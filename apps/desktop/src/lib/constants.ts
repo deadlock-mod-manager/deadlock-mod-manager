@@ -142,4 +142,5 @@ export const EXPERIMENTAL_FEATURES = [
   "profile-sharing",
   "conflict-detection",
   "performance-configs",
+  "cloud-backup",
 ] as const;

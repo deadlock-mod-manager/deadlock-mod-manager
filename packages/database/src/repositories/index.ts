@@ -11,6 +11,7 @@ export * from "./mod.repository";
 export * from "./mod-author.repository";
 export * from "./mod-download.repository";
 export * from "./profile.repository";
+export * from "./profile-backup.repository";
 export * from "./policy-rule.repository";
 export * from "./quick-answer.repository";
 export * from "./reports.repository";

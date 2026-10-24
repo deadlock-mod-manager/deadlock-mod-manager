@@ -1,8 +1,4 @@
-import {
-  profileSchema,
-  type ProfileModDownload,
-  type SharedProfile,
-} from "@deadlock-mods/shared";
+import { profileSchema, type SharedProfile } from "@deadlock-mods/shared";
 import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Dialog,
@@ -27,9 +23,9 @@ import useAbout from "@/hooks/use-about";
 import { useHardwareId } from "@/hooks/use-hardware-id";
 import { shareProfile } from "@/lib/api-client";
 import logger from "@/lib/logger";
+import { serializeEnabledProfileMods } from "@/lib/profiles/serialize-profile-mods";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import type { ModFileTree } from "@/types/mods";
 
 export const ProfileShareDialog = () => {
   const { hardwareId } = useHardwareId();
@@ -42,71 +38,10 @@ export const ProfileShareDialog = () => {
   const activeProfile = usePersistedStore(
     (state) => state.profiles[state.activeProfileId],
   );
-  const enabledMods = Object.values(activeProfile?.enabledMods ?? {})
-    .filter((mod) => mod.enabled)
-    .map((mod) => {
-      // Find the local mod to get installation details
-      const localMod = localMods.find((m) => m.remoteId === mod.remoteId);
-
-      const baseModData: {
-        remoteId: string;
-        submissionType: "mod" | "sound";
-        fileTree?: ModFileTree;
-        selectedDownloads?: ProfileModDownload[];
-      } = {
-        remoteId: mod.remoteId,
-        submissionType: localMod?.isAudio ? "sound" : "mod",
-      };
-
-      // Add file tree information if available (for any mod that has file tree data)
-      if (localMod?.installedFileTree) {
-        // Ensure at least one file is selected in the file tree
-        // (fix for older mods that may not have proper selection info)
-        const hasAnySelected = localMod.installedFileTree.files.some(
-          (f) => f.is_selected,
-        );
-
-        baseModData.fileTree = hasAnySelected
-          ? localMod.installedFileTree
-          : {
-              ...localMod.installedFileTree,
-              files: localMod.installedFileTree.files.map((f) => ({
-                ...f,
-                is_selected: true, // Select all if none selected
-              })),
-            };
-      }
-
-      // Add selected download information if available
-      if (localMod?.downloads && localMod.downloads.length > 0) {
-        const selected = localMod.selectedDownloads?.length
-          ? localMod.selectedDownloads
-          : [localMod.downloads[0]];
-        baseModData.selectedDownloads = selected.map((d) => ({
-          remoteId: mod.remoteId,
-          file: d.name,
-          url: d.url,
-          size: d.size,
-        }));
-      }
-
-      return baseModData;
-    });
-  const enabledIds = new Set(enabledMods.map((mod) => mod.remoteId));
-  const orderedIds = [...(activeProfile?.mods ?? [])]
-    .filter((mod) => enabledIds.has(mod.remoteId))
-    .sort(
-      (left, right) =>
-        (left.installOrder ?? Number.MAX_SAFE_INTEGER) -
-        (right.installOrder ?? Number.MAX_SAFE_INTEGER),
-    )
-    .map((mod) => mod.remoteId);
-  const loadOrder = [
-    ...orderedIds,
-    ...enabledMods
-      .map((mod) => mod.remoteId)
-      .filter((remoteId) => !orderedIds.includes(remoteId)),
-  ];
+  const { mods: enabledMods, loadOrder } = serializeEnabledProfileMods(
+    activeProfile ?? { enabledMods: {} },
+    localMods,
+  );
 
   const { mutate, isPending } = useMutation({
     mutationFn: async (params: {

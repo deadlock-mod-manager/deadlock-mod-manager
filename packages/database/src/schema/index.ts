@@ -12,6 +12,7 @@ export * from "./mirrored-files";
 export * from "./mods";
 export * from "./policy-rules";
 export * from "./profiles";
+export * from "./profile-backups";
 export * from "./quick-answers";
 export * from "./relations";
 export * from "./reports";

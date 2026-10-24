@@ -56,6 +56,8 @@ export type PrepareProfileImportEntry =
 
 export interface ProfileImportOptions {
   sourceProfileId?: string;
+  profileName?: string;
+  profileDescription?: string;
 }
 
 export interface ProfileImportDownloadFile {

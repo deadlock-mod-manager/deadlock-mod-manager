@@ -10,6 +10,7 @@ const current = {
   "profile-management": true,
   "profile-sharing": true,
   "conflict-detection": true,
+  "cloud-backup": false,
 } satisfies Record<ExperimentalFeature, boolean>;
 
 describe("tour opt-in", () => {

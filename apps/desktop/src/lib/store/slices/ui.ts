@@ -55,6 +55,7 @@ const DEFAULT_EXPERIMENTAL_FEATURES: Record<ExperimentalFeature, boolean> = {
   "profile-sharing": true,
   "conflict-detection": true,
   "performance-configs": true,
+  "cloud-backup": true,
 };
 
 export type CrosshairFilters = {
