@@ -3,11 +3,11 @@ import { listen } from "@tauri-apps/api/event";
 import { useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
+import type { ModEntryPoint } from "@/lib/analytics/schema";
 import { getMod } from "@/lib/api-client";
 import { downloadManager } from "@/lib/download/manager";
 import { DownloadAlreadyQueuedError } from "@/lib/download/queue";
 import logger from "@/lib/logger";
-import type { ModEntryPoint } from "@/lib/analytics/schema";
 import { serializeSubmissionRef } from "@/lib/mods/submission-ref";
 import {
   finishOneClickInstall,

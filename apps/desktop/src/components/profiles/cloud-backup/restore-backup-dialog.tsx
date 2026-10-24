@@ -111,7 +111,7 @@ export const RestoreBackupDialog = ({
 
   const isRestoring = restore.isPending;
   const canRestore =
-    !!full && !!profile && !modsLoading && availableCount > 0 && !isRestoring;
+    !!profile && !modsLoading && availableCount > 0 && !isRestoring;
 
   const handleRestore = () => {
     if (!full || !profile) return;

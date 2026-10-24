@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { assetsBaseUrl, DeadlockApiError } from "@/lib/deadlock-api";
 import { fetch } from "@/lib/fetch";
 import {
@@ -22,7 +23,6 @@ import {
   rankedSeasonSchema,
   steamProfileSchema,
 } from "@/lib/validation/stats-api";
-import { z } from "zod";
 import { runtimeServiceOrigin } from "@/lib/runtime-bootstrap";
 import {
   statsScopeQuery,
