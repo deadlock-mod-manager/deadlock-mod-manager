@@ -316,16 +316,13 @@ impl AutoexecManager {
     steam_userdata: Option<&Path>,
   ) -> Result<(), Error> {
     let mut edits = crosshair_settings::prepare(game_path, Some(config), steam_userdata)?;
+    // Older versions also wrote the crosshair to autoexec.cfg. The hero
+    // settings already set it, so drop that copy.
     let path = self.get_autoexec_path(game_path);
-    let mut content = crosshair_settings::read_optional(&path)?.unwrap_or_default();
-    let section = format!(
-      "{}\n{}\n{}",
-      CROSSHAIR_SECTION_START,
-      config.autoexec()?,
-      CROSSHAIR_SECTION_END
-    );
-    upsert_managed_section(&mut content, CROSSHAIR_SECTION, &section);
-    edits.push(ConfigEdit::new(path, Some(content))?);
+    if let Some(mut content) = crosshair_settings::read_optional(&path)? {
+      remove_managed_section(&mut content, CROSSHAIR_SECTION);
+      edits.push(ConfigEdit::new(path, Some(content))?);
+    }
     crosshair_settings::commit(edits)
   }
 

@@ -73,18 +73,6 @@ impl CrosshairConfig {
       .collect(),
     )
   }
-
-  pub fn autoexec(&self) -> Result<String, Error> {
-    Ok(
-      self
-        .settings()?
-        .into_iter()
-        .filter(|(key, _)| key != "crosshair_themed")
-        .map(|(key, value)| format!("citadel_{key} {value}"))
-        .collect::<Vec<_>>()
-        .join("\n"),
-    )
-  }
 }
 
 #[derive(Serialize, Deserialize)]
