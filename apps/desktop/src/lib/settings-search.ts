@@ -49,10 +49,7 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
     tab: "launch-options",
     titleKey: "settings.launchOptions",
     descriptionKey: "settings.launchOptionsDescription",
-    settings: [
-      { titleKey: "gamePresence.condebugOption" },
-      { titleKey: "settings.autoexecLaunchOption" },
-    ],
+    settings: [{ titleKey: "gamePresence.condebugOption" }],
   },
   {
     tab: "autoexec",

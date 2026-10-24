@@ -1,7 +1,5 @@
 import { CustomSettingType } from "@deadlock-mods/shared";
-import { invoke } from "@tauri-apps/api/core";
 import { getCustomSettings } from "@/lib/api-client";
-import { AUTOEXEC_LAUNCH_OPTION_ID } from "@/lib/autoexec/constants";
 import { queryClient } from "@/lib/client";
 import { usePersistedStore } from "@/lib/store";
 import type { LocalSetting } from "@/types/settings";
@@ -20,7 +18,6 @@ const findOrphanedLaunchOptionIds = (
       (s) =>
         s.type === CustomSettingType.LAUNCH_OPTION &&
         !s.id.startsWith(LOCAL_SETTING_PREFIX) &&
-        s.id !== AUTOEXEC_LAUNCH_OPTION_ID &&
         !serverSettingIds.has(s.id),
     )
     .map((s) => s.id);
@@ -57,28 +54,9 @@ export const getAdditionalArgs = async () => {
   }
 
   for (const setting of Object.values(settings).filter(
-    (s) =>
-      s.type === CustomSettingType.LAUNCH_OPTION &&
-      s.enabled &&
-      s.id !== AUTOEXEC_LAUNCH_OPTION_ID,
+    (s) => s.type === CustomSettingType.LAUNCH_OPTION && s.enabled,
   )) {
     additionalArgs.push(`${setting.key} ${setting.value || ""}`.trim());
-  }
-
-  if (settings[AUTOEXEC_LAUNCH_OPTION_ID]?.enabled) {
-    try {
-      const autoexecConfig = await invoke<{
-        full_content: string;
-      }>("get_autoexec_config");
-      if (
-        autoexecConfig?.full_content &&
-        autoexecConfig.full_content.trim().length > 0
-      ) {
-        additionalArgs.push("-exec autoexec");
-      }
-    } catch {
-      return additionalArgs.join(" ");
-    }
   }
 
   return additionalArgs.join(" ");

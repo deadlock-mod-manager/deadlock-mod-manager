@@ -562,6 +562,17 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
       delete state.fileserverLatencyMs;
     },
   },
+  {
+    to: 35,
+    label: "drop-autoexec-launch-option",
+    apply: (state) => {
+      // Deadlock runs autoexec.cfg at every launch, so `-exec autoexec` ran it
+      // a second time.
+      if (isPlainObject(state.settings)) {
+        delete state.settings["autoexec-launch-option"];
+      }
+    },
+  },
 ];
 
 const LEGACY_GAMEBANANA_ID = /^[1-9]\d*$/;

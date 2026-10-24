@@ -29,10 +29,6 @@ import {
   hasAutoexecLaunchableContent,
   normalizeAutoexecContent,
 } from "@/lib/autoexec/autoexec-content";
-import {
-  disableAutoexecLaunchOptionIfEnabled,
-  enableAutoexecLaunchOptionIfDisabled,
-} from "@/lib/autoexec/launch-option";
 import type { FlatAutoexecCommand } from "@/lib/autoexec/predefined-commands";
 import logger from "@/lib/logger";
 import { STALE_TIME_LOCAL } from "@/lib/query-constants";
@@ -94,12 +90,6 @@ export const AutoexecSettings = () => {
           ),
         });
         toast.success(t("settings.autoexecSaved"));
-
-        if (hasAutoexecLaunchableContent(savedConfig.full_content)) {
-          enableAutoexecLaunchOptionIfDisabled();
-        } else {
-          disableAutoexecLaunchOptionIfEnabled();
-        }
       }
 
       await queryClient.invalidateQueries({ queryKey: ["autoexec-config"] });
@@ -157,9 +147,6 @@ export const AutoexecSettings = () => {
       });
     },
     onSuccess: async (savedConfig) => {
-      if (!hasAutoexecLaunchableContent(savedConfig.full_content)) {
-        disableAutoexecLaunchOptionIfEnabled();
-      }
       queryClient.setQueryData<AutoexecConfig>(
         ["autoexec-config"],
         savedConfig,
@@ -344,7 +331,6 @@ export const AutoexecSettings = () => {
             <PopoverContent align='start' className='w-96 space-y-2 text-sm'>
               <p>{t("settings.autoexecInfoBody1")}</p>
               <p>{t("settings.autoexecInfoBody2")}</p>
-              <p>{t("settings.autoexecInfoBody3")}</p>
             </PopoverContent>
           </Popover>
         </>

@@ -40,7 +40,7 @@ import {
   WrenchIcon,
 } from "@deadlock-mods/ui/icons";
 import { DiscordLogoIcon } from "@phosphor-icons/react";
-import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
@@ -98,10 +98,8 @@ import { NetworkDiagnosticsButton } from "@/components/shared/network-diagnostic
 import PageTitle from "@/components/shared/page-title";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { getCustomSettings } from "@/lib/api-client";
-import { AUTOEXEC_LAUNCH_OPTION_ID } from "@/lib/autoexec/constants";
 import { GITHUB_REPO, SortType } from "@/lib/constants";
 import logger from "@/lib/logger";
-import { STALE_TIME_LOCAL } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 import type { SettingsSearchResult } from "@/lib/settings-search";
 import { cn } from "@/lib/utils";
@@ -146,22 +144,6 @@ const DangerAction = ({
     </Button>
   </div>
 );
-
-const getAutoexecConfig = async () => {
-  try {
-    return await invoke<{
-      full_content: string;
-      editable_content: string;
-      readonly_sections: Array<{
-        start_line: number;
-        end_line: number;
-        content: string;
-      }>;
-    }>("get_autoexec_config");
-  } catch {
-    return null;
-  }
-};
 
 const CONDEBUG_LAUNCH_OPTION_ID = "condebug-launch-option";
 const SEARCH_HIGHLIGHT_MS = 1600;
@@ -248,13 +230,6 @@ const CustomSettingsData = ({
     queryKey: ["custom-settings"],
     queryFn: getCustomSettings,
   });
-  const { data: autoexecConfig } = useQuery({
-    queryKey: ["autoexec-config"],
-    queryFn: getAutoexecConfig,
-    staleTime: STALE_TIME_LOCAL,
-    retry: false,
-    refetchOnWindowFocus: false,
-  });
   const {
     settings,
     toggleSetting,
@@ -306,32 +281,6 @@ const CustomSettingsData = ({
     );
   }, [settings]);
 
-  const hasAutoexecConfig = useMemo(() => {
-    return (
-      autoexecConfig?.full_content &&
-      autoexecConfig.full_content.trim().length > 0
-    );
-  }, [autoexecConfig]);
-
-  const autoexecLaunchOption: LocalSetting | null = useMemo(() => {
-    if (!autoexecConfig) return null;
-
-    const persistedEnabled =
-      settingStatusById[AUTOEXEC_LAUNCH_OPTION_ID] ?? false;
-    const enabled = hasAutoexecConfig ? persistedEnabled : false;
-
-    return {
-      id: AUTOEXEC_LAUNCH_OPTION_ID,
-      key: "-exec",
-      value: "autoexec",
-      type: CustomSettingType.LAUNCH_OPTION,
-      description: t("settings.autoexecLaunchOption"),
-      enabled,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-  }, [autoexecConfig, hasAutoexecConfig, settingStatusById, t]);
-
   const condebugLaunchOption: LocalSetting = useMemo(() => {
     return {
       id: CONDEBUG_LAUNCH_OPTION_ID,
@@ -353,9 +302,6 @@ const CustomSettingsData = ({
           ...(isLaunchOption ? [condebugLaunchOption] : []),
           ...(settingByType?.[type] ?? []),
           ...(customLocalSettingsByType?.[type] ?? []),
-          ...(isLaunchOption && autoexecLaunchOption
-            ? [autoexecLaunchOption]
-            : []),
         ];
 
         return (
@@ -402,15 +348,11 @@ const CustomSettingsData = ({
                 </div>
               )}
               {settingsForType.map((setting) => {
-                const isAutoexecOption =
-                  setting.id === AUTOEXEC_LAUNCH_OPTION_ID;
                 const isCondebugOption =
                   setting.id === CONDEBUG_LAUNCH_OPTION_ID;
-                const isDisabled = isAutoexecOption && !hasAutoexecConfig;
 
                 return (
                   <SettingCard
-                    disabled={isDisabled}
                     key={setting.id}
                     onChange={() => {
                       if (isCondebugOption) {
@@ -421,9 +363,7 @@ const CustomSettingsData = ({
                         }
                         return;
                       }
-                      if (!isDisabled) {
-                        toggleSetting(setting.id, setting);
-                      }
+                      toggleSetting(setting.id, setting);
                     }}
                     setting={{
                       ...setting,
