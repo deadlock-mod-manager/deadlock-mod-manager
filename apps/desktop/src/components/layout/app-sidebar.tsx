@@ -14,7 +14,6 @@ import {
   SidebarMenuItem,
 } from "@deadlock-mods/ui/components/sidebar";
 import {
-  ArticleIcon,
   BugBeetleIcon,
   ChartLineUpIcon,
   CodeIcon,
@@ -183,14 +182,6 @@ const getSidebarItems = (
       icon: HammerIcon,
       group: "customization",
       isNew: true,
-    },
-    {
-      id: "autoexec",
-      title: () => <span>{t("navigation.autoexec")}</span>,
-      tooltipLabel: t("navigation.autoexec"),
-      url: "/settings/autoexec",
-      icon: ArticleIcon,
-      group: "customization",
     },
     {
       id: "performance",
