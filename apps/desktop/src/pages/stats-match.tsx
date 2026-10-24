@@ -62,6 +62,8 @@ import {
 } from "@/lib/stats/match-analysis";
 import { badgeToStep } from "@/lib/stats/rank";
 
+const EMPTY_RANK_ASSETS: RankAsset[] = [];
+
 const badgeName = (badge: number, rankAssets: RankAsset[]) => {
   const rank = resolveRank(badge, rankAssets);
   return rank.subrank > 0
@@ -229,7 +231,7 @@ const StatsMatch = () => {
   const { accountId, isPending: accountsPending } = useSelectedSteamAccount();
   const stats = usePlayerStats(accountId);
   const { heroesById } = useHeroCatalog();
-  const rankAssets = useRankAssets().data?.data ?? [];
+  const rankAssets = useRankAssets().data?.data ?? EMPTY_RANK_ASSETS;
   const details = useMatchDetails(
     Number.isFinite(matchId) ? matchId : null,
     accountId,

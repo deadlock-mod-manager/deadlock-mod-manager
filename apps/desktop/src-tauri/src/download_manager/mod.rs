@@ -296,13 +296,31 @@ impl DownloadManager {
 
     tokio::spawn(async move {
       loop {
+        // Register the download as active before releasing the queue, so status
+        // checks and profile cancellation never miss a task between the two.
         let task = {
           let mut queue = queue_clone.lock().await;
-          queue.pop_front()
+          match queue.pop_front() {
+            Some(queued) => {
+              let cancel_token = CancellationToken::new();
+              let pause = PauseHandle::new();
+              active_clone.lock().await.insert(
+                queued.task.mod_id.clone(),
+                ActiveDownload {
+                  cancel_token: cancel_token.clone(),
+                  pause: pause.clone(),
+                  status: "downloading".to_string(),
+                  profile_folder: queued.task.profile_folder.clone(),
+                },
+              );
+              Some((queued, cancel_token, pause))
+            }
+            None => None,
+          }
         };
 
         match task {
-          Some(queued) => {
+          Some((queued, cancel_token, pause)) => {
             let mod_id = queued.task.mod_id.clone();
             let profile_folder = queued.task.profile_folder.clone();
             let task_path = queued.task.target_dir.to_string_lossy().to_string();
@@ -310,6 +328,8 @@ impl DownloadManager {
               queued.operation_id,
               queued.task,
               queued.purpose,
+              cancel_token,
+              pause,
               Arc::clone(&active_clone),
               app_handle.clone(),
             )
@@ -365,25 +385,12 @@ impl DownloadManager {
     operation_id: u64,
     task: DownloadTask,
     purpose: DownloadPurpose,
+    cancel_token: CancellationToken,
+    pause: PauseHandle,
     active_downloads: Arc<Mutex<HashMap<String, ActiveDownload>>>,
     app_handle: AppHandle,
   ) -> Result<PreparedDownload, Error> {
     let mod_id = task.mod_id.clone();
-    let cancel_token = CancellationToken::new();
-    let pause = PauseHandle::new();
-
-    {
-      let mut active = active_downloads.lock().await;
-      active.insert(
-        mod_id.clone(),
-        ActiveDownload {
-          cancel_token: cancel_token.clone(),
-          pause: pause.clone(),
-          status: "downloading".to_string(),
-          profile_folder: task.profile_folder.clone(),
-        },
-      );
-    }
 
     app_handle
       .emit(
