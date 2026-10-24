@@ -1,4 +1,5 @@
 import { Badge } from "@deadlock-mods/ui/components/badge";
+import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Dialog,
   DialogContent,
@@ -33,6 +34,8 @@ interface ModOptionsDialogProps {
   onOpenChange: (open: boolean) => void;
   isSaving?: boolean;
   progress?: ModOptionsProgress | null;
+  /** Set while the apply is at a step that can be stopped. */
+  onCancelApply?: () => void;
   onApply: (
     selectedArchives: ModDownloadItem[],
     deselectedArchives: ModDownloadItem[],
@@ -52,6 +55,7 @@ export const ModOptionsDialog = ({
   onOpenChange,
   isSaving = false,
   progress = null,
+  onCancelApply,
   onApply,
   modName = "Mod",
   downloads = [],
@@ -114,6 +118,7 @@ export const ModOptionsDialog = ({
     <Dialog
       onOpenChange={(open) => {
         if (!isBusy) onOpenChange(open);
+        else if (!open) onCancelApply?.();
       }}
       open={isOpen}>
       <DialogContent
@@ -188,7 +193,10 @@ export const ModOptionsDialog = ({
                 </div>
                 {progress && (
                   <div className='px-3'>
-                    <ApplyProgress progress={progress} />
+                    <ApplyProgress
+                      onCancel={onCancelApply}
+                      progress={progress}
+                    />
                   </div>
                 )}
               </OptionSection>
@@ -211,7 +219,13 @@ export const ModOptionsDialog = ({
   );
 };
 
-const ApplyProgress = ({ progress }: { progress: ModOptionsProgress }) => {
+const ApplyProgress = ({
+  progress,
+  onCancel,
+}: {
+  progress: ModOptionsProgress;
+  onCancel?: () => void;
+}) => {
   const { t } = useTranslation();
 
   if (progress.phase === "applying") {
@@ -255,14 +269,21 @@ const ApplyProgress = ({ progress }: { progress: ModOptionsProgress }) => {
         value={percent}
       />
       {progress.phase === "downloading" && (
-        <p className='text-xs text-muted-foreground tabular-nums'>
-          {progress.total
-            ? t("modOptions.progress.bytes", {
-                downloaded: formatFileSize(progress.downloaded),
-                total: formatFileSize(progress.total),
-              })
-            : formatFileSize(progress.downloaded)}
-        </p>
+        <div className='flex items-center justify-between gap-3'>
+          <p className='text-xs text-muted-foreground tabular-nums'>
+            {progress.total
+              ? t("modOptions.progress.bytes", {
+                  downloaded: formatFileSize(progress.downloaded),
+                  total: formatFileSize(progress.total),
+                })
+              : formatFileSize(progress.downloaded)}
+          </p>
+          {onCancel && (
+            <Button onClick={onCancel} size='sm' variant='ghost'>
+              {t("common.cancel")}
+            </Button>
+          )}
+        </div>
       )}
     </div>
   );

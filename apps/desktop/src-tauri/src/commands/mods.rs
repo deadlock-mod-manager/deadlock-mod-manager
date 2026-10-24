@@ -860,6 +860,23 @@ pub enum StageArchiveProgress {
 /// flood the webview.
 const STAGE_PROGRESS_STEP: u64 = 512 * 1024;
 
+/// In-flight `stage_download_archive` downloads, by mod ID. The number tells a
+/// staging run its own token from one a newer run of the same mod put there.
+static STAGE_CANCEL: std::sync::LazyLock<
+  std::sync::Mutex<std::collections::HashMap<String, (u64, tokio_util::sync::CancellationToken)>>,
+> = std::sync::LazyLock::new(Default::default);
+static STAGE_RUN: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+/// Stops a mod's `stage_download_archive` download. Extraction and copying
+/// can't be interrupted, so a cancel that arrives after the download finishes
+/// does nothing.
+#[tauri::command]
+pub fn cancel_stage_download_archive(mod_id: String) {
+  if let Some((_, cancel)) = STAGE_CANCEL.lock().unwrap().get(&mod_id) {
+    cancel.cancel();
+  }
+}
+
 #[tauri::command]
 pub async fn stage_download_archive(
   catalog_state: State<'_, super::gamebanana_catalog::GameBananaCatalogState>,
@@ -912,7 +929,13 @@ pub async fn stage_download_archive(
   let archive_path = temp_dir.path().join(&safe_archive_name);
   let download_channel = on_progress.clone();
   let last_reported = std::sync::atomic::AtomicU64::new(0);
-  crate::download_manager::downloader::download_file_resumable(
+  let cancel = tokio_util::sync::CancellationToken::new();
+  let run = STAGE_RUN.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+  STAGE_CANCEL
+    .lock()
+    .unwrap()
+    .insert(mod_id.clone(), (run, cancel.clone()));
+  let download = crate::download_manager::downloader::download_file_resumable(
     &file.url,
     &archive_path,
     file.size,
@@ -928,7 +951,7 @@ pub async fn stage_download_archive(
         });
       }
     },
-    tokio_util::sync::CancellationToken::new(),
+    cancel,
     crate::download_manager::downloader::PauseHandle::new(),
     Some(if file.size == 0 {
       2 * 1024 * 1024 * 1024
@@ -938,7 +961,14 @@ pub async fn stage_download_archive(
     file.md5_checksum.as_deref(),
     true,
   )
-  .await?;
+  .await;
+  {
+    let mut tokens = STAGE_CANCEL.lock().unwrap();
+    if tokens.get(&mod_id).is_some_and(|(owner, _)| *owner == run) {
+      tokens.remove(&mod_id);
+    }
+  }
+  download?;
 
   let extract_dir = temp_dir.path().join("extracted");
 

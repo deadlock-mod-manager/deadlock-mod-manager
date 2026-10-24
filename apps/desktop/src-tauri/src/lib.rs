@@ -378,6 +378,7 @@ pub fn run() {
       commands::mods::swap_mod_options,
       commands::mods::fetch_missing_mod_variants,
       commands::mods::stage_download_archive,
+      commands::mods::cancel_stage_download_archive,
       commands::mods::switch_mod_download_variant,
       commands::ingest::trigger_cache_scan,
       commands::ingest::start_cache_watcher,

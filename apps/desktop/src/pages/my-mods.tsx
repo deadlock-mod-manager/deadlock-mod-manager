@@ -287,6 +287,7 @@ const LazyModOptionsDialog = ({
       isOpen={modOptions.isOpen}
       onOpenChange={(open) => (open ? modOptions.open() : modOptions.close())}
       isSaving={modOptions.isSaving}
+      onCancelApply={modOptions.cancelApply}
       progress={modOptions.progress}
       onApply={modOptions.apply}
       fileTree={modOptions.fileTree}
