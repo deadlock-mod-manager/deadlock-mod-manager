@@ -81,3 +81,9 @@ export const formatHourRange = (hour: number): string => {
     clock.format(new Date(2000, 0, 1, hour, minute));
   return `${at(0)} - ${at(59)}`;
 };
+
+/** Souls as the game shows them in tight spots: "4.9k", whole numbers below 1000. */
+export const formatThousands = (value: number): string =>
+  Math.abs(value) >= 1000
+    ? `${formatDecimal(value / 1000, 1)}k`
+    : String(Math.round(value));

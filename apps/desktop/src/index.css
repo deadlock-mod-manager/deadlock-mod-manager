@@ -1514,6 +1514,15 @@
   --viz-positive: #3987e5;
   --viz-negative: #e66767;
   --viz-neutral: #383835;
+  /* Match results. Never the only cue: rows carry a W/L letter, beads a height. */
+  --viz-win: #6fcf97;
+  --viz-loss: #ec6a5e;
+  /* Deadlock's own identity colours: the two teams and the three item slots. */
+  --team-0: #e0a84e;
+  --team-1: #7095e8;
+  --slot-weapon: #c8792e;
+  --slot-vitality: #5e9b4a;
+  --slot-spirit: #8e5bc9;
 }
 
 .light {
@@ -1522,6 +1531,41 @@
   --viz-positive: #2a78d6;
   --viz-negative: #e34948;
   --viz-neutral: #f0efec;
+  --viz-win: #23935a;
+  --viz-loss: #d64535;
+}
+
+/*
+ * Stats panels sit one small step above the page, the way the design layers
+ * them. Based on the page colour, not --card: some themes already lift
+ * --card, and stacking both made the panels read grey.
+ */
+.stats-surface {
+  background-color: color-mix(
+    in srgb,
+    hsl(var(--foreground)) 2.5%,
+    hsl(var(--background))
+  );
+}
+
+/*
+ * The shared chart container mutes every reference line. Stats charts use
+ * them as signal (baselines, medians, zero), so they set their own colour
+ * through --ref-stroke; the line's stroke-opacity attribute still applies.
+ */
+.stats-chart .recharts-reference-line .recharts-reference-line-line {
+  stroke: var(--ref-stroke, hsl(var(--primary)));
+}
+
+/* Stats plots sit on a faint dot grid instead of gridlines. */
+.stats-dot-grid {
+  background-image: radial-gradient(
+    circle,
+    color-mix(in srgb, hsl(var(--foreground)) 9%, transparent) 0.9px,
+    transparent 1px
+  );
+  background-size: 14px 14px;
+  background-position: 7px 7px;
 }
 
 /* Mod Foundry: an indeterminate sweep for work whose duration is unknown
