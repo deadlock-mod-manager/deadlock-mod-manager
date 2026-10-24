@@ -382,6 +382,7 @@ fn existing_current_models_block_relocation_for_selected_and_opted_out_mods_in_b
         &history,
         &resources,
         &selected,
+        &|_| {},
       )
       .unwrap();
       assert!(!plan.camera_models.contains_key(CURRENT));
@@ -409,6 +410,7 @@ fn already_active_models_unknown_history_and_opted_out_sources_do_not_relocate()
     &history,
     &resources,
     &BTreeSet::new(),
+    &|_| {},
   )
   .unwrap();
   assert!(disabled.camera_models.is_empty());

@@ -32,7 +32,7 @@ import {
 import ErrorBoundary from "@/components/shared/error-boundary";
 import { useConfigListing } from "@/hooks/performance/use-config-listing";
 import { useDownload } from "@/hooks/use-download";
-import { useHasOpened } from "@/hooks/use-has-opened";
+import { useHasOpened } from "@deadlock-mods/ui/hooks/use-has-opened";
 import { useInstallAction } from "@/hooks/use-install-action";
 import {
   modDownloadsQueryOptions,

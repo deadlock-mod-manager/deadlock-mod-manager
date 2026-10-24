@@ -274,6 +274,16 @@ export const resolveRank = (
   };
 };
 
+/** "Name subrank" for a badge, or null when no asset names its tier. */
+export const rankLabel = (
+  badge: number | undefined,
+  rankAssets: RankAsset[],
+) => {
+  const { name, subrank } = resolveRank(badge, rankAssets);
+  if (!name) return null;
+  return subrank > 0 ? `${name} ${subrank}` : name;
+};
+
 export const getRankAssets = async (): Promise<RankAsset[]> => {
   const response = await fetch(`${assetsBaseUrl()}/v1/assets/ranks`);
   if (!response.ok) {

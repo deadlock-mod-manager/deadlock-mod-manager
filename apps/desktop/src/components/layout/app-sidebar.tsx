@@ -39,8 +39,8 @@ import { Link, useLocation, useNavigate } from "react-router";
 import { HintAnchor } from "@/components/feature-hints/hint-anchor";
 import { useThemeOverride } from "@/components/providers/theme-overrides";
 import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
+import { isDownloadInProgress } from "@/lib/download/status";
 import { usePersistedStore } from "@/lib/store";
-import { ModStatus } from "@/types/mods";
 import { BrandingHeader } from "./branding";
 import { SidebarCollapse } from "./sidebar-collapse";
 import { SidebarSocials } from "./sidebar-socials";
@@ -371,12 +371,7 @@ export const AppSidebar = () => {
   const modCount = usePersistedStore((state) => state.localMods.length);
   const downloadCount = usePersistedStore(
     (state) =>
-      state.localMods.filter(
-        (mod) =>
-          mod.status === ModStatus.Downloading ||
-          mod.status === ModStatus.Extracting ||
-          mod.status === ModStatus.Paused,
-      ).length,
+      state.localMods.filter((mod) => isDownloadInProgress(mod.status)).length,
   );
   const seenNavItems = usePersistedStore((state) => state.seenNavItems);
   const markNavItemSeen = usePersistedStore((state) => state.markNavItemSeen);

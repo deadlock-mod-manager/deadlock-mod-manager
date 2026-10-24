@@ -17,7 +17,6 @@ import {
   FinalBuild,
   SoulsSpent,
   TimingCompare,
-  useBuild,
 } from "@/components/stats/match/match-build";
 import {
   isMatchView,
@@ -53,23 +52,19 @@ import type {
   RankAsset,
   SteamProfile,
 } from "@/lib/stats/api";
-import { resolveRank } from "@/lib/stats/api";
+import { rankLabel } from "@/lib/stats/api";
 import type { DeadlockHero, DeadlockItem } from "@/lib/deadlock-api";
 import {
   duels,
   laneMatchup,
   lobbyPlacements,
+  type Placement,
+  type Purchase,
+  purchases,
 } from "@/lib/stats/match-analysis";
 import { badgeToStep } from "@/lib/stats/rank";
 
 const EMPTY_RANK_ASSETS: RankAsset[] = [];
-
-const badgeName = (badge: number, rankAssets: RankAsset[]) => {
-  const rank = resolveRank(badge, rankAssets);
-  return rank.subrank > 0
-    ? `${rank.name ?? ""} ${rank.subrank}`
-    : (rank.name ?? "");
-};
 
 /** The ranked badge after this match against the one shown before it. */
 const rankChangeFor = (
@@ -89,8 +84,8 @@ const rankChangeFor = (
   if (index < 1 || !after || !before) return null;
   return {
     steps: badgeToStep(after) - badgeToStep(before),
-    from: badgeName(before, rankAssets),
-    to: badgeName(after, rankAssets),
+    from: rankLabel(before, rankAssets) ?? "",
+    to: rankLabel(after, rankAssets) ?? "",
   };
 };
 
@@ -103,6 +98,8 @@ interface MatchBodyProps {
   heroesById: Map<number, DeadlockHero>;
   itemsById: Map<number, DeadlockItem>;
   rankAssets: RankAsset[];
+  placements: Placement[];
+  bought: Purchase[];
   onSelectPlayer: (accountId: number) => void;
 }
 
@@ -115,18 +112,15 @@ const MatchBody = ({
   heroesById,
   itemsById,
   rankAssets,
+  placements,
+  bought,
   onSelectPlayer,
 }: MatchBodyProps) => {
   const { t } = useTranslation();
   const nameOf = (id: number) =>
     profiles.get(id)?.personaname ?? t("stats.unknownPlayer");
-  const bought = useBuild(me, itemsById);
   const baseline = useHeroBaseline(accountId, me.hero_id, view === "build");
   const history = usePlayerHistory(accountId, view === "lobby");
-  const placements = useMemo(
-    () => lobbyPlacements(match.players, me),
-    [match.players, me],
-  );
 
   if (view === "build") {
     return (
@@ -260,6 +254,19 @@ const StatsMatch = () => {
     [stats.matches, matchId, rankAssets],
   );
 
+  const placements = useMemo(
+    () =>
+      details.match && details.player
+        ? lobbyPlacements(details.match.players, details.player)
+        : [],
+    [details.match, details.player],
+  );
+  const bought = useMemo(
+    () =>
+      details.player ? purchases(details.player.items, details.itemsById) : [],
+    [details.player, details.itemsById],
+  );
+
   const body = (() => {
     if (accountsPending || details.isPending) {
       return <MatchSkeleton />;
@@ -307,7 +314,6 @@ const StatsMatch = () => {
         </Empty>
       );
     }
-    const placements = lobbyPlacements(details.match.players, me);
     return (
       <div className='flex flex-col gap-4'>
         <MatchHeader
@@ -339,7 +345,9 @@ const StatsMatch = () => {
           itemsById={details.itemsById}
           match={details.match}
           me={me}
+          bought={bought}
           onSelectPlayer={setSelectedPlayer}
+          placements={placements}
           rankAssets={rankAssets}
           view={view}
         />

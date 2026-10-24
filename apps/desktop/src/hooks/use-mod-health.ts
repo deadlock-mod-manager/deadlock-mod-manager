@@ -5,7 +5,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { invoke } from "@tauri-apps/api/core";
+import { type InvokeArgs, invoke } from "@tauri-apps/api/core";
 import { useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { create } from "zustand";
@@ -38,7 +38,7 @@ export const useModHealthProgress = create<{
   setProgress: (progress) => set({ progress }),
 }));
 
-/** Latest `repair-plan-progress` event; each wait clears it before it starts. */
+/** Latest `repair-plan-progress` event, cleared when a new plan build starts. */
 export const useRepairPlanProgress = create<{
   progress: RepairPlanProgress | null;
   setProgress: (progress: RepairPlanProgress | null) => void;
@@ -47,8 +47,11 @@ export const useRepairPlanProgress = create<{
   setProgress: (progress) => set({ progress }),
 }));
 
-export const resetRepairPlanProgress = () =>
+/** Invokes a command that builds a repair plan, clearing the last plan's progress. */
+export const invokeRepairPlan = <T>(command: string, args: InvokeArgs) => {
   useRepairPlanProgress.getState().setProgress(null);
+  return invoke<T>(command, args);
+};
 
 export const useActiveProfileFolder = () =>
   usePersistedStore(
@@ -158,7 +161,7 @@ export const fixMods = async (
   modIds: string[],
   review: (profileFolder: string | null) => Promise<boolean>,
 ): Promise<FixModsOutcome> => {
-  const result = await invoke<FixModsResult>("fix_mods", {
+  const result = await invokeRepairPlan<FixModsResult>("fix_mods", {
     profileFolder,
     modIds,
   });

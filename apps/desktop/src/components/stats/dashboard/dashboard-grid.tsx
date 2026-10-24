@@ -44,6 +44,7 @@ import {
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
+import { useElementWidth } from "@/hooks/use-element-width";
 import {
   type DashboardTab,
   type DashboardWidget,
@@ -76,23 +77,6 @@ const responsiveSpan = (w: number, gridWidth: number) => {
     return Math.min(GRID_COLUMNS, Math.max(w, 6));
   }
   return w;
-};
-
-const useElementWidth = () => {
-  const ref = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState(0);
-  useEffect(() => {
-    const element = ref.current;
-    if (!element) {
-      return;
-    }
-    const observer = new ResizeObserver(([entry]) =>
-      setWidth(entry?.contentRect.width ?? 0),
-    );
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
-  return { ref, width };
 };
 
 export interface GridActions {

@@ -20,7 +20,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { RepairPlanProgressStatus } from "@/components/mod-health/repair-plan-progress";
-import { resetRepairPlanProgress } from "@/hooks/use-mod-health";
+import { invokeRepairPlan } from "@/hooks/use-mod-health";
 import { getErrorMessage } from "@/lib/errors";
 import {
   compatibilityResolutions,
@@ -64,13 +64,11 @@ export function CompatibilityReviewDialog({
   }));
   const analysis = useQuery({
     queryKey: ["mod-compatibility-analysis", profileFolder, inputs],
-    queryFn: () => {
-      resetRepairPlanProgress();
-      return invoke<LocalizationOverlayAnalysis>(
+    queryFn: () =>
+      invokeRepairPlan<LocalizationOverlayAnalysis>(
         "analyze_localization_overlay",
         { profileFolder },
-      );
-    },
+      ),
     enabled: open,
     retry: false,
     refetchOnWindowFocus: false,
@@ -109,8 +107,7 @@ export function CompatibilityReviewDialog({
   const apply = useMutation({
     mutationFn: async () => {
       if (!review.data) return;
-      resetRepairPlanProgress();
-      return invoke<LocalizationOverlayApplyResult>(
+      return invokeRepairPlan<LocalizationOverlayApplyResult>(
         "apply_localization_overlay",
         {
           profileFolder,

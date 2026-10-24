@@ -27,36 +27,29 @@ import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import AuthModal from "@/components/user/auth-modal";
 import {
-  useBackupProfile,
+  type CloudBackups,
   useDeleteProfileBackup,
 } from "@/hooks/use-profile-backups";
-import type { ProfileBackupStatus } from "@/lib/profiles/profile-backup";
-import type { ProfileId } from "@/types/profiles";
 
 interface CloudBackupsPanelProps {
-  isAuthenticated: boolean;
-  backups: ProfileBackupSummary[];
-  isLoading: boolean;
-  // Local profile and status for each backup that is on this PC.
-  localByBackupId: ReadonlyMap<
-    string,
-    { profileId: ProfileId; status: ProfileBackupStatus }
-  >;
+  cloudBackups: CloudBackups;
   disabled: boolean;
   onRestore: (backup: ProfileBackupSummary) => void;
 }
 
 export const CloudBackupsPanel = ({
-  isAuthenticated,
-  backups,
-  isLoading,
-  localByBackupId,
+  cloudBackups: {
+    isAuthenticated,
+    backups,
+    isLoading,
+    localByBackupId,
+    backupProfile,
+  },
   disabled,
   onRestore,
 }: CloudBackupsPanelProps) => {
   const { t } = useTranslation();
   const confirm = useConfirm();
-  const { backupProfile } = useBackupProfile();
   const deleteBackup = useDeleteProfileBackup();
 
   if (!isAuthenticated) {

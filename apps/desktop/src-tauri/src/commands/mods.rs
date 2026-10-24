@@ -14,7 +14,7 @@ use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
 use serde::{Deserialize, Serialize};
 use tauri::{Emitter, State};
 
-use super::downloads::{get_download_manager, resolve_download_files};
+use super::downloads::{FileserverPreference, get_download_manager, resolve_download_files};
 use super::fonts::{apply_font_cleanup, prepare_font_cleanup};
 use super::state::MANAGER;
 use crate::download_manager::{DownloadFileDto, DownloadTask};
@@ -283,7 +283,7 @@ pub async fn batch_update_mods(
         &policy,
         &mod_data.mod_id,
         &mod_data.download_files,
-        None,
+        FileserverPreference::Default,
       )
       .await
       .map_err(|error| format!("Failed to resolve download files: {error:?}")),
@@ -754,7 +754,7 @@ pub async fn fetch_missing_mod_variants(
         size: 0,
         md5_checksum: None,
       }],
-      None,
+      FileserverPreference::Default,
     )
     .await?
     .into_iter()
@@ -901,7 +901,7 @@ pub async fn stage_download_archive(
       size: 0,
       md5_checksum: None,
     }],
-    None,
+    FileserverPreference::Default,
   )
   .await?
   .into_iter()

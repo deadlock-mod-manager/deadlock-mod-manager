@@ -16,6 +16,14 @@ pub(crate) async fn get_download_manager(app_handle: AppHandle) -> &'static Down
     .await
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "lowercase")]
+pub enum FileserverPreference {
+  Default,
+  Auto,
+}
+
 #[tauri::command]
 pub async fn queue_download(
   app_handle: AppHandle,
@@ -24,7 +32,7 @@ pub async fn queue_download(
   mod_id: String,
   files: Vec<DownloadFileDto>,
   profile_folder: Option<String>,
-  fileserver_preference: Option<String>,
+  fileserver_preference: FileserverPreference,
   _is_map: bool,
 ) -> Result<(), Error> {
   log::info!(
@@ -37,7 +45,7 @@ pub async fn queue_download(
     &policy,
     &mod_id,
     &files,
-    fileserver_preference.as_deref(),
+    fileserver_preference,
   )
   .await?;
 
@@ -61,7 +69,7 @@ pub(crate) async fn resolve_download_files(
   policy: &super::policy::PolicyState,
   mod_id: &str,
   files: &[DownloadFileDto],
-  fileserver_preference: Option<&str>,
+  fileserver_preference: FileserverPreference,
 ) -> Result<Vec<DownloadFileDto>, Error> {
   crate::providers::SubmissionRef::parse_slug(mod_id)
     .map_err(|_| Error::InvalidInput("Invalid download identity".to_string()))?;
@@ -91,13 +99,19 @@ async fn resolve_gamebanana_file(
   state: &super::gamebanana_catalog::GameBananaCatalogState,
   mod_id: &str,
   token: &str,
-  fileserver_preference: Option<&str>,
+  fileserver_preference: FileserverPreference,
 ) -> Result<DownloadFileDto, Error> {
   let (submission, file_id) = parse_gamebanana_file_token(mod_id, token)?;
   let backend = state.backend()?;
   let page = backend
     .client
     .download_page(&submission, &tokio_util::sync::CancellationToken::new())
+    .await?;
+  // The cached update snapshot either predates this install or offered a file
+  // the author has since deleted; the next check should see live files.
+  backend
+    .catalog
+    .delete_cached_update(submission.clone())
     .await?;
   if page.is_trashed || page.is_withheld {
     return Err(Error::ProviderInvalidResponse(
@@ -110,16 +124,13 @@ async fn resolve_gamebanana_file(
     .chain(page.archived_files)
     .find(|candidate| candidate.id == file_id)
   else {
-    // The update check may have offered a file id from a cached snapshot that
-    // the author has since deleted; drop it so the next check sees live files.
-    backend.catalog.delete_cached_update(submission).await?;
     return Err(Error::ProviderInvalidResponse(
       "GameBanana file was not found".to_string(),
     ));
   };
   validate_download_file_name(&file.name)?;
   let mut download_url = file.download_url;
-  if fileserver_preference == Some("auto") {
+  if fileserver_preference == FileserverPreference::Auto {
     match backend.fileservers(false).await {
       Ok(servers) => {
         if let Some(mirror_url) = find_fileserver_with_file(
@@ -179,28 +190,44 @@ async fn find_fileserver_with_file(
     }
   };
 
-  for server in candidates.into_iter().take(MAX_FILESERVER_PROBES) {
-    let url = format!(
-      "https://{}/{category}/{}",
-      server.domain,
-      urlencoding::encode(file_name)
-    );
-    match client.head(&url).send().await {
-      Ok(response) if response.status().is_success() => return Some(url),
-      Ok(response) => log::info!(
-        "{} cannot serve {file_name} ({}); trying the next fileserver",
-        server.name,
-        response.status()
-      ),
-      Err(error) => log::info!(
-        "{} is unreachable ({error}); trying the next fileserver",
-        server.name
-      ),
-    }
+  let probes = candidates
+    .into_iter()
+    .take(MAX_FILESERVER_PROBES)
+    .map(|server| {
+      let client = &client;
+      async move {
+        let url = format!(
+          "https://{}/{category}/{}",
+          server.domain,
+          urlencoding::encode(file_name)
+        );
+        match client.head(&url).send().await {
+          Ok(response) if response.status().is_success() => Some(url),
+          Ok(response) => {
+            log::info!(
+              "{} cannot serve {file_name} ({})",
+              server.name,
+              response.status()
+            );
+            None
+          }
+          Err(error) => {
+            log::info!("{} is unreachable ({error})", server.name);
+            None
+          }
+        }
+      }
+    });
+  // Probes run together, but the busiest server that serves the file still wins.
+  let found = futures::future::join_all(probes)
+    .await
+    .into_iter()
+    .flatten()
+    .next();
+  if found.is_none() {
+    log::info!("No fileserver serves {file_name}; using canonical URL");
   }
-
-  log::info!("No fileserver serves {file_name}; using canonical URL");
-  None
+  found
 }
 
 fn parse_gamebanana_file_token(

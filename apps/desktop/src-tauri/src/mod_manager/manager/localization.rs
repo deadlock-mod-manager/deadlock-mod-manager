@@ -331,18 +331,6 @@ impl ModManager {
     receipt::write(&plan, key, resolutions)
   }
 
-  #[cfg(test)]
-  pub(super) fn ensure_localization_overlay_for_launch(
-    &self,
-    profile_folder: Option<&str>,
-  ) -> Result<(), Error> {
-    self.prepare_localization_overlay_with_progress(
-      profile_folder,
-      self.mod_compatibility_enabled(profile_folder)?,
-      || {},
-    )
-  }
-
   pub(super) fn prepare_localization_overlay_with_progress(
     &self,
     profile_folder: Option<&str>,
@@ -487,10 +475,9 @@ impl ModManager {
 
   /// Sends repair plan progress to the window while the player waits on it.
   fn plan_progress(&self) -> impl Fn(RepairPlanProgress) + '_ {
-    move |progress| {
-      use tauri::Emitter;
+    move |progress: RepairPlanProgress| {
       if let Some(app) = &self.app_handle {
-        app.emit("repair-plan-progress", progress).ok();
+        progress.emit(app);
       }
     }
   }
@@ -570,7 +557,7 @@ fn build_overlay_plan(
   progress: &dyn Fn(RepairPlanProgress),
 ) -> Result<LocalizationOverlayPlan, Error> {
   let started = Instant::now();
-  let (mut plan, observed, changed) = LocalizationOverlayPlan::build_learning_history_reporting(
+  let (mut plan, observed, changed) = LocalizationOverlayPlan::build_learning_history(
     citadel,
     inputs,
     history::load(citadel),
@@ -804,7 +791,8 @@ fn loose_resource_stamps(
 mod tests {
   use super::*;
   use crate::mod_manager::mod_health::{
-    self, CachedModHealth, FixModsStatus, HealthKey, ModFindings, ModHealthSource, ModHealthStatus,
+    self, CachedModHealth, FixModsResult, FixModsStatus, HealthKey, ModFindings, ModHealthSource,
+    ModHealthStatus,
   };
 
   #[test]
@@ -1428,7 +1416,11 @@ mod tests {
     fs::write(&path, b"stale repair package").unwrap();
     fs::write(receipt::path(&path), b"stale receipt").unwrap();
     manager
-      .ensure_localization_overlay_for_launch(None)
+      .prepare_localization_overlay_with_progress(
+        None,
+        manager.mod_compatibility_enabled(None).unwrap(),
+        || {},
+      )
       .unwrap();
     assert!(
       !path.exists(),
@@ -1649,16 +1641,10 @@ Game core
       manifest.mark_enabled(id, vec![name.into()], vec![], None, ShardIndex::FIRST);
     }
     manifest.save(&base).unwrap();
-    assert!(
-      manager
-        .fix_mods(None, vec!["first".into(), "missing".into()])
-        .is_err()
-    );
+    assert!(fix_mods(&mut manager, vec!["first".into(), "missing".into()]).is_err());
     assert_eq!(ProfileVpkManifest::load(&base).unwrap(), manifest);
 
-    let result = manager
-      .fix_mods(None, vec!["first".into(), "second".into()])
-      .unwrap();
+    let result = fix_mods(&mut manager, vec!["first".into(), "second".into()]).unwrap();
     assert_eq!(result.status, FixModsStatus::Applied);
     assert!(manager.mod_compatibility_settings(None).unwrap()["first"]);
     assert!(manager.mod_compatibility_settings(None).unwrap()["second"]);
@@ -1674,7 +1660,7 @@ Game core
       ShardIndex::FIRST,
     );
     manifest.save(&base).unwrap();
-    let result = manager.fix_mods(None, vec!["deleted".into()]).unwrap();
+    let result = fix_mods(&mut manager, vec!["deleted".into()]).unwrap();
     assert_eq!(result.status, FixModsStatus::ReviewRequired);
     assert!(manager.mod_compatibility_settings(None).unwrap()["deleted"]);
     assert!(receipt::load(&overlay).unwrap().is_none());
@@ -1699,6 +1685,20 @@ Game core
     )
     .unwrap();
     manager
+  }
+
+  fn fix_mods(manager: &mut ModManager, mod_ids: Vec<String>) -> Result<FixModsResult, Error> {
+    let manager = std::cell::RefCell::new(manager);
+    ModManager::fix_mods(
+      || {
+        Ok(std::cell::RefMut::map(manager.borrow_mut(), |manager| {
+          &mut **manager
+        }))
+      },
+      None,
+      &mod_ids,
+      &|_| {},
+    )
   }
 
   pub(super) fn refresh_repairs(
@@ -1744,7 +1744,7 @@ Game core
     }
     manifest.save(&base).unwrap();
     assert_eq!(
-      manager.fix_mods(None, vec!["fixed".into()]).unwrap().status,
+      fix_mods(&mut manager, vec!["fixed".into()]).unwrap().status,
       FixModsStatus::Applied
     );
     (temp, manager)
@@ -1813,7 +1813,11 @@ Game core
     let survived = overlay.exists();
     assert_applied_repair(&manager, &repaired);
     manager
-      .ensure_localization_overlay_for_launch(None)
+      .prepare_localization_overlay_with_progress(
+        None,
+        manager.mod_compatibility_enabled(None).unwrap(),
+        || {},
+      )
       .unwrap();
     assert_eq!(
       fs::read(&overlay).unwrap(),
@@ -2152,9 +2156,13 @@ Game core
     let analysis = manager.analyze_localization_overlay(None, &[]).unwrap();
     assert!(!analysis.asset_warnings.is_empty());
     manager
-      .ensure_localization_overlay_for_launch(None)
+      .prepare_localization_overlay_with_progress(
+        None,
+        manager.mod_compatibility_enabled(None).unwrap(),
+        || {},
+      )
       .expect("a mod's own findings are reported by mod health, not review");
-    let result = manager.fix_mods(None, vec!["skin".into()]).unwrap();
+    let result = fix_mods(&mut manager, vec!["skin".into()]).unwrap();
     assert_eq!(result.status, FixModsStatus::Applied);
   }
 
@@ -2181,16 +2189,18 @@ Game core
       manifest.mark_enabled(id, vec![name.into()], vec![], None, ShardIndex::FIRST);
     }
     manifest.save(&base).unwrap();
-    let result = manager
-      .fix_mods(None, vec!["first".into(), "second".into()])
-      .unwrap();
+    let result = fix_mods(&mut manager, vec!["first".into(), "second".into()]).unwrap();
     assert_eq!(result.status, FixModsStatus::ReviewRequired);
     let analysis = manager.analyze_localization_overlay(None, &[]).unwrap();
     assert_eq!(analysis.conflicts.len(), 1);
 
     manager.invalidate_localization_overlay(None);
     assert!(matches!(
-      manager.ensure_localization_overlay_for_launch(None),
+      manager.prepare_localization_overlay_with_progress(
+        None,
+        manager.mod_compatibility_enabled(None).unwrap(),
+        || {},
+      ),
       Err(Error::ModDataReviewRequired)
     ));
     assert!(
@@ -2247,11 +2257,15 @@ Game core
     assert!(ProfileVpkManifest::load(&base).unwrap().mods["skin"].compatibility_opted_out);
     assert_eq!(status(), ModHealthStatus::OriginalFiles);
     manager
-      .ensure_localization_overlay_for_launch(None)
+      .prepare_localization_overlay_with_progress(
+        None,
+        manager.mod_compatibility_enabled(None).unwrap(),
+        || {},
+      )
       .unwrap();
     assert!(!manager.mod_compatibility_settings(None).unwrap()["skin"]);
 
-    let result = manager.fix_mods(None, vec!["skin".into()]).unwrap();
+    let result = fix_mods(&mut manager, vec!["skin".into()]).unwrap();
     assert_eq!(result.status, FixModsStatus::Applied);
     let entry = ProfileVpkManifest::load(&base)
       .unwrap()
@@ -2343,7 +2357,11 @@ Game core
       .unwrap();
     // Launch takes the manager lock while the refresh builds without it.
     manager
-      .ensure_localization_overlay_for_launch(None)
+      .prepare_localization_overlay_with_progress(
+        None,
+        manager.mod_compatibility_enabled(None).unwrap(),
+        || {},
+      )
       .unwrap();
     let receipt_path = receipt::path(&manager.localization_overlay_vpk_path(None).unwrap());
     let launched = std::time::SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(1);

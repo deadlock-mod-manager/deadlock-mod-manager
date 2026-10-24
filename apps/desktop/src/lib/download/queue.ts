@@ -78,14 +78,16 @@ export class DownloadQueue {
     )?.onError(new Error(error));
   }
 
+  /** Resolves false when no queue entry tracked the mod. */
   async cancel(modId: string) {
     const entry = this.pending.get(modId);
     await this.dependencies.cancel(modId);
+    if (!entry) return false;
     // Completion may enqueue another request while the cancellation IPC is pending.
-    if (entry)
-      this.settle(modId, "cancelled", entry)?.onError(
-        new Error("Download cancelled"),
-      );
+    this.settle(modId, "cancelled", entry)?.onError(
+      new Error("Download cancelled"),
+    );
+    return true;
   }
 
   private settle(

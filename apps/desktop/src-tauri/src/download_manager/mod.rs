@@ -239,19 +239,38 @@ impl DownloadManager {
     Ok(())
   }
 
+  /// Resolves once the files are placed. A download dropped from the queue
+  /// before it started reports as cancelled.
+  pub async fn queue_download_and_wait(&self, task: DownloadTask) -> Result<(), Error> {
+    self
+      .queue_with_completion(task, DownloadPurpose::Install)
+      .await
+      .await
+      .map_err(|_| Error::DownloadCancelled)?
+      .map(|_| ())
+      .map_err(Error::DownloadFailed)
+  }
+
   pub async fn queue_download_and_prepare(
     &self,
     task: DownloadTask,
   ) -> Result<PreparedDownload, Error> {
-    let (sender, receiver) = oneshot::channel();
     self
-      .queue(task, DownloadPurpose::PrepareUpdate, Some(sender))
-      .await;
-
-    receiver
+      .queue_with_completion(task, DownloadPurpose::PrepareUpdate)
+      .await
       .await
       .map_err(|_| Error::BackgroundTaskFailed("Download worker stopped unexpectedly".to_string()))?
       .map_err(Error::DownloadFailed)
+  }
+
+  async fn queue_with_completion(
+    &self,
+    task: DownloadTask,
+    purpose: DownloadPurpose,
+  ) -> oneshot::Receiver<Result<PreparedDownload, String>> {
+    let (sender, receiver) = oneshot::channel();
+    self.queue(task, purpose, Some(sender)).await;
+    receiver
   }
 
   async fn queue(
@@ -1348,15 +1367,22 @@ impl DownloadManager {
     log::info!("Cancelling download for mod: {mod_id}");
 
     let mut active = self.active_downloads.lock().await;
-    if let Some(download) = active.remove(mod_id) {
-      download.pause.resume();
-      download.cancel_token.cancel();
+    if Self::cancel_active(&mut active, mod_id) {
       Ok(())
     } else {
       Err(Error::InvalidInput(format!(
         "No active download found for mod: {mod_id}"
       )))
     }
+  }
+
+  fn cancel_active(active: &mut HashMap<String, ActiveDownload>, mod_id: &str) -> bool {
+    let Some(download) = active.remove(mod_id) else {
+      return false;
+    };
+    download.pause.resume();
+    download.cancel_token.cancel();
+    true
   }
 
   /// Drops queued downloads for a profile folder and cancels the running one,
@@ -1378,10 +1404,7 @@ impl DownloadManager {
       .map(|(mod_id, _)| mod_id.clone())
       .collect();
     for mod_id in &cancelled {
-      if let Some(download) = active.remove(mod_id) {
-        download.pause.resume();
-        download.cancel_token.cancel();
-      }
+      Self::cancel_active(&mut active, mod_id);
     }
 
     if dropped > 0 || !cancelled.is_empty() {
@@ -1390,15 +1413,6 @@ impl DownloadManager {
         cancelled.len()
       );
     }
-  }
-
-  pub async fn is_queued(&self, mod_id: &str) -> bool {
-    self
-      .queue
-      .lock()
-      .await
-      .iter()
-      .any(|queued| queued.task.mod_id == mod_id)
   }
 
   pub async fn pause_download(&self, mod_id: &str) -> Result<(), Error> {

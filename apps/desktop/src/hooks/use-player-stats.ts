@@ -453,24 +453,18 @@ export const useMatchProfiles = (matchId: number, accountIds: number[]) => {
  */
 export const useHeroBaseline = (
   accountId: number | null,
-  heroId: number | null,
+  heroId: number,
   active: boolean,
 ) => {
-  const enabled = active && heroId !== null;
   const items = usePlayerScopedQuery(
     accountId,
-    { key: `hero-items:${heroId}`, ttl: STATS_TTL.heroStats, enabled },
-    (id) => getItemStats({ accountId: id, heroId: heroId ?? undefined }),
+    { key: `hero-items:${heroId}`, ttl: STATS_TTL.heroStats, enabled: active },
+    (id) => getItemStats({ accountId: id, heroId }),
   );
   const curve = usePlayerScopedQuery(
     accountId,
-    { key: `hero-curve:${heroId}`, ttl: STATS_TTL.heroStats, enabled },
-    (id) => {
-      if (heroId === null) {
-        throw new RuntimeError("hero curve ran without a hero");
-      }
-      return getPerformanceCurve(id, heroId);
-    },
+    { key: `hero-curve:${heroId}`, ttl: STATS_TTL.heroStats, enabled: active },
+    (id) => getPerformanceCurve(id, heroId),
   );
   const buyTimes = useMemo(() => {
     const map = new Map<number, number>();
@@ -484,16 +478,12 @@ export const useHeroBaseline = (
     buyTimes,
     curve: curve.data?.data ?? [],
     isPending:
-      enabled && accountId !== null && (items.isPending || curve.isPending),
+      active && accountId !== null && (items.isPending || curve.isPending),
   };
 };
 
-/**
- * Who the player has met before: shared matches as teammates, premades, and
- * record against each enemy. The same keys the Squad tab uses, so either one
- * warms the other.
- */
-export const usePlayerHistory = (accountId: number | null, active: boolean) => {
+/** Shared matches as teammates, premades, and record against each enemy. */
+const usePlayerEncounters = (accountId: number | null, active: boolean) => {
   const mates = usePlayerScopedQuery(
     accountId,
     { key: "mates", ttl: STATS_TTL.mates, enabled: active },
@@ -509,6 +499,15 @@ export const usePlayerHistory = (accountId: number | null, active: boolean) => {
     { key: "enemies", ttl: STATS_TTL.mates, enabled: active },
     (id) => getEnemyStats(id),
   );
+  return { mates, party, enemies };
+};
+
+/**
+ * Who the player has met before, keyed for lookup. Shares its queries with the
+ * Squad tab, so either one warms the other.
+ */
+export const usePlayerHistory = (accountId: number | null, active: boolean) => {
+  const { mates, party, enemies } = usePlayerEncounters(accountId, active);
   return useMemo(
     () => ({
       mates: new Map(
@@ -710,24 +709,7 @@ export const useSquadStats = (
   active = true,
 ) => {
   const enabled = accountId !== null && active;
-
-  const mates = usePlayerScopedQuery(
-    accountId,
-    { key: "mates", ttl: STATS_TTL.mates, enabled: active },
-    (id) => getMateStats(id),
-  );
-
-  const party = usePlayerScopedQuery(
-    accountId,
-    { key: "party", ttl: STATS_TTL.mates, enabled: active },
-    (id) => getMateStats(id, true),
-  );
-
-  const enemies = usePlayerScopedQuery(
-    accountId,
-    { key: "enemies", ttl: STATS_TTL.mates, enabled: active },
-    (id) => getEnemyStats(id),
-  );
+  const { mates, party, enemies } = usePlayerEncounters(accountId, active);
 
   const mateInsights = useMemo(
     () => joinMateStats(mates.data?.data ?? [], matches),

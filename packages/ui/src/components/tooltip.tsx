@@ -3,6 +3,7 @@
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import * as React from "react";
 
+import { useHasOpened } from "../hooks/use-has-opened";
 import { cn } from "../lib/utils";
 
 const TooltipProvider = TooltipPrimitive.Provider;
@@ -17,17 +18,13 @@ const Tooltip = ({
   onOpenChange,
   ...props
 }: React.ComponentProps<typeof TooltipPrimitive.Root>) => {
-  const [hasOpened, setHasOpened] = React.useState(
-    Boolean(open ?? defaultOpen),
+  const [uncontrolledOpen, setUncontrolledOpen] = React.useState(
+    Boolean(defaultOpen),
   );
-  if (open && !hasOpened) {
-    setHasOpened(true);
-  }
+  const hasOpened = useHasOpened(open ?? uncontrolledOpen);
   const handleOpenChange = React.useCallback(
     (next: boolean) => {
-      if (next) {
-        setHasOpened(true);
-      }
+      setUncontrolledOpen(next);
       onOpenChange?.(next);
     },
     [onOpenChange],

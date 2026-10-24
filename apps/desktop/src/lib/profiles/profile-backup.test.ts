@@ -9,6 +9,7 @@ import {
   buildProfileBackupPayload,
   getProfileBackupStatus,
   hashProfileBackup,
+  profileBackupHashInput,
 } from "./profile-backup";
 
 const LOCAL_ID = "local-0f8fad5b-d9cb-469f-a165-70867728950e";
@@ -39,7 +40,7 @@ describe("buildProfileBackupPayload", () => {
       "10",
     ]);
     expect(payload.profile.payload.loadOrder).toEqual(["10"]);
-    expect(payload.disabledModIds).toEqual(["20"]);
+    expect(payload.disabledModCount).toBe(1);
     expect(payload.skippedLocalModCount).toBe(1);
     expect(Object.keys(payload.modNames ?? {})).not.toContain(LOCAL_ID);
   });
@@ -57,11 +58,13 @@ describe("hashProfileBackup", () => {
       mods,
     );
 
-    expect(await hashProfileBackup("Ranked", toggled)).toBe(
-      await hashProfileBackup("Ranked", original),
-    );
-    expect(await hashProfileBackup("Renamed", original)).not.toBe(
-      await hashProfileBackup("Ranked", original),
+    expect(
+      await hashProfileBackup(profileBackupHashInput("Ranked", toggled)),
+    ).toBe(await hashProfileBackup(profileBackupHashInput("Ranked", original)));
+    expect(
+      await hashProfileBackup(profileBackupHashInput("Renamed", original)),
+    ).not.toBe(
+      await hashProfileBackup(profileBackupHashInput("Ranked", original)),
     );
   });
 });

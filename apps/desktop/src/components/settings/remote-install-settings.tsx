@@ -10,14 +10,12 @@ import {
 import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { ArrowsClockwiseIcon, LinkBreakIcon } from "@phosphor-icons/react";
-import { formatDistanceToNow } from "date-fns";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { GameBananaMemberIdentity } from "@/components/shared/gamebanana-member";
 import {
   useRemoteInstallPairing,
-  useRemoteInstallQueueState,
-  useRemoteInstallStatus,
+  useRemoteInstallSummary,
 } from "@/hooks/use-remote-install";
 import { getErrorMessage } from "@/lib/errors";
 import { usePersistedStore } from "@/lib/store";
@@ -102,8 +100,8 @@ const UnpairedState = () => {
 
 export const RemoteInstallSettings = () => {
   const { t } = useTranslation();
-  const { data: status, isLoading } = useRemoteInstallStatus();
-  const queue = useRemoteInstallQueueState();
+  const { status, queue, memberId, state, lastCheckedLabel } =
+    useRemoteInstallSummary();
   const { unpair } = useRemoteInstallPairing();
 
   // Reaching this section is what the Integrations tab hint points to.
@@ -111,12 +109,9 @@ export const RemoteInstallSettings = () => {
     usePersistedStore.getState().markFeatureUsed("remote-install");
   }, []);
 
-  if (isLoading || !status) {
+  if (status.data === undefined) {
     return <Skeleton className='h-24 w-full' />;
   }
-
-  const memberId = status.memberId;
-  const failed = queue.isError;
 
   const handleUnpair = async () => {
     try {
@@ -126,16 +121,6 @@ export const RemoteInstallSettings = () => {
       toast.error(getErrorMessage(error));
     }
   };
-
-  const lastChecked = queue.isFetching
-    ? t("remoteInstall.indicatorChecking")
-    : queue.dataUpdatedAt
-      ? t("remoteInstall.lastChecked", {
-          time: formatDistanceToNow(new Date(queue.dataUpdatedAt), {
-            addSuffix: true,
-          }),
-        })
-      : t("remoteInstall.notCheckedYet");
 
   return (
     <div className='space-y-4'>
@@ -149,17 +134,17 @@ export const RemoteInstallSettings = () => {
         <span
           className={cn(
             "flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-medium text-xs",
-            memberId == null
+            state === "unpaired"
               ? "text-muted-foreground"
-              : failed
+              : state === "failed"
                 ? "border-destructive/40 text-destructive"
                 : "border-status-ok/40 text-status-ok",
           )}>
           <span className='size-1.5 rounded-full bg-current' />
           {t(
-            memberId == null
+            state === "unpaired"
               ? "remoteInstall.notPaired"
-              : failed
+              : state === "failed"
                 ? "remoteInstall.statusError"
                 : "remoteInstall.statusLinked",
           )}
@@ -172,8 +157,12 @@ export const RemoteInstallSettings = () => {
         <div className='space-y-3'>
           <div className='flex flex-col gap-3 rounded-md border bg-muted/30 p-3 sm:flex-row sm:items-center sm:justify-between'>
             <GameBananaMemberIdentity
-              detail={failed ? getErrorMessage(queue.error) : lastChecked}
-              detailClassName={cn(failed && "text-destructive")}
+              detail={
+                state === "failed"
+                  ? getErrorMessage(queue.error)
+                  : lastCheckedLabel
+              }
+              detailClassName={cn(state === "failed" && "text-destructive")}
               memberId={memberId}
             />
             <div className='flex shrink-0 gap-2'>

@@ -7,7 +7,7 @@ use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
 use serde::{Deserialize, Serialize};
 use tauri::{Emitter, State};
 
-use super::downloads::{get_download_manager, resolve_download_files};
+use super::downloads::{FileserverPreference, get_download_manager, resolve_download_files};
 use super::mods::InstalledModInfo;
 use super::state::MANAGER;
 
@@ -380,7 +380,7 @@ pub async fn import_profile_batch(
         &policy,
         &mod_data.mod_id,
         &mod_data.download_files,
-        None,
+        FileserverPreference::Default,
       )
       .await
       .map_err(|error| format!("Failed to resolve download files: {error:?}")),
@@ -458,108 +458,47 @@ pub async fn import_profile_batch(
     };
 
     let manager = get_download_manager(app_handle.clone()).await;
-    manager.queue_download(task).await?;
-
-    let mut download_complete = false;
-    let mut download_error: Option<String> = None;
-    let start_time = std::time::Instant::now();
-    let timeout_duration = std::time::Duration::from_secs(600);
-
-    while !download_complete && start_time.elapsed() < timeout_duration {
-      tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-
-      match manager.get_download_status(&mod_data.mod_id).await {
-        Ok(Some(status)) => {
-          // Files are placed only once every archive is extracted and named.
-          if status.status == "downloading" || status.status == "processing" {
-            continue;
-          }
-          download_complete = true;
-        }
-        // No status yet means it's either finished or still waiting its turn.
-        Ok(None) => {
-          download_complete = !manager.is_queued(&mod_data.mod_id).await;
-        }
-        Err(e) => {
-          download_error = Some(format!("Failed to check download status: {:?}", e));
-          break;
-        }
-      }
+    if let Err(error) = manager.queue_download_and_wait(task).await {
+      log::error!("Download failed for mod {}: {error}", mod_data.mod_id);
+      download_results.push(Err(error.to_string()));
+      continue;
     }
 
-    if download_complete && download_error.is_none() {
-      let game_path = MANAGER
-        .lock()
-        .unwrap()
-        .get_steam_manager()
-        .get_game_path()
-        .ok_or(Error::GamePathNotSet)?
-        .clone();
+    let game_path = MANAGER
+      .lock()
+      .unwrap()
+      .get_steam_manager()
+      .get_game_path()
+      .ok_or(Error::GamePathNotSet)?
+      .clone();
 
-      let verify_path = game_path
-        .join("game")
-        .join("citadel")
-        .join("addons")
-        .join(&final_profile_folder);
+    let verify_path = game_path
+      .join("game")
+      .join("citadel")
+      .join("addons")
+      .join(&final_profile_folder);
 
-      let vpk_manager = crate::mod_manager::vpk_manager::VpkManager::new();
-      let mut vpks_found = false;
-      let max_retries = 10;
-      let mut retry_delay_ms = 100;
-
-      for attempt in 0..max_retries {
-        match vpk_manager.find_prefixed_vpks(&verify_path, &mod_data.mod_id) {
-          Ok(vpks) if !vpks.is_empty() => {
-            log::info!(
-              "Download completed for mod: {} (found {} VPKs after {} attempts)",
-              mod_data.mod_id,
-              vpks.len(),
-              attempt + 1
-            );
-            vpks_found = true;
-            download_results.push(Ok(()));
-            break;
-          }
-          Ok(_) => {
-            if attempt < max_retries - 1 {
-              log::debug!(
-                "VPKs not found yet for mod {} (attempt {}/{}), waiting {}ms",
-                mod_data.mod_id,
-                attempt + 1,
-                max_retries,
-                retry_delay_ms
-              );
-              tokio::time::sleep(std::time::Duration::from_millis(retry_delay_ms)).await;
-              retry_delay_ms = std::cmp::min(retry_delay_ms * 2, 1000);
-            }
-          }
-          Err(e) => {
-            log::error!("Failed to check VPKs for mod {}: {:?}", mod_data.mod_id, e);
-            download_results.push(Err(format!("Failed to verify download: {:?}", e)));
-            vpks_found = true;
-            break;
-          }
-        }
-      }
-
-      if !vpks_found {
-        log::error!(
-          "Download completed but no VPKs found for mod: {} after {} retries",
+    let vpk_manager = crate::mod_manager::vpk_manager::VpkManager::new();
+    match vpk_manager.find_prefixed_vpks(&verify_path, &mod_data.mod_id) {
+      Ok(vpks) if !vpks.is_empty() => {
+        log::info!(
+          "Download completed for mod: {} ({} VPKs)",
           mod_data.mod_id,
-          max_retries
+          vpks.len()
+        );
+        download_results.push(Ok(()));
+      }
+      Ok(_) => {
+        log::error!(
+          "Download completed but no VPKs found for mod: {}",
+          mod_data.mod_id
         );
         download_results.push(Err("Download completed but no VPKs found".to_string()));
       }
-    } else if download_error.is_some() {
-      log::error!(
-        "Download failed for mod {}: {:?}",
-        mod_data.mod_id,
-        download_error
-      );
-      download_results.push(Err(download_error.unwrap()));
-    } else {
-      log::error!("Download timeout for mod: {}", mod_data.mod_id);
-      download_results.push(Err("Download timeout".to_string()));
+      Err(e) => {
+        log::error!("Failed to check VPKs for mod {}: {:?}", mod_data.mod_id, e);
+        download_results.push(Err(format!("Failed to verify download: {:?}", e)));
+      }
     }
   }
 

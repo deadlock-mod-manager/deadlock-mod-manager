@@ -22,87 +22,114 @@ import {
   buildProfileBackupPayload,
   getProfileBackupStatus,
   hashProfileBackup,
+  profileBackupHashInput,
   type ProfileBackupStatus,
 } from "@/lib/profiles/profile-backup";
 import { usePersistedStore } from "@/lib/store";
+import type { LocalMod } from "@/types/mods";
 import type { ModProfile, ProfileId } from "@/types/profiles";
+
+const EMPTY_BACKUPS: ProfileBackupSummary[] = [];
 
 const PROFILE_BACKUPS_QUERY_KEY = "profile-backups";
 
-const profileModsFor = (profileId: ProfileId) => {
-  const { activeProfileId, localMods, profiles } = usePersistedStore.getState();
-  return profileId === activeProfileId
-    ? localMods
-    : (profiles[profileId]?.mods ?? []);
-};
-
-const backupSourceFor = (
+const backupPayloadFor = (
   profile: ModProfile,
-  mods = profileModsFor(profile.id),
-) => buildProfileBackupPayload(profile, mods);
+  {
+    activeProfileId,
+    localMods,
+  }: { activeProfileId: ProfileId; localMods: LocalMod[] },
+) =>
+  buildProfileBackupPayload(
+    profile,
+    profile.id === activeProfileId ? localMods : profile.mods,
+  );
 
-export const useProfileBackups = () => {
+/**
+ * Backups, each local profile's backup status, and the one backup mutation the
+ * local and cloud tabs share so their pending state agrees.
+ */
+export const useCloudBackups = () => {
   const { user, isAuthenticated } = useAuth();
   const isFeatureEnabled = useExperimentalFeature("cloud-backup");
+  const enabled = isFeatureEnabled && isAuthenticated;
   const query = useQuery({
     queryKey: [PROFILE_BACKUPS_QUERY_KEY, user?.sub],
     queryFn: listProfileBackups,
-    enabled: isFeatureEnabled && isAuthenticated,
+    enabled,
   });
-
-  const backups = query.data ?? [];
+  const backups = query.data ?? EMPTY_BACKUPS;
   const backupsById = useMemo(
     () => new Map(backups.map((backup) => [backup.id, backup])),
     [backups],
   );
 
-  return {
-    backups,
-    backupsById,
-    isLoading: query.isLoading,
-    isError: query.isError,
-    refetch: query.refetch,
-  };
-};
-
-/** Backup status for every local profile, keyed by profile id. */
-export const useProfileBackupStatuses = (
-  backupsById: ReadonlyMap<string, ProfileBackupSummary>,
-  enabled: boolean,
-): Record<string, ProfileBackupStatus> => {
   const profiles = usePersistedStore((state) => state.profiles);
   const activeProfileId = usePersistedStore((state) => state.activeProfileId);
   const localMods = usePersistedStore((state) => state.localMods);
   const links = usePersistedStore((state) => state.cloudBackupLinks);
 
-  const sources = Object.values(profiles).map((profile) => ({
-    profile,
-    payload: backupSourceFor(
-      profile,
-      profile.id === activeProfileId ? localMods : profile.mods,
-    ),
-  }));
+  const sources = useMemo(
+    () =>
+      Object.values(profiles).map((profile) => ({
+        profile,
+        hashInput: profileBackupHashInput(
+          profile.name,
+          backupPayloadFor(profile, { activeProfileId, localMods }),
+        ),
+      })),
+    [profiles, activeProfileId, localMods],
+  );
 
   const hashes = useQueries({
-    queries: sources.map(({ profile, payload }) => ({
-      queryKey: ["profile-backup-hash", profile.name, payload],
-      queryFn: () => hashProfileBackup(profile.name, payload),
+    queries: sources.map(({ hashInput }) => ({
+      queryKey: ["profile-backup-hash", hashInput],
+      queryFn: () => hashProfileBackup(hashInput),
       staleTime: Number.POSITIVE_INFINITY,
       enabled,
     })),
   });
 
-  return Object.fromEntries(
-    sources.map(({ profile }, index) => [
-      profile.id,
-      getProfileBackupStatus(
-        links[profile.id],
-        backupsById,
-        hashes[index]?.data,
-      ),
-    ]),
-  );
+  const { backupProfile, backupAll } = useBackupProfile();
+
+  const statuses: Record<string, ProfileBackupStatus> = {};
+  const localByBackupId = new Map<
+    string,
+    { profileId: ProfileId; status: ProfileBackupStatus }
+  >();
+  const profilesToBackUp: ProfileId[] = [];
+  sources.forEach(({ profile }, index) => {
+    const status = getProfileBackupStatus(
+      links[profile.id],
+      backupsById,
+      hashes[index]?.data,
+    );
+    statuses[profile.id] = status;
+    if (status.kind !== "none") {
+      localByBackupId.set(status.backup.id, { profileId: profile.id, status });
+    }
+    if (
+      Object.keys(profile.enabledMods).length > 0 &&
+      status.kind !== "upToDate"
+    ) {
+      profilesToBackUp.push(profile.id);
+    }
+  });
+
+  return {
+    enabled,
+    isAuthenticated,
+    backups,
+    isLoading: query.isLoading,
+    statuses,
+    localByBackupId,
+    profilesToBackUp,
+    backupProfile,
+    backupAll,
+  };
 };
+
+export type CloudBackups = ReturnType<typeof useCloudBackups>;
 
 const readDeviceName = async () => {
   try {
@@ -117,7 +144,7 @@ type BackupResult =
   | { status: "saved"; backup: ProfileBackupSummary }
   | { status: "conflict" };
 
-export const useBackupProfile = () => {
+const useBackupProfile = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -133,23 +160,26 @@ export const useBackupProfile = () => {
     const profile = profiles[profileId];
     if (!profile) throw new Error(`Profile ${profileId} not found`);
 
-    const payload = backupSourceFor(profile);
+    const payload = backupPayloadFor(profile, usePersistedStore.getState());
     const link = cloudBackupLinks[profileId];
-    const existing = link ? backupsById.get(link.backupId) : undefined;
-    const target = existing
-      ? {
-          id: existing.id,
-          // Overwriting skips the check by sending the revision the server has.
-          expectedRevision: overwrite ? existing.revision : link?.revision,
-        }
-      : {};
+    const existing = link && backupsById.get(link.backupId);
+    const target =
+      link && existing
+        ? {
+            id: existing.id,
+            // Overwriting skips the check by sending the revision the server has.
+            expectedRevision: overwrite ? existing.revision : link.revision,
+          }
+        : {};
 
     try {
       const backup = await saveProfileBackup({
         ...target,
         name: profile.name,
         deviceName: await readDeviceName(),
-        contentHash: await hashProfileBackup(profile.name, payload),
+        contentHash: await hashProfileBackup(
+          profileBackupHashInput(profile.name, payload),
+        ),
         payload,
       });
       setCloudBackupLink(profileId, {

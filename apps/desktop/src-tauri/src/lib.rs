@@ -148,6 +148,7 @@ pub fn run() {
 
   builder
     .manage(game_presence::DiscordState::new())
+    .manage(commands::remote_install::PendingPairing::default())
     .on_window_event(tray::handle_window_event)
     .setup(|app| {
       #[cfg(feature = "e2e-harness")]
@@ -303,7 +304,7 @@ pub fn run() {
       commands::deep_link::get_deep_link_debug_info,
       commands::remote_install::get_remote_install_status,
       commands::remote_install::get_gamebanana_member,
-      commands::remote_install::pair_remote_install,
+      commands::remote_install::confirm_remote_install_pair,
       commands::remote_install::unpair_remote_install,
       commands::remote_install::poll_remote_install,
       commands::gameinfo::backup_gameinfo,

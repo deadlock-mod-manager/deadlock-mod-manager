@@ -62,22 +62,18 @@ export const profileBackupsRouter = {
         payload: input.payload,
       };
 
-      if (!input.id) {
-        const existing = await profileBackupRepository.countForUser(userId);
-        if (existing >= MAX_PROFILE_BACKUPS_PER_USER) {
+      if (!("id" in input)) {
+        const created = await profileBackupRepository.createWithinLimit(
+          userId,
+          fields,
+          MAX_PROFILE_BACKUPS_PER_USER,
+        );
+        if (!created) {
           throw new ORPCError("FORBIDDEN", {
             message: `Accounts can keep up to ${MAX_PROFILE_BACKUPS_PER_USER} profile backups`,
           });
         }
-        return toProfileBackupSummaryDto(
-          await profileBackupRepository.create(userId, fields),
-        );
-      }
-
-      if (input.expectedRevision === undefined) {
-        throw new ORPCError("BAD_REQUEST", {
-          message: "expectedRevision is required to update a backup",
-        });
+        return toProfileBackupSummaryDto(created);
       }
 
       const updated = await profileBackupRepository.updateAtRevision(

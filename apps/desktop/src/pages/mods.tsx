@@ -416,7 +416,7 @@ const GetModsData = ({
   const idReference = parseGameBananaReference(query);
   const { mod: idMatch, isFetching: isFetchingIdMatch } = useMod(
     idReference ?? undefined,
-    { enabled: !!idReference, retry: 0 },
+    { retry: 0 },
   );
   const filteredResults = useMemo(
     () =>

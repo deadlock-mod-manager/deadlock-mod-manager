@@ -1,29 +1,28 @@
 use crate::app_runtime::AppHandle;
 use crate::commands::deep_link::DeepLinkData;
-use crate::deep_link::{is_valid_remote_install_key, validate_mod_deep_link};
+use crate::deep_link::validate_mod_deep_link;
 use crate::errors::Error;
 use crate::providers::gamebanana::{ApiResponse, GameBananaClient};
 use serde::{Deserialize, Serialize};
+use std::sync::Mutex;
+use tauri::State;
 use tauri_plugin_store::StoreExt;
 use tokio_util::sync::CancellationToken;
 use ts_rs::TS;
 
 const STORE_KEY: &str = "gamebanana_remote_install";
 
-/// Kept in the Rust-owned store entry, so the key never lands in the persisted UI state.
+/// Kept in the Rust-owned store entry, so the key never reaches the webview.
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct Pairing {
-  member_id: u32,
-  secret_key: String,
+pub struct Pairing {
+  pub member_id: u32,
+  pub secret_key: String,
 }
 
-#[derive(Debug, Serialize, TS)]
-#[ts(export, rename_all = "camelCase")]
-#[serde(rename_all = "camelCase")]
-pub struct RemoteInstallStatus {
-  pub member_id: Option<u32>,
-}
+/// A pair link waiting for the user to confirm it in the app.
+#[derive(Default)]
+pub struct PendingPairing(pub Mutex<Option<Pairing>>);
 
 #[derive(Debug, Serialize, TS)]
 #[ts(export, rename_all = "camelCase")]
@@ -63,38 +62,27 @@ fn save_pairing(app_handle: &AppHandle, pairing: Option<&Pairing>) -> Result<(),
 }
 
 #[tauri::command]
-pub async fn get_remote_install_status(
-  app_handle: AppHandle,
-) -> Result<RemoteInstallStatus, Error> {
-  Ok(RemoteInstallStatus {
-    member_id: load_pairing(&app_handle)?.map(|pairing| pairing.member_id),
-  })
+pub async fn get_remote_install_status(app_handle: AppHandle) -> Result<Option<u32>, Error> {
+  Ok(load_pairing(&app_handle)?.map(|pairing| pairing.member_id))
 }
 
 #[tauri::command]
-pub async fn pair_remote_install(
+pub async fn confirm_remote_install_pair(
   app_handle: AppHandle,
-  member_id: u32,
-  secret_key: String,
-) -> Result<RemoteInstallStatus, Error> {
-  if !is_valid_remote_install_key(&secret_key) {
-    return Err(Error::InvalidInput(
-      "Invalid Remote Install key".to_string(),
-    ));
-  }
-
-  save_pairing(
-    &app_handle,
-    Some(&Pairing {
-      member_id,
-      secret_key,
-    }),
-  )?;
-  log::info!("Paired GameBanana Remote Install for member {member_id}");
-
-  Ok(RemoteInstallStatus {
-    member_id: Some(member_id),
-  })
+  pending: State<'_, PendingPairing>,
+) -> Result<(), Error> {
+  let pairing = pending
+    .0
+    .lock()
+    .map_err(|_| Error::InvalidInput("Remote Install pairing state is unavailable".to_string()))?
+    .take()
+    .ok_or_else(|| Error::InvalidInput("No Remote Install pairing to confirm".to_string()))?;
+  save_pairing(&app_handle, Some(&pairing))?;
+  log::info!(
+    "Paired GameBanana Remote Install for member {}",
+    pairing.member_id
+  );
+  Ok(())
 }
 
 #[tauri::command]

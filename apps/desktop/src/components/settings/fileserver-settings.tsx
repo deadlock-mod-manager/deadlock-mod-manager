@@ -2,7 +2,7 @@ import { toast } from "@deadlock-mods/ui/components/sonner";
 import { Link, Zap } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
 import { usePersistedStore } from "@/lib/store";
-import type { FileserverPreference } from "@/lib/store/slices/network";
+import type { FileserverPreference } from "@/types/generated/FileserverPreference";
 import { MetaCard } from "./meta-card";
 
 export const FileserverSettings = () => {

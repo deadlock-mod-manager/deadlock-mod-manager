@@ -43,18 +43,12 @@ import { useShallow } from "zustand/react/shallow";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
-import { useAuth } from "@/hooks/use-auth";
 import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
-import {
-  useBackupProfile,
-  useProfileBackupStatuses,
-  useProfileBackups,
-} from "@/hooks/use-profile-backups";
+import { useCloudBackups } from "@/hooks/use-profile-backups";
 import type { RestoreDestination } from "@/hooks/use-restore-profile-backup";
 import { useSyncProfiles } from "@/hooks/use-sync-profiles";
 import logger from "@/lib/logger";
 import { isLocalMod } from "@/lib/mods/installed-helpers";
-import type { ProfileBackupStatus } from "@/lib/profiles/profile-backup";
 import { usePersistedStore } from "@/lib/store";
 import type { ModProfile, ModProfileEntry, ProfileId } from "@/types/profiles";
 import { CloudBackupsPanel } from "./cloud-backup/cloud-backups-panel";
@@ -122,35 +116,18 @@ export const ProfileManagerDialog = ({
     destination: RestoreDestination;
   } | null>(null);
   const isCloudBackupEnabled = useExperimentalFeature("cloud-backup");
-  const { isAuthenticated } = useAuth();
-  const showBackups = isCloudBackupEnabled && isAuthenticated;
   const welcomeBackDismissed = usePersistedStore((s) => s.welcomeBackDismissed);
   const dismissWelcomeBack = usePersistedStore((s) => s.dismissWelcomeBack);
+  const cloudBackups = useCloudBackups();
   const {
+    enabled: showBackups,
     backups,
-    backupsById,
-    isLoading: backupsLoading,
-  } = useProfileBackups();
-  const backupStatuses = useProfileBackupStatuses(backupsById, showBackups);
-  const { backupProfile, backupAll } = useBackupProfile();
-
-  const localByBackupId = new Map<
-    string,
-    { profileId: ProfileId; status: ProfileBackupStatus }
-  >();
-  for (const profile of profiles) {
-    const status = backupStatuses[profile.id];
-    if (status && status.kind !== "none") {
-      localByBackupId.set(status.backup.id, { profileId: profile.id, status });
-    }
-  }
-  const profilesToBackUp = profiles
-    .filter(
-      (profile) =>
-        Object.keys(profile.enabledMods).length > 0 &&
-        backupStatuses[profile.id]?.kind !== "upToDate",
-    )
-    .map((profile) => profile.id);
+    statuses: backupStatuses,
+    localByBackupId,
+    profilesToBackUp,
+    backupProfile,
+    backupAll,
+  } = cloudBackups;
   const isFreshInstall = profiles.every(
     (profile) => Object.keys(profile.enabledMods).length === 0,
   );
@@ -517,10 +494,7 @@ export const ProfileManagerDialog = ({
                 value='cloud'
                 className='mt-0 flex-1 overflow-auto pb-4'>
                 <CloudBackupsPanel
-                  isAuthenticated={isAuthenticated}
-                  backups={backups}
-                  isLoading={backupsLoading}
-                  localByBackupId={localByBackupId}
+                  cloudBackups={cloudBackups}
                   disabled={isSwitching}
                   onRestore={(backup) =>
                     setRestoreTarget({ backup, destination: "new" })

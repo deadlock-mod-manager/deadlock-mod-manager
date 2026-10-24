@@ -14,6 +14,7 @@ import {
   type MatchHistoryEntry,
   type PlayerRank,
   type RankAsset,
+  rankLabel,
   resolveRank,
   type SteamProfile,
 } from "@/lib/stats/api";
@@ -165,9 +166,8 @@ export const ProfilePanel = ({
           ) : null}
           <div className='min-w-0'>
             <div className='truncate font-bold text-lg tracking-tight'>
-              {badge > 0 && resolved.name
-                ? `${resolved.name}${resolved.subrank > 0 ? ` ${resolved.subrank}` : ""}`
-                : t("stats.unranked")}
+              {(badge > 0 && rankLabel(badge, rankAssets)) ||
+                t("stats.unranked")}
             </div>
             {badge <= 0 && (
               <div className='text-muted-foreground text-xs'>

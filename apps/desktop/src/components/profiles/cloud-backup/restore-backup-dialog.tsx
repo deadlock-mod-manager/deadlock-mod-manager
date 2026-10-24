@@ -36,6 +36,7 @@ import {
   getProfileModCandidateIds,
   rewriteProfileIdentities,
 } from "@/lib/profiles/import-profile-shared";
+import { disabledModCountOf } from "@/lib/profiles/profile-backup";
 import { usePersistedStore } from "@/lib/store";
 import { RestoreProgress, type RestoreProgressMod } from "./restore-progress";
 
@@ -105,7 +106,7 @@ export const RestoreBackupDialog = ({
     : [];
   const downloadBytes = progressMods.reduce((sum, { bytes }) => sum + bytes, 0);
   const availableCount = resolvedIds.length - unavailable.length;
-  const disabledCount = full?.payload.disabledModIds.length ?? 0;
+  const disabledCount = full ? disabledModCountOf(full.payload) : 0;
   const modName = (remoteId: string) =>
     full?.payload.modNames?.[remoteId] ?? remoteId;
 

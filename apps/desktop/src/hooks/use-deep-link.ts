@@ -29,6 +29,7 @@ const GAMEBANANA_MMDL_REGEX =
 export type OneClickInstall = (
   link: DeepLinkData,
   entryPoint: ModEntryPoint,
+  onAccepted?: (slug: string) => void,
 ) => Promise<void>;
 
 /**
@@ -36,7 +37,6 @@ export type OneClickInstall = (
  * Mount once: the returned function is stable and de-duplicates by mod.
  */
 export const useOneClickInstall = (): OneClickInstall => {
-  const navigate = useNavigate();
   const { t } = useTranslation();
   const addMod = usePersistedStore((s) => s.addLocalMod);
   const setModStatus = usePersistedStore((s) => s.setModStatus);
@@ -45,7 +45,7 @@ export const useOneClickInstall = (): OneClickInstall => {
   const getActiveProfile = usePersistedStore((s) => s.getActiveProfile);
   const { install } = useInstall();
 
-  const handle: OneClickInstall = async (link, entryPoint) => {
+  const handle: OneClickInstall = async (link, entryPoint, onAccepted) => {
     const { download_url, mod_id, mod_type } = link;
     const submissionType = mod_type.toLowerCase();
     const slug =
@@ -75,11 +75,7 @@ export const useOneClickInstall = (): OneClickInstall => {
     logger.withMetadata({ remoteId: slug, fileId }).info("Deep link received");
 
     try {
-      // A clicked link shows its mod; remote installs run in the background
-      // and must not pull the user away from what they are doing.
-      if (entryPoint !== "remote_install") {
-        navigate(`/mods/${slug}`);
-      }
+      onAccepted?.(slug);
 
       // Fetch mod details from the API
       const modData = await getMod(slug);
@@ -230,12 +226,19 @@ export const useOneClickInstall = (): OneClickInstall => {
   handleRef.current = handle;
 
   return useCallback<OneClickInstall>(
-    (link, entryPoint) => handleRef.current(link, entryPoint),
+    (link, entryPoint, onAccepted) =>
+      handleRef.current(link, entryPoint, onAccepted),
     [],
   );
 };
 
 export const useDeepLink = (installFromLink: OneClickInstall) => {
+  // useNavigate changes identity on every route change; reading it through a
+  // ref keeps the listener registered once.
+  const navigate = useNavigate();
+  const navigateRef = useRef(navigate);
+  navigateRef.current = navigate;
+
   useEffect(() => {
     let unlisten: (() => void) | undefined;
 
@@ -243,8 +246,11 @@ export const useDeepLink = (installFromLink: OneClickInstall) => {
       try {
         logger.debug("Setting up deep link listener");
 
+        // A clicked link shows its mod, unlike background Remote Installs.
         unlisten = await listen<DeepLinkData>("deep-link-received", (event) =>
-          installFromLink(event.payload, "deep_link"),
+          installFromLink(event.payload, "deep_link", (slug) =>
+            navigateRef.current(`/mods/${slug}`),
+          ),
         );
       } catch (error) {
         logger.withError(error).error("Failed to setup deep link listener");

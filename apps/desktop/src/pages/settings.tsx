@@ -647,7 +647,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
                   value='network'
                 />
                 <HintAnchor
-                  eligible={remoteInstallStatus?.memberId === null}
+                  eligible={remoteInstallStatus === null}
                   hintId='remote-install'
                   onShowMe={() => setActiveTab("integrations")}
                   side='right'>

@@ -41,10 +41,7 @@ import { useCheckForUpdates } from "@/hooks/use-check-for-updates";
 import { useFilesystemStatus } from "@/hooks/use-filesystem-status";
 import { useCatalogSyncState } from "@/hooks/use-gamebanana-catalog-sync";
 import { useDiscordGamePresenceIndicator } from "@/hooks/use-game-presence-status";
-import {
-  useRemoteInstallQueueState,
-  useRemoteInstallStatus,
-} from "@/hooks/use-remote-install";
+import { useRemoteInstallSummary } from "@/hooks/use-remote-install";
 import { GameBananaIcon } from "@/components/shared/gamebanana-logo";
 import { useOneClickInstalls } from "@/lib/one-click-installs";
 import { useShallow } from "zustand/react/shallow";
@@ -258,8 +255,7 @@ function RemoteInstallItem({ slug }: { slug: string }) {
 
 function RemoteInstallIndicator() {
   const { t } = useTranslation();
-  const { data: status } = useRemoteInstallStatus();
-  const queue = useRemoteInstallQueueState();
+  const { queue, state, lastCheckedLabel } = useRemoteInstallSummary();
   const activeSlugs = useOneClickInstalls(
     useShallow((state) =>
       Object.keys(state.active).filter(
@@ -269,18 +265,11 @@ function RemoteInstallIndicator() {
   );
   const activeCount = activeSlugs.length;
 
-  if (status?.memberId == null) {
+  if (state === "unpaired") {
     return null;
   }
 
-  const failed = queue.isError;
-  const lastChecked = queue.dataUpdatedAt
-    ? t("remoteInstall.lastChecked", {
-        time: formatDistanceToNow(new Date(queue.dataUpdatedAt), {
-          addSuffix: true,
-        }),
-      })
-    : t("remoteInstall.notCheckedYet");
+  const failed = state === "failed";
 
   return (
     <Tooltip>
@@ -341,11 +330,7 @@ function RemoteInstallIndicator() {
             )}
           </>
         )}
-        <p className='text-xs text-muted-foreground'>
-          {queue.isFetching
-            ? t("remoteInstall.indicatorChecking")
-            : lastChecked}
-        </p>
+        <p className='text-xs text-muted-foreground'>{lastCheckedLabel}</p>
         {!queue.isFetching && (
           <p className='text-xs text-muted-foreground'>
             {t("remoteInstall.indicatorClickToCheck")}

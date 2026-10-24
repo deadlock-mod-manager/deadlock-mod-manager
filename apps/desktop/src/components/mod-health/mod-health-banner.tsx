@@ -10,8 +10,6 @@ import {
   useIsCheckingModHealth,
   useModHealthProgress,
   useModHealthReport,
-  resetRepairPlanProgress,
-  useRepairPlanProgress,
 } from "@/hooks/use-mod-health";
 import {
   fixableModIds,
@@ -39,7 +37,6 @@ export const ModHealthBanner = ({
   const progress = useModHealthProgress((state) => state.progress);
   const gameRunning = useGameRunning();
   const fix = useFixMods();
-  const planStarted = useRepairPlanProgress((state) => state.progress !== null);
   // Null when closed; a list of ids narrows the details to those mods.
   const [details, setDetails] = useState<readonly string[] | "all" | null>(
     null,
@@ -83,7 +80,6 @@ export const ModHealthBanner = ({
       review(heldBackIds);
       return;
     }
-    resetRepairPlanProgress();
     fix.mutate(
       { profileFolder, modIds: fixableIds },
       {
@@ -154,14 +150,11 @@ export const ModHealthBanner = ({
                   {t("modHealth.closeGame")}
                 </p>
               ) : null}
-              {fix.isPending && planStarted ? (
-                <RepairPlanProgressStatus className='mt-1 max-w-sm' />
-              ) : fix.isPending ? (
-                <p
-                  className='text-muted-foreground text-xs leading-5'
-                  role='status'>
-                  {t("modHealth.banner.preparing")}
-                </p>
+              {fix.isPending ? (
+                <RepairPlanProgressStatus
+                  className='mt-1 max-w-sm'
+                  showPreparing
+                />
               ) : heldBackIds.length > 0 ? (
                 <p className='text-muted-foreground text-xs leading-5'>
                   {t("modHealth.banner.crashRisk", {

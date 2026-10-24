@@ -125,7 +125,7 @@ import { useStuckAttribute } from "@/hooks/use-stuck-attribute";
 import { useProfileConflicts } from "@/hooks/use-profile-conflicts";
 import { useSearch } from "@/hooks/use-search";
 import { useModOptions } from "@/hooks/use-mod-options";
-import { useHasOpened } from "@/hooks/use-has-opened";
+import { useHasOpened } from "@deadlock-mods/ui/hooks/use-has-opened";
 import useUninstall from "@/hooks/use-uninstall";
 import { useVpkScan } from "@/hooks/use-vpk-scan";
 import { openFindBrokenMod } from "@/lib/bisect/dialogs";
@@ -269,6 +269,37 @@ type ModCardProps = {
   selected: boolean;
 };
 
+// Rendered outside ModContextMenu so events from the portalled dialog don't
+// bubble into the card's context menu trigger.
+const LazyModOptionsDialog = ({
+  modOptions,
+  modName,
+}: {
+  modOptions: ReturnType<typeof useModOptions>;
+  modName: string;
+}) => {
+  const opened = useHasOpened(modOptions.isOpen);
+  if (!modOptions.showButton || !opened) {
+    return null;
+  }
+  return (
+    <ModOptionsDialog
+      isOpen={modOptions.isOpen}
+      onOpenChange={(open) => (open ? modOptions.open() : modOptions.close())}
+      isSaving={modOptions.isSaving}
+      progress={modOptions.progress}
+      onApply={modOptions.apply}
+      fileTree={modOptions.fileTree}
+      onApplyFiles={modOptions.applyFileSelection}
+      isSavingFiles={modOptions.isSavingFiles}
+      modName={modName}
+      downloads={modOptions.downloads}
+      onDiskArchiveNames={modOptions.onDiskArchiveNames}
+      activeArchiveNames={modOptions.activeArchiveNames}
+    />
+  );
+};
+
 const GridModCard = memo(function GridModCard({
   mod,
   conflictStatus,
@@ -286,7 +317,6 @@ const GridModCard = memo(function GridModCard({
   const [deleting, setDeleting] = useState(false);
   const CardWrapper = useThemeOverride("cardWrapper");
   const modOptions = useModOptions(mod);
-  const optionsOpened = useHasOpened(modOptions.isOpen);
 
   const openModDetail = () =>
     navigate(`/mods/${mod.remoteId}`, {
@@ -309,24 +339,6 @@ const GridModCard = memo(function GridModCard({
       setDeleting(false);
     }
   };
-
-  const optionsDialog =
-    modOptions.showButton && optionsOpened ? (
-      <ModOptionsDialog
-        isOpen={modOptions.isOpen}
-        onOpenChange={(open) => (open ? modOptions.open() : modOptions.close())}
-        isSaving={modOptions.isSaving}
-        progress={modOptions.progress}
-        onApply={modOptions.apply}
-        fileTree={modOptions.fileTree}
-        onApplyFiles={modOptions.applyFileSelection}
-        isSavingFiles={modOptions.isSavingFiles}
-        modName={mod.name}
-        downloads={modOptions.downloads}
-        onDiskArchiveNames={modOptions.onDiskArchiveNames}
-        activeArchiveNames={modOptions.activeArchiveNames}
-      />
-    ) : null;
 
   const cardContent = (
     <ModContextMenu
@@ -444,7 +456,7 @@ const GridModCard = memo(function GridModCard({
   return (
     <>
       {CardWrapper ? <CardWrapper>{cardContent}</CardWrapper> : cardContent}
-      {optionsDialog}
+      <LazyModOptionsDialog modName={mod.name} modOptions={modOptions} />
     </>
   );
 });
@@ -466,7 +478,6 @@ const ListModCard = memo(function ListModCard({
   const { uninstall } = useUninstall();
   const [deleting, setDeleting] = useState(false);
   const modOptions = useModOptions(mod);
-  const optionsOpened = useHasOpened(modOptions.isOpen);
 
   const openModDetail = () =>
     navigate(`/mods/${mod.remoteId}`, {
@@ -610,24 +621,7 @@ const ListModCard = memo(function ListModCard({
           </div>
         </Card>
       </ModContextMenu>
-      {modOptions.showButton && optionsOpened && (
-        <ModOptionsDialog
-          isOpen={modOptions.isOpen}
-          onOpenChange={(open) =>
-            open ? modOptions.open() : modOptions.close()
-          }
-          isSaving={modOptions.isSaving}
-          progress={modOptions.progress}
-          onApply={modOptions.apply}
-          fileTree={modOptions.fileTree}
-          onApplyFiles={modOptions.applyFileSelection}
-          isSavingFiles={modOptions.isSavingFiles}
-          modName={mod.name}
-          downloads={modOptions.downloads}
-          onDiskArchiveNames={modOptions.onDiskArchiveNames}
-          activeArchiveNames={modOptions.activeArchiveNames}
-        />
-      )}
+      <LazyModOptionsDialog modName={mod.name} modOptions={modOptions} />
     </>
   );
 });
@@ -806,45 +800,6 @@ const MyMods = () => {
       .map((mod) => mod.remoteId),
   );
   const selectionAnchor = useRef<string | null>(null);
-  const selectMod = useCallback(
-    (id: string) => {
-      selectionAnchor.current = id;
-      setSelection((current) => {
-        const ids = new Set(
-          current?.profileId === activeProfileId ? current.ids : [],
-        );
-        if (ids.has(id)) ids.delete(id);
-        else ids.add(id);
-        return { profileId: activeProfileId, ids };
-      });
-    },
-    [activeProfileId],
-  );
-  const toggleSelection = (id: string, extend: boolean) => {
-    const anchorIndex = visibleMods.findIndex(
-      (mod) => mod.remoteId === selectionAnchor.current,
-    );
-    const targetIndex = visibleMods.findIndex((mod) => mod.remoteId === id);
-    const range =
-      extend && selecting && anchorIndex !== -1 && targetIndex !== -1
-        ? visibleMods
-            .slice(
-              Math.min(anchorIndex, targetIndex),
-              Math.max(anchorIndex, targetIndex) + 1,
-            )
-            .map((mod) => mod.remoteId)
-        : null;
-    if (!range) selectionAnchor.current = id;
-    setSelection((current) => {
-      const ids = new Set(
-        current?.profileId === activeProfileId ? current.ids : [],
-      );
-      if (range) for (const rangeId of range) ids.add(rangeId);
-      else if (ids.has(id)) ids.delete(id);
-      else ids.add(id);
-      return { profileId: activeProfileId, ids };
-    });
-  };
   const getOrderedMods = usePersistedStore((state) => state.getOrderedMods);
   const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
   const modsStorePaginationEnabled = usePersistedStore(
@@ -1081,6 +1036,43 @@ const MyMods = () => {
         ? groupedDisplayMods.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
         : groupedDisplayMods,
     [groupedDisplayMods, page, paginationEnabled],
+  );
+
+  // Kept in a ref so toggleSelection stays stable for the memoized cards.
+  const selectionScope = useRef({ visibleMods, selecting });
+  useEffect(() => {
+    selectionScope.current = { visibleMods, selecting };
+  }, [visibleMods, selecting]);
+  const toggleSelection = useCallback(
+    (id: string, extend = false) => {
+      const scope = selectionScope.current;
+      const anchorIndex = scope.visibleMods.findIndex(
+        (mod) => mod.remoteId === selectionAnchor.current,
+      );
+      const targetIndex = scope.visibleMods.findIndex(
+        (mod) => mod.remoteId === id,
+      );
+      const range =
+        extend && scope.selecting && anchorIndex !== -1 && targetIndex !== -1
+          ? scope.visibleMods
+              .slice(
+                Math.min(anchorIndex, targetIndex),
+                Math.max(anchorIndex, targetIndex) + 1,
+              )
+              .map((mod) => mod.remoteId)
+          : null;
+      if (!range) selectionAnchor.current = id;
+      setSelection((current) => {
+        const ids = new Set(
+          current?.profileId === activeProfileId ? current.ids : [],
+        );
+        if (range) for (const rangeId of range) ids.add(rangeId);
+        else if (ids.has(id)) ids.delete(id);
+        else ids.add(id);
+        return { profileId: activeProfileId, ids };
+      });
+    },
+    [activeProfileId],
   );
 
   // Reset to first page whenever the filtered set changes, and clamp if totalPages shrinks
@@ -1633,7 +1625,7 @@ const MyMods = () => {
                 {displayMods.length > 0 && (
                   <TabsContent className='mt-0' value={ModFilter.All}>
                     <ModsList
-                      onSelectMod={selectMod}
+                      onSelectMod={toggleSelection}
                       selection={modsListSelection}
                       groupActions={{
                         busy: selectionBusy,
@@ -1658,7 +1650,7 @@ const MyMods = () => {
                 {displayMods.length > 0 && (
                   <TabsContent className='mt-0' value={ModFilter.Enabled}>
                     <ModsList
-                      onSelectMod={selectMod}
+                      onSelectMod={toggleSelection}
                       selection={modsListSelection}
                       groupActions={{
                         busy: selectionBusy,
@@ -1683,7 +1675,7 @@ const MyMods = () => {
                 {displayMods.length > 0 && (
                   <TabsContent className='mt-0' value={ModFilter.Disabled}>
                     <ModsList
-                      onSelectMod={selectMod}
+                      onSelectMod={toggleSelection}
                       selection={modsListSelection}
                       groupActions={{
                         busy: selectionBusy,

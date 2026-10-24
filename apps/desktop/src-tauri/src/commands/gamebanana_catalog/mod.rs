@@ -12,8 +12,8 @@ pub use types::{
 use crate::errors::Error;
 use crate::providers::SubmissionRef;
 use crate::providers::gamebanana::catalog::{
-  CachedUpdate, CatalogAuthor, CatalogCollection, CatalogFacet, CatalogQuery, CatalogRecord,
-  SyncOutcome, current_week, weekly_featured,
+  CatalogAuthor, CatalogCollection, CatalogFacet, CatalogQuery, CatalogRecord, SyncOutcome,
+  current_week, weekly_featured,
 };
 use crate::providers::gamebanana::{ApiResponse, UpdateSnapshot, normalize_profile};
 use activity::{CatalogChangelogDto, CatalogCommentsDto};
@@ -291,30 +291,6 @@ fn detect_update(snapshot: &UpdateSnapshot, installed: &InstalledSubmissionDto) 
 
 const UPDATE_CACHE_TTL_SECS: u64 = 6 * 60 * 60;
 
-/// A cached snapshot predating the install misses the installed files, and one
-/// older than the synced catalog misses the change the catalog already shows.
-fn cached_update_is_current(
-  cached: &CachedUpdate,
-  catalog_changed_at: Option<i64>,
-  installed: &InstalledSubmissionDto,
-  now: u64,
-) -> bool {
-  if now.saturating_sub(cached.checked_at) >= UPDATE_CACHE_TTL_SECS {
-    return false;
-  }
-  if i64::try_from(cached.checked_at).map_or(true, |checked_at| installed.installed_at > checked_at)
-  {
-    return false;
-  }
-  let snapshot_changed_at = cached
-    .snapshot
-    .files
-    .iter()
-    .filter_map(|file| file.date_added)
-    .fold(cached.snapshot.remote_updated_at, i64::max);
-  catalog_changed_at.is_none_or(|changed_at| changed_at <= snapshot_changed_at)
-}
-
 #[tauri::command]
 pub async fn check_gamebanana_catalog_updates(
   state: State<'_, GameBananaCatalogState>,
@@ -343,17 +319,8 @@ pub async fn check_gamebanana_catalog_updates(
     {
       continue;
     }
-    let cached = backend.catalog.cached_update(submission.clone()).await?;
-    let catalog_changed_at = match &cached {
-      Some(_) => backend
-        .catalog
-        .get(submission.clone())
-        .await?
-        .map(|record| record.remote_updated_at.max(record.files_updated_at)),
-      None => None,
-    };
-    match cached {
-      Some(cached) if cached_update_is_current(&cached, catalog_changed_at, &installed, now) => {
+    match backend.catalog.cached_update(submission.clone()).await? {
+      Some(cached) if now.saturating_sub(cached.checked_at) < UPDATE_CACHE_TTL_SECS => {
         resolved.push((submission, installed, cached.snapshot));
       }
       _ => pending.push((submission, installed)),
@@ -683,47 +650,5 @@ mod tests {
     let snapshot = snapshot(250, vec![file(1, 100)]);
     assert_eq!(detect_update(&snapshot, &installed(200, &[])), Some(250));
     assert_eq!(detect_update(&snapshot, &installed(300, &[])), None);
-  }
-
-  fn cached(checked_at: u64, snapshot: UpdateSnapshot) -> CachedUpdate {
-    CachedUpdate {
-      snapshot,
-      checked_at,
-    }
-  }
-
-  #[test]
-  fn cached_snapshot_from_before_install_is_refetched() {
-    let cached = cached(1_000, snapshot(250, vec![file(1, 100)]));
-    assert!(cached_update_is_current(
-      &cached,
-      None,
-      &installed(900, &["1"]),
-      2_000
-    ));
-    assert!(!cached_update_is_current(
-      &cached,
-      None,
-      &installed(1_100, &["2"]),
-      2_000
-    ));
-  }
-
-  #[test]
-  fn cached_snapshot_older_than_catalog_is_refetched() {
-    let cached = cached(1_000, snapshot(250, vec![file(1, 300)]));
-    let install = installed(200, &["1"]);
-    assert!(cached_update_is_current(
-      &cached,
-      Some(300),
-      &install,
-      2_000
-    ));
-    assert!(!cached_update_is_current(
-      &cached,
-      Some(400),
-      &install,
-      2_000
-    ));
   }
 }

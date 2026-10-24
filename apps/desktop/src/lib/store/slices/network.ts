@@ -1,7 +1,6 @@
 import type { StateCreator } from "zustand";
 import type { State } from "..";
-
-export type FileserverPreference = "default" | "auto";
+import type { FileserverPreference } from "@/types/generated/FileserverPreference";
 
 export type ProxyProtocol = "http" | "https" | "socks5";
 

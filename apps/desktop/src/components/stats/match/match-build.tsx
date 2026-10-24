@@ -1,12 +1,12 @@
 import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
 import { Plus } from "@deadlock-mods/ui/icons";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Cell, Pie, PieChart } from "recharts";
 import { ChartCard } from "@/components/stats/chart-card";
 import { LOSS_COLOR, tint, WIN_COLOR } from "@/components/stats/chart-fx";
 import { ItemTile, slotColor } from "@/components/stats/match/item-tile";
-import type { DeadlockItem } from "@/lib/deadlock-api";
+import { useElementWidth } from "@/hooks/use-element-width";
 import type { MatchMetadataPlayer, PerformancePoint } from "@/lib/stats/api";
 import { formatClock, formatCompact } from "@/lib/stats/format";
 import {
@@ -14,7 +14,6 @@ import {
   interpolate,
   isSlotType,
   type Purchase,
-  purchases,
   SLOT_TYPES,
   type SlotType,
   soulsAt,
@@ -28,21 +27,6 @@ const PHASES = [
   { at: 600, key: "laningEnds" },
   { at: 1200, key: "lateGame" },
 ] as const;
-
-const useWidth = () => {
-  const ref = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState(0);
-  useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
-    const observer = new ResizeObserver(([entry]) =>
-      setWidth(entry?.contentRect.width ?? 0),
-    );
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
-  return { ref, width };
-};
 
 const slotOf = (purchase: Purchase): SlotType | null =>
   isSlotType(purchase.item.item_slot_type)
@@ -64,7 +48,7 @@ export const BuildTimeline = ({
   duration: number;
 }) => {
   const { t } = useTranslation();
-  const { ref, width } = useWidth();
+  const { ref, width } = useElementWidth();
   const x = (time: number) => (time / duration) * width;
 
   const placed = useMemo(() => {
@@ -539,8 +523,3 @@ export const FinalBuild = ({ bought }: { bought: Purchase[] }) => {
     </ChartCard>
   );
 };
-
-export const useBuild = (
-  me: MatchMetadataPlayer,
-  itemsById: Map<number, DeadlockItem>,
-) => useMemo(() => purchases(me.items, itemsById), [me.items, itemsById]);

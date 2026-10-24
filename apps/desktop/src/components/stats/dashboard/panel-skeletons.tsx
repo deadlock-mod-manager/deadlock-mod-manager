@@ -3,7 +3,6 @@ import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
 import type { ReactNode } from "react";
 import { StatTileSkeleton } from "@/components/stats/stat-tile";
 import { cn } from "@/lib/utils";
-import type { PanelId } from "./panels";
 
 /**
  * Loading stand-ins shaped like each panel's cards, so the page keeps its
@@ -70,7 +69,7 @@ const TableCard = ({ rows }: { rows: number }) => (
   </Card>
 );
 
-const ProfileSkeleton = () => (
+export const ProfileSkeleton = () => (
   <Card
     aria-hidden
     className='stats-surface flex h-full flex-col gap-5 p-5 shadow-none'>
@@ -97,7 +96,7 @@ const ProfileSkeleton = () => (
   </Card>
 );
 
-const TrendsSkeleton = () => (
+export const TrendsSkeleton = () => (
   <Card
     aria-hidden
     className='stats-surface grid h-[150px] grid-cols-1 overflow-hidden shadow-none sm:grid-cols-2 xl:grid-cols-[minmax(260px,1.3fr)_repeat(4,minmax(0,1fr))]'>
@@ -120,7 +119,7 @@ const TrendsSkeleton = () => (
   </Card>
 );
 
-const TilesSkeleton = () => (
+export const TilesSkeleton = () => (
   <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5'>
     {Array.from({ length: 5 }, (_, index) => (
       <StatTileSkeleton key={index} />
@@ -128,7 +127,7 @@ const TilesSkeleton = () => (
   </div>
 );
 
-const HeroesSkeleton = () => (
+export const HeroesSkeleton = () => (
   <div className='flex flex-col gap-4 pb-8'>
     <div className='grid gap-4 xl:grid-cols-[1fr_380px]'>
       <Shell className='h-[430px]' />
@@ -168,41 +167,18 @@ export const SquadSkeleton = () => (
   </div>
 );
 
-const SKELETONS = {
-  profile: ProfileSkeleton,
-  trends: TrendsSkeleton,
-  tiles: TilesSkeleton,
-  insights: () => (
-    <Shell className='h-[260px]'>
-      <Rows count={4} />
-    </Shell>
-  ),
-  form: () => <Shell />,
-  session: () => <Shell />,
-  rank: () => <Shell className='h-[300px]' />,
-  benchmark: () => (
-    <Shell>
-      <Rows count={4} />
-    </Shell>
-  ),
-  recentMatches: () => (
-    <Shell>
-      <Rows count={6} />
-    </Shell>
-  ),
-  heroPool: () => (
-    <Shell>
-      <Rows count={6} />
-    </Shell>
-  ),
-  heroes: HeroesSkeleton,
-  items: ItemsSkeleton,
-  squad: SquadSkeleton,
-} satisfies Record<PanelId, () => ReactNode>;
+export const ChartSkeleton = () => <Shell />;
 
-const SKELETON_BY_ID: ReadonlyMap<string, () => ReactNode> = new Map(
-  Object.entries(SKELETONS),
+export const RankSkeleton = () => <Shell className='h-[300px]' />;
+
+export const InsightsSkeleton = () => (
+  <Shell className='h-[260px]'>
+    <Rows count={4} />
+  </Shell>
 );
 
-export const PanelSkeleton = ({ panelId }: { panelId: string }) =>
-  SKELETON_BY_ID.get(panelId)?.() ?? <Shell className='h-[240px]' />;
+export const ListSkeleton = ({ rows }: { rows: number }) => (
+  <Shell>
+    <Rows count={rows} />
+  </Shell>
+);

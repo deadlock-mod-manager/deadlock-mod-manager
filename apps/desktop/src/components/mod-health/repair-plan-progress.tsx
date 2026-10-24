@@ -14,15 +14,28 @@ const STAGES: readonly RepairPlanStage[] = [
   "writingPackage",
 ];
 
-/** Shows how far the repair plan build has got. Renders nothing between builds. */
+/**
+ * Shows how far the repair plan build has got. Before the first stage arrives
+ * it renders nothing, or a preparing note with `showPreparing`.
+ */
 export const RepairPlanProgressStatus = ({
   className,
+  showPreparing = false,
 }: {
   className?: string;
+  showPreparing?: boolean;
 }) => {
   const { t } = useTranslation();
   const progress = useRepairPlanProgress((state) => state.progress);
-  if (!progress) return null;
+  if (!progress) {
+    return showPreparing ? (
+      <p
+        className={cn("text-muted-foreground text-xs leading-5", className)}
+        role='status'>
+        {t("modHealth.banner.preparing")}
+      </p>
+    ) : null;
+  }
   // Each stage fills an equal share; reading mods fills its share mod by mod.
   const withinStage =
     progress.stage === "checkingMods" && progress.total > 0

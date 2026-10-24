@@ -59,6 +59,8 @@ import { cn } from "@/lib/utils";
 
 const CUSTOMIZE_HINT_MIN_VISITS = 5;
 
+type BodyState = "grid" | "accountPrompt" | "error" | "noMatches" | "emptyTab";
+
 const Stats = () => {
   const { t } = useTranslation();
   const { analytics } = useAnalyticsContext();
@@ -147,93 +149,90 @@ const Stats = () => {
     </HintAnchor>
   );
 
-  const grid = (
-    <DashboardGrid
-      actions={dashboard.gridActions}
-      editing={editing}
-      onAddWidget={dashboard.addWidget}
-      onHealth={dashboard.reportHealth}
-      tab={activeTab}
-      tabs={dashboard.layout.tabs}
-    />
-  );
+  const bodyState: BodyState = (() => {
+    if (editing) return "grid";
+    if (needsAccount && !accountsPending && !hasAccount) return "accountPrompt";
+    // While loading, the grid draws each widget's own skeleton in its cell.
+    if (accountsPending || (hasAccount && stats.isPending)) return "grid";
+    if (needsHistory && stats.isError) return "error";
+    if (needsHistory && stats.allMatches.length === 0) return "noMatches";
+    if (!hasWidgets) return "emptyTab";
+    return "grid";
+  })();
 
   const renderBody = () => {
-    if (editing) {
-      return grid;
+    switch (bodyState) {
+      case "grid":
+        return (
+          <DashboardGrid
+            actions={dashboard.gridActions}
+            editing={editing}
+            onAddWidget={dashboard.addWidget}
+            onHealth={dashboard.reportHealth}
+            tab={activeTab}
+            tabs={dashboard.layout.tabs}
+          />
+        );
+      case "accountPrompt":
+        return <AccountPrompt onSubmit={setAccountId} />;
+      case "error":
+        return (
+          <Empty className='py-16'>
+            <EmptyHeader>
+              <EmptyMedia variant='default'>
+                <TriangleAlert className='h-16 w-16' />
+              </EmptyMedia>
+              <EmptyTitle>{t("stats.errorTitle")}</EmptyTitle>
+              <EmptyDescription>{t("stats.errorDescription")}</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        );
+      case "noMatches":
+        return (
+          <Empty className='py-16'>
+            <EmptyHeader>
+              <EmptyMedia variant='default'>
+                <Users className='h-16 w-16' />
+              </EmptyMedia>
+              <EmptyTitle>{t("stats.noMatchesTitle")}</EmptyTitle>
+              <EmptyDescription>
+                {t("stats.noMatchesDescription")}
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        );
+      case "emptyTab":
+        return (
+          <Empty className='py-16'>
+            <EmptyHeader>
+              <EmptyMedia variant='default'>
+                <LayoutGrid className='h-16 w-16' />
+              </EmptyMedia>
+              <EmptyTitle>{t("stats.dashboard.emptyTabTitle")}</EmptyTitle>
+              <EmptyDescription>
+                {t("stats.dashboard.emptyTabDescription")}
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <Button className='gap-1.5' onClick={startEditing}>
+                <Pencil className='h-4 w-4' />
+                {t("stats.dashboard.customize")}
+              </Button>
+            </EmptyContent>
+          </Empty>
+        );
     }
-    if (needsAccount && !accountsPending && !hasAccount) {
-      return <AccountPrompt onSubmit={setAccountId} />;
-    }
-    // While loading, the grid draws each widget's own skeleton in its cell.
-    if (accountsPending || (hasAccount && stats.isPending)) {
-      return grid;
-    }
-    if (needsHistory && stats.isError) {
-      return (
-        <Empty className='py-16'>
-          <EmptyHeader>
-            <EmptyMedia variant='default'>
-              <TriangleAlert className='h-16 w-16' />
-            </EmptyMedia>
-            <EmptyTitle>{t("stats.errorTitle")}</EmptyTitle>
-            <EmptyDescription>{t("stats.errorDescription")}</EmptyDescription>
-          </EmptyHeader>
-        </Empty>
-      );
-    }
-    if (needsHistory && stats.allMatches.length === 0) {
-      return (
-        <Empty className='py-16'>
-          <EmptyHeader>
-            <EmptyMedia variant='default'>
-              <Users className='h-16 w-16' />
-            </EmptyMedia>
-            <EmptyTitle>{t("stats.noMatchesTitle")}</EmptyTitle>
-            <EmptyDescription>
-              {t("stats.noMatchesDescription")}
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
-      );
-    }
-    if (!hasWidgets) {
-      return (
-        <Empty className='py-16'>
-          <EmptyHeader>
-            <EmptyMedia variant='default'>
-              <LayoutGrid className='h-16 w-16' />
-            </EmptyMedia>
-            <EmptyTitle>{t("stats.dashboard.emptyTabTitle")}</EmptyTitle>
-            <EmptyDescription>
-              {t("stats.dashboard.emptyTabDescription")}
-            </EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent>
-            <Button className='gap-1.5' onClick={startEditing}>
-              <Pencil className='h-4 w-4' />
-              {t("stats.dashboard.customize")}
-            </Button>
-          </EmptyContent>
-        </Empty>
-      );
-    }
-    return grid;
   };
 
-  const body = renderBody();
   const displayName = accountDisplayName(stats.profile, account);
   // The profile panel carries its own switcher, but only while the grid is on
   // screen; an empty or error state in its place would leave no way to switch.
   const showsProfile =
-    body === grid &&
+    bodyState === "grid" &&
     activeTab.widgets.some(
       (widget) =>
         widget.source.kind === "panel" && widget.source.panel === "profile",
     );
-
-  const showAccountPrompt =
-    !editing && needsAccount && !accountsPending && !hasAccount;
 
   return (
     <DashboardDataProvider
@@ -338,9 +337,9 @@ const Stats = () => {
           className={cn(
             "min-h-0 flex-1 overflow-y-auto px-4 pr-2",
             // The account prompt is a centred card; every tab body is a full page.
-            showAccountPrompt && "flex items-center justify-center",
+            bodyState === "accountPrompt" && "flex items-center justify-center",
           )}>
-          {body}
+          {renderBody()}
         </div>
         {hasAccount && !editing && (
           <div className='shrink-0 px-4 py-3 pr-2 empty:hidden'>

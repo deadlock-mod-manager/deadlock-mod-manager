@@ -5,6 +5,7 @@ use tauri::{Emitter, Manager};
 use tauri_plugin_deep_link::DeepLinkExt;
 
 use crate::commands::deep_link::DeepLinkData;
+use crate::commands::remote_install::{Pairing, PendingPairing};
 
 pub const SCHEMES: &[&str] = &["deadlock-mod-manager:", "deadlock-modmanager:", "dlmm:"];
 
@@ -133,7 +134,7 @@ pub fn parse_remote_install_pair(data_part: &str) -> Option<(u32, String)> {
 }
 
 /// The key becomes a path segment of the queue URL, so only URL-safe characters pass.
-pub fn is_valid_remote_install_key(secret_key: &str) -> bool {
+fn is_valid_remote_install_key(secret_key: &str) -> bool {
   (1..=128).contains(&secret_key.len())
     && secret_key
       .bytes()
@@ -215,10 +216,17 @@ pub fn handle_deep_link_url(
   }
 
   if let Some((member_id, secret_key)) = parse_remote_install_pair(data_part) {
+    let pending = app_handle.state::<PendingPairing>();
+    if let Ok(mut pending) = pending.0.lock() {
+      *pending = Some(Pairing {
+        member_id,
+        secret_key,
+      });
+    }
     emit_to_main_window(
       app_handle,
       EVENT_REMOTE_INSTALL_PAIR,
-      serde_json::json!({ "memberId": member_id, "secretKey": secret_key }),
+      serde_json::json!({ "memberId": member_id }),
     )?;
     return Ok(());
   }

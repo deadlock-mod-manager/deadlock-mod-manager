@@ -11,11 +11,14 @@ export const profileBackupModGroupSchema = z.object({
 });
 
 // Wraps the share format so backups restore through the same import path,
-// and adds what sharing leaves out: disabled mods, groups and the description.
+// and adds groups and the description. Disabled mods can't be restored through
+// that path, so only their count is kept.
 export const profileBackupPayloadSchema = z.object({
   version: z.literal("1"),
   profile: v3ProfileSchema,
-  disabledModIds: z.array(z.string()).max(2000),
+  disabledModCount: z.number().int().nonnegative().optional(),
+  // Backups saved before disabledModCount existed list the ids instead.
+  disabledModIds: z.array(z.string()).max(2000).optional(),
   modGroups: z.array(profileBackupModGroupSchema).max(200),
   description: z.string().max(500).optional(),
   // Shown when a mod has left GameBanana and can no longer be looked up.
@@ -47,15 +50,22 @@ export const profileBackupIdParamSchema = z.object({
   id: z.string(),
 });
 
-export const saveProfileBackupInputSchema = z.object({
-  // Omitted to create a backup; set with the last seen revision to update one.
-  id: z.string().optional(),
-  expectedRevision: z.number().int().positive().optional(),
+const saveProfileBackupFieldsSchema = z.object({
   name: z.string().trim().min(1).max(100),
   deviceName: z.string().trim().max(100),
   contentHash: z.string().min(1).max(128),
   payload: profileBackupPayloadSchema,
 });
+
+// An update carries the last seen revision so a stale client can't overwrite
+// a newer save.
+export const saveProfileBackupInputSchema = z.union([
+  saveProfileBackupFieldsSchema.extend({
+    id: z.string(),
+    expectedRevision: z.number().int().positive(),
+  }),
+  saveProfileBackupFieldsSchema.strict(),
+]);
 
 export type ProfileBackupModGroup = z.infer<typeof profileBackupModGroupSchema>;
 export type ProfileBackupPayload = z.infer<typeof profileBackupPayloadSchema>;

@@ -12,6 +12,7 @@ import {
 import { HeroAvatar } from "@/components/stats/hero-avatar";
 import type { DeadlockHero } from "@/lib/deadlock-api";
 import type { MatchHistoryEntry } from "@/lib/stats/api";
+import { PER_MATCH } from "@/lib/stats/benchmark";
 import { isWin, type PlaySession, playSessions } from "@/lib/stats/derive";
 import { formatClock, formatCompact, formatDecimal } from "@/lib/stats/format";
 import { cn } from "@/lib/utils";
@@ -173,11 +174,7 @@ export const RecentMatches = ({ matches, heroesById }: RecentMatchesProps) => {
                       </span>
                       <span className='text-[11.5px] text-muted-foreground'>
                         {t("stats.recent.kda", {
-                          value: formatDecimal(
-                            (match.player_kills + match.player_assists) /
-                              Math.max(match.player_deaths, 1),
-                            1,
-                          ),
+                          value: formatDecimal(PER_MATCH.kda(match), 1),
                         })}
                       </span>
                     </div>

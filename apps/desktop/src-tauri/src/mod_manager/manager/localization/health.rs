@@ -7,6 +7,7 @@ use crate::mod_manager::mod_health::{
 };
 use crate::mod_manager::vdata_history::VdataHistoryIndex;
 use std::collections::BTreeSet;
+use std::ops::DerefMut;
 use std::sync::Arc;
 
 static CHECK_LOCK: Mutex<()> = Mutex::new(());
@@ -101,20 +102,21 @@ impl ModManager {
     Ok(FixModsResult { status })
   }
 
-  /// Runs the fix in one call, holding the manager throughout.
-  #[cfg(test)]
-  pub fn fix_mods(
-    &mut self,
-    profile_folder: Option<String>,
-    mod_ids: Vec<String>,
+  /// Fixes the listed mods in one step. `manager` is called before and after
+  /// the plan build, so the slow build can run without the mod manager lock.
+  pub fn fix_mods<M: DerefMut<Target = ModManager>>(
+    manager: impl Fn() -> Result<M, Error>,
+    profile_folder: Option<&str>,
+    mod_ids: &[String],
+    progress: &dyn Fn(RepairPlanProgress),
   ) -> Result<FixModsResult, Error> {
-    let Some(refresh) = self.begin_fix_mods(profile_folder.as_deref(), &mod_ids)? else {
+    let Some(refresh) = manager()?.begin_fix_mods(profile_folder, mod_ids)? else {
       return Ok(FixModsResult {
         status: FixModsStatus::Applied,
       });
     };
-    let (refresh, plan) = refresh.build(&|_| {})?;
-    self.finish_fix_mods(refresh, plan)
+    let (refresh, plan) = refresh.build(progress)?;
+    manager()?.finish_fix_mods(refresh, plan)
   }
 
   pub(super) fn record_launch_health(

@@ -4,6 +4,7 @@ import type {
   NewProfileBackupRow,
   ProfileBackupRow,
 } from "../schema/profile-backups";
+import { user } from "../schema/auth";
 import { profileBackups } from "../schema/profile-backups";
 
 type ProfileBackupFields = Pick<
@@ -39,14 +40,6 @@ export class ProfileBackupRepository {
       .orderBy(desc(profileBackups.updatedAt));
   }
 
-  async countForUser(userId: string): Promise<number> {
-    const result = await this.db
-      .select({ value: count() })
-      .from(profileBackups)
-      .where(eq(profileBackups.userId, userId));
-    return result[0]?.value ?? 0;
-  }
-
   async findForUser(
     id: string,
     userId: string,
@@ -59,15 +52,33 @@ export class ProfileBackupRepository {
     return result[0] ?? null;
   }
 
-  async create(
+  /** Returns null when the user already keeps `limit` backups. */
+  async createWithinLimit(
     userId: string,
     fields: ProfileBackupFields,
-  ): Promise<ProfileBackupRow> {
-    const result = await this.db
-      .insert(profileBackups)
-      .values({ ...fields, userId })
-      .returning();
-    return result[0] as ProfileBackupRow;
+    limit: number,
+  ): Promise<ProfileBackupRow | null> {
+    return await this.db.transaction(async (transaction) => {
+      // Locking the user row serializes concurrent creates, so two saves can't
+      // both pass the count check.
+      await transaction
+        .select({ id: user.id })
+        .from(user)
+        .where(eq(user.id, userId))
+        .for("update");
+      const [existing] = await transaction
+        .select({ value: count() })
+        .from(profileBackups)
+        .where(eq(profileBackups.userId, userId));
+      if ((existing?.value ?? 0) >= limit) {
+        return null;
+      }
+      const [created] = await transaction
+        .insert(profileBackups)
+        .values({ ...fields, userId })
+        .returning();
+      return created ?? null;
+    });
   }
 
   /** Returns null when the backup is missing or has moved past `expectedRevision`. */

@@ -36,7 +36,18 @@ import {
 import { resolveRank } from "@/lib/stats/api";
 import { summarize } from "@/lib/stats/derive";
 import { type DashboardData, useDashboardData } from "./dashboard-context";
-import { SquadSkeleton } from "./panel-skeletons";
+import {
+  ChartSkeleton,
+  HeroesSkeleton,
+  InsightsSkeleton,
+  ItemsSkeleton,
+  ListSkeleton,
+  ProfileSkeleton,
+  RankSkeleton,
+  SquadSkeleton,
+  TilesSkeleton,
+  TrendsSkeleton,
+} from "./panel-skeletons";
 
 /**
  * The hand-built sections of the original Stats tabs, placeable like any other
@@ -66,6 +77,8 @@ type AccountData = DashboardData & { accountId: number };
 type PanelDef = {
   icon: ComponentType<{ className?: string }>;
   needsHistory: boolean;
+  /** Shaped like the panel's cards, so the page keeps its layout while loading. */
+  skeleton: () => ReactNode;
 } & (
   | { needsAccount: true; render: (data: AccountData) => ReactNode }
   | { needsAccount: false; render: (data: DashboardData) => ReactNode }
@@ -145,6 +158,7 @@ const SquadPanel = () => {
 const PANELS = {
   profile: {
     icon: UserRound,
+    skeleton: ProfileSkeleton,
     needsAccount: true,
     needsHistory: true,
     render: ({ account, accounts, onSelectAccount, stats, rankAssets }) => (
@@ -162,18 +176,21 @@ const PANELS = {
   },
   trends: {
     icon: Activity,
+    skeleton: TrendsSkeleton,
     needsAccount: true,
     needsHistory: true,
     render: () => <TrendsPanel />,
   },
   tiles: {
     icon: LayoutGrid,
+    skeleton: TilesSkeleton,
     needsAccount: true,
     needsHistory: true,
     render: ({ stats }) => <OverviewTiles matches={stats.matches} />,
   },
   insights: {
     icon: Lightbulb,
+    skeleton: InsightsSkeleton,
     needsAccount: true,
     needsHistory: true,
     render: ({ stats, heroesById }) => (
@@ -182,6 +199,7 @@ const PANELS = {
   },
   form: {
     icon: ChartLine,
+    skeleton: ChartSkeleton,
     needsAccount: true,
     needsHistory: true,
     render: ({ stats, heroesById }) => (
@@ -190,12 +208,14 @@ const PANELS = {
   },
   session: {
     icon: CalendarClock,
+    skeleton: ChartSkeleton,
     needsAccount: true,
     needsHistory: true,
     render: ({ stats }) => <SessionChart matches={stats.matches} />,
   },
   rank: {
     icon: Trophy,
+    skeleton: RankSkeleton,
     needsAccount: true,
     needsHistory: true,
     render: ({ stats, rankAssets }) => (
@@ -204,12 +224,14 @@ const PANELS = {
   },
   benchmark: {
     icon: Gauge,
+    skeleton: () => <ListSkeleton rows={4} />,
     needsAccount: true,
     needsHistory: true,
     render: () => <BenchmarkPanel />,
   },
   recentMatches: {
     icon: ListOrdered,
+    skeleton: () => <ListSkeleton rows={6} />,
     needsAccount: true,
     needsHistory: true,
     render: ({ stats, heroesById }) => (
@@ -218,6 +240,7 @@ const PANELS = {
   },
   heroPool: {
     icon: Swords,
+    skeleton: () => <ListSkeleton rows={6} />,
     needsAccount: true,
     needsHistory: true,
     render: ({ stats, heroesById }) => (
@@ -226,6 +249,7 @@ const PANELS = {
   },
   heroes: {
     icon: Sword,
+    skeleton: HeroesSkeleton,
     needsAccount: true,
     needsHistory: true,
     render: ({ stats, heroesById }) => (
@@ -239,12 +263,14 @@ const PANELS = {
   },
   items: {
     icon: Package,
+    skeleton: ItemsSkeleton,
     needsAccount: true,
     needsHistory: false,
     render: ({ accountId }) => <ItemsPanel accountId={accountId} />,
   },
   squad: {
     icon: Users,
+    skeleton: SquadSkeleton,
     needsAccount: true,
     needsHistory: true,
     render: () => <SquadPanel />,

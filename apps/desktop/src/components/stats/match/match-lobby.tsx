@@ -23,6 +23,7 @@ import {
   type MatchMetadata,
   type MateStats,
   type RankAsset,
+  rankLabel,
   resolveRank,
 } from "@/lib/stats/api";
 import { formatClock, formatThousands } from "@/lib/stats/format";
@@ -332,6 +333,7 @@ export const LobbyRoster = ({
         const badge =
           team === 0 ? match.average_badge_team0 : match.average_badge_team1;
         const rank = badge ? resolveRank(badge, rankAssets) : null;
+        const rankName = badge ? rankLabel(badge, rankAssets) : null;
         const members = match.players.filter((player) => player.team === team);
         return (
           <Card
@@ -352,9 +354,7 @@ export const LobbyRoster = ({
                     />
                   )}
                   <span className='font-semibold text-foreground'>
-                    {rank.subrank > 0
-                      ? `${rank.name} ${rank.subrank}`
-                      : rank.name}
+                    {rankName}
                   </span>
                 </span>
               )}

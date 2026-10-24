@@ -33,11 +33,6 @@ export const buildProfileBackupPayload = (
     .sort(byRemoteId);
   const backedUpIds = new Set(backedUpMods.map((mod) => mod.remoteId));
   const entries = Object.values(profile.enabledMods);
-  const disabledModIds = entries
-    .filter((entry) => !entry.enabled && !isLocalMod(entry))
-    .map((entry) => entry.remoteId)
-    .sort();
-  const named = new Set([...backedUpIds, ...disabledModIds]);
 
   return {
     version: "1",
@@ -48,14 +43,16 @@ export const buildProfileBackupPayload = (
         loadOrder: serialized.loadOrder.filter((id) => backedUpIds.has(id)),
       },
     },
-    disabledModIds,
+    disabledModCount: entries.filter(
+      (entry) => !entry.enabled && !isLocalMod(entry),
+    ).length,
     modGroups: (profile.modGroups ?? []).map(
       ({ id, name, modIds, collapsed }) => ({ id, name, modIds, collapsed }),
     ),
     description: profile.description || undefined,
     modNames: Object.fromEntries(
       mods
-        .filter((mod) => named.has(mod.remoteId))
+        .filter((mod) => backedUpIds.has(mod.remoteId))
         .map((mod) => [mod.remoteId, mod.name])
         .sort(([left], [right]) => left.localeCompare(right)),
     ),
@@ -63,11 +60,16 @@ export const buildProfileBackupPayload = (
   };
 };
 
-export const hashProfileBackup = async (
+export const disabledModCountOf = (payload: ProfileBackupPayload) =>
+  payload.disabledModCount ?? payload.disabledModIds?.length ?? 0;
+
+export const profileBackupHashInput = (
   name: string,
   payload: ProfileBackupPayload,
-): Promise<string> => {
-  const bytes = new TextEncoder().encode(JSON.stringify({ name, payload }));
+) => JSON.stringify({ name, payload });
+
+export const hashProfileBackup = async (hashInput: string): Promise<string> => {
+  const bytes = new TextEncoder().encode(hashInput);
   const digest = await crypto.subtle.digest("SHA-256", bytes);
   return Array.from(new Uint8Array(digest), (byte) =>
     byte.toString(16).padStart(2, "0"),

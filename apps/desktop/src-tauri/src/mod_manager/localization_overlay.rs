@@ -460,6 +460,13 @@ pub enum RepairPlanStage {
   WritingPackage,
 }
 
+impl RepairPlanProgress {
+  pub fn emit(self, app: &crate::app_runtime::AppHandle) {
+    use tauri::Emitter;
+    app.emit("repair-plan-progress", self).ok();
+  }
+}
+
 impl LocalizationOverlayPlan {
   #[cfg(test)]
   pub fn build(
@@ -496,28 +503,11 @@ impl LocalizationOverlayPlan {
       VdataHistoryIndex::embedded(),
       &resources,
       enabled_mod_ids,
-    )
-  }
-
-  #[cfg(test)]
-  pub(crate) fn build_learning_history(
-    citadel_dir: &Path,
-    mods: &[LocalizationModInput],
-    observed: VdataHistoryIndex,
-    version: Option<u32>,
-    enabled_mod_ids: &BTreeSet<String>,
-  ) -> Result<(Self, VdataHistoryIndex, bool), Error> {
-    Self::build_learning_history_reporting(
-      citadel_dir,
-      mods,
-      observed,
-      version,
-      enabled_mod_ids,
       &|_| {},
     )
   }
 
-  pub(crate) fn build_learning_history_reporting(
+  pub(crate) fn build_learning_history(
     citadel_dir: &Path,
     mods: &[LocalizationModInput],
     mut observed: VdataHistoryIndex,
@@ -612,7 +602,7 @@ impl LocalizationOverlayPlan {
       }
     }
     let history = VdataHistoryIndex::embedded().with_observed(observed);
-    let plan = Self::build_snapshot_reporting(
+    let plan = Self::build_snapshot(
       mods,
       HistoricalLocalizationIndex::embedded(),
       &history,
@@ -637,28 +627,11 @@ impl LocalizationOverlayPlan {
       history,
       &resources,
       &mods.iter().map(|input| input.mod_id.clone()).collect(),
-    )
-  }
-
-  #[cfg(test)]
-  fn build_snapshot(
-    mods: &[LocalizationModInput],
-    historical_localization: &HistoricalLocalizationIndex,
-    history: &VdataHistoryIndex,
-    resources: &resources::ResourceSnapshot,
-    enabled_mod_ids: &BTreeSet<String>,
-  ) -> Result<Self, Error> {
-    Self::build_snapshot_reporting(
-      mods,
-      historical_localization,
-      history,
-      resources,
-      enabled_mod_ids,
       &|_| {},
     )
   }
 
-  fn build_snapshot_reporting(
+  fn build_snapshot(
     mods: &[LocalizationModInput],
     historical_localization: &HistoricalLocalizationIndex,
     history: &VdataHistoryIndex,
@@ -3037,6 +3010,7 @@ mod tests {
       VdataHistoryIndex::default(),
       Some(1),
       &mods.iter().map(|input| input.mod_id.clone()).collect(),
+      &|_| {},
     )
     .unwrap();
     assert!(changed);
@@ -3057,6 +3031,7 @@ mod tests {
       observed,
       Some(2),
       &mods.iter().map(|input| input.mod_id.clone()).collect(),
+      &|_| {},
     )
     .unwrap();
     assert!(changed);
@@ -3080,7 +3055,8 @@ mod tests {
         &mods,
         observed,
         Some(2),
-        &mods.iter().map(|input| input.mod_id.clone()).collect()
+        &mods.iter().map(|input| input.mod_id.clone()).collect(),
+        &|_| {},
       )
       .unwrap()
       .2
@@ -4684,6 +4660,7 @@ mod tests {
       history,
       &resources,
       &mods.iter().map(|input| input.mod_id.clone()).collect(),
+      &|_| {},
     )
     .unwrap();
     println!(
@@ -4699,6 +4676,7 @@ mod tests {
         history,
         &resources,
         &mods.iter().map(|input| input.mod_id.clone()).collect(),
+        &|_| {},
       )
       .unwrap();
       println!("warm analysis in {:?}", started.elapsed());

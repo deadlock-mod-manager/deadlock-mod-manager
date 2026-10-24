@@ -25,15 +25,12 @@ import { usePersistedStore } from "@/lib/store";
 
 export const RemoteInstallPairDialog = () => {
   const { t } = useTranslation();
-  const { request, dismiss } = useRemoteInstallPairRequest();
+  const { memberId, dismiss } = useRemoteInstallPairRequest();
   const { pair } = useRemoteInstallPairing();
 
   const handleLink = async () => {
-    if (!request) {
-      return;
-    }
     try {
-      await pair.mutateAsync(request);
+      await pair.mutateAsync();
       usePersistedStore.getState().markFeatureUsed("remote-install");
       toast.success(t("remoteInstall.paired"));
       dismiss();
@@ -48,7 +45,7 @@ export const RemoteInstallPairDialog = () => {
       onOpenChange={(open) => {
         if (!open && !pair.isPending) dismiss();
       }}
-      open={request !== null}>
+      open={memberId !== null}>
       <AlertDialogContent className='gap-0 overflow-hidden p-0 sm:max-w-md'>
         <div className='space-y-5 p-6'>
           <div className='flex items-start gap-4'>
@@ -65,9 +62,9 @@ export const RemoteInstallPairDialog = () => {
             </AlertDialogHeader>
           </div>
 
-          {request && (
+          {memberId !== null && (
             <div className='rounded-md border bg-muted/30 p-3'>
-              <GameBananaMemberIdentity memberId={request.memberId} />
+              <GameBananaMemberIdentity memberId={memberId} />
             </div>
           )}
 

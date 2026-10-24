@@ -1,22 +1,43 @@
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import {
+  queryOptions,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import { formatDistanceToNow } from "date-fns";
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { REFETCH_INTERVAL_REMOTE_INSTALL } from "@/lib/query-constants";
 import type { GameBananaMember } from "@/types/generated/GameBananaMember";
-import type { RemoteInstallStatus } from "@/types/generated/RemoteInstallStatus";
 import type { DeepLinkData, OneClickInstall } from "./use-deep-link";
 
 const PAIR_EVENT = "remote-install-pair-requested";
 const STATUS_KEY = ["remote-install", "status"];
-const QUEUE_KEY = ["remote-install", "queue"];
 // Names and avatars rarely change; refresh them about once an hour.
 const STALE_TIME_MEMBER = 60 * 60 * 1000;
+
+// GameBanana marks entries retrieved once returned, so every fetch, including
+// a manual refetch from Settings or the status bar, must install what it gets.
+// The app-wide poller registers the installer before its first fetch.
+let installLink: OneClickInstall | null = null;
+
+const queueQuery = queryOptions({
+  queryKey: ["remote-install", "queue"],
+  queryFn: async () => {
+    const links = await invoke<DeepLinkData[]>("poll_remote_install");
+    for (const link of links) {
+      void installLink?.(link, "remote_install");
+    }
+    return links;
+  },
+});
 
 export const useRemoteInstallStatus = () =>
   useQuery({
     queryKey: STATUS_KEY,
-    queryFn: () => invoke<RemoteInstallStatus>("get_remote_install_status"),
+    queryFn: () => invoke<number | null>("get_remote_install_status"),
   });
 
 export const useGameBananaMember = (memberId: number | null) =>
@@ -29,27 +50,41 @@ export const useGameBananaMember = (memberId: number | null) =>
     retry: false,
   });
 
-/**
- * Shares the poller's queue state. Never fetches on its own, so opening
- * Settings does not consume the queue outside the poller.
- */
-export const useRemoteInstallQueueState = () =>
-  useQuery({
-    queryKey: QUEUE_KEY,
-    queryFn: () => invoke<DeepLinkData[]>("poll_remote_install"),
-    enabled: false,
-  });
+/** Shares the poller's queue state without fetching on its own. */
+const useRemoteInstallQueueState = () =>
+  useQuery({ ...queueQuery, enabled: false });
+
+type RemoteInstallState = "unpaired" | "failed" | "linked";
+
+export const useRemoteInstallSummary = () => {
+  const { t } = useTranslation();
+  const status = useRemoteInstallStatus();
+  const queue = useRemoteInstallQueueState();
+  const memberId = status.data ?? null;
+  const state: RemoteInstallState =
+    memberId == null ? "unpaired" : queue.isError ? "failed" : "linked";
+  const lastCheckedLabel = queue.isFetching
+    ? t("remoteInstall.indicatorChecking")
+    : queue.dataUpdatedAt
+      ? t("remoteInstall.lastChecked", {
+          time: formatDistanceToNow(new Date(queue.dataUpdatedAt), {
+            addSuffix: true,
+          }),
+        })
+      : t("remoteInstall.notCheckedYet");
+
+  return { status, queue, memberId, state, lastCheckedLabel };
+};
 
 export const useRemoteInstallPairing = () => {
   const queryClient = useQueryClient();
   const onSettled = () => {
     queryClient.invalidateQueries({ queryKey: STATUS_KEY });
-    queryClient.removeQueries({ queryKey: QUEUE_KEY });
+    queryClient.removeQueries({ queryKey: queueQuery.queryKey });
   };
 
   const pair = useMutation({
-    mutationFn: (request: PairRequest) =>
-      invoke<RemoteInstallStatus>("pair_remote_install", request),
+    mutationFn: () => invoke<void>("confirm_remote_install_pair"),
     onSettled,
   });
   const unpair = useMutation({
@@ -60,48 +95,37 @@ export const useRemoteInstallPairing = () => {
   return { pair, unpair };
 };
 
-export type PairRequest = { memberId: number; secretKey: string };
-
 // GameBanana's Pair button opens the app with the member's key. Any page can
-// fire that link, so the request waits here until the user confirms it.
+// fire that link, so Rust holds the key until the user confirms the member.
 export const useRemoteInstallPairRequest = () => {
-  const [request, setRequest] = useState<PairRequest | null>(null);
+  const [memberId, setMemberId] = useState<number | null>(null);
 
   useEffect(() => {
-    const unlisten = listen<PairRequest>(PAIR_EVENT, (event) =>
-      setRequest(event.payload),
+    const unlisten = listen<{ memberId: number }>(PAIR_EVENT, (event) =>
+      setMemberId(event.payload.memberId),
     );
     return () => {
       unlisten.then((dispose) => dispose()).catch(() => undefined);
     };
   }, []);
 
-  return { request, dismiss: () => setRequest(null) };
+  return { memberId, dismiss: () => setMemberId(null) };
 };
 
 export const useRemoteInstallPoll = (installFromLink: OneClickInstall) => {
-  const { data: status } = useRemoteInstallStatus();
-  const paired = status?.memberId != null;
-  const { data, dataUpdatedAt } = useQuery({
-    queryKey: QUEUE_KEY,
-    queryFn: () => invoke<DeepLinkData[]>("poll_remote_install"),
-    enabled: paired,
+  const { data: memberId } = useRemoteInstallStatus();
+  useEffect(() => {
+    installLink = installFromLink;
+    return () => {
+      installLink = null;
+    };
+  }, [installFromLink]);
+  useQuery({
+    ...queueQuery,
+    enabled: memberId != null,
     refetchInterval: REFETCH_INTERVAL_REMOTE_INSTALL,
     refetchIntervalInBackground: true,
     refetchOnWindowFocus: false,
     retry: false,
   });
-
-  // GameBanana marks entries retrieved once returned, so each response is
-  // handled exactly once, keyed by when it arrived.
-  const handledAt = useRef(0);
-  useEffect(() => {
-    if (!data || dataUpdatedAt === handledAt.current) {
-      return;
-    }
-    handledAt.current = dataUpdatedAt;
-    for (const link of data) {
-      void installFromLink(link, "remote_install");
-    }
-  }, [data, dataUpdatedAt, installFromLink]);
 };
