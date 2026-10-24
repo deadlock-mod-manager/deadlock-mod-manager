@@ -84,7 +84,9 @@ const ModCard = memo((props: ModCardProps) => {
         ? "featured"
         : collection === "library"
           ? "library"
-          : usePersistedStore.getState().modsFilters.searchQuery
+          : usePersistedStore.getState()[
+                collection === "maps" ? "mapsFilters" : "modsFilters"
+              ].searchQuery
             ? "search"
             : "catalog";
   const openModDetail = () => {

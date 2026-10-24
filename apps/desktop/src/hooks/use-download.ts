@@ -140,7 +140,9 @@ export const useDownload = (
         entryPoint ??
         modEntryPoint(
           pathname,
-          !!usePersistedStore.getState().modsFilters.searchQuery,
+          !!usePersistedStore.getState()[
+            pathname === "/maps" ? "mapsFilters" : "modsFilters"
+          ].searchQuery,
         ),
       onComplete: () => {
         setIsDialogOpen(false);
