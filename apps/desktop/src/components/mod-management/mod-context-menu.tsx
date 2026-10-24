@@ -55,7 +55,7 @@ export const ModContextMenu = ({
   children,
 }: ModContextMenuProps) => {
   const { t } = useTranslation();
-  const { getActiveProfile } = usePersistedStore();
+  const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
   const markFeatureUsed = usePersistedStore((state) => state.markFeatureUsed);
   const profileId = usePersistedStore((state) => state.activeProfileId);
   const groups = usePersistedStore(

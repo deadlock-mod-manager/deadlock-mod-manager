@@ -36,10 +36,12 @@ export const ProfileShareDialog = () => {
   const { version } = useAbout();
   const { t } = useTranslation();
   const { analytics } = useAnalyticsContext();
-  const { getActiveProfile, localMods } = usePersistedStore();
+  const localMods = usePersistedStore((state) => state.localMods);
   const [profileId, setProfileId] = useState<string | null>(null);
 
-  const activeProfile = getActiveProfile();
+  const activeProfile = usePersistedStore(
+    (state) => state.profiles[state.activeProfileId],
+  );
   const enabledMods = Object.values(activeProfile?.enabledMods ?? {})
     .filter((mod) => mod.enabled)
     .map((mod) => {

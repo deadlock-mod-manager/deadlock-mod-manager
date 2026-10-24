@@ -2,7 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { usePersistedStore } from "@/lib/store";
 
 export const useSyncProfiles = (enabled = true) => {
-  const { syncProfilesWithFilesystem } = usePersistedStore();
+  const syncProfilesWithFilesystem = usePersistedStore(
+    (state) => state.syncProfilesWithFilesystem,
+  );
 
   return useQuery({
     queryKey: ["sync-profiles"],

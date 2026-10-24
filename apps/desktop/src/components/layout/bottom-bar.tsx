@@ -478,7 +478,6 @@ const fsStatusConfig = {
 
 export const BottomBar = () => {
   const { t } = useTranslation();
-  const localMods = usePersistedStore((state) => state.localMods);
   const gamePath = usePersistedStore((s) => s.gamePath);
   const {
     updateAvailable,
@@ -491,15 +490,19 @@ export const BottomBar = () => {
   const { status: authStatus } = useAuthStatus();
   const { status: fsStatus } = useFilesystemStatus();
 
-  const downloadingCount = localMods.filter(
-    (mod) =>
-      mod.status === ModStatus.Downloading ||
-      mod.status === ModStatus.Extracting,
-  ).length;
+  const downloadingCount = usePersistedStore(
+    (state) =>
+      state.localMods.filter(
+        (mod) =>
+          mod.status === ModStatus.Downloading ||
+          mod.status === ModStatus.Extracting,
+      ).length,
+  );
 
-  const pausedCount = localMods.filter(
-    (mod) => mod.status === ModStatus.Paused,
-  ).length;
+  const pausedCount = usePersistedStore(
+    (state) =>
+      state.localMods.filter((mod) => mod.status === ModStatus.Paused).length,
+  );
 
   const apiCfg = apiStatusConfig[apiStatus];
   const authCfg = authStatusConfig[authStatus];

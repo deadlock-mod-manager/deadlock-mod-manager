@@ -22,7 +22,7 @@ export const useAddonAnalysis = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const { analytics } = useAnalyticsContext();
-  const { getActiveProfile } = usePersistedStore();
+  const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
   const [progress, setProgress] = useState<AddonAnalysisProgress | null>(null);
   const [showProgressToast, setShowProgressToast] = useState(false);
   const [analysisStartTime, setAnalysisStartTime] = useState<number | null>(

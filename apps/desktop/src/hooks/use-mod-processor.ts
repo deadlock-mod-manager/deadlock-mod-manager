@@ -59,12 +59,10 @@ const storeSourceFile = async (
 export const useModProcessor = () => {
   const { t } = useTranslation();
   const { setProcessing } = useProgress();
-  const {
-    addLocalMod: addMod,
-    setModStatus,
-    setDetectedHero,
-    getActiveProfile,
-  } = usePersistedStore();
+  const addMod = usePersistedStore((state) => state.addLocalMod);
+  const setModStatus = usePersistedStore((state) => state.setModStatus);
+  const setDetectedHero = usePersistedStore((state) => state.setDetectedHero);
+  const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
 
   const processArchive = async (
     file: File,

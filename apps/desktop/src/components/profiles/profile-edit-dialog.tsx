@@ -33,8 +33,9 @@ export const ProfileEditDialog = ({
   const [description, setDescription] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const { getProfile, updateProfile, getAllProfiles } = usePersistedStore();
-  const profile = getProfile(profileId);
+  const updateProfile = usePersistedStore((state) => state.updateProfile);
+  const getAllProfiles = usePersistedStore((state) => state.getAllProfiles);
+  const profile = usePersistedStore((state) => state.profiles[profileId]);
 
   useEffect(() => {
     if (profile) {

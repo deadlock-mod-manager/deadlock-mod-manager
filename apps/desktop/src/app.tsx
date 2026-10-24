@@ -39,10 +39,8 @@ import { RemoteInstallPairDialog } from "./components/remote-install-pair-dialog
 import { useIngestToolInit } from "./hooks/use-ingest-tool-init";
 import { useLanguageListener } from "./hooks/use-language-listener";
 import { useMissingVpkDetection } from "./hooks/use-missing-vpk-detection";
-import { useDownloadsMigration } from "./hooks/use-downloads-migration";
-import { useHeroDetection } from "./hooks/use-hero-detection";
+import { LibraryMaintenanceRenderer } from "./components/library-maintenance-renderer";
 import { useGameBananaCatalogSync } from "./hooks/use-gamebanana-catalog-sync";
-import { useModOrderMigration } from "./hooks/use-mod-order-migration";
 import { useRemoteInstallPoll } from "./hooks/use-remote-install";
 import { Layout } from "./layout";
 import { queryClient } from "./lib/client";
@@ -75,12 +73,9 @@ const DeepLinkListener = () => {
 const App = ({ runtime, storage }: AppProps) => {
   const integrations = runtime.integrations;
   useLanguageListener();
-  useModOrderMigration();
-  useDownloadsMigration();
   useCrosshairConfigReconciliation();
   useGameinfoAutoReset();
   useMissingVpkDetection();
-  useHeroDetection();
   useGameBananaCatalogSync();
   usePerfBackgroundSync();
   useIngestToolInit(integrations?.ingestion !== "disabled");
@@ -204,6 +199,7 @@ const App = ({ runtime, storage }: AppProps) => {
                               </Layout>
                             </FoundryProvider>
                           </ThemeOverridesProvider>
+                          <LibraryMaintenanceRenderer />
                           <GlobalPluginRenderer />
                           {integrations?.presence !== "disabled" && (
                             <GamePresenceRenderer />

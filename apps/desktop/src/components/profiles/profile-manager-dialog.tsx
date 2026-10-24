@@ -26,6 +26,7 @@ import {
 } from "@deadlock-mods/ui/icons";
 import { useIsMutating } from "@tanstack/react-query";
 import { useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
@@ -58,7 +59,7 @@ export const ProfileManagerDialog = ({
 }: ProfileManagerDialogProps) => {
   const { t } = useTranslation();
   const { analytics } = useAnalyticsContext();
-  const { localMods } = usePersistedStore();
+  const localMods = usePersistedStore((state) => state.localMods);
   const confirm = useConfirm();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingProfile, setEditingProfile] = useState<ProfileId | null>(null);
@@ -69,19 +70,21 @@ export const ProfileManagerDialog = ({
 
   useSyncProfiles(open);
 
-  const {
-    isSwitching: profileSwitchPending,
-    getAllProfiles,
-    getActiveProfile,
-    deleteProfile,
-    switchToProfile,
-    syncProfilesWithFilesystem,
-  } = usePersistedStore();
+  const profileSwitchPending = usePersistedStore((state) => state.isSwitching);
+  const deleteProfile = usePersistedStore((state) => state.deleteProfile);
+  const switchToProfile = usePersistedStore((state) => state.switchToProfile);
+  const syncProfilesWithFilesystem = usePersistedStore(
+    (state) => state.syncProfilesWithFilesystem,
+  );
 
   const bulkPending = useIsMutating({ mutationKey: ["library-bulk"] }) > 0;
   const isSwitching = profileSwitchPending || bulkPending;
-  const profiles = getAllProfiles();
-  const activeProfile = getActiveProfile();
+  const profiles = usePersistedStore(
+    useShallow((state) => state.getAllProfiles()),
+  );
+  const activeProfile = usePersistedStore(
+    (state) => state.profiles[state.activeProfileId],
+  );
 
   const handleDeleteProfile = async (
     profileId: ProfileId,

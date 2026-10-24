@@ -273,7 +273,8 @@ const CollapsedSeparator = () => (
 type SidebarItemProps = {
   item: SidebarItem;
   location: ReturnType<typeof useLocation>;
-  mods: Array<{ status: ModStatus; remoteId: string }>;
+  modCount: number;
+  downloadCount: number;
   showNewBadge: boolean;
 };
 
@@ -299,7 +300,8 @@ const renderIcon = (item: SidebarItem) => {
 const SidebarItemComponent = ({
   item,
   location,
-  mods,
+  modCount,
+  downloadCount,
   showNewBadge,
 }: SidebarItemProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -310,16 +312,8 @@ const SidebarItemComponent = ({
         (item.activeOnChildren === true &&
           location.pathname.startsWith(`${item.url}/`))
       : false,
-    count: item.id === "my-mods" ? mods.length : undefined,
-    downloads:
-      item.id === "downloads"
-        ? mods.filter(
-            (mod) =>
-              mod.status === ModStatus.Downloading ||
-              mod.status === ModStatus.Extracting ||
-              mod.status === ModStatus.Paused,
-          ).length
-        : undefined,
+    count: item.id === "my-mods" ? modCount : undefined,
+    downloads: item.id === "downloads" ? downloadCount : undefined,
   };
 
   if (item.dialog) {
@@ -374,7 +368,16 @@ export const AppSidebar = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
-  const mods = usePersistedStore((state) => state.localMods);
+  const modCount = usePersistedStore((state) => state.localMods.length);
+  const downloadCount = usePersistedStore(
+    (state) =>
+      state.localMods.filter(
+        (mod) =>
+          mod.status === ModStatus.Downloading ||
+          mod.status === ModStatus.Extracting ||
+          mod.status === ModStatus.Paused,
+      ).length,
+  );
   const seenNavItems = usePersistedStore((state) => state.seenNavItems);
   const markNavItemSeen = usePersistedStore((state) => state.markNavItemSeen);
   const developerMode = usePersistedStore((state) => state.developerMode);
@@ -441,7 +444,8 @@ export const AppSidebar = () => {
                       <SidebarItemComponent
                         item={item}
                         location={location}
-                        mods={mods}
+                        modCount={modCount}
+                        downloadCount={downloadCount}
                         showNewBadge={!!item.isNew && !seenNavItems[item.id]}
                       />
                     );

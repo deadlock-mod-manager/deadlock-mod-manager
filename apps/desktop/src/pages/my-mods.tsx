@@ -78,7 +78,7 @@ import { Radioactive, Trash } from "@phosphor-icons/react";
 import { MagnifyingGlass } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
 import { platform } from "@tauri-apps/plugin-os";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { HintAnchor } from "@/components/feature-hints/hint-anchor";
@@ -97,7 +97,7 @@ import { AnalysisProgressToast } from "@/components/my-mods/analysis-progress-to
 import { AnalysisResultsDialog } from "@/components/my-mods/analysis-results-dialog";
 import { BatchUpdateDialog } from "@/components/my-mods/batch-update-dialog";
 import { EnableAllRecapDialog } from "@/components/my-mods/enable-all-recap-dialog";
-import { UpdateButton } from "@/components/my-mods/update-button";
+import { BatchUpdateButton } from "@/components/my-mods/batch-update-button";
 import { ExportDialog } from "@/components/mod-interchange/export-dialog";
 import { AddModsMenu } from "@/components/mod-interchange/add-mods-menu";
 import { ConflictsPanel } from "@/components/my-mods/conflicts/conflicts-panel";
@@ -152,7 +152,6 @@ import type {
 } from "@/lib/store/slices/ui";
 import type { ModConflictStatus } from "@/lib/mods/conflicts";
 import { isInstalledModWithVpks } from "@/lib/mods/installed-helpers";
-import { getUpdatePercent } from "@/lib/mods/batch-update-progress";
 import { getModCoverImage } from "@/lib/mods/mod-images";
 import { healthByModId, showsDateOutdatedWarning } from "@/lib/mods/mod-health";
 import { cn, isModOutdated } from "@/lib/utils";
@@ -265,17 +264,17 @@ type ModCardProps = {
   onShowConflicts: () => void;
   health: ModHealth | undefined;
   contextMenuHint: boolean;
-  onSelect: (() => void) | undefined;
+  onSelect: ((id: string) => void) | undefined;
 };
 
-const GridModCard = ({
+const GridModCard = memo(function GridModCard({
   mod,
   conflictStatus,
   onShowConflicts,
   health,
   contextMenuHint,
   onSelect,
-}: ModCardProps) => {
+}: ModCardProps) {
   const { t } = useTranslation();
   const isDisabled = mod.status !== ModStatus.Installed;
   const hasUpdate = useModHasUpdate(mod);
@@ -325,7 +324,10 @@ const GridModCard = ({
   ) : null;
 
   const cardContent = (
-    <ModContextMenu hint={contextMenuHint} mod={mod} onSelect={onSelect}>
+    <ModContextMenu
+      hint={contextMenuHint}
+      mod={mod}
+      onSelect={onSelect ? () => onSelect(mod.remoteId) : undefined}>
       <Card className='flex h-full flex-col shadow'>
         <div className='relative'>
           <div
@@ -439,16 +441,16 @@ const GridModCard = ({
       {optionsDialog}
     </>
   );
-};
+});
 
-const ListModCard = ({
+const ListModCard = memo(function ListModCard({
   mod,
   conflictStatus,
   onShowConflicts,
   health,
   contextMenuHint,
   onSelect,
-}: ModCardProps) => {
+}: ModCardProps) {
   const { t } = useTranslation();
   const isDisabled = mod.status !== ModStatus.Installed;
   const hasUpdate = useModHasUpdate(mod);
@@ -482,7 +484,10 @@ const ListModCard = ({
 
   return (
     <>
-      <ModContextMenu hint={contextMenuHint} mod={mod} onSelect={onSelect}>
+      <ModContextMenu
+        hint={contextMenuHint}
+        mod={mod}
+        onSelect={onSelect ? () => onSelect(mod.remoteId) : undefined}>
         <Card className='group/row flex items-center gap-4 overflow-hidden pr-3 shadow transition-colors hover:bg-muted/40'>
           <div
             className={cn(
@@ -616,7 +621,7 @@ const ListModCard = ({
       )}
     </>
   );
-};
+});
 
 const ModsList = ({
   mods,
@@ -630,7 +635,9 @@ const ModsList = ({
   contextMenuHint,
   selection,
   groupActions,
+  onSelectMod,
 }: {
+  onSelectMod: (id: string) => void;
   groupActions: ModGroupActions;
   selection: {
     active: boolean;
@@ -735,11 +742,7 @@ const ModsList = ({
                       !selection.active && contextMenuHint && index === 0
                     }
                     mod={mod}
-                    onSelect={
-                      selection.active
-                        ? undefined
-                        : () => selection.toggle(mod.remoteId, false)
-                    }
+                    onSelect={selection.active ? undefined : onSelectMod}
                     onShowConflicts={onShowConflicts}
                     health={healthById.get(mod.remoteId)}
                   />
@@ -776,6 +779,20 @@ const MyMods = () => {
       .map((mod) => mod.remoteId),
   );
   const selectionAnchor = useRef<string | null>(null);
+  const selectMod = useCallback(
+    (id: string) => {
+      selectionAnchor.current = id;
+      setSelection((current) => {
+        const ids = new Set(
+          current?.profileId === activeProfileId ? current.ids : [],
+        );
+        if (ids.has(id)) ids.delete(id);
+        else ids.add(id);
+        return { profileId: activeProfileId, ids };
+      });
+    },
+    [activeProfileId],
+  );
   const toggleSelection = (id: string, extend: boolean) => {
     const anchorIndex = visibleMods.findIndex(
       (mod) => mod.remoteId === selectionAnchor.current,
@@ -877,13 +894,10 @@ const MyMods = () => {
   const hiddenModelCount = conflictGroups.filter(
     (group) => group.severity === "critical",
   ).length;
-  const showConflicts = () => setActiveTab(CONFLICTS_TAB);
+  const showConflicts = useCallback(() => setActiveTab(CONFLICTS_TAB), []);
   const [showBatchUpdateDialog, setShowBatchUpdateDialog] = useState(false);
   const [batchUpdateIds, setBatchUpdateIds] =
     useState<ReadonlySet<string> | null>(null);
-  const updatePercent = usePersistedStore((state) =>
-    getUpdatePercent(state.batchUpdateProgress),
-  );
   const [showModOrdering, setShowModOrdering] = useState(false);
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [actionsMenuOpen, setActionsMenuOpen] = useState(false);
@@ -1216,12 +1230,11 @@ const MyMods = () => {
 
         <div className='flex min-w-0 flex-1 flex-wrap items-center justify-start gap-2 xl:justify-end'>
           {updatableCount > 0 && (
-            <UpdateButton
+            <BatchUpdateButton
               variant='default'
-              onClick={() => setShowBatchUpdateDialog(true)}
-              updatePercent={updatePercent}>
+              onClick={() => setShowBatchUpdateDialog(true)}>
               {t("myMods.updateAvailableCount", { count: updatableCount })}
-            </UpdateButton>
+            </BatchUpdateButton>
           )}
           <Tooltip>
             <TooltipTrigger asChild>
@@ -1593,6 +1606,7 @@ const MyMods = () => {
                 {displayMods.length > 0 && (
                   <TabsContent className='mt-0' value={ModFilter.All}>
                     <ModsList
+                      onSelectMod={selectMod}
                       selection={modsListSelection}
                       groupActions={{
                         busy: selectionBusy,
@@ -1617,6 +1631,7 @@ const MyMods = () => {
                 {displayMods.length > 0 && (
                   <TabsContent className='mt-0' value={ModFilter.Enabled}>
                     <ModsList
+                      onSelectMod={selectMod}
                       selection={modsListSelection}
                       groupActions={{
                         busy: selectionBusy,
@@ -1641,6 +1656,7 @@ const MyMods = () => {
                 {displayMods.length > 0 && (
                   <TabsContent className='mt-0' value={ModFilter.Disabled}>
                     <ModsList
+                      onSelectMod={selectMod}
                       selection={modsListSelection}
                       groupActions={{
                         busy: selectionBusy,
