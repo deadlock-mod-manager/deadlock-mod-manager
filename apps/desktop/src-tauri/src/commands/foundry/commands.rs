@@ -6,7 +6,6 @@
 
 use std::io::Cursor;
 use std::path::PathBuf;
-use std::sync::{Arc, OnceLock};
 
 use base64::Engine;
 use image::codecs::png::PngEncoder;
@@ -15,13 +14,12 @@ use image::{ExtendedColorType, ImageEncoder};
 use crate::errors::Error;
 
 use super::analyze::{analyze_default_hero, analyze_vpk_path, decode_foundry_cards};
-use super::archive_cache::{clear_archive_cache, open_archive};
+use super::archive_cache::clear_archive_cache;
 use super::export::{ExportDestination, FoundryExportResult, export_workspace};
 use super::paint::{describe_paint_targets, paint_target};
 use super::sounds::find_mp3_payload;
-use super::staging::staged_base_game_vpk;
 use super::types::{
-  ExportDestinationKind, FoundryBuildResult, FoundryCardPreview, FoundryManifest, FoundryModel,
+  ExportDestinationKind, FoundryBuildResult, FoundryCardPreview, FoundryManifest,
   FoundryPaintResult, FoundryPaintTargetInfo, FoundryReplacementResult, FoundrySoundPreview,
   FoundryTexture, FoundryWorkspace, PaintTarget,
 };
@@ -318,57 +316,6 @@ pub async fn foundry_decode_cards(
   .map_err(|e| Error::InvalidInput(format!("card decode task failed: {e}")))?
 }
 
-fn model_decode_slot() -> &'static Arc<tokio::sync::Semaphore> {
-  static SLOT: OnceLock<Arc<tokio::sync::Semaphore>> = OnceLock::new();
-  SLOT.get_or_init(|| Arc::new(tokio::sync::Semaphore::new(1)))
-}
-
-/// Decode a `.vmesh_c`, or assemble every mesh a `.vmdl_c` references, into one
-/// GLB for the 3D preview.
-///
-/// Two things make the preview match the game rather than the raw file: the
-/// workspace shadows the archive, so a repaint shows immediately, and the model
-/// is stood in the base game's idle rest pose, so the hero holds its weapon
-/// instead of floating in bind pose. Animation tracks are loaded separately.
-#[tauri::command]
-pub async fn foundry_decode_model(
-  file_path: String,
-  entry_path: String,
-  workspace_root: Option<String>,
-) -> Result<FoundryModel, Error> {
-  let permit = model_decode_slot()
-    .clone()
-    .acquire_owned()
-    .await
-    .map_err(|e| Error::InvalidInput(format!("model decode slot closed: {e}")))?;
-  let vpk_path = PathBuf::from(&file_path);
-  tauri::async_runtime::spawn_blocking(move || {
-    let overlay = workspace_root.map(|root| PathBuf::from(root).join("files"));
-    let _permit = permit;
-    let base = staged_base_game_vpk()?
-      .map(|path| open_archive(&path, None))
-      .transpose()?;
-    let archive =
-      source2_model::vpk_extract::VpkArchive::open_with_overlay(&vpk_path, overlay.as_deref())
-        .map_err(|e| Error::InvalidInput(e.to_string()))?
-        .with_fallbacks(base.iter().cloned().collect());
-    let decoded = source2_model::decode_model_glb_from_archive(&archive, &entry_path)
-      .map_err(|e| Error::InvalidInput(format!("failed to decode model: {e}")))?;
-    let decoded = match base {
-      Some(base) => source2_model::pose_model_at_rest(decoded, &base, &archive, &entry_path),
-      None => decoded,
-    };
-    let b64 = base64::engine::general_purpose::STANDARD.encode(&decoded.glb);
-    Ok(FoundryModel {
-      vertex_count: decoded.vertex_count,
-      index_count: decoded.index_count,
-      data_url: format!("data:model/gltf-binary;base64,{b64}"),
-    })
-  })
-  .await
-  .map_err(|e| Error::InvalidInput(format!("model decode task failed: {e}")))?
-}
-
 /// Extract a browser-playable preview from a compiled Source 2 sound. Clips that
 /// aren't MP3-encoded have no preview; the caller treats that as "not playable"
 /// rather than an error worth surfacing.
@@ -398,23 +345,4 @@ pub async fn foundry_decode_sound(
   })
   .await
   .map_err(|e| Error::InvalidInput(format!("sound decode task failed: {e}")))?
-}
-
-#[cfg(test)]
-mod tests {
-  use super::*;
-
-  #[tokio::test]
-  async fn model_decode_waits_for_busy_slot_and_releases_cancelled_waiter() {
-    let slot = model_decode_slot();
-    let permit = slot.clone().acquire_owned().await.unwrap();
-    let decode = foundry_decode_model(String::new(), String::new(), None);
-    assert!(
-      tokio::time::timeout(std::time::Duration::from_millis(25), decode)
-        .await
-        .is_err()
-    );
-    drop(permit);
-    assert!(slot.clone().try_acquire_owned().is_ok());
-  }
 }

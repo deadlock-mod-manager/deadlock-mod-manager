@@ -190,6 +190,12 @@ pub fn run() {
         app.add_capability(capability)?;
       }
 
+      let model_assets = commands::foundry::ModelAssets::open()?;
+      app
+        .asset_protocol_scope()
+        .allow_directory(model_assets.directory(), false)?;
+      app.manage(std::sync::Arc::new(model_assets));
+
       state_file::inspect(&app.path().resolve(
         runtime_environment::state_store_path(),
         tauri::path::BaseDirectory::AppData,
@@ -347,6 +353,8 @@ pub fn run() {
       commands::foundry::foundry_decode_texture,
       commands::foundry::foundry_decode_cards,
       commands::foundry::foundry_decode_model,
+      commands::foundry::foundry_cancel_model_decode,
+      commands::foundry::foundry_release_model,
       commands::foundry::foundry_list_animations,
       commands::foundry::foundry_decode_animation,
       commands::foundry::foundry_decode_cloth,

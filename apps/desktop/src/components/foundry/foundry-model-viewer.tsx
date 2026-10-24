@@ -12,7 +12,9 @@ import { useTranslation } from "react-i18next";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { retainFoundryModel } from "@/lib/model-assets";
+import type { FoundryModel } from "@/types/foundry";
+import { loadPreviewModel } from "./model-loader";
 import {
   createPreviewClip,
   type PreviewPlayback,
@@ -55,7 +57,7 @@ export interface FoundryPreviewTint {
 }
 
 interface FoundryModelViewerProps {
-  dataUrl: string;
+  model: FoundryModel;
   label: string;
   /** Paints the matching materials on the GPU, without touching any file, so
    *  the paint tab shows a color the instant it is picked. */
@@ -195,6 +197,7 @@ const GIZMO_AXES: {
 ];
 
 const disposeObject = (root: THREE.Object3D) => {
+  const textures = new Set<THREE.Texture>();
   root.traverse((child) => {
     if (child instanceof THREE.Mesh) {
       child.geometry.dispose();
@@ -210,14 +213,24 @@ const disposeObject = (root: THREE.Object3D) => {
             material.metalnessMap,
             material.aoMap,
             material.emissiveMap,
-          ])
-            texture?.dispose();
+          ]) {
+            if (texture) textures.add(texture);
+          }
         }
         material.dispose();
       }
       if (child instanceof THREE.SkinnedMesh) child.skeleton.dispose();
     }
   });
+  const bitmaps = new Set<ImageBitmap>();
+  for (const texture of textures) {
+    texture.dispose();
+    const image = texture.source.data;
+    if (typeof ImageBitmap !== "undefined" && image instanceof ImageBitmap) {
+      bitmaps.add(image);
+    }
+  }
+  for (const bitmap of bitmaps) bitmap.close();
 };
 
 /** A round handle sprite (filled + labelled for the positive axis, faint ring
@@ -253,7 +266,7 @@ const makeHandleTexture = (
 };
 
 export const FoundryModelViewer = ({
-  dataUrl,
+  model,
   label,
   tint,
   playback,
@@ -309,7 +322,7 @@ export const FoundryModelViewer = ({
       activeEffectsRef.current = [];
       for (const effect of created) effect.dispose();
     };
-  }, [effects, loading, dataUrl]);
+  }, [effects, loading, model]);
   useEffect(() => {
     const root = modelRef.current;
     if (!root || loading) return;
@@ -333,7 +346,7 @@ export const FoundryModelViewer = ({
       mixer.uncacheRoot(root);
       mixerRef.current = null;
     };
-  }, [playback?.animation, loading, dataUrl]);
+  }, [playback?.animation, loading, model]);
   useEffect(() => {
     if (playback && mixerRef.current) {
       clockRef.current?.seek(playback.seek.time);
@@ -516,15 +529,14 @@ export const FoundryModelViewer = ({
       cameraControls.fit();
     };
 
-    const loader = new GLTFLoader();
-    loader.load(
-      dataUrl,
-      (gltf) => {
+    const loadController = new AbortController();
+    const releaseAsset = retainFoundryModel(model);
+    void loadPreviewModel(model, loadController.signal)
+      .then((gltf) => {
         if (disposed) {
           disposeObject(gltf.scene);
           return;
         }
-
         loadedRoot = gltf.scene;
         modelRef.current = gltf.scene;
         cloneSceneMaterials(gltf.scene);
@@ -533,17 +545,15 @@ export const FoundryModelViewer = ({
         outlines.setViewportHeight(Math.max(container.clientHeight, 1));
         applyLook();
         scene.add(gltf.scene);
-
         frameModel(gltf.scene);
         setLoading(false);
-      },
-      undefined,
-      () => {
+      })
+      .catch(() => {
         if (disposed) return;
         setLoading(false);
         setFailed(true);
-      },
-    );
+      })
+      .finally(releaseAsset);
 
     // Snap the camera to the clicked axis (instant, keeps the current distance).
     const raycaster = new THREE.Raycaster();
@@ -610,6 +620,7 @@ export const FoundryModelViewer = ({
 
     return () => {
       disposed = true;
+      loadController.abort();
       window.cancelAnimationFrame(frame);
       gizmoRenderer.domElement.removeEventListener("pointerdown", onGizmoClick);
       resizeObserver.disconnect();
@@ -650,7 +661,7 @@ export const FoundryModelViewer = ({
       gizmoRenderer.forceContextLoss();
       gizmoRenderer.domElement.remove();
     };
-  }, [dataUrl]);
+  }, [model]);
 
   useEffect(() => {
     applyPreviewTint(snapshotsRef.current, tint);

@@ -151,7 +151,7 @@ export const PreviewSurface = ({ preview, label }: PreviewSurfaceProps) => {
   return (
     <AnimatedModelPreview
       key={`${preview.data.filePath}:${preview.data.entryPath}`}
-      dataUrl={preview.data.dataUrl}
+      model={preview.data.model}
       label={label}
       source={preview.data}
     />

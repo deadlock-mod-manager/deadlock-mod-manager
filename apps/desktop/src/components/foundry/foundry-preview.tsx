@@ -34,7 +34,7 @@ export const FoundryPreview = () => {
   // their texture, and sounds have nothing to show.
   const showModel = activeTab === "assets" || activeTab === "paint";
   const imageUrl = activeTab === "cards" ? texturePreview.dataUrl : null;
-  const modelUrl = showModel ? modelPreview.dataUrl : null;
+  const model = showModel ? modelPreview.model : null;
   const decodingTexture = texturePreview.status === "loading";
   // A paint bake re-encodes several textures and then the model is decoded
   // again, so both halves of that wait get the same indicator.
@@ -67,13 +67,13 @@ export const FoundryPreview = () => {
     activeTab === "paint" && manifest
       ? getPrimaryModelPath(manifest)
       : selectedEntryPath;
-  if (modelUrl && !rebuildingModel && manifest && modelPath) {
+  if (model && !rebuildingModel && manifest && modelPath) {
     return (
       <div className='relative flex h-full w-full items-center justify-center overflow-hidden rounded-lg border bg-gradient-to-b from-muted/40 to-background'>
         <AnimatedModelPreview
           key={`${manifest.filePath}:${modelPath}`}
           source={{ filePath: manifest.filePath, entryPath: modelPath }}
-          dataUrl={modelUrl}
+          model={model}
           label={selectedEntryPath ?? t("foundry.preview.alt")}
           tint={previewTint}
         />

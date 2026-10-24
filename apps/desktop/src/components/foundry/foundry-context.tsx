@@ -27,6 +27,7 @@ import {
   revertFoundryFile,
 } from "@/lib/foundry";
 import logger from "@/lib/logger";
+import { releaseFoundryModel } from "@/lib/model-assets";
 import { usePersistedStore } from "@/lib/store";
 import type { FoundryPreviewTint } from "./foundry-model-viewer";
 import type {
@@ -34,6 +35,7 @@ import type {
   FoundryExportRequest,
   FoundryExportResult,
   FoundryManifest,
+  FoundryModel,
   FoundryPaint,
   FoundryPaintTargetId,
   FoundryPaintResult,
@@ -54,7 +56,7 @@ interface TexturePreview {
 
 interface ModelPreview {
   status: AsyncStatus;
-  dataUrl: string | null;
+  model: FoundryModel | null;
   vertexCount: number | null;
   indexCount: number | null;
 }
@@ -74,7 +76,7 @@ const IDLE_TEXTURE: TexturePreview = {
 
 const IDLE_MODEL: ModelPreview = {
   status: "idle",
-  dataUrl: null,
+  model: null,
   vertexCount: null,
   indexCount: null,
 };
@@ -188,12 +190,10 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
   // separate ones let them drift apart.
   const [editRevision, setEditRevision] = useState(0);
   const texturePreviewCacheRef = useRef<Map<string, TexturePreview>>(new Map());
-  const modelPreviewCacheRef = useRef<Map<string, ModelPreview>>(new Map());
   const soundCacheRef = useRef<Map<string, string>>(new Map());
 
   const clearCaches = useCallback(() => {
     texturePreviewCacheRef.current.clear();
-    modelPreviewCacheRef.current.clear();
     soundCacheRef.current.clear();
   }, []);
 
@@ -300,37 +300,31 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       setModelPreview(IDLE_MODEL);
       return;
     }
-    // The revision is part of the key: a repaint rewrites the textures the model
-    // samples, so the same model at a new revision is a different picture.
-    const cacheKey = `${filePath}\n${entryPath}\n${editRevision}`;
-    const cached = modelPreviewCacheRef.current.get(cacheKey);
-    if (cached) {
-      setModelPreview(cached);
-      return;
-    }
-    let cancelled = false;
+    const controller = new AbortController();
+    let ownedModel: FoundryModel | null = null;
     setModelPreview({ ...IDLE_MODEL, status: "loading" });
-    // Without the workspace the backend decodes the packed originals and no
-    // edit ever shows up in the preview.
-    decodeFoundryModel(filePath, entryPath, workspaceRoot)
+    decodeFoundryModel(filePath, entryPath, workspaceRoot, controller.signal)
       .then((model) => {
-        if (cancelled) return;
-        const preview: ModelPreview = {
+        if (controller.signal.aborted) {
+          releaseFoundryModel(model);
+          return;
+        }
+        ownedModel = model;
+        setModelPreview({
           status: "ready",
-          dataUrl: model.dataUrl,
+          model,
           vertexCount: model.vertexCount,
           indexCount: model.indexCount,
-        };
-        modelPreviewCacheRef.current.set(cacheKey, preview);
-        setModelPreview(preview);
+        });
       })
       .catch((err) => {
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
         logger.withError(err).error("[Foundry] Failed to decode model");
         setModelPreview({ ...IDLE_MODEL, status: "error" });
       });
     return () => {
-      cancelled = true;
+      controller.abort();
+      if (ownedModel) releaseFoundryModel(ownedModel);
     };
   }, [
     preview3dEnabled,
@@ -494,7 +488,6 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       if (!filePath) return;
       const cacheKey = `${filePath}\n${entryPath}`;
       texturePreviewCacheRef.current.delete(cacheKey);
-      modelPreviewCacheRef.current.delete(cacheKey);
       soundCacheRef.current.delete(cacheKey);
     },
     [filePath],
@@ -568,7 +561,6 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
         });
         setAppliedPaint((current) => ({ ...current, [target]: paint }));
         // A repaint changes what the model samples and what the cards show.
-        modelPreviewCacheRef.current.clear();
         texturePreviewCacheRef.current.clear();
         setEditRevision((revision) => revision + 1);
         return result;

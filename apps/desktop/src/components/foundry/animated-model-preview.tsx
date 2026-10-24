@@ -31,6 +31,7 @@ import {
   type PreviewSource,
 } from "@/lib/preview-animation";
 import { cachedFetch, STATS_TTL } from "@/lib/stats/cache";
+import type { FoundryModel } from "@/types/foundry";
 import type { PreviewParticles } from "@/types/generated/PreviewParticles";
 import {
   FoundryModelViewer,
@@ -47,7 +48,7 @@ import {
 } from "./viewer-transport";
 
 interface Props {
-  dataUrl: string;
+  model: FoundryModel;
   label: string;
   source: PreviewSource;
   tint?: FoundryPreviewTint | null;
@@ -57,12 +58,7 @@ const REST_POSE = "rest";
 
 const HERO_ABILITIES_KEY = "assets:hero-abilities";
 
-export const AnimatedModelPreview = ({
-  dataUrl,
-  label,
-  source,
-  tint,
-}: Props) => {
+export const AnimatedModelPreview = ({ model, label, source, tint }: Props) => {
   const { t } = useTranslation();
   const fullscreenRef = useRef<HTMLDivElement>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -190,7 +186,7 @@ export const AnimatedModelPreview = ({
       <div className='relative min-h-0 flex-1'>
         <FoundryModelViewer
           fullscreenTarget={fullscreenRef}
-          dataUrl={dataUrl}
+          model={model}
           label={label}
           tint={tint}
           effects={effects}
