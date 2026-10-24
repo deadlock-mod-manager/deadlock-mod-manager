@@ -26,6 +26,7 @@ import { isGameRunning } from "@/lib/tauri-commands";
 import type { FixModsResult } from "@/types/generated/FixModsResult";
 import type { ModHealthProgress } from "@/types/generated/ModHealthProgress";
 import type { ModHealthReport } from "@/types/generated/ModHealthReport";
+import type { RepairPlanProgress } from "@/types/generated/RepairPlanProgress";
 
 const MOD_HEALTH_CHECK_KEY = ["mod-health-check"];
 
@@ -36,6 +37,18 @@ export const useModHealthProgress = create<{
   progress: null,
   setProgress: (progress) => set({ progress }),
 }));
+
+/** Latest `repair-plan-progress` event; each wait clears it before it starts. */
+export const useRepairPlanProgress = create<{
+  progress: RepairPlanProgress | null;
+  setProgress: (progress: RepairPlanProgress | null) => void;
+}>()((set) => ({
+  progress: null,
+  setProgress: (progress) => set({ progress }),
+}));
+
+export const resetRepairPlanProgress = () =>
+  useRepairPlanProgress.getState().setProgress(null);
 
 export const useActiveProfileFolder = () =>
   usePersistedStore(

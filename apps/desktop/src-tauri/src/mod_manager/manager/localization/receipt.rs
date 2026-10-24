@@ -101,10 +101,16 @@ pub(super) fn write(
   resolutions: &[LocalizationResolution],
 ) -> Result<LocalizationOverlayApplyResult, Error> {
   let output = key.output_path.clone();
-  write_inner(plan, key, resolutions).map_err(|error| match error {
+  let started = std::time::Instant::now();
+  let result = write_inner(plan, key, resolutions).map_err(|error| match error {
     Error::Io(error) => Error::io_context("save compatibility files beside", &output, error),
     error => error,
-  })
+  })?;
+  log::info!(
+    "Wrote repair package in {} ms",
+    started.elapsed().as_millis()
+  );
+  Ok(result)
 }
 
 fn write_inner(

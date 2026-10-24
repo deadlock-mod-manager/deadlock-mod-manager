@@ -9,6 +9,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, OnceLock};
 use tempfile::TempDir;
+use ts_rs::TS;
 use vpkmanager::pack_directory;
 use vpkmanager::source2::kv3::{self, Encoding as Kv3Encoding, Seg as Kv3Seg, Value as Kv3Value};
 use vpkmanager::source2::resource::Resource;
@@ -435,6 +436,30 @@ pub struct LocalizationOverlayPlan {
   material_assets: BTreeMap<String, Vec<u8>>,
 }
 
+/// Sent as `repair-plan-progress` while a repair plan is built or written.
+/// `checked` counts the mods read so far out of `total`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct RepairPlanProgress {
+  pub stage: RepairPlanStage,
+  pub checked: u32,
+  pub total: u32,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub enum RepairPlanStage {
+  ReadingGame,
+  CheckingMods,
+  MergingData,
+  CheckingAnimations,
+  RepairingModels,
+  CheckingProblems,
+  WritingPackage,
+}
+
 impl LocalizationOverlayPlan {
   #[cfg(test)]
   pub fn build(
@@ -474,13 +499,37 @@ impl LocalizationOverlayPlan {
     )
   }
 
+  #[cfg(test)]
   pub(crate) fn build_learning_history(
+    citadel_dir: &Path,
+    mods: &[LocalizationModInput],
+    observed: VdataHistoryIndex,
+    version: Option<u32>,
+    enabled_mod_ids: &BTreeSet<String>,
+  ) -> Result<(Self, VdataHistoryIndex, bool), Error> {
+    Self::build_learning_history_reporting(
+      citadel_dir,
+      mods,
+      observed,
+      version,
+      enabled_mod_ids,
+      &|_| {},
+    )
+  }
+
+  pub(crate) fn build_learning_history_reporting(
     citadel_dir: &Path,
     mods: &[LocalizationModInput],
     mut observed: VdataHistoryIndex,
     version: Option<u32>,
     enabled_mod_ids: &BTreeSet<String>,
+    progress: &dyn Fn(RepairPlanProgress),
   ) -> Result<(Self, VdataHistoryIndex, bool), Error> {
+    progress(RepairPlanProgress {
+      stage: RepairPlanStage::ReadingGame,
+      checked: 0,
+      total: mods.len() as u32,
+    });
     let resources = resources::ResourceSnapshot::open(citadel_dir, mods)?;
     let (plan, changed) = Self::build_observing(
       &resources,
@@ -489,6 +538,7 @@ impl LocalizationOverlayPlan {
       version,
       enabled_mod_ids,
       &mut BTreeSet::new(),
+      progress,
     )?;
     Ok((plan, observed, changed))
   }
@@ -512,6 +562,7 @@ impl LocalizationOverlayPlan {
       version,
       &enabled_mod_ids,
       recorded,
+      &|_| {},
     )
   }
 
@@ -522,6 +573,7 @@ impl LocalizationOverlayPlan {
     version: Option<u32>,
     enabled_mod_ids: &BTreeSet<String>,
     recorded: &mut BTreeSet<String>,
+    progress: &dyn Fn(RepairPlanProgress),
   ) -> Result<(Self, bool), Error> {
     let scope = repair_scope::RepairScope::new(mods, enabled_mod_ids, resources);
     let mut changed = false;
@@ -560,12 +612,13 @@ impl LocalizationOverlayPlan {
       }
     }
     let history = VdataHistoryIndex::embedded().with_observed(observed);
-    let plan = Self::build_snapshot(
+    let plan = Self::build_snapshot_reporting(
       mods,
       HistoricalLocalizationIndex::embedded(),
       &history,
       resources,
       enabled_mod_ids,
+      progress,
     )?;
     Ok((plan, changed))
   }
@@ -587,6 +640,7 @@ impl LocalizationOverlayPlan {
     )
   }
 
+  #[cfg(test)]
   fn build_snapshot(
     mods: &[LocalizationModInput],
     historical_localization: &HistoricalLocalizationIndex,
@@ -594,6 +648,32 @@ impl LocalizationOverlayPlan {
     resources: &resources::ResourceSnapshot,
     enabled_mod_ids: &BTreeSet<String>,
   ) -> Result<Self, Error> {
+    Self::build_snapshot_reporting(
+      mods,
+      historical_localization,
+      history,
+      resources,
+      enabled_mod_ids,
+      &|_| {},
+    )
+  }
+
+  fn build_snapshot_reporting(
+    mods: &[LocalizationModInput],
+    historical_localization: &HistoricalLocalizationIndex,
+    history: &VdataHistoryIndex,
+    resources: &resources::ResourceSnapshot,
+    enabled_mod_ids: &BTreeSet<String>,
+    progress: &dyn Fn(RepairPlanProgress),
+  ) -> Result<Self, Error> {
+    let total = mods.len() as u32;
+    let report = |stage, checked| {
+      progress(RepairPlanProgress {
+        stage,
+        checked,
+        total,
+      })
+    };
     let repair_scope = repair_scope::RepairScope::new(mods, enabled_mod_ids, resources);
     let mut bases: BTreeMap<String, LocalizationFile> = BTreeMap::new();
     let mut groups: BTreeMap<String, CandidateGroup> = BTreeMap::new();
@@ -616,6 +696,7 @@ impl LocalizationOverlayPlan {
     let mut animation_inputs = animation_model_evidence::AnimationInputs::default();
 
     for (priority, mod_input) in mods.iter().enumerate() {
+      report(RepairPlanStage::CheckingMods, priority as u32);
       for vpk_path in &mod_input.vpks {
         scanned_vpks += 1;
         let archive = resources.archive(vpk_path);
@@ -864,6 +945,7 @@ impl LocalizationOverlayPlan {
       }
     }
 
+    report(RepairPlanStage::MergingData, total);
     let compiled_data =
       build_compiled_data(resources, compiled_sources, history, &mut file_findings)?;
     let vdata_compatibility::PreparedData {
@@ -873,6 +955,7 @@ impl LocalizationOverlayPlan {
     } = prepare_data(&compiled_data, &[], &file_findings)?;
     let mut asset_repairs = Vec::new();
     let mut asset_warnings = asset_compatibility::model_overlaps(resources, mods, &repair_scope);
+    report(RepairPlanStage::CheckingAnimations, total);
     let animation_skeletons = animation_skeleton::prepare(
       resources,
       &skeleton_sources,
@@ -896,6 +979,7 @@ impl LocalizationOverlayPlan {
       &mut asset_warnings,
     )?;
     let animated = animation_models.keys().cloned().collect();
+    report(RepairPlanStage::RepairingModels, total);
     // Convert old attachments first, so points restored from the game are not converted again.
     camera_attachment_frame::prepare(
       resources,
@@ -945,6 +1029,7 @@ impl LocalizationOverlayPlan {
       .chain(&material_assets)
       .map(|(path, bytes)| (path.as_str(), bytes.as_slice()))
       .collect();
+    report(RepairPlanStage::CheckingProblems, total);
     asset_warnings.extend(asset_compatibility::analyze(
       resources,
       &asset_sources,

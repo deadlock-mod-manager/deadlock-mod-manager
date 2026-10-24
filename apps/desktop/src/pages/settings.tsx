@@ -29,6 +29,7 @@ import {
   Globe,
   InfoIcon,
   MonitorIcon,
+  PackageIcon,
   PaletteIcon,
   PlugIcon,
   PlusIcon,
@@ -622,6 +623,11 @@ const CustomSettings = ({ value }: { value?: string }) => {
                   label={t("settings.game")}
                   value='game'
                 />
+                <SettingsNavItem
+                  icon={PackageIcon}
+                  label={t("settings.mods")}
+                  value='mods'
+                />
               </SettingsNavGroup>
 
               <SettingsNavGroup label={t("settings.label.application")}>
@@ -760,20 +766,12 @@ const CustomSettings = ({ value }: { value?: string }) => {
             </Section>
 
             <Section
-              description={t("settings.downloadCacheLocationDescription")}
-              searchId='download-cache-location'
-              title={t("settings.downloadCacheLocation")}>
-              <DownloadCacheSettings />
-            </Section>
-
-            <Section
               description={t("settings.gameConfigDescription")}
               searchId='game-config'
               title={t("settings.gameConfigManagement")}>
               <div className='grid grid-cols-1 gap-4'>
                 <GameInfoManagement />
                 <AutoResetGameinfoToggle />
-                <AutoFixModsToggle />
               </div>
             </Section>
 
@@ -795,6 +793,79 @@ const CustomSettings = ({ value }: { value?: string }) => {
             </Section>
           </TabsContent>
 
+          <TabsContent className='mt-0 space-y-4' value='mods'>
+            <Section
+              description={t("settings.modInstallingSectionDescription")}
+              searchId='mod-installing'
+              title={t("settings.modInstallingSectionTitle")}>
+              <div className='grid grid-cols-1 gap-4'>
+                <SystemSettings
+                  ids={["auto-reapply-mods", "hero-conflict-warning"]}
+                />
+              </div>
+            </Section>
+
+            <Section
+              description={t("settings.modRepairSectionDescription")}
+              searchId='mod-repair'
+              title={t("settings.modRepairSectionTitle")}>
+              <AutoFixModsToggle />
+            </Section>
+
+            <Section
+              description={t("settings.heroSkinsDescription")}
+              searchId='hero-skins'
+              title={t("settings.heroSkins")}>
+              <HeroSkinsSettings />
+            </Section>
+
+            <Section
+              description={t("settings.modBrowsingSectionDescription")}
+              searchId='mod-browsing'
+              title={t("settings.modBrowsingSectionTitle")}>
+              <div className='grid grid-cols-1 gap-4'>
+                <SettingRow
+                  description={t("settings.defaultSortDescription")}
+                  title={t("settings.defaultSort")}>
+                  <Select
+                    onValueChange={(v) => setDefaultSort(v as SortType)}
+                    value={defaultSort}>
+                    <SelectTrigger
+                      aria-label={t("settings.defaultSort")}
+                      className='w-36'>
+                      <SelectValue
+                        placeholder={t("settings.selectDefaultSort")}
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {Object.values(SortType).map((type) => (
+                          <SelectItem
+                            className='capitalize'
+                            key={type}
+                            value={type}>
+                            {t(
+                              `sorting.${type.replace(/\s+/g, "").toLowerCase()}`,
+                            )}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </SettingRow>
+                <SystemSettings ids={["mods-store-pagination"]} />
+                <ModUpdateBadgesToggle />
+              </div>
+            </Section>
+
+            <Section
+              description={t("settings.downloadCacheLocationDescription")}
+              searchId='download-cache-location'
+              title={t("settings.downloadCacheLocation")}>
+              <DownloadCacheSettings />
+            </Section>
+          </TabsContent>
+
           <TabsContent className='mt-0 space-y-4' value='discord'>
             <Section
               description={t("gamePresence.settingsDescription")}
@@ -809,7 +880,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
               searchId='system'
               title={t("settings.systemSettings")}>
               <div className='grid grid-cols-1 gap-4'>
-                <SystemSettings />
+                <SystemSettings ids={["launch-vanilla-no-args"]} />
                 <TrayToggles />
                 <AutoUpdateToggle />
                 <UpdateChannelSelect />
@@ -834,8 +905,6 @@ const CustomSettings = ({ value }: { value?: string }) => {
 
                 <VolumeControl />
 
-                <ModUpdateBadgesToggle />
-
                 <FeatureTipsToggle />
 
                 <ModelPreviewToggle />
@@ -849,46 +918,6 @@ const CustomSettings = ({ value }: { value?: string }) => {
               searchId='language'
               title={t("settings.languageSettings")}>
               <LanguageSettings />
-            </Section>
-
-            <Section
-              description={t("settings.defaultSortDescription")}
-              searchId='default-sort'
-              title={t("settings.defaultSortValue")}>
-              <SettingRow title={t("settings.defaultSort")}>
-                <Select
-                  onValueChange={(v) => setDefaultSort(v as SortType)}
-                  value={defaultSort}>
-                  <SelectTrigger
-                    aria-label={t("settings.defaultSort")}
-                    className='w-36'>
-                    <SelectValue
-                      placeholder={t("settings.selectDefaultSort")}
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {Object.values(SortType).map((type) => (
-                        <SelectItem
-                          className='capitalize'
-                          key={type}
-                          value={type}>
-                          {t(
-                            `sorting.${type.replace(/\s+/g, "").toLowerCase()}`,
-                          )}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </SettingRow>
-            </Section>
-
-            <Section
-              description={t("settings.heroSkinsDescription")}
-              searchId='hero-skins'
-              title={t("settings.heroSkins")}>
-              <HeroSkinsSettings />
             </Section>
           </TabsContent>
 

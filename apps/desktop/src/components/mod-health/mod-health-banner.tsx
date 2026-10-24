@@ -1,6 +1,7 @@
 import { Button } from "@deadlock-mods/ui/components/button";
 import { Progress } from "@deadlock-mods/ui/components/progress";
 import { Loader2, Wrench } from "@deadlock-mods/ui/icons";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -9,6 +10,8 @@ import {
   useIsCheckingModHealth,
   useModHealthProgress,
   useModHealthReport,
+  resetRepairPlanProgress,
+  useRepairPlanProgress,
 } from "@/hooks/use-mod-health";
 import {
   fixableModIds,
@@ -16,9 +19,12 @@ import {
   isFixableStatus,
   isHeldBack,
 } from "@/lib/mods/mod-health";
+import { modHealthQueryKey } from "@/lib/mods/mod-health-queries";
 import { usePersistedStore } from "@/lib/store";
+import type { ModHealthReport } from "@/types/generated/ModHealthReport";
 import { ModStatus } from "@/types/mods";
 import { ModHealthDialog } from "./mod-health-dialog";
+import { RepairPlanProgressStatus } from "./repair-plan-progress";
 
 export const ModHealthBanner = ({
   profileFolder,
@@ -26,12 +32,14 @@ export const ModHealthBanner = ({
   profileFolder: string | null;
 }) => {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const localMods = usePersistedStore((state) => state.localMods);
   const report = useModHealthReport(profileFolder);
   const isChecking = useIsCheckingModHealth();
   const progress = useModHealthProgress((state) => state.progress);
   const gameRunning = useGameRunning();
   const fix = useFixMods();
+  const planStarted = useRepairPlanProgress((state) => state.progress !== null);
   // Null when closed; a list of ids narrows the details to those mods.
   const [details, setDetails] = useState<readonly string[] | "all" | null>(
     null,
@@ -51,7 +59,11 @@ export const ModHealthBanner = ({
         isFixableStatus(health.status) && installedIds.has(health.modId),
     ) ?? [];
   const count = fixable.length;
-  const heldBackIds = fixable.filter(isHeldBack).map((health) => health.modId);
+  const heldBackIn = (data: ModHealthReport | undefined) =>
+    data?.mods
+      .filter((health) => isHeldBack(health) && installedIds.has(health.modId))
+      .map((health) => health.modId) ?? [];
+  const heldBackIds = heldBackIn(report.data);
   // Partly fixable mods still need an author update after fixing, so the
   // message says the fix may only be partial.
   const somePartly = fixable.some(
@@ -60,6 +72,32 @@ export const ModHealthBanner = ({
   const messageKey = gameUpdatedSinceLastCheck(report.data)
     ? "gameUpdated"
     : "olderVersion";
+  // Held-back mods need a look before fixing, so the review opens once the
+  // safe fixes are done. The fix can repair them too when they were chosen
+  // before, so the refreshed report decides which still need it.
+  const fixAll = () => {
+    const review = (ids: string[]) => {
+      if (ids.length > 0) setDetails(ids);
+    };
+    if (fixableIds.length === 0) {
+      review(heldBackIds);
+      return;
+    }
+    resetRepairPlanProgress();
+    fix.mutate(
+      { profileFolder, modIds: fixableIds },
+      {
+        onSuccess: () =>
+          review(
+            heldBackIn(
+              queryClient.getQueryData<ModHealthReport>(
+                modHealthQueryKey(profileFolder),
+              ),
+            ),
+          ),
+      },
+    );
+  };
   const checking =
     isChecking && progress && progress.total > 0 ? progress : null;
   // Fixing from the open dialog can empty the banner; the dialog stays open.
@@ -116,7 +154,15 @@ export const ModHealthBanner = ({
                   {t("modHealth.closeGame")}
                 </p>
               ) : null}
-              {heldBackIds.length > 0 ? (
+              {fix.isPending && planStarted ? (
+                <RepairPlanProgressStatus className='mt-1 max-w-sm' />
+              ) : fix.isPending ? (
+                <p
+                  className='text-muted-foreground text-xs leading-5'
+                  role='status'>
+                  {t("modHealth.banner.preparing")}
+                </p>
+              ) : heldBackIds.length > 0 ? (
                 <p className='text-muted-foreground text-xs leading-5'>
                   {t("modHealth.banner.crashRisk", {
                     count: heldBackIds.length,
@@ -132,26 +178,14 @@ export const ModHealthBanner = ({
                   {checkedLabel}
                 </span>
               ) : null}
-              {fixableIds.length > 0 ? (
-                <Button
-                  size='sm'
-                  disabled={gameRunning}
-                  isLoading={fix.isPending}
-                  icon={<Wrench className='h-4 w-4' />}
-                  onClick={() =>
-                    fix.mutate({ profileFolder, modIds: fixableIds })
-                  }>
-                  {t("modHealth.banner.fix", { count: fixableIds.length })}
-                </Button>
-              ) : null}
-              {heldBackIds.length > 0 ? (
-                <Button
-                  size='sm'
-                  variant={fixableIds.length > 0 ? "outline" : "default"}
-                  onClick={() => setDetails(heldBackIds)}>
-                  {t("modHealth.banner.review", { count: heldBackIds.length })}
-                </Button>
-              ) : null}
+              <Button
+                size='sm'
+                disabled={gameRunning || fix.isPending}
+                isLoading={fix.isPending}
+                icon={<Wrench className='h-4 w-4' />}
+                onClick={fixAll}>
+                {t("modHealth.banner.fix", { count })}
+              </Button>
               <Button
                 size='sm'
                 variant='outline'

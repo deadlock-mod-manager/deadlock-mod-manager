@@ -71,7 +71,7 @@ fn measure_real_profile_merge_and_apply() {
   let (_, inputs, mut key) = manager.localization_overlay_inputs(None).unwrap();
   let input_ms = started.elapsed().as_secs_f64() * 1000.0;
   let started = Instant::now();
-  let plan = build_overlay_plan(&citadel, &inputs, &mut key).unwrap();
+  let plan = build_overlay_plan(&citadel, &inputs, &mut key, &|_| {}).unwrap();
   let analysis_ms = started.elapsed().as_secs_f64() * 1000.0;
   assert!(!requires_review(&plan.analysis));
   let analysis = serde_json::to_value(&plan.analysis).unwrap();

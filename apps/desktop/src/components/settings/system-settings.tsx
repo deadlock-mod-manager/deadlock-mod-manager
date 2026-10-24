@@ -41,7 +41,7 @@ const getSystemSettings = (
   },
 ];
 
-const SystemSettings = () => {
+const SystemSettings = ({ ids }: { ids: readonly string[] }) => {
   const { t } = useTranslation();
   const { settings, toggleSetting } = usePersistedStore();
   const isLinux = platform() === "linux";
@@ -52,7 +52,9 @@ const SystemSettings = () => {
     );
   }, [settings]);
 
-  const systemSettings = getSystemSettings(t, isLinux);
+  const systemSettings = getSystemSettings(t, isLinux).filter((def) =>
+    ids.includes(def.id),
+  );
 
   return (
     <>

@@ -2505,11 +2505,20 @@
       "seeDetails": "",
       "crashRisk_one": "",
       "crashRisk_other": "",
-      "review_one": "",
-      "review_other": "",
       "checkingTitle": "",
       "checkingDescription": "",
-      "checkingCount": ""
+      "checkingCount": "",
+      "preparing": ""
+    },
+    "planProgress": {
+      "readingGame": "",
+      "checkingMods": "",
+      "mergingData": "",
+      "checkingAnimations": "",
+      "repairingModels": "",
+      "checkingProblems": "",
+      "writingPackage": "",
+      "mayTakeAMoment": ""
     },
     "dialog": {
       "title": "",
@@ -3176,6 +3185,13 @@
     "gameGuardDescription": "",
     "gameGuardSectionTitle": "",
     "gameGuardSectionDescription": "",
+    "modRepairSectionTitle": "",
+    "modRepairSectionDescription": "",
+    "mods": "",
+    "modInstallingSectionTitle": "",
+    "modInstallingSectionDescription": "",
+    "modBrowsingSectionTitle": "",
+    "modBrowsingSectionDescription": "",
     "gameGuardSyncFailed": "",
     "troubleshooting": "",
     "troubleshootingDescription": "",

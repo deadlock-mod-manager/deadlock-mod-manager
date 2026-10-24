@@ -3,7 +3,7 @@ use crate::errors::Error;
 use crate::mod_manager::localization_overlay::{
   LocalizationOverlayAnalysis, LocalizationOverlayApplyResult, LocalizationResolution,
 };
-use crate::mod_manager::mod_health::{FixModsResult, ModHealthReport};
+use crate::mod_manager::mod_health::{FixModsResult, FixModsStatus, ModHealthReport};
 use std::sync::Mutex;
 use tauri::Emitter;
 
@@ -44,14 +44,27 @@ pub async fn check_mod_health(
 
 #[tauri::command]
 pub async fn fix_mods(
+  app_handle: AppHandle,
   profile_folder: Option<String>,
   mod_ids: Vec<String>,
 ) -> Result<FixModsResult, Error> {
+  // The plan build is the slow part, so it runs without the mod manager lock
+  // and library actions stay responsive meanwhile.
   tauri::async_runtime::spawn_blocking(move || {
-    MANAGER
-      .lock()
-      .map_err(|_| Error::BackgroundTaskFailed("Mod manager is unavailable".into()))?
-      .fix_mods(profile_folder, mod_ids)
+    let manager = || {
+      MANAGER
+        .lock()
+        .map_err(|_| Error::BackgroundTaskFailed("Mod manager is unavailable".into()))
+    };
+    let Some(refresh) = manager()?.begin_fix_mods(profile_folder.as_deref(), &mod_ids)? else {
+      return Ok(FixModsResult {
+        status: FixModsStatus::Applied,
+      });
+    };
+    let (refresh, plan) = refresh.build(&|progress| {
+      app_handle.emit("repair-plan-progress", progress).ok();
+    })?;
+    manager()?.finish_fix_mods(refresh, plan)
   })
   .await
   .map_err(|error| Error::BackgroundTaskFailed(format!("Could not fix mods: {error}")))?
@@ -79,7 +92,7 @@ pub async fn refresh_mod_fixes(profile_folder: Option<String>) -> Result<(), Err
     let Some(refresh) = manager()?.begin_mod_fix_refresh(profile_folder.as_deref())? else {
       return Ok(());
     };
-    let (refresh, plan) = refresh.build()?;
+    let (refresh, plan) = refresh.build(&|_| {})?;
     manager()?.finish_mod_fix_refresh(refresh, plan)
   })
   .await

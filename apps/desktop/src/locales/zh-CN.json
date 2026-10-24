@@ -2505,11 +2505,20 @@
       "seeDetails": "",
       "crashRisk_one": "",
       "crashRisk_other": "",
-      "review_one": "",
-      "review_other": "",
       "checkingTitle": "",
       "checkingDescription": "",
-      "checkingCount": ""
+      "checkingCount": "",
+      "preparing": ""
+    },
+    "planProgress": {
+      "readingGame": "",
+      "checkingMods": "",
+      "mergingData": "",
+      "checkingAnimations": "",
+      "repairingModels": "",
+      "checkingProblems": "",
+      "writingPackage": "",
+      "mayTakeAMoment": ""
     },
     "dialog": {
       "title": "",
@@ -3176,6 +3185,13 @@
     "gameGuardDescription": "游戏打开时拒绝安装、移除或调整模组顺序，因为 Deadlock 会占用这些文件，更改进行到一半可能破坏你的加载顺序。出现警告时，你仍可为单次操作强行继续。",
     "gameGuardSectionTitle": "游玩时的保护",
     "gameGuardSectionDescription": "当 Deadlock 正在运行时更改模组，模组管理器会如何处理。",
+    "modRepairSectionTitle": "",
+    "modRepairSectionDescription": "",
+    "mods": "",
+    "modInstallingSectionTitle": "",
+    "modInstallingSectionDescription": "",
+    "modBrowsingSectionTitle": "",
+    "modBrowsingSectionDescription": "",
     "gameGuardSyncFailed": "无法更改该保护设置，请重试。",
     "troubleshooting": "疑难排查",
     "troubleshootingDescription": "模组、配置文件或统计数据加载不出来？检查是哪个连接或服务出了问题。",

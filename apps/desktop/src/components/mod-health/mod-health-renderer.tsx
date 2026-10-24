@@ -7,6 +7,7 @@ import {
   useModHealthProgress,
   useModHealthReport,
   useRefreshModFixes,
+  useRepairPlanProgress,
 } from "@/hooks/use-mod-health";
 import { gameUpdatedSinceLastCheck } from "@/lib/mods/mod-health";
 import {
@@ -16,6 +17,7 @@ import {
 import { createModHealthRefreshQueue } from "@/lib/mods/mod-health-refresh";
 import { usePersistedStore } from "@/lib/store";
 import type { ModHealthProgress } from "@/types/generated/ModHealthProgress";
+import type { RepairPlanProgress } from "@/types/generated/RepairPlanProgress";
 import { ModStatus } from "@/types/mods";
 
 /**
@@ -53,6 +55,16 @@ export const ModHealthRenderer = () => {
       void unlisten.then((stop) => stop());
     };
   }, [setProgress]);
+
+  useEffect(() => {
+    const unlisten = listen<RepairPlanProgress>(
+      "repair-plan-progress",
+      (event) => useRepairPlanProgress.getState().setProgress(event.payload),
+    );
+    return () => {
+      void unlisten.then((stop) => stop());
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;

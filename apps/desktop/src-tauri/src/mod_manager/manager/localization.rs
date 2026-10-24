@@ -2,7 +2,7 @@ use super::*;
 use crate::mod_manager::localization_overlay::{
   LocalizationInputWarning, LocalizationModInput, LocalizationOverlayAnalysis,
   LocalizationOverlayApplyResult, LocalizationOverlayPlan, LocalizationResolution,
-  OVERLAY_VPK_NAME, UnmanagedVpk,
+  OVERLAY_VPK_NAME, RepairPlanProgress, RepairPlanStage, UnmanagedVpk,
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -15,7 +15,7 @@ mod performance;
 mod preference;
 mod receipt;
 use std::fs;
-use std::time::SystemTime;
+use std::time::{Instant, SystemTime};
 
 const OVERLAY_DIRECTORY_PREFIX: &str = "dmm_localization_";
 
@@ -58,8 +58,11 @@ pub struct ModFixRefresh {
 }
 
 impl ModFixRefresh {
-  pub fn build(mut self) -> Result<(Self, LocalizationOverlayPlan), Error> {
-    let plan = build_overlay_plan(&self.citadel, &self.inputs, &mut self.key)?;
+  pub fn build(
+    mut self,
+    progress: &dyn Fn(RepairPlanProgress),
+  ) -> Result<(Self, LocalizationOverlayPlan), Error> {
+    let plan = build_overlay_plan(&self.citadel, &self.inputs, &mut self.key, progress)?;
     Ok((self, plan))
   }
 }
@@ -254,7 +257,7 @@ impl ModManager {
       .map(|cached| cached.plan);
     let plan = match cached_plan {
       Some(plan) => plan,
-      None => build_overlay_plan(&citadel_dir, &inputs, &mut key)?,
+      None => build_overlay_plan(&citadel_dir, &inputs, &mut key, &self.plan_progress())?,
     };
     let analysis = plan.analyze(resolutions);
     self
@@ -316,7 +319,7 @@ impl ModManager {
         log::debug!("Reusing analyzed shared-data plan for overlay apply");
         plan
       }
-      None => build_overlay_plan(&citadel_dir, &inputs, &mut key)?,
+      None => build_overlay_plan(&citadel_dir, &inputs, &mut key, &self.plan_progress())?,
     };
     let (_, _, current_key) = self.localization_overlay_inputs(profile_folder)?;
     if current_key != key || input_fingerprint(&key)? != expected_fingerprint {
@@ -324,9 +327,11 @@ impl ModManager {
         "Mods or game files changed while preparing compatibility fixes. Reopen the review before applying changes".into()
       ));
     }
+    self.report_plan_stage(RepairPlanStage::WritingPackage);
     receipt::write(&plan, key, resolutions)
   }
 
+  #[cfg(test)]
   pub(super) fn ensure_localization_overlay_for_launch(
     &self,
     profile_folder: Option<&str>,
@@ -358,7 +363,7 @@ impl ModManager {
     before_rebuild();
     let reviewed = previous.filter(|receipt| receipt.key == key);
     receipt::remove(&key.output_path)?;
-    let plan = build_overlay_plan(&citadel, &inputs, &mut key)?;
+    let plan = build_overlay_plan(&citadel, &inputs, &mut key, &|_| {})?;
     let reviewed = reviewed.filter(|receipt| receipt.key == key);
     let (_, _, current_key) = self.localization_overlay_inputs(profile_folder)?;
     if current_key != key {
@@ -403,35 +408,50 @@ impl ModManager {
     refresh: ModFixRefresh,
     plan: LocalizationOverlayPlan,
   ) -> Result<(), Error> {
+    if self.is_game_running()? {
+      return Ok(());
+    }
+    match self.commit_mod_fix_refresh(refresh, plan) {
+      Ok(true) => Ok(()),
+      Ok(false) => {
+        log::info!("Mods changed while rebuilding the repair package; dropping the stale plan");
+        Ok(())
+      }
+      Err(Error::ModDataReviewRequired) => {
+        log::info!("Repair package needs review; launch will prepare it");
+        Ok(())
+      }
+      Err(error) => Err(error),
+    }
+  }
+
+  /// Writes a plan built without the lock. Returns false when the mods changed
+  /// during the build, so the plan no longer matches them.
+  fn commit_mod_fix_refresh(
+    &self,
+    refresh: ModFixRefresh,
+    plan: LocalizationOverlayPlan,
+  ) -> Result<bool, Error> {
     let ModFixRefresh {
       profile_folder,
       key,
       ..
     } = refresh;
     let profile_folder = profile_folder.as_deref();
-    if self.is_game_running()? {
-      return Ok(());
-    }
     let (_, _, current_key) = self.localization_overlay_inputs(profile_folder)?;
     if current_key != key {
-      log::info!("Mods changed while rebuilding the repair package; dropping the stale plan");
-      return Ok(());
+      return Ok(false);
     }
     let previous = receipt::load(&key.output_path)?;
     if let Some(previous) = &previous
       && previous.is_current(&key)?
     {
-      return Ok(());
+      return Ok(true);
     }
     let reviewed = previous.filter(|receipt| receipt.key == key);
     receipt::remove(&key.output_path)?;
-    match self.commit_overlay_plan(profile_folder, key, plan, reviewed) {
-      Err(Error::ModDataReviewRequired) => {
-        log::info!("Repair package needs review; launch will prepare it");
-        Ok(())
-      }
-      result => result,
-    }
+    self.commit_overlay_plan(profile_folder, key, plan, reviewed)?;
+    Ok(true)
   }
 
   fn commit_overlay_plan(
@@ -463,6 +483,24 @@ impl ModManager {
       result.applied_compiled_rows
     );
     Ok(())
+  }
+
+  /// Sends repair plan progress to the window while the player waits on it.
+  fn plan_progress(&self) -> impl Fn(RepairPlanProgress) + '_ {
+    move |progress| {
+      use tauri::Emitter;
+      if let Some(app) = &self.app_handle {
+        app.emit("repair-plan-progress", progress).ok();
+      }
+    }
+  }
+
+  pub(super) fn report_plan_stage(&self, stage: RepairPlanStage) {
+    self.plan_progress()(RepairPlanProgress {
+      stage,
+      checked: 0,
+      total: 0,
+    });
   }
 
   fn notify_compatibility_changed(&self, profile_folder: Option<&str>) {
@@ -529,14 +567,23 @@ fn build_overlay_plan(
   citadel: &Path,
   inputs: &[LocalizationModInput],
   key: &mut LocalizationOverlayPlanKey,
+  progress: &dyn Fn(RepairPlanProgress),
 ) -> Result<LocalizationOverlayPlan, Error> {
-  let (mut plan, observed, changed) = LocalizationOverlayPlan::build_learning_history(
+  let started = Instant::now();
+  let (mut plan, observed, changed) = LocalizationOverlayPlan::build_learning_history_reporting(
     citadel,
     inputs,
     history::load(citadel),
     history::version(citadel),
     &key.compatibility_mod_ids,
+    progress,
   )?;
+  log::info!(
+    "Built repair plan for {} mods ({} repaired) in {} ms",
+    inputs.len(),
+    key.compatibility_mod_ids.len(),
+    started.elapsed().as_millis()
+  );
   if changed {
     // Learning is reproducible from these stamped inputs. A cache write failure
     // must not prevent analysis; the next plan can learn the same snapshot again.
@@ -1659,7 +1706,7 @@ Game core
     profile: Option<&str>,
   ) -> Result<(), Error> {
     if let Some(refresh) = manager.begin_mod_fix_refresh(profile)? {
-      let (refresh, plan) = refresh.build()?;
+      let (refresh, plan) = refresh.build(&|_| {})?;
       manager.finish_mod_fix_refresh(refresh, plan)?;
     }
     Ok(())
@@ -2239,7 +2286,7 @@ Game core
       .begin_mod_fix_refresh(None)
       .unwrap()
       .unwrap()
-      .build()
+      .build(&|_| {})
       .unwrap();
     // The library changes while the plan builds without the manager lock.
     write_test_vpk(&base.join("pak02_dir.vpk"));
@@ -2263,7 +2310,7 @@ Game core
       .begin_mod_fix_refresh(None)
       .unwrap()
       .unwrap()
-      .build()
+      .build(&|_| {})
       .unwrap();
     manager.finish_mod_fix_refresh(refresh, plan).unwrap();
     assert!(manager.begin_mod_fix_refresh(None).unwrap().is_none());
@@ -2292,7 +2339,7 @@ Game core
       .begin_mod_fix_refresh(None)
       .unwrap()
       .unwrap()
-      .build()
+      .build(&|_| {})
       .unwrap();
     // Launch takes the manager lock while the refresh builds without it.
     manager
