@@ -41,6 +41,19 @@ export const deadlockItemSchema = z.object({
   shop_image_webp: z.string().optional(),
 });
 
+/** Only the fields the model preview reads to put a hero's abilities on screen. */
+export const heroLoadoutSchema = z.object({
+  models: z.object({ hero_select: z.string().optional() }).default({}),
+  items: z.record(z.string(), z.string()).default({}),
+});
+
+export const abilityAssetSchema = z.object({
+  class_name: z.string(),
+  name: z.string(),
+  image: z.string().nullish(),
+  image_webp: z.string().nullish(),
+});
+
 export const rankAssetSchema = z.object({
   tier: z.number(),
   name: z.string(),
