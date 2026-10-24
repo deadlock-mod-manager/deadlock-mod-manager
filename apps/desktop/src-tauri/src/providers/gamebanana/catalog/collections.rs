@@ -174,7 +174,7 @@ impl Catalog {
     self
       .pool
       .run(move |connection| {
-        connection.transaction::<_, Error, _>(|connection| {
+        connection.immediate_transaction::<_, Error, _>(|connection| {
           for record in &records {
             let row = NewCollection {
               collection_id: &record.collection_id,
@@ -255,7 +255,7 @@ impl Catalog {
     self
       .pool
       .run(move |connection| {
-        connection.transaction::<_, Error, _>(|connection| {
+        connection.immediate_transaction::<_, Error, _>(|connection| {
           for (collection_id, description) in descriptions {
             let target = collection::table.find(collection_id.to_string());
             diesel::update(target)
@@ -322,7 +322,7 @@ impl Catalog {
     self
       .pool
       .run(move |connection| {
-        connection.transaction::<_, Error, _>(|connection| {
+        connection.immediate_transaction::<_, Error, _>(|connection| {
           diesel::delete(
             collection_item::table.filter(collection_item::collection_id.eq(&stale.collection_id)),
           )

@@ -144,7 +144,7 @@ impl Catalog {
     self
       .pool
       .run(move |connection| {
-        connection.transaction::<_, Error, _>(|connection| {
+        connection.immediate_transaction::<_, Error, _>(|connection| {
           for record in records {
             upsert_record(connection, record)?;
           }
@@ -196,7 +196,7 @@ impl Catalog {
     self
       .pool
       .run(move |connection| {
-        connection.transaction::<_, Error, _>(|connection| {
+        connection.immediate_transaction::<_, Error, _>(|connection| {
           let incomplete_snapshot = sync_state::table
             .find(INCOMPLETE_SNAPSHOT)
             .select(sync_state::value)
@@ -300,7 +300,7 @@ impl Catalog {
     self
       .pool
       .run(move |connection| {
-        connection.transaction::<_, Error, _>(|connection| {
+        connection.immediate_transaction::<_, Error, _>(|connection| {
           for submission in submissions {
             diesel::update(submission::table.find((
               provider_name(submission.provider),
@@ -373,7 +373,7 @@ impl Catalog {
     self
       .pool
       .run(move |connection| {
-        connection.transaction::<_, Error, _>(|connection| {
+        connection.immediate_transaction::<_, Error, _>(|connection| {
           for record in records {
             upsert_record(connection, record)?;
           }
@@ -457,7 +457,7 @@ impl Catalog {
     self
       .pool
       .run(|connection| {
-        connection.transaction::<_, Error, _>(|connection| {
+        connection.immediate_transaction::<_, Error, _>(|connection| {
           diesel::delete(submission::table).execute(connection)?;
           diesel::delete(super::schema::collection::table).execute(connection)?;
           diesel::delete(super::schema::update_cache::table).execute(connection)?;
@@ -473,7 +473,7 @@ impl Catalog {
     self
       .pool
       .run(|connection| {
-        connection.transaction::<_, Error, _>(|connection| {
+        connection.immediate_transaction::<_, Error, _>(|connection| {
           diesel::delete(sync_state::table).execute(connection)?;
           diesel::update(sync_cursor::table)
             .set((

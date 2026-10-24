@@ -51,6 +51,7 @@ export const useCatalogSyncMutation = (forceRefresh = false) => {
       void queryClient.invalidateQueries({ queryKey: ["mods"] });
       void queryClient.invalidateQueries({ queryKey: ["mod"] });
       void queryClient.invalidateQueries({ queryKey: COLLECTIONS_QUERY_KEY });
+      void queryClient.invalidateQueries({ queryKey: ["check-mod-updates"] });
     },
     onError: (error) => {
       logger.withError(error).warn("GameBanana catalog refresh failed");
