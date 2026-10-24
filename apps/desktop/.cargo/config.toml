@@ -1,0 +1,6 @@
+# Statically link the MSVC runtime. unrar_sys compiles C++, so a dynamic CRT
+# makes the exe import MSVCP140.dll and fail to start on machines without the
+# Visual C++ Redistributable. Lives at the workspace root so it applies whether
+# cargo runs from here or from src-tauri.
+[target.'cfg(all(windows, target_env = "msvc"))']
+rustflags = ["-C", "target-feature=+crt-static"]
