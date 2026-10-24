@@ -398,6 +398,16 @@ fn parse_file_entries(entries: Vec<serde_json::Value>) -> Vec<SubmissionFile> {
 }
 
 #[derive(Debug, Clone, Deserialize)]
+pub struct MemberProfile {
+  #[serde(rename = "_sName")]
+  pub name: String,
+  #[serde(rename = "_sAvatarUrl", default)]
+  pub avatar_url: Option<String>,
+  #[serde(rename = "_sProfileUrl")]
+  pub profile_url: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
 pub struct Profile {
   #[serde(rename = "_idRow")]
   pub id: u64,

@@ -1,7 +1,7 @@
 use super::activity::ActivityPage;
 use super::models::{
-  BulkHydration, CollectionDescription, DownloadPage, FileserverPage, IndexPage, Profile,
-  UpdateSnapshot, core_error,
+  BulkHydration, CollectionDescription, DownloadPage, FileserverPage, IndexPage, MemberProfile,
+  Profile, UpdateSnapshot, core_error,
 };
 use super::transport::{ApiResponse, GameBananaTransport, TransportConfig};
 use crate::errors::Error;
@@ -12,6 +12,8 @@ const API_BASE: &str = "https://gamebanana.com/apiv11/";
 // `Core/Item/Data` multicall only exists on the legacy API host, not under apiv11.
 const LEGACY_API_BASE: &str = "https://api.gamebanana.com/";
 pub(crate) const DEADLOCK_GAME_ID: u64 = 20_948;
+// Assigned to us by GameBanana when Remote Install was enabled for the manager.
+const REMOTE_INSTALL_MANAGER_ALIAS: &str = "DeadlockModManager";
 const INDEX_PAGE_SIZE: u32 = 50;
 const MAX_INDEX_PAGE: u32 = 250;
 const MAX_BULK_ITEMS: usize = 50;
@@ -124,6 +126,35 @@ impl GameBananaClient {
       UPDATES_PAGE_SIZE,
     )?;
     self.transport.get_json("updates", url, cancel).await
+  }
+
+  pub async fn member_profile(
+    &self,
+    member_id: u32,
+    cancel: &CancellationToken,
+  ) -> Result<MemberProfile, Error> {
+    let url = reqwest::Url::parse(&format!("{}Member/{member_id}/ProfilePage", self.api_base))
+      .map_err(|error| Error::ProviderInvalidResponse(error.to_string()))?;
+    self.transport.get_json("member profile", url, cancel).await
+  }
+
+  /// Returns the member's pending `{mmdl url},{type},{id}` entries.
+  /// GameBanana marks them retrieved once this succeeds.
+  pub async fn remote_install_queue(
+    &self,
+    member_id: u32,
+    secret_key: &str,
+    cancel: &CancellationToken,
+  ) -> Result<ApiResponse<Option<Vec<String>>>, Error> {
+    let url = reqwest::Url::parse(&format!(
+      "{}RemoteInstall/{member_id}/{secret_key}/{REMOTE_INSTALL_MANAGER_ALIAS}",
+      self.api_base
+    ))
+    .map_err(|error| Error::ProviderInvalidResponse(error.to_string()))?;
+    self
+      .transport
+      .get_json_or_rejection("remote install queue", url, cancel)
+      .await
   }
 
   pub async fn fileservers(&self, cancel: &CancellationToken) -> Result<FileserverPage, Error> {

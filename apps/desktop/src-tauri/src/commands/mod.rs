@@ -35,6 +35,7 @@ pub mod performance;
 pub mod policy;
 pub mod profile_snapshot;
 pub mod profiles;
+pub mod remote_install;
 pub mod reports;
 pub mod server_browser;
 pub mod server_connect;

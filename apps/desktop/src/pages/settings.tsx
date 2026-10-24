@@ -22,6 +22,7 @@ import {
 import {
   Archive,
   FileCog,
+  Blocks,
   FlagIcon,
   FolderOpen,
   GamepadIcon,
@@ -78,6 +79,8 @@ import { ModelPreviewToggle } from "@/components/settings/model-preview-toggle";
 import { RepairModFolder } from "@/components/settings/repair-mod-folder";
 import PrivacySettings from "@/components/settings/privacy-settings";
 import { ProxySettings } from "@/components/settings/proxy-settings";
+import { RemoteInstallSettings } from "@/components/settings/remote-install-settings";
+import { GameBananaLogo } from "@/components/shared/gamebanana-logo";
 import Section, { SectionSkeleton } from "@/components/settings/section";
 import SettingCard, {
   SettingCardSkeleton,
@@ -101,6 +104,8 @@ import { STALE_TIME_LOCAL } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 import type { SettingsSearchResult } from "@/lib/settings-search";
 import { cn } from "@/lib/utils";
+import { HintAnchor } from "@/components/feature-hints/hint-anchor";
+import { useRemoteInstallStatus } from "@/hooks/use-remote-install";
 import ThemesPlugin from "@/plugins/themes/index";
 import type { LocalSetting } from "@/types/settings";
 import {
@@ -473,6 +478,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
     "launch-options";
   const [activeTab, setActiveTab] = useState(initialTab);
   const contentRef = useRef<HTMLDivElement>(null);
+  const { data: remoteInstallStatus } = useRemoteInstallStatus();
 
   useEffect(() => {
     if (value) {
@@ -634,6 +640,19 @@ const CustomSettings = ({ value }: { value?: string }) => {
                   label={t("settings.network")}
                   value='network'
                 />
+                <HintAnchor
+                  eligible={remoteInstallStatus?.memberId === null}
+                  hintId='remote-install'
+                  onShowMe={() => setActiveTab("integrations")}
+                  side='right'>
+                  <div>
+                    <SettingsNavItem
+                      icon={Blocks}
+                      label={t("settings.integrations")}
+                      value='integrations'
+                    />
+                  </div>
+                </HintAnchor>
                 <SettingsNavItem
                   icon={PlugIcon}
                   label={t("settings.plugin")}
@@ -886,6 +905,20 @@ const CustomSettings = ({ value }: { value?: string }) => {
               searchId='proxy'
               title={t("settings.proxy")}>
               <ProxySettings />
+            </Section>
+          </TabsContent>
+
+          <TabsContent className='mt-0 space-y-4' value='integrations'>
+            <Section
+              description={t("settings.gamebananaDescription")}
+              searchId='gamebanana'
+              title={
+                <span className='flex items-center gap-2'>
+                  <GameBananaLogo className='size-5' />
+                  {t("settings.gamebanana")}
+                </span>
+              }>
+              <RemoteInstallSettings />
             </Section>
           </TabsContent>
 

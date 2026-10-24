@@ -41,6 +41,13 @@ import { useCheckForUpdates } from "@/hooks/use-check-for-updates";
 import { useFilesystemStatus } from "@/hooks/use-filesystem-status";
 import { useCatalogSyncState } from "@/hooks/use-gamebanana-catalog-sync";
 import { useDiscordGamePresenceIndicator } from "@/hooks/use-game-presence-status";
+import {
+  useRemoteInstallQueueState,
+  useRemoteInstallStatus,
+} from "@/hooks/use-remote-install";
+import { GameBananaIcon } from "@/components/shared/gamebanana-logo";
+import { useOneClickInstalls } from "@/lib/one-click-installs";
+import { useShallow } from "zustand/react/shallow";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { ModStatus } from "@/types/mods";
@@ -213,6 +220,142 @@ function CatalogSyncIndicator() {
   );
 }
 
+const MAX_LISTED_REMOTE_INSTALLS = 5;
+
+function RemoteInstallItem({ slug }: { slug: string }) {
+  const { t } = useTranslation();
+  const mod = usePersistedStore((state) =>
+    state.localMods.find((localMod) => localMod.remoteId === slug),
+  );
+  const percentage = usePersistedStore(
+    (state) => state.modProgress[slug]?.percentage,
+  );
+
+  let label = t("remoteInstall.itemPreparing");
+  if (
+    mod?.status === ModStatus.Downloading ||
+    mod?.status === ModStatus.Extracting
+  ) {
+    label =
+      percentage != null
+        ? t("remoteInstall.itemDownloading", {
+            percentage: Math.round(percentage),
+          })
+        : t("remoteInstall.itemDownloadingStarted");
+  } else if (mod?.status === ModStatus.Installing) {
+    label = t("remoteInstall.itemInstalling");
+  }
+
+  return (
+    <li className='flex items-center justify-between gap-3 text-xs'>
+      <span className='truncate'>{mod?.name ?? slug}</span>
+      <span className='shrink-0 text-muted-foreground tabular-nums'>
+        {label}
+      </span>
+    </li>
+  );
+}
+
+function RemoteInstallIndicator() {
+  const { t } = useTranslation();
+  const { data: status } = useRemoteInstallStatus();
+  const queue = useRemoteInstallQueueState();
+  const activeSlugs = useOneClickInstalls(
+    useShallow((state) =>
+      Object.keys(state.active).filter(
+        (slug) => state.active[slug] === "remote_install",
+      ),
+    ),
+  );
+  const activeCount = activeSlugs.length;
+
+  if (status?.memberId == null) {
+    return null;
+  }
+
+  const failed = queue.isError;
+  const lastChecked = queue.dataUpdatedAt
+    ? t("remoteInstall.lastChecked", {
+        time: formatDistanceToNow(new Date(queue.dataUpdatedAt), {
+          addSuffix: true,
+        }),
+      })
+    : t("remoteInstall.notCheckedYet");
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          aria-label={t("remoteInstall.checkNow")}
+          aria-disabled={queue.isFetching}
+          className='flex cursor-pointer items-center gap-1 p-0.5 aria-disabled:cursor-default'
+          onClick={(event) => {
+            // Radix closes the tooltip on click and a disabled button never
+            // reports the pointer leaving, which left it closed for good.
+            // Keep it open so the check's progress stays visible.
+            event.preventDefault();
+            if (!queue.isFetching) void queue.refetch();
+          }}
+          type='button'>
+          <GameBananaIcon
+            className={cn(
+              queue.isFetching && "animate-pulse",
+              failed
+                ? "text-red-500"
+                : activeCount > 0
+                  ? "text-blue-500"
+                  : queue.dataUpdatedAt
+                    ? "text-status-ok"
+                    : "text-muted-foreground",
+            )}
+          />
+          {activeCount > 0 && (
+            <span className='tabular-nums text-foreground'>{activeCount}</span>
+          )}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent className='w-64 space-y-1 p-2' side='top' sideOffset={8}>
+        <p className='text-xs font-medium'>
+          {t(
+            failed
+              ? "remoteInstall.indicatorError"
+              : "remoteInstall.indicatorLinked",
+          )}
+        </p>
+        {activeCount > 0 && (
+          <>
+            <p className='text-xs'>
+              {t("remoteInstall.indicatorActive", { count: activeCount })}
+            </p>
+            <ul className='space-y-1 py-1'>
+              {activeSlugs.slice(0, MAX_LISTED_REMOTE_INSTALLS).map((slug) => (
+                <RemoteInstallItem key={slug} slug={slug} />
+              ))}
+            </ul>
+            {activeCount > MAX_LISTED_REMOTE_INSTALLS && (
+              <p className='text-muted-foreground text-xs'>
+                {t("remoteInstall.indicatorMore", {
+                  count: activeCount - MAX_LISTED_REMOTE_INSTALLS,
+                })}
+              </p>
+            )}
+          </>
+        )}
+        <p className='text-xs text-muted-foreground'>
+          {queue.isFetching
+            ? t("remoteInstall.indicatorChecking")
+            : lastChecked}
+        </p>
+        {!queue.isFetching && (
+          <p className='text-xs text-muted-foreground'>
+            {t("remoteInstall.indicatorClickToCheck")}
+          </p>
+        )}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 function BottomBarVolume() {
   const { t } = useTranslation();
   const audioVolume = usePersistedStore((state) => state.audioVolume);
@@ -367,28 +510,6 @@ export const BottomBar = () => {
       className='z-30 flex h-8 w-full shrink-0 items-center justify-between border-t bg-background pl-4 pr-3 text-xs text-muted-foreground'
       data-bottom-bar='true'>
       <div className='flex items-center gap-3'>
-        {downloadingCount > 0 && (
-          <>
-            <div className='flex items-center gap-1'>
-              <DownloadSimpleIcon className='h-3 w-3 animate-pulse text-blue-500' />
-              <span>
-                {downloadingCount} {t("common.downloading")}
-              </span>
-            </div>
-            <Separator className='mx-1 h-3' orientation='vertical' />
-          </>
-        )}
-        {pausedCount > 0 && (
-          <>
-            <div className='flex items-center gap-1'>
-              <DownloadSimpleIcon className='h-3 w-3 text-amber-500' />
-              <span>
-                {pausedCount} {t("common.paused")}
-              </span>
-            </div>
-            <Separator className='mx-1 h-3' orientation='vertical' />
-          </>
-        )}
         <div className='flex items-center gap-1.5'>
           <span className='text-xs text-muted-foreground'>
             {t("common.status")}:
@@ -412,8 +533,34 @@ export const BottomBar = () => {
           )}
           <HeroParserIndicator />
           <CatalogSyncIndicator />
+          <RemoteInstallIndicator />
           <DiscordPresenceIndicator />
         </div>
+
+        {/* After the status icons, so they don't jump under the cursor when a
+            download starts or finishes. */}
+        {downloadingCount > 0 && (
+          <>
+            <Separator className='mx-1 h-3' orientation='vertical' />
+            <div className='flex items-center gap-1'>
+              <DownloadSimpleIcon className='h-3 w-3 animate-pulse text-blue-500' />
+              <span>
+                {downloadingCount} {t("common.downloading")}
+              </span>
+            </div>
+          </>
+        )}
+        {pausedCount > 0 && (
+          <>
+            <Separator className='mx-1 h-3' orientation='vertical' />
+            <div className='flex items-center gap-1'>
+              <DownloadSimpleIcon className='h-3 w-3 text-amber-500' />
+              <span>
+                {pausedCount} {t("common.paused")}
+              </span>
+            </div>
+          </>
+        )}
 
         {!gamePath && (
           <>

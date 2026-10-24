@@ -34,7 +34,8 @@ import { AnalyticsProvider } from "./contexts/analytics-context";
 import { useAutoUpdate } from "./hooks/use-auto-update";
 import { useCrosshairConfigReconciliation } from "./hooks/use-crosshair-config-reconciliation";
 import { useGameinfoAutoReset } from "./hooks/use-gameinfo-auto-reset";
-import { useDeepLink } from "./hooks/use-deep-link";
+import { useDeepLink, useOneClickInstall } from "./hooks/use-deep-link";
+import { RemoteInstallPairDialog } from "./components/remote-install-pair-dialog";
 import { useIngestToolInit } from "./hooks/use-ingest-tool-init";
 import { useLanguageListener } from "./hooks/use-language-listener";
 import { useMissingVpkDetection } from "./hooks/use-missing-vpk-detection";
@@ -42,6 +43,7 @@ import { useDownloadsMigration } from "./hooks/use-downloads-migration";
 import { useHeroDetection } from "./hooks/use-hero-detection";
 import { useGameBananaCatalogSync } from "./hooks/use-gamebanana-catalog-sync";
 import { useModOrderMigration } from "./hooks/use-mod-order-migration";
+import { useRemoteInstallPoll } from "./hooks/use-remote-install";
 import { Layout } from "./layout";
 import { queryClient } from "./lib/client";
 import { downloadManager } from "./lib/download/manager";
@@ -64,7 +66,9 @@ type AppProps = {
 // Deep links install mods, which can open conflict and game-guard dialogs, so
 // the listener must mount inside their providers rather than in App itself.
 const DeepLinkListener = () => {
-  useDeepLink();
+  const installFromLink = useOneClickInstall();
+  useDeepLink(installFromLink);
+  useRemoteInstallPoll(installFromLink);
   return null;
 };
 
@@ -213,6 +217,7 @@ const App = ({ runtime, storage }: AppProps) => {
                           <ForgeInstallRenderer />
                           <GameGuardRenderer />
                           <DeepLinkListener />
+                          <RemoteInstallPairDialog />
                           <FilePermissionsRenderer />
                           <PerformanceRenderer />
                           <LaunchHealthRenderer />

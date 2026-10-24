@@ -8,6 +8,7 @@ export const SETTINGS_TAB_LABEL_KEYS = {
   application: "settings.application",
   themes: "settings.themes",
   network: "settings.network",
+  integrations: "settings.integrations",
   plugin: "settings.plugin",
   discord: "settings.discord",
   tools: "settings.tools",
@@ -253,6 +254,18 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
     tab: "network",
     titleKey: "settings.fileserverSectionTitle",
     descriptionKey: "settings.networkDescription",
+  },
+  {
+    id: "gamebanana",
+    tab: "integrations",
+    titleKey: "settings.gamebanana",
+    descriptionKey: "settings.gamebananaDescription",
+    settings: [
+      {
+        titleKey: "settings.remoteInstall",
+        descriptionKey: "settings.remoteInstallDescription",
+      },
+    ],
   },
   {
     id: "proxy",

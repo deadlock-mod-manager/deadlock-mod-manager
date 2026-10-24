@@ -3093,6 +3093,11 @@
     "fileserverPreferenceSaved": "网络偏好已保存",
     "proxy": "代理",
     "proxyDescription": "通过 HTTP、HTTPS 或 SOCKS5 代理路由所有应用流量。更改仅在保存后生效。",
+    "remoteInstall": "",
+    "remoteInstallDescription": "",
+    "integrations": "",
+    "gamebanana": "",
+    "gamebananaDescription": "",
     "proxyEnable": "启用代理",
     "proxyEnableDescription": "通过代理服务器路由所有网络流量",
     "proxyProtocol": "协议",
@@ -6000,6 +6005,44 @@
       "inheritPlaceholder": "留空以使用默认值"
     }
   },
+  "remoteInstall": {
+    "pairTitle": "",
+    "pairBody": "",
+    "pairAction": "",
+    "pairCancel": "",
+    "pairWarning": "",
+    "paired": "",
+    "pairFailed": "",
+    "notPaired": "",
+    "lastChecked": "",
+    "notCheckedYet": "",
+    "checkNow": "",
+    "unpair": "",
+    "unpaired": "",
+    "statusLinked": "",
+    "statusError": "",
+    "memberLabel": "",
+    "pairedHint": "",
+    "stepOpen": "",
+    "stepPair": "",
+    "stepQueue": "",
+    "viewGuide": "",
+    "guideTitle": "",
+    "guideDescription": "",
+    "guideAlt": "",
+    "indicatorLinked": "",
+    "indicatorError": "",
+    "indicatorActive_one": "",
+    "indicatorActive_other": "",
+    "itemPreparing": "",
+    "itemDownloading": "",
+    "itemDownloadingStarted": "",
+    "itemInstalling": "",
+    "indicatorMore_one": "",
+    "indicatorMore_other": "",
+    "indicatorChecking": "",
+    "indicatorClickToCheck": ""
+  },
   "forge": {
     "confirmTitle": "要从 DeadlockForge 安装此模组吗？",
     "confirmBody": "deadlockforge.net 想要将「{{name}}」发送到 Deadlock Mod Manager。它会加入你的模组，但在你启用之前会保持禁用状态。",
@@ -6530,6 +6573,10 @@
       "body": ""
     },
     "profiles": {
+      "title": "",
+      "body": ""
+    },
+    "remoteInstall": {
       "title": "",
       "body": ""
     },

@@ -3093,6 +3093,11 @@
     "fileserverPreferenceSaved": "네트워크 환경설정이 저장되었습니다.",
     "proxy": "",
     "proxyDescription": "",
+    "remoteInstall": "",
+    "remoteInstallDescription": "",
+    "integrations": "",
+    "gamebanana": "",
+    "gamebananaDescription": "",
     "proxyEnable": "",
     "proxyEnableDescription": "",
     "proxyProtocol": "",
@@ -6000,6 +6005,44 @@
       "inheritPlaceholder": ""
     }
   },
+  "remoteInstall": {
+    "pairTitle": "",
+    "pairBody": "",
+    "pairAction": "",
+    "pairCancel": "",
+    "pairWarning": "",
+    "paired": "",
+    "pairFailed": "",
+    "notPaired": "",
+    "lastChecked": "",
+    "notCheckedYet": "",
+    "checkNow": "",
+    "unpair": "",
+    "unpaired": "",
+    "statusLinked": "",
+    "statusError": "",
+    "memberLabel": "",
+    "pairedHint": "",
+    "stepOpen": "",
+    "stepPair": "",
+    "stepQueue": "",
+    "viewGuide": "",
+    "guideTitle": "",
+    "guideDescription": "",
+    "guideAlt": "",
+    "indicatorLinked": "",
+    "indicatorError": "",
+    "indicatorActive_one": "",
+    "indicatorActive_other": "",
+    "itemPreparing": "",
+    "itemDownloading": "",
+    "itemDownloadingStarted": "",
+    "itemInstalling": "",
+    "indicatorMore_one": "",
+    "indicatorMore_other": "",
+    "indicatorChecking": "",
+    "indicatorClickToCheck": ""
+  },
   "forge": {
     "confirmTitle": "",
     "confirmBody": "",
@@ -6530,6 +6573,10 @@
       "body": ""
     },
     "profiles": {
+      "title": "",
+      "body": ""
+    },
+    "remoteInstall": {
       "title": "",
       "body": ""
     },

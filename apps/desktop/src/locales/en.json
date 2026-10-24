@@ -3390,6 +3390,11 @@
     "fileserverPreferenceSaved": "Network preference saved",
     "proxy": "Proxy",
     "proxyDescription": "Route all app traffic through an HTTP, HTTPS, or SOCKS5 proxy. Changes only take effect once you save.",
+    "remoteInstall": "Remote Install",
+    "remoteInstallDescription": "Queue mods on GameBanana from any device, like your phone, and they download and install here automatically.",
+    "integrations": "Integrations",
+    "gamebanana": "GameBanana",
+    "gamebananaDescription": "Features that connect Deadlock Mod Manager to your GameBanana account.",
     "proxyEnable": "Enable Proxy",
     "proxyEnableDescription": "Route all network traffic through a proxy server",
     "proxyProtocol": "Protocol",
@@ -6297,6 +6302,44 @@
       "inheritPlaceholder": "Leave empty to use the default"
     }
   },
+  "remoteInstall": {
+    "pairTitle": "Link this GameBanana account?",
+    "pairBody": "Mods it queues with Remote Install will download and install here automatically.",
+    "pairAction": "Link account",
+    "pairCancel": "Cancel",
+    "pairWarning": "Only link if you just clicked Pair on GameBanana. Whoever owns this account can queue installs on this PC.",
+    "paired": "Remote Install linked. Mods you queue on GameBanana will install here.",
+    "pairFailed": "Could not link Remote Install. Try Pair again on GameBanana.",
+    "notPaired": "Not linked",
+    "lastChecked": "Checked {{time}}",
+    "notCheckedYet": "Not checked yet",
+    "checkNow": "Check now",
+    "unpair": "Unlink",
+    "unpaired": "Remote Install unlinked",
+    "statusLinked": "Linked",
+    "statusError": "Check failed",
+    "memberLabel": "GameBanana member {{memberId}}",
+    "pairedHint": "To queue a mod, open the arrow next to its Deadlock Mod Manager 1-click button and choose Remote Install.",
+    "stepOpen": "On a mod's GameBanana page, open the arrow next to the Deadlock Mod Manager 1-click button.",
+    "stepPair": "Choose Enroll & Pair. Click Enroll once, then Pair to link this app.",
+    "stepQueue": "Choose Remote Install on any mod. It installs here within 5 minutes while the app is running.",
+    "viewGuide": "View the full guide",
+    "guideTitle": "How Remote Install works",
+    "guideDescription": "GameBanana's guide to enrolling, pairing, and queueing mods.",
+    "guideAlt": "GameBanana's Remote Install guide: open the dropdown on a 1-click button, Enroll & Pair to link the mod manager, then Remote Install adds mods to a queue the manager checks and installs.",
+    "indicatorLinked": "GameBanana Remote Install linked",
+    "indicatorError": "Could not check your Remote Install queue",
+    "indicatorActive_one": "{{count}} mod installing from your queue",
+    "indicatorActive_other": "{{count}} mods installing from your queue",
+    "itemPreparing": "Preparing",
+    "itemDownloading": "{{percentage}}%",
+    "itemDownloadingStarted": "Downloading",
+    "itemInstalling": "Installing",
+    "indicatorMore_one": "and {{count}} more",
+    "indicatorMore_other": "and {{count}} more",
+    "indicatorChecking": "Checking your queue…",
+    "indicatorClickToCheck": "Click to check now."
+  },
   "forge": {
     "confirmTitle": "Install this mod from DeadlockForge?",
     "confirmBody": "deadlockforge.net wants to send \"{{name}}\" to Deadlock Mod Manager. It will be added to your mods but stays disabled until you enable it.",
@@ -6829,6 +6872,10 @@
     "profiles": {
       "title": "Keep separate mod setups",
       "body": "Profiles save different sets of mods so you can switch between them without enabling and disabling mods one by one."
+    },
+    "remoteInstall": {
+      "title": "Install mods from your phone",
+      "body": "Link your GameBanana account and any mod you queue with Remote Install downloads and installs here, even while you're away."
     },
     "settingsSearch": {
       "title": "Search every setting",
