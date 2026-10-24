@@ -292,19 +292,26 @@ impl VtexHeader {
         Ok(sequences)
     }
 
-    /// Compressed mip sizes if the COMPRESSED_MIP_SIZE extra-data block is present.
-    fn compressed_mip_sizes(&self, data: &[u8]) -> Option<Vec<usize>> {
+    /// Compressed mip sizes if the COMPRESSED_MIP_SIZE extra-data block is
+    /// present, with where the mip data starts: right after the size array,
+    /// which sits between the extra-data headers and the pixels.
+    fn compressed_mip_sizes(&self, data: &[u8]) -> Option<(Vec<usize>, usize)> {
         let e = self
             .extra
             .iter()
             .find(|e| e.kind == EXTRA_COMPRESSED_MIP_SIZE)?;
-        // layout: u32 compressionMethod, u32 mipCount, then mipCount * u32 sizes
-        let count = rd_u32(data, e.offset + 4).ok()? as usize;
+        // layout (as ValveResourceFormat reads it): u32 compressed flag, u32
+        // offset to the size array relative to this field, u32 mip count.
+        if rd_u32(data, e.offset).ok()? != 1 {
+            return None;
+        }
+        let sizes_at = e.offset + 4 + rd_u32(data, e.offset + 4).ok()? as usize;
+        let count = rd_u32(data, e.offset + 8).ok()? as usize;
         let mut sizes = Vec::with_capacity(count);
         for i in 0..count {
-            sizes.push(rd_u32(data, e.offset + 8 + i * 4).ok()? as usize);
+            sizes.push(rd_u32(data, sizes_at + i * 4).ok()? as usize);
         }
-        Some(sizes)
+        Some((sizes, self.data_offset.max(sizes_at + count * 4)))
     }
 
     /// Stored bytes of one mip for an embedded-image format (PNG/JPEG). Each mip
@@ -315,8 +322,8 @@ impl VtexHeader {
         let mips = self.num_mip_levels.max(1) as u32;
         let target_level = target_level.min(mips - 1);
         match self.compressed_mip_sizes(data) {
-            Some(sizes) => {
-                let mut cursor = self.data_offset;
+            Some((sizes, start)) => {
+                let mut cursor = start;
                 for level in (0..mips).rev() {
                     let stored = sizes.get(level as usize).copied().unwrap_or(0);
                     let slice = data
@@ -342,7 +349,10 @@ impl VtexHeader {
         let target_width = (self.width as u32 >> target_level).max(1);
         let target_height = (self.height as u32 >> target_level).max(1);
         let uncompressed_target = self.format.mip_byte_size(target_width, target_height)?;
-        let compressed_sizes = self.compressed_mip_sizes(data);
+        let (compressed_sizes, start) = match self.compressed_mip_sizes(data) {
+            Some((sizes, start)) => (Some(sizes), start),
+            None => (None, self.data_offset),
+        };
 
         // Mips are stored smallest first. Compute the on-disk size of every mip,
         // then seek to the requested level.
@@ -360,7 +370,7 @@ impl VtexHeader {
         }
 
         // Stored order: level = mips-1 (smallest) .. 0 (largest).
-        let mut cursor = self.data_offset;
+        let mut cursor = start;
         let mut target: Option<Vec<u8>> = None;
         for level in (0..mips).rev() {
             let (unc, stored) = on_disk[level as usize];

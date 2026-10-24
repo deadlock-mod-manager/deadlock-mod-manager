@@ -58,6 +58,7 @@ pub struct PreviewTexture {
     /// The material takes its colour from the mesh's vertex colours
     /// (`F_VERTEX_COLOR`), so its primitives export a COLOR_0 stream.
     pub vertex_color: bool,
+    pub double_sided: bool,
     pub base_color_factor: [f32; 4],
     /// glTF metallicFactor. Source 2 hero materials are non-metallic unless the
     /// VMAT declares `g_flMetalness`; defaulting to 0 avoids the oily/chrome look
@@ -66,6 +67,19 @@ pub struct PreviewTexture {
     pub alpha_mode: MaterialAlphaMode,
     pub alpha_cutoff: f32,
     pub emissive_factor: Option<[f32; 3]>,
+    /// glTF `emissiveStrength`: the self-illum scale, which Source 2 lets run
+    /// past 1 so bright glows bloom.
+    pub emissive_strength: f32,
+    /// The NPR silhouette outline, when the material draws one.
+    pub outline: Option<MaterialOutline>,
+}
+
+/// Deadlock's toon outline around NPR-lit materials.
+#[derive(Debug, Clone, Copy)]
+pub struct MaterialOutline {
+    /// `g_vSolidOutlineTint` when `F_SOLID_COLOR_OUTLINE` is set; otherwise the
+    /// outline darkens the surface colour.
+    pub tint: Option<[f32; 3]>,
 }
 
 #[derive(Debug, Clone, Copy, Default)]

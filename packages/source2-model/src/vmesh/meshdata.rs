@@ -307,6 +307,51 @@ pub(crate) fn default_mesh_group_masks(res: &Resource) -> Option<(u64, Vec<u64>)
     (!masks.is_empty()).then_some((default_mask, masks))
 }
 
+/// One LOD mask per mesh (`m_refLODGroupMasks`): bit 0 marks the meshes the
+/// game draws up close. Mesh names are no guide — a hero's LOD meshes rarely
+/// carry `_lod` in their name — so the mask is what keeps the lower LODs from
+/// being stacked inside the full-detail body.
+pub(crate) fn lod_group_masks(res: &Resource) -> Option<Vec<u64>> {
+    let data = res
+        .block_bytes("DATA")
+        .and_then(|bytes| crate::kv3::parse(bytes).ok())?;
+    let masks = data
+        .get("m_refLODGroupMasks")?
+        .as_array()?
+        .iter()
+        .map(|mask| mask.as_u64().unwrap_or(u64::MAX))
+        .collect::<Vec<_>>();
+    (!masks.is_empty()).then_some(masks)
+}
+
+/// Whether mesh `index` belongs to LOD0. Without a mask table every mesh does.
+pub(crate) fn mesh_is_lod0(lod_masks: Option<&[u64]>, index: usize) -> bool {
+    lod_masks
+        .and_then(|masks| masks.get(index))
+        .is_none_or(|mask| mask & 1 != 0)
+}
+
+/// Which of a model's `m_refMeshes` the game draws by default: LOD0 and a
+/// body group the default mask turns on.
+pub fn default_mesh_selection(res: &Resource, mesh_count: usize) -> Vec<bool> {
+    let lod_masks = lod_group_masks(res);
+    let groups = default_mesh_group_masks(res);
+    let shown = (0..mesh_count)
+        .map(|index| {
+            let group = groups.as_ref().is_none_or(|(default_mask, masks)| {
+                *default_mask == 0 || masks.get(index).is_none_or(|mask| mask & default_mask != 0)
+            });
+            mesh_is_lod0(lod_masks.as_deref(), index) && group
+        })
+        .collect::<Vec<_>>();
+    // A model whose tables select nothing is still better shown whole.
+    if shown.iter().any(|&shown| shown) {
+        shown
+    } else {
+        vec![true; mesh_count]
+    }
+}
+
 pub(crate) fn mesh_is_enabled(
     mesh: &KvValue,
     fallback_index: usize,
@@ -426,5 +471,7 @@ pub(crate) fn material_index_for_material(
                 .is_some_and(|candidate| candidate == material)
         })
         .map(|index| index + 1)
-        .unwrap_or_else(|| usize::from(textures.len() == 1))
+        // A named material that failed to decode gets the neutral default, not
+        // whichever other material happened to decode.
+        .unwrap_or(0)
 }

@@ -4,7 +4,7 @@ use crate::vpk_extract::VpkArchive;
 use std::collections::BTreeSet;
 use std::path::Path;
 
-fn clip_stem(path: &str) -> &str {
+pub(super) fn clip_stem(path: &str) -> &str {
     path.rsplit('/')
         .next()
         .unwrap_or(path)
@@ -12,7 +12,7 @@ fn clip_stem(path: &str) -> &str {
         .trim_end_matches(".vnmclip")
 }
 
-fn family_prefix(path: &str) -> Option<String> {
+pub(super) fn family_prefix(path: &str) -> Option<String> {
     let tokens = clip_stem(path).split('_').collect::<Vec<_>>();
     let ability = tokens.iter().position(|token| *token == "ability")?;
     let name = tokens.get(ability + 1)?;
@@ -23,7 +23,14 @@ fn contains_token(name: &str, token: &str) -> bool {
     name.split('_').any(|candidate| candidate == token)
 }
 
-fn is_in_air_variant(name: &str) -> bool {
+pub(super) fn is_additive_clip(path: &str) -> bool {
+    let name = clip_stem(path);
+    ["aim", "add", "additive", "null"]
+        .iter()
+        .any(|token| contains_token(name, token))
+}
+
+pub(super) fn is_in_air_variant(name: &str) -> bool {
     contains_token(name, "inair")
         || name
             .split('_')
@@ -33,7 +40,9 @@ fn is_in_air_variant(name: &str) -> bool {
 }
 
 fn direction_token(name: &str) -> Option<&'static str> {
-    const DIRECTIONS: [&str; 8] = ["forward", "backward", "left", "right", "n", "e", "s", "w"];
+    const DIRECTIONS: [&str; 12] = [
+        "forward", "backward", "left", "right", "n", "e", "s", "w", "ne", "nw", "se", "sw",
+    ];
     DIRECTIONS
         .into_iter()
         .find(|direction| contains_token(name, direction))
@@ -57,35 +66,41 @@ fn phase_rank(name: &str, family: &str) -> Option<i32> {
     if name == family {
         return Some(20);
     }
-    if contains_token(name, "precast") {
-        Some(0)
-    } else if ["start", "takeoff", "upwards"]
-        .iter()
-        .any(|token| contains_token(name, token))
-    {
-        Some(10)
-    } else if contains_token(name, "hover") {
-        Some(30)
-    } else if contains_token(name, "intro") {
-        Some(40)
-    } else if contains_token(name, "loop") {
-        Some(50)
-    } else if ["impact", "crash", "land", "toss"]
-        .iter()
-        .any(|token| contains_token(name, token))
-    {
-        Some(60)
-    } else if ["end", "release"]
-        .iter()
-        .any(|token| contains_token(name, token))
-    {
-        Some(70)
-    } else {
-        None
-    }
+    let name = name.strip_prefix(family)?.strip_prefix('_')?;
+    const PHASES: &[(i32, &[&str])] = &[
+        (0, &["precast"]),
+        (5, &["chargeup"]),
+        (10, &["start", "takeoff", "upwards", "casting", "jump"]),
+        (30, &["hover", "hold", "fly", "charge"]),
+        (40, &["intro"]),
+        (50, &["loop", "idle", "channeling"]),
+        (55, &["dash", "dive"]),
+        (58, &["attack", "hit", "shoot", "fire", "slam", "cast"]),
+        (
+            60,
+            &[
+                "impact",
+                "crash",
+                "land",
+                "toss",
+                "explosion",
+                "explode",
+                "damage",
+                "throw",
+            ],
+        ),
+        (65, &["finale", "counterattack"]),
+        (70, &["end", "release", "castcomplete", "exit", "getup"]),
+    ];
+    PHASES.iter().find_map(|(rank, tokens)| {
+        tokens
+            .iter()
+            .any(|token| contains_token(name, token))
+            .then_some(*rank)
+    })
 }
 
-fn coherent_phase_paths(
+pub(super) fn coherent_phase_paths(
     primary_path: &str,
     family: &str,
     paths: impl IntoIterator<Item = String>,
@@ -94,7 +109,15 @@ fn coherent_phase_paths(
     let mut phases = paths
         .into_iter()
         .filter_map(|path| {
-            let name = clip_stem(&path);
+            let stem = clip_stem(&path);
+            if is_additive_clip(&path)
+                || ["alt", "base", "swap", "turn", "run", "walk", "zipline"]
+                    .iter()
+                    .any(|token| contains_token(stem, token))
+            {
+                return None;
+            }
+            let name = stem.find("ability_").map_or(stem, |index| &stem[index..]);
             if !(name == family || name.starts_with(&format!("{family}_"))) {
                 return None;
             }
@@ -134,8 +157,18 @@ fn coherent_phase_paths(
         });
     }
 
-    phases.sort_by(|left, right| left.0.cmp(&right.0).then_with(|| left.1.cmp(&right.1)));
-    phases.dedup_by(|left, right| left.1 == right.1);
+    phases.sort_by(|left, right| {
+        left.0
+            .cmp(&right.0)
+            .then_with(|| {
+                clip_stem(&left.1)
+                    .split('_')
+                    .count()
+                    .cmp(&clip_stem(&right.1).split('_').count())
+            })
+            .then_with(|| left.1.cmp(&right.1))
+    });
+    phases.dedup_by(|left, right| left.0 == right.0);
     phases
 }
 

@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::io::{Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use vpk_parser::VpkParser;
 
@@ -62,6 +63,7 @@ pub struct VpkArchive {
     /// version of that entry, so previews must read it instead of the packed
     /// original.
     overlay_dir: Option<PathBuf>,
+    fallbacks: Vec<Arc<VpkArchive>>,
 }
 
 impl VpkArchive {
@@ -120,6 +122,7 @@ impl VpkArchive {
             entries,
             entry_index,
             overlay_dir: None,
+            fallbacks: Vec::new(),
         })
     }
 
@@ -148,6 +151,12 @@ impl VpkArchive {
         path.is_file().then_some(path)
     }
 
+    /// Read missing resources from lower-priority archives without unpacking them.
+    pub fn with_fallbacks(mut self, fallbacks: Vec<Arc<VpkArchive>>) -> Self {
+        self.fallbacks = fallbacks;
+        self
+    }
+
     pub fn list_entries(&self) -> Vec<String> {
         self.entries
             .iter()
@@ -160,6 +169,14 @@ impl VpkArchive {
             || self
                 .entry_index
                 .contains_key(&entry_path.replace('\\', "/").to_ascii_lowercase())
+            || self.fallback_for(entry_path).is_some()
+    }
+
+    fn fallback_for(&self, entry_path: &str) -> Option<&VpkArchive> {
+        self.fallbacks
+            .iter()
+            .find(|archive| archive.contains_entry(entry_path))
+            .map(Arc::as_ref)
     }
 
     /// Whether an entry stores a prefix in the directory tree. Extraction includes this prefix.
@@ -176,12 +193,51 @@ impl VpkArchive {
             return Ok(fs::read(overlay)?);
         }
         let key = entry_path.replace('\\', "/").to_ascii_lowercase();
-        let entry = self
+        let Some(entry) = self
             .entry_index
             .get(&key)
             .and_then(|index| self.entries.get(*index))
-            .ok_or_else(|| Source2Error::EntryNotFound(entry_path.to_string()))?;
+        else {
+            return match self.fallback_for(entry_path) {
+                Some(archive) => archive.extract_entry(entry_path),
+                None => Err(Source2Error::EntryNotFound(entry_path.to_string())),
+            };
+        };
         self.read_entry(entry)
+    }
+
+    /// Reject oversized preview assets before allocating their archive payload.
+    pub fn extract_entry_limited(&self, entry_path: &str, max_bytes: usize) -> Result<Vec<u8>> {
+        let too_large =
+            || Source2Error::Vpk(format!("entry exceeds preview byte limit: {entry_path}"));
+        if let Some(overlay) = self.overlay_path(entry_path) {
+            let file = fs::File::open(overlay)?;
+            if file.metadata()?.len() > max_bytes as u64 {
+                return Err(too_large());
+            }
+            let mut bytes = Vec::new();
+            file.take(max_bytes.saturating_add(1) as u64)
+                .read_to_end(&mut bytes)?;
+            if bytes.len() > max_bytes {
+                return Err(too_large());
+            }
+            return Ok(bytes);
+        }
+        let key = entry_path.replace('\\', "/").to_ascii_lowercase();
+        if let Some(entry) = self
+            .entry_index
+            .get(&key)
+            .and_then(|index| self.entries.get(*index))
+        {
+            if entry.preload.len() as u64 + u64::from(entry.entry_length) > max_bytes as u64 {
+                return Err(too_large());
+            }
+            return self.read_entry(entry);
+        }
+        match self.fallback_for(entry_path) {
+            Some(archive) => archive.extract_entry_limited(entry_path, max_bytes),
+            None => Err(Source2Error::EntryNotFound(entry_path.to_string())),
+        }
     }
 
     /// Read the bytes of one already-resolved entry, pulling from inline data or
@@ -358,6 +414,57 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("s2m-{label}-{unique}"));
         fs::create_dir_all(&dir).expect("create scratch dir");
         dir
+    }
+
+    #[test]
+    fn preview_limits_include_preloads_and_apply_before_reading_companions() {
+        let dir = scratch_dir("preview-limit");
+        let path = dir.join("pak01_dir.vpk");
+        fs::write(&path, inline_vpk(b"prefix", b"payload")).unwrap();
+        let archive = VpkArchive::open(&path).unwrap();
+        assert!(
+            archive
+                .extract_entry_limited("folder/sample.txt", 12)
+                .is_err()
+        );
+        assert_eq!(
+            archive
+                .extract_entry_limited("FOLDER/SAMPLE.TXT", 13)
+                .unwrap(),
+            b"prefixpayload"
+        );
+        let mut bytes = inline_vpk(b"prefix", b"payload");
+        let index_offset = 12 + b"txt\0folder\0sample\0".len() + 6;
+        bytes[index_offset..index_offset + 2].copy_from_slice(&0u16.to_le_bytes());
+        fs::write(&path, bytes).unwrap();
+        let archive = VpkArchive::open(&path).unwrap();
+        let error = archive
+            .extract_entry_limited("folder/sample.txt", 12)
+            .unwrap_err();
+        assert!(error.to_string().contains("preview byte limit"));
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn layered_archive_prefers_mod_and_resolves_missing_entries_from_base() {
+        let dir = scratch_dir("fallback");
+        let base_path = dir.join("base.vpk");
+        let mod_path = dir.join("mod.vpk");
+        fs::write(&base_path, inline_vpk(b"", b"base")).unwrap();
+        fs::write(&mod_path, inline_vpk(b"", b"mod")).unwrap();
+        let base = Arc::new(VpkArchive::open(&base_path).unwrap());
+        let archive = VpkArchive::open(&mod_path)
+            .unwrap()
+            .with_fallbacks(vec![base.clone()]);
+        assert_eq!(archive.extract_entry("folder\\sample.txt").unwrap(), b"mod");
+        let mut empty = VpkArchive::open(&mod_path)
+            .unwrap()
+            .with_fallbacks(vec![base]);
+        empty.entry_index.clear();
+        assert!(empty.contains_entry("folder/sample.txt"));
+        assert_eq!(empty.extract_entry("folder/sample.txt").unwrap(), b"base");
+        assert!(empty.extract_entry("folder/missing.txt").is_err());
+        let _ = fs::remove_dir_all(dir);
     }
 
     #[test]

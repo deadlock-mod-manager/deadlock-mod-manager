@@ -444,8 +444,9 @@ pub(crate) fn build_glb(
             "metallicFactor": 0.0,
             "roughnessFactor": 0.82
         },
-        "doubleSided": true
+        "doubleSided": false
     })];
+    let mut uses_emissive_strength = false;
     for (texture, (base, normal, orm, emissive)) in textures.iter().zip(&texture_indices) {
         let alpha_mode = match texture.alpha_mode {
             MaterialAlphaMode::Opaque => "OPAQUE",
@@ -462,7 +463,7 @@ pub(crate) fn build_glb(
                 "metallicFactor": 0.0,
                 "roughnessFactor": 0.8
             },
-            "doubleSided": true
+            "doubleSided": texture.double_sided
         });
         if let Some(normal) = normal {
             material["normalTexture"] = json!({ "index": normal });
@@ -483,6 +484,18 @@ pub(crate) fn build_glb(
             if let Some(emissive) = emissive {
                 material["emissiveTexture"] = json!({ "index": emissive });
             }
+            if texture.emissive_strength > 1.0 {
+                material["extensions"] = json!({
+                    "KHR_materials_emissive_strength": {
+                        "emissiveStrength": texture.emissive_strength
+                    }
+                });
+                uses_emissive_strength = true;
+            }
+        }
+        if let Some(outline) = texture.outline {
+            // three.js copies material extras into `material.userData`.
+            material["extras"] = json!({ "outline": { "tint": outline.tint } });
         }
         materials.push(material);
     }
@@ -567,6 +580,9 @@ pub(crate) fn build_glb(
         "bufferViews": buffer_views,
         "accessors": accessors
     });
+    if uses_emissive_strength {
+        gltf["extensionsUsed"] = json!(["KHR_materials_emissive_strength"]);
+    }
     if let Some(skin) = skin {
         gltf["skins"] = json!([skin]);
     }
