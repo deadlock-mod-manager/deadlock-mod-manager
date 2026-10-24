@@ -83,20 +83,37 @@ export const pickFeaturedModsByCategory = (
     return picked ? [picked] : [];
   });
 
+/** Leads with `pinned`, replacing the weekly pick for its category. */
+export const pinFeaturedMod = (
+  featured: ModDto[],
+  pinned: ModDto,
+): ModDto[] => [
+  pinned,
+  ...featured.filter(
+    (m) => m.remoteId !== pinned.remoteId && m.category !== pinned.category,
+  ),
+];
+
 /**
  * Picks the "featured mods of the week" deterministically, one per category,
  * from each category's top downloads. Stable across reloads, identical for
- * every user, rotates weekly.
+ * every user, rotates weekly. A `pinned` mod leads the week instead of its
+ * category's pick.
  *
  * NOTE: client-side heuristic. A backend `/featured` endpoint would be a
  * better long-term solution.
  */
 export const useFeaturedMods = (
   mods: ModDto[] | undefined,
-  options?: { now?: Date },
+  options?: { now?: Date; pinned?: ModDto },
 ): ModDto[] => {
+  const pinned = options?.pinned;
   return useMemo(() => {
-    if (!mods || mods.length === 0) return [];
-    return pickFeaturedModsByCategory(mods, options?.now ?? new Date());
-  }, [mods, options?.now]);
+    if (!mods || mods.length === 0) return pinned ? [pinned] : [];
+    const featured = pickFeaturedModsByCategory(
+      mods,
+      options?.now ?? new Date(),
+    );
+    return pinned ? pinFeaturedMod(featured, pinned) : featured;
+  }, [mods, options?.now, pinned]);
 };

@@ -6,6 +6,7 @@ import {
   getIsoWeekParts,
   pickFeaturedMod,
   pickFeaturedModsByCategory,
+  pinFeaturedMod,
 } from "./use-featured-mod";
 
 function makeMod(
@@ -170,6 +171,18 @@ describe("pickFeaturedModsByCategory", () => {
     expect(picks.map((m) => m.category)).toEqual([
       ModCategory.SKINS,
       ModCategory.HUD,
+    ]);
+  });
+});
+
+describe("pinFeaturedMod", () => {
+  it("leads with the pinned mod in place of its category's pick", () => {
+    const skin = makeMod("skin-1", 10, { category: ModCategory.SKINS });
+    const hud = makeMod("hud-1", 50, { category: ModCategory.HUD });
+    const pinned = makeMod("remlock", 1, { category: ModCategory.SKINS });
+    expect(pinFeaturedMod([skin, hud], pinned).map((m) => m.remoteId)).toEqual([
+      "remlock",
+      "hud-1",
     ]);
   });
 });
