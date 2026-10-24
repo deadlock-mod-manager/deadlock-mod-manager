@@ -212,7 +212,12 @@ fn finalize(manifest: &mut FoundryManifest) {
     .clone()
     .or_else(|| manifest.hero.clone());
   manifest.sound_groups = group_sounds(hero.as_deref(), &manifest.sounds);
-  manifest.primary_model_path = primary_model_path(hero.as_deref(), &manifest.models);
+  manifest.primary_model_path =
+    primary_model_path(hero.as_deref(), &manifest.models).or_else(|| {
+      hero
+        .as_deref()
+        .and_then(super::vdata::canonical_model_entry)
+    });
 
   log::info!(
     "[Foundry] Analyzed {} entries (hero={:?}, skin={}): {} models, {} materials, {} textures, {} cards, {} sounds in {} groups, body={:?}",
