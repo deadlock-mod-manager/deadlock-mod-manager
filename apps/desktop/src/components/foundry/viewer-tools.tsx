@@ -32,6 +32,7 @@ import {
   CornersOutIcon,
   CubeIcon,
   CubeTransparentIcon,
+  FlaskIcon,
   FrameCornersIcon,
   ImageIcon,
   type Icon,
@@ -85,6 +86,33 @@ export interface ViewerOverlayToggle {
 /** Controls float over the render, so they need their own backdrop to stay legible on any background image. */
 export const overlaySurface =
   "border border-white/10 bg-background/80 shadow-black/40 shadow-lg backdrop-blur-sm";
+
+/** Stays on screen after loading so nobody mistakes the preview for the game. */
+export const ViewerWipBadge = () => {
+  const { t } = useTranslation();
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span
+          tabIndex={0}
+          aria-label={t("modelPreview.disclaimerTitle")}
+          className={cn(
+            overlaySurface,
+            "flex h-8 shrink-0 cursor-default items-center gap-1.5 whitespace-nowrap rounded-md px-2 text-amber-300 text-xs",
+          )}>
+          <FlaskIcon className='size-3.5' weight='fill' />
+          <span className='hidden @2xl:inline'>
+            {t("modelPreview.disclaimerTitle")}
+          </span>
+        </span>
+      </TooltipTrigger>
+      <TooltipContent side='bottom' className='max-w-72'>
+        <p className='font-medium'>{t("modelPreview.disclaimerTitle")}</p>
+        <p className='mt-1 text-white/70'>{t("modelPreview.disclaimer")}</p>
+      </TooltipContent>
+    </Tooltip>
+  );
+};
 
 const EASE_OUT_QUART = "cubic-bezier(0.25, 1, 0.5, 1)";
 

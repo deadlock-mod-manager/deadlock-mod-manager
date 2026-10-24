@@ -41,6 +41,7 @@ import {
   type ViewerOverlayToggle,
   ViewerToolRail,
   ViewerViewMenu,
+  ViewerWipBadge,
 } from "./viewer-tools";
 import { createViewerRecorder } from "./viewer-capture";
 import { createViewerCamera } from "./viewer-camera";
@@ -682,7 +683,7 @@ export const FoundryModelViewer = ({
   }, [tint, loading]);
 
   return (
-    <div className='relative h-full w-full overflow-hidden bg-background'>
+    <div className='@container relative h-full w-full overflow-hidden bg-background'>
       <div
         ref={containerRef}
         className={cn(
@@ -726,6 +727,7 @@ export const FoundryModelViewer = ({
           background={background}
           onBackgroundChange={setBackground}
         />
+        <ViewerWipBadge />
       </div>
       <ViewerToolRail
         belowGizmo={showGizmo}
