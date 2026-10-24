@@ -5,6 +5,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@deadlock-mods/ui/components/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@deadlock-mods/ui/components/select";
 import { Separator } from "@deadlock-mods/ui/components/separator";
 import { Slider } from "@deadlock-mods/ui/components/slider";
 import { Switch } from "@deadlock-mods/ui/components/switch";
@@ -23,6 +30,7 @@ import {
   CheckIcon,
   CornersInIcon,
   CornersOutIcon,
+  CubeIcon,
   CubeTransparentIcon,
   FrameCornersIcon,
   ImageIcon,
@@ -46,6 +54,7 @@ import {
   type ViewerBackground,
 } from "./viewer-background";
 import { RECORDING_LIMIT_MS } from "./viewer-capture";
+import type { MeshGroupTable } from "./viewer-mesh-groups";
 
 export interface ViewerLook {
   bloom: boolean;
@@ -119,14 +128,23 @@ const MenuSection = ({
   </div>
 );
 
+/** The model's switchable body groups and the choice shown for each. */
+export interface ViewerBodyGroups {
+  table: MeshGroupTable;
+  chosen: Record<string, number>;
+  onChange: (chosen: Record<string, number>) => void;
+}
+
 export const ViewerViewMenu = ({
   look,
   onChange,
   overlays,
+  bodyGroups,
 }: {
   look: ViewerLook;
   onChange: (look: ViewerLook) => void;
   overlays: ViewerOverlayToggle[];
+  bodyGroups?: ViewerBodyGroups | null;
 }) => {
   const { t } = useTranslation();
   const passes: {
@@ -186,6 +204,42 @@ export const ViewerViewMenu = ({
             />
           </div>
         </MenuSection>
+        {bodyGroups && (
+          <>
+            <Separator />
+            <MenuSection title={t("modelPreview.bodyGroups")}>
+              {bodyGroups.table.bodyGroups.map((group) => (
+                <div
+                  key={group.name}
+                  className='flex h-8 items-center gap-2.5 px-2 text-xs'>
+                  <CubeIcon className='size-3.5 shrink-0 text-muted-foreground' />
+                  <span className='flex-1 truncate'>{group.name}</span>
+                  <Select
+                    value={String(bodyGroups.chosen[group.name])}
+                    onValueChange={(value) =>
+                      bodyGroups.onChange({
+                        ...bodyGroups.chosen,
+                        [group.name]: Number(value),
+                      })
+                    }>
+                    <SelectTrigger
+                      aria-label={group.name}
+                      className='h-7 w-32 px-2 text-xs'>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {group.choices.map((choice) => (
+                        <SelectItem key={choice.bit} value={String(choice.bit)}>
+                          {choice.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ))}
+            </MenuSection>
+          </>
+        )}
         {overlays.length > 0 && (
           <>
             <Separator />

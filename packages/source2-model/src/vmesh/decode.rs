@@ -626,10 +626,47 @@ pub fn decode_embedded_model_glb_from_resource(
         ));
     }
 
-    let selected_meshes = default_embedded_meshes(res, meshes);
+    // With body groups to switch between, every group's LOD0 meshes are kept
+    // and tagged; the viewer shows the default ones.
+    let mesh_groups = model_mesh_groups(res);
+    let source_index = |mesh_index: usize, mesh: &KvValue| {
+        kv_usize(mesh, "m_nMeshIndex")
+            .or_else(|| kv_usize(mesh, "mesh_index"))
+            .unwrap_or(mesh_index)
+    };
+    let selected_meshes = match &mesh_groups {
+        Some(_) => {
+            let lod_masks = lod_group_masks(res);
+            let lod0 = meshes
+                .iter()
+                .enumerate()
+                .filter_map(|(mesh_index, mesh)| {
+                    let name = kv_string(mesh, "m_Name")
+                        .or_else(|| kv_string(mesh, "name"))
+                        .unwrap_or_else(|| "mesh".into());
+                    embedded_mesh_is_lod0(
+                        lod_masks.as_deref(),
+                        source_index(mesh_index, mesh),
+                        &name,
+                    )
+                    .then_some((mesh_index, name, mesh))
+                })
+                .collect::<Vec<_>>();
+            if lod0.is_empty() {
+                default_embedded_meshes(res, meshes)
+            } else {
+                lod0
+            }
+        }
+        None => default_embedded_meshes(res, meshes),
+    };
 
     let mut decoded = Vec::new();
     for (mesh_index, name, mesh) in selected_meshes {
+        let group_mask = mesh_groups
+            .as_ref()
+            .and_then(|groups| groups.masks.get(source_index(mesh_index, mesh)))
+            .map_or(u64::MAX, |mask| *mask);
         let bone_remap = model_mesh_bone_remap(res, mesh_index)?;
         let vbib = parse_embedded_mesh_buffers(res, mesh)?;
         let mesh_data = kv_usize(mesh, "m_nDataBlock")
@@ -640,6 +677,9 @@ pub fn decode_embedded_model_glb_from_resource(
                 decode_drawcall_primitives(&vbib, &mesh_data, preview_textures)?;
             if !drawcall_primitives.is_empty() {
                 apply_bone_remap_to_primitives(&mut drawcall_primitives, bone_remap.as_deref());
+                for primitive in &mut drawcall_primitives {
+                    primitive.mesh_group_mask = group_mask;
+                }
                 decoded.extend(drawcall_primitives);
                 continue;
             }
@@ -648,6 +688,7 @@ pub fn decode_embedded_model_glb_from_resource(
         let material = material_index_for_mesh(&name, preview_textures);
         let mut primitive = decode_vbib_primitive(name, vbib, material)?;
         apply_bone_remap(&mut primitive, bone_remap.as_deref());
+        primitive.mesh_group_mask = group_mask;
         decoded.push(primitive);
     }
     if decoded.is_empty() {
@@ -656,7 +697,12 @@ pub fn decode_embedded_model_glb_from_resource(
         ));
     }
 
-    model_from_decoded_primitives(&decoded, preview_textures, skeleton.as_ref())
+    model_from_decoded_primitives(
+        &decoded,
+        preview_textures,
+        skeleton.as_ref(),
+        mesh_groups.as_ref(),
+    )
 }
 
 pub fn referenced_meshes(res: &Resource) -> Result<Vec<String>> {

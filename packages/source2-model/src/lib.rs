@@ -179,7 +179,8 @@ pub fn decode_model_glb_from_archive(archive: &VpkArchive, entry_path: &str) -> 
     let mesh_paths = vmesh::referenced_meshes(&res)?;
     if !mesh_paths.is_empty() {
         let skeleton = skeleton::parse_model_skeleton(&res)?;
-        let shown = vmesh::default_mesh_selection(&res, mesh_paths.len());
+        let mesh_groups = vmesh::model_mesh_groups(&res);
+        let shown = vmesh::preview_mesh_selection(&res, mesh_paths.len());
         let mut primitives = Vec::new();
         let mut preview_textures = Vec::new();
         for (mesh_index, mesh_path) in mesh_paths.into_iter().enumerate() {
@@ -197,10 +198,15 @@ pub fn decode_model_glb_from_archive(archive: &VpkArchive, entry_path: &str) -> 
                 &mesh_textures,
                 bone_remap.as_deref(),
             )?;
+            let group_mask = mesh_groups
+                .as_ref()
+                .and_then(|groups| groups.masks.get(mesh_index))
+                .map_or(u64::MAX, |mask| *mask);
             for primitive in &mut mesh_primitives {
                 if primitive.material > 0 {
                     primitive.material += material_offset;
                 }
+                primitive.mesh_group_mask = group_mask;
             }
             primitives.append(&mut mesh_primitives);
             preview_textures.extend(mesh_textures);
@@ -209,6 +215,7 @@ pub fn decode_model_glb_from_archive(archive: &VpkArchive, entry_path: &str) -> 
             &primitives,
             &preview_textures,
             skeleton.as_ref(),
+            mesh_groups.as_ref(),
         );
     }
     let material_paths = vmesh::referenced_materials(&res);

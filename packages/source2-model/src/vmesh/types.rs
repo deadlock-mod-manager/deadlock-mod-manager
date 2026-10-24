@@ -133,6 +133,7 @@ pub(crate) struct GlbPrimitive<'a> {
     pub(crate) indices: &'a [u8],
     pub(crate) index_component: u32,
     pub(crate) material: usize,
+    pub(crate) mesh_group_mask: u64,
 }
 
 pub(crate) struct DecodedPrimitive {

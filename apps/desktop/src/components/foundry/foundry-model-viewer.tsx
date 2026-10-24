@@ -46,6 +46,11 @@ import { createViewerRecorder } from "./viewer-capture";
 import { createViewerCamera } from "./viewer-camera";
 import type { ViewerBackground } from "./viewer-background";
 import { createViewerPostFx } from "./viewer-postfx";
+import {
+  applyMeshGroups,
+  type MeshGroupTable,
+  readMeshGroups,
+} from "./viewer-mesh-groups";
 import { createViewerScene } from "./viewer-scene";
 
 /** A live paint preview: which part, and the exact paint being previewed. */
@@ -291,6 +296,8 @@ export const FoundryModelViewer = ({
   const [background, setBackground] = useState<ViewerBackground | null>(null);
   const [look, setLook] = useState<ViewerLook>(DEFAULT_LOOK);
   const [showGizmo, setShowGizmo] = useState(true);
+  const [meshGroups, setMeshGroups] = useState<MeshGroupTable | null>(null);
+  const [bodyChoice, setBodyChoice] = useState<Record<string, number>>({});
   const lookRef = useRef({ background, ...look });
   const captureRef = useRef<(() => Promise<Blob | null>) | null>(null);
   const recorderRef = useRef<ReturnType<typeof createViewerRecorder> | null>(
@@ -306,6 +313,10 @@ export const FoundryModelViewer = ({
   useEffect(() => {
     playbackRef.current = playback;
   }, [playback]);
+  useEffect(() => {
+    if (modelRef.current && meshGroups)
+      applyMeshGroups(modelRef.current, meshGroups, bodyChoice);
+  }, [meshGroups, bodyChoice]);
   useEffect(() => {
     const model = modelRef.current;
     const stage = stageRef.current;
@@ -539,6 +550,9 @@ export const FoundryModelViewer = ({
         }
         loadedRoot = gltf.scene;
         modelRef.current = gltf.scene;
+        const table = readMeshGroups(gltf.scene);
+        setMeshGroups(table);
+        setBodyChoice(table?.defaults ?? {});
         cloneSceneMaterials(gltf.scene);
         snapshotsRef.current = installPaintShaders(gltf.scene);
         outlines = attachNprOutlines(gltf.scene);
@@ -690,6 +704,13 @@ export const FoundryModelViewer = ({
         <ViewerViewMenu
           look={look}
           onChange={setLook}
+          bodyGroups={
+            meshGroups && {
+              table: meshGroups,
+              chosen: bodyChoice,
+              onChange: setBodyChoice,
+            }
+          }
           overlays={[
             ...overlays,
             {
