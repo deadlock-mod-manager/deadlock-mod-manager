@@ -133,6 +133,7 @@ tauri-plugin-single-instance = { version = "2.5.4", features = ["deep-link"] }
 # appindicator library isn't available everywhere the app ships
 [target.'cfg(any(target_os = "macos", windows))'.dependencies]
 tauri = { version = "2.12.4", default-features = false, features = [
+  "protocol-asset",
   "tray-icon",
 ] }
 
