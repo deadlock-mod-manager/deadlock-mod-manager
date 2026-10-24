@@ -19,9 +19,8 @@ import {
 } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { FoundrySkinAssembling } from "@/components/foundry/foundry-assembling";
-import { FoundryLoadingBar } from "@/components/foundry/foundry-loading-bar";
-import { FoundryModelViewer } from "@/components/foundry/foundry-model-viewer";
+import { AnimatedModelPreview } from "@/components/foundry/animated-model-preview";
+import { ModelLoadingStage } from "@/components/foundry/model-loading-stage";
 import { useSkinModelPreview } from "@/hooks/use-skin-model-preview";
 import { usePersistedStore } from "@/lib/store";
 import type { LocalMod } from "@/types/mods";
@@ -111,22 +110,12 @@ interface PreviewSurfaceProps {
   label: string;
 }
 
-const PreviewSurface = ({ preview, label }: PreviewSurfaceProps) => {
+export const PreviewSurface = ({ preview, label }: PreviewSurfaceProps) => {
   const { t } = useTranslation();
 
-  // The assembling figure stands in for the model so the panel never sits empty.
+  // The empty stage stands in for the model so the panel never sits empty.
   if (preview.isPending) {
-    return (
-      <>
-        <FoundrySkinAssembling />
-        <div className='absolute inset-x-0 bottom-0 space-y-2 p-6'>
-          <p className='text-center text-muted-foreground text-sm'>
-            {t("skins.preview.loading")}
-          </p>
-          <FoundryLoadingBar />
-        </div>
-      </>
-    );
+    return <ModelLoadingStage status={t("skins.preview.loading")} />;
   }
 
   if (preview.isError || preview.data.kind === "unsupported") {
@@ -159,5 +148,12 @@ const PreviewSurface = ({ preview, label }: PreviewSurfaceProps) => {
     );
   }
 
-  return <FoundryModelViewer dataUrl={preview.data.dataUrl} label={label} />;
+  return (
+    <AnimatedModelPreview
+      key={`${preview.data.filePath}:${preview.data.entryPath}`}
+      dataUrl={preview.data.dataUrl}
+      label={label}
+      source={preview.data}
+    />
+  );
 };

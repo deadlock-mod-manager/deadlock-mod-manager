@@ -13,9 +13,15 @@ interface ModHeroProps {
   mod: ModDto;
   shouldBlur?: boolean;
   actions?: ReactNode;
+  cornerAction?: ReactNode;
 }
 
-export const ModHero = ({ mod, shouldBlur = false, actions }: ModHeroProps) => {
+export const ModHero = ({
+  mod,
+  shouldBlur = false,
+  actions,
+  cornerAction,
+}: ModHeroProps) => {
   const hasImages = mod.images && mod.images.length > 0;
   const localMod = usePersistedStore((state) =>
     findLocalMod(state.localMods, mod.remoteId),
@@ -84,6 +90,9 @@ export const ModHero = ({ mod, shouldBlur = false, actions }: ModHeroProps) => {
             {getModCategoryDisplayName(mod.category)}
           </p>
         </div>
+        {cornerAction && (
+          <div className='absolute right-6 bottom-6 z-20'>{cornerAction}</div>
+        )}
       </div>
     );
   }

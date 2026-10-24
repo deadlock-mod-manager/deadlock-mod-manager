@@ -12,6 +12,7 @@ import Collection from "./pages/collection";
 import Crosshairs from "./pages/crosshairs";
 import Dashboard from "./pages/dashboard";
 import Debug from "./pages/debug";
+import { DebugViewer } from "./pages/debug-viewer";
 import Contributors from "./pages/contributors";
 import Developer from "./pages/developer";
 import Downloads from "./pages/downloads";
@@ -77,6 +78,9 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
       <Suspense fallback={<Splash />}>
         <BrowserRouter>
           <Routes>
+            {import.meta.env.DEV && (
+              <Route element={<DebugViewer />} path='/debug/viewer/:modId?' />
+            )}
             <Route
               element={
                 <App

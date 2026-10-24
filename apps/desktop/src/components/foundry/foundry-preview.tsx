@@ -3,10 +3,11 @@ import { cn } from "@deadlock-mods/ui/lib/utils";
 import { CubeIcon, ImageIcon, MusicNotesIcon } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import { usePersistedStore } from "@/lib/store";
-import { FoundrySkinAssembling } from "./foundry-assembling";
 import { useFoundry } from "./foundry-context";
 import { FoundryLoadingBar } from "./foundry-loading-bar";
-import { FoundryModelViewer } from "./foundry-model-viewer";
+import { AnimatedModelPreview } from "./animated-model-preview";
+import { ModelLoadingStage } from "./model-loading-stage";
+import { getPrimaryModelPath } from "@/lib/foundry";
 
 /**
  * The result surface in the middle of the Foundry: the live 3D turntable while a
@@ -62,10 +63,16 @@ export const FoundryPreview = () => {
     );
   }
 
-  if (modelUrl && !rebuildingModel) {
+  const modelPath =
+    activeTab === "paint" && manifest
+      ? getPrimaryModelPath(manifest)
+      : selectedEntryPath;
+  if (modelUrl && !rebuildingModel && manifest && modelPath) {
     return (
       <div className='relative flex h-full w-full items-center justify-center overflow-hidden rounded-lg border bg-gradient-to-b from-muted/40 to-background'>
-        <FoundryModelViewer
+        <AnimatedModelPreview
+          key={`${manifest.filePath}:${modelPath}`}
+          source={{ filePath: manifest.filePath, entryPath: modelPath }}
           dataUrl={modelUrl}
           label={selectedEntryPath ?? t("foundry.preview.alt")}
           tint={previewTint}
@@ -74,18 +81,16 @@ export const FoundryPreview = () => {
     );
   }
 
-  // While the model is being built, the assembling figure stands in for it: the
-  // same silhouette, made of particles, so the panel never sits empty.
+  // While the model is being built, the empty stage stands in for it so the
+  // panel never sits empty.
   if (rebuildingModel) {
     return (
-      <div className='relative flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-lg border bg-gradient-to-b from-muted/40 to-background'>
-        <FoundrySkinAssembling />
-        <div className='absolute inset-x-0 bottom-0 space-y-2 p-6'>
-          <p className='text-center text-muted-foreground text-sm'>
-            {t(busy ? "foundry.preview.painting" : "foundry.preview.loading")}
-          </p>
-          <FoundryLoadingBar />
-        </div>
+      <div className='relative h-full w-full overflow-hidden rounded-lg border bg-gradient-to-b from-muted/40 to-background'>
+        <ModelLoadingStage
+          status={t(
+            busy ? "foundry.preview.painting" : "foundry.preview.loading",
+          )}
+        />
       </div>
     );
   }

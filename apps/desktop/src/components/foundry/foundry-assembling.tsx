@@ -278,20 +278,6 @@ const AssemblingCanvas = ({
   );
 };
 
-/** A rotating hero figure, shown while a skin's model is being decoded. */
-export const FoundrySkinAssembling = ({
-  className,
-}: {
-  className?: string;
-}) => (
-  <AssemblingCanvas
-    className={className}
-    distance={4.3}
-    sampler={sampleFigurePoint}
-    spin={0.5}
-  />
-);
-
 /**
  * A portrait card that builds and rebuilds, shown per tile while card art
  * decodes. No spin — a flat card turned edge-on would vanish — and fewer
