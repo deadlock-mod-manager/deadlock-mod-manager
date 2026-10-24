@@ -24,6 +24,7 @@ import { createParticleEffect } from "@/lib/particles/effect";
 import { type ParticleDiagnostic } from "@/lib/particles/types";
 import { assignAbilitySlots } from "@/lib/preview-actions";
 import {
+  decodePreviewAbilityParticles,
   decodePreviewAnimation,
   decodePreviewCloth,
   decodePreviewParticles,
@@ -38,7 +39,7 @@ import {
   type FoundryPreviewTint,
 } from "./foundry-model-viewer";
 import { ViewerAnimationPicker } from "./viewer-animation-picker";
-import type { ViewerEffectFactory } from "./viewer-effects";
+import { restartEvery, type ViewerEffectFactory } from "./viewer-effects";
 import { overlaySurface } from "./viewer-tools";
 import {
   AbilityBar,
@@ -57,6 +58,10 @@ interface Props {
 const REST_POSE = "rest";
 
 const HERO_ABILITIES_KEY = "assets:hero-abilities";
+
+/** A clip where the ability lets loose, which starts its beam or shot. */
+const RELEASE_CLIP =
+  /_(fire|shoot|attack|slam|throw|toss|release|launch)(_|\.|$)/;
 
 export const AnimatedModelPreview = ({ model, label, source, tint }: Props) => {
   const { t } = useTranslation();
@@ -80,11 +85,6 @@ export const AnimatedModelPreview = ({ model, label, source, tint }: Props) => {
     retry: false,
     meta: { skipGlobalErrorHandler: true },
   };
-  const choices = useQuery({
-    ...modelAssetQuery,
-    queryKey: ["preview-clips", source.filePath, source.entryPath],
-    queryFn: () => listPreviewAnimations(source),
-  });
   const cloth = useQuery({
     ...modelAssetQuery,
     queryKey: ["preview-cloth", source.filePath, source.entryPath],
@@ -108,27 +108,19 @@ export const AnimatedModelPreview = ({ model, label, source, tint }: Props) => {
   const hero = (heroAbilities.data?.data ?? [])
     .filter((set) => source.entryPath.startsWith(set.modelDirectory))
     .sort((a, b) => b.modelDirectory.length - a.modelDirectory.length)[0];
-  const hasParticles = (particles.data?.systems.length ?? 0) > 0;
-  const effects = useMemo<ViewerEffectFactory[]>(
-    () => [
-      ...(clothOn && cloth.data ? [createClothEffect(cloth.data)] : []),
-      ...(particlesOn && particles.data?.systems.length
-        ? [
-            createParticleEffect(particles.data, {
-              onDiagnostics: (diagnostics) => {
-                if (particles.data)
-                  setParticleReport({ data: particles.data, diagnostics });
-              },
-            }),
-          ]
-        : []),
+  const abilityNames = hero?.abilities.map((ability) => ability.name) ?? [];
+  const choices = useQuery({
+    ...modelAssetQuery,
+    queryKey: [
+      "preview-clips",
+      source.filePath,
+      source.entryPath,
+      ...abilityNames,
     ],
-    [clothOn, cloth.data, particlesOn, particles.data],
-  );
-  const effectsLimited =
-    (particles.data?.diagnostics?.length ?? 0) > 0 ||
-    (particleReport?.data === particles.data &&
-      (particleReport?.diagnostics.length ?? 0) > 0);
+    queryFn: () => listPreviewAnimations(source, abilityNames),
+    // The names find clips not prefixed `ability_`; wait for them.
+    enabled: modelAssetQuery.enabled && !heroAbilities.isPending,
+  });
   const actions = choices.data ?? [];
   // Until something is picked, play the first action (an idle) on its own.
   const action =
@@ -164,6 +156,82 @@ export const AnimatedModelPreview = ({ model, label, source, tint }: Props) => {
   };
   const { slots } = assignAbilitySlots(actions, hero?.abilities ?? []);
   const hasAbilityBar = slots.some((slot) => slot.action);
+  const abilityClass =
+    slots.find((slot) => action && slot.action?.id === action.id)?.ability
+      .className ?? null;
+  const abilityParticles = useQuery({
+    ...modelAssetQuery,
+    queryKey: [
+      "preview-ability-particles",
+      source.filePath,
+      source.entryPath,
+      abilityClass,
+    ],
+    queryFn: () => decodePreviewAbilityParticles(source, abilityClass ?? ""),
+    enabled: modelAssetQuery.enabled && abilityClass !== null,
+    gcTime: 30_000,
+  });
+  const castEffects = abilityParticles.data?.cast.systems.length
+    ? abilityParticles.data.cast
+    : null;
+  const releaseEffects = abilityParticles.data?.release.systems.length
+    ? abilityParticles.data.release
+    : null;
+  const loopSeconds = current?.duration ?? 0;
+  const releaseSeconds =
+    current?.segments.find((segment) =>
+      RELEASE_CLIP.test(segment.clipPath.split("/").pop() ?? ""),
+    )?.start ?? 0;
+  const hasParticles =
+    (particles.data?.systems.length ?? 0) > 0 ||
+    castEffects !== null ||
+    releaseEffects !== null;
+  const effects = useMemo<ViewerEffectFactory[]>(
+    () => [
+      ...(clothOn && cloth.data ? [createClothEffect(cloth.data)] : []),
+      ...(particlesOn && particles.data?.systems.length
+        ? [
+            createParticleEffect(particles.data, {
+              onDiagnostics: (diagnostics) => {
+                if (particles.data)
+                  setParticleReport({ data: particles.data, diagnostics });
+              },
+            }),
+          ]
+        : []),
+      ...(particlesOn && castEffects
+        ? [
+            restartEvery(
+              createParticleEffect(castEffects, { prewarm: false }),
+              loopSeconds,
+            ),
+          ]
+        : []),
+      ...(particlesOn && releaseEffects
+        ? [
+            restartEvery(
+              createParticleEffect(releaseEffects, { prewarm: false }),
+              loopSeconds,
+              releaseSeconds,
+            ),
+          ]
+        : []),
+    ],
+    [
+      clothOn,
+      cloth.data,
+      particlesOn,
+      particles.data,
+      castEffects,
+      releaseEffects,
+      loopSeconds,
+      releaseSeconds,
+    ],
+  );
+  const effectsLimited =
+    (particles.data?.diagnostics?.length ?? 0) > 0 ||
+    (particleReport?.data === particles.data &&
+      (particleReport?.diagnostics.length ?? 0) > 0);
   const status = animation.isFetching
     ? t("modelPreview.loadingAnimation")
     : animation.isError || choices.isError

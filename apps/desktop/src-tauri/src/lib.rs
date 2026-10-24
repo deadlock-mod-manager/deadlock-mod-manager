@@ -359,6 +359,7 @@ pub fn run() {
       commands::foundry::foundry_decode_animation,
       commands::foundry::foundry_decode_cloth,
       commands::foundry::foundry_decode_particles,
+      commands::foundry::foundry_decode_ability_particles,
       commands::foundry::foundry_decode_sound,
       commands::reports::create_report,
       commands::reports::get_report_counts,

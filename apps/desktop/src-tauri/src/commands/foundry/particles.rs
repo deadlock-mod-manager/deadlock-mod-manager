@@ -6,6 +6,7 @@ use source2_model::vpk_extract::VpkArchive;
 use source2_model::{Resource, particles};
 use ts_rs::TS;
 
+use super::ability_vfx::caster_particles;
 use super::animation::{archives, invalid};
 use crate::errors::Error;
 
@@ -146,96 +147,152 @@ pub async fn foundry_decode_particles(
     )?;
     let discovery = particles::discover_model_preview_particles(&archive, &resource, &entry_path)
       .map_err(invalid)?;
-    let loaded = particles::load_particle_systems(&archive, &discovery.paths);
-    let mut diagnostics: Vec<_> = loaded
-      .diagnostics
-      .into_iter()
-      .map(|diagnostic| {
-        let (code, detail) = match diagnostic.issue {
-          particles::ParticleLoadIssue::SystemLimit => {
-            (PreviewParticleIssue::SystemLimit, String::new())
-          }
-          particles::ParticleLoadIssue::DepthLimit => {
-            (PreviewParticleIssue::DepthLimit, String::new())
-          }
-          particles::ParticleLoadIssue::Cycle => (PreviewParticleIssue::Cycle, String::new()),
-          particles::ParticleLoadIssue::Unavailable(detail) => {
-            (PreviewParticleIssue::Unavailable, detail)
-          }
-        };
-        PreviewParticleDiagnostic {
-          path: diagnostic.path,
-          code,
-          detail,
-        }
-      })
-      .collect();
-    let systems = loaded.systems;
-    let texture_paths = systems
-      .iter()
-      .flat_map(particles::particle_texture_paths)
-      .collect::<std::collections::BTreeSet<_>>();
-    let mut textures = Vec::new();
-    for (index, path) in texture_paths.into_iter().enumerate() {
-      if index >= MAX_TEXTURES {
-        diagnostics.push(PreviewParticleDiagnostic {
-          path,
-          code: PreviewParticleIssue::TextureLimit,
-          detail: String::new(),
-        });
-        continue;
-      }
-      match particles::particle_texture(&archive, &path, TEXTURE_SIDE) {
-        Ok(texture) => textures.push(PreviewParticleTexture {
-          data_url: format!(
-            "data:image/png;base64,{}",
-            base64::engine::general_purpose::STANDARD.encode(&texture.png)
-          ),
-          sequences: texture
-            .sequences
-            .into_iter()
-            .map(|sequence| PreviewSpriteSequence {
-              frames_per_second: sequence.frames_per_second,
-              frames: sequence
-                .frames
-                .into_iter()
-                .map(|frame| PreviewSpriteFrame {
-                  duration: frame.display_time,
-                  min: frame.cropped_min,
-                  max: frame.cropped_max,
-                })
-                .collect(),
-            })
-            .collect(),
-          path,
-        }),
-        Err(error) => diagnostics.push(PreviewParticleDiagnostic {
-          path,
-          code: PreviewParticleIssue::MissingTexture,
-          detail: error.to_string(),
-        }),
-      }
-    }
-    Ok(PreviewParticles {
-      attachments: particles::model_attachments(&resource)
-        .map_err(invalid)?
-        .into_iter()
-        .map(|attachment| PreviewAttachment {
-          name: attachment.name,
-          bone: attachment.bone,
-          offset: attachment.offset,
-          rotation: attachment.rotation,
-        })
-        .collect(),
-      systems: systems
-        .into_iter()
-        .map(PreviewParticleSystem::from)
-        .collect(),
-      textures,
-      diagnostics,
-      source_models: discovery.source_models,
+    preview_particles(
+      &archive,
+      &resource,
+      &discovery.paths,
+      discovery.source_models,
+    )
+  })
+  .await
+  .map_err(invalid)?
+}
+
+/// The effects an ability plays on its caster, split by when they start.
+#[derive(Serialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct PreviewAbilityParticles {
+  /// From the start of the ability's animation.
+  pub cast: PreviewParticles,
+  /// From the animation's firing phase: beams, shots, swings.
+  pub release: PreviewParticles,
+}
+
+/// The particle effects `ability_class` plays on its caster, for previewing
+/// that ability's animation on the model at `entry_path`.
+#[tauri::command]
+pub async fn foundry_decode_ability_particles(
+  file_path: String,
+  entry_path: String,
+  ability_class: String,
+) -> Result<PreviewAbilityParticles, Error> {
+  let permit = effect_slot()
+    .clone()
+    .acquire_owned()
+    .await
+    .map_err(invalid)?;
+  tauri::async_runtime::spawn_blocking(move || {
+    let _permit = permit;
+    let (archive, resource) = effect_model(
+      &file_path,
+      &entry_path,
+      "Ability effects require a compiled character model",
+    )?;
+    let particles = caster_particles(&ability_class);
+    Ok(PreviewAbilityParticles {
+      cast: preview_particles(&archive, &resource, &particles.cast, Vec::new())?,
+      release: preview_particles(&archive, &resource, &particles.release, Vec::new())?,
     })
   })
   .await
   .map_err(invalid)?
+}
+
+/// Loads `paths` with their textures and the model's attachment points.
+fn preview_particles(
+  archive: &VpkArchive,
+  resource: &Resource,
+  paths: &[String],
+  source_models: Vec<String>,
+) -> Result<PreviewParticles, Error> {
+  let loaded = particles::load_particle_systems(archive, paths);
+  let mut diagnostics: Vec<_> = loaded
+    .diagnostics
+    .into_iter()
+    .map(|diagnostic| {
+      let (code, detail) = match diagnostic.issue {
+        particles::ParticleLoadIssue::SystemLimit => {
+          (PreviewParticleIssue::SystemLimit, String::new())
+        }
+        particles::ParticleLoadIssue::DepthLimit => {
+          (PreviewParticleIssue::DepthLimit, String::new())
+        }
+        particles::ParticleLoadIssue::Cycle => (PreviewParticleIssue::Cycle, String::new()),
+        particles::ParticleLoadIssue::Unavailable(detail) => {
+          (PreviewParticleIssue::Unavailable, detail)
+        }
+      };
+      PreviewParticleDiagnostic {
+        path: diagnostic.path,
+        code,
+        detail,
+      }
+    })
+    .collect();
+  let systems = loaded.systems;
+  let texture_paths = systems
+    .iter()
+    .flat_map(particles::particle_texture_paths)
+    .collect::<std::collections::BTreeSet<_>>();
+  let mut textures = Vec::new();
+  for (index, path) in texture_paths.into_iter().enumerate() {
+    if index >= MAX_TEXTURES {
+      diagnostics.push(PreviewParticleDiagnostic {
+        path,
+        code: PreviewParticleIssue::TextureLimit,
+        detail: String::new(),
+      });
+      continue;
+    }
+    match particles::particle_texture(archive, &path, TEXTURE_SIDE) {
+      Ok(texture) => textures.push(PreviewParticleTexture {
+        data_url: format!(
+          "data:image/png;base64,{}",
+          base64::engine::general_purpose::STANDARD.encode(&texture.png)
+        ),
+        sequences: texture
+          .sequences
+          .into_iter()
+          .map(|sequence| PreviewSpriteSequence {
+            frames_per_second: sequence.frames_per_second,
+            frames: sequence
+              .frames
+              .into_iter()
+              .map(|frame| PreviewSpriteFrame {
+                duration: frame.display_time,
+                min: frame.cropped_min,
+                max: frame.cropped_max,
+              })
+              .collect(),
+          })
+          .collect(),
+        path,
+      }),
+      Err(error) => diagnostics.push(PreviewParticleDiagnostic {
+        path,
+        code: PreviewParticleIssue::MissingTexture,
+        detail: error.to_string(),
+      }),
+    }
+  }
+  Ok(PreviewParticles {
+    attachments: particles::model_attachments(resource)
+      .map_err(invalid)?
+      .into_iter()
+      .map(|attachment| PreviewAttachment {
+        name: attachment.name,
+        bone: attachment.bone,
+        offset: attachment.offset,
+        rotation: attachment.rotation,
+      })
+      .collect(),
+    systems: systems
+      .into_iter()
+      .map(PreviewParticleSystem::from)
+      .collect(),
+    textures,
+    diagnostics,
+    source_models,
+  })
 }

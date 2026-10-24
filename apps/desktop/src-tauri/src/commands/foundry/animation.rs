@@ -7,7 +7,7 @@ use source2_model::{Resource, nm_anim, skeleton};
 use ts_rs::TS;
 
 use super::archive_cache::open_archive;
-use super::staging::staged_base_game_vpk;
+use super::staging::{staged_base_game_vpk, staged_core_vpk};
 use crate::errors::Error;
 
 #[derive(Clone, Serialize, TS)]
@@ -18,6 +18,11 @@ pub struct PreviewAnimationChoice {
   pub kind: PreviewAnimationKind,
   pub label: String,
   pub clips: Vec<String>,
+  /// The ability name these clips were found by, when they don't carry the
+  /// `ability_` prefix that otherwise ties them to an ability.
+  #[ts(optional)]
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub ability: Option<String>,
 }
 
 #[derive(Clone, Serialize, TS)]
@@ -124,13 +129,18 @@ fn animation_slot() -> &'static Arc<tokio::sync::Semaphore> {
   SLOT.get_or_init(|| Arc::new(tokio::sync::Semaphore::new(1)))
 }
 
+/// The VPK at `file_path`, falling back to the base game and then the engine's
+/// core pak, plus the base game on its own for clip listings.
 pub(super) fn archives(file_path: &str) -> Result<(VpkArchive, Option<Arc<VpkArchive>>), Error> {
   let base = staged_base_game_vpk()?
     .map(|path| open_archive(&path, None))
     .transpose()?;
+  let core = staged_core_vpk()?
+    .map(|path| open_archive(&path, None))
+    .transpose()?;
   let archive = VpkArchive::open(Path::new(file_path))
     .map_err(invalid)?
-    .with_fallbacks(base.iter().cloned().collect());
+    .with_fallbacks(base.iter().chain(core.iter()).cloned().collect());
   Ok((archive, base))
 }
 
@@ -144,8 +154,11 @@ fn clip_directory(model_path: &str) -> Result<String, Error> {
     .ok_or_else(|| invalid("Invalid model path"))
 }
 
-fn choices(paths: impl Iterator<Item = String>) -> Vec<PreviewAnimationChoice> {
-  nm_anim::preview_actions(paths)
+fn choices(
+  paths: impl Iterator<Item = String>,
+  ability_names: &[String],
+) -> Vec<PreviewAnimationChoice> {
+  nm_anim::preview_actions(paths, ability_names)
     .into_iter()
     .map(|action| {
       let (kind, label) = match action.kind {
@@ -167,6 +180,7 @@ fn choices(paths: impl Iterator<Item = String>) -> Vec<PreviewAnimationChoice> {
         kind,
         label,
         clips: action.clips,
+        ability: action.ability,
       }
     })
     .collect()
@@ -176,6 +190,7 @@ fn choices(paths: impl Iterator<Item = String>) -> Vec<PreviewAnimationChoice> {
 pub async fn foundry_list_animations(
   file_path: String,
   entry_path: String,
+  ability_names: Vec<String>,
 ) -> Result<Vec<PreviewAnimationChoice>, Error> {
   tauri::async_runtime::spawn_blocking(move || {
     clip_directory(&entry_path)?;
@@ -186,6 +201,7 @@ pub async fn foundry_list_animations(
     }
     Ok(choices(
       nm_anim::model_clip_paths(&archive, &entry_path, &listing).into_iter(),
+      &ability_names,
     ))
   })
   .await
@@ -435,7 +451,7 @@ mod tests {
       "models/a/clips/aim_idle.vnmclip+non_additive.vnmclip_c",
       "models/a/body.vmdl_c",
     ];
-    let clips = choices(paths.into_iter().map(str::to_owned));
+    let clips = choices(paths.into_iter().map(str::to_owned), &[]);
     assert_eq!(clips.len(), 2);
     assert_eq!(clips[0].id, "idle");
     assert_eq!(clips[0].label, "modelPreview.actions.idle");

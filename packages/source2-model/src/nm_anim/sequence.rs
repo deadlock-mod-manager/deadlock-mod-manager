@@ -12,11 +12,73 @@ pub(super) fn clip_stem(path: &str) -> &str {
         .trim_end_matches(".vnmclip")
 }
 
+/// Phase tokens by playback order. Phases past the first only break ties, so
+/// `dive_intro` plays before `dive_loop` and `fire` before `fire_loop`.
+const PHASES: &[(i32, &[&str])] = &[
+    (0, &["precast"]),
+    (5, &["chargeup"]),
+    (10, &["start", "takeoff", "upwards", "casting", "jump"]),
+    (30, &["hover", "hold", "fly", "charge", "charging"]),
+    (40, &["intro"]),
+    (50, &["loop", "idle", "channeling"]),
+    (55, &["dash", "dive"]),
+    (58, &["attack", "hit", "shoot", "fire", "slam", "cast"]),
+    (59, &["attached"]),
+    (
+        60,
+        &[
+            "impact",
+            "crash",
+            "land",
+            "toss",
+            "explosion",
+            "explode",
+            "damage",
+            "throw",
+        ],
+    ),
+    (65, &["finale", "counterattack"]),
+    (70, &["end", "release", "castcomplete", "exit", "getup"]),
+];
+
+/// The clip named after the family alone, like `ability_uppercut`, is the
+/// move's body: after its start and intro, before any loop or follow-up.
+const BODY_RANK: i32 = 45;
+
+/// Stance, direction and layer tokens. Like phases, they end an ability's
+/// name inside a clip stem.
+const VARIANTS: &[&str] = &[
+    "in", "air", "inair", "up", "down", "crouch", "alt", "base", "turn", "run", "walk", "zipline",
+    "stand", "add", "additive", "null", "aim", "forward", "backward", "left", "right", "n", "e",
+    "s", "w", "ne", "nw", "se", "sw",
+];
+
+fn phase_token_rank(token: &str) -> Option<i32> {
+    PHASES
+        .iter()
+        .find(|(_, tokens)| tokens.contains(&token))
+        .map(|(rank, _)| *rank)
+}
+
+fn ends_name(token: &str) -> bool {
+    phase_token_rank(token).is_some() || VARIANTS.contains(&token)
+}
+
+/// `ability_` plus the ability's name: every token up to the first phase or
+/// variant, so `ability_sleep_dagger` and `ability_hook_cast_loop` group as
+/// `ability_sleep_dagger` and `ability_hook`. The first name token is kept
+/// even when it reads as a phase (`ability_charge`).
 pub(super) fn family_prefix(path: &str) -> Option<String> {
     let tokens = clip_stem(path).split('_').collect::<Vec<_>>();
     let ability = tokens.iter().position(|token| *token == "ability")?;
-    let name = tokens.get(ability + 1)?;
-    Some(format!("ability_{name}"))
+    let first = tokens.get(ability + 1)?;
+    let mut name = vec![*first];
+    name.extend(
+        tokens[ability + 2..]
+            .iter()
+            .take_while(|token| !ends_name(token)),
+    );
+    Some(format!("ability_{}", name.join("_")))
 }
 
 fn contains_token(name: &str, token: &str) -> bool {
@@ -62,42 +124,16 @@ fn direction_preference(direction: &str) -> usize {
     }
 }
 
-fn phase_rank(name: &str, family: &str) -> Option<i32> {
+/// Where `name` plays within `family`: its first phase token, then its next
+/// one to order variants of the same phase.
+fn phase_rank(name: &str, family: &str) -> Option<(i32, i32)> {
     if name == family {
-        return Some(20);
+        return Some((BODY_RANK, 0));
     }
-    let name = name.strip_prefix(family)?.strip_prefix('_')?;
-    const PHASES: &[(i32, &[&str])] = &[
-        (0, &["precast"]),
-        (5, &["chargeup"]),
-        (10, &["start", "takeoff", "upwards", "casting", "jump"]),
-        (30, &["hover", "hold", "fly", "charge"]),
-        (40, &["intro"]),
-        (50, &["loop", "idle", "channeling"]),
-        (55, &["dash", "dive"]),
-        (58, &["attack", "hit", "shoot", "fire", "slam", "cast"]),
-        (
-            60,
-            &[
-                "impact",
-                "crash",
-                "land",
-                "toss",
-                "explosion",
-                "explode",
-                "damage",
-                "throw",
-            ],
-        ),
-        (65, &["finale", "counterattack"]),
-        (70, &["end", "release", "castcomplete", "exit", "getup"]),
-    ];
-    PHASES.iter().find_map(|(rank, tokens)| {
-        tokens
-            .iter()
-            .any(|token| contains_token(name, token))
-            .then_some(*rank)
-    })
+    let suffix = name.strip_prefix(family)?.strip_prefix('_')?;
+    let mut ranks = suffix.split('_').filter_map(phase_token_rank);
+    let first = ranks.next()?;
+    Some((first, ranks.next().unwrap_or(0)))
 }
 
 pub(super) fn coherent_phase_paths(
@@ -110,24 +146,27 @@ pub(super) fn coherent_phase_paths(
         .into_iter()
         .filter_map(|path| {
             let stem = clip_stem(&path);
-            if is_additive_clip(&path)
-                || ["alt", "base", "swap", "turn", "run", "walk", "zipline"]
-                    .iter()
-                    .any(|token| contains_token(stem, token))
-            {
+            if is_additive_clip(&path) {
                 return None;
             }
             let name = stem.find("ability_").map_or(stem, |index| &stem[index..]);
-            if !(name == family || name.starts_with(&format!("{family}_"))) {
-                return None;
-            }
-            if !primary_in_air && is_in_air_variant(name) {
-                return None;
-            }
-            if ["up", "down", "crouch"]
-                .iter()
-                .any(|token| contains_token(name, token))
+            let suffix = if name == family {
+                ""
+            } else {
+                name.strip_prefix(family)?.strip_prefix('_')?
+            };
+            // Judge variants on what follows the name, so an ability called
+            // "Paradoxical Swap" still keeps its own clips.
+            if [
+                "alt", "base", "swap", "turn", "run", "walk", "zipline", "stand", "up", "down",
+                "crouch",
+            ]
+            .iter()
+            .any(|token| contains_token(suffix, token))
             {
+                return None;
+            }
+            if !primary_in_air && is_in_air_variant(suffix) {
                 return None;
             }
             phase_rank(name, family).map(|rank| (rank, path))
@@ -170,6 +209,9 @@ pub(super) fn coherent_phase_paths(
     });
     phases.dedup_by(|left, right| left.0 == right.0);
     phases
+        .into_iter()
+        .map(|((rank, _), path)| (rank, path))
+        .collect()
 }
 
 pub fn resolve_nm_clip_sequence(

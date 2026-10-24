@@ -17,6 +17,9 @@ pub struct PreviewAction {
     pub id: String,
     pub kind: PreviewActionKind,
     pub clips: Vec<String>,
+    /// The ability name a clip group was found by, when its clips are not
+    /// prefixed `ability_` and so do not name the ability themselves.
+    pub ability: Option<String>,
 }
 
 const MOVEMENT: &[(&str, &[&[&str]])] = &[
@@ -67,9 +70,39 @@ const MOVEMENT: &[(&str, &[&[&str]])] = &[
     ),
 ];
 
+fn squash(text: &str) -> String {
+    text.chars()
+        .filter(char::is_ascii_alphanumeric)
+        .map(|ch| ch.to_ascii_lowercase())
+        .collect()
+}
+
+/// A clip group named after an ability without the `ability_` prefix, and the
+/// ability it names: its first one to three tokens spell the whole name, as
+/// Bebop's `hyperbeam_fire` does for "Hyper Beam".
+fn named_family<'a>(path: &str, ability_names: &'a [String]) -> Option<(String, &'a str)> {
+    let stem = clip_stem(path);
+    let tokens: Vec<_> = stem.split('_').collect();
+    if tokens.contains(&"ability") {
+        return None;
+    }
+    (1..tokens.len().min(4)).find_map(|count| {
+        let family = tokens[..count].join("_");
+        ability_names
+            .iter()
+            .find(|name| name.len() >= 4 && squash(name) == squash(&family))
+            .map(|name| (family, name.as_str()))
+    })
+}
+
 /// Select whole playable moves, excluding additive layers and stance fragments.
 /// Ability phases share the resolver's ordering and directional policy.
-pub fn preview_actions(paths: impl IntoIterator<Item = String>) -> Vec<PreviewAction> {
+/// `ability_names` (display names such as "Hyper Beam") find abilities whose
+/// clips do not carry the `ability_` prefix.
+pub fn preview_actions(
+    paths: impl IntoIterator<Item = String>,
+    ability_names: &[String],
+) -> Vec<PreviewAction> {
     let paths: BTreeSet<_> = paths
         .into_iter()
         .filter(|path| {
@@ -99,16 +132,26 @@ pub fn preview_actions(paths: impl IntoIterator<Item = String>) -> Vec<PreviewAc
                     id: id.to_string(),
                     kind: PreviewActionKind::Movement,
                     clips,
+                    ability: None,
                 });
             }
             break;
         }
     }
     let mut families: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    let mut named: BTreeMap<String, &str> = BTreeMap::new();
     for path in paths {
-        if let Some(family) = family_prefix(&path) {
-            families.entry(family).or_default().push(path);
-        }
+        let family = match family_prefix(&path) {
+            Some(family) => family,
+            None => {
+                let Some((family, ability)) = named_family(&path, ability_names) else {
+                    continue;
+                };
+                named.insert(family.clone(), ability);
+                family
+            }
+        };
+        families.entry(family).or_default().push(path);
     }
     for (family, paths) in families {
         let Some(primary) = paths
@@ -128,6 +171,7 @@ pub fn preview_actions(paths: impl IntoIterator<Item = String>) -> Vec<PreviewAc
                 id: format!("ability:{}", family.trim_start_matches("ability_")),
                 kind: PreviewActionKind::Ability,
                 clips,
+                ability: named.get(&family).map(|name| name.to_string()),
             });
         }
     }
@@ -144,6 +188,7 @@ mod tests {
             names
                 .iter()
                 .map(|name| format!("models/a/clips/{name}.vnmclip_c")),
+            &[],
         )
     }
 
@@ -187,6 +232,64 @@ mod tests {
                 "ability_leap_impact"
             ]
         );
+    }
+
+    #[test]
+    fn multi_word_and_unprefixed_ability_names_form_actions() {
+        // Haze's Sleep Dagger and Bebop's Grapple Arm and Hyper Beam, as the game
+        // names them.
+        let selected = preview_actions(
+            [
+                "ability_sleep_dagger",
+                "ability_hook_attached_loop",
+                "ability_hook_cast",
+                "ability_hook_attached",
+                "ability_hook_cast_loop",
+                "sleep_start",
+                "hyperbeam_fire_loop",
+                "hyperbeam_charge",
+                "hyperbeam_run_n",
+                "hyperbeam_fire",
+                "hyperbeam_stand_idle",
+                "hyperbeam_charge_loop",
+            ]
+            .iter()
+            .map(|name| format!("models/a/clips/{name}.vnmclip_c")),
+            &["Hyper Beam".to_string(), "Sleep Dagger".to_string()],
+        );
+        let action = |id: &str| selected.iter().find(|action| action.id == id).unwrap();
+        assert_eq!(
+            names(action("ability:hyperbeam")),
+            [
+                "hyperbeam_charge",
+                "hyperbeam_charge_loop",
+                "hyperbeam_fire",
+                "hyperbeam_fire_loop"
+            ]
+        );
+        assert_eq!(
+            names(action("ability:sleep_dagger")),
+            ["ability_sleep_dagger"]
+        );
+        assert_eq!(
+            names(action("ability:hook")),
+            [
+                "ability_hook_cast",
+                "ability_hook_cast_loop",
+                "ability_hook_attached",
+                "ability_hook_attached_loop"
+            ]
+        );
+        assert!(
+            selected
+                .iter()
+                .all(|action| action.id != "ability:hook_attached")
+        );
+        assert_eq!(
+            action("ability:hyperbeam").ability.as_deref(),
+            Some("Hyper Beam")
+        );
+        assert!(selected.iter().all(|action| action.id != "ability:sleep"));
     }
 
     #[test]
@@ -238,6 +341,7 @@ mod tests {
             ]
             .into_iter()
             .map(str::to_string),
+            &[],
         );
         assert!(selected.is_empty());
     }

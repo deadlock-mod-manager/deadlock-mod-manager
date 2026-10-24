@@ -30,8 +30,6 @@ const BLOCKING = new Set([
   "C_INIT_CreateOnModel",
   "C_INIT_CreateOnModelAtHeight",
   "C_INIT_CreateFromParentParticles",
-  "C_INIT_CreateSequentialPath",
-  "C_INIT_CreateSequentialPathV2",
 ]);
 
 const endCapOnly = (operator: JsonObject) =>
@@ -176,11 +174,13 @@ export const compileSystem = (file: DefinitionFile): CompiledSystem => {
     ) ?? list(definition.m_controlPointConfigurations)[0];
   const drivers = list(preview?.m_drivers).map((driver) => {
     const attachType = stringOf(driver.m_iAttachType, "");
+    const [x = 0, y = 0, z = 0] = numbersOf(driver.m_vecOffset, [0, 0, 0]);
     return {
       controlPoint: numberOf(driver.m_iControlPoint, 0),
       attachment: attachType.startsWith("PATTACH_POINT")
         ? stringOf(driver.m_attachmentName, "") || null
         : null,
+      offset: [x, y, z] as [number, number, number],
     };
   });
   return {

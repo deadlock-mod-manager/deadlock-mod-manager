@@ -71,6 +71,19 @@ export class ParticleSystem {
     return values;
   }
 
+  /** How many particles have spawned since the last reset. */
+  get spawned() {
+    return this.serial;
+  }
+
+  /** Live particle indices from oldest to newest, ties in index order. */
+  byAge(out: number[]) {
+    const created = this.scalar(FIELD.creationTime);
+    out.length = 0;
+    for (let index = 0; index < this.count; index += 1) out.push(index);
+    return out.sort((a, b) => created[a] - created[b]);
+  }
+
   initialOf(field: number) {
     return this.initial.get(field);
   }

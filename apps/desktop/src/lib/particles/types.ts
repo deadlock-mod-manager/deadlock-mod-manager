@@ -41,6 +41,8 @@ export type Emitter = (
 export interface SpriteRendererSpec {
   kind: "sprites" | "ropes";
   texture: string | null;
+  /** A second layer multiplied over the first, like a ring masking noise. */
+  mask: string | null;
   additive: boolean;
   overbright: FloatInput;
   alphaScale: FloatInput;
@@ -103,6 +105,13 @@ export interface CompiledSystem {
   /** Why this system is not simulated, when it is not. */
   blockedBy: string | null;
   children: CompiledSystem[];
-  /** The `preview` control point drivers, read from the root system only. */
-  drivers: { controlPoint: number; attachment: string | null }[];
+  /**
+   * The `preview` control point drivers, read from the root system only.
+   * `offset` is in the attachment's frame, or the model's when unattached.
+   */
+  drivers: {
+    controlPoint: number;
+    attachment: string | null;
+    offset: [number, number, number];
+  }[];
 }

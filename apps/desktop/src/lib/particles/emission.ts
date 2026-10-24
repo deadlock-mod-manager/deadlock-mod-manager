@@ -64,9 +64,44 @@ export const compileEmitter = (operator: JsonObject): Emitter | null => {
       return null;
   }
 };
+const distanceBetweenControlPoints = (
+  operator: JsonObject,
+): CompiledSystem["preEmission"][number] => {
+  const start = numberOf(operator.m_nStartCP, 0);
+  const end = numberOf(operator.m_nEndCP, 1);
+  const output = numberOf(operator.m_nOutputCP, 2);
+  const field = THREE.MathUtils.clamp(
+    numberOf(operator.m_nOutputCPField, 0),
+    0,
+    2,
+  );
+  const inputMin = numberOf(operator.m_flInputMin, 0);
+  const inputMax = numberOf(operator.m_flInputMax, 128);
+  const outputMin = numberOf(operator.m_flOutputMin, 0);
+  const outputMax = numberOf(operator.m_flOutputMax, 1);
+  return (controlPoints) => {
+    const from = controlPoints[start];
+    const to = controlPoints[end];
+    const point = controlPoints[output];
+    if (!from || !to || !point) return;
+    const span = inputMax - inputMin;
+    const t =
+      span === 0
+        ? 0
+        : THREE.MathUtils.clamp(
+            (from.position.distanceTo(to.position) - inputMin) / span,
+            0,
+            1,
+          );
+    point.position.setComponent(field, outputMin + (outputMax - outputMin) * t);
+  };
+};
+
 export const compilePreEmission = (
   operator: JsonObject,
 ): CompiledSystem["preEmission"][number] | null => {
+  if (classOf(operator) === "C_OP_DistanceBetweenCPsToCP")
+    return distanceBetweenControlPoints(operator);
   if (classOf(operator) !== "C_OP_SetSingleControlPointPosition") return null;
   const target = numberOf(operator.m_nCP1, 1);
   const source = transformControlPoint(operator.m_transformInput);

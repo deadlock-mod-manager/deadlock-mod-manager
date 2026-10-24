@@ -20,6 +20,7 @@ import {
   type DefinitionFile,
   particleSystemDiagnostics,
 } from "./compiler";
+import { PATH_PROGRESS } from "./path";
 import { ParticleSystem } from "./system";
 
 const CONTROL_POINTS = 16;
@@ -143,6 +144,12 @@ const flatten = (system: CompiledSystem): CompiledSystem[] => [
 
 export interface ParticleEffectOptions {
   onDiagnostics?: (diagnostics: ParticleDiagnostic[]) => void;
+  /**
+   * Run the systems for a moment on every reset so ambient effects start in
+   * full swing. Turn off for effects that should start with the animation,
+   * like an ability's cast burst. Defaults to true.
+   */
+  prewarm?: boolean;
 }
 
 const SPRITE_VERTEX = /* glsl */ `
@@ -152,6 +159,7 @@ attribute vec4 iColor;
 attribute vec4 iUv;
 attribute vec2 iSizeRoll;
 varying vec2 vUv;
+varying vec2 vMaskUv;
 varying vec4 vColor;
 void main() {
   vec4 view = modelViewMatrix * vec4(iPosition, 1.0);
@@ -161,34 +169,42 @@ void main() {
   gl_Position = projectionMatrix * view;
   vec2 t = corner * 0.5 + 0.5;
   vUv = vec2(mix(iUv.x, iUv.z, t.x), mix(iUv.w, iUv.y, t.y));
+  vMaskUv = t;
   vColor = iColor;
 }`;
 
 const ROPE_VERTEX = /* glsl */ `
 attribute vec4 tint;
 varying vec2 vUv;
+varying vec2 vMaskUv;
 varying vec4 vColor;
 void main() {
   gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
   vUv = uv;
+  vMaskUv = uv;
   vColor = tint;
 }`;
 
 const FRAGMENT = /* glsl */ `
 uniform sampler2D map;
 uniform float hasMap;
+uniform sampler2D mask;
+uniform float hasMask;
 varying vec2 vUv;
+varying vec2 vMaskUv;
 varying vec4 vColor;
 void main() {
   vec4 texel = hasMap > 0.5
     ? texture2D(map, vUv)
     : vec4(1.0, 1.0, 1.0, (1.0 - smoothstep(0.0, 1.0, length(vUv * 2.0 - 1.0))));
+  if (hasMask > 0.5) texel *= texture2D(mask, vMaskUv);
   gl_FragColor = vec4(texel.rgb * vColor.rgb, texel.a * vColor.a);
 }`;
 
 const makeMaterial = (
   vertexShader: string,
   texture: THREE.Texture | null,
+  mask: THREE.Texture | null,
   additive: boolean,
 ) =>
   new THREE.ShaderMaterial({
@@ -197,6 +213,8 @@ const makeMaterial = (
     uniforms: {
       map: { value: texture },
       hasMap: { value: texture ? 1 : 0 },
+      mask: { value: mask },
+      hasMask: { value: 0 },
     },
     transparent: true,
     depthWrite: false,
@@ -242,6 +260,7 @@ const spriteDrawable = (
   system: ParticleSystem,
   spec: SpriteRendererSpec,
   texture: THREE.Texture | null,
+  mask: THREE.Texture | null,
   sequences: PreviewSpriteSequence[] | undefined,
   parent: THREE.Object3D,
 ): Drawable => {
@@ -270,7 +289,7 @@ const spriteDrawable = (
     attribute.setUsage(THREE.DynamicDrawUsage);
     geometry.setAttribute(name, attribute);
   }
-  const material = makeMaterial(SPRITE_VERTEX, texture, spec.additive);
+  const material = makeMaterial(SPRITE_VERTEX, texture, mask, spec.additive);
   const mesh = new THREE.Mesh(geometry, material);
   mesh.frustumCulled = false;
   mesh.renderOrder = 10;
@@ -279,6 +298,7 @@ const spriteDrawable = (
   return {
     update() {
       material.uniforms.hasMap.value = texture?.image ? 1 : 0;
+      material.uniforms.hasMask.value = mask?.image ? 1 : 0;
       const count = Math.min(system.count, capacity);
       const position = system.vector(FIELD.position);
       const color = system.vector(FIELD.color);
@@ -332,6 +352,7 @@ const ropeDrawable = (
   system: ParticleSystem,
   spec: SpriteRendererSpec,
   texture: THREE.Texture | null,
+  mask: THREE.Texture | null,
   parent: THREE.Object3D,
 ): Drawable => {
   const capacity = Math.min(
@@ -359,7 +380,7 @@ const ropeDrawable = (
   geometry.setAttribute("position", position);
   geometry.setAttribute("tint", tint);
   geometry.setAttribute("uv", uv);
-  const material = makeMaterial(ROPE_VERTEX, texture, spec.additive);
+  const material = makeMaterial(ROPE_VERTEX, texture, mask, spec.additive);
   const mesh = new THREE.Mesh(geometry, material);
   mesh.frustumCulled = false;
   mesh.renderOrder = 10;
@@ -374,12 +395,17 @@ const ropeDrawable = (
   return {
     update(camera) {
       material.uniforms.hasMap.value = texture?.image ? 1 : 0;
+      material.uniforms.hasMask.value = mask?.image ? 1 : 0;
       const count = Math.min(system.count, capacity);
       const created = system.scalar(FIELD.creationTime);
+      const progress = system.scalar(PATH_PROGRESS);
       order.length = 0;
       for (let particle = 0; particle < count; particle += 1)
         order.push(particle);
-      order.sort((a, b) => created[a] - created[b]);
+      // A beam's particles spawn together; their place on the path orders them.
+      order.sort(
+        (a, b) => created[a] - created[b] || progress[a] - progress[b],
+      );
       const source = system.vector(FIELD.position);
       const color = system.vector(FIELD.color);
       const radius = system.scalar(FIELD.radius);
@@ -495,7 +521,9 @@ export const createParticleEffect =
           system.blockedBy || system.maxParticles === 0
             ? []
             : system.renderers.flatMap((renderer) =>
-                renderer.texture ? [renderer.texture] : [],
+                [renderer.texture, renderer.mask].filter(
+                  (path): path is string => path !== null,
+                ),
               ),
         ),
     );
@@ -550,15 +578,17 @@ export const createParticleEffect =
           const texture = spec.texture
             ? (textures.get(spec.texture) ?? null)
             : null;
+          const mask = spec.mask ? (textures.get(spec.mask) ?? null) : null;
           return spec.kind === "sprites"
             ? spriteDrawable(
                 system,
                 spec,
                 texture,
+                mask,
                 spec.texture ? sequences.get(spec.texture) : undefined,
                 fx,
               )
-            : ropeDrawable(system, spec, texture, fx);
+            : ropeDrawable(system, spec, texture, mask, fx);
         }),
       );
       const driven = new Set(root.drivers.map((driver) => driver.controlPoint));
@@ -571,6 +601,7 @@ export const createParticleEffect =
     const cameraLocal = new THREE.Vector3();
     const attachmentOffset = new THREE.Vector3();
     const attachmentRotation = new THREE.Quaternion();
+    const driverOffset = new THREE.Vector3();
     const unitScale = new THREE.Vector3(1, 1, 1);
 
     const placeControlPoints = (snap: boolean) => {
@@ -595,7 +626,9 @@ export const createParticleEffect =
               )
             : undefined;
           if (!attachment || !bone) {
-            point.position.set(0, 0, 0);
+            // Unattached drivers sit at the model's origin, plus the offset
+            // the effect's author previewed it with (a beam's far end).
+            point.position.fromArray(driver.offset);
             point.rotation.identity();
             continue;
           }
@@ -608,6 +641,11 @@ export const createParticleEffect =
             .premultiply(bone.matrixWorld)
             .premultiply(fxInverse)
             .decompose(point.position, point.rotation, scale);
+          point.position.add(
+            driverOffset
+              .fromArray(driver.offset)
+              .applyQuaternion(point.rotation),
+          );
         }
         // Control points nothing drives sit on the first driven one.
         const anchor =
@@ -632,7 +670,8 @@ export const createParticleEffect =
       placeControlPoints(true);
       for (const tree of trees)
         for (const system of tree.systems) system.reset();
-      for (let time = 0; time < PREWARM_SECONDS; time += 1 / 30) {
+      const prewarmSeconds = options.prewarm === false ? 0 : PREWARM_SECONDS;
+      for (let time = 0; time < prewarmSeconds; time += 1 / 30) {
         for (const tree of trees)
           for (const system of tree.systems) system.update(1 / 30);
       }

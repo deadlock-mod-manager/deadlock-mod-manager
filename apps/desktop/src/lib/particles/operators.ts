@@ -9,6 +9,7 @@ import {
 } from "./definition";
 import { parseFloatInput, parseVectorInput } from "./inputs";
 import { setField } from "./compile-values";
+import { PATH_PROGRESS, parsePathParams, pathPoint } from "./path";
 import { FIELD, type CompiledSystem, type FrameOperator } from "./types";
 import { type JsonObject } from "./json";
 
@@ -18,8 +19,72 @@ const vecA = new THREE.Vector3();
 const vecB = new THREE.Vector3();
 const quatA = new THREE.Quaternion();
 
+const order: number[] = [];
+
+/** How far `value` has moved from `from` to `to`, clamped to 0..1. */
+const ramp = (value: number, from: number, to: number) =>
+  to <= from ? 1 : THREE.MathUtils.clamp((value - from) / (to - from), 0, 1);
+
 export const compileOperator = (operator: JsonObject): FrameOperator | null => {
   switch (classOf(operator)) {
+    case "C_OP_MaintainSequentialPath": {
+      // Keeps particles spaced along the path as its control points move,
+      // oldest at the start.
+      const stops = numberOf(operator.m_flNumToAssign, 100);
+      const useCount = booleanOf(operator.m_bUseParticleCount);
+      const path = parsePathParams(operator.m_PathParams);
+      return (system) => {
+        const total = Math.max(useCount ? system.count : stops, 1);
+        const progress = system.scalar(PATH_PROGRESS);
+        const position = system.vector(FIELD.position);
+        system.byAge(order).forEach((index, rank) => {
+          const stop = rank % total;
+          progress[index] = total > 1 ? stop / (total - 1) : 0;
+          pathPoint(
+            path,
+            (point) => system.controlPoint(point),
+            progress[index],
+            vecA,
+          );
+          position.set([vecA.x, vecA.y, vecA.z], index * 3);
+        });
+      };
+    }
+    case "C_OP_LockToSavedSequentialPathV2": {
+      // Holds each particle at the stop its sequential-path initializer gave it.
+      const path = parsePathParams(operator.m_PathParams);
+      return (system) => {
+        const progress = system.scalar(PATH_PROGRESS);
+        const position = system.vector(FIELD.position);
+        for (let index = 0; index < system.count; index += 1) {
+          pathPoint(
+            path,
+            (point) => system.controlPoint(point),
+            progress[index],
+            vecA,
+          );
+          position.set([vecA.x, vecA.y, vecA.z], index * 3);
+        }
+      };
+    }
+    case "C_OP_SetChildControlPoints": {
+      // Moves control points onto particles so children follow them. Children
+      // share their parent's control points here, so the write reaches them.
+      const first = numberOf(operator.m_nFirstControlPoint, 0);
+      const count = numberOf(operator.m_nNumControlPoints, 1);
+      const source = parseFloatInput(operator.m_nFirstSourcePoint, 0);
+      return (system) => {
+        const position = system.vector(FIELD.position);
+        const start = Math.round(source.evaluate(system.focusCollection()));
+        system.byAge(order);
+        for (let offset = 0; offset < count; offset += 1) {
+          const particle = order[start + offset];
+          const point = system.controlPoints[first + offset];
+          if (particle === undefined || !point) break;
+          point.position.fromArray(position, particle * 3);
+        }
+      };
+    }
     case "C_OP_Decay":
       return (system) => {
         const lifetime = system.scalar(FIELD.lifetime);
@@ -137,6 +202,64 @@ export const compileOperator = (operator: JsonObject): FrameOperator | null => {
             continue;
           const t = Math.min(Math.max(context.age / length, 0), 1);
           values[index] = (initial?.[index] ?? 1) * t * t * (3 - 2 * t);
+        }
+      };
+    }
+    case "C_OP_PinParticleToCP": {
+      // Holds one particle (the oldest, newest or the `m_nParticleNumber`th)
+      // on a control point: the ends of a rope stay on its anchors.
+      const controlPoint = numberOf(operator.m_nControlPointNumber, 0);
+      const selection = stringOf(
+        operator.m_nParticleSelection,
+        "PARTICLE_SELECTION_FIRST",
+      );
+      const number = parseFloatInput(operator.m_nParticleNumber, 0);
+      const offset = parseVectorInput(operator.m_vecOffset, [0, 0, 0]);
+      const local = booleanOf(operator.m_bOffsetLocal);
+      return (system) => {
+        system.byAge(order);
+        const rank =
+          selection === "PARTICLE_SELECTION_LAST"
+            ? order.length - 1
+            : selection === "PARTICLE_SELECTION_NUMBER"
+              ? Math.round(number.evaluate(system.focusCollection()))
+              : 0;
+        const particle = order[rank];
+        if (particle === undefined) return;
+        const point = system.controlPoint(controlPoint);
+        offset.evaluate(system.focus(particle), scratch);
+        vecA.set(scratch[0], scratch[1], scratch[2]);
+        if (local) vecA.applyQuaternion(point.rotation);
+        vecA.add(point.position);
+        system
+          .vector(FIELD.position)
+          .set([vecA.x, vecA.y, vecA.z], particle * 3);
+      };
+    }
+    case "C_OP_FadeAndKill": {
+      // Fades alpha in from `m_flStartAlpha`, out to `m_flEndAlpha`, then kills.
+      const startFadeIn = numberOf(operator.m_flStartFadeInTime, 0);
+      const endFadeIn = numberOf(operator.m_flEndFadeInTime, 0.5);
+      const startFadeOut = numberOf(operator.m_flStartFadeOutTime, 0.5);
+      const endFadeOut = numberOf(operator.m_flEndFadeOutTime, 1);
+      const startAlpha = numberOf(operator.m_flStartAlpha, 1);
+      const endAlpha = numberOf(operator.m_flEndAlpha, 0);
+      return (system) => {
+        const alpha = system.scalar(FIELD.alpha);
+        const initial = system.initialOf(FIELD.alpha);
+        for (let index = 0; index < system.count; index += 1) {
+          const context = system.focus(index);
+          const age = context.lifetime > 0 ? context.age / context.lifetime : 1;
+          if (age >= endFadeOut) {
+            system.expire(index);
+            continue;
+          }
+          const base = initial?.[index] ?? 1;
+          alpha[index] =
+            age < startFadeOut
+              ? startAlpha +
+                (base - startAlpha) * ramp(age, startFadeIn, endFadeIn)
+              : base + (endAlpha - base) * ramp(age, startFadeOut, endFadeOut);
         }
       };
     }

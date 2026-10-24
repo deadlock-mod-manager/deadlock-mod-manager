@@ -19,7 +19,7 @@ use std::sync::{Arc, Mutex, OnceLock};
 
 use crate::errors::Error;
 
-use super::game::base_game_vpk_path;
+use super::game::{base_game_vpk_path, core_vpk_path};
 use super::workspace::{copy_companion_archives, sanitize_workspace_name, short_path_hash};
 
 /// Where staged copies live: `<temp>/deadlock-mod-manager/foundry-staged-vpk/<id>/`.
@@ -166,4 +166,12 @@ pub(crate) fn staged_base_game_vpk() -> Result<Option<PathBuf>, Error> {
     return Ok(None);
   };
   stage(&base_vpk, Companions::Reference).map(Some)
+}
+
+/// Stage the engine's `core/pak01_dir.vpk` the same way, or `None` when absent.
+pub(crate) fn staged_core_vpk() -> Result<Option<PathBuf>, Error> {
+  let Some(core_vpk) = core_vpk_path()? else {
+    return Ok(None);
+  };
+  stage(&core_vpk, Companions::Reference).map(Some)
 }

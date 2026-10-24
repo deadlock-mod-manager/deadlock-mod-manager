@@ -10,6 +10,7 @@ import {
 } from "./definition";
 import { hash01, parseFloatInput, parseVectorInput } from "./inputs";
 import { setField } from "./compile-values";
+import { PATH_PROGRESS, parsePathParams, pathPoint } from "./path";
 import { FIELD, type InitOperator } from "./types";
 import { type JsonObject } from "./json";
 
@@ -55,6 +56,24 @@ export const compileInitializer = (
   operator: JsonObject,
 ): InitOperator | null => {
   switch (classOf(operator)) {
+    case "C_INIT_CreateSequentialPath":
+    case "C_INIT_CreateSequentialPathV2": {
+      // Each new particle takes the next of `m_flNumToAssign` evenly spaced
+      // stops between the path's control points, wrapping after the last.
+      const stops = parseFloatInput(operator.m_flNumToAssign, 100);
+      const path = parsePathParams(operator.m_PathParams);
+      return (system, index) => {
+        const total = Math.max(
+          1,
+          Math.round(stops.evaluate(system.focus(index))),
+        );
+        const stop = (system.spawned - 1) % total;
+        const progress = total > 1 ? stop / (total - 1) : 0;
+        system.scalar(PATH_PROGRESS)[index] = progress;
+        pathPoint(path, (point) => system.controlPoint(point), progress, vecA);
+        system.vector(FIELD.position).set([vecA.x, vecA.y, vecA.z], index * 3);
+      };
+    }
     case "C_INIT_InitFloat": {
       const input = parseFloatInput(operator.m_InputValue, 0);
       const field = numberOf(operator.m_nOutputField, FIELD.radius);

@@ -20,6 +20,23 @@ export const compileRenderer = (
     stringOf(layers[0]?.m_hTexture, "") ||
     stringOf(operator.m_hTexture, "") ||
     null;
+  // Spritecard layers past the first multiply by default; distortion and
+  // other special layers are skipped.
+  const mask =
+    stringOf(
+      layers
+        .slice(1)
+        .find(
+          (layer) =>
+            stringOf(
+              layer.m_nTextureBlendMode,
+              "SPRITECARD_TEXTURE_BLEND_MULTIPLY",
+            ) === "SPRITECARD_TEXTURE_BLEND_MULTIPLY" &&
+            stringOf(layer.m_nTextureType, "SPRITECARD_TEXTURE_DIFFUSE") ===
+              "SPRITECARD_TEXTURE_DIFFUSE",
+        )?.m_hTexture,
+      "",
+    ) || null;
   const blend = stringOf(
     operator.m_nOutputBlendMode,
     "PARTICLE_OUTPUT_BLEND_MODE_ALPHA",
@@ -28,6 +45,7 @@ export const compileRenderer = (
   return {
     kind,
     texture,
+    mask,
     additive:
       blend === "PARTICLE_OUTPUT_BLEND_MODE_ADD" ||
       addSelf.evaluate(STATIC_CONTEXT) > 0,

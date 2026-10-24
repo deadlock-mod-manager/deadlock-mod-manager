@@ -9,6 +9,16 @@ use crate::errors::Error;
 /// The base game's `pak01_dir.vpk`, or `None` when Deadlock isn't installed.
 /// Every default-hero and fallback asset lookup goes through this archive.
 pub(crate) fn base_game_vpk_path() -> Result<Option<PathBuf>, Error> {
+  game_pak("citadel")
+}
+
+/// The engine's own `core/pak01_dir.vpk`, which holds the generic particle
+/// materials (`materials/particle/...`) Deadlock's effects draw with.
+pub(crate) fn core_vpk_path() -> Result<Option<PathBuf>, Error> {
+  game_pak("core")
+}
+
+fn game_pak(content: &str) -> Result<Option<PathBuf>, Error> {
   let mut manager = MANAGER
     .lock()
     .map_err(|e| Error::InvalidInput(format!("manager lock poisoned: {e}")))?;
@@ -20,7 +30,7 @@ pub(crate) fn base_game_vpk_path() -> Result<Option<PathBuf>, Error> {
   let Some(game_path) = game_path else {
     return Ok(None);
   };
-  let pak_path = game_path.join("game").join("citadel").join("pak01_dir.vpk");
+  let pak_path = game_path.join("game").join(content).join("pak01_dir.vpk");
   Ok(pak_path.exists().then_some(pak_path))
 }
 

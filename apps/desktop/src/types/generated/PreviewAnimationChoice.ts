@@ -6,4 +6,9 @@ export type PreviewAnimationChoice = {
   kind: PreviewAnimationKind;
   label: string;
   clips: Array<string>;
+  /**
+   * The ability name these clips were found by, when they don't carry the
+   * `ability_` prefix that otherwise ties them to an ability.
+   */
+  ability?: string;
 };

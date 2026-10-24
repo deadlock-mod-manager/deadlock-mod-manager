@@ -11,9 +11,11 @@
 //! - `hero` holds the codename tables those two need
 //! - `vdata` asks the game which model is a hero's body
 //! - `export` delivers the packed VPK to a file, a new mod, or the source mod
-//! - `animation`, `cloth` and `particles` feed the animated 3D preview
+//! - `animation`, `cloth` and `particles` feed the animated 3D preview, and
+//!   `ability_vfx` picks the effects an ability plays on its caster
 //! - `commands` is the Tauri surface
 
+mod ability_vfx;
 mod analyze;
 mod animation;
 mod archive_cache;

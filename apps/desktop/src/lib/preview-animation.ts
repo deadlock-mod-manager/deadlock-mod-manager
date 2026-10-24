@@ -6,6 +6,7 @@ import {
   QuaternionKeyframeTrack,
   VectorKeyframeTrack,
 } from "three";
+import type { PreviewAbilityParticles } from "@/types/generated/PreviewAbilityParticles";
 import type { PreviewAnimation } from "@/types/generated/PreviewAnimation";
 import type { PreviewCloth } from "@/types/generated/PreviewCloth";
 import type { PreviewParticles } from "@/types/generated/PreviewParticles";
@@ -22,10 +23,18 @@ export interface PreviewPlayback {
   seek: { time: number; revision: number };
 }
 
-export const listPreviewAnimations = (source: PreviewSource) =>
+/**
+ * The model's playable moves. `abilityNames` (the hero's ability names) find
+ * abilities whose clips are not prefixed `ability_`, like Bebop's Hyper Beam.
+ */
+export const listPreviewAnimations = (
+  source: PreviewSource,
+  abilityNames: string[],
+) =>
   invoke<PreviewAnimationChoice[]>("foundry_list_animations", {
     filePath: source.filePath,
     entryPath: source.entryPath,
+    abilityNames,
   });
 /** Decodes `clipPaths` back to back into one looping timeline. */
 export const decodePreviewAnimation = (
@@ -50,6 +59,17 @@ export const decodePreviewParticles = (source: PreviewSource) =>
   invoke<PreviewParticles>("foundry_decode_particles", {
     filePath: source.filePath,
     entryPath: source.entryPath,
+  });
+
+/** The particle effects an ability plays on its caster, bound to this model. */
+export const decodePreviewAbilityParticles = (
+  source: PreviewSource,
+  abilityClass: string,
+) =>
+  invoke<PreviewAbilityParticles>("foundry_decode_ability_particles", {
+    filePath: source.filePath,
+    entryPath: source.entryPath,
+    abilityClass,
   });
 
 export function createPreviewClip(
