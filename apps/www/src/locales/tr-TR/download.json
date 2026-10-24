@@ -62,7 +62,7 @@
     },
     "detected": "Algılanan sistem",
     "noBuilds": "Bu sürüm için {{platform}} derlemesi yok.",
-    "experimental": "",
+    "experimental": "Deneysel Chromium derlemeleri",
     "experimentalDescription": "Sistem web görünümü yerine Chromium (CEF) motorunu içerir. Daha büyük ve daha az test edilmiştir; yalnızca standart sürümde görüntüleme sorunları yaşıyorsanız deneyin."
   },
   "installer": {
@@ -81,8 +81,8 @@
         "description": "Yönetilen veya sessiz kurulumlar için (.msi)"
       },
       "portable": {
-        "label": "",
-        "description": ""
+        "label": "Taşınabilir",
+        "description": "Yüklemeden doğrudan çalıştır (.exe)"
       },
       "dmg": {
         "label": "Disk görüntüsü",
