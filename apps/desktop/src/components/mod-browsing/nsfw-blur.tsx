@@ -1,7 +1,7 @@
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Eye, EyeOff } from "@deadlock-mods/ui/icons";
 import { platform } from "@tauri-apps/plugin-os";
-import { useEffect, useRef, useState } from "react";
+import { isValidElement, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 export const NSFWBadge = ({ className }: { className?: string }) => (
@@ -105,8 +105,12 @@ export const NSFWBlur = ({
   const contentRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   // WebKitGTK's compositor stalls or crashes on pages with many filter and
-  // backdrop-filter layers (#1041), so Linux blurs through a canvas instead.
-  const canvasBlur = platform() === "linux";
+  // backdrop-filter layers (#1041), so Linux blurs image thumbnails through a
+  // canvas instead. Other content keeps the CSS blur.
+  const canvasBlur =
+    platform() === "linux" &&
+    isValidElement(children) &&
+    children.type === "img";
   const blurWithCanvas = canvasBlur && isNSFW && !disableBlur && !isVisible;
 
   if (previousIsNSFW !== isNSFW) {
