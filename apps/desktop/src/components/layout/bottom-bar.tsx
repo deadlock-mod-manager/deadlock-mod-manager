@@ -184,11 +184,12 @@ function CatalogSyncIndicator() {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <div className='flex cursor-default items-center justify-center p-0.5'>
-          {syncing ? (
-            <ArrowsClockwiseIcon className='h-3.5 w-3.5 animate-spin text-blue-500' />
-          ) : (
-            <DatabaseIcon className={cn("h-3.5 w-3.5", className)} />
+        <div className='relative flex cursor-default items-center justify-center p-0.5'>
+          <DatabaseIcon className={cn("h-3.5 w-3.5", className)} />
+          {syncing && (
+            <span className='absolute right-0 bottom-0 size-2 rounded-full bg-background p-px'>
+              <span className='block size-full animate-spin rounded-full border border-blue-500 border-t-transparent' />
+            </span>
           )}
         </div>
       </TooltipTrigger>
