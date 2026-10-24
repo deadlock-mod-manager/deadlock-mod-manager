@@ -32,6 +32,7 @@ import {
 import ErrorBoundary from "@/components/shared/error-boundary";
 import { useConfigListing } from "@/hooks/performance/use-config-listing";
 import { useDownload } from "@/hooks/use-download";
+import { useHasOpened } from "@/hooks/use-has-opened";
 import { useInstallAction } from "@/hooks/use-install-action";
 import {
   modDownloadsQueryOptions,
@@ -189,6 +190,11 @@ const InstallModButton = ({
   const heroConflictResolverRef = useRef<
     ((resolution: HeroConflictResolution) => void) | null
   >(null);
+  // Every catalog and library card renders this button, so its dialogs mount
+  // only once they are first opened.
+  const fileSelectorOpened = useHasOpened(showFileSelector);
+  const downloadDialogOpened = useHasOpened(isDialogOpen);
+  const heroConflictOpened = useHasOpened(heroConflict !== null);
 
   const askHeroConflict = useCallback(
     (heroName: string, currentMod: LocalMod, newMod: LocalMod) =>
@@ -457,40 +463,48 @@ const InstallModButton = ({
       )}
 
       <div className='contents' onClick={(e) => e.stopPropagation()}>
-        <FileSelectorDialog
-          fileTree={currentFileTree}
-          isOpen={showFileSelector}
-          modName={currentMod?.name}
-          onCancel={cancelInstallation}
-          onConfirm={confirmInstallation}
-          onOpenChange={(open) => {
-            if (!open) {
-              cancelInstallation();
+        {fileSelectorOpened && (
+          <FileSelectorDialog
+            fileTree={currentFileTree}
+            isOpen={showFileSelector}
+            modName={currentMod?.name}
+            onCancel={cancelInstallation}
+            onConfirm={confirmInstallation}
+            onOpenChange={(open) => {
+              if (!open) {
+                cancelInstallation();
+              }
+            }}
+          />
+        )}
+
+        {downloadDialogOpened && (
+          <MultiFileDownloadDialog
+            downloadPercentage={progressPercent ?? 0}
+            files={availableFiles}
+            isDownloading={
+              localMod?.status === ModStatus.Downloading ||
+              localMod?.status === ModStatus.Paused
             }
-          }}
-        />
+            isExtracting={localMod?.status === ModStatus.Extracting}
+            isOpen={isDialogOpen}
+            modName={
+              localMod?.name || remoteMod?.name || t("modForm.unknownMod")
+            }
+            onClose={closeDialog}
+            onDownload={downloadSelectedFiles}
+          />
+        )}
 
-        <MultiFileDownloadDialog
-          downloadPercentage={progressPercent ?? 0}
-          files={availableFiles}
-          isDownloading={
-            localMod?.status === ModStatus.Downloading ||
-            localMod?.status === ModStatus.Paused
-          }
-          isExtracting={localMod?.status === ModStatus.Extracting}
-          isOpen={isDialogOpen}
-          modName={localMod?.name || remoteMod?.name || t("modForm.unknownMod")}
-          onClose={closeDialog}
-          onDownload={downloadSelectedFiles}
-        />
-
-        <HeroConflictDialog
-          currentMod={heroConflict?.currentMod ?? null}
-          heroName={heroConflict?.heroName ?? ""}
-          newMod={heroConflict?.newMod ?? null}
-          onResolve={handleHeroConflictResolve}
-          open={heroConflict !== null}
-        />
+        {heroConflictOpened && (
+          <HeroConflictDialog
+            currentMod={heroConflict?.currentMod ?? null}
+            heroName={heroConflict?.heroName ?? ""}
+            newMod={heroConflict?.newMod ?? null}
+            onResolve={handleHeroConflictResolve}
+            open={heroConflict !== null}
+          />
+        )}
       </div>
     </ErrorBoundary>
   );

@@ -125,6 +125,7 @@ import { useStuckAttribute } from "@/hooks/use-stuck-attribute";
 import { useProfileConflicts } from "@/hooks/use-profile-conflicts";
 import { useSearch } from "@/hooks/use-search";
 import { useModOptions } from "@/hooks/use-mod-options";
+import { useHasOpened } from "@/hooks/use-has-opened";
 import useUninstall from "@/hooks/use-uninstall";
 import { useVpkScan } from "@/hooks/use-vpk-scan";
 import { openFindBrokenMod } from "@/lib/bisect/dialogs";
@@ -283,6 +284,7 @@ const GridModCard = memo(function GridModCard({
   const [deleting, setDeleting] = useState(false);
   const CardWrapper = useThemeOverride("cardWrapper");
   const modOptions = useModOptions(mod);
+  const optionsOpened = useHasOpened(modOptions.isOpen);
 
   const openModDetail = () =>
     navigate(`/mods/${mod.remoteId}`, {
@@ -306,22 +308,23 @@ const GridModCard = memo(function GridModCard({
     }
   };
 
-  const optionsDialog = modOptions.showButton ? (
-    <ModOptionsDialog
-      isOpen={modOptions.isOpen}
-      onOpenChange={(open) => (open ? modOptions.open() : modOptions.close())}
-      isSaving={modOptions.isSaving}
-      progress={modOptions.progress}
-      onApply={modOptions.apply}
-      fileTree={modOptions.fileTree}
-      onApplyFiles={modOptions.applyFileSelection}
-      isSavingFiles={modOptions.isSavingFiles}
-      modName={mod.name}
-      downloads={modOptions.downloads}
-      onDiskArchiveNames={modOptions.onDiskArchiveNames}
-      activeArchiveNames={modOptions.activeArchiveNames}
-    />
-  ) : null;
+  const optionsDialog =
+    modOptions.showButton && optionsOpened ? (
+      <ModOptionsDialog
+        isOpen={modOptions.isOpen}
+        onOpenChange={(open) => (open ? modOptions.open() : modOptions.close())}
+        isSaving={modOptions.isSaving}
+        progress={modOptions.progress}
+        onApply={modOptions.apply}
+        fileTree={modOptions.fileTree}
+        onApplyFiles={modOptions.applyFileSelection}
+        isSavingFiles={modOptions.isSavingFiles}
+        modName={mod.name}
+        downloads={modOptions.downloads}
+        onDiskArchiveNames={modOptions.onDiskArchiveNames}
+        activeArchiveNames={modOptions.activeArchiveNames}
+      />
+    ) : null;
 
   const cardContent = (
     <ModContextMenu
@@ -459,6 +462,7 @@ const ListModCard = memo(function ListModCard({
   const { uninstall } = useUninstall();
   const [deleting, setDeleting] = useState(false);
   const modOptions = useModOptions(mod);
+  const optionsOpened = useHasOpened(modOptions.isOpen);
 
   const openModDetail = () =>
     navigate(`/mods/${mod.remoteId}`, {
@@ -601,7 +605,7 @@ const ListModCard = memo(function ListModCard({
           </div>
         </Card>
       </ModContextMenu>
-      {modOptions.showButton && (
+      {modOptions.showButton && optionsOpened && (
         <ModOptionsDialog
           isOpen={modOptions.isOpen}
           onOpenChange={(open) =>
