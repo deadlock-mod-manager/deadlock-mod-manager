@@ -435,6 +435,11 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
         descriptionKey: "privacy.blurStrengthDescription",
       },
       {
+        titleKey: "privacy.lightweightNSFWBlur",
+        descriptionKey: "privacy.lightweightNSFWBlurDescription",
+        platforms: ["linux"],
+      },
+      {
         titleKey: "privacy.showLikelyNSFW",
         descriptionKey: "privacy.showLikelyNSFWDescription",
       },

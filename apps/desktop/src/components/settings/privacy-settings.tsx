@@ -2,6 +2,7 @@ import { Button } from "@deadlock-mods/ui/components/button";
 import { Label } from "@deadlock-mods/ui/components/label";
 import { Slider } from "@deadlock-mods/ui/components/slider";
 import { useMutation } from "@tanstack/react-query";
+import { platform } from "@tauri-apps/plugin-os";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
@@ -28,7 +29,10 @@ const PrivacySettings = () => {
     clearPerItemNSFWOverrides,
     telemetrySettings,
     updateTelemetrySettings,
+    linuxCanvasNSFWBlur,
+    setLinuxCanvasNSFWBlur,
   } = usePersistedStore();
+  const isLinux = platform() === "linux";
 
   const overrideCount = Object.keys(perItemNSFWOverrides).length;
   const clearOverrides = useMutation({
@@ -106,6 +110,16 @@ const PrivacySettings = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {isLinux && !nsfwSettings.disableBlur && (
+        <SettingToggleRow
+          checked={linuxCanvasNSFWBlur}
+          description={t("privacy.lightweightNSFWBlurDescription")}
+          id='toggle-privacy-lightweight-blur'
+          onCheckedChange={setLinuxCanvasNSFWBlur}
+          title={t("privacy.lightweightNSFWBlur")}
+        />
       )}
 
       <SettingToggleRow
