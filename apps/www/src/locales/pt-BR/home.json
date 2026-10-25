@@ -21,8 +21,8 @@
       "ready": "{{name}} está pronto para jogar."
     },
     "commissions": {
-      "title": "Quer uma skin que ainda não existe?",
-      "body": "Encomende de um autor de mods, pelo Discord ou pelo site."
+      "title": "",
+      "body": ""
     }
   },
   "partners": {
