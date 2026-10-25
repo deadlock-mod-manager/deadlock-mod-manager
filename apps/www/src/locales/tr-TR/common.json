@@ -37,7 +37,7 @@
     "links": {
       "mods": "Modlar",
       "skins": "Görünümler",
-      "commissions": "Siparişler",
+      "commissions": "",
       "features": "Özellikler",
       "themes": "Temalar",
       "tools": "Araçlar",
@@ -69,7 +69,7 @@
       "download": "İndir",
       "sourceCode": "Kaynak kodu",
       "changelog": "Değişiklik günlüğü",
-      "commissions": "Siparişler",
+      "commissions": "",
       "documentation": "Belgeler",
       "faq": "Sık sorulan sorular",
       "reportBug": "Hata bildir"

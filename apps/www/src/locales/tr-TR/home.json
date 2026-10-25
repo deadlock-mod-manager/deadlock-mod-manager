@@ -21,8 +21,8 @@
       "ready": "{{name}} oynamaya hazır."
     },
     "commissions": {
-      "title": "Henüz var olmayan bir skin mi istiyorsun?",
-      "body": "Bir mod yapımcısına Discord'dan ya da web sitesinden sipariş ver."
+      "title": "",
+      "body": ""
     }
   },
   "partners": {
