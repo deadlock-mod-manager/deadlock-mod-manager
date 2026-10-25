@@ -311,30 +311,47 @@ jobs:
             });
             console.log('Successfully uploaded Flatpak bundle');
 
-      # Windows build - don't upload to release yet, need to code-sign first
+      # Same two-pass flow as release.yml: sign the executable, bundle it without
+      # the bundle-type patch, then sign the installer.
       - name: Build the app (Windows)
         if: matrix.platform == 'windows-latest'
-        uses: tauri-apps/tauri-action@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           VITE_API_URL: https://api.deadlockmods.app
           VITE_WEB_URL: https://deadlockmods.app
           VITE_AUTH_URL: https://auth.deadlockmods.app
           VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}
-        with:
-          projectPath: ./apps/desktop
-          args: "--bundles nsis,updater"
+        run: pnpm --filter @deadlock-mods/desktop tauri build --no-bundle
 
-      - name: Stage standalone Windows executable
+      - name: Sign application executable
+        if: matrix.platform == 'windows-latest'
+        uses: ./.github/actions/signpath-sign
+        with:
+          unsigned-artifact-path: apps/desktop/target/release/deadlock-mod-manager.exe
+          artifact-name: windows-unsigned-application
+          output-directory: ./signed-application
+          signpath-api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          signpath-organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+          signpath-project-slug: deadlock-mod-manager
+          signpath-signing-policy: test-signing
+          signpath-artifact-configuration: application-executable
+
+      - name: Bundle installer from the signed executable (Windows)
         if: matrix.platform == 'windows-latest'
         shell: pwsh
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
         run: |
           $version = (Get-Content -LiteralPath apps/desktop/package.json -Raw | ConvertFrom-Json).version
-          Copy-Item -LiteralPath apps/desktop/target/release/deadlock-mod-manager.exe -Destination "apps/desktop/target/release/bundle/nsis/Deadlock Mod Manager_${version}_x64-portable.exe"
+          Copy-Item -LiteralPath ./signed-application/deadlock-mod-manager.exe -Destination apps/desktop/target/release/deadlock-mod-manager.exe -Force
 
-      # Windows: SignPath code signing flow
-      - name: Sign Windows executables
+          pnpm --filter @deadlock-mods/desktop tauri bundle --bundles nsis,updater --no-binary-patching
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          New-Item -ItemType Directory -Force -Path ./artifact-output | Out-Null
+          Copy-Item -LiteralPath ./signed-application/deadlock-mod-manager.exe -Destination "./artifact-output/Deadlock Mod Manager_${version}_x64-portable.exe"
+
+      - name: Sign Windows installer
         if: matrix.platform == 'windows-latest'
         id: signpath-sign
         uses: ./.github/actions/signpath-sign
