@@ -85,6 +85,7 @@ export class ModOfTheWeekCommand extends Command {
 
     const subcommand = interaction.options.getSubcommand();
     const featureFlagService = FeatureFlagsService.instance.getService();
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     try {
       const [idFlag, untilFlag] = await Promise.all([
@@ -110,15 +111,13 @@ export class ModOfTheWeekCommand extends Command {
         const id = String(idFlag.value.value ?? "");
         const until = Date.parse(String(untilFlag.value.value ?? ""));
         if (!id || Number.isNaN(until) || until <= Date.now()) {
-          return interaction.reply({
+          return interaction.editReply({
             content:
               "No mod of the week is pinned. The app uses the weekly rotation.",
-            flags: MessageFlags.Ephemeral,
           });
         }
-        return interaction.reply({
+        return interaction.editReply({
           content: `Mod \`${id}\` is pinned until ${time(new Date(until), TimestampStyles.LongDateTime)}.`,
-          flags: MessageFlags.Ephemeral,
         });
       }
 
@@ -127,7 +126,7 @@ export class ModOfTheWeekCommand extends Command {
         logger
           .withMetadata({ userId: user.id, username: user.username })
           .info("Cleared mod of the week");
-        return interaction.reply({
+        return interaction.editReply({
           content:
             "Cleared the mod of the week. The app is back on the weekly rotation.",
         });
@@ -140,9 +139,8 @@ export class ModOfTheWeekCommand extends Command {
       try {
         identity = parsePolicyIdentity(modIdOrUrl);
       } catch {
-        return interaction.reply({
+        return interaction.editReply({
           content: "That isn't a GameBanana mod ID or URL.",
-          flags: MessageFlags.Ephemeral,
         });
       }
       const mod = await modRepository.findBySubmissionIdentity(
@@ -150,15 +148,13 @@ export class ModOfTheWeekCommand extends Command {
         identity.submissionId,
       );
       if (!mod) {
-        return interaction.reply({
+        return interaction.editReply({
           content: "That mod isn't in the catalog yet, or it's blacklisted.",
-          flags: MessageFlags.Ephemeral,
         });
       }
       if (mod.isNSFW) {
-        return interaction.reply({
+        return interaction.editReply({
           content: "NSFW mods can't be mod of the week.",
-          flags: MessageFlags.Ephemeral,
         });
       }
 
@@ -174,7 +170,7 @@ export class ModOfTheWeekCommand extends Command {
         })
         .info("Set mod of the week");
 
-      return interaction.reply({
+      return interaction.editReply({
         content: `**${mod.name}** is mod of the week until ${time(until, TimestampStyles.LongDateTime)}. The app picks it up within a few minutes.`,
       });
     } catch (error) {
@@ -182,9 +178,8 @@ export class ModOfTheWeekCommand extends Command {
         .withError(error)
         .withMetadata({ userId: user.id, subcommand })
         .error("Error in modoftheweek command");
-      return interaction.reply({
+      return interaction.editReply({
         content: "An error occurred while processing the request.",
-        flags: MessageFlags.Ephemeral,
       });
     }
   }
