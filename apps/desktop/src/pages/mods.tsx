@@ -53,26 +53,17 @@ import {
   getGameBananaCatalogFacets,
   queryGameBananaCatalog,
 } from "@/lib/gamebanana-catalog";
-import {
-  MOD_OUTDATED_CUTOFF_SECONDS,
-  SortType,
-  TimePeriod,
-} from "@/lib/constants";
+import { MOD_OUTDATED_CUTOFF_SECONDS, SortType } from "@/lib/constants";
 import { parseGameBananaReference } from "@/lib/mod-interchange";
 import { MODS_LIST_QUERY_KEY } from "@/lib/mods/mod-query-cache";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 import type {
-  AddedFilter,
   ContentType,
+  DateFilter,
   FilterMode,
 } from "@/lib/store/slices/ui";
-import {
-  cn,
-  getAddedRange,
-  getTimePeriodCutoff,
-  isAddedFilterActive,
-} from "@/lib/utils";
+import { cn, getDateRange, isDateFilterActive } from "@/lib/utils";
 import type { CatalogQuery } from "@/types/generated/CatalogQuery";
 import type { SubmissionType } from "@/types/generated/SubmissionType";
 
@@ -237,7 +228,7 @@ const GetModsData = ({
     hideNSFW,
     nsfwOnly: nsfwOnlyFilter,
     hideOutdated,
-    timePeriod = TimePeriod.ALL_TIME,
+    updatedFilter,
     addedFilter,
     filterMode,
     showFavoritesOnly = false,
@@ -254,14 +245,11 @@ const GetModsData = ({
   const [page, setPage] = useState(() => getPersistedPage(pageKey));
   const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
   const catalogQuery = useMemo<CatalogQuery>(() => {
-    const timePeriodCutoff = getTimePeriodCutoff(timePeriod);
-    const timePeriodCutoffSeconds = timePeriodCutoff
-      ? Math.floor(timePeriodCutoff.getTime() / 1_000)
-      : null;
+    const updatedRange = getDateRange(updatedFilter);
     const updatedAfter = hideOutdated
-      ? Math.max(timePeriodCutoffSeconds ?? 0, MOD_OUTDATED_CUTOFF_SECONDS)
-      : timePeriodCutoffSeconds;
-    const addedRange = getAddedRange(addedFilter);
+      ? Math.max(updatedRange.after ?? 0, MOD_OUTDATED_CUTOFF_SECONDS)
+      : updatedRange.after;
+    const addedRange = getDateRange(addedFilter);
     return {
       search: debouncedSearchQuery,
       categories: selectedCategories,
@@ -281,6 +269,7 @@ const GetModsData = ({
       nsfwOnly,
       hideObsolete: hideOutdated,
       updatedAfter,
+      updatedBefore: updatedRange.before,
       addedAfter: addedRange.after,
       addedBefore: addedRange.before,
       favorites: showFavoritesOnly ? favorites : [],
@@ -307,7 +296,7 @@ const GetModsData = ({
     selectedCategories,
     selectedHeroes,
     showFavoritesOnly,
-    timePeriod,
+    updatedFilter,
   ]);
   // Querying with a deferred value keeps the current results on screen while a
   // new filter/search/page loads, instead of suspending back to the skeleton.
@@ -485,7 +474,7 @@ const GetModsData = ({
         query,
         selectedCategories,
         selectedHeroes,
-        timePeriod,
+        updatedFilter,
         showFavoritesOnly,
         addedFilter,
       }),
@@ -500,7 +489,7 @@ const GetModsData = ({
       query,
       selectedCategories,
       selectedHeroes,
-      timePeriod,
+      updatedFilter,
       showFavoritesOnly,
     ],
   );
@@ -580,13 +569,13 @@ const GetModsData = ({
     [updateModsFilters],
   );
 
-  const handleTimePeriodChange = useCallback(
-    (timePeriod: TimePeriod) => updateModsFilters({ timePeriod }),
+  const handleUpdatedFilterChange = useCallback(
+    (updatedFilter: DateFilter) => updateModsFilters({ updatedFilter }),
     [updateModsFilters],
   );
 
   const handleAddedFilterChange = useCallback(
-    (addedFilter: AddedFilter) => updateModsFilters({ addedFilter }),
+    (addedFilter: DateFilter) => updateModsFilters({ addedFilter }),
     [updateModsFilters],
   );
 
@@ -602,8 +591,8 @@ const GetModsData = ({
     nsfwOnly ||
     hideOutdated ||
     showFavoritesOnly ||
-    isAddedFilterActive(addedFilter) ||
-    timePeriod !== TimePeriod.ALL_TIME;
+    isDateFilterActive(updatedFilter) ||
+    isDateFilterActive(addedFilter);
 
   return (
     <div className='flex min-h-0 flex-1 flex-col gap-4'>
@@ -611,8 +600,6 @@ const GetModsData = ({
         trailingActions={<CatalogRefreshButton />}
         filterMode={filterMode}
         mods={filterOptions}
-        timePeriod={timePeriod}
-        onTimePeriodChange={handleTimePeriodChange}
         onCategoriesChange={handleCategoriesChange}
         onFilterModeChange={handleFilterModeChange}
         onHeroesChange={handleHeroesChange}
@@ -631,6 +618,8 @@ const GetModsData = ({
         showFavoritesFilter={!mapsOnly}
         showFavoritesOnly={showFavoritesOnly}
         onShowFavoritesOnlyChange={handleShowFavoritesOnlyChange}
+        updatedFilter={updatedFilter}
+        onUpdatedFilterChange={handleUpdatedFilterChange}
         addedFilter={addedFilter}
         onAddedFilterChange={handleAddedFilterChange}
       />

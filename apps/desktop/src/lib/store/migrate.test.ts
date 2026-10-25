@@ -257,7 +257,7 @@ describe("safeMigrate", () => {
   it("LATEST_VERSION matches the highest step target", () => {
     const max = Math.max(...MIGRATION_STEPS.map((s) => s.to));
     expect(LATEST_VERSION).toBe(max);
-    expect(LATEST_VERSION).toBe(35);
+    expect(LATEST_VERSION).toBe(36);
   });
 
   it("v25 (themes switch): drops the leftover enabledPlugins.themes entry", () => {
@@ -359,6 +359,22 @@ describe("safeMigrate", () => {
         26,
       ) as Record<string, unknown>;
       expect(alreadySet.modsFilters).toEqual({ contentType: "wip" });
+    });
+
+    it("v36 (rolling date filters): maps the old presets to rolling windows", () => {
+      const result = safeMigrate(
+        {
+          modsFilters: {
+            timePeriod: "past 3 months",
+            addedFilter: { period: "week", from: "", to: "" },
+          },
+        },
+        35,
+      ) as Record<string, unknown>;
+      expect(result.modsFilters).toEqual({
+        updatedFilter: { period: "1y", from: "", to: "" },
+        addedFilter: { period: "7d", from: "", to: "" },
+      });
     });
 
     it("v29 (albums to collections): moves the Albums tab to Collections", () => {

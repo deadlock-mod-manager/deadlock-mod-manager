@@ -1,5 +1,5 @@
 import type { StateCreator } from "zustand";
-import { EXPERIMENTAL_FEATURES, SortType, TimePeriod } from "@/lib/constants";
+import { EXPERIMENTAL_FEATURES, SortType } from "@/lib/constants";
 import type { State } from "..";
 import {
   applyPluginSettings,
@@ -15,16 +15,17 @@ export type AudioQuickFilter = "off" | "only" | "exclude";
 // map flag set; collections are GameBanana collections; the rest map onto
 // submission types.
 export type ContentType = "mod" | "sound" | "map" | "wip" | "collection";
-export type AddedPeriod = "any" | "today" | "week" | "month" | "custom";
+export type DatePeriod = "any" | "24h" | "7d" | "14d" | "28d" | "1y" | "custom";
 
-export type AddedFilter = {
-  period: AddedPeriod;
+// The "Updated" and "Added" filters: a rolling window or a custom range.
+export type DateFilter = {
+  period: DatePeriod;
   // Local calendar dates (YYYY-MM-DD) used when period is "custom".
   from: string;
   to: string;
 };
 
-export const DEFAULT_ADDED_FILTER: AddedFilter = {
+export const DEFAULT_DATE_FILTER: DateFilter = {
   period: "any",
   from: "",
   to: "",
@@ -38,8 +39,8 @@ export type ModsFilters = {
   nsfwOnly: boolean;
   hideOutdated: boolean;
   currentSort: SortType;
-  timePeriod: TimePeriod;
-  addedFilter: AddedFilter;
+  updatedFilter: DateFilter;
+  addedFilter: DateFilter;
   filterMode: FilterMode;
   searchQuery: string;
   showFavoritesOnly: boolean;
@@ -119,8 +120,8 @@ const DEFAULT_MODS_FILTERS: ModsFilters = {
   nsfwOnly: false,
   hideOutdated: false,
   currentSort: SortType.LAST_UPDATED,
-  timePeriod: TimePeriod.ALL_TIME,
-  addedFilter: DEFAULT_ADDED_FILTER,
+  updatedFilter: DEFAULT_DATE_FILTER,
+  addedFilter: DEFAULT_DATE_FILTER,
   filterMode: "include",
   searchQuery: "",
   showFavoritesOnly: false,

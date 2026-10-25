@@ -46,6 +46,8 @@ pub struct CatalogQuery {
   #[ts(type = "number | null")]
   pub updated_after: Option<i64>,
   #[ts(type = "number | null")]
+  pub updated_before: Option<i64>,
+  #[ts(type = "number | null")]
   pub added_after: Option<i64>,
   #[ts(type = "number | null")]
   pub added_before: Option<i64>,
@@ -268,6 +270,9 @@ fn filtered_query<'a>(
   }
   if let Some(updated_after) = query.updated_after {
     statement = statement.filter(submission::remote_updated_at.ge(updated_after));
+  }
+  if let Some(updated_before) = query.updated_before {
+    statement = statement.filter(submission::remote_updated_at.lt(updated_before));
   }
   if let Some(added_after) = query.added_after {
     statement = statement.filter(submission::remote_added_at.ge(added_after));

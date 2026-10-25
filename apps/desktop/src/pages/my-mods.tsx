@@ -1491,7 +1491,6 @@ const MyMods = () => {
                       selectedHeroes={selectedHeroes}
                       setQuery={setQuery}
                       showSortControl={false}
-                      showTimePeriodControl={false}
                       hideMapFilter={!isCustomMapsEnabled}
                       inputGroupClassName='min-w-0 w-full'
                       searchContainerClassName='w-full min-w-48 max-w-md flex-1'

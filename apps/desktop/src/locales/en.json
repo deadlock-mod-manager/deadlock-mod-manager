@@ -4412,17 +4412,20 @@
     "showOutdatedBadge": "Show Outdated",
     "added": "Added",
     "addedLabel": "Added:",
-    "addedFrom": "From",
-    "addedTo": "To",
+    "updatedLabel": "Updated:",
+    "dateFrom": "From",
+    "dateTo": "To",
     "pickDate": "Pick a date",
-    "addedBetween": "{{from}} – {{to}}",
-    "addedSince": "since {{date}}",
-    "addedUntil": "until {{date}}",
-    "addedPeriod": {
+    "dateBetween": "{{from}} – {{to}}",
+    "dateSince": "since {{date}}",
+    "dateUntil": "until {{date}}",
+    "datePeriod": {
       "any": "Any time",
-      "today": "Today",
-      "week": "This week",
-      "month": "This month",
+      "24h": "Past 24 hours",
+      "7d": "Past 7 days",
+      "14d": "Past 14 days",
+      "28d": "Past 28 days",
+      "1y": "Past year",
       "custom": "Custom range"
     },
     "clearAll": "Clear all",
@@ -4450,13 +4453,6 @@
     "hero": "Hero",
     "name": "Name",
     "recentlyadded": "Recently Added"
-  },
-  "timePeriod": {
-    "alltime": "Any time",
-    "pastweek": "Past week",
-    "pastmonth": "Past month",
-    "past3months": "Past 3 months",
-    "pastyear": "Past year"
   },
   "addMods": {
     "title": "Add Mods",

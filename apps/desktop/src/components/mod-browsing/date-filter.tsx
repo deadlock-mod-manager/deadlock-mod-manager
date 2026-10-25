@@ -18,21 +18,23 @@ import { format } from "date-fns";
 import { memo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type {
-  AddedFilter as AddedFilterValue,
-  AddedPeriod,
+  DateFilter as DateFilterValue,
+  DatePeriod,
 } from "@/lib/store/slices/ui";
 import {
-  ADDED_DATE_FORMAT,
   cn,
-  formatAddedDate,
-  parseAddedDate,
+  FILTER_DATE_FORMAT,
+  formatFilterDate,
+  parseFilterDate,
 } from "@/lib/utils";
 
-const ADDED_PERIODS: AddedPeriod[] = [
+const DATE_PERIODS: DatePeriod[] = [
   "any",
-  "today",
-  "week",
-  "month",
+  "24h",
+  "7d",
+  "14d",
+  "28d",
+  "1y",
   "custom",
 ];
 
@@ -62,7 +64,7 @@ const DatePicker = ({
 }: DatePickerProps) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const selected = parseAddedDate(value);
+  const selected = parseFilterDate(value);
 
   return (
     <div className='flex min-w-0 flex-col gap-1'>
@@ -79,7 +81,7 @@ const DatePicker = ({
             id={id}
             variant='outline'>
             <span className='truncate'>
-              {selected ? formatAddedDate(value) : t("filters.pickDate")}
+              {selected ? formatFilterDate(value) : t("filters.pickDate")}
             </span>
             <CalendarIcon className='text-muted-foreground' />
           </Button>
@@ -94,7 +96,7 @@ const DatePicker = ({
             endMonth={max}
             mode='single'
             onSelect={(date) => {
-              onChange(date ? format(date, ADDED_DATE_FORMAT) : "");
+              onChange(date ? format(date, FILTER_DATE_FORMAT) : "");
               setOpen(false);
             }}
             selected={selected}
@@ -106,16 +108,18 @@ const DatePicker = ({
   );
 };
 
-type AddedFilterProps = {
-  value: AddedFilterValue;
-  onChange: (value: AddedFilterValue) => void;
+type DateFilterProps = {
+  id: string;
+  label: string;
+  value: DateFilterValue;
+  onChange: (value: DateFilterValue) => void;
 };
 
-const AddedFilter = ({ value, onChange }: AddedFilterProps) => {
+const DateFilter = ({ id, label, value, onChange }: DateFilterProps) => {
   const { t } = useTranslation();
   const today = new Date();
-  const from = parseAddedDate(value.from);
-  const to = parseAddedDate(value.to);
+  const from = parseFilterDate(value.from);
+  const to = parseFilterDate(value.to);
 
   return (
     // Keep the dropdown menu's typeahead and arrow-key navigation away from
@@ -123,19 +127,19 @@ const AddedFilter = ({ value, onChange }: AddedFilterProps) => {
     <div className={FILTER_ROW_CLASS} onKeyDown={(e) => e.stopPropagation()}>
       <Label
         className='font-normal text-muted-foreground text-sm'
-        htmlFor='addedPeriod'>
-        {t("filters.added")}
+        htmlFor={`${id}Period`}>
+        {label}
       </Label>
       <Select
-        onValueChange={(period: AddedPeriod) => onChange({ ...value, period })}
+        onValueChange={(period: DatePeriod) => onChange({ ...value, period })}
         value={value.period}>
-        <SelectTrigger className='h-8 w-full' id='addedPeriod'>
+        <SelectTrigger className='h-8 w-full' id={`${id}Period`}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          {ADDED_PERIODS.map((period) => (
+          {DATE_PERIODS.map((period) => (
             <SelectItem key={period} value={period}>
-              {t(`filters.addedPeriod.${period}`)}
+              {t(`filters.datePeriod.${period}`)}
             </SelectItem>
           ))}
         </SelectContent>
@@ -143,15 +147,15 @@ const AddedFilter = ({ value, onChange }: AddedFilterProps) => {
       {value.period === "custom" && (
         <div className='col-span-2 grid grid-cols-2 gap-2'>
           <DatePicker
-            id='addedFrom'
-            label={t("filters.addedFrom")}
+            id={`${id}From`}
+            label={t("filters.dateFrom")}
             max={to ?? today}
             onChange={(from) => onChange({ ...value, from })}
             value={value.from}
           />
           <DatePicker
-            id='addedTo'
-            label={t("filters.addedTo")}
+            id={`${id}To`}
+            label={t("filters.dateTo")}
             max={today}
             min={from}
             onChange={(to) => onChange({ ...value, to })}
@@ -163,4 +167,4 @@ const AddedFilter = ({ value, onChange }: AddedFilterProps) => {
   );
 };
 
-export default memo(AddedFilter);
+export default memo(DateFilter);

@@ -52,6 +52,7 @@ export const CATALOG_QUERY_DEFAULTS: CatalogQuery = {
   nsfwOnly: false,
   hideObsolete: false,
   updatedAfter: null,
+  updatedBefore: null,
   addedAfter: null,
   addedBefore: null,
   favorites: [],

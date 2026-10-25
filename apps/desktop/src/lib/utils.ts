@@ -4,23 +4,15 @@ import {
   formatByteRate,
   formatByteSize,
 } from "@deadlock-mods/shared";
-import {
-  addDays,
-  format,
-  getUnixTime,
-  parse,
-  startOfDay,
-  subDays,
-} from "date-fns";
+import { addDays, format, getUnixTime, parse, subDays } from "date-fns";
 import { platform } from "@tauri-apps/plugin-os";
 
-import type { AddedFilter } from "@/lib/store/slices/ui";
+import type { DateFilter } from "@/lib/store/slices/ui";
 import {
   MOD_OUTDATED_CUTOFF_SECONDS,
   STALE_MOD_DAYS,
   STALE_MOD_REPORT_THRESHOLD,
   SortType,
-  TimePeriod,
   UPDATED_RECENTLY_MS,
   UPDATED_RECENTLY_THRESHOLD,
 } from "./constants";
@@ -73,47 +65,42 @@ export const sortMods = <T extends ModDto>(mods: T[], sortType: SortType) => {
   });
 };
 
-export const getTimePeriodCutoff = (period: TimePeriod): Date | null => {
-  if (period === TimePeriod.ALL_TIME) return null;
-  const now = new Date();
-  switch (period) {
-    case TimePeriod.PAST_WEEK:
-      return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    case TimePeriod.PAST_MONTH:
-      return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    case TimePeriod.PAST_3_MONTHS:
-      return new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-    case TimePeriod.PAST_YEAR:
-      return new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
-  }
-};
+export const FILTER_DATE_FORMAT = "yyyy-MM-dd";
 
-export const ADDED_DATE_FORMAT = "yyyy-MM-dd";
+/** Parses a date filter date (YYYY-MM-DD) as local midnight. */
+export const parseFilterDate = (date: string): Date | undefined =>
+  date ? parse(date, FILTER_DATE_FORMAT, new Date()) : undefined;
 
-/** Parses an "Added" filter date (YYYY-MM-DD) as local midnight. */
-export const parseAddedDate = (date: string): Date | undefined =>
-  date ? parse(date, ADDED_DATE_FORMAT, new Date()) : undefined;
-
-/** Formats an "Added" filter date for display, e.g. "Sep 1, 2026". */
-export const formatAddedDate = (date: string): string => {
-  const parsed = parseAddedDate(date);
+/** Formats a date filter date for display, e.g. "Sep 1, 2026". */
+export const formatFilterDate = (date: string): string => {
+  const parsed = parseFilterDate(date);
   return parsed ? format(parsed, "MMM d, yyyy") : "";
 };
 
 // A `[after, before)` range in unix seconds; `null` leaves that side open.
-type AddedRange = { after: number | null; before: number | null };
+type DateRange = { after: number | null; before: number | null };
 
-export const getAddedRange = (filter: AddedFilter): AddedRange => {
+const DATE_PERIOD_DAYS = {
+  "24h": 1,
+  "7d": 7,
+  "14d": 14,
+  "28d": 28,
+  "1y": 365,
+};
+
+export const getDateRange = (filter: DateFilter): DateRange => {
   switch (filter.period) {
-    case "today":
-      return { after: getUnixTime(startOfDay(new Date())), before: null };
-    case "week":
-      return { after: getUnixTime(subDays(new Date(), 7)), before: null };
-    case "month":
-      return { after: getUnixTime(subDays(new Date(), 30)), before: null };
+    case "24h":
+    case "7d":
+    case "14d":
+    case "28d":
+    case "1y": {
+      const days = DATE_PERIOD_DAYS[filter.period];
+      return { after: getUnixTime(subDays(new Date(), days)), before: null };
+    }
     case "custom": {
-      const from = parseAddedDate(filter.from);
-      const to = parseAddedDate(filter.to);
+      const from = parseFilterDate(filter.from);
+      const to = parseFilterDate(filter.to);
       return {
         after: from ? getUnixTime(from) : null,
         // `to` is inclusive, so the range ends at the next local midnight.
@@ -125,7 +112,7 @@ export const getAddedRange = (filter: AddedFilter): AddedRange => {
   }
 };
 
-export const isAddedFilterActive = (filter: AddedFilter): boolean =>
+export const isDateFilterActive = (filter: DateFilter): boolean =>
   filter.period !== "any" &&
   (filter.period !== "custom" || Boolean(filter.from || filter.to));
 
