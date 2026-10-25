@@ -17,8 +17,10 @@ import {
   decodeFoundrySound,
   decodeFoundryTexture,
   exportFoundryWorkspace,
+  foundryModelParts,
   foundryPaintTargets,
   getPrimaryModelPath,
+  paintFoundryParts,
   paintFoundryTarget,
   prepareFoundryWorkspace,
   releaseFoundryArchives,
@@ -37,6 +39,8 @@ import type {
   FoundryManifest,
   FoundryModel,
   FoundryPaint,
+  FoundryPaintPart,
+  FoundryPaintSelection,
   FoundryPaintTargetId,
   FoundryPaintResult,
   FoundryPaintTargetInfo,
@@ -87,6 +91,72 @@ const IDLE_CARDS: CardPreviews = {
   defaultCards: [],
 };
 
+/** The targets whose textures are sections of the model. */
+const MODEL_TARGETS: FoundryPaintTargetId[] = [
+  "body",
+  "weapon",
+  "bodyAndWeapon",
+];
+
+const DEFAULT_SELECTION: FoundryPaintSelection = {
+  kind: "target",
+  target: "body",
+};
+
+/** The key `appliedPaint` keeps one target's or one section's paint under. */
+export const targetPaintKey = (target: FoundryPaintTargetId) =>
+  `target:${target}`;
+export const partPaintKey = (texture: string) => `part:${texture}`;
+
+/**
+ * The color maps a selection covers on the model, for the viewer to tint and
+ * highlight. Targets are resolved through the model's own section list, so a
+ * preview colors exactly what an apply would rewrite. Ability effects are not
+ * part of the model, so they cover nothing here.
+ */
+export const selectionTextures = (
+  selection: FoundryPaintSelection,
+  parts: readonly FoundryPaintPart[],
+): string[] => {
+  if (selection.kind === "parts") return selection.textures;
+  switch (selection.target) {
+    case "abilities":
+      return [];
+    case "bodyAndWeapon":
+      return parts.map((part) => part.texture);
+    default:
+      return parts
+        .filter((part) => part.target === selection.target)
+        .map((part) => part.texture);
+  }
+};
+
+/**
+ * Record a paint on the sections it reached. A target holding one of them no
+ * longer wears a single paint, so its own entry is dropped; the caller sets
+ * the target it painted afterwards.
+ */
+const withPaintedSections = (
+  applied: Readonly<Record<string, FoundryPaint>>,
+  paintedPaths: readonly string[],
+  paint: FoundryPaint,
+  parts: readonly FoundryPaintPart[],
+) => {
+  const next = { ...applied };
+  const painted = new Set(paintedPaths);
+  for (const texture of paintedPaths) next[partPaintKey(texture)] = paint;
+  for (const target of MODEL_TARGETS) {
+    if (
+      selectionTextures({ kind: "target", target }, parts).some((texture) =>
+        painted.has(texture),
+      )
+    ) {
+      delete next[targetPaintKey(target)];
+    }
+  }
+  return next;
+};
+
 interface FoundryContextValue {
   status: FoundryStatus;
   manifest: FoundryManifest | null;
@@ -110,8 +180,17 @@ interface FoundryContextValue {
   setPreviewTint: (tint: FoundryPreviewTint | null) => void;
   /** How much of the hero each paint target covers, once the skin is scanned. */
   paintTargets: FoundryPaintTargetInfo[];
-  /** The paint applied per target this session, for the panel to reflect. */
-  appliedPaint: Readonly<Partial<Record<FoundryPaintTargetId, FoundryPaint>>>;
+  /** The paint applied this session, keyed by `targetPaintKey` / `partPaintKey`. */
+  appliedPaint: Readonly<Record<string, FoundryPaint>>;
+  /** The primary model's paintable sections, in draw order. */
+  paintParts: FoundryPaintPart[];
+  /** What the paint tab is about to paint. */
+  paintSelection: FoundryPaintSelection;
+  setPaintSelection: (selection: FoundryPaintSelection) => void;
+  /** Select one section, or add it to / take it out of a hand-picked set. */
+  togglePaintPart: (texture: string, additive: boolean) => void;
+  /** The selection's color maps while the paint tab is open, else none. */
+  highlightTextures: readonly string[];
   busy: boolean;
   setActiveTab: (tab: FoundryTab) => void;
   setSelectedEntryPath: (path: string | null) => void;
@@ -126,6 +205,10 @@ interface FoundryContextValue {
   replaceEntry: (entryPath: string, sourceFilePath: string) => Promise<void>;
   paintTarget: (
     target: FoundryPaintTargetId,
+    paint: FoundryPaint,
+  ) => Promise<FoundryPaintResult>;
+  paintSelectedParts: (
+    textures: string[],
     paint: FoundryPaint,
   ) => Promise<FoundryPaintResult>;
   revertEntry: (entryPath: string) => Promise<void>;
@@ -182,8 +265,11 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
     [],
   );
   const [appliedPaint, setAppliedPaint] = useState<
-    Partial<Record<FoundryPaintTargetId, FoundryPaint>>
+    Record<string, FoundryPaint>
   >({});
+  const [paintParts, setPaintParts] = useState<FoundryPaintPart[]>([]);
+  const [paintSelection, setPaintSelection] =
+    useState<FoundryPaintSelection>(DEFAULT_SELECTION);
   const [busy, setBusy] = useState(false);
   // Bumped by every edit. Each derived preview keys its cache on it, so one
   // counter keeps the model, the textures and the card gallery in step; three
@@ -213,6 +299,8 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
     setPreviewTint(null);
     setPaintTargets([]);
     setAppliedPaint({});
+    setPaintParts([]);
+    setPaintSelection(DEFAULT_SELECTION);
     setTexturePreview(IDLE_TEXTURE);
     setModelPreview(IDLE_MODEL);
     setCardPreviews(IDLE_CARDS);
@@ -395,6 +483,54 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [manifest, workspaceRoot]);
 
+  // The sections follow the primary model: they are what the paint tab's
+  // preview shows and what a click on it selects.
+  useEffect(() => {
+    // A selection of another model's sections means nothing on this one.
+    setPaintSelection(DEFAULT_SELECTION);
+    if (!manifest || !primaryModelPath) {
+      setPaintParts([]);
+      return;
+    }
+    let cancelled = false;
+    foundryModelParts(
+      manifest.filePath,
+      primaryModelPath,
+      manifest.heroDisplay ?? null,
+    )
+      .then((parts) => {
+        if (!cancelled) setPaintParts(parts);
+      })
+      .catch((err) => {
+        logger.withError(err).error("[Foundry] Failed to list paint parts");
+        if (!cancelled) setPaintParts([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [manifest, primaryModelPath]);
+
+  const togglePaintPart = useCallback((texture: string, additive: boolean) => {
+    setPaintSelection((current) => {
+      if (!additive) {
+        const alone =
+          current.kind === "parts" &&
+          current.textures.length === 1 &&
+          current.textures[0] === texture;
+        return alone
+          ? DEFAULT_SELECTION
+          : { kind: "parts", textures: [texture] };
+      }
+      const textures = current.kind === "parts" ? current.textures : [];
+      const next = textures.includes(texture)
+        ? textures.filter((entry) => entry !== texture)
+        : [...textures, texture];
+      return next.length > 0
+        ? { kind: "parts", textures: next }
+        : DEFAULT_SELECTION;
+    });
+  }, []);
+
   /**
    * Unpack the loaded skin in the background. Editing is unavailable until this
    * lands, but previewing the model and cards is not, so a failure here is
@@ -559,7 +695,15 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
           for (const path of result.paintedPaths) next.add(path);
           return next;
         });
-        setAppliedPaint((current) => ({ ...current, [target]: paint }));
+        setAppliedPaint((current) => ({
+          ...withPaintedSections(
+            current,
+            result.paintedPaths,
+            paint,
+            paintParts,
+          ),
+          [targetPaintKey(target)]: paint,
+        }));
         // A repaint changes what the model samples and what the cards show.
         texturePreviewCacheRef.current.clear();
         setEditRevision((revision) => revision + 1);
@@ -568,7 +712,41 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
         setBusy(false);
       }
     },
-    [filePath, manifest, requireWorkspace],
+    [filePath, manifest, paintParts, requireWorkspace],
+  );
+
+  const paintSelectedParts = useCallback(
+    async (textures: string[], paint: FoundryPaint) => {
+      const active = requireWorkspace();
+      if (!filePath || !primaryModelPath) {
+        throw new Error("No model is loaded.");
+      }
+      setBusy(true);
+      try {
+        const result = await paintFoundryParts(
+          active.root,
+          filePath,
+          primaryModelPath,
+          manifest?.heroDisplay ?? null,
+          textures,
+          paint,
+        );
+        setEditedPaths((current) => {
+          const next = new Set(current);
+          for (const path of result.paintedPaths) next.add(path);
+          return next;
+        });
+        setAppliedPaint((current) =>
+          withPaintedSections(current, result.paintedPaths, paint, paintParts),
+        );
+        texturePreviewCacheRef.current.clear();
+        setEditRevision((revision) => revision + 1);
+        return result;
+      } finally {
+        setBusy(false);
+      }
+    },
+    [filePath, manifest, paintParts, primaryModelPath, requireWorkspace],
   );
 
   const revertEntry = useCallback(
@@ -629,6 +807,14 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
     [editedPaths.size, manifest, requireWorkspace],
   );
 
+  const highlightTextures = useMemo(
+    () =>
+      activeTab === "paint"
+        ? selectionTextures(paintSelection, paintParts)
+        : [],
+    [activeTab, paintSelection, paintParts],
+  );
+
   const value = useMemo<FoundryContextValue>(
     () => ({
       status,
@@ -654,6 +840,11 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       setPreviewTint,
       paintTargets,
       appliedPaint,
+      paintParts,
+      paintSelection,
+      setPaintSelection,
+      togglePaintPart,
+      highlightTextures,
       busy,
       setActiveTab,
       setSelectedEntryPath: selectEntryPath,
@@ -663,6 +854,7 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       importDefaultHero,
       replaceEntry,
       paintTarget,
+      paintSelectedParts,
       revertEntry,
       playSound,
       exportVpk,
@@ -685,6 +877,10 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       previewTint,
       paintTargets,
       appliedPaint,
+      paintParts,
+      paintSelection,
+      togglePaintPart,
+      highlightTextures,
       busy,
       selectEntryPath,
       previewCard,
@@ -693,6 +889,7 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       importDefaultHero,
       replaceEntry,
       paintTarget,
+      paintSelectedParts,
       revertEntry,
       playSound,
       exportVpk,

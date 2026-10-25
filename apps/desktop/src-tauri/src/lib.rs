@@ -353,6 +353,8 @@ pub fn run() {
       commands::foundry::foundry_replace_workspace_file,
       commands::foundry::foundry_paint_targets,
       commands::foundry::foundry_paint_target,
+      commands::foundry::foundry_model_parts,
+      commands::foundry::foundry_paint_parts,
       commands::foundry::foundry_pattern_swatch,
       commands::foundry::foundry_release_archives,
       commands::foundry::foundry_revert_workspace_file,

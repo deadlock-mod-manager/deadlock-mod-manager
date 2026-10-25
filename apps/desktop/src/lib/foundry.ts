@@ -6,6 +6,7 @@ import type {
   FoundryExportResult,
   FoundryManifest,
   FoundryPaint,
+  FoundryPaintPart,
   FoundryPaintResult,
   FoundryPatternId,
   FoundryPaintTargetId,
@@ -176,6 +177,43 @@ export const paintFoundryTarget = async (
     filePath,
     target,
     heroDisplay,
+    colorHex: paint.colorHex,
+    saturation: paint.saturation,
+    brightness: paint.brightness,
+    pattern: paint.pattern === "none" ? null : paint.pattern,
+    patternIntensity: paint.patternIntensity,
+    patternPhase: paint.patternPhase,
+  });
+};
+
+/** The paintable sections of a model: every color map it draws with. */
+export const foundryModelParts = async (
+  filePath: string,
+  modelPath: string,
+  heroDisplay: string | null,
+): Promise<FoundryPaintPart[]> => {
+  return await invoke<FoundryPaintPart[]>("foundry_model_parts", {
+    filePath,
+    modelPath,
+    heroDisplay,
+  });
+};
+
+/** Paint the chosen sections of a model, identified by their color maps. */
+export const paintFoundryParts = async (
+  workspaceRoot: string,
+  filePath: string,
+  modelPath: string,
+  heroDisplay: string | null,
+  textures: string[],
+  paint: FoundryPaint,
+): Promise<FoundryPaintResult> => {
+  return await invoke<FoundryPaintResult>("foundry_paint_parts", {
+    workspaceRoot,
+    filePath,
+    modelPath,
+    heroDisplay,
+    textures,
     colorHex: paint.colorHex,
     saturation: paint.saturation,
     brightness: paint.brightness,

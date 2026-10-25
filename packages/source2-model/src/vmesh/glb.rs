@@ -481,7 +481,10 @@ pub(crate) fn build_glb(
                 "metallicFactor": 0.0,
                 "roughnessFactor": 0.8
             },
-            "doubleSided": texture.double_sided
+            "doubleSided": texture.double_sided,
+            // The color map, so the Foundry can pick and paint single
+            // sections. three.js copies material extras into `material.userData`.
+            "extras": { "colorTexture": texture.name }
         });
         if let Some(normal) = normal {
             material["normalTexture"] = json!({ "index": normal });
@@ -512,8 +515,7 @@ pub(crate) fn build_glb(
             }
         }
         if let Some(outline) = texture.outline {
-            // three.js copies material extras into `material.userData`.
-            material["extras"] = json!({ "outline": { "tint": outline.tint } });
+            material["extras"]["outline"] = json!({ "tint": outline.tint });
         }
         materials.push(material);
     }

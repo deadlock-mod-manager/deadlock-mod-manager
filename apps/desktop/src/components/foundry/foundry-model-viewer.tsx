@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
+import { z } from "zod";
 import { retainFoundryModel } from "@/lib/model-assets";
 import type { FoundryModel } from "@/types/foundry";
 import { loadPreviewModel } from "./model-loader";
@@ -54,9 +55,9 @@ import {
 } from "./viewer-mesh-groups";
 import { createViewerScene } from "./viewer-scene";
 
-/** A live paint preview: which part, and the exact paint being previewed. */
+/** A live paint preview: the color maps it covers and the exact paint. */
 export interface FoundryPreviewTint {
-  target: "body" | "weapon" | "bodyAndWeapon" | "abilities";
+  textures: readonly string[];
   colorHex: string;
   saturation: number;
   brightness: number;
@@ -68,6 +69,12 @@ interface FoundryModelViewerProps {
   /** Paints the matching materials on the GPU, without touching any file, so
    *  the paint tab shows a color the instant it is picked. */
   tint?: FoundryPreviewTint | null;
+  /** Color maps of the selected sections, drawn with a faint glow. */
+  highlightTextures?: readonly string[];
+  /** Makes sections clickable: a click selects one, Shift or Ctrl adds it. */
+  onPickPart?: (texture: string, additive: boolean) => void;
+  /** The section name shown while the pointer is over it. */
+  partLabel?: (texture: string) => string | undefined;
   playback?: PreviewPlayback;
   /** Simulations attached to the loaded model; rebuilt when the array changes, so memoize it. */
   effects?: ViewerEffectFactory[];
@@ -83,10 +90,28 @@ interface FoundryModelViewerProps {
 interface MaterialSnapshot {
   /** The paint shader's uniforms for this material. */
   uniforms: PaintUniforms;
-  /** Material and mesh names joined, which is what the part match reads. */
-  name: string;
+  /** The material's color map (lowercase), or null when it has none. */
+  texture: string | null;
   material: PaintableMaterial;
 }
+
+/** A mesh with its flat ID material for the GPU pick pass. */
+interface PickTarget {
+  mesh: THREE.Mesh;
+  texture: string | null;
+  pickMaterial: THREE.MeshBasicMaterial;
+}
+
+/** Hovered parts glow brighter than selected ones, so the pointer reads. */
+const HOVER_GLOW = 0.32;
+const SELECTED_GLOW = 0.14;
+
+/** A pointer that moved more than this between press and release orbited. */
+const CLICK_SLOP_PX = 4;
+
+/** How often a still pointer is re-picked while the model or camera moves.
+ *  Each pick is a synchronous pixel read, so not every frame. */
+const REPICK_INTERVAL_MS = 100;
 
 const isTintable = (material: THREE.Material): material is PaintableMaterial =>
   material instanceof THREE.MeshBasicMaterial ||
@@ -95,44 +120,13 @@ const isTintable = (material: THREE.Material): material is PaintableMaterial =>
   material instanceof THREE.MeshPhongMaterial ||
   material instanceof THREE.MeshLambertMaterial;
 
-const WEAPON_TOKENS = [
-  "weapon",
-  "gun",
-  "rifle",
-  "pistol",
-  "shotgun",
-  "cannon",
-  "launcher",
-  "bow",
-  "arrow",
-  "blade",
-  "sword",
-  "knife",
-  "staff",
-  "wand",
-  "mace",
-  "club",
-  "revolver",
-  "smg",
-  "bullet",
-  "melee",
-];
+/** `material.userData.colorTexture`, written by our GLB exporter's material extras. */
+const colorTextureExtras = z.string();
 
-/**
- * Whether a material belongs to the part being painted. This mirrors the
- * backend's material classification (`commands/foundry/paint.rs`) so the preview
- * highlights exactly what an Apply would rewrite. Ability effects are not part
- * of the model, so nothing on the mesh matches them.
- */
-const materialMatchesTarget = (
-  snapshot: MaterialSnapshot,
-  target: FoundryPreviewTint["target"],
-): boolean => {
-  if (target === "abilities") return false;
-  if (target === "bodyAndWeapon") return true;
-  const name = snapshot.name.toLowerCase();
-  const isWeapon = WEAPON_TOKENS.some((token) => name.includes(token));
-  return target === "weapon" ? isWeapon : !isWeapon;
+/** The color map the decoder recorded for a material, lowercased. */
+const colorTextureOf = (material: THREE.Material): string | null => {
+  const parsed = colorTextureExtras.safeParse(material.userData.colorTexture);
+  return parsed.success ? parsed.data.toLowerCase() : null;
 };
 
 /** Clone every material so tinting one model never bleeds into another. */
@@ -158,11 +152,53 @@ const installPaintShaders = (root: THREE.Object3D): MaterialSnapshot[] => {
       snapshots.push({
         material,
         uniforms: installPaintShader(material),
-        name: [material.name, child.name].filter(Boolean).join(" "),
+        texture: colorTextureOf(material),
       });
     }
   });
   return snapshots;
+};
+
+/**
+ * One flat-colored stand-in material per mesh for the pick pass. The IDs start
+ * at 1 so a cleared pixel (0) means "nothing under the pointer". Built before
+ * the outline shells are attached, so those never become pick targets.
+ */
+const buildPickTargets = (root: THREE.Object3D): PickTarget[] => {
+  const targets: PickTarget[] = [];
+  root.traverse((child) => {
+    if (!(child instanceof THREE.Mesh) || Array.isArray(child.material)) return;
+    const id = targets.length + 1;
+    targets.push({
+      mesh: child,
+      texture: colorTextureOf(child.material),
+      pickMaterial: new THREE.MeshBasicMaterial({
+        color: new THREE.Color().setHex(id, THREE.LinearSRGBColorSpace),
+        toneMapped: false,
+        side: THREE.DoubleSide,
+      }),
+    });
+  });
+  return targets;
+};
+
+/** Glow the hovered part and, more faintly, the selected ones. */
+const applyHighlight = (
+  snapshots: MaterialSnapshot[],
+  selected: ReadonlySet<string>,
+  hovered: string | null,
+) => {
+  for (const snapshot of snapshots) {
+    const texture = snapshot.texture;
+    snapshot.uniforms.uPaintHighlight.value =
+      texture === null
+        ? 0
+        : texture === hovered
+          ? HOVER_GLOW
+          : selected.has(texture)
+            ? SELECTED_GLOW
+            : 0;
+  }
 };
 
 /**
@@ -177,9 +213,14 @@ const applyPreviewTint = (
   tint: FoundryPreviewTint | null | undefined,
 ) => {
   const hue = tint ? hueOf(tint.colorHex) : 0;
+  const textures = new Set(
+    tint?.textures.map((texture) => texture.toLowerCase()),
+  );
   for (const snapshot of snapshots) {
     const painted =
-      tint != null && materialMatchesTarget(snapshot, tint.target);
+      tint != null &&
+      snapshot.texture !== null &&
+      textures.has(snapshot.texture);
     snapshot.uniforms.uPaintActive.value = painted ? 1 : 0;
     if (!painted) continue;
     snapshot.uniforms.uPaintHue.value = hue;
@@ -275,6 +316,9 @@ export const FoundryModelViewer = ({
   model,
   label,
   tint,
+  highlightTextures,
+  onPickPart,
+  partLabel,
   playback,
   effects,
   fullscreenTarget,
@@ -290,6 +334,14 @@ export const FoundryModelViewer = ({
   const fitRef = useRef<(() => void) | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const snapshotsRef = useRef<MaterialSnapshot[]>([]);
+  const [hovered, setHovered] = useState<string | null>(null);
+  // The frame loop and pick handler read the latest props through refs, so a
+  // changed callback never rebuilds the scene.
+  const onPickRef = useRef(onPickPart);
+  onPickRef.current = onPickPart;
+  const pickable = Boolean(onPickPart);
+  const pickableRef = useRef(pickable);
+  pickableRef.current = pickable;
   const [loading, setLoading] = useState(true);
   const [scanGone, setScanGone] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -512,7 +564,97 @@ export const FoundryModelViewer = ({
 
     let disposed = false;
     let loadedRoot: THREE.Object3D | null = null;
+    let picks: PickTarget[] = [];
     let frame = 0;
+
+    // GPU picking: the model is drawn into a 1x1 target under the pointer with
+    // one flat color per mesh, and the pixel read back names the section. A CPU
+    // raycast would have to skin every vertex of a 100k-triangle hero per move.
+    const pickTarget = new THREE.WebGLRenderTarget(1, 1);
+    const pickCamera = new THREE.PerspectiveCamera();
+    const pickPixel = new Uint8Array(4);
+    const pickPointer = { x: 0, y: 0, inside: false, dirty: false };
+    let pointerDown: { x: number; y: number } | null = null;
+    let lastHovered: string | null = null;
+    let lastPick = 0;
+
+    const setHover = (texture: string | null) => {
+      if (texture === lastHovered) return;
+      lastHovered = texture;
+      setHovered(texture);
+    };
+
+    const pickAtPointer = (): string | null => {
+      const root = loadedRoot;
+      if (!root || picks.length === 0) return null;
+      const canvas = renderer.domElement;
+      pickCamera.copy(camera);
+      pickCamera.setViewOffset(
+        canvas.clientWidth,
+        canvas.clientHeight,
+        Math.floor(pickPointer.x),
+        Math.floor(pickPointer.y),
+        1,
+        1,
+      );
+      pickCamera.updateProjectionMatrix();
+      const saved = picks.map((target) => target.mesh.material);
+      for (const target of picks) target.mesh.material = target.pickMaterial;
+      // The outline shells keep their own material and would read as an ID.
+      outlines?.setVisible(false);
+      const previousTarget = renderer.getRenderTarget();
+      const previousClear = renderer.getClearColor(new THREE.Color());
+      const previousAlpha = renderer.getClearAlpha();
+      renderer.setRenderTarget(pickTarget);
+      renderer.setClearColor(0x000000, 0);
+      renderer.clear();
+      renderer.render(root, pickCamera);
+      renderer.readRenderTargetPixels(pickTarget, 0, 0, 1, 1, pickPixel);
+      renderer.setRenderTarget(previousTarget);
+      renderer.setClearColor(previousClear, previousAlpha);
+      outlines?.setVisible(lookRef.current.outlines);
+      picks.forEach((target, index) => {
+        target.mesh.material = saved[index];
+      });
+      const id = (pickPixel[0] << 16) | (pickPixel[1] << 8) | pickPixel[2];
+      return id > 0 ? (picks[id - 1]?.texture ?? null) : null;
+    };
+
+    const onPointerMove = (event: PointerEvent) => {
+      const rect = renderer.domElement.getBoundingClientRect();
+      pickPointer.x = event.clientX - rect.left;
+      pickPointer.y = event.clientY - rect.top;
+      pickPointer.inside = true;
+      pickPointer.dirty = true;
+    };
+    const onPointerLeave = () => {
+      pickPointer.inside = false;
+      setHover(null);
+    };
+    const onPointerDown = (event: PointerEvent) => {
+      pointerDown = { x: event.clientX, y: event.clientY };
+    };
+    const onPointerUp = (event: PointerEvent) => {
+      const start = pointerDown;
+      pointerDown = null;
+      if (
+        !start ||
+        !pickableRef.current ||
+        Math.hypot(event.clientX - start.x, event.clientY - start.y) >
+          CLICK_SLOP_PX
+      ) {
+        return;
+      }
+      onPointerMove(event);
+      const texture = pickAtPointer();
+      if (texture) {
+        onPickRef.current?.(texture, event.shiftKey || event.ctrlKey);
+      }
+    };
+    renderer.domElement.addEventListener("pointermove", onPointerMove);
+    renderer.domElement.addEventListener("pointerleave", onPointerLeave);
+    renderer.domElement.addEventListener("pointerdown", onPointerDown);
+    renderer.domElement.addEventListener("pointerup", onPointerUp);
 
     const resize = () => {
       const width = Math.max(container.clientWidth, 1);
@@ -556,6 +698,7 @@ export const FoundryModelViewer = ({
         setBodyChoice(table?.defaults ?? {});
         cloneSceneMaterials(gltf.scene);
         snapshotsRef.current = installPaintShaders(gltf.scene);
+        picks = buildPickTargets(gltf.scene);
         outlines = attachNprOutlines(gltf.scene);
         outlines.setViewportHeight(Math.max(container.clientHeight, 1));
         applyLook();
@@ -625,6 +768,22 @@ export const FoundryModelViewer = ({
       renderer.domElement.dataset.seeking = String(clock.seeking);
       for (const effect of activeEffectsRef.current) effect.update(0);
       controls.update();
+      // Re-pick when the pointer moved, and now and then while the camera or
+      // the pose moves under a still pointer.
+      const moving =
+        controls.autoRotate ||
+        (mixerRef.current !== null && (playback?.playing ?? true));
+      if (
+        pickableRef.current &&
+        pickPointer.inside &&
+        (pickPointer.dirty || (moving && now - lastPick >= REPICK_INTERVAL_MS))
+      ) {
+        pickPointer.dirty = false;
+        lastPick = now;
+        setHover(pickAtPointer());
+      } else if (!pickableRef.current && lastHovered !== null) {
+        setHover(null);
+      }
       postFx.render();
 
       // Mirror the main camera's orientation so the gizmo turns with the model.
@@ -638,6 +797,13 @@ export const FoundryModelViewer = ({
       loadController.abort();
       window.cancelAnimationFrame(frame);
       gizmoRenderer.domElement.removeEventListener("pointerdown", onGizmoClick);
+      renderer.domElement.removeEventListener("pointermove", onPointerMove);
+      renderer.domElement.removeEventListener("pointerleave", onPointerLeave);
+      renderer.domElement.removeEventListener("pointerdown", onPointerDown);
+      renderer.domElement.removeEventListener("pointerup", onPointerUp);
+      for (const pick of picks) pick.pickMaterial.dispose();
+      pickTarget.dispose();
+      setHover(null);
       resizeObserver.disconnect();
       visibility.disconnect();
       clockRef.current = null;
@@ -682,6 +848,21 @@ export const FoundryModelViewer = ({
     applyPreviewTint(snapshotsRef.current, tint);
   }, [tint, loading]);
 
+  useEffect(() => {
+    // The selection glow would shift the color being previewed, so it gives
+    // way to the tint; the hover glow stays so the pointer still reads.
+    applyHighlight(
+      snapshotsRef.current,
+      new Set(
+        tint ? [] : highlightTextures?.map((texture) => texture.toLowerCase()),
+      ),
+      pickable ? hovered : null,
+    );
+  }, [highlightTextures, hovered, pickable, tint, loading]);
+
+  const hoveredLabel =
+    pickable && hovered ? (partLabel?.(hovered) ?? null) : null;
+
   return (
     <div className='@container relative h-full w-full overflow-hidden bg-background'>
       <div
@@ -689,6 +870,7 @@ export const FoundryModelViewer = ({
         className={cn(
           "h-full w-full transition-opacity duration-700 ease-out",
           loading && "opacity-0",
+          hoveredLabel && "cursor-pointer",
         )}
         title={label}
       />
@@ -751,6 +933,18 @@ export const FoundryModelViewer = ({
         }}
       />
       {!loading && !failed && children}
+      {hoveredLabel && (
+        <p
+          className={cn(
+            overlaySurface,
+            "pointer-events-none absolute top-14 left-3 flex h-7 max-w-[calc(100%-7rem)] items-center gap-2 rounded-full px-2.5 text-[11px]",
+          )}>
+          <span className='truncate font-medium'>{hoveredLabel}</span>
+          <span className='shrink-0 text-muted-foreground'>
+            {t("foundry.paint.pickHint")}
+          </span>
+        </p>
+      )}
 
       {!scanGone && !failed && (
         <div

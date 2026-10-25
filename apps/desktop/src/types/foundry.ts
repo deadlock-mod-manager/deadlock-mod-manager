@@ -13,6 +13,7 @@ export type { FoundryEntrySource } from "./generated/FoundryEntrySource";
 export type { FoundryExportResult } from "./generated/FoundryExportResult";
 export type { FoundryManifest } from "./generated/FoundryManifest";
 export type { FoundryModel } from "./generated/FoundryModel";
+export type { FoundryPaintPart } from "./generated/FoundryPaintPart";
 export type { FoundryPaintResult } from "./generated/FoundryPaintResult";
 export type { FoundryPaintTargetInfo } from "./generated/FoundryPaintTargetInfo";
 export type { FoundryReplacementResult } from "./generated/FoundryReplacementResult";
@@ -24,6 +25,7 @@ export type { FoundryWorkspace } from "./generated/FoundryWorkspace";
 export type { PaintTarget as FoundryPaintTargetId } from "./generated/PaintTarget";
 
 import type { ExportDestinationKind } from "./generated/ExportDestinationKind";
+import type { PaintTarget } from "./generated/PaintTarget";
 
 /** The procedural patterns the paint tab can lay over a recolor. */
 export const FOUNDRY_PATTERNS = [
@@ -61,6 +63,15 @@ export interface FoundryPaint {
   /** Shifts the pattern's hue and offset, 0..1. */
   patternPhase: number;
 }
+
+/**
+ * What the paint tab paints: one of the whole targets, or sections of the
+ * model picked by hand. A section is identified by its color map, which is
+ * what the paint rewrites.
+ */
+export type FoundryPaintSelection =
+  | { kind: "target"; target: PaintTarget }
+  | { kind: "parts"; textures: string[] };
 
 export interface FoundryExportRequest {
   destination: ExportDestinationKind;

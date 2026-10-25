@@ -1,13 +1,13 @@
 import { Button } from "@deadlock-mods/ui/components/button";
 import { cn } from "@deadlock-mods/ui/lib/utils";
 import { CubeIcon, ImageIcon, MusicNotesIcon } from "@phosphor-icons/react";
+import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { usePersistedStore } from "@/lib/store";
 import { useFoundry } from "./foundry-context";
 import { FoundryLoadingBar } from "./foundry-loading-bar";
 import { AnimatedModelPreview } from "./animated-model-preview";
 import { ModelLoadingStage } from "./model-loading-stage";
-import { getPrimaryModelPath } from "@/lib/foundry";
 
 /**
  * The result surface in the middle of the Foundry: the live 3D turntable while a
@@ -25,9 +25,24 @@ export const FoundryPreview = () => {
     previewTint,
     busy,
     preview3dEnabled,
+    primaryModelPath,
+    paintParts,
+    highlightTextures,
+    togglePaintPart,
   } = useFoundry();
   const setPreview3d = usePersistedStore(
     (state) => state.setFoundry3dPreviewEnabled,
+  );
+  const labels = useMemo(
+    () =>
+      new Map(
+        paintParts.map((part) => [part.texture.toLowerCase(), part.label]),
+      ),
+    [paintParts],
+  );
+  const partLabel = useCallback(
+    (texture: string) => labels.get(texture.toLowerCase()),
+    [labels],
   );
 
   // Only the asset browser and the paint tab have a 3D surface; cards render
@@ -63,10 +78,9 @@ export const FoundryPreview = () => {
     );
   }
 
+  // The paint tab shows the primary model, the one its sections belong to.
   const modelPath =
-    activeTab === "paint" && manifest
-      ? getPrimaryModelPath(manifest)
-      : selectedEntryPath;
+    activeTab === "paint" ? primaryModelPath : selectedEntryPath;
   if (model && !rebuildingModel && manifest && modelPath) {
     return (
       <div className='relative flex h-full w-full items-center justify-center overflow-hidden rounded-lg border bg-gradient-to-b from-muted/40 to-background'>
@@ -76,6 +90,10 @@ export const FoundryPreview = () => {
           model={model}
           label={selectedEntryPath ?? t("foundry.preview.alt")}
           tint={previewTint}
+          highlightTextures={highlightTextures}
+          // Sections are only picked where they can be painted.
+          onPickPart={activeTab === "paint" ? togglePaintPart : undefined}
+          partLabel={partLabel}
         />
       </div>
     );
