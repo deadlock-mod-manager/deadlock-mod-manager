@@ -4412,17 +4412,20 @@
     "showOutdatedBadge": "오래된 표시",
     "added": "",
     "addedLabel": "",
-    "addedFrom": "",
-    "addedTo": "",
+    "updatedLabel": "",
+    "dateFrom": "",
+    "dateTo": "",
     "pickDate": "",
-    "addedBetween": "",
-    "addedSince": "",
-    "addedUntil": "",
-    "addedPeriod": {
+    "dateBetween": "",
+    "dateSince": "",
+    "dateUntil": "",
+    "datePeriod": {
       "any": "",
-      "today": "",
-      "week": "",
-      "month": "",
+      "24h": "",
+      "7d": "",
+      "14d": "",
+      "28d": "",
+      "1y": "",
       "custom": ""
     },
     "clearAll": "모두 지우기",
@@ -4450,13 +4453,6 @@
     "hero": "",
     "name": "",
     "recentlyadded": ""
-  },
-  "timePeriod": {
-    "alltime": "",
-    "pastweek": "",
-    "pastmonth": "",
-    "past3months": "",
-    "pastyear": ""
   },
   "addMods": {
     "title": "모드 추가",
@@ -7013,6 +7009,7 @@
   "modelPreview": {
     "title": "",
     "disclaimerTitle": "",
+    "wipBadge": "",
     "disclaimer": "",
     "downloadHint": "",
     "download": "",

@@ -4412,18 +4412,21 @@
     "showOutdatedBadge": "包含过时内容",
     "added": "添加时间",
     "addedLabel": "添加时间：",
-    "addedFrom": "从",
-    "addedTo": "至",
+    "updatedLabel": "",
+    "dateFrom": "",
+    "dateTo": "",
     "pickDate": "选择日期",
-    "addedBetween": "",
-    "addedSince": "自 {{date}} 起",
-    "addedUntil": "截至 {{date}}",
-    "addedPeriod": {
-      "any": "不限时间",
-      "today": "今天",
-      "week": "本周",
-      "month": "本月",
-      "custom": "自定义范围"
+    "dateBetween": "",
+    "dateSince": "",
+    "dateUntil": "",
+    "datePeriod": {
+      "any": "",
+      "24h": "",
+      "7d": "",
+      "14d": "",
+      "28d": "",
+      "1y": "",
+      "custom": ""
     },
     "clearAll": "清除所有",
     "contentType": "内容类型",
@@ -4450,13 +4453,6 @@
     "hero": "",
     "name": "",
     "recentlyadded": ""
-  },
-  "timePeriod": {
-    "alltime": "",
-    "pastweek": "",
-    "pastmonth": "",
-    "past3months": "",
-    "pastyear": ""
   },
   "addMods": {
     "title": "添加模组",
@@ -7013,6 +7009,7 @@
   "modelPreview": {
     "title": "",
     "disclaimerTitle": "",
+    "wipBadge": "",
     "disclaimer": "",
     "downloadHint": "",
     "download": "",
