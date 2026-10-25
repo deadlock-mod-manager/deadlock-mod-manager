@@ -7,6 +7,7 @@ import { Slider } from "@deadlock-mods/ui/components/slider";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { cn } from "@deadlock-mods/ui/lib/utils";
 import {
+  CursorClickIcon,
   EyeIcon,
   EyeSlashIcon,
   PaintBrushIcon,
@@ -20,10 +21,17 @@ import { useTranslation } from "react-i18next";
 import logger from "@/lib/logger";
 import type {
   FoundryPaint,
+  FoundryPaintPart,
+  FoundryPaintSelection,
   FoundryPaintTargetId,
   FoundryPaintTargetInfo,
 } from "@/types/foundry";
-import { useFoundry } from "./foundry-context";
+import {
+  partPaintKey,
+  selectionTextures,
+  targetPaintKey,
+  useFoundry,
+} from "./foundry-context";
 import { FoundryPatternPicker } from "./foundry-pattern-picker";
 
 const TARGET_ORDER: FoundryPaintTargetId[] = [
@@ -39,6 +47,9 @@ const TARGET_ICONS: Record<FoundryPaintTargetId, React.ReactNode> = {
   bodyAndWeapon: <UsersThreeIcon className='h-4 w-4' weight='duotone' />,
   abilities: <SparkleIcon className='h-4 w-4' weight='duotone' />,
 };
+
+/** The section groups, in the order the list shows them. */
+const PART_GROUPS: FoundryPaintTargetId[] = ["body", "weapon"];
 
 /**
  * Starting colors, one per part, picked so the three read as a set rather than
@@ -62,6 +73,39 @@ const defaultPaint = (target: FoundryPaintTargetId): FoundryPaint => ({
 
 const coverage = (info: FoundryPaintTargetInfo | undefined): number =>
   (info?.textureCount ?? 0) + (info?.particleCount ?? 0);
+
+/** One draft per selection: a target, a section, or a set of sections. */
+const selectionKey = (selection: FoundryPaintSelection): string =>
+  selection.kind === "target"
+    ? targetPaintKey(selection.target)
+    : selection.textures.length === 1
+      ? partPaintKey(selection.textures[0])
+      : `parts:${[...selection.textures].sort().join("|")}`;
+
+const samePaint = (a: FoundryPaint, b: FoundryPaint) =>
+  a.colorHex === b.colorHex &&
+  a.saturation === b.saturation &&
+  a.brightness === b.brightness &&
+  a.pattern === b.pattern &&
+  a.patternIntensity === b.patternIntensity &&
+  a.patternPhase === b.patternPhase;
+
+/** The paint a selection last had applied, when all of it shares one. */
+const appliedFor = (
+  selection: FoundryPaintSelection,
+  applied: Readonly<Record<string, FoundryPaint>>,
+): FoundryPaint | undefined => {
+  if (selection.kind === "target") {
+    return applied[targetPaintKey(selection.target)];
+  }
+  const paints = selection.textures.map(
+    (texture) => applied[partPaintKey(texture)],
+  );
+  const [first] = paints;
+  return first && paints.every((paint) => paint && samePaint(paint, first))
+    ? first
+    : undefined;
+};
 
 /** A multiplier slider, shown with its current value. */
 const ScaleSlider = ({
@@ -144,10 +188,55 @@ const TargetButton = ({
   );
 };
 
+const PartRow = ({
+  part,
+  isSelected,
+  isEdited,
+  onSelect,
+}: {
+  part: FoundryPaintPart;
+  isSelected: boolean;
+  isEdited: boolean;
+  onSelect: (additive: boolean) => void;
+}) => {
+  const { t } = useTranslation();
+  return (
+    <button
+      aria-pressed={isSelected}
+      className={cn(
+        "flex w-full items-center gap-2 rounded-md border px-2.5 py-1.5 text-left text-sm transition-colors",
+        isSelected
+          ? "border-primary bg-primary/10"
+          : "border-transparent hover:bg-muted",
+      )}
+      onClick={(event) => onSelect(event.shiftKey || event.ctrlKey)}
+      title={part.materials.join("\n")}
+      type='button'>
+      <span
+        aria-hidden
+        className={cn(
+          "h-2 w-2 shrink-0 rounded-full border",
+          isSelected ? "border-primary bg-primary" : "border-muted-foreground",
+        )}
+      />
+      <span className='min-w-0 flex-1 truncate'>{part.label}</span>
+      {isEdited && (
+        <Badge className='shrink-0 text-[10px]'>{t("foundry.edited")}</Badge>
+      )}
+    </button>
+  );
+};
+
 /**
- * The paint tab: pick a part of the hero, pick a color and optionally a pattern,
- * apply. Each part is a whole set of materials, so one apply repaints every
- * texture it covers — and for abilities, the particle color parameters too.
+ * The paint tab: pick what to paint, pick a color and optionally a pattern,
+ * apply.
+ *
+ * What to paint is either a whole part of the hero (body, weapon, both, the
+ * ability effects) or individual sections of the model — the coat, the hair,
+ * the gun's glass — picked from the list or by clicking the model. A part
+ * repaints every texture it covers, and for abilities the particle color
+ * parameters too; a section is one color map, so painting it rewrites exactly
+ * that map.
  *
  * The 3D preview tints live as the color changes, which is instant but
  * approximate; Apply bakes the real thing into the workspace and the preview
@@ -159,14 +248,17 @@ export const FoundryPaintPanel = () => {
     paintTargets,
     appliedPaint,
     workspace,
+    editedPaths,
     busy,
+    paintParts,
+    paintSelection,
+    setPaintSelection,
+    togglePaintPart,
     paintTarget,
+    paintSelectedParts,
     setPreviewTint,
   } = useFoundry();
-  const [selected, setSelected] = useState<FoundryPaintTargetId>("body");
-  const [drafts, setDrafts] = useState<
-    Partial<Record<FoundryPaintTargetId, FoundryPaint>>
-  >({});
+  const [drafts, setDrafts] = useState<Record<string, FoundryPaint>>({});
   // Off until the user asks for it. A color the user has not committed to must
   // not appear on the hero: the picker always holds *some* value, so tinting
   // whenever it differs from what is baked meant a freshly opened skin was
@@ -178,10 +270,32 @@ export const FoundryPaintPanel = () => {
     [paintTargets],
   );
 
+  const key = selectionKey(paintSelection);
+  const applied = appliedFor(paintSelection, appliedPaint);
   const paint =
-    drafts[selected] ?? appliedPaint[selected] ?? defaultPaint(selected);
-  const info = infoById.get(selected);
-  const disabled = !workspace || busy || coverage(info) === 0;
+    drafts[key] ??
+    applied ??
+    defaultPaint(
+      paintSelection.kind === "target" ? paintSelection.target : "body",
+    );
+  const info =
+    paintSelection.kind === "target"
+      ? infoById.get(paintSelection.target)
+      : undefined;
+  const nothingSelected =
+    paintSelection.kind === "target"
+      ? coverage(info) === 0
+      : paintSelection.textures.length === 0;
+  const disabled = !workspace || busy || nothingSelected;
+  const selectedTextures = useMemo(
+    () =>
+      new Set(paintSelection.kind === "parts" ? paintSelection.textures : []),
+    [paintSelection],
+  );
+  const tintTextures = useMemo(
+    () => selectionTextures(paintSelection, paintParts),
+    [paintSelection, paintParts],
+  );
 
   // A pattern carries its own palette and replaces the picked color on every
   // texture it covers. Particles are the one thing it cannot cover, so for
@@ -191,7 +305,6 @@ export const FoundryPaintPanel = () => {
   const colorIgnored = patterned && !colorDrivesParticlesOnly;
 
   // Whether the panel holds a change that has not been baked yet.
-  const applied = appliedPaint[selected];
   const isDirty =
     !applied ||
     applied.colorHex !== paint.colorHex ||
@@ -205,13 +318,14 @@ export const FoundryPaintPanel = () => {
   //    and tinting on top would double it;
   //  - no pattern is chosen, because the shader cannot generate one and would
   //    show a hue the bake is about to discard.
-  const showTint = previewEnabled && isDirty && !patterned;
+  const showTint =
+    previewEnabled && isDirty && !patterned && tintTextures.length > 0;
 
   useEffect(() => {
     setPreviewTint(
       showTint
         ? {
-            target: selected,
+            textures: tintTextures,
             colorHex: paint.colorHex,
             saturation: paint.saturation,
             brightness: paint.brightness,
@@ -221,7 +335,7 @@ export const FoundryPaintPanel = () => {
     return () => setPreviewTint(null);
   }, [
     showTint,
-    selected,
+    tintTextures,
     paint.colorHex,
     paint.saturation,
     paint.brightness,
@@ -232,18 +346,32 @@ export const FoundryPaintPanel = () => {
     (patch: Partial<FoundryPaint>) => {
       setDrafts((current) => ({
         ...current,
-        [selected]: { ...paint, ...patch },
+        [key]: { ...paint, ...patch },
       }));
     },
-    [paint, selected],
+    [key, paint],
   );
 
   const handleApply = useCallback(async () => {
     try {
-      await paintTarget(selected, paint);
+      if (paintSelection.kind === "target") {
+        await paintTarget(paintSelection.target, paint);
+      } else {
+        const result = await paintSelectedParts(paintSelection.textures, paint);
+        if (result.skippedPaths.length > 0) {
+          toast.error(
+            t("foundry.paint.partsSkipped", {
+              count: result.skippedPaths.length,
+            }),
+          );
+        }
+      }
       // The baked textures are the truth now, so the scene tint has nothing
       // left to add — leaving it on would paint the color a second time.
       setPreviewEnabled(false);
+      // Targets and sections overlap, so a draft for another selection may now
+      // hold a color its textures no longer wear.
+      setDrafts({});
       // No success toast: the preview repaints and the target picks up its
       // "Edited" badge, which says the same thing without a popup on every
       // colour the user tries.
@@ -251,7 +379,32 @@ export const FoundryPaintPanel = () => {
       logger.withError(err).error("[Foundry] Paint failed");
       toast.error(t("foundry.paint.failed"));
     }
-  }, [paint, paintTarget, selected, t]);
+  }, [paint, paintSelectedParts, paintSelection, paintTarget, t]);
+
+  const partsByGroup = useMemo(
+    () =>
+      PART_GROUPS.map((group) => ({
+        group,
+        parts: paintParts.filter((part) => part.target === group),
+      })).filter(({ parts }) => parts.length > 0),
+    [paintParts],
+  );
+
+  const applyLabel =
+    paintSelection.kind === "target"
+      ? t("foundry.paint.apply", {
+          target: t(`foundry.paint.targets.${paintSelection.target}`),
+        })
+      : paintSelection.textures.length === 1
+        ? t("foundry.paint.apply", {
+            target:
+              paintParts.find(
+                (part) => part.texture === paintSelection.textures[0],
+              )?.label ?? "",
+          })
+        : t("foundry.paint.applySections", {
+            count: paintSelection.textures.length,
+          });
 
   return (
     <div className='space-y-4'>
@@ -259,14 +412,60 @@ export const FoundryPaintPanel = () => {
         {TARGET_ORDER.map((target) => (
           <TargetButton
             info={infoById.get(target)}
-            isPainted={Boolean(appliedPaint[target])}
-            isSelected={target === selected}
+            isPainted={Boolean(appliedPaint[targetPaintKey(target)])}
+            isSelected={
+              paintSelection.kind === "target" &&
+              paintSelection.target === target
+            }
             key={target}
-            onSelect={() => setSelected(target)}
+            onSelect={() => setPaintSelection({ kind: "target", target })}
             target={target}
           />
         ))}
       </div>
+
+      {partsByGroup.length > 0 && (
+        <div className='space-y-2'>
+          <div className='flex items-center justify-between gap-2'>
+            <Label className='text-muted-foreground text-xs'>
+              {t("foundry.paint.sectionsLabel")}
+            </Label>
+            {paintSelection.kind === "parts" && (
+              <Button
+                className='h-6 px-2 text-xs'
+                onClick={() =>
+                  setPaintSelection({ kind: "target", target: "body" })
+                }
+                size='sm'
+                variant='ghost'>
+                {t("foundry.paint.clearSelection")}
+              </Button>
+            )}
+          </div>
+          <p className='flex items-center gap-1.5 text-muted-foreground text-xs'>
+            <CursorClickIcon className='h-3.5 w-3.5 shrink-0' />
+            {t("foundry.paint.sectionsHint")}
+          </p>
+          {partsByGroup.map(({ group, parts }) => (
+            <div className='space-y-0.5' key={group}>
+              <p className='px-1 font-semibold text-[10px] text-muted-foreground uppercase tracking-wider'>
+                {t(`foundry.paint.targets.${group}`)}
+              </p>
+              {parts.map((part) => (
+                <PartRow
+                  isEdited={editedPaths.has(part.texture)}
+                  isSelected={selectedTextures.has(part.texture)}
+                  key={part.texture}
+                  onSelect={(additive) =>
+                    togglePaintPart(part.texture, additive)
+                  }
+                  part={part}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
 
       <Separator />
 
@@ -382,9 +581,7 @@ export const FoundryPaintPanel = () => {
           icon={<PaintBrushIcon className='h-4 w-4' />}
           onClick={handleApply}
           size='sm'>
-          {t("foundry.paint.apply", {
-            target: t(`foundry.paint.targets.${selected}`),
-          })}
+          {applyLabel}
         </Button>
       </div>
     </div>

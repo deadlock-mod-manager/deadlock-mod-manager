@@ -16,10 +16,10 @@ use crate::errors::Error;
 use super::analyze::{analyze_default_hero, analyze_vpk_path, decode_foundry_cards};
 use super::archive_cache::clear_archive_cache;
 use super::export::{ExportDestination, FoundryExportResult, export_workspace};
-use super::paint::{describe_paint_targets, paint_target};
+use super::paint::{describe_paint_targets, model_paint_parts, paint_parts, paint_target};
 use super::sounds::find_mp3_payload;
 use super::types::{
-  ExportDestinationKind, FoundryBuildResult, FoundryCardPreview, FoundryManifest,
+  ExportDestinationKind, FoundryBuildResult, FoundryCardPreview, FoundryManifest, FoundryPaintPart,
   FoundryPaintResult, FoundryPaintTargetInfo, FoundryReplacementResult, FoundrySoundPreview,
   FoundryTexture, FoundryWorkspace, PaintTarget,
 };
@@ -195,6 +195,66 @@ pub async fn foundry_paint_target(
       PathBuf::from(file_path),
       target,
       hero_display,
+      recolor,
+      pattern,
+    )
+  })
+  .await
+  .map_err(|e| Error::InvalidInput(format!("paint task failed: {e}")))?
+}
+
+/// The paintable sections of a model, for the paint tab's section list and the
+/// viewer's click-to-select.
+#[tauri::command]
+pub async fn foundry_model_parts(
+  file_path: String,
+  model_path: String,
+  hero_display: Option<String>,
+) -> Result<Vec<FoundryPaintPart>, Error> {
+  tauri::async_runtime::spawn_blocking(move || {
+    model_paint_parts(
+      &PathBuf::from(file_path),
+      &model_path,
+      hero_display.as_deref(),
+    )
+  })
+  .await
+  .map_err(|e| Error::InvalidInput(format!("part scan failed: {e}")))?
+}
+
+/// Paint individual sections of the model, identified by their color maps.
+/// Same paint as [`foundry_paint_target`], applied to exactly these maps.
+#[tauri::command]
+pub async fn foundry_paint_parts(
+  workspace_root: String,
+  file_path: String,
+  model_path: String,
+  hero_display: Option<String>,
+  textures: Vec<String>,
+  color_hex: String,
+  saturation: Option<f32>,
+  brightness: Option<f32>,
+  pattern: Option<String>,
+  pattern_intensity: Option<f32>,
+  pattern_phase: Option<f32>,
+) -> Result<FoundryPaintResult, Error> {
+  if textures.is_empty() {
+    return Err(Error::InvalidInput("no parts selected".into()));
+  }
+  let color = parse_hex_color(&color_hex)?;
+  let recolor = vpkmanager::Recolor::new(
+    f64::from(hue_of(color)),
+    f64::from(saturation.unwrap_or(1.0).clamp(0.0, 3.0)),
+    f64::from(brightness.unwrap_or(1.0).clamp(0.2, 2.0)),
+  );
+  let pattern = parse_pattern(pattern.as_deref(), pattern_intensity, pattern_phase)?;
+  tauri::async_runtime::spawn_blocking(move || {
+    paint_parts(
+      PathBuf::from(workspace_root),
+      PathBuf::from(file_path),
+      &model_path,
+      hero_display,
+      textures,
       recolor,
       pattern,
     )

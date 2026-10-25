@@ -223,6 +223,38 @@ pub fn decode_model_glb_from_archive(archive: &VpkArchive, entry_path: &str) -> 
     vmesh::decode_embedded_model_glb_from_resource(&res, &preview_textures)
 }
 
+/// The materials a model draws in the 3D preview (LOD0, every body group the
+/// preview can switch to), in draw order and without duplicates. These are the
+/// parts the preview shows, so they are what the Foundry can paint.
+pub fn model_materials(archive: &VpkArchive, entry_path: &str) -> Result<Vec<String>> {
+    let res = Resource::parse(archive.extract_entry(entry_path)?)?;
+    if entry_path.ends_with(".vmesh_c") {
+        return Ok(dedup_in_order(vmesh::referenced_materials(&res)));
+    }
+    let mesh_paths = vmesh::referenced_meshes(&res)?;
+    if mesh_paths.is_empty() {
+        return Ok(dedup_in_order(vmesh::default_embedded_materials(&res)));
+    }
+    let shown = vmesh::preview_mesh_selection(&res, mesh_paths.len());
+    let mut materials = Vec::new();
+    for (mesh_index, mesh_path) in mesh_paths.iter().enumerate() {
+        if !shown[mesh_index] {
+            continue;
+        }
+        let mesh = Resource::parse(archive.extract_entry(mesh_path)?)?;
+        materials.extend(vmesh::referenced_materials(&mesh));
+    }
+    Ok(dedup_in_order(materials))
+}
+
+fn dedup_in_order(paths: Vec<String>) -> Vec<String> {
+    let mut seen = std::collections::HashSet::new();
+    paths
+        .into_iter()
+        .filter(|path| seen.insert(path.to_ascii_lowercase()))
+        .collect()
+}
+
 /// Decode a `.vmesh_c`, or resolve a `.vmdl_c`, into renderer-friendly mesh data.
 pub fn decode_model_render_model(vpk_path: &Path, entry_path: &str) -> Result<RenderModel> {
     let archive = VpkArchive::open(vpk_path)?;

@@ -52,6 +52,9 @@ interface Props {
   label: string;
   source: PreviewSource;
   tint?: FoundryPreviewTint | null;
+  highlightTextures?: readonly string[];
+  onPickPart?: (texture: string, additive: boolean) => void;
+  partLabel?: (texture: string) => string | undefined;
 }
 
 const REST_POSE = "rest";
@@ -62,7 +65,15 @@ const HERO_ABILITIES_KEY = "assets:hero-abilities";
 const RELEASE_CLIP =
   /_(fire|shoot|attack|slam|throw|toss|release|launch)(_|\.|$)/;
 
-export const AnimatedModelPreview = ({ model, label, source, tint }: Props) => {
+export const AnimatedModelPreview = ({
+  model,
+  label,
+  source,
+  tint,
+  highlightTextures,
+  onPickPart,
+  partLabel,
+}: Props) => {
   const { t } = useTranslation();
   const fullscreenRef = useRef<HTMLDivElement>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -254,6 +265,9 @@ export const AnimatedModelPreview = ({ model, label, source, tint }: Props) => {
           model={model}
           label={label}
           tint={tint}
+          highlightTextures={highlightTextures}
+          onPickPart={onPickPart}
+          partLabel={partLabel}
           effects={effects}
           timeRef={timeRef}
           playback={{

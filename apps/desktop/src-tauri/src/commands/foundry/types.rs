@@ -245,6 +245,23 @@ pub struct FoundryPaintTargetInfo {
   pub particle_count: usize,
 }
 
+/// One paintable section of the hero's model: every material that samples the
+/// same color map. Painting is per color map because that is what an edit
+/// rewrites — two materials sharing a map can only ever wear the same paint.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct FoundryPaintPart {
+  /// The color map's entry path; the id the viewer and the paint call share.
+  pub texture: String,
+  /// A readable name from the material (`bebop_upper_body` -> `Upper body`).
+  pub label: String,
+  /// The materials drawing with this map, in draw order.
+  pub materials: Vec<String>,
+  /// `body` or `weapon`, so the part sorts under the target it belongs to.
+  pub target: PaintTarget,
+}
+
 /// What a paint pass actually rewrote. `skipped_paths` holds entries the
 /// recolor could not handle (an HDR map, an unsupported container); the pass
 /// still succeeds, because one odd texture should not block repainting a hero.
@@ -252,7 +269,8 @@ pub struct FoundryPaintTargetInfo {
 #[ts(export, rename_all = "camelCase")]
 #[serde(rename_all = "camelCase")]
 pub struct FoundryPaintResult {
-  pub target: PaintTarget,
+  /// The target painted, or `None` for a selection of individual sections.
+  pub target: Option<PaintTarget>,
   pub painted_paths: Vec<String>,
   pub skipped_paths: Vec<String>,
 }
