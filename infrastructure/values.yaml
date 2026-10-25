@@ -49,7 +49,15 @@ deployments:
     port: 3002
   web:
     image: stormix/deadlock-mods-api:latest
-    replicas: 7
+    # Ignored while autoscaling is enabled; the HPA owns the replica count.
+    replicas: 5
+    autoscaling:
+      enabled: true
+      minReplicas: 3
+      maxReplicas: 5
+      # Percent of the CPU request.
+      targetCPUUtilization: 60
+      scaleDownStabilizationSeconds: 600
     memory:
       request: 1Gi
       limit: 3Gi

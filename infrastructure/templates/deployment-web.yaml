@@ -6,7 +6,9 @@ metadata:
   annotations:
     reloader.stakater.com/auto: "true"
 spec:
+  {{- if not .Values.deployments.web.autoscaling.enabled }}
   replicas: {{ .Values.deployments.web.replicas }}
+  {{- end }}
   {{- if .Values.deployments.web.strategy }}
   strategy:
     type: {{ .Values.deployments.web.strategy.type | default "RollingUpdate" }}
