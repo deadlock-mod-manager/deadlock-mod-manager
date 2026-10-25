@@ -419,6 +419,9 @@ jobs:
           projectPath: ./apps/desktop
           releaseId: ${{ needs.create-nightly-release.outputs.release_id }}
           tauriScript: pnpm tauri
+          # No RPM: since Tauri CLI 2.12 the bundler rejects the "-" in nightly
+          # versions, and RPM's "~" form isn't valid semver for the app.
+          args: "--bundles deb,updater"
 
       - name: Build Flatpak bundle (Linux)
         if: matrix.os == 'linux'
