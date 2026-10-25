@@ -1,14 +1,5 @@
 import type { FeatureFlag } from "@deadlock-mods/shared";
-import { z } from "zod";
-import { getRemlockFeaturedModId } from "@/lib/theme-release";
-
-function readStringFlag(flags: readonly FeatureFlag[], name: string): string {
-  return z
-    .string()
-    .catch("")
-    .parse(flags.find((f) => f.name === name)?.value)
-    .trim();
-}
+import { getRemlockFeaturedModId, readStringFlag } from "@/lib/theme-release";
 
 /**
  * GameBanana id pinned as mod of the week. A pin set with the bot's

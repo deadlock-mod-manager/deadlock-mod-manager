@@ -4,7 +4,7 @@ import { getPinnedFeaturedModId } from "./mod-of-the-week";
 
 const flag = (
   name: string,
-  value: boolean | string,
+  value: boolean | number | string,
   type: FeatureFlag["type"] = "string",
 ): FeatureFlag => ({
   id: name,
@@ -18,7 +18,7 @@ const flag = (
 
 describe("pinned mod of the week", () => {
   const pin = [
-    flag("mod-of-the-week-id", "111"),
+    flag("mod-of-the-week-id", 111),
     flag("mod-of-the-week-until", "2026-11-01T12:00:00.000Z"),
   ];
   const remlock = [

@@ -12,6 +12,21 @@ export function isRemlockReleaseEnabled(flags: readonly FeatureFlag[] = []) {
   );
 }
 
+/**
+ * The API returns numeric-looking string flags (mod ids) as JSON numbers.
+ */
+export function readStringFlag(
+  flags: readonly FeatureFlag[],
+  name: string,
+): string {
+  return z
+    .union([z.string(), z.number()])
+    .transform(String)
+    .catch("")
+    .parse(flags.find((f) => f.name === name)?.value)
+    .trim();
+}
+
 const DEFAULT_REMLOCK_MOD_ID = "687789";
 
 /**
@@ -24,15 +39,11 @@ export function getRemlockFeaturedModId(
   now = new Date(),
 ): string | undefined {
   if (!isRemlockReleaseEnabled(flags)) return undefined;
-  const flag = (name: string) =>
-    z
-      .string()
-      .catch("")
-      .parse(flags.find((f) => f.name === name)?.value)
-      .trim();
-  const end = Date.parse(flag("remlock-featured-until"));
+  const end = Date.parse(readStringFlag(flags, "remlock-featured-until"));
   if (Number.isNaN(end) || now.getTime() >= end) return undefined;
-  return flag("remlock-featured-mod-id") || DEFAULT_REMLOCK_MOD_ID;
+  return (
+    readStringFlag(flags, "remlock-featured-mod-id") || DEFAULT_REMLOCK_MOD_ID
+  );
 }
 
 export function resolveActiveTheme(
