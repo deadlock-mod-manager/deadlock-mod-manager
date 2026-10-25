@@ -37,6 +37,7 @@
     "links": {
       "mods": "",
       "skins": "",
+      "commissions": "커미션",
       "features": "",
       "themes": "",
       "tools": "",
@@ -68,6 +69,7 @@
       "download": "",
       "sourceCode": "",
       "changelog": "",
+      "commissions": "커미션",
       "documentation": "",
       "faq": "",
       "reportBug": ""

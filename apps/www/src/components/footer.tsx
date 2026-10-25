@@ -4,6 +4,7 @@ import { Trans, useTranslation } from "react-i18next";
 import {
   APP_NAME,
   BUG_REPORT_URL,
+  COMMISSIONS_URL,
   COPYRIGHT,
   GITHUB_REPO,
   social,
@@ -47,6 +48,13 @@ export const Footer = () => {
                 to='/changelog'>
                 {t("footer.links.changelog")}
               </Link>
+              <a
+                className='text-sm opacity-60 hover:opacity-100 transition-opacity'
+                href={COMMISSIONS_URL}
+                rel='noopener noreferrer'
+                target='_blank'>
+                {t("footer.links.commissions")}
+              </a>
               <a
                 className='text-sm opacity-60 hover:opacity-100 transition-opacity'
                 href={GITHUB_REPO}

@@ -19,6 +19,10 @@
       "installing": "",
       "installed": "",
       "ready": ""
+    },
+    "commissions": {
+      "title": "Хочаш скін, якога яшчэ няма?",
+      "body": "Замоў яго ў аўтара модаў праз Discord або на сайце."
     }
   },
   "partners": {

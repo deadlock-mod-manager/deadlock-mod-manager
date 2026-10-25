@@ -19,6 +19,10 @@
       "installing": "Installing mod",
       "installed": "Mod installed",
       "ready": "{{name}} is ready to play."
+    },
+    "commissions": {
+      "title": "Want a skin that doesn't exist yet?",
+      "body": "Commission one from a mod author, on Discord or the website."
     }
   },
   "partners": {

@@ -19,6 +19,8 @@ export const SITE_URL = "https://deadlockmods.app";
 export const DOWNLOAD_PAGE_URL = `${SITE_URL}/download`;
 export const STATUS_URL = "https://status.deadlockmods.app";
 export const DOCS_URL = "https://docs.deadlockmods.app";
+/** Where players order custom skins from mod authors. */
+export const COMMISSIONS_URL = "https://commissions.deadlockmods.app";
 
 export const social = [
   {
