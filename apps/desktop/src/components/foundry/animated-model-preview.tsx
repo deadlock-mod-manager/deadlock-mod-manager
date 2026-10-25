@@ -10,7 +10,6 @@ import {
   PauseIcon,
   PlayIcon,
   SkipBackIcon,
-  SparkleIcon,
   SquaresFourIcon,
   WarningIcon,
   WindIcon,
@@ -73,7 +72,8 @@ export const AnimatedModelPreview = ({ model, label, source, tint }: Props) => {
   const [abilitiesHidden, setAbilitiesHidden] = useState(false);
   const timeRef = useRef(0);
   const [clothOn, setClothOn] = useState(true);
-  const [particlesOn, setParticlesOn] = useState(true);
+  // Particle effects stay off, with no toggle, until they render faithfully.
+  const [particlesOn] = useState(false);
   const [particleReport, setParticleReport] = useState<{
     data: PreviewParticles;
     diagnostics: ParticleDiagnostic[];
@@ -94,6 +94,7 @@ export const AnimatedModelPreview = ({ model, label, source, tint }: Props) => {
     ...modelAssetQuery,
     queryKey: ["preview-particles", source.filePath, source.entryPath],
     queryFn: () => decodePreviewParticles(source),
+    enabled: modelAssetQuery.enabled && particlesOn,
   });
   const heroAbilities = useQuery({
     queryKey: ["stats", HERO_ABILITIES_KEY],
@@ -168,7 +169,7 @@ export const AnimatedModelPreview = ({ model, label, source, tint }: Props) => {
       abilityClass,
     ],
     queryFn: () => decodePreviewAbilityParticles(source, abilityClass ?? ""),
-    enabled: modelAssetQuery.enabled && abilityClass !== null,
+    enabled: modelAssetQuery.enabled && particlesOn && abilityClass !== null,
     gcTime: 30_000,
   });
   const castEffects = abilityParticles.data?.cast.systems.length
@@ -182,10 +183,6 @@ export const AnimatedModelPreview = ({ model, label, source, tint }: Props) => {
     current?.segments.find((segment) =>
       RELEASE_CLIP.test(segment.clipPath.split("/").pop() ?? ""),
     )?.start ?? 0;
-  const hasParticles =
-    (particles.data?.systems.length ?? 0) > 0 ||
-    castEffects !== null ||
-    releaseEffects !== null;
   const effects = useMemo<ViewerEffectFactory[]>(
     () => [
       ...(clothOn && cloth.data ? [createClothEffect(cloth.data)] : []),
@@ -359,14 +356,6 @@ export const AnimatedModelPreview = ({ model, label, source, tint }: Props) => {
             onSeek={seekTo}
             className='min-w-64 flex-1 basis-64 px-1'
           />
-          {hasParticles && (
-            <EffectToggle
-              icon={SparkleIcon}
-              on={particlesOn}
-              onChange={setParticlesOn}>
-              {t("modelPreview.particles")}
-            </EffectToggle>
-          )}
           {cloth.data && (
             <EffectToggle icon={WindIcon} on={clothOn} onChange={setClothOn}>
               {t("modelPreview.cloth")}

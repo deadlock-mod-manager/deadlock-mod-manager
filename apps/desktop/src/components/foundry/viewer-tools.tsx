@@ -32,7 +32,6 @@ import {
   CornersOutIcon,
   CubeIcon,
   CubeTransparentIcon,
-  FlaskIcon,
   FrameCornersIcon,
   ImageIcon,
   type Icon,
@@ -98,12 +97,9 @@ export const ViewerWipBadge = () => {
           aria-label={t("modelPreview.disclaimerTitle")}
           className={cn(
             overlaySurface,
-            "flex h-8 shrink-0 cursor-default items-center gap-1.5 whitespace-nowrap rounded-md px-2 text-amber-300 text-xs",
+            "flex h-8 shrink-0 cursor-default items-center whitespace-nowrap rounded-md px-2 font-medium text-xs",
           )}>
-          <FlaskIcon className='size-3.5' weight='fill' />
-          <span className='hidden @2xl:inline'>
-            {t("modelPreview.disclaimerTitle")}
-          </span>
+          {t("modelPreview.wipBadge")}
         </span>
       </TooltipTrigger>
       <TooltipContent side='bottom' className='max-w-72'>

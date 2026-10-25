@@ -7013,6 +7013,7 @@
   "modelPreview": {
     "title": "3D preview",
     "disclaimerTitle": "Work in progress",
+    "wipBadge": "WIP",
     "disclaimer": "This preview is very much a work in progress. It is limited and may not match everything you see in game, including models, materials, animations and effects.",
     "downloadHint": "Download a variant to preview it locally. It stays in your library, ready to install. Nothing is enabled in the game.",
     "download": "Download for preview",
