@@ -4247,6 +4247,8 @@
     "disableNSFWBlurDescription": "Mostra conteúdo adulto sem o efeito de desfoque (o selo de “conteúdo adulto” ainda será exibido).",
     "blurStrength": "Intensidade do desfoque",
     "blurStrengthDescription": "Define o quanto o conteúdo adulto será desfocado quando visível (em pixels).",
+    "lightweightNSFWBlur": "",
+    "lightweightNSFWBlurDescription": "",
     "rememberPerItemChoices": "Lembrar escolhas por item",
     "rememberPerItemChoicesDescription": "Memoriza quando você optar por mostrar ou ocultar itens adultos específicos.",
     "savedPerItemChoices": "",
@@ -4412,17 +4414,20 @@
     "showOutdatedBadge": "",
     "added": "",
     "addedLabel": "",
-    "addedFrom": "",
-    "addedTo": "",
+    "updatedLabel": "",
+    "dateFrom": "",
+    "dateTo": "",
     "pickDate": "",
-    "addedBetween": "",
-    "addedSince": "",
-    "addedUntil": "",
-    "addedPeriod": {
+    "dateBetween": "",
+    "dateSince": "",
+    "dateUntil": "",
+    "datePeriod": {
       "any": "",
-      "today": "",
-      "week": "",
-      "month": "",
+      "24h": "",
+      "7d": "",
+      "14d": "",
+      "28d": "",
+      "1y": "",
       "custom": ""
     },
     "clearAll": "Limpar Tudo",
@@ -4450,13 +4455,6 @@
     "hero": "",
     "name": "",
     "recentlyadded": ""
-  },
-  "timePeriod": {
-    "alltime": "",
-    "pastweek": "",
-    "pastmonth": "",
-    "past3months": "",
-    "pastyear": ""
   },
   "addMods": {
     "title": "Adicionar Mods",
@@ -7013,6 +7011,7 @@
   "modelPreview": {
     "title": "",
     "disclaimerTitle": "",
+    "wipBadge": "",
     "disclaimer": "",
     "downloadHint": "",
     "download": "",
