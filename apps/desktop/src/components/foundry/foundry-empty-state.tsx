@@ -11,7 +11,7 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
-import { useCommissionsUrl } from "@/hooks/use-commissions-url";
+import { COMMISSIONS_URL } from "@/lib/constants";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { useFoundry } from "./foundry-context";
@@ -19,6 +19,12 @@ import { FoundryImportDialog } from "./foundry-import-dialog";
 import { FoundryLoadingBar } from "./foundry-loading-bar";
 
 const DEADLOCK_FORGE_URL = "https://deadlockforge.net/";
+
+const openCommissions = () => {
+  openUrl(COMMISSIONS_URL).catch((error) => {
+    logger.withError(error).error("[Foundry] Could not open Commissions");
+  });
+};
 
 /**
  * One of the two entry points. The card lifts and warms on hover so the pair
@@ -93,7 +99,6 @@ export const FoundryEmptyState = () => {
   const setForgeInstallEnabled = usePersistedStore(
     (state) => state.setForgeInstallEnabled,
   );
-  const commissionsUrl = useCommissionsUrl();
   const [importOpen, setImportOpen] = useState(false);
   const analyzing = status === "analyzing";
 
@@ -128,12 +133,6 @@ export const FoundryEmptyState = () => {
     openForge();
   };
 
-  const openCommissions = (url: string) => {
-    openUrl(url).catch((error) => {
-      logger.withError(error).error("[Foundry] Could not open Commissions");
-    });
-  };
-
   return (
     <div className='flex h-full w-full flex-col items-center justify-center gap-8 p-8'>
       <div className='max-w-xl space-y-2 text-center'>
@@ -143,11 +142,7 @@ export const FoundryEmptyState = () => {
         </p>
       </div>
 
-      <div
-        className={cn(
-          "grid w-full gap-4 sm:grid-cols-2",
-          commissionsUrl ? "max-w-5xl lg:grid-cols-3" : "max-w-3xl",
-        )}>
+      <div className='grid w-full max-w-5xl gap-4 sm:grid-cols-2 lg:grid-cols-3'>
         <EntryCard
           action={
             analyzing ? t("foundry.import.analyzing") : t("foundry.import.cta")
@@ -173,16 +168,14 @@ export const FoundryEmptyState = () => {
           title={t("foundry.empty.forgeTitle")}
         />
 
-        {commissionsUrl && (
-          <EntryCard
-            action={t("foundry.empty.commissionsAction")}
-            description={t("foundry.empty.commissionsDescription")}
-            external
-            icon={<PaintBrushIcon className='h-8 w-8' weight='duotone' />}
-            onClick={() => openCommissions(commissionsUrl)}
-            title={t("foundry.empty.commissionsTitle")}
-          />
-        )}
+        <EntryCard
+          action={t("foundry.empty.commissionsAction")}
+          description={t("foundry.empty.commissionsDescription")}
+          external
+          icon={<PaintBrushIcon className='h-8 w-8' weight='duotone' />}
+          onClick={openCommissions}
+          title={t("foundry.empty.commissionsTitle")}
+        />
       </div>
 
       <p className='flex items-center gap-1.5 text-muted-foreground text-xs'>
