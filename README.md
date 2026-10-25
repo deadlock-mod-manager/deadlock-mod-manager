@@ -244,13 +244,13 @@ We're actively working to make Deadlock Mod Manager accessible to users worldwid
 | 🇧🇬 **Bulgarian** | Български | 🚧 3% | [macchiako](https://discordapp.com/users/macchiako./) |
 | 🇧🇾 **Belarusian** | Беларуская | 🚧 In Progress | [drodn](https://discordapp.com/users/drodn/) |
 | 🇩🇪 **German** | Deutsch | 🚧 30% | [skeptic](https://github.com/Skeptic-systems) |
-| 🇫🇷 **French** | Français | 🚧 28% | [stormix](https://github.com/stormix) |
+| 🇫🇷 **French** | Français | 🚧 27% | [stormix](https://github.com/stormix) |
 | 🇷🇺 **Russian** | Русский | 🚧 22% | [awkward_akio](https://discordapp.com/users/awkward_akio/), [Thyron](https://github.com/baka-thyron) |
 | 🇸🇦 **Arabic** | العربية | 🚧 9% | [archeroflegend](https://discordapp.com/users/archeroflegend/) |
 | 🇵🇱 **Polish** | Polski | 🚧 40% | [_manio](https://discordapp.com/users/_manio/) |
 | 🇨🇭 **Swiss German** | Schwiizerdütsch | 🚧 4% | [degoods_deedos](https://discordapp.com/users/degoods_deedos/) |
 | 🇹🇭 **Thai** | ไทย | 🚧 6% | [altqx](https://discordapp.com/users/altq/) |
-| 🇹🇷 **Turkish** | Türkçe | 🚧 65% | [kenanala](https://discordapp.com/users/kenanala/), [hollmmes](https://discordapp.com/users/hollmmes/) |
+| 🇹🇷 **Turkish** | Türkçe | 🚧 99% | [kenanala](https://discordapp.com/users/kenanala/), [hollmmes](https://discordapp.com/users/hollmmes/) |
 | 🇨🇳 **Chinese (Simplified)** | 简体中文 | 🚧 35% | [待到春深方挽柳](mailto:sfk_04@qq.com) |
 | 🇹🇼 **Chinese (Traditional)** | 繁體中文 | ✅ Complete | [白雲](https://github.com/phillychi3) |
 | 🇪🇸 **Spanish** | Español | ✅ Complete | [chikencio](https://discordapp.com/users/chikencio/) |
