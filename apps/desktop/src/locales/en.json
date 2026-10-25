@@ -4247,6 +4247,8 @@
     "disableNSFWBlurDescription": "Show NSFW content without any blur effect (content still shows NSFW badge)",
     "blurStrength": "Blur Strength",
     "blurStrengthDescription": "How much to blur NSFW content when visible (pixels)",
+    "lightweightNSFWBlur": "Lightweight NSFW Blur",
+    "lightweightNSFWBlurDescription": "Blur NSFW thumbnails with a lighter method that avoids freezes on pages with many blurred mods",
     "rememberPerItemChoices": "Remember Per-Item Choices",
     "rememberPerItemChoicesDescription": "Remember when you choose to show/hide specific NSFW items",
     "savedPerItemChoices": "Saved NSFW Choices",
