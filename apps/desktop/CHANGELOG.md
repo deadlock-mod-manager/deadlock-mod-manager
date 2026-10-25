@@ -1,5 +1,48 @@
 # desktop
 
+## 2.2.0
+
+### Minor Changes
+
+- e177093: Redesign the Stats page and add a page for each match
+- 8f45bc5: Preview mods in 3D on your device, with animations, cloth, effects and glow.
+- 143c777: Add GameBanana Remote Install: queue mods from your phone and install them here
+- 4b36850: Back up profiles to your account and restore them on another PC
+- 61ad97b: Feature Remlock as mod of the week during the Remlock release
+- f942eb4: Fix outdated mods with one button and see each step while fixes prepare
+
+### Patch Changes
+
+- 5ff1bfa: Show every set of video settings a config author ships
+- 5f14adb: Open the mod library and mod store faster
+- f7d40bc: Right-click a library mod to select or deselect it while selecting mods
+- 4912c80: Remove the autoexec launch option, since Deadlock runs autoexec.cfg on its own
+- 7f5ed12: Fix late and repeating mod update alerts (thanks basicfuton from Discord)
+- 4aa173c: Check for performance catalog updates hourly and add a refresh button
+- 278e25e: Add rolling date presets and custom ranges to the Updated and Added filters
+- ae57e5b: Stop broken mod records in other profiles blocking updates (thanks Labargoin)
+- faf4716: Remove the file server picker and fall back when a mirror lacks the file
+- 19e8ec5: Keep popovers and tooltips visible when a model preview is fullscreen.
+- 1882221: Stop writing custom crosshairs to autoexec.cfg, which the game already loads
+- 7474ed8: Show download progress as a ring on compact mod buttons
+- 821a2c5: Fix the app failing to start on Windows with a missing MSVCP140.dll error
+- 0130866: Fix the Mods Store freezing on Linux when many NSFW thumbnails are blurred
+- 23c0e08: Stop a deleted profile from coming back after an interrupted import
+- d06d9b1: Update Tauri and its plugins for security fixes and fewer Windows crashes
+- ee96289: Keep performance config edits in editor and compiler sections
+- 7f5ed12: Keep mod pages open when the catalog is busy syncing
+- e2c8e9d: Keep the mod library responsive while mods download
+- 6e44dbd: Recover downloads that stall after a reload and add a cancel button
+- 1200188: Install Windows updates with a progress bar instead of installer prompts
+- 75477e2: Find the hero and category of skins in GameBanana's new hero subcategories
+- bd88f25: Reduce memory overhead for large 3D previews using local model files, with cancellation and cleanup when previews close.
+- Updated dependencies [4b36850]
+- Updated dependencies [19e8ec5]
+- Updated dependencies [75477e2]
+  - @deadlock-mods/shared@2.5.0
+  - @deadlock-mods/ui@0.3.2
+  - @deadlock-mods/crosshair@0.2.9
+
 ## 2.1.1
 
 ### Patch Changes

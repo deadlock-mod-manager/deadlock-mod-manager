@@ -1,5 +1,17 @@
 # @deadlock-mods/mirror-service
 
+## 1.1.15
+
+### Patch Changes
+
+- Updated dependencies [4b36850]
+- Updated dependencies [75477e2]
+  - @deadlock-mods/database@2.5.0
+  - @deadlock-mods/shared@2.5.0
+  - @deadlock-mods/distributed-lock@1.0.14
+  - @deadlock-mods/feature-flags@0.2.12
+  - @deadlock-mods/instrumentation@0.1.14
+
 ## 1.1.14
 
 ### Patch Changes

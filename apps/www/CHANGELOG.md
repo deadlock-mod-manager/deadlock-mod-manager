@@ -1,5 +1,16 @@
 # web
 
+## 0.6.5
+
+### Patch Changes
+
+- Updated dependencies [4b36850]
+- Updated dependencies [19e8ec5]
+- Updated dependencies [75477e2]
+  - @deadlock-mods/shared@2.5.0
+  - @deadlock-mods/ui@0.3.2
+  - @deadlock-mods/crosshair@0.2.9
+
 ## 0.6.4
 
 ### Patch Changes

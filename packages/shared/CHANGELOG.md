@@ -1,5 +1,15 @@
 # @deadlock-mods/shared
 
+## 2.5.0
+
+### Minor Changes
+
+- 4b36850: Back up profiles to your account and restore them on another PC
+
+### Patch Changes
+
+- 75477e2: Find the hero and category of skins in GameBanana's new hero subcategories
+
 ## 2.4.1
 
 ### Patch Changes

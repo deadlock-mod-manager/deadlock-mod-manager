@@ -1,6 +1,6 @@
 {
   "name": "@deadlock-mods/instrumentation",
-  "version": "0.1.13",
+  "version": "0.1.14",
   "private": true,
   "exports": {
     ".": "./src/index.ts"
