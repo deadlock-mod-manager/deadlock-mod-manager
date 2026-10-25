@@ -105,11 +105,13 @@ impl Default for ProfileVpkManifest {
 }
 
 impl ProfileVpkManifest {
-  /// Validate every manifest-backed profile in a shard-root snapshot.
+  /// Validate every manifest-backed profile in a shard-root snapshot, returning
+  /// the first problem of each invalid profile keyed by its folder relative to
+  /// `addons` (empty for the default profile).
   ///
   /// `root` contains sibling `addons`, `addons2`, ... directories, as used by
   /// both the live `citadel` tree and addons backups.
-  pub fn validate_tree(root: &Path) -> Result<(), Error> {
+  pub fn profile_failures(root: &Path) -> Result<BTreeMap<String, Error>, Error> {
     let addons_root = root.join("addons");
     if !addons_root.is_dir() {
       return Err(Error::ModInvalid(format!(
@@ -118,7 +120,8 @@ impl ProfileVpkManifest {
       )));
     }
 
-    let mut pending = vec![addons_root];
+    let mut failures = BTreeMap::new();
+    let mut pending = vec![addons_root.clone()];
     while let Some(profile_path) = pending.pop() {
       for entry in fs::read_dir(&profile_path)? {
         let entry = entry?;
@@ -130,43 +133,59 @@ impl ProfileVpkManifest {
       if !profile_path.join(MANIFEST_FILENAME).is_file() {
         continue;
       }
-      let base = ProfileBase::from_snapshot(&profile_path)?;
-      let manifest = Self::load(&profile_path)?;
-      let mut claimed = std::collections::BTreeMap::<String, String>::new();
-      for (mod_id, entry) in &manifest.mods {
-        let missing: Vec<String> = entry
-          .file_paths(&base)
-          .into_iter()
-          .filter(|path| !path.is_file())
-          .map(|path| path.display().to_string())
-          .collect();
-        if !missing.is_empty() {
-          return Err(Error::ModInvalid(format!(
-            "Manifest entry {mod_id} references missing VPKs: {}",
-            missing.join(", ")
-          )));
-        }
-        for path in entry.file_paths(&base) {
-          let key = path.display().to_string();
-          if let Some(owner) = claimed.insert(key.clone(), mod_id.clone()) {
-            return Err(Error::DuplicateVpkOwnership {
-              mod_ids: vec![owner, mod_id.clone()],
-              path: path
-                .strip_prefix(root)
-                .unwrap_or(&path)
-                .to_string_lossy()
-                .replace('\\', "/"),
-              profile_folder: profile_path
-                .strip_prefix(root.join("addons"))
-                .unwrap_or(&profile_path)
-                .to_string_lossy()
-                .replace('\\', "/"),
-            });
-          }
-        }
+      let profile_folder = profile_path
+        .strip_prefix(&addons_root)
+        .unwrap_or(&profile_path)
+        .to_string_lossy()
+        .replace('\\', "/");
+      if let Err(error) = Self::validate_profile(root, &profile_path, &profile_folder) {
+        failures.insert(profile_folder, error);
       }
     }
 
+    Ok(failures)
+  }
+
+  #[cfg(test)]
+  pub fn validate_tree(root: &Path) -> Result<(), Error> {
+    match Self::profile_failures(root)?.into_values().next() {
+      Some(error) => Err(error),
+      None => Ok(()),
+    }
+  }
+
+  fn validate_profile(root: &Path, profile_path: &Path, profile_folder: &str) -> Result<(), Error> {
+    let base = ProfileBase::from_snapshot(profile_path)?;
+    let manifest = Self::load(profile_path)?;
+    let mut claimed = BTreeMap::<String, String>::new();
+    for (mod_id, entry) in &manifest.mods {
+      let missing: Vec<String> = entry
+        .file_paths(&base)
+        .into_iter()
+        .filter(|path| !path.is_file())
+        .map(|path| path.display().to_string())
+        .collect();
+      if !missing.is_empty() {
+        return Err(Error::ModInvalid(format!(
+          "Manifest entry {mod_id} references missing VPKs: {}",
+          missing.join(", ")
+        )));
+      }
+      for path in entry.file_paths(&base) {
+        let key = path.display().to_string();
+        if let Some(owner) = claimed.insert(key, mod_id.clone()) {
+          return Err(Error::DuplicateVpkOwnership {
+            mod_ids: vec![owner, mod_id.clone()],
+            path: path
+              .strip_prefix(root)
+              .unwrap_or(&path)
+              .to_string_lossy()
+              .replace('\\', "/"),
+            profile_folder: profile_folder.to_string(),
+          });
+        }
+      }
+    }
     Ok(())
   }
 
@@ -232,7 +251,7 @@ impl ProfileVpkManifest {
   /// parked in a staging directory.
   ///
   /// Only mutation entry points may call this. Reads must use [`Self::load`],
-  /// which never writes -- notably [`Self::validate_tree`], which walks backup
+  /// which never writes -- notably [`Self::profile_failures`], which walks backup
   /// snapshots that must come out byte-identical.
   pub fn open_for_write(addons_path: &Path) -> Result<Self, Error> {
     crate::mod_manager::file_permissions::prepare_profile_for_write(addons_path)?;

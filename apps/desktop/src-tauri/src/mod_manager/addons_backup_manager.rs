@@ -7,6 +7,7 @@ use chrono::{DateTime, Local};
 use log;
 use serde::{Deserialize, Serialize};
 use std::cmp::Reverse;
+use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -160,6 +161,7 @@ impl AddonsBackupManager {
       .map(|index| citadel_path.join(index.root_name()))
       .filter(|path| path.exists())
       .collect();
+    let already_invalid = Self::invalid_profiles(citadel_path);
 
     // Emit progress: copying
     let _ = app_handle.emit(
@@ -196,7 +198,7 @@ impl AddonsBackupManager {
       );
     }
 
-    if let Err(error) = Self::validate_snapshot(&staging_path) {
+    if let Err(error) = Self::validate_snapshot(&staging_path, &already_invalid) {
       let _ = fs::remove_dir_all(&staging_path);
       return Err(match error {
         Error::DuplicateVpkOwnership { .. } => error,
@@ -372,11 +374,30 @@ impl AddonsBackupManager {
     Ok(stats)
   }
 
-  fn validate_snapshot(root: &Path) -> Result<(), Error> {
-    ProfileVpkManifest::validate_tree(root).map_err(|error| match error {
-      Error::DuplicateVpkOwnership { .. } => error,
-      _ => Error::BackupRestoreFailed(error.to_string()),
-    })
+  /// Profiles whose manifest is already inconsistent. A faithful copy keeps
+  /// them that way, so they cannot be blamed on the copy.
+  fn invalid_profiles(root: &Path) -> BTreeSet<String> {
+    ProfileVpkManifest::profile_failures(root)
+      .map(|failures| failures.into_keys().collect())
+      .unwrap_or_default()
+  }
+
+  fn validate_snapshot(root: &Path, already_invalid: &BTreeSet<String>) -> Result<(), Error> {
+    let failures = ProfileVpkManifest::profile_failures(root)
+      .map_err(|error| Error::BackupRestoreFailed(error.to_string()))?;
+    for (profile_folder, error) in failures {
+      if already_invalid.contains(&profile_folder) {
+        log::warn!(
+          "Copying profile {profile_folder:?} as-is; it was already inconsistent: {error}"
+        );
+        continue;
+      }
+      return Err(match error {
+        Error::DuplicateVpkOwnership { .. } => error,
+        _ => Error::BackupRestoreFailed(error.to_string()),
+      });
+    }
+    Ok(())
   }
 
   fn restore_staged_roots(
@@ -525,6 +546,10 @@ impl AddonsBackupManager {
       Error::BackupRestoreFailed("Addons folder has no parent directory".to_string())
     })?;
     let is_structured_backup = backup_path.join("addons").is_dir();
+    let mut already_invalid = Self::invalid_profiles(citadel_path);
+    if is_structured_backup {
+      already_invalid.extend(Self::invalid_profiles(&backup_path));
+    }
     let staging_path = citadel_path.join(".dmm-restore-staging");
     if staging_path.exists() {
       return Err(Error::BackupRestoreFailed(format!(
@@ -595,7 +620,7 @@ impl AddonsBackupManager {
         })?;
       }
 
-      Self::validate_snapshot(citadel_path)
+      Self::validate_snapshot(citadel_path, &already_invalid)
     })();
 
     if let Err(error) = restore_result {
@@ -807,7 +832,7 @@ mod tests {
     );
 
     // The snapshot must satisfy the same check restore runs against it.
-    AddonsBackupManager::validate_snapshot(&snapshot).unwrap();
+    AddonsBackupManager::validate_snapshot(&snapshot, &BTreeSet::new()).unwrap();
   }
 
   /// A backup that captured a shard root but not the files a manifest points at
@@ -820,7 +845,7 @@ mod tests {
 
     AddonsBackupManager::copy_tree(&citadel.join("addons"), &snapshot.join("addons")).unwrap();
 
-    let error = AddonsBackupManager::validate_snapshot(&snapshot).unwrap_err();
+    let error = AddonsBackupManager::validate_snapshot(&snapshot, &BTreeSet::new()).unwrap_err();
     assert!(error.to_string().contains("references missing VPKs"));
   }
 
@@ -844,8 +869,11 @@ mod tests {
     }
     manifest.save(&profile).unwrap();
 
-    let error = AddonsBackupManager::validate_snapshot(&snapshot).unwrap_err();
+    let error = AddonsBackupManager::validate_snapshot(&snapshot, &BTreeSet::new()).unwrap_err();
     assert!(matches!(error, Error::DuplicateVpkOwnership { .. }));
+
+    // Already broken before the copy, so the copy is faithful, not inconsistent.
+    AddonsBackupManager::validate_snapshot(&snapshot, &BTreeSet::from([String::new()])).unwrap();
   }
 
   /// In-progress staging directories belong to an interrupted operation, not to
@@ -908,7 +936,7 @@ mod tests {
     let restored = snapshot.join("addons").join("profile_x");
     assert!(restored.join(".dmm.json").is_file());
     assert!(!restored.join(".dmm.json.tmp").exists());
-    AddonsBackupManager::validate_snapshot(&snapshot).unwrap();
+    AddonsBackupManager::validate_snapshot(&snapshot, &BTreeSet::new()).unwrap();
   }
 
   /// Retrying an update within the same second used to fail with "Backup

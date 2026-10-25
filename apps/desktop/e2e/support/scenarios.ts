@@ -17,6 +17,7 @@ import {
   prepareGroupedIdentificationWorld,
 } from "./library-groups-fixtures";
 import { prepareProfileWorld } from "./profile-fixtures";
+import { prepareBrokenProfileWorld } from "./broken-profile-fixtures";
 import { prepareCompatibilityFixWorld } from "./compatibility-fix-fixtures";
 import { prepareConflictWorld } from "./conflict-fixtures";
 import { prepareFilesystemWorld } from "./filesystem-fixtures";
@@ -669,6 +670,17 @@ export const scenarios = {
     phases: ["variants", "restart"],
     routes: variantNamesRoutes,
     verifyNetwork: assertVariantNamesNetwork,
+  },
+  "gamebanana-update-broken-profile": {
+    ...catalog,
+    spec: "update-broken-profile",
+    phases: ["update-restore"],
+    routes: multipakUpdateRoutes,
+    verifyNetwork: assertMultipakUpdateNetwork,
+    prepare: async (world, origin) => {
+      await catalog.prepare(world, origin);
+      await prepareBrokenProfileWorld(world);
+    },
   },
   "gamebanana-update-skip": {
     ...catalog,

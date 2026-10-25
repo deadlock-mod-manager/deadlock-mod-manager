@@ -68,7 +68,8 @@ describe("batch update failure details", () => {
       "Baggy Billy",
       "pak19_dir.vpk",
       "Other profile",
-      "no mods were updated",
+      "nothing was updated",
+      "delete both mods",
       "Copy details",
       "Technical details",
     ])

@@ -99,8 +99,11 @@ export const assertMultipakDisk = async (
       ];
     }),
   );
+  // Other profiles live in subfolders of the default profile's addons root.
   const actualInventory = Object.fromEntries(
-    Object.entries(inventory).filter(([name]) => name !== ".dmm.json"),
+    Object.entries(inventory).filter(
+      ([name]) => name !== ".dmm.json" && !name.includes("/"),
+    ),
   );
   const failures: string[] = [];
   const check = (label: string, action: () => void) => {

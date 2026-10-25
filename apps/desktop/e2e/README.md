@@ -45,6 +45,8 @@ current. Both run in the Windows and Linux E2E matrices with no host update.
 
 `gamebanana-variant-names` downloads three variant archives that each ship `pak01_dir.vpk`, and enabling installs all three under their own names (`pak01-red-skin_dir.vpk`, `pak01-blue_dir.vpk`, `pak01-green_dir.vpk`) with distinct bytes. Unticking blue in the Installed Files list parks it; Update All then replaces red and green with v2, leaves blue unselected and drops its stale parked copy, so ticking blue again fetches its v2 archive. A fresh process must see the same names, bytes and parked files.
 
+`gamebanana-update-broken-profile` adds an inactive Beta profile whose manifest has two mods claiming the same `pak01_dir.vpk`, a layout found in user installs. Update All on the two multipak mods in the default profile must still back up and update, the backup must carry Beta byte for byte, and restoring that backup from Settings must bring back the v1 addons. Beta stays byte-identical throughout and after exit.
+
 `catalog-refresh` checks that manual refresh finds a new sound during the automatic sync cooldown, disables duplicate clicks while syncing, preserves saved entries, and fetches no unchanged details on a repeated refresh. Its network assertions require only the latest index pages and one new sound hydration.
 
 `library-author-navigation` downloads a catalog mod into the library, opens its author from grid and list layouts, and verifies Back returns to Mods Library. It also checks the nested author → mod → author path, the author link in library mod details, and that Store author navigation still returns to Mods Store.
