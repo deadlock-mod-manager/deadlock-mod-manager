@@ -3255,7 +3255,6 @@
   },
   "authorPage": {
     "viewProfile": "View profile",
-    "submittedBy": "Submitted by",
     "modStat_one": "mod",
     "modStat_other": "mods",
     "downloadStat_one": "download",
@@ -3274,6 +3273,7 @@
     "discordCopied": "Copied {{username}} to the clipboard",
     "openContactError": "Failed to open this link",
     "commission": "Commission",
+    "commissionNudge": "Get a custom mod",
     "commissionTooltip": "Request a custom mod from {{author}} on DMM Commissions",
     "openCommissionError": "Failed to open DMM Commissions",
     "verifiedLabel": "Verified Deadlock Mod Manager author",

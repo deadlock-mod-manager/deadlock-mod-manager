@@ -469,28 +469,7 @@
     0 0 28px 4px hsl(var(--primary) / 0.22);
 }
 
-/* Warm light behind a verified author's avatar, fading in after the seal */
-@keyframes verified-header-glow-in {
-  from {
-    opacity: 0;
-  }
-}
-
-.verified-header-glow {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(
-    circle at 4.5rem 50%,
-    hsl(var(--primary) / 0.18),
-    transparent 16rem
-  );
-  animation: verified-header-glow-in 900ms cubic-bezier(0.16, 1, 0.3, 1) 300ms
-    backwards;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .verified-header-glow,
   .verified-seal,
   .verified-seal::after,
   .verified-seal svg {
@@ -1737,7 +1716,8 @@
   }
 }
 
-.experimental-tour-nudge {
+.experimental-tour-nudge,
+.commission-nudge {
   font-family: "Segoe Print", "Bradley Hand", "Chalkboard SE", cursive;
   font-size: 0.875rem;
   font-weight: 400;
@@ -1745,17 +1725,24 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .experimental-tour-nudge {
+  .experimental-tour-nudge,
+  .commission-nudge {
     animation: tour-note-appear 350ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
-  .experimental-tour-nudge-arrow {
+  .experimental-tour-nudge-arrow,
+  .commission-nudge-arrow {
     transition: transform 180ms ease-out;
   }
 
   a:hover .experimental-tour-nudge-arrow,
   a:focus-visible .experimental-tour-nudge-arrow {
     transform: translateX(-3px) rotate(-5deg);
+  }
+
+  .commission-nudge-wrap:hover .commission-nudge-arrow,
+  .commission-nudge-wrap:focus-within .commission-nudge-arrow {
+    transform: translateY(2px);
   }
 
   @keyframes tour-note-appear {
