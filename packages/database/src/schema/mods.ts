@@ -39,6 +39,29 @@ export interface ModDependency {
   level: "required" | "recommended" | null;
 }
 
+export type ModAuthorContactType =
+  | "discord"
+  | "steam"
+  | "x"
+  | "bluesky"
+  | "instagram"
+  | "youtube"
+  | "twitch"
+  | "kofi"
+  | "patreon"
+  | "buymeacoffee"
+  | "github"
+  | "reddit"
+  | "soundcloud";
+
+export interface ModAuthorContact {
+  type: ModAuthorContactType;
+  /** What the author entered, cleaned up for display */
+  value: string;
+  /** Null for a Discord username, which has no public profile link */
+  url: string | null;
+}
+
 export const modAuthors = pgTable(
   "mod_author",
   {
@@ -56,6 +79,8 @@ export const modAuthors = pgTable(
     title: text("title"),
     joinedAt: integer("joined_at"),
     subscriberCount: integer("subscriber_count"),
+    contacts: jsonb("contacts").$type<ModAuthorContact[]>(),
+    contactsFetchedAt: timestamp("contacts_fetched_at", { mode: "date" }),
     ...timestamps,
   },
   (table) => [
