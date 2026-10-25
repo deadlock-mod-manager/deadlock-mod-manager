@@ -2,11 +2,15 @@ import { describe, expect, it } from "bun:test";
 import type { FeatureFlag } from "@deadlock-mods/shared";
 import { getPinnedFeaturedModId } from "./mod-of-the-week";
 
-const flag = (name: string, value: boolean | string): FeatureFlag => ({
+const flag = (
+  name: string,
+  value: boolean | string,
+  type: FeatureFlag["type"] = "string",
+): FeatureFlag => ({
   id: name,
   name,
   description: null,
-  type: typeof value === "boolean" ? "boolean" : "string",
+  type,
   value,
   enabled: value,
   exposed: false,
@@ -18,7 +22,7 @@ describe("pinned mod of the week", () => {
     flag("mod-of-the-week-until", "2026-11-01T12:00:00.000Z"),
   ];
   const remlock = [
-    flag("remlock-release", true),
+    flag("remlock-release", true, "boolean"),
     flag("remlock-featured-until", "2026-12-01"),
   ];
 
