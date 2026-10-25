@@ -114,11 +114,13 @@ deployments:
   worker:
     image: stormix/deadlock-mods-api:latest
     command: pnpm start:worker
-    replicas: 2
+    # The cron queue has one effective job and the mod sync takes a Postgres lock,
+    # so a second consumer only idles.
+    replicas: 1
     memory:
-      request: 1Gi
+      request: 512Mi
       limit: 3Gi
-    cpu: 500m
+    cpu: 250m
 
     healthCheck:
       readiness:
@@ -153,7 +155,7 @@ deployments:
 
     strategy:
       type: RollingUpdate
-      maxUnavailable: 1
+      maxUnavailable: 0
       maxSurge: 1
 
     restartPolicy: Always
