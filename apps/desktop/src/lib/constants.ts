@@ -4,6 +4,7 @@ export const GITHUB_REPO =
 export const REDDIT_URL = "https://www.reddit.com/r/DeadlockModManager/";
 export const X_URL = "https://x.com/DLModManager";
 export const DISCORD_URL = "https://deadlockmods.app/discord";
+export const COMMISSIONS_URL = "https://commissions.deadlockmods.app/";
 export const PRIVACY_POLICY_URL = "https://deadlockmods.app/privacy";
 export const NETWORK_ACTIVITY_DOCS_URL =
   "https://docs.deadlockmods.app/using-mod-manager/privacy";
