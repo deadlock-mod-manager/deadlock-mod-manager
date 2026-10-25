@@ -26,10 +26,6 @@ inputs:
     description: "SignPath signing policy slug"
     required: true
     default: "release-signing"
-  signpath-artifact-configuration:
-    description: "SignPath artifact configuration slug; empty uses the project default (the installer configuration)"
-    required: false
-    default: ""
   tauri-private-key:
     description: "Tauri signing private key for regenerating updater signatures; leave empty for executables the updater never downloads"
     required: false
@@ -72,28 +68,13 @@ runs:
         path: ./signpath-staging/*.exe
         if-no-files-found: error
 
-    # Two steps because the SignPath action rejects an empty artifact configuration slug.
     - name: Submit to SignPath
-      if: inputs.signpath-artifact-configuration == ''
       uses: signpath/github-action-submit-signing-request@v2
       with:
         api-token: ${{ inputs.signpath-api-token }}
         organization-id: ${{ inputs.signpath-organization-id }}
         project-slug: ${{ inputs.signpath-project-slug }}
         signing-policy-slug: ${{ inputs.signpath-signing-policy }}
-        github-artifact-id: ${{ steps.upload-unsigned.outputs.artifact-id }}
-        wait-for-completion: true
-        output-artifact-directory: "./signpath-signed-output"
-
-    - name: Submit to SignPath (named artifact configuration)
-      if: inputs.signpath-artifact-configuration != ''
-      uses: signpath/github-action-submit-signing-request@v2
-      with:
-        api-token: ${{ inputs.signpath-api-token }}
-        organization-id: ${{ inputs.signpath-organization-id }}
-        project-slug: ${{ inputs.signpath-project-slug }}
-        signing-policy-slug: ${{ inputs.signpath-signing-policy }}
-        artifact-configuration-slug: ${{ inputs.signpath-artifact-configuration }}
         github-artifact-id: ${{ steps.upload-unsigned.outputs.artifact-id }}
         wait-for-completion: true
         output-artifact-directory: "./signpath-signed-output"

@@ -267,7 +267,6 @@ jobs:
           signpath-organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
           signpath-project-slug: deadlock-mod-manager
           signpath-signing-policy: release-signing
-          signpath-artifact-configuration: application-executable
 
       - name: Bundle installers from the signed executable (Windows)
         if: matrix.platform == 'windows-latest'
