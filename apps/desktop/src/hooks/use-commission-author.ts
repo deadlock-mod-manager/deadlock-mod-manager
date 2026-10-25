@@ -7,7 +7,6 @@ import { STALE_TIME_API } from "@/lib/query-constants";
 
 const CommissionAuthorSchema = z.object({
   author: z.object({
-    discordId: z.string().regex(/^\d{5,32}$/u),
     availability: z.enum(["open", "limited", "closed"]),
   }),
 });
@@ -38,7 +37,10 @@ const findCommissionAuthor = async (base: string, remoteId: string) => {
     requestUrl:
       author.availability === "closed"
         ? null
-        : commissionsLink(base, `requests/new?author=${author.discordId}`),
+        : commissionsLink(
+            base,
+            `requests/new?gamebanana=${encodeURIComponent(remoteId)}`,
+          ),
   };
 };
 
