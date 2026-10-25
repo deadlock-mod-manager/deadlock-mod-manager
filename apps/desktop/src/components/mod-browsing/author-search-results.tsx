@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { AuthorAvatar } from "@/components/mod-author/author-avatar";
+import { VerifiedSeal } from "@/components/mod-author/verified-author-badge";
+import { useCommissionAuthor } from "@/hooks/use-commission-author";
 import { searchGameBananaCatalogAuthors } from "@/lib/gamebanana-catalog";
 import { modAuthorQueryOptions } from "@/lib/mods/mod-author-query";
 import type { ModsCollection } from "@/lib/mods/mod-detail-navigation";
@@ -64,6 +66,7 @@ const AuthorResult = ({
     ...modAuthorQueryOptions(authorId),
     retry: 1,
   });
+  const verified = useCommissionAuthor(profile?.author) !== null;
 
   return (
     <button
@@ -80,6 +83,7 @@ const AuthorResult = ({
         size='sm'
       />
       <span className='font-medium text-sm'>{author.name}</span>
+      {verified && <VerifiedSeal />}
       <span className='text-muted-foreground text-xs tabular-nums'>
         {t("authorPage.resultCount", { count: author.submissionCount })}
       </span>

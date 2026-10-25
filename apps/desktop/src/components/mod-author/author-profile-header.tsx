@@ -1,5 +1,4 @@
 import type { ModAuthorDto, ModDto } from "@deadlock-mods/shared";
-import { Button } from "@deadlock-mods/ui/components/button";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import {
   CalendarDays,
@@ -12,9 +11,14 @@ import {
 import { useMutation } from "@tanstack/react-query";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useTranslation } from "react-i18next";
+import { useCommissionAuthor } from "@/hooks/use-commission-author";
 import { isTrustedExternalUrl } from "@/lib/trusted-external-url";
+import { cn } from "@/lib/utils";
 import { AuthorAvatar } from "./author-avatar";
+import { AuthorContacts } from "./author-contacts";
 import { AuthorStatPill } from "./author-stat-pill";
+import { CommissionAuthorButton } from "./commission-author-button";
+import { VerifiedAuthorBadge } from "./verified-author-badge";
 
 const formatMemberSince = (joinedAt: number, locale: string) =>
   new Intl.DateTimeFormat(locale, {
@@ -37,6 +41,7 @@ export const AuthorProfileHeader = ({
     meta: { skipGlobalErrorHandler: true },
     onError: () => toast.error(t("authorPage.openProfileError")),
   });
+  const commission = useCommissionAuthor(author);
   const displayName = author.name;
   const canOpenProfile = isTrustedExternalUrl(author.profileUrl);
   const headerImage = authorMods.find(
@@ -58,16 +63,30 @@ export const AuthorProfileHeader = ({
           src={headerImage}
         />
       )}
-      <div className='relative flex min-h-48 items-center gap-5 bg-gradient-to-t from-background via-background/85 to-background/20 p-6'>
-        <AuthorAvatar author={author} mods={authorMods} name={displayName} />
+      <div className='relative isolate flex min-h-48 items-center gap-5 bg-gradient-to-t from-background via-background/85 to-background/20 p-6'>
+        {commission && (
+          <div aria-hidden='true' className='verified-header-glow -z-10' />
+        )}
+        <div
+          className={cn(
+            "shrink-0 rounded-full",
+            commission && "verified-avatar-ring",
+          )}>
+          <AuthorAvatar author={author} mods={authorMods} name={displayName} />
+        </div>
         <div className='min-w-0 flex-1'>
           <p className='mb-1 text-muted-foreground text-sm'>
             {t("authorPage.submittedBy")}
           </p>
           <div className='flex flex-wrap items-center gap-x-4 gap-y-2'>
-            <h1 className='truncate font-semibold text-3xl tracking-tight'>
-              {displayName}
-            </h1>
+            <div className='flex min-w-0 items-center gap-2'>
+              <h1 className='truncate font-semibold text-3xl tracking-tight'>
+                {displayName}
+              </h1>
+              {commission && (
+                <VerifiedAuthorBadge availability={commission.availability} />
+              )}
+            </div>
             {author.title && (
               <span className='rounded-full bg-muted px-2.5 py-1 text-muted-foreground text-xs'>
                 {author.title}
@@ -133,15 +152,24 @@ export const AuthorProfileHeader = ({
               src={author.signatureUrl}
             />
           )}
-          {canOpenProfile && (
-            <Button
-              disabled={openProfile.isPending}
-              onClick={() => openProfile.mutate()}
-              variant='outline'>
-              {t("authorPage.viewOnGameBanana")}
-              <ExternalLink className='h-4 w-4' />
-            </Button>
-          )}
+          <AuthorContacts contacts={author.contacts} />
+          <div className='flex flex-wrap items-center justify-end gap-2'>
+            <CommissionAuthorButton author={author} />
+            {canOpenProfile && (
+              <a
+                className='inline-flex items-center gap-1.5 rounded-sm text-muted-foreground text-sm underline-offset-4 transition-colors hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+                href={author.profileUrl}
+                onClick={(event) => {
+                  event.preventDefault();
+                  openProfile.mutate();
+                }}
+                rel='noreferrer noopener'
+                target='_blank'>
+                {t("authorPage.viewOnGameBanana")}
+                <ExternalLink className='h-3.5 w-3.5' />
+              </a>
+            )}
+          </div>
         </div>
       </div>
     </section>

@@ -3,7 +3,7 @@ import {
   ArrowSquareOutIcon,
   FireIcon,
   HammerIcon,
-  HandCoinsIcon,
+  PaintBrushIcon,
   UploadSimpleIcon,
 } from "@phosphor-icons/react";
 import { toast } from "@deadlock-mods/ui/components/sonner";
@@ -178,7 +178,7 @@ export const FoundryEmptyState = () => {
             action={t("foundry.empty.commissionsAction")}
             description={t("foundry.empty.commissionsDescription")}
             external
-            icon={<HandCoinsIcon className='h-8 w-8' weight='duotone' />}
+            icon={<PaintBrushIcon className='h-8 w-8' weight='duotone' />}
             onClick={() => openCommissions(commissionsUrl)}
             title={t("foundry.empty.commissionsTitle")}
           />
