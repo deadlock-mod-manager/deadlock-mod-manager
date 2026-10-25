@@ -3,26 +3,40 @@ use std::path::PathBuf;
 
 use crate::app_runtime::{AppHandle, AppRuntime};
 
-const STABLE_ENDPOINT: &str = "https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/latest/download/latest.json";
-const NIGHTLY_ENDPOINT: &str = "https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/download/nightly/latest.json";
+// API first: Kaspersky flags processes that poll GitHub release downloads
+// (NetTool.GitHubGetRepo.HTTP.C&C). GitHub stays as the fallback.
+const STABLE_ENDPOINTS: [&str; 2] = [
+  "https://api.deadlockmods.app/updates/stable/latest.json",
+  "https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/latest/download/latest.json",
+];
+const NIGHTLY_ENDPOINTS: [&str; 2] = [
+  "https://api.deadlockmods.app/updates/nightly/latest.json",
+  "https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/download/nightly/latest.json",
+];
 
-const CEF_STABLE_ENDPOINT: &str = "https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/latest/download/latest-cef.json";
-const CEF_NIGHTLY_ENDPOINT: &str = "https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/download/nightly/latest-cef.json";
+const CEF_STABLE_ENDPOINTS: [&str; 2] = [
+  "https://api.deadlockmods.app/updates/stable/latest-cef.json",
+  "https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/latest/download/latest-cef.json",
+];
+const CEF_NIGHTLY_ENDPOINTS: [&str; 2] = [
+  "https://api.deadlockmods.app/updates/nightly/latest-cef.json",
+  "https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/download/nightly/latest-cef.json",
+];
 
-pub(crate) fn endpoint_for(channel: &UpdateChannel) -> &'static str {
+pub(crate) fn endpoints_for(channel: &UpdateChannel) -> &'static [&'static str] {
   match channel {
     UpdateChannel::Stable => {
       if cfg!(feature = "cef") {
-        CEF_STABLE_ENDPOINT
+        &CEF_STABLE_ENDPOINTS
       } else {
-        STABLE_ENDPOINT
+        &STABLE_ENDPOINTS
       }
     }
     UpdateChannel::Nightly => {
       if cfg!(feature = "cef") {
-        CEF_NIGHTLY_ENDPOINT
+        &CEF_NIGHTLY_ENDPOINTS
       } else {
-        NIGHTLY_ENDPOINT
+        &NIGHTLY_ENDPOINTS
       }
     }
   }
@@ -74,12 +88,12 @@ pub fn apply_to_context(context: &mut tauri::Context<AppRuntime>) {
   let identifier = context.config().identifier.clone();
   let channel = resolve_channel(&identifier);
 
-  let endpoint = endpoint_for(&channel);
+  let endpoints = endpoints_for(&channel);
 
-  log::info!("Updater channel resolved: {channel:?}, endpoint: {endpoint}");
+  log::info!("Updater channel resolved: {channel:?}, endpoints: {endpoints:?}");
 
   if let Some(updater) = context.config_mut().plugins.0.get_mut("updater") {
-    updater["endpoints"] = serde_json::json!([endpoint]);
+    updater["endpoints"] = serde_json::json!(endpoints);
   }
 }
 
