@@ -26,7 +26,7 @@ import { modDetailQueryKey } from "@/lib/mods/mod-query-cache";
 import { filterHiddenNSFWItems } from "@/lib/mods/nsfw-visibility";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
-import { getRemlockFeaturedModId } from "@/lib/theme-release";
+import { getPinnedFeaturedModId } from "@/lib/mod-of-the-week";
 
 const Dashboard = () => {
   const { t } = useTranslation();
@@ -45,7 +45,7 @@ const Dashboard = () => {
     [hideNSFW, mods],
   );
   const { data: flags } = useFeatureFlags();
-  const pinnedModId = getRemlockFeaturedModId(flags);
+  const pinnedModId = getPinnedFeaturedModId(flags);
   const pinnedMod = useQuery({
     queryKey: modDetailQueryKey(pinnedModId ?? ""),
     queryFn: () => getMod(pinnedModId ?? ""),

@@ -29,6 +29,22 @@ export const featureFlagDefinitions: FeatureFlagDefinition[] = [
     exposed: false,
   },
   {
+    name: "mod-of-the-week-id",
+    description:
+      "GameBanana remote id pinned as mod of the week, set with the bot's /modoftheweek command; empty for none",
+    type: "string",
+    defaultValue: "",
+    exposed: false,
+  },
+  {
+    name: "mod-of-the-week-until",
+    description:
+      "ISO timestamp when the mod-of-the-week-id pin ends; empty for none",
+    type: "string",
+    defaultValue: "",
+    exposed: false,
+  },
+  {
     name: "seasonal-themes",
     description:
       "Master switch for seasonal themes (Halloween, Christmas, New Year, Lunar New Year, Easter)",
