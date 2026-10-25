@@ -37,6 +37,7 @@
     "links": {
       "mods": "Моды",
       "skins": "Скины",
+      "commissions": "Заказы",
       "features": "Возможности",
       "themes": "Темы",
       "tools": "Инструменты",
@@ -68,6 +69,7 @@
       "download": "Скачать",
       "sourceCode": "Исходный код",
       "changelog": "",
+      "commissions": "Заказы",
       "documentation": "Документация",
       "faq": "",
       "reportBug": "Сообщить об ошибке"

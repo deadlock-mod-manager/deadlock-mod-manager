@@ -19,6 +19,10 @@
       "installing": "Instalowanie moda",
       "installed": "Mod zainstalowany",
       "ready": "{{name}} jest gotowy do gry."
+    },
+    "commissions": {
+      "title": "Chcesz skina, którego jeszcze nie ma?",
+      "body": "Zamów go u autora modów na Discordzie lub przez stronę."
     }
   },
   "partners": {
