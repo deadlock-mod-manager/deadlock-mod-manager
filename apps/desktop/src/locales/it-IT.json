@@ -4247,6 +4247,8 @@
     "disableNSFWBlurDescription": "Mostra contenuti NSFW senza effetto di sfocatura (il contenuto mostra comunque il badge NSFW)",
     "blurStrength": "Intensità Sfocatura",
     "blurStrengthDescription": "Quanto sfocare i contenuti NSFW quando visibili (pixel)",
+    "lightweightNSFWBlur": "",
+    "lightweightNSFWBlurDescription": "",
     "rememberPerItemChoices": "Ricorda Scelte per Elemento",
     "rememberPerItemChoicesDescription": "Ricorda quando scegli di mostrare/nascondere elementi NSFW specifici",
     "savedPerItemChoices": "",
@@ -4412,17 +4414,20 @@
     "showOutdatedBadge": "Mostra Obsolete",
     "added": "",
     "addedLabel": "",
-    "addedFrom": "",
-    "addedTo": "",
+    "updatedLabel": "",
+    "dateFrom": "",
+    "dateTo": "",
     "pickDate": "",
-    "addedBetween": "",
-    "addedSince": "",
-    "addedUntil": "",
-    "addedPeriod": {
+    "dateBetween": "",
+    "dateSince": "",
+    "dateUntil": "",
+    "datePeriod": {
       "any": "",
-      "today": "",
-      "week": "",
-      "month": "",
+      "24h": "",
+      "7d": "",
+      "14d": "",
+      "28d": "",
+      "1y": "",
       "custom": ""
     },
     "clearAll": "Cancella tutto",
@@ -4450,13 +4455,6 @@
     "hero": "",
     "name": "",
     "recentlyadded": ""
-  },
-  "timePeriod": {
-    "alltime": "",
-    "pastweek": "",
-    "pastmonth": "",
-    "past3months": "",
-    "pastyear": ""
   },
   "addMods": {
     "title": "Aggiungi Mod locale",
@@ -7013,6 +7011,7 @@
   "modelPreview": {
     "title": "",
     "disclaimerTitle": "",
+    "wipBadge": "",
     "disclaimer": "",
     "downloadHint": "",
     "download": "",

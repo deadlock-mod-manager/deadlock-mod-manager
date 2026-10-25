@@ -4247,6 +4247,8 @@
     "disableNSFWBlurDescription": "Afficher le contenu NSFW sans effet de flou (le contenu affiche toujours le badge NSFW)",
     "blurStrength": "Force du flou",
     "blurStrengthDescription": "Combien flouter le contenu NSFW quand il est visible (pixels)",
+    "lightweightNSFWBlur": "",
+    "lightweightNSFWBlurDescription": "",
     "rememberPerItemChoices": "Se souvenir des choix par élément",
     "rememberPerItemChoicesDescription": "Se souvenir quand vous choisissez d'afficher/masquer des éléments NSFW spécifiques",
     "savedPerItemChoices": "",
@@ -4412,17 +4414,20 @@
     "showOutdatedBadge": "Afficher obsolètes",
     "added": "",
     "addedLabel": "",
-    "addedFrom": "",
-    "addedTo": "",
+    "updatedLabel": "",
+    "dateFrom": "",
+    "dateTo": "",
     "pickDate": "",
-    "addedBetween": "",
-    "addedSince": "",
-    "addedUntil": "",
-    "addedPeriod": {
+    "dateBetween": "",
+    "dateSince": "",
+    "dateUntil": "",
+    "datePeriod": {
       "any": "",
-      "today": "",
-      "week": "",
-      "month": "",
+      "24h": "",
+      "7d": "",
+      "14d": "",
+      "28d": "",
+      "1y": "",
       "custom": ""
     },
     "clearAll": "Tout effacer",
@@ -4450,13 +4455,6 @@
     "hero": "",
     "name": "",
     "recentlyadded": ""
-  },
-  "timePeriod": {
-    "alltime": "",
-    "pastweek": "",
-    "pastmonth": "",
-    "past3months": "",
-    "pastyear": ""
   },
   "addMods": {
     "title": "Ajouter des mods",
@@ -7013,6 +7011,7 @@
   "modelPreview": {
     "title": "",
     "disclaimerTitle": "",
+    "wipBadge": "",
     "disclaimer": "",
     "downloadHint": "",
     "download": "",

@@ -4247,6 +4247,8 @@
     "disableNSFWBlurDescription": "",
     "blurStrength": "",
     "blurStrengthDescription": "",
+    "lightweightNSFWBlur": "",
+    "lightweightNSFWBlurDescription": "",
     "rememberPerItemChoices": "",
     "rememberPerItemChoicesDescription": "",
     "savedPerItemChoices": "",
@@ -4412,17 +4414,20 @@
     "showOutdatedBadge": "",
     "added": "",
     "addedLabel": "",
-    "addedFrom": "",
-    "addedTo": "",
+    "updatedLabel": "",
+    "dateFrom": "",
+    "dateTo": "",
     "pickDate": "",
-    "addedBetween": "",
-    "addedSince": "",
-    "addedUntil": "",
-    "addedPeriod": {
+    "dateBetween": "",
+    "dateSince": "",
+    "dateUntil": "",
+    "datePeriod": {
       "any": "",
-      "today": "",
-      "week": "",
-      "month": "",
+      "24h": "",
+      "7d": "",
+      "14d": "",
+      "28d": "",
+      "1y": "",
       "custom": ""
     },
     "clearAll": "",
@@ -4450,13 +4455,6 @@
     "hero": "",
     "name": "",
     "recentlyadded": ""
-  },
-  "timePeriod": {
-    "alltime": "",
-    "pastweek": "",
-    "pastmonth": "",
-    "past3months": "",
-    "pastyear": ""
   },
   "addMods": {
     "title": "",
@@ -7013,6 +7011,7 @@
   "modelPreview": {
     "title": "",
     "disclaimerTitle": "",
+    "wipBadge": "",
     "disclaimer": "",
     "downloadHint": "",
     "download": "",
