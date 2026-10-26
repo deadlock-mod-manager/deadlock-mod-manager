@@ -77,6 +77,8 @@ const watchConnect = async (
  * With the game already running, `steam://connect` hands the address to the
  * client without a restart. From cold we launch with `+connect` so the user's
  * launch options survive, and let the watchdog handle a dropped connect.
+ * Without logging, passwords unsafe for launch arguments go through Steam
+ * after the launch command confirms the game process has started.
  */
 export const joinServer = async ({
   server,
@@ -112,31 +114,38 @@ export const joinServer = async ({
   const connect = buildConnectArgs(server, password);
 
   if (connect) {
-    const launchArgs = [additionalArgs.trim(), connect.args]
+    const passwordConnectUrl =
+      address && connect.passwordSkipped && !loggingEnabled
+        ? buildSteamConnectUrl(server, password, address)
+        : null;
+    const launchArgs = [
+      additionalArgs.trim(),
+      passwordConnectUrl ? "" : connect.args,
+    ]
       .filter(Boolean)
       .join(" ");
     try {
       await invoke("launch_game_direct", { additionalArgs: launchArgs });
-      const watched =
-        address && loggingEnabled
-          ? await watchConnect(address, password, server, true)
-          : false;
-      return {
-        kind: "launched",
-        passwordSkipped: connect.passwordSkipped,
-        watched,
-      };
+      if (!passwordConnectUrl) {
+        const watched =
+          address && loggingEnabled
+            ? await watchConnect(address, password, server, true)
+            : false;
+        return {
+          kind: "launched",
+          passwordSkipped: connect.passwordSkipped,
+          watched,
+        };
+      }
     } catch (err) {
       logger
         .withError(err)
         .warn("Direct launch failed, falling back to steam:// connect URL");
     }
 
-    const steamUrl = buildSteamConnectUrl(
-      server,
-      password,
-      address ?? undefined,
-    );
+    const steamUrl =
+      passwordConnectUrl ??
+      buildSteamConnectUrl(server, password, address ?? undefined);
     if (steamUrl) {
       try {
         await openUrl(steamUrl);
