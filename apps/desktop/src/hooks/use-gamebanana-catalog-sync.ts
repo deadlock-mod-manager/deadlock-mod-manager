@@ -12,10 +12,12 @@ import { useConfirm } from "@/components/providers/alert-dialog";
 import {
   clearGameBananaCatalog,
   inspectGameBananaCatalog,
+  resolveLegacySoundIds,
   synchronizeGameBananaCatalog,
 } from "@/lib/gamebanana-catalog";
 import { COLLECTIONS_QUERY_KEY } from "@/lib/collections/queries";
 import logger from "@/lib/logger";
+import { usePersistedStore } from "@/lib/store";
 import {
   REFETCH_INTERVAL_CATALOG_SYNC,
   REFETCH_JITTER_CATALOG_SYNC,
@@ -32,6 +34,20 @@ const dropCachedCatalog = async (queryClient: QueryClient) => {
   await queryClient.resetQueries({ queryKey: ["mods"] });
 };
 
+const checkLegacySoundFavorites = async () => {
+  const { pendingSoundFavoriteChecks } = usePersistedStore.getState();
+  if (pendingSoundFavoriteChecks.length === 0) return;
+  const soundIds = await resolveLegacySoundIds(pendingSoundFavoriteChecks);
+  if (soundIds === null) return;
+  usePersistedStore.getState().applySoundFavoriteChecks(soundIds);
+  logger
+    .withMetadata({
+      checked: pendingSoundFavoriteChecks.length,
+      renamed: soundIds.length,
+    })
+    .info("Checked legacy favorites for sounds");
+};
+
 export const useCatalogSyncMutation = (forceRefresh = false) => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -44,6 +60,11 @@ export const useCatalogSyncMutation = (forceRefresh = false) => {
       return synchronizeGameBananaCatalog(forceRefresh);
     },
     meta: { skipGlobalErrorHandler: true },
+    onSuccess: () => {
+      checkLegacySoundFavorites().catch((error) => {
+        logger.withError(error).warn("Legacy sound favorites check failed");
+      });
+    },
     onSettled: (status) => {
       void queryClient.invalidateQueries({
         queryKey: ["gamebanana-catalog-status"],

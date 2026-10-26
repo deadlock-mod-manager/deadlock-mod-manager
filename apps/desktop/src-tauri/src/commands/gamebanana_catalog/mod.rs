@@ -430,6 +430,14 @@ pub async fn inspect_gamebanana_catalog_state(
 }
 
 #[tauri::command]
+pub async fn resolve_legacy_sound_ids(
+  state: State<'_, GameBananaCatalogState>,
+  ids: Vec<String>,
+) -> Result<Option<Vec<String>>, Error> {
+  state.backend()?.catalog.legacy_sound_ids(ids).await
+}
+
+#[tauri::command]
 pub async fn clear_gamebanana_catalog(
   state: State<'_, GameBananaCatalogState>,
 ) -> Result<(), Error> {

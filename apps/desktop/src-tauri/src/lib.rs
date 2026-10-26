@@ -241,6 +241,7 @@ pub fn run() {
       commands::game::get_installed_build_id,
       commands::gamebanana_catalog::synchronize_gamebanana_catalog,
       commands::gamebanana_catalog::clear_gamebanana_catalog,
+      commands::gamebanana_catalog::resolve_legacy_sound_ids,
       commands::gamebanana_catalog::query_gamebanana_catalog,
       commands::gamebanana_catalog::get_gamebanana_catalog_facets,
       commands::gamebanana_catalog::search_gamebanana_catalog_authors,

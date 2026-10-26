@@ -3,11 +3,13 @@ import type { State } from "..";
 
 export type FavoritesState = {
   favorites: string[];
+  pendingSoundFavoriteChecks: string[];
   toggleFavorite: (remoteId: string) => void;
   addFavorite: (remoteId: string) => void;
   removeFavorite: (remoteId: string) => void;
   isFavorite: (remoteId: string) => boolean;
   clearFavorites: () => void;
+  applySoundFavoriteChecks: (soundIds: string[]) => void;
 };
 
 export const favoritesDeepMergeKeys =
@@ -20,6 +22,7 @@ export const createFavoritesSlice: StateCreator<
   FavoritesState
 > = (set, get) => ({
   favorites: [],
+  pendingSoundFavoriteChecks: [],
 
   toggleFavorite: (remoteId) =>
     set((state) => {
@@ -46,4 +49,16 @@ export const createFavoritesSlice: StateCreator<
   isFavorite: (remoteId) => get().favorites.includes(remoteId),
 
   clearFavorites: () => set({ favorites: [] }),
+
+  applySoundFavoriteChecks: (soundIds) =>
+    set((state) => {
+      const sounds = new Set(soundIds);
+      const favorites = state.favorites.map((id) =>
+        sounds.has(id) ? `snd-${id}` : id,
+      );
+      return {
+        favorites: [...new Set(favorites)],
+        pendingSoundFavoriteChecks: [],
+      };
+    }),
 });

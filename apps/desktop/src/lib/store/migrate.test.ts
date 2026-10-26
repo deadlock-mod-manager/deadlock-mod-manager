@@ -204,6 +204,12 @@ describe("safeMigrate", () => {
     ]);
   });
 
+  it("v37 queues bare favorites for the catalog sound check", () => {
+    expect(
+      safeMigrate({ favorites: ["42", "snd-7", "local-abc"] }, 36),
+    ).toMatchObject({ pendingSoundFavoriteChecks: ["42"] });
+  });
+
   it("v26 preserves pending disk work when rerun after state identities changed", () => {
     const state = {
       localMods: [{ remoteId: "snd-42", isAudio: true }],
@@ -257,7 +263,7 @@ describe("safeMigrate", () => {
   it("LATEST_VERSION matches the highest step target", () => {
     const max = Math.max(...MIGRATION_STEPS.map((s) => s.to));
     expect(LATEST_VERSION).toBe(max);
-    expect(LATEST_VERSION).toBe(36);
+    expect(LATEST_VERSION).toBe(37);
   });
 
   it("v25 (themes switch): drops the leftover enabledPlugins.themes entry", () => {
