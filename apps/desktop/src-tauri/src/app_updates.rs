@@ -100,9 +100,11 @@ pub async fn check_app_update(webview: tauri::Webview<AppRuntime>) -> UpdateChec
       .timeout(Duration::from_secs(30));
     // Fixture endpoints are configured by the isolated E2E runtime.
     if !crate::runtime_environment::is_e2e_active() {
-      builder = builder.endpoints(vec![
-        updater_channel::endpoint_for(&context.channel).parse()?,
-      ])?;
+      let endpoints = updater_channel::endpoints_for(&context.channel)
+        .iter()
+        .map(|endpoint| endpoint.parse())
+        .collect::<Result<Vec<_>, _>>()?;
+      builder = builder.endpoints(endpoints)?;
     }
     if context.channel == UpdateChannel::Nightly {
       builder = builder.version_comparator(|current, release| release.version != current);

@@ -86,7 +86,7 @@ See the [features overview](https://docs.deadlockmods.app/using-mod-manager/feat
 
 ## Installation
 
-Download the latest installer for Windows or Linux (`.exe`, `.deb`, `.rpm`, `.flatpak`) from the [releases page](https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/latest), or use a package manager:
+Download the latest installer for Windows or Linux (`.exe`, `.deb`, `.rpm`, `.flatpak`) from the [releases page](https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/latest), or use a package manager. On Linux, the CEF (Chromium) builds, such as `deadlock-mod-manager-cef.flatpak`, are the recommended default:
 
 ```bash
 # Windows (winget)
@@ -251,7 +251,7 @@ We're actively working to make Deadlock Mod Manager accessible to users worldwid
 | 🇨🇭 **Swiss German** | Schwiizerdütsch | 🚧 4% | [degoods_deedos](https://discordapp.com/users/degoods_deedos/) |
 | 🇹🇭 **Thai** | ไทย | 🚧 6% | [altqx](https://discordapp.com/users/altq/) |
 | 🇹🇷 **Turkish** | Türkçe | ✅ 100% | [kenanala](https://discordapp.com/users/kenanala/), [hollmmes](https://discordapp.com/users/hollmmes/) |
-| 🇨🇳 **Chinese (Simplified)** | 简体中文 | 🚧 35% | [待到春深方挽柳](mailto:sfk_04@qq.com) |
+| 🇨🇳 **Chinese (Simplified)** | 简体中文 | 🚧 34% | [待到春深方挽柳](mailto:sfk_04@qq.com) |
 | 🇹🇼 **Chinese (Traditional)** | 繁體中文 | ✅ Complete | [白雲](https://github.com/phillychi3) |
 | 🇪🇸 **Spanish** | Español | ✅ Complete | [chikencio](https://discordapp.com/users/chikencio/) |
 | 🇧🇷 **Portuguese (Brazil)** | Português (Brasil) | 🚧 28% | [meneee](https://discordapp.com/users/meneee/) |

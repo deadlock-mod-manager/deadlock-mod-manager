@@ -11,5 +11,7 @@ export const prefetchModDetail = (
     queryKey: modDetailQueryKey(remoteId),
     queryFn: () => getMod(remoteId),
     staleTime: STALE_TIME_API,
+    // A speculative fetch; the detail page reports its own failure if opened.
+    meta: { skipGlobalErrorHandler: true },
   });
 };
