@@ -56,7 +56,7 @@ deployments:
       minReplicas: 3
       maxReplicas: 5
       # Percent of the CPU request.
-      targetCPUUtilization: 60
+      targetCPUUtilization: 75
       scaleDownStabilizationSeconds: 600
     memory:
       request: 1Gi
@@ -120,7 +120,7 @@ deployments:
     memory:
       request: 512Mi
       limit: 3Gi
-    cpu: 250m
+    cpu: 100m
 
     healthCheck:
       readiness:
@@ -273,7 +273,7 @@ deployments:
     memory:
       request: 1Gi
       limit: 2Gi
-    cpu: 250m
+    cpu: 100m
 
     healthCheck:
       readiness:
@@ -308,7 +308,8 @@ deployments:
 
     strategy:
       type: RollingUpdate
-      maxUnavailable: 1
+      # Single replica: start the new pod before stopping the old one so the site stays up during releases.
+      maxUnavailable: 0
       maxSurge: 1
 
     restartPolicy: Always
@@ -322,7 +323,7 @@ deployments:
     memory:
       request: 512Mi
       limit: 1Gi
-    cpu: 500m
+    cpu: 300m
 
     healthCheck:
       readiness:

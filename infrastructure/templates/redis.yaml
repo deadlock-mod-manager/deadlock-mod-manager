@@ -27,7 +27,7 @@ spec:
     replicas: {{ .Values.resources.redis.sentinels }}
     resources:
       requests:
-        cpu: 100m
+        cpu: 25m
         memory: 100Mi
       limits:
         memory: 100Mi
@@ -35,7 +35,7 @@ spec:
       enabled: true
       resources:
         requests:
-          cpu: 100m
+          cpu: 10m
           memory: 50Mi
         limits:
           cpu: 100m
@@ -70,7 +70,7 @@ spec:
       enabled: true
       resources:
         requests:
-          cpu: 100m
+          cpu: 10m
           memory: 50Mi
         limits:
           cpu: 100m
