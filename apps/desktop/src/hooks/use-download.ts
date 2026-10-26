@@ -15,7 +15,7 @@ import { getErrorMessage } from "@/lib/errors";
 import { getQueuedDownloads } from "@/lib/mods/mod-variants";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
-import { findLocalMod } from "@/lib/store/selectors";
+import { findLocalMod, selectStoreFilters } from "@/lib/store/selectors";
 import { type ModDownloadItem, ModStatus } from "@/types/mods";
 import { invokeGuarded } from "@/lib/game-guard";
 
@@ -140,9 +140,10 @@ export const useDownload = (
         entryPoint ??
         modEntryPoint(
           pathname,
-          !!usePersistedStore.getState()[
-            pathname === "/maps" ? "mapsFilters" : "modsFilters"
-          ].searchQuery,
+          !!selectStoreFilters(
+            usePersistedStore.getState(),
+            pathname === "/maps",
+          ).searchQuery,
         ),
       onComplete: () => {
         setIsDialogOpen(false);

@@ -58,6 +58,7 @@ import { parseGameBananaReference } from "@/lib/mod-interchange";
 import { MODS_LIST_QUERY_KEY } from "@/lib/mods/mod-query-cache";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
+import { selectStoreFilters } from "@/lib/store/selectors";
 import type {
   ContentType,
   DateFilter,
@@ -210,7 +211,7 @@ const GetModsData = ({
   const isCustomMapsEnabled = useExperimentalFeature("custom-maps");
   const nsfwSettings = usePersistedStore((state) => state.nsfwSettings);
   const filters = usePersistedStore((state) =>
-    mapsOnly ? state.mapsFilters : state.modsFilters,
+    selectStoreFilters(state, !!mapsOnly),
   );
   const modsStorePaginationEnabled = usePersistedStore(
     (state) => state.settings[MODS_STORE_PAGINATION_SETTING_ID]?.enabled,

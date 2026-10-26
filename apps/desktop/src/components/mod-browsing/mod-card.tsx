@@ -27,7 +27,7 @@ import type {
 import { prefetchModDetail } from "@/lib/mods/mod-detail-prefetch";
 import { getModCoverImage } from "@/lib/mods/mod-images";
 import { usePersistedStore } from "@/lib/store";
-import { findLocalMod } from "@/lib/store/selectors";
+import { findLocalMod, selectStoreFilters } from "@/lib/store/selectors";
 import { cn, isModOutdated, isUpdatedRecently } from "@/lib/utils";
 import { ModStatus } from "@/types/mods";
 import FavoriteButton from "./favorite-button";
@@ -41,6 +41,22 @@ interface ModCardProps {
   author?: AuthorNavigationTarget;
   curatedCollection?: CuratedCollectionNavigationTarget;
 }
+
+const cardEntryPoint = ({
+  collection = "mods",
+  author,
+  curatedCollection,
+}: ModCardProps): ModEntryPoint => {
+  if (curatedCollection) return "collection";
+  if (author) return "author";
+  if (collection === "dashboard") return "featured";
+  if (collection === "library") return "library";
+  const { searchQuery } = selectStoreFilters(
+    usePersistedStore.getState(),
+    collection === "maps",
+  );
+  return searchQuery ? "search" : "catalog";
+};
 
 const ModCard = memo((props: ModCardProps) => {
   const {
@@ -76,19 +92,7 @@ const ModCard = memo((props: ModCardProps) => {
   // A config-only upload is a gameinfo.gi config, not a VPK a patch breaks.
   const isOutdated = isModOutdated(mod) && configListingKind !== "confirmed";
 
-  const entryPoint: ModEntryPoint = curatedCollection
-    ? "collection"
-    : author
-      ? "author"
-      : collection === "dashboard"
-        ? "featured"
-        : collection === "library"
-          ? "library"
-          : usePersistedStore.getState()[
-                collection === "maps" ? "mapsFilters" : "modsFilters"
-              ].searchQuery
-            ? "search"
-            : "catalog";
+  const entryPoint = cardEntryPoint(props);
   const openModDetail = () => {
     analytics.track("catalog_item_opened", {
       mod_id: mod.remoteId,
