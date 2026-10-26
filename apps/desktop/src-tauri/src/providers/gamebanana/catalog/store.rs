@@ -10,6 +10,7 @@ use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
 pub(super) const INCOMPLETE_SNAPSHOT: &str = "snapshot_with_invalid_records";
+pub(super) const LAST_FULL_SYNC_AT: &str = "last_full_sync_at";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -332,24 +333,18 @@ impl Catalog {
 
   /// Before sounds had their own `snd-` slug, a sound was saved under its bare
   /// GameBanana id, which looks like a mod id. Returns the ids the catalog
-  /// knows only as sounds, or `None` until a full crawl has finished, since a
+  /// knows only as sounds, or `None` until a full crawl has completed, since a
   /// mod missing from a partial catalog may just not be synced yet.
   pub async fn legacy_sound_ids(&self, ids: Vec<String>) -> Result<Option<Vec<String>>, Error> {
     self
       .pool
       .run(move |connection| {
-        let crawling = sync_cursor::table
-          .filter(sync_cursor::snapshot_id.is_not_null())
+        let crawled = sync_state::table
+          .find(LAST_FULL_SYNC_AT)
           .count()
           .get_result::<i64>(connection)?
           > 0;
-        let incomplete = sync_state::table
-          .find(INCOMPLETE_SNAPSHOT)
-          .count()
-          .get_result::<i64>(connection)?
-          > 0;
-        let empty = submission::table.count().get_result::<i64>(connection)? == 0;
-        if crawling || incomplete || empty {
+        if !crawled {
           return Ok(None);
         }
         let candidates = ids
@@ -830,6 +825,12 @@ mod tests {
 
     catalog
       .complete_snapshot("snapshot-a".to_string())
+      .await
+      .unwrap();
+    assert_eq!(catalog.legacy_sound_ids(ids.clone()).await.unwrap(), None);
+
+    catalog
+      .set_state(super::LAST_FULL_SYNC_AT, "123".to_string())
       .await
       .unwrap();
     assert_eq!(
