@@ -14,7 +14,6 @@ import {
   SidebarMenuItem,
 } from "@deadlock-mods/ui/components/sidebar";
 import {
-  ArticleIcon,
   BugBeetleIcon,
   ChartLineUpIcon,
   CodeIcon,
@@ -40,8 +39,8 @@ import { Link, useLocation, useNavigate } from "react-router";
 import { HintAnchor } from "@/components/feature-hints/hint-anchor";
 import { useThemeOverride } from "@/components/providers/theme-overrides";
 import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
+import { isDownloadInProgress } from "@/lib/download/status";
 import { usePersistedStore } from "@/lib/store";
-import { ModStatus } from "@/types/mods";
 import { BrandingHeader } from "./branding";
 import { SidebarCollapse } from "./sidebar-collapse";
 import { SidebarSocials } from "./sidebar-socials";
@@ -66,6 +65,8 @@ type SidebarItem = {
   group: string;
   /** Shows a "New" badge until the user opens the page. */
   isNew?: boolean;
+  /** Also active on pages nested under `url`, such as a single match under Stats. */
+  activeOnChildren?: boolean;
 };
 
 const GROUP_ORDER = [
@@ -183,14 +184,6 @@ const getSidebarItems = (
       isNew: true,
     },
     {
-      id: "autoexec",
-      title: () => <span>{t("navigation.autoexec")}</span>,
-      tooltipLabel: t("navigation.autoexec"),
-      url: "/settings/autoexec",
-      icon: ArticleIcon,
-      group: "customization",
-    },
-    {
       id: "performance",
       title: () => <span>{t("navigation.performance")}</span>,
       tooltipLabel: t("navigation.performance"),
@@ -207,6 +200,7 @@ const getSidebarItems = (
       icon: ChartLineUpIcon,
       group: "customization",
       isNew: true,
+      activeOnChildren: true,
     },
     ...(developerMode
       ? [
@@ -279,7 +273,8 @@ const CollapsedSeparator = () => (
 type SidebarItemProps = {
   item: SidebarItem;
   location: ReturnType<typeof useLocation>;
-  mods: Array<{ status: ModStatus; remoteId: string }>;
+  modCount: number;
+  downloadCount: number;
   showNewBadge: boolean;
 };
 
@@ -305,23 +300,20 @@ const renderIcon = (item: SidebarItem) => {
 const SidebarItemComponent = ({
   item,
   location,
-  mods,
+  modCount,
+  downloadCount,
   showNewBadge,
 }: SidebarItemProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const titleProps = {
-    isActive: item.url ? location.pathname === item.url : false,
-    count: item.id === "my-mods" ? mods.length : undefined,
-    downloads:
-      item.id === "downloads"
-        ? mods.filter(
-            (mod) =>
-              mod.status === ModStatus.Downloading ||
-              mod.status === ModStatus.Extracting ||
-              mod.status === ModStatus.Paused,
-          ).length
-        : undefined,
+    isActive: item.url
+      ? location.pathname === item.url ||
+        (item.activeOnChildren === true &&
+          location.pathname.startsWith(`${item.url}/`))
+      : false,
+    count: item.id === "my-mods" ? modCount : undefined,
+    downloads: item.id === "downloads" ? downloadCount : undefined,
   };
 
   if (item.dialog) {
@@ -376,7 +368,11 @@ export const AppSidebar = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
-  const mods = usePersistedStore((state) => state.localMods);
+  const modCount = usePersistedStore((state) => state.localMods.length);
+  const downloadCount = usePersistedStore(
+    (state) =>
+      state.localMods.filter((mod) => isDownloadInProgress(mod.status)).length,
+  );
   const seenNavItems = usePersistedStore((state) => state.seenNavItems);
   const markNavItemSeen = usePersistedStore((state) => state.markNavItemSeen);
   const developerMode = usePersistedStore((state) => state.developerMode);
@@ -443,7 +439,8 @@ export const AppSidebar = () => {
                       <SidebarItemComponent
                         item={item}
                         location={location}
-                        mods={mods}
+                        modCount={modCount}
+                        downloadCount={downloadCount}
                         showNewBadge={!!item.isNew && !seenNavItems[item.id]}
                       />
                     );

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, mock } from "bun:test";
 import * as tauriCore from "@tauri-apps/api/core";
 import { ModStatus } from "@/types/mods";
 import { createProfileId } from "@/types/profiles";
-import { SortType, TimePeriod } from "@/lib/constants";
+import { SortType } from "@/lib/constants";
 import type { ProxyConfig } from "./slices/network";
 import type {
   ModsFilters,
@@ -126,8 +126,7 @@ const seededState = {
   enabledPlugins: {},
   backupEnabled: true,
   maxBackupCount: 5,
-  fileserverPreference: "default",
-  fileserverLatencyMs: { server1: 42, server2: 88 },
+  fileserverPreference: "default" as const,
   audioVolume: 50,
   modsFilters: {
     selectedCategories: [],
@@ -137,13 +136,21 @@ const seededState = {
     hideNSFW: false,
     hideOutdated: false,
     currentSort: SortType.DOWNLOADS,
-    timePeriod: TimePeriod.ALL_TIME,
+    timePeriod: "all time",
     filterMode: "include",
     searchQuery: "",
   } satisfies Omit<
     ModsFilters,
-    "contentType" | "addedFilter" | "showFavoritesOnly" | "nsfwOnly"
-  > & { audioQuickFilter: AudioQuickFilter; mapQuickFilter: MapQuickFilter },
+    | "contentType"
+    | "updatedFilter"
+    | "addedFilter"
+    | "showFavoritesOnly"
+    | "nsfwOnly"
+  > & {
+    audioQuickFilter: AudioQuickFilter;
+    mapQuickFilter: MapQuickFilter;
+    timePeriod: string;
+  },
   crosshairFilters: {
     selectedHeroes: [],
     selectedTags: [],
@@ -244,12 +251,12 @@ describe("persisted store integration with real production fixture", () => {
     // Every field that the buggy unconditional-assign migration steps would
     // have clobbered on the upgrade from v15 -> v18 must survive.
     expect(s.proxyConfig).toEqual(seededState.proxyConfig);
-    expect(s.fileserverLatencyMs).toEqual(seededState.fileserverLatencyMs);
     expect(s.fileserverPreference).toBe(seededState.fileserverPreference);
     expect(s.nsfwSettings).toEqual(seededState.nsfwSettings);
     const {
       audioQuickFilter: _audioQuickFilter,
       mapQuickFilter: _mapQuickFilter,
+      timePeriod: _timePeriod,
       ...seededModsFilters
     } = seededState.modsFilters;
     expect(s.modsFilters).toEqual({
@@ -257,6 +264,7 @@ describe("persisted store integration with real production fixture", () => {
       contentType: "mod",
       showFavoritesOnly: false,
       nsfwOnly: false,
+      updatedFilter: { period: "any", from: "", to: "" },
       addedFilter: { period: "any", from: "", to: "" },
     });
     expect(s.crosshairFilters).toEqual(seededState.crosshairFilters);

@@ -12,6 +12,7 @@ import Collection from "./pages/collection";
 import Crosshairs from "./pages/crosshairs";
 import Dashboard from "./pages/dashboard";
 import Debug from "./pages/debug";
+import { DebugViewer } from "./pages/debug-viewer";
 import Contributors from "./pages/contributors";
 import Developer from "./pages/developer";
 import Downloads from "./pages/downloads";
@@ -27,6 +28,7 @@ import CustomSettings from "./pages/settings";
 import Skins from "./pages/skins";
 import Splash from "./pages/splash";
 import Stats from "./pages/stats";
+import StatsMatch from "./pages/stats-match";
 import "flag-icons/css/flag-icons.min.css";
 import "./index.css";
 import "./lib/i18n";
@@ -46,12 +48,12 @@ const MapsRouteGate = () => {
   return <GetMaps />;
 };
 
-const StatsRouteGate = () => {
+const StatsRouteGate = ({ page: Page }: { page: typeof Stats }) => {
   const isEnabled = useExperimentalFeature("player-stats");
   if (!isEnabled) {
     return <Navigate replace to='/' />;
   }
-  return <Stats />;
+  return <Page />;
 };
 
 const PerformanceRouteGate = () => {
@@ -76,6 +78,9 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
       <Suspense fallback={<Splash />}>
         <BrowserRouter>
           <Routes>
+            {import.meta.env.DEV && (
+              <Route element={<DebugViewer />} path='/debug/viewer/:modId?' />
+            )}
             <Route
               element={
                 <App
@@ -101,7 +106,11 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
               <Route element={<Debug />} path='/debug' />
               <Route element={<Crosshairs />} path='/crosshairs' />
               <Route element={<Skins />} path='/skins' />
-              <Route element={<StatsRouteGate />} path='/stats' />
+              <Route element={<StatsRouteGate page={Stats} />} path='/stats' />
+              <Route
+                element={<StatsRouteGate page={StatsMatch} />}
+                path='/stats/matches/:matchId'
+              />
               <Route element={<FoundryRouteGate />} path='/foundry' />
               <Route element={<PerformanceRouteGate />} path='/performance' />
               <Route

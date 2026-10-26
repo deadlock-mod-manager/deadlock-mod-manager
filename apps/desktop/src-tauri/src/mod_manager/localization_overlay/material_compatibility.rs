@@ -211,14 +211,14 @@ fn baseline(resources: &ResourceSnapshot, path: &str) -> Result<Arc<Vec<u8>>, Er
     .ok_or_else(|| invalid(format!("Missing current game dependency {path}")))?;
   if let Some((provider, effective)) = resources.resolve(path)?
     && provider.mod_id.is_some()
-      && effective != current
-      && !((path.ends_with(".vtex") || path.ends_with(".vtex_c"))
-        && same_texture_runtime(&effective, &current))
-    {
-      return Err(invalid(format!(
-        "Enabled mod overrides migration dependency {path}"
-      )));
-    }
+    && effective != current
+    && !((path.ends_with(".vtex") || path.ends_with(".vtex_c"))
+      && same_texture_runtime(&effective, &current))
+  {
+    return Err(invalid(format!(
+      "Enabled mod overrides migration dependency {path}"
+    )));
+  }
   Ok(current)
 }
 

@@ -1,5 +1,4 @@
-import { useIsMutating, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CATALOG_SYNC_KEY } from "@/hooks/use-gamebanana-catalog-sync";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getMod } from "@/lib/api-client";
 import {
   findModInModsListCache,
@@ -20,7 +19,6 @@ export const useMod = (
 ) => {
   const { enabled = true, retry = 1 } = options;
   const queryClient = useQueryClient();
-  const syncing = useIsMutating({ mutationKey: CATALOG_SYNC_KEY }) > 0;
   const isLocal = modId?.includes("local") ?? false;
   const localMod = usePersistedStore((state) =>
     findLocalMod(state.localMods, modId),
@@ -37,7 +35,6 @@ export const useMod = (
     enabled: !!modId && !isLocal && enabled,
     retry,
     staleTime: STALE_TIME_API,
-    refetchInterval: syncing ? 15_000 : false,
     placeholderData: () => {
       if (!modId || isLocal) {
         return undefined;

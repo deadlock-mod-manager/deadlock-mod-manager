@@ -9,7 +9,7 @@ import { useTranslation } from "react-i18next";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import { ChartCard } from "@/components/stats/chart-card";
 import type { MatchHistoryEntry, RankAsset } from "@/lib/stats/api";
-import { resolveRank } from "@/lib/stats/api";
+import { rankLabel } from "@/lib/stats/api";
 import { formatDayTick } from "@/lib/stats/format";
 
 interface RankChartProps {
@@ -57,15 +57,8 @@ export const RankChart = ({ matches, rankAssets }: RankChartProps) => {
 
   // Valve packs tier and subrank into one number, so the raw value is not a
   // scale anybody can read - every tick goes through the rank assets.
-  const badgeLabel = (badge: number) => {
-    const resolved = resolveRank(badge, rankAssets);
-    if (!resolved.name) {
-      return String(badge);
-    }
-    return resolved.subrank > 0
-      ? `${resolved.name} ${resolved.subrank}`
-      : resolved.name;
-  };
+  const badgeLabel = (badge: number) =>
+    rankLabel(badge, rankAssets) ?? String(badge);
 
   if (data.length < 2) {
     return (

@@ -230,7 +230,7 @@ export const refreshSources = async (
     const pin = await refreshCommunityPin(definition);
     const old = before.community[id];
     // Download counts move every day; only carry a change that matters so the
-    // weekly refresh doesn't open a pull request for noise.
+    // scheduled refresh doesn't open a pull request for noise.
     const samePin =
       old &&
       old.fileId === pin.fileId &&

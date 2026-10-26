@@ -210,9 +210,13 @@ export class ModRepository {
 
   async findLeastRecentlySynced(
     limit: number,
-  ): Promise<Array<{ remoteId: string; isAudio: boolean }>> {
+  ): Promise<Array<{ remoteId: string; isAudio: boolean; category: string }>> {
     return await this.db
-      .select({ remoteId: mods.remoteId, isAudio: mods.isAudio })
+      .select({
+        remoteId: mods.remoteId,
+        isAudio: mods.isAudio,
+        category: mods.category,
+      })
       .from(mods)
       .where(eq(mods.isTrashed, false))
       .orderBy(sql`${mods.lastSyncedAt} ASC NULLS FIRST`)

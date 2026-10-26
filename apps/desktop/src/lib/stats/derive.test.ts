@@ -16,6 +16,7 @@ import {
   joinMateStats,
   mergeHeroStats,
   mergeLocalMatches,
+  playSessions,
   rollingWinrate,
   sessionCurve,
   streaks,
@@ -219,6 +220,36 @@ describe("winrateByHour", () => {
       winrate: 0.5,
     });
     expect(buckets.find((b) => b.bucket === 10)?.winrate).toBe(1);
+  });
+});
+
+describe("playSessions", () => {
+  it("splits on long breaks and tracks rank across sessions", () => {
+    const start = 1_700_000_000;
+    const sessions = playSessions([
+      win({ start_time: start, match_mode: 4, ranked_display_badge: 65 }),
+      // Unranked games in between leave the last known badge alone.
+      loss({ start_time: start + 14 * HOUR }),
+      win({
+        start_time: start + 15 * HOUR,
+        match_mode: 4,
+        ranked_display_badge: 64,
+      }),
+      win({
+        start_time: start + 16 * HOUR,
+        match_mode: 4,
+        ranked_display_badge: 71,
+      }),
+    ]);
+
+    expect(sessions).toHaveLength(2);
+    expect(sessions[0]?.matches.map((match) => match.start_time)).toEqual([
+      start + 16 * HOUR,
+      start + 15 * HOUR,
+      start + 14 * HOUR,
+    ]);
+    expect(sessions[0]).toMatchObject({ wins: 2, rankSteps: 2 });
+    expect(sessions[1]?.rankSteps).toBeNull();
   });
 });
 

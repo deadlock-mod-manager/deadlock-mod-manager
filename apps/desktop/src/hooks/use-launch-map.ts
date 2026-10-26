@@ -5,7 +5,6 @@ import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { useCompatibilityReview } from "@/components/providers/compatibility-review";
 import { useLaunchFixes } from "@/hooks/use-launch-fixes";
-import { enableAutoexecLaunchOptionIfDisabled } from "@/lib/autoexec/launch-option";
 import { launchWithCompatibilityReview } from "@/lib/launch-with-compatibility-review";
 import { getLaunchErrorMessage } from "@/lib/launch-error";
 import logger from "@/lib/logger";
@@ -23,8 +22,6 @@ export const useLaunchMap = (onSuccess?: () => void) => {
   const launchMapMutation = useMutation({
     mutationFn: async (mapName: string) => {
       await invoke("add_map_command_to_autoexec", { mapName });
-
-      enableAutoexecLaunchOptionIfDisabled();
 
       const activeProfile = getActiveProfile();
       const profileFolder = activeProfile?.folderName ?? null;

@@ -547,6 +547,73 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
       }
     },
   },
+  {
+    to: 34,
+    label: "drop-pinned-fileservers",
+    apply: (state) => {
+      // Pinned file caches failed downloads for files they did not mirror, and
+      // the picker that set them is gone.
+      if (
+        "fileserverPreference" in state &&
+        state.fileserverPreference !== "auto"
+      ) {
+        state.fileserverPreference = "default";
+      }
+      delete state.fileserverLatencyMs;
+    },
+  },
+  {
+    to: 35,
+    label: "drop-autoexec-launch-option",
+    apply: (state) => {
+      // Deadlock runs autoexec.cfg at every launch, so `-exec autoexec` ran it
+      // a second time.
+      if (isPlainObject(state.settings)) {
+        delete state.settings["autoexec-launch-option"];
+      }
+    },
+  },
+  {
+    to: 36,
+    label: "rolling-date-filters",
+    apply: (state) => {
+      // The "Updated" and "Added" presets became 24 hours, 7, 14 and 28 days,
+      // and a year, and Updated gained the custom range Added already had.
+      // Past 3 months widens to a year so no results disappear.
+      const modsFilters = state.modsFilters;
+      if (!isPlainObject(modsFilters)) return;
+      const timePeriods: Record<string, string> = {
+        "past week": "7d",
+        "past month": "28d",
+        "past 3 months": "1y",
+        "past year": "1y",
+      };
+      const timePeriod = modsFilters.timePeriod;
+      if (
+        !("updatedFilter" in modsFilters) &&
+        typeof timePeriod === "string" &&
+        timePeriod in timePeriods
+      ) {
+        modsFilters.updatedFilter = {
+          period: timePeriods[timePeriod],
+          from: "",
+          to: "",
+        };
+      }
+      delete modsFilters.timePeriod;
+      const addedFilter = modsFilters.addedFilter;
+      if (!isPlainObject(addedFilter)) return;
+      const periods: Record<string, string> = {
+        today: "24h",
+        week: "7d",
+        month: "28d",
+      };
+      const period = addedFilter.period;
+      if (typeof period === "string" && period in periods) {
+        addedFilter.period = periods[period];
+      }
+    },
+  },
 ];
 
 const LEGACY_GAMEBANANA_ID = /^[1-9]\d*$/;

@@ -25,14 +25,5 @@ const FileserverDtoSchema = z.object({
 
 export const FileserversResponseSchema = z.array(FileserverDtoSchema);
 
-const FileserverLatencyResultSchema = z.object({
-  id: z.string(),
-  latencyMs: z.number().nullable(),
-  reachable: z.boolean(),
-});
-
 export type FileserverDto = z.infer<typeof FileserverDtoSchema>;
 export type FileserverGeo = z.infer<typeof FileserverGeoSchema>;
-export type FileserverLatencyResult = z.infer<
-  typeof FileserverLatencyResultSchema
->;

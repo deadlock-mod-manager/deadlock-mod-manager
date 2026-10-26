@@ -1,5 +1,18 @@
 # @deadlock-mods/auth
 
+## 1.1.7
+
+### Patch Changes
+
+- Updated dependencies [4b36850]
+- Updated dependencies [19e8ec5]
+- Updated dependencies [75477e2]
+  - @deadlock-mods/database@2.5.0
+  - @deadlock-mods/shared@2.5.0
+  - @deadlock-mods/ui@0.3.2
+  - @deadlock-mods/feature-flags@0.2.12
+  - @deadlock-mods/instrumentation@0.1.14
+
 ## 1.1.6
 
 ### Patch Changes

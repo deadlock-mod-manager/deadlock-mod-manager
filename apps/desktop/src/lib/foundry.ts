@@ -5,7 +5,6 @@ import type {
   FoundryExportRequest,
   FoundryExportResult,
   FoundryManifest,
-  FoundryModel,
   FoundryPaint,
   FoundryPaintResult,
   FoundryPatternId,
@@ -149,22 +148,7 @@ export const decodeFoundryCards = async (
   });
 };
 
-/**
- * Decode a `.vmesh_c`, or assemble every mesh a `.vmdl_c` references, to a GLB
- * data URL for the 3D preview. Passing the workspace makes the preview show the
- * user's painted textures and stands the hero in its idle pose.
- */
-export const decodeFoundryModel = async (
-  filePath: string,
-  entryPath: string,
-  workspaceRoot: string | null = null,
-): Promise<FoundryModel> => {
-  return await invoke<FoundryModel>("foundry_decode_model", {
-    filePath,
-    entryPath,
-    workspaceRoot,
-  });
-};
+export { decodeFoundryModel } from "./model-assets";
 
 /** How much of the hero each paint target covers in the loaded skin. */
 export const foundryPaintTargets = async (

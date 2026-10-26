@@ -1,5 +1,12 @@
 # @deadlock-mods/perf-catalog
 
+## 0.0.3
+
+### Patch Changes
+
+- 5ff1bfa: Show every set of video settings a config author ships
+- ee96289: Keep performance config edits in editor and compiler sections
+
 ## 0.0.2
 
 ### Patch Changes

@@ -1,19 +1,58 @@
-import { Button } from "@deadlock-mods/ui/components/button";
+import { RuntimeError } from "@deadlock-mods/common/client-errors";
 import { cn } from "@deadlock-mods/ui/lib/utils";
-import { ArrowsClockwiseIcon, CubeIcon } from "@phosphor-icons/react";
-import { useEffect, useRef, useState } from "react";
+import { CompassIcon, CubeIcon } from "@phosphor-icons/react";
+import {
+  type ReactNode,
+  type RefObject,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { FoundryLoadingBar } from "./foundry-loading-bar";
+import { retainFoundryModel } from "@/lib/model-assets";
+import type { FoundryModel } from "@/types/foundry";
+import { loadPreviewModel } from "./model-loader";
+import {
+  createPreviewClip,
+  type PreviewPlayback,
+} from "@/lib/preview-animation";
+import { PreviewClock } from "@/lib/preview-clock";
+import { ModelLoadingStage } from "./model-loading-stage";
 import {
   hueOf,
   installPaintShader,
   type PaintableMaterial,
   type PaintUniforms,
 } from "./foundry-paint-shader";
+import { attachNprOutlines } from "./npr-outline";
+import type {
+  ViewerEffect,
+  ViewerEffectContext,
+  ViewerEffectFactory,
+} from "./viewer-effects";
+import {
+  DEFAULT_LOOK,
+  overlaySurface,
+  ViewerBackgroundButton,
+  type ViewerLook,
+  type ViewerOverlayToggle,
+  ViewerToolRail,
+  ViewerViewMenu,
+  ViewerWipBadge,
+} from "./viewer-tools";
+import { createViewerRecorder } from "./viewer-capture";
+import { createViewerCamera } from "./viewer-camera";
+import type { ViewerBackground } from "./viewer-background";
+import { createViewerPostFx } from "./viewer-postfx";
+import {
+  applyMeshGroups,
+  type MeshGroupTable,
+  readMeshGroups,
+} from "./viewer-mesh-groups";
+import { createViewerScene } from "./viewer-scene";
 
 /** A live paint preview: which part, and the exact paint being previewed. */
 export interface FoundryPreviewTint {
@@ -24,11 +63,21 @@ export interface FoundryPreviewTint {
 }
 
 interface FoundryModelViewerProps {
-  dataUrl: string;
+  model: FoundryModel;
   label: string;
   /** Paints the matching materials on the GPU, without touching any file, so
    *  the paint tab shows a color the instant it is picked. */
   tint?: FoundryPreviewTint | null;
+  playback?: PreviewPlayback;
+  /** Simulations attached to the loaded model; rebuilt when the array changes, so memoize it. */
+  effects?: ViewerEffectFactory[];
+  fullscreenTarget: RefObject<HTMLDivElement | null>;
+  /** Extra View menu switches for overlays the caller draws in `children`. */
+  overlays?: ViewerOverlayToggle[];
+  /** Receives the playback clock every frame, for timelines that must not re-render React. */
+  timeRef?: RefObject<number>;
+  /** Drawn over the render, inside the viewport. */
+  children?: ReactNode;
 }
 
 interface MaterialSnapshot {
@@ -36,6 +85,7 @@ interface MaterialSnapshot {
   uniforms: PaintUniforms;
   /** Material and mesh names joined, which is what the part match reads. */
   name: string;
+  material: PaintableMaterial;
 }
 
 const isTintable = (material: THREE.Material): material is PaintableMaterial =>
@@ -78,7 +128,6 @@ const materialMatchesTarget = (
   snapshot: MaterialSnapshot,
   target: FoundryPreviewTint["target"],
 ): boolean => {
-  // Ability effects are not part of the mesh, so nothing on it ever matches.
   if (target === "abilities") return false;
   if (target === "bodyAndWeapon") return true;
   const name = snapshot.name.toLowerCase();
@@ -107,6 +156,7 @@ const installPaintShaders = (root: THREE.Object3D): MaterialSnapshot[] => {
     for (const material of materials) {
       if (!isTintable(material)) continue;
       snapshots.push({
+        material,
         uniforms: installPaintShader(material),
         name: [material.name, child.name].filter(Boolean).join(" "),
       });
@@ -129,13 +179,12 @@ const applyPreviewTint = (
   const hue = tint ? hueOf(tint.colorHex) : 0;
   for (const snapshot of snapshots) {
     const painted =
-      Boolean(tint) && materialMatchesTarget(snapshot, tint!.target);
+      tint != null && materialMatchesTarget(snapshot, tint.target);
     snapshot.uniforms.uPaintActive.value = painted ? 1 : 0;
-    if (painted && tint) {
-      snapshot.uniforms.uPaintHue.value = hue;
-      snapshot.uniforms.uPaintSaturation.value = tint.saturation;
-      snapshot.uniforms.uPaintBrightness.value = tint.brightness;
-    }
+    if (!painted) continue;
+    snapshot.uniforms.uPaintHue.value = hue;
+    snapshot.uniforms.uPaintSaturation.value = tint.saturation;
+    snapshot.uniforms.uPaintBrightness.value = tint.brightness;
   }
 };
 
@@ -154,6 +203,7 @@ const GIZMO_AXES: {
 ];
 
 const disposeObject = (root: THREE.Object3D) => {
+  const textures = new Set<THREE.Texture>();
   root.traverse((child) => {
     if (child instanceof THREE.Mesh) {
       child.geometry.dispose();
@@ -161,10 +211,32 @@ const disposeObject = (root: THREE.Object3D) => {
         ? child.material
         : [child.material];
       for (const material of materials) {
+        if (material instanceof THREE.MeshStandardMaterial) {
+          for (const texture of [
+            material.map,
+            material.normalMap,
+            material.roughnessMap,
+            material.metalnessMap,
+            material.aoMap,
+            material.emissiveMap,
+          ]) {
+            if (texture) textures.add(texture);
+          }
+        }
         material.dispose();
       }
+      if (child instanceof THREE.SkinnedMesh) child.skeleton.dispose();
     }
   });
+  const bitmaps = new Set<ImageBitmap>();
+  for (const texture of textures) {
+    texture.dispose();
+    const image = texture.source.data;
+    if (typeof ImageBitmap !== "undefined" && image instanceof ImageBitmap) {
+      bitmaps.add(image);
+    }
+  }
+  for (const bitmap of bitmaps) bitmap.close();
 };
 
 /** A round handle sprite (filled + labelled for the positive axis, faint ring
@@ -200,18 +272,103 @@ const makeHandleTexture = (
 };
 
 export const FoundryModelViewer = ({
-  dataUrl,
+  model,
   label,
   tint,
+  playback,
+  effects,
+  fullscreenTarget,
+  overlays = [],
+  timeRef,
+  children,
 }: FoundryModelViewerProps) => {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const gizmoRef = useRef<HTMLDivElement>(null);
+  const clockRef = useRef<PreviewClock | null>(null);
+  const firstAnimationRef = useRef(true);
+  const fitRef = useRef<(() => void) | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const snapshotsRef = useRef<MaterialSnapshot[]>([]);
   const [loading, setLoading] = useState(true);
+  const [scanGone, setScanGone] = useState(false);
   const [failed, setFailed] = useState(false);
-  const [autoRotate, setAutoRotate] = useState(true);
+  const [autoRotate, setAutoRotate] = useState(false);
+  const [background, setBackground] = useState<ViewerBackground | null>(null);
+  const [look, setLook] = useState<ViewerLook>(DEFAULT_LOOK);
+  const [showGizmo, setShowGizmo] = useState(true);
+  const [meshGroups, setMeshGroups] = useState<MeshGroupTable | null>(null);
+  const [bodyChoice, setBodyChoice] = useState<Record<string, number>>({});
+  const lookRef = useRef({ background, ...look });
+  const captureRef = useRef<(() => Promise<Blob | null>) | null>(null);
+  const recorderRef = useRef<ReturnType<typeof createViewerRecorder> | null>(
+    null,
+  );
+  const applyLookRef = useRef<(() => void) | null>(null);
+  const playbackRef = useRef(playback);
+  const modelRef = useRef<THREE.Object3D | null>(null);
+  const mixerRef = useRef<THREE.AnimationMixer | null>(null);
+  const actionRef = useRef<THREE.AnimationAction | null>(null);
+  const stageRef = useRef<Omit<ViewerEffectContext, "model"> | null>(null);
+  const activeEffectsRef = useRef<ViewerEffect[]>([]);
+  useEffect(() => {
+    playbackRef.current = playback;
+  }, [playback]);
+  useEffect(() => {
+    if (modelRef.current && meshGroups)
+      applyMeshGroups(modelRef.current, meshGroups, bodyChoice);
+  }, [meshGroups, bodyChoice]);
+  useEffect(() => {
+    const model = modelRef.current;
+    const stage = stageRef.current;
+    if (!model || !stage || loading || !effects?.length) return;
+    const created = effects
+      .map((factory) => factory({ ...stage, model }))
+      .filter((effect): effect is ViewerEffect => effect !== null);
+    activeEffectsRef.current = created;
+    const duration = playbackRef.current?.animation?.duration ?? 0;
+    clockRef.current?.seek(
+      duration > 0 ? (mixerRef.current?.time ?? 0) % duration : 0,
+    );
+    return () => {
+      activeEffectsRef.current = [];
+      for (const effect of created) effect.dispose();
+    };
+  }, [effects, loading, model]);
+  useEffect(() => {
+    const root = modelRef.current;
+    if (!root || loading) return;
+    clockRef.current?.seek(0);
+    if (!playback?.animation) return;
+    const mixer = new THREE.AnimationMixer(root);
+    const clip = createPreviewClip(root, playback.animation);
+    const action = mixer.clipAction(clip);
+    action.setLoop(THREE.LoopRepeat, Infinity);
+    action.play();
+    actionRef.current = action;
+    mixerRef.current = mixer;
+    mixer.setTime(0);
+    if (firstAnimationRef.current) {
+      fitRef.current?.();
+      firstAnimationRef.current = false;
+    }
+    return () => {
+      actionRef.current = null;
+      mixer.stopAllAction();
+      mixer.uncacheRoot(root);
+      mixerRef.current = null;
+    };
+  }, [playback?.animation, loading, model]);
+  useEffect(() => {
+    if (playback && mixerRef.current) {
+      clockRef.current?.seek(playback.seek.time);
+    }
+  }, [playback?.seek]);
+
+  useEffect(() => {
+    lookRef.current = { background, ...look };
+    applyLookRef.current?.();
+  }, [background, look]);
 
   // Keep the live controls in sync with the auto-rotate toggle without
   // rebuilding the scene.
@@ -226,11 +383,12 @@ export const FoundryModelViewer = ({
     const gizmoContainer = gizmoRef.current;
     if (!container || !gizmoContainer) return;
 
+    firstAnimationRef.current = true;
     setFailed(false);
     setLoading(true);
+    setScanGone(false);
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0a0b0d);
 
     const camera = new THREE.PerspectiveCamera(38, 1, 0.01, 5000);
     camera.position.set(0, 1.2, 8);
@@ -245,6 +403,9 @@ export const FoundryModelViewer = ({
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 0.95;
     container.appendChild(renderer.domElement);
+    stageRef.current = { scene, camera, renderer };
+    const recorder = createViewerRecorder(renderer.domElement);
+    recorderRef.current = recorder;
 
     const environment = new RoomEnvironment();
     const pmremGenerator = new THREE.PMREMGenerator(renderer);
@@ -256,19 +417,42 @@ export const FoundryModelViewer = ({
     controls.dampingFactor = 0.08;
     controls.autoRotate = autoRotate;
     controls.autoRotateSpeed = 0.7;
-    controls.enablePan = false;
     controls.zoomSpeed = 0.85;
     controls.minDistance = 0.5;
     controls.maxDistance = 500;
     controlsRef.current = controls;
+    const cameraControls = createViewerCamera(
+      camera,
+      controls,
+      renderer.domElement,
+      () => modelRef.current,
+    );
+    fitRef.current = cameraControls.fit;
+    renderer.domElement.setAttribute(
+      "aria-label",
+      t("modelPreview.cameraHint"),
+    );
 
-    scene.add(new THREE.HemisphereLight(0xe9eef9, 0x242022, 2.6));
-    const keyLight = new THREE.DirectionalLight(0xfff1dc, 2.5);
-    keyLight.position.set(2.8, 4.2, 3.6);
-    scene.add(keyLight);
-    const rimLight = new THREE.DirectionalLight(0xff4965, 1.1);
-    rimLight.position.set(-3.5, 2.4, -2.4);
-    scene.add(rimLight);
+    const stage = createViewerScene(scene);
+    const postFx = createViewerPostFx(renderer, scene, camera);
+    let outlines: ReturnType<typeof attachNprOutlines> | null = null;
+    const applyLook = () => {
+      stage.setBackground(lookRef.current.background?.image ?? null);
+      postFx.setBloom(lookRef.current.bloom);
+      outlines?.setVisible(lookRef.current.outlines);
+      postFx.setAntialias(lookRef.current.antialias);
+      renderer.toneMappingExposure = lookRef.current.exposure;
+      for (const snapshot of snapshotsRef.current)
+        snapshot.material.wireframe = lookRef.current.wireframe;
+    };
+    applyLookRef.current = applyLook;
+    applyLook();
+    captureRef.current = () => {
+      postFx.render();
+      return new Promise((resolve) =>
+        renderer.domElement.toBlob(resolve, "image/png"),
+      );
+    };
 
     // --- Orientation gizmo (isolated renderer so it can never affect the
     // model view): click an axis handle to snap the camera to that side. ---
@@ -307,7 +491,6 @@ export const FoundryModelViewer = ({
       const sprite = new THREE.Sprite(material);
       sprite.position.copy(dir);
       sprite.scale.setScalar(axis.label ? 0.62 : 0.44);
-      sprite.userData.dir = dir;
       gizmoRoot.add(sprite);
       handles.push(sprite);
 
@@ -337,6 +520,9 @@ export const FoundryModelViewer = ({
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
       renderer.setSize(width, height, false);
+      stage.resize(width, height);
+      postFx.setSize(width, height);
+      outlines?.setViewportHeight(height);
     };
 
     const resizeObserver = new ResizeObserver(resize);
@@ -348,59 +534,41 @@ export const FoundryModelViewer = ({
       if (box.isEmpty()) return;
 
       const center = new THREE.Vector3();
-      const sphere = new THREE.Sphere();
       box.getCenter(center);
-      box.getBoundingSphere(sphere);
       root.position.sub(center);
+      stage.placeFloor(box);
 
-      const radius = Math.max(sphere.radius, 1);
-      const halfFov = THREE.MathUtils.degToRad(camera.fov * 0.5);
-      let fitDistance = radius / Math.sin(halfFov);
-      if (camera.aspect < 1) {
-        fitDistance /= camera.aspect;
-      }
-
-      // Snug default framing — just enough margin to keep the model in view.
-      const startDistance = fitDistance * 1.3;
-      camera.near = Math.max(startDistance / 2000, 0.01);
-      camera.far = Math.max(startDistance * 120, 5000);
-      camera.position.set(
-        startDistance * 0.18,
-        startDistance * 0.08,
-        startDistance,
-      );
-      camera.updateProjectionMatrix();
-
-      controls.target.set(0, 0, 0);
-      controls.minDistance = Math.max(radius * 0.12, 0.05);
-      controls.maxDistance = Math.max(startDistance * 16, radius * 80);
-      controls.update();
+      cameraControls.fit();
     };
 
-    const loader = new GLTFLoader();
-    loader.load(
-      dataUrl,
-      (gltf) => {
+    const loadController = new AbortController();
+    const releaseAsset = retainFoundryModel(model);
+    void loadPreviewModel(model, loadController.signal)
+      .then((gltf) => {
         if (disposed) {
           disposeObject(gltf.scene);
           return;
         }
-
         loadedRoot = gltf.scene;
+        modelRef.current = gltf.scene;
+        const table = readMeshGroups(gltf.scene);
+        setMeshGroups(table);
+        setBodyChoice(table?.defaults ?? {});
         cloneSceneMaterials(gltf.scene);
         snapshotsRef.current = installPaintShaders(gltf.scene);
+        outlines = attachNprOutlines(gltf.scene);
+        outlines.setViewportHeight(Math.max(container.clientHeight, 1));
+        applyLook();
         scene.add(gltf.scene);
-
         frameModel(gltf.scene);
         setLoading(false);
-      },
-      undefined,
-      () => {
+      })
+      .catch(() => {
         if (disposed) return;
         setLoading(false);
         setFailed(true);
-      },
-    );
+      })
+      .finally(releaseAsset);
 
     // Snap the camera to the clicked axis (instant, keeps the current distance).
     const raycaster = new THREE.Raycaster();
@@ -421,32 +589,72 @@ export const FoundryModelViewer = ({
       raycaster.setFromCamera(pointer, gizmoCamera);
       const hit = raycaster.intersectObjects(handles)[0];
       if (hit) {
-        snapToDir((hit.object.userData.dir as THREE.Vector3).clone());
+        snapToDir(hit.object.position.clone());
       }
     };
     gizmoRenderer.domElement.addEventListener("pointerdown", onGizmoClick);
     gizmoRenderer.domElement.style.cursor = "pointer";
 
+    const clock = new PreviewClock(
+      () => {
+        actionRef.current?.reset().play();
+        mixerRef.current?.setTime(0);
+        for (const effect of activeEffectsRef.current) effect.reset();
+      },
+      (delta) => {
+        mixerRef.current?.update(delta);
+        for (const effect of activeEffectsRef.current) effect.update(delta);
+      },
+    );
+    clockRef.current = clock;
+    let previousTime = performance.now();
+    let visible = true;
+    const visibility = new IntersectionObserver(([entry]) => {
+      visible = entry?.isIntersecting ?? false;
+    });
+    visibility.observe(container);
     const render = () => {
+      frame = window.requestAnimationFrame(render);
+      const now = performance.now();
+      const delta = Math.min((now - previousTime) / 1000, 0.1);
+      previousTime = now;
+      if (document.hidden || !visible) return;
+      const playback = playbackRef.current;
+      clock.tick(delta, playback?.playing ?? true, playback?.speed ?? 1);
+      if (timeRef) timeRef.current = clock.time;
+      renderer.domElement.dataset.seeking = String(clock.seeking);
+      for (const effect of activeEffectsRef.current) effect.update(0);
       controls.update();
-      renderer.render(scene, camera);
+      postFx.render();
 
       // Mirror the main camera's orientation so the gizmo turns with the model.
       gizmoRoot.quaternion.copy(camera.quaternion).invert();
       gizmoRenderer.render(gizmoScene, gizmoCamera);
-
-      frame = window.requestAnimationFrame(render);
     };
     render();
 
     return () => {
       disposed = true;
+      loadController.abort();
       window.cancelAnimationFrame(frame);
       gizmoRenderer.domElement.removeEventListener("pointerdown", onGizmoClick);
       resizeObserver.disconnect();
+      visibility.disconnect();
+      clockRef.current = null;
+      modelRef.current = null;
+      stageRef.current = null;
+      cameraControls.dispose();
+      fitRef.current = null;
       controls.dispose();
       controlsRef.current = null;
       snapshotsRef.current = [];
+      applyLookRef.current = null;
+      captureRef.current = null;
+      recorder.dispose();
+      recorderRef.current = null;
+      outlines?.dispose();
+      postFx.dispose();
+      stage.dispose();
       if (loadedRoot) {
         scene.remove(loadedRoot);
         disposeObject(loadedRoot);
@@ -468,47 +676,90 @@ export const FoundryModelViewer = ({
       gizmoRenderer.forceContextLoss();
       gizmoRenderer.domElement.remove();
     };
-  }, [dataUrl]);
+  }, [model]);
 
-  // Re-tint whenever the picked color changes. The scene already renders every
-  // frame, so touching the materials is all that is needed.
   useEffect(() => {
     applyPreviewTint(snapshotsRef.current, tint);
   }, [tint, loading]);
 
   return (
-    <div className='relative h-full w-full overflow-hidden rounded-lg border bg-background'>
-      <div ref={containerRef} className='h-full w-full' title={label} />
-
+    <div className='@container relative h-full w-full overflow-hidden bg-background'>
+      <div
+        ref={containerRef}
+        className={cn(
+          "h-full w-full transition-opacity duration-700 ease-out",
+          loading && "opacity-0",
+        )}
+        title={label}
+      />
       <div
         ref={gizmoRef}
-        className='absolute top-3 right-3'
+        className={cn(
+          overlaySurface,
+          "absolute top-3 right-3 overflow-hidden rounded-full bg-background/40",
+          !showGizmo && "hidden",
+        )}
         style={{ width: 84, height: 84 }}
       />
-
-      <Button
-        className={cn(
-          "absolute bottom-3 right-3 h-8 w-8",
-          autoRotate && "text-primary",
-        )}
-        onClick={() => setAutoRotate((value) => !value)}
-        size='icon'
-        title={t(
-          autoRotate ? "foundry.preview.stopSpin" : "foundry.preview.startSpin",
-        )}
-        variant='secondary'>
-        <ArrowsClockwiseIcon
-          className={cn("h-4 w-4", autoRotate && "animate-spin")}
-          weight='bold'
+      <div className='absolute top-3 left-3 flex items-start gap-1.5'>
+        <ViewerViewMenu
+          look={look}
+          onChange={setLook}
+          bodyGroups={
+            meshGroups && {
+              table: meshGroups,
+              chosen: bodyChoice,
+              onChange: (chosen) => {
+                setBodyChoice(chosen);
+                if (modelRef.current && meshGroups)
+                  applyMeshGroups(modelRef.current, meshGroups, chosen);
+                fitRef.current?.();
+              },
+            }
+          }
+          overlays={[
+            ...overlays,
+            {
+              id: "gizmo",
+              label: t("modelPreview.axisGizmo"),
+              icon: CompassIcon,
+              checked: showGizmo,
+              onCheckedChange: setShowGizmo,
+            },
+          ]}
         />
-      </Button>
+        <ViewerBackgroundButton
+          background={background}
+          onBackgroundChange={setBackground}
+        />
+        <ViewerWipBadge />
+      </div>
+      <ViewerToolRail
+        belowGizmo={showGizmo}
+        autoRotate={autoRotate}
+        onAutoRotateChange={setAutoRotate}
+        onFit={() => fitRef.current?.()}
+        capture={() => captureRef.current?.() ?? Promise.resolve(null)}
+        record={() =>
+          recorderRef.current?.record() ??
+          Promise.reject(new RuntimeError("Viewer is loading"))
+        }
+        stopRecording={() => recorderRef.current?.stop()}
+        fullscreen={async () => {
+          if (document.fullscreenElement) await document.exitFullscreen();
+          else await fullscreenTarget.current?.requestFullscreen();
+        }}
+      />
+      {!loading && !failed && children}
 
-      {loading && !failed && (
-        <div className='absolute inset-x-0 bottom-0 space-y-2 bg-gradient-to-t from-background/90 to-transparent p-4'>
-          <span className='text-muted-foreground text-xs'>
-            {t("foundry.preview.loading")}
-          </span>
-          <FoundryLoadingBar />
+      {!scanGone && !failed && (
+        <div
+          className={cn(
+            "pointer-events-none absolute inset-0 transition-opacity duration-500 ease-out",
+            !loading && "opacity-0",
+          )}
+          onTransitionEnd={() => !loading && setScanGone(true)}>
+          <ModelLoadingStage status={t("foundry.preview.loading")} />
         </div>
       )}
       {failed && (

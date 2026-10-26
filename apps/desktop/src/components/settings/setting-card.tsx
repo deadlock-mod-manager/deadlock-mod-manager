@@ -125,7 +125,6 @@ const SettingCard = ({
     return <SettingCardSkeleton />;
   }
   const custom = setting.id.startsWith("local_setting_");
-  const isAutoexecOption = setting.id === "autoexec-launch-option";
   const switchId = `toggle-setting-${setting.id}`;
   const subtitleId = subtitle ? `${switchId}-subtitle` : undefined;
   const commandId =
@@ -194,7 +193,7 @@ const SettingCard = ({
         </div>
 
         <div className='flex shrink-0 items-center space-x-2'>
-          {custom && !isAutoexecOption && (
+          {custom && (
             <>
               <Tooltip>
                 <TooltipTrigger asChild>

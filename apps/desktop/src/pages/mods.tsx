@@ -43,6 +43,7 @@ import {
 import ErrorBoundary from "@/components/shared/error-boundary";
 import PageTitle from "@/components/shared/page-title";
 import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
+import { useMod } from "@/hooks/use-mod";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useResponsiveColumns } from "@/hooks/use-responsive-columns";
 import { useScrollPosition } from "@/hooks/use-scroll-position";
@@ -52,25 +53,17 @@ import {
   getGameBananaCatalogFacets,
   queryGameBananaCatalog,
 } from "@/lib/gamebanana-catalog";
-import {
-  MOD_OUTDATED_CUTOFF_SECONDS,
-  SortType,
-  TimePeriod,
-} from "@/lib/constants";
+import { MOD_OUTDATED_CUTOFF_SECONDS, SortType } from "@/lib/constants";
+import { parseGameBananaReference } from "@/lib/mod-interchange";
 import { MODS_LIST_QUERY_KEY } from "@/lib/mods/mod-query-cache";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 import type {
-  AddedFilter,
   ContentType,
+  DateFilter,
   FilterMode,
 } from "@/lib/store/slices/ui";
-import {
-  cn,
-  getAddedRange,
-  getTimePeriodCutoff,
-  isAddedFilterActive,
-} from "@/lib/utils";
+import { cn, getDateRange, isDateFilterActive } from "@/lib/utils";
 import type { CatalogQuery } from "@/types/generated/CatalogQuery";
 import type { SubmissionType } from "@/types/generated/SubmissionType";
 
@@ -237,7 +230,7 @@ const GetModsData = ({
     hideNSFW,
     nsfwOnly: nsfwOnlyFilter,
     hideOutdated,
-    timePeriod = TimePeriod.ALL_TIME,
+    updatedFilter,
     addedFilter,
     filterMode,
     showFavoritesOnly = false,
@@ -254,14 +247,11 @@ const GetModsData = ({
   const [page, setPage] = useState(() => getPersistedPage(pageKey));
   const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
   const catalogQuery = useMemo<CatalogQuery>(() => {
-    const timePeriodCutoff = getTimePeriodCutoff(timePeriod);
-    const timePeriodCutoffSeconds = timePeriodCutoff
-      ? Math.floor(timePeriodCutoff.getTime() / 1_000)
-      : null;
+    const updatedRange = getDateRange(updatedFilter);
     const updatedAfter = hideOutdated
-      ? Math.max(timePeriodCutoffSeconds ?? 0, MOD_OUTDATED_CUTOFF_SECONDS)
-      : timePeriodCutoffSeconds;
-    const addedRange = getAddedRange(addedFilter);
+      ? Math.max(updatedRange.after ?? 0, MOD_OUTDATED_CUTOFF_SECONDS)
+      : updatedRange.after;
+    const addedRange = getDateRange(addedFilter);
     return {
       search: debouncedSearchQuery,
       categories: selectedCategories,
@@ -281,6 +271,7 @@ const GetModsData = ({
       nsfwOnly,
       hideObsolete: hideOutdated,
       updatedAfter,
+      updatedBefore: updatedRange.before,
       addedAfter: addedRange.after,
       addedBefore: addedRange.before,
       favorites: showFavoritesOnly ? favorites : [],
@@ -307,7 +298,7 @@ const GetModsData = ({
     selectedCategories,
     selectedHeroes,
     showFavoritesOnly,
-    timePeriod,
+    updatedFilter,
   ]);
   // Querying with a deferred value keeps the current results on screen while a
   // new filter/search/page loads, instead of suspending back to the skeleton.
@@ -421,7 +412,21 @@ const GetModsData = ({
   );
   const { query, setQuery, sortType, setSortType } =
     useSearchQueryState(searchQueryState);
-  const filteredResults = deferredData;
+  // A pasted GameBanana id or link shows that mod right away, ahead of the
+  // text matches, even when it isn't in the local catalog yet.
+  const idReference = parseGameBananaReference(query);
+  const { mod: idMatch, isFetching: isFetchingIdMatch } = useMod(
+    idReference ?? undefined,
+    { retry: 0 },
+  );
+  const filteredResults = useMemo(
+    () =>
+      idReference && idMatch
+        ? [idMatch, ...deferredData.filter((mod) => mod.id !== idMatch.id)]
+        : deferredData,
+    [deferredData, idMatch, idReference],
+  );
+  const isLookingUpId = !!idReference && !idMatch && isFetchingIdMatch;
 
   const totalPages = paginationEnabled
     ? Math.ceil(catalogPage.total / PAGE_SIZE)
@@ -481,7 +486,7 @@ const GetModsData = ({
         query,
         selectedCategories,
         selectedHeroes,
-        timePeriod,
+        updatedFilter,
         showFavoritesOnly,
         addedFilter,
       }),
@@ -496,7 +501,7 @@ const GetModsData = ({
       query,
       selectedCategories,
       selectedHeroes,
-      timePeriod,
+      updatedFilter,
       showFavoritesOnly,
     ],
   );
@@ -576,13 +581,13 @@ const GetModsData = ({
     [updateFilters],
   );
 
-  const handleTimePeriodChange = useCallback(
-    (timePeriod: TimePeriod) => updateFilters({ timePeriod }),
+  const handleUpdatedFilterChange = useCallback(
+    (updatedFilter: DateFilter) => updateFilters({ updatedFilter }),
     [updateFilters],
   );
 
   const handleAddedFilterChange = useCallback(
-    (addedFilter: AddedFilter) => updateFilters({ addedFilter }),
+    (addedFilter: DateFilter) => updateFilters({ addedFilter }),
     [updateFilters],
   );
 
@@ -598,8 +603,8 @@ const GetModsData = ({
     nsfwOnly ||
     hideOutdated ||
     showFavoritesOnly ||
-    isAddedFilterActive(addedFilter) ||
-    timePeriod !== TimePeriod.ALL_TIME;
+    isDateFilterActive(updatedFilter) ||
+    isDateFilterActive(addedFilter);
 
   return (
     <div className='flex min-h-0 flex-1 flex-col gap-4'>
@@ -607,8 +612,6 @@ const GetModsData = ({
         trailingActions={<CatalogRefreshButton />}
         filterMode={filterMode}
         mods={filterOptions}
-        timePeriod={timePeriod}
-        onTimePeriodChange={handleTimePeriodChange}
         onCategoriesChange={handleCategoriesChange}
         onFilterModeChange={handleFilterModeChange}
         onHeroesChange={handleHeroesChange}
@@ -627,6 +630,8 @@ const GetModsData = ({
         showFavoritesFilter={!mapsOnly}
         showFavoritesOnly={showFavoritesOnly}
         onShowFavoritesOnlyChange={handleShowFavoritesOnlyChange}
+        updatedFilter={updatedFilter}
+        onUpdatedFilterChange={handleUpdatedFilterChange}
         addedFilter={addedFilter}
         onAddedFilterChange={handleAddedFilterChange}
       />
@@ -645,13 +650,13 @@ const GetModsData = ({
         </Alert>
       ) : null}
       <div
-        aria-busy={isUpdatingResults}
+        aria-busy={isUpdatingResults || isLookingUpId}
         className='relative flex min-h-0 flex-1 flex-col'>
         <div
           aria-hidden
           className={cn(
             "pointer-events-none absolute inset-x-0 -top-2 z-10 h-0.5 overflow-hidden rounded-full opacity-0 transition-opacity duration-200",
-            isUpdatingResults && "opacity-100 delay-150",
+            (isUpdatingResults || isLookingUpId) && "opacity-100 delay-150",
           )}>
           <div className='h-full w-1/3 animate-results-loading rounded-full bg-primary/70 motion-reduce:w-full motion-reduce:animate-none motion-reduce:bg-primary/40' />
         </div>
@@ -659,7 +664,7 @@ const GetModsData = ({
           <Empty
             className={cn(
               "py-12 transition-opacity duration-200",
-              isUpdatingResults && "opacity-50 delay-150",
+              (isUpdatingResults || isLookingUpId) && "opacity-50 delay-150",
             )}>
             <EmptyHeader>
               <EmptyMedia variant='default'>

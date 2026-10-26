@@ -14,12 +14,15 @@ export const DEFAULT_TAB_TITLES = [
   "Live",
 ];
 export const DEFAULT_OVERVIEW = [
-  "tiles",
-  "insights",
+  "profile",
   "form",
+  "trends",
+  "benchmark",
   "session",
-  "rank",
   "recentMatches",
+  "heroPool",
+  "rank",
+  "insights",
 ];
 
 const savedLayoutSchema = z.object({

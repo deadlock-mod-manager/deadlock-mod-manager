@@ -9,7 +9,14 @@ import {
   TabsTrigger,
 } from "@deadlock-mods/ui/components/tabs";
 import { ArrowLeft, Settings, Trash } from "@deadlock-mods/ui/icons";
-import { Warning } from "@phosphor-icons/react";
+import {
+  ChatCircleIcon,
+  ClockCounterClockwiseIcon,
+  CubeIcon,
+  FilesIcon,
+  InfoIcon,
+  Warning,
+} from "@phosphor-icons/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -19,10 +26,12 @@ import ModButton from "@/components/mod-browsing/mod-button";
 import { InstalledVpksSection } from "@/components/mod-detail/installed-vpks-section";
 import { ModAudioPreview } from "@/components/mod-detail/mod-audio-preview";
 import { ModChangelog } from "@/components/mod-detail/mod-changelog";
+import { ModCommissionButton } from "@/components/mod-detail/mod-commission-button";
 import { ModComments } from "@/components/mod-detail/mod-comments";
 import { ModDependencies } from "@/components/mod-detail/mod-dependencies";
 import { ModDescription } from "@/components/mod-detail/mod-description";
 import { ModFiles } from "@/components/mod-detail/mod-files";
+import { ModModelPreview } from "@/components/mod-detail/mod-model-preview";
 import { ModGallery } from "@/components/mod-detail/mod-gallery";
 import { ModHero } from "@/components/mod-detail/mod-hero";
 import { ModInfo } from "@/components/mod-detail/mod-info";
@@ -76,6 +85,11 @@ const Mod = () => {
   const isCustomMapsEnabled = useExperimentalFeature("custom-maps");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const backButtonRef = useRef<HTMLButtonElement>(null);
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const [selectedTab, setSelectedTab] = useState({
+    modId: "",
+    tab: "overview",
+  });
 
   const { data: mod, error, isLoading } = useMod(params.id);
 
@@ -140,6 +154,15 @@ const Mod = () => {
   const isInstalled = localMod?.status === ModStatus.Installed;
   const hasImages = mod?.images && mod.images.length > 0;
   const hasHero = !!mod?.hero || hasImages || !!mod?.isAudio;
+  const canPreviewModel = !mod?.isAudio && !mod?.isMap && !shouldBlur;
+  const activeTab =
+    selectedTab.modId === mod?.remoteId ? selectedTab.tab : "overview";
+  const selectTab = (tab: string) =>
+    setSelectedTab({ modId: mod?.remoteId ?? "", tab });
+  const openModelPreview = () => {
+    selectTab("3d");
+    tabsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
   const [deleting, setDeleting] = useState(false);
   const { uninstall } = useUninstall();
 
@@ -331,6 +354,18 @@ const Mod = () => {
                   variant='hero'
                 />
               }
+              cornerAction={
+                canPreviewModel && (
+                  <Button
+                    className='gap-1.5 rounded-full border border-white/15 bg-black/40 text-white shadow-lg backdrop-blur-md hover:bg-black/60 hover:text-white'
+                    onClick={openModelPreview}
+                    size='sm'
+                    variant='ghost'>
+                    <CubeIcon className='size-4' />
+                    {t("modDetail.viewIn3d")}
+                  </Button>
+                )
+              }
             />
             <ModInfo
               hasHero={hasHero}
@@ -370,6 +405,9 @@ const Mod = () => {
                     variant='outline'>
                     {t("modOptions.openTooltip")}
                   </Button>
+                )}
+                {mod.modAuthorId && (
+                  <ModCommissionButton authorId={mod.modAuthorId} />
                 )}
                 <FavoriteButton remoteId={mod.remoteId} variant='inline' />
                 {hasUpdate && (
@@ -413,14 +451,26 @@ const Mod = () => {
           </Card>
           <ModDependencies dependencies={resolvedDependencies} />
 
-          <Tabs defaultValue='overview' key={mod.remoteId}>
+          <Tabs
+            className='scroll-mt-4'
+            onValueChange={selectTab}
+            ref={tabsRef}
+            value={activeTab}>
             <TabsList>
-              <TabsTrigger value='overview'>
+              <TabsTrigger className='gap-1.5' value='overview'>
+                <InfoIcon className='size-4' />
                 {t("modDetail.tabs.overview")}
               </TabsTrigger>
+              {canPreviewModel && (
+                <TabsTrigger className='gap-1.5' value='3d'>
+                  <CubeIcon className='size-4' />
+                  {t("modDetail.tabs.model")}
+                </TabsTrigger>
+              )}
               {isGameBananaMod && (
                 <>
                   <TabsTrigger className='gap-1.5' value='changelog'>
+                    <ClockCounterClockwiseIcon className='size-4' />
                     {t("modDetail.tabs.changelog")}
                     {hasUpdate && (
                       <span
@@ -430,13 +480,15 @@ const Mod = () => {
                       />
                     )}
                   </TabsTrigger>
-                  <TabsTrigger value='comments'>
+                  <TabsTrigger className='gap-1.5' value='comments'>
+                    <ChatCircleIcon className='size-4' />
                     {t("modDetail.tabs.comments")}
                   </TabsTrigger>
                 </>
               )}
               {hasFilesTab && (
                 <TabsTrigger className='gap-1.5' value='files'>
+                  <FilesIcon className='size-4' />
                   {t("modDetail.tabs.files")}
                   {downloadableFileCount > 0 && (
                     <span className='text-muted-foreground text-xs tabular-nums'>
@@ -475,6 +527,16 @@ const Mod = () => {
                 />
               )}
             </TabsContent>
+
+            {canPreviewModel && (
+              <TabsContent className='mt-4' value='3d'>
+                <ModModelPreview
+                  mod={mod}
+                  localMod={localMod}
+                  files={availableFiles}
+                />
+              </TabsContent>
+            )}
 
             {isGameBananaMod && (
               <>
@@ -529,6 +591,7 @@ const Mod = () => {
               open ? modOptions.open() : modOptions.close()
             }
             isSaving={modOptions.isSaving}
+            onCancelApply={modOptions.cancelApply}
             progress={modOptions.progress}
             onApply={modOptions.apply}
             fileTree={modOptions.fileTree}

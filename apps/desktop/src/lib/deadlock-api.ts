@@ -1,9 +1,12 @@
 import { ProviderError } from "@deadlock-mods/common/client-errors";
+import type { z } from "zod";
 import {
+  abilityAssetSchema,
   type DeadlockHero,
   deadlockHeroSchema,
   type DeadlockItem,
   deadlockItemSchema,
+  heroLoadoutSchema,
   parseList,
 } from "./validation/deadlock-api";
 import { fetch } from "./fetch";
@@ -65,4 +68,65 @@ export const getItems = async (): Promise<DeadlockItem[]> => {
       shop_image_webp: item.shop_image_webp,
       shop_image: item.shop_image,
     }));
+};
+
+export interface HeroAbility {
+  name: string;
+  /** The ability's class name without the `citadel_ability_` prefix. */
+  className: string;
+  image: string | null;
+}
+
+export interface HeroAbilitySet {
+  /** Folder holding the hero's base model, e.g. `models/heroes_wip/abrams/`. */
+  modelDirectory: string;
+  /** The four signature abilities, in key order. */
+  abilities: HeroAbility[];
+}
+
+const fetchList = async <T>(
+  path: string,
+  schema: z.ZodType<T>,
+): Promise<T[]> => {
+  const res = await fetch(`${assetsBaseUrl()}${path}`);
+  if (!res.ok) {
+    throw new DeadlockApiError(res.status, path);
+  }
+  return parseList(schema, await res.json(), path);
+};
+
+/**
+ * Each hero's signature abilities with their icons, keyed by the folder of the
+ * hero's model so a decoded skin can find its hero. The raw ability list is
+ * ~4 MB, so only the four slots of every hero are kept.
+ */
+export const getHeroAbilities = async (): Promise<HeroAbilitySet[]> => {
+  const [heroes, abilities] = await Promise.all([
+    fetchList("/v1/assets/heroes?only_active=true", heroLoadoutSchema),
+    fetchList("/v1/assets/items/by-type/ability", abilityAssetSchema),
+  ]);
+  const byClass = new Map(
+    abilities.map((ability) => [ability.class_name, ability]),
+  );
+  return heroes.flatMap((hero) => {
+    const model = hero.models.hero_select?.match(
+      /\/(models\/.+\/)[^/]+\/hero_select\.glb$/,
+    )?.[1];
+    if (!model) return [];
+    const slots = [1, 2, 3, 4].flatMap((slot) => {
+      const ability = byClass.get(hero.items[`signature${slot}`] ?? "");
+      return ability
+        ? [
+            {
+              name: ability.name,
+              className: ability.class_name.replace(/^citadel_ability_/, ""),
+              image: ability.image_webp ?? ability.image ?? null,
+            },
+          ]
+        : [];
+    });
+    return slots.length === 4
+      ? [{ modelDirectory: model, abilities: slots }]
+      : [];
+  });
 };

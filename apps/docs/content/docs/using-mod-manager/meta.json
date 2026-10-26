@@ -8,6 +8,7 @@
     "interface",
     "features",
     "library",
+    "remote-install",
     "fixing-mods-after-updates",
     "finding-a-broken-mod",
     "profiles",

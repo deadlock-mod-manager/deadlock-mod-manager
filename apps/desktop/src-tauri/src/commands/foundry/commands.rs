@@ -14,13 +14,12 @@ use image::{ExtendedColorType, ImageEncoder};
 use crate::errors::Error;
 
 use super::analyze::{analyze_default_hero, analyze_vpk_path, decode_foundry_cards};
-use super::archive_cache::{clear_archive_cache, open_archive};
+use super::archive_cache::clear_archive_cache;
 use super::export::{ExportDestination, FoundryExportResult, export_workspace};
 use super::paint::{describe_paint_targets, paint_target};
 use super::sounds::find_mp3_payload;
-use super::staging::staged_base_game_vpk;
 use super::types::{
-  ExportDestinationKind, FoundryBuildResult, FoundryCardPreview, FoundryManifest, FoundryModel,
+  ExportDestinationKind, FoundryBuildResult, FoundryCardPreview, FoundryManifest,
   FoundryPaintResult, FoundryPaintTargetInfo, FoundryReplacementResult, FoundrySoundPreview,
   FoundryTexture, FoundryWorkspace, PaintTarget,
 };
@@ -315,46 +314,6 @@ pub async fn foundry_decode_cards(
   })
   .await
   .map_err(|e| Error::InvalidInput(format!("card decode task failed: {e}")))?
-}
-
-/// Decode a `.vmesh_c`, or assemble every mesh a `.vmdl_c` references, into one
-/// GLB for the 3D preview.
-///
-/// Two things make the preview match the game rather than the raw file: the
-/// workspace shadows the archive, so a repaint shows immediately, and the model
-/// is stood in the base game's idle rest pose, so the hero holds its weapon
-/// instead of floating in bind pose. Still geometry only — nothing animates.
-#[tauri::command]
-pub async fn foundry_decode_model(
-  file_path: String,
-  entry_path: String,
-  workspace_root: Option<String>,
-) -> Result<FoundryModel, Error> {
-  let vpk_path = PathBuf::from(&file_path);
-  tauri::async_runtime::spawn_blocking(move || {
-    let overlay = workspace_root.map(|root| PathBuf::from(root).join("files"));
-    // Both archives come from the cache: opening pak01 costs ~550 ms, and the
-    // rest pose alone would otherwise reopen it for the skeleton, the clip
-    // lookup and the clip itself.
-    let archive = open_archive(&vpk_path, overlay.as_deref())?;
-    let decoded = source2_model::decode_model_glb_from_archive(&archive, &entry_path)
-      .map_err(|e| Error::InvalidInput(format!("failed to decode model: {e}")))?;
-    let decoded = match staged_base_game_vpk()? {
-      Some(base_vpk) => {
-        let base = open_archive(&base_vpk, None)?;
-        source2_model::pose_model_at_rest(decoded, &base, &archive, &entry_path)
-      }
-      None => decoded,
-    };
-    let b64 = base64::engine::general_purpose::STANDARD.encode(&decoded.glb);
-    Ok(FoundryModel {
-      vertex_count: decoded.vertex_count,
-      index_count: decoded.index_count,
-      data_url: format!("data:model/gltf-binary;base64,{b64}"),
-    })
-  })
-  .await
-  .map_err(|e| Error::InvalidInput(format!("model decode task failed: {e}")))?
 }
 
 /// Extract a browser-playable preview from a compiled Source 2 sound. Clips that

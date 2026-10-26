@@ -1,0 +1,81 @@
+---
+title: Remote Install
+description: Queue mods on GameBanana from your phone or any browser and have them install on your PC
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+# Remote Install
+
+Remote Install lets you queue mods on GameBanana from any device, such as your phone. Deadlock Mod Manager downloads them on your PC and installs them into your active profile.
+
+The manager checks the queue every 5 minutes while it's running. If your PC is off or the manager is closed, queued mods wait on GameBanana and install after you open it.
+
+## Link your GameBanana account
+
+You do this once per PC.
+
+![Integrations settings before linking, with the three setup steps and GameBanana's guide](/assets/v2-remote-install-settings-not-linked.png)
+
+1. Open Deadlock Mod Manager on your PC and leave it running.
+2. On GameBanana, open any Deadlock mod and find the **Deadlock Mod Manager** 1-click button in its **Files** section. Click the arrow next to it and choose **Enroll & Pair**.
+
+   ![The arrow next to the Deadlock Mod Manager 1-click button, showing Remote Install and Enroll & Pair](/assets/v2-remote-install-gamebanana-menu.png)
+
+3. In **Remote Install Setup**, click **Enroll** to create your Remote Install key, then click **Pair**. Your browser asks to open Deadlock Mod Manager; allow it.
+
+   ![GameBanana's Remote Install Setup window with the Enroll and Pair buttons](/assets/v2-remote-install-gamebanana-pair.png)
+
+4. The manager shows the GameBanana account it's about to link. Check that it's yours, then choose **Link account**.
+
+   ![Link this GameBanana account dialog showing the account name, avatar, and member ID](/assets/v2-remote-install-confirm.png)
+
+<Callout type='warn'>
+  Only link an account if you just clicked **Pair** yourself. Anyone who owns
+  the linked account can queue mods that install on your PC. If the dialog shows
+  an account you don't recognize, choose **Cancel**.
+</Callout>
+
+## Queue a mod
+
+On any Deadlock mod page on GameBanana, click the arrow next to the **Deadlock Mod Manager** 1-click button and choose **Remote Install**. You can do this from your phone or any other browser where you're signed in to GameBanana.
+
+The manager installs it at its next check, in the background, into your [active profile](/using-mod-manager/profiles). It stays on whatever page you have open. Mods you already have installed are skipped.
+
+To see your queue on GameBanana, open **Remote Installs** in your GameBanana control center. Mods the manager has picked up show as **Retrieved**.
+
+## Watch installs from the status bar
+
+While you're linked, a banana icon appears in the status bar at the bottom of the window.
+
+![Status bar tooltip listing two mods installing from the Remote Install queue with their progress](/assets/v2-remote-install-status-bar.png)
+
+- The number next to the banana is how many queued mods are downloading or installing.
+- Hover the banana to see each mod's progress and when the queue was last checked.
+- Click the banana to check the queue right away instead of waiting for the next check.
+
+The banana turns red if the last check failed. **Settings → Integrations** shows the error.
+
+## Manage the link
+
+Open **Settings → Integrations**. The **GameBanana** section shows which account is linked and when the queue was last checked.
+
+![Remote Install settings showing the linked GameBanana account with Check now and Unlink buttons](/assets/v2-remote-install-settings.png)
+
+- **Check now** checks the queue immediately.
+- **Unlink** stops checking the queue on this PC. Mods you queue afterwards stay on GameBanana until you link again.
+- **View the full guide** opens GameBanana's illustrated guide to the whole process.
+
+To link a different account, choose **Unlink**, then pair again from that account on GameBanana.
+
+![GameBanana's Remote Install guide: open the arrow on a 1-click button, Enroll and Pair to link the manager, then Remote Install adds mods to the queue the manager checks](/assets/v2-remote-install-gamebanana-guide.webp)
+
+## Troubleshooting
+
+**Clicking Pair doesn't open the manager.** Your browser may have blocked the link, so allow it to open Deadlock Mod Manager. If nothing happens at all, close and reopen the manager; it registers itself to open these links each time it starts.
+
+**Queued mods don't install.** Make sure the manager is running and the banana in the status bar isn't red, then click it to check now. Check that the mod shows as **Pending** in **Remote Installs** on GameBanana.
+
+**Mods stopped arriving after I clicked Enroll again.** Enroll creates a new key, which ends the old link. Click **Pair** on GameBanana to link the new key.
+
+**A queued mod failed to install.** Once the manager picks up a mod, GameBanana marks it **Retrieved** and won't send it again. Install it from the mod's page in the manager, or queue it again with Remote Install.

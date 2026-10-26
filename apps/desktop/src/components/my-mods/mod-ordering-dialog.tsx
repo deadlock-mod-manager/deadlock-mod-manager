@@ -135,13 +135,15 @@ export const ModOrderingDialog = ({
 }: ModOrderingDialogProps) => {
   const { t } = useTranslation();
   const { analytics } = useAnalyticsContext();
-  const {
-    getOrderedMods,
-    reorderMods,
-    updateModVpksAfterReorder,
-    migrateLegacyMods,
-    getActiveProfile,
-  } = usePersistedStore();
+  const getOrderedMods = usePersistedStore((state) => state.getOrderedMods);
+  const reorderMods = usePersistedStore((state) => state.reorderMods);
+  const updateModVpksAfterReorder = usePersistedStore(
+    (state) => state.updateModVpksAfterReorder,
+  );
+  const migrateLegacyMods = usePersistedStore(
+    (state) => state.migrateLegacyMods,
+  );
+  const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
   const [orderedMods, setOrderedMods] = useState<LocalMod[]>([]);
   const [internalOpen, setInternalOpen] = useState(false);
   const [reorderStartTime, setReorderStartTime] = useState<number | null>(null);

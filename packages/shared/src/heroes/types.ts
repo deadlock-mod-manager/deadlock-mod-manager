@@ -8,3 +8,10 @@ export type HeroDefinition = {
 };
 
 export type HeroDefinitions = Record<DeadlockHeroes, HeroDefinition>;
+
+/** A submission's GameBanana category names, from the top level down. */
+export type SkinCategoryPath = {
+  root?: string;
+  parent?: string;
+  category?: string;
+};

@@ -7,17 +7,12 @@ import { memo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { HeroIcon } from "@/components/heroes/hero-icon";
 import { usePersistedStore } from "@/lib/store";
-import { cn, formatAddedDate, isAddedFilterActive } from "@/lib/utils";
+import { cn, formatFilterDate, isDateFilterActive } from "@/lib/utils";
+import { getModCategoryDisplayName, SortType } from "@/lib/constants";
 import {
-  getModCategoryDisplayName,
-  SortType,
-  TimePeriod,
-  timePeriodLabelKey,
-} from "@/lib/constants";
-import {
-  type AddedFilter,
   type AudioQuickFilter,
-  DEFAULT_ADDED_FILTER,
+  type DateFilter,
+  DEFAULT_DATE_FILTER,
   type FilterMode,
   type MapQuickFilter,
 } from "@/lib/store/slices/ui";
@@ -58,18 +53,17 @@ type SearchBarProps = {
   onMapQuickFilterChange?: (value: MapQuickFilter) => void;
   hideOutdated: boolean;
   onHideOutdatedChange: (hideOutdated: boolean) => void;
-  timePeriod?: TimePeriod;
-  onTimePeriodChange?: (timePeriod: TimePeriod) => void;
   filterMode: FilterMode;
   onFilterModeChange: (filterMode: FilterMode) => void;
   showSortControl?: boolean;
-  showTimePeriodControl?: boolean;
   showFavoritesFilter?: boolean;
   showFavoritesOnly?: boolean;
   onShowFavoritesOnlyChange?: (value: boolean) => void;
   hideMapFilter?: boolean;
-  addedFilter?: AddedFilter;
-  onAddedFilterChange?: (value: AddedFilter) => void;
+  updatedFilter?: DateFilter;
+  onUpdatedFilterChange?: (value: DateFilter) => void;
+  addedFilter?: DateFilter;
+  onAddedFilterChange?: (value: DateFilter) => void;
 };
 
 const SearchBar = ({
@@ -97,22 +91,23 @@ const SearchBar = ({
   onMapQuickFilterChange,
   hideOutdated,
   onHideOutdatedChange,
-  timePeriod,
-  onTimePeriodChange,
   filterMode,
   onFilterModeChange,
   showSortControl = true,
-  showTimePeriodControl = true,
   showFavoritesFilter = false,
   showFavoritesOnly = false,
   onShowFavoritesOnlyChange,
   hideMapFilter,
+  updatedFilter,
+  onUpdatedFilterChange,
   addedFilter,
   onAddedFilterChange,
 }: SearchBarProps) => {
   const { t } = useTranslation();
-  const addedActive = addedFilter ? isAddedFilterActive(addedFilter) : false;
-  const effectiveTimePeriod = timePeriod ?? TimePeriod.ALL_TIME;
+  const updatedActive = updatedFilter
+    ? isDateFilterActive(updatedFilter)
+    : false;
+  const addedActive = addedFilter ? isDateFilterActive(addedFilter) : false;
   const favoritesCount = usePersistedStore((state) => state.favorites.length);
 
   const getHeroDisplayName = (hero: string) => {
@@ -140,22 +135,22 @@ const SearchBar = ({
     onAudioQuickFilterChange?.("off");
     onMapQuickFilterChange?.("off");
     onHideOutdatedChange(false);
-    onTimePeriodChange?.(TimePeriod.ALL_TIME);
     onFilterModeChange("include");
     onShowFavoritesOnlyChange?.(false);
-    onAddedFilterChange?.(DEFAULT_ADDED_FILTER);
+    onUpdatedFilterChange?.(DEFAULT_DATE_FILTER);
+    onAddedFilterChange?.(DEFAULT_DATE_FILTER);
   };
 
-  const addedFilterLabel = (filter: AddedFilter) => {
+  const dateFilterLabel = (filter: DateFilter) => {
     if (filter.period !== "custom") {
-      return t(`filters.addedPeriod.${filter.period}`);
+      return t(`filters.datePeriod.${filter.period}`);
     }
-    const from = formatAddedDate(filter.from);
-    const to = formatAddedDate(filter.to);
-    if (from && to) return t("filters.addedBetween", { from, to });
+    const from = formatFilterDate(filter.from);
+    const to = formatFilterDate(filter.to);
+    if (from && to) return t("filters.dateBetween", { from, to });
     return from
-      ? t("filters.addedSince", { date: from })
-      : t("filters.addedUntil", { date: to });
+      ? t("filters.dateSince", { date: from })
+      : t("filters.dateUntil", { date: to });
   };
 
   const hasActiveFilters =
@@ -167,8 +162,8 @@ const SearchBar = ({
     (!hideMapFilter && (mapQuickFilter ?? "off") !== "off") ||
     hideOutdated ||
     showFavoritesOnly ||
-    addedActive ||
-    (showTimePeriodControl && effectiveTimePeriod !== TimePeriod.ALL_TIME);
+    updatedActive ||
+    addedActive;
 
   const showTrailing =
     showFavoritesFilter ||
@@ -221,10 +216,8 @@ const SearchBar = ({
           onHideOutdatedChange={onHideOutdatedChange}
           onMapQuickFilterChange={onMapQuickFilterChange}
           onNSFWOnlyChange={onNSFWOnlyChange}
-          onTimePeriodChange={
-            showTimePeriodControl ? onTimePeriodChange : undefined
-          }
-          timePeriod={effectiveTimePeriod}
+          onUpdatedFilterChange={onUpdatedFilterChange}
+          updatedFilter={updatedFilter}
         />
         {showTrailing && (
           <div className='ml-auto flex items-center gap-2'>
@@ -375,26 +368,24 @@ const SearchBar = ({
             </Badge>
           )}
 
-          {/* Time period badge */}
-          {showTimePeriodControl &&
-            effectiveTimePeriod !== TimePeriod.ALL_TIME && (
-              <Badge className='flex items-center gap-1' variant='secondary'>
-                {t(timePeriodLabelKey(effectiveTimePeriod))}
-                <button
-                  className='ml-1 rounded-full p-0.5 hover:bg-muted'
-                  onClick={() => onTimePeriodChange?.(TimePeriod.ALL_TIME)}
-                  type='button'>
-                  <X className='h-3 w-3' />
-                </button>
-              </Badge>
-            )}
+          {updatedFilter && updatedActive && (
+            <Badge className='flex items-center gap-1' variant='secondary'>
+              {t("filters.updatedLabel")} {dateFilterLabel(updatedFilter)}
+              <button
+                className='ml-1 rounded-full p-0.5 hover:bg-muted'
+                onClick={() => onUpdatedFilterChange?.(DEFAULT_DATE_FILTER)}
+                type='button'>
+                <X className='h-3 w-3' />
+              </button>
+            </Badge>
+          )}
 
           {addedFilter && addedActive && (
             <Badge className='flex items-center gap-1' variant='secondary'>
-              {t("filters.addedLabel")} {addedFilterLabel(addedFilter)}
+              {t("filters.addedLabel")} {dateFilterLabel(addedFilter)}
               <button
                 className='ml-1 rounded-full p-0.5 hover:bg-muted'
-                onClick={() => onAddedFilterChange?.(DEFAULT_ADDED_FILTER)}
+                onClick={() => onAddedFilterChange?.(DEFAULT_DATE_FILTER)}
                 type='button'>
                 <X className='h-3 w-3' />
               </button>

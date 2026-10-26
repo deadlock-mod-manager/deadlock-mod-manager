@@ -13,6 +13,38 @@ export const featureFlagDefinitions: FeatureFlagDefinition[] = [
     exposed: false,
   },
   {
+    name: "remlock-featured-until",
+    description:
+      "While remlock-release is on, pin the Remlock mod as mod of the week until this ISO date (e.g. 2026-11-02, UTC midnight); empty for none",
+    type: "string",
+    defaultValue: "",
+    exposed: false,
+  },
+  {
+    name: "remlock-featured-mod-id",
+    description:
+      "GameBanana submission id pinned as mod of the week during the Remlock release",
+    type: "string",
+    defaultValue: "687789",
+    exposed: false,
+  },
+  {
+    name: "mod-of-the-week-id",
+    description:
+      "GameBanana remote id pinned as mod of the week, set with the bot's /modoftheweek command; empty for none",
+    type: "string",
+    defaultValue: "",
+    exposed: false,
+  },
+  {
+    name: "mod-of-the-week-until",
+    description:
+      "ISO timestamp when the mod-of-the-week-id pin ends; empty for none",
+    type: "string",
+    defaultValue: "",
+    exposed: false,
+  },
+  {
     name: "seasonal-themes",
     description:
       "Master switch for seasonal themes (Halloween, Christmas, New Year, Lunar New Year, Easter)",

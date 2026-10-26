@@ -13,12 +13,14 @@ import {
   type AnalyticsHeroStats,
   getAnalyticsHeroStats,
   getBadgeDistribution,
+  getBracketMetrics,
   getEnemyStats,
   getHeroCounterStats,
   getItemStats,
   getMatchHistory,
   getMatchMetadata,
   getMateStats,
+  getPerformanceCurve,
   getPlayerHeroStats,
   getPlayerRank,
   getRankAssets,
@@ -29,6 +31,7 @@ import {
   type PlayerRank,
   type SteamProfile,
 } from "@/lib/stats/api";
+import { bracketRows, playerBracketValues } from "@/lib/stats/benchmark";
 import { cachedFetch, clearCachedPrefix, STATS_TTL } from "@/lib/stats/cache";
 import {
   benchmarkDeltas,
@@ -285,6 +288,48 @@ export const useRankInsights = (active = true) => {
 };
 
 /**
+ * The player's numbers placed among everyone in their rank tier. Unranked
+ * players are compared with the whole population instead, which the response
+ * reports as `tier: null`. One global request per tier and scope, shared by
+ * every account in that tier.
+ */
+export const useBracketBenchmark = (
+  stats: Pick<ReturnType<typeof usePlayerStats>, "matches" | "heroes" | "rank">,
+  scope: StatsScope,
+) => {
+  const tier = Math.floor((stats.rank?.badge ?? 0) / 10);
+  const bracket = tier > 0 ? tier : null;
+  const query = useStatsQuery(
+    {
+      key: `benchmark:bracket:${bracket ?? "all"}:${statsScopeQuery(scope)}`,
+      ttl: STATS_TTL.benchmark,
+    },
+    () =>
+      getBracketMetrics({
+        minBadge: bracket === null ? 0 : bracket * 10 + 1,
+        maxBadge: bracket === null ? 116 : bracket * 10 + 6,
+        scope,
+      }),
+  );
+
+  const rows = useMemo(
+    () =>
+      bracketRows(
+        query.data?.data ?? {},
+        playerBracketValues(stats.matches, stats.heroes),
+      ),
+    [query.data, stats.matches, stats.heroes],
+  );
+
+  return {
+    rows,
+    tier: bracket,
+    isPending: query.isPending,
+    isError: query.isError,
+  };
+};
+
+/**
  * The per-hero deep dive: who the player beats on that hero and what they build
  * on it. Two analytics requests, made only once a hero card is opened.
  */
@@ -347,7 +392,8 @@ export const useMatchDetails = (
   const enabled = active && matchId !== null && accountId !== null;
   const metadata = useStatsQuery(
     {
-      key: `match:${matchId}:metadata`,
+      // v2 keeps slots, deaths, MVP and lane; older entries were trimmed without them.
+      key: `match:${matchId}:metadata:v2`,
       ttl: STATS_TTL.matchMetadata,
       enabled,
     },
@@ -376,6 +422,104 @@ export const useMatchDetails = (
     isError: metadata.isError || catalog.isError,
     refetch: metadata.refetch,
   };
+};
+
+/** Personas and avatars for everyone in one match: a single batched request. */
+export const useMatchProfiles = (matchId: number, accountIds: number[]) => {
+  const ids = useMemo(
+    () => [...accountIds].sort((a, b) => a - b),
+    [accountIds],
+  );
+  const query = useStatsQuery(
+    {
+      key: `${PLAYER_CACHE_PREFIX}match-profiles:${matchId}`,
+      ttl: STATS_TTL.steamProfiles,
+      enabled: ids.length > 0,
+    },
+    () => getSteamProfiles(ids),
+  );
+  return useMemo(() => {
+    const map = new Map<number, SteamProfile>();
+    for (const profile of query.data?.data ?? []) {
+      map.set(profile.account_id, profile);
+    }
+    return map;
+  }, [query.data]);
+};
+
+/**
+ * The player's usual game on a hero: average buy time per item and souls over
+ * time. Fetched only once the build view opens.
+ */
+export const useHeroBaseline = (
+  accountId: number | null,
+  heroId: number,
+  active: boolean,
+) => {
+  const items = usePlayerScopedQuery(
+    accountId,
+    { key: `hero-items:${heroId}`, ttl: STATS_TTL.heroStats, enabled: active },
+    (id) => getItemStats({ accountId: id, heroId }),
+  );
+  const curve = usePlayerScopedQuery(
+    accountId,
+    { key: `hero-curve:${heroId}`, ttl: STATS_TTL.heroStats, enabled: active },
+    (id) => getPerformanceCurve(id, heroId),
+  );
+  const buyTimes = useMemo(() => {
+    const map = new Map<number, number>();
+    for (const item of items.data?.data ?? []) {
+      map.set(item.item_id, item.avg_buy_time_s);
+    }
+    return map;
+  }, [items.data]);
+
+  return {
+    buyTimes,
+    curve: curve.data?.data ?? [],
+    isPending:
+      active && accountId !== null && (items.isPending || curve.isPending),
+  };
+};
+
+/** Shared matches as teammates, premades, and record against each enemy. */
+const usePlayerEncounters = (accountId: number | null, active: boolean) => {
+  const mates = usePlayerScopedQuery(
+    accountId,
+    { key: "mates", ttl: STATS_TTL.mates, enabled: active },
+    (id) => getMateStats(id),
+  );
+  const party = usePlayerScopedQuery(
+    accountId,
+    { key: "party", ttl: STATS_TTL.mates, enabled: active },
+    (id) => getMateStats(id, true),
+  );
+  const enemies = usePlayerScopedQuery(
+    accountId,
+    { key: "enemies", ttl: STATS_TTL.mates, enabled: active },
+    (id) => getEnemyStats(id),
+  );
+  return { mates, party, enemies };
+};
+
+/**
+ * Who the player has met before, keyed for lookup. Shares its queries with the
+ * Squad tab, so either one warms the other.
+ */
+export const usePlayerHistory = (accountId: number | null, active: boolean) => {
+  const { mates, party, enemies } = usePlayerEncounters(accountId, active);
+  return useMemo(
+    () => ({
+      mates: new Map(
+        (mates.data?.data ?? []).map((mate) => [mate.mate_id, mate]),
+      ),
+      party: new Set((party.data?.data ?? []).map((mate) => mate.mate_id)),
+      enemies: new Map(
+        (enemies.data?.data ?? []).map((enemy) => [enemy.enemy_id, enemy]),
+      ),
+    }),
+    [mates.data, party.data, enemies.data],
+  );
 };
 
 /**
@@ -565,24 +709,7 @@ export const useSquadStats = (
   active = true,
 ) => {
   const enabled = accountId !== null && active;
-
-  const mates = usePlayerScopedQuery(
-    accountId,
-    { key: "mates", ttl: STATS_TTL.mates, enabled: active },
-    (id) => getMateStats(id),
-  );
-
-  const party = usePlayerScopedQuery(
-    accountId,
-    { key: "party", ttl: STATS_TTL.mates, enabled: active },
-    (id) => getMateStats(id, true),
-  );
-
-  const enemies = usePlayerScopedQuery(
-    accountId,
-    { key: "enemies", ttl: STATS_TTL.mates, enabled: active },
-    (id) => getEnemyStats(id),
-  );
+  const { mates, party, enemies } = usePlayerEncounters(accountId, active);
 
   const mateInsights = useMemo(
     () => joinMateStats(mates.data?.data ?? [], matches),

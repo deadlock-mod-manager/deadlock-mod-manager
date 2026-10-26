@@ -218,6 +218,10 @@ const PanelWidget = ({ widget, onHealth, actions }: WidgetContentProps) => {
   })();
   useHealthReport(widget.id, state?.status === "broken", onHealth);
 
+  if (panel && state?.status === "loading" && !actions) {
+    return panel.skeleton();
+  }
+
   const body = (() => {
     if (state || !panel) {
       return (

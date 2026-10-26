@@ -72,15 +72,17 @@ const listenForUpdateProgress = async () => {
 export const useBatchUpdate = () => {
   const [updatableMods, setUpdatableMods] = useState<UpdatableMod[]>([]);
   const { t } = useTranslation();
-  const {
-    getActiveProfile,
-    setInstalledVpks,
-    setSelectedDownloads: setStoreSelectedDownloads,
-    updateModVpksAfterReorder,
-    localMods,
-    backupEnabled,
-    maxBackupCount,
-  } = usePersistedStore();
+  const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
+  const setInstalledVpks = usePersistedStore((state) => state.setInstalledVpks);
+  const setStoreSelectedDownloads = usePersistedStore(
+    (state) => state.setSelectedDownloads,
+  );
+  const updateModVpksAfterReorder = usePersistedStore(
+    (state) => state.updateModVpksAfterReorder,
+  );
+  const localMods = usePersistedStore((state) => state.localMods);
+  const backupEnabled = usePersistedStore((state) => state.backupEnabled);
+  const maxBackupCount = usePersistedStore((state) => state.maxBackupCount);
   const updateProgress = usePersistedStore(
     (state) => state.batchUpdateProgress,
   );

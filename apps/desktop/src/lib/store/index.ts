@@ -9,6 +9,11 @@ import {
   createBisectSlice,
 } from "./slices/bisect";
 import {
+  type CloudBackupsState,
+  cloudBackupsDeepMergeKeys,
+  createCloudBackupsSlice,
+} from "./slices/cloud-backups";
+import {
   type CrosshairState,
   createCrosshairSlice,
   crosshairDeepMergeKeys,
@@ -92,7 +97,8 @@ export type State = ModsState &
   StatsState &
   PerformanceState &
   LaunchHealthState &
-  BisectState;
+  BisectState &
+  CloudBackupsState;
 
 const allDeepMergeKeys = new Set<string>([
   ...modsDeepMergeKeys,
@@ -110,6 +116,7 @@ const allDeepMergeKeys = new Set<string>([
   ...performanceDeepMergeKeys,
   ...launchHealthDeepMergeKeys,
   ...bisectDeepMergeKeys,
+  ...cloudBackupsDeepMergeKeys,
 ]);
 
 export const usePersistedStore = create<State>()(
@@ -131,6 +138,7 @@ export const usePersistedStore = create<State>()(
       ...createPerformanceSlice(...a),
       ...createLaunchHealthSlice(...a),
       ...createBisectSlice(...a),
+      ...createCloudBackupsSlice(...a),
     }),
     {
       name: "local-config",

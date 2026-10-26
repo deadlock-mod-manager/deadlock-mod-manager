@@ -1,12 +1,8 @@
 import { DeadlockHeroes } from "../constants";
-import {
-  GENERIC_SKIN_CATEGORIES,
-  HERO_DEFINITIONS,
-  SKINS_SUPER_CATEGORY,
-} from "./constants";
+import { HERO_DEFINITIONS, SKINS_SUPER_CATEGORY } from "./constants";
 import { normalizeHeroKey } from "./normalize";
 import { buildKnownAliases, buildKnownRegexes } from "./patterns";
-import type { HeroDefinitions } from "./types";
+import type { HeroDefinitions, SkinCategoryPath } from "./types";
 
 export class HeroRegistry {
   private readonly knownAliases: Map<string, DeadlockHeroes>;
@@ -41,18 +37,24 @@ export class HeroRegistry {
   }
 
   resolveFromSkinCategory(
-    superCategoryName: string | undefined,
-    categoryName: string | undefined,
+    path: SkinCategoryPath,
     modName: string,
   ): DeadlockHeroes | null {
-    const fromCategory =
-      superCategoryName === SKINS_SUPER_CATEGORY &&
-      categoryName &&
-      !GENERIC_SKIN_CATEGORIES.has(categoryName)
-        ? this.normalize(categoryName)
-        : null;
+    return this.heroFromCategoryPath(path) ?? this.guess(modName);
+  }
 
-    return fromCategory ?? this.guess(modName);
+  // Skins nest as Skins > hero > style (e.g. Faithful/Vanilla+), so the hero is
+  // the category or its parent. Profiles omit the root; no other root has
+  // hero-named children, so a parent naming a hero is enough on its own.
+  private heroFromCategoryPath({
+    root,
+    parent,
+    category,
+  }: SkinCategoryPath): DeadlockHeroes | null {
+    if (root && root !== SKINS_SUPER_CATEGORY) return null;
+    const isSkin =
+      root === SKINS_SUPER_CATEGORY || parent === SKINS_SUPER_CATEGORY;
+    return (isSkin ? this.normalize(category) : null) ?? this.normalize(parent);
   }
 }
 

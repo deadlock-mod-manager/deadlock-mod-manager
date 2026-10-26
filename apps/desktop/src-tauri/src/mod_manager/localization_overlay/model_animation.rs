@@ -147,11 +147,10 @@ fn eligible(source: &Kv3Value, current: &Kv3Value) -> bool {
     // An explicit null binding is as absent as a missing one.
     source.get(field).is_none_or(|value| {
       matches!(value, Kv3Value::Null) || value.as_array().is_some_and(|values| values.is_empty())
-    })
-      && current
-        .get(field)
-        .and_then(Kv3Value::as_array)
-        .is_some_and(|values| !values.is_empty())
+    }) && current
+      .get(field)
+      .and_then(Kv3Value::as_array)
+      .is_some_and(|values| !values.is_empty())
   })
 }
 

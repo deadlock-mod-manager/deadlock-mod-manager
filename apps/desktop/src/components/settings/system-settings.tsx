@@ -1,5 +1,4 @@
 import { platform } from "@tauri-apps/plugin-os";
-import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { SettingToggleRow } from "@/components/settings/setting-row";
 import { usePersistedStore } from "@/lib/store";
@@ -41,23 +40,20 @@ const getSystemSettings = (
   },
 ];
 
-const SystemSettings = () => {
+const SystemSettings = ({ ids }: { ids: readonly string[] }) => {
   const { t } = useTranslation();
-  const { settings, toggleSetting } = usePersistedStore();
+  const settings = usePersistedStore((state) => state.settings);
+  const toggleSetting = usePersistedStore((state) => state.toggleSetting);
   const isLinux = platform() === "linux";
 
-  const settingStatusById = useMemo(() => {
-    return Object.fromEntries(
-      Object.entries(settings).map(([id, setting]) => [id, setting.enabled]),
-    );
-  }, [settings]);
-
-  const systemSettings = getSystemSettings(t, isLinux);
+  const systemSettings = getSystemSettings(t, isLinux).filter((def) =>
+    ids.includes(def.id),
+  );
 
   return (
     <>
       {systemSettings.map((def) => {
-        const enabled = settingStatusById[def.id] ?? def.defaultEnabled;
+        const enabled = settings[def.id]?.enabled ?? def.defaultEnabled;
         return (
           <SettingToggleRow
             checked={enabled}

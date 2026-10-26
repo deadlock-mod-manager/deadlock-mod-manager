@@ -31,6 +31,18 @@ export const reveal = async (
     timeoutMsg: "Target did not become visible in the viewport",
   });
 };
+// A closing Radix dialog or menu keeps body pointer-events disabled until its
+// exit animation ends, so a trigger clicked meanwhile never opens.
+export const waitForOverlaysClosed = () =>
+  browser.waitUntil(
+    () =>
+      browser.execute(
+        () =>
+          document.body.style.pointerEvents !== "none" &&
+          !document.querySelector('[role="dialog"], [role="menu"]'),
+      ),
+    { timeoutMsg: "A dialog or menu did not finish closing" },
+  );
 // Look the element up again on every poll. The embedded WebKitGTK driver keeps
 // evaluating a node React has replaced instead of reporting it stale, so a
 // cached element's waitForDisplayed() can stay false although the page shows it.
@@ -58,6 +70,7 @@ export const openOrdering = () =>
   });
 export const activateProfile = (name: string) =>
   step(`activate profile ${name}`, async () => {
+    await waitForOverlaysClosed();
     await $('button[aria-label="Active Profile"]').click();
     const toggle = `[role="switch"][aria-label="Activate ${name} profile"]`;
     await waitForClickable(toggle);

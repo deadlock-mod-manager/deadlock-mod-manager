@@ -1,6 +1,11 @@
-import { Card } from "@deadlock-mods/ui/components/card";
-import { Lightbulb, TrendingDown, TrendingUp } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
+import { ChartCard } from "@/components/stats/chart-card";
+import {
+  HERO_TILE_CLASS,
+  LOSS_COLOR,
+  tint,
+  WIN_COLOR,
+} from "@/components/stats/chart-fx";
 import { HeroAvatar } from "@/components/stats/hero-avatar";
 import type { DeadlockHero } from "@/lib/deadlock-api";
 import type { Insight } from "@/lib/stats/derive";
@@ -91,15 +96,130 @@ const useInsightText = () => {
   };
 };
 
+/** The number an insight is about and what it is measured against, if any. */
+const comparisonOf = (
+  insight: Insight,
+): { value: number; baseline: number } | null => {
+  switch (insight.kind) {
+    case "form":
+      return { value: insight.recent, baseline: insight.career };
+    case "session":
+    case "hours":
+    case "longGames":
+      return { value: insight.winrate, baseline: insight.baseline };
+    default:
+      return null;
+  }
+};
+
+const toneColor = (tone: Insight["tone"]) =>
+  tone === "good"
+    ? WIN_COLOR
+    : tone === "bad"
+      ? LOSS_COLOR
+      : "hsl(var(--muted-foreground))";
+
+const MAX_STREAK_BEADS = 10;
+
+/** The left column of an insight: its number drawn, not just written. */
+const InsightVisual = ({
+  insight,
+  hero,
+}: {
+  insight: Insight;
+  hero: DeadlockHero | undefined;
+}) => {
+  const { t } = useTranslation();
+  const color = toneColor(insight.tone);
+  const comparison = comparisonOf(insight);
+
+  if (comparison) {
+    return (
+      <div className='flex w-[92px] shrink-0 flex-col gap-1.5'>
+        <span
+          className='font-bold text-[22px] leading-none tabular-nums'
+          style={{ color }}>
+          {formatPercent(comparison.value, 0)}
+        </span>
+        <span className='font-mono text-[10.5px] text-muted-foreground'>
+          {t("stats.insights.versus", {
+            value: formatPercent(comparison.baseline, 0),
+          })}
+        </span>
+        <div aria-hidden className='relative mt-1 h-3'>
+          <div className='absolute inset-x-0 top-1/2 h-0.5 -translate-y-1/2 rounded-full bg-foreground/[0.08]' />
+          <div
+            className='absolute top-0 h-3 w-0.5 -translate-x-1/2 rounded-full bg-primary/60'
+            style={{ left: `${comparison.baseline * 100}%` }}
+          />
+          <div
+            className='absolute top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-card'
+            style={{
+              left: `${comparison.value * 100}%`,
+              backgroundColor: color,
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (insight.kind === "streak") {
+    return (
+      <div className='flex w-[92px] shrink-0 flex-col gap-2'>
+        <span
+          className='font-bold text-[22px] leading-none tabular-nums'
+          style={{ color }}>
+          {insight.won
+            ? t("stats.insights.streakWins", { count: insight.length })
+            : t("stats.insights.streakLosses", { count: insight.length })}
+        </span>
+        <div aria-hidden className='flex h-3 items-end gap-[3px]'>
+          {Array.from(
+            { length: Math.min(insight.length, MAX_STREAK_BEADS) },
+            (_, bead) => (
+              <span
+                className={cn("w-2 rounded-[2px]", insight.won ? "h-3" : "h-2")}
+                key={bead}
+                style={{ backgroundColor: tint(color, 80) }}
+              />
+            ),
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  const heroId = heroIdOf(insight);
+  if (heroId !== null && "winrate" in insight) {
+    return (
+      <div className='flex w-[92px] shrink-0 items-center gap-2.5'>
+        <HeroAvatar
+          className={cn("h-10 w-10", HERO_TILE_CLASS)}
+          hero={hero}
+          heroId={heroId}
+        />
+        <span
+          className='font-semibold text-sm tabular-nums'
+          style={{ color: insight.winrate >= 0.5 ? WIN_COLOR : LOSS_COLOR }}>
+          {formatPercent(insight.winrate, 0)}
+        </span>
+      </div>
+    );
+  }
+  return null;
+};
+
 /**
- * The dashboard's one opinionated section: a few sentences about what the numbers
- * actually mean. Tone is carried by an icon plus the wording, never colour alone.
+ * The dashboard's one opinionated section: a few patterns worth acting on, each
+ * led by its number drawn against your usual, then a sentence on what it means.
+ * Tone is carried by wording and position as well as colour.
  */
 export const InsightList = ({ insights, heroesById }: InsightListProps) => {
   const { t } = useTranslation();
   const describe = useInsightText();
   const capped = insights.slice(0, MAX_INSIGHTS);
-  // Safety net for the two-column grid: drop a lone trailing card rather than
+  // Safety net for the two-column grid: drop a lone trailing entry rather than
   // leave a gap next to it. The fallback insights make this rare.
   const visible =
     capped.length > 1 && capped.length % 2 === 1 ? capped.slice(0, -1) : capped;
@@ -109,52 +229,36 @@ export const InsightList = ({ insights, heroesById }: InsightListProps) => {
   }
 
   return (
-    <div className='grid gap-3 sm:grid-cols-2'>
-      {visible.map((insight) => {
-        const heroId = heroIdOf(insight);
-        const Icon =
-          insight.tone === "good"
-            ? TrendingUp
-            : insight.tone === "bad"
-              ? TrendingDown
-              : Lightbulb;
-
-        return (
-          <Card
-            className='flex items-start gap-3 p-3 shadow-none'
-            key={insightKey(insight)}>
-            {heroId === null ? (
-              <span
-                className={cn(
-                  "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md",
-                  insight.tone === "good"
-                    ? "bg-emerald-500/10 text-emerald-500"
-                    : insight.tone === "bad"
-                      ? "bg-destructive/10 text-destructive"
-                      : "bg-muted text-muted-foreground",
-                )}>
-                <Icon className='h-4 w-4' />
-              </span>
-            ) : (
-              <HeroAvatar
-                hero={heroesById.get(heroId)}
-                heroId={heroId}
-                className='mt-0.5 shrink-0'
-              />
-            )}
-            <div className='min-w-0'>
-              <div className='font-medium text-sm'>
-                {t(`stats.insights.titles.${insight.kind}`, {
-                  hero: heroId !== null ? heroesById.get(heroId)?.name : "",
-                })}
+    <ChartCard
+      description={t("stats.insights.panelDescription")}
+      title={t("stats.insights.panelTitle")}>
+      <div className='grid gap-x-10 sm:grid-cols-2'>
+        {visible.map((insight, index) => {
+          const heroId = heroIdOf(insight);
+          const hero = heroId === null ? undefined : heroesById.get(heroId);
+          return (
+            <div
+              className={cn(
+                "flex items-start gap-4 py-4",
+                index > 0 && "border-border/60 border-t",
+                index === 1 && "sm:border-t-0",
+              )}
+              key={insightKey(insight)}>
+              <InsightVisual hero={hero} insight={insight} />
+              <div className='min-w-0'>
+                <div className='font-semibold text-[13.5px]'>
+                  {t(`stats.insights.titles.${insight.kind}`, {
+                    hero: hero?.name ?? "",
+                  })}
+                </div>
+                <p className='mt-1 text-muted-foreground text-xs leading-relaxed'>
+                  {describe(insight)}
+                </p>
               </div>
-              <p className='text-muted-foreground text-xs leading-relaxed'>
-                {describe(insight)}
-              </p>
             </div>
-          </Card>
-        );
-      })}
-    </div>
+          );
+        })}
+      </div>
+    </ChartCard>
   );
 };

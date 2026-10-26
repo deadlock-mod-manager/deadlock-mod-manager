@@ -116,10 +116,20 @@ fn append_png_texture(
     texture_index
 }
 
+fn mask_bits(mask: u64, count: usize) -> Vec<u32> {
+    (0..count.min(64) as u32)
+        .filter(|bit| mask & (1 << bit) != 0)
+        .collect()
+}
+
+/// `mesh_groups` tags each primitive with the groups it belongs to and lists
+/// the groups on the scene, so a viewer can switch body groups. Masks become
+/// bit lists because JSON numbers cannot hold 64 bits.
 pub(crate) fn build_glb(
     primitives: &[GlbPrimitive<'_>],
     textures: &[PreviewTexture],
     skeleton: Option<&Skeleton>,
+    mesh_groups: Option<&MeshGroups>,
 ) -> Result<Vec<u8>> {
     if primitives.is_empty() {
         return Err(Source2Error::Resource("no drawable primitives".into()));
@@ -383,12 +393,20 @@ pub(crate) fn build_glb(
         } else {
             0
         };
-        gltf_primitives.push(json!({
+        let mut gltf_primitive = json!({
             "attributes": attributes,
             "indices": index_accessor,
             "material": material,
             "mode": 4
-        }));
+        });
+        if let Some(groups) = mesh_groups
+            && primitive.mesh_group_mask != u64::MAX
+        {
+            gltf_primitive["extras"] = json!({
+                "meshGroups": mask_bits(primitive.mesh_group_mask, groups.choices.len())
+            });
+        }
+        gltf_primitives.push(gltf_primitive);
     }
 
     let mut images = Vec::with_capacity(textures.len() * 4);
@@ -444,8 +462,9 @@ pub(crate) fn build_glb(
             "metallicFactor": 0.0,
             "roughnessFactor": 0.82
         },
-        "doubleSided": true
+        "doubleSided": false
     })];
+    let mut uses_emissive_strength = false;
     for (texture, (base, normal, orm, emissive)) in textures.iter().zip(&texture_indices) {
         let alpha_mode = match texture.alpha_mode {
             MaterialAlphaMode::Opaque => "OPAQUE",
@@ -462,7 +481,7 @@ pub(crate) fn build_glb(
                 "metallicFactor": 0.0,
                 "roughnessFactor": 0.8
             },
-            "doubleSided": true
+            "doubleSided": texture.double_sided
         });
         if let Some(normal) = normal {
             material["normalTexture"] = json!({ "index": normal });
@@ -483,6 +502,18 @@ pub(crate) fn build_glb(
             if let Some(emissive) = emissive {
                 material["emissiveTexture"] = json!({ "index": emissive });
             }
+            if texture.emissive_strength > 1.0 {
+                material["extensions"] = json!({
+                    "KHR_materials_emissive_strength": {
+                        "emissiveStrength": texture.emissive_strength
+                    }
+                });
+                uses_emissive_strength = true;
+            }
+        }
+        if let Some(outline) = texture.outline {
+            // three.js copies material extras into `material.userData`.
+            material["extras"] = json!({ "outline": { "tint": outline.tint } });
         }
         materials.push(material);
     }
@@ -567,6 +598,25 @@ pub(crate) fn build_glb(
         "bufferViews": buffer_views,
         "accessors": accessors
     });
+    if uses_emissive_strength {
+        gltf["extensionsUsed"] = json!(["KHR_materials_emissive_strength"]);
+    }
+    if let Some(groups) = mesh_groups {
+        let all = groups.choices.len();
+        let shown = if groups.default_mask == 0 {
+            u64::MAX
+        } else {
+            groups.default_mask
+        };
+        gltf["scenes"][0]["extras"] = json!({
+            "meshGroups": groups.choices.iter().map(|choice| json!({
+                "bodyGroup": choice.body_group,
+                "name": choice.name,
+                "bit": choice.bit
+            })).collect::<Vec<_>>(),
+            "defaultMeshGroups": mask_bits(shown, all)
+        });
+    }
     if let Some(skin) = skin {
         gltf["skins"] = json!([skin]);
     }
@@ -603,6 +653,7 @@ pub(crate) fn model_from_decoded_primitives(
     decoded: &[DecodedPrimitive],
     preview_textures: &[PreviewTexture],
     skeleton: Option<&Skeleton>,
+    mesh_groups: Option<&MeshGroups>,
 ) -> Result<ModelGlb> {
     let glb_primitives = decoded
         .iter()
@@ -616,6 +667,7 @@ pub(crate) fn model_from_decoded_primitives(
             indices: &primitive.indices,
             index_component: primitive.index_component,
             material: primitive.material,
+            mesh_group_mask: primitive.mesh_group_mask,
         })
         .collect::<Vec<_>>();
     let vertex_count = decoded
@@ -626,7 +678,7 @@ pub(crate) fn model_from_decoded_primitives(
         .iter()
         .map(|primitive| primitive.index_count)
         .sum::<usize>();
-    let glb = build_glb(&glb_primitives, preview_textures, skeleton)?;
+    let glb = build_glb(&glb_primitives, preview_textures, skeleton, mesh_groups)?;
     Ok(ModelGlb {
         vertex_count: vertex_count as u32,
         index_count: index_count as u32,
@@ -659,7 +711,7 @@ pub(crate) fn decode_mesh_glb_from_resource_with_skeleton(
         let mut decoded = decode_drawcall_primitives(&vbib, &mesh_data, preview_textures)?;
         apply_bone_remap_to_primitives(&mut decoded, bone_remap);
         if !decoded.is_empty() {
-            return model_from_decoded_primitives(&decoded, preview_textures, skeleton);
+            return model_from_decoded_primitives(&decoded, preview_textures, skeleton, None);
         }
     }
 
@@ -729,8 +781,9 @@ pub(crate) fn decode_mesh_glb_from_resource_with_skeleton(
         indices: &decoded.indices,
         index_component: decoded.index_component,
         material: decoded.material,
+        mesh_group_mask: u64::MAX,
     };
-    let glb = build_glb(&[primitive], preview_textures, skeleton)?;
+    let glb = build_glb(&[primitive], preview_textures, skeleton, None)?;
     Ok(ModelGlb {
         vertex_count: vertex_buffer.element_count as u32,
         index_count: index_count as u32,

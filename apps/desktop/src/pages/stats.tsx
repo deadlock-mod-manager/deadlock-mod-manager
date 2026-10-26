@@ -8,7 +8,6 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@deadlock-mods/ui/components/empty";
-import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
 import {
   LayoutGrid,
   Pencil,
@@ -19,6 +18,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { HintAnchor } from "@/components/feature-hints/hint-anchor";
 import PageTitle from "@/components/shared/page-title";
+import {
+  AccountSwitcher,
+  accountDisplayName,
+  PlayerAvatar,
+} from "@/components/stats/account-switcher";
 import { AccountPrompt } from "@/components/stats/account-prompt";
 import { DashboardDataProvider } from "@/components/stats/dashboard/dashboard-context";
 import { DashboardGrid } from "@/components/stats/dashboard/dashboard-grid";
@@ -34,10 +38,8 @@ import {
   widgetNeedsHistory,
 } from "@/components/stats/dashboard/widget-requirements";
 import { StatsFilters } from "@/components/stats/stats-filters";
-import { StatsHeader } from "@/components/stats/stats-header";
 import { StatsHints } from "@/components/stats/stats-hints";
 import { StatsStatus } from "@/components/stats/stats-status";
-import { StatTileSkeleton } from "@/components/stats/stat-tile";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import {
   useHeroCatalog,
@@ -55,22 +57,9 @@ import {
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
-const StatsSkeleton = () => (
-  <div className='flex flex-col gap-4'>
-    <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5'>
-      {Array.from({ length: 5 }, (_, index) => (
-        <StatTileSkeleton key={index} />
-      ))}
-    </div>
-    <Skeleton className='h-[320px] w-full rounded-xl' />
-    <div className='grid gap-4 lg:grid-cols-2'>
-      <Skeleton className='h-[280px] w-full rounded-xl' />
-      <Skeleton className='h-[280px] w-full rounded-xl' />
-    </div>
-  </div>
-);
-
 const CUSTOMIZE_HINT_MIN_VISITS = 5;
+
+type BodyState = "grid" | "accountPrompt" | "error" | "noMatches" | "emptyTab";
 
 const Stats = () => {
   const { t } = useTranslation();
@@ -124,118 +113,135 @@ const Stats = () => {
     hasWidgets && activeTab.widgets.every(widgetNeedsHistory);
 
   const tabBar = (
-    <div className='flex min-w-0 items-center gap-2'>
-      <DashboardTabs
-        activeTabId={activeTab.id}
-        brokenTabIds={dashboard.brokenTabIds}
-        editing={editing}
-        onSelect={dashboard.selectTab}
-        tabs={dashboard.layout.tabs}
-        {...dashboard.tabActions}
-      />
-      {!editing && (
-        <HintAnchor
-          align='end'
-          eligible={statsVisits >= CUSTOMIZE_HINT_MIN_VISITS}
-          hintId='stats-customize'
-          onShowMe={startEditing}>
-          <Button
-            className='h-9 shrink-0 gap-1.5'
-            data-testid='stats-customize'
-            onClick={startEditing}
-            size='sm'
-            title={t("stats.dashboard.customizeHint")}
-            variant='outline'>
-            <Pencil className='h-3.5 w-3.5' />
-            {t("stats.dashboard.customize")}
-          </Button>
-        </HintAnchor>
-      )}
-    </div>
+    <DashboardTabs
+      activeTabId={activeTab.id}
+      brokenTabIds={dashboard.brokenTabIds}
+      counts={{
+        heroes: hasAccount
+          ? stats.isPending
+            ? null
+            : stats.heroes.length
+          : undefined,
+      }}
+      editing={editing}
+      onSelect={dashboard.selectTab}
+      tabs={dashboard.layout.tabs}
+      {...dashboard.tabActions}
+    />
   );
 
+  const customize = (
+    <HintAnchor
+      align='end'
+      eligible={statsVisits >= CUSTOMIZE_HINT_MIN_VISITS}
+      hintId='stats-customize'
+      onShowMe={startEditing}>
+      <Button
+        className='h-9 shrink-0 gap-2 rounded-lg font-semibold'
+        data-testid='stats-customize'
+        onClick={startEditing}
+        size='sm'
+        title={t("stats.dashboard.customizeHint")}
+        variant='outline'>
+        <Pencil className='h-3.5 w-3.5 text-muted-foreground' />
+        {t("stats.dashboard.customize")}
+      </Button>
+    </HintAnchor>
+  );
+
+  const bodyState: BodyState = (() => {
+    if (editing) return "grid";
+    if (needsAccount && !accountsPending && !hasAccount) return "accountPrompt";
+    // While loading, the grid draws each widget's own skeleton in its cell.
+    if (accountsPending || (hasAccount && stats.isPending)) return "grid";
+    if (needsHistory && stats.isError) return "error";
+    if (needsHistory && stats.allMatches.length === 0) return "noMatches";
+    if (!hasWidgets) return "emptyTab";
+    return "grid";
+  })();
+
   const renderBody = () => {
-    const grid = (
-      <DashboardGrid
-        actions={dashboard.gridActions}
-        editing={editing}
-        onAddWidget={dashboard.addWidget}
-        onHealth={dashboard.reportHealth}
-        tab={activeTab}
-        tabs={dashboard.layout.tabs}
-      />
-    );
-    if (editing) {
-      return grid;
+    switch (bodyState) {
+      case "grid":
+        return (
+          <DashboardGrid
+            actions={dashboard.gridActions}
+            editing={editing}
+            onAddWidget={dashboard.addWidget}
+            onHealth={dashboard.reportHealth}
+            tab={activeTab}
+            tabs={dashboard.layout.tabs}
+          />
+        );
+      case "accountPrompt":
+        return <AccountPrompt onSubmit={setAccountId} />;
+      case "error":
+        return (
+          <Empty className='py-16'>
+            <EmptyHeader>
+              <EmptyMedia variant='default'>
+                <TriangleAlert className='h-16 w-16' />
+              </EmptyMedia>
+              <EmptyTitle>{t("stats.errorTitle")}</EmptyTitle>
+              <EmptyDescription>{t("stats.errorDescription")}</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        );
+      case "noMatches":
+        return (
+          <Empty className='py-16'>
+            <EmptyHeader>
+              <EmptyMedia variant='default'>
+                <Users className='h-16 w-16' />
+              </EmptyMedia>
+              <EmptyTitle>{t("stats.noMatchesTitle")}</EmptyTitle>
+              <EmptyDescription>
+                {t("stats.noMatchesDescription")}
+              </EmptyDescription>
+            </EmptyHeader>
+          </Empty>
+        );
+      case "emptyTab":
+        return (
+          <Empty className='py-16'>
+            <EmptyHeader>
+              <EmptyMedia variant='default'>
+                <LayoutGrid className='h-16 w-16' />
+              </EmptyMedia>
+              <EmptyTitle>{t("stats.dashboard.emptyTabTitle")}</EmptyTitle>
+              <EmptyDescription>
+                {t("stats.dashboard.emptyTabDescription")}
+              </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+              <Button className='gap-1.5' onClick={startEditing}>
+                <Pencil className='h-4 w-4' />
+                {t("stats.dashboard.customize")}
+              </Button>
+            </EmptyContent>
+          </Empty>
+        );
     }
-    if (needsAccount && accountsPending) {
-      return <StatsSkeleton />;
-    }
-    if (needsAccount && !hasAccount) {
-      return <AccountPrompt onSubmit={setAccountId} />;
-    }
-    if (needsHistory && stats.isPending) {
-      return <StatsSkeleton />;
-    }
-    if (needsHistory && stats.isError) {
-      return (
-        <Empty className='py-16'>
-          <EmptyHeader>
-            <EmptyMedia variant='default'>
-              <TriangleAlert className='h-16 w-16' />
-            </EmptyMedia>
-            <EmptyTitle>{t("stats.errorTitle")}</EmptyTitle>
-            <EmptyDescription>{t("stats.errorDescription")}</EmptyDescription>
-          </EmptyHeader>
-        </Empty>
-      );
-    }
-    if (needsHistory && stats.allMatches.length === 0) {
-      return (
-        <Empty className='py-16'>
-          <EmptyHeader>
-            <EmptyMedia variant='default'>
-              <Users className='h-16 w-16' />
-            </EmptyMedia>
-            <EmptyTitle>{t("stats.noMatchesTitle")}</EmptyTitle>
-            <EmptyDescription>
-              {t("stats.noMatchesDescription")}
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
-      );
-    }
-    if (!hasWidgets) {
-      return (
-        <Empty className='py-16'>
-          <EmptyHeader>
-            <EmptyMedia variant='default'>
-              <LayoutGrid className='h-16 w-16' />
-            </EmptyMedia>
-            <EmptyTitle>{t("stats.dashboard.emptyTabTitle")}</EmptyTitle>
-            <EmptyDescription>
-              {t("stats.dashboard.emptyTabDescription")}
-            </EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent>
-            <Button className='gap-1.5' onClick={startEditing}>
-              <Pencil className='h-4 w-4' />
-              {t("stats.dashboard.customize")}
-            </Button>
-          </EmptyContent>
-        </Empty>
-      );
-    }
-    return grid;
   };
 
-  const showAccountPrompt =
-    !editing && needsAccount && !accountsPending && !hasAccount;
+  const displayName = accountDisplayName(stats.profile, account);
+  // The profile panel carries its own switcher, but only while the grid is on
+  // screen; an empty or error state in its place would leave no way to switch.
+  const showsProfile =
+    bodyState === "grid" &&
+    activeTab.widgets.some(
+      (widget) =>
+        widget.source.kind === "panel" && widget.source.panel === "profile",
+    );
 
   return (
     <DashboardDataProvider
       value={{
         accountId,
+        isAccountPending: accountsPending,
+        account,
+        accounts,
+        onSelectAccount: setAccountId,
         scope,
         stats,
         heroesById,
@@ -261,33 +267,47 @@ const Stats = () => {
           />
         </div>
 
-        {/* Account and tabs share one pinned row - the tabs are the page's
-            primary navigation and shouldn't cost a band of their own. Without a
-            detected account the global widgets still work, so the switcher
-            stands on its own. */}
+        {/* Tabs and filters share one pinned row. The account lives in the
+            Overview's profile panel; tabs without one get a compact chip so
+            switching accounts is always one click away. */}
         <div className='flex shrink-0 flex-col gap-3 px-4 pr-2 pt-4 pb-4'>
-          {hasAccount ? (
-            <StatsHeader
-              account={account}
-              accountId={accountId}
-              accounts={accounts}
-              onSelectAccount={setAccountId}
-              profile={stats.profile}
-              rank={stats.rank}
-              rankAssets={rankAssets.data?.data ?? []}
-              tabs={tabBar}
-            />
-          ) : (
-            tabBar
-          )}
-          {!editing && (
-            <StatsFilters
-              mode={mode}
-              onModeChange={setMode}
-              onSinceDateChange={setSinceDate}
-              sinceDate={sinceDate}
-            />
-          )}
+          <div className='flex flex-wrap items-center justify-between gap-x-4 gap-y-3'>
+            {tabBar}
+            {!editing && (
+              <div className='flex flex-wrap items-center gap-2'>
+                {/* Tabs with the profile panel keep the chip's space, so
+                    switching tabs never moves the filters. */}
+                {hasAccount && (
+                  <div
+                    aria-hidden={showsProfile || undefined}
+                    className={cn(
+                      "flex h-9 min-w-0 items-center gap-2 rounded-lg border border-border/60 pr-1 pl-1.5",
+                      showsProfile && "invisible",
+                    )}>
+                    <PlayerAvatar
+                      className='h-6 w-6'
+                      name={displayName}
+                      profile={stats.profile}
+                    />
+                    <span className='max-w-40 truncate font-medium text-sm'>
+                      {displayName || t("stats.unknownPlayer")}
+                    </span>
+                    <AccountSwitcher
+                      accounts={accounts}
+                      onSelectAccount={setAccountId}
+                    />
+                  </div>
+                )}
+                <StatsFilters
+                  mode={mode}
+                  onModeChange={setMode}
+                  onSinceDateChange={setSinceDate}
+                  sinceDate={sinceDate}
+                />
+                {customize}
+              </div>
+            )}
+          </div>
           {editing && (
             <EditToolbar
               isDirty={dashboard.isDirty}
@@ -317,7 +337,7 @@ const Stats = () => {
           className={cn(
             "min-h-0 flex-1 overflow-y-auto px-4 pr-2",
             // The account prompt is a centred card; every tab body is a full page.
-            showAccountPrompt && "flex items-center justify-center",
+            bodyState === "accountPrompt" && "flex items-center justify-center",
           )}>
           {renderBody()}
         </div>

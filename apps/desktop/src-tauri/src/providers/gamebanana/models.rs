@@ -249,6 +249,27 @@ pub struct GameRef {
 pub struct Category {
   #[serde(rename = "_sName", default)]
   pub name: String,
+  #[serde(rename = "_sProfileUrl", default)]
+  pub profile_url: String,
+}
+
+impl Category {
+  /// Index records name categories without `_idRow`; the id is in the profile URL.
+  pub fn id(&self) -> Option<u64> {
+    let (_, id) = self.profile_url.rsplit_once("/cats/")?;
+    id.parse().ok()
+  }
+}
+
+/// One entry of `{Model}/Categories`, which lists a single level of the tree.
+#[derive(Debug, Clone, Deserialize)]
+pub struct CategoryListing {
+  #[serde(rename = "_idRow")]
+  pub id: u64,
+  #[serde(rename = "_sName", default)]
+  pub name: String,
+  #[serde(rename = "_nCategoryCount", default)]
+  pub category_count: u32,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -395,6 +416,16 @@ fn parse_file_entries(entries: Vec<serde_json::Value>) -> Vec<SubmissionFile> {
     );
   }
   files
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct MemberProfile {
+  #[serde(rename = "_sName")]
+  pub name: String,
+  #[serde(rename = "_sAvatarUrl", default)]
+  pub avatar_url: Option<String>,
+  #[serde(rename = "_sProfileUrl")]
+  pub profile_url: String,
 }
 
 #[derive(Debug, Clone, Deserialize)]

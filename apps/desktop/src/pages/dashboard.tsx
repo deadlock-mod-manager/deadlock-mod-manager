@@ -13,16 +13,20 @@ import { TrendingCategoryRail } from "@/components/dashboard/trending-category-r
 import { WhatsNewCard } from "@/components/dashboard/whats-new-card";
 import { useThemeOverride } from "@/components/providers/theme-overrides";
 import PageTitle from "@/components/shared/page-title";
+import { useFeatureFlags } from "@/hooks/use-feature-flags";
 import { useFeaturedMods } from "@/hooks/use-featured-mod";
 import { useTrendingByCategory } from "@/hooks/use-trending-by-category";
+import { getMod } from "@/lib/api-client";
 import { MOD_CATEGORY_ORDER } from "@/lib/constants";
 import {
   dashboardCatalogQueryKey,
   getDashboardCatalogMods,
 } from "@/lib/mods/dashboard-catalog";
+import { modDetailQueryKey } from "@/lib/mods/mod-query-cache";
 import { filterHiddenNSFWItems } from "@/lib/mods/nsfw-visibility";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
+import { getPinnedFeaturedModId } from "@/lib/mod-of-the-week";
 
 const Dashboard = () => {
   const { t } = useTranslation();
@@ -40,7 +44,17 @@ const Dashboard = () => {
     () => filterHiddenNSFWItems(mods, hideNSFW),
     [hideNSFW, mods],
   );
-  const featured = useFeaturedMods(visibleMods);
+  const { data: flags } = useFeatureFlags();
+  const pinnedModId = getPinnedFeaturedModId(flags);
+  const pinnedMod = useQuery({
+    queryKey: modDetailQueryKey(pinnedModId ?? ""),
+    queryFn: () => getMod(pinnedModId ?? ""),
+    enabled: !!pinnedModId,
+    staleTime: STALE_TIME_API,
+  });
+  const featured = useFeaturedMods(visibleMods, {
+    pinned: pinnedModId ? pinnedMod.data : undefined,
+  });
   const trending = useTrendingByCategory(visibleMods);
 
   const visibleCategories = useMemo(
@@ -71,7 +85,10 @@ const Dashboard = () => {
         />
       </div>
       <div className='flex-1 space-y-8 overflow-y-auto overflow-x-hidden px-6 pb-8 pr-2'>
-        <FeaturedModsCarousel isLoading={isPending} mods={featured} />
+        <FeaturedModsCarousel
+          isLoading={isPending || (!!pinnedModId && pinnedMod.isPending)}
+          mods={featured}
+        />
 
         <QuickStatsStrip />
 

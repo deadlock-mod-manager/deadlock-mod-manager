@@ -235,12 +235,11 @@ const HeroDisplay = ({ mod, resolvedHero, canOverride }: HeroDisplayProps) => {
           {name}
         </span>
       </div>
-      {canOverride && (
-        <HeroOverridePicker
-          remoteId={mod.remoteId}
-          resolvedHero={resolvedHero}
-        />
-      )}
+      <HeroOverridePicker
+        disabled={!canOverride}
+        remoteId={mod.remoteId}
+        resolvedHero={resolvedHero}
+      />
     </div>
   );
 };

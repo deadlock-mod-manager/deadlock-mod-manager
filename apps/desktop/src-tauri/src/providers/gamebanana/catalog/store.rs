@@ -144,7 +144,7 @@ impl Catalog {
     self
       .pool
       .run(move |connection| {
-        connection.transaction::<_, Error, _>(|connection| {
+        connection.immediate_transaction::<_, Error, _>(|connection| {
           for record in records {
             upsert_record(connection, record)?;
           }
@@ -196,7 +196,7 @@ impl Catalog {
     self
       .pool
       .run(move |connection| {
-        connection.transaction::<_, Error, _>(|connection| {
+        connection.immediate_transaction::<_, Error, _>(|connection| {
           let incomplete_snapshot = sync_state::table
             .find(INCOMPLETE_SNAPSHOT)
             .select(sync_state::value)
@@ -300,7 +300,7 @@ impl Catalog {
     self
       .pool
       .run(move |connection| {
-        connection.transaction::<_, Error, _>(|connection| {
+        connection.immediate_transaction::<_, Error, _>(|connection| {
           for submission in submissions {
             diesel::update(submission::table.find((
               provider_name(submission.provider),
@@ -373,7 +373,7 @@ impl Catalog {
     self
       .pool
       .run(move |connection| {
-        connection.transaction::<_, Error, _>(|connection| {
+        connection.immediate_transaction::<_, Error, _>(|connection| {
           for record in records {
             upsert_record(connection, record)?;
           }
@@ -457,7 +457,7 @@ impl Catalog {
     self
       .pool
       .run(|connection| {
-        connection.transaction::<_, Error, _>(|connection| {
+        connection.immediate_transaction::<_, Error, _>(|connection| {
           diesel::delete(submission::table).execute(connection)?;
           diesel::delete(super::schema::collection::table).execute(connection)?;
           diesel::delete(super::schema::update_cache::table).execute(connection)?;
@@ -473,7 +473,7 @@ impl Catalog {
     self
       .pool
       .run(|connection| {
-        connection.transaction::<_, Error, _>(|connection| {
+        connection.immediate_transaction::<_, Error, _>(|connection| {
           diesel::delete(sync_state::table).execute(connection)?;
           diesel::update(sync_cursor::table)
             .set((
@@ -650,6 +650,18 @@ fn upsert_record(
     .select(SubmissionRow::as_select())
     .first::<SubmissionRow>(connection)
     .optional()?;
+  let changed = existing.as_ref().is_none_or(|existing| {
+    incoming.remote_updated_at > existing.remote_updated_at
+      || incoming.files_updated_at > existing.files_updated_at
+  });
+  if changed {
+    diesel::delete(super::schema::update_cache::table.find((
+      &incoming.provider,
+      &incoming.submission_type,
+      &incoming.submission_id,
+    )))
+    .execute(connection)?;
+  }
   let row = existing
     .map(|existing| existing.merge(incoming.clone()))
     .unwrap_or(incoming);
@@ -749,6 +761,43 @@ mod tests {
       development_state: None,
       completion_percentage: None,
     }
+  }
+
+  #[tokio::test]
+  async fn newer_catalog_record_drops_cached_update() {
+    let directory = tempdir().unwrap();
+    let catalog = Catalog::open(directory.path().join("catalog.sqlite3"), 1)
+      .await
+      .unwrap();
+    let entry = record("1", "Cached entry", "snapshot-a");
+    let submission = entry.submission.clone();
+    catalog.upsert_records(vec![entry.clone()]).await.unwrap();
+    let snapshot = crate::providers::gamebanana::UpdateSnapshot {
+      remote_updated_at: 200,
+      files: Vec::new(),
+    };
+    catalog
+      .save_cached_update(submission.clone(), snapshot, 1_000)
+      .await
+      .unwrap();
+
+    catalog.upsert_records(vec![entry.clone()]).await.unwrap();
+    assert!(
+      catalog
+        .cached_update(submission.clone())
+        .await
+        .unwrap()
+        .is_some()
+    );
+
+    catalog
+      .upsert_records(vec![CatalogRecord {
+        files_updated_at: 300,
+        ..entry
+      }])
+      .await
+      .unwrap();
+    assert!(catalog.cached_update(submission).await.unwrap().is_none());
   }
 
   #[tokio::test]

@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useActiveProfileFolder } from "@/hooks/use-mod-health";
 import {
@@ -9,24 +9,27 @@ import {
   releaseFoundryArchives,
   resolveModVpk,
 } from "@/lib/foundry";
+import { cacheFoundryModel, releaseFoundryModel } from "@/lib/model-assets";
+import type { FoundryModel } from "@/types/foundry";
 import type { LocalMod } from "@/types/mods";
 
 /** `unsupported` is not a failure: the VPK simply holds no hero model. */
 export type SkinModel =
-  | { kind: "model"; dataUrl: string }
+  | { kind: "model"; model: FoundryModel; filePath: string; entryPath: string }
   | { kind: "unsupported" };
 
 /** How long a decoded model survives with nothing on screen showing it. */
-const MODEL_CACHE_TIME_MS = 5 * 60 * 1000;
+const MODEL_CACHE_TIME_MS = 0;
 
 /**
  * The Foundry's model pipeline without the editor around it: no workspace is
- * prepared, so nothing is unpacked to disk and nothing is written.
+ * prepared. Analysis stages a local VPK copy; source mods stay unchanged.
  */
 const decodeSkinModel = async (
   mod: LocalMod | null,
   hero: string,
   profileFolder: string | null,
+  signal: AbortSignal,
 ): Promise<SkinModel> => {
   const manifest = mod
     ? await analyzeFoundryVpk(
@@ -42,8 +45,18 @@ const decodeSkinModel = async (
   if (!modelPath) {
     return { kind: "unsupported" };
   }
-  const model = await decodeFoundryModel(manifest.filePath, modelPath, null);
-  return { kind: "model", dataUrl: model.dataUrl };
+  const model = await decodeFoundryModel(
+    manifest.filePath,
+    modelPath,
+    null,
+    signal,
+  );
+  return {
+    kind: "model",
+    model,
+    filePath: manifest.filePath,
+    entryPath: modelPath,
+  };
 };
 
 /**
@@ -52,27 +65,44 @@ const decodeSkinModel = async (
  * setting is on — the decode is the expensive part, and that is the point of
  * the setting.
  */
-export const useSkinModelPreview = (hero: string, mod: LocalMod | null) => {
+export const useSkinModelPreview = (
+  hero: string,
+  mod: LocalMod | null,
+  enabled = true,
+) => {
   const profileFolder = useActiveProfileFolder();
+  const client = useQueryClient();
 
   // Parsed VPK indexes stay cached in the backend so switching skins is quick;
   // a parsed pak01 is a large thing to hold onto once the page is gone.
   useEffect(() => () => void releaseFoundryArchives(), []);
 
+  const queryKey = [
+    "skin-model-preview",
+    hero,
+    mod?.remoteId ?? mod?.id ?? null,
+    mod?.installedVpks ?? [],
+    mod?.activeVariantArchive ?? null,
+    mod?.downloadedAt ?? null,
+    mod?.status ?? null,
+    profileFolder,
+  ];
   return useQuery({
-    // Everything resolveModVpk reads is in the key: they all decide which
-    // archive is opened, and so which model comes back.
-    queryKey: [
-      "skin-model-preview",
-      hero,
-      mod?.remoteId ?? mod?.id ?? null,
-      mod?.installedVpks ?? [],
-      mod?.activeVariantArchive ?? null,
-      profileFolder,
-    ],
-    queryFn: () => decodeSkinModel(mod, hero, profileFolder),
-    // A skin's model only changes when the skin does, and that changes the key.
-    staleTime: Number.POSITIVE_INFINITY,
+    enabled,
+    queryKey,
+    queryFn: async ({ signal }) => {
+      const preview = await decodeSkinModel(mod, hero, profileFolder, signal);
+      if (preview.kind === "model") {
+        if (signal.aborted) {
+          releaseFoundryModel(preview.model);
+          signal.throwIfAborted();
+        }
+        cacheFoundryModel(client, queryKey, preview.model);
+      }
+      return preview;
+    },
+    // Keep decoded models only while a preview is mounted.
+    staleTime: 60_000,
     gcTime: MODEL_CACHE_TIME_MS,
     retry: false,
     // The panel shows the failure in place, with a retry; a toast on top of

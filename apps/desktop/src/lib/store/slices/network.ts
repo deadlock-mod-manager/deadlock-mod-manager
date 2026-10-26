@@ -1,7 +1,6 @@
 import type { StateCreator } from "zustand";
 import type { State } from "..";
-
-export type FileserverPreference = "default" | "auto" | string;
+import type { FileserverPreference } from "@/types/generated/FileserverPreference";
 
 export type ProxyProtocol = "http" | "https" | "socks5";
 
@@ -29,10 +28,8 @@ export const DEFAULT_PROXY_CONFIG: ProxyConfig = {
 
 export type NetworkState = {
   fileserverPreference: FileserverPreference;
-  fileserverLatencyMs: Record<string, number>;
   proxyConfig: ProxyConfig;
   setFileserverPreference: (pref: FileserverPreference) => void;
-  setFileserverLatencyMs: (latencies: Record<string, number>) => void;
   setProxyConfig: (config: ProxyConfig) => void;
 };
 
@@ -44,11 +41,8 @@ export const createNetworkSlice: StateCreator<State, [], [], NetworkState> = (
   set,
 ) => ({
   fileserverPreference: "default",
-  fileserverLatencyMs: {},
   proxyConfig: DEFAULT_PROXY_CONFIG,
   setFileserverPreference: (pref: FileserverPreference) =>
     set(() => ({ fileserverPreference: pref })),
-  setFileserverLatencyMs: (latencies: Record<string, number>) =>
-    set(() => ({ fileserverLatencyMs: latencies })),
   setProxyConfig: (config: ProxyConfig) => set(() => ({ proxyConfig: config })),
 });

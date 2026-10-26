@@ -7,13 +7,21 @@ export const modHealthQueryKey = (profileFolder: string | null) => [
   profileFolder,
 ];
 
-/** Refreshes everything derived from the compatibility state of a profile. */
+/**
+ * Refreshes everything derived from the compatibility state of a profile. The
+ * review analysis rebuilds the whole repair plan, so it is only marked stale
+ * and runs again when the review next opens.
+ */
 export const invalidateModHealth = (queryClient: QueryClient) =>
   Promise.all([
     queryClient.invalidateQueries({ queryKey: MOD_HEALTH_QUERY_KEY }),
-    queryClient.invalidateQueries({ queryKey: ["mod-compatibility-analysis"] }),
+    queryClient.invalidateQueries({
+      queryKey: ["mod-compatibility-analysis"],
+      refetchType: "none",
+    }),
     queryClient.invalidateQueries({
       queryKey: ["mod-compatibility-resolved-analysis"],
+      refetchType: "none",
     }),
   ]);
 

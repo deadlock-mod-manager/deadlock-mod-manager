@@ -1,24 +1,35 @@
 use super::generated_hero_registry::{HERO_ALIASES, HERO_FUZZY_TOKENS, HERO_PHRASES};
 
-const SKINS_SUPER_CATEGORY: &str = "Skins";
+pub const SKINS_CATEGORY: &str = "Skins";
 
-pub fn resolve_from_skin_category(
-  super_category: Option<&str>,
-  category: Option<&str>,
-  submission_name: &str,
-) -> Option<String> {
-  let from_category = if super_category == Some(SKINS_SUPER_CATEGORY) {
-    category
-      .filter(|name| !matches!(*name, "Skins" | "Other"))
-      .and_then(normalize)
-  } else {
-    None
-  };
-
-  from_category.or_else(|| guess(submission_name))
+/// A submission's GameBanana category names, from the top level down.
+#[derive(Default)]
+pub struct CategoryPath<'a> {
+  pub root: Option<&'a str>,
+  pub parent: Option<&'a str>,
+  pub category: Option<&'a str>,
 }
 
-fn normalize(value: &str) -> Option<String> {
+pub fn resolve_from_skin_category(path: CategoryPath<'_>, submission_name: &str) -> Option<String> {
+  hero_from_category_path(&path).or_else(|| guess(submission_name))
+}
+
+// Skins nest as Skins > hero > style (e.g. Faithful/Vanilla+), so the hero is
+// the category or its parent. Profiles omit the root; no other root has
+// hero-named children, so a parent naming a hero is enough on its own.
+fn hero_from_category_path(path: &CategoryPath<'_>) -> Option<String> {
+  let root = path.root.filter(|root| !root.is_empty());
+  if root.is_some_and(|root| root != SKINS_CATEGORY) {
+    return None;
+  }
+  let is_skin = root == Some(SKINS_CATEGORY) || path.parent == Some(SKINS_CATEGORY);
+  is_skin
+    .then(|| path.category.and_then(normalize))
+    .flatten()
+    .or_else(|| path.parent.and_then(normalize))
+}
+
+pub fn normalize(value: &str) -> Option<String> {
   let key = normalize_key(value);
   HERO_ALIASES.iter().find_map(|(hero, aliases)| {
     aliases
@@ -93,7 +104,7 @@ fn normalize_key(value: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-  use super::{guess, normalize, resolve_from_skin_category};
+  use super::{CategoryPath, guess, normalize, resolve_from_skin_category};
 
   #[test]
   fn generated_aliases_match_shared_registry_behavior() {
@@ -109,7 +120,14 @@ mod tests {
       Some("Lady Geist".to_string())
     );
     assert_eq!(
-      resolve_from_skin_category(Some("Skins"), Some("Drifter"), "Pink"),
+      resolve_from_skin_category(
+        CategoryPath {
+          parent: Some("Skins"),
+          category: Some("Drifter"),
+          ..Default::default()
+        },
+        "Pink"
+      ),
       Some("Drifter".to_string())
     );
   }
@@ -117,7 +135,14 @@ mod tests {
   #[test]
   fn resolves_heroes_by_codename_and_multi_word_name() {
     assert_eq!(
-      resolve_from_skin_category(Some("Skins"), Some("RatKing"), "Recolor"),
+      resolve_from_skin_category(
+        CategoryPath {
+          parent: Some("Skins"),
+          category: Some("RatKing"),
+          ..Default::default()
+        },
+        "Recolor"
+      ),
       Some("Rat King".to_string())
     );
     assert_eq!(normalize("chessmaster"), Some("Solomon".to_string()));
@@ -132,5 +157,26 @@ mod tests {
       Some("Warden".to_string())
     );
     assert_eq!(guess("Harrow Grey Talon"), Some("Grey Talon".to_string()));
+  }
+
+  #[test]
+  fn reads_the_hero_from_a_skin_subcategory_parent() {
+    let nested = |root| CategoryPath {
+      root,
+      parent: Some("Nurse Harrow"),
+      category: Some("Faithful/Vanilla+"),
+    };
+    assert_eq!(
+      resolve_from_skin_category(nested(None), "Nurse Sparrow"),
+      Some("Nurse Harrow".to_string())
+    );
+    assert_eq!(
+      resolve_from_skin_category(nested(Some("Skins")), "Nurse Sparrow"),
+      Some("Nurse Harrow".to_string())
+    );
+    assert_eq!(
+      resolve_from_skin_category(nested(Some("Model Replacement")), "Walker"),
+      None
+    );
   }
 }

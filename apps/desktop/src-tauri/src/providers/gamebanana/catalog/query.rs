@@ -46,6 +46,8 @@ pub struct CatalogQuery {
   #[ts(type = "number | null")]
   pub updated_after: Option<i64>,
   #[ts(type = "number | null")]
+  pub updated_before: Option<i64>,
+  #[ts(type = "number | null")]
   pub added_after: Option<i64>,
   #[ts(type = "number | null")]
   pub added_before: Option<i64>,
@@ -269,6 +271,9 @@ fn filtered_query<'a>(
   if let Some(updated_after) = query.updated_after {
     statement = statement.filter(submission::remote_updated_at.ge(updated_after));
   }
+  if let Some(updated_before) = query.updated_before {
+    statement = statement.filter(submission::remote_updated_at.lt(updated_before));
+  }
   if let Some(added_after) = query.added_after {
     statement = statement.filter(submission::remote_added_at.ge(added_after));
   }
@@ -326,19 +331,17 @@ fn filter_heroes<'a>(
 fn rank_authors(rows: Vec<(String, String, i64, i64)>) -> Vec<CatalogAuthor> {
   let mut authors: HashMap<String, (CatalogAuthor, i64)> = HashMap::new();
   for (author_remote_id, name, downloads, updated_at) in rows {
-    let (author, latest_update) = authors
-      .entry(author_remote_id.clone())
-      .or_insert_with(|| {
-        (
-          CatalogAuthor {
-            author_remote_id,
-            name: name.clone(),
-            submission_count: 0,
-            download_count: 0,
-          },
-          updated_at,
-        )
-      });
+    let (author, latest_update) = authors.entry(author_remote_id.clone()).or_insert_with(|| {
+      (
+        CatalogAuthor {
+          author_remote_id,
+          name: name.clone(),
+          submission_count: 0,
+          download_count: 0,
+        },
+        updated_at,
+      )
+    });
     author.submission_count += 1;
     author.download_count += u64::try_from(downloads).unwrap_or(0);
     if updated_at > *latest_update {

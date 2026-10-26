@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { assetsBaseUrl, DeadlockApiError } from "@/lib/deadlock-api";
 import { fetch } from "@/lib/fetch";
 import {
@@ -15,12 +16,13 @@ import {
   matchHistoryEntrySchema,
   matchMetadataSchema,
   mateStatsSchema,
+  metricSpreadSchema,
+  performancePointSchema,
   playerHeroStatsSchema,
   playerRankSchema,
   rankedSeasonSchema,
   steamProfileSchema,
 } from "@/lib/validation/stats-api";
-import type { z } from "zod";
 import { runtimeServiceOrigin } from "@/lib/runtime-bootstrap";
 import {
   statsScopeQuery,
@@ -46,6 +48,8 @@ export type {
   MatchMetadataPlayer,
   MatchMetadataStat,
   MateStats,
+  MetricSpread,
+  PerformancePoint,
   PlayerHeroStats,
   PlayerRank,
   RankedSeason,
@@ -177,6 +181,39 @@ export const getAnalyticsHeroStats = (
 export const getBadgeDistribution = () =>
   getList("/v1/analytics/badge-distribution", badgeDistributionEntrySchema);
 
+/**
+ * How every player inside a badge range performs per match: average and
+ * percentiles for each metric. `minBadge`/`maxBadge` filter on the match's
+ * average badge, so a whole tier is `tier * 10 + 1` to `tier * 10 + 6`.
+ */
+export const getBracketMetrics = async ({
+  minBadge,
+  maxBadge,
+  scope,
+}: {
+  minBadge: number;
+  maxBadge: number;
+  scope: StatsScope;
+}) => {
+  const path = `/v1/analytics/player-stats/metrics?min_average_badge=${minBadge}&max_average_badge=${maxBadge}&${statsScopeQuery(scope)}`;
+  const response = await request(path);
+  return parseOne(
+    z.record(z.string(), metricSpreadSchema),
+    await response.json(),
+    path,
+  );
+};
+
+/**
+ * How an account's souls usually grow over a match on one hero, bucketed in
+ * absolute game seconds. The baseline the match page compares a game with.
+ */
+export const getPerformanceCurve = (accountId: number, heroId: number) =>
+  getList(
+    `/v1/analytics/player-performance-curve?account_ids=${accountId}&hero_ids=${heroId}&resolution=0`,
+    performancePointSchema,
+  );
+
 /** The season definitions the game client ships, including its entry requirements. */
 export const getRankedSeasons = () =>
   getList("/v1/assets/ranked-seasons", rankedSeasonSchema);
@@ -235,6 +272,16 @@ export const resolveRank = (
     name: asset?.name,
     image: asset?.images[`large_subrank${subrank}`] ?? asset?.images.large,
   };
+};
+
+/** "Name subrank" for a badge, or null when no asset names its tier. */
+export const rankLabel = (
+  badge: number | undefined,
+  rankAssets: RankAsset[],
+) => {
+  const { name, subrank } = resolveRank(badge, rankAssets);
+  if (!name) return null;
+  return subrank > 0 ? `${name} ${subrank}` : name;
 };
 
 export const getRankAssets = async (): Promise<RankAsset[]> => {

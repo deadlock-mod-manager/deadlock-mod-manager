@@ -222,14 +222,16 @@ pub struct FoundryTexture {
   pub data_url: String,
 }
 
-/// A decoded model as a base64 GLB data URL, ready for the webview viewer.
+/// A private, immutable GLB artifact served through the scoped asset protocol.
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export, rename_all = "camelCase")]
 #[serde(rename_all = "camelCase")]
 pub struct FoundryModel {
+  pub asset_id: String,
+  pub file_path: String,
+  pub byte_length: usize,
   pub vertex_count: u32,
   pub index_count: u32,
-  pub data_url: String,
 }
 
 /// How much of a hero one paint target covers in the loaded skin, so the UI can

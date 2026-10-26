@@ -261,6 +261,21 @@ describe("removeMod", () => {
 });
 
 describe("setModProgress", () => {
+  it("preserves library, profiles, and other downloads during progress ticks", () => {
+    const before = store.getState();
+    store
+      .getState()
+      .setModProgress(
+        "2",
+        progressFor(25, { progressTotal: 250, total: 1000 }),
+      );
+    const after = store.getState();
+    expect(after.localMods).toBe(before.localMods);
+    expect(after.profiles).toBe(before.profiles);
+    expect(after.modProgress["1"]).toBe(before.modProgress["1"]);
+    expect(after.modProgress["2"].percentage).toBe(25);
+  });
+
   it("reports the backend's percentage, not the byte ratio beside it", () => {
     store
       .getState()
@@ -335,6 +350,17 @@ const broken = (mods: LocalMod[]) =>
   mods.map((mod) => ({ ...mod, missingVpks: ["gone.vpk"] }));
 
 describe("setInstalledVpks", () => {
+  it("preserves unrelated mod references when installation completes", () => {
+    store.setState((state) => ({ localMods: state.profiles.default.mods }));
+    const before = store.getState();
+    store.getState().setInstalledVpks("1", ["pak01_dir.vpk"]);
+    const after = store.getState();
+    expect(after.localMods[0]).not.toBe(before.localMods[0]);
+    expect(after.localMods[1]).toBe(before.localMods[1]);
+    expect(after.profiles.secondary).toBe(before.profiles.secondary);
+    expect(after.localMods[0].installedVpks).toEqual(["pak01_dir.vpk"]);
+  });
+
   const missing = (remoteId: string) =>
     store.getState().localMods.find((mod) => mod.remoteId === remoteId)
       ?.missingVpks;
@@ -456,4 +482,23 @@ describe("disabled mod updates", () => {
       store.getState().localMods,
     );
   });
+});
+
+describe("download metadata updates", () => {
+  it.each(["selected downloads", "downloads", "variant", "order"])(
+    "preserves unrelated mod references for %s",
+    (field) => {
+      store.setState((state) => ({ localMods: state.profiles.default.mods }));
+      const before = store.getState();
+      if (field === "selected downloads") before.setSelectedDownloads("1", []);
+      else if (field === "downloads") before.setModDownloads("1", []);
+      else if (field === "variant")
+        before.setActiveVariantArchive("1", "variant.zip");
+      else before.setModOrder("1", 4);
+      const after = store.getState();
+      expect(after.localMods[0]).not.toBe(before.localMods[0]);
+      expect(after.localMods[1]).toBe(before.localMods[1]);
+      expect(after.profiles.secondary).toBe(before.profiles.secondary);
+    },
+  );
 });

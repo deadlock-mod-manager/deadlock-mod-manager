@@ -32,7 +32,8 @@ export const ProfileCreateDialog = ({
   const [description, setDescription] = useState("");
   const [isCreating, setIsCreating] = useState(false);
 
-  const { createProfile, getAllProfiles } = usePersistedStore();
+  const createProfile = usePersistedStore((state) => state.createProfile);
+  const getAllProfiles = usePersistedStore((state) => state.getAllProfiles);
 
   const handleCreate = async () => {
     if (!name.trim()) {

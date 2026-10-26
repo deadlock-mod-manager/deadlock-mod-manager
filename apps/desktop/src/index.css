@@ -407,6 +407,77 @@
   }
 }
 
+/* Verified author: the seal stamps in once, then a ring ripples out */
+@keyframes verified-seal-stamp {
+  from {
+    transform: scale(1.8) rotate(-20deg);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes verified-seal-ripple {
+  from {
+    transform: scale(0.6);
+    opacity: 0.7;
+  }
+  to {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+.verified-seal {
+  filter: drop-shadow(0 0 6px hsl(var(--primary) / 0.45));
+  animation: verified-seal-stamp 450ms cubic-bezier(0.16, 1, 0.3, 1) 150ms
+    backwards;
+}
+
+.verified-seal::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: 2px solid hsl(var(--primary));
+  opacity: 0;
+  pointer-events: none;
+  animation: verified-seal-ripple 700ms cubic-bezier(0.16, 1, 0.3, 1) 450ms;
+}
+
+.verified-seal svg {
+  transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.verified-seal:hover svg,
+.verified-seal:focus-visible svg {
+  transform: rotate(18deg) scale(1.1);
+}
+
+.verified-seal:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+  border-radius: 9999px;
+}
+
+.verified-avatar-ring {
+  box-shadow:
+    0 0 0 2px hsl(var(--background)),
+    0 0 0 4px hsl(var(--primary) / 0.85),
+    0 0 28px 4px hsl(var(--primary) / 0.22);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .verified-seal,
+  .verified-seal::after,
+  .verified-seal svg {
+    animation: none;
+    transition: none;
+  }
+}
+
 /* Occult Geometry Animations */
 @keyframes occult-rotate {
   from {
@@ -1514,6 +1585,15 @@
   --viz-positive: #3987e5;
   --viz-negative: #e66767;
   --viz-neutral: #383835;
+  /* Match results. Never the only cue: rows carry a W/L letter, beads a height. */
+  --viz-win: #6fcf97;
+  --viz-loss: #ec6a5e;
+  /* Deadlock's own identity colours: the two teams and the three item slots. */
+  --team-0: #e0a84e;
+  --team-1: #7095e8;
+  --slot-weapon: #c8792e;
+  --slot-vitality: #5e9b4a;
+  --slot-spirit: #8e5bc9;
 }
 
 .light {
@@ -1522,6 +1602,41 @@
   --viz-positive: #2a78d6;
   --viz-negative: #e34948;
   --viz-neutral: #f0efec;
+  --viz-win: #23935a;
+  --viz-loss: #d64535;
+}
+
+/*
+ * Stats panels sit one small step above the page, the way the design layers
+ * them. Based on the page colour, not --card: some themes already lift
+ * --card, and stacking both made the panels read grey.
+ */
+.stats-surface {
+  background-color: color-mix(
+    in srgb,
+    hsl(var(--foreground)) 2.5%,
+    hsl(var(--background))
+  );
+}
+
+/*
+ * The shared chart container mutes every reference line. Stats charts use
+ * them as signal (baselines, medians, zero), so they set their own colour
+ * through --ref-stroke; the line's stroke-opacity attribute still applies.
+ */
+.stats-chart .recharts-reference-line .recharts-reference-line-line {
+  stroke: var(--ref-stroke, hsl(var(--primary)));
+}
+
+/* Stats plots sit on a faint dot grid instead of gridlines. */
+.stats-dot-grid {
+  background-image: radial-gradient(
+    circle,
+    color-mix(in srgb, hsl(var(--foreground)) 9%, transparent) 0.9px,
+    transparent 1px
+  );
+  background-size: 14px 14px;
+  background-position: 7px 7px;
 }
 
 /* Mod Foundry: an indeterminate sweep for work whose duration is unknown
@@ -1601,7 +1716,8 @@
   }
 }
 
-.experimental-tour-nudge {
+.experimental-tour-nudge,
+.commission-nudge {
   font-family: "Segoe Print", "Bradley Hand", "Chalkboard SE", cursive;
   font-size: 0.875rem;
   font-weight: 400;
@@ -1609,17 +1725,24 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .experimental-tour-nudge {
+  .experimental-tour-nudge,
+  .commission-nudge {
     animation: tour-note-appear 350ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
-  .experimental-tour-nudge-arrow {
+  .experimental-tour-nudge-arrow,
+  .commission-nudge-arrow {
     transition: transform 180ms ease-out;
   }
 
   a:hover .experimental-tour-nudge-arrow,
   a:focus-visible .experimental-tour-nudge-arrow {
     transform: translateX(-3px) rotate(-5deg);
+  }
+
+  .commission-nudge-wrap:hover .commission-nudge-arrow,
+  .commission-nudge-wrap:focus-within .commission-nudge-arrow {
+    transform: translateY(2px);
   }
 
   @keyframes tour-note-appear {

@@ -139,8 +139,6 @@ export const assertFilesystemLayout = async (
     );
     for (const [name, hash] of Object.entries(expectedBackup))
       expectedProtected[`addons-backups/${backup.fileName}/${name}`] = hash;
-    // Opening Settings initializes the real autoexec manager with an empty file.
-    expectedProtected["cfg/autoexec.cfg"] = fingerprint(Buffer.alloc(0));
   }
   assert.deepEqual(protectedFiles(inventory), expectedProtected);
   assert.deepEqual(

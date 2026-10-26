@@ -616,7 +616,10 @@ mod tests {
 
   #[test]
   fn recognizes_equivalent_rigs_with_reordered_bones_and_pruned_masks() {
-    assert_eq!(equivalent_rigs(&fixture(false), &fixture(true), true), Some(true));
+    assert_eq!(
+      equivalent_rigs(&fixture(false), &fixture(true), true),
+      Some(true)
+    );
   }
 
   fn with_terminal_bone(mut rig: Kv3Value, name: &str) -> Kv3Value {
@@ -641,7 +644,11 @@ mod tests {
   fn recognizes_reordered_rigs_with_retired_terminal_end_bones() {
     for name in ["child_end", "child_end_L", "child_end_R"] {
       let old = with_terminal_bone(fixture(false), name);
-      assert_eq!(equivalent_rigs(&old, &fixture(true), true), Some(true), "{name}");
+      assert_eq!(
+        equivalent_rigs(&old, &fixture(true), true),
+        Some(true),
+        "{name}"
+      );
     }
   }
 
@@ -650,14 +657,16 @@ mod tests {
     assert_eq!(
       equivalent_rigs(
         &fixture(false),
-        &with_terminal_bone(fixture(true), "attachWorld"), true
+        &with_terminal_bone(fixture(true), "attachWorld"),
+        true
       ),
       Some(true)
     );
     assert_eq!(
       equivalent_rigs(
         &with_terminal_bone(fixture(false), "child_TWIST1"),
-        &fixture(true), true
+        &fixture(true),
+        true
       ),
       Some(true)
     );
@@ -809,7 +818,8 @@ mod tests {
     assert_eq!(
       equivalent_rigs(
         &with_terminal_bone(fixture(false), "custom_attachment"),
-        &current, true
+        &current,
+        true
       ),
       Some(false)
     );

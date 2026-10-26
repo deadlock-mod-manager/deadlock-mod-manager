@@ -11,6 +11,28 @@ export const ModDependencySchema = z.object({
   level: z.enum(["required", "recommended"]).nullable(),
 });
 
+export const ModAuthorContactSchema = z.object({
+  type: z.enum([
+    "discord",
+    "steam",
+    "x",
+    "bluesky",
+    "instagram",
+    "youtube",
+    "twitch",
+    "kofi",
+    "patreon",
+    "buymeacoffee",
+    "github",
+    "reddit",
+    "soundcloud",
+  ]),
+  value: z.string(),
+  url: z.string().nullable(),
+});
+
+export type ModAuthorContactDto = z.infer<typeof ModAuthorContactSchema>;
+
 export const ModAuthorIdParamSchema = z.object({
   id: z.string(),
 });
@@ -28,6 +50,7 @@ export const ModAuthorSchema = z.object({
   title: z.string().nullable(),
   joinedAt: z.number().int().positive().nullable(),
   subscriberCount: z.number().int().nonnegative().nullable(),
+  contacts: z.array(ModAuthorContactSchema).default([]),
 });
 
 export type ModAuthorDto = z.infer<typeof ModAuthorSchema>;

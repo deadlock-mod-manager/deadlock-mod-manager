@@ -170,6 +170,7 @@ struct ActiveDownload {
   cancel_token: CancellationToken,
   pause: PauseHandle,
   status: String,
+  profile_folder: Option<String>,
 }
 
 #[derive(Clone, Debug)]
@@ -238,19 +239,38 @@ impl DownloadManager {
     Ok(())
   }
 
+  /// Resolves once the files are placed. A download dropped from the queue
+  /// before it started reports as cancelled.
+  pub async fn queue_download_and_wait(&self, task: DownloadTask) -> Result<(), Error> {
+    self
+      .queue_with_completion(task, DownloadPurpose::Install)
+      .await
+      .await
+      .map_err(|_| Error::DownloadCancelled)?
+      .map(|_| ())
+      .map_err(Error::DownloadFailed)
+  }
+
   pub async fn queue_download_and_prepare(
     &self,
     task: DownloadTask,
   ) -> Result<PreparedDownload, Error> {
-    let (sender, receiver) = oneshot::channel();
     self
-      .queue(task, DownloadPurpose::PrepareUpdate, Some(sender))
-      .await;
-
-    receiver
+      .queue_with_completion(task, DownloadPurpose::PrepareUpdate)
+      .await
       .await
       .map_err(|_| Error::BackgroundTaskFailed("Download worker stopped unexpectedly".to_string()))?
       .map_err(Error::DownloadFailed)
+  }
+
+  async fn queue_with_completion(
+    &self,
+    task: DownloadTask,
+    purpose: DownloadPurpose,
+  ) -> oneshot::Receiver<Result<PreparedDownload, String>> {
+    let (sender, receiver) = oneshot::channel();
+    self.queue(task, purpose, Some(sender)).await;
+    receiver
   }
 
   async fn queue(
@@ -295,13 +315,31 @@ impl DownloadManager {
 
     tokio::spawn(async move {
       loop {
+        // Register the download as active before releasing the queue, so status
+        // checks and profile cancellation never miss a task between the two.
         let task = {
           let mut queue = queue_clone.lock().await;
-          queue.pop_front()
+          match queue.pop_front() {
+            Some(queued) => {
+              let cancel_token = CancellationToken::new();
+              let pause = PauseHandle::new();
+              active_clone.lock().await.insert(
+                queued.task.mod_id.clone(),
+                ActiveDownload {
+                  cancel_token: cancel_token.clone(),
+                  pause: pause.clone(),
+                  status: "downloading".to_string(),
+                  profile_folder: queued.task.profile_folder.clone(),
+                },
+              );
+              Some((queued, cancel_token, pause))
+            }
+            None => None,
+          }
         };
 
         match task {
-          Some(queued) => {
+          Some((queued, cancel_token, pause)) => {
             let mod_id = queued.task.mod_id.clone();
             let profile_folder = queued.task.profile_folder.clone();
             let task_path = queued.task.target_dir.to_string_lossy().to_string();
@@ -309,6 +347,8 @@ impl DownloadManager {
               queued.operation_id,
               queued.task,
               queued.purpose,
+              cancel_token,
+              pause,
               Arc::clone(&active_clone),
               app_handle.clone(),
             )
@@ -364,24 +404,12 @@ impl DownloadManager {
     operation_id: u64,
     task: DownloadTask,
     purpose: DownloadPurpose,
+    cancel_token: CancellationToken,
+    pause: PauseHandle,
     active_downloads: Arc<Mutex<HashMap<String, ActiveDownload>>>,
     app_handle: AppHandle,
   ) -> Result<PreparedDownload, Error> {
     let mod_id = task.mod_id.clone();
-    let cancel_token = CancellationToken::new();
-    let pause = PauseHandle::new();
-
-    {
-      let mut active = active_downloads.lock().await;
-      active.insert(
-        mod_id.clone(),
-        ActiveDownload {
-          cancel_token: cancel_token.clone(),
-          pause: pause.clone(),
-          status: "downloading".to_string(),
-        },
-      );
-    }
 
     app_handle
       .emit(
@@ -1339,14 +1367,51 @@ impl DownloadManager {
     log::info!("Cancelling download for mod: {mod_id}");
 
     let mut active = self.active_downloads.lock().await;
-    if let Some(download) = active.remove(mod_id) {
-      download.pause.resume();
-      download.cancel_token.cancel();
+    if Self::cancel_active(&mut active, mod_id) {
       Ok(())
     } else {
       Err(Error::InvalidInput(format!(
         "No active download found for mod: {mod_id}"
       )))
+    }
+  }
+
+  fn cancel_active(active: &mut HashMap<String, ActiveDownload>, mod_id: &str) -> bool {
+    let Some(download) = active.remove(mod_id) else {
+      return false;
+    };
+    download.pause.resume();
+    download.cancel_token.cancel();
+    true
+  }
+
+  /// Drops queued downloads for a profile folder and cancels the running one,
+  /// so a deleted profile's folder isn't recreated when they finish.
+  pub async fn cancel_profile_downloads(&self, profile_folder: &str) {
+    let targets = |folder: &Option<String>| folder.as_deref() == Some(profile_folder);
+
+    let dropped = {
+      let mut queue = self.queue.lock().await;
+      let before = queue.len();
+      queue.retain(|queued| !targets(&queued.task.profile_folder));
+      before - queue.len()
+    };
+
+    let mut active = self.active_downloads.lock().await;
+    let cancelled: Vec<String> = active
+      .iter()
+      .filter(|(_, download)| targets(&download.profile_folder))
+      .map(|(mod_id, _)| mod_id.clone())
+      .collect();
+    for mod_id in &cancelled {
+      Self::cancel_active(&mut active, mod_id);
+    }
+
+    if dropped > 0 || !cancelled.is_empty() {
+      log::info!(
+        "Cancelled downloads for deleted profile {profile_folder}: {dropped} queued, {} active",
+        cancelled.len()
+      );
     }
   }
 

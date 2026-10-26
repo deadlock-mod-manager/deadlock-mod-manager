@@ -1,8 +1,14 @@
 #!/usr/bin/env bun
 
 import { spawnSync } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
-import { resolve } from "node:path";
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { dirname, resolve } from "node:path";
 
 // Pinned so upstream API changes on the `feat/cef` branches can't break CI
 // unannounced. The plugins revision is the `feat/cef` commit built against
@@ -34,6 +40,13 @@ const CEF_PATCHED_PLUGINS = [
   "tauri-plugin-store",
   "tauri-plugin-updater",
 ];
+// Optional Wry and E2E crates whose releases can require a newer Tauri than the
+// CEF branch ships. CEF builds never enable them, but Cargo still resolves them.
+const CEF_UNUSED_DEPENDENCIES = [
+  "tauri-plugin-mcp-bridge",
+  "tauri-plugin-wdio",
+  "tauri-plugin-wdio-webdriver",
+];
 const PATCH_MARKER = "[patch.crates-io]";
 const CEF_TAURI_CONFIG = "src-tauri/tauri.cef.conf.json";
 const DEPENDENCIES_HEADER = "[dependencies]";
@@ -54,6 +67,12 @@ const CEF_DEPENDENCY_LINE = `tauri-runtime-cef = { git = "${TAURI_GIT}", tag = "
 const desktopDir = resolve(import.meta.dirname, "..");
 const workspaceCargoToml = resolve(desktopDir, "Cargo.toml");
 const packageCargoToml = resolve(desktopDir, "src-tauri", "Cargo.toml");
+const packageCargoTomlBackup = resolve(
+  desktopDir,
+  "target",
+  "cef-patch",
+  "Cargo.toml",
+);
 
 const patchBlock = [
   "",
@@ -79,7 +98,13 @@ function writeUtf8(path: string, content: string): void {
 function syncTauriLockfile(context: "inject" | "restore"): void {
   const result = spawnSync(
     "cargo",
-    ["update", ...TAURI_CORE_CRATES.flatMap((name) => ["-p", name])],
+    [
+      "update",
+      ...[...TAURI_CORE_CRATES, ...CEF_PATCHED_PLUGINS].flatMap((name) => [
+        "-p",
+        name,
+      ]),
+    ],
     { cwd: desktopDir, stdio: "inherit" },
   );
 
@@ -122,19 +147,40 @@ function injectCefManifest(): void {
     }
   }
 
-  writeUtf8(
-    packageCargoToml,
-    manifest
-      .replace(`${TAURI_WRY_LINE}\n`, `${CEF_FEATURE_LINES}\n`)
-      .replace(
-        `${DEPENDENCIES_HEADER}\n`,
-        `${DEPENDENCIES_HEADER}\n${CEF_DEPENDENCY_LINE}\n`,
-      ),
-  );
+  mkdirSync(dirname(packageCargoTomlBackup), { recursive: true });
+  writeUtf8(packageCargoTomlBackup, manifest);
+
+  let updated = manifest
+    .replace(`${TAURI_WRY_LINE}\n`, `${CEF_FEATURE_LINES}\n`)
+    .replace(
+      `${DEPENDENCIES_HEADER}\n`,
+      `${DEPENDENCIES_HEADER}\n${CEF_DEPENDENCY_LINE}\n`,
+    );
+  // The CEF branch can trail crates.io releases, so the patched crates take
+  // whatever 2.x version it ships instead of the release the manifest asks for.
+  for (const name of [...TAURI_CORE_CRATES, ...CEF_PATCHED_PLUGINS]) {
+    updated = updated.replace(
+      new RegExp(`^(${name} = (?:\\{ version = )?)"[^"]*"`, "gm"),
+      '$1"2"',
+    );
+  }
+  for (const name of CEF_UNUSED_DEPENDENCIES) {
+    updated = updated
+      .replace(new RegExp(`^${name} = .*\\n`, "m"), "")
+      .replace(new RegExp(`^\\s*"dep:${name}",\\n`, "gm"), "");
+  }
+  writeUtf8(packageCargoToml, updated);
   console.log("Injected tauri-runtime-cef in src-tauri/Cargo.toml");
 }
 
 function stripCefManifest(): boolean {
+  if (existsSync(packageCargoTomlBackup)) {
+    writeUtf8(packageCargoToml, readUtf8(packageCargoTomlBackup));
+    rmSync(packageCargoTomlBackup);
+    return true;
+  }
+
+  // Setups injected before the manifest was backed up.
   const manifest = readUtf8(packageCargoToml);
   // Match the dependency by prefix so cleanup still works after a pin bump.
   const updated = manifest
@@ -155,14 +201,15 @@ function isCefSetupCurrent(): boolean {
   return (
     readUtf8(workspaceCargoToml).includes(patchBlock) &&
     manifest.includes(`${CEF_FEATURE_LINES}\n`) &&
-    manifest.includes(`${CEF_DEPENDENCY_LINE}\n`)
+    manifest.includes(`${CEF_DEPENDENCY_LINE}\n`) &&
+    existsSync(packageCargoTomlBackup)
   );
 }
 
 // Re-injects from a clean state whenever the existing setup doesn't match the
 // current pins, so a tag bump never leaves a stale or duplicated patch behind.
-// Like `cleanup`, this restores Cargo.lock from git first, discarding any
-// uncommitted lockfile edits.
+// Like `cleanup`, this restores Cargo.lock from git and src-tauri/Cargo.toml
+// from its pre-CEF copy first, discarding edits made while CEF was set up.
 function ensureCefSetup(): boolean {
   if (isCefSetupCurrent()) {
     return false;

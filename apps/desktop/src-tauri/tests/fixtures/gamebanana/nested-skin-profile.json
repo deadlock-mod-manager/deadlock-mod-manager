@@ -1,0 +1,55 @@
+{
+  "_idRow": 731467,
+  "_bIsPrivate": false,
+  "_bIsTrashed": false,
+  "_bIsWithheld": false,
+  "_sName": "Nurse Sparrow",
+  "_tsDateModified": 1792846875,
+  "_tsDateAdded": 1792806130,
+  "_sProfileUrl": "https://gamebanana.com/mods/731467",
+  "_sInitialVisibility": "show",
+  "_nDownloadCount": 1295,
+  "_nLikeCount": 27,
+  "_sText": "A Nurse Harrow skin filed under the Faithful/Vanilla+ skin subcategory",
+  "_bIsObsolete": false,
+  "_aTags": [],
+  "_aPreviewMedia": {
+    "_aImages": [
+      {
+        "_sType": "screenshot",
+        "_sBaseUrl": "https://images.gamebanana.com/img/ss/mods",
+        "_sFile": "6adc0c50e4741.jpg"
+      }
+    ]
+  },
+  "_aFiles": [
+    {
+      "_idRow": 1861481,
+      "_sFile": "nursesparrow.zip",
+      "_nFilesize": 219289930,
+      "_tsDateAdded": 1792806125,
+      "_nDownloadCount": 1295,
+      "_sDownloadUrl": "https://gamebanana.com/dl/1861481",
+      "_sMd5Checksum": "7d3d2b482e65666a200a24442e55f1a3"
+    }
+  ],
+  "_aSubmitter": {
+    "_idRow": 5244015,
+    "_sName": "Spareyote",
+    "_aDonationMethods": []
+  },
+  "_aGame": {
+    "_idRow": 20948,
+    "_sName": "Deadlock"
+  },
+  "_aCategory": {
+    "_idRow": 50598,
+    "_sName": "Faithful/Vanilla+",
+    "_sModelName": "ModCategory"
+  },
+  "_aSuperCategory": {
+    "_idRow": 49633,
+    "_sName": "Nurse Harrow",
+    "_sModelName": "ModCategory"
+  }
+}

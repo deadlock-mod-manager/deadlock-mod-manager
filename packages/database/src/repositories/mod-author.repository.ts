@@ -1,6 +1,11 @@
 import { and, desc, eq, type SQL } from "drizzle-orm";
 import type { Database } from "../client";
-import type { Mod, ModAuthor, NewModAuthor } from "../schema/mods";
+import type {
+  Mod,
+  ModAuthor,
+  ModAuthorContact,
+  NewModAuthor,
+} from "../schema/mods";
 import { modAuthors, mods } from "../schema/mods";
 
 export interface ModAuthorProfile {
@@ -42,6 +47,20 @@ export class ModAuthorRepository {
     return { author, mods: authorMods };
   }
 
+  async updateContacts(
+    id: string,
+    contacts: ModAuthorContact[],
+  ): Promise<ModAuthor> {
+    const [result] = await this.db
+      .update(modAuthors)
+      .set({ contacts, contactsFetchedAt: new Date() })
+      .where(eq(modAuthors.id, id))
+      .returning();
+    return result;
+  }
+
+  // Mod sync only knows the submitter summary, so contacts are left alone here
+  // and kept fresh by updateContacts.
   async upsert(author: NewModAuthor): Promise<ModAuthor> {
     const [result] = await this.db
       .insert(modAuthors)

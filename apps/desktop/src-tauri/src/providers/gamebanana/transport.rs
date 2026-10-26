@@ -100,17 +100,22 @@ impl GameBananaTransport {
     T: DeserializeOwned,
   {
     let response = self.fetch(operation, url, cancel, true).await?;
-    if response.status.is_success() {
-      return parse_json_body(&response.body).map(ApiResponse::Ok);
-    }
-    parse_json_body::<ApiErrorBody>(&response.body)
+    // GameBanana reports some rejections, like Remote Install's NOT_ENROLLED, with HTTP 200.
+    let rejection = parse_json_body::<ApiErrorBody>(&response.body)
       .ok()
       .and_then(|body| body.code)
       .filter(|code| !code.trim().is_empty())
-      .map(|code| ApiResponse::Rejected { code })
-      .ok_or_else(|| {
-        Error::ProviderInvalidResponse(format!("{operation} failed with HTTP {}", response.status))
-      })
+      .map(|code| ApiResponse::Rejected { code });
+    if let Some(rejection) = rejection {
+      return Ok(rejection);
+    }
+    if response.status.is_success() {
+      return parse_json_body(&response.body).map(ApiResponse::Ok);
+    }
+    Err(Error::ProviderInvalidResponse(format!(
+      "{operation} failed with HTTP {}",
+      response.status
+    )))
   }
 
   async fn fetch(
@@ -199,6 +204,17 @@ impl GameBananaTransport {
         body.extend_from_slice(&chunk);
       }
       drop(permit);
+
+      // GameBanana occasionally answers 200 with an empty body; a retry gets the payload.
+      if status.is_success() && body.trim_ascii().is_empty() {
+        if attempt == self.config.max_retries {
+          return Err(Error::ProviderUnavailable(format!(
+            "{operation} returned an empty response"
+          )));
+        }
+        wait_or_cancel(retry_delay(&self.config, attempt), cancel).await?;
+        continue;
+      }
 
       return Ok(FetchedBody { status, body });
     }
@@ -473,6 +489,13 @@ mod tests {
       .get_json::<Value>("profile", invalid, &cancel)
       .await;
     assert!(matches!(result, Err(Error::ProviderInvalidResponse(_))));
+
+    let empty = serve_once("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n").await;
+    let result = transport.get_json::<Value>("profile", empty, &cancel).await;
+    assert!(
+      matches!(result, Err(Error::ProviderUnavailable(_))),
+      "{result:?}"
+    );
   }
 
   #[test]
@@ -500,6 +523,15 @@ mod tests {
       .get_json_or_rejection::<Value>("posts", hidden, &cancel)
       .await;
     assert!(matches!(&result, Ok(ApiResponse::Rejected { code }) if code == "COMMENT_MODE_HIDDEN"));
+
+    let not_enrolled = serve_once(
+      "HTTP/1.1 200 OK\r\nContent-Length: 30\r\n\r\n{\"_sErrorCode\":\"NOT_ENROLLED\"}",
+    )
+    .await;
+    let result = transport
+      .get_json_or_rejection::<Vec<String>>("remote install queue", not_enrolled, &cancel)
+      .await;
+    assert!(matches!(&result, Ok(ApiResponse::Rejected { code }) if code == "NOT_ENROLLED"));
 
     let opaque = serve_once("HTTP/1.1 400 Bad Request\r\nContent-Length: 6\r\n\r\nsecret").await;
     let result = transport

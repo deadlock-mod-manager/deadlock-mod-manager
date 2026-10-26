@@ -22,12 +22,14 @@ import {
 import {
   Archive,
   FileCog,
+  Blocks,
   FlagIcon,
   FolderOpen,
   GamepadIcon,
   Globe,
   InfoIcon,
   MonitorIcon,
+  PackageIcon,
   PaletteIcon,
   PlugIcon,
   PlusIcon,
@@ -38,7 +40,7 @@ import {
   WrenchIcon,
 } from "@deadlock-mods/ui/icons";
 import { DiscordLogoIcon } from "@phosphor-icons/react";
-import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
@@ -78,6 +80,8 @@ import { ModelPreviewToggle } from "@/components/settings/model-preview-toggle";
 import { RepairModFolder } from "@/components/settings/repair-mod-folder";
 import PrivacySettings from "@/components/settings/privacy-settings";
 import { ProxySettings } from "@/components/settings/proxy-settings";
+import { RemoteInstallSettings } from "@/components/settings/remote-install-settings";
+import { GameBananaLogo } from "@/components/shared/gamebanana-logo";
 import Section, { SectionSkeleton } from "@/components/settings/section";
 import SettingCard, {
   SettingCardSkeleton,
@@ -94,13 +98,13 @@ import { NetworkDiagnosticsButton } from "@/components/shared/network-diagnostic
 import PageTitle from "@/components/shared/page-title";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { getCustomSettings } from "@/lib/api-client";
-import { AUTOEXEC_LAUNCH_OPTION_ID } from "@/lib/autoexec/constants";
 import { GITHUB_REPO, SortType } from "@/lib/constants";
 import logger from "@/lib/logger";
-import { STALE_TIME_LOCAL } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 import type { SettingsSearchResult } from "@/lib/settings-search";
 import { cn } from "@/lib/utils";
+import { HintAnchor } from "@/components/feature-hints/hint-anchor";
+import { useRemoteInstallStatus } from "@/hooks/use-remote-install";
 import ThemesPlugin from "@/plugins/themes/index";
 import type { LocalSetting } from "@/types/settings";
 import {
@@ -140,22 +144,6 @@ const DangerAction = ({
     </Button>
   </div>
 );
-
-const getAutoexecConfig = async () => {
-  try {
-    return await invoke<{
-      full_content: string;
-      editable_content: string;
-      readonly_sections: Array<{
-        start_line: number;
-        end_line: number;
-        content: string;
-      }>;
-    }>("get_autoexec_config");
-  } catch {
-    return null;
-  }
-};
 
 const CONDEBUG_LAUNCH_OPTION_ID = "condebug-launch-option";
 const SEARCH_HIGHLIGHT_MS = 1600;
@@ -242,13 +230,6 @@ const CustomSettingsData = ({
     queryKey: ["custom-settings"],
     queryFn: getCustomSettings,
   });
-  const { data: autoexecConfig } = useQuery({
-    queryKey: ["autoexec-config"],
-    queryFn: getAutoexecConfig,
-    staleTime: STALE_TIME_LOCAL,
-    retry: false,
-    refetchOnWindowFocus: false,
-  });
   const {
     settings,
     toggleSetting,
@@ -300,32 +281,6 @@ const CustomSettingsData = ({
     );
   }, [settings]);
 
-  const hasAutoexecConfig = useMemo(() => {
-    return (
-      autoexecConfig?.full_content &&
-      autoexecConfig.full_content.trim().length > 0
-    );
-  }, [autoexecConfig]);
-
-  const autoexecLaunchOption: LocalSetting | null = useMemo(() => {
-    if (!autoexecConfig) return null;
-
-    const persistedEnabled =
-      settingStatusById[AUTOEXEC_LAUNCH_OPTION_ID] ?? false;
-    const enabled = hasAutoexecConfig ? persistedEnabled : false;
-
-    return {
-      id: AUTOEXEC_LAUNCH_OPTION_ID,
-      key: "-exec",
-      value: "autoexec",
-      type: CustomSettingType.LAUNCH_OPTION,
-      description: t("settings.autoexecLaunchOption"),
-      enabled,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-  }, [autoexecConfig, hasAutoexecConfig, settingStatusById, t]);
-
   const condebugLaunchOption: LocalSetting = useMemo(() => {
     return {
       id: CONDEBUG_LAUNCH_OPTION_ID,
@@ -347,9 +302,6 @@ const CustomSettingsData = ({
           ...(isLaunchOption ? [condebugLaunchOption] : []),
           ...(settingByType?.[type] ?? []),
           ...(customLocalSettingsByType?.[type] ?? []),
-          ...(isLaunchOption && autoexecLaunchOption
-            ? [autoexecLaunchOption]
-            : []),
         ];
 
         return (
@@ -396,15 +348,11 @@ const CustomSettingsData = ({
                 </div>
               )}
               {settingsForType.map((setting) => {
-                const isAutoexecOption =
-                  setting.id === AUTOEXEC_LAUNCH_OPTION_ID;
                 const isCondebugOption =
                   setting.id === CONDEBUG_LAUNCH_OPTION_ID;
-                const isDisabled = isAutoexecOption && !hasAutoexecConfig;
 
                 return (
                   <SettingCard
-                    disabled={isDisabled}
                     key={setting.id}
                     onChange={() => {
                       if (isCondebugOption) {
@@ -415,9 +363,7 @@ const CustomSettingsData = ({
                         }
                         return;
                       }
-                      if (!isDisabled) {
-                        toggleSetting(setting.id, setting);
-                      }
+                      toggleSetting(setting.id, setting);
                     }}
                     setting={{
                       ...setting,
@@ -473,6 +419,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
     "launch-options";
   const [activeTab, setActiveTab] = useState(initialTab);
   const contentRef = useRef<HTMLDivElement>(null);
+  const { data: remoteInstallStatus } = useRemoteInstallStatus();
 
   useEffect(() => {
     if (value) {
@@ -616,6 +563,11 @@ const CustomSettings = ({ value }: { value?: string }) => {
                   label={t("settings.game")}
                   value='game'
                 />
+                <SettingsNavItem
+                  icon={PackageIcon}
+                  label={t("settings.mods")}
+                  value='mods'
+                />
               </SettingsNavGroup>
 
               <SettingsNavGroup label={t("settings.label.application")}>
@@ -634,6 +586,19 @@ const CustomSettings = ({ value }: { value?: string }) => {
                   label={t("settings.network")}
                   value='network'
                 />
+                <HintAnchor
+                  eligible={remoteInstallStatus === null}
+                  hintId='remote-install'
+                  onShowMe={() => setActiveTab("integrations")}
+                  side='right'>
+                  <div>
+                    <SettingsNavItem
+                      icon={Blocks}
+                      label={t("settings.integrations")}
+                      value='integrations'
+                    />
+                  </div>
+                </HintAnchor>
                 <SettingsNavItem
                   icon={PlugIcon}
                   label={t("settings.plugin")}
@@ -741,20 +706,12 @@ const CustomSettings = ({ value }: { value?: string }) => {
             </Section>
 
             <Section
-              description={t("settings.downloadCacheLocationDescription")}
-              searchId='download-cache-location'
-              title={t("settings.downloadCacheLocation")}>
-              <DownloadCacheSettings />
-            </Section>
-
-            <Section
               description={t("settings.gameConfigDescription")}
               searchId='game-config'
               title={t("settings.gameConfigManagement")}>
               <div className='grid grid-cols-1 gap-4'>
                 <GameInfoManagement />
                 <AutoResetGameinfoToggle />
-                <AutoFixModsToggle />
               </div>
             </Section>
 
@@ -776,6 +733,79 @@ const CustomSettings = ({ value }: { value?: string }) => {
             </Section>
           </TabsContent>
 
+          <TabsContent className='mt-0 space-y-4' value='mods'>
+            <Section
+              description={t("settings.modInstallingSectionDescription")}
+              searchId='mod-installing'
+              title={t("settings.modInstallingSectionTitle")}>
+              <div className='grid grid-cols-1 gap-4'>
+                <SystemSettings
+                  ids={["auto-reapply-mods", "hero-conflict-warning"]}
+                />
+              </div>
+            </Section>
+
+            <Section
+              description={t("settings.modRepairSectionDescription")}
+              searchId='mod-repair'
+              title={t("settings.modRepairSectionTitle")}>
+              <AutoFixModsToggle />
+            </Section>
+
+            <Section
+              description={t("settings.heroSkinsDescription")}
+              searchId='hero-skins'
+              title={t("settings.heroSkins")}>
+              <HeroSkinsSettings />
+            </Section>
+
+            <Section
+              description={t("settings.modBrowsingSectionDescription")}
+              searchId='mod-browsing'
+              title={t("settings.modBrowsingSectionTitle")}>
+              <div className='grid grid-cols-1 gap-4'>
+                <SettingRow
+                  description={t("settings.defaultSortDescription")}
+                  title={t("settings.defaultSort")}>
+                  <Select
+                    onValueChange={(v) => setDefaultSort(v as SortType)}
+                    value={defaultSort}>
+                    <SelectTrigger
+                      aria-label={t("settings.defaultSort")}
+                      className='w-36'>
+                      <SelectValue
+                        placeholder={t("settings.selectDefaultSort")}
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {Object.values(SortType).map((type) => (
+                          <SelectItem
+                            className='capitalize'
+                            key={type}
+                            value={type}>
+                            {t(
+                              `sorting.${type.replace(/\s+/g, "").toLowerCase()}`,
+                            )}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </SettingRow>
+                <SystemSettings ids={["mods-store-pagination"]} />
+                <ModUpdateBadgesToggle />
+              </div>
+            </Section>
+
+            <Section
+              description={t("settings.downloadCacheLocationDescription")}
+              searchId='download-cache-location'
+              title={t("settings.downloadCacheLocation")}>
+              <DownloadCacheSettings />
+            </Section>
+          </TabsContent>
+
           <TabsContent className='mt-0 space-y-4' value='discord'>
             <Section
               description={t("gamePresence.settingsDescription")}
@@ -790,7 +820,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
               searchId='system'
               title={t("settings.systemSettings")}>
               <div className='grid grid-cols-1 gap-4'>
-                <SystemSettings />
+                <SystemSettings ids={["launch-vanilla-no-args"]} />
                 <TrayToggles />
                 <AutoUpdateToggle />
                 <UpdateChannelSelect />
@@ -815,8 +845,6 @@ const CustomSettings = ({ value }: { value?: string }) => {
 
                 <VolumeControl />
 
-                <ModUpdateBadgesToggle />
-
                 <FeatureTipsToggle />
 
                 <ModelPreviewToggle />
@@ -830,46 +858,6 @@ const CustomSettings = ({ value }: { value?: string }) => {
               searchId='language'
               title={t("settings.languageSettings")}>
               <LanguageSettings />
-            </Section>
-
-            <Section
-              description={t("settings.defaultSortDescription")}
-              searchId='default-sort'
-              title={t("settings.defaultSortValue")}>
-              <SettingRow title={t("settings.defaultSort")}>
-                <Select
-                  onValueChange={(v) => setDefaultSort(v as SortType)}
-                  value={defaultSort}>
-                  <SelectTrigger
-                    aria-label={t("settings.defaultSort")}
-                    className='w-36'>
-                    <SelectValue
-                      placeholder={t("settings.selectDefaultSort")}
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {Object.values(SortType).map((type) => (
-                        <SelectItem
-                          className='capitalize'
-                          key={type}
-                          value={type}>
-                          {t(
-                            `sorting.${type.replace(/\s+/g, "").toLowerCase()}`,
-                          )}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </SettingRow>
-            </Section>
-
-            <Section
-              description={t("settings.heroSkinsDescription")}
-              searchId='hero-skins'
-              title={t("settings.heroSkins")}>
-              <HeroSkinsSettings />
             </Section>
           </TabsContent>
 
@@ -886,6 +874,20 @@ const CustomSettings = ({ value }: { value?: string }) => {
               searchId='proxy'
               title={t("settings.proxy")}>
               <ProxySettings />
+            </Section>
+          </TabsContent>
+
+          <TabsContent className='mt-0 space-y-4' value='integrations'>
+            <Section
+              description={t("settings.gamebananaDescription")}
+              searchId='gamebanana'
+              title={
+                <span className='flex items-center gap-2'>
+                  <GameBananaLogo className='size-5' />
+                  {t("settings.gamebanana")}
+                </span>
+              }>
+              <RemoteInstallSettings />
             </Section>
           </TabsContent>
 

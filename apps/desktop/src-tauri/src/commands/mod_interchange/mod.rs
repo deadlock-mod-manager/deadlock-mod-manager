@@ -14,9 +14,9 @@ pub mod export;
 pub mod format;
 pub mod grimoire;
 pub mod hash_cache;
-mod reconcile;
 pub mod import;
 pub mod ledger;
+mod reconcile;
 
 use super::state::MANAGER;
 use crate::app_runtime::AppHandle;

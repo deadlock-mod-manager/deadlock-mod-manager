@@ -3,13 +3,16 @@ use super::store::{Catalog, CatalogRecord, INCOMPLETE_SNAPSHOT};
 use crate::errors::Error;
 use crate::providers::gamebanana::client::{MAX_COLLECTION_DESCRIPTIONS, MAX_HYDRATION_ITEMS};
 use crate::providers::gamebanana::hero_registry;
+use crate::providers::gamebanana::models::IndexSubmission;
 use crate::providers::gamebanana::{
-  BulkHydration, CollectionDescription, GameBananaClient, IndexPage, is_nsfw_visibility, parse_tags,
+  BulkHydration, CategoryListing, CollectionDescription, GameBananaClient, IndexPage,
+  is_nsfw_visibility, parse_tags,
 };
 use crate::providers::{SubmissionProvider, SubmissionRef, SubmissionType};
+use std::collections::HashMap;
 use std::future::Future;
 use std::pin::Pin;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tokio_util::sync::CancellationToken;
 
 // An incremental run stops at the high-water mark, so with nothing new it costs one
@@ -21,7 +24,7 @@ const LAST_INCREMENTAL_AT: &str = "last_incremental_at";
 const LAST_FULL_SYNC_AT: &str = "last_full_sync_at";
 const LAST_INCOMPLETE_SNAPSHOT_AT: &str = "last_incomplete_snapshot_at";
 const PREVIEW_IMAGES_VERSION: &str = "preview_images_v1";
-const HYDRATION_VERSION: &str = "bulk_hydration_v2";
+const HYDRATION_VERSION: &str = "bulk_hydration_v3";
 const THUMBNAILS_VERSION: &str = "thumbnails_v1";
 const AUTHOR_REMOTE_ID_VERSION: &str = "author_remote_id_v1";
 // Bumping any of these forces one full resync to backfill existing catalogs.
@@ -50,6 +53,9 @@ const COLLECTION_SYNC_INTERVAL: Duration = Duration::from_secs(6 * 60 * 60);
 // re-crawled once they are this old.
 const COLLECTION_ITEMS_MAX_AGE: Duration = Duration::from_secs(7 * 24 * 60 * 60);
 const COLLECTION_SYNC_PHASE: &str = "collections";
+// Walking the Skins tree costs one request per hero, so an unknown subcategory
+// refreshes it at most this often.
+const SKIN_HEROES_REFRESH_INTERVAL: Duration = Duration::from_secs(60 * 60);
 
 type SourceFuture<'a, T> = Pin<Box<dyn Future<Output = Result<T, Error>> + Send + 'a>>;
 
@@ -76,6 +82,14 @@ trait CatalogSource: Send + Sync {
     _cancel: &'a CancellationToken,
   ) -> SourceFuture<'a, IndexPage> {
     Box::pin(async { Ok(IndexPage::empty()) })
+  }
+
+  fn mod_categories<'a>(
+    &'a self,
+    _parent_id: Option<u64>,
+    _cancel: &'a CancellationToken,
+  ) -> SourceFuture<'a, Vec<CategoryListing>> {
+    Box::pin(async { Ok(Vec::new()) })
   }
 
   fn collection_items<'a>(
@@ -135,6 +149,14 @@ impl CatalogSource for GameBananaClient {
     Box::pin(GameBananaClient::bulk_hydrate(self, submissions, cancel))
   }
 
+  fn mod_categories<'a>(
+    &'a self,
+    parent_id: Option<u64>,
+    cancel: &'a CancellationToken,
+  ) -> SourceFuture<'a, Vec<CategoryListing>> {
+    Box::pin(GameBananaClient::mod_categories(self, parent_id, cancel))
+  }
+
   fn collection_index<'a>(
     &'a self,
     page: u32,
@@ -177,11 +199,21 @@ pub enum SyncOutcome {
   Throttled,
 }
 
+/// The legacy hydration API names only a skin's own category, and a skin
+/// subcategory (Skins > hero > Faithful/Vanilla+) doesn't name the hero, so
+/// those categories map to the hero above them.
+#[derive(Default)]
+struct SkinHeroes {
+  by_category: HashMap<u64, String>,
+  refreshed_at: Option<Instant>,
+}
+
 pub struct CatalogSync {
   catalog: Catalog,
   source: Box<dyn CatalogSource>,
   sync_lock: tokio::sync::Mutex<()>,
   progress: tokio::sync::Mutex<(Option<String>, Option<u32>)>,
+  skin_heroes: tokio::sync::Mutex<SkinHeroes>,
 }
 
 impl CatalogSync {
@@ -191,6 +223,7 @@ impl CatalogSync {
       source: Box::new(source),
       sync_lock: tokio::sync::Mutex::new(()),
       progress: tokio::sync::Mutex::new((None, None)),
+      skin_heroes: tokio::sync::Mutex::default(),
     }
   }
 
@@ -201,6 +234,7 @@ impl CatalogSync {
       source: Box::new(source),
       sync_lock: tokio::sync::Mutex::new(()),
       progress: tokio::sync::Mutex::new((None, None)),
+      skin_heroes: tokio::sync::Mutex::default(),
     }
   }
 
@@ -766,7 +800,7 @@ impl CatalogSync {
 
   async fn hydrate_records(
     &self,
-    index_records: &[crate::providers::gamebanana::models::IndexSubmission],
+    index_records: &[IndexSubmission],
     submission_type: SubmissionType,
     snapshot_id: Option<String>,
     cancel: &CancellationToken,
@@ -795,12 +829,44 @@ impl CatalogSync {
           continue;
         }
       };
+      let mut skin_heroes = self.skin_heroes.lock().await;
+      let unknown_subcategory = batch.iter().zip(&hydrated).any(|(index, hydration)| {
+        hydration.as_ref().is_some_and(|hydration| {
+          unresolved_skin_subcategory(index, hydration)
+            .is_some_and(|id| !skin_heroes.by_category.contains_key(&id))
+        })
+      });
+      if unknown_subcategory
+        && skin_heroes
+          .refreshed_at
+          .is_none_or(|at| at.elapsed() >= SKIN_HEROES_REFRESH_INTERVAL)
+      {
+        skin_heroes.refreshed_at = Some(Instant::now());
+        match self.fetch_skin_heroes(cancel).await {
+          Ok(by_category) => skin_heroes.by_category = by_category,
+          Err(error @ Error::ProviderCancelled) => return Err(error),
+          Err(error) => log::warn!("GameBanana skin categories could not be loaded: {error}"),
+        }
+      }
       let records = batch
         .iter()
         .zip(hydrated)
         .filter_map(|(index, hydration)| {
-          hydration
-            .map(|record| from_hydration(index, record, submission_type, snapshot_id.clone()))
+          let parent_hero = index
+            .sub_category
+            .as_ref()
+            .and_then(|category| category.id())
+            .and_then(|id| skin_heroes.by_category.get(&id))
+            .map(String::as_str);
+          hydration.map(|record| {
+            from_hydration(
+              index,
+              record,
+              parent_hero,
+              submission_type,
+              snapshot_id.clone(),
+            )
+          })
         })
         .collect::<Vec<_>>();
       if records.is_empty() {
@@ -818,6 +884,47 @@ impl CatalogSync {
     }
     Ok(())
   }
+}
+
+impl CatalogSync {
+  async fn fetch_skin_heroes(
+    &self,
+    cancel: &CancellationToken,
+  ) -> Result<HashMap<u64, String>, Error> {
+    let mut by_category = HashMap::new();
+    let roots = self.source.mod_categories(None, cancel).await?;
+    let Some(skins) = roots
+      .iter()
+      .find(|category| category.name == hero_registry::SKINS_CATEGORY)
+    else {
+      return Ok(by_category);
+    };
+    for hero_category in self.source.mod_categories(Some(skins.id), cancel).await? {
+      let Some(hero) = hero_registry::normalize(&hero_category.name) else {
+        continue;
+      };
+      let mut pending = vec![hero_category];
+      while let Some(parent) = pending.pop() {
+        if parent.category_count == 0 {
+          continue;
+        }
+        for child in self.source.mod_categories(Some(parent.id), cancel).await? {
+          by_category.insert(child.id, hero.clone());
+          pending.push(child);
+        }
+      }
+    }
+    Ok(by_category)
+  }
+}
+
+/// The id of a skin's own category when its name isn't a hero, i.e. a subcategory.
+fn unresolved_skin_subcategory(index: &IndexSubmission, hydration: &BulkHydration) -> Option<u64> {
+  let category = index.sub_category.as_ref()?;
+  (hydration.root_category.trim() == hero_registry::SKINS_CATEGORY
+    && hero_registry::normalize(&category.name).is_none())
+  .then(|| category.id())
+  .flatten()
 }
 
 fn catalog_percentage(completed: u64, total: u64) -> Option<u32> {
@@ -900,8 +1007,9 @@ fn from_index(
 }
 
 fn from_hydration(
-  index: &crate::providers::gamebanana::models::IndexSubmission,
+  index: &IndexSubmission,
   hydration: BulkHydration,
+  parent_hero: Option<&str>,
   submission_type: SubmissionType,
   snapshot_id: Option<String>,
 ) -> CatalogRecord {
@@ -925,8 +1033,11 @@ fn from_hydration(
   }
   .to_string();
   record.hero = hero_registry::resolve_from_skin_category(
-    Some(record.category.as_str()),
-    Some(hydration.category.as_str()),
+    hero_registry::CategoryPath {
+      root: Some(record.category.as_str()),
+      parent: parent_hero,
+      category: Some(hydration.category.as_str()),
+    },
     &record.name,
   );
   record.is_map = submission_type == SubmissionType::Mod && record.category == "Maps";
@@ -987,7 +1098,10 @@ mod tests {
 
   use super::{CatalogSource, CatalogSync, SourceFuture};
   use crate::errors::Error;
-  use crate::providers::gamebanana::{BulkHydration, CollectionDescription, IndexPage};
+  use crate::providers::gamebanana::models::IndexSubmission;
+  use crate::providers::gamebanana::{
+    BulkHydration, CategoryListing, CollectionDescription, IndexPage,
+  };
   use crate::providers::{SubmissionRef, SubmissionType};
   use std::collections::{HashSet, VecDeque};
   use std::sync::Mutex;
@@ -1231,6 +1345,123 @@ mod tests {
       .await
       .unwrap();
     assert_eq!(*item_requests.lock().unwrap(), [(1, 1), (1, 2)]);
+  }
+
+  /// Files every submission under Skins > Nurse Harrow > Faithful/Vanilla+, which the
+  /// legacy hydration API reports only as "Faithful/Vanilla+".
+  struct SkinSubcategorySource {
+    category_requests: std::sync::Arc<Mutex<u32>>,
+  }
+
+  impl CatalogSource for SkinSubcategorySource {
+    fn record_counts<'a>(&'a self, _cancel: &'a CancellationToken) -> SourceFuture<'a, [u64; 3]> {
+      Box::pin(async { Ok([0, 0, 0]) })
+    }
+
+    fn index<'a>(
+      &'a self,
+      _submission_type: SubmissionType,
+      _page: u32,
+      _latest_modified: bool,
+      _cancel: &'a CancellationToken,
+    ) -> SourceFuture<'a, IndexPage> {
+      Box::pin(async { Ok(empty_page()) })
+    }
+
+    fn bulk_hydrate<'a>(
+      &'a self,
+      submissions: &'a [SubmissionRef],
+      _cancel: &'a CancellationToken,
+    ) -> SourceFuture<'a, Vec<Option<BulkHydration>>> {
+      Box::pin(async move {
+        Ok(
+          submissions
+            .iter()
+            .map(|_| {
+              Some(BulkHydration {
+                name: "Nurse Sparrow".to_string(),
+                download_count: 1,
+                category: "Faithful/Vanilla+".to_string(),
+                root_category: "Skins".to_string(),
+                description: String::new(),
+                text: String::new(),
+                files_updated_at: None,
+              })
+            })
+            .collect(),
+        )
+      })
+    }
+
+    fn mod_categories<'a>(
+      &'a self,
+      parent_id: Option<u64>,
+      _cancel: &'a CancellationToken,
+    ) -> SourceFuture<'a, Vec<CategoryListing>> {
+      *self.category_requests.lock().unwrap() += 1;
+      let listing = |id, name: &str, category_count| CategoryListing {
+        id,
+        name: name.to_string(),
+        category_count,
+      };
+      let children = match parent_id {
+        None => vec![listing(37225, "Maps", 0), listing(33295, "Skins", 1)],
+        Some(33295) => vec![listing(49633, "Nurse Harrow", 1)],
+        Some(49633) => vec![listing(50598, "Faithful/Vanilla+", 0)],
+        Some(_) => Vec::new(),
+      };
+      Box::pin(async move { Ok(children) })
+    }
+  }
+
+  #[tokio::test]
+  async fn hydration_reads_a_skin_subcategory_hero_from_the_category_tree() {
+    let directory = tempdir().unwrap();
+    let catalog = super::Catalog::open(directory.path().join("catalog.sqlite3"), 2)
+      .await
+      .unwrap();
+    let category_requests = std::sync::Arc::new(Mutex::new(0));
+    let sync = CatalogSync::with_source(
+      catalog.clone(),
+      SkinSubcategorySource {
+        category_requests: category_requests.clone(),
+      },
+    );
+    let index: Vec<IndexSubmission> = serde_json::from_value(serde_json::json!([{
+      "_idRow": 731467,
+      "_sModelName": "Mod",
+      "_sName": "Nurse Sparrow",
+      "_sProfileUrl": "https://gamebanana.com/mods/731467",
+      "_aRootCategory": {
+        "_sName": "Skins",
+        "_sProfileUrl": "https://gamebanana.com/mods/cats/33295"
+      },
+      "_aSubCategory": {
+        "_sName": "Faithful/Vanilla+",
+        "_sProfileUrl": "https://gamebanana.com/mods/cats/50598"
+      }
+    }]))
+    .unwrap();
+    let cancel = CancellationToken::new();
+    for _ in 0..2 {
+      sync
+        .hydrate_records(&index, SubmissionType::Mod, None, &cancel)
+        .await
+        .unwrap();
+    }
+
+    let record = catalog
+      .get(super::submission_ref(731467, SubmissionType::Mod))
+      .await
+      .unwrap()
+      .unwrap();
+    assert_eq!(record.category, "Skins");
+    assert_eq!(record.hero.as_deref(), Some("Nurse Harrow"));
+    assert_eq!(
+      *category_requests.lock().unwrap(),
+      3,
+      "the tree is walked once, not once per batch"
+    );
   }
 
   fn empty_page() -> IndexPage {

@@ -14,6 +14,7 @@ import type {
   Progress,
 } from "@/types/mods";
 import { createLogger } from "../logger";
+import { isDownloadInProgress } from "./status";
 import { usePersistedStore } from "../store";
 import { ModStatus } from "@/types/mods";
 import type { ConfigFoundEvent } from "@/types/generated/ConfigFoundEvent";
@@ -318,31 +319,45 @@ class DownloadManager {
       return;
     }
 
-    const activeIds = new Set(activeDownloads.map((d) => d.modId));
+    // A webview reload drops the queue entries that route backend events to a
+    // mod, so a download the backend kept running can never report progress or
+    // completion. Cancel it; the stale scan below then offers a retry.
+    await Promise.allSettled(
+      activeDownloads
+        .filter(({ modId }) => !this.isQueued(modId))
+        .map(async ({ modId }) => {
+          logger
+            .withMetadata({ mod: modId })
+            .warn("Cancelling backend download orphaned by a reload");
+          try {
+            await invoke("cancel_download", { modId });
+          } catch (error) {
+            logger
+              .withMetadata({ mod: modId })
+              .withError(error)
+              .warn("Failed to cancel orphaned download");
+          }
+        }),
+    );
+
     const store = usePersistedStore.getState();
     // Any mod left in a transient in-flight state (Downloading, Paused,
-    // Extracting) that the backend doesn't know about is stale from a previous
-    // session and should be flagged as failed so the UI doesn't show a phantom
-    // queue.
-    const staleStatuses = new Set<ModStatus>([
-      ModStatus.Downloading,
-      ModStatus.Paused,
-      ModStatus.Extracting,
-    ]);
+    // Extracting) without a queue entry is stale and should be flagged as failed
+    // so the UI doesn't show a phantom queue.
     // setModStatus resolves a mod through the active profile's list, so the scan
     // has to read from there as well: a mod present only in localMods would be
     // flagged here and then dropped by the writer as "Mod not found".
     const trackedMods =
       store.profiles[store.activeProfileId]?.mods ?? store.localMods;
     const staleMods = trackedMods.filter(
-      (mod) => staleStatuses.has(mod.status) && !activeIds.has(mod.remoteId),
+      (mod) => isDownloadInProgress(mod.status) && !this.isQueued(mod.remoteId),
     );
 
     for (const mod of staleMods) {
       logger
         .withMetadata({ mod: mod.remoteId, previousStatus: mod.status })
         .warn(
-          "Stale in-flight download status on startup (no backend entry); marking as FailedToDownload",
+          "Stale in-flight download status on startup (no queue entry); marking as FailedToDownload",
         );
       store.setModStatus(mod.remoteId, ModStatus.FailedToDownload);
     }
@@ -408,7 +423,14 @@ class DownloadManager {
 
   async cancelDownload(modId: string) {
     try {
-      await this.downloads.cancel(modId);
+      const tracked = await this.downloads.cancel(modId);
+      // Without a queue entry no callback settles the mod, so it would stay
+      // stuck in its in-flight status.
+      if (!tracked) {
+        usePersistedStore
+          .getState()
+          .setModStatus(modId, ModStatus.FailedToDownload);
+      }
       logger.withMetadata({ mod: modId }).info("Download cancelled");
     } catch (error) {
       logger.withError(error).error("Failed to cancel download");

@@ -609,19 +609,18 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
     return set((state) => {
       const profileId = requestedProfileId ?? state.activeProfileId;
       return applyToModsInProfile(state, profileId, (mods) =>
-        mods.map((mod) => ({
-          ...mod,
-          status:
-            mod.remoteId === remoteId && vpks.length > 0
-              ? ModStatus.Installed
-              : mod.status,
-          installedVpks: mod.remoteId === remoteId ? vpks : mod.installedVpks,
-          installedFileTree:
-            mod.remoteId === remoteId ? fileTree : mod.installedFileTree,
-          // Freshly installed VPKs replace whatever had gone missing.
-          missingVpks:
-            mod.remoteId === remoteId && vpks.length > 0 ? [] : mod.missingVpks,
-        })),
+        mods.map((mod) =>
+          mod.remoteId !== remoteId
+            ? mod
+            : {
+                ...mod,
+                status: vpks.length > 0 ? ModStatus.Installed : mod.status,
+                installedVpks: vpks,
+                installedFileTree: fileTree,
+                // Freshly installed VPKs replace whatever had gone missing.
+                missingVpks: vpks.length > 0 ? [] : mod.missingVpks,
+              },
+        ),
       );
     });
   },
@@ -630,11 +629,11 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
     set((state) => {
       const profileId = requestedProfileId ?? state.activeProfileId;
       return applyToModsInProfile(state, profileId, (mods) =>
-        mods.map((mod) => ({
-          ...mod,
-          selectedDownloads:
-            mod.remoteId === remoteId ? downloads : mod.selectedDownloads,
-        })),
+        mods.map((mod) =>
+          mod.remoteId === remoteId
+            ? { ...mod, selectedDownloads: downloads }
+            : mod,
+        ),
       );
     }),
 
@@ -642,10 +641,9 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
     set((state) => {
       const profileId = requestedProfileId ?? state.activeProfileId;
       return applyToModsInProfile(state, profileId, (mods) =>
-        mods.map((mod) => ({
-          ...mod,
-          downloads: mod.remoteId === remoteId ? downloads : mod.downloads,
-        })),
+        mods.map((mod) =>
+          mod.remoteId === remoteId ? { ...mod, downloads } : mod,
+        ),
       );
     }),
 
@@ -653,11 +651,11 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
     set((state) => {
       const profileId = requestedProfileId ?? state.activeProfileId;
       return applyToModsInProfile(state, profileId, (mods) =>
-        mods.map((mod) => ({
-          ...mod,
-          activeVariantArchive:
-            mod.remoteId === remoteId ? archiveName : mod.activeVariantArchive,
-        })),
+        mods.map((mod) =>
+          mod.remoteId === remoteId
+            ? { ...mod, activeVariantArchive: archiveName }
+            : mod,
+        ),
       );
     }),
 
@@ -682,10 +680,9 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
     set((state) => {
       const profileId = requestedProfileId ?? state.activeProfileId;
       return applyToModsInProfile(state, profileId, (mods) =>
-        mods.map((mod) => ({
-          ...mod,
-          installOrder: mod.remoteId === remoteId ? order : mod.installOrder,
-        })),
+        mods.map((mod) =>
+          mod.remoteId === remoteId ? { ...mod, installOrder: order } : mod,
+        ),
       );
     }),
 

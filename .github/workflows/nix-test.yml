@@ -45,7 +45,7 @@ jobs:
             accept-flake-config = true
 
       - name: Use Cachix binary cache
-        uses: cachix/cachix-action@v16
+        uses: cachix/cachix-action@v17
         with:
           name: deadlock-mod-manager
           skipPush: true
@@ -87,7 +87,7 @@ jobs:
             accept-flake-config = true
 
       - name: Use Cachix binary cache
-        uses: cachix/cachix-action@v16
+        uses: cachix/cachix-action@v17
         with:
           name: deadlock-mod-manager
           skipPush: true
@@ -166,7 +166,7 @@ jobs:
 
       # The only job that pushes, so the cache holds nightly builds rather than CI tooling.
       - name: Use Cachix binary cache
-        uses: cachix/cachix-action@v16
+        uses: cachix/cachix-action@v17
         with:
           name: deadlock-mod-manager
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
@@ -204,7 +204,7 @@ jobs:
             accept-flake-config = true
 
       - name: Use Cachix binary cache
-        uses: cachix/cachix-action@v16
+        uses: cachix/cachix-action@v17
         with:
           name: deadlock-mod-manager
           skipPush: true

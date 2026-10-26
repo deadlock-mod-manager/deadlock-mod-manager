@@ -32,6 +32,11 @@ fn setup() -> (tempfile::TempDir, PathBuf) {
 #[test]
 fn apply_preserves_hero_overrides_and_unrelated_settings() {
   let (game, cfg) = setup();
+  fs::write(
+    cfg.join("autoexec.cfg"),
+    "echo keep\n// === Deadlock Mod Manager - Crosshair Settings (DO NOT EDIT) ===\ncitadel_crosshair_color_r \"1\"\n// === End Crosshair Settings ===\n",
+  )
+  .unwrap();
   AutoexecManager::new()
     .apply_crosshair(game.path(), &config(), None)
     .unwrap();
@@ -58,11 +63,10 @@ fn apply_preserves_hero_overrides_and_unrelated_settings() {
     content.split("heroes = ").nth(1),
     fixture().split("heroes = ").nth(1)
   );
-  let autoexec = fs::read_to_string(cfg.join("autoexec.cfg")).unwrap();
-  assert!(autoexec.starts_with("echo keep\n"));
-  assert!(autoexec.contains("citadel_crosshair_pip_outline_border \"0\""));
-  assert!(!autoexec.contains("citadel_crosshair_pip_border"));
-  assert!(!autoexec.contains("citadel_crosshair_themed"));
+  assert_eq!(
+    fs::read_to_string(cfg.join("autoexec.cfg")).unwrap(),
+    "echo keep"
+  );
 }
 
 #[test]
@@ -92,7 +96,7 @@ fn repeated_apply_and_disable_restore_original_crosshair() {
   assert!(!cfg.join(BACKUP_FILE).exists());
   assert_eq!(
     fs::read_to_string(cfg.join("autoexec.cfg")).unwrap(),
-    "echo keep"
+    "echo keep\n"
   );
   manager
     .disable_custom_crosshairs(game.path(), None)

@@ -5,9 +5,11 @@ export const SETTINGS_TAB_LABEL_KEYS = {
   "launch-options": "settings.launchOptions",
   autoexec: "settings.autoexec",
   game: "settings.game",
+  mods: "settings.mods",
   application: "settings.application",
   themes: "settings.themes",
   network: "settings.network",
+  integrations: "settings.integrations",
   plugin: "settings.plugin",
   discord: "settings.discord",
   tools: "settings.tools",
@@ -47,10 +49,7 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
     tab: "launch-options",
     titleKey: "settings.launchOptions",
     descriptionKey: "settings.launchOptionsDescription",
-    settings: [
-      { titleKey: "gamePresence.condebugOption" },
-      { titleKey: "settings.autoexecLaunchOption" },
-    ],
+    settings: [{ titleKey: "gamePresence.condebugOption" }],
   },
   {
     tab: "autoexec",
@@ -70,12 +69,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
     descriptionKey: "settings.steamPathSectionDescription",
   },
   {
-    id: "download-cache-location",
-    tab: "game",
-    titleKey: "settings.downloadCacheLocation",
-    descriptionKey: "settings.downloadCacheLocationDescription",
-  },
-  {
     id: "game-config",
     tab: "game",
     titleKey: "settings.gameConfigManagement",
@@ -87,10 +80,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
       {
         titleKey: "settings.autoResetGameinfo",
         descriptionKey: "settings.autoResetGameinfoDescription",
-      },
-      {
-        titleKey: "settings.autoFixMods",
-        descriptionKey: "settings.autoFixModsDescription",
       },
       { titleKey: "game.validateConfiguration" },
     ],
@@ -118,10 +107,10 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
     descriptionKey: "heroParser.settingsDescription",
   },
   {
-    id: "system",
-    tab: "application",
-    titleKey: "settings.systemSettings",
-    descriptionKey: "settings.systemSettingsDescription",
+    id: "mod-installing",
+    tab: "mods",
+    titleKey: "settings.modInstallingSectionTitle",
+    descriptionKey: "settings.modInstallingSectionDescription",
     settings: [
       {
         titleKey: "settings.autoReapplyMods",
@@ -131,13 +120,71 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
         titleKey: "settings.heroConflictWarning",
         descriptionKey: "settings.heroConflictWarningDescription",
       },
+    ],
+  },
+  {
+    id: "mod-repair",
+    tab: "mods",
+    titleKey: "settings.modRepairSectionTitle",
+    descriptionKey: "settings.modRepairSectionDescription",
+    settings: [
       {
-        titleKey: "settings.launchVanillaNoArgs",
-        descriptionKey: "settings.launchVanillaNoArgsDescription",
+        titleKey: "settings.autoFixMods",
+        descriptionKey: "settings.autoFixModsDescription",
+      },
+    ],
+  },
+  {
+    id: "hero-skins",
+    tab: "mods",
+    titleKey: "settings.heroSkins",
+    descriptionKey: "settings.heroSkinsDescription",
+    settings: [
+      {
+        titleKey: "settings.multipleSkins",
+        descriptionKey: "settings.multipleSkinsDescription",
+      },
+      {
+        titleKey: "settings.heroExtras",
+        descriptionKey: "settings.heroExtrasDescription",
+      },
+    ],
+  },
+  {
+    id: "mod-browsing",
+    tab: "mods",
+    titleKey: "settings.modBrowsingSectionTitle",
+    descriptionKey: "settings.modBrowsingSectionDescription",
+    settings: [
+      {
+        titleKey: "settings.defaultSort",
+        descriptionKey: "settings.defaultSortDescription",
       },
       {
         titleKey: "settings.modsStorePagination",
         descriptionKey: "settings.modsStorePaginationDescription",
+      },
+      {
+        titleKey: "settings.showModUpdateBadges",
+        descriptionKey: "settings.showModUpdateBadgesDescription",
+      },
+    ],
+  },
+  {
+    id: "download-cache-location",
+    tab: "mods",
+    titleKey: "settings.downloadCacheLocation",
+    descriptionKey: "settings.downloadCacheLocationDescription",
+  },
+  {
+    id: "system",
+    tab: "application",
+    titleKey: "settings.systemSettings",
+    descriptionKey: "settings.systemSettingsDescription",
+    settings: [
+      {
+        titleKey: "settings.launchVanillaNoArgs",
+        descriptionKey: "settings.launchVanillaNoArgsDescription",
       },
       {
         titleKey: "settings.minimizeToTray",
@@ -188,10 +235,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
         descriptionKey: "settings.audioVolumeDescription",
       },
       {
-        titleKey: "settings.showModUpdateBadges",
-        descriptionKey: "settings.showModUpdateBadgesDescription",
-      },
-      {
         titleKey: "settings.featureTips",
         descriptionKey: "settings.featureTipsDescription",
       },
@@ -222,29 +265,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
     ],
   },
   {
-    id: "default-sort",
-    tab: "application",
-    titleKey: "settings.defaultSortValue",
-    descriptionKey: "settings.defaultSortDescription",
-    settings: [{ titleKey: "settings.defaultSort" }],
-  },
-  {
-    id: "hero-skins",
-    tab: "application",
-    titleKey: "settings.heroSkins",
-    descriptionKey: "settings.heroSkinsDescription",
-    settings: [
-      {
-        titleKey: "settings.multipleSkins",
-        descriptionKey: "settings.multipleSkinsDescription",
-      },
-      {
-        titleKey: "settings.heroExtras",
-        descriptionKey: "settings.heroExtrasDescription",
-      },
-    ],
-  },
-  {
     tab: "themes",
     titleKey: "settings.themes",
   },
@@ -253,6 +273,18 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
     tab: "network",
     titleKey: "settings.fileserverSectionTitle",
     descriptionKey: "settings.networkDescription",
+  },
+  {
+    id: "gamebanana",
+    tab: "integrations",
+    titleKey: "settings.gamebanana",
+    descriptionKey: "settings.gamebananaDescription",
+    settings: [
+      {
+        titleKey: "settings.remoteInstall",
+        descriptionKey: "settings.remoteInstallDescription",
+      },
+    ],
   },
   {
     id: "proxy",
@@ -401,6 +433,11 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
       {
         titleKey: "privacy.blurStrength",
         descriptionKey: "privacy.blurStrengthDescription",
+      },
+      {
+        titleKey: "privacy.lightweightNSFWBlur",
+        descriptionKey: "privacy.lightweightNSFWBlurDescription",
+        platforms: ["linux"],
       },
       {
         titleKey: "privacy.showLikelyNSFW",

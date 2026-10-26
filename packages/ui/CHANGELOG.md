@@ -1,5 +1,11 @@
 # @deadlock-mods/ui
 
+## 0.3.2
+
+### Patch Changes
+
+- 19e8ec5: Keep popovers and tooltips visible when a model preview is fullscreen.
+
 ## 0.3.1
 
 ### Patch Changes

@@ -17,7 +17,7 @@ pnpm perf:catalog --refresh  # move the pins to the newest upstream state, then 
 - GameBanana archives (zip, rar, 7z) are extracted with `bsdtar` (Windows' `tar.exe` is bsdtar) or `7z`.
 - Every file is checked against its pinned sha256 (md5 for GameBanana); a mismatch stops the run.
 - The output is deterministic: if nothing but `version`/`generatedAt` would change, the file is left alone. `version` is `YYYY.MM.DD-N`.
-- `.github/workflows/perf-catalog.yml` runs `--refresh` weekly and opens a pull request when the catalog changes.
+- `.github/workflows/perf-catalog.yml` runs `--refresh` twice a day and opens a pull request when the catalog changes.
 
 ## Layout
 

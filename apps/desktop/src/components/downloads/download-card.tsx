@@ -1,7 +1,7 @@
 import { Button } from "@deadlock-mods/ui/components/button";
 import { Card } from "@deadlock-mods/ui/components/card";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { ArrowClockwiseIcon, Pause, Play } from "@phosphor-icons/react";
+import { ArrowClockwiseIcon, Pause, Play, XIcon } from "@phosphor-icons/react";
 import type { MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
@@ -138,6 +138,16 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
     });
   };
 
+  const handleCancel = (e: MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    e.preventDefault();
+    downloadManager.cancelDownload(download.remoteId).catch((err: unknown) => {
+      toast.error(
+        t("downloads.cancelError", { message: getErrorMessage(err) }),
+      );
+    });
+  };
+
   const handleRetry = (e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     e.preventDefault();
@@ -262,6 +272,17 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
               variant='outline'>
               <Play aria-hidden className='mr-1 size-4' weight='fill' />
               {t("downloads.resume")}
+            </Button>
+          )}
+          {(isDownloading || isPaused) && (
+            <Button
+              className='h-8'
+              onClick={handleCancel}
+              size='sm'
+              type='button'
+              variant='ghost'>
+              <XIcon aria-hidden className='mr-1 size-4' weight='bold' />
+              {t("common.cancel")}
             </Button>
           )}
         </div>

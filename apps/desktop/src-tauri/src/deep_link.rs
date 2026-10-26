@@ -5,6 +5,7 @@ use tauri::{Emitter, Manager};
 use tauri_plugin_deep_link::DeepLinkExt;
 
 use crate::commands::deep_link::DeepLinkData;
+use crate::commands::remote_install::{Pairing, PendingPairing};
 
 pub const SCHEMES: &[&str] = &["deadlock-mod-manager:", "deadlock-modmanager:", "dlmm:"];
 
@@ -14,6 +15,7 @@ pub const EVENT_AUTH_CALLBACK: &str = "auth-callback-received";
 pub const EVENT_AUTH_ERROR: &str = "auth-callback-error";
 pub const EVENT_DEEP_LINK_RECEIVED: &str = "deep-link-received";
 pub const EVENT_FORGE_LAUNCH: &str = "forge-launch-requested";
+pub const EVENT_REMOTE_INSTALL_PAIR: &str = "remote-install-pair-requested";
 
 pub const PATH_OIDC_CALLBACK: &str = "//auth/callback";
 pub const PATH_LEGACY_AUTH_CALLBACK: &str = "//auth-callback";
@@ -21,6 +23,9 @@ pub const PATH_LEGACY_AUTH_CALLBACK: &str = "//auth-callback";
 /// Fired by deadlockforge.net when its 1-click button cannot find the bridge.
 /// Brings the app up and asks whether to turn 1-click installs on.
 pub const PATH_FORGE_LAUNCH: &str = "//forge/launch";
+
+/// GameBanana's Pair button sends `registerKey,{memberID},{secretKey}`.
+pub const REMOTE_INSTALL_PAIR_PREFIX: &str = "registerKey,";
 
 pub const GAMEBANANA_DOMAIN: &str = "gamebanana.com";
 pub const MOD_ID_PARTS_COUNT: usize = 3;
@@ -116,6 +121,26 @@ pub fn validate_mod_deep_link(data_part: &str) -> Option<(String, String, String
   Some((download_url.to_string(), mod_type, mod_id))
 }
 
+/// Returns (member_id, secret_key) for a GameBanana Remote Install pair link.
+pub fn parse_remote_install_pair(data_part: &str) -> Option<(u32, String)> {
+  let (member_id, secret_key) = data_part
+    .trim_start_matches('/')
+    .strip_prefix(REMOTE_INSTALL_PAIR_PREFIX)?
+    .trim_end_matches('/')
+    .split_once(',')?;
+
+  let member_id = member_id.parse::<u32>().ok()?;
+  is_valid_remote_install_key(secret_key).then(|| (member_id, secret_key.to_string()))
+}
+
+/// The key becomes a path segment of the queue URL, so only URL-safe characters pass.
+fn is_valid_remote_install_key(secret_key: &str) -> bool {
+  (1..=128).contains(&secret_key.len())
+    && secret_key
+      .bytes()
+      .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_'))
+}
+
 pub fn handle_deep_link_url(
   app_handle: &AppHandle,
   url: &str,
@@ -190,6 +215,22 @@ pub fn handle_deep_link_url(
     return Ok(());
   }
 
+  if let Some((member_id, secret_key)) = parse_remote_install_pair(data_part) {
+    let pending = app_handle.state::<PendingPairing>();
+    if let Ok(mut pending) = pending.0.lock() {
+      *pending = Some(Pairing {
+        member_id,
+        secret_key,
+      });
+    }
+    emit_to_main_window(
+      app_handle,
+      EVENT_REMOTE_INSTALL_PAIR,
+      serde_json::json!({ "memberId": member_id }),
+    )?;
+    return Ok(());
+  }
+
   if let Some((download_url, mod_type, mod_id)) = validate_mod_deep_link(data_part) {
     let parsed_data = DeepLinkData {
       download_url,
@@ -255,7 +296,7 @@ pub fn setup(app: &tauri::App<AppRuntime>) -> Result<(), Box<dyn std::error::Err
 
 #[cfg(test)]
 mod tests {
-  use super::{PATH_FORGE_LAUNCH, strip_scheme, validate_mod_deep_link};
+  use super::{PATH_FORGE_LAUNCH, parse_remote_install_pair, strip_scheme, validate_mod_deep_link};
 
   #[test]
   fn recognises_the_forge_launch_url_the_site_fires() {
@@ -278,5 +319,27 @@ mod tests {
     assert!(validate_mod_deep_link("https://gamebanana.com.evil.test/mmdl/12,Mod,42").is_none());
     assert!(validate_mod_deep_link("http://gamebanana.com/mmdl/12,Mod,42").is_none());
     assert!(validate_mod_deep_link("https://gamebanana.com/mmdl/12,Map,42").is_none());
+  }
+
+  #[test]
+  fn parses_remote_install_pair_links() {
+    let expected = Some((4765184, "DF385693F33BABD5".to_string()));
+    for url in [
+      "deadlock-mod-manager:registerKey,4765184,DF385693F33BABD5",
+      "deadlock-mod-manager://registerKey,4765184,DF385693F33BABD5/",
+    ] {
+      assert_eq!(
+        parse_remote_install_pair(strip_scheme(url).unwrap()),
+        expected,
+        "{url}"
+      );
+    }
+  }
+
+  #[test]
+  fn keeps_mod_links_and_unsafe_keys_out_of_pairing() {
+    assert!(parse_remote_install_pair("https://gamebanana.com/mmdl/12,Mod,42").is_none());
+    assert!(parse_remote_install_pair("registerKey,42,key/../other").is_none());
+    assert!(parse_remote_install_pair("registerKey,not-a-member,KEY").is_none());
   }
 }

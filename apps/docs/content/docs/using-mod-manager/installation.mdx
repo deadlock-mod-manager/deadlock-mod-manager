@@ -42,17 +42,15 @@ The easiest way to install Deadlock Mod Manager is to download the latest releas
 2. Download the appropriate installer for your operating system
 3. Run the installer and follow the setup instructions
 
-### Optional CEF Builds
+### CEF (Chromium) Builds
 
-Some releases also include builds using Chromium Embedded Framework (CEF) instead of the standard system webview. Look for release assets with a `-cef` suffix, such as `-cef-setup.exe`, `-cef.deb`, or `deadlock-mod-manager-cef.flatpak`, when available. On Ubuntu/Debian, the CEF build is also available from the [APT repository](#ubuntudebian-apt).
+Releases include builds using Chromium Embedded Framework (CEF) instead of the system webview. These assets have a `-cef` suffix: `-cef-setup.exe`, `-cef.deb`, and `deadlock-mod-manager-cef.flatpak`. On Ubuntu/Debian, the CEF build is also available from the [APT repository](#ubuntudebian-apt).
 
-<Callout type='info' title='Slow or laggy app? Try the CEF build'>
-  If the regular build feels slow, especially on Linux, switch to the CEF build.
-  It bundles Chromium, which generally performs better than the system webview.
-  The CEF download is larger.
-</Callout>
+**On Linux, the CEF build is the default.** The download buttons on [deadlockmods.app](https://deadlockmods.app/download) give you the CEF Flatpak, because the system webview (WebKitGTK) is slow or renders blank on many setups. The system webview builds (`deadlock-mod-manager.flatpak`, `.deb`, `.rpm`) are still available as alternatives. There is no CEF `.rpm`; use the CEF Flatpak on Fedora and openSUSE.
 
-CEF is an alternate runtime for the same manager features. Use the release notes to decide which build suits your system, especially when troubleshooting webview rendering. Availability varies by release and platform. Avoid running multiple builds against the same game installation at once.
+On Windows, the system webview build stays the default and the CEF installer is optional. The CEF download is larger.
+
+Both runtimes have the same manager features. If one renders badly on your system, try the other. Avoid running multiple builds against the same game installation at once.
 
 ### Windows standalone executable
 
@@ -241,9 +239,14 @@ sudo apt install ./Deadlock.Mod.Manager_*_amd64.deb
 
 #### Flatpak
 
+There are two Flatpak bundles. `deadlock-mod-manager-cef.flatpak` (Chromium) is the recommended one; `deadlock-mod-manager.flatpak` uses the system webview. Both install as `dev.stormix.deadlock-mod-manager`, so installing one replaces the other.
+
 ```bash
-# Install from the Flatpak bundle
-flatpak install ./deadlock-mod-manager-*.flatpak
+# Install the recommended CEF (Chromium) bundle
+flatpak install ./deadlock-mod-manager-cef.flatpak
+
+# Or the system webview bundle
+flatpak install ./deadlock-mod-manager.flatpak
 
 # Or, once published on Flathub:
 flatpak install flathub dev.stormix.deadlock-mod-manager

@@ -67,6 +67,8 @@ export type SettingsState = {
   /** Whether weapon skins, sounds and the like get listed under a hero too. */
   heroExtrasEnabled: boolean;
   linuxGpuOptimization: "auto" | "on" | "off";
+  /** Linux only: blur NSFW thumbnails through a canvas instead of CSS filters. */
+  linuxCanvasNSFWBlur: boolean;
   enabledPlugins: Record<string, boolean>; // pluginId -> isEnabled
   gamePresenceEnabled: boolean;
   forgeInstallEnabled: boolean;
@@ -125,6 +127,7 @@ export type SettingsState = {
 
   // Linux GPU optimization management
   setLinuxGpuOptimization: (value: "auto" | "on" | "off") => void;
+  setLinuxCanvasNSFWBlur: (enabled: boolean) => void;
 
   setGamePresenceEnabled: (enabled: boolean) => void;
   setForgeInstallEnabled: (enabled: boolean) => void;
@@ -180,6 +183,7 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   multipleSkinsEnabled: false,
   heroExtrasEnabled: false,
   linuxGpuOptimization: "auto",
+  linuxCanvasNSFWBlur: true,
   enabledPlugins: {},
   gamePresenceEnabled: true,
   forgeInstallEnabled: false,
@@ -336,6 +340,10 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   setLinuxGpuOptimization: (value: "auto" | "on" | "off") =>
     set(() => ({
       linuxGpuOptimization: value,
+    })),
+  setLinuxCanvasNSFWBlur: (enabled: boolean) =>
+    set(() => ({
+      linuxCanvasNSFWBlur: enabled,
     })),
 
   setGamePresenceEnabled: (enabled: boolean) =>

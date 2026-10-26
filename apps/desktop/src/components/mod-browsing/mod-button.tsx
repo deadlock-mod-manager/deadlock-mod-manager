@@ -32,6 +32,7 @@ import {
 import ErrorBoundary from "@/components/shared/error-boundary";
 import { useConfigListing } from "@/hooks/performance/use-config-listing";
 import { useDownload } from "@/hooks/use-download";
+import { useHasOpened } from "@deadlock-mods/ui/hooks/use-has-opened";
 import { useInstallAction } from "@/hooks/use-install-action";
 import {
   modDownloadsQueryOptions,
@@ -107,6 +108,33 @@ export const ModStatusIcon = ({
   );
 };
 
+const DownloadProgressRing = ({ percentage }: { percentage: number }) => (
+  <svg aria-hidden className='h-5 w-5 -rotate-90' viewBox='0 0 20 20'>
+    <circle
+      className='text-muted-foreground/25'
+      cx='10'
+      cy='10'
+      fill='none'
+      r='8'
+      stroke='currentColor'
+      strokeWidth='2.5'
+    />
+    <circle
+      className='text-primary transition-[stroke-dashoffset] duration-200 ease-out motion-reduce:transition-none'
+      cx='10'
+      cy='10'
+      fill='none'
+      pathLength={100}
+      r='8'
+      stroke='currentColor'
+      strokeDasharray={100}
+      strokeDashoffset={100 - percentage}
+      strokeLinecap='round'
+      strokeWidth='2.5'
+    />
+  </svg>
+);
+
 const InstallModButton = ({
   remoteMod,
   variant = "default",
@@ -143,9 +171,14 @@ const InstallModButton = ({
     currentMod,
   } = useInstallAction();
   const { uninstall } = useUninstall();
-  const modProgress = usePersistedStore((state) =>
-    remoteMod?.remoteId ? state.modProgress[remoteMod.remoteId] : undefined,
-  );
+  // Progress is written on every chunk; subscribing to the rounded number keeps
+  // each card to at most one re-render per percent.
+  const progressPercent = usePersistedStore((state) => {
+    const percentage = remoteMod?.remoteId
+      ? state.modProgress[remoteMod.remoteId]?.percentage
+      : undefined;
+    return percentage == null ? undefined : Math.round(percentage);
+  });
   const removeMod = usePersistedStore((state) => state.removeMod);
   const [ref, hovering] = useHover();
   const [isActionInProgress, setIsActionInProgress] = useState(false);
@@ -157,6 +190,11 @@ const InstallModButton = ({
   const heroConflictResolverRef = useRef<
     ((resolution: HeroConflictResolution) => void) | null
   >(null);
+  // Every catalog and library card renders this button, so its dialogs mount
+  // only once they are first opened.
+  const fileSelectorOpened = useHasOpened(showFileSelector);
+  const downloadDialogOpened = useHasOpened(isDialogOpen);
+  const heroConflictOpened = useHasOpened(heroConflict !== null);
 
   const askHeroConflict = useCallback(
     (heroName: string, currentMod: LocalMod, newMod: LocalMod) =>
@@ -299,18 +337,18 @@ const InstallModButton = ({
         return t("modButton.downloaded");
       case ModStatus.Downloading:
         return t("downloads.downloadingPercent", {
-          percent: Math.round(modProgress?.percentage ?? 0),
+          percent: progressPercent ?? 0,
         });
       case ModStatus.Paused:
         return `${t("downloads.paused")} ${t("downloads.percentage", {
-          percentage: Math.round(modProgress?.percentage ?? 0),
+          percentage: progressPercent ?? 0,
         })}`;
       case undefined:
         return t("modButton.add");
       default:
         return t(`modButton.${localMod?.status}`);
     }
-  }, [localMod?.status, t, hovering, modProgress?.percentage]);
+  }, [localMod?.status, t, hovering, progressPercent]);
 
   const tooltip = useMemo(() => {
     switch (localMod?.status) {
@@ -318,8 +356,9 @@ const InstallModButton = ({
         return t("modButton.installedTooltip");
       case ModStatus.Downloaded:
         return t("modButton.downloadedTooltip");
+      case ModStatus.Downloading:
       case ModStatus.Paused:
-        return t("downloads.paused");
+        return text;
       case ModStatus.FailedToDownload:
         return t("downloads.retry");
       case undefined:
@@ -327,7 +366,12 @@ const InstallModButton = ({
       default:
         return t(`modButton.${localMod?.status}`);
     }
-  }, [localMod?.status, t]);
+  }, [localMod?.status, t, text]);
+
+  const showProgressRing =
+    variant === "iconOnly" &&
+    localMod?.status === ModStatus.Downloading &&
+    progressPercent != null;
 
   const buttonVariant = useMemo(() => {
     switch (localMod?.status) {
@@ -396,7 +440,14 @@ const InstallModButton = ({
               aria-label={tooltip}
               disabled={isActionInProgress || isAnalyzing}
               icon={
-                <ModStatusIcon hovering={hovering} status={localMod?.status} />
+                showProgressRing ? (
+                  <DownloadProgressRing percentage={progressPercent} />
+                ) : (
+                  <ModStatusIcon
+                    hovering={hovering}
+                    status={localMod?.status}
+                  />
+                )
               }
               onClick={onClick}
               ref={ref}
@@ -412,40 +463,48 @@ const InstallModButton = ({
       )}
 
       <div className='contents' onClick={(e) => e.stopPropagation()}>
-        <FileSelectorDialog
-          fileTree={currentFileTree}
-          isOpen={showFileSelector}
-          modName={currentMod?.name}
-          onCancel={cancelInstallation}
-          onConfirm={confirmInstallation}
-          onOpenChange={(open) => {
-            if (!open) {
-              cancelInstallation();
+        {fileSelectorOpened && (
+          <FileSelectorDialog
+            fileTree={currentFileTree}
+            isOpen={showFileSelector}
+            modName={currentMod?.name}
+            onCancel={cancelInstallation}
+            onConfirm={confirmInstallation}
+            onOpenChange={(open) => {
+              if (!open) {
+                cancelInstallation();
+              }
+            }}
+          />
+        )}
+
+        {downloadDialogOpened && (
+          <MultiFileDownloadDialog
+            downloadPercentage={progressPercent ?? 0}
+            files={availableFiles}
+            isDownloading={
+              localMod?.status === ModStatus.Downloading ||
+              localMod?.status === ModStatus.Paused
             }
-          }}
-        />
+            isExtracting={localMod?.status === ModStatus.Extracting}
+            isOpen={isDialogOpen}
+            modName={
+              localMod?.name || remoteMod?.name || t("modForm.unknownMod")
+            }
+            onClose={closeDialog}
+            onDownload={downloadSelectedFiles}
+          />
+        )}
 
-        <MultiFileDownloadDialog
-          downloadPercentage={modProgress?.percentage ?? 0}
-          files={availableFiles}
-          isDownloading={
-            localMod?.status === ModStatus.Downloading ||
-            localMod?.status === ModStatus.Paused
-          }
-          isExtracting={localMod?.status === ModStatus.Extracting}
-          isOpen={isDialogOpen}
-          modName={localMod?.name || remoteMod?.name || t("modForm.unknownMod")}
-          onClose={closeDialog}
-          onDownload={downloadSelectedFiles}
-        />
-
-        <HeroConflictDialog
-          currentMod={heroConflict?.currentMod ?? null}
-          heroName={heroConflict?.heroName ?? ""}
-          newMod={heroConflict?.newMod ?? null}
-          onResolve={handleHeroConflictResolve}
-          open={heroConflict !== null}
-        />
+        {heroConflictOpened && (
+          <HeroConflictDialog
+            currentMod={heroConflict?.currentMod ?? null}
+            heroName={heroConflict?.heroName ?? ""}
+            newMod={heroConflict?.newMod ?? null}
+            onResolve={handleHeroConflictResolve}
+            open={heroConflict !== null}
+          />
+        )}
       </div>
     </ErrorBoundary>
   );

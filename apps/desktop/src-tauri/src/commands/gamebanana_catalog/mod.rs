@@ -160,18 +160,30 @@ pub async fn get_gamebanana_submission_detail(
   let cancel = CancellationToken::new();
   let mut mod_data = match backend.client.profile(&submission, &cancel).await {
     Ok(profile) => {
-      let normalized =
+      let mut normalized =
         normalize_profile(&profile, submission.submission_type).ok_or_else(|| {
           Error::ProviderInvalidResponse("submission is not publicly available".to_string())
         })?;
-      backend
+      // A profile names only its category and that category's parent, which is not the
+      // root in deeper trees (Model Replacement > NPCs > Troopers). The sync stored the
+      // index root category.
+      match backend.catalog.get(submission.clone()).await {
+        Ok(Some(cached)) => normalized.category = cached.category,
+        Ok(None) => {}
+        Err(error) => log::warn!("Could not read the cached record for {remote_id}: {error}"),
+      }
+      // Caching the profile is incidental; a busy catalog must not hide a page we already have.
+      if let Err(error) = backend
         .catalog
         .upsert_records(vec![record_from_profile(
           submission,
           &profile,
           normalized.clone(),
         )])
-        .await?;
+        .await
+      {
+        log::warn!("Could not cache the GameBanana profile for {remote_id}: {error}");
+      }
       CatalogModDto::from_profile(&profile, normalized)
     }
     Err(provider_error) => {
@@ -285,6 +297,8 @@ fn detect_update(snapshot: &UpdateSnapshot, installed: &InstalledSubmissionDto) 
     .max()
 }
 
+const UPDATE_CACHE_TTL_SECS: u64 = 6 * 60 * 60;
+
 #[tauri::command]
 pub async fn check_gamebanana_catalog_updates(
   state: State<'_, GameBananaCatalogState>,
@@ -314,7 +328,7 @@ pub async fn check_gamebanana_catalog_updates(
       continue;
     }
     match backend.catalog.cached_update(submission.clone()).await? {
-      Some(cached) if now.saturating_sub(cached.checked_at) < 6 * 60 * 60 => {
+      Some(cached) if now.saturating_sub(cached.checked_at) < UPDATE_CACHE_TTL_SECS => {
         resolved.push((submission, installed, cached.snapshot));
       }
       _ => pending.push((submission, installed)),
@@ -427,14 +441,6 @@ pub async fn invalidate_gamebanana_catalog_state(
   state: State<'_, GameBananaCatalogState>,
 ) -> Result<(), Error> {
   state.backend()?.catalog.invalidate_sync_state().await
-}
-
-#[tauri::command]
-pub async fn get_gamebanana_fileservers(
-  state: State<'_, GameBananaCatalogState>,
-  force_refresh: bool,
-) -> Result<Vec<GameBananaFileserverDto>, Error> {
-  state.backend()?.fileservers(force_refresh).await
 }
 
 async fn submission_files(

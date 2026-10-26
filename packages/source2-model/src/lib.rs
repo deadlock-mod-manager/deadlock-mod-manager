@@ -1,19 +1,18 @@
 //! Decoder for the Source 2 compiled assets the Mod Foundry previews.
 //!
-//! Scope is deliberately narrow, and read-only: character models
-//! (`.vmdl_c` / `.vmesh_c`) and the materials and textures they reference.
-//! Animation, particle and physics decoding are intentionally not part of this
-//! crate — the Foundry previews a static character model only — and the write
-//! side (recolor, replace, pack) lives in `vpkmanager`.
+//! Read-only decoding of character models, materials, textures, animations,
+//! particles and cloth. The write side (recolor, replace, pack) lives in `vpkmanager`.
 //!
 //! Decode and export behavior is adapted from the MIT-licensed
 //! [ValveResourceFormat](https://github.com/ValveResourceFormat/ValveResourceFormat)
 //! project. The full license text is in `LICENSE-ValveResourceFormat`.
 
 pub mod error;
+pub mod fe_model;
 pub mod kv3;
 mod material_preview;
 pub mod nm_anim;
+pub mod particles;
 pub mod resource;
 mod rest_pose;
 pub mod skeleton;
@@ -180,9 +179,14 @@ pub fn decode_model_glb_from_archive(archive: &VpkArchive, entry_path: &str) -> 
     let mesh_paths = vmesh::referenced_meshes(&res)?;
     if !mesh_paths.is_empty() {
         let skeleton = skeleton::parse_model_skeleton(&res)?;
+        let mesh_groups = vmesh::model_mesh_groups(&res);
+        let shown = vmesh::preview_mesh_selection(&res, mesh_paths.len());
         let mut primitives = Vec::new();
         let mut preview_textures = Vec::new();
         for (mesh_index, mesh_path) in mesh_paths.into_iter().enumerate() {
+            if !shown[mesh_index] {
+                continue;
+            }
             let mesh_bytes = archive.extract_entry(&mesh_path)?;
             let mesh_res = Resource::parse(mesh_bytes)?;
             let material_paths = vmesh::referenced_materials(&mesh_res);
@@ -194,10 +198,15 @@ pub fn decode_model_glb_from_archive(archive: &VpkArchive, entry_path: &str) -> 
                 &mesh_textures,
                 bone_remap.as_deref(),
             )?;
+            let group_mask = mesh_groups
+                .as_ref()
+                .and_then(|groups| groups.masks.get(mesh_index))
+                .map_or(u64::MAX, |mask| *mask);
             for primitive in &mut mesh_primitives {
                 if primitive.material > 0 {
                     primitive.material += material_offset;
                 }
+                primitive.mesh_group_mask = group_mask;
             }
             primitives.append(&mut mesh_primitives);
             preview_textures.extend(mesh_textures);
@@ -206,6 +215,7 @@ pub fn decode_model_glb_from_archive(archive: &VpkArchive, entry_path: &str) -> 
             &primitives,
             &preview_textures,
             skeleton.as_ref(),
+            mesh_groups.as_ref(),
         );
     }
     let material_paths = vmesh::referenced_materials(&res);
@@ -256,7 +266,11 @@ fn decode_model_render_model_from_archive(
             alpha_cutoff: 0.5,
             emissive_factor: None,
         }];
+        let shown = vmesh::default_mesh_selection(&res, mesh_paths.len());
         for (mesh_index, mesh_path) in mesh_paths.into_iter().enumerate() {
+            if !shown[mesh_index] {
+                continue;
+            }
             let bone_remap = vmesh::model_mesh_bone_remap(&res, mesh_index)?;
             let mesh_bytes = archive.extract_entry(&mesh_path)?;
             let mesh_res = Resource::parse(mesh_bytes)?;

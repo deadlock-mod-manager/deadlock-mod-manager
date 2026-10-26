@@ -14,4 +14,5 @@ export const toModAuthorDto = (author: ModAuthor): ModAuthorDto => ({
   title: author.title,
   joinedAt: author.joinedAt,
   subscriberCount: author.subscriberCount,
+  contacts: author.contacts ?? [],
 });

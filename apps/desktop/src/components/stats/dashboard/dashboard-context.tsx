@@ -1,6 +1,7 @@
 import { RuntimeError } from "@deadlock-mods/common/client-errors";
 import { createContext, type ReactNode, useContext } from "react";
 import type { usePlayerStats } from "@/hooks/use-player-stats";
+import type { SteamAccount } from "@/hooks/use-steam-accounts";
 import type { DeadlockHero } from "@/lib/deadlock-api";
 import type { RankAsset } from "@/lib/stats/api";
 import type { StatsScope } from "@/lib/stats/scope";
@@ -12,6 +13,11 @@ import type { StatsScope } from "@/lib/stats/scope";
  */
 export interface DashboardData {
   accountId: number | null;
+  /** The saved accounts are still loading, so no account is selected yet. */
+  isAccountPending: boolean;
+  account: SteamAccount | null;
+  accounts: SteamAccount[];
+  onSelectAccount: (accountId: number) => void;
   scope: StatsScope;
   stats: ReturnType<typeof usePlayerStats>;
   heroesById: Map<number, DeadlockHero>;

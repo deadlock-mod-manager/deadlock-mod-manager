@@ -78,7 +78,7 @@ import { Radioactive, Trash } from "@phosphor-icons/react";
 import { MagnifyingGlass } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
 import { platform } from "@tauri-apps/plugin-os";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { HintAnchor } from "@/components/feature-hints/hint-anchor";
@@ -97,7 +97,7 @@ import { AnalysisProgressToast } from "@/components/my-mods/analysis-progress-to
 import { AnalysisResultsDialog } from "@/components/my-mods/analysis-results-dialog";
 import { BatchUpdateDialog } from "@/components/my-mods/batch-update-dialog";
 import { EnableAllRecapDialog } from "@/components/my-mods/enable-all-recap-dialog";
-import { UpdateButton } from "@/components/my-mods/update-button";
+import { BatchUpdateButton } from "@/components/my-mods/batch-update-button";
 import { ExportDialog } from "@/components/mod-interchange/export-dialog";
 import { AddModsMenu } from "@/components/mod-interchange/add-mods-menu";
 import { ConflictsPanel } from "@/components/my-mods/conflicts/conflicts-panel";
@@ -125,6 +125,7 @@ import { useStuckAttribute } from "@/hooks/use-stuck-attribute";
 import { useProfileConflicts } from "@/hooks/use-profile-conflicts";
 import { useSearch } from "@/hooks/use-search";
 import { useModOptions } from "@/hooks/use-mod-options";
+import { useHasOpened } from "@deadlock-mods/ui/hooks/use-has-opened";
 import useUninstall from "@/hooks/use-uninstall";
 import { useVpkScan } from "@/hooks/use-vpk-scan";
 import { openFindBrokenMod } from "@/lib/bisect/dialogs";
@@ -132,6 +133,7 @@ import { useThemeOverride } from "@/components/providers/theme-overrides";
 import { SortType } from "@/lib/constants";
 import { ModCategory } from "@/lib/constants";
 import { getErrorMessage } from "@/lib/errors";
+import { parseGameBananaReference } from "@/lib/mod-interchange";
 import {
   filterLibraryModsByStatus,
   formatModList,
@@ -151,7 +153,6 @@ import type {
 } from "@/lib/store/slices/ui";
 import type { ModConflictStatus } from "@/lib/mods/conflicts";
 import { isInstalledModWithVpks } from "@/lib/mods/installed-helpers";
-import { getUpdatePercent } from "@/lib/mods/batch-update-progress";
 import { getModCoverImage } from "@/lib/mods/mod-images";
 import { healthByModId, showsDateOutdatedWarning } from "@/lib/mods/mod-health";
 import { cn, isModOutdated } from "@/lib/utils";
@@ -264,17 +265,51 @@ type ModCardProps = {
   onShowConflicts: () => void;
   health: ModHealth | undefined;
   contextMenuHint: boolean;
-  onSelect: (() => void) | undefined;
+  onSelect: (id: string) => void;
+  selected: boolean;
 };
 
-const GridModCard = ({
+// Rendered outside ModContextMenu so events from the portalled dialog don't
+// bubble into the card's context menu trigger.
+const LazyModOptionsDialog = ({
+  modOptions,
+  modName,
+}: {
+  modOptions: ReturnType<typeof useModOptions>;
+  modName: string;
+}) => {
+  const opened = useHasOpened(modOptions.isOpen);
+  if (!modOptions.showButton || !opened) {
+    return null;
+  }
+  return (
+    <ModOptionsDialog
+      isOpen={modOptions.isOpen}
+      onOpenChange={(open) => (open ? modOptions.open() : modOptions.close())}
+      isSaving={modOptions.isSaving}
+      onCancelApply={modOptions.cancelApply}
+      progress={modOptions.progress}
+      onApply={modOptions.apply}
+      fileTree={modOptions.fileTree}
+      onApplyFiles={modOptions.applyFileSelection}
+      isSavingFiles={modOptions.isSavingFiles}
+      modName={modName}
+      downloads={modOptions.downloads}
+      onDiskArchiveNames={modOptions.onDiskArchiveNames}
+      activeArchiveNames={modOptions.activeArchiveNames}
+    />
+  );
+};
+
+const GridModCard = memo(function GridModCard({
   mod,
   conflictStatus,
   onShowConflicts,
   health,
   contextMenuHint,
   onSelect,
-}: ModCardProps) => {
+  selected,
+}: ModCardProps) {
   const { t } = useTranslation();
   const isDisabled = mod.status !== ModStatus.Installed;
   const hasUpdate = useModHasUpdate(mod);
@@ -306,25 +341,12 @@ const GridModCard = ({
     }
   };
 
-  const optionsDialog = modOptions.showButton ? (
-    <ModOptionsDialog
-      isOpen={modOptions.isOpen}
-      onOpenChange={(open) => (open ? modOptions.open() : modOptions.close())}
-      isSaving={modOptions.isSaving}
-      progress={modOptions.progress}
-      onApply={modOptions.apply}
-      fileTree={modOptions.fileTree}
-      onApplyFiles={modOptions.applyFileSelection}
-      isSavingFiles={modOptions.isSavingFiles}
-      modName={mod.name}
-      downloads={modOptions.downloads}
-      onDiskArchiveNames={modOptions.onDiskArchiveNames}
-      activeArchiveNames={modOptions.activeArchiveNames}
-    />
-  ) : null;
-
   const cardContent = (
-    <ModContextMenu hint={contextMenuHint} mod={mod} onSelect={onSelect}>
+    <ModContextMenu
+      hint={contextMenuHint}
+      mod={mod}
+      onSelect={() => onSelect(mod.remoteId)}
+      selected={selected}>
       <Card className='flex h-full flex-col shadow'>
         <div className='relative'>
           <div
@@ -435,19 +457,20 @@ const GridModCard = ({
   return (
     <>
       {CardWrapper ? <CardWrapper>{cardContent}</CardWrapper> : cardContent}
-      {optionsDialog}
+      <LazyModOptionsDialog modName={mod.name} modOptions={modOptions} />
     </>
   );
-};
+});
 
-const ListModCard = ({
+const ListModCard = memo(function ListModCard({
   mod,
   conflictStatus,
   onShowConflicts,
   health,
   contextMenuHint,
   onSelect,
-}: ModCardProps) => {
+  selected,
+}: ModCardProps) {
   const { t } = useTranslation();
   const isDisabled = mod.status !== ModStatus.Installed;
   const hasUpdate = useModHasUpdate(mod);
@@ -481,7 +504,11 @@ const ListModCard = ({
 
   return (
     <>
-      <ModContextMenu hint={contextMenuHint} mod={mod} onSelect={onSelect}>
+      <ModContextMenu
+        hint={contextMenuHint}
+        mod={mod}
+        onSelect={() => onSelect(mod.remoteId)}
+        selected={selected}>
         <Card className='group/row flex items-center gap-4 overflow-hidden pr-3 shadow transition-colors hover:bg-muted/40'>
           <div
             className={cn(
@@ -595,27 +622,10 @@ const ListModCard = ({
           </div>
         </Card>
       </ModContextMenu>
-      {modOptions.showButton && (
-        <ModOptionsDialog
-          isOpen={modOptions.isOpen}
-          onOpenChange={(open) =>
-            open ? modOptions.open() : modOptions.close()
-          }
-          isSaving={modOptions.isSaving}
-          progress={modOptions.progress}
-          onApply={modOptions.apply}
-          fileTree={modOptions.fileTree}
-          onApplyFiles={modOptions.applyFileSelection}
-          isSavingFiles={modOptions.isSavingFiles}
-          modName={mod.name}
-          downloads={modOptions.downloads}
-          onDiskArchiveNames={modOptions.onDiskArchiveNames}
-          activeArchiveNames={modOptions.activeArchiveNames}
-        />
-      )}
+      <LazyModOptionsDialog modName={mod.name} modOptions={modOptions} />
     </>
   );
-};
+});
 
 const ModsList = ({
   mods,
@@ -629,7 +639,9 @@ const ModsList = ({
   contextMenuHint,
   selection,
   groupActions,
+  onSelectMod,
 }: {
+  onSelectMod: (id: string) => void;
   groupActions: ModGroupActions;
   selection: {
     active: boolean;
@@ -724,6 +736,23 @@ const ModsList = ({
                       onClick={(event) =>
                         selection.toggle(mod.remoteId, event.shiftKey)
                       }
+                      onContextMenu={(event) => {
+                        // The surface covers the card, so hand the right-click
+                        // to the card's own context menu underneath.
+                        event.preventDefault();
+                        const surface = event.currentTarget;
+                        document
+                          .elementsFromPoint(event.clientX, event.clientY)
+                          .find((element) => element !== surface)
+                          ?.dispatchEvent(
+                            new MouseEvent("contextmenu", {
+                              bubbles: true,
+                              cancelable: true,
+                              clientX: event.clientX,
+                              clientY: event.clientY,
+                            }),
+                          );
+                      }}
                       tabIndex={-1}
                       type='button'
                     />
@@ -734,11 +763,8 @@ const ModsList = ({
                       !selection.active && contextMenuHint && index === 0
                     }
                     mod={mod}
-                    onSelect={
-                      selection.active
-                        ? undefined
-                        : () => selection.toggle(mod.remoteId, false)
-                    }
+                    onSelect={onSelectMod}
+                    selected={selected}
                     onShowConflicts={onShowConflicts}
                     health={healthById.get(mod.remoteId)}
                   />
@@ -775,31 +801,6 @@ const MyMods = () => {
       .map((mod) => mod.remoteId),
   );
   const selectionAnchor = useRef<string | null>(null);
-  const toggleSelection = (id: string, extend: boolean) => {
-    const anchorIndex = visibleMods.findIndex(
-      (mod) => mod.remoteId === selectionAnchor.current,
-    );
-    const targetIndex = visibleMods.findIndex((mod) => mod.remoteId === id);
-    const range =
-      extend && selecting && anchorIndex !== -1 && targetIndex !== -1
-        ? visibleMods
-            .slice(
-              Math.min(anchorIndex, targetIndex),
-              Math.max(anchorIndex, targetIndex) + 1,
-            )
-            .map((mod) => mod.remoteId)
-        : null;
-    if (!range) selectionAnchor.current = id;
-    setSelection((current) => {
-      const ids = new Set(
-        current?.profileId === activeProfileId ? current.ids : [],
-      );
-      if (range) for (const rangeId of range) ids.add(rangeId);
-      else if (ids.has(id)) ids.delete(id);
-      else ids.add(id);
-      return { profileId: activeProfileId, ids };
-    });
-  };
   const getOrderedMods = usePersistedStore((state) => state.getOrderedMods);
   const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
   const modsStorePaginationEnabled = usePersistedStore(
@@ -876,13 +877,10 @@ const MyMods = () => {
   const hiddenModelCount = conflictGroups.filter(
     (group) => group.severity === "critical",
   ).length;
-  const showConflicts = () => setActiveTab(CONFLICTS_TAB);
+  const showConflicts = useCallback(() => setActiveTab(CONFLICTS_TAB), []);
   const [showBatchUpdateDialog, setShowBatchUpdateDialog] = useState(false);
   const [batchUpdateIds, setBatchUpdateIds] =
     useState<ReadonlySet<string> | null>(null);
-  const updatePercent = usePersistedStore((state) =>
-    getUpdatePercent(state.batchUpdateProgress),
-  );
   const [showModOrdering, setShowModOrdering] = useState(false);
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [actionsMenuOpen, setActionsMenuOpen] = useState(false);
@@ -940,8 +938,16 @@ const MyMods = () => {
     },
   });
 
+  // A pasted GameBanana id or link matches that mod exactly, without the
+  // fuzzy search's debounce.
+  const idReference = parseGameBananaReference(librarySearchQuery);
+
   const displayMods = useMemo(() => {
-    const baseMods = query.trim() ? results : mods;
+    const baseMods = idReference
+      ? mods.filter((mod) => mod.remoteId === idReference)
+      : query.trim()
+        ? results
+        : mods;
     const predefinedCategorySet =
       selectedCategories.length > 0
         ? new Set<string>(Object.values(ModCategory))
@@ -1001,6 +1007,7 @@ const MyMods = () => {
     globallyHideNSFW,
     hideNSFW,
     hideOutdated,
+    idReference,
     nsfwOnly,
     query,
     results,
@@ -1030,6 +1037,43 @@ const MyMods = () => {
         ? groupedDisplayMods.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
         : groupedDisplayMods,
     [groupedDisplayMods, page, paginationEnabled],
+  );
+
+  // Kept in a ref so toggleSelection stays stable for the memoized cards.
+  const selectionScope = useRef({ visibleMods, selecting });
+  useEffect(() => {
+    selectionScope.current = { visibleMods, selecting };
+  }, [visibleMods, selecting]);
+  const toggleSelection = useCallback(
+    (id: string, extend = false) => {
+      const scope = selectionScope.current;
+      const anchorIndex = scope.visibleMods.findIndex(
+        (mod) => mod.remoteId === selectionAnchor.current,
+      );
+      const targetIndex = scope.visibleMods.findIndex(
+        (mod) => mod.remoteId === id,
+      );
+      const range =
+        extend && scope.selecting && anchorIndex !== -1 && targetIndex !== -1
+          ? scope.visibleMods
+              .slice(
+                Math.min(anchorIndex, targetIndex),
+                Math.max(anchorIndex, targetIndex) + 1,
+              )
+              .map((mod) => mod.remoteId)
+          : null;
+      if (!range) selectionAnchor.current = id;
+      setSelection((current) => {
+        const ids = new Set(
+          current?.profileId === activeProfileId ? current.ids : [],
+        );
+        if (range) for (const rangeId of range) ids.add(rangeId);
+        else if (ids.has(id)) ids.delete(id);
+        else ids.add(id);
+        return { profileId: activeProfileId, ids };
+      });
+    },
+    [activeProfileId],
   );
 
   // Reset to first page whenever the filtered set changes, and clamp if totalPages shrinks
@@ -1206,12 +1250,11 @@ const MyMods = () => {
 
         <div className='flex min-w-0 flex-1 flex-wrap items-center justify-start gap-2 xl:justify-end'>
           {updatableCount > 0 && (
-            <UpdateButton
+            <BatchUpdateButton
               variant='default'
-              onClick={() => setShowBatchUpdateDialog(true)}
-              updatePercent={updatePercent}>
+              onClick={() => setShowBatchUpdateDialog(true)}>
               {t("myMods.updateAvailableCount", { count: updatableCount })}
-            </UpdateButton>
+            </BatchUpdateButton>
           )}
           <Tooltip>
             <TooltipTrigger asChild>
@@ -1448,7 +1491,6 @@ const MyMods = () => {
                       selectedHeroes={selectedHeroes}
                       setQuery={setQuery}
                       showSortControl={false}
-                      showTimePeriodControl={false}
                       hideMapFilter={!isCustomMapsEnabled}
                       inputGroupClassName='min-w-0 w-full'
                       searchContainerClassName='w-full min-w-48 max-w-md flex-1'
@@ -1583,6 +1625,7 @@ const MyMods = () => {
                 {displayMods.length > 0 && (
                   <TabsContent className='mt-0' value={ModFilter.All}>
                     <ModsList
+                      onSelectMod={toggleSelection}
                       selection={modsListSelection}
                       groupActions={{
                         busy: selectionBusy,
@@ -1607,6 +1650,7 @@ const MyMods = () => {
                 {displayMods.length > 0 && (
                   <TabsContent className='mt-0' value={ModFilter.Enabled}>
                     <ModsList
+                      onSelectMod={toggleSelection}
                       selection={modsListSelection}
                       groupActions={{
                         busy: selectionBusy,
@@ -1631,6 +1675,7 @@ const MyMods = () => {
                 {displayMods.length > 0 && (
                   <TabsContent className='mt-0' value={ModFilter.Disabled}>
                     <ModsList
+                      onSelectMod={toggleSelection}
                       selection={modsListSelection}
                       groupActions={{
                         busy: selectionBusy,

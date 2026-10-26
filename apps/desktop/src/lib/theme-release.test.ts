@@ -1,7 +1,11 @@
 import { describe, expect, it } from "bun:test";
 import type { FeatureFlag } from "@deadlock-mods/shared";
 import type { ThemeSettings } from "@/plugins/themes/custom/types";
-import { isRemlockReleaseEnabled, resolveActiveTheme } from "./theme-release";
+import {
+  getRemlockFeaturedModId,
+  isRemlockReleaseEnabled,
+  resolveActiveTheme,
+} from "./theme-release";
 
 function releaseFlag(value: boolean | string): FeatureFlag {
   return {
@@ -30,6 +34,50 @@ describe("Remlock release flag", () => {
         { ...releaseFlag(false), id: "themes", name: "plugin-themes" },
       ]),
     ).toBe(false);
+  });
+});
+
+describe("Remlock mod of the week", () => {
+  const stringFlag = (name: string, value: string): FeatureFlag => ({
+    ...releaseFlag(false),
+    id: name,
+    name,
+    type: "string",
+    value,
+  });
+  const until = stringFlag("remlock-featured-until", "2026-11-02");
+  const before = new Date("2026-11-01T23:59:00Z");
+  const after = new Date("2026-11-02T00:00:00Z");
+
+  it("pins a mod only during the release and before the end date", () => {
+    expect(getRemlockFeaturedModId([releaseFlag(true), until], before)).toBe(
+      "687789",
+    );
+    expect(
+      getRemlockFeaturedModId([releaseFlag(true), until], after),
+    ).toBeUndefined();
+    expect(
+      getRemlockFeaturedModId([releaseFlag(false), until], before),
+    ).toBeUndefined();
+    expect(
+      getRemlockFeaturedModId(
+        [releaseFlag(true), stringFlag("remlock-featured-until", "")],
+        before,
+      ),
+    ).toBeUndefined();
+  });
+
+  it("pins the submission from the mod id flag", () => {
+    expect(
+      getRemlockFeaturedModId(
+        [
+          releaseFlag(true),
+          until,
+          stringFlag("remlock-featured-mod-id", "123456"),
+        ],
+        before,
+      ),
+    ).toBe("123456");
   });
 });
 

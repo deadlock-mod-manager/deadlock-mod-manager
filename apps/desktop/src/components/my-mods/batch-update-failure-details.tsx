@@ -47,7 +47,6 @@ export function BatchUpdateFailureDetails({
     title = t("myMods.batchUpdate.ownershipTitle");
     description = t("myMods.batchUpdate.ownershipDescription", {
       mods: ownership.mods.map((mod) => mod.name).join(", "),
-      path: ownership.path,
       profile: ownership.profileName || t("myMods.batchUpdate.defaultProfile"),
     });
   }

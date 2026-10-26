@@ -25,7 +25,8 @@ type AuthStep = "idle" | "redirecting" | "code-entry";
 
 const FALLBACK_TIMEOUT_MS = 5000;
 
-const AuthModal = () => {
+// `prominent` renders a primary button for places where signing in is the main action.
+const AuthModal = ({ prominent = false }: { prominent?: boolean }) => {
   const { t } = useTranslation();
   const { isAuthenticated, isLoading } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -88,9 +89,13 @@ const AuthModal = () => {
   return (
     <>
       <Button
-        variant='ghost'
+        variant={prominent ? "default" : "ghost"}
         size='sm'
-        className='h-7 gap-1.5 px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground'
+        className={
+          prominent
+            ? undefined
+            : "h-7 gap-1.5 px-2.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+        }
         icon={<LogInIcon className='size-4' />}
         disabled={isLoading}
         onClick={handleSignInClick}>

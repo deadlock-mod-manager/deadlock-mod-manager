@@ -25,6 +25,12 @@ const FEATURE_HINTS = [
   },
   { id: "profiles", i18nKey: "profiles", minAgeDays: 1 },
   {
+    id: "remote-install",
+    i18nKey: "remoteInstall",
+    minAgeDays: 0,
+    emote: "/brand/gamebanana.png",
+  },
+  {
     id: "settings-search",
     i18nKey: "settingsSearch",
     minAgeDays: 0,

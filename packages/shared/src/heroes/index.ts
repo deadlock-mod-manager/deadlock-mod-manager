@@ -1,13 +1,14 @@
 import type { DeadlockHeroes } from "../constants";
 import { heroRegistry } from "./registry";
+import type { SkinCategoryPath } from "./types";
 
-export {
-  GENERIC_SKIN_CATEGORIES,
-  HERO_DEFINITIONS,
-  SKINS_SUPER_CATEGORY,
-} from "./constants";
+export { HERO_DEFINITIONS, SKINS_SUPER_CATEGORY } from "./constants";
 export { HeroRegistry, heroRegistry } from "./registry";
-export type { HeroDefinition, HeroDefinitions } from "./types";
+export type {
+  HeroDefinition,
+  HeroDefinitions,
+  SkinCategoryPath,
+} from "./types";
 
 export const normalizeHero = (
   value: string | null | undefined,
@@ -17,12 +18,6 @@ export const guessHero = (value: string): DeadlockHeroes | null =>
   heroRegistry.guess(value);
 
 export const resolveHeroFromSkinCategory = (
-  superCategoryName: string | undefined,
-  categoryName: string | undefined,
+  path: SkinCategoryPath,
   modName: string,
-): DeadlockHeroes | null =>
-  heroRegistry.resolveFromSkinCategory(
-    superCategoryName,
-    categoryName,
-    modName,
-  );
+): DeadlockHeroes | null => heroRegistry.resolveFromSkinCategory(path, modName);

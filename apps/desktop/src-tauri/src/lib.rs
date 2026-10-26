@@ -148,6 +148,7 @@ pub fn run() {
 
   builder
     .manage(game_presence::DiscordState::new())
+    .manage(commands::remote_install::PendingPairing::default())
     .on_window_event(tray::handle_window_event)
     .setup(|app| {
       #[cfg(feature = "e2e-harness")]
@@ -188,6 +189,12 @@ pub fn run() {
         };
         app.add_capability(capability)?;
       }
+
+      let model_assets = commands::foundry::ModelAssets::open()?;
+      app
+        .asset_protocol_scope()
+        .allow_directory(model_assets.directory(), false)?;
+      app.manage(std::sync::Arc::new(model_assets));
 
       state_file::inspect(&app.path().resolve(
         runtime_environment::state_store_path(),
@@ -248,7 +255,6 @@ pub fn run() {
       commands::gamebanana_catalog::resolve_gamebanana_download_candidates,
       commands::gamebanana_catalog::inspect_gamebanana_catalog_state,
       commands::gamebanana_catalog::invalidate_gamebanana_catalog_state,
-      commands::gamebanana_catalog::get_gamebanana_fileservers,
       commands::identity_migration::migrate_submission_identities,
       commands::policy::refresh_policy_manifest,
       commands::game::find_steam_path,
@@ -302,6 +308,11 @@ pub fn run() {
       commands::game_session::session_set_enabled,
       commands::deep_link::parse_deep_link,
       commands::deep_link::get_deep_link_debug_info,
+      commands::remote_install::get_remote_install_status,
+      commands::remote_install::get_gamebanana_member,
+      commands::remote_install::confirm_remote_install_pair,
+      commands::remote_install::unpair_remote_install,
+      commands::remote_install::poll_remote_install,
       commands::gameinfo::backup_gameinfo,
       commands::gameinfo::restore_gameinfo_backup,
       commands::gameinfo::reset_to_vanilla,
@@ -342,6 +353,13 @@ pub fn run() {
       commands::foundry::foundry_decode_texture,
       commands::foundry::foundry_decode_cards,
       commands::foundry::foundry_decode_model,
+      commands::foundry::foundry_cancel_model_decode,
+      commands::foundry::foundry_release_model,
+      commands::foundry::foundry_list_animations,
+      commands::foundry::foundry_decode_animation,
+      commands::foundry::foundry_decode_cloth,
+      commands::foundry::foundry_decode_particles,
+      commands::foundry::foundry_decode_ability_particles,
       commands::foundry::foundry_decode_sound,
       commands::reports::create_report,
       commands::reports::get_report_counts,
@@ -369,6 +387,7 @@ pub fn run() {
       commands::mods::swap_mod_options,
       commands::mods::fetch_missing_mod_variants,
       commands::mods::stage_download_archive,
+      commands::mods::cancel_stage_download_archive,
       commands::mods::switch_mod_download_variant,
       commands::ingest::trigger_cache_scan,
       commands::ingest::start_cache_watcher,
@@ -465,7 +484,6 @@ pub fn run() {
       commands::logs::open_latest_crash_dump_parsed,
       commands::archive::copy_dropped_mod_file,
       commands::app::check_filesystem_writable,
-      commands::downloads::test_fileserver_latency,
       commands::server_browser::ping_servers,
       commands::deadworks_content::download_deadworks_content,
       commands::deadworks_content::preview_deadworks_content,

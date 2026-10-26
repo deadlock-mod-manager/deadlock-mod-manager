@@ -9,6 +9,7 @@
     "apps/desktop": {
       "entry": [
         "src/main.tsx",
+        "src/lib/react-scan.ts",
         "**/*.{test,spec}.{ts,tsx}",
         "scripts/**/*.{ts,mjs}",
         "*.config.{ts,mjs}",

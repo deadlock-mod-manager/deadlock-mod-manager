@@ -16,6 +16,7 @@ import {
   deriveActiveVariantCount,
 } from "@/lib/mods/mod-variants";
 import { usePersistedStore } from "@/lib/store";
+import { isTauriError } from "@/types/tauri";
 import {
   type LocalMod,
   type ModDownloadItem,
@@ -441,6 +442,11 @@ export const useModOptions = (mod: LocalMod | null) => {
       setIsOpen(false);
     },
     onError: (error) => {
+      if (isTauriError(error) && error.kind === "downloadCancelled") {
+        logger.info("Variant download cancelled");
+        setIsOpen(false);
+        return;
+      }
       logger.withError(error).error("Failed to apply file selection change");
       toast.error(getErrorMessage(error));
     },
@@ -517,6 +523,12 @@ export const useModOptions = (mod: LocalMod | null) => {
   const open = () => setIsOpen(true);
   const close = () => setIsOpen(false);
 
+  // Only the download can be stopped; extracting and applying run to the end.
+  const cancelApply =
+    mod && progress?.phase === "downloading"
+      ? () => invoke("cancel_stage_download_archive", { modId: mod.remoteId })
+      : undefined;
+
   const apply = (
     selectedArchives: ModDownloadItem[],
     deselectedArchives: ModDownloadItem[],
@@ -536,6 +548,7 @@ export const useModOptions = (mod: LocalMod | null) => {
     apply,
     isSaving: applyMutation.isPending,
     progress,
+    cancelApply,
     applyFileSelection: fileSelectionMutation.mutate,
     isSavingFiles: fileSelectionMutation.isPending,
     showButton,

@@ -42,13 +42,8 @@ type HeroModels = HashMap<String, String>;
 /// rather than served from a stale parse. Mirrors `archive_cache`'s keying.
 type TableKey = (PathBuf, u64, u128);
 
-/// One slot is enough: there is only ever one base pak to read.
-type Cache = Mutex<Option<(TableKey, Arc<HeroModels>)>>;
-
-fn cache() -> &'static Cache {
-  static CACHE: OnceLock<Cache> = OnceLock::new();
-  CACHE.get_or_init(|| Mutex::new(None))
-}
+/// One slot per table is enough: there is only ever one base pak to read.
+pub(super) type TableCache<T> = OnceLock<Mutex<Option<(TableKey, Arc<T>)>>>;
 
 fn key_for(path: &Path) -> Result<TableKey, Error> {
   let metadata = std::fs::metadata(path)?;
@@ -68,23 +63,69 @@ fn as_str(value: Option<&KvValue>) -> Option<&str> {
   }
 }
 
-/// Read every `hero_<codename> -> m_strModelName` pair out of the pak.
+/// The decoded `DATA` block of a `.vdata_c` entry in the pak.
+fn read_vdata(pak: &Path, entry: &str) -> Result<KvValue, Error> {
+  let archive = open_archive(pak, None)?;
+  let bytes = archive
+    .extract_entry(entry)
+    .map_err(|e| Error::InvalidInput(format!("failed to read {entry}: {e}")))?;
+  let resource = Resource::parse(bytes)
+    .map_err(|e| Error::InvalidInput(format!("failed to parse {entry}: {e}")))?;
+  let data = resource
+    .block_bytes("DATA")
+    .ok_or_else(|| Error::InvalidInput(format!("{entry} has no DATA block")))?;
+  source2_model::kv3::parse(data)
+    .map_err(|e| Error::InvalidInput(format!("failed to decode {entry}: {e}")))
+}
+
+/// `build` run over the base pak's `entry`, parsed once per base pak.
+///
+/// A missing or unreadable table is not fatal: callers fall back to a
+/// heuristic or show less, and the Foundry still opens.
+pub(super) fn base_table<T>(
+  cache: &'static TableCache<T>,
+  entry: &str,
+  build: impl FnOnce(KvValue) -> Result<T, Error>,
+) -> Option<Arc<T>> {
+  let cache = cache.get_or_init(|| Mutex::new(None));
+  let pak = match staged_base_game_vpk() {
+    Ok(Some(pak)) => pak,
+    Ok(None) => return None,
+    Err(error) => {
+      log::warn!("[Foundry] No base pak to read {entry}: {error}");
+      return None;
+    }
+  };
+  let key = key_for(&pak).ok()?;
+
+  if let Ok(cached) = cache.lock()
+    && let Some((cached_key, table)) = cached.as_ref()
+    && *cached_key == key
+  {
+    return Some(Arc::clone(table));
+  }
+
+  // Parsed outside the lock: reading a table costs ~70 ms on top of opening
+  // the pak, which is long enough that holding the mutex would stall callers.
+  let table = match read_vdata(&pak, entry).and_then(build) {
+    Ok(table) => Arc::new(table),
+    Err(error) => {
+      log::warn!("[Foundry] Could not read {entry}: {error}");
+      return None;
+    }
+  };
+
+  if let Ok(mut cached) = cache.lock() {
+    *cached = Some((key, Arc::clone(&table)));
+  }
+  Some(table)
+}
+
+/// Every `hero_<codename> -> m_strModelName` pair in the hero table.
 ///
 /// `m_strModelName` is the *uncompiled* path (`....vmdl`); a VPK stores the
 /// compiled resource, so the entry we want carries a trailing `_c`.
-fn read_table(pak: &Path) -> Result<HeroModels, Error> {
-  let archive = open_archive(pak, None)?;
-  let bytes = archive
-    .extract_entry(HEROES_VDATA)
-    .map_err(|e| Error::InvalidInput(format!("failed to read {HEROES_VDATA}: {e}")))?;
-  let resource = Resource::parse(bytes)
-    .map_err(|e| Error::InvalidInput(format!("failed to parse {HEROES_VDATA}: {e}")))?;
-  let data = resource
-    .block_bytes("DATA")
-    .ok_or_else(|| Error::InvalidInput(format!("{HEROES_VDATA} has no DATA block")))?;
-  let root = source2_model::kv3::parse(data)
-    .map_err(|e| Error::InvalidInput(format!("failed to decode {HEROES_VDATA}: {e}")))?;
-
+fn hero_table(root: KvValue) -> Result<HeroModels, Error> {
   let KvValue::Object(heroes) = &root else {
     return Err(Error::InvalidInput(format!(
       "{HEROES_VDATA} root is not an object"
@@ -111,39 +152,8 @@ fn read_table(pak: &Path) -> Result<HeroModels, Error> {
 
 /// The hero model table, parsed once per base pak.
 fn hero_models() -> Option<Arc<HeroModels>> {
-  let pak = match staged_base_game_vpk() {
-    Ok(Some(pak)) => pak,
-    Ok(None) => return None,
-    Err(error) => {
-      log::warn!("[Foundry] No base pak for hero model lookup: {error}");
-      return None;
-    }
-  };
-  let key = key_for(&pak).ok()?;
-
-  if let Ok(cached) = cache().lock()
-    && let Some((cached_key, models)) = cached.as_ref()
-    && *cached_key == key
-  {
-    return Some(Arc::clone(models));
-  }
-
-  // Parsed outside the lock: reading the table costs ~70 ms on top of opening
-  // the pak, which is long enough that holding the mutex would stall callers.
-  let models = match read_table(&pak) {
-    Ok(models) => Arc::new(models),
-    Err(error) => {
-      // A missing or unreadable table is not fatal: the caller falls back to
-      // its heuristic and the Foundry still opens.
-      log::warn!("[Foundry] Could not read the hero model table: {error}");
-      return None;
-    }
-  };
-
-  if let Ok(mut cached) = cache().lock() {
-    *cached = Some((key, Arc::clone(&models)));
-  }
-  Some(models)
+  static CACHE: TableCache<HeroModels> = OnceLock::new();
+  base_table(&CACHE, HEROES_VDATA, hero_table)
 }
 
 /// The codenames to look for in the table, most specific first. The panorama

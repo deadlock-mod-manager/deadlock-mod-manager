@@ -42,8 +42,8 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
   const createProfileFromImport = async (
     importedProfile: SharedProfile,
     modsData: ModDto[],
-    _options?: ProfileImportOptions,
-  ): Promise<void> => {
+    options?: ProfileImportOptions,
+  ): Promise<ProfileId> => {
     const {
       importedMods,
       availableImportedMods,
@@ -82,9 +82,13 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
       const profileId = `profile_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
       const createdProfileId = createProfileId(profileId);
       newProfileId = createdProfileId;
-      const profileName = t("profiles.importedProfileName", {
-        date: new Date().toLocaleDateString(),
-      });
+      const profileName =
+        options?.profileName ??
+        t("profiles.importedProfileName", {
+          date: new Date().toLocaleDateString(),
+        });
+      const profileDescription =
+        options?.profileDescription ?? t("profiles.importedProfileDescription");
       const folderName = await createImportProfileFolder(
         createdProfileId,
         profileName,
@@ -93,7 +97,7 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
       const newProfile: ModProfile = {
         id: createdProfileId,
         name: profileName,
-        description: t("profiles.importedProfileDescription"),
+        description: profileDescription,
         createdAt: new Date(),
         lastUsed: new Date(),
         enabledMods: {},
@@ -119,7 +123,7 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
           "import_profile_batch",
           {
             profileName,
-            profileDescription: t("profiles.importedProfileDescription"),
+            profileDescription,
             profileFolder: folderName,
             mods: preparedMods.map((entry) => entry.profileImportMod),
             importType: "override",
@@ -183,6 +187,7 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
       }
 
       void missingCount;
+      return createdProfileId;
     } catch (error) {
       attempt.finish(
         failureOutcome(isTauriError(error) ? error.kind : undefined),

@@ -63,7 +63,9 @@ const ICONS = {
   coins: Coins,
 } satisfies Record<TabIcon, ComponentType<{ className?: string }>>;
 
-const TAB_TRIGGER_CLASS = "h-8 gap-1.5 px-3";
+// Quiet tabs: only the active one gets a surface, a hairline and a primary icon.
+const TAB_TRIGGER_CLASS =
+  "h-9 gap-2 rounded-lg border border-transparent px-3.5 font-semibold text-[13.5px] text-muted-foreground data-[state=active]:border-primary/15 data-[state=active]:bg-secondary data-[state=active]:text-foreground data-[state=active]:shadow-none [&[data-state=active]>svg:first-child]:text-primary";
 
 interface TabSettingsProps {
   tab: DashboardTab;
@@ -200,6 +202,8 @@ interface DashboardTabsProps {
   editing: boolean;
   /** Tab ids holding at least one broken widget. */
   brokenTabIds: ReadonlySet<string>;
+  /** A count shown after a tab's name, such as heroes played; `null` holds its slot while it loads. */
+  counts?: Partial<Record<string, number | null>>;
   onSelect: (tabId: string) => void;
   onAddTab: (templateId: string | null) => void;
   onRenameTab: (tabId: string, title: string) => void;
@@ -213,6 +217,7 @@ export const DashboardTabs = ({
   activeTabId,
   editing,
   brokenTabIds,
+  counts,
   onSelect,
   onAddTab,
   onRenameTab,
@@ -230,7 +235,7 @@ export const DashboardTabs = ({
     // does; scrolling them keeps every tab reachable instead of clipped.
     <div className='flex max-w-full items-center gap-2 overflow-x-auto'>
       <Tabs onValueChange={onSelect} value={activeTabId}>
-        <TabsList className='h-10 w-max gap-1 bg-muted/60 p-1'>
+        <TabsList className='h-auto w-max gap-1 bg-transparent p-0'>
           {tabs.map((tab) => {
             const Icon = ICONS[tab.icon];
             return (
@@ -242,6 +247,11 @@ export const DashboardTabs = ({
                 value={tab.id}>
                 <Icon className='h-4 w-4' />
                 {tabTitle(tab)}
+                {counts?.[tab.id] !== undefined && (
+                  <span className='min-w-[2ch] font-medium font-mono text-[11.5px] text-muted-foreground/70'>
+                    {counts[tab.id]}
+                  </span>
+                )}
                 {brokenTabIds.has(tab.id) && (
                   <TriangleAlert
                     aria-label={t("stats.dashboard.tabs.broken")}

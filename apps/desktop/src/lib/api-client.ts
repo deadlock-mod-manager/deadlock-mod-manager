@@ -3,11 +3,13 @@ import type {
   CreateCrosshairDto,
   CustomSettingDto,
   FeatureFlag,
-  FileserverDto,
   ModAuthorDto,
   ModDto,
+  ProfileBackup,
+  ProfileBackupSummary,
   PublishedCrosshairDto,
   ResolveModsResponse,
+  SaveProfileBackupInput,
   ServerBrowserEntry,
   ServerBrowserFacetsResponse,
   ServerBrowserListInput,
@@ -24,7 +26,6 @@ import {
   getGameBananaCatalogDownloads,
   getGameBananaCatalogMod,
   getGameBananaCatalogMods,
-  getDirectGameBananaFileservers,
 } from "./gamebanana-catalog";
 
 export const BASE_URL =
@@ -83,6 +84,8 @@ export const getModAuthor = async (id: string) => {
   const profile = await apiRequest<{ author: ModAuthorDto; mods: ModDto[] }>(
     `/api/v2/mod-authors/${encodeURIComponent(id)}`,
   );
+  // An API from before contacts existed leaves the field out.
+  profile.author.contacts ??= [];
   if (profile.author.provider !== "gamebanana") return profile;
   const mods = await getGameBananaCatalogMods(profile.author.remoteId);
   return { ...profile, mods };
@@ -94,10 +97,6 @@ export const getModDownload = async (remoteId: string) => {
 
 export const getModDownloads = async (remoteId: string) => {
   return getGameBananaCatalogDownloads(remoteId);
-};
-
-export const getGameBananaFileservers = async (): Promise<FileserverDto[]> => {
-  return getDirectGameBananaFileservers();
 };
 
 export const checkModUpdates = async (
@@ -141,6 +140,32 @@ export const shareProfile = async (
 
 export const getProfile = async (profileId: string) => {
   return await apiRequest<SharedProfile>(`/api/v2/profiles/${profileId}`);
+};
+
+export const listProfileBackups = async () => {
+  return await apiRequest<ProfileBackupSummary[]>("/api/v2/profile-backups");
+};
+
+export const getProfileBackup = async (id: string) => {
+  return await apiRequest<ProfileBackup>(
+    `/api/v2/profile-backups/${encodeURIComponent(id)}`,
+  );
+};
+
+export const saveProfileBackup = async (input: SaveProfileBackupInput) => {
+  return await apiRequest<ProfileBackupSummary>(
+    "/api/v2/profile-backups",
+    input,
+    "PUT",
+  );
+};
+
+export const deleteProfileBackup = async (id: string) => {
+  return await apiRequest<{ success: boolean }>(
+    `/api/v2/profile-backups/${encodeURIComponent(id)}`,
+    undefined,
+    "DELETE",
+  );
 };
 
 export const getFeatureFlags = async () => {

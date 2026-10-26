@@ -19,6 +19,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { RepairPlanProgressStatus } from "@/components/mod-health/repair-plan-progress";
+import { invokeRepairPlan } from "@/hooks/use-mod-health";
 import { getErrorMessage } from "@/lib/errors";
 import {
   compatibilityResolutions,
@@ -63,9 +65,10 @@ export function CompatibilityReviewDialog({
   const analysis = useQuery({
     queryKey: ["mod-compatibility-analysis", profileFolder, inputs],
     queryFn: () =>
-      invoke<LocalizationOverlayAnalysis>("analyze_localization_overlay", {
-        profileFolder,
-      }),
+      invokeRepairPlan<LocalizationOverlayAnalysis>(
+        "analyze_localization_overlay",
+        { profileFolder },
+      ),
     enabled: open,
     retry: false,
     refetchOnWindowFocus: false,
@@ -104,7 +107,7 @@ export function CompatibilityReviewDialog({
   const apply = useMutation({
     mutationFn: async () => {
       if (!review.data) return;
-      return invoke<LocalizationOverlayApplyResult>(
+      return invokeRepairPlan<LocalizationOverlayApplyResult>(
         "apply_localization_overlay",
         {
           profileFolder,
@@ -161,11 +164,14 @@ export function CompatibilityReviewDialog({
           ) : null}
         </DialogHeader>
         {analysis.isFetching || review.isFetching ? (
-          <div
-            role='status'
-            className='flex items-center gap-2 py-8 text-muted-foreground text-sm'>
-            <Loader2 aria-hidden className='size-4 animate-spin' />
-            {t("myMods.compatibility.checking")}
+          <div className='flex flex-col gap-3 py-8'>
+            <div
+              role='status'
+              className='flex items-center gap-2 text-muted-foreground text-sm'>
+              <Loader2 aria-hidden className='size-4 animate-spin' />
+              {t("myMods.compatibility.checking")}
+            </div>
+            {analysis.isFetching ? <RepairPlanProgressStatus /> : null}
           </div>
         ) : analysis.isError || review.isError ? (
           <div role='alert' className='space-y-3 py-4 text-sm'>
@@ -191,6 +197,9 @@ export function CompatibilityReviewDialog({
               setSelection({ scope, choices: { ...choices, [key]: choice } })
             }
           />
+        ) : null}
+        {apply.isPending ? (
+          <RepairPlanProgressStatus className='shrink-0 pb-1' />
         ) : null}
         <DialogFooter className='shrink-0 border-t pt-4'>
           <Button

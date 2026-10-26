@@ -66,7 +66,7 @@ describe("safeMigrate", () => {
     expect(result.backupEnabled).toBe(true);
     expect(result.maxBackupCount).toBe(5);
     expect(result.fileserverPreference).toBe("default");
-    expect(result.fileserverLatencyMs).toEqual({});
+    expect(result.fileserverLatencyMs).toBeUndefined();
     expect(result.proxyConfig).toMatchObject({
       enabled: false,
       port: 8080,
@@ -122,9 +122,17 @@ describe("safeMigrate", () => {
     expect(result.backupEnabled).toBe(false);
     expect(result.maxBackupCount).toBe(99);
     expect(result.fileserverPreference).toBe("auto");
-    expect(result.fileserverLatencyMs).toEqual({ server1: 42 });
     expect(result.linuxGpuOptimization).toBe("off");
     expect(result.heroParserIntervalSeconds).toBe(5);
+  });
+
+  it("v34 resets a pinned fileserver to the default link", () => {
+    const result = safeMigrate(
+      { fileserverPreference: "1234", fileserverLatencyMs: { "1234": 30 } },
+      33,
+    ) as Record<string, unknown>;
+    expect(result.fileserverPreference).toBe("default");
+    expect(result.fileserverLatencyMs).toBeUndefined();
   });
 
   it("v26 namespaces sound identities across every persisted reference", () => {
@@ -249,7 +257,7 @@ describe("safeMigrate", () => {
   it("LATEST_VERSION matches the highest step target", () => {
     const max = Math.max(...MIGRATION_STEPS.map((s) => s.to));
     expect(LATEST_VERSION).toBe(max);
-    expect(LATEST_VERSION).toBe(33);
+    expect(LATEST_VERSION).toBe(36);
   });
 
   it("v25 (themes switch): drops the leftover enabledPlugins.themes entry", () => {
@@ -351,6 +359,22 @@ describe("safeMigrate", () => {
         26,
       ) as Record<string, unknown>;
       expect(alreadySet.modsFilters).toEqual({ contentType: "wip" });
+    });
+
+    it("v36 (rolling date filters): maps the old presets to rolling windows", () => {
+      const result = safeMigrate(
+        {
+          modsFilters: {
+            timePeriod: "past 3 months",
+            addedFilter: { period: "week", from: "", to: "" },
+          },
+        },
+        35,
+      ) as Record<string, unknown>;
+      expect(result.modsFilters).toEqual({
+        updatedFilter: { period: "1y", from: "", to: "" },
+        addedFilter: { period: "7d", from: "", to: "" },
+      });
     });
 
     it("v29 (albums to collections): moves the Albums tab to Collections", () => {

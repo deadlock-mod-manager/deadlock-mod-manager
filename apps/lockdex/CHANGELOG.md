@@ -1,5 +1,16 @@
 # @deadlock-mods/lockdex
 
+## 0.4.3
+
+### Patch Changes
+
+- Updated dependencies [4b36850]
+- Updated dependencies [75477e2]
+  - @deadlock-mods/database@2.5.0
+  - @deadlock-mods/shared@2.5.0
+  - @deadlock-mods/distributed-lock@1.0.14
+  - @deadlock-mods/instrumentation@0.1.14
+
 ## 0.4.2
 
 ### Patch Changes

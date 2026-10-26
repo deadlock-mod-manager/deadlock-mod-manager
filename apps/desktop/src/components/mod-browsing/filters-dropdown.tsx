@@ -5,29 +5,21 @@ import {
   DropdownMenuTrigger,
 } from "@deadlock-mods/ui/components/dropdown-menu";
 import { Label } from "@deadlock-mods/ui/components/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@deadlock-mods/ui/components/select";
 import { Switch } from "@deadlock-mods/ui/components/switch";
 import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@deadlock-mods/ui/components/toggle-group";
 import { useTranslation } from "react-i18next";
-import { TimePeriod, timePeriodLabelKey } from "@/lib/constants";
-import { cn, isAddedFilterActive } from "@/lib/utils";
+import { cn, isDateFilterActive } from "@/lib/utils";
 import {
-  type AddedFilter as AddedFilterValue,
   type AudioQuickFilter,
-  DEFAULT_ADDED_FILTER,
+  type DateFilter as DateFilterValue,
+  DEFAULT_DATE_FILTER,
   type FilterMode,
   type MapQuickFilter,
 } from "@/lib/store/slices/ui";
-import AddedFilter, { FILTER_ROW_CLASS } from "./added-filter";
+import DateFilter, { FILTER_ROW_CLASS } from "./date-filter";
 import { FiltersTriggerButton } from "./filters-trigger-button";
 
 type FiltersDropdownProps = {
@@ -45,10 +37,10 @@ type FiltersDropdownProps = {
   filterMode: FilterMode;
   onFilterModeChange: (filterMode: FilterMode) => void;
   hideMapFilter?: boolean;
-  timePeriod?: TimePeriod;
-  onTimePeriodChange?: (timePeriod: TimePeriod) => void;
-  addedFilter?: AddedFilterValue;
-  onAddedFilterChange?: (value: AddedFilterValue) => void;
+  updatedFilter?: DateFilterValue;
+  onUpdatedFilterChange?: (value: DateFilterValue) => void;
+  addedFilter?: DateFilterValue;
+  onAddedFilterChange?: (value: DateFilterValue) => void;
 };
 
 const FILTER_MODES: FilterMode[] = ["include", "exclude"];
@@ -88,8 +80,8 @@ const FiltersDropdown = ({
   filterMode,
   onFilterModeChange,
   hideMapFilter,
-  timePeriod,
-  onTimePeriodChange,
+  updatedFilter,
+  onUpdatedFilterChange,
   addedFilter,
   onAddedFilterChange,
 }: FiltersDropdownProps) => {
@@ -98,7 +90,7 @@ const FiltersDropdown = ({
   const showAudioFilter = audioQuickFilter && onAudioQuickFilterChange;
   const showMapFilter =
     !hideMapFilter && mapQuickFilter && onMapQuickFilterChange;
-  const showTimePeriod = timePeriod && onTimePeriodChange;
+  const showUpdated = updatedFilter && onUpdatedFilterChange;
   const showAdded = addedFilter && onAddedFilterChange;
   const showNSFWOnly = nsfwOnly !== undefined && onNSFWOnlyChange;
   const totalActiveFilters = [
@@ -107,8 +99,8 @@ const FiltersDropdown = ({
     showAudioFilter && audioQuickFilter !== "off",
     showMapFilter && mapQuickFilter !== "off",
     hideOutdated,
-    showAdded && isAddedFilterActive(addedFilter),
-    showTimePeriod && timePeriod !== TimePeriod.ALL_TIME,
+    showUpdated && isDateFilterActive(updatedFilter),
+    showAdded && isDateFilterActive(addedFilter),
   ].filter(Boolean).length;
   const canReset = totalActiveFilters > 0 || !include;
 
@@ -124,8 +116,8 @@ const FiltersDropdown = ({
     onHideOutdatedChange(false);
     onAudioQuickFilterChange?.("off");
     onMapQuickFilterChange?.("off");
-    onTimePeriodChange?.(TimePeriod.ALL_TIME);
-    onAddedFilterChange?.(DEFAULT_ADDED_FILTER);
+    onUpdatedFilterChange?.(DEFAULT_DATE_FILTER);
+    onAddedFilterChange?.(DEFAULT_DATE_FILTER);
   };
 
   return (
@@ -184,31 +176,23 @@ const FiltersDropdown = ({
           </p>
         </div>
 
-        {(showTimePeriod || showAdded) && (
+        {(showUpdated || showAdded) && (
           <div className='space-y-2 px-4 py-3'>
-            {showTimePeriod && (
-              <div className={FILTER_ROW_CLASS}>
-                <Label
-                  className='font-normal text-muted-foreground text-sm'
-                  htmlFor='updatedPeriod'>
-                  {t("filters.updated")}
-                </Label>
-                <Select onValueChange={onTimePeriodChange} value={timePeriod}>
-                  <SelectTrigger className='h-8 w-full' id='updatedPeriod'>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.values(TimePeriod).map((period) => (
-                      <SelectItem key={period} value={period}>
-                        {t(timePeriodLabelKey(period))}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            {showUpdated && (
+              <DateFilter
+                id='updated'
+                label={t("filters.updated")}
+                onChange={onUpdatedFilterChange}
+                value={updatedFilter}
+              />
             )}
             {showAdded && (
-              <AddedFilter onChange={onAddedFilterChange} value={addedFilter} />
+              <DateFilter
+                id='added'
+                label={t("filters.added")}
+                onChange={onAddedFilterChange}
+                value={addedFilter}
+              />
             )}
           </div>
         )}

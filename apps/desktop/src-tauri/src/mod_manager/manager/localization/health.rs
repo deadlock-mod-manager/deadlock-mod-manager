@@ -7,6 +7,7 @@ use crate::mod_manager::mod_health::{
 };
 use crate::mod_manager::vdata_history::VdataHistoryIndex;
 use std::collections::BTreeSet;
+use std::ops::DerefMut;
 use std::sync::Arc;
 
 static CHECK_LOCK: Mutex<()> = Mutex::new(());
@@ -57,26 +58,65 @@ impl ModManager {
   }
 
   /// Turns compatibility on for exactly the listed mods, clearing any earlier
-  /// choice of original files, and prepares the overlay the way launch does.
+  /// choice of original files, and captures what the repair package needs.
   /// Fixing is an explicit choice, so it also accepts the mods' own asset and
   /// data findings for their current files. The choices stay saved when
-  /// something else still needs review.
-  pub fn fix_mods(
+  /// something else still needs review. Returns `None` when the package is
+  /// already current; otherwise build the plan without the lock and pass it
+  /// to [`Self::finish_fix_mods`].
+  pub fn begin_fix_mods(
     &mut self,
-    profile_folder: Option<String>,
-    mod_ids: Vec<String>,
+    profile_folder: Option<&str>,
+    mod_ids: &[String],
+  ) -> Result<Option<ModFixRefresh>, Error> {
+    if self.is_game_running()? {
+      return Err(Error::GameRunning);
+    }
+    self.write_mod_compatibility(mod_ids, true, profile_folder)?;
+    let refresh = self.begin_mod_fix_refresh(profile_folder)?;
+    if refresh.is_none() {
+      self.apply_profile_gameinfo(profile_folder.map(str::to_owned))?;
+    }
+    Ok(refresh)
+  }
+
+  /// Writes the repair package from a plan built by [`ModFixRefresh::build`].
+  /// Mods that changed during the build send the player to the review, which
+  /// analyses them again.
+  pub fn finish_fix_mods(
+    &mut self,
+    refresh: ModFixRefresh,
+    plan: LocalizationOverlayPlan,
   ) -> Result<FixModsResult, Error> {
     if self.is_game_running()? {
       return Err(Error::GameRunning);
     }
-    self.write_mod_compatibility(&mod_ids, true, profile_folder.as_deref())?;
-    let status = match self.ensure_localization_overlay_for_launch(profile_folder.as_deref()) {
-      Ok(()) => FixModsStatus::Applied,
-      Err(Error::ModDataReviewRequired) => FixModsStatus::ReviewRequired,
+    let profile_folder = refresh.profile_folder.clone();
+    self.report_plan_stage(RepairPlanStage::WritingPackage);
+    let status = match self.commit_mod_fix_refresh(refresh, plan) {
+      Ok(true) => FixModsStatus::Applied,
+      Ok(false) | Err(Error::ModDataReviewRequired) => FixModsStatus::ReviewRequired,
       Err(error) => return Err(error),
     };
     self.apply_profile_gameinfo(profile_folder)?;
     Ok(FixModsResult { status })
+  }
+
+  /// Fixes the listed mods in one step. `manager` is called before and after
+  /// the plan build, so the slow build can run without the mod manager lock.
+  pub fn fix_mods<M: DerefMut<Target = ModManager>>(
+    manager: impl Fn() -> Result<M, Error>,
+    profile_folder: Option<&str>,
+    mod_ids: &[String],
+    progress: &dyn Fn(RepairPlanProgress),
+  ) -> Result<FixModsResult, Error> {
+    let Some(refresh) = manager()?.begin_fix_mods(profile_folder, mod_ids)? else {
+      return Ok(FixModsResult {
+        status: FixModsStatus::Applied,
+      });
+    };
+    let (refresh, plan) = refresh.build(progress)?;
+    manager()?.finish_fix_mods(refresh, plan)
   }
 
   pub(super) fn record_launch_health(

@@ -43,7 +43,7 @@ export const prepareInstalledProfiles = async (
   activeProfileId: string,
 ): Promise<void> => {
   const active = layout.find(({ profile }) => profile.id === activeProfileId);
-  if (!active)
+  if (!active && activeProfileId !== "default")
     throw new Error("Active profile is missing from the fixture recipe");
   if (
     new Set(layout.map(({ profile }) => profile.id)).size !== layout.length ||
@@ -180,6 +180,8 @@ export const prepareInstalledProfiles = async (
       }),
     }),
   );
+  // An active default profile leaves gameinfo.gi as a fresh world has it.
+  if (!active) return;
   const gameinfo = path.join(
     world.configuration.roots.game,
     "game",

@@ -28,6 +28,7 @@ import docsRouter from "./routers/legacy/docs";
 import healthRouter from "./routers/legacy/health";
 import modsRouter from "./routers/legacy/mods";
 import redirectRouter from "./routers/redirect";
+import updatesRouter from "./routers/updates";
 import { featureFlagsService } from "./services/feature-flags";
 
 const { printMetrics, registerMetrics } = prometheus();
@@ -111,6 +112,7 @@ app
   .route("/", healthRouter)
   .route("/docs", docsRouter)
   .route("/redirect", redirectRouter)
+  .route("/updates", updatesRouter)
   .route("/artifacts", artifactsRouter);
 
 const main = async () => {

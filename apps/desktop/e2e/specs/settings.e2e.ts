@@ -30,12 +30,6 @@ const applicationToggles = [
     value: false,
   },
   {
-    id: "toggle-setting-multiple-skins",
-    key: "multipleSkinsEnabled",
-    value: true,
-  },
-  { id: "toggle-setting-hero-extras", key: "heroExtrasEnabled", value: true },
-  {
     id: "toggle-animate-occult-geometry",
     key: "animateOccultGeometry",
     value: false,
@@ -46,13 +40,29 @@ const applicationToggles = [
     value: false,
   },
 ];
-const systemToggles = [
-  { id: "auto-reapply-mods", value: true },
+const modsToggles = [
+  {
+    id: "toggle-setting-multiple-skins",
+    key: "multipleSkinsEnabled",
+    value: true,
+  },
+  { id: "toggle-setting-hero-extras", key: "heroExtrasEnabled", value: true },
+];
+const applicationSystemToggles = [
   { id: "launch-vanilla-no-args", value: true },
+];
+const modsSystemToggles = [
+  { id: "auto-reapply-mods", value: true },
   // Pagination defaults to enabled on Linux; flip it away from the default.
   { id: "mods-store-pagination", value: process.platform !== "linux" },
   { id: "hero-conflict-warning", value: false },
 ];
+const systemToggles = [...applicationSystemToggles, ...modsSystemToggles];
+const systemControls = (toggles: typeof systemToggles) =>
+  toggles.map((setting) => ({
+    ...setting,
+    id: `toggle-setting-${setting.id}`,
+  }));
 const privacyToggles = [
   { label: "Hide NSFW Content", key: "hideNSFW", value: true },
   { label: "Show Likely NSFW Content", key: "showLikelyNSFW", value: true },
@@ -81,7 +91,7 @@ describe("settings persistence", () => {
     if (scenario === "settings-application") {
       await openSettings("application");
       if (editing) {
-        for (const control of systemToggles)
+        for (const control of applicationSystemToggles)
           await setSwitch(`#toggle-setting-${control.id}`, control.value);
         // Change animation before disabling the parent option.
         await setSwitch("#toggle-show-occult-geometry", true);
@@ -99,10 +109,7 @@ describe("settings persistence", () => {
       }
       for (const control of [
         ...applicationToggles,
-        ...systemToggles.map((setting) => ({
-          ...setting,
-          id: `toggle-setting-${setting.id}`,
-        })),
+        ...systemControls(applicationSystemToggles),
       ])
         await expect($(`#${control.id}`)).toHaveAttribute(
           "aria-checked",
@@ -117,6 +124,22 @@ describe("settings persistence", () => {
         $('[role="slider"][aria-label="Audio Volume"]'),
       ).toHaveAttribute("aria-valuenow", "37");
       await expect($('[aria-label="Update Channel"]')).toHaveText("Nightly");
+      await openSettings("mods");
+      if (editing) {
+        for (const control of [
+          ...modsToggles,
+          ...systemControls(modsSystemToggles),
+        ])
+          await setSwitch(`#${control.id}`, control.value);
+      }
+      for (const control of [
+        ...modsToggles,
+        ...systemControls(modsSystemToggles),
+      ])
+        await expect($(`#${control.id}`)).toHaveAttribute(
+          "aria-checked",
+          String(control.value),
+        );
       await observeUntil(
         "Application preferences persisted",
         () => readSettings(world),
@@ -125,7 +148,7 @@ describe("settings persistence", () => {
             .record(z.string(), z.object({ enabled: z.boolean() }))
             .parse(state.settings);
           return (
-            applicationToggles.every(
+            [...applicationToggles, ...modsToggles].every(
               (control) => state[control.key] === control.value,
             ) &&
             systemToggles.every(
@@ -239,7 +262,7 @@ describe("settings persistence", () => {
       "backupEnabled",
       "maxBackupCount",
       "gamePresenceEnabled",
-      ...applicationToggles.map((control) => control.key),
+      ...[...applicationToggles, ...modsToggles].map((control) => control.key),
     ])
       assert.deepEqual(closed[key], state[key], `Closing changed ${key}`);
   });
