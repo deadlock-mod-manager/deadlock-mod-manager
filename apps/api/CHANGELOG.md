@@ -1,5 +1,26 @@
 # api
 
+## 3.7.0
+
+### Minor Changes
+
+- 4b36850: Back up profiles to your account and restore them on another PC
+- 61ad97b: Feature Remlock as mod of the week during the Remlock release
+
+### Patch Changes
+
+- 75477e2: Find the hero and category of skins in GameBanana's new hero subcategories
+- Updated dependencies [5ff1bfa]
+- Updated dependencies [4b36850]
+- Updated dependencies [ee96289]
+- Updated dependencies [75477e2]
+  - @deadlock-mods/perf-catalog@0.0.3
+  - @deadlock-mods/database@2.5.0
+  - @deadlock-mods/shared@2.5.0
+  - @deadlock-mods/distributed-lock@1.0.14
+  - @deadlock-mods/feature-flags@0.2.12
+  - @deadlock-mods/instrumentation@0.1.14
+
 ## 3.6.1
 
 ### Patch Changes

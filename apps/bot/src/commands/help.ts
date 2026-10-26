@@ -76,6 +76,12 @@ const helpEntries: HelpEntry[] = [
     allowed: (member) => hasBlacklistPermission(member.user, member),
   },
   {
+    usage: "/modoftheweek set, /modoftheweek clear, /modoftheweek status",
+    description:
+      "Pin a GameBanana mod as the app's mod of the week for 1 to 30 days, or go back to the weekly rotation.",
+    allowed: (member) => member.permissions.has("Administrator"),
+  },
+  {
     usage: "/ai enable, /ai disable",
     description: "Turn AI replies on or off.",
     allowed: (member) => member.permissions.has("Administrator"),

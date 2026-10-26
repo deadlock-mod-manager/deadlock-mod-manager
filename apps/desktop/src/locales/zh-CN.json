@@ -3255,7 +3255,6 @@
   },
   "authorPage": {
     "viewProfile": "查看个人资料",
-    "submittedBy": "提交者",
     "modStat_one": "个模组",
     "modStat_other": "个模组",
     "downloadStat_one": "次下载",
@@ -3269,6 +3268,20 @@
     "signatureAlt": "{{author}} 的签名",
     "viewOnGameBanana": "在 GameBanana 上查看",
     "openProfileError": "无法打开 GameBanana 个人资料",
+    "copyDiscordUsername": "",
+    "joinDiscordServer": "",
+    "discordCopied": "",
+    "openContactError": "",
+    "commission": "",
+    "commissionNudge": "",
+    "commissionTooltip": "",
+    "openCommissionError": "",
+    "verifiedLabel": "",
+    "verifiedAvailability": {
+      "open": "",
+      "limited": "",
+      "closed": ""
+    },
     "modsBy": "{{author}} 的模组",
     "resultCount_one": "{{count}} 个模组",
     "resultCount_other": "{{count}} 个模组",
@@ -4892,6 +4905,34 @@
       "other": "其他"
     },
     "versions": {
+      "2.2.0": {
+        "title": "",
+        "features": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ]
+      },
       "2.1.1": {
         "title": "",
         "features": [

@@ -1,5 +1,6 @@
 import { ProviderError } from "@deadlock-mods/common";
-import type { NewModAuthor } from "@deadlock-mods/database";
+import type { ModAuthorContact, NewModAuthor } from "@deadlock-mods/database";
+import { parseGameBananaContacts } from "@deadlock-mods/shared";
 import { z } from "zod";
 import {
   DEADLOCK_GAME_ID,
@@ -21,6 +22,20 @@ const memberProfileSchema = z
     _nSubscriberCount: z.number().int().nonnegative().optional(),
     _bIsPrivate: z.boolean().optional(),
     _bIsBanned: z.boolean().optional(),
+    // Only present when the member filled in their contact info.
+    _aContactInfo: z
+      .array(
+        z
+          .object({
+            _sTitle: z.string().optional(),
+            _sValue: z.string().optional(),
+          })
+          .transform(({ _sTitle: title, _sValue: value }) => ({
+            title,
+            value,
+          })),
+      )
+      .default([]),
   })
   .passthrough();
 
@@ -56,15 +71,7 @@ const hasDeadlockSubmission = async (
   );
 };
 
-export const fetchGameBananaMember = async (
-  remoteId: string,
-  fetcher: typeof fetch = fetch,
-): Promise<NewModAuthor | null> => {
-  const hasDeadlockContent =
-    (await hasDeadlockSubmission("Mod", remoteId, fetcher)) ||
-    (await hasDeadlockSubmission("Sound", remoteId, fetcher));
-  if (!hasDeadlockContent) return null;
-
+const fetchProfilePage = async (remoteId: string, fetcher: typeof fetch) => {
   const response = await fetcher(
     `${GAME_BANANA_BASE_URL}/Member/${remoteId}/ProfilePage`,
     { signal: AbortSignal.timeout(10_000) },
@@ -82,6 +89,7 @@ export const fetchGameBananaMember = async (
     _idRow: idRow,
     _bIsPrivate: isPrivate,
     _bIsBanned: isBanned,
+    _aContactInfo: contactInfo,
   } = result.data;
   if (
     idRow.toString() !== remoteId ||
@@ -90,6 +98,34 @@ export const fetchGameBananaMember = async (
   ) {
     return null;
   }
+  return { ...result.data, contactInfo };
+};
 
-  return buildModAuthor(result.data) ?? null;
+export const fetchGameBananaMember = async (
+  remoteId: string,
+  fetcher: typeof fetch = fetch,
+): Promise<NewModAuthor | null> => {
+  const hasDeadlockContent =
+    (await hasDeadlockSubmission("Mod", remoteId, fetcher)) ||
+    (await hasDeadlockSubmission("Sound", remoteId, fetcher));
+  if (!hasDeadlockContent) return null;
+
+  const profile = await fetchProfilePage(remoteId, fetcher);
+  if (!profile) return null;
+  const author = buildModAuthor(profile);
+  if (!author) return null;
+  return {
+    ...author,
+    contacts: parseGameBananaContacts(profile.contactInfo),
+    contactsFetchedAt: new Date(),
+  };
+};
+
+/** The member's contact list, or null when the profile is gone or hidden. */
+export const fetchGameBananaContacts = async (
+  remoteId: string,
+  fetcher: typeof fetch = fetch,
+): Promise<ModAuthorContact[] | null> => {
+  const profile = await fetchProfilePage(remoteId, fetcher);
+  return profile ? parseGameBananaContacts(profile.contactInfo) : null;
 };

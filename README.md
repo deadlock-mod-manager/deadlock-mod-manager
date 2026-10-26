@@ -86,7 +86,7 @@ See the [features overview](https://docs.deadlockmods.app/using-mod-manager/feat
 
 ## Installation
 
-Download the latest installer for Windows or Linux (`.exe`, `.deb`, `.rpm`, `.flatpak`) from the [releases page](https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/latest), or use a package manager:
+Download the latest installer for Windows or Linux (`.exe`, `.deb`, `.rpm`, `.flatpak`) from the [releases page](https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/latest), or use a package manager. On Linux, the CEF (Chromium) builds, such as `deadlock-mod-manager-cef.flatpak`, are the recommended default:
 
 ```bash
 # Windows (winget)
@@ -255,9 +255,9 @@ We're actively working to make Deadlock Mod Manager accessible to users worldwid
 | 🇹🇼 **Chinese (Traditional)** | 繁體中文 | ✅ Complete | [白雲](https://github.com/phillychi3) |
 | 🇪🇸 **Spanish** | Español | ✅ Complete | [chikencio](https://discordapp.com/users/chikencio/) |
 | 🇧🇷 **Portuguese (Brazil)** | Português (Brasil) | 🚧 28% | [meneee](https://discordapp.com/users/meneee/) |
-| 🇮🇹 **Italian** | Italiano | 🚧 6% | [Constrat](https://github.com/Constrat) |
+| 🇮🇹 **Italian** | Italiano | 🚧 5% | [Constrat](https://github.com/Constrat) |
 | 🇯🇵 **Japanese** | 日本語 | 🚧 8% | [hiropiki](https://discordapp.com/users/hiropiki/) |
-| 🇰🇷 **Korean** | 한국어 | 🚧 13% | [Quinnly_IRL](https://discordapp.com/users/Quinnly_IRL/) |
+| 🇰🇷 **Korean** | 한국어 | 🚧 12% | [Quinnly_IRL](https://discordapp.com/users/Quinnly_IRL/) |
 
 <!-- LANGUAGE_TABLE_END -->
 </details>

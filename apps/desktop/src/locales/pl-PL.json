@@ -3255,7 +3255,6 @@
   },
   "authorPage": {
     "viewProfile": "",
-    "submittedBy": "",
     "modStat_one": "",
     "modStat_other": "",
     "downloadStat_one": "",
@@ -3269,6 +3268,20 @@
     "signatureAlt": "",
     "viewOnGameBanana": "",
     "openProfileError": "",
+    "copyDiscordUsername": "",
+    "joinDiscordServer": "",
+    "discordCopied": "",
+    "openContactError": "",
+    "commission": "",
+    "commissionNudge": "",
+    "commissionTooltip": "",
+    "openCommissionError": "",
+    "verifiedLabel": "",
+    "verifiedAvailability": {
+      "open": "",
+      "limited": "",
+      "closed": ""
+    },
     "modsBy": "",
     "resultCount_one": "",
     "resultCount_other": "",
@@ -4892,6 +4905,34 @@
       "other": "Inne"
     },
     "versions": {
+      "2.2.0": {
+        "title": "",
+        "features": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ]
+      },
       "2.1.1": {
         "title": "",
         "features": [

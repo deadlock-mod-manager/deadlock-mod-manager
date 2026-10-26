@@ -27,8 +27,9 @@ inputs:
     required: true
     default: "release-signing"
   tauri-private-key:
-    description: "Tauri signing private key for regenerating updater signature"
-    required: true
+    description: "Tauri signing private key for regenerating updater signatures; leave empty for executables the updater never downloads"
+    required: false
+    default: ""
 
 outputs:
   signed-artifact-path:
@@ -145,13 +146,15 @@ runs:
           exit 1
         fi
 
-        for exeFile in "${exeFiles[@]}"; do
-          echo "Regenerating Tauri signature for: $exeFile"
-          pnpm --filter @deadlock-mods/desktop tauri signer sign -k "$TAURI_PRIVATE_KEY" -p "" "$exeFile"
-        done
+        if [ -n "$TAURI_PRIVATE_KEY" ]; then
+          for exeFile in "${exeFiles[@]}"; do
+            echo "Regenerating Tauri signature for: $exeFile"
+            pnpm --filter @deadlock-mods/desktop tauri signer sign -k "$TAURI_PRIVATE_KEY" -p "" "$exeFile"
+          done
+          mv "$SIGNED_DIR"/*.exe.sig "${{ inputs.output-directory }}/"
+        fi
 
         mv "$SIGNED_DIR"/*.exe "${{ inputs.output-directory }}/"
-        mv "$SIGNED_DIR"/*.exe.sig "${{ inputs.output-directory }}/"
 
     - name: Cleanup temporary signing directories
       shell: bash

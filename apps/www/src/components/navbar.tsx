@@ -14,7 +14,12 @@ import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { LanguageList, LanguageSwitcher } from "@/components/language-switcher";
-import { APP_NAME, DOCS_URL, GITHUB_REPO } from "@/lib/constants";
+import {
+  APP_NAME,
+  COMMISSIONS_URL,
+  DOCS_URL,
+  GITHUB_REPO,
+} from "@/lib/constants";
 import { primaryCta } from "./home/cta";
 import Logo from "./logo";
 import UserMenu from "./user-menu";
@@ -64,6 +69,13 @@ export const Navbar = () => {
               {t(`navbar.links.${link.key}`)}
             </Link>
           ))}
+          <a
+            href={COMMISSIONS_URL}
+            target='_blank'
+            rel='noopener noreferrer'
+            className={linkClassName}>
+            {t("navbar.links.commissions")}
+          </a>
           {sectionLinks.map((link) => (
             <Link
               key={link.hash}
@@ -140,6 +152,13 @@ export const Navbar = () => {
                       {t(`navbar.links.${link.key}`)}
                     </Link>
                   ))}
+                  <a
+                    href={COMMISSIONS_URL}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className={mobileLinkClassName}>
+                    {t("navbar.links.commissions")}
+                  </a>
                   {sectionLinks.map((link) => (
                     <Link
                       key={link.hash}

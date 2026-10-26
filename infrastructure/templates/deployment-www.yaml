@@ -12,8 +12,8 @@ spec:
     type: {{ .Values.deployments.www.strategy.type | default "RollingUpdate" }}
     {{- if eq (.Values.deployments.www.strategy.type | default "RollingUpdate") "RollingUpdate" }}
     rollingUpdate:
-      maxUnavailable: {{ .Values.deployments.www.strategy.maxUnavailable | default 1 }}
-      maxSurge: {{ .Values.deployments.www.strategy.maxSurge | default 1 }}
+      maxUnavailable: {{ hasKey .Values.deployments.www.strategy "maxUnavailable" | ternary .Values.deployments.www.strategy.maxUnavailable 1 }}
+      maxSurge: {{ hasKey .Values.deployments.www.strategy "maxSurge" | ternary .Values.deployments.www.strategy.maxSurge 1 }}
     {{- end }}
   {{- end }}
   selector:

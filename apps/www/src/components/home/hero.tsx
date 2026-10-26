@@ -1,12 +1,15 @@
 import {
   ArrowRightIcon,
+  ArrowUpRightIcon,
   CheckCircleIcon,
   DownloadSimpleIcon,
+  PaintBrushIcon,
 } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Trans, useTranslation } from "react-i18next";
 import { usePlatformDownload } from "@/components/downloads/platform-download-button";
+import { COMMISSIONS_URL } from "@/lib/constants";
 import { orpc } from "@/utils/orpc";
 import { CtaArrow, DownloadCta, secondaryCta } from "./cta";
 
@@ -28,6 +31,36 @@ const DownloadFacts = () => {
     <p className='mt-10 text-[13px] text-foreground-subtle'>
       {facts.join(" · ")}
     </p>
+  );
+};
+
+/** Points players who want a skin that doesn't exist yet to the commissions site. */
+const CommissionsLink = () => {
+  const { t } = useTranslation("home");
+
+  return (
+    <a
+      href={COMMISSIONS_URL}
+      target='_blank'
+      rel='noopener noreferrer'
+      className='group/cta mt-8 flex max-w-md items-center gap-3.5 border-border border-t pt-6 focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-4'>
+      <span className='flex size-9 shrink-0 items-center justify-center rounded-lg border border-border-strong bg-surface/80 text-primary'>
+        <PaintBrushIcon aria-hidden='true' weight='bold' className='size-4' />
+      </span>
+      <span className='min-w-0 text-[13px] leading-snug'>
+        <span className='block font-semibold text-foreground transition-colors group-hover/cta:text-primary'>
+          {t("hero.commissions.title")}
+        </span>
+        <span className='block text-muted-foreground'>
+          {t("hero.commissions.body")}
+        </span>
+      </span>
+      <ArrowUpRightIcon
+        aria-hidden='true'
+        weight='bold'
+        className='ml-auto size-4 shrink-0 text-muted-foreground transition-[color,translate] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/cta:-translate-y-0.5 group-hover/cta:translate-x-0.5 group-hover/cta:text-primary'
+      />
+    </a>
   );
 };
 
@@ -84,6 +117,7 @@ export const HeroSection = () => {
             </Link>
           </div>
           <DownloadFacts />
+          <CommissionsLink />
         </div>
 
         <HeroWindow />

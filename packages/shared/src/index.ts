@@ -1,4 +1,5 @@
 export * from "./auth";
+export * from "./author-contacts";
 export * from "./constants";
 export * from "./deadworks-registry";
 export * from "./dto/announcement.dto";

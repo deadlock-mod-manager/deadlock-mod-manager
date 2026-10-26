@@ -19,6 +19,10 @@
       "installing": "Instalowanie moda",
       "installed": "Mod zainstalowany",
       "ready": "{{name}} jest gotowy do gry."
+    },
+    "commissions": {
+      "title": "",
+      "body": ""
     }
   },
   "partners": {

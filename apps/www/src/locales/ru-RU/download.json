@@ -58,7 +58,10 @@
       "requirements": "Windows 10 или 11, 64-бит"
     },
     "linux": {
-      "requirements": "64-бит, большинство дистрибутивов"
+      "requirements": "64-бит, большинство дистрибутивов",
+      "runtimeNote": "",
+      "alternative": "",
+      "alternativeDescription": ""
     },
     "detected": "Твоя система",
     "noBuilds": "Для этой версии нет сборок под {{platform}}.",
@@ -71,6 +74,10 @@
     "signatureTitle": "Подпись для {{filename}}",
     "download": "Скачать",
     "downloadLabel": "Скачать {{filename}}",
+    "runtime": {
+      "cef": "",
+      "wry": ""
+    },
     "types": {
       "exe": {
         "label": "Установщик",

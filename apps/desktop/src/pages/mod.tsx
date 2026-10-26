@@ -26,6 +26,7 @@ import ModButton from "@/components/mod-browsing/mod-button";
 import { InstalledVpksSection } from "@/components/mod-detail/installed-vpks-section";
 import { ModAudioPreview } from "@/components/mod-detail/mod-audio-preview";
 import { ModChangelog } from "@/components/mod-detail/mod-changelog";
+import { ModCommissionButton } from "@/components/mod-detail/mod-commission-button";
 import { ModComments } from "@/components/mod-detail/mod-comments";
 import { ModDependencies } from "@/components/mod-detail/mod-dependencies";
 import { ModDescription } from "@/components/mod-detail/mod-description";
@@ -404,6 +405,9 @@ const Mod = () => {
                     variant='outline'>
                     {t("modOptions.openTooltip")}
                   </Button>
+                )}
+                {mod.modAuthorId && (
+                  <ModCommissionButton authorId={mod.modAuthorId} />
                 )}
                 <FavoriteButton remoteId={mod.remoteId} variant='inline' />
                 {hasUpdate && (

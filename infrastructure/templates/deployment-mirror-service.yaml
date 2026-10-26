@@ -13,8 +13,8 @@ spec:
     type: {{ $deployment.strategy.type | default "RollingUpdate" }}
     {{- if eq ($deployment.strategy.type | default "RollingUpdate") "RollingUpdate" }}
     rollingUpdate:
-      maxUnavailable: {{ $deployment.strategy.maxUnavailable | default 1 }}
-      maxSurge: {{ $deployment.strategy.maxSurge | default 1 }}
+      maxUnavailable: {{ hasKey $deployment.strategy "maxUnavailable" | ternary $deployment.strategy.maxUnavailable 1 }}
+      maxSurge: {{ hasKey $deployment.strategy "maxSurge" | ternary $deployment.strategy.maxSurge 1 }}
     {{- end }}
   {{- end }}
   selector:

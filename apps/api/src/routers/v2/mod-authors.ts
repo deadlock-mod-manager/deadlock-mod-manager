@@ -7,7 +7,10 @@ import {
 } from "@deadlock-mods/shared";
 import { ORPCError } from "@orpc/server";
 import { createRateLimitMiddleware, publicProcedure } from "../../lib/orpc";
-import { fetchGameBananaMember } from "../../services/gamebanana-member";
+import {
+  fetchGameBananaContacts,
+  fetchGameBananaMember,
+} from "../../services/gamebanana-member";
 import { resolveModAuthorProfile } from "../../services/mod-author-profile";
 
 const modAuthorRepository = new ModAuthorRepository(db);
@@ -28,6 +31,7 @@ export const modAuthorsRouter = {
         input.id,
         modAuthorRepository,
         fetchGameBananaMember,
+        fetchGameBananaContacts,
       );
       if (!profile) {
         throw new ORPCError("NOT_FOUND");

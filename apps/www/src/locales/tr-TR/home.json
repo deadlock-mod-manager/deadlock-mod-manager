@@ -19,6 +19,10 @@
       "installing": "Mod yükleniyor",
       "installed": "Mod yüklendi",
       "ready": "{{name}} oynamaya hazır."
+    },
+    "commissions": {
+      "title": "Aradığınız görünüm henüz yok mu?",
+      "body": "Discord’dan veya web sitesinden bir mod geliştiricisine özel bir görünüm yaptırın."
     }
   },
   "partners": {

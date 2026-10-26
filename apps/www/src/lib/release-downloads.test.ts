@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import type { PlatformDownload } from "@/types/releases";
 import {
   getDownloadRuntime,
+  getPlatformInstallers,
   getRuntimeName,
   getRuntimeStatus,
   selectRecommendedDownload,
@@ -23,18 +24,29 @@ const createDownload = (
 });
 
 describe("selectRecommendedDownload", () => {
-  test("selects Wry even when CEF is listed first", () => {
-    const downloads = [
-      createDownload("deadlock-mod-manager-cef.flatpak", "flatpak", "cef"),
-      createDownload("deadlock-mod-manager.flatpak", "flatpak", "wry"),
-    ];
-
-    expect(selectRecommendedDownload(downloads, "linux", "x64")?.runtime).toBe(
+  test("selects the CEF Flatpak on Linux even when Wry is listed first", () => {
+    const wryFlatpak = createDownload(
+      "deadlock-mod-manager.flatpak",
+      "flatpak",
       "wry",
     );
+    const cefDeb = createDownload("deadlock-mod-manager-cef.deb", "deb", "cef");
+    const cefFlatpak = createDownload(
+      "deadlock-mod-manager-cef.flatpak",
+      "flatpak",
+      "cef",
+    );
+
+    expect(
+      selectRecommendedDownload(
+        [wryFlatpak, cefDeb, cefFlatpak],
+        "linux",
+        "x64",
+      ),
+    ).toBe(cefFlatpak);
   });
 
-  test("prefers Wry Flatpak over native Linux packages", () => {
+  test("falls back to Wry on Linux when a release has no CEF builds", () => {
     const downloads = [
       createDownload("deadlock-mod-manager.deb", "deb", "wry"),
       createDownload("deadlock-mod-manager.flatpak", "flatpak", "wry"),
@@ -45,15 +57,38 @@ describe("selectRecommendedDownload", () => {
     ).toBe("flatpak");
   });
 
-  test("returns no recommendation when only CEF is available", () => {
-    const downloads = [
-      createDownload("deadlock-mod-manager-cef.flatpak", "flatpak", "cef"),
-    ];
+  test("never recommends CEF on Windows", () => {
+    const cef: PlatformDownload = {
+      ...createDownload("deadlock-mod-manager-cef-setup.exe", "exe", "cef"),
+      platform: "windows",
+    };
 
-    expect(selectRecommendedDownload(downloads, "linux", "x64")).toBeNull();
+    expect(selectRecommendedDownload([cef], "windows", "x64")).toBeNull();
+    expect(getPlatformInstallers([cef], "windows")).toEqual({
+      primary: [],
+      alternative: [cef],
+    });
   });
 
-  test("labels CEF as experimental and Wry as recommended", () => {
+  test("lists Linux CEF installers first and Wry as the alternative", () => {
+    const wry = createDownload(
+      "deadlock-mod-manager.flatpak",
+      "flatpak",
+      "wry",
+    );
+    const cef = createDownload(
+      "deadlock-mod-manager-cef.flatpak",
+      "flatpak",
+      "cef",
+    );
+
+    expect(getPlatformInstallers([wry, cef], "linux")).toEqual({
+      primary: [cef],
+      alternative: [wry],
+    });
+  });
+
+  test("labels the platform's preferred runtime as recommended", () => {
     const cef = createDownload(
       "deadlock-mod-manager-cef.flatpak",
       "flatpak",
@@ -65,10 +100,13 @@ describe("selectRecommendedDownload", () => {
       "wry",
     );
 
+    const windowsCef: PlatformDownload = { ...cef, platform: "windows" };
+
     expect(getRuntimeName(cef)).toBe("CEF");
-    expect(getRuntimeStatus(cef)).toBe("Experimental");
+    expect(getRuntimeStatus(cef)).toBe("Recommended");
     expect(getRuntimeName(wry)).toBe("Wry");
-    expect(getRuntimeStatus(wry)).toBe("Recommended");
+    expect(getRuntimeStatus(wry)).toBe("Alternative");
+    expect(getRuntimeStatus(windowsCef)).toBe("Alternative");
   });
 
   test("recognizes CEF filenames when runtime metadata is absent", () => {
@@ -90,9 +128,7 @@ describe("selectRecommendedDownload", () => {
 
     expect(getDownloadRuntime(cef)).toBe("cef");
     expect(getDownloadRuntime(cefDeb)).toBe("cef");
-    expect(getRuntimeStatus(cef)).toBe("Experimental");
-    expect(selectRecommendedDownload([cef, wry], "linux", "x64")).toBe(wry);
-    expect(selectRecommendedDownload([cef], "linux", "x64")).toBeNull();
+    expect(selectRecommendedDownload([wry, cef], "linux", "x64")).toBe(cef);
   });
 
   test("does not recommend updater signatures", () => {

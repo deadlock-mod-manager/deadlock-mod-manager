@@ -1,5 +1,4 @@
 import type { ModAuthorDto, ModDto } from "@deadlock-mods/shared";
-import { Button } from "@deadlock-mods/ui/components/button";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import {
   CalendarDays,
@@ -12,9 +11,14 @@ import {
 import { useMutation } from "@tanstack/react-query";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useTranslation } from "react-i18next";
+import { useCommissionAuthor } from "@/hooks/use-commission-author";
 import { isTrustedExternalUrl } from "@/lib/trusted-external-url";
+import { cn } from "@/lib/utils";
 import { AuthorAvatar } from "./author-avatar";
+import { AuthorContacts } from "./author-contacts";
 import { AuthorStatPill } from "./author-stat-pill";
+import { CommissionAuthorButton } from "./commission-author-button";
+import { VerifiedAuthorBadge } from "./verified-author-badge";
 
 const formatMemberSince = (joinedAt: number, locale: string) =>
   new Intl.DateTimeFormat(locale, {
@@ -37,6 +41,7 @@ export const AuthorProfileHeader = ({
     meta: { skipGlobalErrorHandler: true },
     onError: () => toast.error(t("authorPage.openProfileError")),
   });
+  const commission = useCommissionAuthor(author);
   const displayName = author.name;
   const canOpenProfile = isTrustedExternalUrl(author.profileUrl);
   const headerImage = authorMods.find(
@@ -49,7 +54,7 @@ export const AuthorProfileHeader = ({
   }
 
   return (
-    <section className='relative mb-6 min-h-48 overflow-hidden rounded-lg border bg-card'>
+    <section className='relative mb-6 overflow-hidden rounded-lg border bg-card'>
       {headerImage && (
         <img
           alt=''
@@ -58,50 +63,90 @@ export const AuthorProfileHeader = ({
           src={headerImage}
         />
       )}
-      <div className='relative flex min-h-48 items-center gap-5 bg-gradient-to-t from-background via-background/85 to-background/20 p-6'>
-        <AuthorAvatar author={author} mods={authorMods} name={displayName} />
-        <div className='min-w-0 flex-1'>
-          <p className='mb-1 text-muted-foreground text-sm'>
-            {t("authorPage.submittedBy")}
-          </p>
-          <div className='flex flex-wrap items-center gap-x-4 gap-y-2'>
-            <h1 className='truncate font-semibold text-3xl tracking-tight'>
-              {displayName}
-            </h1>
-            {author.title && (
-              <span className='rounded-full bg-muted px-2.5 py-1 text-muted-foreground text-xs'>
-                {author.title}
-              </span>
-            )}
-          </div>
-          {author.upicUrl && (
-            <img
-              alt={t("authorPage.upicAlt", { author: displayName })}
-              className='mt-2 max-h-10 max-w-56 object-contain object-left'
-              src={author.upicUrl}
+      <div className='relative bg-gradient-to-t from-background via-background/85 to-background/20'>
+        {canOpenProfile && (
+          <a
+            className='absolute top-4 right-6 inline-flex items-center gap-1.5 rounded-sm text-muted-foreground text-sm underline-offset-4 transition-colors hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+            href={author.profileUrl}
+            onClick={(event) => {
+              event.preventDefault();
+              openProfile.mutate();
+            }}
+            rel='noreferrer noopener'
+            target='_blank'>
+            {t("authorPage.viewOnGameBanana")}
+            <ExternalLink className='h-3.5 w-3.5' />
+          </a>
+        )}
+        <div className='flex items-center gap-6 px-6 pt-6 pb-5'>
+          <div
+            className={cn(
+              "shrink-0 rounded-full",
+              commission && "verified-avatar-ring",
+            )}>
+            <AuthorAvatar
+              author={author}
+              mods={authorMods}
+              name={displayName}
             />
-          )}
-          {(author.joinedAt !== null || (author.subscriberCount ?? 0) > 0) && (
-            <div className='mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-muted-foreground text-xs'>
-              {author.joinedAt !== null && (
-                <span className='inline-flex items-center gap-1.5'>
-                  <CalendarDays className='h-3.5 w-3.5' />
-                  {t("authorPage.memberSince", {
-                    date: formatMemberSince(author.joinedAt, i18n.language),
-                  })}
-                </span>
-              )}
-              {(author.subscriberCount ?? 0) > 0 && (
-                <span className='inline-flex items-center gap-1.5'>
-                  <Users className='h-3.5 w-3.5' />
-                  {t("authorPage.subscriberCount", {
-                    count: author.subscriberCount,
-                  })}
+          </div>
+          <div className='min-w-0 flex-1'>
+            <div className='flex flex-wrap items-center gap-x-3 gap-y-2'>
+              <div className='flex min-w-0 items-center gap-2'>
+                <h1 className='truncate font-semibold text-3xl tracking-tight'>
+                  {displayName}
+                </h1>
+                {commission && (
+                  <VerifiedAuthorBadge availability={commission.availability} />
+                )}
+              </div>
+              {author.title && (
+                <span className='rounded-full bg-muted px-2.5 py-1 text-muted-foreground text-xs'>
+                  {author.title}
                 </span>
               )}
             </div>
+            {(author.joinedAt !== null ||
+              (author.subscriberCount ?? 0) > 0) && (
+              <div className='mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-muted-foreground text-sm'>
+                {author.joinedAt !== null && (
+                  <span className='inline-flex items-center gap-1.5'>
+                    <CalendarDays className='h-3.5 w-3.5' />
+                    {t("authorPage.memberSince", {
+                      date: formatMemberSince(author.joinedAt, i18n.language),
+                    })}
+                  </span>
+                )}
+                {(author.subscriberCount ?? 0) > 0 && (
+                  <span className='inline-flex items-center gap-1.5'>
+                    <Users className='h-3.5 w-3.5' />
+                    {t("authorPage.subscriberCount", {
+                      count: author.subscriberCount,
+                    })}
+                  </span>
+                )}
+              </div>
+            )}
+            {author.upicUrl && (
+              <img
+                alt={t("authorPage.upicAlt", { author: displayName })}
+                className='mt-3 max-h-10 max-w-56 object-contain object-left'
+                src={author.upicUrl}
+              />
+            )}
+          </div>
+          {author.signatureUrl && (
+            <img
+              alt={t("authorPage.signatureAlt", {
+                author: displayName,
+              })}
+              className='max-h-16 max-w-56 shrink-0 self-end object-contain object-right'
+              src={author.signatureUrl}
+            />
           )}
-          <div className='mt-3 flex flex-wrap items-center gap-2'>
+        </div>
+        <div className='flex flex-wrap items-center gap-x-4 gap-y-3 border-border/50 border-t bg-background/60 px-6 py-3'>
+          <div className='flex flex-1 flex-wrap items-center gap-2'>
             <AuthorStatPill
               icon={<Package className='h-3.5 w-3.5' />}
               label={t("authorPage.modStat", {
@@ -122,26 +167,10 @@ export const AuthorProfileHeader = ({
               value={totals.likes.toLocaleString()}
             />
           </div>
-        </div>
-        <div className='flex shrink-0 flex-col items-end gap-3'>
-          {author.signatureUrl && (
-            <img
-              alt={t("authorPage.signatureAlt", {
-                author: displayName,
-              })}
-              className='max-h-14 max-w-56 object-contain object-right'
-              src={author.signatureUrl}
-            />
-          )}
-          {canOpenProfile && (
-            <Button
-              disabled={openProfile.isPending}
-              onClick={() => openProfile.mutate()}
-              variant='outline'>
-              {t("authorPage.viewOnGameBanana")}
-              <ExternalLink className='h-4 w-4' />
-            </Button>
-          )}
+          <div className='flex flex-wrap items-center justify-end gap-3'>
+            <AuthorContacts contacts={author.contacts} />
+            <CommissionAuthorButton author={author} nudge variant='default' />
+          </div>
         </div>
       </div>
     </section>

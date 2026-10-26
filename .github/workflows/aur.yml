@@ -77,6 +77,24 @@ jobs:
             sed -i "s/^_pkgver=.*/_pkgver=${{ steps.version.outputs.version }}/" ${{ matrix.pkgbuild_dir }}/PKGBUILD
             sed -i -E "s/^pkgrel=.*/pkgrel=1/" ${{ matrix.pkgbuild_dir }}/PKGBUILD
           fi
+          # The deploy action runs updpkgsums only on its own copy, so refresh the
+          # repo's checksums here or the bot PR ships the previous release's sums.
+          pkgbuild=${{ matrix.pkgbuild_dir }}/PKGBUILD
+          mapfile -t sources < <(bash -c 'source "$1" && printf "%s\n" "${source[@]}"' _ "$pkgbuild")
+          sums=()
+          for entry in "${sources[@]}"; do
+            curl -fsSL --retry 3 -o source.tmp "${entry#*::}"
+            sums+=("'$(sha256sum source.tmp | cut -d' ' -f1)'")
+          done
+          rm -f source.tmp
+          block="sha256sums=(${sums[0]}"
+          for sum in "${sums[@]:1}"; do
+            block+=$'\n'"            ${sum}"
+          done
+          block+=")"
+          awk -v block="$block" '/^sha256sums=\(/ { print block; skip = 1 } skip { if (/\)/) skip = 0; next } { print }' \
+            "$pkgbuild" > PKGBUILD.tmp
+          mv PKGBUILD.tmp "$pkgbuild"
           # Copy for AUR deploy
           cp -r ${{ matrix.pkgbuild_dir }} ./${{ matrix.pkgname }}
 

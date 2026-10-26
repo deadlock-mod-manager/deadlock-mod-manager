@@ -1,5 +1,11 @@
 # @deadlock-mods/database
 
+## 2.5.0
+
+### Minor Changes
+
+- 4b36850: Back up profiles to your account and restore them on another PC
+
 ## 2.4.0
 
 ### Minor Changes

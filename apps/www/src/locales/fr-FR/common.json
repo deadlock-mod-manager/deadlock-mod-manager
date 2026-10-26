@@ -37,6 +37,7 @@
     "links": {
       "mods": "",
       "skins": "",
+      "commissions": "",
       "features": "Fonctionnalités",
       "themes": "Thèmes",
       "tools": "Outils",
@@ -68,6 +69,7 @@
       "download": "Télécharger",
       "sourceCode": "Code source",
       "changelog": "",
+      "commissions": "",
       "documentation": "",
       "faq": "",
       "reportBug": "Signaler un bug"

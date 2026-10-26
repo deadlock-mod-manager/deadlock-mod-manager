@@ -19,6 +19,10 @@
       "installing": "Установка мода",
       "installed": "Мод установлен",
       "ready": "{{name}} готов к игре."
+    },
+    "commissions": {
+      "title": "",
+      "body": ""
     }
   },
   "partners": {

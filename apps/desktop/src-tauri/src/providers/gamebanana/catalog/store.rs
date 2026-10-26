@@ -10,6 +10,7 @@ use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
 pub(super) const INCOMPLETE_SNAPSHOT: &str = "snapshot_with_invalid_records";
+pub(super) const LAST_FULL_SYNC_AT: &str = "last_full_sync_at";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -326,6 +327,42 @@ impl Catalog {
           .count()
           .get_result::<i64>(connection)?;
         count_to_u64(count)
+      })
+      .await
+  }
+
+  /// Before sounds had their own `snd-` slug, a sound was saved under its bare
+  /// GameBanana id, which looks like a mod id. Returns the ids the catalog
+  /// knows only as sounds, or `None` until a full crawl has completed, since a
+  /// mod missing from a partial catalog may just not be synced yet.
+  pub async fn legacy_sound_ids(&self, ids: Vec<String>) -> Result<Option<Vec<String>>, Error> {
+    self
+      .pool
+      .run(move |connection| {
+        let crawled = sync_state::table
+          .find(LAST_FULL_SYNC_AT)
+          .count()
+          .get_result::<i64>(connection)?
+          > 0;
+        if !crawled {
+          return Ok(None);
+        }
+        let candidates = ids
+          .iter()
+          .flat_map(|id| [id.clone(), format!("snd-{id}")])
+          .collect::<Vec<_>>();
+        let known = submission::table
+          .filter(submission::slug.eq_any(&candidates))
+          .select(submission::slug)
+          .load::<String>(connection)?
+          .into_iter()
+          .collect::<HashSet<_>>();
+        Ok(Some(
+          ids
+            .into_iter()
+            .filter(|id| !known.contains(id) && known.contains(&format!("snd-{id}")))
+            .collect(),
+        ))
       })
       .await
   }
@@ -761,6 +798,45 @@ mod tests {
       development_state: None,
       completion_percentage: None,
     }
+  }
+
+  #[tokio::test]
+  async fn legacy_sound_ids_skip_mods_and_unfinished_crawls() {
+    let directory = tempdir().unwrap();
+    let catalog = Catalog::open(directory.path().join("catalog.sqlite3"), 1)
+      .await
+      .unwrap();
+    catalog
+      .upsert_page(
+        vec![
+          record("7", "Mod", "snapshot-a"),
+          record("snd-7", "Sound sharing the mod id", "snapshot-a"),
+          record("snd-8", "Sound", "snapshot-a"),
+        ],
+        crate::providers::SubmissionType::Sound,
+        2,
+        Some("snapshot-a".to_string()),
+        false,
+      )
+      .await
+      .unwrap();
+    let ids = vec!["7".to_string(), "8".to_string(), "9".to_string()];
+    assert_eq!(catalog.legacy_sound_ids(ids.clone()).await.unwrap(), None);
+
+    catalog
+      .complete_snapshot("snapshot-a".to_string())
+      .await
+      .unwrap();
+    assert_eq!(catalog.legacy_sound_ids(ids.clone()).await.unwrap(), None);
+
+    catalog
+      .set_state(super::LAST_FULL_SYNC_AT, "123".to_string())
+      .await
+      .unwrap();
+    assert_eq!(
+      catalog.legacy_sound_ids(ids).await.unwrap(),
+      Some(vec!["8".to_string()])
+    );
   }
 
   #[tokio::test]

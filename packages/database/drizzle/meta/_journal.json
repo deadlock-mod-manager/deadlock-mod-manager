@@ -421,6 +421,13 @@
       "when": 1792864578848,
       "tag": "0059_resync_nested_categories",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1792957938077,
+      "tag": "0060_mod_author_contacts",
+      "breakpoints": true
     }
   ]
 }

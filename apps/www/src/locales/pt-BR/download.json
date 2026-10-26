@@ -58,7 +58,10 @@
       "requirements": "Windows 10 ou 11, 64 bits"
     },
     "linux": {
-      "requirements": "64 bits, a maioria das distribuições"
+      "requirements": "64 bits, a maioria das distribuições",
+      "runtimeNote": "",
+      "alternative": "",
+      "alternativeDescription": ""
     },
     "detected": "Sistema detectado",
     "noBuilds": "Nenhuma versão para {{platform}} nesta release.",
@@ -71,6 +74,10 @@
     "signatureTitle": "Assinatura de {{filename}}",
     "download": "Baixar",
     "downloadLabel": "Baixar {{filename}}",
+    "runtime": {
+      "cef": "",
+      "wry": ""
+    },
     "types": {
       "exe": {
         "label": "Instalador",

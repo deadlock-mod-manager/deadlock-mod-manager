@@ -148,6 +148,10 @@ export const inspectGameBananaCatalog = () =>
 export const clearGameBananaCatalog = () =>
   invoke<void>("clear_gamebanana_catalog");
 
+/** Resolves to `null` until the catalog has finished a full crawl. */
+export const resolveLegacySoundIds = (ids: string[]) =>
+  invoke<string[] | null>("resolve_legacy_sound_ids", { ids });
+
 export const synchronizeGameBananaCatalog = (forceRefresh = false) =>
   invoke<CatalogSyncStatusDto>("synchronize_gamebanana_catalog", {
     forceRefresh,

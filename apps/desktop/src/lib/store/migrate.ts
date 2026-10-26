@@ -614,6 +614,19 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
       }
     },
   },
+  {
+    to: 37,
+    label: "check-legacy-sound-favorites",
+    apply: (state) => {
+      // v26 only renamed sounds that were installed, so a favorited sound that
+      // wasn't kept its bare id. Only the catalog can tell those from mods.
+      if (!Array.isArray(state.favorites)) return;
+      state.pendingSoundFavoriteChecks = state.favorites.filter(
+        (value): value is string =>
+          typeof value === "string" && LEGACY_GAMEBANANA_ID.test(value),
+      );
+    },
+  },
 ];
 
 const LEGACY_GAMEBANANA_ID = /^[1-9]\d*$/;
