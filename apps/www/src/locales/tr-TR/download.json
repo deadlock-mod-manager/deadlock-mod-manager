@@ -58,7 +58,10 @@
       "requirements": "Windows 10 veya 11, 64 bit"
     },
     "linux": {
-      "requirements": "64 bit, çoğu dağıtım"
+      "requirements": "64 bit, çoğu dağıtım",
+      "runtimeNote": "",
+      "alternative": "",
+      "alternativeDescription": ""
     },
     "detected": "Algılanan sistem",
     "noBuilds": "Bu sürüm için {{platform}} derlemesi yok.",
@@ -71,6 +74,10 @@
     "signatureTitle": "{{filename}} için imza",
     "download": "İndir",
     "downloadLabel": "{{filename}} dosyasını indir",
+    "runtime": {
+      "cef": "",
+      "wry": ""
+    },
     "types": {
       "exe": {
         "label": "Yükleyici",

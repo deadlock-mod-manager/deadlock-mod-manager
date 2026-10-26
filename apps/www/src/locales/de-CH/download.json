@@ -58,7 +58,10 @@
       "requirements": ""
     },
     "linux": {
-      "requirements": ""
+      "requirements": "",
+      "runtimeNote": "",
+      "alternative": "",
+      "alternativeDescription": ""
     },
     "detected": "",
     "noBuilds": "",
@@ -71,6 +74,10 @@
     "signatureTitle": "",
     "download": "",
     "downloadLabel": "",
+    "runtime": {
+      "cef": "",
+      "wry": ""
+    },
     "types": {
       "exe": {
         "label": "",

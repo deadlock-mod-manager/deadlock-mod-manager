@@ -58,7 +58,10 @@
       "requirements": "Windows 10 lub 11, 64-bit"
     },
     "linux": {
-      "requirements": "64-bit, większość dystrybucji"
+      "requirements": "64-bit, większość dystrybucji",
+      "runtimeNote": "",
+      "alternative": "",
+      "alternativeDescription": ""
     },
     "detected": "Wykryty system",
     "noBuilds": "Brak wersji na {{platform}} dla tego wydania.",
@@ -71,6 +74,10 @@
     "signatureTitle": "Podpis dla {{filename}}",
     "download": "Pobierz",
     "downloadLabel": "Pobierz {{filename}}",
+    "runtime": {
+      "cef": "",
+      "wry": ""
+    },
     "types": {
       "exe": {
         "label": "Instalator",

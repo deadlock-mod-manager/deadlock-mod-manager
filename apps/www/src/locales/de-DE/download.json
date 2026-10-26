@@ -58,7 +58,10 @@
       "requirements": "Windows 10 oder 11, 64 Bit"
     },
     "linux": {
-      "requirements": "64 Bit, die meisten Distributionen"
+      "requirements": "64 Bit, die meisten Distributionen",
+      "runtimeNote": "",
+      "alternative": "",
+      "alternativeDescription": ""
     },
     "detected": "Erkanntes System",
     "noBuilds": "Keine {{platform}}-Builds für diese Version.",
@@ -71,6 +74,10 @@
     "signatureTitle": "Signatur für {{filename}}",
     "download": "",
     "downloadLabel": "{{filename}} herunterladen",
+    "runtime": {
+      "cef": "",
+      "wry": ""
+    },
     "types": {
       "exe": {
         "label": "",
