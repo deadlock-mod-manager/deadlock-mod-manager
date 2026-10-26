@@ -5,6 +5,7 @@ export type ErrorKind = {
     | "makeWritableFailed"
     | "utf8"
     | "steamNotFound"
+    | "steamRunning"
     | "gameNotFound"
     | "gamePathNotSet"
     | "appHandleNotInitialized"

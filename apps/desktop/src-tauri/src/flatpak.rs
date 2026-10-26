@@ -9,6 +9,8 @@ use tokio::process::Command;
 
 use crate::errors::Error;
 
+#[cfg(target_os = "linux")]
+pub(crate) mod game_process;
 mod relaunch;
 
 const ALLOWED_UPDATE_HOST: &str = "github.com";

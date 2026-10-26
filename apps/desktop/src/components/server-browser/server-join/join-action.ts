@@ -21,10 +21,6 @@ export type JoinOutcome =
   | { kind: "manual"; code: string }
   | { kind: "no-connect-method" };
 
-/** The client only writes `console.log`, which the watchdog tails, with `-condebug`. */
-export const withConsoleLog = (args: string): string =>
-  /(^|\s)-condebug(\s|$)/.test(args) ? args : `${args} -condebug`.trim();
-
 export const buildSteamConnectUrl = (
   server: ServerBrowserEntry,
   password: string,
@@ -94,13 +90,16 @@ export const joinServer = async ({
   }
 
   const address = await resolveSteamAddress(server);
+  const loggingEnabled = /(^|\s)-condebug(\s|$)/.test(additionalArgs);
 
   if (address && gameRunning) {
     const steamUrl = buildSteamConnectUrl(server, password, address);
     if (steamUrl) {
       try {
         await openUrl(steamUrl);
-        await watchConnect(address, password, server, false);
+        if (loggingEnabled) {
+          await watchConnect(address, password, server, false);
+        }
         return { kind: "steam-url" };
       } catch (err) {
         logger
@@ -113,14 +112,15 @@ export const joinServer = async ({
   const connect = buildConnectArgs(server, password);
 
   if (connect) {
-    const launchArgs = withConsoleLog(
-      [additionalArgs.trim(), connect.args].filter(Boolean).join(" "),
-    );
+    const launchArgs = [additionalArgs.trim(), connect.args]
+      .filter(Boolean)
+      .join(" ");
     try {
       await invoke("launch_game_direct", { additionalArgs: launchArgs });
-      const watched = address
-        ? await watchConnect(address, password, server, true)
-        : false;
+      const watched =
+        address && loggingEnabled
+          ? await watchConnect(address, password, server, true)
+          : false;
       return {
         kind: "launched",
         passwordSkipped: connect.passwordSkipped,
@@ -140,7 +140,7 @@ export const joinServer = async ({
     if (steamUrl) {
       try {
         await openUrl(steamUrl);
-        if (address) {
+        if (address && loggingEnabled) {
           await watchConnect(address, password, server, true);
         }
         return { kind: "steam-url" };

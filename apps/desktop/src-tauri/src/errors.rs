@@ -19,6 +19,8 @@ pub enum Error {
   Utf8(#[from] std::str::Utf8Error),
   #[error("Steam installation not found")]
   SteamNotFound,
+  #[error("Close Steam before removing its saved console logging option")]
+  SteamRunning,
   #[error("Game not found in any Steam library")]
   GameNotFound,
   #[error("Game path not set - initialize game first")]
@@ -173,6 +175,7 @@ impl serde::Serialize for Error {
       Error::MakeWritableFailed { .. } => "makeWritableFailed",
       Error::Utf8(_) => "utf8",
       Error::SteamNotFound => "steamNotFound",
+      Error::SteamRunning => "steamRunning",
       Error::GameNotFound => "gameNotFound",
       Error::GamePathNotSet => "gamePathNotSet",
       Error::AppHandleNotInitialized => "appHandleNotInitialized",

@@ -11,12 +11,13 @@ const DEADLOCK_PROCESS_NAME: &str = "deadlock.exe";
 /// Name, start time and command line are all we read. On Linux, sysinfo
 /// lists every thread as a process of its own unless tasks are left out, and
 /// the game's threads share its command line.
+/// Proton replaces its launcher's command line in place during startup.
 fn refresh_processes(system: &mut System) {
   system.refresh_processes_specifics(
     ProcessesToUpdate::All,
     true,
     ProcessRefreshKind::nothing()
-      .with_cmd(UpdateKind::OnlyIfNotSet)
+      .with_cmd(UpdateKind::Always)
       .without_tasks(),
   );
 }
@@ -153,6 +154,49 @@ mod tests {
   use sysinfo::{Pid, System, ThreadKind};
 
   use super::{is_deadlock_process, refresh_processes};
+
+  #[cfg(target_os = "linux")]
+  #[test]
+  fn refreshes_command_lines_after_a_launcher_execs_the_game() {
+    use std::io::{BufRead, BufReader, Write};
+    use std::process::{Command, Stdio};
+
+    let mut child = Command::new("sh")
+      .args(["-c", "printf 'ready\\n'; read -r line; exec sleep 30"])
+      .stdin(Stdio::piped())
+      .stdout(Stdio::piped())
+      .spawn()
+      .unwrap();
+    let mut ready = String::new();
+    BufReader::new(child.stdout.take().unwrap())
+      .read_line(&mut ready)
+      .unwrap();
+    let pid = Pid::from_u32(child.id());
+    let mut system = System::new();
+    refresh_processes(&mut system);
+    let before = system.process(pid).unwrap().cmd().to_vec();
+    child.stdin.take().unwrap().write_all(b"\n").unwrap();
+    let mut updated = false;
+    for _ in 0..100 {
+      refresh_processes(&mut system);
+      if system
+        .process(pid)
+        .unwrap()
+        .cmd()
+        .first()
+        .map(|arg| arg.as_os_str())
+        == Some(OsStr::new("sleep"))
+      {
+        updated = true;
+        break;
+      }
+      std::thread::sleep(std::time::Duration::from_millis(10));
+    }
+    child.kill().unwrap();
+    child.wait().unwrap();
+
+    assert!(updated, "kept the launcher's cached arguments: {before:?}");
+  }
 
   #[test]
   fn lists_processes_without_their_threads() {

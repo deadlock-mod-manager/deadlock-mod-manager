@@ -111,4 +111,34 @@ describe("getAdditionalArgs", () => {
 
     expect(await getAdditionalArgs()).toBe("-condebug");
   });
+
+  it("leaves logging disabled when game presence is off", async () => {
+    serverSettings = Promise.resolve([]);
+    usePersistedStore.setState({ gamePresenceEnabled: true, settings: {} });
+    usePersistedStore.getState().setGamePresenceEnabled(false);
+
+    expect(await getAdditionalArgs()).toBe("");
+    expect(usePersistedStore.getState().gamePresenceEnabled).toBe(false);
+  });
+
+  it("keeps disabled launch options out of the arguments", async () => {
+    serverSettings = Promise.resolve([]);
+    usePersistedStore.setState({
+      settings: {
+        local_setting_logging: {
+          ...launchOption("local_setting_logging", "-condebug"),
+          enabled: false,
+        },
+      },
+    });
+
+    expect(await getAdditionalArgs()).toBe("");
+  });
+
+  it("includes logging when game presence is enabled", async () => {
+    serverSettings = Promise.resolve([]);
+    usePersistedStore.setState({ gamePresenceEnabled: true, settings: {} });
+
+    expect(await getAdditionalArgs()).toBe("-condebug");
+  });
 });

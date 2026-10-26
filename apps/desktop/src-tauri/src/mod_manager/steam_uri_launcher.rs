@@ -119,6 +119,11 @@ impl SteamUriLaunchRequest {
   }
 
   #[cfg(all(test, target_os = "linux"))]
+  pub(crate) fn uri(&self) -> &str {
+    &self.uri
+  }
+
+  #[cfg(all(test, target_os = "linux"))]
   pub(crate) fn program(&self) -> &Path {
     &self.program
   }

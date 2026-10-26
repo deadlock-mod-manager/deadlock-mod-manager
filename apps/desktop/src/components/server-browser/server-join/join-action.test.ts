@@ -1,4 +1,4 @@
-import { describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 import type { ServerBrowserEntry } from "@deadlock-mods/shared";
 
 mock.module("@deadlock-mods/ui/components/sonner", () => ({
@@ -10,9 +10,17 @@ mock.module("@tauri-apps/plugin-clipboard-manager", () => ({
 mock.module("@tauri-apps/plugin-opener", () => ({
   openUrl: async () => {},
 }));
-mock.module("@tauri-apps/api/core", () => ({
-  invoke: async () => {},
-}));
+interface JoinCommandArgs {
+  address?: string;
+  additionalArgs?: string;
+  password?: string | null;
+  coldStart?: boolean;
+}
+
+const invoke = mock(async (command: string, _args?: JoinCommandArgs) =>
+  command === "resolve_connect_address" ? "203.0.113.10:27015" : undefined,
+);
+mock.module("@tauri-apps/api/core", () => ({ invoke }));
 mock.module("@/lib/logger", () => {
   const logger = {
     withError: () => ({ error: () => {}, warn: () => {} }),
@@ -23,7 +31,7 @@ mock.module("@/lib/logger", () => {
   };
 });
 
-const { buildSteamConnectUrl, withConsoleLog } = await import("./join-action");
+const { buildSteamConnectUrl, joinServer } = await import("./join-action");
 const { buildConnectArgs, normalizeConnectCode } =
   await import("./connect-args");
 
@@ -211,21 +219,51 @@ describe("buildSteamConnectUrl", () => {
   });
 });
 
-describe("withConsoleLog", () => {
-  it("adds -condebug when it is missing", () => {
-    expect(withConsoleLog("+connect 10.0.0.1:27015")).toBe(
-      "+connect 10.0.0.1:27015 -condebug",
-    );
-    expect(withConsoleLog("")).toBe("-condebug");
-  });
+describe("joinServer", () => {
+  beforeEach(() => invoke.mockClear());
 
-  it("leaves args that already log to the console alone", () => {
-    expect(withConsoleLog("-condebug +connect 10.0.0.1:27015")).toBe(
-      "-condebug +connect 10.0.0.1:27015",
-    );
-  });
+  it.each(["", "-novid", "-condebuglog"])(
+    "does not enable logging when launching with %j",
+    async (additionalArgs) => {
+      const result = await joinServer({
+        server: baseServer(),
+        password: "",
+        additionalArgs,
+        gameRunning: false,
+      });
 
-  it("does not mistake a longer flag for -condebug", () => {
-    expect(withConsoleLog("-condebuglog")).toBe("-condebuglog -condebug");
+      expect(invoke).toHaveBeenCalledWith("launch_game_direct", {
+        additionalArgs: [additionalArgs, "+connect 203.0.113.10:27015"]
+          .filter(Boolean)
+          .join(" "),
+      });
+      expect(result).toEqual({
+        kind: "launched",
+        passwordSkipped: false,
+        watched: false,
+      });
+      expect(invoke.mock.calls.map(([command]) => command)).not.toContain(
+        "watch_server_connect",
+      );
+    },
+  );
+
+  it("preserves enabled logging and starts the reconnect watchdog", async () => {
+    const result = await joinServer({
+      server: baseServer(),
+      password: "",
+      additionalArgs: "-condebug",
+      gameRunning: false,
+    });
+
+    expect(invoke).toHaveBeenCalledWith("launch_game_direct", {
+      additionalArgs: "-condebug +connect 203.0.113.10:27015",
+    });
+    expect(invoke).toHaveBeenCalledWith("watch_server_connect", {
+      address: "203.0.113.10:27015",
+      password: null,
+      coldStart: true,
+    });
+    expect(result).toMatchObject({ kind: "launched", watched: true });
   });
 });

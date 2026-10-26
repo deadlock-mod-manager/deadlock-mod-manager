@@ -1,6 +1,6 @@
 use crate::ast::*;
 use crate::error::{KvError, Result};
-use crate::tokenizer::Tokenizer;
+use crate::tokenizer::{MAX_TOKEN_LENGTH, Tokenizer};
 use crate::types::{KeyValuesObject, KeyValuesValue, ParseOptions, ParseResult, Token, TokenType};
 
 pub struct Parser {
@@ -14,12 +14,22 @@ impl Parser {
     }
 
     pub fn parse(input: &str, options: ParseOptions) -> Result<ParseResult> {
+        Self::parse_with_token_limit(input, options, MAX_TOKEN_LENGTH)
+    }
+
+    /// Parse trusted documents that require a different token length limit.
+    pub fn parse_with_token_limit(
+        input: &str,
+        options: ParseOptions,
+        max_token_length: usize,
+    ) -> Result<ParseResult> {
         let mut tokenizer = Tokenizer::with_options(
             input,
             options.allow_escape_sequences,
             options.allow_conditionals,
             options.allow_includes,
-        );
+        )
+        .with_max_token_length(max_token_length);
         let tokens = tokenizer.tokenize()?;
         let mut parser = Parser::new(tokens);
         let ast = parser.parse_document()?;
@@ -468,6 +478,20 @@ impl Parser {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn caller_can_raise_the_token_limit_without_changing_the_default() {
+        let input = format!("\"large\" \"{}\"", "a".repeat(2048));
+        assert!(matches!(
+            Parser::parse(&input, ParseOptions::default()),
+            Err(KvError::TokenTooLong { .. })
+        ));
+        assert!(Parser::parse_with_token_limit(&input, ParseOptions::default(), 4096).is_ok());
+        assert!(matches!(
+            Parser::parse_with_token_limit(&input, ParseOptions::default(), 1500),
+            Err(KvError::TokenTooLong { .. })
+        ));
+    }
 
     #[test]
     fn test_parse_simple_keyvalue() {
