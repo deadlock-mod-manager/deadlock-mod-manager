@@ -6,6 +6,7 @@ import { useAnalyticsContext } from "@/components/analytics-provider";
 import { formatFileSize } from "@/lib/os-detection";
 import {
   findSignatureFor,
+  getDownloadRuntime,
   getPlatformInstallers,
 } from "@/lib/release-downloads";
 import type { DetectedOS, PlatformDownload } from "@/types/releases";
@@ -44,6 +45,7 @@ const InstallerRow = ({
       : null;
   const label = type ? t(`installer.types.${type}.label`) : download.filename;
   const description = type ? t(`installer.types.${type}.description`) : "";
+  const runtime = getDownloadRuntime(download);
 
   const handleClick = () => {
     if (analytics.isEnabled) {
@@ -59,6 +61,9 @@ const InstallerRow = ({
       <div className='min-w-0 flex-1'>
         <p className='font-medium text-sm'>
           {label}
+          <span className='ml-2 rounded border px-1.5 py-0.5 font-normal text-muted-foreground text-xs'>
+            {t(`installer.runtime.${runtime}`)}
+          </span>
           {recommended && (
             <span className='ml-2 font-normal text-primary text-xs'>
               {t("installer.recommended")}
@@ -122,7 +127,8 @@ export const PlatformDownloads = ({
   return (
     <div className='divide-y rounded-xl border bg-card'>
       {PLATFORMS.map(({ id, name, icon: Icon }) => {
-        const { standard, experimental } = getPlatformInstallers(downloads, id);
+        const { primary, alternative } = getPlatformInstallers(downloads, id);
+        const isLinux = id === "linux";
 
         return (
           <div
@@ -135,6 +141,11 @@ export const PlatformDownloads = ({
                 <p className='mt-1 text-muted-foreground text-xs'>
                   {t(`platforms.${id}.requirements`)}
                 </p>
+                {isLinux && (
+                  <p className='mt-1 text-muted-foreground text-xs'>
+                    {t("platforms.linux.runtimeNote")}
+                  </p>
+                )}
                 {userOS === id && (
                   <p className='mt-1 text-primary text-xs'>
                     {t("platforms.detected")}
@@ -144,13 +155,13 @@ export const PlatformDownloads = ({
             </div>
 
             <div className='min-w-0'>
-              {standard.length === 0 ? (
+              {primary.length === 0 ? (
                 <p className='py-3 text-muted-foreground text-sm'>
                   {t("platforms.noBuilds", { platform: name })}
                 </p>
               ) : (
                 <ul className='divide-y divide-border/60'>
-                  {standard.map((download, index) => (
+                  {primary.map((download, index) => (
                     <InstallerRow
                       download={download}
                       key={download.filename}
@@ -162,18 +173,22 @@ export const PlatformDownloads = ({
                 </ul>
               )}
 
-              {experimental.length > 0 && (
+              {alternative.length > 0 && (
                 <div className='border-border/60 border-t pt-3'>
                   <p className='text-muted-foreground text-xs'>
-                    {t("platforms.experimental", {
-                      total: experimental.length,
-                    })}
+                    {isLinux
+                      ? t("platforms.linux.alternative")
+                      : t("platforms.experimental", {
+                          total: alternative.length,
+                        })}
                   </p>
                   <p className='py-1 text-muted-foreground text-xs'>
-                    {t("platforms.experimentalDescription")}
+                    {isLinux
+                      ? t("platforms.linux.alternativeDescription")
+                      : t("platforms.experimentalDescription")}
                   </p>
                   <ul className='divide-y divide-border/60'>
-                    {experimental.map((download) => (
+                    {alternative.map((download) => (
                       <InstallerRow
                         download={download}
                         key={download.filename}

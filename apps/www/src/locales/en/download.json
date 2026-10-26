@@ -58,7 +58,10 @@
       "requirements": "Windows 10 or 11, 64-bit"
     },
     "linux": {
-      "requirements": "64-bit, most distributions"
+      "requirements": "64-bit, most distributions",
+      "runtimeNote": "Linux builds now default to bundled Chromium, which renders more reliably than the system webview.",
+      "alternative": "System webview builds",
+      "alternativeDescription": "Use the system WebKitGTK webview instead of bundled Chromium. Smaller download, but slower or blank on some setups. Both Flatpaks install as the same app, so installing one replaces the other."
     },
     "detected": "Detected system",
     "noBuilds": "No {{platform}} builds for this version.",
@@ -71,6 +74,10 @@
     "signatureTitle": "Signature for {{filename}}",
     "download": "Download",
     "downloadLabel": "Download {{filename}}",
+    "runtime": {
+      "cef": "Chromium",
+      "wry": "System webview"
+    },
     "types": {
       "exe": {
         "label": "Installer",
