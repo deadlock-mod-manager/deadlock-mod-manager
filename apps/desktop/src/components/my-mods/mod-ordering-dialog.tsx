@@ -38,6 +38,7 @@ import {
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import type { OrderedVpkFile } from "@/components/my-mods/mod-file-order";
 import {
@@ -47,6 +48,7 @@ import {
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { restrictToVerticalAxis } from "@/lib/mods/load-order-drag";
 import { usePersistedStore } from "@/lib/store";
+import { cn } from "@/lib/utils";
 import type { ModVpkFiles } from "@/types/generated/ModVpkFiles";
 import type { LocalMod } from "@/types/mods";
 
@@ -395,7 +397,10 @@ export const ModOrderingDialog = ({
                     items={visibleMods.map((mod) => mod.remoteId)}
                     strategy={verticalListSortingStrategy}>
                     <ol
-                      className='space-y-1'
+                      className={cn(
+                        "space-y-1",
+                        activeId && "pointer-events-none",
+                      )}
                       onFocus={(event) =>
                         setHandleFocused(
                           event.target.getAttribute("aria-roledescription") ===
@@ -433,11 +438,19 @@ export const ModOrderingDialog = ({
                       })}
                     </ol>
                   </SortableContext>
-                  <DragOverlay dropAnimation={null}>
-                    {activeMod && (
-                      <DragPreview mod={activeMod} position={activeIndex + 1} />
-                    )}
-                  </DragOverlay>
+                  {/* The dialog is centered with a transform, which would
+                      offset a fixed overlay rendered inside it. */}
+                  {createPortal(
+                    <DragOverlay dropAnimation={null}>
+                      {activeMod && (
+                        <DragPreview
+                          mod={activeMod}
+                          position={activeIndex + 1}
+                        />
+                      )}
+                    </DragOverlay>,
+                    document.body,
+                  )}
                 </DndContext>
               )}
             </div>
