@@ -21,6 +21,7 @@ import { TauriAppWindowProvider } from "./components/layout/window-controls/wind
 import { OnboardingWizard } from "./components/onboarding/onboarding-wizard";
 import { PerformanceRenderer } from "./components/performance/performance-renderer";
 import { TelemetryConsentDialog } from "./components/telemetry/telemetry-consent-dialog";
+import { WorkbenchActionBridge } from "./components/modding-workbench/workbench-actions";
 import { LaunchRepairProvider } from "./components/providers/launch-repair";
 import { FilePermissionsRenderer } from "./components/file-permissions-renderer";
 import { AlertDialogProvider } from "./components/providers/alert-dialog";
@@ -191,6 +192,7 @@ const App = ({ runtime, storage }: AppProps) => {
                   <ModelConflictProvider>
                     <CompatibilityReviewProvider>
                       <LaunchRepairProvider>
+                        <WorkbenchActionBridge />
                         <TauriAppWindowProvider>
                           <ThemeOverridesProvider>
                             <FoundryProvider>

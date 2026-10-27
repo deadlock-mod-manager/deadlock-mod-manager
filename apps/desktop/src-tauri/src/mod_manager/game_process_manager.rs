@@ -34,6 +34,15 @@ fn executable_name(value: &OsStr) -> Option<&str> {
 }
 
 fn is_deadlock_process(name: &OsStr, command: &[std::ffi::OsString]) -> bool {
+  // SDK editors run deadlock.exe too; they must not become game sessions or
+  // targets of DMM's Stop Game action.
+  if command.iter().any(|argument| {
+    argument
+      .to_str()
+      .is_some_and(|value| value.eq_ignore_ascii_case("-tools"))
+  }) {
+    return false;
+  }
   executable_name(name).is_some_and(|name| name.eq_ignore_ascii_case(DEADLOCK_PROCESS_NAME))
     || command
       .first()
@@ -187,6 +196,18 @@ mod tests {
     )];
 
     assert!(is_deadlock_process(OsStr::new("MainThrd"), &command));
+  }
+
+  #[test]
+  fn sdk_editors_are_not_game_processes_on_windows_or_proton() {
+    let command = [
+      OsString::from(r"C:\DMM\tools\game\bin\win64\deadlock.exe"),
+      OsString::from("-tools"),
+      OsString::from("-tool"),
+      OsString::from("modeldoc_editor"),
+    ];
+    assert!(!is_deadlock_process(OsStr::new("deadlock.exe"), &command));
+    assert!(!is_deadlock_process(OsStr::new("MainThrd"), &command));
   }
 
   #[test]

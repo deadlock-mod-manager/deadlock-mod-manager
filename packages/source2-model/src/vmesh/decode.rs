@@ -775,6 +775,19 @@ pub fn model_mesh_bone_remap(res: &Resource, mesh_index: usize) -> Result<Option
     let Some(data) = res.block_bytes("DATA").map(crate::kv3::parse).transpose()? else {
         return Ok(None);
     };
+    mesh_bone_remap_data(&data, mesh_index)
+}
+
+fn mesh_bone_remap_data(data: &KvValue, mesh_index: usize) -> Result<Option<Vec<u16>>> {
+    // Static models can carry an unused -1 remap slot without a skeleton.
+    if data
+        .get("m_modelSkeleton")
+        .and_then(|skeleton| skeleton.get("m_boneName"))
+        .and_then(KvValue::as_array)
+        .is_some_and(|bones| bones.is_empty())
+    {
+        return Ok(None);
+    }
     let starts = data
         .get("m_remappingTableStarts")
         .and_then(KvValue::as_array)
@@ -853,4 +866,39 @@ pub fn referenced_materials(res: &Resource) -> Vec<String> {
     }
 
     materials
+}
+
+#[cfg(test)]
+mod bone_remap_tests {
+    use super::*;
+    fn model(bones: Vec<KvValue>, table: Vec<KvValue>) -> KvValue {
+        KvValue::Object(
+            [
+                (
+                    "m_modelSkeleton".into(),
+                    KvValue::Object([("m_boneName".into(), KvValue::Array(bones))].into()),
+                ),
+                (
+                    "m_remappingTableStarts".into(),
+                    KvValue::Array(vec![KvValue::Int(0)]),
+                ),
+                ("m_remappingTable".into(), KvValue::Array(table)),
+            ]
+            .into(),
+        )
+    }
+    #[test]
+    fn static_model_remapping_accepts_unused_negative_bone_slot() {
+        let data = model(vec![], vec![KvValue::Int(-1)]);
+        assert_eq!(mesh_bone_remap_data(&data, 0).unwrap(), None);
+    }
+    #[test]
+    fn skinned_models_keep_remapping_and_reject_invalid_bone_indices() {
+        let bones = vec![KvValue::String("root".into())];
+        assert_eq!(
+            mesh_bone_remap_data(&model(bones.clone(), vec![KvValue::Int(0)]), 0).unwrap(),
+            Some(vec![0])
+        );
+        assert!(mesh_bone_remap_data(&model(bones, vec![KvValue::Int(-1)]), 0).is_err());
+    }
 }

@@ -20,7 +20,7 @@ export const GlobalFileDrop = () => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [dragging, setDragging] = useState(false);
-  const enabled = pathname !== ADD_MODS_PATH;
+  const enabled = pathname !== ADD_MODS_PATH && pathname !== "/workbench";
   const { handleDataTransfer } = useDroppedSource(
     (source) => {
       setPendingDrop(source);

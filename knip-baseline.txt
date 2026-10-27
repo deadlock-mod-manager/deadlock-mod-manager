@@ -21,7 +21,6 @@
 ["dependencies","apps/desktop/package.json",[["","@tanstack/react-table"]]]
 ["dependencies","apps/desktop/package.json",[["","@tauri-apps/plugin-deep-link"]]]
 ["dependencies","apps/desktop/package.json",[["","better-auth"]]]
-["dependencies","apps/desktop/package.json",[["","next-themes"]]]
 ["dependencies","apps/desktop/package.json",[["","react-promise-suspense"]]]
 ["dependencies","apps/desktop/package.json",[["","tslog"]]]
 ["dependencies","apps/lockdex/package.json",[["","@deadlock-mods/distributed-lock"]]]

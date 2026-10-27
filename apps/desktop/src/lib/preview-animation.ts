@@ -6,15 +6,16 @@ import {
   QuaternionKeyframeTrack,
   VectorKeyframeTrack,
 } from "three";
-import type { PreviewAbilityParticles } from "@/types/generated/PreviewAbilityParticles";
 import type { PreviewAnimation } from "@/types/generated/PreviewAnimation";
 import type { PreviewCloth } from "@/types/generated/PreviewCloth";
-import type { PreviewParticles } from "@/types/generated/PreviewParticles";
 import type { PreviewAnimationChoice } from "@/types/generated/PreviewAnimationChoice";
 
 export interface PreviewSource {
   filePath: string;
   entryPath: string;
+  overlayRoot?: string;
+  revision?: number;
+  allowAdditiveReference?: boolean;
 }
 export interface PreviewPlayback {
   animation: PreviewAnimation | null;
@@ -32,6 +33,7 @@ export const listPreviewAnimations = (
   abilityNames: string[],
 ) =>
   invoke<PreviewAnimationChoice[]>("foundry_list_animations", {
+    overlayRoot: source.overlayRoot,
     filePath: source.filePath,
     entryPath: source.entryPath,
     abilityNames,
@@ -42,6 +44,8 @@ export const decodePreviewAnimation = (
   clipPaths: string[],
 ) =>
   invoke<PreviewAnimation>("foundry_decode_animation", {
+    allowAdditiveReference: source.allowAdditiveReference,
+    overlayRoot: source.overlayRoot,
     filePath: source.filePath,
     entryPath: source.entryPath,
     clipPaths,
@@ -50,26 +54,9 @@ export const decodePreviewAnimation = (
 /** The model's cloth setup, or null when nothing on it is simulated. */
 export const decodePreviewCloth = (source: PreviewSource) =>
   invoke<PreviewCloth | null>("foundry_decode_cloth", {
+    overlayRoot: source.overlayRoot,
     filePath: source.filePath,
     entryPath: source.entryPath,
-  });
-
-/** The particle effects the model shows in previews, with their attachments and textures. */
-export const decodePreviewParticles = (source: PreviewSource) =>
-  invoke<PreviewParticles>("foundry_decode_particles", {
-    filePath: source.filePath,
-    entryPath: source.entryPath,
-  });
-
-/** The particle effects an ability plays on its caster, bound to this model. */
-export const decodePreviewAbilityParticles = (
-  source: PreviewSource,
-  abilityClass: string,
-) =>
-  invoke<PreviewAbilityParticles>("foundry_decode_ability_particles", {
-    filePath: source.filePath,
-    entryPath: source.entryPath,
-    abilityClass,
   });
 
 export function createPreviewClip(

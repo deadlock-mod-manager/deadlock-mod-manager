@@ -7,7 +7,7 @@ use source2_model::{Resource, particles};
 use ts_rs::TS;
 
 use super::ability_vfx::caster_particles;
-use super::animation::{archives, invalid};
+use super::animation::{archives_with_overlay, invalid};
 use crate::errors::Error;
 
 /// Particle textures are small on screen; this keeps the IPC payload modest.
@@ -25,11 +25,12 @@ pub(super) fn effect_model(
   file_path: &str,
   entry_path: &str,
   rejection: &str,
+  overlay: Option<&str>,
 ) -> Result<(VpkArchive, Resource), Error> {
   if !entry_path.ends_with(".vmdl_c") || entry_path.contains("..") {
     return Err(invalid(rejection));
   }
-  let (archive, _) = archives(file_path)?;
+  let (archive, _) = archives_with_overlay(file_path, overlay)?;
   let resource = Resource::parse(
     archive
       .extract_entry_limited(entry_path, MAX_EFFECT_MODEL_BYTES)
@@ -144,6 +145,7 @@ pub async fn foundry_decode_particles(
       &file_path,
       &entry_path,
       "Particles require a compiled character model",
+      None,
     )?;
     let discovery = particles::discover_model_preview_particles(&archive, &resource, &entry_path)
       .map_err(invalid)?;
@@ -188,6 +190,7 @@ pub async fn foundry_decode_ability_particles(
       &file_path,
       &entry_path,
       "Ability effects require a compiled character model",
+      None,
     )?;
     let particles = caster_particles(&ability_class);
     Ok(PreviewAbilityParticles {

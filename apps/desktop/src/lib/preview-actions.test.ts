@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { assignAbilitySlots } from "./preview-actions";
+import { abilityForAction, assignAbilitySlots } from "./preview-actions";
 
 const ability = (className: string, name: string) => ({
   className,
@@ -14,6 +14,24 @@ const action = (stem: string) => ({
 });
 
 describe("preview ability slots", () => {
+  it("resolves effects for alternate clips that did not claim the ability bar slot", () => {
+    const abilities = [
+      ability("shiv_dagger", "Serrated Knives"),
+      ability("shiv_dash", "Slice and Dice"),
+      ability("shiv_defer_damage", "Bloodletting"),
+      ability("shiv_killing_blow", "Killing Blow"),
+    ];
+    const actions = [
+      action("shiv_killingblow"),
+      action("shiv_killingblow_leap"),
+      action("shiv_killingblow_slash"),
+    ];
+    expect(assignAbilitySlots(actions, abilities).rest).toHaveLength(2);
+    expect(abilityForAction(actions[2], abilities)?.className).toBe(
+      "shiv_killing_blow",
+    );
+    expect(abilityForAction(action("generic"), abilities)).toBeNull();
+  });
   it("puts an ability action on the one slot it names best", () => {
     const { slots, rest } = assignAbilitySlots(
       [action("pain"), action("frank"), action("jumpstart"), action("ult")],

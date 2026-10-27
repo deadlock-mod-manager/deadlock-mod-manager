@@ -13,32 +13,36 @@ import {
   SquaresFourIcon,
   WarningIcon,
   WindIcon,
+  SparkleIcon,
 } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
+import { invoke } from "@tauri-apps/api/core";
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { createClothEffect } from "@/lib/cloth-sim";
 import { getHeroAbilities } from "@/lib/deadlock-api";
-import { createParticleEffect } from "@/lib/particles/effect";
-import { type ParticleDiagnostic } from "@/lib/particles/types";
-import { assignAbilitySlots } from "@/lib/preview-actions";
+import { useSourceParticles } from "@/hooks/use-source-particles";
+import { createSourceViewerEffect } from "./particles/viewer-effect";
+import { abilityForAction, assignAbilitySlots } from "@/lib/preview-actions";
+import { previewHeroAbilities } from "@/lib/preview-hero";
+import type { PreviewModelAbility } from "@/types/generated/PreviewModelAbility";
+import { ViewerParticlePicker } from "./viewer-particle-picker";
 import {
-  decodePreviewAbilityParticles,
   decodePreviewAnimation,
   decodePreviewCloth,
-  decodePreviewParticles,
   listPreviewAnimations,
   type PreviewSource,
 } from "@/lib/preview-animation";
 import { cachedFetch, STATS_TTL } from "@/lib/stats/cache";
 import type { FoundryModel } from "@/types/foundry";
-import type { PreviewParticles } from "@/types/generated/PreviewParticles";
+import type { PreviewAnimationChoice } from "@/types/generated/PreviewAnimationChoice";
+import type { FoundryParticleGraph } from "@/types/generated/FoundryParticleGraph";
 import {
   FoundryModelViewer,
   type FoundryPreviewTint,
 } from "./foundry-model-viewer";
 import { ViewerAnimationPicker } from "./viewer-animation-picker";
-import { restartEvery, type ViewerEffectFactory } from "./viewer-effects";
+import type { ViewerEffectFactory } from "./viewer-effects";
 import { overlaySurface } from "./viewer-tools";
 import {
   AbilityBar,
@@ -52,6 +56,7 @@ interface Props {
   label: string;
   source: PreviewSource;
   tint?: FoundryPreviewTint | null;
+  clipPath?: string;
 }
 
 const REST_POSE = "rest";
@@ -62,7 +67,13 @@ const HERO_ABILITIES_KEY = "assets:hero-abilities";
 const RELEASE_CLIP =
   /_(fire|shoot|attack|slam|throw|toss|release|launch)(_|\.|$)/;
 
-export const AnimatedModelPreview = ({ model, label, source, tint }: Props) => {
+export const AnimatedModelPreview = ({
+  model,
+  label,
+  source,
+  tint,
+  clipPath,
+}: Props) => {
   const { t } = useTranslation();
   const fullscreenRef = useRef<HTMLDivElement>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -72,11 +83,14 @@ export const AnimatedModelPreview = ({ model, label, source, tint }: Props) => {
   const [abilitiesHidden, setAbilitiesHidden] = useState(false);
   const timeRef = useRef(0);
   const [clothOn, setClothOn] = useState(true);
-  // Particle effects stay off, with no toggle, until they render faithfully.
-  const [particlesOn] = useState(false);
+  const [particlesOn, setParticlesOn] = useState(true);
+  const [effectSelection, setEffectSelection] = useState<{
+    action: string;
+    roots: string[];
+  }>({ action: "", roots: [] });
   const [particleReport, setParticleReport] = useState<{
-    data: PreviewParticles;
-    diagnostics: ParticleDiagnostic[];
+    data: FoundryParticleGraph;
+    diagnostics: string[];
   } | null>(null);
   const modelAssetQuery = {
     enabled: source.entryPath.endsWith(".vmdl_c"),
@@ -87,14 +101,15 @@ export const AnimatedModelPreview = ({ model, label, source, tint }: Props) => {
   };
   const cloth = useQuery({
     ...modelAssetQuery,
-    queryKey: ["preview-cloth", source.filePath, source.entryPath],
+    queryKey: [
+      "preview-cloth",
+      source.filePath,
+      source.overlayRoot,
+      source.revision,
+      source.allowAdditiveReference,
+      source.entryPath,
+    ],
     queryFn: () => decodePreviewCloth(source),
-  });
-  const particles = useQuery({
-    ...modelAssetQuery,
-    queryKey: ["preview-particles", source.filePath, source.entryPath],
-    queryFn: () => decodePreviewParticles(source),
-    enabled: modelAssetQuery.enabled && particlesOn,
   });
   const heroAbilities = useQuery({
     queryKey: ["stats", HERO_ABILITIES_KEY],
@@ -104,25 +119,54 @@ export const AnimatedModelPreview = ({ model, label, source, tint }: Props) => {
     retry: 1,
     meta: { skipGlobalErrorHandler: true },
   });
-  // The hero whose model folder holds this model; the longest folder wins so
-  // `nano/nano_v2/` beats `nano/`.
-  const hero = (heroAbilities.data?.data ?? [])
-    .filter((set) => source.entryPath.startsWith(set.modelDirectory))
-    .sort((a, b) => b.modelDirectory.length - a.modelDirectory.length)[0];
-  const abilityNames = hero?.abilities.map((ability) => ability.name) ?? [];
+  const localAbilities = useQuery({
+    ...modelAssetQuery,
+    queryKey: [
+      "preview-model-abilities",
+      source.filePath,
+      source.entryPath,
+      source.overlayRoot,
+      source.revision,
+    ],
+    queryFn: () =>
+      invoke<PreviewModelAbility[]>("foundry_model_abilities", {
+        filePath: source.filePath,
+        entryPath: source.entryPath,
+        overlayRoot: source.overlayRoot,
+      }),
+  });
+  const abilities = previewHeroAbilities(
+    source.entryPath,
+    localAbilities.data,
+    heroAbilities.data?.data ?? [],
+  );
+  const abilityNames = abilities.map((ability) => ability.name);
   const choices = useQuery({
     ...modelAssetQuery,
     queryKey: [
       "preview-clips",
       source.filePath,
+      source.overlayRoot,
+      source.revision,
+      source.allowAdditiveReference,
       source.entryPath,
       ...abilityNames,
     ],
     queryFn: () => listPreviewAnimations(source, abilityNames),
     // The names find clips not prefixed `ability_`; wait for them.
-    enabled: modelAssetQuery.enabled && !heroAbilities.isPending,
+    enabled: modelAssetQuery.enabled && !localAbilities.isPending,
   });
-  const actions = choices.data ?? [];
+  const explicitClip: PreviewAnimationChoice[] = clipPath
+    ? [
+        {
+          id: clipPath,
+          kind: "movement",
+          label: clipPath.split("/").pop() ?? clipPath,
+          clips: [clipPath],
+        },
+      ]
+    : [];
+  const actions = [...explicitClip, ...(choices.data ?? [])];
   // Until something is picked, play the first action (an idle) on its own.
   const action =
     selectedId === REST_POSE
@@ -134,6 +178,9 @@ export const AnimatedModelPreview = ({ model, label, source, tint }: Props) => {
     queryKey: [
       "preview-animation",
       source.filePath,
+      source.overlayRoot,
+      source.revision,
+      source.allowAdditiveReference,
       source.entryPath,
       ...(action?.clips ?? []),
     ],
@@ -155,29 +202,16 @@ export const AnimatedModelPreview = ({ model, label, source, tint }: Props) => {
     setPlaying(true);
     restart();
   };
-  const { slots } = assignAbilitySlots(actions, hero?.abilities ?? []);
+  const { slots } = assignAbilitySlots(actions, abilities);
   const hasAbilityBar = slots.some((slot) => slot.action);
-  const abilityClass =
-    slots.find((slot) => action && slot.action?.id === action.id)?.ability
-      .className ?? null;
-  const abilityParticles = useQuery({
-    ...modelAssetQuery,
-    queryKey: [
-      "preview-ability-particles",
-      source.filePath,
-      source.entryPath,
-      abilityClass,
-    ],
-    queryFn: () => decodePreviewAbilityParticles(source, abilityClass ?? ""),
-    enabled: modelAssetQuery.enabled && particlesOn && abilityClass !== null,
-    gcTime: 30_000,
-  });
-  const castEffects = abilityParticles.data?.cast.systems.length
-    ? abilityParticles.data.cast
-    : null;
-  const releaseEffects = abilityParticles.data?.release.systems.length
-    ? abilityParticles.data.release
-    : null;
+  const abilityClass = abilityForAction(action, abilities)?.className ?? null;
+  const additionalRoots =
+    effectSelection.action === action?.id ? effectSelection.roots : [];
+  const { graph: particles, models: particleModels } = useSourceParticles(
+    source,
+    abilityClass,
+    additionalRoots,
+  );
   const loopSeconds = current?.duration ?? 0;
   const releaseSeconds =
     current?.segments.find((segment) =>
@@ -186,31 +220,18 @@ export const AnimatedModelPreview = ({ model, label, source, tint }: Props) => {
   const effects = useMemo<ViewerEffectFactory[]>(
     () => [
       ...(clothOn && cloth.data ? [createClothEffect(cloth.data)] : []),
-      ...(particlesOn && particles.data?.systems.length
+      ...(particles.data
         ? [
-            createParticleEffect(particles.data, {
-              onDiagnostics: (diagnostics) => {
+            createSourceViewerEffect(particles.data, particleModels, {
+              modelPath: source.entryPath,
+              particles: particlesOn,
+              period: loopSeconds,
+              releaseAt: releaseSeconds,
+              onWarnings: (diagnostics) => {
                 if (particles.data)
                   setParticleReport({ data: particles.data, diagnostics });
               },
             }),
-          ]
-        : []),
-      ...(particlesOn && castEffects
-        ? [
-            restartEvery(
-              createParticleEffect(castEffects, { prewarm: false }),
-              loopSeconds,
-            ),
-          ]
-        : []),
-      ...(particlesOn && releaseEffects
-        ? [
-            restartEvery(
-              createParticleEffect(releaseEffects, { prewarm: false }),
-              loopSeconds,
-              releaseSeconds,
-            ),
           ]
         : []),
     ],
@@ -219,14 +240,14 @@ export const AnimatedModelPreview = ({ model, label, source, tint }: Props) => {
       cloth.data,
       particlesOn,
       particles.data,
-      castEffects,
-      releaseEffects,
+      particleModels,
       loopSeconds,
       releaseSeconds,
+      source.entryPath,
     ],
   );
   const effectsLimited =
-    (particles.data?.diagnostics?.length ?? 0) > 0 ||
+    (particles.data?.warnings.length ?? 0) > 0 ||
     (particleReport?.data === particles.data &&
       (particleReport?.diagnostics.length ?? 0) > 0);
   const status = animation.isFetching
@@ -361,8 +382,31 @@ export const AnimatedModelPreview = ({ model, label, source, tint }: Props) => {
               {t("modelPreview.cloth")}
             </EffectToggle>
           )}
+          {particles.data ? (
+            <>
+              <EffectToggle
+                icon={SparkleIcon}
+                on={particlesOn}
+                onChange={setParticlesOn}>
+                {t("modelPreview.particles")}
+              </EffectToggle>
+              <ViewerParticlePicker
+                effects={particles.data.abilityEffects}
+                selected={additionalRoots}
+                pending={particles.isFetching}
+                onChange={(roots) =>
+                  setEffectSelection({ action: action?.id ?? "", roots })
+                }
+              />
+            </>
+          ) : null}
           <SpeedPicker speed={speed} onChange={setSpeed} />
         </div>
+        {current?.additiveReferencePose ? (
+          <p className='text-xs text-muted-foreground'>
+            {t("modelPreview.additiveReferencePose")}
+          </p>
+        ) : null}
         {status && (
           <p className='text-muted-foreground text-xs' role='status'>
             {status}

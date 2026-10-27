@@ -515,6 +515,9 @@ pub(crate) fn build_glb(
             // three.js copies material extras into `material.userData`.
             material["extras"] = json!({ "outline": { "tint": outline.tint } });
         }
+        if let Some(path) = &texture.material {
+            material["extras"]["sourceMaterial"] = json!(path.trim_end_matches("_c"));
+        }
         materials.push(material);
     }
 

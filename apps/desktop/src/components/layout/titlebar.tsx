@@ -165,6 +165,7 @@ export const Titlebar = () => {
   const handleExit = async () => {
     try {
       await flushPendingWrites();
+      if (await invoke<boolean>("keep_main_for_comparison")) return;
       await exit(0);
     } catch (error) {
       logger.withError(error).error("Failed to exit");

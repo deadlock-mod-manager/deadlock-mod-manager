@@ -66,17 +66,16 @@ impl<'a> Resource<'a> {
         }
         let output = self.rebuild_with_block(block_index, new_payload)?;
         let rebuilt = Resource::parse(&output)?;
-        let preserved = rebuilt.blocks().len() == self.blocks().len()
-            && self
-                .blocks()
-                .iter()
-                .zip(rebuilt.blocks())
-                .enumerate()
-                .all(|(index, (old, new))| {
-                    old.kind == new.kind
-                        && (index == block_index
-                            || self.get_block_by_index(index) == rebuilt.get_block_by_index(index))
-                });
+        let preserved =
+            rebuilt.blocks().len() == self.blocks().len()
+                && self.blocks().iter().zip(rebuilt.blocks()).enumerate().all(
+                    |(index, (old, new))| {
+                        old.kind == new.kind
+                            && (index == block_index
+                                || self.get_block_by_index(index)
+                                    == rebuilt.get_block_by_index(index))
+                    },
+                );
         if !preserved {
             return Err(DecodeError::BadResource("rebuild changed another block"));
         }

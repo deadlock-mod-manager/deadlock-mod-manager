@@ -167,7 +167,10 @@ async fn find_fileserver_with_file(
   category: &str,
   file_name: &str,
 ) -> Option<String> {
-  let mut candidates: Vec<_> = servers.iter().filter(|server| server.state == "up").collect();
+  let mut candidates: Vec<_> = servers
+    .iter()
+    .filter(|server| server.state == "up")
+    .collect();
   candidates.sort_by_key(|server| {
     std::cmp::Reverse(
       server

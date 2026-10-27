@@ -112,6 +112,7 @@ import {
   useWipeLocalCatalog,
 } from "@/hooks/use-gamebanana-catalog-sync";
 import { invokeGuarded } from "@/lib/game-guard";
+import { ModdingToolsSettings } from "@/components/settings/modding-tools-settings";
 
 type DangerActionProps = {
   disabled?: boolean;
@@ -892,6 +893,9 @@ const CustomSettings = ({ value }: { value?: string }) => {
           </TabsContent>
 
           <TabsContent className='mt-0 space-y-4' value='tools'>
+            <Section title={t("moddingTools.title")} searchId='modding-tools'>
+              <ModdingToolsSettings />
+            </Section>
             <Section
               description={t("settings.toolsDescription")}
               title={t("settings.tools")}>

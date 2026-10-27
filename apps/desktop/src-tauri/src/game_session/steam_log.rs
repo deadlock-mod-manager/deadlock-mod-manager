@@ -70,6 +70,12 @@ fn parse_events_with(
         .and_then(&to_utc)?;
       if let Some(pid) = captures.get(2) {
         let command = captures.get(3)?.as_str().to_ascii_lowercase();
+        if command
+          .split_whitespace()
+          .any(|argument| argument.trim_matches('"') == "-tools")
+        {
+          return None;
+        }
         return command
           .contains("deadlock.exe")
           .then_some(SteamLogEvent::Started {
@@ -159,6 +165,14 @@ mod tests {
         at: utc("2026-10-04 22:27:59"),
       }
     );
+  }
+
+  #[test]
+  fn sdk_launches_do_not_count_as_later_game_runs() {
+    let log = "[2026-10-04 22:27:59] AppID 1422450 adding PID 52896 as a tracked process \"C:\\DMM\\deadlock.exe -tools -tool modeldoc_editor\"";
+    let events = parse_events_with(log, |time| Some(time.and_utc()));
+    assert!(events.is_empty());
+    assert_eq!(next_start(&events, utc("2026-10-04 22:20:00"), None), None);
   }
 
   #[test]

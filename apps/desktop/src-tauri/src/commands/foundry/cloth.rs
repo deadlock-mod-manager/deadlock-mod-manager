@@ -1,8 +1,11 @@
 use serde::Serialize;
-use source2_model::fe_model;
+use source2_model::{
+  Resource, fe_model,
+  skeleton::{self, Skeleton},
+};
 use ts_rs::TS;
 
-use super::animation::invalid;
+use super::animation::{archives_with_overlay, invalid};
 use super::particles::{effect_model, effect_slot};
 use crate::errors::Error;
 
@@ -20,6 +23,40 @@ pub struct PreviewClothNode {
   pub animation_force_attraction: f32,
   pub animation_vertex_attraction: f32,
   pub collision_radius: f32,
+}
+
+fn cloth_bindings_match<'a>(
+  target: &Skeleton,
+  original: &Skeleton,
+  names: impl Iterator<Item = &'a str>,
+) -> bool {
+  let mut matched = 0;
+  for name in names {
+    let Some(source) = original
+      .bones
+      .iter()
+      .find(|bone| bone.name.eq_ignore_ascii_case(name))
+    else {
+      continue;
+    };
+    let Some(destination) = target
+      .bones
+      .iter()
+      .find(|bone| bone.name.eq_ignore_ascii_case(name))
+    else {
+      return false;
+    };
+    if source
+      .model_bind_matrix
+      .iter()
+      .zip(destination.model_bind_matrix)
+      .any(|(a, b)| (a - b).abs() > 0.02 || !a.is_finite() || !b.is_finite())
+    {
+      return false;
+    }
+    matched += 1;
+  }
+  matched > 0
 }
 
 #[derive(Serialize, TS)]
@@ -142,6 +179,7 @@ impl From<fe_model::ClothModel> for PreviewCloth {
 pub async fn foundry_decode_cloth(
   file_path: String,
   entry_path: String,
+  overlay_root: Option<String>,
 ) -> Result<Option<PreviewCloth>, Error> {
   let permit = effect_slot()
     .clone()
@@ -154,13 +192,92 @@ pub async fn foundry_decode_cloth(
       &file_path,
       &entry_path,
       "Cloth requires a compiled character model",
+      overlay_root.as_deref(),
     )?;
+    let cloth = fe_model::parse_model_cloth(&resource).map_err(invalid)?;
+    if cloth.is_some() || overlay_root.is_none() {
+      return Ok(cloth.map(PreviewCloth::from));
+    }
+    // Decompilation can omit PHYS. Inherit its simulation only when the
+    // driven bones still have the original bind transforms.
+    let (original, base) = archives_with_overlay(&file_path, None)?;
+    let original = base.as_deref().unwrap_or(&original);
+    let original = Resource::parse(
+      original
+        .extract_entry_limited(&entry_path, 32 * 1024 * 1024)
+        .map_err(invalid)?,
+    )
+    .map_err(invalid)?;
+    let inherited = fe_model::parse_model_cloth(&original).map_err(invalid)?;
+    let Some(cloth) = inherited else {
+      return Ok(None);
+    };
+    let (Some(target), Some(original)) = (
+      skeleton::parse_model_skeleton(&resource).map_err(invalid)?,
+      skeleton::parse_model_skeleton(&original).map_err(invalid)?,
+    ) else {
+      return Ok(None);
+    };
     Ok(
-      fe_model::parse_model_cloth(&resource)
-        .map_err(invalid)?
-        .map(PreviewCloth::from),
+      cloth_bindings_match(
+        &target,
+        &original,
+        cloth.nodes.iter().map(|n| n.name.as_str()),
+      )
+      .then(|| PreviewCloth::from(cloth)),
     )
   })
   .await
   .map_err(invalid)?
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  fn rig(name: &str, x: f32) -> Skeleton {
+    let mut matrix = [0.0; 16];
+    for i in [0, 5, 10, 15] {
+      matrix[i] = 1.0;
+    }
+    matrix[12] = x;
+    Skeleton {
+      bones: vec![skeleton::Bone {
+        name: name.into(),
+        parent: -1,
+        flags: 0,
+        bind_pos: [x, 0.0, 0.0],
+        bind_rot: [0.0, 0.0, 0.0, 1.0],
+        bind_scale: [1.0; 3],
+        local_bind_matrix: matrix,
+        model_bind_matrix: matrix,
+      }],
+      inverse_bind_matrices: vec![],
+    }
+  }
+
+  #[test]
+  fn inherits_only_compatible_cloth_bindings() {
+    let original = rig("head", 2.0);
+    assert!(cloth_bindings_match(
+      &rig("head", 2.001),
+      &original,
+      ["head", "$virtual"].into_iter()
+    ));
+    assert!(!cloth_bindings_match(
+      &rig("head", 3.0),
+      &original,
+      ["head"].into_iter()
+    ));
+    assert!(!cloth_bindings_match(
+      &rig("different", 2.0),
+      &original,
+      ["head"].into_iter()
+    ));
+    assert!(!cloth_bindings_match(
+      &rig("head", 2.0),
+      &original,
+      ["$virtual"].into_iter()
+    ));
+  }
 }

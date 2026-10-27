@@ -184,6 +184,15 @@ const getSidebarItems = (
       isNew: true,
     },
     {
+      id: "workbench",
+      title: () => <span>{t("navigation.moddingWorkbench")}</span>,
+      tooltipLabel: t("navigation.moddingWorkbench"),
+      url: "/workbench",
+      icon: CodeIcon,
+      group: "customization",
+      isNew: true,
+    },
+    {
       id: "performance",
       title: () => <span>{t("navigation.performance")}</span>,
       tooltipLabel: t("navigation.performance"),

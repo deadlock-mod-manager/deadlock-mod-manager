@@ -50,6 +50,9 @@ pub struct PreviewAnimation {
   pub times: Vec<f32>,
   pub tracks: Vec<PreviewBoneTrack>,
   pub segments: Vec<PreviewAnimationSegment>,
+  #[ts(optional)]
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub additive_reference_pose: Option<bool>,
 }
 
 /// One clip's span inside a decoded sequence.
@@ -130,14 +133,17 @@ fn animation_slot() -> &'static Arc<tokio::sync::Semaphore> {
 
 /// The VPK at `file_path`, falling back to the base game and then the engine's
 /// core pak, plus the base game on its own for clip listings.
-pub(super) fn archives(file_path: &str) -> Result<(VpkArchive, Option<Arc<VpkArchive>>), Error> {
+pub(super) fn archives_with_overlay(
+  file_path: &str,
+  overlay: Option<&str>,
+) -> Result<(VpkArchive, Option<Arc<VpkArchive>>), Error> {
   let base = staged_base_game_vpk()?
     .map(|path| open_archive(&path, None))
     .transpose()?;
   let core = staged_core_vpk()?
     .map(|path| open_archive(&path, None))
     .transpose()?;
-  let archive = VpkArchive::open(Path::new(file_path))
+  let archive = VpkArchive::open_with_overlay(Path::new(file_path), overlay.map(Path::new))
     .map_err(invalid)?
     .with_fallbacks(base.iter().chain(core.iter()).cloned().collect());
   Ok((archive, base))
@@ -190,11 +196,34 @@ pub async fn foundry_list_animations(
   file_path: String,
   entry_path: String,
   ability_names: Vec<String>,
+  overlay_root: Option<String>,
 ) -> Result<Vec<PreviewAnimationChoice>, Error> {
   tauri::async_runtime::spawn_blocking(move || {
     clip_directory(&entry_path)?;
-    let (archive, base) = archives(&file_path)?;
+    let (archive, base) = archives_with_overlay(&file_path, overlay_root.as_deref())?;
     let mut listing = archive.list_entries();
+    if let Some(root) = overlay_root {
+      let root = std::path::PathBuf::from(root);
+      let mut pending = vec![root.clone()];
+      while let Some(directory) = pending.pop() {
+        for entry in std::fs::read_dir(directory)? {
+          let entry = entry?;
+          let kind = entry.file_type()?;
+          if kind.is_dir() {
+            pending.push(entry.path());
+          } else if kind.is_file() {
+            listing.push(
+              entry
+                .path()
+                .strip_prefix(&root)
+                .map_err(invalid)?
+                .to_string_lossy()
+                .replace('\\', "/"),
+            );
+          }
+        }
+      }
+    }
     if let Some(base) = base {
       listing.extend(base.list_entries());
     }
@@ -214,6 +243,8 @@ pub async fn foundry_decode_animation(
   file_path: String,
   entry_path: String,
   clip_paths: Vec<String>,
+  overlay_root: Option<String>,
+  allow_additive_reference: Option<bool>,
 ) -> Result<PreviewAnimation, Error> {
   if clip_paths.is_empty() || clip_paths.len() > MAX_SEQUENCE_CLIPS {
     return Err(invalid("An animation needs between one and eight clips"));
@@ -236,7 +267,7 @@ pub async fn foundry_decode_animation(
     {
       return Err(invalid("Not an animation clip"));
     }
-    let (archive, _) = archives(&file_path)?;
+    let (archive, _) = archives_with_overlay(&file_path, overlay_root.as_deref())?;
     let resource =
       Resource::parse(archive.extract_entry(&entry_path).map_err(invalid)?).map_err(invalid)?;
     let skeleton = skeleton::parse_model_skeleton(&resource)
@@ -249,7 +280,7 @@ pub async fn foundry_decode_animation(
     for clip_path in &clip_paths {
       let animation =
         nm_anim::load_nm_animation_from_archive(&archive, clip_path).map_err(invalid)?;
-      if animation.clip.additive {
+      if animation.clip.additive && !allow_additive_reference.unwrap_or(false) {
         return Err(invalid(
           "Additive animation layers cannot play on their own",
         ));
@@ -265,6 +296,7 @@ pub async fn foundry_decode_animation(
       }
       clips.push(animation);
     }
+    let additive_reference_pose = clips.iter().any(|clip| clip.clip.additive).then_some(true);
     let metadata: Vec<_> = clips
       .iter()
       .map(|animation| (animation.clip.frame_count, animation.clip.duration_seconds))
@@ -320,6 +352,7 @@ pub async fn foundry_decode_animation(
       times,
       tracks,
       segments,
+      additive_reference_pose,
     })
   })
   .await

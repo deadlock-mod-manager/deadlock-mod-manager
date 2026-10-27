@@ -4,6 +4,8 @@ import React, { Suspense } from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import App from "./app";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import { ComparisonWindow } from "./components/modding-workbench/comparison-window";
 import { useExperimentalFeature } from "./hooks/use-experimental-feature";
 import { queryClient } from "./lib/client";
 import AddMods from "./pages/add-mods";
@@ -17,6 +19,7 @@ import Contributors from "./pages/contributors";
 import Developer from "./pages/developer";
 import Downloads from "./pages/downloads";
 import Foundry from "./pages/foundry";
+import ModdingWorkbench from "./pages/modding-workbench";
 
 import Mod from "./pages/mod";
 import Performance from "./pages/performance";
@@ -38,7 +41,8 @@ if (import.meta.env.VITE_DMM_E2E_HARNESS === "1") {
   await import("@wdio/tauri-plugin");
 }
 
-const application = await initializeApplication();
+const comparisonOnly = getCurrentWindow().label === "workbench-compare";
+const application = await initializeApplication(comparisonOnly);
 
 const MapsRouteGate = () => {
   const isEnabled = useExperimentalFeature("custom-maps");
@@ -76,54 +80,66 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <Suspense fallback={<Splash />}>
-        <BrowserRouter>
-          <Routes>
-            {import.meta.env.DEV && (
-              <Route element={<DebugViewer />} path='/debug/viewer/:modId?' />
-            )}
-            <Route
-              element={
-                <App
-                  runtime={application.runtime}
-                  storage={application.storage}
-                />
-              }>
-              <Route element={<Dashboard />} path='/' />
-              <Route element={<MyMods />} path='/my-mods' />
-              <Route element={<GetMods />} path='/mods' />
+        {comparisonOnly ? (
+          <ComparisonWindow />
+        ) : (
+          <BrowserRouter>
+            <Routes>
+              {import.meta.env.DEV && (
+                <Route element={<DebugViewer />} path='/debug/viewer/:modId?' />
+              )}
+              <Route
+                element={
+                  <App
+                    runtime={application.runtime}
+                    storage={application.storage}
+                  />
+                }>
+                <Route element={<Dashboard />} path='/' />
+                <Route element={<MyMods />} path='/my-mods' />
+                <Route element={<GetMods />} path='/mods' />
 
-              <Route element={<MapsRouteGate />} path='/maps' />
-              <Route element={<Mod />} path='/mods/:id' />
-              <Route element={<Author />} path='/authors/:id' />
-              <Route element={<Collection />} path='/collections/:id' />
-              <Route element={<AddMods />} path='/add-mods' />
-              <Route element={<Downloads />} path='/downloads' />
-              <Route element={<Servers />} path='/servers' />
-              <Route element={<CustomSettings />} path='/settings' />
-              <Route element={<Contributors />} path='/contributors' />
-              <Route element={<Developer />} path='/developer' />
-              <Route element={<PluginEntry />} path='/plugins/:id' />
-              <Route element={<Debug />} path='/debug' />
-              <Route element={<Crosshairs />} path='/crosshairs' />
-              <Route element={<Skins />} path='/skins' />
-              <Route element={<StatsRouteGate page={Stats} />} path='/stats' />
-              <Route
-                element={<StatsRouteGate page={StatsMatch} />}
-                path='/stats/matches/:matchId'
-              />
-              <Route element={<FoundryRouteGate />} path='/foundry' />
-              <Route element={<PerformanceRouteGate />} path='/performance' />
-              <Route
-                element={<CustomSettings value='autoexec' />}
-                path='/settings/autoexec'
-              />
-              <Route
-                element={<CustomSettings value='experimental' />}
-                path='/settings/experimental'
-              />
-            </Route>
-          </Routes>
-        </BrowserRouter>
+                <Route element={<MapsRouteGate />} path='/maps' />
+                <Route element={<Mod />} path='/mods/:id' />
+                <Route element={<Author />} path='/authors/:id' />
+                <Route element={<Collection />} path='/collections/:id' />
+                <Route element={<AddMods />} path='/add-mods' />
+                <Route element={<Downloads />} path='/downloads' />
+                <Route element={<Servers />} path='/servers' />
+                <Route element={<CustomSettings />} path='/settings' />
+                <Route element={<Contributors />} path='/contributors' />
+                <Route element={<Developer />} path='/developer' />
+                <Route element={<PluginEntry />} path='/plugins/:id' />
+                <Route element={<Debug />} path='/debug' />
+                <Route element={<Crosshairs />} path='/crosshairs' />
+                <Route element={<Skins />} path='/skins' />
+                <Route
+                  element={<StatsRouteGate page={Stats} />}
+                  path='/stats'
+                />
+                <Route
+                  element={<StatsRouteGate page={StatsMatch} />}
+                  path='/stats/matches/:matchId'
+                />
+                <Route element={<FoundryRouteGate />} path='/foundry' />
+                <Route element={<ModdingWorkbench />} path='/workbench' />
+                <Route
+                  element={<CustomSettings value='tools' />}
+                  path='/settings/tools'
+                />
+                <Route element={<PerformanceRouteGate />} path='/performance' />
+                <Route
+                  element={<CustomSettings value='autoexec' />}
+                  path='/settings/autoexec'
+                />
+                <Route
+                  element={<CustomSettings value='experimental' />}
+                  path='/settings/experimental'
+                />
+              </Route>
+            </Routes>
+          </BrowserRouter>
+        )}
       </Suspense>
     </QueryClientProvider>
   </React.StrictMode>,

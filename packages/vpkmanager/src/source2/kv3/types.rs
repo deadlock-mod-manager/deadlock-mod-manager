@@ -47,6 +47,12 @@ pub enum EncodingChildren {
 }
 
 impl Encoding {
+    /// The semantic KV3 flag (resource, panorama, soundevent, etc.), or zero for none.
+    #[must_use]
+    pub fn flag(&self) -> u8 {
+        self.flag
+    }
+
     /// Whether this value occupies an IEEE 754 single-precision lane.
     pub fn is_float(&self) -> bool {
         self.datatype == super::node::FLOAT

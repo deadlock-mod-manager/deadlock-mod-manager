@@ -164,6 +164,15 @@ impl VpkArchive {
             .collect()
     }
 
+    pub fn entries_with_sizes(&self) -> impl Iterator<Item = (&str, u64)> {
+        self.entries.iter().map(|entry| {
+            (
+                entry.full_path.as_str(),
+                u64::from(entry.entry_length) + entry.preload.len() as u64,
+            )
+        })
+    }
+
     pub fn contains_entry(&self, entry_path: &str) -> bool {
         self.overlay_path(entry_path).is_some()
             || self
@@ -238,6 +247,77 @@ impl VpkArchive {
             Some(archive) => archive.extract_entry_limited(entry_path, max_bytes),
             None => Err(Source2Error::EntryNotFound(entry_path.to_string())),
         }
+    }
+
+    /// Read a bounded slice without allocating the rest of a resource's payload.
+    pub fn read_entry_range(
+        &self,
+        entry_path: &str,
+        offset: usize,
+        length: usize,
+    ) -> Result<Vec<u8>> {
+        let invalid = || Source2Error::Vpk(format!("invalid entry byte range: {entry_path}"));
+        let end = offset.checked_add(length).ok_or_else(invalid)?;
+        if let Some(overlay) = self.overlay_path(entry_path) {
+            let mut file = fs::File::open(overlay)?;
+            if end as u64 > file.metadata()?.len() {
+                return Err(invalid());
+            }
+            file.seek(SeekFrom::Start(offset as u64))?;
+            let mut bytes = vec![0; length];
+            file.read_exact(&mut bytes)?;
+            return Ok(bytes);
+        }
+        let key = entry_path.replace('\\', "/").to_ascii_lowercase();
+        let Some(entry) = self
+            .entry_index
+            .get(&key)
+            .and_then(|index| self.entries.get(*index))
+        else {
+            return match self.fallback_for(entry_path) {
+                Some(archive) => archive.read_entry_range(entry_path, offset, length),
+                None => Err(Source2Error::EntryNotFound(entry_path.to_owned())),
+            };
+        };
+        if end > entry.preload.len() + entry.entry_length as usize {
+            return Err(invalid());
+        }
+        let mut bytes = Vec::with_capacity(length);
+        if offset < entry.preload.len() {
+            bytes.extend_from_slice(&entry.preload[offset..end.min(entry.preload.len())]);
+        }
+        if bytes.len() == length {
+            return Ok(bytes);
+        }
+        let payload_offset = offset.saturating_sub(entry.preload.len());
+        let (path, start) = if entry.archive_index == 0x7fff {
+            if self.inline_data_length.is_some_and(|limit| {
+                u64::from(entry.entry_offset) + u64::from(entry.entry_length) > u64::from(limit)
+            }) {
+                return Err(invalid());
+            }
+            (
+                self.path.clone(),
+                self.data_section_start as u64 + u64::from(entry.entry_offset),
+            )
+        } else {
+            let stem = self.path.file_stem().and_then(|s| s.to_str()).unwrap_or("");
+            let base = stem.strip_suffix("_dir").unwrap_or(stem);
+            (
+                self.companion_dir
+                    .join(format!("{base}_{:03}.vpk", entry.archive_index)),
+                u64::from(entry.entry_offset),
+            )
+        };
+        let mut file = fs::File::open(path)?;
+        if start + u64::from(entry.entry_length) > file.metadata()?.len() {
+            return Err(invalid());
+        }
+        file.seek(SeekFrom::Start(start + payload_offset as u64))?;
+        let prefix = bytes.len();
+        bytes.resize(length, 0);
+        file.read_exact(&mut bytes[prefix..])?;
+        Ok(bytes)
     }
 
     /// Read the bytes of one already-resolved entry, pulling from inline data or
@@ -417,6 +497,61 @@ mod tests {
     }
 
     #[test]
+    fn entry_ranges_handle_preload_companions_overlays_and_bounds() {
+        let dir = scratch_dir("entry-ranges");
+        let path = dir.join("pak01_dir.vpk");
+        let bytes = inline_vpk(b"prefix", b"payload");
+        fs::write(&path, &bytes).unwrap();
+        let archive = VpkArchive::open(&path).unwrap();
+        assert_eq!(
+            archive.read_entry_range("folder/sample.txt", 1, 3).unwrap(),
+            b"ref"
+        );
+        assert_eq!(
+            archive.read_entry_range("folder/sample.txt", 4, 5).unwrap(),
+            b"ixpay"
+        );
+        assert_eq!(
+            archive
+                .read_entry_range("FOLDER\\SAMPLE.TXT", 8, 5)
+                .unwrap(),
+            b"yload"
+        );
+        assert!(
+            archive
+                .read_entry_range("folder/sample.txt", 12, 2)
+                .is_err()
+        );
+        assert!(
+            archive
+                .read_entry_range("folder/sample.txt", usize::MAX, 2)
+                .is_err()
+        );
+        let mut companion = bytes;
+        let archive_index = 12 + b"txt\0folder\0sample\0".len() + 6;
+        companion[archive_index..archive_index + 2].copy_from_slice(&0u16.to_le_bytes());
+        fs::write(&path, companion).unwrap();
+        fs::write(dir.join("pak01_000.vpk"), b"payload").unwrap();
+        let archive = VpkArchive::open(&path).unwrap();
+        assert_eq!(
+            archive.read_entry_range("folder/sample.txt", 4, 5).unwrap(),
+            b"ixpay"
+        );
+        fs::remove_file(dir.join("pak01_000.vpk")).unwrap();
+        assert!(archive.read_entry_range("folder/sample.txt", 6, 1).is_err());
+        let overlay = dir.join("overlay");
+        fs::create_dir_all(overlay.join("folder")).unwrap();
+        fs::write(overlay.join("folder/sample.txt"), b"edited").unwrap();
+        let archive = VpkArchive::open_with_overlay(&path, Some(&overlay)).unwrap();
+        assert_eq!(
+            archive.read_entry_range("folder/sample.txt", 1, 3).unwrap(),
+            b"dit"
+        );
+        assert!(archive.read_entry_range("folder/sample.txt", 6, 1).is_err());
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
     fn preview_limits_include_preloads_and_apply_before_reading_companions() {
         let dir = scratch_dir("preview-limit");
         let path = dir.join("pak01_dir.vpk");
@@ -518,6 +653,10 @@ mod tests {
         fs::write(&ordinary_path, inline_vpk(&[], b"payload")).expect("write ordinary VPK");
         let ordinary = VpkArchive::open(&ordinary_path).expect("open ordinary VPK");
         assert_eq!(ordinary.list_entries(), vec!["folder/sample.txt"]);
+        assert_eq!(
+            ordinary.entries_with_sizes().collect::<Vec<_>>(),
+            vec![("folder/sample.txt", 7)]
+        );
         assert!(!ordinary.has_preload_bytes("FOLDER\\SAMPLE.TXT"));
         assert_eq!(
             ordinary.extract_entry("folder/sample.txt").unwrap(),

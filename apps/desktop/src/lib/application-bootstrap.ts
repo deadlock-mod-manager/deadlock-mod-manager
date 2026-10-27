@@ -28,7 +28,9 @@ export type ApplicationBootstrap = {
 
 let applicationBootstrapPromise: Promise<ApplicationBootstrap> | null = null;
 
-const bootstrapApplication = async (): Promise<ApplicationBootstrap> => {
+const bootstrapApplication = async (
+  comparisonOnly: boolean,
+): Promise<ApplicationBootstrap> => {
   const runtime = await initializeRuntimeBootstrap();
 
   setStateStorePath(runtime.stateStorePath);
@@ -36,7 +38,24 @@ const bootstrapApplication = async (): Promise<ApplicationBootstrap> => {
   if (recovery && recovery.backupPath === null) {
     lockWriteGate(recovery.reason);
   }
-  await load(runtime.stateStorePath, { autoSave: true, defaults: {} });
+  const nativeStore = await load(runtime.stateStorePath, {
+    autoSave: true,
+    defaults: {},
+  });
+  if (comparisonOnly) {
+    const storage = usePersistedStore.persist.getOptions().storage;
+    if (storage)
+      usePersistedStore.persist.setOptions({
+        storage: {
+          getItem: storage.getItem,
+          setItem: () => {},
+          removeItem: () => {},
+        },
+      });
+    await nativeStore.onKeyChange("local-config", () => {
+      void usePersistedStore.persist.rehydrate();
+    });
+  }
   await usePersistedStore.persist.rehydrate();
   const storage = await storageReady();
 
@@ -50,6 +69,7 @@ const bootstrapApplication = async (): Promise<ApplicationBootstrap> => {
     .info("Persisted store hydration completed");
 
   await initializeApiUrl(getRuntimeServiceOrigin(runtime, "dmmApi"));
+  if (comparisonOnly) return { runtime, storage };
   await syncProxyConfigToBackend();
   // The backend starts enforced, so a failed sync leaves the guard on.
   await applyGameGuardSetting(
@@ -69,6 +89,10 @@ const bootstrapApplication = async (): Promise<ApplicationBootstrap> => {
   await downloadManager.init();
   // Tauri saves the store on exit with whatever writes have reached it.
   void getCurrentWindow().onCloseRequested(async (event) => {
+    if (await invoke<boolean>("keep_main_for_comparison")) {
+      event.preventDefault();
+      return;
+    }
     await flushPendingWrites();
     if (await hideToTrayOnClose().catch(() => false)) {
       event.preventDefault();
@@ -82,7 +106,9 @@ const bootstrapApplication = async (): Promise<ApplicationBootstrap> => {
   return { runtime, storage };
 };
 
-export const initializeApplication = (): Promise<ApplicationBootstrap> => {
-  applicationBootstrapPromise ??= bootstrapApplication();
+export const initializeApplication = (
+  comparisonOnly = false,
+): Promise<ApplicationBootstrap> => {
+  applicationBootstrapPromise ??= bootstrapApplication(comparisonOnly);
   return applicationBootstrapPromise;
 };

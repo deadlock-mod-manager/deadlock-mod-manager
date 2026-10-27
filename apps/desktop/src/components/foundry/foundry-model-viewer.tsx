@@ -44,6 +44,7 @@ import {
   ViewerWipBadge,
 } from "./viewer-tools";
 import { createViewerRecorder } from "./viewer-capture";
+import { createViewerAxisGizmo } from "./viewer-axis-gizmo";
 import { createViewerCamera } from "./viewer-camera";
 import type { ViewerBackground } from "./viewer-background";
 import { createViewerPostFx } from "./viewer-postfx";
@@ -188,20 +189,6 @@ const applyPreviewTint = (
   }
 };
 
-// DMM-themed gizmo palette (dark surface, gold primary accent).
-const GIZMO_AXES: {
-  dir: [number, number, number];
-  label: string;
-  color: string;
-}[] = [
-  { dir: [1, 0, 0], label: "X", color: "#d98d6a" },
-  { dir: [0, 1, 0], label: "Y", color: "#e7d5a3" },
-  { dir: [0, 0, 1], label: "Z", color: "#8fb0c9" },
-  { dir: [-1, 0, 0], label: "", color: "#d98d6a" },
-  { dir: [0, -1, 0], label: "", color: "#e7d5a3" },
-  { dir: [0, 0, -1], label: "", color: "#8fb0c9" },
-];
-
 const disposeObject = (root: THREE.Object3D) => {
   const textures = new Set<THREE.Texture>();
   root.traverse((child) => {
@@ -237,38 +224,6 @@ const disposeObject = (root: THREE.Object3D) => {
     }
   }
   for (const bitmap of bitmaps) bitmap.close();
-};
-
-/** A round handle sprite (filled + labelled for the positive axis, faint ring
- * for the negative one) drawn on a small canvas so it always faces the camera. */
-const makeHandleTexture = (
-  color: string,
-  label: string,
-): THREE.CanvasTexture => {
-  const size = 64;
-  const canvas = document.createElement("canvas");
-  canvas.width = size;
-  canvas.height = size;
-  const ctx = canvas.getContext("2d")!;
-  const r = size / 2;
-  ctx.beginPath();
-  ctx.arc(r, r, r - 6, 0, Math.PI * 2);
-  if (label) {
-    ctx.fillStyle = color;
-    ctx.fill();
-    ctx.fillStyle = "#1a1712";
-    ctx.font = "bold 34px Inter, Arial, sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(label, r, r + 2);
-  } else {
-    ctx.lineWidth = 5;
-    ctx.strokeStyle = color;
-    ctx.stroke();
-  }
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  return texture;
 };
 
 export const FoundryModelViewer = ({
@@ -454,62 +409,6 @@ export const FoundryModelViewer = ({
       );
     };
 
-    // --- Orientation gizmo (isolated renderer so it can never affect the
-    // model view): click an axis handle to snap the camera to that side. ---
-    const gizmoSize = 84;
-    const gizmoRenderer = new THREE.WebGLRenderer({
-      antialias: true,
-      alpha: true,
-    });
-    gizmoRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    gizmoRenderer.setSize(gizmoSize, gizmoSize);
-    gizmoRenderer.outputColorSpace = THREE.SRGBColorSpace;
-    gizmoContainer.appendChild(gizmoRenderer.domElement);
-
-    const gizmoScene = new THREE.Scene();
-    const gizmoCamera = new THREE.OrthographicCamera(
-      -1.6,
-      1.6,
-      1.6,
-      -1.6,
-      0,
-      4,
-    );
-    gizmoCamera.position.set(0, 0, 2);
-    const gizmoRoot = new THREE.Group();
-    gizmoScene.add(gizmoRoot);
-
-    const handles: THREE.Sprite[] = [];
-    for (const axis of GIZMO_AXES) {
-      const dir = new THREE.Vector3(...axis.dir);
-      const material = new THREE.SpriteMaterial({
-        map: makeHandleTexture(axis.color, axis.label),
-        transparent: true,
-        opacity: axis.label ? 1 : 0.55,
-        depthTest: false,
-      });
-      const sprite = new THREE.Sprite(material);
-      sprite.position.copy(dir);
-      sprite.scale.setScalar(axis.label ? 0.62 : 0.44);
-      gizmoRoot.add(sprite);
-      handles.push(sprite);
-
-      if (axis.label) {
-        const axisLine = new THREE.Line(
-          new THREE.BufferGeometry().setFromPoints([
-            new THREE.Vector3(0, 0, 0),
-            dir.clone().multiplyScalar(0.8),
-          ]),
-          new THREE.LineBasicMaterial({
-            color: axis.color,
-            transparent: true,
-            opacity: 0.8,
-          }),
-        );
-        gizmoRoot.add(axisLine);
-      }
-    }
-
     let disposed = false;
     let loadedRoot: THREE.Object3D | null = null;
     let frame = 0;
@@ -570,30 +469,17 @@ export const FoundryModelViewer = ({
       })
       .finally(releaseAsset);
 
-    // Snap the camera to the clicked axis (instant, keeps the current distance).
-    const raycaster = new THREE.Raycaster();
-    const pointer = new THREE.Vector2();
-    const snapToDir = (dir: THREE.Vector3) => {
+    const gizmo = createViewerAxisGizmo(gizmoContainer, camera, (direction) => {
       const distance = camera.position.distanceTo(controls.target);
       camera.up.set(0, 1, 0);
-      if (Math.abs(dir.y) > 0.9) {
-        camera.up.set(0, 0, dir.y > 0 ? -1 : 1);
+      if (Math.abs(direction.y) > 0.9) {
+        camera.up.set(0, 0, direction.y > 0 ? -1 : 1);
       }
-      camera.position.copy(controls.target).addScaledVector(dir, distance);
+      camera.position
+        .copy(controls.target)
+        .addScaledVector(direction, distance);
       controls.update();
-    };
-    const onGizmoClick = (event: PointerEvent) => {
-      const rect = gizmoRenderer.domElement.getBoundingClientRect();
-      pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-      raycaster.setFromCamera(pointer, gizmoCamera);
-      const hit = raycaster.intersectObjects(handles)[0];
-      if (hit) {
-        snapToDir(hit.object.position.clone());
-      }
-    };
-    gizmoRenderer.domElement.addEventListener("pointerdown", onGizmoClick);
-    gizmoRenderer.domElement.style.cursor = "pointer";
+    });
 
     const clock = new PreviewClock(
       () => {
@@ -627,9 +513,7 @@ export const FoundryModelViewer = ({
       controls.update();
       postFx.render();
 
-      // Mirror the main camera's orientation so the gizmo turns with the model.
-      gizmoRoot.quaternion.copy(camera.quaternion).invert();
-      gizmoRenderer.render(gizmoScene, gizmoCamera);
+      gizmo.update();
     };
     render();
 
@@ -637,7 +521,7 @@ export const FoundryModelViewer = ({
       disposed = true;
       loadController.abort();
       window.cancelAnimationFrame(frame);
-      gizmoRenderer.domElement.removeEventListener("pointerdown", onGizmoClick);
+      gizmo.dispose();
       resizeObserver.disconnect();
       visibility.disconnect();
       clockRef.current = null;
@@ -659,10 +543,6 @@ export const FoundryModelViewer = ({
         scene.remove(loadedRoot);
         disposeObject(loadedRoot);
       }
-      for (const handle of handles) {
-        handle.material.map?.dispose();
-        handle.material.dispose();
-      }
       environmentMap.dispose();
       pmremGenerator.dispose();
       environment.dispose();
@@ -672,9 +552,6 @@ export const FoundryModelViewer = ({
       renderer.dispose();
       renderer.forceContextLoss();
       renderer.domElement.remove();
-      gizmoRenderer.dispose();
-      gizmoRenderer.forceContextLoss();
-      gizmoRenderer.domElement.remove();
     };
   }, [model]);
 
@@ -696,7 +573,7 @@ export const FoundryModelViewer = ({
         ref={gizmoRef}
         className={cn(
           overlaySurface,
-          "absolute top-3 right-3 overflow-hidden rounded-full bg-background/40",
+          "absolute top-3 right-3 cursor-pointer overflow-hidden rounded-full bg-background/40",
           !showGizmo && "hidden",
         )}
         style={{ width: 84, height: 84 }}
