@@ -659,13 +659,16 @@ pub fn start_background_worker(app: AppHandle) {
   if !should_monitor(&app) {
     return;
   }
+  // Sync is on, so lift a cancel from an opt-out that came before. A worker still running
+  // from before a quick disable/re-enable keeps going, and would otherwise abort every
+  // pass from then on.
+  BACKGROUND_CANCEL.store(false, Ordering::Relaxed);
   if BACKGROUND_RUNNING
     .compare_exchange(false, true, Ordering::AcqRel, Ordering::Relaxed)
     .is_err()
   {
     return;
   }
-  BACKGROUND_CANCEL.store(false, Ordering::Relaxed);
   tokio::spawn(async move {
     while should_monitor(&app) {
       background_pass(&app).await;
