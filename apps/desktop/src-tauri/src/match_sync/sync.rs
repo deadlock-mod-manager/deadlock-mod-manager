@@ -1,28 +1,35 @@
 //! Sync orchestration. Generic over its dependencies so the whole pipeline is
-//! unit-testable with spies. All GC fetches funnel through `fetch_one`, the single
-//! choke point that enforces: already-fetched skip → persisted quota → throttle →
+//! unit-testable with spies. Every GC request goes through `gc_call`, which keeps it off
+//! Steam's GC pipe while the game runs; salt fetches also funnel through `fetch_one`,
+//! the choke point that enforces: already-fetched skip → persisted quota → throttle →
 //! counter. `*_if_enabled` are the enabled/consent gate.
 
-use std::collections::HashSet;
+mod friend_phase;
+
+use std::collections::{HashMap, HashSet};
+use std::future::Future;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
 use super::api_client::{BackfillSource, SaltsSink};
 use super::auth::SteamAuthProvider;
-use super::error::MatchSyncError;
+use super::error::{GcRefusal, MatchSyncError};
 use super::game_check::GameRunningCheck;
 use super::gc_client::GcMatchClient;
 use super::model::{
-  AuthContext, BACKFILL_QUOTA_RESERVE, FetchScope, MatchHistoryPage, MatchSyncConfig, SaltPayload,
-  SyncProgress,
+  AuthContext, BACKFILL_QUOTA_RESERVE, FetchScope, MatchHistoryPage, MatchSyncConfig, QuotaKind,
+  SaltPayload, SyncProgress,
 };
 use super::quota::QuotaWindow;
 use super::throttle::Throttle;
 
 pub trait SyncPersistence: Send + Sync {
   fn now(&self) -> i64;
-  fn load_quota(&self) -> Result<QuotaWindow, MatchSyncError>;
-  fn save_quota(&self, quota: &QuotaWindow) -> Result<(), MatchSyncError>;
+  fn load_quota(&self, kind: QuotaKind) -> Result<QuotaWindow, MatchSyncError>;
+  fn save_quota(&self, kind: QuotaKind, quota: &QuotaWindow) -> Result<(), MatchSyncError>;
+  fn friend_cooldowns(&self) -> HashMap<u32, i64>;
+  // (friend account id, unix time before which they aren't looked up again)
+  fn set_friend_cooldowns(&self, cooldowns: &[(u32, i64)]);
   fn load_fetched(&self) -> Vec<u64>;
   fn persist_fetched(&self, ids: &[u64]);
   fn set_full_sync_complete(&self, complete: bool);
@@ -50,12 +57,16 @@ enum LoopControl {
 }
 
 struct RunState {
-  // Persisted, successfully-ingested ids (idempotency across runs + quota protection).
+  // Persisted ids that need no more fetching: ingested, or refused by the GC for good
+  // (idempotency across runs + quota protection).
   fetched_set: HashSet<u64>,
   // Every id acted on this run (incl. failures/skips) so a sticky to-fetch list or a
   // failing GC can't re-offer the same id and spin/burn quota.
   processed: HashSet<u64>,
   fetched_order: Vec<u64>,
+  // Ids no salts fetch can get this run: deadlock-api already stores their salts, or they
+  // are still in progress.
+  settled: HashSet<u64>,
   quota: QuotaWindow,
   progress: SyncProgress,
 }
@@ -68,6 +79,22 @@ fn newest_first_fresh(ids: Vec<u64>, processed: &HashSet<u64>) -> Vec<u64> {
   ids.sort_unstable_by(|a, b| b.cmp(a));
   ids.dedup();
   ids
+}
+
+// A best-effort step's value, or `None` once the reason it's missing is logged. Only a
+// game launch is passed on, since that must stop the pass.
+fn best_effort<T>(
+  result: Result<T, MatchSyncError>,
+  what: &str,
+) -> Result<Option<T>, MatchSyncError> {
+  match result {
+    Ok(value) => Ok(Some(value)),
+    Err(MatchSyncError::GameRunning) => Err(MatchSyncError::GameRunning),
+    Err(e) => {
+      log::warn!("match-sync: {what} unavailable: {e}");
+      Ok(None)
+    }
+  }
 }
 
 pub struct SyncEngine<A, G, S, B, P, R> {
@@ -115,12 +142,13 @@ where
   fn new_run_state(&self) -> Result<RunState, MatchSyncError> {
     let fetched_order = self.persistence.load_fetched();
     let fetched_set: HashSet<u64> = fetched_order.iter().copied().collect();
-    let quota = self.persistence.load_quota()?;
+    let quota = self.persistence.load_quota(QuotaKind::Salts)?;
     let remaining = quota.remaining(self.persistence.now()) as u32;
     Ok(RunState {
       fetched_set,
       processed: HashSet::new(),
       fetched_order,
+      settled: HashSet::new(),
       quota,
       progress: SyncProgress {
         fetched: 0,
@@ -149,59 +177,119 @@ where
     }
 
     let now = self.persistence.now();
-    // The 24h cap counts successful salt fetches; check headroom before requesting.
+    // The 24h cap counts every salts request the GC answers; check headroom before asking.
     if st.quota.remaining(now) == 0 {
       st.progress.quota_reached = true;
       st.progress.quota_remaining = 0;
       return Ok(FetchStep::QuotaReached);
     }
     self.throttle.acquire().await;
-    // Re-checked here, not just at pass-start, and after the throttle wait (up to
-    // GC_MIN_INTERVAL), not before it: the game can launch during that sleep, and this
-    // is the actual GC choke point that must never race the game's own session.
-    if self.game_check.is_game_running() {
-      return Err(MatchSyncError::GameRunning);
-    }
-    self.counter.fetch_add(1, Ordering::Relaxed);
+    let fetched = self.gc_call(async {
+      self.counter.fetch_add(1, Ordering::Relaxed);
+      self.gc.fetch_match_salts(ctx, match_id).await
+    });
 
-    let salts = match self.gc.fetch_match_salts(ctx, match_id).await {
+    let salts = match fetched.await {
       Ok(salts) => salts,
+      Err(MatchSyncError::GameRunning) => return Err(MatchSyncError::GameRunning),
       // Steam itself is rate-limiting this account: treat the 24h bucket as fully
       // spent so we stop hammering it and only try again once it naturally frees up.
       Err(MatchSyncError::GcRateLimited) => {
         log::warn!("match-sync: Steam GC rate-limited; treating quota as exhausted for 24h");
         st.quota.exhaust(now);
-        self.persistence.save_quota(&st.quota)?;
+        self.persistence.save_quota(QuotaKind::Salts, &st.quota)?;
         st.progress.rate_limited = true;
         st.progress.quota_reached = true;
         st.progress.quota_remaining = st.quota.remaining(now) as u32;
         return Ok(FetchStep::RateLimited);
       }
-      // Any other failure fetched nothing, so it must not count against the cap.
+      // Refused for good: remembered like a fetched match, so no later pass pays to ask
+      // again. Carry on with the next match.
+      Err(e @ MatchSyncError::GcRefused(GcRefusal::InvalidMatch)) => {
+        log::debug!("match-sync: skipping {match_id}: {e}");
+        self.skip_answered(now, st)?;
+        self.remember_fetched(match_id, st);
+        return Ok(FetchStep::Done);
+      }
+      // Still in progress, or someone else's match this account may not see: settled for
+      // this run only. A later pass that lists it again (the user's history, a to-fetch
+      // list, the friend's next lookup) asks again.
+      Err(MatchSyncError::GcRefused(refusal @ (GcRefusal::InFlight | GcRefusal::NoPermission)))
+        if is_backfill || refusal == GcRefusal::InFlight =>
+      {
+        log::debug!("match-sync: skipping {match_id}: {refusal}");
+        self.skip_answered(now, st)?;
+        st.settled.insert(match_id);
+        return Ok(FetchStep::Done);
+      }
+      // Any other failure fetched nothing, so it must not count against the cap. Refusing
+      // one of the user's own matches is an outage, as is a refusal Steam gives no reason
+      // for.
       Err(e) => {
+        let e = e.refusal_as_outage();
         log::warn!("match-sync: GC fetch failed for {match_id}: {e}");
         self.persistence.record_gc_error(&e);
         return Ok(FetchStep::RetryLater);
       }
     };
-
-    let _ = st.quota.try_consume(now);
-    self.persistence.save_quota(&st.quota)?;
+    self.count_salts_request(now, st)?;
 
     self.sink.post_salts(&[SaltPayload::from(&salts)]).await?;
-
-    st.fetched_set.insert(match_id);
-    st.fetched_order.push(match_id);
-    self.persistence.persist_fetched(&st.fetched_order);
+    self.remember_fetched(match_id, st);
 
     if is_backfill {
       st.progress.backfilled += 1;
     } else {
       st.progress.fetched += 1;
     }
-    st.progress.quota_remaining = st.quota.remaining(now) as u32;
     self.persistence.emit_progress(&st.progress);
     Ok(FetchStep::Done)
+  }
+
+  // The GC answered, so the request counts against the cap.
+  fn count_salts_request(&self, now: i64, st: &mut RunState) -> Result<(), MatchSyncError> {
+    let _ = st.quota.try_consume(now);
+    self.persistence.save_quota(QuotaKind::Salts, &st.quota)?;
+    st.progress.quota_remaining = st.quota.remaining(now) as u32;
+    Ok(())
+  }
+
+  // A GC answer that leaves nothing to fetch still counts against the cap.
+  fn skip_answered(&self, now: i64, st: &mut RunState) -> Result<(), MatchSyncError> {
+    self.count_salts_request(now, st)?;
+    st.progress.skipped += 1;
+    self.persistence.emit_progress(&st.progress);
+    Ok(())
+  }
+
+  // The user's own history page, or `None` if the GC didn't serve it: that failure is
+  // reported, not returned. Steam limits match history requests per account, so a rate
+  // limit here rules out friend lookups until the window frees up as well.
+  async fn own_history_page(
+    &self,
+    ctx: &AuthContext,
+    cursor: Option<u64>,
+  ) -> Result<Option<MatchHistoryPage>, MatchSyncError> {
+    let e = match self.gc_history_page(ctx, ctx.account_id(), cursor).await {
+      Ok(page) => return Ok(Some(page)),
+      Err(MatchSyncError::GameRunning) => return Err(MatchSyncError::GameRunning),
+      Err(e) => e.refusal_as_outage(),
+    };
+    log::warn!("match-sync: GC match history unavailable: {e}");
+    self.persistence.record_gc_error(&e);
+    if let MatchSyncError::GcRateLimited = e {
+      let loaded = self.persistence.load_quota(QuotaKind::FriendHistory);
+      if let Ok(Some(mut quota)) = best_effort(loaded, "friend history quota") {
+        self.exhaust_history_quota(&mut quota);
+      }
+    }
+    Ok(None)
+  }
+
+  fn remember_fetched(&self, match_id: u64, st: &mut RunState) {
+    st.fetched_set.insert(match_id);
+    st.fetched_order.push(match_id);
+    self.persistence.persist_fetched(&st.fetched_order);
   }
 
   async fn process_ids(
@@ -226,18 +314,49 @@ where
     Ok(LoopControl::Continue)
   }
 
+  // Every GC request goes through here, after any throttle wait (the game can launch
+  // during one): the game must never share Steam's GC pipe with us. Futures are lazy, so
+  // `request` sends nothing before the check.
+  async fn gc_call<T>(
+    &self,
+    request: impl Future<Output = Result<T, MatchSyncError>>,
+  ) -> Result<T, MatchSyncError> {
+    if self.game_check.is_game_running() {
+      return Err(MatchSyncError::GameRunning);
+    }
+    request.await
+  }
+
   // Throttled, not quota-counted: a history query is not a salt fetch.
   async fn gc_history_page(
     &self,
     ctx: &AuthContext,
+    account_id: u32,
     cursor: Option<u64>,
   ) -> Result<MatchHistoryPage, MatchSyncError> {
     self.throttle.acquire().await;
-    // Checked after the throttle wait, not before: the game may launch during the sleep.
-    if self.game_check.is_game_running() {
-      return Err(MatchSyncError::GameRunning);
+    self
+      .gc_call(self.gc.fetch_match_history(ctx, account_id, cursor))
+      .await
+  }
+
+  // What's left for backfill, or `None` once the pass should stop. Keeps a reserve
+  // untouched so the user's own matches — always fetched first, and not subject to this
+  // cap — retain headroom against a bottomless backfill.
+  fn backfill_budget(
+    &self,
+    control: LoopControl,
+    cancel: &AtomicBool,
+    st: &RunState,
+  ) -> Option<usize> {
+    if matches!(control, LoopControl::Stop) || cancel.load(Ordering::Relaxed) {
+      return None;
     }
-    self.gc.fetch_match_history(ctx, cursor).await
+    let budget = st
+      .quota
+      .remaining(self.persistence.now())
+      .saturating_sub(BACKFILL_QUOTA_RESERVE);
+    (budget > 0).then_some(budget)
   }
 
   fn finish(&self, mut st: RunState) -> SyncProgress {
@@ -290,14 +409,8 @@ where
       if cancel.load(Ordering::Relaxed) {
         return Ok(());
       }
-      let page = match self.gc_history_page(&ctx, cursor).await {
-        Ok(page) => page,
-        Err(MatchSyncError::GameRunning) => return Err(MatchSyncError::GameRunning),
-        Err(e) => {
-          log::warn!("match-sync: GC match history unavailable: {e}");
-          self.persistence.record_gc_error(&e);
-          break;
-        }
+      let Some(page) = self.own_history_page(&ctx, cursor).await? else {
+        break;
       };
       let fresh = newest_first_fresh(page.match_ids(), &st.processed);
       if let LoopControl::Stop = self
@@ -342,9 +455,10 @@ where
     }
   }
 
-  // One background pass: the user's own new matches, then global backfill, all
-  // bounded by the shared 24h quota. A no-op unless the user has opted in, or
-  // while Deadlock is running (Steam routes GC traffic to the game's own pipe).
+  // One background pass: the user's own new matches, then friends' likely-new matches,
+  // then global backfill, all bounded by the shared 24h quota. A no-op unless the user
+  // has opted in, or while Deadlock is running (Steam routes GC traffic to the game's
+  // own pipe).
   pub async fn run_background_pass(
     &self,
     config: &MatchSyncConfig,
@@ -381,852 +495,54 @@ where
 
     // Own matches = the newest GC history page ∪ deadlock-api's missing-for-account
     // list, newest first. Both best-effort so one being down still syncs the other.
-    let mut own_ids = match self.gc_history_page(&ctx, None).await {
-      Ok(page) => page.match_ids(),
-      Err(MatchSyncError::GameRunning) => return Err(MatchSyncError::GameRunning),
-      Err(e) => {
-        log::warn!("match-sync: GC match history unavailable: {e}");
-        self.persistence.record_gc_error(&e);
-        Vec::new()
-      }
-    };
-    match self
+    let mut own_ids = self
+      .own_history_page(&ctx, None)
+      .await?
+      .map(|page| page.match_ids())
+      .unwrap_or_default();
+    let account_list = self
       .backfill
       .to_fetch(FetchScope::Account(account_id))
-      .await
-    {
-      Ok(ids) => own_ids.extend(ids),
-      Err(e) => log::warn!("match-sync: account to-fetch unavailable: {e}"),
+      .await;
+    if let Some(ids) = best_effort(account_list, "account to-fetch")? {
+      own_ids.extend(ids);
     }
     let own = newest_first_fresh(own_ids, &st.processed);
     let control = self.process_ids(&ctx, own, false, Some(cancel), st).await?;
 
-    // Backfill globally-missing matches with whatever of the 24h quota is left over,
-    // fully in the background. The user's own matches always go first.
-    if let LoopControl::Continue = control
-      && !cancel.load(Ordering::Relaxed)
-    {
-      // Keep a reserve untouched so the user's own matches — always fetched first, and
-      // not subject to this cap — retain headroom against a bottomless global list.
-      let budget = st
-        .quota
-        .remaining(self.persistence.now())
-        .saturating_sub(BACKFILL_QUOTA_RESERVE);
-      if budget > 0 {
-        let result = match self.backfill.to_fetch(FetchScope::Global).await {
-          Ok(global) => {
-            let picks: Vec<u64> = newest_first_fresh(global, &st.processed)
-              .into_iter()
-              .take(budget)
-              .collect();
-            self
-              .process_ids(&ctx, picks, true, Some(cancel), st)
-              .await
-              .map(|_| ())
-          }
-          Err(e) => {
-            log::warn!("match-sync: global to-fetch unavailable: {e}");
-            Ok(())
-          }
-        };
-        // The global list claims every id it hands out, but the budget, a quota or
-        // GC stop, cancellation or an error usually leaves most of it unfetched.
-        // However the backfill ended, hand the rest back to other workers now rather
-        // than when the claims expire.
-        self.backfill.release_claim().await;
-        result?;
-      }
-    }
+    // Backfill missing matches with whatever of the 24h quota is left over, fully in
+    // the background. The user's own matches always go first, then friends' likely-new
+    // matches, then deadlock-api's global list.
+    let Some(budget) = self.backfill_budget(control, cancel, st) else {
+      return Ok(());
+    };
+    let control = self.backfill_friends(&ctx, budget, cancel, st).await?;
 
-    Ok(())
+    let Some(budget) = self.backfill_budget(control, cancel, st) else {
+      return Ok(());
+    };
+    let result = match self.backfill.to_fetch(FetchScope::Global).await {
+      Ok(global) => {
+        let mut picks = newest_first_fresh(global, &st.processed);
+        picks.truncate(budget);
+        self
+          .process_ids(&ctx, picks, true, Some(cancel), st)
+          .await
+          .map(|_| ())
+      }
+      Err(e) => {
+        log::warn!("match-sync: global to-fetch unavailable: {e}");
+        Ok(())
+      }
+    };
+    // The global list claims every id it hands out, but the budget, a quota or GC
+    // stop, cancellation or an error usually leaves most of it unfetched. However the
+    // backfill ended, hand the rest back to other workers now rather than when the
+    // claims expire.
+    self.backfill.release_claim().await;
+    result
   }
 }
 
 #[cfg(test)]
-mod tests {
-  use super::*;
-  use crate::match_sync::model::{AuthContext, LocalMatch, MatchHistoryPage, MatchSalts};
-  use crate::match_sync::quota::QuotaWindow;
-  use std::sync::Mutex;
-  use std::time::Duration;
-
-  const LIMIT: usize = 40;
-  const WINDOW: i64 = 24 * 60 * 60;
-
-  #[derive(Default)]
-  struct SpyAuth {
-    calls: AtomicU64,
-  }
-  impl SteamAuthProvider for SpyAuth {
-    fn recover(&self) -> Result<AuthContext, MatchSyncError> {
-      self.calls.fetch_add(1, Ordering::Relaxed);
-      Ok(AuthContext {
-        account_name: "spy".into(),
-        steam_id64: 76561197960265728 + 42,
-        refresh_token: "secret".into(),
-      })
-    }
-  }
-
-  #[derive(Default)]
-  struct SpyGc {
-    calls: AtomicU64,
-    fail: bool,
-    fail_history: bool,
-    rate_limited: bool,
-    history: Vec<u64>,
-  }
-  impl GcMatchClient for SpyGc {
-    async fn fetch_match_history(
-      &self,
-      _ctx: &AuthContext,
-      _cursor: Option<u64>,
-    ) -> Result<MatchHistoryPage, MatchSyncError> {
-      self.calls.fetch_add(1, Ordering::Relaxed);
-      if self.fail_history {
-        return Err(MatchSyncError::GcUnavailable("spy history".into()));
-      }
-      Ok(MatchHistoryPage {
-        matches: self
-          .history
-          .iter()
-          .map(|&match_id| LocalMatch {
-            match_id,
-            ..Default::default()
-          })
-          .collect(),
-        next_cursor: None,
-      })
-    }
-    async fn fetch_match_salts(
-      &self,
-      _ctx: &AuthContext,
-      match_id: u64,
-    ) -> Result<MatchSalts, MatchSyncError> {
-      self.calls.fetch_add(1, Ordering::Relaxed);
-      if self.rate_limited {
-        return Err(MatchSyncError::GcRateLimited);
-      }
-      if self.fail {
-        return Err(MatchSyncError::GcUnavailable("spy".into()));
-      }
-      Ok(MatchSalts {
-        match_id,
-        cluster_id: Some(1),
-        metadata_salt: Some(2),
-        replay_salt: Some(3),
-      })
-    }
-  }
-
-  #[derive(Default)]
-  struct SpySink {
-    posted: Mutex<Vec<u64>>,
-  }
-  impl SaltsSink for SpySink {
-    async fn post_salts(&self, salts: &[SaltPayload]) -> Result<(), MatchSyncError> {
-      let mut p = self.posted.lock().unwrap();
-      p.extend(salts.iter().map(|s| s.match_id));
-      Ok(())
-    }
-  }
-
-  #[derive(Debug, PartialEq)]
-  enum BackfillCall {
-    Account,
-    Global,
-    Release,
-  }
-
-  // Sticky, like the real endpoint: it keeps listing the same ids until they are
-  // ingested, so run termination must come from the run-local `processed` set.
-  #[derive(Default)]
-  struct SpyBackfill {
-    account: Vec<u64>,
-    global: Vec<u64>,
-    calls: AtomicU64,
-    log: Mutex<Vec<BackfillCall>>,
-  }
-  impl BackfillSource for SpyBackfill {
-    async fn to_fetch(&self, scope: FetchScope) -> Result<Vec<u64>, MatchSyncError> {
-      self.calls.fetch_add(1, Ordering::Relaxed);
-      match scope {
-        FetchScope::Account(_) => {
-          self.log.lock().unwrap().push(BackfillCall::Account);
-          Ok(self.account.clone())
-        }
-        FetchScope::Global => {
-          self.log.lock().unwrap().push(BackfillCall::Global);
-          Ok(self.global.clone())
-        }
-      }
-    }
-    async fn release_claim(&self) {
-      self.log.lock().unwrap().push(BackfillCall::Release);
-    }
-  }
-
-  #[derive(Default)]
-  struct MemPersistence {
-    now: i64,
-    quota_hits: Mutex<Vec<i64>>,
-    fetched: Mutex<Vec<u64>>,
-    complete: Mutex<bool>,
-    progress_events: AtomicU64,
-    gc_errors: AtomicU64,
-    fail_load_quota: bool,
-    fail_save_quota: bool,
-    last_progress_running: Mutex<Option<bool>>,
-  }
-  impl SyncPersistence for MemPersistence {
-    fn now(&self) -> i64 {
-      self.now
-    }
-    fn load_quota(&self) -> Result<QuotaWindow, MatchSyncError> {
-      if self.fail_load_quota {
-        return Err(MatchSyncError::Store("spy load failure".into()));
-      }
-      Ok(QuotaWindow::new(
-        self.quota_hits.lock().unwrap().clone(),
-        LIMIT,
-        WINDOW,
-      ))
-    }
-    fn save_quota(&self, quota: &QuotaWindow) -> Result<(), MatchSyncError> {
-      if self.fail_save_quota {
-        return Err(MatchSyncError::Store("spy save failure".into()));
-      }
-      *self.quota_hits.lock().unwrap() = quota.snapshot();
-      Ok(())
-    }
-    fn load_fetched(&self) -> Vec<u64> {
-      self.fetched.lock().unwrap().clone()
-    }
-    fn persist_fetched(&self, ids: &[u64]) {
-      *self.fetched.lock().unwrap() = ids.to_vec();
-    }
-    fn set_full_sync_complete(&self, complete: bool) {
-      *self.complete.lock().unwrap() = complete;
-    }
-    fn emit_progress(&self, progress: &SyncProgress) {
-      self.progress_events.fetch_add(1, Ordering::Relaxed);
-      *self.last_progress_running.lock().unwrap() = Some(progress.running);
-    }
-    fn record_gc_error(&self, _err: &MatchSyncError) {
-      self.gc_errors.fetch_add(1, Ordering::Relaxed);
-    }
-  }
-
-  #[derive(Default)]
-  struct SpyGameCheck {
-    running: bool,
-    // Simulates the game launching mid-pass: is_game_running() starts returning
-    // true starting from this call number (1-indexed) across the whole engine.
-    // 0 (the default) means never trips this way.
-    trip_after_calls: usize,
-    calls: std::sync::atomic::AtomicUsize,
-  }
-  impl GameRunningCheck for SpyGameCheck {
-    fn is_game_running(&self) -> bool {
-      if self.running {
-        return true;
-      }
-      if self.trip_after_calls == 0 {
-        return false;
-      }
-      self.calls.fetch_add(1, Ordering::Relaxed) + 1 >= self.trip_after_calls
-    }
-  }
-
-  fn engine(
-    gc: SpyGc,
-    backfill: SpyBackfill,
-  ) -> SyncEngine<SpyAuth, SpyGc, SpySink, SpyBackfill, MemPersistence, SpyGameCheck> {
-    engine_with_game_check(gc, backfill, SpyGameCheck::default())
-  }
-
-  fn engine_with_game_check(
-    gc: SpyGc,
-    backfill: SpyBackfill,
-    game_check: SpyGameCheck,
-  ) -> SyncEngine<SpyAuth, SpyGc, SpySink, SpyBackfill, MemPersistence, SpyGameCheck> {
-    engine_with_persistence(
-      gc,
-      backfill,
-      game_check,
-      MemPersistence {
-        now: 1_000_000,
-        ..Default::default()
-      },
-    )
-  }
-
-  fn engine_with_persistence(
-    gc: SpyGc,
-    backfill: SpyBackfill,
-    game_check: SpyGameCheck,
-    persistence: MemPersistence,
-  ) -> SyncEngine<SpyAuth, SpyGc, SpySink, SpyBackfill, MemPersistence, SpyGameCheck> {
-    SyncEngine::new(
-      SpyAuth::default(),
-      gc,
-      SpySink::default(),
-      backfill,
-      persistence,
-      game_check,
-      Arc::new(Throttle::new(Duration::ZERO)),
-      Arc::new(AtomicU64::new(0)),
-    )
-  }
-
-  fn active_config() -> MatchSyncConfig {
-    MatchSyncConfig {
-      enabled: true,
-      consent_accepted: true,
-    }
-  }
-
-  #[tokio::test]
-  async fn disabled_does_nothing() {
-    let eng = engine(
-      SpyGc::default(),
-      SpyBackfill {
-        account: vec![1, 2, 3],
-        global: vec![9, 8, 7],
-        ..Default::default()
-      },
-    );
-    let config = MatchSyncConfig {
-      enabled: false,
-      consent_accepted: false,
-    };
-
-    let out = eng
-      .run_background_pass(&config, &AtomicBool::new(false))
-      .await
-      .unwrap();
-    assert!(out.is_none());
-    assert!(
-      eng
-        .run_full_sync_if_enabled(&config, &AtomicBool::new(false))
-        .await
-        .is_err()
-    );
-
-    assert_eq!(eng.auth.calls.load(Ordering::Relaxed), 0);
-    assert_eq!(eng.gc.calls.load(Ordering::Relaxed), 0);
-    assert_eq!(eng.backfill.calls.load(Ordering::Relaxed), 0);
-    assert_eq!(eng.counter.load(Ordering::Relaxed), 0);
-    assert!(eng.sink.posted.lock().unwrap().is_empty());
-  }
-
-  #[tokio::test]
-  async fn full_sync_fetches_posts_and_is_idempotent() {
-    let backfill = SpyBackfill {
-      account: vec![10, 11, 12],
-      global: vec![],
-      ..Default::default()
-    };
-    let eng = engine(SpyGc::default(), backfill);
-    let cancel = AtomicBool::new(false);
-
-    let p = eng
-      .run_full_sync_if_enabled(&active_config(), &cancel)
-      .await
-      .unwrap();
-    assert_eq!(p.fetched, 3);
-    assert_eq!(eng.counter.load(Ordering::Relaxed), 3);
-    assert_eq!(*eng.sink.posted.lock().unwrap(), vec![12, 11, 10]);
-
-    // Re-run: the same ids are already fetched -> nothing new is fetched/posted.
-    let p2 = eng
-      .run_full_sync_if_enabled(&active_config(), &cancel)
-      .await
-      .unwrap();
-    assert_eq!(p2.fetched, 0);
-    assert_eq!(eng.counter.load(Ordering::Relaxed), 3);
-    assert_eq!(eng.sink.posted.lock().unwrap().len(), 3);
-  }
-
-  #[tokio::test]
-  async fn hard_quota_caps_total_fetches_at_limit() {
-    // 200 distinct ids available, but the 24h cap must stop us at LIMIT.
-    let ids: Vec<u64> = (1..=200).collect();
-    let backfill = SpyBackfill {
-      account: ids,
-      global: vec![],
-      ..Default::default()
-    };
-    let eng = engine(SpyGc::default(), backfill);
-
-    let p = eng
-      .run_full_sync_if_enabled(&active_config(), &AtomicBool::new(false))
-      .await
-      .unwrap();
-    assert_eq!(p.fetched, LIMIT as u32);
-    assert!(p.quota_reached);
-    assert_eq!(eng.counter.load(Ordering::Relaxed), LIMIT as u64);
-    // Persisted quota is full, proving it survives to the next process.
-    assert_eq!(eng.persistence.quota_hits.lock().unwrap().len(), LIMIT);
-  }
-
-  #[tokio::test]
-  async fn monitoring_unions_history_and_to_fetch_then_backfills_within_quota() {
-    let backfill = SpyBackfill {
-      account: vec![100, 101],
-      global: vec![200, 201, 202, 203, 204, 205, 206],
-      ..Default::default()
-    };
-    // GC history contributes 102 and a duplicate of 100.
-    let eng = engine(
-      SpyGc {
-        history: vec![102, 100],
-        ..Default::default()
-      },
-      backfill,
-    );
-
-    let p = eng
-      .run_background_pass(&active_config(), &AtomicBool::new(false))
-      .await
-      .unwrap()
-      .unwrap();
-    // own = {102, 101, 100} after union + dedup, fetched newest first.
-    assert_eq!(p.fetched, 3);
-    // Backfill takes the rest of the global list (quota has plenty left).
-    assert_eq!(p.backfilled, 7);
-    let posted = eng.sink.posted.lock().unwrap();
-    assert_eq!(
-      &posted[..3],
-      &[102, 101, 100],
-      "own matches, newest first, deduped"
-    );
-    assert_eq!(posted.len(), 10);
-  }
-
-  #[tokio::test]
-  async fn background_backfill_leaves_reserve_for_own_matches() {
-    // No own matches, a bottomless global list: backfill must stop at LIMIT - reserve
-    // rather than drain the whole bucket, so a later-played match keeps headroom.
-    let backfill = SpyBackfill {
-      account: vec![],
-      global: (1..=200).collect(),
-      ..Default::default()
-    };
-    let eng = engine(SpyGc::default(), backfill);
-
-    let p = eng
-      .run_background_pass(&active_config(), &AtomicBool::new(false))
-      .await
-      .unwrap()
-      .unwrap();
-    assert_eq!(p.fetched, 0);
-    assert_eq!(p.backfilled as usize, LIMIT - BACKFILL_QUOTA_RESERVE);
-    assert_eq!(p.quota_remaining as usize, BACKFILL_QUOTA_RESERVE);
-    // The ids past the budget stay claimed unless released.
-    assert_eq!(
-      *eng.backfill.log.lock().unwrap(),
-      [
-        BackfillCall::Account,
-        BackfillCall::Global,
-        BackfillCall::Release
-      ]
-    );
-  }
-
-  #[tokio::test]
-  async fn background_pass_releases_the_global_claim_once_backfill_is_done() {
-    let backfill = SpyBackfill {
-      account: vec![100],
-      global: vec![200, 201],
-      ..Default::default()
-    };
-    let eng = engine(SpyGc::default(), backfill);
-
-    let p = eng
-      .run_background_pass(&active_config(), &AtomicBool::new(false))
-      .await
-      .unwrap()
-      .unwrap();
-    assert_eq!(p.backfilled, 2);
-    // Released exactly once, after the global list, as the last deadlock-api call.
-    assert_eq!(
-      *eng.backfill.log.lock().unwrap(),
-      [
-        BackfillCall::Account,
-        BackfillCall::Global,
-        BackfillCall::Release
-      ]
-    );
-  }
-
-  #[tokio::test]
-  async fn background_pass_releases_the_global_claim_when_backfill_aborts() {
-    let backfill = SpyBackfill {
-      global: vec![200, 201, 202],
-      ..Default::default()
-    };
-    // Not running for the pass-start check or the history page, but flips true on
-    // the first backfill salt fetch, aborting the pass with an error.
-    let eng = engine_with_game_check(
-      SpyGc::default(),
-      backfill,
-      SpyGameCheck {
-        trip_after_calls: 3,
-        ..Default::default()
-      },
-    );
-
-    let p = eng
-      .run_background_pass(&active_config(), &AtomicBool::new(false))
-      .await;
-    assert!(matches!(p, Err(MatchSyncError::GameRunning)));
-    assert!(eng.sink.posted.lock().unwrap().is_empty());
-    assert_eq!(
-      eng.backfill.log.lock().unwrap().last(),
-      Some(&BackfillCall::Release)
-    );
-  }
-
-  #[tokio::test]
-  async fn background_pass_without_backfill_claims_nothing_to_release() {
-    // Rate-limited on the own matches: the global list is never requested.
-    let backfill = SpyBackfill {
-      account: vec![1],
-      global: vec![9],
-      ..Default::default()
-    };
-    let eng = engine(
-      SpyGc {
-        rate_limited: true,
-        ..Default::default()
-      },
-      backfill,
-    );
-
-    eng
-      .run_background_pass(&active_config(), &AtomicBool::new(false))
-      .await
-      .unwrap();
-    assert_eq!(*eng.backfill.log.lock().unwrap(), [BackfillCall::Account]);
-  }
-
-  #[tokio::test]
-  async fn gc_failure_posts_nothing_and_spares_quota() {
-    let backfill = SpyBackfill {
-      account: vec![1, 2, 3],
-      global: vec![],
-      ..Default::default()
-    };
-    let eng = engine(
-      SpyGc {
-        fail: true,
-        ..Default::default()
-      },
-      backfill,
-    );
-
-    let p = eng
-      .run_full_sync_if_enabled(&active_config(), &AtomicBool::new(false))
-      .await
-      .unwrap();
-    assert_eq!(p.fetched, 0);
-    assert!(eng.sink.posted.lock().unwrap().is_empty());
-    // A failed fetch got no data, so it must not spend quota.
-    assert!(eng.persistence.quota_hits.lock().unwrap().is_empty());
-  }
-
-  #[tokio::test]
-  async fn sticky_to_fetch_failure_does_not_falsely_complete_the_sync() {
-    // deadlock-api's to-fetch list is sticky: it keeps listing an id until it's
-    // actually ingested. A transient GC failure must not make that look "caught up".
-    let backfill = SpyBackfill {
-      account: vec![1],
-      global: vec![],
-      ..Default::default()
-    };
-    let eng = engine(
-      SpyGc {
-        fail: true,
-        ..Default::default()
-      },
-      backfill,
-    );
-
-    let p = eng
-      .run_full_sync_if_enabled(&active_config(), &AtomicBool::new(false))
-      .await
-      .unwrap();
-    assert_eq!(p.fetched, 0);
-    assert!(!*eng.persistence.complete.lock().unwrap());
-  }
-
-  #[tokio::test]
-  async fn rate_limit_stops_the_pass_and_exhausts_quota_for_24h() {
-    let backfill = SpyBackfill {
-      account: vec![1, 2, 3],
-      global: vec![9],
-      ..Default::default()
-    };
-    let eng = engine(
-      SpyGc {
-        rate_limited: true,
-        ..Default::default()
-      },
-      backfill,
-    );
-
-    let p = eng
-      .run_background_pass(&active_config(), &AtomicBool::new(false))
-      .await
-      .unwrap()
-      .unwrap();
-    assert_eq!(p.fetched, 0);
-    assert_eq!(p.backfilled, 0, "backed off before backfill");
-    assert!(p.rate_limited);
-    assert!(p.quota_reached);
-    assert_eq!(p.quota_remaining, 0);
-    // One history call + exactly one salts attempt, then stop.
-    assert_eq!(eng.gc.calls.load(Ordering::Relaxed), 2);
-    // The very first rate-limit hit burns the whole 24h bucket, not just this attempt.
-    assert_eq!(eng.persistence.quota_hits.lock().unwrap().len(), LIMIT);
-  }
-
-  #[tokio::test]
-  async fn cancel_stops_full_sync() {
-    let ids: Vec<u64> = (1..=50).collect();
-    let backfill = SpyBackfill {
-      account: ids,
-      global: vec![],
-      ..Default::default()
-    };
-    let eng = engine(SpyGc::default(), backfill);
-    let cancel = Arc::new(AtomicBool::new(true));
-
-    let p = eng
-      .run_full_sync_if_enabled(&active_config(), &cancel)
-      .await
-      .unwrap();
-    assert_eq!(p.fetched, 0);
-    assert_eq!(eng.gc.calls.load(Ordering::Relaxed), 0);
-  }
-
-  #[tokio::test]
-  async fn cancel_stops_background_pass() {
-    let backfill = SpyBackfill {
-      account: (1..=50).collect(),
-      global: vec![],
-      ..Default::default()
-    };
-    let eng = engine(SpyGc::default(), backfill);
-    let cancel = AtomicBool::new(true);
-
-    let p = eng
-      .run_background_pass(&active_config(), &cancel)
-      .await
-      .unwrap()
-      .unwrap();
-    assert_eq!(p.fetched, 0);
-    assert_eq!(eng.gc.calls.load(Ordering::Relaxed), 0);
-  }
-
-  #[tokio::test]
-  async fn refuses_while_game_is_running() {
-    let backfill = SpyBackfill {
-      account: vec![1, 2, 3],
-      global: vec![9],
-      ..Default::default()
-    };
-    let eng = engine_with_game_check(
-      SpyGc::default(),
-      backfill,
-      SpyGameCheck {
-        running: true,
-        ..Default::default()
-      },
-    );
-
-    assert!(matches!(
-      eng
-        .run_full_sync_if_enabled(&active_config(), &AtomicBool::new(false))
-        .await,
-      Err(MatchSyncError::GameRunning)
-    ));
-    assert_eq!(eng.auth.calls.load(Ordering::Relaxed), 0);
-    assert_eq!(eng.gc.calls.load(Ordering::Relaxed), 0);
-
-    // Background pass treats it as a quiet no-op, not an error.
-    assert!(
-      eng
-        .run_background_pass(&active_config(), &AtomicBool::new(false))
-        .await
-        .unwrap()
-        .is_none()
-    );
-    assert_eq!(eng.auth.calls.load(Ordering::Relaxed), 0);
-    assert_eq!(eng.gc.calls.load(Ordering::Relaxed), 0);
-  }
-
-  #[tokio::test]
-  async fn fails_closed_when_quota_cannot_be_loaded() {
-    let backfill = SpyBackfill {
-      account: vec![1, 2, 3],
-      global: vec![],
-      ..Default::default()
-    };
-    let eng = engine_with_persistence(
-      SpyGc::default(),
-      backfill,
-      SpyGameCheck::default(),
-      MemPersistence {
-        now: 1_000_000,
-        fail_load_quota: true,
-        ..Default::default()
-      },
-    );
-
-    assert!(matches!(
-      eng
-        .run_full_sync_if_enabled(&active_config(), &AtomicBool::new(false))
-        .await,
-      Err(MatchSyncError::Store(_))
-    ));
-    // A quota we couldn't read must not be treated as empty (full headroom).
-    assert_eq!(eng.gc.calls.load(Ordering::Relaxed), 0);
-  }
-
-  #[tokio::test]
-  async fn stops_fetching_when_quota_cannot_be_saved() {
-    let backfill = SpyBackfill {
-      account: vec![1, 2, 3],
-      global: vec![],
-      ..Default::default()
-    };
-    let eng = engine_with_persistence(
-      SpyGc::default(),
-      backfill,
-      SpyGameCheck::default(),
-      MemPersistence {
-        now: 1_000_000,
-        fail_save_quota: true,
-        ..Default::default()
-      },
-    );
-
-    assert!(matches!(
-      eng
-        .run_full_sync_if_enabled(&active_config(), &AtomicBool::new(false))
-        .await,
-      Err(MatchSyncError::Store(_))
-    ));
-    // The fetch that couldn't be persisted must not be reported as posted.
-    assert!(eng.sink.posted.lock().unwrap().is_empty());
-  }
-
-  #[tokio::test]
-  async fn background_pass_finalizes_progress_as_not_running_on_mid_pass_failure() {
-    let backfill = SpyBackfill {
-      account: vec![1, 2, 3],
-      global: vec![],
-      ..Default::default()
-    };
-    let eng = engine_with_persistence(
-      SpyGc::default(),
-      backfill,
-      SpyGameCheck::default(),
-      MemPersistence {
-        now: 1_000_000,
-        fail_save_quota: true,
-        ..Default::default()
-      },
-    );
-
-    assert!(
-      eng
-        .run_background_pass(&active_config(), &AtomicBool::new(false))
-        .await
-        .is_err()
-    );
-    // Even though the pass aborted mid-fetch, the last emitted progress must
-    // reflect "not running" so the UI never sticks on a stale "running" state.
-    assert_eq!(
-      *eng.persistence.last_progress_running.lock().unwrap(),
-      Some(false)
-    );
-  }
-
-  #[tokio::test]
-  async fn game_launching_mid_pass_aborts_the_run() {
-    let backfill = SpyBackfill {
-      account: vec![1, 2, 3, 4, 5],
-      global: vec![],
-      ..Default::default()
-    };
-    // Not running for the pass-start check or the history page, but flips true on
-    // the first salt fetch (the actual GC choke point, not just pass-start).
-    let eng = engine_with_game_check(
-      SpyGc::default(),
-      backfill,
-      SpyGameCheck {
-        trip_after_calls: 3,
-        ..Default::default()
-      },
-    );
-
-    let p = eng
-      .run_full_sync_if_enabled(&active_config(), &AtomicBool::new(false))
-      .await;
-    assert!(matches!(p, Err(MatchSyncError::GameRunning)));
-    // Aborted at the first match, not after walking the whole list.
-    assert!(eng.sink.posted.lock().unwrap().is_empty());
-  }
-
-  #[tokio::test]
-  async fn swallowed_salt_gc_error_is_still_reported_via_hook() {
-    // A salt-fetch GcUnavailable is swallowed to Ok (best-effort), but the orchestrator
-    // needs to see it to back the account off — the hook is that channel.
-    let backfill = SpyBackfill {
-      account: vec![1, 2, 3],
-      global: vec![],
-      ..Default::default()
-    };
-    let eng = engine(
-      SpyGc {
-        fail: true,
-        ..Default::default()
-      },
-      backfill,
-    );
-
-    let p = eng
-      .run_full_sync_if_enabled(&active_config(), &AtomicBool::new(false))
-      .await
-      .unwrap();
-    assert_eq!(p.fetched, 0);
-    assert!(eng.persistence.gc_errors.load(Ordering::Relaxed) > 0);
-  }
-
-  #[tokio::test]
-  async fn swallowed_history_gc_error_is_still_reported_via_hook() {
-    // A history-page GcUnavailable is likewise swallowed (Vec::new / break) but must
-    // reach the hook so a broken-handshake account (e.g. no game ownership) backs off.
-    let backfill = SpyBackfill {
-      account: vec![],
-      global: vec![],
-      ..Default::default()
-    };
-    let eng = engine(
-      SpyGc {
-        fail_history: true,
-        ..Default::default()
-      },
-      backfill,
-    );
-
-    eng
-      .run_background_pass(&active_config(), &AtomicBool::new(false))
-      .await
-      .unwrap();
-    assert!(eng.persistence.gc_errors.load(Ordering::Relaxed) > 0);
-  }
-}
+mod tests;

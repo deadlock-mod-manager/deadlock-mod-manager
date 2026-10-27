@@ -1,9 +1,9 @@
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 use futures::{channel::mpsc, sink};
-use steam_vent::connection::UnAuthenticatedConnection;
+use steam_vent::proto::steammessages_clientserver_friends::cmsg_client_friends_list::Friend;
 use steam_vent::proto::steammessages_clientserver_login::CMsgClientLogonResponse;
-use steam_vent::{NetMessage, NetMessageHeader, NetworkError};
+use steam_vent::{NetMessage, NetMessageHeader};
 use tokio::sync::{Notify, Semaphore};
 
 use super::*;
@@ -52,8 +52,34 @@ enum GcReplies {
   None,
 }
 
+const FRIEND_ID64: u64 = 76561197960265728 + 7;
+// More than the 32 messages steam-vent keeps for nobody.
+const LOGON_BURST: usize = 40;
+
+// The friends list Steam pushes right after logon: one friend, a pending invite and a
+// group.
+fn logon_friends_list() -> CMsgClientFriendsList {
+  let entry = |id: u64, relationship: u32| Friend {
+    ulfriendid: Some(id),
+    efriendrelationship: Some(relationship),
+    ..Default::default()
+  };
+  CMsgClientFriendsList {
+    bincremental: Some(false),
+    friends: vec![
+      entry(FRIEND_ID64, FRIEND_RELATIONSHIP_FRIEND),
+      entry(FRIEND_ID64 + 1, 2),
+      entry(103582791429521408, FRIEND_RELATIONSHIP_FRIEND),
+    ],
+    ..Default::default()
+  }
+}
+
 // Exercise steam-vent's real login and GC encoding over an in-memory CM transport.
-async fn fake_connection(replies: GcReplies, block_cleanup: bool) -> (Connection, Arc<SteamState>) {
+async fn fake_connection(
+  replies: GcReplies,
+  block_cleanup: bool,
+) -> (Connection, FriendsList, Arc<SteamState>) {
   let state = Arc::new(SteamState {
     playing: AtomicBool::new(false),
     logged_off: AtomicBool::new(false),
@@ -79,9 +105,18 @@ async fn fake_connection(replies: GcReplies, block_cleanup: bool) -> (Connection
           },
         )?;
         tx.unbounded_send(Ok(reply.into_bytes())).unwrap();
+        let list = RawNetMessage::from_message(NetMessageHeader::default(), logon_friends_list())?;
+        tx.unbounded_send(Ok(list.into_bytes())).unwrap();
+        for _ in 0..LOGON_BURST {
+          let unheard = RawNetMessage::from_message(
+            NetMessageHeader::default(),
+            CMsgClientPersonaState::default(),
+          )?;
+          tx.unbounded_send(Ok(unheard.into_bytes())).unwrap();
+        }
       } else if raw.kind == EMsg::k_EMsgClientGamesPlayedWithDataBlob {
         let mut raw = raw;
-        raw.kind = CMsgClientGamesPlayed::KIND.into();
+        raw.kind = <CMsgClientGamesPlayed as NetMessage>::KIND.into();
         let message = raw.into_message::<CMsgClientGamesPlayed>()?;
         if message.games_played.is_empty() {
           state.cleanup_started.notify_one();
@@ -136,13 +171,12 @@ async fn fake_connection(replies: GcReplies, block_cleanup: bool) -> (Connection
       Ok::<_, NetworkError>(tx)
     }
   });
-  let conn = UnAuthenticatedConnection::from_sender_receiver(sender, rx)
-    .await
-    .unwrap()
-    .anonymous()
+  let unauthenticated = UnAuthenticatedConnection::from_sender_receiver(sender, rx)
     .await
     .unwrap();
-  (conn, state)
+  let friends_list = listen_for_friends_list(&unauthenticated);
+  let conn = unauthenticated.anonymous().await.unwrap();
+  (conn, friends_list, state)
 }
 
 fn context() -> AuthContext {
@@ -156,14 +190,16 @@ fn context() -> AuthContext {
 async fn seeded_client(
   replies: GcReplies,
   block_cleanup: bool,
-) -> (Arc<SteamGcClient>, Arc<SteamState>) {
-  let (conn, state) = fake_connection(replies, block_cleanup).await;
+) -> (SteamGcClient, Arc<SteamState>) {
+  let (conn, friends_list, state) = fake_connection(replies, block_cleanup).await;
   let gc = GameCoordinator::new(&conn, DEADLOCK_APP_ID).await.unwrap();
-  let client = Arc::new(SteamGcClient::new());
-  *client.session.lock().await = Some(GcSession {
+  let client = SteamGcClient::new();
+  *client.shared.session.lock().await = Some(GcSession {
     steam_id64: 42,
     gc,
     conn,
+    friends_list: Some(friends_list),
+    friends: Vec::new(),
   });
   (client, state)
 }
@@ -172,9 +208,12 @@ async fn seeded_client(
 async fn launch_cancels_in_flight_history_and_waits_for_cleanup() {
   let _serial = TEST_LOCK.lock().await;
   let (client, state) = seeded_client(GcReplies::HandshakeOnly, true).await;
-  let request_client = Arc::clone(&client);
-  let request =
-    tokio::spawn(async move { request_client.fetch_match_history(&context(), None).await });
+  let request_client = client.clone();
+  let request = tokio::spawn(async move {
+    request_client
+      .fetch_match_history(&context(), context().account_id(), None)
+      .await
+  });
   tokio::time::timeout(Duration::from_secs(1), state.job_started.notified())
     .await
     .unwrap();
@@ -206,12 +245,17 @@ async fn launch_hold_blocks_cached_sessions_and_allows_requests_afterward() {
   let _serial = TEST_LOCK.lock().await;
   let (client, state) = seeded_client(GcReplies::All, false).await;
   let hold = LaunchHold::start();
-  let result = client.fetch_match_history(&context(), None).await;
+  let result = client
+    .fetch_match_history(&context(), context().account_id(), None)
+    .await;
   assert!(matches!(result, Err(MatchSyncError::GameRunning)));
   assert_eq!(state.jobs.load(Ordering::SeqCst), 0);
   drop(hold);
 
-  client.fetch_match_history(&context(), None).await.unwrap();
+  client
+    .fetch_match_history(&context(), context().account_id(), None)
+    .await
+    .unwrap();
   assert_eq!(state.jobs.load(Ordering::SeqCst), 1);
   client.disconnect().await;
   assert!(!state.playing.load(Ordering::SeqCst));
@@ -256,13 +300,13 @@ async fn launch_waits_for_cleanup_already_started_by_disconnect() {
 #[tokio::test]
 async fn launch_cancels_a_stalled_handshake_and_waits_for_cleanup() {
   let _serial = TEST_LOCK.lock().await;
-  let (conn, state) = fake_connection(GcReplies::None, true).await;
-  let client = Arc::new(SteamGcClient::new());
-  let connecting_client = Arc::clone(&client);
+  let (conn, friends_list, state) = fake_connection(GcReplies::None, true).await;
+  let client = SteamGcClient::new();
+  let connecting_client = client.clone();
   let handshake = tokio::spawn(async move {
-    let _guard = connecting_client.session.lock().await;
-    let mut cancel = connecting_client.launch_cancel.subscribe();
-    SteamGcClient::connect_gc(&context(), conn, &mut cancel).await
+    let _guard = connecting_client.shared.session.lock().await;
+    let mut cancel = connecting_client.shared.launch_cancel.subscribe();
+    SteamGcClient::connect_gc(&context(), conn, friends_list, &mut cancel).await
   });
   tokio::time::timeout(Duration::from_secs(1), state.handshake_started.notified())
     .await
@@ -290,10 +334,125 @@ async fn launch_cancels_a_stalled_handshake_and_waits_for_cleanup() {
 }
 
 #[tokio::test]
+async fn friends_list_pushed_at_logon_survives_the_logon_burst() {
+  let _serial = TEST_LOCK.lock().await;
+  let (client, _state) = seeded_client(GcReplies::All, false).await;
+  let friends = tokio::time::timeout(Duration::from_secs(1), client.friend_ids(&context()))
+    .await
+    .unwrap()
+    .unwrap();
+  assert_eq!(friends, vec![account_id_of(FRIEND_ID64)]);
+}
+
+#[tokio::test]
 async fn launch_hold_lasts_until_ended() {
   let _serial = TEST_LOCK.lock().await;
   let hold = LaunchHold::start();
   assert!(launch_hold_active());
   drop(hold);
   assert!(!launch_hold_active());
+}
+
+fn refusal(error: Option<MatchSyncError>) -> Option<GcRefusal> {
+  match error? {
+    MatchSyncError::GcRefused(refusal) => Some(refusal),
+    _ => None,
+  }
+}
+
+#[test]
+fn salts_results_are_classified_without_deciding_on_a_backoff() {
+  use c_msg_client_to_gc_get_match_meta_data_response::EResult;
+  assert!(salts_error(None).is_none());
+  assert!(salts_error(Some(EResult::KEResultSuccess as i32)).is_none());
+  assert!(matches!(
+    salts_error(Some(EResult::KEResultRateLimited as i32)),
+    Some(MatchSyncError::GcRateLimited)
+  ));
+  // Waited out through the quotas, not a day-long backoff.
+  assert!(!MatchSyncError::GcRateLimited.backs_off_gc());
+  for (result, expected) in [
+    (EResult::KEResultMatchInFlight, GcRefusal::InFlight),
+    (EResult::KEResultInvalidMatch, GcRefusal::InvalidMatch),
+    (EResult::KEResultInvalidPermission, GcRefusal::NoPermission),
+    (
+      EResult::KEResultInternalError,
+      GcRefusal::Other(EResult::KEResultInternalError as i32),
+    ),
+  ] {
+    let error = salts_error(Some(result as i32));
+    assert!(error.as_ref().is_some_and(|e| !e.backs_off_gc()));
+    assert_eq!(refusal(error), Some(expected));
+  }
+}
+
+#[test]
+fn history_results_are_classified_without_deciding_on_a_backoff() {
+  use c_msg_client_to_gc_get_match_history_response::EResult;
+  assert!(history_error(None).is_none());
+  assert!(history_error(Some(EResult::KEResultSuccess as i32)).is_none());
+  assert!(matches!(
+    history_error(Some(EResult::KEResultRateLimited as i32)),
+    Some(MatchSyncError::GcRateLimited)
+  ));
+  assert_eq!(
+    refusal(history_error(Some(
+      EResult::KEResultInvalidPermission as i32
+    ))),
+    Some(GcRefusal::NoPermission)
+  );
+  assert_eq!(
+    refusal(history_error(Some(i32::MAX))),
+    Some(GcRefusal::Other(i32::MAX))
+  );
+}
+
+#[test]
+fn a_refusal_about_the_account_itself_backs_it_off() {
+  let refused = MatchSyncError::GcRefused(GcRefusal::NoPermission);
+  assert!(!refused.backs_off_gc());
+  assert!(refused.refusal_as_outage().backs_off_gc());
+  assert!(
+    !MatchSyncError::GcRateLimited
+      .refusal_as_outage()
+      .backs_off_gc()
+  );
+}
+
+#[test]
+fn persona_updates_add_to_what_earlier_ones_said() {
+  use steam_vent::proto::steammessages_clientserver_friends::cmsg_client_persona_state::Friend;
+  const BASE: u64 = 76_561_197_960_265_728;
+  let update = |account_id: u32, friend: Friend| CMsgClientPersonaState {
+    friends: vec![Friend {
+      friendid: Some(BASE + u64::from(account_id)),
+      ..friend
+    }],
+    ..Default::default()
+  };
+  let requested = HashSet::from([7]);
+  let mut personas = HashMap::new();
+
+  merge_personas(
+    &mut personas,
+    update(
+      7,
+      Friend {
+        game_played_app_id: Some(DEADLOCK_APP_ID),
+        persona_state: Some(1),
+        last_seen_online: Some(500),
+        ..Default::default()
+      },
+    ),
+    &requested,
+  );
+  // A later update that only carries some fields keeps what the first one said.
+  merge_personas(&mut personas, update(7, Friend::default()), &requested);
+  // Updates nobody asked for are dropped.
+  merge_personas(&mut personas, update(8, Friend::default()), &requested);
+
+  let persona = personas[&7];
+  assert!(persona.in_deadlock && persona.online);
+  assert_eq!(persona.last_seen, Some(500));
+  assert_eq!(personas.len(), 1);
 }

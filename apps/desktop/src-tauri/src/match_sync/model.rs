@@ -11,6 +11,36 @@ pub const FETCH_QUOTA_WINDOW_SECS: i64 = 24 * 60 * 60;
 // margin for two sessions straddling the rolling 24h window.
 pub const BACKFILL_QUOTA_RESERVE: usize = 8;
 
+// GetMatchHistory has its own per-account Steam limit; friend lookups stay well below it
+// so the user's own history pages keep headroom.
+pub const FRIEND_HISTORY_QUOTA_LIMIT: usize = 20;
+// The per-account 24h caps on GC requests.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum QuotaKind {
+  Salts,
+  FriendHistory,
+}
+
+impl QuotaKind {
+  pub fn limit(self) -> usize {
+    match self {
+      QuotaKind::Salts => FETCH_QUOTA_LIMIT,
+      QuotaKind::FriendHistory => FRIEND_HISTORY_QUOTA_LIMIT,
+    }
+  }
+}
+
+// Friend history lookups per account per background pass, on top of the 24h history
+// quota, so one pass doesn't spend the whole day's budget at once.
+pub const MAX_FRIEND_HISTORIES_PER_PASS: usize = 5;
+// After a friend's history was looked up (by any account), leave them alone for a while;
+// a private history won't become public soon.
+pub const FRIEND_COOLDOWN_SECS: i64 = 6 * 60 * 60;
+pub const PRIVATE_FRIEND_COOLDOWN_SECS: i64 = 7 * 24 * 60 * 60;
+// A friend whose new matches weren't all dealt with (budget, quota or a failure) comes
+// back soon, but not every pass: each lookup spends the friend history quota.
+pub const UNFINISHED_FRIEND_COOLDOWN_SECS: i64 = 60 * 60;
+
 // Matches the httpcache scraper so both ingest sources look identical server-side.
 pub const INGEST_USERNAME: &str = "Mod Manager";
 
@@ -26,7 +56,7 @@ pub struct AuthContext {
 impl AuthContext {
   // deadlock-api expects the 32-bit Steam3 account id, not the SteamID64.
   pub fn account_id(&self) -> u32 {
-    (self.steam_id64 & 0xFFFF_FFFF) as u32
+    crate::steam_user::account_id_of(self.steam_id64)
   }
 }
 
@@ -69,6 +99,26 @@ impl From<&MatchSalts> for SaltPayload {
       username: Some(INGEST_USERNAME.to_string()),
     }
   }
+}
+
+/// A friend deadlock-api has seen play recently, with what it has stored for them.
+#[derive(Debug, Clone)]
+pub struct ActiveFriend {
+  pub account_id: u32,
+  /// End of their newest stored match.
+  pub last_end: i64,
+  /// Start times of their stored matches, newest first (as deadlock-api returns them).
+  pub starts: Vec<i64>,
+}
+
+/// What deadlock-api stores for a list of match ids, checked in order until enough
+/// are found missing. Ids in neither list weren't checked.
+#[derive(Debug, Default)]
+pub struct SaltsCheck {
+  /// Ids deadlock-api has no salts for.
+  pub missing: Vec<u64>,
+  /// Ids it already has salts for.
+  pub stored: Vec<u64>,
 }
 
 #[derive(Debug, Clone, Copy)]

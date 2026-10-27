@@ -2,6 +2,7 @@
 //! never race the zustand-managed `state.json`. The quota timestamps live here too,
 //! which is what makes the daily fetch cap survive reboots and app restarts.
 
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use tauri_plugin_store::{Store, StoreExt};
@@ -9,7 +10,7 @@ use tauri_plugin_store::{Store, StoreExt};
 use crate::app_runtime::{AppHandle, AppRuntime};
 
 use super::error::MatchSyncError;
-use super::model::{FETCH_QUOTA_LIMIT, FETCH_QUOTA_WINDOW_SECS, MatchSyncConfig};
+use super::model::{FETCH_QUOTA_WINDOW_SECS, MatchSyncConfig, QuotaKind};
 use super::quota::QuotaWindow;
 
 const STORE_FILE: &str = "match-sync.json";
@@ -21,6 +22,9 @@ const KEY_FETCHED_IDS: &str = "fetched_ids";
 const KEY_QUOTA_HITS: &str = "quota_hits";
 const KEY_FULL_SYNC_COMPLETE: &str = "full_sync_complete";
 const KEY_GC_BACKOFF: &str = "gc_backoff_until";
+const KEY_HISTORY_HITS: &str = "history_hits";
+// Global, not per account: a friend shared by several accounts is looked up once.
+const KEY_FRIEND_COOLDOWNS: &str = "friend_cooldowns";
 
 const MAX_FETCHED_IDS: usize = 10_000;
 
@@ -174,15 +178,27 @@ pub fn set_gc_backoff_until(
   save(&store)
 }
 
-pub fn load_quota(app: &AppHandle, steam_id64: u64) -> Result<QuotaWindow, MatchSyncError> {
+fn quota_key(kind: QuotaKind, steam_id64: u64) -> String {
+  let key = match kind {
+    QuotaKind::Salts => KEY_QUOTA_HITS,
+    QuotaKind::FriendHistory => KEY_HISTORY_HITS,
+  };
+  format!("{key}::{steam_id64}")
+}
+
+pub fn load_quota(
+  app: &AppHandle,
+  steam_id64: u64,
+  kind: QuotaKind,
+) -> Result<QuotaWindow, MatchSyncError> {
   let store = store(app)?;
   let hits = store
-    .get(format!("{KEY_QUOTA_HITS}::{steam_id64}"))
+    .get(quota_key(kind, steam_id64))
     .and_then(|v| serde_json::from_value::<Vec<i64>>(v).ok())
     .unwrap_or_default();
   Ok(QuotaWindow::new(
     hits,
-    FETCH_QUOTA_LIMIT,
+    kind.limit(),
     FETCH_QUOTA_WINDOW_SECS,
   ))
 }
@@ -190,14 +206,48 @@ pub fn load_quota(app: &AppHandle, steam_id64: u64) -> Result<QuotaWindow, Match
 pub fn save_quota(
   app: &AppHandle,
   steam_id64: u64,
+  kind: QuotaKind,
   quota: &QuotaWindow,
 ) -> Result<(), MatchSyncError> {
   let store = store(app)?;
   store.set(
-    format!("{KEY_QUOTA_HITS}::{steam_id64}"),
+    quota_key(kind, steam_id64),
     serde_json::json!(quota.snapshot()),
   );
   save(&store)
+}
+
+// Friend account id -> unix time before which their history isn't looked up again.
+pub fn load_friend_cooldowns(app: &AppHandle) -> Result<HashMap<u32, i64>, MatchSyncError> {
+  Ok(
+    store(app)?
+      .get(KEY_FRIEND_COOLDOWNS)
+      .and_then(|v| serde_json::from_value(v).ok())
+      .unwrap_or_default(),
+  )
+}
+
+// Records friends' cooldowns (account id, until) and drops the ones that already expired.
+pub fn set_friend_cooldowns(
+  app: &AppHandle,
+  updates: &[(u32, i64)],
+  now: i64,
+) -> Result<(), MatchSyncError> {
+  let mut cooldowns = load_friend_cooldowns(app)?;
+  cooldowns.retain(|_, &mut t| t > now);
+  cooldowns.extend(updates.iter().copied());
+  let store = store(app)?;
+  store.set(KEY_FRIEND_COOLDOWNS, serde_json::json!(cooldowns));
+  save(&store)
+}
+
+pub fn clear_friend_cooldowns(app: &AppHandle) -> Result<(), MatchSyncError> {
+  let store = store(app)?;
+  if store.delete(KEY_FRIEND_COOLDOWNS) {
+    save(&store)
+  } else {
+    Ok(())
+  }
 }
 
 pub fn prune_forgotten_accounts(
@@ -210,6 +260,7 @@ pub fn prune_forgotten_accounts(
     KEY_FETCHED_IDS,
     KEY_FULL_SYNC_COMPLETE,
     KEY_GC_BACKOFF,
+    KEY_HISTORY_HITS,
   ];
   let stale: Vec<String> = store
     .keys()
