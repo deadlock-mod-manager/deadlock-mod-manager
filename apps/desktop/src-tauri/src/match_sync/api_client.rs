@@ -32,6 +32,9 @@ const RELEASE_TIMEOUT: Duration = Duration::from_secs(15);
 const STORED_HISTORY_TTL: Duration = Duration::from_secs(60 * 60);
 // Requests in flight at once when reading friends' stored histories or checking salts.
 const READ_CONCURRENCY: usize = 4;
+// Account ids per profile request, which go in the query string: long request lines get
+// rejected by some proxies.
+const PROFILES_PER_REQUEST: usize = 100;
 
 // Process-wide, since every pass builds a fresh client. Stored history belongs to the
 // friend, so accounts sharing a friend share the entry.
@@ -158,7 +161,7 @@ impl ApiClient {
       .await
       .and_then(|r| r.error_for_status())
       .map(|_| ())
-      .map_err(|e| MatchSyncError::Api(e.to_string()))
+      .map_err(MatchSyncError::from)
   }
 
   // Of `account_ids`, the ones deadlock-api saw play Deadlock in the last 30 days.
@@ -168,7 +171,7 @@ impl ApiClient {
     account_ids: &[u32],
   ) -> Result<Vec<u32>, MatchSyncError> {
     let mut players = Vec::new();
-    for chunk in account_ids.chunks(1000) {
+    for chunk in account_ids.chunks(PROFILES_PER_REQUEST) {
       let ids = chunk
         .iter()
         .map(u32::to_string)
@@ -218,18 +221,12 @@ impl ApiClient {
 async fn send_found(
   req: reqwest::RequestBuilder,
 ) -> Result<Option<reqwest::Response>, MatchSyncError> {
-  let resp = req
-    .send()
-    .await
-    .map_err(|e| MatchSyncError::Api(e.to_string()))?;
+  let resp = req.send().await?;
   if resp.status() == reqwest::StatusCode::NOT_FOUND {
     drain(resp).await;
     return Ok(None);
   }
-  resp
-    .error_for_status()
-    .map(Some)
-    .map_err(|e| MatchSyncError::Api(e.to_string()))
+  Ok(Some(resp.error_for_status()?))
 }
 
 // Reads an answered response to the end so its connection can serve the next request.
@@ -247,7 +244,7 @@ async fn get_list<T: serde::de::DeserializeOwned>(
   resp
     .json()
     .await
-    .map_err(|e| MatchSyncError::Api(format!("invalid response: {e}")))
+    .map_err(|e| MatchSyncError::Api(format!("invalid response: {}", e.without_url())))
 }
 
 // Only the newest `GAP_SAMPLE` starts are kept: the cadence never reads further back.
@@ -297,11 +294,7 @@ impl BackfillSource for ApiClient {
         }
       }
     }
-    let resp = req
-      .send()
-      .await
-      .and_then(|r| r.error_for_status())
-      .map_err(|e| MatchSyncError::Api(e.to_string()))?;
+    let resp = req.send().await.and_then(|r| r.error_for_status())?;
     // A failed request keeps the held claim, so a later release still covers it. A
     // response without the cookie claimed nothing (or comes from an older API).
     if let FetchScope::Global = scope {
@@ -310,7 +303,7 @@ impl BackfillSource for ApiClient {
     resp
       .json::<Vec<u64>>()
       .await
-      .map_err(|e| MatchSyncError::Api(format!("invalid to-fetch response: {e}")))
+      .map_err(|e| MatchSyncError::Api(format!("invalid to-fetch response: {}", e.without_url())))
   }
 
   async fn release_claim(&self) {
@@ -353,9 +346,11 @@ impl BackfillSource for ApiClient {
     let mut last_error = None;
     let mut cache = stored_histories();
     for (account_id, history) in read {
-      // A failed read is cached as "nothing stored", so it isn't retried every pass.
       let friend = match history {
         Ok(history) => summarize(account_id, &history),
+        // A failed read is cached as "nothing stored", so it isn't retried every pass. That
+        // also paces the reads deadlock-api rate-limits: it reads accounts its bots are
+        // friends with from Steam, only a few times an hour.
         Err(e) => {
           failures += 1;
           last_error = Some(e);
@@ -430,10 +425,12 @@ impl SaltsSink for ApiClient {
       match result {
         Ok(_) => return Ok(()),
         // 400 means the payload itself is wrong; retrying can't help.
-        Err(e) if e.status() == Some(reqwest::StatusCode::BAD_REQUEST) => {
-          return Err(MatchSyncError::Api(e.to_string()));
+        Err(e)
+          if attempt >= POST_MAX_RETRIES
+            || e.status() == Some(reqwest::StatusCode::BAD_REQUEST) =>
+        {
+          return Err(e.into());
         }
-        Err(e) if attempt >= POST_MAX_RETRIES => return Err(MatchSyncError::Api(e.to_string())),
         Err(_) => tokio::time::sleep(POST_RETRY_DELAY).await,
       }
     }
@@ -444,6 +441,19 @@ impl SaltsSink for ApiClient {
 mod tests {
   use super::*;
   use reqwest::header::HeaderValue;
+
+  #[tokio::test]
+  async fn api_errors_leave_the_url_out() {
+    // Nothing listens on port 1, so this fails without leaving the machine.
+    let client = reqwest::Client::builder().no_proxy().build().unwrap();
+    let e = client
+      .get("http://127.0.0.1:1/v1/players/12345678/match-history")
+      .send()
+      .await
+      .unwrap_err();
+    assert!(e.to_string().contains("12345678"));
+    assert!(!MatchSyncError::from(e).to_string().contains("12345678"));
+  }
 
   #[test]
   fn parses_the_claim_cookie_up_to_the_first_attribute() {

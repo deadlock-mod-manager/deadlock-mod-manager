@@ -493,17 +493,22 @@ impl GcMatchClient for SteamGcClient {
     }
     let mut guard = self.session.lock().await;
     let mut cancel = self.launch_cancel.subscribe();
-    let friends = match self.connected_friends(&mut guard, ctx, &mut cancel).await {
-      Ok(friends) => friends
-        .iter()
-        .copied()
-        .filter(|&id| wanted.contains(&account_id_of(id)))
-        .collect(),
-      Err(e) => {
-        log::warn!("match-sync: persona request skipped: {e}");
-        return personas;
-      }
-    };
+    // Only friends can be asked about, so only they are waited for.
+    let (friends, requested): (Vec<u64>, HashSet<u32>) =
+      match self.connected_friends(&mut guard, ctx, &mut cancel).await {
+        Ok(friends) => friends
+          .iter()
+          .map(|&id| (id, account_id_of(id)))
+          .filter(|(_, account_id)| wanted.contains(account_id))
+          .unzip(),
+        Err(e) => {
+          log::warn!("match-sync: persona request skipped: {e}");
+          return personas;
+        }
+      };
+    if friends.is_empty() {
+      return personas;
+    }
 
     let session = guard.as_ref().expect("connected above");
     let mut updates = Box::pin(session.conn.on::<CMsgClientPersonaState>());
@@ -533,7 +538,7 @@ impl GcMatchClient for SteamGcClient {
     }
 
     let deadline = tokio::time::Instant::now() + FRIENDS_WAIT;
-    while personas.len() < wanted.len() {
+    while personas.len() < requested.len() {
       // A launch must not wait out the deadline for the session lock.
       let next = tokio::select! {
         biased;
@@ -549,7 +554,7 @@ impl GcMatchClient for SteamGcClient {
           continue;
         };
         // Steam also pushes updates nobody asked for (e.g. about ourselves).
-        if !wanted.contains(&id) {
+        if !requested.contains(&id) {
           continue;
         }
         let last_seen = [f.last_seen_online, f.last_logoff]

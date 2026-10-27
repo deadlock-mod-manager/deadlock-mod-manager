@@ -87,6 +87,14 @@ impl MatchSyncError {
   }
 }
 
+// reqwest errors print the request URL, which can carry friends' account ids; converting
+// through here keeps those out of the logs.
+impl From<reqwest::Error> for MatchSyncError {
+  fn from(e: reqwest::Error) -> Self {
+    MatchSyncError::Api(e.without_url().to_string())
+  }
+}
+
 impl From<MatchSyncError> for crate::errors::Error {
   fn from(err: MatchSyncError) -> Self {
     crate::errors::Error::MatchSync {

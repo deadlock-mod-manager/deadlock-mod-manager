@@ -71,8 +71,8 @@ struct RunState {
   // failing GC can't re-offer the same id and spin/burn quota.
   processed: HashSet<u64>,
   fetched_order: Vec<u64>,
-  // Ids that need no salts fetch this run: deadlock-api already stores their salts, or
-  // the GC refused them for good.
+  // Ids no salts fetch can get this run: deadlock-api already stores their salts, the GC
+  // refused them for good, or they are still in progress.
   settled: HashSet<u64>,
   quota: QuotaWindow,
   progress: SyncProgress,
@@ -202,6 +202,13 @@ where
         st.settled.insert(match_id);
         return Ok(FetchStep::Done);
       }
+      // Its salts come once the match is processed: skip it for now and carry on. A later
+      // pass that lists it again asks again.
+      Err(MatchSyncError::MatchInFlight) => {
+        log::debug!("match-sync: {match_id} is still in progress");
+        st.settled.insert(match_id);
+        return Ok(FetchStep::Done);
+      }
       // Any other failure fetched nothing, so it must not count against the cap.
       Err(e) => {
         log::warn!("match-sync: GC fetch failed for {match_id}: {e}");
@@ -316,7 +323,7 @@ where
     }
 
     let mut lookups = Vec::new();
-    for friend in self.friends_to_look_up(ctx, now, budget).await {
+    for friend in self.friends_to_look_up(ctx, now, budget).await? {
       if cancel.load(Ordering::Relaxed) {
         break;
       }
@@ -404,18 +411,19 @@ where
   }
 
   // Up to `budget` friends, most likely first, who played since deadlock-api last saw
-  // them. Best-effort: any failure just yields fewer (or none).
+  // them. Best-effort: any failure just yields fewer (or none); only `GameRunning` is an
+  // error.
   async fn friends_to_look_up(
     &self,
     ctx: &AuthContext,
     now: i64,
     budget: usize,
-  ) -> Vec<ActiveFriend> {
+  ) -> Result<Vec<ActiveFriend>, MatchSyncError> {
     let friend_ids = match self.gc.friend_ids(ctx).await {
       Ok(ids) => ids,
       Err(e) => {
         log::warn!("match-sync: friends list unavailable: {e}");
-        return Vec::new();
+        return Ok(Vec::new());
       }
     };
     let cooldowns = self.persistence.friend_cooldowns();
@@ -425,17 +433,22 @@ where
       .filter(|id| cooldowns.get(id).is_none_or(|&until| until <= now))
       .collect();
     if due.is_empty() {
-      return Vec::new();
+      return Ok(Vec::new());
     }
     let active = match self.backfill.active_friends(&due).await {
       Ok(active) => active,
       Err(e) => {
         log::warn!("match-sync: friend activity unavailable: {e}");
-        return Vec::new();
+        return Ok(Vec::new());
       }
     };
     if active.is_empty() {
-      return Vec::new();
+      return Ok(Vec::new());
+    }
+    // Reading their activity took a while, and the persona request may (re)connect to the
+    // GC, which must never race the game.
+    if self.game_check.is_game_running() {
+      return Err(MatchSyncError::GameRunning);
     }
     // Only the few active friends are worth Steam's persona round-trip.
     let ids: Vec<u32> = active.iter().map(|f| f.account_id).collect();
@@ -454,7 +467,7 @@ where
       friend_ids.len(),
       picks.len()
     );
-    picks
+    Ok(picks)
   }
 
   fn finish(&self, mut st: RunState) -> SyncProgress {
@@ -689,8 +702,10 @@ mod tests {
     fail: bool,
     fail_history: bool,
     rate_limited: bool,
-    // Matches the GC refuses for good.
+    // Matches the GC refuses for good, and ones it says are still in progress.
     refused: HashSet<u64>,
+    in_flight: HashSet<u64>,
+    persona_calls: AtomicU64,
     history: Vec<u64>,
     friends: HashMap<u32, Persona>,
     friend_history: Vec<u64>,
@@ -741,6 +756,9 @@ mod tests {
       if self.refused.contains(&match_id) {
         return Err(MatchSyncError::MatchRefused(6));
       }
+      if self.in_flight.contains(&match_id) {
+        return Err(MatchSyncError::MatchInFlight);
+      }
       Ok(MatchSalts {
         match_id,
         cluster_id: Some(1),
@@ -752,6 +770,7 @@ mod tests {
       Ok(self.friends.keys().copied().collect())
     }
     async fn personas(&self, _ctx: &AuthContext, account_ids: &[u32]) -> HashMap<u32, Persona> {
+      self.persona_calls.fetch_add(1, Ordering::Relaxed);
       self
         .friends
         .iter()
@@ -1636,6 +1655,46 @@ mod tests {
       Some(&(NOW + FRIEND_COOLDOWN_SECS))
     );
     assert_eq!(eng.persistence.gc_errors.load(Ordering::Relaxed), 0);
+  }
+
+  #[tokio::test]
+  async fn in_flight_friend_match_is_skipped_without_stopping_the_pass() {
+    let (mut gc, backfill) = friend_scenario(vec![600]);
+    gc.in_flight = HashSet::from([502]);
+    let eng = engine(gc, backfill);
+
+    eng
+      .run_background_pass(&active_config(), &AtomicBool::new(false))
+      .await
+      .unwrap();
+    assert_eq!(*eng.sink.posted.lock().unwrap(), vec![501, 600]);
+    assert_eq!(
+      eng.persistence.cooldowns.lock().unwrap().get(&FRIEND),
+      Some(&(NOW + FRIEND_COOLDOWN_SECS))
+    );
+    assert_eq!(eng.persistence.gc_errors.load(Ordering::Relaxed), 0);
+  }
+
+  #[tokio::test]
+  async fn game_launching_while_friends_are_ranked_skips_the_persona_request() {
+    let (gc, backfill) = friend_scenario(Vec::new());
+    // Running from the check right before the persona request: after the pass-start
+    // check, the user's own history page and the friend lookup's own check.
+    let eng = engine_with_game_check(
+      gc,
+      backfill,
+      SpyGameCheck {
+        trip_after_calls: 4,
+        ..Default::default()
+      },
+    );
+
+    let result = eng
+      .run_background_pass(&active_config(), &AtomicBool::new(false))
+      .await;
+    assert!(matches!(result, Err(MatchSyncError::GameRunning)));
+    assert_eq!(eng.gc.persona_calls.load(Ordering::Relaxed), 0);
+    assert!(eng.persistence.history_hits.lock().unwrap().is_empty());
   }
 
   #[tokio::test]
