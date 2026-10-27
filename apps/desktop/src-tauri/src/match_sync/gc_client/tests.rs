@@ -396,7 +396,9 @@ fn history_results_are_classified_without_deciding_on_a_backoff() {
     Some(MatchSyncError::GcRateLimited)
   ));
   assert_eq!(
-    refusal(history_error(Some(EResult::KEResultInvalidPermission as i32))),
+    refusal(history_error(Some(
+      EResult::KEResultInvalidPermission as i32
+    ))),
     Some(GcRefusal::NoPermission)
   );
   assert_eq!(
@@ -410,5 +412,9 @@ fn a_refusal_about_the_account_itself_backs_it_off() {
   let refused = MatchSyncError::GcRefused(GcRefusal::NoPermission);
   assert!(!refused.backs_off_gc());
   assert!(refused.refusal_as_outage().backs_off_gc());
-  assert!(!MatchSyncError::GcRateLimited.refusal_as_outage().backs_off_gc());
+  assert!(
+    !MatchSyncError::GcRateLimited
+      .refusal_as_outage()
+      .backs_off_gc()
+  );
 }

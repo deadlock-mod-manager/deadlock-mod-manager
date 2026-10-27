@@ -10,9 +10,7 @@ use tauri_plugin_store::{Store, StoreExt};
 use crate::app_runtime::{AppHandle, AppRuntime};
 
 use super::error::MatchSyncError;
-use super::model::{
-  FETCH_QUOTA_LIMIT, FETCH_QUOTA_WINDOW_SECS, FRIEND_HISTORY_QUOTA_LIMIT, MatchSyncConfig,
-};
+use super::model::{FETCH_QUOTA_WINDOW_SECS, MatchSyncConfig, QuotaKind};
 use super::quota::QuotaWindow;
 
 const STORE_FILE: &str = "match-sync.json";
@@ -180,62 +178,43 @@ pub fn set_gc_backoff_until(
   save(&store)
 }
 
-fn load_window(
+fn quota_key(kind: QuotaKind, steam_id64: u64) -> String {
+  let key = match kind {
+    QuotaKind::Salts => KEY_QUOTA_HITS,
+    QuotaKind::FriendHistory => KEY_HISTORY_HITS,
+  };
+  format!("{key}::{steam_id64}")
+}
+
+pub fn load_quota(
   app: &AppHandle,
-  key: &str,
   steam_id64: u64,
-  limit: usize,
+  kind: QuotaKind,
 ) -> Result<QuotaWindow, MatchSyncError> {
   let store = store(app)?;
   let hits = store
-    .get(format!("{key}::{steam_id64}"))
+    .get(quota_key(kind, steam_id64))
     .and_then(|v| serde_json::from_value::<Vec<i64>>(v).ok())
     .unwrap_or_default();
-  Ok(QuotaWindow::new(hits, limit, FETCH_QUOTA_WINDOW_SECS))
-}
-
-fn save_window(
-  app: &AppHandle,
-  key: &str,
-  steam_id64: u64,
-  quota: &QuotaWindow,
-) -> Result<(), MatchSyncError> {
-  let store = store(app)?;
-  store.set(
-    format!("{key}::{steam_id64}"),
-    serde_json::json!(quota.snapshot()),
-  );
-  save(&store)
-}
-
-pub fn load_quota(app: &AppHandle, steam_id64: u64) -> Result<QuotaWindow, MatchSyncError> {
-  load_window(app, KEY_QUOTA_HITS, steam_id64, FETCH_QUOTA_LIMIT)
+  Ok(QuotaWindow::new(
+    hits,
+    kind.limit(),
+    FETCH_QUOTA_WINDOW_SECS,
+  ))
 }
 
 pub fn save_quota(
   app: &AppHandle,
   steam_id64: u64,
+  kind: QuotaKind,
   quota: &QuotaWindow,
 ) -> Result<(), MatchSyncError> {
-  save_window(app, KEY_QUOTA_HITS, steam_id64, quota)
-}
-
-// Friend match-history lookups have their own, smaller 24h cap.
-pub fn load_history_quota(app: &AppHandle, steam_id64: u64) -> Result<QuotaWindow, MatchSyncError> {
-  load_window(
-    app,
-    KEY_HISTORY_HITS,
-    steam_id64,
-    FRIEND_HISTORY_QUOTA_LIMIT,
-  )
-}
-
-pub fn save_history_quota(
-  app: &AppHandle,
-  steam_id64: u64,
-  quota: &QuotaWindow,
-) -> Result<(), MatchSyncError> {
-  save_window(app, KEY_HISTORY_HITS, steam_id64, quota)
+  let store = store(app)?;
+  store.set(
+    quota_key(kind, steam_id64),
+    serde_json::json!(quota.snapshot()),
+  );
+  save(&store)
 }
 
 // Friend account id -> unix time before which their history isn't looked up again.

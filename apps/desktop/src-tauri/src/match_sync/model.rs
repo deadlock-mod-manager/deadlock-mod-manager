@@ -14,6 +14,22 @@ pub const BACKFILL_QUOTA_RESERVE: usize = 8;
 // GetMatchHistory has its own per-account Steam limit; friend lookups stay well below it
 // so the user's own history pages keep headroom.
 pub const FRIEND_HISTORY_QUOTA_LIMIT: usize = 20;
+// The per-account 24h caps on GC requests.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum QuotaKind {
+  Salts,
+  FriendHistory,
+}
+
+impl QuotaKind {
+  pub fn limit(self) -> usize {
+    match self {
+      QuotaKind::Salts => FETCH_QUOTA_LIMIT,
+      QuotaKind::FriendHistory => FRIEND_HISTORY_QUOTA_LIMIT,
+    }
+  }
+}
+
 // Friend history lookups per account per background pass, on top of the 24h history
 // quota, so one pass doesn't spend the whole day's budget at once.
 pub const MAX_FRIEND_HISTORIES_PER_PASS: usize = 5;

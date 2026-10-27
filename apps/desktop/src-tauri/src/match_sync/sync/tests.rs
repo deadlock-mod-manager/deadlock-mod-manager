@@ -1,6 +1,9 @@
 use super::*;
 use crate::match_sync::friends::Persona;
-use crate::match_sync::model::{FRIEND_HISTORY_QUOTA_LIMIT, LocalMatch, MatchSalts};
+use crate::match_sync::model::{
+  ActiveFriend, FRIEND_COOLDOWN_SECS, FRIEND_HISTORY_QUOTA_LIMIT, LocalMatch, MatchSalts,
+  PRIVATE_FRIEND_COOLDOWN_SECS, QuotaKind, SaltsCheck, UNFINISHED_FRIEND_COOLDOWN_SECS,
+};
 use crate::match_sync::quota::QuotaWindow;
 use std::sync::Mutex;
 use std::time::Duration;
@@ -169,10 +172,7 @@ impl BackfillSource for SpyBackfill {
   async fn release_claim(&self) {
     self.log.lock().unwrap().push(BackfillCall::Release);
   }
-  async fn active_friends(
-    &self,
-    account_ids: &[u32],
-  ) -> Result<Vec<ActiveFriend>, MatchSyncError> {
+  async fn active_friends(&self, account_ids: &[u32]) -> Result<Vec<ActiveFriend>, MatchSyncError> {
     Ok(
       self
         .active
@@ -217,36 +217,37 @@ struct MemPersistence {
   fail_save_quota: bool,
   last_progress_running: Mutex<Option<bool>>,
 }
+impl MemPersistence {
+  fn hits(&self, kind: QuotaKind) -> &Mutex<Vec<i64>> {
+    match kind {
+      QuotaKind::Salts => &self.quota_hits,
+      QuotaKind::FriendHistory => &self.history_hits,
+    }
+  }
+}
 impl SyncPersistence for MemPersistence {
   fn now(&self) -> i64 {
     self.now
   }
-  fn load_quota(&self) -> Result<QuotaWindow, MatchSyncError> {
-    if self.fail_load_quota {
+  fn load_quota(&self, kind: QuotaKind) -> Result<QuotaWindow, MatchSyncError> {
+    if self.fail_load_quota && kind == QuotaKind::Salts {
       return Err(MatchSyncError::Store("spy load failure".into()));
     }
+    let limit = match kind {
+      QuotaKind::Salts => LIMIT,
+      QuotaKind::FriendHistory => FRIEND_HISTORY_QUOTA_LIMIT,
+    };
     Ok(QuotaWindow::new(
-      self.quota_hits.lock().unwrap().clone(),
-      LIMIT,
+      self.hits(kind).lock().unwrap().clone(),
+      limit,
       WINDOW,
     ))
   }
-  fn save_quota(&self, quota: &QuotaWindow) -> Result<(), MatchSyncError> {
-    if self.fail_save_quota {
+  fn save_quota(&self, kind: QuotaKind, quota: &QuotaWindow) -> Result<(), MatchSyncError> {
+    if self.fail_save_quota && kind == QuotaKind::Salts {
       return Err(MatchSyncError::Store("spy save failure".into()));
     }
-    *self.quota_hits.lock().unwrap() = quota.snapshot();
-    Ok(())
-  }
-  fn load_history_quota(&self) -> Result<QuotaWindow, MatchSyncError> {
-    Ok(QuotaWindow::new(
-      self.history_hits.lock().unwrap().clone(),
-      FRIEND_HISTORY_QUOTA_LIMIT,
-      WINDOW,
-    ))
-  }
-  fn save_history_quota(&self, quota: &QuotaWindow) -> Result<(), MatchSyncError> {
-    *self.history_hits.lock().unwrap() = quota.snapshot();
+    *self.hits(kind).lock().unwrap() = quota.snapshot();
     Ok(())
   }
   fn friend_cooldowns(&self) -> HashMap<u32, i64> {

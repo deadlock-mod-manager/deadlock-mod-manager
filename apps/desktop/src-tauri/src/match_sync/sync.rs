@@ -1,32 +1,32 @@
 //! Sync orchestration. Generic over its dependencies so the whole pipeline is
-//! unit-testable with spies. All GC fetches funnel through `fetch_one`, the single
-//! choke point that enforces: already-fetched skip → persisted quota → throttle →
+//! unit-testable with spies. Every GC request goes through `gc_call`, which keeps it off
+//! Steam's GC pipe while the game runs; salt fetches also funnel through `fetch_one`,
+//! the choke point that enforces: already-fetched skip → persisted quota → throttle →
 //! counter. `*_if_enabled` are the enabled/consent gate.
 
+mod friend_phase;
+
 use std::collections::{HashMap, HashSet};
+use std::future::Future;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
 use super::api_client::{BackfillSource, SaltsSink};
 use super::auth::SteamAuthProvider;
 use super::error::{GcRefusal, MatchSyncError};
-use super::friends;
 use super::game_check::GameRunningCheck;
 use super::gc_client::GcMatchClient;
 use super::model::{
-  ActiveFriend, AuthContext, BACKFILL_QUOTA_RESERVE, FRIEND_COOLDOWN_SECS, FetchScope,
-  MAX_FRIEND_HISTORIES_PER_PASS, MatchHistoryPage, MatchSyncConfig, PRIVATE_FRIEND_COOLDOWN_SECS,
-  SaltPayload, SaltsCheck, SyncProgress, UNFINISHED_FRIEND_COOLDOWN_SECS,
+  AuthContext, BACKFILL_QUOTA_RESERVE, FetchScope, MatchHistoryPage, MatchSyncConfig, QuotaKind,
+  SaltPayload, SyncProgress,
 };
 use super::quota::QuotaWindow;
 use super::throttle::Throttle;
 
 pub trait SyncPersistence: Send + Sync {
   fn now(&self) -> i64;
-  fn load_quota(&self) -> Result<QuotaWindow, MatchSyncError>;
-  fn save_quota(&self, quota: &QuotaWindow) -> Result<(), MatchSyncError>;
-  fn load_history_quota(&self) -> Result<QuotaWindow, MatchSyncError>;
-  fn save_history_quota(&self, quota: &QuotaWindow) -> Result<(), MatchSyncError>;
+  fn load_quota(&self, kind: QuotaKind) -> Result<QuotaWindow, MatchSyncError>;
+  fn save_quota(&self, kind: QuotaKind, quota: &QuotaWindow) -> Result<(), MatchSyncError>;
   fn friend_cooldowns(&self) -> HashMap<u32, i64>;
   // (friend account id, unix time before which they aren't looked up again)
   fn set_friend_cooldowns(&self, cooldowns: &[(u32, i64)]);
@@ -56,14 +56,6 @@ enum LoopControl {
   Stop,
 }
 
-// One friend's history lookup: the matches it turned up, and how long the friend is left
-// alone once those are dealt with.
-struct FriendLookup {
-  account_id: u32,
-  cooldown_secs: i64,
-  match_ids: Vec<u64>,
-}
-
 struct RunState {
   // Persisted ids that need no more fetching: ingested, or refused by the GC for good
   // (idempotency across runs + quota protection).
@@ -87,6 +79,22 @@ fn newest_first_fresh(ids: Vec<u64>, processed: &HashSet<u64>) -> Vec<u64> {
   ids.sort_unstable_by(|a, b| b.cmp(a));
   ids.dedup();
   ids
+}
+
+// A best-effort step's value, or `None` once the reason it's missing is logged. Only a
+// game launch is passed on, since that must stop the pass.
+fn best_effort<T>(
+  result: Result<T, MatchSyncError>,
+  what: &str,
+) -> Result<Option<T>, MatchSyncError> {
+  match result {
+    Ok(value) => Ok(Some(value)),
+    Err(MatchSyncError::GameRunning) => Err(MatchSyncError::GameRunning),
+    Err(e) => {
+      log::warn!("match-sync: {what} unavailable: {e}");
+      Ok(None)
+    }
+  }
 }
 
 pub struct SyncEngine<A, G, S, B, P, R> {
@@ -134,7 +142,7 @@ where
   fn new_run_state(&self) -> Result<RunState, MatchSyncError> {
     let fetched_order = self.persistence.load_fetched();
     let fetched_set: HashSet<u64> = fetched_order.iter().copied().collect();
-    let quota = self.persistence.load_quota()?;
+    let quota = self.persistence.load_quota(QuotaKind::Salts)?;
     let remaining = quota.remaining(self.persistence.now()) as u32;
     Ok(RunState {
       fetched_set,
@@ -175,23 +183,22 @@ where
       st.progress.quota_remaining = 0;
       return Ok(FetchStep::QuotaReached);
     }
+    // The game can launch during the throttle wait, which `gc_call` checks after it.
     self.throttle.acquire().await;
-    // Re-checked here, not just at pass-start, and after the throttle wait (up to
-    // GC_MIN_INTERVAL), not before it: the game can launch during that sleep, and this
-    // is the actual GC choke point that must never race the game's own session.
-    if self.game_check.is_game_running() {
-      return Err(MatchSyncError::GameRunning);
-    }
-    self.counter.fetch_add(1, Ordering::Relaxed);
+    let fetched = self.gc_call(async {
+      self.counter.fetch_add(1, Ordering::Relaxed);
+      self.gc.fetch_match_salts(ctx, match_id).await
+    });
 
-    let salts = match self.gc.fetch_match_salts(ctx, match_id).await {
+    let salts = match fetched.await {
       Ok(salts) => salts,
+      Err(MatchSyncError::GameRunning) => return Err(MatchSyncError::GameRunning),
       // Steam itself is rate-limiting this account: treat the 24h bucket as fully
       // spent so we stop hammering it and only try again once it naturally frees up.
       Err(MatchSyncError::GcRateLimited) => {
         log::warn!("match-sync: Steam GC rate-limited; treating quota as exhausted for 24h");
         st.quota.exhaust(now);
-        self.persistence.save_quota(&st.quota)?;
+        self.persistence.save_quota(QuotaKind::Salts, &st.quota)?;
         st.progress.rate_limited = true;
         st.progress.quota_reached = true;
         st.progress.quota_remaining = st.quota.remaining(now) as u32;
@@ -208,9 +215,9 @@ where
       // Still in progress, or someone else's match this account may not see: settled for
       // this run only. A later pass that lists it again (the user's history, a to-fetch
       // list, the friend's next lookup) asks again.
-      Err(MatchSyncError::GcRefused(
-        refusal @ (GcRefusal::InFlight | GcRefusal::NoPermission),
-      )) if is_backfill || refusal == GcRefusal::InFlight => {
+      Err(MatchSyncError::GcRefused(refusal @ (GcRefusal::InFlight | GcRefusal::NoPermission)))
+        if is_backfill || refusal == GcRefusal::InFlight =>
+      {
         log::debug!("match-sync: skipping {match_id}: {refusal}");
         self.skip_answered(now, st)?;
         st.settled.insert(match_id);
@@ -243,7 +250,7 @@ where
   // The GC answered, so the request counts against the cap.
   fn count_salts_request(&self, now: i64, st: &mut RunState) -> Result<(), MatchSyncError> {
     let _ = st.quota.try_consume(now);
-    self.persistence.save_quota(&st.quota)?;
+    self.persistence.save_quota(QuotaKind::Salts, &st.quota)?;
     st.progress.quota_remaining = st.quota.remaining(now) as u32;
     Ok(())
   }
@@ -256,24 +263,28 @@ where
     Ok(())
   }
 
-  // A swallowed failure of the user's own history page. Steam limits match history
-  // requests per account, so a rate limit here rules out friend lookups until the
-  // window frees up as well.
-  fn own_history_failed(&self, e: MatchSyncError) {
-    let e = e.refusal_as_outage();
+  // The user's own history page, or `None` if the GC didn't serve it: that failure is
+  // reported, not returned. Steam limits match history requests per account, so a rate
+  // limit here rules out friend lookups until the window frees up as well.
+  async fn own_history_page(
+    &self,
+    ctx: &AuthContext,
+    cursor: Option<u64>,
+  ) -> Result<Option<MatchHistoryPage>, MatchSyncError> {
+    let e = match self.gc_history_page(ctx, ctx.account_id(), cursor).await {
+      Ok(page) => return Ok(Some(page)),
+      Err(MatchSyncError::GameRunning) => return Err(MatchSyncError::GameRunning),
+      Err(e) => e.refusal_as_outage(),
+    };
     log::warn!("match-sync: GC match history unavailable: {e}");
     self.persistence.record_gc_error(&e);
-    if let MatchSyncError::GcRateLimited = &e {
-      match self.persistence.load_history_quota() {
-        Ok(mut quota) => {
-          quota.exhaust(self.persistence.now());
-          if let Err(e) = self.persistence.save_history_quota(&quota) {
-            log::warn!("match-sync: {e}");
-          }
-        }
-        Err(e) => log::warn!("match-sync: friend history quota unavailable: {e}"),
+    if let MatchSyncError::GcRateLimited = e {
+      let loaded = self.persistence.load_quota(QuotaKind::FriendHistory);
+      if let Ok(Some(mut quota)) = best_effort(loaded, "friend history quota") {
+        self.exhaust_history_quota(&mut quota);
       }
     }
+    Ok(None)
   }
 
   fn remember_fetched(&self, match_id: u64, st: &mut RunState) {
@@ -304,7 +315,21 @@ where
     Ok(LoopControl::Continue)
   }
 
-  // Throttled, not quota-counted: a history query is not a salt fetch.
+  // Every GC request goes through here, checked right before it starts: the game must
+  // never share Steam's GC pipe with us. Futures are lazy, so `request` sends nothing
+  // before the check.
+  async fn gc_call<T>(
+    &self,
+    request: impl Future<Output = Result<T, MatchSyncError>>,
+  ) -> Result<T, MatchSyncError> {
+    if self.game_check.is_game_running() {
+      return Err(MatchSyncError::GameRunning);
+    }
+    request.await
+  }
+
+  // Throttled, not quota-counted: a history query is not a salt fetch. The game can
+  // launch during the throttle wait, which `gc_call` checks after it.
   async fn gc_history_page(
     &self,
     ctx: &AuthContext,
@@ -312,11 +337,9 @@ where
     cursor: Option<u64>,
   ) -> Result<MatchHistoryPage, MatchSyncError> {
     self.throttle.acquire().await;
-    // Checked after the throttle wait, not before: the game may launch during the sleep.
-    if self.game_check.is_game_running() {
-      return Err(MatchSyncError::GameRunning);
-    }
-    self.gc.fetch_match_history(ctx, account_id, cursor).await
+    self
+      .gc_call(self.gc.fetch_match_history(ctx, account_id, cursor))
+      .await
   }
 
   // What's left for backfill, or `None` once the pass should stop. Keeps a reserve
@@ -336,191 +359,6 @@ where
       .remaining(self.persistence.now())
       .saturating_sub(BACKFILL_QUOTA_RESERVE);
     (budget > 0).then_some(budget)
-  }
-
-  // The newest history page of the friends who most likely played since deadlock-api
-  // last saw them. Best-effort: any failure just yields fewer (or no) lookups; only
-  // `GameRunning` is an error. Never backs off the account: friend lookups are extra,
-  // and a broken connection fails the GC calls that follow them anyway.
-  async fn look_up_friends(
-    &self,
-    ctx: &AuthContext,
-    salt_budget: usize,
-    cancel: &AtomicBool,
-  ) -> Result<Vec<FriendLookup>, MatchSyncError> {
-    // Reading the friends list may (re)connect to the GC, which must never race the game.
-    if self.game_check.is_game_running() {
-      return Err(MatchSyncError::GameRunning);
-    }
-    let now = self.persistence.now();
-    let mut history_quota = match self.persistence.load_history_quota() {
-      Ok(quota) => quota,
-      Err(e) => {
-        log::warn!("match-sync: friend history quota unavailable: {e}");
-        return Ok(Vec::new());
-      }
-    };
-    let budget = history_quota
-      .remaining(now)
-      .min(MAX_FRIEND_HISTORIES_PER_PASS)
-      .min(salt_budget);
-    if budget == 0 {
-      return Ok(Vec::new());
-    }
-
-    let mut lookups = Vec::new();
-    for friend in self.friends_to_look_up(ctx, now, budget).await? {
-      if cancel.load(Ordering::Relaxed) {
-        break;
-      }
-      let (cooldown_secs, match_ids) =
-        match self.gc_history_page(ctx, friend.account_id, None).await {
-          Ok(page) => (FRIEND_COOLDOWN_SECS, page.match_ids()),
-          Err(MatchSyncError::GcRefused(GcRefusal::NoPermission)) => {
-            (PRIVATE_FRIEND_COOLDOWN_SECS, Vec::new())
-          }
-          Err(e @ MatchSyncError::GcRefused(_)) => {
-            log::warn!("match-sync: a friend's match history is unavailable: {e}");
-            (FRIEND_COOLDOWN_SECS, Vec::new())
-          }
-          Err(MatchSyncError::GameRunning) => return Err(MatchSyncError::GameRunning),
-          Err(MatchSyncError::GcRateLimited) => {
-            log::warn!("match-sync: Steam GC rate-limited friend history lookups");
-            history_quota.exhaust(self.persistence.now());
-            if let Err(e) = self.persistence.save_history_quota(&history_quota) {
-              log::warn!("match-sync: {e}");
-            }
-            break;
-          }
-          // No answer (connection lost, timed out): stop instead of reconnecting for every
-          // remaining friend. Not charged, since the quota stays far below Steam's limit.
-          Err(e) => {
-            log::warn!("match-sync: friend history lookups stopped: {e}");
-            break;
-          }
-        };
-      // The GC answered, so Steam counted the request.
-      let _ = history_quota.try_consume(self.persistence.now());
-      lookups.push(FriendLookup {
-        account_id: friend.account_id,
-        cooldown_secs,
-        match_ids,
-      });
-      if let Err(e) = self.persistence.save_history_quota(&history_quota) {
-        log::warn!("match-sync: {e}");
-        break;
-      }
-    }
-    Ok(lookups)
-  }
-
-  // Fetches the friends' matches deadlock-api has no salts for, then cools the friends
-  // down. One whose matches the budget, a quota or an error cut off only gets a short
-  // cooldown, so the rest turn up again soon.
-  async fn backfill_friend_matches(
-    &self,
-    ctx: &AuthContext,
-    lookups: &[FriendLookup],
-    budget: usize,
-    cancel: &AtomicBool,
-    st: &mut RunState,
-  ) -> Result<LoopControl, MatchSyncError> {
-    let found = lookups
-      .iter()
-      .flat_map(|lookup| &lookup.match_ids)
-      .copied()
-      .filter(|id| !st.fetched_set.contains(id))
-      .collect();
-    let candidates = newest_first_fresh(found, &st.processed);
-    let SaltsCheck { missing, stored } = self
-      .backfill
-      .missing_salts(&candidates, budget, cancel)
-      .await;
-    st.settled.extend(stored);
-    let result = self.process_ids(ctx, missing, true, Some(cancel), st).await;
-
-    // Dealt with means fetched or settled; a fetch that failed or never ran is not.
-    let now = self.persistence.now();
-    let cooldowns: Vec<(u32, i64)> = lookups
-      .iter()
-      .map(|lookup| {
-        let dealt_with = lookup
-          .match_ids
-          .iter()
-          .all(|id| st.fetched_set.contains(id) || st.settled.contains(id));
-        let cooldown = if dealt_with {
-          lookup.cooldown_secs
-        } else {
-          UNFINISHED_FRIEND_COOLDOWN_SECS
-        };
-        (lookup.account_id, now + cooldown)
-      })
-      .collect();
-    if !cooldowns.is_empty() {
-      self.persistence.set_friend_cooldowns(&cooldowns);
-    }
-    result
-  }
-
-  // Up to `budget` friends, most likely first, who played since deadlock-api last saw
-  // them. Best-effort: any failure just yields fewer (or none); only `GameRunning` is an
-  // error.
-  async fn friends_to_look_up(
-    &self,
-    ctx: &AuthContext,
-    now: i64,
-    budget: usize,
-  ) -> Result<Vec<ActiveFriend>, MatchSyncError> {
-    let friend_ids = match self.gc.friend_ids(ctx).await {
-      Ok(ids) => ids,
-      Err(MatchSyncError::GameRunning) => return Err(MatchSyncError::GameRunning),
-      Err(e) => {
-        log::warn!("match-sync: friends list unavailable: {e}");
-        return Ok(Vec::new());
-      }
-    };
-    let cooldowns = self.persistence.friend_cooldowns();
-    let due: Vec<u32> = friend_ids
-      .iter()
-      .copied()
-      .filter(|id| cooldowns.get(id).is_none_or(|&until| until <= now))
-      .collect();
-    if due.is_empty() {
-      return Ok(Vec::new());
-    }
-    let active = match self.backfill.active_friends(&due).await {
-      Ok(active) => active,
-      Err(e) => {
-        log::warn!("match-sync: friend activity unavailable: {e}");
-        return Ok(Vec::new());
-      }
-    };
-    if active.is_empty() {
-      return Ok(Vec::new());
-    }
-    // Reading their activity took a while, and the persona request may (re)connect to the
-    // GC, which must never race the game.
-    if self.game_check.is_game_running() {
-      return Err(MatchSyncError::GameRunning);
-    }
-    // Only the few active friends are worth Steam's persona round-trip.
-    let ids: Vec<u32> = active.iter().map(|f| f.account_id).collect();
-    let personas = self.gc.personas(ctx, &ids).await;
-    let active_count = active.len();
-    let scored = active
-      .into_iter()
-      .filter_map(|f| {
-        let persona = personas.get(&f.account_id).copied();
-        friends::estimate(now, f.last_end, &f.starts, persona).map(|score| (f, score))
-      })
-      .collect();
-    let picks = friends::pick(scored, budget);
-    log::info!(
-      "match-sync: {} friend(s), {active_count} recently active, {} likely with new matches",
-      friend_ids.len(),
-      picks.len()
-    );
-    Ok(picks)
   }
 
   fn finish(&self, mut st: RunState) -> SyncProgress {
@@ -573,13 +411,8 @@ where
       if cancel.load(Ordering::Relaxed) {
         return Ok(());
       }
-      let page = match self.gc_history_page(&ctx, account_id, cursor).await {
-        Ok(page) => page,
-        Err(MatchSyncError::GameRunning) => return Err(MatchSyncError::GameRunning),
-        Err(e) => {
-          self.own_history_failed(e);
-          break;
-        }
+      let Some(page) = self.own_history_page(&ctx, cursor).await? else {
+        break;
       };
       let fresh = newest_first_fresh(page.match_ids(), &st.processed);
       if let LoopControl::Stop = self
@@ -664,21 +497,17 @@ where
 
     // Own matches = the newest GC history page ∪ deadlock-api's missing-for-account
     // list, newest first. Both best-effort so one being down still syncs the other.
-    let mut own_ids = match self.gc_history_page(&ctx, account_id, None).await {
-      Ok(page) => page.match_ids(),
-      Err(MatchSyncError::GameRunning) => return Err(MatchSyncError::GameRunning),
-      Err(e) => {
-        self.own_history_failed(e);
-        Vec::new()
-      }
-    };
-    match self
+    let mut own_ids = self
+      .own_history_page(&ctx, None)
+      .await?
+      .map(|page| page.match_ids())
+      .unwrap_or_default();
+    let account_list = self
       .backfill
       .to_fetch(FetchScope::Account(account_id))
-      .await
-    {
-      Ok(ids) => own_ids.extend(ids),
-      Err(e) => log::warn!("match-sync: account to-fetch unavailable: {e}"),
+      .await;
+    if let Some(ids) = best_effort(account_list, "account to-fetch")? {
+      own_ids.extend(ids);
     }
     let own = newest_first_fresh(own_ids, &st.processed);
     let control = self.process_ids(&ctx, own, false, Some(cancel), st).await?;
@@ -689,10 +518,7 @@ where
     let Some(budget) = self.backfill_budget(control, cancel, st) else {
       return Ok(());
     };
-    let lookups = self.look_up_friends(&ctx, budget, cancel).await?;
-    let control = self
-      .backfill_friend_matches(&ctx, &lookups, budget, cancel, st)
-      .await?;
+    let control = self.backfill_friends(&ctx, budget, cancel, st).await?;
 
     let Some(budget) = self.backfill_budget(control, cancel, st) else {
       return Ok(());

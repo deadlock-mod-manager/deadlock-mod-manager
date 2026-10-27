@@ -28,7 +28,9 @@ use game_check::SysGameRunningCheck;
 use gc_client::GcMatchClient;
 use gc_client::SteamGcClient;
 pub use model::LocalMatch;
-use model::{AccountStatus, AuthContext, FETCH_QUOTA_LIMIT, FETCH_QUOTA_WINDOW_SECS, SyncProgress};
+use model::{
+  AccountStatus, AuthContext, FETCH_QUOTA_LIMIT, FETCH_QUOTA_WINDOW_SECS, QuotaKind, SyncProgress,
+};
 use sync::{SyncEngine, SyncPersistence};
 use throttle::Throttle;
 
@@ -118,17 +120,11 @@ impl SyncPersistence for AppPersistence {
   fn now(&self) -> i64 {
     settings::now_secs()
   }
-  fn load_quota(&self) -> Result<quota::QuotaWindow, MatchSyncError> {
-    settings::load_quota(&self.app, self.steam_id64)
+  fn load_quota(&self, kind: QuotaKind) -> Result<quota::QuotaWindow, MatchSyncError> {
+    settings::load_quota(&self.app, self.steam_id64, kind)
   }
-  fn save_quota(&self, quota: &quota::QuotaWindow) -> Result<(), MatchSyncError> {
-    settings::save_quota(&self.app, self.steam_id64, quota)
-  }
-  fn load_history_quota(&self) -> Result<quota::QuotaWindow, MatchSyncError> {
-    settings::load_history_quota(&self.app, self.steam_id64)
-  }
-  fn save_history_quota(&self, quota: &quota::QuotaWindow) -> Result<(), MatchSyncError> {
-    settings::save_history_quota(&self.app, self.steam_id64, quota)
+  fn save_quota(&self, kind: QuotaKind, quota: &quota::QuotaWindow) -> Result<(), MatchSyncError> {
+    settings::save_quota(&self.app, self.steam_id64, kind, quota)
   }
   fn friend_cooldowns(&self) -> HashMap<u32, i64> {
     settings::load_friend_cooldowns(&self.app).unwrap_or_default()
@@ -308,7 +304,7 @@ pub fn status(app: &AppHandle) -> Result<MatchSyncStatusDto, MatchSyncError> {
   let accounts = available
     .into_iter()
     .map(|(steam_id64, account_name)| {
-      let quota = settings::load_quota(app, steam_id64).unwrap_or_else(|e| {
+      let quota = settings::load_quota(app, steam_id64, QuotaKind::Salts).unwrap_or_else(|e| {
         log::warn!("match-sync: quota load failed for {steam_id64}: {e}");
         quota::QuotaWindow::new(Vec::new(), FETCH_QUOTA_LIMIT, FETCH_QUOTA_WINDOW_SECS)
       });
@@ -643,7 +639,7 @@ async fn background_pass(app: &AppHandle) {
     "background pass",
     false,
     |app, ctx, now| {
-      settings::load_quota(app, ctx.steam_id64)
+      settings::load_quota(app, ctx.steam_id64, QuotaKind::Salts)
         .map(|q| q.remaining(now) == 0)
         .unwrap_or(true)
     },
