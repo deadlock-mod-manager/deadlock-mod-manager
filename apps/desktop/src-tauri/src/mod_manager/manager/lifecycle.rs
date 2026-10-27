@@ -116,6 +116,9 @@ impl ModManager {
       if prefixed_vpks.len() != selected.len() {
         return Err(Error::ModFileNotFound);
       }
+      tree.sort_in_load_order(&mut prefixed_vpks, |name| {
+        name.strip_prefix(&prefix).unwrap_or(name)
+      });
     }
 
     if prefixed_vpks.is_empty() {
@@ -126,6 +129,19 @@ impl ModManager {
     log::info!("Found {} prefixed VPKs, enabling them", prefixed_vpks.len());
 
     let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
+    // Without a file tree, a re-enabled mod keeps the file order it had when
+    // it was disabled instead of the directory's alphabetical order.
+    if deadlock_mod.file_tree.is_none()
+      && let Some(entry) = manifest.mods.get(&deadlock_mod.id)
+    {
+      prefixed_vpks.sort_by_key(|name| {
+        entry
+          .disabled_vpks
+          .iter()
+          .position(|disabled| disabled == name)
+          .unwrap_or(usize::MAX)
+      });
+    }
     // A re-enabled mod returns to its recorded place in the load order. Without
     // it, the mod would stay in the last shard until an unrelated reorder moved
     // it back and shifted every mod after it.
@@ -704,10 +720,18 @@ impl ModManager {
         "No prepared VPKs provided for update".to_string(),
       ));
     }
-    // Installs enable a mod's VPKs in name order, so an update does too and
-    // the same file wins inside the mod either way.
+    // An update keeps the install's rule: name order, then the file tree's
+    // load order when there is a tree.
     let mut prepared_vpks = prepared_vpks.to_vec();
     prepared_vpks.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
+    if let Some(tree) = &file_tree {
+      tree.sort_in_load_order(&mut prepared_vpks, |path| {
+        path
+          .file_name()
+          .and_then(|name| name.to_str())
+          .unwrap_or_default()
+      });
+    }
 
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
     let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;

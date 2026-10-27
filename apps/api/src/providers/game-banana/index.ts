@@ -604,7 +604,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         })
         .debug("Processing mod downloads");
 
-      const downloadEntries = download._aFiles.map((file) => {
+      const downloadEntries = download._aFiles.map((file, position) => {
         const addedAt = gameBananaTimestampToDate(file._tsDateAdded);
         return {
           remoteId: file._idRow.toString(),
@@ -614,6 +614,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
           description: file._sDescription || null,
           modId: dbMod.id,
           md5Checksum: file._sMd5Checksum ?? null,
+          position,
           createdAt: addedAt,
           updatedAt: addedAt,
         };

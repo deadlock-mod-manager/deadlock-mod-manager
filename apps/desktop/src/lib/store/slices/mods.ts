@@ -3,6 +3,7 @@ import type { StateCreator } from "zustand";
 import { SortType } from "@/lib/constants";
 import { nextSlowSince } from "@/lib/download/health";
 import logger from "@/lib/logger";
+import { reorderFiles } from "@/lib/mods/vpk-load-order";
 import { ModStatusStateMachine } from "@/lib/state-machines/mod-status";
 import {
   type AnalyzeAddonsResult,
@@ -138,6 +139,7 @@ export type ModsState = {
     vpkMappings: Array<[string, string[]]>,
     profileId?: ProfileId,
   ) => void;
+  setModFileOrder: (remoteId: string, orderedNames: string[]) => void;
   getOrderedMods: () => LocalMod[];
   getNextInstallOrder: () => number;
   migrateLegacyMods: () => void;
@@ -735,6 +737,26 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
 
       return applyToModsInProfile(state, profileId, updateMods);
     }),
+
+  setModFileOrder: (remoteId, orderedNames) =>
+    set((state) =>
+      applyToModsInProfile(state, state.activeProfileId, (mods) =>
+        mods.map((mod) =>
+          mod.remoteId === remoteId && mod.installedFileTree
+            ? {
+                ...mod,
+                installedFileTree: {
+                  ...mod.installedFileTree,
+                  files: reorderFiles(
+                    mod.installedFileTree.files,
+                    orderedNames,
+                  ),
+                },
+              }
+            : mod,
+        ),
+      ),
+    ),
 
   getOrderedMods: () => {
     const { localMods } = get();

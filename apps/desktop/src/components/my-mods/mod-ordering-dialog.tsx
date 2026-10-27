@@ -1,4 +1,3 @@
-import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Dialog,
@@ -9,19 +8,24 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@deadlock-mods/ui/components/dialog";
+import { SearchInput } from "@deadlock-mods/ui/components/search-input";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@deadlock-mods/ui/components/tooltip";
-import { GripVertical, Loader2, Save } from "@deadlock-mods/ui/icons";
+import { Save, Undo2 } from "@deadlock-mods/ui/icons";
 import {
+  type Announcements,
   closestCenter,
   DndContext,
   type DragEndEvent,
+  DragOverlay,
+  type DragStartEvent,
   KeyboardSensor,
   PointerSensor,
+  type UniqueIdentifier,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
@@ -29,18 +33,24 @@ import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
-  useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
+import type { OrderedVpkFile } from "@/components/my-mods/mod-file-order";
+import {
+  DragPreview,
+  SortableModRow,
+} from "@/components/my-mods/mod-order-row";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
+import { restrictToVerticalAxis } from "@/lib/mods/load-order-drag";
 import { usePersistedStore } from "@/lib/store";
+import { cn } from "@/lib/utils";
+import type { ModVpkFiles } from "@/types/generated/ModVpkFiles";
 import type { LocalMod } from "@/types/mods";
-import { getModCoverImage } from "@/lib/mods/mod-images";
 
 interface ModOrderingDialogProps {
   children?: React.ReactNode;
@@ -48,85 +58,40 @@ interface ModOrderingDialogProps {
   onOpenChange?: (open: boolean) => void;
 }
 
-interface SortableModItemProps {
-  mod: LocalMod;
-  index: number;
-}
-
 interface SaveOrderResult {
   orderedRemoteIds: string[];
   updatedVpkMappings: Array<[string, string[]]>;
 }
 
-const SortableModItem = ({ mod, index }: SortableModItemProps) => {
-  const { t } = useTranslation();
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: mod.remoteId });
+type FileOrders = Map<string, OrderedVpkFile[]>;
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-  const coverImage = getModCoverImage(mod);
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className='flex items-center space-x-3 rounded-lg border bg-background p-3 shadow-sm'>
-      <div
-        {...attributes}
-        {...listeners}
-        className='cursor-grab touch-none text-muted-foreground hover:text-foreground'>
-        <GripVertical className='h-4 w-4' />
-      </div>
-
-      <div className='flex h-8 w-8 items-center justify-center rounded bg-primary/10 text-primary text-sm font-medium'>
-        {index + 1}
-      </div>
-
-      <div className='flex h-12 w-12 items-center justify-center overflow-hidden rounded bg-secondary'>
-        {coverImage ? (
-          <img
-            src={coverImage}
-            alt={mod.name}
-            className='h-full w-full object-cover'
-          />
-        ) : (
-          <div className='text-muted-foreground text-xs'>No Image</div>
-        )}
-      </div>
-
-      <div className='flex-1 min-w-0'>
-        <div className='flex items-center space-x-2'>
-          <p
-            data-testid='ordered-mod-name'
-            className='font-medium text-sm truncate'>
-            {mod.name}
-          </p>
-          {mod.isAudio && <Badge variant='secondary'>Audio</Badge>}
-          {mod.remoteUrl?.startsWith("local://") && (
-            <Badge variant='outline'>Custom</Badge>
-          )}
-        </div>
-        <p className='text-muted-foreground text-xs truncate'>
-          by {mod.author}
-        </p>
-      </div>
-
-      <div className='text-muted-foreground text-xs'>
-        {t("modOrdering.vpkCount", { count: mod.installedVpks?.length || 0 })}
-      </div>
-    </div>
-  );
+// Files are only listed when the manifest names every enabled VPK; otherwise
+// there is no telling which pak holds which file.
+const toFileOrders = (entries: ModVpkFiles[], mods: LocalMod[]): FileOrders => {
+  const modsById = new Map(mods.map((mod) => [mod.remoteId, mod]));
+  const orders: FileOrders = new Map();
+  for (const entry of entries) {
+    if (entry.originalNames.length !== entry.vpks.length) continue;
+    const archiveByName = new Map(
+      (modsById.get(entry.modId)?.installedFileTree?.files ?? []).map(
+        (file) => [file.name, file.archive_name],
+      ),
+    );
+    orders.set(
+      entry.modId,
+      entry.vpks.map((vpk, index) => ({
+        vpk,
+        name: entry.originalNames[index],
+        archiveName: archiveByName.get(entry.originalNames[index]) || undefined,
+      })),
+    );
+  }
+  return orders;
 };
+
+const sameFileOrder = (a?: OrderedVpkFile[], b?: OrderedVpkFile[]) =>
+  (a ?? []).map((file) => file.vpk).join("|") ===
+  (b ?? []).map((file) => file.vpk).join("|");
 
 export const ModOrderingDialog = ({
   children,
@@ -140,11 +105,22 @@ export const ModOrderingDialog = ({
   const updateModVpksAfterReorder = usePersistedStore(
     (state) => state.updateModVpksAfterReorder,
   );
+  const setModFileOrder = usePersistedStore((state) => state.setModFileOrder);
   const migrateLegacyMods = usePersistedStore(
     (state) => state.migrateLegacyMods,
   );
   const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
+  const [initialMods, setInitialMods] = useState<LocalMod[]>([]);
   const [orderedMods, setOrderedMods] = useState<LocalMod[]>([]);
+  const [initialFiles, setInitialFiles] = useState<FileOrders>(new Map());
+  const [fileOrders, setFileOrders] = useState<FileOrders>(new Map());
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [search, setSearch] = useState("");
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [droppedId, setDroppedId] = useState<string | null>(null);
+  // Only mods the player moved are marked; the ones they pushed aside are not.
+  const [touched, setTouched] = useState<Set<string>>(new Set());
+  const [handleFocused, setHandleFocused] = useState(false);
   const [internalOpen, setInternalOpen] = useState(false);
   const [reorderStartTime, setReorderStartTime] = useState<number | null>(null);
   const isControlled = controlledOpen !== undefined;
@@ -152,46 +128,162 @@ export const ModOrderingDialog = ({
   const setOpen = isControlled
     ? (controlledOnOpenChange ?? (() => {}))
     : setInternalOpen;
+  const profileFolder = getActiveProfile()?.folderName ?? null;
+
+  const { data: vpkFiles } = useQuery({
+    queryKey: ["enabled-mod-vpk-files", profileFolder],
+    queryFn: () =>
+      invoke<ModVpkFiles[]>("get_enabled_mod_vpk_files", { profileFolder }),
+    enabled: open,
+    staleTime: 0,
+    gcTime: 0,
+  });
 
   useEffect(() => {
     if (open) {
       migrateLegacyMods();
-      setOrderedMods(getOrderedMods());
+      const mods = getOrderedMods();
+      setInitialMods(mods);
+      setOrderedMods(mods);
+      setExpanded(new Set());
+      setTouched(new Set());
+      setSearch("");
       setReorderStartTime(Date.now());
     }
   }, [open]);
 
+  useEffect(() => {
+    if (!open || !vpkFiles) return;
+    const orders = toFileOrders(vpkFiles, getOrderedMods());
+    setInitialFiles(orders);
+    setFileOrders(orders);
+  }, [open, vpkFiles]);
+
+  // A moved row flashes and scrolls into view, so a jump to the top or bottom
+  // of a long list doesn't lose it.
+  useEffect(() => {
+    if (!droppedId) return;
+    document
+      .querySelector(`[data-mod-row="${CSS.escape(droppedId)}"]`)
+      ?.scrollIntoView({
+        block: "nearest",
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth",
+      });
+    const timer = window.setTimeout(() => setDroppedId(null), 150);
+    return () => window.clearTimeout(timer);
+  }, [droppedId]);
+
+  const initialPositions = useMemo(
+    () => new Map(initialMods.map((mod, index) => [mod.remoteId, index])),
+    [initialMods],
+  );
+  const changedFileMods = useMemo(
+    () =>
+      [...fileOrders.keys()].filter(
+        (id) => !sameFileOrder(fileOrders.get(id), initialFiles.get(id)),
+      ),
+    [fileOrders, initialFiles],
+  );
+  const shiftOf = (remoteId: string, index: number) =>
+    touched.has(remoteId)
+      ? (initialPositions.get(remoteId) ?? index) - index
+      : 0;
+  const isDirty =
+    changedFileMods.length > 0 ||
+    orderedMods.some(
+      (mod, index) => initialPositions.get(mod.remoteId) !== index,
+    );
+  const changeCount =
+    orderedMods.filter((mod, index) => shiftOf(mod.remoteId, index) !== 0)
+      .length + changedFileMods.length;
+
+  const query = search.trim().toLowerCase();
+  const visibleMods = query
+    ? orderedMods.filter(
+        (mod) =>
+          mod.name.toLowerCase().includes(query) ||
+          mod.author?.toLowerCase().includes(query),
+      )
+    : orderedMods;
+  const activeIndex = orderedMods.findIndex((mod) => mod.remoteId === activeId);
+
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
   );
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
+  const handleDragStart = ({ active }: DragStartEvent) =>
+    setActiveId(String(active.id));
 
-    if (over && active.id !== over.id) {
-      setOrderedMods((items) => {
-        const oldIndex = items.findIndex((item) => item.remoteId === active.id);
-        const newIndex = items.findIndex((item) => item.remoteId === over.id);
-        return arrayMove(items, oldIndex, newIndex);
-      });
-    }
+  const handleDragEnd = ({ active, over }: DragEndEvent) => {
+    setActiveId(null);
+    if (!over || active.id === over.id) return;
+    setDroppedId(String(active.id));
+    setTouched((current) => new Set(current).add(String(active.id)));
+    setOrderedMods((items) =>
+      arrayMove(
+        items,
+        items.findIndex((item) => item.remoteId === active.id),
+        items.findIndex((item) => item.remoteId === over.id),
+      ),
+    );
   };
+
+  const moveMod = (remoteId: string, to: "top" | "bottom") => {
+    setDroppedId(remoteId);
+    setTouched((current) => new Set(current).add(remoteId));
+    setOrderedMods((items) => {
+      const from = items.findIndex((item) => item.remoteId === remoteId);
+      return arrayMove(items, from, to === "top" ? 0 : items.length - 1);
+    });
+  };
+
+  const modName = (id: UniqueIdentifier) =>
+    orderedMods.find((mod) => mod.remoteId === id)?.name ?? String(id);
+  const positionOf = (id: UniqueIdentifier) =>
+    orderedMods.findIndex((mod) => mod.remoteId === id) + 1;
+  const announcements: Announcements = {
+    onDragStart: ({ active }) =>
+      t("modOrdering.announce.pickedUp", { name: modName(active.id) }),
+    onDragOver: ({ active, over }) =>
+      over
+        ? t("modOrdering.announce.over", {
+            name: modName(active.id),
+            position: positionOf(over.id),
+          })
+        : undefined,
+    onDragEnd: ({ active, over }) =>
+      t("modOrdering.announce.dropped", {
+        name: modName(active.id),
+        position: positionOf(over?.id ?? active.id),
+      }),
+    onDragCancel: ({ active }) =>
+      t("modOrdering.announce.cancelled", { name: modName(active.id) }),
+  };
+
+  const toggleExpanded = (remoteId: string) =>
+    setExpanded((current) => {
+      const next = new Set(current);
+      if (!next.delete(remoteId)) next.add(remoteId);
+      return next;
+    });
 
   const saveOrderMutation = useMutation<SaveOrderResult, Error>({
     mutationFn: async () => {
-      const activeProfile = getActiveProfile();
-      const profileFolder = activeProfile?.folderName ?? null;
-
+      // Each mod's VPKs go in their listed order; the backend keeps that order
+      // when it renumbers them.
       const modOrderData = orderedMods.map((mod, index) => [
         mod.remoteId,
-        mod.installedVpks || [],
+        fileOrders.get(mod.remoteId)?.map((file) => file.vpk) ??
+          mod.installedVpks ??
+          [],
         index,
       ]);
 
-      // Call the backend to reorder VPKs and get updated mappings
       const updatedVpkMappings = await invoke<Array<[string, string[]]>>(
         "reorder_mods_by_remote_id",
         { modOrderData, profileFolder },
@@ -202,6 +294,12 @@ export const ModOrderingDialog = ({
     onSuccess: ({ orderedRemoteIds, updatedVpkMappings }) => {
       reorderMods(orderedRemoteIds);
       updateModVpksAfterReorder(updatedVpkMappings);
+      for (const remoteId of changedFileMods) {
+        setModFileOrder(
+          remoteId,
+          (fileOrders.get(remoteId) ?? []).map((file) => file.name),
+        );
+      }
 
       const durationSeconds = reorderStartTime
         ? (Date.now() - reorderStartTime) / 1000
@@ -224,16 +322,14 @@ export const ModOrderingDialog = ({
     },
   });
 
-  const handleSave = () => {
-    saveOrderMutation.mutate();
-  };
-
-  const handleCancel = () => {
-    setOrderedMods(getOrderedMods());
-    setOpen(false);
+  const discardChanges = () => {
+    setOrderedMods(initialMods);
+    setFileOrders(initialFiles);
+    setTouched(new Set());
   };
 
   const isLoading = saveOrderMutation.isPending;
+  const activeMod = activeIndex === -1 ? null : orderedMods[activeIndex];
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -245,7 +341,7 @@ export const ModOrderingDialog = ({
           <TooltipContent>{t("modOrdering.manageOrderTooltip")}</TooltipContent>
         </Tooltip>
       )}
-      <DialogContent className='flex max-h-[82vh] max-w-2xl flex-col overflow-hidden'>
+      <DialogContent className='flex max-h-[85vh] max-w-2xl flex-col gap-3 overflow-hidden'>
         <DialogHeader className='shrink-0 gap-1 space-y-0 pr-8'>
           <DialogTitle className='leading-snug'>
             {t("modOrdering.title")}
@@ -255,47 +351,149 @@ export const ModOrderingDialog = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className='flex min-h-0 flex-1 overflow-hidden'>
-          {orderedMods.length === 0 ? (
-            <div className='flex items-center justify-center py-8 text-muted-foreground'>
-              {t("modOrdering.noMods")}
+        {orderedMods.length === 0 ? (
+          <div className='flex items-center justify-center py-10 text-muted-foreground text-sm'>
+            {t("modOrdering.noMods")}
+          </div>
+        ) : (
+          <>
+            <div className='flex shrink-0 items-center gap-3'>
+              <SearchInput
+                placeholder={t("modOrdering.searchPlaceholder")}
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                onClear={() => setSearch("")}
+              />
+              <span className='shrink-0 text-muted-foreground text-xs tabular-nums'>
+                {query
+                  ? t("modOrdering.matchCount", {
+                      count: visibleMods.length,
+                      total: orderedMods.length,
+                    })
+                  : t("modOrdering.modCount", { count: orderedMods.length })}
+              </span>
             </div>
-          ) : (
-            <div className='space-y-2 overflow-y-auto max-h-[60vh] pr-2'>
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}>
-                <SortableContext
-                  items={orderedMods.map((mod) => mod.remoteId)}
-                  strategy={verticalListSortingStrategy}>
-                  {orderedMods.map((mod, index) => (
-                    <SortableModItem
-                      key={mod.remoteId}
-                      mod={mod}
-                      index={index}
-                    />
-                  ))}
-                </SortableContext>
-              </DndContext>
-            </div>
-          )}
-        </div>
-
-        <DialogFooter className='flex shrink-0 justify-between border-t pt-4'>
-          <Button variant='outline' onClick={handleCancel} disabled={isLoading}>
-            {t("common.cancel")}
-          </Button>
-          <Button
-            onClick={handleSave}
-            disabled={isLoading || orderedMods.length === 0}>
-            {isLoading ? (
-              <Loader2 className='mr-2 h-4 w-4 animate-spin' />
-            ) : (
-              <Save className='mr-2 h-4 w-4' />
+            {query && (
+              <p className='-mt-1 shrink-0 text-muted-foreground text-xs'>
+                {t("modOrdering.searchDragHint")}
+              </p>
             )}
-            {t("common.save")}
-          </Button>
+
+            <div className='-mx-2 min-h-0 flex-1 overflow-y-auto px-2'>
+              {visibleMods.length === 0 ? (
+                <p className='py-8 text-center text-muted-foreground text-sm'>
+                  {t("modOrdering.noMatches")}
+                </p>
+              ) : (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  modifiers={[restrictToVerticalAxis]}
+                  accessibility={{ announcements }}
+                  onDragStart={handleDragStart}
+                  onDragCancel={() => setActiveId(null)}
+                  onDragEnd={handleDragEnd}>
+                  <SortableContext
+                    items={visibleMods.map((mod) => mod.remoteId)}
+                    strategy={verticalListSortingStrategy}>
+                    <ol
+                      className={cn(
+                        "space-y-1",
+                        activeId && "pointer-events-none",
+                      )}
+                      onFocus={(event) =>
+                        setHandleFocused(
+                          event.target.getAttribute("aria-roledescription") ===
+                            "sortable",
+                        )
+                      }
+                      onBlur={() => setHandleFocused(false)}>
+                      {visibleMods.map((mod) => {
+                        const index = orderedMods.indexOf(mod);
+                        return (
+                          <SortableModRow
+                            key={mod.remoteId}
+                            mod={mod}
+                            position={index + 1}
+                            total={orderedMods.length}
+                            shift={shiftOf(mod.remoteId, index)}
+                            justDropped={droppedId === mod.remoteId}
+                            dragDisabled={!!query}
+                            files={fileOrders.get(mod.remoteId)}
+                            filesChanged={changedFileMods.includes(
+                              mod.remoteId,
+                            )}
+                            expanded={expanded.has(mod.remoteId)}
+                            onToggleExpanded={() =>
+                              toggleExpanded(mod.remoteId)
+                            }
+                            onMove={(to) => moveMod(mod.remoteId, to)}
+                            onFilesChange={(files) =>
+                              setFileOrders((current) =>
+                                new Map(current).set(mod.remoteId, files),
+                              )
+                            }
+                          />
+                        );
+                      })}
+                    </ol>
+                  </SortableContext>
+                  {/* The dialog is centered with a transform, which would
+                      offset a fixed overlay rendered inside it. */}
+                  {createPortal(
+                    <DragOverlay dropAnimation={null}>
+                      {activeMod && (
+                        <DragPreview
+                          mod={activeMod}
+                          position={activeIndex + 1}
+                        />
+                      )}
+                    </DragOverlay>,
+                    document.body,
+                  )}
+                </DndContext>
+              )}
+            </div>
+          </>
+        )}
+
+        <DialogFooter className='flex shrink-0 items-center gap-2 border-t pt-3 sm:justify-between'>
+          <div className='flex items-center gap-2'>
+            <Button
+              disabled={!isDirty || isLoading}
+              icon={<Undo2 className='h-3.5 w-3.5' />}
+              onClick={discardChanges}
+              size='sm'
+              variant='ghost'>
+              {t("modOrdering.discardChanges")}
+            </Button>
+            {handleFocused ? (
+              <span className='text-muted-foreground text-xs'>
+                {t("modOrdering.keyboardHint")}
+              </span>
+            ) : (
+              changeCount > 0 && (
+                <span className='text-primary text-xs tabular-nums'>
+                  {t("modOrdering.unsavedChanges", { count: changeCount })}
+                </span>
+              )
+            )}
+          </div>
+          <div className='flex items-center gap-2'>
+            <Button
+              variant='outline'
+              onClick={() => setOpen(false)}
+              disabled={isLoading}>
+              {t("common.cancel")}
+            </Button>
+            <Button
+              onClick={() => saveOrderMutation.mutate()}
+              disabled={isLoading || !isDirty}
+              icon={<Save className='h-4 w-4' />}
+              isLoading={isLoading}>
+              {t("common.save")}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
