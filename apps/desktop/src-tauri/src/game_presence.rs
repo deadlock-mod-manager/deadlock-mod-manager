@@ -212,6 +212,7 @@ pub(crate) fn ensure_watcher(app_handle: &AppHandle) -> Result<(), Error> {
   spawn_watcher(app_handle, presence)
 }
 
+#[cfg(feature = "match-sync")]
 pub fn sync_monitoring_watcher(app_handle: &AppHandle) {
   MONITORING_DESIRED.store(
     crate::match_sync::should_monitor(app_handle),

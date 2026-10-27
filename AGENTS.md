@@ -24,7 +24,7 @@ Key directories:
 - `apps/dmodpkg` — CLI for `.dmodpkg` mod packages
 - `apps/www` — Web application (Vite + React)
 - `apps/docs` — Documentation site (Fumadocs)
-- `packages/` — Shared packages. TypeScript: common, crosshair, database, distributed-lock, feature-flags, instrumentation, logging, perf-catalog, queue, relay-client, shared, ui. Rust, some exposed through Bun FFI: deadlock-discord-presence, dmodpkg, dmp-parser (crash minidumps), hero-parser, kv-parser, source2-model, vpk-parser, vpkmanager
+- `packages/` — Shared packages. TypeScript: common, crosshair, database, distributed-lock, feature-flags, instrumentation, logging, perf-catalog, queue, relay-client, shared, ui. Rust, some exposed through Bun FFI: deadlock-discord-presence, deadlock-match-sync (match salts through Steam, behind desktop's `match-sync` feature), dmodpkg, dmp-parser (crash minidumps), hero-parser, kv-parser, source2-model, vpk-parser, vpkmanager
 - `tools/` — Shared TypeScript, oxc, and custom oxlint plugin configs
 
 ## Rules for AI Agents
@@ -82,7 +82,7 @@ Before the human submits your work, ensure:
 Run from the repo root. Script names are in the root and per-package `package.json`.
 
 - Single test: `bun test <path>` or `pnpm --filter @deadlock-mods/<package> test`. `packages/shared` uses Vitest; the rest use `bun:test`. Run the smallest relevant suite.
-- Rust tests: `cargo test` from `apps/desktop` (the Cargo workspace root; the crate is `src-tauri`). Pre-commit (lefthook) runs `cargo clippy --all-targets` on Rust changes in `apps/desktop`, `packages/dmodpkg`, and `packages/vpk-parser`.
+- Rust tests: `cargo test` from `apps/desktop` (the Cargo workspace root; the crate is `src-tauri`). Match sync's engine tests run from `packages/deadlock-match-sync`. Pre-commit (lefthook) runs `cargo clippy --all-targets` on Rust changes in `apps/desktop`, `packages/deadlock-match-sync`, `packages/dmodpkg`, and `packages/vpk-parser`.
 - Production tsconfigs can exclude tests, so a passing production type check doesn't cover them. Desktop `check-types` also runs `tsconfig.tests.json`; other packages may need a dedicated test tsconfig.
 - After CEF builds (`dev:cef`, `build:cef*`), run `pnpm --filter desktop cef:cleanup` to restore the default Wry build.
 - API and database scripts read the root `.env` (template: `env.example`).

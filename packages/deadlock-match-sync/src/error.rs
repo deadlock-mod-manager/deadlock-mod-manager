@@ -102,12 +102,3 @@ impl From<reqwest::Error> for MatchSyncError {
     MatchSyncError::Api(e.without_url().to_string())
   }
 }
-
-impl From<MatchSyncError> for crate::errors::Error {
-  fn from(err: MatchSyncError) -> Self {
-    crate::errors::Error::MatchSync {
-      subcode: err.subcode(),
-      message: err.to_string(),
-    }
-  }
-}

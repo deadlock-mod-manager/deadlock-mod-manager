@@ -20,6 +20,14 @@ pub struct RuntimeBootstrap {
   pub endpoints: Vec<crate::runtime_environment::ServiceEndpoint>,
   pub integrations: Option<crate::runtime_environment::IntegrationPolicy>,
   pub state_file_recovery: Option<crate::state_file::StateFileRecovery>,
+  pub features: BuildFeatures,
+}
+
+// Optional parts of the app this build was compiled with.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BuildFeatures {
+  pub match_sync: bool,
 }
 
 #[tauri::command]
@@ -45,6 +53,9 @@ pub fn get_runtime_bootstrap() -> RuntimeBootstrap {
       .e2e()
       .map(|configuration| configuration.integrations),
     state_file_recovery: crate::state_file::recovery(),
+    features: BuildFeatures {
+      match_sync: cfg!(feature = "match-sync"),
+    },
   }
 }
 

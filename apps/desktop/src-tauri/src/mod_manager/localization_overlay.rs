@@ -1021,7 +1021,11 @@ impl LocalizationOverlayPlan {
       asset_warnings
         .iter()
         .map(|warning| warning.file_path.as_str())
-        .chain(animation_checks.iter().map(|check| check.file_path.as_str())),
+        .chain(
+          animation_checks
+            .iter()
+            .map(|check| check.file_path.as_str()),
+        ),
     )?;
     let prop_models = model_relocation::prop_models(resources, history, &asset_warnings)?;
     let mut changed_tokens = 0usize;

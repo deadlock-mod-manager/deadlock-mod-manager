@@ -1,14 +1,9 @@
-//! While Deadlock is running, Steam routes GC traffic to the game's own pipe;
-//! a second process's GC session gets nothing. Every fetch path
-//! must refuse while the game is running, not just detect it opportunistically.
+// Whether Deadlock is running, from its process and console log.
 
 use std::sync::Mutex;
 
 use deadlock_discord_presence::{console_log_path, is_game_running};
-
-pub trait GameRunningCheck: Send + Sync {
-  fn is_game_running(&self) -> bool;
-}
+use deadlock_match_sync::game_check::GameRunningCheck;
 
 pub struct SysGameRunningCheck {
   sys: Mutex<sysinfo::System>,

@@ -5,13 +5,12 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
+use deadlock_match_sync::error::MatchSyncError;
+use deadlock_match_sync::model::{FETCH_QUOTA_WINDOW_SECS, MatchSyncConfig, QuotaKind};
+use deadlock_match_sync::quota::QuotaWindow;
 use tauri_plugin_store::{Store, StoreExt};
 
 use crate::app_runtime::{AppHandle, AppRuntime};
-
-use super::error::MatchSyncError;
-use super::model::{FETCH_QUOTA_WINDOW_SECS, MatchSyncConfig, QuotaKind};
-use super::quota::QuotaWindow;
 
 const STORE_FILE: &str = "match-sync.json";
 

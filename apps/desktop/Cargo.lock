@@ -1338,17 +1338,40 @@ dependencies = [
 ]
 
 [[package]]
-name = "deadlock-mod-manager"
-version = "2.2.0"
+name = "deadlock-match-sync"
+version = "0.1.0"
 dependencies = [
  "aes 0.8.4",
  "base64 0.22.1",
- "bzip2",
  "cbc 0.1.2",
+ "crc32fast",
+ "dirs 6.0.0",
+ "futures",
+ "hex",
+ "keyvalues-parser",
+ "log",
+ "prost 0.14.4",
+ "reqwest 0.12.28",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "steam-vent",
+ "thiserror 2.0.18",
+ "tokio",
+ "valveprotos",
+ "windows 0.58.0",
+]
+
+[[package]]
+name = "deadlock-mod-manager"
+version = "2.2.0"
+dependencies = [
+ "base64 0.22.1",
+ "bzip2",
  "chrono",
  "clap",
- "crc32fast",
  "deadlock-discord-presence",
+ "deadlock-match-sync",
  "diesel",
  "diesel_migrations",
  "dirs 6.0.0",
@@ -1374,7 +1397,6 @@ dependencies = [
  "md-5",
  "memchr",
  "notify",
- "prost 0.14.4",
  "regex",
  "reqwest 0.12.28",
  "serde",
@@ -1382,7 +1404,6 @@ dependencies = [
  "sevenz-rust2",
  "sha2 0.10.9",
  "source2-model",
- "steam-vent",
  "steamlocate",
  "sysinfo",
  "tauri",
@@ -1410,7 +1431,6 @@ dependencies = [
  "ttf-parser",
  "unrar",
  "urlencoding",
- "valveprotos",
  "vpk-parser",
  "vpkmanager",
  "windows 0.58.0",

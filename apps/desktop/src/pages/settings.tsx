@@ -112,6 +112,7 @@ import {
   useWipeLocalCatalog,
 } from "@/hooks/use-gamebanana-catalog-sync";
 import { invokeGuarded } from "@/lib/game-guard";
+import { isMatchSyncBuilt } from "@/lib/runtime-bootstrap";
 
 type DangerActionProps = {
   disabled?: boolean;
@@ -1031,12 +1032,14 @@ const CustomSettings = ({ value }: { value?: string }) => {
               </div>
             </Section>
 
-            <Section
-              description={t("matchSync.description")}
-              searchId='match-sync'
-              title={t("matchSync.title")}>
-              <MatchSyncSettings />
-            </Section>
+            {isMatchSyncBuilt() && (
+              <Section
+                description={t("matchSync.description")}
+                searchId='match-sync'
+                title={t("matchSync.title")}>
+                <MatchSyncSettings />
+              </Section>
+            )}
           </TabsContent>
 
           <TabsContent className='mt-0 space-y-4' value='about'>

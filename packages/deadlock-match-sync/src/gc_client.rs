@@ -32,7 +32,7 @@ use valveprotos::deadlock::{
 use super::error::{GcRefusal, MatchSyncError};
 use super::friends::Persona;
 use super::model::{AuthContext, DEADLOCK_APP_ID, LocalMatch, MatchHistoryPage, MatchSalts};
-use crate::steam_user::{account_id_of, is_individual};
+use crate::steam_id::{account_id_of, is_individual};
 
 // A stalled discover/login/job call must not block cancel/disable indefinitely.
 const GC_CALL_TIMEOUT: Duration = Duration::from_secs(30);
@@ -239,6 +239,12 @@ pub struct SteamGcClient {
 struct Shared {
   session: Mutex<Option<GcSession>>,
   launch_cancel: watch::Sender<()>,
+}
+
+impl Default for SteamGcClient {
+  fn default() -> Self {
+    Self::new()
+  }
 }
 
 impl SteamGcClient {

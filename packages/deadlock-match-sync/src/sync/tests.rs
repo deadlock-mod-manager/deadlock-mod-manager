@@ -1,10 +1,10 @@
 use super::*;
-use crate::match_sync::friends::Persona;
-use crate::match_sync::model::{
+use crate::friends::Persona;
+use crate::model::{
   ActiveFriend, FRIEND_COOLDOWN_SECS, FRIEND_HISTORY_QUOTA_LIMIT, LocalMatch, MatchSalts,
   PRIVATE_FRIEND_COOLDOWN_SECS, QuotaKind, SaltsCheck, UNFINISHED_FRIEND_COOLDOWN_SECS,
 };
-use crate::match_sync::quota::QuotaWindow;
+use crate::quota::QuotaWindow;
 use std::sync::Mutex;
 use std::time::Duration;
 

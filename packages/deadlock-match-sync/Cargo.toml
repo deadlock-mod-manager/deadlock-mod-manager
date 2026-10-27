@@ -1,0 +1,45 @@
+[package]
+name = "deadlock-match-sync"
+version = "0.1.0"
+edition = "2024"
+description = "Recovers Deadlock match salts through the user's own Steam account and posts them to deadlock-api"
+license = "GPL-3.0"
+repository = "https://github.com/deadlock-mod-manager/deadlock-mod-manager"
+homepage = "https://github.com/deadlock-mod-manager/deadlock-mod-manager"
+
+[lib]
+name = "deadlock_match_sync"
+crate-type = ["rlib"]
+path = "src/lib.rs"
+
+[dependencies]
+base64 = "0.22"
+crc32fast = "1.4"
+futures = "0.3"
+hex = "0.4"
+keyvalues-parser = "0.2"
+log = "0.4"
+prost = "0.14"
+reqwest = { version = "0.12", features = ["json"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+steam-vent = { git = "https://github.com/deadlock-api/steam-vent", rev = "1d7b274f5c2f648aba5dab474b80c1156b409bca" }
+thiserror = "2.0.18"
+tokio = { version = "1.50.0", features = ["macros", "rt-multi-thread", "sync", "time"] }
+valveprotos = { git = "https://github.com/deadlock-api/deadlock-api", rev = "b14c831f324e20653e50ff60372478d427800d45", features = [
+  "gc-common",
+  "gc-client",
+  "serde",
+] }
+
+[target.'cfg(windows)'.dependencies]
+dirs = "6"
+windows = { version = "0.58", features = [
+  "Win32_Security_Cryptography",
+  "Win32_Foundation",
+] }
+
+[target.'cfg(not(windows))'.dependencies]
+aes = "0.8"
+cbc = { version = "0.1", features = ["alloc"] }
+sha2 = "0.10"

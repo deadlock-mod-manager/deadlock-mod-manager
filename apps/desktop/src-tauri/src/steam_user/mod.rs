@@ -6,9 +6,8 @@
 
 use std::path::Path;
 
+use keyvalues_parser::{Value, Vdf};
 use serde::Serialize;
-
-use crate::match_sync::auth::{RememberedAccount, remembered_accounts};
 
 const DEADLOCK_APP_ID: u32 = 1_422_450;
 
@@ -42,9 +41,66 @@ pub fn account_id_of(steam_id64: u64) -> u32 {
   (steam_id64 & 0xFFFF_FFFF) as u32
 }
 
-// Bits 52..56 hold the account type; 1 is an individual user (not a group, server, ...).
-pub fn is_individual(steam_id64: u64) -> bool {
-  (steam_id64 >> 52) & 0xF == 1
+fn child<'a>(value: &'a Value<'a>, key: &str) -> Option<&'a Value<'a>> {
+  value.get_obj()?.get(key)?.first()
+}
+
+/// One entry of `loginusers.vdf`, with the fields Steam uses to mark which account
+/// is the one currently signed in.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RememberedAccount {
+  pub steam_id64: u64,
+  /// As written by Steam; lowercase it before using it as a ConnectCache key.
+  pub account_name: String,
+  pub persona_name: Option<String>,
+  /// Older Steam builds write `MostRecent`, current ones only `AutoLogin`.
+  pub most_recent: bool,
+  pub auto_login: bool,
+  /// Unix seconds of the last login, `0` when Steam wrote no `Timestamp`.
+  pub timestamp: i64,
+}
+
+fn flag(user: &Value<'_>, key: &str) -> bool {
+  child(user, key).and_then(Value::get_str) == Some("1")
+}
+
+pub fn remembered_accounts(steam_dir: &Path) -> Result<Vec<RememberedAccount>, String> {
+  let path = steam_dir.join("config").join("loginusers.vdf");
+  let text =
+    std::fs::read_to_string(&path).map_err(|e| format!("cannot read loginusers.vdf: {e}"))?;
+  let vdf = keyvalues_parser::parse(&text)
+    .map(Vdf::from)
+    .map_err(|e| format!("cannot parse loginusers.vdf: {e}"))?;
+  let users = vdf.value.get_obj().ok_or("loginusers.vdf has no users")?;
+
+  let mut accounts = Vec::new();
+  for (key, entries) in users.iter() {
+    let Ok(steam_id64) = key.parse::<u64>() else {
+      log::warn!("skipping loginusers.vdf block with non-numeric key: {key}");
+      continue;
+    };
+    let Some(user) = entries.first() else {
+      continue;
+    };
+    let Some(name) = child(user, "AccountName").and_then(Value::get_str) else {
+      log::warn!("skipping loginusers.vdf block {steam_id64} with no AccountName");
+      continue;
+    };
+    accounts.push(RememberedAccount {
+      steam_id64,
+      account_name: name.to_owned(),
+      persona_name: child(user, "PersonaName")
+        .and_then(Value::get_str)
+        .map(str::to_owned),
+      most_recent: flag(user, "MostRecent"),
+      auto_login: flag(user, "AutoLogin"),
+      timestamp: child(user, "Timestamp")
+        .and_then(Value::get_str)
+        .and_then(|t| t.parse::<i64>().ok())
+        .unwrap_or(0),
+    });
+  }
+  Ok(accounts)
 }
 
 /// Sorts by "who did Steam touch last", then falls back to the flags Steam writes

@@ -45,3 +45,8 @@ pre-commit:
         - "**/*.rs"
         - "**/Cargo.toml"
       root: packages/vpk-parser
+    - run: cargo clippy --all-targets
+      glob:
+        - "**/*.rs"
+        - "**/Cargo.toml"
+      root: packages/deadlock-match-sync

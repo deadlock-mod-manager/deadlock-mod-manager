@@ -14,7 +14,7 @@ name = "desktop_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [features]
-default = ["tauri-wry"]
+default = ["tauri-wry", "match-sync"]
 tauri-wry = [
   "tauri/wry",
   "dep:tauri-plugin-mcp-bridge",
@@ -25,6 +25,8 @@ e2e-harness = [
   "dep:tauri-plugin-wdio-webdriver",
   "dep:libc",
 ]
+# Recovers match salts through the user's Steam account (opt-in at runtime).
+match-sync = ["dep:deadlock-match-sync"]
 
 # `cef` is injected into [features] by scripts/cef-patch.ts for CEF builds only.
 [lints.rust]
@@ -80,6 +82,7 @@ vpkmanager = { path = "../../../packages/vpkmanager" }
 dmp-parser = { path = "../../../packages/dmp-parser" }
 kv-parser = { path = "../../../packages/kv-parser" }
 deadlock-discord-presence = { path = "../../../packages/deadlock-discord-presence" }
+deadlock-match-sync = { path = "../../../packages/deadlock-match-sync", optional = true }
 tokio = { version = "1.50.0", features = ["full"] }
 tokio-util = "0.7"
 # Already in the tree via reqwest; the loopback forge bridge only needs the
@@ -106,22 +109,11 @@ fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs" }
 tauri-plugin-clipboard-manager = "2.5.0"
 dirs = "6"
 ttf-parser = "0.24"
-# Local Steam session recovery + GC access.
-aes = "0.8"
-cbc = { version = "0.1", features = ["alloc"] }
-crc32fast = "1.4"
 hex = "0.4"
 base64 = "0.22"
 flate2 = "1"
 image = { version = "0.25", default-features = false, features = ["png"] }
 keyvalues-parser = "0.2"
-prost = "0.14"
-steam-vent = { git = "https://github.com/deadlock-api/steam-vent", rev = "1d7b274f5c2f648aba5dab474b80c1156b409bca" }
-valveprotos = { git = "https://github.com/deadlock-api/deadlock-api", rev = "b14c831f324e20653e50ff60372478d427800d45", features = [
-  "gc-common",
-  "gc-client",
-  "serde",
-] }
 
 [dev-dependencies]
 tempfile = "3.27.0"

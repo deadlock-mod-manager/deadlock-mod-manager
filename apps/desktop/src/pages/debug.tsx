@@ -15,6 +15,7 @@ import {
 import { useMatchSyncToggle } from "@/hooks/use-match-sync-toggle";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { useWhatsNew } from "@/hooks/use-whats-new";
+import { isMatchSyncBuilt } from "@/lib/runtime-bootstrap";
 import { usePersistedStore } from "@/lib/store";
 
 type DeepLinkDebugInfo = {
@@ -188,23 +189,27 @@ const Debug = () => {
             disabled={!telemetrySettings.hasSeenTelemetryPrompt}>
             {t("debug.resetTelemetryConsent")}
           </Button>
-          <Button
-            onClick={() => void triggerMatchSyncConsent(true)}
-            variant='outline'>
-            {t("debug.triggerMatchSyncConsent")}
-          </Button>
-          <Button
-            onClick={() => simulateMatchSync.mutate("newInstall")}
-            variant='outline'
-            disabled={simulateMatchSync.isPending}>
-            {t("debug.simulateMatchSyncNewInstall")}
-          </Button>
-          <Button
-            onClick={() => simulateMatchSync.mutate("update")}
-            variant='outline'
-            disabled={simulateMatchSync.isPending}>
-            {t("debug.simulateMatchSyncUpdate")}
-          </Button>
+          {isMatchSyncBuilt() && (
+            <>
+              <Button
+                onClick={() => void triggerMatchSyncConsent(true)}
+                variant='outline'>
+                {t("debug.triggerMatchSyncConsent")}
+              </Button>
+              <Button
+                onClick={() => simulateMatchSync.mutate("newInstall")}
+                variant='outline'
+                disabled={simulateMatchSync.isPending}>
+                {t("debug.simulateMatchSyncNewInstall")}
+              </Button>
+              <Button
+                onClick={() => simulateMatchSync.mutate("update")}
+                variant='outline'
+                disabled={simulateMatchSync.isPending}>
+                {t("debug.simulateMatchSyncUpdate")}
+              </Button>
+            </>
+          )}
           <Button onClick={resetWhatsNew} variant='outline'>
             {t("debug.resetWhatsNew")}
           </Button>

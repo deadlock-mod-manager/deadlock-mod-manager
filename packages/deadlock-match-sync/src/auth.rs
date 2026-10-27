@@ -43,96 +43,28 @@ fn local_vdf_path(steam_dir: &Path) -> Result<PathBuf, MatchSyncError> {
   Ok(steam_dir.join("local.vdf"))
 }
 
-/// One entry of `loginusers.vdf`, with the fields Steam uses to mark which account
-/// is the one currently signed in.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RememberedAccount {
-  pub steam_id64: u64,
-  /// As written by Steam; lowercase it before using it as a ConnectCache key.
-  pub account_name: String,
-  pub persona_name: Option<String>,
-  /// Older Steam builds write `MostRecent`, current ones only `AutoLogin`.
-  pub most_recent: bool,
-  pub auto_login: bool,
-  /// Unix seconds of the last login, `0` when Steam wrote no `Timestamp`.
-  pub timestamp: i64,
-}
-
-fn flag(user: &Value<'_>, key: &str) -> bool {
-  child(user, key).and_then(Value::get_str) == Some("1")
-}
-
-pub fn remembered_accounts(steam_dir: &Path) -> Result<Vec<RememberedAccount>, MatchSyncError> {
-  let path = steam_dir.join("config").join("loginusers.vdf");
-  let text =
-    std::fs::read_to_string(&path).map_err(|e| err(format!("cannot read loginusers.vdf: {e}")))?;
-  let vdf = keyvalues_parser::parse(&text)
-    .map(Vdf::from)
-    .map_err(|e| err(format!("cannot parse loginusers.vdf: {e}")))?;
-  let users = vdf
-    .value
-    .get_obj()
-    .ok_or_else(|| err("loginusers.vdf has no users"))?;
-
-  let mut accounts = Vec::new();
-  for (key, entries) in users.iter() {
-    let Ok(steam_id64) = key.parse::<u64>() else {
-      log::warn!("skipping loginusers.vdf block with non-numeric key: {key}");
-      continue;
-    };
-    let Some(user) = entries.first() else {
-      continue;
-    };
-    let Some(name) = child(user, "AccountName").and_then(Value::get_str) else {
-      log::warn!("skipping loginusers.vdf block {steam_id64} with no AccountName");
-      continue;
-    };
-    accounts.push(RememberedAccount {
-      steam_id64,
-      account_name: name.to_owned(),
-      persona_name: child(user, "PersonaName")
-        .and_then(Value::get_str)
-        .map(str::to_owned),
-      most_recent: flag(user, "MostRecent"),
-      auto_login: flag(user, "AutoLogin"),
-      timestamp: child(user, "Timestamp")
-        .and_then(Value::get_str)
-        .and_then(|t| t.parse::<i64>().ok())
-        .unwrap_or(0),
-    });
-  }
-  Ok(accounts)
-}
-
-pub fn all_account_ids(steam_dir: &Path) -> Result<Vec<(u64, String)>, MatchSyncError> {
-  Ok(
-    remembered_accounts(steam_dir)?
-      .into_iter()
-      .map(|account| (account.steam_id64, account.account_name.to_lowercase()))
-      .collect(),
-  )
-}
-
-// Self-locating wrapper over `all_account_ids`: every account remembered in
-// `loginusers.vdf`, regardless of current decryptability. Startup-only pruning uses
-// this so temporarily non-decryptable accounts are NOT treated as forgotten.
-pub fn all_remembered_accounts() -> Result<Vec<(u64, String)>, MatchSyncError> {
-  let steam = steamlocate::SteamDir::locate().map_err(|e| err(format!("Steam not found: {e}")))?;
-  all_account_ids(steam.path())
-}
-
-pub fn list_available_accounts() -> Result<Vec<(u64, String)>, MatchSyncError> {
-  let steam = steamlocate::SteamDir::locate().map_err(|e| err(format!("Steam not found: {e}")))?;
-  let steam_dir = steam.path();
+fn read_local_vdf(steam_dir: &Path) -> Result<String, MatchSyncError> {
   let local_vdf = local_vdf_path(steam_dir)?;
-  let text =
-    std::fs::read_to_string(&local_vdf).map_err(|e| err(format!("cannot read local.vdf: {e}")))?;
-  let vdf = keyvalues_parser::parse(&text)
+  std::fs::read_to_string(&local_vdf).map_err(|e| err(format!("cannot read local.vdf: {e}")))
+}
+
+fn parse_local_vdf(text: &str) -> Result<Vdf<'_>, MatchSyncError> {
+  keyvalues_parser::parse(text)
     .map(Vdf::from)
-    .map_err(|e| err(format!("cannot parse local.vdf: {e}")))?;
+    .map_err(|e| err(format!("cannot parse local.vdf: {e}")))
+}
+
+// Of the remembered `accounts` (SteamID64, lowercase account name), the ones Steam keeps
+// a session for.
+pub fn list_available_accounts(
+  steam_dir: &Path,
+  accounts: Vec<(u64, String)>,
+) -> Result<Vec<(u64, String)>, MatchSyncError> {
+  let text = read_local_vdf(steam_dir)?;
+  let vdf = parse_local_vdf(&text)?;
 
   let mut available = Vec::new();
-  for (steam_id64, account_name) in all_account_ids(steam_dir)? {
+  for (steam_id64, account_name) in accounts {
     match connect_cache_hex(&vdf, &account_name) {
       Ok(Some(_)) => available.push((steam_id64, account_name)),
       Ok(None) => {}
@@ -142,18 +74,17 @@ pub fn list_available_accounts() -> Result<Vec<(u64, String)>, MatchSyncError> {
   Ok(available)
 }
 
-pub fn recover_all() -> Result<Vec<AuthContext>, MatchSyncError> {
-  let steam = steamlocate::SteamDir::locate().map_err(|e| err(format!("Steam not found: {e}")))?;
-  let steam_dir = steam.path();
-  let local_vdf = local_vdf_path(steam_dir)?;
-  let text =
-    std::fs::read_to_string(&local_vdf).map_err(|e| err(format!("cannot read local.vdf: {e}")))?;
-  let vdf = keyvalues_parser::parse(&text)
-    .map(Vdf::from)
-    .map_err(|e| err(format!("cannot parse local.vdf: {e}")))?;
+// The session of each remembered account (SteamID64, lowercase account name) that can be
+// decrypted.
+pub fn recover_all(
+  steam_dir: &Path,
+  accounts: Vec<(u64, String)>,
+) -> Result<Vec<AuthContext>, MatchSyncError> {
+  let text = read_local_vdf(steam_dir)?;
+  let vdf = parse_local_vdf(&text)?;
 
   let mut contexts = Vec::new();
-  for (steam_id64, account_name) in all_account_ids(steam_dir)? {
+  for (steam_id64, account_name) in accounts {
     let recovered = connect_cache_blob(&vdf, &account_name)
       .and_then(|blob| decrypt_blob(&blob, &account_name))
       .and_then(|jwt| steam_id_from_jwt(&jwt).map(|sub| (jwt, sub)));
