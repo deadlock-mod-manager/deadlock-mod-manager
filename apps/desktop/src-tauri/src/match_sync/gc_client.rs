@@ -249,7 +249,20 @@ impl SteamGcClient {
     }
   }
 
+  // steam-vent's login needs a lot of stack in debug builds, and a sync pass calls this
+  // already deep in a worker's stack, so it runs as its own task from a fresh stack.
   async fn connect(
+    ctx: &AuthContext,
+    cancel: &mut watch::Receiver<()>,
+  ) -> Result<GcSession, MatchSyncError> {
+    let ctx = ctx.clone();
+    let mut cancel = cancel.clone();
+    tokio::spawn(async move { Self::connect_on_fresh_stack(&ctx, &mut cancel).await })
+      .await
+      .map_err(|e| MatchSyncError::GcUnavailable(format!("connect task failed: {e}")))?
+  }
+
+  async fn connect_on_fresh_stack(
     ctx: &AuthContext,
     cancel: &mut watch::Receiver<()>,
   ) -> Result<GcSession, MatchSyncError> {
