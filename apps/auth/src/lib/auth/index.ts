@@ -31,6 +31,12 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
+  rateLimit: {
+    customRules: {
+      // The API introspects every bearer token here from shared server IPs.
+      "/oauth2/userinfo": false,
+    },
+  },
   advanced: {
     defaultCookieAttributes: {
       sameSite: env.NODE_ENV === "production" ? "none" : "lax",
