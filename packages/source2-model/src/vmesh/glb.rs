@@ -535,6 +535,9 @@ pub(crate) fn build_glb(
                 material["extras"]["source2Effect"]["maskTexture"] = json!(index);
             }
         }
+        if let Some(path) = &texture.material {
+            material["extras"]["sourceMaterial"] = json!(path.trim_end_matches("_c"));
+        }
         materials.push(material);
     }
 

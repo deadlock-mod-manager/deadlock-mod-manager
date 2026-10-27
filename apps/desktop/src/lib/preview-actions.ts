@@ -101,6 +101,12 @@ const candidate = (
   return { action, slot: uniqueBest(parts), tier: 2 };
 };
 
+export const abilityForAction = (
+  action: PreviewAnimationChoice | null,
+  abilities: HeroAbility[],
+): HeroAbility | null =>
+  action ? (abilities[candidate(action, abilities).slot] ?? null) : null;
+
 /**
  * Puts each ability action on the hero's ability it animates. Clip names only
  * loosely follow the ability names, so an action goes to a slot only when it

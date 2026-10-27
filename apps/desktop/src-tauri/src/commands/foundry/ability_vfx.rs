@@ -4,56 +4,55 @@
 //! `scripts/abilities.vdata_c`; neither the model nor its animation clips name
 //! them. The same table lists every effect that lands somewhere else (impacts,
 //! projectiles, debuffs on the target, aiming previews) and nothing marks which
-//! is which, so this keeps the fields that play on the caster and drops any
-//! effect whose name places it on someone else.
+//! is which. Field semantics select automatic caster playback; the full
+//! reference catalog remains available for explicit effect preview.
 
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
+use serde::Serialize;
 use source2_model::kv3::KvValue;
+use ts_rs::TS;
 
 use super::vdata::{TableCache, base_table};
 use crate::errors::Error;
 
 const ABILITIES_VDATA: &str = "scripts/abilities.vdata_c";
 
-/// Ability fields naming an effect the caster plays from the start of the
-/// ability: wind-ups, channels and movement.
-const CAST_FIELDS: &[&str] = &[
-  "m_CastParticle",
-  "m_strCastEffect",
-  "m_CastDelayParticle",
-  "m_ChannelParticle",
-  "m_ChannelStartParticle",
-  "m_ChargeParticle",
-  "m_ChargeUpParticle",
-  "m_LeapParticle",
-  "m_JumpParticle",
-  "m_TrailParticle",
+/// Semantic field tokens apply to new ability classes without a hero-specific allowlist.
+const CAST_WORDS: &[&str] = &[
+  "cast", "precast", "charge", "channel", "windup", "leap", "jump", "trail", "dash", "buff",
+  "shield", "ambient",
 ];
 
 /// Ability fields naming what the caster lets loose (a beam, a shot, a swing),
 /// which starts once the animation reaches its firing phase.
-const RELEASE_FIELDS: &[&str] = &[
-  "m_BeamParticle",
-  "m_ShootParticle",
-  "m_LaunchParticle",
-  "m_SlashSwingEffect",
+const RELEASE_WORDS: &[&str] = &[
+  "beam", "shoot", "launch", "swing", "slash", "fire", "release", "attack",
 ];
 
 /// Ability field mapping cast events (`CAST_COMPLETED`, ...) to the effect the
 /// caster plays as the cast goes off.
 const CAST_EVENT_FIELD: &str = "m_mapCastEventParticles";
 
-/// Fields of a modifier naming the effect it shows on whoever carries it.
-const MODIFIER_FIELDS: &[&str] = &[
-  "m_strParticleEffect",
-  "m_BuffParticle",
-  "m_ShieldParticle",
-  "m_PlayerShieldParticle",
-  "m_RapidFireParticle",
-  "m_ChargeParticle",
-];
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, TS)]
+#[serde(rename_all = "lowercase")]
+#[ts(export, rename_all = "lowercase")]
+pub enum PreviewEffectPhase {
+  Cast,
+  Release,
+  External,
+  Unbound,
+}
+
+#[derive(Clone, Debug, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, rename_all = "camelCase")]
+pub struct PreviewAbilityEffect {
+  pub path: String,
+  pub field: String,
+  pub phase: PreviewEffectPhase,
+}
 
 /// Words in a modifier or effect name that put it on someone other than the
 /// caster, on the ground, or on the HUD.
@@ -104,52 +103,80 @@ fn elsewhere(name: &str) -> bool {
   ELSEWHERE.iter().any(|word| name.contains(word))
 }
 
-fn caster_effect(value: Option<&KvValue>) -> Option<&str> {
-  value?
-    .as_string()
-    .filter(|path| path.ends_with(".vpcf") && !elsewhere(path))
+fn field_words(name: &str) -> Vec<String> {
+  let mut words = String::new();
+  for ch in name.chars() {
+    if ch.is_ascii_uppercase() || !ch.is_ascii_alphanumeric() {
+      words.push(' ');
+    }
+    if ch.is_ascii_alphanumeric() {
+      words.push(ch.to_ascii_lowercase());
+    }
+  }
+  words.split_whitespace().map(str::to_owned).collect()
 }
 
-/// The effects `ability` plays on its caster, each listed once.
-fn ability_caster_particles(ability: &KvValue) -> CasterParticles {
-  let mut particles = CasterParticles::default();
-  let KvValue::Object(fields) = ability else {
-    return particles;
-  };
-  let mut push = |release: bool, path: Option<&str>| {
-    let Some(path) = path else { return };
-    if particles
-      .cast
-      .iter()
-      .chain(&particles.release)
-      .any(|known| known == path)
-    {
-      return;
+pub(super) fn discover_ability_effects(ability: &KvValue) -> Vec<PreviewAbilityEffect> {
+  fn visit(value: &KvValue, fields: &mut Vec<String>, out: &mut Vec<PreviewAbilityEffect>) {
+    match value {
+      KvValue::String(path) if path.trim_end_matches("_c").ends_with(".vpcf") => {
+        let words: Vec<_> = fields.iter().flat_map(|f| field_words(f)).collect();
+        let external = words.iter().any(|word| {
+          ELSEWHERE.contains(&word.as_str())
+            || ["hit", "projectile", "tracer", "explode", "explosion"].contains(&word.as_str())
+        }) || elsewhere(path);
+        let phase = if external {
+          PreviewEffectPhase::External
+        } else if fields.iter().any(|f| f == CAST_EVENT_FIELD)
+          || words.iter().any(|w| RELEASE_WORDS.contains(&w.as_str()))
+        {
+          PreviewEffectPhase::Release
+        } else if words.iter().any(|w| CAST_WORDS.contains(&w.as_str()))
+          || words.iter().filter(|w| w.as_str() == "modifier").count() == 1
+        {
+          PreviewEffectPhase::Cast
+        } else {
+          PreviewEffectPhase::Unbound
+        };
+        out.push(PreviewAbilityEffect {
+          path: path.trim_end_matches("_c").to_owned(),
+          field: fields.join("."),
+          phase,
+        });
+      }
+      KvValue::Object(values) => {
+        for (key, child) in values {
+          fields.push(key.clone());
+          visit(child, fields, out);
+          fields.pop();
+        }
+      }
+      KvValue::Array(values) => {
+        for child in values {
+          visit(child, fields, out);
+        }
+      }
+      _ => {}
     }
-    let list = if release {
-      &mut particles.release
-    } else {
-      &mut particles.cast
+  }
+  let mut effects = Vec::new();
+  visit(ability, &mut Vec::new(), &mut effects);
+  effects.sort_by(|a, b| a.path.cmp(&b.path).then(a.field.cmp(&b.field)));
+  effects.dedup_by(|a, b| a.path == b.path && a.phase == b.phase);
+  effects
+}
+
+/// Automatic playback uses caster effects; the catalog retains other references for explicit preview.
+pub(super) fn ability_caster_particles(ability: &KvValue) -> CasterParticles {
+  let mut particles = CasterParticles::default();
+  for effect in discover_ability_effects(ability) {
+    let target = match effect.phase {
+      PreviewEffectPhase::Cast => &mut particles.cast,
+      PreviewEffectPhase::Release => &mut particles.release,
+      _ => continue,
     };
-    list.push(path.to_string());
-  };
-  for (key, value) in fields {
-    if CAST_FIELDS.contains(&key.as_str()) {
-      push(false, caster_effect(Some(value)));
-    } else if RELEASE_FIELDS.contains(&key.as_str()) {
-      push(true, caster_effect(Some(value)));
-    } else if key == CAST_EVENT_FIELD
-      && let KvValue::Object(events) = value
-    {
-      for event in events.values() {
-        push(true, caster_effect(Some(event)));
-      }
-    } else if key.ends_with("Modifier") && !elsewhere(key) {
-      // Only modifiers the ability applies directly: nested ones (an aura's
-      // provided modifier, a buff's follow-up) usually land on other heroes.
-      for field in MODIFIER_FIELDS {
-        push(false, caster_effect(value.get(field)));
-      }
+    if !target.contains(&effect.path) {
+      target.push(effect.path);
     }
   }
   particles
@@ -251,6 +278,96 @@ mod tests {
     assert_eq!(
       particles.release,
       ["particles/bebop/beam.vpcf", "particles/haze/cast.vpcf"]
+    );
+  }
+
+  #[test]
+  fn includes_minas_channel_without_target_or_explosion_effects() {
+    let particles = ability_caster_particles(&object(&[
+      (
+        "m_BatSwarmChannelParticle",
+        text("particles/abilities/vampirebat/vampirebat_batswarm_channel.vpcf"),
+      ),
+      (
+        "m_ExplodeParticle",
+        text("particles/vampirebat/explode.vpcf"),
+      ),
+      (
+        "m_GainedBatParticle",
+        text("particles/vampirebat/gained.vpcf"),
+      ),
+    ]));
+    assert_eq!(
+      particles.cast,
+      ["particles/abilities/vampirebat/vampirebat_batswarm_channel.vpcf"]
+    );
+    assert!(particles.release.is_empty());
+  }
+
+  #[test]
+  fn discovers_unseen_fields_and_keeps_external_and_unbound_effects_in_the_catalog() {
+    let ability = object(&[
+      (
+        "m_FuturePowerChannelParticle",
+        text("particles/future/channel.vpcf_c"),
+      ),
+      (
+        "m_NewPowerSlashSwingEffect",
+        text("particles/future/swing.vpcf"),
+      ),
+      (
+        "m_TargetModifier",
+        object(&[(
+          "m_strParticleEffect",
+          text("particles/future/on_enemy.vpcf"),
+        )]),
+      ),
+      (
+        "m_MysteryEffects",
+        KvValue::Array(vec![text("particles/future/mystery.vpcf")]),
+      ),
+    ]);
+    let particles = ability_caster_particles(&ability);
+    assert_eq!(particles.cast, ["particles/future/channel.vpcf"]);
+    assert_eq!(particles.release, ["particles/future/swing.vpcf"]);
+    let effects = discover_ability_effects(&ability);
+    assert_eq!(effects.len(), 4);
+    assert!(
+      effects
+        .iter()
+        .any(|e| e.phase == PreviewEffectPhase::External
+          && e.field == "m_TargetModifier.m_strParticleEffect")
+    );
+    assert!(
+      effects
+        .iter()
+        .any(|e| e.phase == PreviewEffectPhase::Unbound)
+    );
+  }
+
+  #[test]
+  fn a_caster_modifier_does_not_spawn_its_weapon_tracers_on_the_body() {
+    let ability = object(&[(
+      "m_CasterModifier",
+      object(&[
+        (
+          "m_strParticleEffect",
+          text("particles/future/self_buff.vpcf"),
+        ),
+        (
+          "m_SpiritBulletTracerParticle",
+          text("particles/weapon_fx/future/spirit.vpcf"),
+        ),
+      ]),
+    )]);
+    assert_eq!(
+      ability_caster_particles(&ability).cast,
+      ["particles/future/self_buff.vpcf"]
+    );
+    assert!(
+      discover_ability_effects(&ability)
+        .iter()
+        .any(|e| e.phase == PreviewEffectPhase::External && e.path.contains("weapon_fx"))
     );
   }
 }

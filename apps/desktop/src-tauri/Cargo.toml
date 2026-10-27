@@ -80,6 +80,7 @@ machine-uid = "0.5.3"
 vpk-parser = { path = "../../../packages/vpk-parser" }
 hero-parser = { path = "../../../packages/hero-parser" }
 source2-model = { path = "../../../packages/source2-model" }
+source2-tools = { path = "../../../packages/source2-tools" }
 vpkmanager = { path = "../../../packages/vpkmanager" }
 dmp-parser = { path = "../../../packages/dmp-parser" }
 kv-parser = { path = "../../../packages/kv-parser" }
@@ -115,7 +116,14 @@ ttf-parser = "0.24"
 hex = "0.4"
 base64 = "0.22"
 flate2 = "1"
-image = { version = "0.25", default-features = false, features = ["png"] }
+image = { version = "0.25", default-features = false, features = [
+  "png",
+  "jpeg",
+  "tga",
+  "webp",
+  "bmp",
+  "gif",
+] }
 keyvalues-parser = "0.2"
 dmm-plugin-runtime = { path = "../../../packages/plugin-runtime", optional = true }
 

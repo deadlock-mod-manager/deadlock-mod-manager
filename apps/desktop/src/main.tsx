@@ -4,6 +4,8 @@ import React, { type ReactNode, Suspense } from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import App from "./app";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import { ComparisonWindow } from "./components/modding-workbench/comparison-window";
 import { useExperimentalFeature } from "./hooks/use-experimental-feature";
 import { queryClient } from "./lib/client";
 import { usePersistedStore } from "./lib/store";
@@ -18,6 +20,7 @@ import Contributors from "./pages/contributors";
 import Developer from "./pages/developer";
 import Downloads from "./pages/downloads";
 import Foundry from "./pages/foundry";
+import ModdingWorkbench from "./pages/modding-workbench";
 
 import Mod from "./pages/mod";
 import Performance from "./pages/performance";
@@ -42,7 +45,8 @@ if (import.meta.env.VITE_DMM_E2E_HARNESS === "1") {
   await import("@wdio/tauri-plugin");
 }
 
-const application = await initializeApplication();
+const comparisonOnly = getCurrentWindow().label === "workbench-compare";
+const application = await initializeApplication(comparisonOnly);
 
 const MapsRouteGate = () => {
   const isEnabled = useExperimentalFeature("custom-maps");
@@ -88,21 +92,24 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <Suspense fallback={<Splash />}>
-        <BrowserRouter>
-          <Routes>
-            {import.meta.env.DEV && (
-              <Route element={<DebugViewer />} path='/debug/viewer/:modId?' />
-            )}
-            <Route
-              element={
-                <App
-                  runtime={application.runtime}
-                  storage={application.storage}
-                />
-              }>
-              <Route element={<Dashboard />} path='/' />
-              <Route element={<MyMods />} path='/my-mods' />
-              <Route element={<GetMods />} path='/mods' />
+        {comparisonOnly ? (
+          <ComparisonWindow />
+        ) : (
+          <BrowserRouter>
+            <Routes>
+              {import.meta.env.DEV && (
+                <Route element={<DebugViewer />} path='/debug/viewer/:modId?' />
+              )}
+              <Route
+                element={
+                  <App
+                    runtime={application.runtime}
+                    storage={application.storage}
+                  />
+                }>
+                <Route element={<Dashboard />} path='/' />
+                <Route element={<MyMods />} path='/my-mods' />
+                <Route element={<GetMods />} path='/mods' />
 
               <Route element={<MapsRouteGate />} path='/maps' />
               <Route element={<Mod />} path='/mods/:id' />
@@ -148,6 +155,8 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
                 path='/stats/matches/:matchId'
               />
               <Route element={<FoundryRouteGate />} path='/foundry' />
+              <Route element={<ModdingWorkbench />} path='/workbench' />
+              <Route element={<CustomSettings value='tools' />} path='/settings/tools' />
               <Route element={<PerformanceRouteGate />} path='/performance' />
               <Route
                 element={<CustomSettings value='autoexec' />}
@@ -160,6 +169,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
             </Route>
           </Routes>
         </BrowserRouter>
+         )}
       </Suspense>
     </QueryClientProvider>
   </React.StrictMode>,

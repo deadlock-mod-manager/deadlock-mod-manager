@@ -1538,7 +1538,9 @@ pub fn is_patch_already_applied(content: &str, diff: &DocumentDiff) -> Result<bo
 
     for change in &diff.changes {
         let is_applied = match change.op {
-            DiffOp::Add => check_add_already_applied(&parse_result.data, &parse_result.ast, change)?,
+            DiffOp::Add => {
+                check_add_already_applied(&parse_result.data, &parse_result.ast, change)?
+            }
             DiffOp::Replace => {
                 check_replace_already_applied(&parse_result.data, &parse_result.ast, change)?
             }
@@ -2646,7 +2648,7 @@ mod tests {
             "Patch should be applied to target"
         );
     }
- 
+
     #[test]
     fn test_replace_array_keyvalues_preserves_indentation() {
         // Test that replacing array values preserves proper indentation (3 tabs for SearchPaths)
@@ -2770,8 +2772,7 @@ mod tests {
             "Start marker should have tab indentation"
         );
     }
- 
- 
+
     #[test]
     fn test_no_orphaned_whitespace_after_removal() {
         // Test that removing KeyValue nodes also removes their associated whitespace
@@ -2908,8 +2909,7 @@ mod tests {
 
         let err = result.unwrap_err();
         assert!(
-            err.to_string()
-                .contains("old_comment/new_comment"),
+            err.to_string().contains("old_comment/new_comment"),
             "Error message should mention old_comment/new_comment fields"
         );
     }

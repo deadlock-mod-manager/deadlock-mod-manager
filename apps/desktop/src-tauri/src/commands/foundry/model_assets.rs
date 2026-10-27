@@ -51,7 +51,7 @@ impl ModelAssets {
     self.directory.path()
   }
 
-  fn publish(
+  pub(crate) fn publish(
     &self,
     glb: &[u8],
     vertex_count: u32,
@@ -81,7 +81,7 @@ impl ModelAssets {
     Ok(model)
   }
 
-  fn release(&self, asset_id: &str) -> Result<(), Error> {
+  pub(crate) fn release(&self, asset_id: &str) -> Result<(), Error> {
     let path = self
       .files
       .lock()
@@ -93,7 +93,7 @@ impl ModelAssets {
     Ok(())
   }
 
-  fn start_job(self: &Arc<Self>, id: String) -> Result<ModelJob, Error> {
+  pub(crate) fn start_job(self: &Arc<Self>, id: String) -> Result<ModelJob, Error> {
     let mut jobs = self.jobs.lock().unwrap_or_else(|e| e.into_inner());
     if id.is_empty() || id.len() > 128 || jobs.contains_key(&id) {
       return Err(Error::InvalidInput(
@@ -152,14 +152,18 @@ fn clean_abandoned_sessions(root: &Path) -> Result<(), Error> {
   Ok(())
 }
 
-struct ModelJob {
+pub(crate) struct ModelJob {
   id: String,
   token: CancellationToken,
   assets: Arc<ModelAssets>,
 }
 
 impl ModelJob {
-  fn check(&self) -> Result<(), Error> {
+  pub(crate) fn cancellation_token(&self) -> CancellationToken {
+    self.token.clone()
+  }
+
+  pub(crate) fn check(&self) -> Result<(), Error> {
     if self.token.is_cancelled() {
       Err(Error::InvalidInput("Model decode cancelled".into()))
     } else {
@@ -167,7 +171,7 @@ impl ModelJob {
     }
   }
 
-  async fn acquire(&self, slot: Arc<Semaphore>) -> Result<OwnedSemaphorePermit, Error> {
+  pub(crate) async fn acquire(&self, slot: Arc<Semaphore>) -> Result<OwnedSemaphorePermit, Error> {
     tokio::select! {
       biased;
       _ = self.token.cancelled() => Err(Error::InvalidInput("Model decode cancelled".into())),
@@ -217,6 +221,7 @@ pub async fn foundry_decode_model(
   file_path: String,
   entry_path: String,
   workspace_root: Option<String>,
+  overlay_root: Option<String>,
 ) -> Result<FoundryModel, Error> {
   let job = assets.start_job(request_id)?;
   let permit = job.acquire(model_decode_slot()).await?;
@@ -224,7 +229,7 @@ pub async fn foundry_decode_model(
     let _permit = permit;
     job.check()?;
     let started = Instant::now();
-    let overlay = workspace_root.map(|root| PathBuf::from(root).join("files"));
+    let overlay = overlay_root.map(PathBuf::from).or_else(|| workspace_root.map(|root| PathBuf::from(root).join("files")));
     let (archive, base) = super::animation::archives_with_overlay(&file_path, overlay.as_deref())
       .map_err(|error| Error::Preview {
       kind: "previewCorruptArchive",

@@ -120,6 +120,7 @@ import { invokeGuarded } from "@/lib/game-guard";
 import { isMatchSyncBuilt } from "@/lib/runtime-bootstrap";
 import { useModRecovery } from "@/hooks/use-mod-recovery";
 import { useVpkScanDismissal } from "@/lib/vpk-scan-dismissal";
+import { ModdingToolsSettings } from "@/components/settings/modding-tools-settings";
 
 type DangerActionProps = {
   disabled?: boolean;
@@ -873,6 +874,9 @@ const CustomSettings = ({ value }: { value?: string }) => {
           </TabsContent>
 
           <TabsContent className='mt-0 space-y-4' value='tools'>
+            <Section title={t("moddingTools.title")} searchId='modding-tools'>
+              <ModdingToolsSettings />
+            </Section>
             <Section
               description={t("settings.toolsDescription")}
               title={t("settings.tools")}>

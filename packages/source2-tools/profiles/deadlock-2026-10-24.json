@@ -1,0 +1,839 @@
+{
+  "id": "deadlock-2026-10-24",
+  "modules": [
+    {
+      "path": "game/bin/win64/OpenImageDenoise.dll",
+      "sha256": "77ddb058fd2c5870cee1a16c4aabb4618f592f9602f388e3c18e406ed753559a",
+      "source": "dota_tools_depot381450",
+      "source_path": "game/bin/win64/OpenImageDenoise.dll"
+    },
+    {
+      "path": "game/bin/win64/OpenImageDenoise_core.dll",
+      "sha256": "8a445b2112e33aa94da9a4dd4dbd5e54a8b697866aabf4ded81b87c5e3826731",
+      "source": "dota_tools_depot381450",
+      "source_path": "game/bin/win64/OpenImageDenoise_core.dll"
+    },
+    {
+      "path": "game/bin/win64/OpenImageDenoise_device_cpu.dll",
+      "sha256": "7e14c3d7a19736cefe515779668c15ad20f1481d78f198055625289198cee286",
+      "source": "dota_tools_depot381450",
+      "source_path": "game/bin/win64/OpenImageDenoise_device_cpu.dll"
+    },
+    {
+      "path": "game/bin/win64/OpenImageDenoise_device_cuda.dll",
+      "sha256": "d2ab3613f1c4e2f86ba446a1e8beb13ea9788d05455e41f569a16731618309ff",
+      "source": "dota_tools_depot381450",
+      "source_path": "game/bin/win64/OpenImageDenoise_device_cuda.dll"
+    },
+    {
+      "path": "game/bin/win64/OpenImageDenoise_device_hip.dll",
+      "sha256": "457b4134be46abbc1a8c355e901fdb207539ccb8deb4e2abe2dec21f8ad4025d",
+      "source": "dota_tools_depot381450",
+      "source_path": "game/bin/win64/OpenImageDenoise_device_hip.dll"
+    },
+    {
+      "path": "game/bin/win64/OpenImageDenoise_device_sycl.dll",
+      "sha256": "a2563fc4a3a1f63ba1579df3e8a3710531b62889b15345f3543739aff2084173",
+      "source": "dota_tools_depot381450",
+      "source_path": "game/bin/win64/OpenImageDenoise_device_sycl.dll"
+    },
+    {
+      "path": "game/bin/win64/Qt5Concurrent.dll",
+      "sha256": "d4a01961fff02cc38ab906d3bffaeb49db893edc624f840e06d07985086db29f",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/Qt5Concurrent.dll"
+    },
+    {
+      "path": "game/bin/win64/Qt5Core.dll",
+      "sha256": "b72018655360463896edbd86b120be6dfa7235ae8a0aaa728165cb496573acb9",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/Qt5Core.dll"
+    },
+    {
+      "path": "game/bin/win64/Qt5Gui.dll",
+      "sha256": "2ea37f7655223c5cdf1f28616c601ca58bf8b215e371d6f612cfa1aa34517fbf",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/Qt5Gui.dll"
+    },
+    {
+      "path": "game/bin/win64/Qt5Widgets.dll",
+      "sha256": "e619823dad8db291f9da78eb81938da3f74a08d2318d660a8f2f9757b862dd0b",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/Qt5Widgets.dll"
+    },
+    {
+      "path": "game/bin/win64/SDL3.dll",
+      "sha256": "e7c0c22aaadc2836242ba001aa488773eceb4609005a7f02464206ca59a86481",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/SDL3.dll"
+    },
+    {
+      "path": "game/bin/win64/amd_ags_x64.dll",
+      "sha256": "2449e8339e0f031bc4f954398f5917b8eb5a2d20c32d4688a083d5dd9f637ab8",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/amd_ags_x64.dll"
+    },
+    {
+      "path": "game/bin/win64/amd_fidelityfx_vk.dll",
+      "sha256": "a1624cc4238fef046f30c4d80ce3f47be63fc5f5373f49e3ee9edb9960f54c78",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/amd_fidelityfx_vk.dll"
+    },
+    {
+      "path": "game/bin/win64/animationsystem.dll",
+      "sha256": "01efc8fcdc1fe9691164f73db5e93dee806999d498a7be9a6366d1a582441d21",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/animationsystem.dll"
+    },
+    {
+      "path": "game/bin/win64/assetbrowser.dll",
+      "sha256": "f0e1bd25b494b5ac28e717c5342261ce5fa088af34f4602f1fe335bc2bbdfcd0",
+      "source": "dota_tools_depot381450",
+      "source_path": "game/bin/win64/assetbrowser.dll"
+    },
+    {
+      "path": "game/bin/win64/assetpreview.dll",
+      "sha256": "6b1a29e17add5bbd589f7894ce00c9bc6d49c526f34bf67a39bc7bd9bc3639bc",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/assetpreview.dll"
+    },
+    {
+      "path": "game/bin/win64/assetrename.dll",
+      "sha256": "ae48aac1e5d771ce56c0a2d19a76237ea8f812becebd324e84f429e3f5e67453",
+      "source": "dota_tools_depot381450",
+      "source_path": "game/bin/win64/assetrename.dll"
+    },
+    {
+      "path": "game/bin/win64/assetsystem.dll",
+      "sha256": "db7521832186e270e9850e90d7eadbf736a399f3821ea0cf89a6f9f2ba6c19c8",
+      "source": "dota_tools_depot381450",
+      "source_path": "game/bin/win64/assetsystem.dll"
+    },
+    {
+      "path": "game/bin/win64/ati_compress_wrapper.dll",
+      "sha256": "59b8e6afa8bd163213b63bbc8b7af18e495ddebee801ebda39ef62fd559901c3",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/ati_compress_wrapper.dll"
+    },
+    {
+      "path": "game/bin/win64/bc7e.dll",
+      "sha256": "a340167d3d9e2576b7d0d1ade6d9a290c10b9c747ac7f621e4da3b4dfc1196ee",
+      "source": "original_reduced_csdk12",
+      "source_path": "game/bin/win64/bc7e.dll"
+    },
+    {
+      "path": "game/bin/win64/bugreporter_filequeue.dll",
+      "sha256": "8c24a65f6700567fdf2c90b31b5a582e824e1d819b7a0bbe5317c0a91f460004",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/bugreporter_filequeue.dll"
+    },
+    {
+      "path": "game/bin/win64/cairo.dll",
+      "sha256": "a353e16432015d93866e468f9f0eb28b7f09c9faa3b57feb4760ab9f2178a756",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/cairo.dll"
+    },
+    {
+      "path": "game/bin/win64/d3dcompiler_47.dll",
+      "sha256": "4432bbd1a390874f3f0a503d45cc48d346abc3a8c0213c289f4b615bf0ee84f3",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/d3dcompiler_47.dll"
+    },
+    {
+      "path": "game/bin/win64/dbghelp.dll",
+      "sha256": "13f0c74845318b52b76e6000564b1a99c37de48422b44ac74d034fa222c65a23",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/dbghelp.dll"
+    },
+    {
+      "path": "game/bin/win64/deadlock.exe",
+      "sha256": "69ce101f58cf0b784f5f5453781120613e780dc1ee8f1f07a73bbcbf4381be7b",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/deadlock.exe"
+    },
+    {
+      "path": "game/bin/win64/dmxconvert.exe",
+      "sha256": "d4c8e91666399a974c960451903261e8b7ff1d906095ecf0badc31d8890bffd0",
+      "source": "dota_tools_depot381450",
+      "source_path": "game/bin/win64/dmxconvert.exe"
+    },
+    {
+      "path": "game/bin/win64/dota2cfg.exe",
+      "sha256": "22d244bd1a4c928b796109229d0e7771b771462035c88a3461b75abe91414778",
+      "source": "dota_tools_depot381450",
+      "source_path": "game/bin/win64/dota2cfg.exe"
+    },
+    {
+      "path": "game/bin/win64/embree3.dll",
+      "sha256": "903b3c680ffbf2965d7988f0a42d902c5e198cab15c435ddea79852573be3620",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/embree3.dll"
+    },
+    {
+      "path": "game/bin/win64/engine2.dll",
+      "sha256": "f7dd5763050e203361809360b4354ef3f768753bb6e43fb314d4822065d28da6",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/engine2.dll"
+    },
+    {
+      "path": "game/bin/win64/exportsystem.dll",
+      "sha256": "de3f58665f7523ae8d3d6a36d0de0eb09e08cdcb561ff94a926227d78f5dc51f",
+      "source": "dota_tools_depot381450",
+      "source_path": "game/bin/win64/exportsystem.dll"
+    },
+    {
+      "path": "game/bin/win64/filesystem_stdio.dll",
+      "sha256": "e5bba3c4cf92f889e13ec4062e281f48bc64a7fe7122df2a40cfc808ad5da47d",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/filesystem_stdio.dll"
+    },
+    {
+      "path": "game/bin/win64/gfsdk_aftermath_lib.x64.dll",
+      "sha256": "d3fa76f1928d3914a8a2a0f9e55a8077c1253e8f9d64cba9e1d3760cfd5fa25e",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/gfsdk_aftermath_lib.x64.dll"
+    },
+    {
+      "path": "game/bin/win64/helpsystem.dll",
+      "sha256": "a8ce211d88d2ac27f8c64573bf945bb347eb9e6dc0a23c58efe82406cb6c81b3",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/helpsystem.dll"
+    },
+    {
+      "path": "game/bin/win64/imemanager.dll",
+      "sha256": "1d58ba45ed25a662da0b125e846dc1439e813da34a8a5765530c6208648f83c2",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/imemanager.dll"
+    },
+    {
+      "path": "game/bin/win64/inputsystem.dll",
+      "sha256": "ce8a3d9ae3f312ad081248dfe11a371008694e4a355c226b9f3944e4a9530fb3",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/inputsystem.dll"
+    },
+    {
+      "path": "game/bin/win64/ispc_texcomp.dll",
+      "sha256": "6f4a0c7316c0098ea6eaf93b659b46e39c425212429c84f247fa5ffcd1787b35",
+      "source": "original_reduced_csdk12",
+      "source_path": "game/bin/win64/ispc_texcomp.dll"
+    },
+    {
+      "path": "game/bin/win64/libavcodec-58.dll",
+      "sha256": "0984e89dce98008fcdfe82ba398ecbda8356ca9374fe40a784c5d25056558870",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/libavcodec-58.dll"
+    },
+    {
+      "path": "game/bin/win64/libavformat-58.dll",
+      "sha256": "9a7e0abf5a09e983d7f46999b6b413a31f0b70dfb8cca1072ec6b88f790c0d0d",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/libavformat-58.dll"
+    },
+    {
+      "path": "game/bin/win64/libavresample-4.dll",
+      "sha256": "b2a72526916f00748fc8957d8186d1756c8eb2d0628102135d0244bed2773c45",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/libavresample-4.dll"
+    },
+    {
+      "path": "game/bin/win64/libavutil-56.dll",
+      "sha256": "114622d5f56bc8c27d2dc01059e4ea975069643f5d0f24da585f62854191bb1b",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/libavutil-56.dll"
+    },
+    {
+      "path": "game/bin/win64/libfbxsdk_2020_3_1.dll",
+      "sha256": "474abba2d946573bbd32f39baf39a295c6fd6cd6a4a58825651a7bd2cd8fed3f",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/libfbxsdk_2020_3_1.dll"
+    },
+    {
+      "path": "game/bin/win64/libfontconfig-1.dll",
+      "sha256": "209507f621bf5cd09422a4d9cf2a027af0f7aa7cf7c9dc82fd98ef4b86b4bc46",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/libfontconfig-1.dll"
+    },
+    {
+      "path": "game/bin/win64/libfreetype-6.dll",
+      "sha256": "bdfb01f8ecf2f5af6014bd4eb4ea733a24f1de6ec6167bc504b8eb088d6b5822",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/libfreetype-6.dll"
+    },
+    {
+      "path": "game/bin/win64/libglib-2.0-0.dll",
+      "sha256": "a23990999e3f5ae299e104b01d70fcf0a035064058dbcc18e6f3ba2ce0431013",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/libglib-2.0-0.dll"
+    },
+    {
+      "path": "game/bin/win64/libgmodule-2.0-0.dll",
+      "sha256": "351d05acc97d19ea348a69a844b3d959a02ed6189357b8d8d65eb70b7f68e537",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/libgmodule-2.0-0.dll"
+    },
+    {
+      "path": "game/bin/win64/libgobject-2.0-0.dll",
+      "sha256": "166ce8496289ebe41cd624e24ba99a5856402141d1f095359314d853581ab22a",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/libgobject-2.0-0.dll"
+    },
+    {
+      "path": "game/bin/win64/libgthread-2.0-0.dll",
+      "sha256": "6dea26270e891756ca78422c289cf77c6780194e541598ff91c3b73c124c249c",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/libgthread-2.0-0.dll"
+    },
+    {
+      "path": "game/bin/win64/libmpg123-0.dll",
+      "sha256": "24e71004d29377b42a5145acdac4195da073a3a0b8e96d9a37b286fb09b2cba7",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/libmpg123-0.dll"
+    },
+    {
+      "path": "game/bin/win64/libpango-1.0-0.dll",
+      "sha256": "0c2971d0cf26cb70021d03c7a1fca8555f3c4b68a8b9e5d5e28508c7d53a7448",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/libpango-1.0-0.dll"
+    },
+    {
+      "path": "game/bin/win64/libpangoft2-1.0-0.dll",
+      "sha256": "4d7f3151cbcdffccad1b68c14a463dfeb19f78893bc74b1e104a04eb987082ff",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/libpangoft2-1.0-0.dll"
+    },
+    {
+      "path": "game/bin/win64/libswscale-5.dll",
+      "sha256": "0ef8ffe68f41957b36a3f0390e8fb13e400b41cc7e0f63c2bb43d18ab8c5419c",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/libswscale-5.dll"
+    },
+    {
+      "path": "game/bin/win64/localize.dll",
+      "sha256": "53c2c608f5bd7c3896920225e52cc6c54bed4459b30e19145da20f7eded18bab",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/localize.dll"
+    },
+    {
+      "path": "game/bin/win64/materialsystem2.dll",
+      "sha256": "26a029e4e33db12801ebab80ea2ad65536e6d1e19889c810edc59637edd78e74",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/materialsystem2.dll"
+    },
+    {
+      "path": "game/bin/win64/meshsystem.dll",
+      "sha256": "d035744bb9de1e25d49db9e09a7f47f2e447c52f28c30e3fdc012e5da52aa24a",
+      "source": "dota_mesh_current",
+      "source_path": "game/bin/win64/meshsystem.dll"
+    },
+    {
+      "path": "game/bin/win64/modeldoc_editor.dll",
+      "sha256": "b6ab77ae4dc5dd7ebc5fd20fb5072de3526e6948cedae9c217be2ea3bea7e33e",
+      "source": "derived_local_clock_patch",
+      "source_path": "game/bin/win64/modeldoc_editor.dll"
+    },
+    {
+      "path": "game/bin/win64/modeldoc_utils.dll",
+      "sha256": "ec589d9e617e4b4102759b5f498d04ac51cbdc108ddd0c301c9b251ace13a3b1",
+      "source": "dota_tools_depot381450",
+      "source_path": "game/bin/win64/modeldoc_utils.dll"
+    },
+    {
+      "path": "game/bin/win64/navsystem.dll",
+      "sha256": "264d20e76c8a3815f37e881c2091fe63540e6162596b09e791ac2cb0c88439cc",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/navsystem.dll"
+    },
+    {
+      "path": "game/bin/win64/networksystem.dll",
+      "sha256": "5483a9b5a02a16d98431b89b8f2604f5511d37ddd4a396a608ced1d7ce946eef",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/networksystem.dll"
+    },
+    {
+      "path": "game/bin/win64/nvngx_dlss.dll",
+      "sha256": "22c4660249da5b352cde0ce4d95178c3761223dd6ac096d0b88e5c03d7a5cdd1",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/nvngx_dlss.dll"
+    },
+    {
+      "path": "game/bin/win64/p4lib.dll",
+      "sha256": "b8b936ffeb5ace85acfb45a05b9811508e24ec829dc1a1c064bd544a84aaa04a",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/p4lib.dll"
+    },
+    {
+      "path": "game/bin/win64/panorama.dll",
+      "sha256": "68e1b13156c1dd531e24520ce584a7b14fe99a988bd9eb9d8b75c5e635d34158",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/panorama.dll"
+    },
+    {
+      "path": "game/bin/win64/panorama_text_pango.dll",
+      "sha256": "5cf2e53a5c125017b7a50b7fe1e9ccfbdb3cfa908ef67650bfda4a9114064b57",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/panorama_text_pango.dll"
+    },
+    {
+      "path": "game/bin/win64/panoramauiclient.dll",
+      "sha256": "68bbfb267ccb2eaca7490de209655711c403adf1ff82e8accbcb6d9f710eda4f",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/panoramauiclient.dll"
+    },
+    {
+      "path": "game/bin/win64/particles.dll",
+      "sha256": "05b1c884941dc8058a9bad5fcd854a59221e415f7b8f903d1994512e7856d17c",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/particles.dll"
+    },
+    {
+      "path": "game/bin/win64/phonemeextractors/phonemeextractor.dll",
+      "sha256": "ec4d68977593cce4a05317adecc74fa10962c1d0167b23a167f486b1caa79a5a",
+      "source": "dota_tools_depot381450",
+      "source_path": "game/bin/win64/phonemeextractors/phonemeextractor.dll"
+    },
+    {
+      "path": "game/bin/win64/phonemeextractors/phonemeextractor_ims.dll",
+      "sha256": "bd0dbbaac64e0f3e3ca461416838a54c1a385d9de8ce5eb1993cf4bcff42b0c6",
+      "source": "dota_tools_depot381450",
+      "source_path": "game/bin/win64/phonemeextractors/phonemeextractor_ims.dll"
+    },
+    {
+      "path": "game/bin/win64/phonon.dll",
+      "sha256": "a97c891d49619e6d6dc3cbad8d64db1648db8dc6efcfe1d01378e90c954161ea",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/phonon.dll"
+    },
+    {
+      "path": "game/bin/win64/phonon4.dll",
+      "sha256": "a844ddfea7141d42f7cfeb37d9595b19575de4e3c2d880985cea926840b6b3a9",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/phonon4.dll"
+    },
+    {
+      "path": "game/bin/win64/physicsbuilder.dll",
+      "sha256": "9191a70d4de9e70c3d53d03e6e1208c30718373192e34b8372240d015029aa63",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/physicsbuilder.dll"
+    },
+    {
+      "path": "game/bin/win64/pi_level_zero.dll",
+      "sha256": "25cd3f916fc41e7c157a09c2aab78a4c4dce63242a01443e6cdadac8ba96df54",
+      "source": "dota_tools_depot381450",
+      "source_path": "game/bin/win64/pi_level_zero.dll"
+    },
+    {
+      "path": "game/bin/win64/pi_win_proxy_loader.dll",
+      "sha256": "ba3847b8ed76ffbb17c7de825bad82d612e9b9e74fd95a41ff7626399f9a9ea5",
+      "source": "dota_tools_depot381450",
+      "source_path": "game/bin/win64/pi_win_proxy_loader.dll"
+    },
+    {
+      "path": "game/bin/win64/propertyeditor.dll",
+      "sha256": "7dcd5c58dd63e58758ccae0983648e4ec4b9f88749f22ac99fd87cd43151c12c",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/propertyeditor.dll"
+    },
+    {
+      "path": "game/bin/win64/pulse_system.dll",
+      "sha256": "a435212d444bcea24e74a1ecc7c6d620eb81aca4a958def36cd1138dde07d44d",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/pulse_system.dll"
+    },
+    {
+      "path": "game/bin/win64/qt5_plugins/imageformats/qgif.dll",
+      "sha256": "df50647b02abf30cda040460e9be6d903cc7a3d07fd79c229ce136997beafd96",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/qt5_plugins/imageformats/qgif.dll"
+    },
+    {
+      "path": "game/bin/win64/qt5_plugins/imageformats/qico.dll",
+      "sha256": "ddafd14ac6215b2ba8af3cbb0a251dffc4d76b7c5d0f419d614991fe9d16a093",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/qt5_plugins/imageformats/qico.dll"
+    },
+    {
+      "path": "game/bin/win64/qt5_plugins/imageformats/qjpeg.dll",
+      "sha256": "4d0201f4dd243bd1fd29417b57901eb03b50bb3bc2603f3a6641d12b4eb3fd81",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/qt5_plugins/imageformats/qjpeg.dll"
+    },
+    {
+      "path": "game/bin/win64/qt5_plugins/imageformats/qtga.dll",
+      "sha256": "fce0a0c801f8be7799c12947d42bc0d975760f85934e9a3bfdf08e9f021ff6ab",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/qt5_plugins/imageformats/qtga.dll"
+    },
+    {
+      "path": "game/bin/win64/qt5_plugins/imageformats/qtiff.dll",
+      "sha256": "a13b60ffad79e982148e757e622afe7176b0790a74a5982083c542bb6176bac6",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/qt5_plugins/imageformats/qtiff.dll"
+    },
+    {
+      "path": "game/bin/win64/qt5_plugins/platforms/qwindows.dll",
+      "sha256": "e9b4e3c270d7b64eb06871e8d5022d4ea768d93bdd205faab070c6fae695e550",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/qt5_plugins/platforms/qwindows.dll"
+    },
+    {
+      "path": "game/bin/win64/qt5_plugins/styles/qwindowsvistastyle.dll",
+      "sha256": "be29d91c9eac2bb826a011357d13593f216a68b55d8914effc480b61ea4348a5",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/qt5_plugins/styles/qwindowsvistastyle.dll"
+    },
+    {
+      "path": "game/bin/win64/qtadvanceddocking-qt5.dll",
+      "sha256": "2cf5fd2ad49534111f18ff23732375f59017199f73c82d21d2bd022d797af9d1",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/qtadvanceddocking-qt5.dll"
+    },
+    {
+      "path": "game/bin/win64/rendersystemdx11.dll",
+      "sha256": "cc1473b6f89e28420f4ef1795c382131a1dc670653d5019e9719e2ca291ff1c0",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/rendersystemdx11.dll"
+    },
+    {
+      "path": "game/bin/win64/rendersystemempty.dll",
+      "sha256": "39dd6a18c91a56fbfb107bf0e72aa66df1cdd69ecb1fe25db8231e8f98453adc",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/rendersystemempty.dll"
+    },
+    {
+      "path": "game/bin/win64/rendersystemvulkan.dll",
+      "sha256": "84a767da4f562731e51a3999e4fc7e87fcb4022c37486ea4008a75764b163364",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/rendersystemvulkan.dll"
+    },
+    {
+      "path": "game/bin/win64/resourcecompiler.dll",
+      "sha256": "3b5062d7515b67288be4243c9a34209b456074e15ace056ac20d821d49547447",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/resourcecompiler.dll"
+    },
+    {
+      "path": "game/bin/win64/resourcecompiler.exe",
+      "sha256": "8c1acca77f87bc28e623641f684c0fbb44cb6c506287f07e697dd8bfccc08729",
+      "source": "dota_tools_depot381450",
+      "source_path": "game/bin/win64/resourcecompiler.exe"
+    },
+    {
+      "path": "game/bin/win64/resourcecopy.exe",
+      "sha256": "d860d6785428f336e91a2acd8ff49c06505470a62229d97aec9c646c28025ea5",
+      "source": "dota_tools_depot381450",
+      "source_path": "game/bin/win64/resourcecopy.exe"
+    },
+    {
+      "path": "game/bin/win64/resourceinfo.exe",
+      "sha256": "105b69fce5985c9b9fd02d10cf56357518992f7b15ddd1634fee2ba52e8ee994",
+      "source": "dota_tools_depot381450",
+      "source_path": "game/bin/win64/resourceinfo.exe"
+    },
+    {
+      "path": "game/bin/win64/resourcesystem.dll",
+      "sha256": "40cc08f3bf2c6bcc61baf9fb5271f333bb9fbc3b3cae501f4b9c73e8d3a2275c",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/resourcesystem.dll"
+    },
+    {
+      "path": "game/bin/win64/scenefilecache.dll",
+      "sha256": "9d1dc08259d09d29423c49822604daf6ec734ae357e5c247084aa27f109e0989",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/scenefilecache.dll"
+    },
+    {
+      "path": "game/bin/win64/scenesystem.dll",
+      "sha256": "caf71738e5e82d0d73ca897d72ce27859a2269d5adbc0fb42e0860a86f577ef3",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/scenesystem.dll"
+    },
+    {
+      "path": "game/bin/win64/schemasystem.dll",
+      "sha256": "f668f779c322ef33c4f2ed51515dd1c2346f0b95905a29d1aee25a46d1531294",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/schemasystem.dll"
+    },
+    {
+      "path": "game/bin/win64/smartprops.dll",
+      "sha256": "68f10d29f96916ff566c6076c39cfa11a20c8fac9d4ff84aa332ce1362c43c1b",
+      "source": "dota_tools_depot381450",
+      "source_path": "game/bin/win64/smartprops.dll"
+    },
+    {
+      "path": "game/bin/win64/soundsystem.dll",
+      "sha256": "4b21d619383dc1e6220bce245861de4f54c2902987d4096074c6cca36cb8801d",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/soundsystem.dll"
+    },
+    {
+      "path": "game/bin/win64/steam_api64.dll",
+      "sha256": "2a785780af426dfc5c809087d100db8d4ff41a1e1a2956ad5473689e77e3c863",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/steam_api64.dll"
+    },
+    {
+      "path": "game/bin/win64/steamaudio.dll",
+      "sha256": "94eb757d7f38c3ebbaccd5cd453395f7c9202977df589e672155a708db8b60bd",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/steamaudio.dll"
+    },
+    {
+      "path": "game/bin/win64/steamnetworkingsockets.dll",
+      "sha256": "ce0651d00c311606c7936fa730149d2b7e25557430ef5c3291eed47dfdcf0736",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/steamnetworkingsockets.dll"
+    },
+    {
+      "path": "game/bin/win64/subtools/netgraph_subtool.dll",
+      "sha256": "dcc4acf78499f2e08776820bff0cd440aade506669b779723dcd6a7b9a3149cd",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/subtools/netgraph_subtool.dll"
+    },
+    {
+      "path": "game/bin/win64/subtools/soundviewer_subtool.dll",
+      "sha256": "0380e2526e0f9ea45ee64b5f383a79e89f96f5b19b27270205a5b7fd144568f4",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/subtools/soundviewer_subtool.dll"
+    },
+    {
+      "path": "game/bin/win64/sycl7.dll",
+      "sha256": "1b4a210d4a4eddae5912ab52ad980596517e5f8dae589878c0825507e11fa63b",
+      "source": "dota_tools_depot381450",
+      "source_path": "game/bin/win64/sycl7.dll"
+    },
+    {
+      "path": "game/bin/win64/symsrv.dll",
+      "sha256": "c67be7d3f54d44ac264a18e33909482f1f8ca7b7fbaaf5659ef71ed9f8092c34",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/symsrv.dll"
+    },
+    {
+      "path": "game/bin/win64/tbb12.dll",
+      "sha256": "bd1a76d99bb3e9fe08643a98b11ed1eebcb2b6b7b6da60d01925a52077e9a00a",
+      "source": "dota_tools_depot381450",
+      "source_path": "game/bin/win64/tbb12.dll"
+    },
+    {
+      "path": "game/bin/win64/tbbbind.dll",
+      "sha256": "85aeec2b9d79e4c51a178ae12b7f13a3e374983e9b8828f0d83aa746a33d80f8",
+      "source": "dota_tools_depot381450",
+      "source_path": "game/bin/win64/tbbbind.dll"
+    },
+    {
+      "path": "game/bin/win64/tbbbind_2_0.dll",
+      "sha256": "6e9e540361518c2e7fce1679c76892961d08f1991fffd402b8f030b570e03056",
+      "source": "dota_tools_depot381450",
+      "source_path": "game/bin/win64/tbbbind_2_0.dll"
+    },
+    {
+      "path": "game/bin/win64/tbbbind_2_5.dll",
+      "sha256": "f98de08d03e7dc9a9d917a7c32e2d53a3c6184fbf4d99bcf4e54bfb6f88f3c5d",
+      "source": "dota_tools_depot381450",
+      "source_path": "game/bin/win64/tbbbind_2_5.dll"
+    },
+    {
+      "path": "game/bin/win64/tier0.dll",
+      "sha256": "666c9022739190d571a67161646d1a55511e130b62c3a93f8c95b47beaede433",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/tier0.dll"
+    },
+    {
+      "path": "game/bin/win64/toolframework2.dll",
+      "sha256": "16bdd64fd81041e5fa82ef33ed7f56055761274b949543700464127ce11b9639",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/toolframework2.dll"
+    },
+    {
+      "path": "game/bin/win64/tools/hammer.dll",
+      "sha256": "2efe6f1ac1ed2f1ce9d6429e6d13dbaeccde737ef4a240f84e816bacf9dfe249",
+      "source": "dota_tools_depot381450",
+      "source_path": "game/bin/win64/tools/hammer.dll"
+    },
+    {
+      "path": "game/bin/win64/tools/met.dll",
+      "sha256": "f166ec4c7d5ccfc197705d5bb93bea119b73bc23fe0914b17b97d86118c64bc1",
+      "source": "dota_tools_depot381450",
+      "source_path": "game/bin/win64/tools/met.dll"
+    },
+    {
+      "path": "game/bin/win64/tools/modeldoc_editor.dll",
+      "sha256": "b6ab77ae4dc5dd7ebc5fd20fb5072de3526e6948cedae9c217be2ea3bea7e33e",
+      "source": "derived_local_clock_patch",
+      "source_path": "game/bin/win64/tools/modeldoc_editor.dll"
+    },
+    {
+      "path": "game/bin/win64/tools/pet.dll",
+      "sha256": "647738e051b32221167af92aa4a284ed2fb3c57e9235aed9698308373c652346",
+      "source": "dota_tools_depot381450",
+      "source_path": "game/bin/win64/tools/pet.dll"
+    },
+    {
+      "path": "game/bin/win64/tools/sfm.dll",
+      "sha256": "d76d836e931960d6a4c0fedafd80d83bdf27582a25967f3592a59fda9f6c851f",
+      "source": "dota_tools_depot381450",
+      "source_path": "game/bin/win64/tools/sfm.dll"
+    },
+    {
+      "path": "game/bin/win64/tools/workshopmanager.dll",
+      "sha256": "064073a72a403d74e9b3ebdf747c3d1acee7575879a09545476cdb2c645cc50c",
+      "source": "dota_tools_depot381450",
+      "source_path": "game/bin/win64/tools/workshopmanager.dll"
+    },
+    {
+      "path": "game/bin/win64/toolscenenodes.dll",
+      "sha256": "72467a584fc660388d6152df488ed27b019fbb2dc0b493e1afcc333ed46e38d6",
+      "source": "dota_tools_depot381450",
+      "source_path": "game/bin/win64/toolscenenodes.dll"
+    },
+    {
+      "path": "game/bin/win64/v8.dll",
+      "sha256": "f85c79b1fe07c75befe22acd91c5d34a39ff83d9284fd9243a72c364a406822d",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/v8.dll"
+    },
+    {
+      "path": "game/bin/win64/v8_icui18n.dll",
+      "sha256": "098cbdaa7a7c7266beedd747d7a455d5917b665887934e8bc8e04ac6d5bff488",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/v8_icui18n.dll"
+    },
+    {
+      "path": "game/bin/win64/v8_icuuc.dll",
+      "sha256": "44ce115a5cf9d141ce11c92c6114bc0bcef92eedfb7737b0792d83213bee456f",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/v8_icuuc.dll"
+    },
+    {
+      "path": "game/bin/win64/v8_libbase.dll",
+      "sha256": "3dc9686891b1f563102a1865499984d18e72432b43efd9137579534273054829",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/v8_libbase.dll"
+    },
+    {
+      "path": "game/bin/win64/v8_libplatform.dll",
+      "sha256": "210ac10fb2ad747b2d59aec2289bf10c3b47644816240842f00761eb2320f9ce",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/v8_libplatform.dll"
+    },
+    {
+      "path": "game/bin/win64/v8_zlib.dll",
+      "sha256": "74b51ce1445ea70c52e342d678717d0103f377fe60adc9271cb7232deed15e5a",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/v8_zlib.dll"
+    },
+    {
+      "path": "game/bin/win64/v8system.dll",
+      "sha256": "1ff13d3a2b419998d75e3888da952b6577535acb9d5350bc08a9ddc4fb175e50",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/v8system.dll"
+    },
+    {
+      "path": "game/bin/win64/valve_avi.dll",
+      "sha256": "928887238ca1fd39c7dea18052bb97629ba008e57feceae274cf5fd7c5b130d8",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/valve_avi.dll"
+    },
+    {
+      "path": "game/bin/win64/valve_webm.dll",
+      "sha256": "086f6f8471fb9843f11db5a072cd04b69dd086f51fbcf2a65fca1c7d78a86b4d",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/valve_webm.dll"
+    },
+    {
+      "path": "game/bin/win64/valve_wmf.dll",
+      "sha256": "a8507338faea977326b4930b2c373bcffda5f52dc403c65e5aae216dcf46cf86",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/valve_wmf.dll"
+    },
+    {
+      "path": "game/bin/win64/vconcomm.dll",
+      "sha256": "e0ad0131ed9a4ee885a933167d7b43f865ef0520df12e3da9791fbd23c623134",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/vconcomm.dll"
+    },
+    {
+      "path": "game/bin/win64/vconsole2.exe",
+      "sha256": "58221f5a94fba778ecd7bcccfd33419d758e10a3a48a0caa0d68a4c953f505bd",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/vconsole2.exe"
+    },
+    {
+      "path": "game/bin/win64/vfx_dx11.dll",
+      "sha256": "5279b3954ca58f1132ddd143676fdc9e9a8ea32759e03f19220ff62ba2f336d5",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/vfx_dx11.dll"
+    },
+    {
+      "path": "game/bin/win64/video64.dll",
+      "sha256": "bd0b26c5ce10647ab04bdedc8d33d7850e678f1a285748b46290c669e2f187fb",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/video64.dll"
+    },
+    {
+      "path": "game/bin/win64/visbuilder.dll",
+      "sha256": "41fa727b49dfe2e58759dc1241a7227bedc81bf73bfb88424f8c86c6b56d9643",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/visbuilder.dll"
+    },
+    {
+      "path": "game/bin/win64/vphysics2.dll",
+      "sha256": "d4d33acad31d7d5fe62a7c516d5c3bf6afa48b9b4c32ab6a23233db6d2db9b25",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/vphysics2.dll"
+    },
+    {
+      "path": "game/bin/win64/vrad3.dll",
+      "sha256": "f149690f8e1503dacba246fe50e7b58b81f619c7a3f85d495571aea1026dc47b",
+      "source": "dota_tools_depot381450",
+      "source_path": "game/bin/win64/vrad3.dll"
+    },
+    {
+      "path": "game/bin/win64/vrad3.exe",
+      "sha256": "42afd5b1772555fbb7dc15398456d24b06fcb1c04e1eab536a3b67e92d9883b0",
+      "source": "dota_tools_depot381450",
+      "source_path": "game/bin/win64/vrad3.exe"
+    },
+    {
+      "path": "game/bin/win64/vscript.dll",
+      "sha256": "4f6349aa340f0a234b1687a513a8cffe57e84f5f6dd5f4da08bc1b36cefc9fc3",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/vscript.dll"
+    },
+    {
+      "path": "game/bin/win64/worldrenderer.dll",
+      "sha256": "ecf174436b483ad4f1cba79575b6ef3e6488d229ad2133d3e4ce0df99f8ac778",
+      "source": "installed_deadlock",
+      "source_path": "game/bin/win64/worldrenderer.dll"
+    },
+    {
+      "path": "game/citadel/bin/win64/client.dll",
+      "sha256": "c09143cf9cd722909404c64e3ffa05157afc15e8a3519b49a1396a627af8ca85",
+      "accepted_sha256": [
+        "8da25ddcd11c1146eeb9770bca24fb25c594c7abdb28947035a44ec8f2945843"
+      ],
+      "source": "installed_deadlock",
+      "source_path": "game/citadel/bin/win64/client.dll"
+    },
+    {
+      "path": "game/citadel/bin/win64/host.dll",
+      "sha256": "dbaa41d94b069c6fe3eff88fdd6822a13f1ec23fa5e3d83d5b96c7748e83a288",
+      "source": "installed_deadlock",
+      "source_path": "game/citadel/bin/win64/host.dll"
+    },
+    {
+      "path": "game/citadel/bin/win64/modtools.dll",
+      "sha256": "c41a4a3069c14780b468790fe8a59f3dfd6a02186fd477a273f891a97f7cff74",
+      "source": "dota_tools_depot381450",
+      "source_path": "game/dota/bin/win64/modtools.dll"
+    },
+    {
+      "path": "game/citadel/bin/win64/server.dll",
+      "sha256": "4855ef0712962f43aa4d9f623b258ada286d3e6f8fd2a2c8272984bfecf777e8",
+      "accepted_sha256": [
+        "1cc0a966a89dac2bf93c78315b2202a9ebb81c371fac7746162d8c345a786696"
+      ],
+      "source": "installed_deadlock",
+      "source_path": "game/citadel/bin/win64/server.dll"
+    }
+  ]
+}

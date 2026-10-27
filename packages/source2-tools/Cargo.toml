@@ -1,0 +1,15 @@
+[package]
+name = "source2-tools"
+version = "0.1.0"
+edition = "2024"
+description = "Local Source 2 tool compatibility and orchestration for Deadlock Mod Manager"
+license = "GPL-3.0"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+thiserror = "2"
+
+[dev-dependencies]
+tempfile = "3"

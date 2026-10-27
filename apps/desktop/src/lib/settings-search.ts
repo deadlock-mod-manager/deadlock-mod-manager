@@ -71,6 +71,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
     ],
   },
   {
+    id: "modding-tools",
+    tab: "tools",
+    titleKey: "moddingTools.title",
+    descriptionKey: "moddingTools.description",
+  },
+  {
     tab: "launch-options",
     titleKey: "settings.launchOptions",
     descriptionKey: "settings.launchOptionsDescription",

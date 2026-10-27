@@ -7,4 +7,5 @@ export type PreviewAnimation = {
   times: Array<number>;
   tracks: Array<PreviewBoneTrack>;
   segments: Array<PreviewAnimationSegment>;
+  additiveReferencePose?: boolean;
 };

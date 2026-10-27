@@ -1,6 +1,7 @@
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import type { QueryClient, QueryKey, QueryCache } from "@tanstack/react-query";
 import type { FoundryModel } from "@/types/foundry";
+import type { ModdingHierarchy } from "@/types/generated/ModdingHierarchy";
 import logger from "./logger";
 
 const references = new Map<string, number>();
@@ -12,6 +13,7 @@ export async function decodeFoundryModel(
   entryPath: string,
   workspaceRoot: string | null = null,
   signal?: AbortSignal,
+  overlayRoot?: string,
 ): Promise<FoundryModel> {
   signal?.throwIfAborted();
   const requestId = crypto.randomUUID();
@@ -20,7 +22,36 @@ export async function decodeFoundryModel(
     filePath,
     entryPath,
     workspaceRoot,
+    overlayRoot,
   });
+  return ownModelDecode(requestId, pending, signal);
+}
+
+export async function decodeModdingDmx(
+  addonId: string,
+  hierarchy: ModdingHierarchy,
+  path: string,
+  signal: AbortSignal,
+): Promise<FoundryModel> {
+  signal.throwIfAborted();
+  const requestId = crypto.randomUUID();
+  return ownModelDecode(
+    requestId,
+    invoke<FoundryModel>("preview_modding_dmx", {
+      requestId,
+      addonId,
+      hierarchy,
+      path,
+    }),
+    signal,
+  );
+}
+
+async function ownModelDecode(
+  requestId: string,
+  pending: Promise<FoundryModel>,
+  signal?: AbortSignal,
+): Promise<FoundryModel> {
   const cancel = () => {
     void invoke("foundry_cancel_model_decode", { requestId }).catch((error) => {
       logger.withError(error).warn("[Foundry] Could not cancel model decode");

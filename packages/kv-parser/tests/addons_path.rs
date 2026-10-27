@@ -48,9 +48,10 @@ fn test_modify_addons_path_simple() {
 
     let game_paths = get_search_paths_game(&data).expect("Game paths should exist");
     if let KeyValuesValue::Array(arr) = game_paths {
-        assert!(arr
-            .iter()
-            .any(|v| matches!(v, KeyValuesValue::String(s) if s == "citadel/addons")));
+        assert!(
+            arr.iter()
+                .any(|v| matches!(v, KeyValuesValue::String(s) if s == "citadel/addons"))
+        );
     }
 
     let new_game_paths = KeyValuesValue::Array(vec![

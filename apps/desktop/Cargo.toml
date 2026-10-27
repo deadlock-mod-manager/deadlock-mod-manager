@@ -2,6 +2,12 @@
 members = ["src-tauri"]
 resolver = "2"
 
+[profile.dev.package.sha2]
+opt-level = 3
+
+[profile.dev.package.source2-tools]
+opt-level = 3
+
 # CEF builds inject a Tauri git patch and cef feature via scripts/cef-patch.ts (local) or _build-cef.yml (CI).
 # Run `pnpm cef:cleanup` after local CEF work to restore Wry builds.
 

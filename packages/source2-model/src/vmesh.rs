@@ -15,6 +15,7 @@ mod types;
 pub(crate) use binary::*;
 pub use decode::*;
 pub use glb::*;
+pub use meshdata::preview_mesh_selection;
 pub(crate) use meshdata::*;
 pub use pose_glb::*;
 pub use types::*;

@@ -1,3 +1,5 @@
+import type { PreviewAbilityParticles } from "@/types/generated/PreviewAbilityParticles";
+import type { PreviewParticles } from "@/types/generated/PreviewParticles";
 import { invoke } from "@tauri-apps/api/core";
 import {
   AnimationClip,
@@ -6,16 +8,17 @@ import {
   QuaternionKeyframeTrack,
   VectorKeyframeTrack,
 } from "three";
-import type { PreviewAbilityParticles } from "@/types/generated/PreviewAbilityParticles";
 import type { PreviewAnimation } from "@/types/generated/PreviewAnimation";
 import type { PreviewCloth } from "@/types/generated/PreviewCloth";
-import type { PreviewParticles } from "@/types/generated/PreviewParticles";
 import type { PreviewAnimationChoice } from "@/types/generated/PreviewAnimationChoice";
 import type { PreviewEffectChoice } from "@/types/generated/PreviewEffectChoice";
 
 export interface PreviewSource {
   filePath: string;
   entryPath: string;
+  overlayRoot?: string;
+  revision?: number;
+  allowAdditiveReference?: boolean;
 }
 export interface PreviewPlayback {
   animation: PreviewAnimation | null;
@@ -33,6 +36,7 @@ export const listPreviewAnimations = (
   abilityNames: string[],
 ) =>
   invoke<PreviewAnimationChoice[]>("foundry_list_animations", {
+    overlayRoot: source.overlayRoot,
     filePath: source.filePath,
     entryPath: source.entryPath,
     abilityNames,
@@ -43,6 +47,8 @@ export const decodePreviewAnimation = (
   clipPaths: string[],
 ) =>
   invoke<PreviewAnimation>("foundry_decode_animation", {
+    allowAdditiveReference: source.allowAdditiveReference,
+    overlayRoot: source.overlayRoot,
     filePath: source.filePath,
     entryPath: source.entryPath,
     clipPaths,
@@ -51,6 +57,7 @@ export const decodePreviewAnimation = (
 /** The model's cloth setup, or null when nothing on it is simulated. */
 export const decodePreviewCloth = (source: PreviewSource) =>
   invoke<PreviewCloth | null>("foundry_decode_cloth", {
+    overlayRoot: source.overlayRoot,
     filePath: source.filePath,
     entryPath: source.entryPath,
   });
