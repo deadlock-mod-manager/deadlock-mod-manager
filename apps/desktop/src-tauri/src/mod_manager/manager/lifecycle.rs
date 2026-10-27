@@ -129,6 +129,19 @@ impl ModManager {
     log::info!("Found {} prefixed VPKs, enabling them", prefixed_vpks.len());
 
     let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
+    // Without a file tree, a re-enabled mod keeps the file order it had when
+    // it was disabled instead of the directory's alphabetical order.
+    if deadlock_mod.file_tree.is_none()
+      && let Some(entry) = manifest.mods.get(&deadlock_mod.id)
+    {
+      prefixed_vpks.sort_by_key(|name| {
+        entry
+          .disabled_vpks
+          .iter()
+          .position(|disabled| disabled == name)
+          .unwrap_or(usize::MAX)
+      });
+    }
     // A re-enabled mod returns to its recorded place in the load order. Without
     // it, the mod would stay in the last shard until an unrelated reorder moved
     // it back and shifted every mod after it.

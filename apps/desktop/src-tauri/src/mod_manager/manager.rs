@@ -915,6 +915,55 @@ mod tests {
   }
 
   #[test]
+  fn reenable_without_file_tree_keeps_the_disabled_file_order() {
+    let game = game_dir();
+    let citadel = game.path().join("game/citadel");
+    fs::write(
+      citadel.join("gameinfo.gi"),
+      "\"GameInfo\"\n{\n\"FileSystem\"\n{\nSearchPaths\n{\nGame citadel\n}\n}\n}\n",
+    )
+    .unwrap();
+    let addons = citadel.join("addons");
+    fs::create_dir_all(&addons).unwrap();
+    fs::write(addons.join("42_blue.vpk"), b"blue bytes").unwrap();
+    fs::write(addons.join("42_red.vpk"), b"red bytes").unwrap();
+    let base = ProfileBase::new(addons.clone()).unwrap();
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mark_disabled(
+      "42",
+      vec!["42_red.vpk".into(), "42_blue.vpk".into()],
+      vec!["red.vpk".into(), "blue.vpk".into()],
+    );
+    manifest.save(&base).unwrap();
+    let mut manager = test_manager(game.path());
+    manager
+      .config_manager
+      .setup_game_for_mods(game.path())
+      .unwrap();
+
+    let installed = manager
+      .install_mod(
+        Mod {
+          id: "42".into(),
+          name: "Ordered fixture".into(),
+          is_map: false,
+          installed_vpks: Vec::new(),
+          file_tree: None,
+          install_order: None,
+          original_vpk_names: Vec::new(),
+        },
+        None,
+      )
+      .unwrap();
+
+    assert_eq!(installed.original_vpk_names, vec!["red.vpk", "blue.vpk"]);
+    assert_eq!(
+      fs::read(addons.join(&installed.installed_vpks[0])).unwrap(),
+      b"red bytes"
+    );
+  }
+
+  #[test]
   fn reenable_returns_mod_to_its_place_in_a_sharded_profile() {
     let game = game_dir();
     let citadel = game.path().join("game/citadel");
