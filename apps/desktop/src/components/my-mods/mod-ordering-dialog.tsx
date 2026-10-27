@@ -17,6 +17,7 @@ import {
 } from "@deadlock-mods/ui/components/tooltip";
 import { Save, Undo2 } from "@deadlock-mods/ui/icons";
 import {
+  type Announcements,
   closestCenter,
   DndContext,
   type DragEndEvent,
@@ -24,6 +25,7 @@ import {
   type DragStartEvent,
   KeyboardSensor,
   PointerSensor,
+  type UniqueIdentifier,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
@@ -113,6 +115,10 @@ export const ModOrderingDialog = ({
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [droppedId, setDroppedId] = useState<string | null>(null);
+  // Only mods the player moved are marked; the ones they pushed aside are not.
+  const [touched, setTouched] = useState<Set<string>>(new Set());
+  const [handleFocused, setHandleFocused] = useState(false);
   const [internalOpen, setInternalOpen] = useState(false);
   const [reorderStartTime, setReorderStartTime] = useState<number | null>(null);
   const isControlled = controlledOpen !== undefined;
@@ -138,6 +144,7 @@ export const ModOrderingDialog = ({
       setInitialMods(mods);
       setOrderedMods(mods);
       setExpanded(new Set());
+      setTouched(new Set());
       setSearch("");
       setReorderStartTime(Date.now());
     }
@@ -150,6 +157,22 @@ export const ModOrderingDialog = ({
     setFileOrders(orders);
   }, [open, vpkFiles]);
 
+  // A moved row flashes and scrolls into view, so a jump to the top or bottom
+  // of a long list doesn't lose it.
+  useEffect(() => {
+    if (!droppedId) return;
+    document
+      .querySelector(`[data-mod-row="${CSS.escape(droppedId)}"]`)
+      ?.scrollIntoView({
+        block: "nearest",
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth",
+      });
+    const timer = window.setTimeout(() => setDroppedId(null), 150);
+    return () => window.clearTimeout(timer);
+  }, [droppedId]);
+
   const initialPositions = useMemo(
     () => new Map(initialMods.map((mod, index) => [mod.remoteId, index])),
     [initialMods],
@@ -161,10 +184,18 @@ export const ModOrderingDialog = ({
       ),
     [fileOrders, initialFiles],
   );
-  const movedCount = orderedMods.filter(
-    (mod, index) => initialPositions.get(mod.remoteId) !== index,
-  ).length;
-  const isDirty = movedCount > 0 || changedFileMods.length > 0;
+  const shiftOf = (remoteId: string, index: number) =>
+    touched.has(remoteId)
+      ? (initialPositions.get(remoteId) ?? index) - index
+      : 0;
+  const isDirty =
+    changedFileMods.length > 0 ||
+    orderedMods.some(
+      (mod, index) => initialPositions.get(mod.remoteId) !== index,
+    );
+  const changeCount =
+    orderedMods.filter((mod, index) => shiftOf(mod.remoteId, index) !== 0)
+      .length + changedFileMods.length;
 
   const query = search.trim().toLowerCase();
   const visibleMods = query
@@ -189,6 +220,8 @@ export const ModOrderingDialog = ({
   const handleDragEnd = ({ active, over }: DragEndEvent) => {
     setActiveId(null);
     if (!over || active.id === over.id) return;
+    setDroppedId(String(active.id));
+    setTouched((current) => new Set(current).add(String(active.id)));
     setOrderedMods((items) =>
       arrayMove(
         items,
@@ -198,11 +231,37 @@ export const ModOrderingDialog = ({
     );
   };
 
-  const moveMod = (remoteId: string, to: "top" | "bottom") =>
+  const moveMod = (remoteId: string, to: "top" | "bottom") => {
+    setDroppedId(remoteId);
+    setTouched((current) => new Set(current).add(remoteId));
     setOrderedMods((items) => {
       const from = items.findIndex((item) => item.remoteId === remoteId);
       return arrayMove(items, from, to === "top" ? 0 : items.length - 1);
     });
+  };
+
+  const modName = (id: UniqueIdentifier) =>
+    orderedMods.find((mod) => mod.remoteId === id)?.name ?? String(id);
+  const positionOf = (id: UniqueIdentifier) =>
+    orderedMods.findIndex((mod) => mod.remoteId === id) + 1;
+  const announcements: Announcements = {
+    onDragStart: ({ active }) =>
+      t("modOrdering.announce.pickedUp", { name: modName(active.id) }),
+    onDragOver: ({ active, over }) =>
+      over
+        ? t("modOrdering.announce.over", {
+            name: modName(active.id),
+            position: positionOf(over.id),
+          })
+        : undefined,
+    onDragEnd: ({ active, over }) =>
+      t("modOrdering.announce.dropped", {
+        name: modName(active.id),
+        position: positionOf(over?.id ?? active.id),
+      }),
+    onDragCancel: ({ active }) =>
+      t("modOrdering.announce.cancelled", { name: modName(active.id) }),
+  };
 
   const toggleExpanded = (remoteId: string) =>
     setExpanded((current) => {
@@ -264,6 +323,7 @@ export const ModOrderingDialog = ({
   const discardChanges = () => {
     setOrderedMods(initialMods);
     setFileOrders(initialFiles);
+    setTouched(new Set());
   };
 
   const isLoading = saveOrderMutation.isPending;
@@ -327,13 +387,22 @@ export const ModOrderingDialog = ({
                   sensors={sensors}
                   collisionDetection={closestCenter}
                   modifiers={[restrictToVerticalAxis]}
+                  accessibility={{ announcements }}
                   onDragStart={handleDragStart}
                   onDragCancel={() => setActiveId(null)}
                   onDragEnd={handleDragEnd}>
                   <SortableContext
                     items={visibleMods.map((mod) => mod.remoteId)}
                     strategy={verticalListSortingStrategy}>
-                    <ol className='space-y-0.5'>
+                    <ol
+                      className='space-y-0.5'
+                      onFocus={(event) =>
+                        setHandleFocused(
+                          event.target.getAttribute("aria-roledescription") ===
+                            "sortable",
+                        )
+                      }
+                      onBlur={() => setHandleFocused(false)}>
                       {visibleMods.map((mod) => {
                         const index = orderedMods.indexOf(mod);
                         return (
@@ -342,7 +411,8 @@ export const ModOrderingDialog = ({
                             mod={mod}
                             position={index + 1}
                             total={orderedMods.length}
-                            moved={initialPositions.get(mod.remoteId) !== index}
+                            shift={shiftOf(mod.remoteId, index)}
+                            justDropped={droppedId === mod.remoteId}
                             dragDisabled={!!query}
                             files={fileOrders.get(mod.remoteId)}
                             filesChanged={changedFileMods.includes(
@@ -384,10 +454,16 @@ export const ModOrderingDialog = ({
               variant='ghost'>
               {t("modOrdering.discardChanges")}
             </Button>
-            {isDirty && (
+            {handleFocused ? (
               <span className='text-muted-foreground text-xs'>
-                {t("modOrdering.unsavedChanges")}
+                {t("modOrdering.keyboardHint")}
               </span>
+            ) : (
+              changeCount > 0 && (
+                <span className='text-primary text-xs tabular-nums'>
+                  {t("modOrdering.unsavedChanges", { count: changeCount })}
+                </span>
+              )
             )}
           </div>
           <div className='flex items-center gap-2'>

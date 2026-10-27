@@ -6,7 +6,9 @@ import {
   TooltipTrigger,
 } from "@deadlock-mods/ui/components/tooltip";
 import {
+  ArrowDown,
   ArrowDownToLine,
+  ArrowUp,
   ArrowUpToLine,
   ChevronRight,
   GripVertical,
@@ -104,11 +106,29 @@ const IconAction = ({
   </Tooltip>
 );
 
+// Positive when the mod moved up since the dialog opened.
+const ShiftIndicator = ({ shift }: { shift: number }) => {
+  const { t } = useTranslation();
+  if (shift === 0) return null;
+  const Arrow = shift > 0 ? ArrowUp : ArrowDown;
+  return (
+    <span
+      className='flex shrink-0 items-center gap-0.5 rounded bg-primary/10 px-1.5 py-0.5 font-medium text-[11px] text-primary tabular-nums'
+      title={t(shift > 0 ? "modOrdering.movedUp" : "modOrdering.movedDown", {
+        count: Math.abs(shift),
+      })}>
+      <Arrow className='h-3 w-3' />
+      {Math.abs(shift)}
+    </span>
+  );
+};
+
 interface SortableModRowProps {
   mod: LocalMod;
   position: number;
   total: number;
-  moved: boolean;
+  shift: number;
+  justDropped: boolean;
   dragDisabled: boolean;
   files?: OrderedVpkFile[];
   filesChanged: boolean;
@@ -122,7 +142,8 @@ export const SortableModRow = ({
   mod,
   position,
   total,
-  moved,
+  shift,
+  justDropped,
   dragDisabled,
   files,
   filesChanged,
@@ -146,13 +167,17 @@ export const SortableModRow = ({
   return (
     <li
       ref={setNodeRef}
+      data-mod-row={mod.remoteId}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={cn(
-        "group rounded-md border border-transparent transition-colors",
+        "group rounded-md border border-transparent transition-colors duration-700 ease-out",
         isDragging
-          ? "border-dashed border-border bg-muted/30 opacity-40"
-          : "hover:bg-muted/40 focus-within:bg-muted/40",
-        expanded && !isDragging && "border-border/60 bg-muted/20",
+          ? "border-dashed border-border bg-muted/20 opacity-40"
+          : justDropped
+            ? "bg-primary/10 duration-0"
+            : expanded
+              ? "bg-muted/40"
+              : "hover:bg-muted/40 focus-within:bg-muted/40",
       )}>
       <div className='flex items-center gap-2 py-1.5 pr-1.5 pl-1'>
         <button
@@ -170,13 +195,16 @@ export const SortableModRow = ({
         </button>
         <span
           className={cn(
-            "w-7 shrink-0 text-right text-xs tabular-nums",
-            moved ? "font-semibold text-primary" : "text-muted-foreground",
+            "w-5 shrink-0 text-right text-xs tabular-nums",
+            shift === 0
+              ? "text-muted-foreground"
+              : "font-semibold text-primary",
           )}>
           {position}
         </span>
         <ModThumbnail mod={mod} />
         <ModSummary mod={mod} />
+        <ShiftIndicator shift={shift} />
 
         {canExpand ? (
           <button
@@ -190,14 +218,15 @@ export const SortableModRow = ({
             {t("modOrdering.files", { count: fileCount })}
             <ChevronRight
               className={cn(
-                "h-3.5 w-3.5 transition-transform",
+                "h-3.5 w-3.5 transition-transform duration-200 ease-out",
                 expanded && "rotate-90",
               )}
             />
           </button>
         ) : (
-          <span className='shrink-0 px-2 text-muted-foreground text-xs'>
+          <span className='flex shrink-0 items-center gap-1 px-2 text-muted-foreground/70 text-xs'>
             {t("modOrdering.files", { count: fileCount })}
+            <span className='w-3.5' />
           </span>
         )}
 
@@ -236,9 +265,9 @@ export const DragPreview = ({
   mod: LocalMod;
   position: number;
 }) => (
-  <div className='flex cursor-grabbing items-center gap-2 rounded-md border border-primary/40 bg-popover py-1.5 pr-3 pl-1 shadow-xl'>
+  <div className='flex scale-[1.02] cursor-grabbing items-center gap-2 rounded-md border border-primary/40 bg-popover py-1.5 pr-3 pl-1 shadow-2xl ring-1 ring-primary/20'>
     <GripVertical className='m-1 h-4 w-4 text-foreground' />
-    <span className='w-7 shrink-0 text-right font-semibold text-primary text-xs tabular-nums'>
+    <span className='w-5 shrink-0 text-right font-semibold text-primary text-xs tabular-nums'>
       {position}
     </span>
     <ModThumbnail mod={mod} />

@@ -115,10 +115,10 @@ export const ModFileOrder = ({
 
   return (
     <div
-      className='mt-1 ml-[3.25rem] border-l border-border/60 pl-3'
+      className='mr-2 ml-14 pb-1'
       aria-label={t("modOrdering.filesOf", { name: modName })}
       role='group'>
-      <div className='flex items-center justify-between gap-2 py-1'>
+      <div className='flex min-h-7 items-center justify-between gap-2 pl-1'>
         <p className='text-muted-foreground text-xs'>
           {t("modOrdering.filesHint")}
         </p>
@@ -141,7 +141,7 @@ export const ModFileOrder = ({
         <SortableContext
           items={files.map((file) => file.vpk)}
           strategy={verticalListSortingStrategy}>
-          <ol className='space-y-0.5 pb-1'>
+          <ol className='space-y-0.5'>
             {files.map((file, index) => (
               <SortableFileRow
                 key={file.vpk}
