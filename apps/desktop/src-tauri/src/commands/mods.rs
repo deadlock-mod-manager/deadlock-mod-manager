@@ -846,6 +846,7 @@ pub struct StagedVpk {
   pub original: String,
   /// Updates and imports find a variant by this path, not its name.
   pub path: String,
+  pub size: u64,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -1028,6 +1029,7 @@ pub async fn stage_download_archive(
     staged.push(StagedVpk {
       original,
       path: file.path.clone(),
+      size: file.size,
     });
   }
 

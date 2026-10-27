@@ -48,7 +48,7 @@ interface SwapModOptionsResult {
 }
 
 interface StageDownloadArchiveResult {
-  staged: { original: string; path: string }[];
+  staged: { original: string; path: string; size: number }[];
 }
 
 interface MissingVariantArchive {
@@ -264,7 +264,7 @@ export const useModOptions = (mod: LocalMod | null) => {
     (downloads.length > 1 || (fileTree?.files.length ?? 0) > 1);
 
   const stagedOriginalsMapRef = useRef(
-    new Map<string, { archiveName: string; path: string }>(),
+    new Map<string, { archiveName: string; path: string; size: number }>(),
   );
   const [progress, setProgress] = useState<ModOptionsProgress | null>(null);
 
@@ -323,10 +323,11 @@ export const useModOptions = (mod: LocalMod | null) => {
               onProgress,
             },
           );
-          for (const { original, path } of result.staged) {
+          for (const { original, path, size } of result.staged) {
             stagedOriginalsMapRef.current.set(original, {
               archiveName: archive.name,
               path,
+              size,
             });
             combinedSelection.push(original);
             stagedThisApply.push(original);
@@ -416,6 +417,7 @@ export const useModOptions = (mod: LocalMod | null) => {
         if (staged) {
           f.archive_name = staged.archiveName;
           f.path = staged.path;
+          f.size = staged.size;
         }
       }
 
