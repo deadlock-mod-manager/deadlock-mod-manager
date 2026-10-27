@@ -53,9 +53,16 @@ export const queueModDownload = (
 
   addLocalMod(mod, { downloads: allFiles, selectedDownloads: selectedFiles });
 
+  // Archives install in the mod's download order, which sets the default
+  // load order of their VPKs.
+  const fileNames = allFiles.map((file) => file.name);
+  const orderedFiles = [...selectedFiles].sort(
+    (a, b) => fileNames.indexOf(a.name) - fileNames.indexOf(b.name),
+  );
+
   return downloadManager.addToQueue({
     ...mod,
-    downloads: selectedFiles,
+    downloads: orderedFiles,
     profileFolder,
     analyticsEntryPoint,
     analyticsOperationKind,

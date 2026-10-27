@@ -51,6 +51,19 @@ impl ModFileTree {
     }
   }
 
+  /// The tree's file order is the mod's load order: an earlier file gets the
+  /// lower pak number, so it wins over later files of the same mod. The sort
+  /// is stable, and items the tree doesn't list keep their order after it.
+  pub fn sort_in_load_order<T>(&self, items: &mut [T], name_of: impl Fn(&T) -> &str) {
+    let positions: HashMap<&str, usize> = self
+      .files
+      .iter()
+      .enumerate()
+      .map(|(index, file)| (file.name.as_str(), index))
+      .collect();
+    items.sort_by_key(|item| positions.get(name_of(item)).copied().unwrap_or(usize::MAX));
+  }
+
   /// A file's `name` is what it installs as (`{mod_id}_{name}`), so it must be
   /// unique within the mod: variant archives usually all ship `pak01_dir.vpk`.
   /// Names come from the archives and paths alone, claimed in a fixed order,

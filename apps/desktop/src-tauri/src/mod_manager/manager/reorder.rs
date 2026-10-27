@@ -1,4 +1,5 @@
 use super::*;
+use std::collections::HashMap;
 
 impl ModManager {
   /// Pick the last active shard when it has room, otherwise append a new shard.
@@ -128,6 +129,48 @@ impl ModManager {
     }
 
     changed
+  }
+
+  /// Take the caller's order for a mod's own VPKs, which is how a player
+  /// reorders files inside one mod. The original names move with their files
+  /// so a later disable still restores each one under its own name. Anything
+  /// but a reordering of exactly the recorded files is ignored.
+  pub(super) fn adopt_requested_vpk_order(
+    entry: &mut ProfileVpkManifestEntry,
+    requested: &[String],
+  ) -> bool {
+    if requested == entry.current_vpks.as_slice()
+      || entry.original_vpk_names.len() != entry.current_vpks.len()
+    {
+      return false;
+    }
+    let positions: HashMap<&str, usize> = entry
+      .current_vpks
+      .iter()
+      .enumerate()
+      .map(|(index, vpk)| (vpk.as_str(), index))
+      .collect();
+    let Some(order) = requested
+      .iter()
+      .map(|vpk| positions.get(vpk.as_str()).copied())
+      .collect::<Option<Vec<usize>>>()
+    else {
+      return false;
+    };
+    let unique: HashSet<usize> = order.iter().copied().collect();
+    if order.len() != entry.current_vpks.len() || unique.len() != order.len() {
+      return false;
+    }
+
+    entry.current_vpks = order
+      .iter()
+      .map(|&index| entry.current_vpks[index].clone())
+      .collect();
+    entry.original_vpk_names = order
+      .iter()
+      .map(|&index| entry.original_vpk_names[index].clone())
+      .collect();
+    true
   }
 
   /// Drop VPK claims recorded by more than one mod, keeping the first claimant
@@ -332,6 +375,9 @@ impl ModManager {
     for placement in &placements {
       if let Some(mut mod_entry) = self.mod_repository.remove_mod(&placement.mod_id) {
         mod_entry.installed_vpks = placement.vpks.clone();
+        if let Some(entry) = manifest.mods.get(&placement.mod_id) {
+          mod_entry.original_vpk_names = entry.original_vpk_names.clone();
+        }
         self.mod_repository.add_mod(mod_entry);
       }
     }
@@ -344,11 +390,10 @@ impl ModManager {
     profile_folder: Option<String>,
     current_installed_vpks: &[String],
     current_original_names: &[String],
-    mut selected_original_names: Vec<String>,
+    selected_original_names: Vec<String>,
   ) -> Result<VariantChangeResult, Error> {
-    // Installs enable a mod's VPKs in name order, so a swap does too and the
-    // same file wins inside the mod either way.
-    selected_original_names.sort();
+    // The caller sends the selection in the mod's load order, which this keeps:
+    // the first name gets the lowest pak number.
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
     let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
     // The UI file tree may be sorted differently from the numbered VPKs.
@@ -401,7 +446,6 @@ impl ModManager {
         available.push(original.to_string());
       }
     }
-    available.sort();
     let selected: HashSet<String> = selected_original_names.iter().cloned().collect();
     let file_tree = ModFileTree::from_options(&available, &selected);
 
@@ -507,6 +551,7 @@ impl ModManager {
 
       manifest_changed |=
         Self::reconcile_manifest_entry_for_reorder(&addons_path, entry, &vpk_files);
+      manifest_changed |= Self::adopt_requested_vpk_order(entry, &vpk_files);
 
       if entry.enabled && !entry.current_vpks.is_empty() {
         mod_vpk_mapping.push(ShardAssignment {

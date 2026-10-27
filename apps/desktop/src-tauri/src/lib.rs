@@ -292,6 +292,7 @@ pub fn run() {
       commands::mods::purge_mod,
       commands::mods::reorder_mods,
       commands::mods::reorder_mods_by_remote_id,
+      commands::mods::get_enabled_mod_vpk_files,
       commands::localization::analyze_localization_overlay,
       commands::localization::apply_localization_overlay,
       commands::localization::get_mod_compatibility_settings,
