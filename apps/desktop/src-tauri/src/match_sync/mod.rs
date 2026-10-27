@@ -61,8 +61,7 @@ fn emit_error(app: &AppHandle, err: &MatchSyncError) {
 // quota (a lost update there would let the hard cap be exceeded). Holding it also means
 // no pass is writing friends' data, which the worker relies on to clear it.
 static SYNC_LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
-// Friends' stored histories outlive the per-pass API clients and are shared by every
-// account. Cleared with the rest of the friends' data in `forget_friends`.
+// Outlives the per-pass API clients; cleared in `forget_friends`.
 static STORED_HISTORIES: LazyLock<Arc<StoredHistories>> = LazyLock::new(Default::default);
 static FULL_SYNC_RUNNING: AtomicBool = AtomicBool::new(false);
 static FULL_SYNC_CANCEL: AtomicBool = AtomicBool::new(false);

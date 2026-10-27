@@ -93,8 +93,7 @@ async fn until_launch<T>(
   }
 }
 
-// What a history response's non-success `result` says. Whose history it was decides what
-// that means, which is up to the sync engine.
+// What a history response's non-success `result` says.
 fn history_error(result: Option<i32>) -> Option<MatchSyncError> {
   use c_msg_client_to_gc_get_match_history_response::EResult;
   let r = result.filter(|&r| r != EResult::KEResultSuccess as i32)?;
@@ -105,8 +104,7 @@ fn history_error(result: Option<i32>) -> Option<MatchSyncError> {
   })
 }
 
-// What a salts response's non-success `result` says. Whose match it was decides what that
-// means, which is up to the sync engine.
+// What a salts response's non-success `result` says.
 fn salts_error(result: Option<i32>) -> Option<MatchSyncError> {
   use c_msg_client_to_gc_get_match_meta_data_response::EResult;
   let r = result.filter(|&r| r != EResult::KEResultSuccess as i32)?;

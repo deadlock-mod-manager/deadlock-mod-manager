@@ -183,7 +183,6 @@ where
       st.progress.quota_remaining = 0;
       return Ok(FetchStep::QuotaReached);
     }
-    // The game can launch during the throttle wait, which `gc_call` checks after it.
     self.throttle.acquire().await;
     let fetched = self.gc_call(async {
       self.counter.fetch_add(1, Ordering::Relaxed);
@@ -315,9 +314,9 @@ where
     Ok(LoopControl::Continue)
   }
 
-  // Every GC request goes through here, checked right before it starts: the game must
-  // never share Steam's GC pipe with us. Futures are lazy, so `request` sends nothing
-  // before the check.
+  // Every GC request goes through here, after any throttle wait (the game can launch
+  // during one): the game must never share Steam's GC pipe with us. Futures are lazy, so
+  // `request` sends nothing before the check.
   async fn gc_call<T>(
     &self,
     request: impl Future<Output = Result<T, MatchSyncError>>,
@@ -328,8 +327,7 @@ where
     request.await
   }
 
-  // Throttled, not quota-counted: a history query is not a salt fetch. The game can
-  // launch during the throttle wait, which `gc_call` checks after it.
+  // Throttled, not quota-counted: a history query is not a salt fetch.
   async fn gc_history_page(
     &self,
     ctx: &AuthContext,
