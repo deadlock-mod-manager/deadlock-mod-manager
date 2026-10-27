@@ -44,7 +44,8 @@ export default defineConfig(async () => ({
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
-    dedupe: ['react', 'react-dom'],
+    // @hookform/resolvers imports zod without declaring it, and pnpm doesn't hoist it.
+    dedupe: ['react', 'react-dom', 'zod'],
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react/jsx-runtime'],
