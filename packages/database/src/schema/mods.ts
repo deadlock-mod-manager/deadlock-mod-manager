@@ -170,6 +170,8 @@ export const modDownloads = pgTable(
     size: integer("size").notNull(),
     description: text("description"),
     md5Checksum: text("md5_checksum"),
+    /** Where the author lists the file on GameBanana; it sets the default load order. */
+    position: integer("position").notNull().default(0),
     ...timestamps,
   },
   (table) => [

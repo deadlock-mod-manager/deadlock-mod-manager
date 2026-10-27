@@ -22,9 +22,15 @@ pub enum MatchSyncError {
   #[error("Steam GC unavailable: {0}")]
   GcUnavailable(String),
 
-  // Steam GC answered but is throttling this account; back off, don't burn quota.
+  // Steam GC answered but is throttling this account; the matching quota is treated as
+  // spent.
   #[error("Steam GC rate-limited the request")]
   GcRateLimited,
+
+  // The GC answered the request with an error. What that means depends on whose history
+  // or match it was, which only the sync engine knows.
+  #[error("Steam GC refused the request: {0}")]
+  GcRefused(GcRefusal),
 
   #[error("Deadlock is currently running; close it to fetch matches")]
   GameRunning,
@@ -37,6 +43,24 @@ pub enum MatchSyncError {
 }
 
 impl MatchSyncError {
+  // Only a broken GC connection backs an account's sync off for a day. A refusal about a
+  // friend or someone else's match says nothing about the connection, and a rate limit
+  // exhausts the quota of what was limited instead.
+  pub fn backs_off_gc(&self) -> bool {
+    matches!(self, MatchSyncError::GcUnavailable(_))
+  }
+
+  // The account can always see its own history and matches, so the GC refusing one means
+  // it won't serve the account at all: an outage, not an answer.
+  pub fn refusal_as_outage(self) -> Self {
+    match self {
+      MatchSyncError::GcRefused(refusal) => {
+        MatchSyncError::GcUnavailable(format!("request refused: {refusal}"))
+      }
+      e => e,
+    }
+  }
+
   // A stable, machine-readable tag so the frontend can branch/localize on the
   // specific case without parsing the English message.
   pub fn subcode(&self) -> &'static str {
@@ -48,10 +72,34 @@ impl MatchSyncError {
       MatchSyncError::AuthUnavailable(_) => "authUnavailable",
       MatchSyncError::GcUnavailable(_) => "gcUnavailable",
       MatchSyncError::GcRateLimited => "gcRateLimited",
+      MatchSyncError::GcRefused(_) => "gcRefused",
       MatchSyncError::GameRunning => "gameRunning",
       MatchSyncError::Api(_) => "apiError",
       MatchSyncError::Store(_) => "storeError",
     }
+  }
+}
+
+#[derive(Error, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GcRefusal {
+  // A private friend history, or a match this account may not see.
+  #[error("no permission")]
+  NoPermission,
+  // The match is still being played or processed; its salts come later.
+  #[error("match still in progress")]
+  InFlight,
+  // The GC doesn't know this match; asking again won't change that.
+  #[error("unknown match")]
+  InvalidMatch,
+  #[error("result {0}")]
+  Other(i32),
+}
+
+// reqwest errors print the request URL, which can carry friends' account ids; converting
+// through here keeps those out of the logs.
+impl From<reqwest::Error> for MatchSyncError {
+  fn from(e: reqwest::Error) -> Self {
+    MatchSyncError::Api(e.without_url().to_string())
   }
 }
 

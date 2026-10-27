@@ -13,6 +13,7 @@ use crate::mod_manager::vpk_manager::staging::VpkSnapshot;
 use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
 use serde::{Deserialize, Serialize};
 use tauri::{Emitter, State};
+use ts_rs::TS;
 
 use super::downloads::{FileserverPreference, get_download_manager, resolve_download_files};
 use super::fonts::{apply_font_cleanup, prepare_font_cleanup};
@@ -165,6 +166,39 @@ pub async fn reorder_mods_by_remote_id(
   crate::game_guard::ensure_game_idle_locked("reorder_mods_by_remote_id", guard_permit.as_deref())?;
   let mut mod_manager = MANAGER.lock().unwrap();
   mod_manager.reorder_mods_by_remote_id(mod_order_data, profile_folder)
+}
+
+/// A mod's enabled VPKs in load order, each beside the file it was installed
+/// from. The two lists line up only when both have the same length.
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct ModVpkFiles {
+  pub mod_id: String,
+  pub vpks: Vec<String>,
+  pub original_names: Vec<String>,
+}
+
+#[tauri::command]
+pub async fn get_enabled_mod_vpk_files(
+  profile_folder: Option<String>,
+) -> Result<Vec<ModVpkFiles>, Error> {
+  let manifest = MANAGER
+    .lock()
+    .unwrap()
+    .get_profile_vpk_manifest(profile_folder)?;
+  Ok(
+    manifest
+      .mods
+      .into_iter()
+      .filter(|(_, entry)| entry.enabled && !entry.current_vpks.is_empty())
+      .map(|(mod_id, entry)| ModVpkFiles {
+        mod_id,
+        vpks: entry.current_vpks,
+        original_names: entry.original_vpk_names,
+      })
+      .collect(),
+  )
 }
 
 #[tauri::command]

@@ -1,5 +1,5 @@
 use super::collections::CollectionRecord;
-use super::store::{Catalog, CatalogRecord, INCOMPLETE_SNAPSHOT};
+use super::store::{Catalog, CatalogRecord, INCOMPLETE_SNAPSHOT, LAST_FULL_SYNC_AT};
 use crate::errors::Error;
 use crate::providers::gamebanana::client::{MAX_COLLECTION_DESCRIPTIONS, MAX_HYDRATION_ITEMS};
 use crate::providers::gamebanana::hero_registry;
@@ -21,7 +21,6 @@ use tokio_util::sync::CancellationToken;
 const INCREMENTAL_INTERVAL: Duration = Duration::from_secs(20 * 60);
 const FULL_RECONCILIATION_INTERVAL: Duration = Duration::from_secs(7 * 24 * 60 * 60);
 const LAST_INCREMENTAL_AT: &str = "last_incremental_at";
-const LAST_FULL_SYNC_AT: &str = "last_full_sync_at";
 const LAST_INCOMPLETE_SNAPSHOT_AT: &str = "last_incomplete_snapshot_at";
 const PREVIEW_IMAGES_VERSION: &str = "preview_images_v1";
 const HYDRATION_VERSION: &str = "bulk_hydration_v3";

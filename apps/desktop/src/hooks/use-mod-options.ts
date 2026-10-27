@@ -15,6 +15,10 @@ import {
   deriveActiveArchiveNames,
   deriveActiveVariantCount,
 } from "@/lib/mods/mod-variants";
+import {
+  insertFilesInAuthorOrder,
+  sortNamesInLoadOrder,
+} from "@/lib/mods/vpk-load-order";
 import { usePersistedStore } from "@/lib/store";
 import { isTauriError } from "@/types/tauri";
 import {
@@ -80,6 +84,7 @@ const deriveCurrentOriginalNames = (mod: LocalMod): string[] => {
 const mergeFileTreeAfterSwap = (
   previous: ModFileTree | undefined,
   swapResult: ModFileTree,
+  archiveNames: string[],
 ): ModFileTree => {
   if (!previous || previous.files.length === 0) {
     return swapResult;
@@ -96,17 +101,17 @@ const mergeFileTreeAfterSwap = (
   }
   const knownNames = new Set(previous.files.map((f) => f.name));
 
-  const merged: ModFile[] = previous.files.map((f) => ({
+  const kept: ModFile[] = previous.files.map((f) => ({
     ...f,
     is_selected: selectedNames.has(f.name),
     archive_name: swapArchiveByName.get(f.name) ?? f.archive_name,
   }));
 
-  for (const f of swapResult.files) {
-    if (!knownNames.has(f.name)) {
-      merged.push({ ...f });
-    }
-  }
+  const merged = insertFilesInAuthorOrder(
+    kept,
+    swapResult.files.filter((f) => !knownNames.has(f.name)),
+    archiveNames,
+  );
 
   return {
     files: merged,
@@ -266,6 +271,7 @@ export const useModOptions = (mod: LocalMod | null) => {
   const stagedOriginalsMapRef = useRef(
     new Map<string, { archiveName: string; path: string }>(),
   );
+  const archiveNames = downloads.map((d) => d.name);
   const [progress, setProgress] = useState<ModOptionsProgress | null>(null);
 
   const applyMutation = useMutation<
@@ -350,6 +356,21 @@ export const useModOptions = (mod: LocalMod | null) => {
       }
 
       combinedSelection = [...new Set(combinedSelection)];
+      const treeFiles = mod.installedFileTree?.files ?? [];
+      const treeNames = new Set(treeFiles.map((f) => f.name));
+      const stagedFiles: ModFile[] = [...stagedOriginalsMapRef.current]
+        .filter(([name]) => !treeNames.has(name))
+        .map(([name, staged]) => ({
+          name,
+          path: staged.path,
+          size: 0,
+          is_selected: true,
+          archive_name: staged.archiveName,
+        }));
+      combinedSelection = sortNamesInLoadOrder(
+        combinedSelection,
+        insertFilesInAuthorOrder(treeFiles, stagedFiles, archiveNames),
+      );
 
       const notOnDiskNames = new Set<string>();
       const onDiskByName = new Map<string, boolean>();
@@ -408,13 +429,19 @@ export const useModOptions = (mod: LocalMod | null) => {
 
       const mergedTree = mergeFileTreeAfterSwap(
         mod.installedFileTree,
-        result.file_tree,
+        {
+          ...result.file_tree,
+          files: result.file_tree.files.map((f) => {
+            const staged = stagedOriginalsMapRef.current.get(f.name);
+            return staged ? { ...f, archive_name: staged.archiveName } : f;
+          }),
+        },
+        archiveNames,
       );
 
       for (const f of mergedTree.files) {
         const staged = stagedOriginalsMapRef.current.get(f.name);
         if (staged) {
-          f.archive_name = staged.archiveName;
           f.path = staged.path;
         }
       }
@@ -495,7 +522,10 @@ export const useModOptions = (mod: LocalMod | null) => {
         profileFolder,
         currentInstalledVpks: installedVpks,
         currentOriginalNames,
-        selectedOriginalNames: selectedNames,
+        selectedOriginalNames: sortNamesInLoadOrder(
+          selectedNames,
+          mod.installedFileTree?.files ?? [],
+        ),
       });
     },
     onSuccess: (result) => {
@@ -503,6 +533,7 @@ export const useModOptions = (mod: LocalMod | null) => {
       const mergedTree = mergeFileTreeAfterSwap(
         mod.installedFileTree,
         result.file_tree,
+        archiveNames,
       );
       setInstalledVpks(mod.remoteId, result.installed_vpks, mergedTree);
       const activeArchives = new Set(

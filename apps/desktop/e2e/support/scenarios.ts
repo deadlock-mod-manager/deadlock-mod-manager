@@ -17,6 +17,7 @@ import {
   prepareGroupedIdentificationWorld,
 } from "./library-groups-fixtures";
 import { prepareProfileWorld } from "./profile-fixtures";
+import { prepareFileOrderWorld } from "./file-order-fixtures";
 import { prepareBrokenProfileWorld } from "./broken-profile-fixtures";
 import { prepareCompatibilityFixWorld } from "./compatibility-fix-fixtures";
 import { prepareConflictWorld } from "./conflict-fixtures";
@@ -564,6 +565,14 @@ export const scenarios = {
   "local-mod-large-drop-path-zip": localLargeOnDisk,
   "profiles-pointer": profiles,
   "profiles-keyboard": profiles,
+  "profiles-file-order": {
+    ...defaults,
+    family: "profiles",
+    spec: "profiles-file-order",
+    phases: ["reorder-files", "restart-file-order"],
+    routes: profileRoutes,
+    prepare: prepareFileOrderWorld,
+  },
   "conflicts-resolve": conflicts,
   "bisect-conflicts": {
     ...conflicts,

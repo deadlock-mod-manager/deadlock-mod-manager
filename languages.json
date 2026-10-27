@@ -148,12 +148,12 @@
       "isDefault": false,
       "contributors": [
         {
-          "name": "kenanala",
-          "discord": "kenanala"
-        },
-        {
           "name": "hollmmes",
           "discord": "hollmmes"
+        },
+        {
+          "name": "kenanala",
+          "discord": "kenanala"
         }
       ]
     },

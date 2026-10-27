@@ -116,7 +116,9 @@ function formatStatus(
     return lang.status === "complete" ? "✅ Complete" : "🚧 In Progress";
   }
 
-  if (pct >= 100) return "✅ 100%";
+  if (pct >= 100) {
+    return lang.status === "complete" ? "✅ Complete" : "✅ 100%";
+  }
   if (pct > 0) return `🚧 ${pct}%`;
   return "🔴 0%";
 }

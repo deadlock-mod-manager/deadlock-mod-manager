@@ -43,6 +43,8 @@ export const useCommissionsUrl = () => {
   const { data } = useQuery({
     queryKey: ["commissions-url"],
     queryFn: findCommissionsUrl,
+    // The E2E harness only reaches fixture servers, never the live site.
+    enabled: import.meta.env.VITE_DMM_E2E_HARNESS !== "1",
     staleTime: STALE_TIME_API,
     // Keep probing while it's offline so the card shows up once the site goes
     // live. A found URL stays on the normal cache policy.
