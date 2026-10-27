@@ -14,7 +14,8 @@ import {
 import { observeUntil } from "../support/observations";
 
 const image = () => $('img[alt="E2E Local Adult Skin"]');
-const card = () => image().$('./ancestor::*[@role="button"][1]');
+const card = () =>
+  $('//img[@alt="E2E Local Adult Skin"]/ancestor::*[@role="button"][1]');
 // Linux hides the image and draws a blurred canvas copy beside it; other
 // platforms blur the image with a CSS filter.
 const assertBlur = async (blurred: boolean) => {
