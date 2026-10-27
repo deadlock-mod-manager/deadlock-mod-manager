@@ -2752,6 +2752,7 @@
       "updatingPercent": "",
       "complete": "Абнаўленне завершана",
       "partialSuccess": "{{succeeded}} абноўлена, {{failed}} не атрымалася",
+      "selectionCanceled": "",
       "error": "Не атрымалася абнавіць моды",
       "failureDescription": "",
       "backupFailedTitle": "",

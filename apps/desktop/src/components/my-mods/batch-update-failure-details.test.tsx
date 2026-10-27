@@ -82,6 +82,7 @@ describe("batch update failure details", () => {
       succeeded: ["1"],
       failed: [["42", "Download unavailable"]],
       installedMods: [],
+      selectionRequired: [],
     });
     for (const text of [
       "1 updated, 1 failed",

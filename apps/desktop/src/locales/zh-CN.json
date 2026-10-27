@@ -2752,6 +2752,7 @@
       "updatingPercent": "正在更新 {{percent}}%…",
       "complete": "更新完成",
       "partialSuccess": "{{succeeded}} 更新成功，{{failed}} 失败",
+      "selectionCanceled": "",
       "error": "更新模组失败",
       "failureDescription": "",
       "backupFailedTitle": "",

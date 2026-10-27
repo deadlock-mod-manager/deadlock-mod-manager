@@ -2752,6 +2752,7 @@
       "updatingPercent": "",
       "complete": "اكتمل التحديث",
       "partialSuccess": "",
+      "selectionCanceled": "",
       "error": "",
       "failureDescription": "",
       "backupFailedTitle": "",

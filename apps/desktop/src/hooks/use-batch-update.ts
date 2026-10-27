@@ -14,8 +14,8 @@ import type {
   BatchUpdateProgressEvent,
   BatchUpdateResult,
   ModDownloadItem,
-  ModFileTree,
   ModUpdateCandidate,
+  PendingSelection,
   ProfileImportMod,
   UpdatableMod,
 } from "@/types/mods";
@@ -71,6 +71,9 @@ const listenForUpdateProgress = async () => {
 
 export const useBatchUpdate = () => {
   const [updatableMods, setUpdatableMods] = useState<UpdatableMod[]>([]);
+  const [pendingSelections, setPendingSelections] = useState<
+    (PendingSelection & { target: UpdatableMod })[]
+  >([]);
   const { t } = useTranslation();
   const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
   const setInstalledVpks = usePersistedStore((state) => state.setInstalledVpks);
@@ -171,14 +174,8 @@ export const useBatchUpdate = () => {
     );
   };
 
-  const setSelectedFileTree = (remoteId: string, fileTree: ModFileTree) => {
-    setUpdatableMods((mods) =>
-      mods.map((m) =>
-        m.mod.remoteId === remoteId ? { ...m, selectedFileTree: fileTree } : m,
-      ),
-    );
-  };
-
+  /** `selectionRequired` in the result lists every mod still waiting for a
+   * VPK choice, including ones from earlier runs. */
   const executeBatchUpdate = async (
     targets: UpdatableMod[],
   ): Promise<BatchUpdateResult> => {
@@ -234,7 +231,15 @@ export const useBatchUpdate = () => {
       const rawResult = await invokeGuarded("batch_update_mods", {
         mods: batchUpdateMods,
         profileFolder,
-        skipBackup: !backupEnabled,
+        // Mods sent back for a VPK choice were left untouched by the run that
+        // already backed up addons.
+        skipBackup:
+          !backupEnabled ||
+          targets.every((target) =>
+            pendingSelections.some(
+              (pending) => pending.modId === target.mod.remoteId,
+            ),
+          ),
         maxBackups: maxBackupCount,
       });
 
@@ -294,10 +299,32 @@ export const useBatchUpdate = () => {
             succeeded: result.succeeded.length,
           })
           .warn("Some mods failed to update");
-      } else {
+      } else if (result.selectionRequired.length === 0) {
         toast.success(t("myMods.batchUpdate.complete"));
       }
-      return result;
+
+      if (result.selectionRequired.length > 0) {
+        logger
+          .withMetadata({
+            mods: result.selectionRequired.map((pending) => pending.modId),
+          })
+          .info("Waiting for a VPK choice before updating");
+      }
+      const selectionRequired = [
+        ...pendingSelections.filter(
+          (pending) =>
+            !targets.some((target) => target.mod.remoteId === pending.modId),
+        ),
+        // The dialog's list empties when it closes, so each pick keeps its target.
+        ...result.selectionRequired.flatMap((pending) => {
+          const target = targets.find(
+            (um) => um.mod.remoteId === pending.modId,
+          );
+          return target ? [{ ...pending, target }] : [];
+        }),
+      ];
+      setPendingSelections(selectionRequired);
+      return { ...result, selectionRequired };
     } catch (error) {
       attempt.finish(
         failureOutcome(isTauriError(error) ? error.kind : undefined),
@@ -319,12 +346,26 @@ export const useBatchUpdate = () => {
     }
   };
 
+  /** Returns how many mods still wait for a VPK choice. */
+  const dismissSelection = (modId: string): number => {
+    const pending = pendingSelections.find((p) => p.modId === modId);
+    const remaining = pendingSelections.filter((p) => p.modId !== modId);
+    setPendingSelections(remaining);
+    if (pending) {
+      toast.info(
+        t("myMods.batchUpdate.selectionCanceled", { name: pending.modName }),
+      );
+    }
+    return remaining.length;
+  };
+
   return {
     updatableMods,
     setSelectedDownloads,
-    setSelectedFileTree,
     prepareUpdates,
     executeBatchUpdate,
     updateProgress,
+    pendingSelections,
+    dismissSelection,
   };
 };

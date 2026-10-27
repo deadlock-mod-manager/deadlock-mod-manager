@@ -221,6 +221,17 @@ pub struct BatchUpdateResult {
   pub installed_mods: Vec<InstalledModInfo>,
   #[serde(default)]
   pub vpk_mappings: Vec<(String, Vec<String>)>,
+  /// Mods left as they were until the user picks their VPKs from `file_tree`.
+  #[serde(default)]
+  pub selection_required: Vec<SelectionRequiredMod>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SelectionRequiredMod {
+  pub mod_id: String,
+  pub mod_name: String,
+  pub file_tree: ModFileTree,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -363,6 +374,7 @@ pub async fn batch_update_mods(
   let mut succeeded = Vec::new();
   let mut failed = Vec::new();
   let mut installed_mods = Vec::new();
+  let mut selection_required = Vec::new();
 
   for (index, (mod_data, download_files)) in mods.iter().zip(resolved_downloads).enumerate() {
     let download_files = match download_files {
@@ -420,6 +432,22 @@ pub async fn batch_update_mods(
         continue;
       }
     };
+
+    if prepared.selection_required {
+      prepared.remove_scratch_files();
+      if let Some(file_tree) = prepared.file_tree {
+        log::info!(
+          "No saved VPK selection fits the update for mod {}; asking the user",
+          mod_data.mod_id
+        );
+        selection_required.push(SelectionRequiredMod {
+          mod_id: mod_data.mod_id.clone(),
+          mod_name: mod_data.mod_name.clone(),
+          file_tree,
+        });
+      }
+      continue;
+    }
 
     app_handle
       .emit(
@@ -524,6 +552,7 @@ pub async fn batch_update_mods(
     failed,
     installed_mods,
     vpk_mappings,
+    selection_required,
   })
 }
 

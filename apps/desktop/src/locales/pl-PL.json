@@ -2752,6 +2752,7 @@
       "updatingPercent": "",
       "complete": "Aktualizacja zakończona",
       "partialSuccess": "{{succeeded}} zaktualizowany, {{failed}} nie powiodło się",
+      "selectionCanceled": "",
       "error": "Nie udało się zaktualizować modyfikacji",
       "failureDescription": "",
       "backupFailedTitle": "",
