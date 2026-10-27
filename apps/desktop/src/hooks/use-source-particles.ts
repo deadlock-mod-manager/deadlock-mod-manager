@@ -5,6 +5,8 @@ import { cacheFoundryModel, decodeFoundryModel } from "@/lib/model-assets";
 import type { PreviewSource } from "@/lib/preview-animation";
 import type { FoundryParticleGraph } from "@/types/generated/FoundryParticleGraph";
 import type { ParticleSourceDraft } from "@/types/generated/ParticleSourceDraft";
+import type { ParticleGraphOptions } from "@/types/generated/ParticleGraphOptions";
+import logger from "@/lib/logger";
 
 export interface ParticleDraftSources {
   addonId: string;
@@ -17,6 +19,8 @@ export const useSourceParticles = (
   abilityName: string | null,
   additionalRoots: string[],
   drafts?: ParticleDraftSources,
+  textureSide = 1024,
+  enabled = true,
 ) => {
   const client = useQueryClient();
   const graph = useQuery({
@@ -30,28 +34,57 @@ export const useSourceParticles = (
       additionalRoots,
       drafts?.addonId,
       drafts?.version,
+      textureSide,
     ],
-    queryFn: () =>
-      invoke<FoundryParticleGraph>("foundry_particle_graph", {
-        filePath: source.filePath,
-        entryPath: source.entryPath,
-        overlayRoot: source.overlayRoot,
-        roots: [],
-        abilityName,
-        options: {
-          additionalRoots,
-          sourceAddonId: drafts?.addonId,
-          sourceFiles: drafts?.files ?? [],
-        },
-      }),
-    enabled: /\.(vmdl|vpcf)_c$/.test(source.entryPath),
-    placeholderData: drafts ? undefined : (previous) => previous,
+    queryFn: async ({ signal }) => {
+      signal.throwIfAborted();
+      const requestId = crypto.randomUUID();
+      const cancel = () => {
+        void invoke("foundry_cancel_model_decode", { requestId }).catch(
+          (error) => {
+            logger
+              .withError(error)
+              .warn("[Workbench] Could not cancel particle graph");
+          },
+        );
+      };
+      signal.addEventListener("abort", cancel, { once: true });
+      try {
+        const graph = await invoke<FoundryParticleGraph>(
+          "foundry_particle_graph",
+          {
+            filePath: source.filePath,
+            entryPath: source.entryPath,
+            overlayRoot: source.overlayRoot,
+            roots: [],
+            abilityName,
+            options: {
+              requestId,
+              textureSide,
+              additionalRoots,
+              sourceAddonId: drafts?.addonId ?? null,
+              sourceFiles: drafts?.files ?? [],
+            } satisfies ParticleGraphOptions,
+          },
+        );
+        signal.throwIfAborted();
+        return graph;
+      } finally {
+        signal.removeEventListener("abort", cancel);
+      }
+    },
+    enabled: enabled && /\.(vmdl|vpcf)_c$/.test(source.entryPath),
+    placeholderData:
+      drafts || textureSide < 1024 ? undefined : (previous) => previous,
     staleTime: 60_000,
-    gcTime: 30_000,
+    gcTime: drafts ? 0 : 30_000,
     retry: false,
-    meta: { skipGlobalErrorHandler: true },
+    meta: {
+      skipGlobalErrorHandler: true,
+      foregroundPreview: enabled && textureSide >= 1024,
+    },
   });
-  const paths = graph.data?.models ?? [];
+  const paths = enabled ? (graph.data?.models ?? []) : [];
   const models = useQueries({
     queries: paths.map((path) => {
       const key = [

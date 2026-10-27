@@ -1,7 +1,8 @@
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use crate::{ToolError, WORKBENCH_ADDON, inspect_sdk};
+use crate::profile::inspect_sdk_cached;
+use crate::{ToolError, WORKBENCH_ADDON};
 
 pub struct ProtonRuntime {
     pub launcher: PathBuf,
@@ -76,7 +77,7 @@ pub fn sdk_project_command(
     {
         return Err(ToolError::InvalidInput("Invalid addon name".into()));
     }
-    let inspection = inspect_sdk(sdk)?;
+    let inspection = inspect_sdk_cached(sdk)?;
     if !inspection.compatible {
         return Err(ToolError::InvalidInput(format!(
             "The SDK differs from compatibility profile {} in {} modules; prepare a compatible SDK before launching",

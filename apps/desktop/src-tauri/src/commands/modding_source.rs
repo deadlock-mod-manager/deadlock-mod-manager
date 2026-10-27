@@ -315,6 +315,20 @@ pub(super) fn replace_field(text: &str, path: &str, value: &str) -> Result<Strin
   fields(&result)?;
   Ok(result)
 }
+pub(super) fn property_name_range(
+  text: &str,
+  field: &Field,
+) -> Result<std::ops::Range<usize>, Error> {
+  let token = tokens(&text[..field.start])?
+    .into_iter()
+    .rev()
+    .find(|token| token.text != "=")
+    .ok_or_else(|| invalid("missing property name"))?;
+  if token.text.trim_matches('"') != field.name {
+    return Err(invalid("ambiguous property name"));
+  }
+  Ok(token.start..token.end)
+}
 #[cfg(test)]
 mod tests {
   use super::*;

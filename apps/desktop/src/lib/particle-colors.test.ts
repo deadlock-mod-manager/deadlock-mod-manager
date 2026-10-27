@@ -13,6 +13,9 @@ import {
   particleFolders,
   recolorParticleFiles,
   type ParticleFileSelection,
+  initialParticleSelection,
+  selectParticleFolder,
+  planParticleColors,
 } from "./particle-colors";
 function file(
   path: string,
@@ -27,6 +30,36 @@ function file(
     diagnostic: null,
   };
 }
+
+test("initial All folders and reselected All folders expose the same batch colors", () => {
+  const documents = [
+    { ...file("particles/empty.vpcf", [0, 0, 0]), colors: [] },
+    file("particles/fx/a.vpcf", [255, 100, 50]),
+    file("particles/fx/b.vpcf", [255, 100, 50]),
+  ];
+  const initial = initialParticleSelection(documents);
+  const folder = selectParticleFolder(documents, "particles");
+  const all = selectParticleFolder(documents, "");
+  const colors = (selection: ParticleFileSelection) =>
+    sharedParticleColors(
+      documents.filter((file) => selection.paths.has(file.path)),
+      0,
+    );
+  expect(colors(initial)).toEqual(colors(all));
+  expect(colors(initial)).toHaveLength(1);
+  expect([...initial.paths]).toEqual([...all.paths]);
+  expect(colors(folder)).toEqual(colors(all));
+});
+
+test("opening one particle explicitly keeps single-file selection", () => {
+  const documents = [
+    file("particles/a.vpcf", [1, 2, 3]),
+    file("particles/b.vpcf", [1, 2, 3]),
+  ];
+  expect([
+    ...initialParticleSelection(documents, "particles/b.vpcf").paths,
+  ]).toEqual(["particles/b.vpcf"]);
+});
 test("shared colors count files separately and expand only within the chosen tolerance", () => {
   const files = [
     file("a.vpcf", [255, 0, 0]),
@@ -163,4 +196,34 @@ test("hex input supports shorthand and rejects malformed colors", () => {
   expect(particleRgb("#f80")).toEqual([255, 136, 0]);
   expect(particleRgb("#aabbcc")).toEqual([170, 187, 204]);
   expect(particleRgb("bad hex")).toBeNull();
+});
+
+test("recolor proposals count only changed fields and selected, valid files", () => {
+  const a = file("particles/a.vpcf", [10, 20, 30]);
+  a.colors.push({
+    path: "m_Color2",
+    rgb: [1, 2, 3],
+    alpha: null,
+    normalized: false,
+  });
+  const b = file("particles/b.vpcf", [10, 20, 30]);
+  const broken = {
+    ...file("particles/broken.vpcf", [10, 20, 30]),
+    diagnostic: "invalid source",
+  };
+  const matching = planParticleColors(
+    [a, b, broken],
+    [1, 2, 3],
+    [{ file: a.path, path: "m_Color1" }],
+  );
+  expect(matching.files).toEqual([a.path]);
+  expect(matching.fields).toBe(1);
+  expect(matching.edits[0]?.changes).toEqual([
+    { path: "m_Color1", rgb: [1, 2, 3] },
+  ]);
+  const all = planParticleColors([a, b, broken], [1, 2, 3]);
+  expect(all.files).toEqual([a.path, b.path]);
+  expect(all.fields).toBe(2);
+  expect(a.colors[0]?.rgb).toEqual([10, 20, 30]);
+  expect(a.colors[0]?.alpha).toBe(123);
 });

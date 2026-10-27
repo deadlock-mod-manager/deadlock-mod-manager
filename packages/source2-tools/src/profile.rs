@@ -1,6 +1,10 @@
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{self, Read};
 use std::path::Path;
+use std::path::PathBuf;
+use std::sync::{LazyLock, Mutex};
+use std::time::SystemTime;
 
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -68,6 +72,65 @@ pub(crate) fn file_hash(path: &Path) -> io::Result<Option<String>> {
     Ok(Some(format!("{:x}", digest.finalize())))
 }
 
+#[derive(PartialEq, Eq)]
+struct FileStamp {
+    len: u64,
+    modified: SystemTime,
+    created: Option<SystemTime>,
+}
+
+impl FileStamp {
+    fn read(path: &Path) -> io::Result<Self> {
+        let metadata = std::fs::metadata(path)?;
+        Ok(Self {
+            len: metadata.len(),
+            modified: metadata.modified()?,
+            created: metadata.created().ok(),
+        })
+    }
+}
+
+#[derive(Default)]
+struct HashCache {
+    files: HashMap<PathBuf, (FileStamp, String)>,
+}
+
+impl HashCache {
+    fn hash(&mut self, path: &Path) -> io::Result<Option<String>> {
+        let stamp = match FileStamp::read(path) {
+            Ok(stamp) => stamp,
+            Err(error) if error.kind() == io::ErrorKind::NotFound => {
+                self.files.remove(path);
+                return Ok(None);
+            }
+            Err(error) => return Err(error),
+        };
+        if let Some((previous, hash)) = self.files.get(path)
+            && *previous == stamp
+        {
+            return Ok(Some(hash.clone()));
+        }
+        let hash = file_hash(path)?;
+        if let Some(hash) = &hash
+            && FileStamp::read(path)? == stamp
+        {
+            if self.files.len() >= 512 {
+                self.files.clear();
+            }
+            self.files.insert(path.to_owned(), (stamp, hash.clone()));
+        }
+        Ok(hash)
+    }
+}
+
+pub(crate) fn inspect_sdk_cached(root: &Path) -> Result<SdkInspection, ToolError> {
+    static HASHES: LazyLock<Mutex<HashCache>> = LazyLock::new(Mutex::default);
+    let mut hashes = HASHES
+        .lock()
+        .map_err(|error| ToolError::InvalidInput(error.to_string()))?;
+    inspect_sdk_with(root, |path| hashes.hash(path))
+}
+
 fn check_model_metadata(root: &Path) -> Result<(), ToolError> {
     let path = root.join("game/bin/assettypes_common.txt");
     let source = std::fs::read_to_string(&path).map_err(|source| ToolError::Io { path, source })?;
@@ -87,7 +150,10 @@ fn check_model_metadata(root: &Path) -> Result<(), ToolError> {
             .join("game")
             .join(directory)
             .join("readonly_tools_asset_info.bin");
-        let header = crate::read(&path)?;
+        let mut header = Vec::with_capacity(36);
+        File::open(&path)
+            .and_then(|file| file.take(36).read_to_end(&mut header))
+            .map_err(|source| ToolError::Io { path, source })?;
         if header.len() < 36
             || !header.starts_with(&[0xe9, 0xac, 0xcc, 0xc4])
             || !matches!(header.get(4..8), Some([13 | 16, 0, 0, 0]))
@@ -99,12 +165,19 @@ fn check_model_metadata(root: &Path) -> Result<(), ToolError> {
 }
 
 pub fn inspect_sdk(root: &Path) -> Result<SdkInspection, ToolError> {
+    inspect_sdk_with(root, file_hash)
+}
+
+fn inspect_sdk_with(
+    root: &Path,
+    mut hash_file: impl FnMut(&Path) -> io::Result<Option<String>>,
+) -> Result<SdkInspection, ToolError> {
     let profile = bundled_profile()?;
     let mut differences = Vec::new();
     let checked_modules = profile.modules.len();
     for module in profile.modules {
         let path = root.join(&module.path);
-        let actual_sha256 = file_hash(&path).map_err(|source| ToolError::Io { path, source })?;
+        let actual_sha256 = hash_file(&path).map_err(|source| ToolError::Io { path, source })?;
         if !actual_sha256
             .as_deref()
             .is_some_and(|actual| module.accepts_hash(actual))
@@ -231,5 +304,31 @@ mod tests {
         data[131072] = 8;
         std::fs::write(&path, &data).unwrap();
         assert_eq!(file_hash(&path).unwrap(), Some(crate::hash(&data)));
+    }
+
+    #[test]
+    fn cached_hashes_track_modification_replacement_and_deletion() {
+        let root = tempfile::tempdir().unwrap();
+        let path = root.path().join("module.dll");
+        let mut cache = HashCache::default();
+        std::fs::write(&path, b"original").unwrap();
+        assert_eq!(cache.hash(&path).unwrap(), Some(crate::hash(b"original")));
+        assert_eq!(cache.hash(&path).unwrap(), Some(crate::hash(b"original")));
+        std::fs::write(&path, b"changed!").unwrap();
+        let changed = SystemTime::now() + std::time::Duration::from_secs(2);
+        File::options()
+            .write(true)
+            .open(&path)
+            .unwrap()
+            .set_times(std::fs::FileTimes::new().set_modified(changed))
+            .unwrap();
+        assert_eq!(cache.hash(&path).unwrap(), Some(crate::hash(b"changed!")));
+        std::fs::remove_file(&path).unwrap();
+        assert_eq!(cache.hash(&path).unwrap(), None);
+        std::fs::write(&path, b"replacement").unwrap();
+        assert_eq!(
+            cache.hash(&path).unwrap(),
+            Some(crate::hash(b"replacement"))
+        );
     }
 }

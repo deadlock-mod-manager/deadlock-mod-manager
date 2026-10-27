@@ -37,10 +37,17 @@ export class ParticleAssets {
     readonly graph: FoundryParticleGraph,
     models: ParticleModelAsset[],
     readonly poseSource?: { path: string; model: THREE.Object3D },
+    previous?: ParticleAssets,
   ) {
     for (const warning of graph.warnings) this.warnings.add(warning);
     this.ready = Promise.all([
       ...graph.textures.map(async (sheet) => {
+        const reusable = previous?.textures.get(sheet.path);
+        if (reusable?.sheet.dataUrl === sheet.dataUrl) {
+          this.textures.set(sheet.path, { texture: reusable.texture, sheet });
+          previous?.textures.delete(sheet.path);
+          return;
+        }
         try {
           const texture = await new THREE.TextureLoader().loadAsync(
             sheet.dataUrl,
@@ -58,6 +65,17 @@ export class ParticleAssets {
         }
       }),
       ...models.map(async (model) => {
+        const reusable = previous?.models.get(model.path);
+        if (
+          reusable &&
+          previous?.modelIds.get(model.path) === model.asset.assetId
+        ) {
+          this.models.set(model.path, reusable);
+          this.modelIds.set(model.path, model.asset.assetId);
+          previous.models.delete(model.path);
+          previous.modelIds.delete(model.path);
+          return;
+        }
         const release = retainFoundryModel(model.asset);
         try {
           const gltf = await new GLTFLoader().loadAsync(
@@ -68,6 +86,7 @@ export class ParticleAssets {
             return;
           }
           this.models.set(model.path, gltf.scene);
+          this.modelIds.set(model.path, model.asset.assetId);
         } catch {
           this.warnings.add(`Model unavailable: ${model.path}`);
         } finally {
@@ -76,6 +95,7 @@ export class ParticleAssets {
       }),
     ]).then(() => {});
   }
+  private readonly modelIds = new Map<string, string>();
   dispose() {
     this.closed = true;
     for (const texture of this.gradients.values()) texture.dispose();
@@ -84,9 +104,10 @@ export class ParticleAssets {
     for (const model of this.models.values()) disposeModel(model);
     this.textures.clear();
     this.models.clear();
+    this.modelIds.clear();
   }
 }
-function disposeModel(root: THREE.Object3D) {
+export function disposeModel(root: THREE.Object3D) {
   const geometries = new Set<THREE.BufferGeometry>(),
     materials = new Set<THREE.Material>(),
     textures = new Set<THREE.Texture>(),

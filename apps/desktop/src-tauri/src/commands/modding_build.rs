@@ -46,6 +46,16 @@ fn copy_assets(root: &Path, output: &Path, top_level: bool) -> Result<(), Error>
 
 pub(super) static BUILD_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
+fn packed_asset(path: &Path) -> bool {
+  !path
+    .components()
+    .any(|part| part.as_os_str().to_string_lossy().starts_with('.'))
+    && !path.components().next().is_some_and(|part| {
+      ["tools", "addoninfo.txt", "toolscenelightrigs.vdata_c"]
+        .contains(&part.as_os_str().to_string_lossy().as_ref())
+    })
+}
+
 fn compiler_extensions(text: &str) -> std::collections::BTreeSet<String> {
   let mut extensions = std::collections::BTreeSet::new();
   let mut objects: Vec<(Vec<String>, bool)> = Vec::new();
@@ -193,7 +203,22 @@ pub(super) fn compile(
   log_path: &Path,
   selected: Option<Vec<PathBuf>>,
 ) -> Result<(), Error> {
-  super::modding_housekeeping::normalize_particles(Path::new(&addon.content_path))?;
+  let started = std::time::Instant::now();
+  let root = Path::new(&addon.content_path);
+  match selected.as_deref() {
+    Some(inputs)
+      if inputs.iter().all(|path| {
+        path
+          .extension()
+          .is_some_and(|ext| ext.eq_ignore_ascii_case("vpcf"))
+      }) =>
+    {
+      super::modding_housekeeping::normalize_selected_particles(root, inputs)?;
+    }
+    _ => {
+      super::modding_housekeeping::normalize_particles(root)?;
+    }
+  }
   let image_compilers = super::modding_image_compiler::sync(Path::new(&addon.content_path))?;
   let sdk = PathBuf::from(config.prepared_sdk);
   let alias = super::modding_workspace::mount(addon, &sdk)?;
@@ -269,12 +294,23 @@ pub(super) fn compile(
   }
   file_list.flush()?;
   let log = std::fs::File::create(log_path)?;
-  let status = source2_tools::compiler_command(&sdk, &alias, file_list.path(), runtime.as_ref())
-    .map_err(|e| Error::InvalidInput(e.to_string()))?
+  let prepared_ms = started.elapsed().as_millis();
+  let mut command =
+    source2_tools::compiler_command(&sdk, &alias, file_list.path(), runtime.as_ref())
+      .map_err(|e| Error::InvalidInput(e.to_string()))?;
+  let verified_ms = started.elapsed().as_millis() - prepared_ms;
+  let status = command
     .stdin(Stdio::null())
     .stdout(log.try_clone()?)
     .stderr(log)
     .status()?;
+  log::info!(
+    "[Workbench] Compile {}: prepare {} ms, SDK verification {} ms, compiler {} ms",
+    addon.id,
+    prepared_ms,
+    verified_ms,
+    started.elapsed().as_millis() - prepared_ms - verified_ms
+  );
   let compilation = std::fs::read_to_string(log_path)?;
   if !status.success() || super::modding_compile_log::failed(&compilation) {
     let details = super::modding_compile_log::failure_details(&compilation);
@@ -340,19 +376,16 @@ pub async fn build_modding_addon(
     std::fs::create_dir_all(&mod_dir)?;
     let log_path = mod_dir.join("compile.log");
     compile(&addon, config, &tools, steam, &log_path, None)?;
-    let staging = tempfile::tempdir_in(&mod_dir)?;
-    let files = staging.path().join("files");
-    std::fs::create_dir(&files)?;
-    pack_files(Path::new(&addon.game_path), &files)?;
-    let packed = staging.path().join("addon_dir.vpk");
-    let file_count = vpkmanager::pack_directory(&files, &packed).map_err(|e| Error::InvalidInput(e.to_string()))?;
+    let packing = std::time::Instant::now();
     let final_files = mod_dir.join("files");
     std::fs::create_dir_all(&final_files)?;
     let output = final_files.join("addon_dir.vpk");
     let mut temporary = tempfile::NamedTempFile::new_in(&final_files)?;
-    std::io::copy(&mut std::fs::File::open(packed)?, &mut temporary)?;
+    let file_count = vpkmanager::pack::pack_directory_to_writer(Path::new(&addon.game_path), &mut temporary, packed_asset).map_err(|e| Error::InvalidInput(e.to_string()))?;
     temporary.flush()?;
+    temporary.as_file().sync_all()?;
     temporary.persist(&output).map_err(|e| e.error)?;
+    log::info!("[Workbench] Packed {} files for {} in {} ms", file_count, addon.id, packing.elapsed().as_millis());
     let metadata = serde_json::json!({"id":mod_id,"kind":"local","name":addon.name,"author":"Modding Workbench","category":"Skins","description":"Built from a CSDK12 addon.","createdAt":chrono::Utc::now().to_rfc3339(),"_schema":1});
     std::fs::write(mod_dir.join("metadata.json"), serde_json::to_vec_pretty(&metadata).map_err(|e| Error::InvalidInput(e.to_string()))?)?;
     Ok(ModdingBuildResult { mod_id, addon_id, output_path: output.to_string_lossy().into_owned(), file_count, log_path: log_path.to_string_lossy().into_owned() })
@@ -362,6 +395,34 @@ pub async fn build_modding_addon(
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  #[test]
+  fn streaming_packages_preserve_asset_contents_and_skip_editor_support() {
+    let root = tempfile::tempdir().unwrap();
+    let output = tempfile::tempdir().unwrap();
+    std::fs::create_dir_all(root.path().join("models/nested")).unwrap();
+    std::fs::create_dir(root.path().join("tools")).unwrap();
+    let payload = vec![23; 1024 * 1024 + 1];
+    std::fs::write(root.path().join("models/nested/hero.vmdl_c"), &payload).unwrap();
+    std::fs::write(root.path().join("empty.txt"), []).unwrap();
+    std::fs::write(root.path().join("tools/preset.txt"), b"support").unwrap();
+    std::fs::write(root.path().join("addoninfo.txt"), b"support").unwrap();
+    let path = output.path().join("addon_dir.vpk");
+    let mut file = std::fs::File::create(&path).unwrap();
+    assert_eq!(
+      vpkmanager::pack::pack_directory_to_writer(root.path(), &mut file, packed_asset).unwrap(),
+      2
+    );
+    drop(file);
+    let archive = source2_model::vpk_extract::VpkArchive::open(&path).unwrap();
+    assert_eq!(
+      archive.extract_entry("models/nested/hero.vmdl_c").unwrap(),
+      payload
+    );
+    assert_eq!(archive.extract_entry("empty.txt").unwrap(), b"");
+    assert!(!archive.contains_entry("tools/preset.txt"));
+    assert!(!archive.contains_entry("addoninfo.txt"));
+  }
   #[test]
   fn selected_model_compilation_excludes_unrelated_project_sources() {
     let root = tempfile::tempdir().unwrap();

@@ -2,10 +2,17 @@ import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import type { QueryClient, QueryKey, QueryCache } from "@tanstack/react-query";
 import type { FoundryModel } from "@/types/foundry";
 import type { ModdingHierarchy } from "@/types/generated/ModdingHierarchy";
+import type { ModdingSourceModel } from "@/types/generated/ModdingSourceModel";
 import logger from "./logger";
 
 const references = new Map<string, number>();
-const queryAssets = new WeakMap<QueryCache, Map<string, FoundryModel>>();
+export type PreviewModel = FoundryModel | ModdingSourceModel;
+const queryAssets = new WeakMap<QueryCache, Map<string, PreviewModel>>();
+export const MODEL_PREVIEW_GC_TIME = 60_000;
+const MAX_CACHED_MODEL_BYTES = 256 * 1024 * 1024;
+const MAX_CACHED_MODELS = 8;
+const artifacts = (model: PreviewModel): FoundryModel[] =>
+  "meshes" in model ? model.meshes.map((mesh) => mesh.asset) : [model];
 
 /** Owns one artifact lease. Abort also discards an artifact returned by a stale decode. */
 export async function decodeFoundryModel(
@@ -52,6 +59,32 @@ async function ownModelDecode(
   pending: Promise<FoundryModel>,
   signal?: AbortSignal,
 ): Promise<FoundryModel> {
+  return ownPreviewDecode(requestId, pending, signal);
+}
+
+export async function decodeModdingSourceModel(
+  addonId: string,
+  path: string,
+  signal: AbortSignal,
+): Promise<ModdingSourceModel> {
+  signal.throwIfAborted();
+  const requestId = crypto.randomUUID();
+  return ownPreviewDecode(
+    requestId,
+    invoke<ModdingSourceModel>("preview_modding_source_model", {
+      requestId,
+      addonId,
+      path,
+    }),
+    signal,
+  );
+}
+
+async function ownPreviewDecode<T extends PreviewModel>(
+  requestId: string,
+  pending: Promise<T>,
+  signal?: AbortSignal,
+): Promise<T> {
   const cancel = () => {
     void invoke("foundry_cancel_model_decode", { requestId }).catch((error) => {
       logger.withError(error).warn("[Foundry] Could not cancel model decode");
@@ -60,7 +93,7 @@ async function ownModelDecode(
   signal?.addEventListener("abort", cancel, { once: true });
   try {
     const model = await pending;
-    references.set(model.assetId, 1);
+    for (const asset of artifacts(model)) references.set(asset.assetId, 1);
     if (signal?.aborted) {
       releaseFoundryModel(model);
       signal.throwIfAborted();
@@ -72,8 +105,9 @@ async function ownModelDecode(
 }
 
 /** Keeps the file alive while a viewer's fetch/parse is still in flight. */
-export function retainFoundryModel(model: FoundryModel): () => void {
-  references.set(model.assetId, (references.get(model.assetId) ?? 0) + 1);
+export function retainFoundryModel(model: PreviewModel): () => void {
+  for (const asset of artifacts(model))
+    references.set(asset.assetId, (references.get(asset.assetId) ?? 0) + 1);
   let released = false;
   return () => {
     if (released) return;
@@ -82,7 +116,11 @@ export function retainFoundryModel(model: FoundryModel): () => void {
   };
 }
 
-export function releaseFoundryModel(model: FoundryModel): void {
+export function releaseFoundryModel(model: PreviewModel): void {
+  for (const asset of artifacts(model)) releaseArtifact(asset);
+}
+
+function releaseArtifact(model: FoundryModel): void {
   const count = references.get(model.assetId);
   if (count === undefined) return;
   if (count > 1) {
@@ -107,7 +145,7 @@ export function modelAssetUrl(model: FoundryModel): string {
 export function cacheFoundryModel(
   client: QueryClient,
   queryKey: QueryKey,
-  model: FoundryModel,
+  model: PreviewModel,
 ): void {
   const cache = client.getQueryCache();
   let assets = queryAssets.get(cache);
@@ -116,10 +154,20 @@ export function cacheFoundryModel(
     queryAssets.set(cache, assets);
     const tracked = assets;
     cache.subscribe((event) => {
-      if (event.type !== "removed") return;
-      const model = tracked.get(event.query.queryHash);
-      if (model) releaseFoundryModel(model);
-      tracked.delete(event.query.queryHash);
+      const hash = event.query.queryHash;
+      if (event.type === "removed") {
+        const model = tracked.get(hash);
+        if (model) releaseFoundryModel(model);
+        tracked.delete(hash);
+      } else if (event.type === "observerAdded") {
+        const model = tracked.get(hash);
+        if (model) {
+          tracked.delete(hash);
+          tracked.set(hash, model);
+        }
+      } else if (event.type === "observerRemoved") {
+        trimModelCache(client, tracked);
+      }
     });
   }
   const query = cache.find({ queryKey, exact: true });
@@ -130,4 +178,35 @@ export function cacheFoundryModel(
   const previous = assets.get(query.queryHash);
   assets.set(query.queryHash, model);
   if (previous) releaseFoundryModel(previous);
+  trimModelCache(client, assets, query.queryHash);
+}
+
+function trimModelCache(
+  client: QueryClient,
+  assets: Map<string, PreviewModel>,
+  keep?: string,
+) {
+  let bytes = [...assets.values()].reduce(
+    (total, model) =>
+      total +
+      artifacts(model).reduce((size, asset) => size + asset.byteLength, 0),
+    0,
+  );
+  for (const [hash, model] of assets) {
+    if (bytes <= MAX_CACHED_MODEL_BYTES && assets.size <= MAX_CACHED_MODELS)
+      break;
+    const query = client.getQueryCache().get(hash);
+    if (
+      hash === keep ||
+      !query ||
+      query.getObserversCount() > 0 ||
+      query.state.fetchStatus !== "idle"
+    )
+      continue;
+    bytes -= artifacts(model).reduce(
+      (size, asset) => size + asset.byteLength,
+      0,
+    );
+    client.removeQueries({ queryKey: query.queryKey, exact: true });
+  }
 }

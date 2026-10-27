@@ -192,7 +192,7 @@ export class SourceParticlePlayer {
       motion: burst ? { speed: burst.speed, start: null } : undefined,
     });
   }
-  update(dt: number, camera: THREE.Camera, fade = 1) {
+  update(dt: number, camera: THREE.Camera, fade = 1, updateRenderers = true) {
     for (const graph of this.graphs) {
       this.attachments.update(graph.simulation.controls, graph.drivers);
       if (graph.motion) {
@@ -209,8 +209,9 @@ export class SourceParticlePlayer {
       const steps = Math.ceil(Math.max(0, dt) / (1 / 60)),
         step = steps > 0 ? dt / steps : 0;
       for (let i = 0; i < steps; i++) graph.simulation.step(step);
-      for (const renderer of graph.renderers)
-        renderer.update(camera, this.root, fade);
+      if (updateRenderers)
+        for (const renderer of graph.renderers)
+          renderer.update(camera, this.root, fade);
       for (const node of graph.simulation.all())
         for (const name of node.unsupported) this.warnings.add(name);
     }

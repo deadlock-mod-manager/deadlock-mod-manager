@@ -1,4 +1,4 @@
-//! Private GLB artifacts. IPC carries descriptors; the asset protocol carries bytes.
+//! Private preview artifacts. IPC carries descriptors; the asset protocol carries bytes.
 
 use std::collections::HashMap;
 use std::fs::File;
@@ -57,9 +57,23 @@ impl ModelAssets {
     vertex_count: u32,
     index_count: u32,
   ) -> Result<FoundryModel, Error> {
+    self.publish_artifact(glb, ".glb", vertex_count, index_count)
+  }
+
+  pub(crate) fn publish_source(&self, bytes: &[u8]) -> Result<FoundryModel, Error> {
+    self.publish_artifact(bytes, ".fbx", 0, 0)
+  }
+
+  fn publish_artifact(
+    &self,
+    glb: &[u8],
+    suffix: &str,
+    vertex_count: u32,
+    index_count: u32,
+  ) -> Result<FoundryModel, Error> {
     let mut file = tempfile::Builder::new()
       .prefix("model-")
-      .suffix(".glb")
+      .suffix(suffix)
       .tempfile_in(self.directory())?;
     file.write_all(glb)?;
     file.flush()?;

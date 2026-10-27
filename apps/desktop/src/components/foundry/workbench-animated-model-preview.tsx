@@ -41,7 +41,7 @@ import {
   FoundryModelViewer,
   type FoundryPreviewTint,
   type FoundryTextureRefresh,
-} from "./foundry-model-viewer";
+} from "./workbench-model-viewer";
 import { ViewerAnimationPicker } from "./viewer-animation-picker";
 import { type ViewerEffectFactory } from "./viewer-effects";
 import type { ViewerCallout } from "./viewer-callouts";

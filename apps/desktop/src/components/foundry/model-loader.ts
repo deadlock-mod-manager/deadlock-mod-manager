@@ -1,12 +1,13 @@
 import { RuntimeError } from "@deadlock-mods/common/client-errors";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { modelAssetUrl } from "@/lib/model-assets";
-import type { FoundryModel } from "@/types/foundry";
+import { modelAssetUrl, type PreviewModel } from "@/lib/model-assets";
+import { loadSourcePreviewModel } from "./source-model-loader";
 
 export async function loadPreviewModel(
-  model: FoundryModel,
+  model: PreviewModel,
   signal: AbortSignal,
 ) {
+  if ("meshes" in model) return loadSourcePreviewModel(model, signal);
   const started = performance.now();
   const response = await fetch(modelAssetUrl(model), { signal });
   if (!response.ok) {

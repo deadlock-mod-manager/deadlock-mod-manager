@@ -1,12 +1,14 @@
 import { beforeEach, expect, mock, test } from "bun:test";
-import { QueryClient } from "@tanstack/react-query";
+import { QueryClient, QueryObserver } from "@tanstack/react-query";
 import type { FoundryModel } from "@/types/foundry";
 import {
   cacheFoundryModel,
   decodeFoundryModel,
   releaseFoundryModel,
   retainFoundryModel,
+  decodeModdingSourceModel,
 } from "./model-assets";
+import type { ModdingSourceModel } from "@/types/generated/ModdingSourceModel";
 
 interface IpcArguments {
   assetId?: string;
@@ -14,8 +16,13 @@ interface IpcArguments {
 }
 
 let nextDecode: Promise<FoundryModel>;
+let nextSource: Promise<ModdingSourceModel>;
 const invoke = mock((command: string, _args?: IpcArguments) =>
-  command === "foundry_decode_model" ? nextDecode : Promise.resolve(),
+  command === "foundry_decode_model"
+    ? nextDecode
+    : command === "preview_modding_source_model"
+      ? nextSource
+      : Promise.resolve(),
 );
 mock.module("@tauri-apps/api/core", () => ({
   invoke,
@@ -41,6 +48,49 @@ const released = () =>
 beforeEach(() => {
   invoke.mockClear();
   nextDecode = Promise.resolve(artifact());
+  nextSource = Promise.resolve({
+    meshes: [
+      { asset: artifact(), name: "body", scale: 0.4 },
+      { asset: artifact(), name: "prop", scale: 1 },
+    ],
+    diagnostics: [],
+  });
+});
+
+test("source model mesh leases stay alive until the renderer finishes reading", async () => {
+  const model = await decodeModdingSourceModel(
+    "addon",
+    "models/body.vmdl",
+    new AbortController().signal,
+  );
+  const finish = retainFoundryModel(model);
+  releaseFoundryModel(model);
+  expect(released()).toEqual([]);
+  finish();
+  finish();
+  expect(released()).toEqual(model.meshes.map((mesh) => mesh.asset.assetId));
+});
+
+test("source model cancellation releases every staged mesh", async () => {
+  const pending = Promise.withResolvers<ModdingSourceModel>();
+  nextSource = pending.promise;
+  const controller = new AbortController();
+  const decode = decodeModdingSourceModel(
+    "addon",
+    "models/body.vmdl",
+    controller.signal,
+  );
+  controller.abort();
+  const model: ModdingSourceModel = {
+    meshes: [
+      { asset: artifact(), name: "body", scale: 1 },
+      { asset: artifact(), name: "prop", scale: 1 },
+    ],
+    diagnostics: [],
+  };
+  pending.resolve(model);
+  await expect(decode).rejects.toMatchObject({ name: "AbortError" });
+  expect(released()).toEqual(model.meshes.map((mesh) => mesh.asset.assetId));
 });
 
 test("an in-flight viewer keeps its file after the preview owner releases it", async () => {
@@ -119,5 +169,66 @@ test("a result cannot become an orphan after its query has been removed", async 
     "removed",
   );
   expect(released()).toEqual([model.assetId]);
+  client.clear();
+});
+
+test("warm model queries reuse their artifact when returning to a file", async () => {
+  const client = new QueryClient();
+  const queryKey = ["workbench-model", "warm"];
+  const queryFn = mock(async () => {
+    const model = await decodeFoundryModel("skin.vpk", "hero.vmdl_c");
+    cacheFoundryModel(client, queryKey, model);
+    return model;
+  });
+  const first = await client.fetchQuery({
+    queryKey,
+    queryFn,
+    staleTime: 60_000,
+  });
+  const second = await client.fetchQuery({
+    queryKey,
+    queryFn,
+    staleTime: 60_000,
+  });
+  expect(second).toBe(first);
+  expect(queryFn).toHaveBeenCalledTimes(1);
+  expect(released()).toEqual([]);
+  client.clear();
+  expect(released()).toEqual([first.assetId]);
+});
+
+test("cache pressure evicts inactive artifacts while preserving active viewers", async () => {
+  const client = new QueryClient();
+  const load = async (name: string) => {
+    const queryKey = ["workbench-model", name];
+    nextDecode = Promise.resolve({
+      ...artifact(),
+      byteLength: 100 * 1024 * 1024,
+    });
+    const model = await client.fetchQuery({
+      queryKey,
+      queryFn: async () => {
+        const model = await decodeFoundryModel("skin.vpk", `${name}.vmdl_c`);
+        cacheFoundryModel(client, queryKey, model);
+        return model;
+      },
+    });
+    return { model, queryKey };
+  };
+  const active = await load("active");
+  const observer = new QueryObserver(client, {
+    queryKey: active.queryKey,
+    enabled: false,
+  });
+  const unsubscribe = observer.subscribe(() => {});
+  const old = await load("old");
+  const current = await load("current");
+  expect(client.getQueryData<FoundryModel>(active.queryKey)).toBe(active.model);
+  expect(client.getQueryData<FoundryModel>(old.queryKey)).toBeUndefined();
+  expect(client.getQueryData<FoundryModel>(current.queryKey)).toBe(
+    current.model,
+  );
+  expect(released()).toEqual([old.model.assetId]);
+  unsubscribe();
   client.clear();
 });

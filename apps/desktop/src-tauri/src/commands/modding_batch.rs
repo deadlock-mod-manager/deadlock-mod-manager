@@ -223,6 +223,13 @@ fn rename_plan(
   plan.fingerprint = modding_edits::fingerprint(&identity);
   Ok((plan, edits))
 }
+fn list_files(root: &Path) -> Result<Vec<String>, Error> {
+  if !root.try_exists()? {
+    return Ok(Vec::new());
+  }
+  files(root)
+}
+
 #[tauri::command]
 pub async fn list_modding_batch_files(
   app: AppHandle,
@@ -230,7 +237,7 @@ pub async fn list_modding_batch_files(
   hierarchy: ModdingHierarchy,
 ) -> Result<Vec<String>, Error> {
   let root = resolve(&app, &addon_id)?.root(hierarchy);
-  tauri::async_runtime::spawn_blocking(move || files(&root))
+  tauri::async_runtime::spawn_blocking(move || list_files(&root))
     .await
     .map_err(|error| Error::BackgroundTaskFailed(error.to_string()))?
 }
@@ -367,6 +374,16 @@ pub async fn replace_modding_audio_batch(
 #[cfg(test)]
 mod tests {
   use super::*;
+  #[test]
+  fn uncompiled_addons_list_no_game_files_without_creating_a_folder() {
+    let root = tempfile::tempdir().unwrap();
+    let game = root.path().join("not-built-yet");
+    assert!(list_files(&game).unwrap().is_empty());
+    assert!(!game.exists());
+    assert!(files(&game).is_err());
+    std::fs::write(&game, b"not a directory").unwrap();
+    assert!(list_files(&game).is_err());
+  }
   #[test]
   fn recursive_icon_rename_preserves_unrelated_files_detects_collisions_and_can_undo() {
     let root = tempfile::tempdir().unwrap();

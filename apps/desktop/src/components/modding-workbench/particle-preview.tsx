@@ -1,24 +1,31 @@
 import { Button } from "@deadlock-mods/ui/components/button";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import * as THREE from "three";
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { ParticleAssets } from "@/components/foundry/particles/assets";
-import { SourceParticlePlayer } from "@/components/foundry/particles/player";
 import {
   useSourceParticles,
   type ParticleDraftSources,
 } from "@/hooks/use-source-particles";
 import type { PreviewSource } from "@/lib/preview-animation";
+import { PreviewStage } from "./preview-stage";
 
 const NO_EXTRA_ROOTS: string[] = [];
 
 export function ParticlePreview({
   source,
   drafts,
+  picking = false,
+  onColorPicked,
+  onCancelPick,
+  onPickError,
+  onSnapshot,
 }: {
   source: PreviewSource;
   drafts?: ParticleDraftSources;
+  picking?: boolean;
+  onColorPicked?: (hex: string) => void;
+  onCancelPick?: () => void;
+  onPickError?: () => void;
+  onSnapshot?: (image: string | null) => void;
 }) {
   const { t } = useTranslation();
   const { graph, models } = useSourceParticles(
@@ -26,127 +33,114 @@ export function ParticlePreview({
     null,
     NO_EXTRA_ROOTS,
     drafts,
+    onSnapshot ? 256 : 1024,
   );
   const host = useRef<HTMLDivElement>(null);
-  const running = useRef(true);
-  const restart = useRef(() => {});
+  const stage = useRef<PreviewStage | null>(null);
+  const callbacks = useRef({
+    onColorPicked,
+    onCancelPick,
+    onPickError,
+    onSnapshot,
+  });
+  callbacks.current = { onColorPicked, onCancelPick, onPickError, onSnapshot };
   const [playing, setPlaying] = useState(true);
   const [warnings, setWarnings] = useState<string[]>([]);
+  const thumbnail = !!onSnapshot;
   useEffect(() => {
-    const element = host.current;
-    if (!element || !graph.data) return;
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(45, 1, 0.01, 500);
-    camera.position.set(5, 3, 5);
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.domElement.setAttribute(
+    if (!host.current) return;
+    const preview = new PreviewStage(host.current, thumbnail);
+    preview.callbacks = {
+      snapshot: (image) => callbacks.current.onSnapshot?.(image),
+      warnings: setWarnings,
+    };
+    stage.current = preview;
+    return () => {
+      stage.current = null;
+      preview.dispose();
+    };
+  }, [thumbnail]);
+  useEffect(() => {
+    stage.current?.renderer.domElement.setAttribute(
       "aria-label",
       t("workbenchExplorer.particleCanvas"),
     );
-    element.append(renderer.domElement);
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.target.set(0, 1, 0);
-    controls.enableDamping = true;
-    const rig = new THREE.Group();
-    rig.scale.setScalar(0.0254);
-    scene.add(rig);
-    scene.add(new THREE.HemisphereLight(0xf4ead4, 0x454342, 2));
-    const light = new THREE.DirectionalLight(0xfff3df, 3);
-    light.position.set(4, 6, 3);
-    scene.add(light);
-    const grid = new THREE.GridHelper(10, 20, 0x6d6554, 0x3e3d37);
-    scene.add(grid);
-    const assets = new ParticleAssets(graph.data, models);
-    const player = new SourceParticlePlayer(assets, rig, () => {});
-    player.reset(graph.data.roots);
-    let elapsed = 0;
-    restart.current = () => {
-      elapsed = 0;
-      player.reset(assets.graph.roots);
+  }, [t, thumbnail]);
+  useEffect(() => {
+    if (graph.data) stage.current?.setGraph(graph.data, models);
+  }, [graph.data, models, thumbnail]);
+  useEffect(() => {
+    stage.current?.setPlaying(playing);
+  }, [playing, thumbnail]);
+  useEffect(() => {
+    if (graph.error) callbacks.current.onSnapshot?.(null);
+  }, [graph.error]);
+  useEffect(() => {
+    if (!picking) return;
+    const cancel = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      callbacks.current.onCancelPick?.();
     };
-    const observer = new ResizeObserver(() => {
-      const width = Math.max(1, element.clientWidth);
-      const height = Math.max(1, element.clientHeight);
-      renderer.setSize(width, height);
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
-    });
-    observer.observe(element);
-    let previous = performance.now();
-    let report = "";
-    renderer.setAnimationLoop((now) => {
-      const delta = running.current
-        ? Math.min(0.05, (now - previous) / 1000)
-        : 0;
-      previous = now;
-      elapsed += delta;
-      if (elapsed >= 8) restart.current();
-      scene.updateMatrixWorld(true);
-      player.update(delta, camera);
-      controls.update();
-      renderer.render(scene, camera);
-      const issues = [...new Set([...assets.warnings, ...player.warnings])];
-      if (issues.join("\n") !== report) {
-        report = issues.join("\n");
-        setWarnings(issues);
-      }
-    });
-    return () => {
-      renderer.setAnimationLoop(null);
-      restart.current = () => {};
-      observer.disconnect();
-      controls.dispose();
-      player.dispose();
-      assets.dispose();
-      grid.geometry.dispose();
-      for (const material of Array.isArray(grid.material)
-        ? grid.material
-        : [grid.material])
-        material.dispose();
-      renderer.dispose();
-      renderer.forceContextLoss();
-      renderer.domElement.remove();
-    };
-  }, [graph.data, models, t]);
-  if (!graph.data)
-    return (
-      <p
-        role={graph.error ? "alert" : "status"}
-        className='p-4 text-sm text-muted-foreground'>
-        {graph.error?.message ?? t("common.loading")}
-      </p>
-    );
+    window.addEventListener("keydown", cancel, true);
+    return () => window.removeEventListener("keydown", cancel, true);
+  }, [picking]);
   return (
     <div className='flex h-full min-h-0 flex-col'>
-      <div ref={host} className='min-h-40 flex-1 overflow-hidden bg-muted/20' />
-      <div className='flex gap-2 border-t p-2'>
-        <Button
-          size='sm'
-          variant='outline'
-          onClick={() => {
-            running.current = !playing;
-            setPlaying(!playing);
-          }}>
-          {t(playing ? "modelPreview.pause" : "modelPreview.play")}
-        </Button>
-        <Button size='sm' variant='outline' onClick={() => restart.current()}>
-          {t("modelPreview.restart")}
-        </Button>
+      <div
+        ref={host}
+        onPointerDownCapture={(event) => {
+          if (!picking) return;
+          event.preventDefault();
+          event.stopPropagation();
+          try {
+            const hex = stage.current?.colorAt(event.clientX, event.clientY);
+            if (hex) onColorPicked?.(hex);
+            else onPickError?.();
+          } catch {
+            onPickError?.();
+          }
+        }}
+        className={`relative min-h-0 flex-1 overflow-hidden bg-muted/20 ${picking ? "cursor-crosshair ring-1 ring-inset ring-primary" : ""}`}>
+        {!graph.data ? (
+          <p
+            role={graph.error ? "alert" : "status"}
+            className='absolute inset-0 z-10 p-4 text-sm text-muted-foreground'>
+            {graph.error?.message ?? t("common.loading")}
+          </p>
+        ) : null}
       </div>
-      <p className='px-2 pb-2 text-xs text-muted-foreground'>
-        {t("workbenchExplorer.particlePreviewHint")}
-      </p>
-      {warnings.length ? (
-        <details className='max-h-32 overflow-auto border-t p-2 text-xs text-muted-foreground'>
-          <summary>{t("modelPreview.effectsLimited")}</summary>
-          {warnings.map((warning) => (
-            <p key={warning} className='break-words pt-1'>
-              {warning}
-            </p>
-          ))}
-        </details>
+      {!thumbnail ? (
+        <>
+          <div className='flex gap-2 border-t p-2'>
+            <Button
+              size='sm'
+              variant='outline'
+              onClick={() => setPlaying(!playing)}>
+              {t(playing ? "modelPreview.pause" : "modelPreview.play")}
+            </Button>
+            <Button
+              size='sm'
+              variant='outline'
+              onClick={() => stage.current?.restart()}>
+              {t("modelPreview.restart")}
+            </Button>
+          </div>
+          <p className='px-2 pb-2 text-xs text-muted-foreground'>
+            {t("workbenchExplorer.particlePreviewHint")}
+          </p>
+          {warnings.length ? (
+            <details className='max-h-32 overflow-auto border-t p-2 text-xs text-muted-foreground'>
+              <summary>{t("modelPreview.effectsLimited")}</summary>
+              {warnings.map((warning) => (
+                <p key={warning} className='break-words pt-1'>
+                  {warning}
+                </p>
+              ))}
+            </details>
+          ) : null}
+        </>
       ) : null}
     </div>
   );

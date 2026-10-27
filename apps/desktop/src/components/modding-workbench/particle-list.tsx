@@ -50,7 +50,7 @@ export function ParticleList({
               }
               title={item.id}
               onClick={(event) => onSelect(item.id, event)}
-              className={`absolute left-0 top-0 flex w-full select-none items-center gap-2 border-b px-3 py-2 text-left text-xs hover:bg-accent disabled:opacity-50 ${selection ? (selection.has(item.id) ? "bg-accent" : "") : active === item.id ? "bg-accent" : ""} ${selection && active === item.id ? "ring-1 ring-inset ring-primary/50" : ""}`}
+              className={`absolute left-0 top-0 flex w-full select-none items-center gap-2 border-b border-border/50 px-3 py-2 text-left text-xs transition-colors hover:bg-muted disabled:opacity-50 ${selection ? (selection.has(item.id) ? "bg-primary/5" : "") : active === item.id ? "bg-primary/10" : ""} ${active === item.id ? "ring-1 ring-inset ring-primary/40" : ""}`}
               style={{
                 height: row.size,
                 transform: `translateY(${row.start}px)`,
