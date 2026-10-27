@@ -248,16 +248,15 @@ pub fn load_friend_cooldowns(app: &AppHandle) -> Result<HashMap<u32, i64>, Match
   )
 }
 
-// Records a friend's cooldown and drops the ones that already expired.
-pub fn set_friend_cooldown(
+// Records friends' cooldowns (account id, until) and drops the ones that already expired.
+pub fn set_friend_cooldowns(
   app: &AppHandle,
-  account_id: u32,
-  until: i64,
+  updates: &[(u32, i64)],
   now: i64,
 ) -> Result<(), MatchSyncError> {
   let mut cooldowns = load_friend_cooldowns(app)?;
   cooldowns.retain(|_, &mut t| t > now);
-  cooldowns.insert(account_id, until);
+  cooldowns.extend(updates.iter().copied());
   let store = store(app)?;
   store.set(KEY_FRIEND_COOLDOWNS, serde_json::json!(cooldowns));
   save(&store)

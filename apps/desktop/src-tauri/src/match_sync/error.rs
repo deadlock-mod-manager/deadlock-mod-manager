@@ -35,6 +35,15 @@ pub enum MatchSyncError {
   #[error("Steam GC refused the match history request (result {0})")]
   HistoryRefused(i32),
 
+  // The GC won't hand out this match's salts (unknown match, or not visible to this
+  // account); asking again won't change that.
+  #[error("Steam GC refused the match (result {0})")]
+  MatchRefused(i32),
+
+  // The match is still being played or processed; its salts come later.
+  #[error("match is still in progress")]
+  MatchInFlight,
+
   #[error("Deadlock is currently running; close it to fetch matches")]
   GameRunning,
 
@@ -47,7 +56,8 @@ pub enum MatchSyncError {
 
 impl MatchSyncError {
   // Only a broken or throttled GC connection backs an account's sync off; an answer about
-  // one match history (refused, private) says nothing about the connection.
+  // one match or match history (refused, private, in flight) says nothing about the
+  // connection.
   pub fn backs_off_gc(&self) -> bool {
     matches!(
       self,
@@ -68,6 +78,8 @@ impl MatchSyncError {
       MatchSyncError::GcRateLimited => "gcRateLimited",
       MatchSyncError::HistoryPrivate => "historyPrivate",
       MatchSyncError::HistoryRefused(_) => "historyRefused",
+      MatchSyncError::MatchRefused(_) => "matchRefused",
+      MatchSyncError::MatchInFlight => "matchInFlight",
       MatchSyncError::GameRunning => "gameRunning",
       MatchSyncError::Api(_) => "apiError",
       MatchSyncError::Store(_) => "storeError",

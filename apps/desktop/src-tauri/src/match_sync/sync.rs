@@ -16,7 +16,7 @@ use super::gc_client::GcMatchClient;
 use super::model::{
   ActiveFriend, AuthContext, BACKFILL_QUOTA_RESERVE, FRIEND_COOLDOWN_SECS, FetchScope,
   MAX_FRIEND_HISTORIES_PER_PASS, MatchHistoryPage, MatchSyncConfig, PRIVATE_FRIEND_COOLDOWN_SECS,
-  SaltPayload, SyncProgress,
+  SaltPayload, SaltsCheck, SyncProgress,
 };
 use super::quota::QuotaWindow;
 use super::throttle::Throttle;
@@ -28,7 +28,8 @@ pub trait SyncPersistence: Send + Sync {
   fn load_history_quota(&self) -> Result<QuotaWindow, MatchSyncError>;
   fn save_history_quota(&self, quota: &QuotaWindow) -> Result<(), MatchSyncError>;
   fn friend_cooldowns(&self) -> HashMap<u32, i64>;
-  fn set_friend_cooldown(&self, account_id: u32, until: i64);
+  // (friend account id, unix time before which they aren't looked up again)
+  fn set_friend_cooldowns(&self, cooldowns: &[(u32, i64)]);
   fn load_fetched(&self) -> Vec<u64>;
   fn persist_fetched(&self, ids: &[u64]);
   fn set_full_sync_complete(&self, complete: bool);
@@ -55,6 +56,14 @@ enum LoopControl {
   Stop,
 }
 
+// One friend's history lookup: the matches it turned up, and how long the friend is left
+// alone once those are dealt with.
+struct FriendLookup {
+  account_id: u32,
+  cooldown_secs: i64,
+  match_ids: Vec<u64>,
+}
+
 struct RunState {
   // Persisted, successfully-ingested ids (idempotency across runs + quota protection).
   fetched_set: HashSet<u64>,
@@ -62,6 +71,9 @@ struct RunState {
   // failing GC can't re-offer the same id and spin/burn quota.
   processed: HashSet<u64>,
   fetched_order: Vec<u64>,
+  // Ids that need no salts fetch this run: deadlock-api already stores their salts, or
+  // the GC refused them for good.
+  settled: HashSet<u64>,
   quota: QuotaWindow,
   progress: SyncProgress,
 }
@@ -127,6 +139,7 @@ where
       fetched_set,
       processed: HashSet::new(),
       fetched_order,
+      settled: HashSet::new(),
       quota,
       progress: SyncProgress {
         fetched: 0,
@@ -182,6 +195,12 @@ where
         st.progress.quota_reached = true;
         st.progress.quota_remaining = st.quota.remaining(now) as u32;
         return Ok(FetchStep::RateLimited);
+      }
+      // The GC won't serve this match, now or later: skip it and carry on.
+      Err(e @ MatchSyncError::MatchRefused(_)) => {
+        log::debug!("match-sync: skipping {match_id}: {e}");
+        st.settled.insert(match_id);
+        return Ok(FetchStep::Done);
       }
       // Any other failure fetched nothing, so it must not count against the cap.
       Err(e) => {
@@ -266,15 +285,16 @@ where
     (budget > 0).then_some(budget)
   }
 
-  // Matches deadlock-api is likely missing: the newest history page of the friends who
-  // most likely played since the API last saw them. Best-effort: any failure just
-  // yields fewer (or no) matches; only `GameRunning` is an error.
-  async fn friend_matches(
+  // The newest history page of the friends who most likely played since deadlock-api
+  // last saw them. Best-effort: any failure just yields fewer (or no) lookups; only
+  // `GameRunning` is an error. Never backs off the account: friend lookups are extra,
+  // and a broken connection fails the GC calls that follow them anyway.
+  async fn look_up_friends(
     &self,
     ctx: &AuthContext,
     salt_budget: usize,
     cancel: &AtomicBool,
-  ) -> Result<Vec<u64>, MatchSyncError> {
+  ) -> Result<Vec<FriendLookup>, MatchSyncError> {
     // Reading the friends list may (re)connect to the GC, which must never race the game.
     if self.game_check.is_game_running() {
       return Err(MatchSyncError::GameRunning);
@@ -295,58 +315,92 @@ where
       return Ok(Vec::new());
     }
 
-    let mut found = Vec::new();
+    let mut lookups = Vec::new();
     for friend in self.friends_to_look_up(ctx, now, budget).await {
       if cancel.load(Ordering::Relaxed) {
         break;
       }
-      let result = self.gc_history_page(ctx, friend.account_id, None).await;
-      if matches!(result, Err(MatchSyncError::GameRunning)) {
-        return Err(MatchSyncError::GameRunning);
-      }
-      // Every request counts against Steam's limit, whatever it answers.
-      let now = self.persistence.now();
-      if matches!(result, Err(MatchSyncError::GcRateLimited)) {
-        history_quota.exhaust(now);
-      } else {
-        let _ = history_quota.try_consume(now);
-      }
+      let (cooldown_secs, match_ids) =
+        match self.gc_history_page(ctx, friend.account_id, None).await {
+          Ok(page) => (FRIEND_COOLDOWN_SECS, page.match_ids()),
+          Err(MatchSyncError::HistoryPrivate) => (PRIVATE_FRIEND_COOLDOWN_SECS, Vec::new()),
+          Err(e @ MatchSyncError::HistoryRefused(_)) => {
+            log::warn!("match-sync: a friend's match history is unavailable: {e}");
+            (FRIEND_COOLDOWN_SECS, Vec::new())
+          }
+          Err(MatchSyncError::GameRunning) => return Err(MatchSyncError::GameRunning),
+          Err(MatchSyncError::GcRateLimited) => {
+            log::warn!("match-sync: Steam GC rate-limited friend history lookups");
+            history_quota.exhaust(self.persistence.now());
+            if let Err(e) = self.persistence.save_history_quota(&history_quota) {
+              log::warn!("match-sync: {e}");
+            }
+            break;
+          }
+          // No answer (connection lost, timed out): stop instead of reconnecting for every
+          // remaining friend. Not charged, since the quota stays far below Steam's limit.
+          Err(e) => {
+            log::warn!("match-sync: friend history lookups stopped: {e}");
+            break;
+          }
+        };
+      // The GC answered, so Steam counted the request.
+      let _ = history_quota.try_consume(self.persistence.now());
+      lookups.push(FriendLookup {
+        account_id: friend.account_id,
+        cooldown_secs,
+        match_ids,
+      });
       if let Err(e) = self.persistence.save_history_quota(&history_quota) {
         log::warn!("match-sync: {e}");
         break;
       }
-      let cooldown = match result {
-        Ok(page) => {
-          found.extend(
-            page
-              .match_ids()
-              .into_iter()
-              .filter(|&id| id > friend.latest_match_id),
-          );
-          FRIEND_COOLDOWN_SECS
-        }
-        Err(MatchSyncError::GcRateLimited) => {
-          log::warn!("match-sync: Steam GC rate-limited friend history lookups");
-          break;
-        }
-        Err(MatchSyncError::HistoryPrivate) => PRIVATE_FRIEND_COOLDOWN_SECS,
-        // The connection is broken, not this friend's history: stop instead of
-        // reconnecting for, and cooling down, every remaining friend.
-        Err(e @ MatchSyncError::GcUnavailable(_)) => {
-          log::warn!("match-sync: friend history lookups stopped: {e}");
-          self.persistence.record_gc_error(&e);
-          break;
-        }
-        Err(e) => {
-          log::warn!("match-sync: a friend's match history is unavailable: {e}");
-          FRIEND_COOLDOWN_SECS
-        }
-      };
-      self
-        .persistence
-        .set_friend_cooldown(friend.account_id, now + cooldown);
     }
-    Ok(found)
+    Ok(lookups)
+  }
+
+  // Fetches the friends' matches deadlock-api has no salts for, then cools down every
+  // friend whose matches were all dealt with. A friend whose matches the budget, a quota
+  // or an error cut off stays due, so the rest turn up again next pass.
+  async fn backfill_friend_matches(
+    &self,
+    ctx: &AuthContext,
+    lookups: &[FriendLookup],
+    budget: usize,
+    cancel: &AtomicBool,
+    st: &mut RunState,
+  ) -> Result<LoopControl, MatchSyncError> {
+    let found = lookups
+      .iter()
+      .flat_map(|lookup| &lookup.match_ids)
+      .copied()
+      .filter(|id| !st.fetched_set.contains(id))
+      .collect();
+    let candidates = newest_first_fresh(found, &st.processed);
+    let SaltsCheck { missing, stored } = self
+      .backfill
+      .missing_salts(&candidates, budget, cancel)
+      .await;
+    st.settled.extend(stored);
+    let result = self.process_ids(ctx, missing, true, Some(cancel), st).await;
+
+    // Dealt with means fetched or settled. A fetch that failed or never ran keeps its
+    // friend due.
+    let now = self.persistence.now();
+    let cooldowns: Vec<(u32, i64)> = lookups
+      .iter()
+      .filter(|lookup| {
+        lookup
+          .match_ids
+          .iter()
+          .all(|id| st.fetched_set.contains(id) || st.settled.contains(id))
+      })
+      .map(|lookup| (lookup.account_id, now + lookup.cooldown_secs))
+      .collect();
+    if !cooldowns.is_empty() {
+      self.persistence.set_friend_cooldowns(&cooldowns);
+    }
+    result
   }
 
   // Up to `budget` friends, most likely first, who played since deadlock-api last saw
@@ -361,7 +415,6 @@ where
       Ok(ids) => ids,
       Err(e) => {
         log::warn!("match-sync: friends list unavailable: {e}");
-        self.persistence.record_gc_error(&e);
         return Vec::new();
       }
     };
@@ -572,11 +625,9 @@ where
     let Some(budget) = self.backfill_budget(control, cancel, st) else {
       return Ok(());
     };
-    let friend_ids = self.friend_matches(&ctx, budget, cancel).await?;
-    let mut picks = newest_first_fresh(friend_ids, &st.processed);
-    picks.truncate(budget);
+    let lookups = self.look_up_friends(&ctx, budget, cancel).await?;
     let control = self
-      .process_ids(&ctx, picks, true, Some(cancel), st)
+      .backfill_friend_matches(&ctx, &lookups, budget, cancel, st)
       .await?;
 
     let Some(budget) = self.backfill_budget(control, cancel, st) else {
@@ -609,9 +660,7 @@ where
 mod tests {
   use super::*;
   use crate::match_sync::friends::Persona;
-  use crate::match_sync::model::{
-    ActiveFriend, AuthContext, FRIEND_HISTORY_QUOTA_LIMIT, LocalMatch, MatchHistoryPage, MatchSalts,
-  };
+  use crate::match_sync::model::{FRIEND_HISTORY_QUOTA_LIMIT, LocalMatch, MatchSalts};
   use crate::match_sync::quota::QuotaWindow;
   use std::sync::Mutex;
   use std::time::Duration;
@@ -640,6 +689,8 @@ mod tests {
     fail: bool,
     fail_history: bool,
     rate_limited: bool,
+    // Matches the GC refuses for good.
+    refused: HashSet<u64>,
     history: Vec<u64>,
     friends: HashMap<u32, Persona>,
     friend_history: Vec<u64>,
@@ -687,6 +738,9 @@ mod tests {
       if self.fail {
         return Err(MatchSyncError::GcUnavailable("spy".into()));
       }
+      if self.refused.contains(&match_id) {
+        return Err(MatchSyncError::MatchRefused(6));
+      }
       Ok(MatchSalts {
         match_id,
         cluster_id: Some(1),
@@ -733,6 +787,8 @@ mod tests {
     account: Vec<u64>,
     global: Vec<u64>,
     active: Vec<ActiveFriend>,
+    // Matches deadlock-api already has salts for.
+    stored_salts: HashSet<u64>,
     calls: AtomicU64,
     log: Mutex<Vec<BackfillCall>>,
   }
@@ -765,6 +821,25 @@ mod tests {
           .cloned()
           .collect(),
       )
+    }
+    async fn missing_salts(
+      &self,
+      match_ids: &[u64],
+      limit: usize,
+      _cancel: &AtomicBool,
+    ) -> SaltsCheck {
+      let mut check = SaltsCheck::default();
+      for &id in match_ids {
+        if check.missing.len() == limit {
+          break;
+        }
+        if self.stored_salts.contains(&id) {
+          check.stored.push(id);
+        } else {
+          check.missing.push(id);
+        }
+      }
+      check
     }
   }
 
@@ -817,8 +892,12 @@ mod tests {
     fn friend_cooldowns(&self) -> HashMap<u32, i64> {
       self.cooldowns.lock().unwrap().clone()
     }
-    fn set_friend_cooldown(&self, account_id: u32, until: i64) {
-      self.cooldowns.lock().unwrap().insert(account_id, until);
+    fn set_friend_cooldowns(&self, cooldowns: &[(u32, i64)]) {
+      self
+        .cooldowns
+        .lock()
+        .unwrap()
+        .extend(cooldowns.iter().copied());
     }
     fn load_fetched(&self) -> Vec<u64> {
       self.fetched.lock().unwrap().clone()
@@ -1456,7 +1535,8 @@ mod tests {
   const NOW: i64 = 1_000_000;
   const FRIEND: u32 = 7;
 
-  // A friend in Deadlock right now whose newest stored match (500) ended two hours ago.
+  // A friend in Deadlock right now whose newest stored match ended two hours ago, with
+  // salts stored for their two older matches.
   fn friend_scenario(global: Vec<u64>) -> (SpyGc, SpyBackfill) {
     let gc = SpyGc {
       friends: HashMap::from([(
@@ -1474,10 +1554,10 @@ mod tests {
       global,
       active: vec![ActiveFriend {
         account_id: FRIEND,
-        latest_match_id: 500,
         last_end: NOW - 2 * 60 * 60,
         starts: Vec::new(),
       }],
+      stored_salts: HashSet::from([500, 499]),
       ..Default::default()
     };
     (gc, backfill)
@@ -1494,13 +1574,68 @@ mod tests {
       .unwrap()
       .unwrap();
     assert_eq!(p.backfilled, 3);
-    // Only matches newer than the friend's newest stored one, ahead of the global list.
+    // Only the matches deadlock-api has no salts for, ahead of the global list.
     assert_eq!(*eng.sink.posted.lock().unwrap(), vec![502, 501, 600]);
     assert_eq!(eng.persistence.history_hits.lock().unwrap().len(), 1);
     assert_eq!(
       eng.persistence.cooldowns.lock().unwrap().get(&FRIEND),
       Some(&(NOW + FRIEND_COOLDOWN_SECS))
     );
+  }
+
+  #[tokio::test]
+  async fn friend_stays_due_while_the_budget_leaves_matches_unfetched() {
+    let (gc, backfill) = friend_scenario(Vec::new());
+    // 9 fetches left: 1 above the reserve kept for the user's own matches.
+    let eng = engine_with_persistence(
+      gc,
+      backfill,
+      SpyGameCheck::default(),
+      MemPersistence {
+        now: NOW,
+        quota_hits: Mutex::new(vec![NOW; LIMIT - BACKFILL_QUOTA_RESERVE - 1]),
+        ..Default::default()
+      },
+    );
+
+    eng
+      .run_background_pass(&active_config(), &AtomicBool::new(false))
+      .await
+      .unwrap();
+    assert_eq!(*eng.sink.posted.lock().unwrap(), vec![502]);
+    assert!(eng.persistence.cooldowns.lock().unwrap().is_empty());
+  }
+
+  #[tokio::test]
+  async fn friend_stays_due_when_fetching_their_match_fails() {
+    let (mut gc, backfill) = friend_scenario(Vec::new());
+    gc.fail = true;
+    let eng = engine(gc, backfill);
+
+    eng
+      .run_background_pass(&active_config(), &AtomicBool::new(false))
+      .await
+      .unwrap();
+    assert!(eng.sink.posted.lock().unwrap().is_empty());
+    assert!(eng.persistence.cooldowns.lock().unwrap().is_empty());
+  }
+
+  #[tokio::test]
+  async fn refused_friend_match_is_skipped_without_backing_off() {
+    let (mut gc, backfill) = friend_scenario(vec![600]);
+    gc.refused = HashSet::from([502]);
+    let eng = engine(gc, backfill);
+
+    eng
+      .run_background_pass(&active_config(), &AtomicBool::new(false))
+      .await
+      .unwrap();
+    assert_eq!(*eng.sink.posted.lock().unwrap(), vec![501, 600]);
+    assert_eq!(
+      eng.persistence.cooldowns.lock().unwrap().get(&FRIEND),
+      Some(&(NOW + FRIEND_COOLDOWN_SECS))
+    );
+    assert_eq!(eng.persistence.gc_errors.load(Ordering::Relaxed), 0);
   }
 
   #[tokio::test]
@@ -1542,7 +1677,7 @@ mod tests {
   }
 
   #[tokio::test]
-  async fn broken_gc_stops_friend_lookups_without_cooling_friends_down() {
+  async fn unanswered_friend_history_stops_lookups_without_charging_or_backing_off() {
     let (mut gc, backfill) = friend_scenario(vec![600]);
     gc.friend_history_error = Some(|| MatchSyncError::GcUnavailable("spy".into()));
     let eng = engine(gc, backfill);
@@ -1552,7 +1687,8 @@ mod tests {
       .await
       .unwrap();
     assert!(eng.persistence.cooldowns.lock().unwrap().is_empty());
-    assert_eq!(eng.persistence.gc_errors.load(Ordering::Relaxed), 1);
+    assert!(eng.persistence.history_hits.lock().unwrap().is_empty());
+    assert_eq!(eng.persistence.gc_errors.load(Ordering::Relaxed), 0);
     assert_eq!(*eng.sink.posted.lock().unwrap(), vec![600]);
   }
 

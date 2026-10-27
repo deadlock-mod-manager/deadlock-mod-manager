@@ -86,11 +86,20 @@ impl From<&MatchSalts> for SaltPayload {
 #[derive(Debug, Clone)]
 pub struct ActiveFriend {
   pub account_id: u32,
-  pub latest_match_id: u64,
   /// End of their newest stored match.
   pub last_end: i64,
   /// Start times of their stored matches, newest first (as deadlock-api returns them).
   pub starts: Vec<i64>,
+}
+
+/// What deadlock-api stores for a list of match ids, checked in order until enough
+/// are found missing. Ids in neither list weren't checked.
+#[derive(Debug, Default)]
+pub struct SaltsCheck {
+  /// Ids deadlock-api has no salts for.
+  pub missing: Vec<u64>,
+  /// Ids it already has salts for.
+  pub stored: Vec<u64>,
 }
 
 #[derive(Debug, Clone, Copy)]

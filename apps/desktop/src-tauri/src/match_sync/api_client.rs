@@ -1,19 +1,22 @@
 //! The deadlock-api calls this subsystem makes: read the to-fetch list (and release
-//! the global list's claims once done with it) and what is stored for the user's Steam
-//! friends, and POST recovered salts to the same route the httpcache scraper uses.
-//! Split into traits so [`super::sync`] can be tested with spies.
+//! the global list's claims once done with it), what is stored for the user's Steam
+//! friends and which matches already have salts, and POST recovered salts to the same
+//! route the httpcache scraper uses. Split into traits so [`super::sync`] can be tested
+//! with spies.
 
 use std::collections::HashMap;
 use std::future::Future;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{LazyLock, Mutex, MutexGuard, PoisonError};
 use std::time::{Duration, Instant};
 
+use futures::{StreamExt as _, stream};
 use reqwest::header::{COOKIE, HeaderMap, SET_COOKIE};
 use serde::Deserialize;
 
 use super::error::MatchSyncError;
 use super::friends::GAP_SAMPLE;
-use super::model::{ActiveFriend, FetchScope, SaltPayload};
+use super::model::{ActiveFriend, FetchScope, SaltPayload, SaltsCheck};
 
 const DEFAULT_BASE_URL: &str = "https://api.deadlock-api.com";
 const POST_MAX_RETRIES: u32 = 5;
@@ -27,6 +30,8 @@ const RELEASE_TIMEOUT: Duration = Duration::from_secs(15);
 // every pass. Short enough that matches deadlock-api ingested since are soon seen; picked
 // friends go on a far longer cooldown anyway.
 const STORED_HISTORY_TTL: Duration = Duration::from_secs(60 * 60);
+// Requests in flight at once when reading friends' stored histories or checking salts.
+const READ_CONCURRENCY: usize = 4;
 
 // Process-wide, since every pass builds a fresh client. Stored history belongs to the
 // friend, so accounts sharing a friend share the entry.
@@ -39,7 +44,8 @@ fn stored_histories() -> MutexGuard<'static, HistoryCache> {
 }
 
 // Per friend: when their stored history was read, and the summary `active_friends`
-// reports (`None` if deadlock-api has no stored match for them).
+// reports (`None` if deadlock-api has no stored match for them, or their history couldn't
+// be read).
 #[derive(Default)]
 struct HistoryCache(HashMap<u32, (Instant, Option<ActiveFriend>)>);
 
@@ -81,6 +87,16 @@ pub trait BackfillSource: Send + Sync {
     &self,
     account_ids: &[u32],
   ) -> impl Future<Output = Result<Vec<ActiveFriend>, MatchSyncError>> + Send;
+
+  // Checks `match_ids` in order until `limit` of them have no salts in deadlock-api, or
+  // `cancel` is set. Stops at the first check that fails: fetching a match that can't be
+  // checked could spend a GC request on salts deadlock-api already has.
+  fn missing_salts(
+    &self,
+    match_ids: &[u64],
+    limit: usize,
+    cancel: &AtomicBool,
+  ) -> impl Future<Output = SaltsCheck> + Send;
 }
 
 pub trait SaltsSink: Send + Sync {
@@ -114,7 +130,6 @@ struct SteamProfile {
 
 #[derive(Deserialize)]
 struct StoredMatch {
-  match_id: u64,
   start_time: i64,
   #[serde(default)]
   match_duration_s: i64,
@@ -181,22 +196,55 @@ impl ApiClient {
     let url = format!("{}/v1/players/{account_id}/match-history", self.base_url);
     get_list(client.get(url)).await
   }
+
+  // Whether deadlock-api stores salts for `match_id`, without letting it ask Steam.
+  async fn salts_stored(
+    &self,
+    client: &reqwest::Client,
+    match_id: u64,
+  ) -> Result<bool, MatchSyncError> {
+    let req = client
+      .get(format!("{}/v1/matches/{match_id}/salts", self.base_url))
+      .query(&[("disable_steam", true)]);
+    let Some(resp) = send_found(req).await? else {
+      return Ok(false);
+    };
+    drain(resp).await;
+    Ok(true)
+  }
 }
 
-// deadlock-api answers 404 for queries that match nothing, so that reads as empty.
-async fn get_list<T: serde::de::DeserializeOwned>(
+// Sends `req`; `None` for the 404 deadlock-api answers when it has nothing stored.
+async fn send_found(
   req: reqwest::RequestBuilder,
-) -> Result<Vec<T>, MatchSyncError> {
+) -> Result<Option<reqwest::Response>, MatchSyncError> {
   let resp = req
     .send()
     .await
     .map_err(|e| MatchSyncError::Api(e.to_string()))?;
   if resp.status() == reqwest::StatusCode::NOT_FOUND {
-    return Ok(Vec::new());
+    drain(resp).await;
+    return Ok(None);
   }
   resp
     .error_for_status()
-    .map_err(|e| MatchSyncError::Api(e.to_string()))?
+    .map(Some)
+    .map_err(|e| MatchSyncError::Api(e.to_string()))
+}
+
+// Reads an answered response to the end so its connection can serve the next request.
+// The status already said what was needed, so a failed read changes nothing.
+async fn drain(resp: reqwest::Response) {
+  let _ = resp.bytes().await;
+}
+
+async fn get_list<T: serde::de::DeserializeOwned>(
+  req: reqwest::RequestBuilder,
+) -> Result<Vec<T>, MatchSyncError> {
+  let Some(resp) = send_found(req).await? else {
+    return Ok(Vec::new());
+  };
+  resp
     .json()
     .await
     .map_err(|e| MatchSyncError::Api(format!("invalid response: {e}")))
@@ -206,7 +254,6 @@ async fn get_list<T: serde::de::DeserializeOwned>(
 fn summarize(account_id: u32, history: &[StoredMatch]) -> Option<ActiveFriend> {
   Some(ActiveFriend {
     account_id,
-    latest_match_id: history.iter().map(|m| m.match_id).max()?,
     last_end: history
       .iter()
       .map(|m| m.start_time + m.match_duration_s)
@@ -280,30 +327,86 @@ impl BackfillSource for ApiClient {
   async fn active_friends(&self, account_ids: &[u32]) -> Result<Vec<ActiveFriend>, MatchSyncError> {
     // One client for the whole batch, so the per-friend requests share connections.
     let client = self.client()?;
+    let players = self.recent_players(&client, account_ids).await?;
     let now = Instant::now();
-    stored_histories().prune(now);
     let mut active = Vec::new();
-    for account_id in self.recent_players(&client, account_ids).await? {
-      // A statement of its own, so the cache lock is released before the request.
-      let cached = stored_histories().get(account_id, now);
-      let friend = match cached {
-        Some(friend) => friend,
-        None => {
-          let history = match self.stored_history(&client, account_id).await {
-            Ok(history) => history,
-            Err(e) => {
-              log::warn!("match-sync: a friend's stored history is unavailable: {e}");
-              continue;
-            }
-          };
-          let friend = summarize(account_id, &history);
-          stored_histories().insert(account_id, Instant::now(), friend.clone());
-          friend
+    let mut uncached = Vec::new();
+    {
+      let mut cache = stored_histories();
+      cache.prune(now);
+      for account_id in players {
+        match cache.get(account_id, now) {
+          Some(friend) => active.extend(friend),
+          None => uncached.push(account_id),
+        }
+      }
+    }
+
+    let client = &client;
+    let read: Vec<_> = stream::iter(uncached)
+      .map(|account_id| async move { (account_id, self.stored_history(client, account_id).await) })
+      .buffer_unordered(READ_CONCURRENCY)
+      .collect()
+      .await;
+    let read_at = Instant::now();
+    let mut failures = 0;
+    let mut last_error = None;
+    let mut cache = stored_histories();
+    for (account_id, history) in read {
+      // A failed read is cached as "nothing stored", so it isn't retried every pass.
+      let friend = match history {
+        Ok(history) => summarize(account_id, &history),
+        Err(e) => {
+          failures += 1;
+          last_error = Some(e);
+          None
         }
       };
+      cache.insert(account_id, read_at, friend.clone());
       active.extend(friend);
     }
+    drop(cache);
+    if let Some(e) = last_error {
+      log::warn!("match-sync: stored history of {failures} friend(s) unavailable: {e}");
+    }
     Ok(active)
+  }
+
+  async fn missing_salts(
+    &self,
+    match_ids: &[u64],
+    limit: usize,
+    cancel: &AtomicBool,
+  ) -> SaltsCheck {
+    let mut check = SaltsCheck::default();
+    if match_ids.is_empty() || limit == 0 {
+      return check;
+    }
+    let client = match self.client() {
+      Ok(client) => client,
+      Err(e) => {
+        log::warn!("match-sync: stored salts unavailable: {e}");
+        return check;
+      }
+    };
+    let client = &client;
+    let mut results = stream::iter(match_ids.iter().copied())
+      .map(|match_id| async move { (match_id, self.salts_stored(client, match_id).await) })
+      .buffered(READ_CONCURRENCY);
+    while check.missing.len() < limit
+      && !cancel.load(Ordering::Relaxed)
+      && let Some((match_id, stored)) = results.next().await
+    {
+      match stored {
+        Ok(true) => check.stored.push(match_id),
+        Ok(false) => check.missing.push(match_id),
+        Err(e) => {
+          log::warn!("match-sync: stored salts unavailable: {e}");
+          break;
+        }
+      }
+    }
+    check
   }
 }
 
@@ -385,18 +488,15 @@ mod tests {
   fn summarizes_stored_history_or_nothing() {
     let history = [
       StoredMatch {
-        match_id: 12,
         start_time: 2_000,
         match_duration_s: 1_500,
       },
       StoredMatch {
-        match_id: 11,
         start_time: 1_000,
         match_duration_s: 3_000,
       },
     ];
     let friend = summarize(7, &history).unwrap();
-    assert_eq!(friend.latest_match_id, 12);
     assert_eq!(friend.last_end, 4_000);
     assert_eq!(friend.starts, vec![2_000, 1_000]);
     assert!(summarize(7, &[]).is_none());
@@ -413,7 +513,6 @@ mod tests {
       summarize(
         8,
         &[StoredMatch {
-          match_id: 1,
           start_time: 0,
           match_duration_s: 0,
         }],

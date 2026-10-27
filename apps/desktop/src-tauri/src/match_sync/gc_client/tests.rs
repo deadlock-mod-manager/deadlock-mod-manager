@@ -1,9 +1,9 @@
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 use futures::{channel::mpsc, sink};
-use steam_vent::connection::UnAuthenticatedConnection;
+use steam_vent::proto::steammessages_clientserver_friends::cmsg_client_friends_list::Friend;
 use steam_vent::proto::steammessages_clientserver_login::CMsgClientLogonResponse;
-use steam_vent::{NetMessage, NetMessageHeader, NetworkError};
+use steam_vent::{NetMessage, NetMessageHeader};
 use tokio::sync::{Notify, Semaphore};
 
 use super::*;
@@ -52,8 +52,34 @@ enum GcReplies {
   None,
 }
 
+const FRIEND_ID64: u64 = 76561197960265728 + 7;
+// More than the 32 messages steam-vent keeps for nobody.
+const LOGON_BURST: usize = 40;
+
+// The friends list Steam pushes right after logon: one friend, a pending invite and a
+// group.
+fn logon_friends_list() -> CMsgClientFriendsList {
+  let entry = |id: u64, relationship: u32| Friend {
+    ulfriendid: Some(id),
+    efriendrelationship: Some(relationship),
+    ..Default::default()
+  };
+  CMsgClientFriendsList {
+    bincremental: Some(false),
+    friends: vec![
+      entry(FRIEND_ID64, FRIEND_RELATIONSHIP_FRIEND),
+      entry(FRIEND_ID64 + 1, 2),
+      entry(103582791429521408, FRIEND_RELATIONSHIP_FRIEND),
+    ],
+    ..Default::default()
+  }
+}
+
 // Exercise steam-vent's real login and GC encoding over an in-memory CM transport.
-async fn fake_connection(replies: GcReplies, block_cleanup: bool) -> (Connection, Arc<SteamState>) {
+async fn fake_connection(
+  replies: GcReplies,
+  block_cleanup: bool,
+) -> (Connection, FriendsList, Arc<SteamState>) {
   let state = Arc::new(SteamState {
     playing: AtomicBool::new(false),
     logged_off: AtomicBool::new(false),
@@ -79,6 +105,15 @@ async fn fake_connection(replies: GcReplies, block_cleanup: bool) -> (Connection
           },
         )?;
         tx.unbounded_send(Ok(reply.into_bytes())).unwrap();
+        let list = RawNetMessage::from_message(NetMessageHeader::default(), logon_friends_list())?;
+        tx.unbounded_send(Ok(list.into_bytes())).unwrap();
+        for _ in 0..LOGON_BURST {
+          let unheard = RawNetMessage::from_message(
+            NetMessageHeader::default(),
+            CMsgClientPersonaState::default(),
+          )?;
+          tx.unbounded_send(Ok(unheard.into_bytes())).unwrap();
+        }
       } else if raw.kind == EMsg::k_EMsgClientGamesPlayedWithDataBlob {
         let mut raw = raw;
         raw.kind = <CMsgClientGamesPlayed as NetMessage>::KIND.into();
@@ -136,13 +171,12 @@ async fn fake_connection(replies: GcReplies, block_cleanup: bool) -> (Connection
       Ok::<_, NetworkError>(tx)
     }
   });
-  let conn = UnAuthenticatedConnection::from_sender_receiver(sender, rx)
-    .await
-    .unwrap()
-    .anonymous()
+  let unauthenticated = UnAuthenticatedConnection::from_sender_receiver(sender, rx)
     .await
     .unwrap();
-  (conn, state)
+  let friends_list = listen_for_friends_list(&unauthenticated);
+  let conn = unauthenticated.anonymous().await.unwrap();
+  (conn, friends_list, state)
 }
 
 fn context() -> AuthContext {
@@ -157,13 +191,14 @@ async fn seeded_client(
   replies: GcReplies,
   block_cleanup: bool,
 ) -> (Arc<SteamGcClient>, Arc<SteamState>) {
-  let (conn, state) = fake_connection(replies, block_cleanup).await;
+  let (conn, friends_list, state) = fake_connection(replies, block_cleanup).await;
   let gc = GameCoordinator::new(&conn, DEADLOCK_APP_ID).await.unwrap();
   let client = Arc::new(SteamGcClient::new());
   *client.session.lock().await = Some(GcSession {
     steam_id64: 42,
     gc,
     conn,
+    friends_list: Some(friends_list),
     friends: Vec::new(),
   });
   (client, state)
@@ -265,13 +300,13 @@ async fn launch_waits_for_cleanup_already_started_by_disconnect() {
 #[tokio::test]
 async fn launch_cancels_a_stalled_handshake_and_waits_for_cleanup() {
   let _serial = TEST_LOCK.lock().await;
-  let (conn, state) = fake_connection(GcReplies::None, true).await;
+  let (conn, friends_list, state) = fake_connection(GcReplies::None, true).await;
   let client = Arc::new(SteamGcClient::new());
   let connecting_client = Arc::clone(&client);
   let handshake = tokio::spawn(async move {
     let _guard = connecting_client.session.lock().await;
     let mut cancel = connecting_client.launch_cancel.subscribe();
-    SteamGcClient::connect_gc(&context(), conn, &mut cancel).await
+    SteamGcClient::connect_gc(&context(), conn, friends_list, &mut cancel).await
   });
   tokio::time::timeout(Duration::from_secs(1), state.handshake_started.notified())
     .await
@@ -299,12 +334,47 @@ async fn launch_cancels_a_stalled_handshake_and_waits_for_cleanup() {
 }
 
 #[tokio::test]
+async fn friends_list_pushed_at_logon_survives_the_logon_burst() {
+  let _serial = TEST_LOCK.lock().await;
+  let (client, _state) = seeded_client(GcReplies::All, false).await;
+  let friends = tokio::time::timeout(Duration::from_secs(1), client.friend_ids(&context()))
+    .await
+    .unwrap()
+    .unwrap();
+  assert_eq!(friends, vec![account_id_of(FRIEND_ID64)]);
+}
+
+#[tokio::test]
 async fn launch_hold_lasts_until_ended() {
   let _serial = TEST_LOCK.lock().await;
   let hold = LaunchHold::start();
   assert!(launch_hold_active());
   drop(hold);
   assert!(!launch_hold_active());
+}
+
+#[test]
+fn refusals_about_one_match_do_not_back_off() {
+  use c_msg_client_to_gc_get_match_meta_data_response::EResult;
+  assert!(salts_error(None).is_none());
+  assert!(salts_error(Some(EResult::KEResultSuccess as i32)).is_none());
+  assert!(matches!(
+    salts_error(Some(EResult::KEResultRateLimited as i32)),
+    Some(MatchSyncError::GcRateLimited)
+  ));
+  assert!(matches!(
+    salts_error(Some(EResult::KEResultMatchInFlight as i32)),
+    Some(MatchSyncError::MatchInFlight)
+  ));
+  for refused in [
+    EResult::KEResultInvalidMatch,
+    EResult::KEResultInvalidPermission,
+  ] {
+    assert!(salts_error(Some(refused as i32)).is_some_and(|e| !e.backs_off_gc()));
+  }
+  for broken in [EResult::KEResultInternalError, EResult::KEResultTooBusy] {
+    assert!(salts_error(Some(broken as i32)).is_some_and(|e| e.backs_off_gc()));
+  }
 }
 
 #[test]

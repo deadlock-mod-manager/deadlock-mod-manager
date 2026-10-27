@@ -132,9 +132,9 @@ impl SyncPersistence for AppPersistence {
   fn friend_cooldowns(&self) -> HashMap<u32, i64> {
     settings::load_friend_cooldowns(&self.app).unwrap_or_default()
   }
-  fn set_friend_cooldown(&self, account_id: u32, until: i64) {
-    if let Err(e) = settings::set_friend_cooldown(&self.app, account_id, until, self.now()) {
-      log::error!("match-sync: failed to persist friend cooldown: {e}");
+  fn set_friend_cooldowns(&self, cooldowns: &[(u32, i64)]) {
+    if let Err(e) = settings::set_friend_cooldowns(&self.app, cooldowns, self.now()) {
+      log::error!("match-sync: failed to persist friend cooldowns: {e}");
     }
   }
   fn load_fetched(&self) -> Vec<u64> {
