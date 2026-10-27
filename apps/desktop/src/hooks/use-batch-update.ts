@@ -69,6 +69,11 @@ const listenForUpdateProgress = async () => {
   };
 };
 
+// GameBanana tells uploads that share a file name apart with a random
+// `_xxxxx` suffix, so a re-uploaded pack keeps its name up to that suffix.
+const uploadBaseName = (name: string) =>
+  name.replace(/_[0-9a-f]{5}(\.[^.]+)$/i, "$1").toLowerCase();
+
 export const useBatchUpdate = () => {
   const [updatableMods, setUpdatableMods] = useState<UpdatableMod[]>([]);
   const [pendingSelections, setPendingSelections] = useState<
@@ -116,8 +121,17 @@ export const useBatchUpdate = () => {
           // Archived files are older versions of current ones; installing
           // both ships the same VPK names twice.
           const current = update.downloads.filter((d) => !d.isArchived);
+          const currentNames = new Set(current.map((d) => d.name));
+          const reuploaded = new Set(
+            [...savedNames, ...installedArchiveNames]
+              .filter((name) => !currentNames.has(name))
+              .map(uploadBaseName),
+          );
           const matched = current.filter(
-            (d) => savedNames.has(d.name) || installedArchiveNames.has(d.name),
+            (d) =>
+              savedNames.has(d.name) ||
+              installedArchiveNames.has(d.name) ||
+              reuploaded.has(uploadBaseName(d.name)),
           );
           selectedDownloads =
             matched.length > 0
@@ -281,10 +295,11 @@ export const useBatchUpdate = () => {
         }
       }
 
+      const awaitingChoice = result.selectionRequired.length > 0;
       attempt.finish(
-        result.failed.length === 0
+        result.failed.length === 0 && !awaitingChoice
           ? "completed"
-          : result.succeeded.length > 0
+          : result.succeeded.length > 0 || awaitingChoice
             ? "partial"
             : "failed",
         {

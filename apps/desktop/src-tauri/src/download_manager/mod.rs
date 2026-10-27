@@ -956,10 +956,11 @@ impl DownloadManager {
   }
 
   /// A re-upload under a new file name leaves the selection scoped to an
-  /// archive that no longer downloads. The replaced archive sharing the most
-  /// VPK names with this one is taken as its old upload, and its choices carry
-  /// over to the files found here again. Files it didn't choose, new ones
-  /// included, stay out: they are usually other variants.
+  /// archive that no longer downloads. Of the saved archives this update
+  /// doesn't download, the one with the most chosen VPKs found here (then the
+  /// most VPK names shared) is taken as its old upload, and its choices carry
+  /// over. Files it didn't choose, new ones included, stay out: they are
+  /// usually other variants. `None` leaves the choice to the user.
   fn carry_selection_to_archive(
     extracted_tree: &crate::mod_manager::file_tree::ModFileTree,
     selection: Option<&crate::mod_manager::file_tree::ModFileTree>,
@@ -969,7 +970,21 @@ impl DownloadManager {
 
     let selection = selection?;
     let name_of = |file: &ModFile| source_file_name(file).to_lowercase();
-    let names: Vec<String> = extracted_tree.files.iter().map(name_of).collect();
+    let name_counts = |files: &[&ModFile]| {
+      let mut counts: HashMap<String, usize> = HashMap::new();
+      for file in files {
+        *counts.entry(name_of(file)).or_default() += 1;
+      }
+      counts
+    };
+    let here = name_counts(&extracted_tree.files.iter().collect::<Vec<_>>());
+    let saved_in = |archive: &str| -> Vec<&ModFile> {
+      selection
+        .files
+        .iter()
+        .filter(|file| file.archive_name == archive)
+        .collect()
+    };
 
     let mut replaced: Vec<&str> = selection
       .files
@@ -980,43 +995,41 @@ impl DownloadManager {
     replaced.sort_unstable();
     replaced.dedup();
 
-    let mut shared: Vec<(usize, &str)> = replaced
+    // A sibling variant can share more names, so chosen ones rank first.
+    let mut ranked: Vec<((usize, usize), &str)> = replaced
       .into_iter()
       .map(|archive| {
-        let saved: HashSet<String> = selection
-          .files
-          .iter()
-          .filter(|file| file.archive_name == archive)
-          .map(name_of)
-          .collect();
+        let saved = saved_in(archive);
+        let found = |file: &&&ModFile| here.contains_key(&name_of(file));
+        let chosen = saved.iter().filter(|file| file.is_selected).filter(found);
         (
-          names.iter().filter(|name| saved.contains(*name)).count(),
+          (chosen.count(), saved.iter().filter(found).count()),
           archive,
         )
       })
-      .filter(|(count, _)| *count > 0)
+      .filter(|((chosen, _), _)| *chosen > 0)
       .collect();
-    shared.sort_by_key(|(count, _)| std::cmp::Reverse(*count));
-    let &(most, paired) = shared.first()?;
-    if shared.get(1).is_some_and(|(count, _)| *count == most) {
+    ranked.sort_by_key(|(rank, _)| std::cmp::Reverse(*rank));
+    let &(best, paired) = ranked.first()?;
+    if ranked.get(1).is_some_and(|(rank, _)| *rank == best) {
       return None;
     }
 
-    let chosen: Vec<&ModFile> = selection
-      .files
-      .iter()
-      .filter(|file| file.archive_name == paired && file.is_selected)
-      .collect();
+    let saved = saved_in(paired);
+    let before = name_counts(&saved);
+    let chosen: Vec<&ModFile> = saved.into_iter().filter(|file| file.is_selected).collect();
     let path_of = |file: &ModFile| relative_path(file).to_lowercase();
     let files: Vec<ModFile> = extracted_tree
       .files
       .iter()
-      .zip(&names)
-      .map(|(file, name)| {
-        // A name alone only counts when nothing else here shares it.
+      .map(|file| {
+        let name = name_of(file);
+        // A name alone only counts when it names one file before and after,
+        // so it can't pick a variant the user turned down.
         let is_selected = chosen.iter().any(|listed| path_of(listed) == path_of(file))
-          || (names.iter().filter(|other| *other == name).count() == 1
-            && chosen.iter().any(|listed| name_of(listed) == *name));
+          || (here[&name] == 1
+            && before.get(&name) == Some(&1)
+            && chosen.iter().any(|listed| name_of(listed) == name));
         ModFile {
           path: format!("{}/{}", file.archive_name, relative_path(file)),
           is_selected,
@@ -1025,7 +1038,7 @@ impl DownloadManager {
       })
       .collect();
 
-    if !chosen.is_empty() && !files.iter().any(|file| file.is_selected) {
+    if !files.iter().any(|file| file.is_selected) {
       return None;
     }
     let total_files = files.len();
@@ -2070,7 +2083,8 @@ mod tests {
   }
 
   #[test]
-  fn update_selection_keeps_a_deselected_pack_deselected() {
+  fn update_selection_asks_about_a_pack_with_nothing_chosen() {
+    // Carrying "nothing" over would leave the update with no VPKs to install.
     let new = "mod_v2.zip";
     let selection = tree(vec![
       file("mod.zip", "mod.zip/one.vpk", false),
@@ -2078,10 +2092,43 @@ mod tests {
     ]);
     let extracted = tree(vec![file(new, "one.vpk", true), file(new, "two.vpk", true)]);
 
+    assert_eq!(carried_selection(&extracted, &selection, &[new]), None);
+  }
+
+  #[test]
+  fn update_selection_pairs_with_the_archive_whose_choices_are_found() {
+    // Blue wasn't downloaded this time and shares more names, but nothing
+    // in it was chosen.
+    let selection = tree(vec![
+      file("red.zip", "red.zip/pak01_dir.vpk", true),
+      file("blue.zip", "blue.zip/pak01_dir.vpk", false),
+      file("blue.zip", "blue.zip/extra.vpk", false),
+    ]);
+    let extracted = tree(vec![
+      file("red_v2.zip", "pak01_dir.vpk", true),
+      file("red_v2.zip", "extra.vpk", true),
+    ]);
+
     assert_eq!(
-      carried_selection(&extracted, &selection, &[new]),
-      Some(vec![])
+      carried_selection(&extracted, &selection, &["red_v2.zip"]),
+      Some(vec!["pak01_dir.vpk".to_string()])
     );
+  }
+
+  #[test]
+  fn update_selection_never_picks_a_turned_down_variant_by_name() {
+    let new = "mod_v2.zip";
+    let selection = tree(vec![
+      file("mod.zip", "mod.zip/red/pak01_dir.vpk", false),
+      file("mod.zip", "mod.zip/blue/pak01_dir.vpk", true),
+    ]);
+    // Blue is gone and red moved, so only the name could still match.
+    let extracted = tree(vec![
+      file(new, "skins/pak01_dir.vpk", true),
+      file(new, "other.vpk", true),
+    ]);
+
+    assert_eq!(carried_selection(&extracted, &selection, &[new]), None);
   }
 
   #[test]

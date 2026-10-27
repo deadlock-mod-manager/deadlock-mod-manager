@@ -435,16 +435,22 @@ pub async fn batch_update_mods(
 
     if prepared.selection_required {
       prepared.remove_scratch_files();
-      if let Some(file_tree) = prepared.file_tree {
-        log::info!(
-          "No saved VPK selection fits the update for mod {}; asking the user",
-          mod_data.mod_id
-        );
-        selection_required.push(SelectionRequiredMod {
-          mod_id: mod_data.mod_id.clone(),
-          mod_name: mod_data.mod_name.clone(),
-          file_tree,
-        });
+      match prepared.file_tree {
+        Some(file_tree) => {
+          log::info!(
+            "No saved VPK selection fits the update for mod {}; asking the user",
+            mod_data.mod_id
+          );
+          selection_required.push(SelectionRequiredMod {
+            mod_id: mod_data.mod_id.clone(),
+            mod_name: mod_data.mod_name.clone(),
+            file_tree,
+          });
+        }
+        None => failed.push((
+          mod_data.mod_id.clone(),
+          "A VPK selection is required, but the update had no files to choose from".to_string(),
+        )),
       }
       continue;
     }

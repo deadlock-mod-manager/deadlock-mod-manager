@@ -96,12 +96,15 @@ export const BatchUpdateDialog = ({
   const localMods = usePersistedStore((state) => state.localMods);
   const profiles = usePersistedStore((state) => state.profiles);
   const targets =
-    batchUpdateMutation.variables?.map(
-      (target) =>
-        updatableMods.find(
-          (update) => update.mod.remoteId === target.mod.remoteId,
-        ) ?? target,
-    ) ?? updatableMods;
+    batchUpdateMutation.variables?.map((target) => {
+      const update = updatableMods.find(
+        (candidate) => candidate.mod.remoteId === target.mod.remoteId,
+      );
+      // A VPK pick only lives on the target it was sent with.
+      return update
+        ? { ...update, selectedFileTree: target.selectedFileTree }
+        : target;
+    }) ?? updatableMods;
   const pendingUpdates = remainingUpdateTargets(
     targets,
     batchUpdateMutation.data,
@@ -194,6 +197,11 @@ export const BatchUpdateDialog = ({
           onOpenChange(true);
           batchUpdateMutation.mutate([
             { ...pendingSelection.target, selectedFileTree: fileTree },
+            // This run replaces the last result, so the batch's failures retry
+            // with it instead of vanishing from the dialog.
+            ...pendingUpdates.filter(
+              (update) => update.mod.remoteId !== pendingSelection.modId,
+            ),
           ]);
         }}
         onCancel={handleDismissSelection}
