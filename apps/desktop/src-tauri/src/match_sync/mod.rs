@@ -21,7 +21,7 @@ use tokio::sync::Mutex;
 
 use crate::app_runtime::AppHandle;
 
-use api_client::ApiClient;
+use api_client::{ApiClient, StoredHistories};
 use auth::FixedAccountAuth;
 use game_check::GameRunningCheck;
 use game_check::SysGameRunningCheck;
@@ -61,6 +61,9 @@ fn emit_error(app: &AppHandle, err: &MatchSyncError) {
 // quota (a lost update there would let the hard cap be exceeded). Holding it also means
 // no pass is writing friends' data, which the worker relies on to clear it.
 static SYNC_LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
+// Friends' stored histories outlive the per-pass API clients and are shared by every
+// account. Cleared with the rest of the friends' data in `forget_friends`.
+static STORED_HISTORIES: LazyLock<Arc<StoredHistories>> = LazyLock::new(Default::default);
 static FULL_SYNC_RUNNING: AtomicBool = AtomicBool::new(false);
 static FULL_SYNC_CANCEL: AtomicBool = AtomicBool::new(false);
 static BACKGROUND_RUNNING: AtomicBool = AtomicBool::new(false);
@@ -187,8 +190,8 @@ fn build_engine(
   SyncEngine::new(
     FixedAccountAuth(ctx.clone()),
     Arc::clone(&resources.gc_client),
-    ApiClient::default(),
-    ApiClient::default(),
+    ApiClient::new(Arc::clone(&STORED_HISTORIES)),
+    ApiClient::new(Arc::clone(&STORED_HISTORIES)),
     AppPersistence {
       app,
       steam_id64: ctx.steam_id64,
@@ -448,7 +451,7 @@ pub fn prune_forgotten_accounts(app: &AppHandle) {
 // Friends' account ids are kept for match sync only, so they go once it is inactive. Only
 // background passes write them: call this when none can be running.
 fn forget_friends(app: &AppHandle) {
-  api_client::forget_stored_histories();
+  STORED_HISTORIES.clear();
   if let Err(e) = settings::clear_friend_cooldowns(app) {
     log::warn!("match-sync: failed to clear friend cooldowns: {e}");
   }

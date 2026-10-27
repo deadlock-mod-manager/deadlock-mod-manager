@@ -7,7 +7,7 @@
 use std::collections::HashMap;
 use std::future::Future;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{LazyLock, Mutex, MutexGuard, PoisonError};
+use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::time::{Duration, Instant};
 
 use futures::{StreamExt as _, stream};
@@ -39,18 +39,19 @@ const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
 // rejected by some proxies.
 const PROFILES_PER_REQUEST: usize = 100;
 
-// Process-wide, since every pass builds a fresh client. Stored history belongs to the
-// friend, so accounts sharing a friend share the entry.
-static STORED_HISTORIES: LazyLock<Mutex<HistoryCache>> = LazyLock::new(Default::default);
+// Friends' stored histories, kept across passes so they aren't re-read every pass. Stored
+// history belongs to the friend, so accounts sharing a friend share the entry.
+#[derive(Default)]
+pub struct StoredHistories(Mutex<HistoryCache>);
 
-fn stored_histories() -> MutexGuard<'static, HistoryCache> {
-  STORED_HISTORIES
-    .lock()
-    .unwrap_or_else(PoisonError::into_inner)
-}
+impl StoredHistories {
+  fn lock(&self) -> MutexGuard<'_, HistoryCache> {
+    self.0.lock().unwrap_or_else(PoisonError::into_inner)
+  }
 
-pub fn forget_stored_histories() {
-  stored_histories().0.clear();
+  pub fn clear(&self) {
+    self.lock().0.clear();
+  }
 }
 
 // Per friend: when their stored history was read, and the summary `active_friends`
@@ -121,13 +122,15 @@ pub struct ApiClient {
   // The claim cookie of the last global to-fetch list, held here rather than in a
   // cookie store since every request builds a fresh client.
   claim: Mutex<Option<String>>,
+  histories: Arc<StoredHistories>,
 }
 
-impl Default for ApiClient {
-  fn default() -> Self {
+impl ApiClient {
+  pub fn new(histories: Arc<StoredHistories>) -> Self {
     Self {
       base_url: DEFAULT_BASE_URL.to_string(),
       claim: Mutex::new(None),
+      histories,
     }
   }
 }
@@ -350,7 +353,7 @@ impl BackfillSource for ApiClient {
     let mut active = Vec::new();
     let mut uncached = Vec::new();
     {
-      let mut cache = stored_histories();
+      let mut cache = self.histories.lock();
       cache.prune(now);
       for account_id in players {
         match cache.get(account_id, now) {
@@ -376,7 +379,7 @@ impl BackfillSource for ApiClient {
     }
     let read_at = Instant::now();
     let mut last_error = None;
-    let mut cache = stored_histories();
+    let mut cache = self.histories.lock();
     for (account_id, history) in read {
       let friend = match history {
         Ok(history) => summarize(account_id, &history),
