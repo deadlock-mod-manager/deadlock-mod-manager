@@ -14,23 +14,27 @@ import {
 import { observeUntil } from "../support/observations";
 
 const image = () => $('img[alt="E2E Local Adult Skin"]');
+const card = () => image().$('./ancestor::*[@role="button"][1]');
+// Linux hides the image and draws a blurred canvas copy beside it; other
+// platforms blur the image with a CSS filter.
 const assertBlur = async (blurred: boolean) => {
-  const target = await image();
-  await reveal(target);
+  await reveal(card());
   await browser.waitUntil(
-    async () => {
-      const filters = await browser.execute((element: HTMLElement) => {
-        const filters: string[] = [];
-        for (
-          let node: HTMLElement | null = element;
-          node;
-          node = node.parentElement
-        )
-          filters.push(getComputedStyle(node).filter);
-        return filters;
-      }, target);
-      return filters.includes("blur(16px)") === blurred;
-    },
+    async () =>
+      (await browser.execute(
+        (element: HTMLElement) => {
+          for (
+            let node: HTMLElement | null = element;
+            node;
+            node = node.parentElement
+          )
+            if (getComputedStyle(node).filter === "blur(16px)") return true;
+          return !!element.parentElement?.parentElement?.querySelector(
+            ":scope > canvas",
+          );
+        },
+        await image(),
+      )) === blurred,
     { timeoutMsg: `Expected adult preview blur to be ${blurred}` },
   );
 };
@@ -44,8 +48,7 @@ describe("NSFW preview preferences", () => {
     await navigate("skins");
     if (editing) {
       await assertBlur(true);
-      const card = await image().$('./ancestor::*[@role="button"][1]');
-      await card.$("button=Show").click();
+      await card().$("button=Show").click();
       await assertBlur(false);
       await observeUntil(
         "Remembered reveal persisted",
