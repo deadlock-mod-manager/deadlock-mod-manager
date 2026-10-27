@@ -15,8 +15,9 @@ pub const GAP_SAMPLE: usize = 20;
 // A match takes a while to start and finish; being online only briefly after the last
 // stored match doesn't mean another one was played.
 const MIN_ACTIVITY_AFTER_LAST: i64 = 45 * 60;
-// Without presence data, a friend who stopped playing long ago is not worth a lookup.
-const MAX_CADENCE_ONLY_AGE: i64 = 14 * DAY;
+// Unless they're in Deadlock right now, a friend whose newest stored match is this old has
+// most likely stopped playing, and isn't worth a lookup.
+const MAX_IDLE: i64 = 14 * DAY;
 // Being in Deadlock right now always ranks ahead of a cadence guess.
 const IN_GAME_BOOST: u64 = 1 << 32;
 
@@ -58,9 +59,12 @@ pub fn estimate(
   if persona.is_some_and(|p| p.in_deadlock) {
     return (elapsed > HOUR).then_some(score + IN_GAME_BOOST);
   }
+  if elapsed >= MAX_IDLE {
+    return None;
+  }
   match persona.and_then(|p| p.online.then_some(now).or(p.last_seen)) {
     Some(seen) => (seen > last_end + MIN_ACTIVITY_AFTER_LAST && elapsed > gap).then_some(score),
-    None => (elapsed > 2 * gap && elapsed < MAX_CADENCE_ONLY_AGE).then_some(score),
+    None => (elapsed > 2 * gap).then_some(score),
   }
 }
 
@@ -123,6 +127,21 @@ mod tests {
       ..Default::default()
     };
     assert_eq!(estimate(NOW, end, &starts, Some(gone)), None);
+  }
+
+  #[test]
+  fn online_friend_who_stopped_playing_is_not_stale() {
+    let (end, starts) = regular(20 * DAY);
+    let online = Persona {
+      online: true,
+      ..Default::default()
+    };
+    assert_eq!(estimate(NOW, end, &starts, Some(online)), None);
+    let in_game = Persona {
+      in_deadlock: true,
+      ..online
+    };
+    assert!(estimate(NOW, end, &starts, Some(in_game)).is_some());
   }
 
   #[test]

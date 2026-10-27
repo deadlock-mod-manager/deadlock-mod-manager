@@ -362,6 +362,8 @@ fn refusals_about_one_match_do_not_back_off() {
     salts_error(Some(EResult::KEResultRateLimited as i32)),
     Some(MatchSyncError::GcRateLimited)
   ));
+  // Waited out through the quotas, not a day-long backoff.
+  assert!(!MatchSyncError::GcRateLimited.backs_off_gc());
   assert!(matches!(
     salts_error(Some(EResult::KEResultMatchInFlight as i32)),
     Some(MatchSyncError::MatchInFlight)

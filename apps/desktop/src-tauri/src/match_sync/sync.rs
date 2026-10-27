@@ -65,14 +65,15 @@ struct FriendLookup {
 }
 
 struct RunState {
-  // Persisted, successfully-ingested ids (idempotency across runs + quota protection).
+  // Persisted ids that need no more fetching: ingested, or refused by the GC for good
+  // (idempotency across runs + quota protection).
   fetched_set: HashSet<u64>,
   // Every id acted on this run (incl. failures/skips) so a sticky to-fetch list or a
   // failing GC can't re-offer the same id and spin/burn quota.
   processed: HashSet<u64>,
   fetched_order: Vec<u64>,
-  // Ids no salts fetch can get this run: deadlock-api already stores their salts, the GC
-  // refused them for good, or they are still in progress.
+  // Ids no salts fetch can get this run: deadlock-api already stores their salts, or they
+  // are still in progress.
   settled: HashSet<u64>,
   quota: QuotaWindow,
   progress: SyncProgress,
@@ -184,7 +185,7 @@ where
     self.counter.fetch_add(1, Ordering::Relaxed);
 
     let salts = match self.gc.fetch_match_salts(ctx, match_id).await {
-      Ok(salts) => Some(salts),
+      Ok(salts) => salts,
       // Steam itself is rate-limiting this account: treat the 24h bucket as fully
       // spent so we stop hammering it and only try again once it naturally frees up.
       Err(MatchSyncError::GcRateLimited) => {
@@ -196,11 +197,23 @@ where
         st.progress.quota_remaining = st.quota.remaining(now) as u32;
         return Ok(FetchStep::RateLimited);
       }
-      // An answer about the match itself: refused for good, or still in progress (a later
-      // pass that lists it again asks again). Nothing to fetch now, so carry on.
-      Err(e @ (MatchSyncError::MatchRefused(_) | MatchSyncError::MatchInFlight)) => {
+      // Refused for good: remembered like a fetched match, so no later pass pays to ask
+      // again. Carry on with the next match.
+      Err(e @ MatchSyncError::MatchRefused(_)) => {
         log::debug!("match-sync: skipping {match_id}: {e}");
-        None
+        self.count_salts_request(now, st)?;
+        self.remember_fetched(match_id, st);
+        self.persistence.emit_progress(&st.progress);
+        return Ok(FetchStep::Done);
+      }
+      // Still in progress: settled for this run only. A later pass that lists it again
+      // (the user's history, a to-fetch list, the friend's next lookup) asks again.
+      Err(MatchSyncError::MatchInFlight) => {
+        log::debug!("match-sync: skipping {match_id}: still in progress");
+        self.count_salts_request(now, st)?;
+        st.settled.insert(match_id);
+        self.persistence.emit_progress(&st.progress);
+        return Ok(FetchStep::Done);
       }
       // Any other failure fetched nothing, so it must not count against the cap.
       Err(e) => {
@@ -209,21 +222,10 @@ where
         return Ok(FetchStep::RetryLater);
       }
     };
-
-    // The GC answered, so the request counts against the cap.
-    let _ = st.quota.try_consume(now);
-    self.persistence.save_quota(&st.quota)?;
-    st.progress.quota_remaining = st.quota.remaining(now) as u32;
-    let Some(salts) = salts else {
-      st.settled.insert(match_id);
-      return Ok(FetchStep::Done);
-    };
+    self.count_salts_request(now, st)?;
 
     self.sink.post_salts(&[SaltPayload::from(&salts)]).await?;
-
-    st.fetched_set.insert(match_id);
-    st.fetched_order.push(match_id);
-    self.persistence.persist_fetched(&st.fetched_order);
+    self.remember_fetched(match_id, st);
 
     if is_backfill {
       st.progress.backfilled += 1;
@@ -232,6 +234,39 @@ where
     }
     self.persistence.emit_progress(&st.progress);
     Ok(FetchStep::Done)
+  }
+
+  // The GC answered, so the request counts against the cap.
+  fn count_salts_request(&self, now: i64, st: &mut RunState) -> Result<(), MatchSyncError> {
+    let _ = st.quota.try_consume(now);
+    self.persistence.save_quota(&st.quota)?;
+    st.progress.quota_remaining = st.quota.remaining(now) as u32;
+    Ok(())
+  }
+
+  // A swallowed failure of the user's own history page. Steam limits match history
+  // requests per account, so a rate limit here rules out friend lookups until the
+  // window frees up as well.
+  fn own_history_failed(&self, e: &MatchSyncError) {
+    log::warn!("match-sync: GC match history unavailable: {e}");
+    self.persistence.record_gc_error(e);
+    if let MatchSyncError::GcRateLimited = e {
+      match self.persistence.load_history_quota() {
+        Ok(mut quota) => {
+          quota.exhaust(self.persistence.now());
+          if let Err(e) = self.persistence.save_history_quota(&quota) {
+            log::warn!("match-sync: {e}");
+          }
+        }
+        Err(e) => log::warn!("match-sync: friend history quota unavailable: {e}"),
+      }
+    }
+  }
+
+  fn remember_fetched(&self, match_id: u64, st: &mut RunState) {
+    st.fetched_set.insert(match_id);
+    st.fetched_order.push(match_id);
+    self.persistence.persist_fetched(&st.fetched_order);
   }
 
   async fn process_ids(
@@ -523,8 +558,7 @@ where
         Ok(page) => page,
         Err(MatchSyncError::GameRunning) => return Err(MatchSyncError::GameRunning),
         Err(e) => {
-          log::warn!("match-sync: GC match history unavailable: {e}");
-          self.persistence.record_gc_error(&e);
+          self.own_history_failed(&e);
           break;
         }
       };
@@ -615,8 +649,7 @@ where
       Ok(page) => page.match_ids(),
       Err(MatchSyncError::GameRunning) => return Err(MatchSyncError::GameRunning),
       Err(e) => {
-        log::warn!("match-sync: GC match history unavailable: {e}");
-        self.persistence.record_gc_error(&e);
+        self.own_history_failed(&e);
         Vec::new()
       }
     };
@@ -700,6 +733,7 @@ mod tests {
     calls: AtomicU64,
     fail: bool,
     fail_history: bool,
+    own_history_rate_limited: bool,
     rate_limited: bool,
     // Matches the GC refuses for good, and ones it says are still in progress.
     refused: HashSet<u64>,
@@ -723,6 +757,9 @@ mod tests {
       self.calls.fetch_add(1, Ordering::Relaxed);
       if self.fail_history {
         return Err(MatchSyncError::GcUnavailable("spy history".into()));
+      }
+      if self.own_history_rate_limited && account_id == ctx.account_id() {
+        return Err(MatchSyncError::GcRateLimited);
       }
       let history = if account_id == ctx.account_id() {
         &self.history
@@ -935,10 +972,9 @@ mod tests {
       self.progress_events.fetch_add(1, Ordering::Relaxed);
       *self.last_progress_running.lock().unwrap() = Some(progress.running);
     }
-    fn record_gc_error(&self, err: &MatchSyncError) {
-      if err.backs_off_gc() {
-        self.gc_errors.fetch_add(1, Ordering::Relaxed);
-      }
+    // Counts every report: what backs the account off is decided in production code.
+    fn record_gc_error(&self, _err: &MatchSyncError) {
+      self.gc_errors.fetch_add(1, Ordering::Relaxed);
     }
   }
 
@@ -1661,6 +1697,8 @@ mod tests {
     assert_eq!(eng.persistence.gc_errors.load(Ordering::Relaxed), 0);
     // The refusal is a GC answer too, so it counts like the two fetches.
     assert_eq!(eng.persistence.quota_hits.lock().unwrap().len(), 3);
+    // ...and is remembered, so no later pass asks for it again.
+    assert!(eng.persistence.fetched.lock().unwrap().contains(&502));
   }
 
   #[tokio::test]
@@ -1714,6 +1752,23 @@ mod tests {
       .await;
     assert!(matches!(result, Err(MatchSyncError::GameRunning)));
     assert!(eng.sink.posted.lock().unwrap().is_empty());
+  }
+
+  #[tokio::test]
+  async fn rate_limited_own_history_rules_out_friend_lookups() {
+    let (mut gc, backfill) = friend_scenario(vec![600]);
+    gc.own_history_rate_limited = true;
+    let eng = engine(gc, backfill);
+
+    eng
+      .run_background_pass(&active_config(), &AtomicBool::new(false))
+      .await
+      .unwrap();
+    assert_eq!(
+      eng.persistence.history_hits.lock().unwrap().len(),
+      FRIEND_HISTORY_QUOTA_LIMIT
+    );
+    assert_eq!(*eng.sink.posted.lock().unwrap(), vec![600]);
   }
 
   #[tokio::test]

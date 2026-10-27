@@ -22,7 +22,8 @@ pub enum MatchSyncError {
   #[error("Steam GC unavailable: {0}")]
   GcUnavailable(String),
 
-  // Steam GC answered but is throttling this account; back off, don't burn quota.
+  // Steam GC answered but is throttling this account; the matching quota is treated as
+  // spent.
   #[error("Steam GC rate-limited the request")]
   GcRateLimited,
 
@@ -55,14 +56,11 @@ pub enum MatchSyncError {
 }
 
 impl MatchSyncError {
-  // Only a broken or throttled GC connection backs an account's sync off; an answer about
-  // one match or match history (refused, private, in flight) says nothing about the
-  // connection.
+  // Only a broken GC connection backs an account's sync off for a day. An answer about one
+  // match or match history (refused, private, in flight) says nothing about the
+  // connection, and a rate limit exhausts the quota of what was limited instead.
   pub fn backs_off_gc(&self) -> bool {
-    matches!(
-      self,
-      MatchSyncError::GcUnavailable(_) | MatchSyncError::GcRateLimited
-    )
+    matches!(self, MatchSyncError::GcUnavailable(_))
   }
 
   // A stable, machine-readable tag so the frontend can branch/localize on the

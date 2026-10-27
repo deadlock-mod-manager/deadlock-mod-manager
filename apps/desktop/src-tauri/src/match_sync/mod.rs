@@ -56,7 +56,8 @@ fn emit_error(app: &AppHandle, err: &MatchSyncError) {
 }
 
 // One serializer for every run so concurrent syncs can't race a per-account persisted
-// quota (a lost update there would let the hard cap be exceeded).
+// quota (a lost update there would let the hard cap be exceeded). Holding it also means
+// no pass is writing friends' data, which the worker relies on to clear it.
 static SYNC_LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
 static FULL_SYNC_RUNNING: AtomicBool = AtomicBool::new(false);
 static FULL_SYNC_CANCEL: AtomicBool = AtomicBool::new(false);
@@ -162,8 +163,8 @@ impl SyncPersistence for AppPersistence {
     );
   }
   fn record_gc_error(&self, err: &MatchSyncError) {
-    // The hook is only ever called from GC swallow points, but classify defensively so a
-    // future caller can't misfire it.
+    // The engine reports every GC failure it swallows; only a broken connection backs the
+    // account off.
     if err.backs_off_gc() {
       self.gc_error_seen.store(true, Ordering::Relaxed);
     }
@@ -449,7 +450,7 @@ pub fn prune_forgotten_accounts(app: &AppHandle) {
 }
 
 // Friends' account ids are kept for match sync only, so they go once it is inactive. Only
-// the background worker writes them: call this when it isn't running.
+// background passes write them: call this when none can be running.
 fn forget_friends(app: &AppHandle) {
   api_client::forget_stored_histories();
   if let Err(e) = settings::clear_friend_cooldowns(app) {
@@ -674,8 +675,12 @@ pub fn start_background_worker(app: AppHandle) {
         slept += 5;
       }
     }
-    // Before a restarted worker can run a pass that writes them again.
-    forget_friends(&app);
+    // Under the sync lock, so a pass started elsewhere (on game exit) has finished writing
+    // them; and before a restarted worker can run one that writes them again.
+    {
+      let _guard = SYNC_LOCK.lock().await;
+      forget_friends(&app);
+    }
     BACKGROUND_RUNNING.store(false, Ordering::Relaxed);
     // A quick disable/re-enable while this task was still shutting down could have
     // seen BACKGROUND_RUNNING as true and returned early; make sure that isn't lost.
