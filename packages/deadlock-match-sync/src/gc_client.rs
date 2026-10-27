@@ -15,12 +15,14 @@ use steam_vent::connection::UnAuthenticatedConnection;
 use steam_vent::proto::MsgKind;
 use steam_vent::proto::enums_clientserver::{EClientPersonaStateFlag, EMsg};
 use steam_vent::proto::steammessages_clientserver::CMsgClientGamesPlayed;
+use steam_vent::proto::steammessages_clientserver_2::CMsgClientPlayingSessionState;
 use steam_vent::proto::steammessages_clientserver_friends::{
   CMsgClientFriendsList, CMsgClientPersonaState, CMsgClientRequestFriendData,
 };
+use steam_vent::proto::steammessages_clientserver_login::CMsgClientLoggedOff;
 use steam_vent::{
-  Connection, ConnectionError, ConnectionTrait, GameCoordinator, NetworkError, RawNetMessage,
-  ReadonlyConnection as _, ServerList, UntypedMessage,
+  Connection, ConnectionError, ConnectionTrait, EResult, GameCoordinator, NetworkError,
+  RawNetMessage, ReadonlyConnection as _, ServerList, UntypedMessage,
 };
 use tokio::sync::{Mutex, watch};
 use valveprotos::deadlock::{
@@ -63,10 +65,11 @@ fn launch_hold_active() -> bool {
     .is_some_and(|at| at.elapsed() < LAUNCH_HOLD)
 }
 
-// Steam pushes the friends list right after logon, so it has normally arrived by the
-// time it's needed; this only bounds the wait when it never comes. Persona states
-// arrive as a burst.
+// Steam pushes the friends list and the playing state right after logon, so they have
+// normally arrived by the time they're needed; this only bounds the wait when they never
+// come. Persona states arrive as a burst.
 const FRIENDS_WAIT: Duration = Duration::from_secs(5);
+const PLAYING_STATE_WAIT: Duration = Duration::from_secs(5);
 const FRIEND_RELATIONSHIP_FRIEND: u32 = 3;
 
 async fn with_timeout<T, E: std::fmt::Display>(
@@ -162,12 +165,56 @@ pub trait GcMatchClient: Send + Sync {
 
 // The first friends list Steam sends after logon, which is the full one.
 type FriendsList = BoxFuture<'static, Result<CMsgClientFriendsList, NetworkError>>;
+type LoggedOff = BoxFuture<'static, Result<CMsgClientLoggedOff, NetworkError>>;
 
-// Listens for the friends list before logging in: Steam pushes it right after logon, and
-// steam-vent keeps only the last 32 messages nobody listens for, which the logon burst
-// can overflow.
-fn listen_for_friends_list(conn: &UnAuthenticatedConnection) -> FriendsList {
-  conn.one::<CMsgClientFriendsList>().boxed()
+// Listened for before logging in: Steam pushes these right after logon, and steam-vent
+// keeps only the last 32 messages nobody listens for, which the logon burst can overflow.
+struct LogonListeners {
+  friends_list: FriendsList,
+  playing_state: BoxFuture<'static, Result<CMsgClientPlayingSessionState, NetworkError>>,
+  logged_off: LoggedOff,
+}
+
+impl LogonListeners {
+  fn new(conn: &UnAuthenticatedConnection) -> Self {
+    Self {
+      friends_list: conn.one::<CMsgClientFriendsList>().boxed(),
+      playing_state: conn.one::<CMsgClientPlayingSessionState>().boxed(),
+      logged_off: conn.one::<CMsgClientLoggedOff>().boxed(),
+    }
+  }
+}
+
+// Whether another session of the account is already playing a game, on this PC or
+// another. Starting Deadlock then gets this session logged off.
+async fn playing_elsewhere(listeners: &mut LogonListeners) -> Result<bool, MatchSyncError> {
+  let state = with_timeout(
+    PLAYING_STATE_WAIT,
+    "playing state",
+    &mut listeners.playing_state,
+  );
+  match state.await {
+    Ok(state) => Ok(state.playing_blocked()),
+    // Without the state, a logoff during the handshake still tells.
+    Err(e) => {
+      log::debug!("match-sync: {e}");
+      Ok(false)
+    }
+  }
+}
+
+// A request that failed because another session of the account started a game, which
+// gets this one logged off, is not a GC outage.
+fn logged_off_or(logged_off: &mut LoggedOff, error: MatchSyncError) -> MatchSyncError {
+  if error.ends_pass() {
+    return error;
+  }
+  match logged_off.as_mut().now_or_never() {
+    Some(Ok(msg)) if msg.eresult() == EResult::LoggedInElsewhere as i32 => {
+      MatchSyncError::AccountInUse
+    }
+    _ => error,
+  }
 }
 
 struct GcSession {
@@ -179,6 +226,7 @@ struct GcSession {
   // SteamID64s of confirmed individual friends, once `friends_list` is read; empty if
   // Steam sent no usable list.
   friends: Vec<u64>,
+  logged_off: LoggedOff,
 }
 
 impl GcSession {
@@ -274,29 +322,32 @@ impl SteamGcClient {
     ctx: &AuthContext,
     cancel: &mut watch::Receiver<()>,
   ) -> Result<GcSession, MatchSyncError> {
-    let (conn, friends_list) = until_launch(cancel, async {
+    let (conn, listeners) = until_launch(cancel, async {
       let servers =
         with_timeout(GC_CALL_TIMEOUT, "server discovery", ServerList::discover()).await?;
       with_timeout(GC_CALL_TIMEOUT, "CM login", async {
         let unauthenticated = UnAuthenticatedConnection::connect(&servers).await?;
-        let friends_list = listen_for_friends_list(&unauthenticated);
+        let listeners = LogonListeners::new(&unauthenticated);
         let conn = unauthenticated
           .access(&ctx.account_name, &ctx.refresh_token)
           .await?;
-        Ok::<_, ConnectionError>((conn, friends_list))
+        Ok::<_, ConnectionError>((conn, listeners))
       })
       .await
     })
     .await?;
-    Self::connect_gc(ctx, conn, friends_list, cancel).await
+    Self::connect_gc(ctx, conn, listeners, cancel).await
   }
 
   async fn connect_gc(
     ctx: &AuthContext,
     conn: Connection,
-    friends_list: FriendsList,
+    mut listeners: LogonListeners,
     cancel: &mut watch::Receiver<()>,
   ) -> Result<GcSession, MatchSyncError> {
+    if until_launch(cancel, playing_elsewhere(&mut listeners)).await? {
+      return Err(MatchSyncError::AccountInUse);
+    }
     let handshake = with_timeout(
       GC_CALL_TIMEOUT,
       "GC handshake",
@@ -306,15 +357,16 @@ impl SteamGcClient {
       Ok(gc) => gc,
       Err(error) => {
         GcSession::clear_playing(&conn).await;
-        return Err(error);
+        return Err(logged_off_or(&mut listeners.logged_off, error));
       }
     };
     Ok(GcSession {
       steam_id64: ctx.steam_id64,
       gc,
       conn,
-      friends_list: Some(friends_list),
+      friends_list: Some(listeners.friends_list),
       friends: Vec::new(),
+      logged_off: listeners.logged_off,
     })
   }
 
@@ -377,9 +429,11 @@ impl SteamGcClient {
     label: &str,
     send: impl AsyncFnOnce(&GameCoordinator, &Connection) -> Result<T, E>,
   ) -> Result<T, MatchSyncError> {
-    let session = guard.as_ref().expect("connected above");
+    let session = guard.as_mut().expect("connected above");
     let sent = send(&session.gc, &session.conn);
-    let result = until_launch(cancel, with_timeout(GC_CALL_TIMEOUT, label, sent)).await;
+    let result = until_launch(cancel, with_timeout(GC_CALL_TIMEOUT, label, sent))
+      .await
+      .map_err(|e| logged_off_or(&mut session.logged_off, e));
     if result.is_err() {
       Self::poison(guard).await;
     }

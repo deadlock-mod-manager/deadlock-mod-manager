@@ -93,7 +93,7 @@ where
             log::warn!("match-sync: a friend's match history is unavailable: {e}");
             (FRIEND_COOLDOWN_SECS, Vec::new())
           }
-          Err(MatchSyncError::GameRunning) => return Err(MatchSyncError::GameRunning),
+          Err(e) if e.ends_pass() => return Err(e),
           Err(MatchSyncError::GcRateLimited) => {
             log::warn!("match-sync: Steam GC rate-limited friend history lookups");
             self.exhaust_history_quota(&mut history_quota);

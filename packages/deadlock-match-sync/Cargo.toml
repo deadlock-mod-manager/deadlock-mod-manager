@@ -32,6 +32,9 @@ valveprotos = { git = "https://github.com/deadlock-api/deadlock-api", rev = "b14
   "serde",
 ] }
 
+[dev-dependencies]
+tokio = { version = "1.50.0", features = ["test-util"] }
+
 [target.'cfg(windows)'.dependencies]
 dirs = "6"
 windows = { version = "0.58", features = [

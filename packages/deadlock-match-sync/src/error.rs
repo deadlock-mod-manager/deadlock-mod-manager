@@ -35,6 +35,11 @@ pub enum MatchSyncError {
   #[error("Deadlock is currently running; close it to fetch matches")]
   GameRunning,
 
+  // Steam is already playing a game on this account, on this PC or another, and logs the
+  // session off once it starts Deadlock.
+  #[error("Steam is playing another game on this account; close it to fetch matches")]
+  AccountInUse,
+
   #[error("deadlock-api request failed: {0}")]
   Api(String),
 
@@ -48,6 +53,14 @@ impl MatchSyncError {
   // exhausts the quota of what was limited instead.
   pub fn backs_off_gc(&self) -> bool {
     matches!(self, MatchSyncError::GcUnavailable(_))
+  }
+
+  // Every later GC request of the pass would fail the same way.
+  pub fn ends_pass(&self) -> bool {
+    matches!(
+      self,
+      MatchSyncError::GameRunning | MatchSyncError::AccountInUse
+    )
   }
 
   // The account can always see its own history and matches, so the GC refusing one means
@@ -74,6 +87,7 @@ impl MatchSyncError {
       MatchSyncError::GcRateLimited => "gcRateLimited",
       MatchSyncError::GcRefused(_) => "gcRefused",
       MatchSyncError::GameRunning => "gameRunning",
+      MatchSyncError::AccountInUse => "accountInUse",
       MatchSyncError::Api(_) => "apiError",
       MatchSyncError::Store(_) => "storeError",
     }

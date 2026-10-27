@@ -45,6 +45,14 @@ struct SteamState {
   allow_cleanup: Semaphore,
 }
 
+#[derive(Clone, Copy, PartialEq)]
+enum SteamAccount {
+  Free,
+  PlayingElsewhere,
+  // Another session starts a game during the GC handshake.
+  LoggedOffAtHandshake,
+}
+
 #[derive(Clone, Copy)]
 enum GcReplies {
   All,
@@ -77,9 +85,10 @@ fn logon_friends_list() -> CMsgClientFriendsList {
 
 // Exercise steam-vent's real login and GC encoding over an in-memory CM transport.
 async fn fake_connection(
+  account: SteamAccount,
   replies: GcReplies,
   block_cleanup: bool,
-) -> (Connection, FriendsList, Arc<SteamState>) {
+) -> (Connection, LogonListeners, Arc<SteamState>) {
   let state = Arc::new(SteamState {
     playing: AtomicBool::new(false),
     logged_off: AtomicBool::new(false),
@@ -105,6 +114,14 @@ async fn fake_connection(
           },
         )?;
         tx.unbounded_send(Ok(reply.into_bytes())).unwrap();
+        let playing = RawNetMessage::from_message(
+          NetMessageHeader::default(),
+          CMsgClientPlayingSessionState {
+            playing_blocked: Some(account == SteamAccount::PlayingElsewhere),
+            ..Default::default()
+          },
+        )?;
+        tx.unbounded_send(Ok(playing.into_bytes())).unwrap();
         let list = RawNetMessage::from_message(NetMessageHeader::default(), logon_friends_list())?;
         tx.unbounded_send(Ok(list.into_bytes())).unwrap();
         for _ in 0..LOGON_BURST {
@@ -132,6 +149,17 @@ async fn fake_connection(
         let job = RawNetMessage::read(envelope.payload.unwrap())?;
         if job.kind == MsgKind(4006) {
           state.handshake_started.notify_one();
+          if account == SteamAccount::LoggedOffAtHandshake {
+            let logged_off = RawNetMessage::from_message(
+              NetMessageHeader::default(),
+              CMsgClientLoggedOff {
+                eresult: Some(EResult::LoggedInElsewhere as i32),
+                ..Default::default()
+              },
+            )?;
+            tx.unbounded_send(Ok(logged_off.into_bytes())).unwrap();
+            return Ok(tx);
+          }
           if matches!(replies, GcReplies::None) {
             return Ok(tx);
           }
@@ -174,9 +202,9 @@ async fn fake_connection(
   let unauthenticated = UnAuthenticatedConnection::from_sender_receiver(sender, rx)
     .await
     .unwrap();
-  let friends_list = listen_for_friends_list(&unauthenticated);
+  let listeners = LogonListeners::new(&unauthenticated);
   let conn = unauthenticated.anonymous().await.unwrap();
-  (conn, friends_list, state)
+  (conn, listeners, state)
 }
 
 fn context() -> AuthContext {
@@ -191,15 +219,16 @@ async fn seeded_client(
   replies: GcReplies,
   block_cleanup: bool,
 ) -> (SteamGcClient, Arc<SteamState>) {
-  let (conn, friends_list, state) = fake_connection(replies, block_cleanup).await;
+  let (conn, listeners, state) = fake_connection(SteamAccount::Free, replies, block_cleanup).await;
   let gc = GameCoordinator::new(&conn, DEADLOCK_APP_ID).await.unwrap();
   let client = SteamGcClient::new();
   *client.shared.session.lock().await = Some(GcSession {
     steam_id64: 42,
     gc,
     conn,
-    friends_list: Some(friends_list),
+    friends_list: Some(listeners.friends_list),
     friends: Vec::new(),
+    logged_off: listeners.logged_off,
   });
   (client, state)
 }
@@ -300,13 +329,13 @@ async fn launch_waits_for_cleanup_already_started_by_disconnect() {
 #[tokio::test]
 async fn launch_cancels_a_stalled_handshake_and_waits_for_cleanup() {
   let _serial = TEST_LOCK.lock().await;
-  let (conn, friends_list, state) = fake_connection(GcReplies::None, true).await;
+  let (conn, listeners, state) = fake_connection(SteamAccount::Free, GcReplies::None, true).await;
   let client = SteamGcClient::new();
   let connecting_client = client.clone();
   let handshake = tokio::spawn(async move {
     let _guard = connecting_client.shared.session.lock().await;
     let mut cancel = connecting_client.shared.launch_cancel.subscribe();
-    SteamGcClient::connect_gc(&context(), conn, friends_list, &mut cancel).await
+    SteamGcClient::connect_gc(&context(), conn, listeners, &mut cancel).await
   });
   tokio::time::timeout(Duration::from_secs(1), state.handshake_started.notified())
     .await
@@ -331,6 +360,37 @@ async fn launch_cancels_a_stalled_handshake_and_waits_for_cleanup() {
   ));
   assert!(!state.playing.load(Ordering::SeqCst));
   assert!(!state.logged_off.load(Ordering::SeqCst));
+}
+
+async fn connect_as(account: SteamAccount) -> (Result<GcSession, MatchSyncError>, Arc<SteamState>) {
+  let (conn, listeners, state) = fake_connection(account, GcReplies::All, false).await;
+  let client = SteamGcClient::new();
+  let mut cancel = client.shared.launch_cancel.subscribe();
+  let result = SteamGcClient::connect_gc(&context(), conn, listeners, &mut cancel).await;
+  (result, state)
+}
+
+#[tokio::test]
+async fn an_account_playing_another_game_never_announces_deadlock() {
+  let _serial = TEST_LOCK.lock().await;
+  let (result, state) = connect_as(SteamAccount::PlayingElsewhere).await;
+  assert!(
+    matches!(result, Err(MatchSyncError::AccountInUse)),
+    "{:?}",
+    result.as_ref().err()
+  );
+  assert!(!state.playing.load(Ordering::SeqCst));
+}
+
+#[tokio::test(start_paused = true)]
+async fn a_logoff_for_another_game_during_the_handshake_is_not_a_gc_outage() {
+  let _serial = TEST_LOCK.lock().await;
+  let (result, _state) = connect_as(SteamAccount::LoggedOffAtHandshake).await;
+  assert!(
+    matches!(result, Err(MatchSyncError::AccountInUse)),
+    "{:?}",
+    result.as_ref().err()
+  );
 }
 
 #[tokio::test]
