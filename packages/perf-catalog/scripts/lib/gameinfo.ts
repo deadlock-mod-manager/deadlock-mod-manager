@@ -337,7 +337,14 @@ export const computeDelta = (
 
   const configGroups = groupLeaves(config.leaves);
   const baseGroups = groupLeaves(base.leaves);
-  const lists = new Set([...listSections(base), ...listSections(config, true)]);
+  // A key the author repeats inside a section stock holds as key/value pairs
+  // is a slip, not a list: the last value wins.
+  const baseSectionIds = new Set(
+    base.leaves.map((leaf) => sectionId(leaf.path)),
+  );
+  const lists = listSections(base);
+  for (const section of listSections(config, true))
+    if (!baseSectionIds.has(section)) lists.add(section);
   const baseSections = new Set(
     base.leaves
       .filter((leaf) => leaf.path.length > 0)
