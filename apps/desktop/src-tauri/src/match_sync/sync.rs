@@ -16,7 +16,7 @@ use super::gc_client::GcMatchClient;
 use super::model::{
   ActiveFriend, AuthContext, BACKFILL_QUOTA_RESERVE, FRIEND_COOLDOWN_SECS, FetchScope,
   MAX_FRIEND_HISTORIES_PER_PASS, MatchHistoryPage, MatchSyncConfig, PRIVATE_FRIEND_COOLDOWN_SECS,
-  SaltPayload, SaltsCheck, SyncProgress,
+  SaltPayload, SaltsCheck, SyncProgress, UNFINISHED_FRIEND_COOLDOWN_SECS,
 };
 use super::quota::QuotaWindow;
 use super::throttle::Throttle;
@@ -197,22 +197,29 @@ where
         st.progress.quota_remaining = st.quota.remaining(now) as u32;
         return Ok(FetchStep::RateLimited);
       }
+      // The account can always see its own matches, so refusing one means the GC won't
+      // serve the account at all: an outage, not an answer about the match.
+      Err(MatchSyncError::MatchForbidden) if !is_backfill => {
+        let e = MatchSyncError::GcUnavailable(format!("own match {match_id} refused"));
+        log::warn!("match-sync: {e}");
+        self.persistence.record_gc_error(&e);
+        return Ok(FetchStep::RetryLater);
+      }
       // Refused for good: remembered like a fetched match, so no later pass pays to ask
       // again. Carry on with the next match.
       Err(e @ MatchSyncError::MatchRefused(_)) => {
         log::debug!("match-sync: skipping {match_id}: {e}");
-        self.count_salts_request(now, st)?;
+        self.skip_answered(now, st)?;
         self.remember_fetched(match_id, st);
-        self.persistence.emit_progress(&st.progress);
         return Ok(FetchStep::Done);
       }
-      // Still in progress: settled for this run only. A later pass that lists it again
-      // (the user's history, a to-fetch list, the friend's next lookup) asks again.
-      Err(MatchSyncError::MatchInFlight) => {
-        log::debug!("match-sync: skipping {match_id}: still in progress");
-        self.count_salts_request(now, st)?;
+      // Still in progress, or someone else's match this account may not see: settled for
+      // this run only. A later pass that lists it again (the user's history, a to-fetch
+      // list, the friend's next lookup) asks again.
+      Err(e @ (MatchSyncError::MatchInFlight | MatchSyncError::MatchForbidden)) => {
+        log::debug!("match-sync: skipping {match_id}: {e}");
+        self.skip_answered(now, st)?;
         st.settled.insert(match_id);
-        self.persistence.emit_progress(&st.progress);
         return Ok(FetchStep::Done);
       }
       // Any other failure fetched nothing, so it must not count against the cap.
@@ -241,6 +248,14 @@ where
     let _ = st.quota.try_consume(now);
     self.persistence.save_quota(&st.quota)?;
     st.progress.quota_remaining = st.quota.remaining(now) as u32;
+    Ok(())
+  }
+
+  // A GC answer that leaves nothing to fetch still counts against the cap.
+  fn skip_answered(&self, now: i64, st: &mut RunState) -> Result<(), MatchSyncError> {
+    self.count_salts_request(now, st)?;
+    st.progress.skipped += 1;
+    self.persistence.emit_progress(&st.progress);
     Ok(())
   }
 
@@ -399,9 +414,9 @@ where
     Ok(lookups)
   }
 
-  // Fetches the friends' matches deadlock-api has no salts for, then cools down every
-  // friend whose matches were all dealt with. A friend whose matches the budget, a quota
-  // or an error cut off stays due, so the rest turn up again next pass.
+  // Fetches the friends' matches deadlock-api has no salts for, then cools the friends
+  // down. One whose matches the budget, a quota or an error cut off only gets a short
+  // cooldown, so the rest turn up again soon.
   async fn backfill_friend_matches(
     &self,
     ctx: &AuthContext,
@@ -424,18 +439,22 @@ where
     st.settled.extend(stored);
     let result = self.process_ids(ctx, missing, true, Some(cancel), st).await;
 
-    // Dealt with means fetched or settled. A fetch that failed or never ran keeps its
-    // friend due.
+    // Dealt with means fetched or settled; a fetch that failed or never ran is not.
     let now = self.persistence.now();
     let cooldowns: Vec<(u32, i64)> = lookups
       .iter()
-      .filter(|lookup| {
-        lookup
+      .map(|lookup| {
+        let dealt_with = lookup
           .match_ids
           .iter()
-          .all(|id| st.fetched_set.contains(id) || st.settled.contains(id))
+          .all(|id| st.fetched_set.contains(id) || st.settled.contains(id));
+        let cooldown = if dealt_with {
+          lookup.cooldown_secs
+        } else {
+          UNFINISHED_FRIEND_COOLDOWN_SECS
+        };
+        (lookup.account_id, now + cooldown)
       })
-      .map(|lookup| (lookup.account_id, now + lookup.cooldown_secs))
       .collect();
     if !cooldowns.is_empty() {
       self.persistence.set_friend_cooldowns(&cooldowns);
@@ -738,6 +757,8 @@ mod tests {
     // Matches the GC refuses for good, and ones it says are still in progress.
     refused: HashSet<u64>,
     in_flight: HashSet<u64>,
+    // Matches the GC won't show this account.
+    forbidden: HashSet<u64>,
     persona_calls: AtomicU64,
     history: Vec<u64>,
     friends: HashMap<u32, Persona>,
@@ -796,6 +817,9 @@ mod tests {
       }
       if self.in_flight.contains(&match_id) {
         return Err(MatchSyncError::MatchInFlight);
+      }
+      if self.forbidden.contains(&match_id) {
+        return Err(MatchSyncError::MatchForbidden);
       }
       Ok(MatchSalts {
         match_id,
@@ -1643,7 +1667,7 @@ mod tests {
   }
 
   #[tokio::test]
-  async fn friend_stays_due_while_the_budget_leaves_matches_unfetched() {
+  async fn friend_comes_back_soon_while_the_budget_leaves_matches_unfetched() {
     let (gc, backfill) = friend_scenario(Vec::new());
     // 9 fetches left: 1 above the reserve kept for the user's own matches.
     let eng = engine_with_persistence(
@@ -1662,11 +1686,14 @@ mod tests {
       .await
       .unwrap();
     assert_eq!(*eng.sink.posted.lock().unwrap(), vec![502]);
-    assert!(eng.persistence.cooldowns.lock().unwrap().is_empty());
+    assert_eq!(
+      eng.persistence.cooldowns.lock().unwrap().get(&FRIEND),
+      Some(&(NOW + UNFINISHED_FRIEND_COOLDOWN_SECS))
+    );
   }
 
   #[tokio::test]
-  async fn friend_stays_due_when_fetching_their_match_fails() {
+  async fn friend_comes_back_soon_when_fetching_their_match_fails() {
     let (mut gc, backfill) = friend_scenario(Vec::new());
     gc.fail = true;
     let eng = engine(gc, backfill);
@@ -1676,7 +1703,10 @@ mod tests {
       .await
       .unwrap();
     assert!(eng.sink.posted.lock().unwrap().is_empty());
-    assert!(eng.persistence.cooldowns.lock().unwrap().is_empty());
+    assert_eq!(
+      eng.persistence.cooldowns.lock().unwrap().get(&FRIEND),
+      Some(&(NOW + UNFINISHED_FRIEND_COOLDOWN_SECS))
+    );
   }
 
   #[tokio::test]
@@ -1685,10 +1715,12 @@ mod tests {
     gc.refused = HashSet::from([502]);
     let eng = engine(gc, backfill);
 
-    eng
+    let p = eng
       .run_background_pass(&active_config(), &AtomicBool::new(false))
       .await
+      .unwrap()
       .unwrap();
+    assert_eq!(p.skipped, 1);
     assert_eq!(*eng.sink.posted.lock().unwrap(), vec![501, 600]);
     assert_eq!(
       eng.persistence.cooldowns.lock().unwrap().get(&FRIEND),
@@ -1769,6 +1801,39 @@ mod tests {
       FRIEND_HISTORY_QUOTA_LIMIT
     );
     assert_eq!(*eng.sink.posted.lock().unwrap(), vec![600]);
+  }
+
+  #[tokio::test]
+  async fn forbidden_friend_match_is_skipped_without_backing_off() {
+    let (mut gc, backfill) = friend_scenario(vec![600]);
+    gc.forbidden = HashSet::from([502]);
+    let eng = engine(gc, backfill);
+
+    eng
+      .run_background_pass(&active_config(), &AtomicBool::new(false))
+      .await
+      .unwrap();
+    assert_eq!(*eng.sink.posted.lock().unwrap(), vec![501, 600]);
+    assert_eq!(eng.persistence.gc_errors.load(Ordering::Relaxed), 0);
+    // Not written off: a later lookup may ask again.
+    assert!(!eng.persistence.fetched.lock().unwrap().contains(&502));
+  }
+
+  #[tokio::test]
+  async fn forbidden_own_match_backs_the_account_off() {
+    let gc = SpyGc {
+      history: vec![10, 11],
+      forbidden: HashSet::from([11]),
+      ..Default::default()
+    };
+    let eng = engine(gc, SpyBackfill::default());
+
+    eng
+      .run_background_pass(&active_config(), &AtomicBool::new(false))
+      .await
+      .unwrap();
+    assert!(eng.sink.posted.lock().unwrap().is_empty());
+    assert_eq!(eng.persistence.gc_errors.load(Ordering::Relaxed), 1);
   }
 
   #[tokio::test]

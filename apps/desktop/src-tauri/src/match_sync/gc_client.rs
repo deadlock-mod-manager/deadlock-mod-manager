@@ -118,9 +118,8 @@ fn salts_error(result: Option<i32>) -> Option<MatchSyncError> {
   Some(match EResult::try_from(r) {
     Ok(EResult::KEResultRateLimited) => MatchSyncError::GcRateLimited,
     Ok(EResult::KEResultMatchInFlight) => MatchSyncError::MatchInFlight,
-    Ok(EResult::KEResultInvalidMatch | EResult::KEResultInvalidPermission) => {
-      MatchSyncError::MatchRefused(r)
-    }
+    Ok(EResult::KEResultInvalidMatch) => MatchSyncError::MatchRefused(r),
+    Ok(EResult::KEResultInvalidPermission) => MatchSyncError::MatchForbidden,
     _ => MatchSyncError::GcUnavailable(format!("salts result {r}")),
   })
 }

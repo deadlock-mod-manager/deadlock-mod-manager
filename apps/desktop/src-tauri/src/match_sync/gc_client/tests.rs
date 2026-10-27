@@ -368,12 +368,15 @@ fn refusals_about_one_match_do_not_back_off() {
     salts_error(Some(EResult::KEResultMatchInFlight as i32)),
     Some(MatchSyncError::MatchInFlight)
   ));
-  for refused in [
-    EResult::KEResultInvalidMatch,
-    EResult::KEResultInvalidPermission,
-  ] {
-    assert!(salts_error(Some(refused as i32)).is_some_and(|e| !e.backs_off_gc()));
-  }
+  assert!(matches!(
+    salts_error(Some(EResult::KEResultInvalidMatch as i32)),
+    Some(MatchSyncError::MatchRefused(_))
+  ));
+  // Whether this backs the account off depends on whose match it is (see `fetch_one`).
+  assert!(matches!(
+    salts_error(Some(EResult::KEResultInvalidPermission as i32)),
+    Some(MatchSyncError::MatchForbidden)
+  ));
   for broken in [EResult::KEResultInternalError, EResult::KEResultTooBusy] {
     assert!(salts_error(Some(broken as i32)).is_some_and(|e| e.backs_off_gc()));
   }

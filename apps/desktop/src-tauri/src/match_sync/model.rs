@@ -21,6 +21,9 @@ pub const MAX_FRIEND_HISTORIES_PER_PASS: usize = 5;
 // a private history won't become public soon.
 pub const FRIEND_COOLDOWN_SECS: i64 = 6 * 60 * 60;
 pub const PRIVATE_FRIEND_COOLDOWN_SECS: i64 = 7 * 24 * 60 * 60;
+// A friend whose new matches weren't all dealt with (budget, quota or a failure) comes
+// back soon, but not every pass: each lookup spends the friend history quota.
+pub const UNFINISHED_FRIEND_COOLDOWN_SECS: i64 = 60 * 60;
 
 // Matches the httpcache scraper so both ingest sources look identical server-side.
 pub const INGEST_USERNAME: &str = "Mod Manager";

@@ -28,7 +28,7 @@ const CLAIM_COOKIE: &str = "to_fetch_claim";
 const RELEASE_TIMEOUT: Duration = Duration::from_secs(15);
 // Friends who are active but not picked would otherwise have their stored history re-read
 // every pass. Short enough that matches deadlock-api ingested since are soon seen; picked
-// friends go on a far longer cooldown anyway.
+// friends go on a cooldown at least this long anyway.
 const STORED_HISTORY_TTL: Duration = Duration::from_secs(60 * 60);
 // Requests in flight at once when reading friends' stored histories or checking salts.
 const READ_CONCURRENCY: usize = 4;
@@ -205,7 +205,18 @@ impl ApiClient {
     account_id: u32,
   ) -> Result<Vec<StoredMatch>, MatchSyncError> {
     let url = format!("{}/v1/players/{account_id}/match-history", self.base_url);
-    get_list(client.get(url)).await
+    let resp = client.get(url).send().await?;
+    match resp.status() {
+      reqwest::StatusCode::NOT_FOUND => {
+        drain(resp).await;
+        Ok(Vec::new())
+      }
+      // deadlock-api reads accounts its bots are friends with from Steam, only a few times an
+      // hour per IP. Past that it answers 429 with the stored history, which is all this
+      // needs.
+      reqwest::StatusCode::TOO_MANY_REQUESTS => read_list(resp).await,
+      _ => read_list(resp.error_for_status()?).await,
+    }
   }
 
   // Whether deadlock-api stores salts for `match_id`, without letting it ask Steam.
@@ -246,9 +257,15 @@ async fn drain(resp: reqwest::Response) {
 async fn get_list<T: serde::de::DeserializeOwned>(
   req: reqwest::RequestBuilder,
 ) -> Result<Vec<T>, MatchSyncError> {
-  let Some(resp) = send_found(req).await? else {
-    return Ok(Vec::new());
-  };
+  match send_found(req).await? {
+    Some(resp) => read_list(resp).await,
+    None => Ok(Vec::new()),
+  }
+}
+
+async fn read_list<T: serde::de::DeserializeOwned>(
+  resp: reqwest::Response,
+) -> Result<Vec<T>, MatchSyncError> {
   resp
     .json()
     .await
@@ -363,9 +380,7 @@ impl BackfillSource for ApiClient {
     for (account_id, history) in read {
       let friend = match history {
         Ok(history) => summarize(account_id, &history),
-        // A failed read is cached as "nothing stored", so it isn't retried every pass. That
-        // also paces the reads deadlock-api rate-limits: it reads accounts its bots are
-        // friends with from Steam, only a few times an hour.
+        // A failed read is cached as "nothing stored", so it isn't retried every pass.
         Err(e) => {
           last_error = Some(e);
           None
