@@ -292,7 +292,7 @@ impl BackfillSource for ApiClient {
           let history = match self.stored_history(&client, account_id).await {
             Ok(history) => history,
             Err(e) => {
-              log::warn!("match-sync: stored history of friend {account_id}: {e}");
+              log::warn!("match-sync: a friend's stored history is unavailable: {e}");
               continue;
             }
           };

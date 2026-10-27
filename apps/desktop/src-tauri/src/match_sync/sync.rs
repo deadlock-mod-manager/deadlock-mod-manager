@@ -338,10 +338,7 @@ where
           break;
         }
         Err(e) => {
-          log::warn!(
-            "match-sync: match history of friend {} unavailable: {e}",
-            friend.account_id
-          );
+          log::warn!("match-sync: a friend's match history is unavailable: {e}");
           FRIEND_COOLDOWN_SECS
         }
       };
