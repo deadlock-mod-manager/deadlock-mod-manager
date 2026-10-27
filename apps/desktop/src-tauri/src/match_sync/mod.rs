@@ -340,7 +340,7 @@ pub fn status(app: &AppHandle) -> Result<MatchSyncStatusDto, MatchSyncError> {
     .into_iter()
     .map(|(steam_id64, account_name)| {
       let quota = settings::load_quota(app, steam_id64, QuotaKind::Salts).unwrap_or_else(|e| {
-        log::warn!("match-sync: quota load failed for {steam_id64}: {e}");
+        log::warn!("match-sync: quota load failed: {e}");
         quota::QuotaWindow::new(Vec::new(), FETCH_QUOTA_LIMIT, FETCH_QUOTA_WINDOW_SECS)
       });
       AccountStatus {
