@@ -518,6 +518,8 @@ impl GcMatchClient for SteamGcClient {
         EClientPersonaStateFlag::k_EClientPersonaStateFlagStatus,
         EClientPersonaStateFlag::k_EClientPersonaStateFlagPresence,
         EClientPersonaStateFlag::k_EClientPersonaStateFlagLastSeen,
+        // Carries the app a friend is playing, which marks them as in Deadlock.
+        EClientPersonaStateFlag::k_EClientPersonaStateGameExtraInfo,
       ]
       .into_iter()
       .map(|flag| flag as u32)

@@ -262,6 +262,15 @@ pub fn set_friend_cooldowns(
   save(&store)
 }
 
+pub fn clear_friend_cooldowns(app: &AppHandle) -> Result<(), MatchSyncError> {
+  let store = store(app)?;
+  if store.delete(KEY_FRIEND_COOLDOWNS) {
+    save(&store)
+  } else {
+    Ok(())
+  }
+}
+
 pub fn prune_forgotten_accounts(
   app: &AppHandle,
   current_ids: &[u64],

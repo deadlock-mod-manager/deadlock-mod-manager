@@ -32,6 +32,9 @@ const RELEASE_TIMEOUT: Duration = Duration::from_secs(15);
 const STORED_HISTORY_TTL: Duration = Duration::from_secs(60 * 60);
 // Requests in flight at once when reading friends' stored histories or checking salts.
 const READ_CONCURRENCY: usize = 4;
+// A stalled request must not hold up the pass, which only checks for cancellation between
+// requests.
+const REQUEST_TIMEOUT: Duration = Duration::from_secs(30);
 // Account ids per profile request, which go in the query string: long request lines get
 // rejected by some proxies.
 const PROFILES_PER_REQUEST: usize = 100;
@@ -44,6 +47,10 @@ fn stored_histories() -> MutexGuard<'static, HistoryCache> {
   STORED_HISTORIES
     .lock()
     .unwrap_or_else(PoisonError::into_inner)
+}
+
+pub fn forget_stored_histories() {
+  stored_histories().0.clear();
 }
 
 // Per friend: when their stored history was read, and the summary `active_friends`
@@ -140,7 +147,8 @@ struct StoredMatch {
 
 impl ApiClient {
   fn client(&self) -> Result<reqwest::Client, MatchSyncError> {
-    crate::proxy::build_default_http_client().map_err(|e| MatchSyncError::Api(e.to_string()))
+    crate::proxy::build_http_client(|b| b.timeout(REQUEST_TIMEOUT))
+      .map_err(|e| MatchSyncError::Api(e.to_string()))
   }
 
   fn set_claim(&self, claim: Option<String>) {
@@ -336,13 +344,20 @@ impl BackfillSource for ApiClient {
     }
 
     let client = &client;
-    let read: Vec<_> = stream::iter(uncached)
+    let mut reads = stream::iter(uncached)
       .map(|account_id| async move { (account_id, self.stored_history(client, account_id).await) })
-      .buffer_unordered(READ_CONCURRENCY)
-      .collect()
-      .await;
+      .buffer_unordered(READ_CONCURRENCY);
+    let mut read = Vec::new();
+    while let Some((account_id, history)) = reads.next().await {
+      let failed = history.is_err();
+      read.push((account_id, history));
+      // A failing or stalled API would most likely fail the rest too; one is enough, and
+      // the friends left unread are read on a later pass.
+      if failed {
+        break;
+      }
+    }
     let read_at = Instant::now();
-    let mut failures = 0;
     let mut last_error = None;
     let mut cache = stored_histories();
     for (account_id, history) in read {
@@ -352,7 +367,6 @@ impl BackfillSource for ApiClient {
         // also paces the reads deadlock-api rate-limits: it reads accounts its bots are
         // friends with from Steam, only a few times an hour.
         Err(e) => {
-          failures += 1;
           last_error = Some(e);
           None
         }
@@ -362,7 +376,7 @@ impl BackfillSource for ApiClient {
     }
     drop(cache);
     if let Some(e) = last_error {
-      log::warn!("match-sync: stored history of {failures} friend(s) unavailable: {e}");
+      log::warn!("match-sync: a friend's stored history is unavailable: {e}");
     }
     Ok(active)
   }

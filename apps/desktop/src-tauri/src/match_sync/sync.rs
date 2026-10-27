@@ -168,7 +168,7 @@ where
     }
 
     let now = self.persistence.now();
-    // The 24h cap counts successful salt fetches; check headroom before requesting.
+    // The 24h cap counts every salts request the GC answers; check headroom before asking.
     if st.quota.remaining(now) == 0 {
       st.progress.quota_reached = true;
       st.progress.quota_remaining = 0;
@@ -184,7 +184,7 @@ where
     self.counter.fetch_add(1, Ordering::Relaxed);
 
     let salts = match self.gc.fetch_match_salts(ctx, match_id).await {
-      Ok(salts) => salts,
+      Ok(salts) => Some(salts),
       // Steam itself is rate-limiting this account: treat the 24h bucket as fully
       // spent so we stop hammering it and only try again once it naturally frees up.
       Err(MatchSyncError::GcRateLimited) => {
@@ -196,18 +196,11 @@ where
         st.progress.quota_remaining = st.quota.remaining(now) as u32;
         return Ok(FetchStep::RateLimited);
       }
-      // The GC won't serve this match, now or later: skip it and carry on.
-      Err(e @ MatchSyncError::MatchRefused(_)) => {
+      // An answer about the match itself: refused for good, or still in progress (a later
+      // pass that lists it again asks again). Nothing to fetch now, so carry on.
+      Err(e @ (MatchSyncError::MatchRefused(_) | MatchSyncError::MatchInFlight)) => {
         log::debug!("match-sync: skipping {match_id}: {e}");
-        st.settled.insert(match_id);
-        return Ok(FetchStep::Done);
-      }
-      // Its salts come once the match is processed: skip it for now and carry on. A later
-      // pass that lists it again asks again.
-      Err(MatchSyncError::MatchInFlight) => {
-        log::debug!("match-sync: {match_id} is still in progress");
-        st.settled.insert(match_id);
-        return Ok(FetchStep::Done);
+        None
       }
       // Any other failure fetched nothing, so it must not count against the cap.
       Err(e) => {
@@ -217,8 +210,14 @@ where
       }
     };
 
+    // The GC answered, so the request counts against the cap.
     let _ = st.quota.try_consume(now);
     self.persistence.save_quota(&st.quota)?;
+    st.progress.quota_remaining = st.quota.remaining(now) as u32;
+    let Some(salts) = salts else {
+      st.settled.insert(match_id);
+      return Ok(FetchStep::Done);
+    };
 
     self.sink.post_salts(&[SaltPayload::from(&salts)]).await?;
 
@@ -231,7 +230,6 @@ where
     } else {
       st.progress.fetched += 1;
     }
-    st.progress.quota_remaining = st.quota.remaining(now) as u32;
     self.persistence.emit_progress(&st.progress);
     Ok(FetchStep::Done)
   }
@@ -421,6 +419,7 @@ where
   ) -> Result<Vec<ActiveFriend>, MatchSyncError> {
     let friend_ids = match self.gc.friend_ids(ctx).await {
       Ok(ids) => ids,
+      Err(MatchSyncError::GameRunning) => return Err(MatchSyncError::GameRunning),
       Err(e) => {
         log::warn!("match-sync: friends list unavailable: {e}");
         return Ok(Vec::new());
@@ -711,6 +710,8 @@ mod tests {
     friend_history: Vec<u64>,
     // What the GC answers instead of `friend_history` (`MatchSyncError` isn't `Clone`).
     friend_history_error: Option<fn() -> MatchSyncError>,
+    // What the GC answers instead of the friends list.
+    friend_ids_error: Option<fn() -> MatchSyncError>,
   }
   impl GcMatchClient for SpyGc {
     async fn fetch_match_history(
@@ -767,6 +768,9 @@ mod tests {
       })
     }
     async fn friend_ids(&self, _ctx: &AuthContext) -> Result<Vec<u32>, MatchSyncError> {
+      if let Some(error) = self.friend_ids_error {
+        return Err(error());
+      }
       Ok(self.friends.keys().copied().collect())
     }
     async fn personas(&self, _ctx: &AuthContext, account_ids: &[u32]) -> HashMap<u32, Persona> {
@@ -1655,6 +1659,8 @@ mod tests {
       Some(&(NOW + FRIEND_COOLDOWN_SECS))
     );
     assert_eq!(eng.persistence.gc_errors.load(Ordering::Relaxed), 0);
+    // The refusal is a GC answer too, so it counts like the two fetches.
+    assert_eq!(eng.persistence.quota_hits.lock().unwrap().len(), 3);
   }
 
   #[tokio::test]
@@ -1695,6 +1701,19 @@ mod tests {
     assert!(matches!(result, Err(MatchSyncError::GameRunning)));
     assert_eq!(eng.gc.persona_calls.load(Ordering::Relaxed), 0);
     assert!(eng.persistence.history_hits.lock().unwrap().is_empty());
+  }
+
+  #[tokio::test]
+  async fn launch_while_reading_the_friends_list_stops_the_pass() {
+    let (mut gc, backfill) = friend_scenario(vec![600]);
+    gc.friend_ids_error = Some(|| MatchSyncError::GameRunning);
+    let eng = engine(gc, backfill);
+
+    let result = eng
+      .run_background_pass(&active_config(), &AtomicBool::new(false))
+      .await;
+    assert!(matches!(result, Err(MatchSyncError::GameRunning)));
+    assert!(eng.sink.posted.lock().unwrap().is_empty());
   }
 
   #[tokio::test]

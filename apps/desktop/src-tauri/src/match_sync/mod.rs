@@ -432,6 +432,8 @@ pub fn reset_config(app: &AppHandle) -> Result<(), MatchSyncError> {
 // accounts stay remembered, so they are never pruned here.
 pub fn prune_forgotten_accounts(app: &AppHandle) {
   if !should_monitor(app) {
+    // No worker runs while sync is inactive, so nothing can write them back.
+    forget_friends(app);
     return;
   }
   match auth::all_remembered_accounts() {
@@ -443,6 +445,15 @@ pub fn prune_forgotten_accounts(app: &AppHandle) {
       }
     }
     Err(e) => log::warn!("match-sync: could not list remembered accounts for pruning: {e}"),
+  }
+}
+
+// Friends' account ids are kept for match sync only, so they go once it is inactive. Only
+// the background worker writes them: call this when it isn't running.
+fn forget_friends(app: &AppHandle) {
+  api_client::forget_stored_histories();
+  if let Err(e) = settings::clear_friend_cooldowns(app) {
+    log::warn!("match-sync: failed to clear friend cooldowns: {e}");
   }
 }
 
@@ -663,6 +674,8 @@ pub fn start_background_worker(app: AppHandle) {
         slept += 5;
       }
     }
+    // Before a restarted worker can run a pass that writes them again.
+    forget_friends(&app);
     BACKGROUND_RUNNING.store(false, Ordering::Relaxed);
     // A quick disable/re-enable while this task was still shutting down could have
     // seen BACKGROUND_RUNNING as true and returned early; make sure that isn't lost.
