@@ -75,7 +75,7 @@ static GC_REQUEST_COUNTER: LazyLock<Arc<AtomicU64>> = LazyLock::new(|| Arc::new(
 // session, keyed by steam_id64. Never hold this lock across an `.await`.
 struct AccountResources {
   throttle: Arc<Throttle>,
-  gc_client: Arc<SteamGcClient>,
+  gc_client: SteamGcClient,
 }
 
 static ACCOUNT_RESOURCES: LazyLock<std::sync::Mutex<HashMap<u64, Arc<AccountResources>>>> =
@@ -86,7 +86,7 @@ fn resources_for(steam_id64: u64) -> Arc<AccountResources> {
   Arc::clone(map.entry(steam_id64).or_insert_with(|| {
     Arc::new(AccountResources {
       throttle: Arc::new(Throttle::new(GC_MIN_INTERVAL)),
-      gc_client: Arc::new(SteamGcClient::new()),
+      gc_client: SteamGcClient::new(),
     })
   }))
 }
@@ -172,7 +172,7 @@ impl SyncPersistence for AppPersistence {
 
 type ProdEngine = SyncEngine<
   FixedAccountAuth,
-  Arc<SteamGcClient>,
+  SteamGcClient,
   ApiClient,
   ApiClient,
   AppPersistence,
@@ -189,7 +189,7 @@ fn build_engine(
   let resources = resources_for(ctx.steam_id64);
   SyncEngine::new(
     FixedAccountAuth(ctx.clone()),
-    Arc::clone(&resources.gc_client),
+    resources.gc_client.clone(),
     ApiClient::new(Arc::clone(&STORED_HISTORIES)),
     ApiClient::new(Arc::clone(&STORED_HISTORIES)),
     AppPersistence {
@@ -606,7 +606,7 @@ pub async fn release_for_game_launch() {
     .lock()
     .unwrap()
     .values()
-    .map(|resources| Arc::clone(&resources.gc_client))
+    .map(|resources| resources.gc_client.clone())
     .collect();
   futures::future::join_all(clients.iter().map(|client| client.release())).await;
 }

@@ -190,11 +190,11 @@ fn context() -> AuthContext {
 async fn seeded_client(
   replies: GcReplies,
   block_cleanup: bool,
-) -> (Arc<SteamGcClient>, Arc<SteamState>) {
+) -> (SteamGcClient, Arc<SteamState>) {
   let (conn, friends_list, state) = fake_connection(replies, block_cleanup).await;
   let gc = GameCoordinator::new(&conn, DEADLOCK_APP_ID).await.unwrap();
-  let client = Arc::new(SteamGcClient::new());
-  *client.session.lock().await = Some(GcSession {
+  let client = SteamGcClient::new();
+  *client.shared.session.lock().await = Some(GcSession {
     steam_id64: 42,
     gc,
     conn,
@@ -208,7 +208,7 @@ async fn seeded_client(
 async fn launch_cancels_in_flight_history_and_waits_for_cleanup() {
   let _serial = TEST_LOCK.lock().await;
   let (client, state) = seeded_client(GcReplies::HandshakeOnly, true).await;
-  let request_client = Arc::clone(&client);
+  let request_client = client.clone();
   let request = tokio::spawn(async move {
     request_client
       .fetch_match_history(&context(), context().account_id(), None)
@@ -301,11 +301,11 @@ async fn launch_waits_for_cleanup_already_started_by_disconnect() {
 async fn launch_cancels_a_stalled_handshake_and_waits_for_cleanup() {
   let _serial = TEST_LOCK.lock().await;
   let (conn, friends_list, state) = fake_connection(GcReplies::None, true).await;
-  let client = Arc::new(SteamGcClient::new());
-  let connecting_client = Arc::clone(&client);
+  let client = SteamGcClient::new();
+  let connecting_client = client.clone();
   let handshake = tokio::spawn(async move {
-    let _guard = connecting_client.session.lock().await;
-    let mut cancel = connecting_client.launch_cancel.subscribe();
+    let _guard = connecting_client.shared.session.lock().await;
+    let mut cancel = connecting_client.shared.launch_cancel.subscribe();
     SteamGcClient::connect_gc(&context(), conn, friends_list, &mut cancel).await
   });
   tokio::time::timeout(Duration::from_secs(1), state.handshake_started.notified())
@@ -417,4 +417,42 @@ fn a_refusal_about_the_account_itself_backs_it_off() {
       .refusal_as_outage()
       .backs_off_gc()
   );
+}
+
+#[test]
+fn persona_updates_add_to_what_earlier_ones_said() {
+  use steam_vent::proto::steammessages_clientserver_friends::cmsg_client_persona_state::Friend;
+  const BASE: u64 = 76_561_197_960_265_728;
+  let update = |account_id: u32, friend: Friend| CMsgClientPersonaState {
+    friends: vec![Friend {
+      friendid: Some(BASE + u64::from(account_id)),
+      ..friend
+    }],
+    ..Default::default()
+  };
+  let requested = HashSet::from([7]);
+  let mut personas = HashMap::new();
+
+  merge_personas(
+    &mut personas,
+    update(
+      7,
+      Friend {
+        game_played_app_id: Some(DEADLOCK_APP_ID),
+        persona_state: Some(1),
+        last_seen_online: Some(500),
+        ..Default::default()
+      },
+    ),
+    &requested,
+  );
+  // A later update that only carries some fields keeps what the first one said.
+  merge_personas(&mut personas, update(7, Friend::default()), &requested);
+  // Updates nobody asked for are dropped.
+  merge_personas(&mut personas, update(8, Friend::default()), &requested);
+
+  let persona = personas[&7];
+  assert!(persona.in_deadlock && persona.online);
+  assert_eq!(persona.last_seen, Some(500));
+  assert_eq!(personas.len(), 1);
 }

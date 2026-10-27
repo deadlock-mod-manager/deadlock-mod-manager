@@ -231,7 +231,14 @@ impl GcSession {
   }
 }
 
+// Cheap to clone: clones share one session, so the per-account resource registry in
+// `mod.rs` hands every engine it builds the same client.
+#[derive(Clone)]
 pub struct SteamGcClient {
+  shared: Arc<Shared>,
+}
+
+struct Shared {
   session: Mutex<Option<GcSession>>,
   launch_cancel: watch::Sender<()>,
 }
@@ -239,8 +246,10 @@ pub struct SteamGcClient {
 impl SteamGcClient {
   pub fn new() -> Self {
     Self {
-      session: Mutex::new(None),
-      launch_cancel: watch::channel(()).0,
+      shared: Arc::new(Shared {
+        session: Mutex::new(None),
+        launch_cancel: watch::channel(()).0,
+      }),
     }
   }
 
@@ -306,13 +315,13 @@ impl SteamGcClient {
   }
 
   pub async fn disconnect(&self) {
-    let mut guard = self.session.lock().await;
+    let mut guard = self.shared.session.lock().await;
     Self::poison(&mut guard).await;
   }
 
   /// Waits for the cancelled request to clear its playing status before launch.
   pub async fn release(&self) {
-    self.launch_cancel.send_replace(());
+    self.shared.launch_cancel.send_replace(());
     self.disconnect().await;
   }
 
@@ -394,8 +403,8 @@ impl GcMatchClient for SteamGcClient {
     account_id: u32,
     cursor: Option<u64>,
   ) -> Result<MatchHistoryPage, MatchSyncError> {
-    let mut guard = self.session.lock().await;
-    let mut cancel = self.launch_cancel.subscribe();
+    let mut guard = self.shared.session.lock().await;
+    let mut cancel = self.shared.launch_cancel.subscribe();
     self.ensure_connected(&mut guard, ctx, &mut cancel).await?;
 
     let req = CMsgClientToGcGetMatchHistory {
@@ -459,8 +468,8 @@ impl GcMatchClient for SteamGcClient {
     ctx: &AuthContext,
     match_id: u64,
   ) -> Result<MatchSalts, MatchSyncError> {
-    let mut guard = self.session.lock().await;
-    let mut cancel = self.launch_cancel.subscribe();
+    let mut guard = self.shared.session.lock().await;
+    let mut cancel = self.shared.launch_cancel.subscribe();
     self.ensure_connected(&mut guard, ctx, &mut cancel).await?;
 
     let req = CMsgClientToGcGetMatchMetaData {
@@ -486,8 +495,8 @@ impl GcMatchClient for SteamGcClient {
   }
 
   async fn friend_ids(&self, ctx: &AuthContext) -> Result<Vec<u32>, MatchSyncError> {
-    let mut guard = self.session.lock().await;
-    let mut cancel = self.launch_cancel.subscribe();
+    let mut guard = self.shared.session.lock().await;
+    let mut cancel = self.shared.launch_cancel.subscribe();
     let friends = self.connected_friends(&mut guard, ctx, &mut cancel).await?;
     Ok(friends.iter().copied().map(account_id_of).collect())
   }
@@ -498,8 +507,8 @@ impl GcMatchClient for SteamGcClient {
     if wanted.is_empty() {
       return personas;
     }
-    let mut guard = self.session.lock().await;
-    let mut cancel = self.launch_cancel.subscribe();
+    let mut guard = self.shared.session.lock().await;
+    let mut cancel = self.shared.launch_cancel.subscribe();
     // Only friends can be asked about, so only they are waited for.
     let (friends, requested): (Vec<u64>, HashSet<u32>) =
       match self.connected_friends(&mut guard, ctx, &mut cancel).await {
@@ -557,65 +566,39 @@ impl GcMatchClient for SteamGcClient {
       let Ok(Some(msg)) = next else {
         break;
       };
-      let Ok(msg) = msg else { continue };
-      for f in msg.friends {
-        let Some(id) = f.friendid.map(account_id_of) else {
-          continue;
-        };
-        // Steam also pushes updates nobody asked for (e.g. about ourselves).
-        if !requested.contains(&id) {
-          continue;
-        }
-        let last_seen = [f.last_seen_online, f.last_logoff]
-          .into_iter()
-          .flatten()
-          .filter(|&t| t != 0)
-          .max()
-          .map(i64::from);
-        // A later, partial update must not erase what an earlier one told us.
-        let persona = personas.entry(id).or_default();
-        persona.in_deadlock |= f.game_played_app_id == Some(DEADLOCK_APP_ID);
-        persona.online |= f.persona_state.is_some_and(|s| s != 0);
-        persona.last_seen = last_seen.or(persona.last_seen);
+      if let Ok(msg) = msg {
+        merge_personas(&mut personas, msg, &requested);
       }
     }
     personas
   }
 }
 
-// Lets the per-account resource registry in `mod.rs` hand out a shared
-// `Arc<SteamGcClient>` while still satisfying `SyncEngine`'s `G: GcMatchClient` bound.
-impl GcMatchClient for Arc<SteamGcClient> {
-  fn fetch_match_history(
-    &self,
-    ctx: &AuthContext,
-    account_id: u32,
-    cursor: Option<u64>,
-  ) -> impl Future<Output = Result<MatchHistoryPage, MatchSyncError>> + Send {
-    (**self).fetch_match_history(ctx, account_id, cursor)
-  }
-
-  fn fetch_match_salts(
-    &self,
-    ctx: &AuthContext,
-    match_id: u64,
-  ) -> impl Future<Output = Result<MatchSalts, MatchSyncError>> + Send {
-    (**self).fetch_match_salts(ctx, match_id)
-  }
-
-  fn friend_ids(
-    &self,
-    ctx: &AuthContext,
-  ) -> impl Future<Output = Result<Vec<u32>, MatchSyncError>> + Send {
-    (**self).friend_ids(ctx)
-  }
-
-  fn personas(
-    &self,
-    ctx: &AuthContext,
-    account_ids: &[u32],
-  ) -> impl Future<Output = HashMap<u32, Persona>> + Send {
-    (**self).personas(ctx, account_ids)
+// Folds one persona state update into `personas`, for the `requested` friends only: Steam
+// also pushes updates nobody asked for (e.g. about ourselves).
+fn merge_personas(
+  personas: &mut HashMap<u32, Persona>,
+  msg: CMsgClientPersonaState,
+  requested: &HashSet<u32>,
+) {
+  for f in msg.friends {
+    let Some(id) = f.friendid.map(account_id_of) else {
+      continue;
+    };
+    if !requested.contains(&id) {
+      continue;
+    }
+    let last_seen = [f.last_seen_online, f.last_logoff]
+      .into_iter()
+      .flatten()
+      .filter(|&t| t != 0)
+      .max()
+      .map(i64::from);
+    // A later, partial update must not erase what an earlier one told us.
+    let persona = personas.entry(id).or_default();
+    persona.in_deadlock |= f.game_played_app_id == Some(DEADLOCK_APP_ID);
+    persona.online |= f.persona_state.is_some_and(|s| s != 0);
+    persona.last_seen = last_seen.or(persona.last_seen);
   }
 }
 
