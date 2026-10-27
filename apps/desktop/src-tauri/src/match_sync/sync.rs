@@ -9,7 +9,7 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
 use super::api_client::{BackfillSource, SaltsSink};
 use super::auth::SteamAuthProvider;
-use super::error::MatchSyncError;
+use super::error::{GcRefusal, MatchSyncError};
 use super::friends;
 use super::game_check::GameRunningCheck;
 use super::gc_client::GcMatchClient;
@@ -197,17 +197,9 @@ where
         st.progress.quota_remaining = st.quota.remaining(now) as u32;
         return Ok(FetchStep::RateLimited);
       }
-      // The account can always see its own matches, so refusing one means the GC won't
-      // serve the account at all: an outage, not an answer about the match.
-      Err(MatchSyncError::MatchForbidden) if !is_backfill => {
-        let e = MatchSyncError::GcUnavailable(format!("own match {match_id} refused"));
-        log::warn!("match-sync: {e}");
-        self.persistence.record_gc_error(&e);
-        return Ok(FetchStep::RetryLater);
-      }
       // Refused for good: remembered like a fetched match, so no later pass pays to ask
       // again. Carry on with the next match.
-      Err(e @ MatchSyncError::MatchRefused(_)) => {
+      Err(e @ MatchSyncError::GcRefused(GcRefusal::InvalidMatch)) => {
         log::debug!("match-sync: skipping {match_id}: {e}");
         self.skip_answered(now, st)?;
         self.remember_fetched(match_id, st);
@@ -216,14 +208,19 @@ where
       // Still in progress, or someone else's match this account may not see: settled for
       // this run only. A later pass that lists it again (the user's history, a to-fetch
       // list, the friend's next lookup) asks again.
-      Err(e @ (MatchSyncError::MatchInFlight | MatchSyncError::MatchForbidden)) => {
-        log::debug!("match-sync: skipping {match_id}: {e}");
+      Err(MatchSyncError::GcRefused(
+        refusal @ (GcRefusal::InFlight | GcRefusal::NoPermission),
+      )) if is_backfill || refusal == GcRefusal::InFlight => {
+        log::debug!("match-sync: skipping {match_id}: {refusal}");
         self.skip_answered(now, st)?;
         st.settled.insert(match_id);
         return Ok(FetchStep::Done);
       }
-      // Any other failure fetched nothing, so it must not count against the cap.
+      // Any other failure fetched nothing, so it must not count against the cap. Refusing
+      // one of the user's own matches is an outage, as is a refusal Steam gives no reason
+      // for.
       Err(e) => {
+        let e = e.refusal_as_outage();
         log::warn!("match-sync: GC fetch failed for {match_id}: {e}");
         self.persistence.record_gc_error(&e);
         return Ok(FetchStep::RetryLater);
@@ -262,10 +259,11 @@ where
   // A swallowed failure of the user's own history page. Steam limits match history
   // requests per account, so a rate limit here rules out friend lookups until the
   // window frees up as well.
-  fn own_history_failed(&self, e: &MatchSyncError) {
+  fn own_history_failed(&self, e: MatchSyncError) {
+    let e = e.refusal_as_outage();
     log::warn!("match-sync: GC match history unavailable: {e}");
-    self.persistence.record_gc_error(e);
-    if let MatchSyncError::GcRateLimited = e {
+    self.persistence.record_gc_error(&e);
+    if let MatchSyncError::GcRateLimited = &e {
       match self.persistence.load_history_quota() {
         Ok(mut quota) => {
           quota.exhaust(self.persistence.now());
@@ -378,8 +376,10 @@ where
       let (cooldown_secs, match_ids) =
         match self.gc_history_page(ctx, friend.account_id, None).await {
           Ok(page) => (FRIEND_COOLDOWN_SECS, page.match_ids()),
-          Err(MatchSyncError::HistoryPrivate) => (PRIVATE_FRIEND_COOLDOWN_SECS, Vec::new()),
-          Err(e @ MatchSyncError::HistoryRefused(_)) => {
+          Err(MatchSyncError::GcRefused(GcRefusal::NoPermission)) => {
+            (PRIVATE_FRIEND_COOLDOWN_SECS, Vec::new())
+          }
+          Err(e @ MatchSyncError::GcRefused(_)) => {
             log::warn!("match-sync: a friend's match history is unavailable: {e}");
             (FRIEND_COOLDOWN_SECS, Vec::new())
           }
@@ -577,7 +577,7 @@ where
         Ok(page) => page,
         Err(MatchSyncError::GameRunning) => return Err(MatchSyncError::GameRunning),
         Err(e) => {
-          self.own_history_failed(&e);
+          self.own_history_failed(e);
           break;
         }
       };
@@ -668,7 +668,7 @@ where
       Ok(page) => page.match_ids(),
       Err(MatchSyncError::GameRunning) => return Err(MatchSyncError::GameRunning),
       Err(e) => {
-        self.own_history_failed(&e);
+        self.own_history_failed(e);
         Vec::new()
       }
     };

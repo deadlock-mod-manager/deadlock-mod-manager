@@ -29,7 +29,7 @@ use valveprotos::deadlock::{
   c_msg_client_to_gc_get_match_history_response, c_msg_client_to_gc_get_match_meta_data_response,
 };
 
-use super::error::MatchSyncError;
+use super::error::{GcRefusal, MatchSyncError};
 use super::friends::Persona;
 use super::model::{AuthContext, DEADLOCK_APP_ID, LocalMatch, MatchHistoryPage, MatchSalts};
 use crate::steam_user::{account_id_of, is_individual};
@@ -93,34 +93,29 @@ async fn until_launch<T>(
   }
 }
 
-// What a history response's non-success `result` means. Refusing the account's own
-// history means the GC won't serve this account, which backs it off like an outage; a
-// refusal for a friend is only about that friend.
-fn history_error(result: Option<i32>, own_history: bool) -> Option<MatchSyncError> {
+// What a history response's non-success `result` says. Whose history it was decides what
+// that means, which is up to the sync engine.
+fn history_error(result: Option<i32>) -> Option<MatchSyncError> {
   use c_msg_client_to_gc_get_match_history_response::EResult;
   let r = result.filter(|&r| r != EResult::KEResultSuccess as i32)?;
-  Some(if r == EResult::KEResultRateLimited as i32 {
-    MatchSyncError::GcRateLimited
-  } else if own_history {
-    MatchSyncError::GcUnavailable(format!("history result {r}"))
-  } else if r == EResult::KEResultInvalidPermission as i32 {
-    MatchSyncError::HistoryPrivate
-  } else {
-    MatchSyncError::HistoryRefused(r)
+  Some(match EResult::try_from(r) {
+    Ok(EResult::KEResultRateLimited) => MatchSyncError::GcRateLimited,
+    Ok(EResult::KEResultInvalidPermission) => MatchSyncError::GcRefused(GcRefusal::NoPermission),
+    _ => MatchSyncError::GcRefused(GcRefusal::Other(r)),
   })
 }
 
-// What a salts response's non-success `result` means. An answer about the match itself
-// says nothing about the connection, so it must not back the account off.
+// What a salts response's non-success `result` says. Whose match it was decides what that
+// means, which is up to the sync engine.
 fn salts_error(result: Option<i32>) -> Option<MatchSyncError> {
   use c_msg_client_to_gc_get_match_meta_data_response::EResult;
   let r = result.filter(|&r| r != EResult::KEResultSuccess as i32)?;
   Some(match EResult::try_from(r) {
     Ok(EResult::KEResultRateLimited) => MatchSyncError::GcRateLimited,
-    Ok(EResult::KEResultMatchInFlight) => MatchSyncError::MatchInFlight,
-    Ok(EResult::KEResultInvalidMatch) => MatchSyncError::MatchRefused(r),
-    Ok(EResult::KEResultInvalidPermission) => MatchSyncError::MatchForbidden,
-    _ => MatchSyncError::GcUnavailable(format!("salts result {r}")),
+    Ok(EResult::KEResultMatchInFlight) => MatchSyncError::GcRefused(GcRefusal::InFlight),
+    Ok(EResult::KEResultInvalidMatch) => MatchSyncError::GcRefused(GcRefusal::InvalidMatch),
+    Ok(EResult::KEResultInvalidPermission) => MatchSyncError::GcRefused(GcRefusal::NoPermission),
+    _ => MatchSyncError::GcRefused(GcRefusal::Other(r)),
   })
 }
 
@@ -421,7 +416,7 @@ impl GcMatchClient for SteamGcClient {
     let resp = CMsgClientToGcGetMatchHistoryResponse::decode(raw.data.as_ref())
       .map_err(|e| MatchSyncError::GcUnavailable(format!("bad history response: {e}")))?;
 
-    if let Some(e) = history_error(resp.result, account_id == ctx.account_id()) {
+    if let Some(e) = history_error(resp.result) {
       return Err(e);
     }
 

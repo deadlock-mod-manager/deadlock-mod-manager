@@ -89,13 +89,13 @@ impl GcMatchClient for SpyGc {
       return Err(MatchSyncError::GcUnavailable("spy".into()));
     }
     if self.refused.contains(&match_id) {
-      return Err(MatchSyncError::MatchRefused(6));
+      return Err(MatchSyncError::GcRefused(GcRefusal::InvalidMatch));
     }
     if self.in_flight.contains(&match_id) {
-      return Err(MatchSyncError::MatchInFlight);
+      return Err(MatchSyncError::GcRefused(GcRefusal::InFlight));
     }
     if self.forbidden.contains(&match_id) {
-      return Err(MatchSyncError::MatchForbidden);
+      return Err(MatchSyncError::GcRefused(GcRefusal::NoPermission));
     }
     Ok(MatchSalts {
       match_id,
@@ -1134,7 +1134,7 @@ async fn friends_on_cooldown_are_not_looked_up() {
 #[tokio::test]
 async fn private_friend_history_cools_down_longer_without_backing_off_the_account() {
   let (mut gc, backfill) = friend_scenario(vec![600]);
-  gc.friend_history_error = Some(|| MatchSyncError::HistoryPrivate);
+  gc.friend_history_error = Some(|| MatchSyncError::GcRefused(GcRefusal::NoPermission));
   let eng = engine(gc, backfill);
 
   eng
@@ -1169,7 +1169,7 @@ async fn unanswered_friend_history_stops_lookups_without_charging_or_backing_off
 #[tokio::test]
 async fn refused_friend_history_cools_down_without_backing_off_the_account() {
   let (mut gc, backfill) = friend_scenario(vec![600]);
-  gc.friend_history_error = Some(|| MatchSyncError::HistoryRefused(2));
+  gc.friend_history_error = Some(|| MatchSyncError::GcRefused(GcRefusal::Other(2)));
   let eng = engine(gc, backfill);
 
   eng

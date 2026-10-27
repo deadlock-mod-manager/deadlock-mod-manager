@@ -353,8 +353,15 @@ async fn launch_hold_lasts_until_ended() {
   assert!(!launch_hold_active());
 }
 
+fn refusal(error: Option<MatchSyncError>) -> Option<GcRefusal> {
+  match error? {
+    MatchSyncError::GcRefused(refusal) => Some(refusal),
+    _ => None,
+  }
+}
+
 #[test]
-fn refusals_about_one_match_do_not_back_off() {
+fn salts_results_are_classified_without_deciding_on_a_backoff() {
   use c_msg_client_to_gc_get_match_meta_data_response::EResult;
   assert!(salts_error(None).is_none());
   assert!(salts_error(Some(EResult::KEResultSuccess as i32)).is_none());
@@ -364,46 +371,44 @@ fn refusals_about_one_match_do_not_back_off() {
   ));
   // Waited out through the quotas, not a day-long backoff.
   assert!(!MatchSyncError::GcRateLimited.backs_off_gc());
-  assert!(matches!(
-    salts_error(Some(EResult::KEResultMatchInFlight as i32)),
-    Some(MatchSyncError::MatchInFlight)
-  ));
-  assert!(matches!(
-    salts_error(Some(EResult::KEResultInvalidMatch as i32)),
-    Some(MatchSyncError::MatchRefused(_))
-  ));
-  // Whether this backs the account off depends on whose match it is (see `fetch_one`).
-  assert!(matches!(
-    salts_error(Some(EResult::KEResultInvalidPermission as i32)),
-    Some(MatchSyncError::MatchForbidden)
-  ));
-  for broken in [EResult::KEResultInternalError, EResult::KEResultTooBusy] {
-    assert!(salts_error(Some(broken as i32)).is_some_and(|e| e.backs_off_gc()));
+  for (result, expected) in [
+    (EResult::KEResultMatchInFlight, GcRefusal::InFlight),
+    (EResult::KEResultInvalidMatch, GcRefusal::InvalidMatch),
+    (EResult::KEResultInvalidPermission, GcRefusal::NoPermission),
+    (
+      EResult::KEResultInternalError,
+      GcRefusal::Other(EResult::KEResultInternalError as i32),
+    ),
+  ] {
+    let error = salts_error(Some(result as i32));
+    assert!(error.as_ref().is_some_and(|e| !e.backs_off_gc()));
+    assert_eq!(refusal(error), Some(expected));
   }
 }
 
 #[test]
-fn own_history_refusals_back_off_and_friend_refusals_do_not() {
+fn history_results_are_classified_without_deciding_on_a_backoff() {
   use c_msg_client_to_gc_get_match_history_response::EResult;
-  let private = Some(EResult::KEResultInvalidPermission as i32);
-  let other = Some(i32::MAX);
-
-  assert!(history_error(None, true).is_none());
-  assert!(history_error(Some(EResult::KEResultSuccess as i32), false).is_none());
+  assert!(history_error(None).is_none());
+  assert!(history_error(Some(EResult::KEResultSuccess as i32)).is_none());
   assert!(matches!(
-    history_error(Some(EResult::KEResultRateLimited as i32), false),
+    history_error(Some(EResult::KEResultRateLimited as i32)),
     Some(MatchSyncError::GcRateLimited)
   ));
-  for result in [private, other] {
-    assert!(history_error(result, true).is_some_and(|e| e.backs_off_gc()));
-    assert!(history_error(result, false).is_some_and(|e| !e.backs_off_gc()));
-  }
-  assert!(matches!(
-    history_error(private, false),
-    Some(MatchSyncError::HistoryPrivate)
-  ));
-  assert!(matches!(
-    history_error(other, false),
-    Some(MatchSyncError::HistoryRefused(i32::MAX))
-  ));
+  assert_eq!(
+    refusal(history_error(Some(EResult::KEResultInvalidPermission as i32))),
+    Some(GcRefusal::NoPermission)
+  );
+  assert_eq!(
+    refusal(history_error(Some(i32::MAX))),
+    Some(GcRefusal::Other(i32::MAX))
+  );
+}
+
+#[test]
+fn a_refusal_about_the_account_itself_backs_it_off() {
+  let refused = MatchSyncError::GcRefused(GcRefusal::NoPermission);
+  assert!(!refused.backs_off_gc());
+  assert!(refused.refusal_as_outage().backs_off_gc());
+  assert!(!MatchSyncError::GcRateLimited.refusal_as_outage().backs_off_gc());
 }

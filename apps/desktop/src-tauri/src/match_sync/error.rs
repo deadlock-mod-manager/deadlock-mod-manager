@@ -27,27 +27,10 @@ pub enum MatchSyncError {
   #[error("Steam GC rate-limited the request")]
   GcRateLimited,
 
-  // The GC refused a friend's match history (their profile is private).
-  #[error("match history is private")]
-  HistoryPrivate,
-
-  // The GC answered a friend's match history request with an error; the connection
-  // itself is fine.
-  #[error("Steam GC refused the match history request (result {0})")]
-  HistoryRefused(i32),
-
-  // The GC doesn't know this match; asking again won't change that.
-  #[error("Steam GC refused the match (result {0})")]
-  MatchRefused(i32),
-
-  // The match is still being played or processed; its salts come later.
-  #[error("match is still in progress")]
-  MatchInFlight,
-
-  // The GC won't show this match to this account. Whether that is about the match or the
-  // whole account depends on whose match it is, which only the caller knows.
-  #[error("Steam GC refused access to the match")]
-  MatchForbidden,
+  // The GC answered the request with an error. What that means depends on whose history
+  // or match it was, which only the sync engine knows.
+  #[error("Steam GC refused the request: {0}")]
+  GcRefused(GcRefusal),
 
   #[error("Deadlock is currently running; close it to fetch matches")]
   GameRunning,
@@ -60,11 +43,22 @@ pub enum MatchSyncError {
 }
 
 impl MatchSyncError {
-  // Only a broken GC connection backs an account's sync off for a day. An answer about one
-  // match or match history (refused, private, in flight) says nothing about the
-  // connection, and a rate limit exhausts the quota of what was limited instead.
+  // Only a broken GC connection backs an account's sync off for a day. A refusal about a
+  // friend or someone else's match says nothing about the connection, and a rate limit
+  // exhausts the quota of what was limited instead.
   pub fn backs_off_gc(&self) -> bool {
     matches!(self, MatchSyncError::GcUnavailable(_))
+  }
+
+  // The account can always see its own history and matches, so the GC refusing one means
+  // it won't serve the account at all: an outage, not an answer.
+  pub fn refusal_as_outage(self) -> Self {
+    match self {
+      MatchSyncError::GcRefused(refusal) => {
+        MatchSyncError::GcUnavailable(format!("request refused: {refusal}"))
+      }
+      e => e,
+    }
   }
 
   // A stable, machine-readable tag so the frontend can branch/localize on the
@@ -78,16 +72,27 @@ impl MatchSyncError {
       MatchSyncError::AuthUnavailable(_) => "authUnavailable",
       MatchSyncError::GcUnavailable(_) => "gcUnavailable",
       MatchSyncError::GcRateLimited => "gcRateLimited",
-      MatchSyncError::HistoryPrivate => "historyPrivate",
-      MatchSyncError::HistoryRefused(_) => "historyRefused",
-      MatchSyncError::MatchRefused(_) => "matchRefused",
-      MatchSyncError::MatchInFlight => "matchInFlight",
-      MatchSyncError::MatchForbidden => "matchForbidden",
+      MatchSyncError::GcRefused(_) => "gcRefused",
       MatchSyncError::GameRunning => "gameRunning",
       MatchSyncError::Api(_) => "apiError",
       MatchSyncError::Store(_) => "storeError",
     }
   }
+}
+
+#[derive(Error, Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GcRefusal {
+  // A private friend history, or a match this account may not see.
+  #[error("no permission")]
+  NoPermission,
+  // The match is still being played or processed; its salts come later.
+  #[error("match still in progress")]
+  InFlight,
+  // The GC doesn't know this match; asking again won't change that.
+  #[error("unknown match")]
+  InvalidMatch,
+  #[error("result {0}")]
+  Other(i32),
 }
 
 // reqwest errors print the request URL, which can carry friends' account ids; converting
