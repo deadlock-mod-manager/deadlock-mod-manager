@@ -54,51 +54,43 @@ fn parse_local_vdf(text: &str) -> Result<Vdf<'_>, MatchSyncError> {
     .map_err(|e| err(format!("cannot parse local.vdf: {e}")))
 }
 
-// Of the remembered `accounts` (SteamID64, lowercase account name), the ones Steam keeps
-// a session for.
+// Of the remembered `accounts` (SteamID64, lowercase account name), the ones with a
+// usable session. Quiet about the rest, since the status is read often.
 pub fn list_available_accounts(
   steam_dir: &Path,
   accounts: Vec<(u64, String)>,
 ) -> Result<Vec<(u64, String)>, MatchSyncError> {
   let text = read_local_vdf(steam_dir)?;
   let vdf = parse_local_vdf(&text)?;
+  let now = now_secs();
 
-  let mut available = Vec::new();
-  for (steam_id64, account_name) in accounts {
-    match connect_cache_hex(&vdf, &account_name) {
-      Ok(Some(_)) => available.push((steam_id64, account_name)),
-      Ok(None) => {}
-      Err(e) => log::warn!("cannot check ConnectCache for {account_name}: {e}"),
-    }
-  }
-  Ok(available)
+  Ok(
+    accounts
+      .into_iter()
+      .filter(|(steam_id64, account_name)| {
+        recover_session(&vdf, *steam_id64, account_name, now).is_ok()
+      })
+      .collect(),
+  )
 }
 
-// The session of each remembered account (SteamID64, lowercase account name) that can be
-// decrypted.
+// The usable session of each remembered account (SteamID64, lowercase account name).
 pub fn recover_all(
   steam_dir: &Path,
   accounts: Vec<(u64, String)>,
 ) -> Result<Vec<AuthContext>, MatchSyncError> {
   let text = read_local_vdf(steam_dir)?;
   let vdf = parse_local_vdf(&text)?;
+  let now = now_secs();
 
   let mut contexts = Vec::new();
   for (steam_id64, account_name) in accounts {
-    let recovered = connect_cache_blob(&vdf, &account_name)
-      .and_then(|blob| decrypt_blob(&blob, &account_name))
-      .and_then(|jwt| steam_id_from_jwt(&jwt).map(|sub| (jwt, sub)));
-    match recovered {
-      Ok((refresh_token, sub)) if sub == steam_id64 => contexts.push(AuthContext {
+    match recover_session(&vdf, steam_id64, &account_name, now) {
+      Ok(refresh_token) => contexts.push(AuthContext {
         account_name,
         steam_id64,
         refresh_token,
       }),
-      // The ConnectCache lookup is keyed by account name, not steam_id64 - reject a
-      // blob whose token identity doesn't match the loginusers.vdf entry it came from.
-      Ok(_) => log::warn!(
-        "skipping account {account_name}: token identity does not match loginusers.vdf entry"
-      ),
       Err(e) => log::warn!("skipping account {account_name}: {e}"),
     }
   }
@@ -107,6 +99,25 @@ pub fn recover_all(
     return Err(err("no remembered Steam account found"));
   }
   Ok(contexts)
+}
+
+fn now_secs() -> i64 {
+  std::time::SystemTime::now()
+    .duration_since(std::time::UNIX_EPOCH)
+    .map_or(0, |d| d.as_secs() as i64)
+}
+
+// The account's refresh token, if Steam keeps one this user can decrypt and it is usable.
+fn recover_session(
+  vdf: &Vdf,
+  steam_id64: u64,
+  account_name: &str,
+  now: i64,
+) -> Result<String, MatchSyncError> {
+  let blob = connect_cache_blob(vdf, account_name)?;
+  let jwt = decrypt_blob(&blob, account_name)?;
+  check_token(&jwt, steam_id64, now)?;
+  Ok(jwt)
 }
 
 // `local.vdf` is read and parsed once per caller (`list_available_accounts`/
@@ -192,7 +203,9 @@ fn decrypt_blob(blob: &[u8], account: &str) -> Result<String, MatchSyncError> {
   }
 }
 
-fn steam_id_from_jwt(jwt: &str) -> Result<u64, MatchSyncError> {
+// Steam keeps the session of a remembered account after its token expires; logging in
+// with it only fails.
+fn check_token(jwt: &str, steam_id64: u64, now: i64) -> Result<(), MatchSyncError> {
   let payload = jwt
     .split('.')
     .nth(1)
@@ -206,9 +219,40 @@ fn steam_id_from_jwt(jwt: &str) -> Result<u64, MatchSyncError> {
   if json.get("iss").and_then(serde_json::Value::as_str) != Some("steam") {
     return Err(err("token issuer is not steam"));
   }
-  json
+  let sub = json
     .get("sub")
     .and_then(serde_json::Value::as_str)
     .and_then(|s| s.parse::<u64>().ok())
-    .ok_or_else(|| err("token has no SteamID"))
+    .ok_or_else(|| err("token has no SteamID"))?;
+  // The ConnectCache lookup is keyed by account name, not steam_id64 - reject a
+  // blob whose token identity doesn't match the loginusers.vdf entry it came from.
+  if sub != steam_id64 {
+    return Err(err("token identity does not match loginusers.vdf entry"));
+  }
+  if json
+    .get("exp")
+    .and_then(serde_json::Value::as_i64)
+    .is_some_and(|exp| exp <= now)
+  {
+    return Err(err("saved Steam session expired; sign in to Steam again"));
+  }
+  Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn an_expired_session_is_not_usable() {
+    let jwt = |exp: i64| {
+      let claims = format!(r#"{{"iss":"steam","sub":"76561198000000000","exp":{exp}}}"#);
+      format!(
+        "header.{}.signature",
+        base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(claims)
+      )
+    };
+    assert!(check_token(&jwt(2_000), 76561198000000000, 1_000).is_ok());
+    assert!(check_token(&jwt(1_000), 76561198000000000, 1_000).is_err());
+  }
 }
