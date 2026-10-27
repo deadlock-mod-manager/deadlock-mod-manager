@@ -1,4 +1,4 @@
-//! Private GLB artifacts. IPC carries descriptors; the asset protocol carries bytes.
+//! Private preview artifacts. IPC carries descriptors; the asset protocol carries bytes.
 
 use std::collections::HashMap;
 use std::fs::File;
@@ -59,9 +59,23 @@ impl ModelAssets {
     vertex_count: u32,
     index_count: u32,
   ) -> Result<FoundryModel, Error> {
+    self.publish_artifact(glb, ".glb", vertex_count, index_count)
+  }
+
+  pub(crate) fn publish_source(&self, bytes: &[u8]) -> Result<FoundryModel, Error> {
+    self.publish_artifact(bytes, ".fbx", 0, 0)
+  }
+
+  fn publish_artifact(
+    &self,
+    glb: &[u8],
+    suffix: &str,
+    vertex_count: u32,
+    index_count: u32,
+  ) -> Result<FoundryModel, Error> {
     let mut file = tempfile::Builder::new()
       .prefix("model-")
-      .suffix(".glb")
+      .suffix(suffix)
       .tempfile_in(self.directory())?;
     file.write_all(glb)?;
     file.flush()?;
@@ -219,12 +233,10 @@ pub async fn foundry_decode_model(
       .map(|path| open_archive(&path, None))
       .transpose()?;
     job.check()?;
-    let archive = source2_model::vpk_extract::VpkArchive::open_with_overlay(
-      Path::new(&file_path),
-      overlay.as_deref(),
-    )
-    .map_err(|e| Error::InvalidInput(e.to_string()))?
-    .with_fallbacks(base.iter().cloned().collect());
+    let archive = open_archive(Path::new(&file_path), overlay.as_deref())?
+      .as_ref()
+      .clone()
+      .with_fallbacks(base.iter().cloned().collect());
     let decoded = source2_model::decode_model_glb_from_archive(&archive, &entry_path)
       .map_err(|e| Error::InvalidInput(format!("failed to decode model: {e}")))?;
     job.check()?;

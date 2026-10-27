@@ -27,7 +27,10 @@ export const ResourceInspector = (props: Props) => {
   const compile = useMutation({
     mutationKey: ["workbench-build", props.addonId],
     mutationFn: () =>
-      invoke<string>("compile_modding_addon", { addonId: props.addonId }),
+      invoke<string>("compile_modding_addon", {
+        addonId: props.addonId,
+        paths: [props.path],
+      }),
     onSuccess: () => props.onSaved?.(),
   });
   const saved = async (shouldCompile: boolean) => {

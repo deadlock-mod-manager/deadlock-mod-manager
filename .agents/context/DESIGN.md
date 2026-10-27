@@ -26,9 +26,18 @@ page.
   compact history.
 - Settings: grouped controls, clear section labels, and searchable/common tasks
   for high-frequency maintenance actions.
+- Workbench: reuse Library and Foundry tabs, selection states, and compact
+  toolbars. Give the active asset most of the workspace. Use DMM's existing
+  model and particle renderers for preview imagery.
 
 ## Interaction Rules
 
+- Keep the main workflow visible and move occasional actions into menus. Reveal
+  detailed guidance and advanced controls on demand; tester feedback identified
+  too many simultaneous choices and explanations as overwhelming.
+- Show proposed changes, affected files, and unsaved edits as distinct states.
+- Describe current capabilities accurately: models can be previewed; model
+  editing is planned.
 - Bulk operations should use an explicit selection mode with a sticky action bar
   showing selected count and available actions.
 - Delete, reset, repair, and file mutation flows should disclose affected count

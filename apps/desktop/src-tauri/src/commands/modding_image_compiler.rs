@@ -62,14 +62,27 @@ pub(super) fn sync(root: &Path) -> Result<Vec<PathBuf>, Error> {
     return Ok(Vec::new());
   }
   let mut seen = BTreeSet::new();
-  let images: Vec<_> = super::modding_images::image_inputs(root)?
+  let mut directories = vec![root.to_path_buf()];
+  for name in ["panorama", "images"] {
+    let mut matches = Vec::new();
+    for directory in directories {
+      for entry in std::fs::read_dir(directory)? {
+        let entry = entry?;
+        if entry.file_type()?.is_dir() && entry.file_name().eq_ignore_ascii_case(name) {
+          matches.push(entry.path());
+        }
+      }
+    }
+    directories = matches;
+  }
+  let mut inputs = Vec::new();
+  for directory in directories {
+    inputs.extend(super::modding_images::image_inputs(&directory)?);
+  }
+  let images: Vec<_> = inputs
     .into_iter()
     .filter_map(|input| {
-      let prefix = "panorama/images/";
-      if !input.path.to_ascii_lowercase().starts_with(prefix) {
-        return None;
-      }
-      let image = format!("file://{{images}}/{}", &input.path[prefix.len()..]);
+      let image = format!("file://{{images}}/{}", input.path);
       seen.insert(image.to_ascii_lowercase()).then_some(image)
     })
     .collect();
@@ -132,6 +145,21 @@ pub(super) fn sync(root: &Path) -> Result<Vec<PathBuf>, Error> {
 #[cfg(test)]
 mod image_compiler_tests {
   use super::*;
+
+  #[test]
+  fn image_inventory_preserves_case_insensitive_panorama_folder_matching() {
+    let root = tempfile::tempdir().unwrap();
+    std::fs::create_dir_all(root.path().join("Panorama/Images/nested")).unwrap();
+    std::fs::write(
+      root.path().join("Panorama/Images/nested/Icon.PNG"),
+      b"image",
+    )
+    .unwrap();
+    sync(root.path()).unwrap();
+    let compiler =
+      std::fs::read_to_string(root.path().join("panorama/image_compiler.vdata")).unwrap();
+    assert!(compiler.contains("file://{images}/nested/Icon.PNG"));
+  }
 
   #[test]
   fn moving_an_image_out_of_images_removes_its_compiler_entry() {

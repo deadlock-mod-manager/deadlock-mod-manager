@@ -25,6 +25,7 @@ struct ArchiveKey {
   overlay: Option<PathBuf>,
   len: u64,
   modified_nanos: u128,
+  origin: Option<(u64, u128)>,
 }
 
 /// Bounded so a long session that opens many skins cannot grow without limit.
@@ -51,6 +52,17 @@ fn key_for(path: &Path, overlay: Option<&Path>) -> Result<ArchiveKey, Error> {
     overlay: overlay.map(Path::to_path_buf),
     len: metadata.len(),
     modified_nanos,
+    origin: std::fs::metadata(source2_model::vpk_extract::origin_sidecar_path(path))
+      .ok()
+      .map(|metadata| {
+        let modified = metadata
+          .modified()
+          .ok()
+          .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok())
+          .map(|time| time.as_nanos())
+          .unwrap_or_default();
+        (metadata.len(), modified)
+      }),
   })
 }
 
@@ -68,21 +80,31 @@ fn key_for(path: &Path, overlay: Option<&Path>) -> Result<ArchiveKey, Error> {
 pub(crate) fn open_archive(path: &Path, overlay: Option<&Path>) -> Result<Arc<VpkArchive>, Error> {
   let key = key_for(path, overlay)?;
 
-  {
+  let shared = {
     let cached = cache()
       .lock()
       .map_err(|e| Error::InvalidInput(format!("archive cache poisoned: {e}")))?;
     if let Some((_, archive)) = cached.iter().find(|(cached_key, _)| *cached_key == key) {
       return Ok(Arc::clone(archive));
     }
-  }
+    cached
+      .iter()
+      .find(|(existing, _)| {
+        existing.path == key.path
+          && existing.len == key.len
+          && existing.modified_nanos == key.modified_nanos
+          && existing.origin == key.origin
+      })
+      .map(|(_, archive)| archive.as_ref().clone())
+  };
 
   // Opened outside the lock: parsing the base pak takes long enough that
   // holding the mutex would serialize every other command behind it.
-  let archive = Arc::new(
-    VpkArchive::open_with_overlay(path, overlay)
+  let archive = Arc::new(match shared {
+    Some(archive) => archive.with_overlay(overlay),
+    None => VpkArchive::open_with_overlay(path, overlay)
       .map_err(|e| Error::InvalidInput(format!("failed to open VPK {}: {e}", path.display())))?,
-  );
+  });
 
   let mut cached = cache()
     .lock()
@@ -103,5 +125,44 @@ pub(crate) fn open_archive(path: &Path, overlay: Option<&Path>) -> Result<Arc<Vp
 pub(crate) fn clear_archive_cache() {
   if let Ok(mut cached) = cache().lock() {
     cached.clear();
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn archive_cache_reuses_handles_and_reads_current_overlay_and_rebuilt_archive() {
+    let root = tempfile::tempdir().unwrap();
+    let source = root.path().join("source");
+    let overlay = root.path().join("overlay");
+    std::fs::create_dir(&source).unwrap();
+    std::fs::create_dir(&overlay).unwrap();
+    std::fs::write(source.join("asset.txt"), b"original").unwrap();
+    let path = root.path().join("addon.vpk");
+    vpkmanager::pack_directory(&source, &path).unwrap();
+    let first = open_archive(&path, None).unwrap();
+    assert!(Arc::ptr_eq(&first, &open_archive(&path, None).unwrap()));
+    let view = open_archive(&path, Some(&overlay)).unwrap();
+    std::fs::write(overlay.join("asset.txt"), b"edited").unwrap();
+    assert_eq!(view.extract_entry("asset.txt").unwrap(), b"edited");
+    std::fs::write(overlay.join("asset.txt"), b"new edit").unwrap();
+    assert_eq!(view.extract_entry("asset.txt").unwrap(), b"new edit");
+    std::fs::write(source.join("asset.txt"), b"rebuilt and longer").unwrap();
+    vpkmanager::pack_directory(&source, &path).unwrap();
+    let rebuilt = open_archive(&path, None).unwrap();
+    assert!(!Arc::ptr_eq(&first, &rebuilt));
+    assert_eq!(
+      rebuilt.extract_entry("asset.txt").unwrap(),
+      b"rebuilt and longer"
+    );
+    let original_key = key_for(&path, None).unwrap();
+    std::fs::write(
+      source2_model::vpk_extract::origin_sidecar_path(&path),
+      "another companion directory",
+    )
+    .unwrap();
+    assert!(original_key != key_for(&path, None).unwrap());
   }
 }

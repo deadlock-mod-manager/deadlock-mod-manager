@@ -51,13 +51,14 @@ pub fn companion_dir(vpk_path: &Path) -> PathBuf {
         .to_path_buf()
 }
 
+#[derive(Clone)]
 pub struct VpkArchive {
     path: PathBuf,
     companion_dir: PathBuf,
     data_section_start: usize,
     inline_data_length: Option<u32>,
-    entries: Vec<EntryInfo>,
-    entry_index: HashMap<String, usize>,
+    entries: Arc<[EntryInfo]>,
+    entry_index: Arc<HashMap<String, usize>>,
     /// An unpacked file tree that shadows the archive. When the Foundry has an
     /// editable workspace open, a file present there is the user's edited
     /// version of that entry, so previews must read it instead of the packed
@@ -119,8 +120,8 @@ impl VpkArchive {
             companion_dir: companion_dir(vpk_path),
             data_section_start,
             inline_data_length,
-            entries,
-            entry_index,
+            entries: entries.into(),
+            entry_index: Arc::new(entry_index),
             overlay_dir: None,
             fallbacks: Vec::new(),
         })
@@ -128,11 +129,13 @@ impl VpkArchive {
 
     /// Open the archive with an unpacked tree shadowing it (see `overlay_dir`).
     pub fn open_with_overlay(vpk_path: &Path, overlay_dir: Option<&Path>) -> Result<Self> {
-        let mut archive = Self::open(vpk_path)?;
-        archive.overlay_dir = overlay_dir
-            .filter(|dir| dir.is_dir())
-            .map(Path::to_path_buf);
-        Ok(archive)
+        Ok(Self::open(vpk_path)?.with_overlay(overlay_dir))
+    }
+
+    /// Reuses the immutable directory index while reading overlay entries live.
+    pub fn with_overlay(mut self, overlay_dir: Option<&Path>) -> Self {
+        self.overlay_dir = overlay_dir.map(Path::to_path_buf);
+        self
     }
 
     /// The overlay's path for an entry, if the overlay holds one. Entry paths
@@ -375,7 +378,7 @@ impl VpkArchive {
     /// This only reads the source VPK; nothing is moved or removed.
     pub fn extract_all_to(&self, dest_dir: &Path) -> Result<usize> {
         let mut written = 0usize;
-        for entry in &self.entries {
+        for entry in self.entries.iter() {
             written += self.write_entry(entry, dest_dir)?;
         }
         Ok(written)
@@ -497,6 +500,31 @@ mod tests {
     }
 
     #[test]
+    fn cloned_archives_share_indexes_and_keep_overlay_reads_fresh() {
+        let dir = scratch_dir("shared-index");
+        let path = dir.join("source.vpk");
+        fs::write(&path, inline_vpk(b"", b"original")).unwrap();
+        let archive = VpkArchive::open(&path).unwrap();
+        let overlay = dir.join("overlay");
+        let view = archive.clone().with_overlay(Some(&overlay));
+        assert!(Arc::ptr_eq(&archive.entries, &view.entries));
+        assert!(Arc::ptr_eq(&archive.entry_index, &view.entry_index));
+        fs::create_dir_all(overlay.join("folder")).unwrap();
+        fs::write(overlay.join("folder/sample.txt"), b"edited").unwrap();
+        assert_eq!(view.extract_entry("folder/sample.txt").unwrap(), b"edited");
+        fs::write(overlay.join("folder/sample.txt"), b"new edit").unwrap();
+        assert_eq!(
+            view.extract_entry("folder/sample.txt").unwrap(),
+            b"new edit"
+        );
+        assert_eq!(
+            archive.extract_entry("folder/sample.txt").unwrap(),
+            b"original"
+        );
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
     fn entry_ranges_handle_preload_companions_overlays_and_bounds() {
         let dir = scratch_dir("entry-ranges");
         let path = dir.join("pak01_dir.vpk");
@@ -595,7 +623,7 @@ mod tests {
         let mut empty = VpkArchive::open(&mod_path)
             .unwrap()
             .with_fallbacks(vec![base]);
-        empty.entry_index.clear();
+        Arc::make_mut(&mut empty.entry_index).clear();
         assert!(empty.contains_entry("folder/sample.txt"));
         assert_eq!(empty.extract_entry("folder/sample.txt").unwrap(), b"base");
         assert!(empty.extract_entry("folder/missing.txt").is_err());

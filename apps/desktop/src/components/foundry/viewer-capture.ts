@@ -7,6 +7,9 @@ export const createViewerRecorder = (canvas: HTMLCanvasElement) => {
   let cancel: (() => void) | null = null;
   let disposed = false;
   return {
+    get recording() {
+      return recorder?.state === "recording";
+    },
     record(): Promise<Blob> {
       if (disposed || recorder)
         return Promise.reject(

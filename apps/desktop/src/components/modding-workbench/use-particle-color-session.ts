@@ -33,7 +33,11 @@ export function useParticleColorSession(
   };
   const compile = useMutation({
     mutationKey: ["workbench-build", addonId],
-    mutationFn: () => invoke<string>("compile_modding_addon", { addonId }),
+    mutationFn: (paths?: string[]) =>
+      invoke<string>("compile_modding_addon", {
+        addonId,
+        paths: paths ?? [...session.files.keys()],
+      }),
     onSuccess: changed,
   });
   const edit = useMutation({
@@ -84,7 +88,7 @@ export function useParticleColorSession(
         at: Date.now(),
       });
       await changed();
-      if (result.compile) compile.mutate();
+      if (result.compile && result.paths.length) compile.mutate(result.paths);
     },
   });
   const restore = useMutation({

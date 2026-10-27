@@ -1,13 +1,26 @@
 import { Button } from "@deadlock-mods/ui/components/button";
-import { CubeIcon } from "@phosphor-icons/react";
+import { CubeIcon, InfoIcon } from "@phosphor-icons/react";
+import { Badge } from "@deadlock-mods/ui/components/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@deadlock-mods/ui/components/tooltip";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { ParticleColorsDialog } from "./particle-colors-dialog";
 import { ResourceInspector } from "./resource-inspector";
 import { useTranslation } from "react-i18next";
 import { AnimatedModelPreview } from "@/components/foundry/animated-model-preview";
-import { cacheFoundryModel, decodeFoundryModel } from "@/lib/model-assets";
+import { FoundryModelViewer } from "@/components/foundry/foundry-model-viewer";
+import {
+  cacheFoundryModel,
+  decodeFoundryModel,
+  decodeModdingSourceModel,
+  MODEL_PREVIEW_GC_TIME,
+} from "@/lib/model-assets";
+import type { ModdingParticleFile } from "@/types/generated/ModdingParticleFile";
 import type { ModdingAddon } from "@/types/generated/ModdingAddon";
 import type { ModdingFile } from "@/types/generated/ModdingFile";
 import type { ModdingHierarchy } from "@/types/generated/ModdingHierarchy";
@@ -38,6 +51,7 @@ export const AssetPreview = ({
   const [dirty, setDirty] = useState(false);
   const [inspecting, setInspecting] = useState(false);
   const [colorsOpen, setColorsOpen] = useState(false);
+  const fullscreen = useRef<HTMLDivElement>(null);
   const isResource = /\.(vmat|vpcf|vdata|vsndevts)(_c)?$/i.test(path);
   const archive = location.kind === "archive";
   const addon = location.kind === "addon" ? location.addon : undefined;
@@ -66,7 +80,21 @@ export const AssetPreview = ({
     enabled: isClip,
   });
   const isParticle = /\.vpcf(_c)?$/i.test(path);
-  const isModel = /\.(vmdl|vmesh)(_c)?$/.test(path);
+  const isModel = /\.(vmdl|vmesh)(_c)?$/i.test(path);
+  const sourceModel =
+    !!addon && hierarchy === "content" && /\.vmdl$/i.test(path);
+  const sourceParticle =
+    !!addon && hierarchy === "content" && /\.vpcf$/i.test(path);
+  const particle = useQuery({
+    queryKey: ["workbench-particle-colors", addonId, revision],
+    queryFn: () =>
+      invoke<ModdingParticleFile[]>("list_modding_particle_colors", {
+        addonId,
+        scope: "",
+      }),
+    select: (files) => files.find((file) => file.path === path),
+    enabled: sourceParticle,
+  });
   const isImage = /\.(png|jpe?g|tga|webp|bmp|gif|vtex_c)$/i.test(path);
   const isAudio = /\.(mp3|wav|ogg|flac|m4a|aac|vsnd_c)$/i.test(path);
   const isDmx = /\.dmx$/i.test(path);
@@ -97,38 +125,55 @@ export const AssetPreview = ({
         hierarchy: "game",
         directory: entryPath.split("/").slice(0, -1).join("/"),
       }),
-    enabled: (isModel || isParticle) && requiresCompiledCheck && !archive,
+    enabled:
+      (isModel || isParticle) &&
+      requiresCompiledCheck &&
+      !archive &&
+      !sourceModel &&
+      !sourceParticle,
   });
   const needsCompile =
     (isModel || isParticle) &&
+    !sourceModel &&
+    !sourceParticle &&
     !archive &&
     requiresCompiledCheck &&
     compiledFiles.data !== undefined &&
     !compiledFiles.data.some((file) => file.path === entryPath);
   const canPreviewModel =
     isModel &&
-    (archive ||
+    (sourceModel ||
+      archive ||
       (hierarchy === "game" && !requiresCompiledCheck) ||
       compiledFiles.data?.some((file) => file.path === entryPath));
-  const key = ["workbench-model", sourceId, entryPath, revision, archive];
+  const key = [
+    sourceModel ? "workbench-source-model" : "workbench-model",
+    sourceId,
+    sourceModel ? path : entryPath,
+    revision,
+    archive,
+  ];
   const model = useQuery({
     queryKey: key,
     queryFn: async ({ signal }) => {
-      const result = await decodeFoundryModel(
-        archivePath,
-        entryPath,
-        null,
-        signal,
-        archive ? undefined : addon?.gamePath,
-      );
+      const result =
+        sourceModel && addon
+          ? await decodeModdingSourceModel(addon.id, path, signal)
+          : await decodeFoundryModel(
+              archivePath,
+              entryPath,
+              null,
+              signal,
+              archive ? undefined : addon?.gamePath,
+            );
       cacheFoundryModel(client, key, result);
       return result;
     },
     enabled: canPreviewModel || (isClip && !!entryPath),
-    gcTime: 0,
+    gcTime: MODEL_PREVIEW_GC_TIME,
     staleTime: 60_000,
     retry: false,
-    meta: { skipGlobalErrorHandler: true },
+    meta: { skipGlobalErrorHandler: true, foregroundPreview: true },
   });
   const image = useQuery({
     queryKey: ["workbench-image", sourceId, hierarchy, path, revision, archive],
@@ -164,18 +209,43 @@ export const AssetPreview = ({
     image.error ??
     text.error ??
     clipModel.error ??
-    compiledFiles.error;
+    compiledFiles.error ??
+    particle.error ??
+    (particle.data?.diagnostic ? new Error(particle.data.diagnostic) : null);
   return (
     <section
       className='flex h-full min-h-0 flex-col'
       aria-label={t("workbenchExplorer.preview")}>
-      <div className='border-b px-3 py-2'>
-        <h2 className='text-sm font-medium'>
-          {t("workbenchExplorer.preview")}
+      <div className='flex min-h-12 shrink-0 items-center justify-between gap-2 border-b bg-background/60 px-3 py-2'>
+        <h2 className='min-w-0 truncate text-xs font-medium' title={path}>
+          {path ? path.split("/").at(-1) : t("workbenchExplorer.preview")}
         </h2>
-        <p className='truncate text-xs text-muted-foreground' title={path}>
-          {path || t("workbenchExplorer.chooseFile")}
-        </p>
+        {isModel || isClip ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge
+                variant='outline'
+                tabIndex={0}
+                className='shrink-0 gap-1.5 text-[10px] font-normal text-muted-foreground'>
+                <InfoIcon className='size-3' />
+                {t(
+                  sourceModel
+                    ? "workbenchAssets.sourcePreview"
+                    : "workbenchAssets.compiledPreview",
+                )}
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent className='max-w-72'>
+              {t(
+                sourceModel
+                  ? "workbenchAssets.sourcePreviewHint"
+                  : archive
+                    ? "workbenchExplorer.archivePreview"
+                    : "workbenchExplorer.compiledPreview",
+              )}
+            </TooltipContent>
+          </Tooltip>
+        ) : null}
       </div>
       {isResource ? (
         <div className='flex gap-1 border-b p-2'>
@@ -240,9 +310,13 @@ export const AssetPreview = ({
           />
         ) : isParticle &&
           !needsCompile &&
-          (archive ||
-            (hierarchy === "game" && !requiresCompiledCheck) ||
-            compiledFiles.data?.some((file) => file.path === entryPath)) ? (
+          ((sourceParticle && !!particle.data && !particle.data.diagnostic) ||
+            (!sourceParticle &&
+              (archive ||
+                (hierarchy === "game" && !requiresCompiledCheck) ||
+                compiledFiles.data?.some(
+                  (file) => file.path === entryPath,
+                )))) ? (
           <ParticlePreview
             key={`${sourceId}:${path}:${revision}:${archive}`}
             source={{
@@ -251,6 +325,17 @@ export const AssetPreview = ({
               overlayRoot: archive ? undefined : addon?.gamePath,
               revision,
             }}
+            drafts={
+              particle.data && addon
+                ? {
+                    addonId: addon.id,
+                    version: particle.data.fingerprint,
+                    files: [
+                      { path: particle.data.path, text: particle.data.text },
+                    ],
+                  }
+                : undefined
+            }
           />
         ) : isDmx && addon ? (
           <AddonDmxPreview
@@ -271,21 +356,31 @@ export const AssetPreview = ({
             archivePath={archivePath}
           />
         ) : !needsCompile && (isModel || isClip) && model.data ? (
-          <AnimatedModelPreview
-            key={`${sourceId}:${entryPath}:${isClip ? path : ""}:${revision}`}
-            clipPath={
-              isClip ? (path.endsWith("_c") ? path : `${path}_c`) : undefined
-            }
-            model={model.data}
-            label={path}
-            source={{
-              filePath: archivePath,
-              entryPath,
-              overlayRoot: archive ? undefined : addon?.gamePath,
-              allowAdditiveReference: isClip,
-              revision,
-            }}
-          />
+          "meshes" in model.data ? (
+            <div ref={fullscreen} className='h-full min-h-0'>
+              <FoundryModelViewer
+                model={model.data}
+                label={path}
+                fullscreenTarget={fullscreen}
+              />
+            </div>
+          ) : (
+            <AnimatedModelPreview
+              key={`${sourceId}:${entryPath}:${isClip ? path : ""}:${revision}`}
+              clipPath={
+                isClip ? (path.endsWith("_c") ? path : `${path}_c`) : undefined
+              }
+              model={model.data}
+              label={path}
+              source={{
+                filePath: archivePath,
+                entryPath,
+                overlayRoot: archive ? undefined : addon?.gamePath,
+                allowAdditiveReference: isClip,
+                revision,
+              }}
+            />
+          )
         ) : isImage && image.data ? (
           <div className='flex h-full items-center justify-center overflow-auto bg-muted/20 p-3'>
             <img
@@ -349,14 +444,17 @@ export const AssetPreview = ({
           </div>
         )}
       </div>
-      {isModel || isClip ? (
-        <p className='border-t px-3 py-2 text-xs text-muted-foreground'>
-          {t(
-            archive
-              ? "workbenchExplorer.archivePreview"
-              : "workbenchExplorer.compiledPreview",
-          )}
-        </p>
+      {model.data && "meshes" in model.data && model.data.diagnostics.length ? (
+        <details className='shrink-0 border-t px-3 py-2 text-xs text-muted-foreground'>
+          <summary className='cursor-pointer'>
+            {t("workbenchAssets.sourceWarnings")}
+          </summary>
+          {model.data.diagnostics.map((diagnostic) => (
+            <p key={diagnostic} className='pt-1'>
+              {diagnostic}
+            </p>
+          ))}
+        </details>
       ) : null}
     </section>
   );

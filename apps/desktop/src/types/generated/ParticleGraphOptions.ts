@@ -2,6 +2,8 @@
 import type { ParticleSourceDraft } from "./ParticleSourceDraft";
 
 export type ParticleGraphOptions = {
+  requestId?: string;
+  textureSide?: number;
   additionalRoots: Array<string>;
   sourceAddonId: string | null;
   sourceFiles: Array<ParticleSourceDraft>;

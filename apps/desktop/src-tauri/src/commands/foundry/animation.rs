@@ -143,8 +143,9 @@ pub(super) fn archives_with_overlay(
   let core = staged_core_vpk()?
     .map(|path| open_archive(&path, None))
     .transpose()?;
-  let archive = VpkArchive::open_with_overlay(Path::new(file_path), overlay.map(Path::new))
-    .map_err(invalid)?
+  let archive = open_archive(Path::new(file_path), overlay.map(Path::new))?
+    .as_ref()
+    .clone()
     .with_fallbacks(base.iter().chain(core.iter()).cloned().collect());
   Ok((archive, base))
 }

@@ -31,6 +31,26 @@ export interface ParticleFileSelection {
   anchor: string;
   paths: Set<string>;
 }
+export function initialParticleSelection(
+  files: ModdingParticleFile[],
+  initialPath?: string,
+): ParticleFileSelection {
+  const active = files.find((file) => file.path === initialPath)?.path;
+  return active
+    ? { active, anchor: active, paths: new Set([active]) }
+    : selectParticleFolder(files, "");
+}
+
+export function selectParticleFolder(
+  files: ModdingParticleFile[],
+  folder: string,
+): ParticleFileSelection {
+  const paths = files
+    .filter((file) => particleInFolder(file.path, folder))
+    .map((file) => file.path);
+  const active = paths[0] ?? "";
+  return { active, anchor: active, paths: new Set(paths) };
+}
 export function selectParticleFile(
   state: ParticleFileSelection,
   path: string,
@@ -76,9 +96,59 @@ export function recolorParticleFiles(
     .map((file) => ({
       path: file.path,
       text: file.text,
-      changes: file.colors.map((color) => ({ path: color.path, rgb })),
+      changes: file.colors
+        .filter((color) =>
+          color.rgb.some((channel, index) => channel !== rgb[index]),
+        )
+        .map((color) => ({ path: color.path, rgb })),
     }))
     .filter((file) => file.changes.length);
+}
+
+export interface ParticleColorDraft {
+  selection: string;
+  hex: string;
+  threshold: number;
+  all: boolean;
+}
+
+export const emptyParticleColorDraft = (): ParticleColorDraft => ({
+  selection: "",
+  hex: "#ff8800",
+  threshold: 0,
+  all: false,
+});
+
+export function planParticleColors(
+  files: ModdingParticleFile[],
+  rgb: ParticleRgb,
+  fields?: { file: string; path: string }[],
+) {
+  const allowed = new Map<string, Set<string>>();
+  for (const field of fields ?? []) {
+    let paths = allowed.get(field.file);
+    if (!paths) {
+      paths = new Set();
+      allowed.set(field.file, paths);
+    }
+    paths.add(field.path);
+  }
+  const edits = recolorParticleFiles(files, rgb)
+    .map((edit) => ({
+      path: edit.path,
+      text: edit.text,
+      changes: fields
+        ? edit.changes.filter((change) =>
+            allowed.get(edit.path)?.has(change.path),
+          )
+        : edit.changes,
+    }))
+    .filter((edit) => edit.changes.length > 0);
+  return {
+    edits,
+    files: edits.map((edit) => edit.path),
+    fields: edits.reduce((sum, edit) => sum + edit.changes.length, 0),
+  };
 }
 export function sharedParticleColors(
   files: Iterable<ModdingParticleFile>,

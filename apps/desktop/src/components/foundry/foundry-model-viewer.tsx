@@ -12,8 +12,7 @@ import { useTranslation } from "react-i18next";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
-import { retainFoundryModel } from "@/lib/model-assets";
-import type { FoundryModel } from "@/types/foundry";
+import { retainFoundryModel, type PreviewModel } from "@/lib/model-assets";
 import { loadPreviewModel } from "./model-loader";
 import {
   createPreviewClip,
@@ -64,7 +63,7 @@ export interface FoundryPreviewTint {
 }
 
 interface FoundryModelViewerProps {
-  model: FoundryModel;
+  model: PreviewModel;
   label: string;
   /** Paints the matching materials on the GPU, without touching any file, so
    *  the paint tab shows a color the instant it is picked. */
@@ -79,6 +78,7 @@ interface FoundryModelViewerProps {
   timeRef?: RefObject<number>;
   /** Drawn over the render, inside the viewport. */
   children?: ReactNode;
+  onSnapshot?: (image: string | null) => void;
 }
 
 interface MaterialSnapshot {
@@ -198,18 +198,8 @@ const disposeObject = (root: THREE.Object3D) => {
         ? child.material
         : [child.material];
       for (const material of materials) {
-        if (material instanceof THREE.MeshStandardMaterial) {
-          for (const texture of [
-            material.map,
-            material.normalMap,
-            material.roughnessMap,
-            material.metalnessMap,
-            material.aoMap,
-            material.emissiveMap,
-          ]) {
-            if (texture) textures.add(texture);
-          }
-        }
+        for (const value of Object.values(material))
+          if (value instanceof THREE.Texture) textures.add(value);
         material.dispose();
       }
       if (child instanceof THREE.SkinnedMesh) child.skeleton.dispose();
@@ -236,9 +226,12 @@ export const FoundryModelViewer = ({
   overlays = [],
   timeRef,
   children,
+  onSnapshot,
 }: FoundryModelViewerProps) => {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
+  const snapshotRef = useRef(onSnapshot);
+  snapshotRef.current = onSnapshot;
   const gizmoRef = useRef<HTMLDivElement>(null);
   const clockRef = useRef<PreviewClock | null>(null);
   const firstAnimationRef = useRef(true);
@@ -266,6 +259,10 @@ export const FoundryModelViewer = ({
   const actionRef = useRef<THREE.AnimationAction | null>(null);
   const stageRef = useRef<Omit<ViewerEffectContext, "model"> | null>(null);
   const activeEffectsRef = useRef<ViewerEffect[]>([]);
+  const renderDirty = useRef(true);
+  useEffect(() => {
+    renderDirty.current = true;
+  });
   useEffect(() => {
     playbackRef.current = playback;
   }, [playback]);
@@ -372,6 +369,9 @@ export const FoundryModelViewer = ({
     controls.dampingFactor = 0.08;
     controls.autoRotate = autoRotate;
     controls.autoRotateSpeed = 0.7;
+    controls.addEventListener("change", () => {
+      renderDirty.current = true;
+    });
     controls.zoomSpeed = 0.85;
     controls.minDistance = 0.5;
     controls.maxDistance = 500;
@@ -411,9 +411,11 @@ export const FoundryModelViewer = ({
 
     let disposed = false;
     let loadedRoot: THREE.Object3D | null = null;
+    let captured = false;
     let frame = 0;
 
     const resize = () => {
+      renderDirty.current = true;
       const width = Math.max(container.clientWidth, 1);
       const height = Math.max(container.clientHeight, 1);
       camera.aspect = width / height;
@@ -466,6 +468,7 @@ export const FoundryModelViewer = ({
         if (disposed) return;
         setLoading(false);
         setFailed(true);
+        snapshotRef.current?.(null);
       })
       .finally(releaseAsset);
 
@@ -497,6 +500,7 @@ export const FoundryModelViewer = ({
     let visible = true;
     const visibility = new IntersectionObserver(([entry]) => {
       visible = entry?.isIntersecting ?? false;
+      renderDirty.current = true;
     });
     visibility.observe(container);
     const render = () => {
@@ -504,14 +508,31 @@ export const FoundryModelViewer = ({
       const now = performance.now();
       const delta = Math.min((now - previousTime) / 1000, 0.1);
       previousTime = now;
-      if (document.hidden || !visible) return;
+      if (document.hidden || (!visible && !snapshotRef.current)) return;
       const playback = playbackRef.current;
-      clock.tick(delta, playback?.playing ?? true, playback?.speed ?? 1);
+      const animating =
+        (playback?.playing ?? true) &&
+        (!!mixerRef.current || activeEffectsRef.current.length > 0);
+      const seeking = clock.seeking;
+      clock.tick(delta, animating, playback?.speed ?? 1);
       if (timeRef) timeRef.current = clock.time;
       renderer.domElement.dataset.seeking = String(clock.seeking);
+      const moving = controls.update();
+      if (
+        !renderDirty.current &&
+        !moving &&
+        !animating &&
+        !seeking &&
+        !recorder.recording
+      )
+        return;
+      renderDirty.current = false;
       for (const effect of activeEffectsRef.current) effect.update(0);
-      controls.update();
       postFx.render();
+      if (loadedRoot && !captured && snapshotRef.current) {
+        captured = true;
+        snapshotRef.current(renderer.domElement.toDataURL("image/png"));
+      }
 
       gizmo.update();
     };

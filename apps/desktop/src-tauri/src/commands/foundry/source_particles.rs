@@ -1,14 +1,18 @@
 //! Compiled particle graphs and their dependencies, read from the skin before the game.
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Arc, LazyLock, Mutex};
 
 use base64::{Engine, engine::general_purpose::STANDARD};
 use image::ImageEncoder;
 use serde::{Deserialize, Serialize};
 use source2_model::{kv3::KvValue, resource::Resource, vpk_extract::VpkArchive, vtex::VtexHeader};
+use tauri::Manager;
 use ts_rs::TS;
 
 use super::ability_vfx::PreviewAbilityEffect;
 use super::animation::{archives_with_overlay, invalid as msg};
+use super::model_assets::ModelAssets;
 use super::particles::effect_slot;
 use crate::errors::Error;
 
@@ -23,6 +27,10 @@ pub struct ParticleSourceDraft {
 #[serde(default, rename_all = "camelCase")]
 #[ts(export)]
 pub struct ParticleGraphOptions {
+  #[ts(optional)]
+  pub request_id: Option<String>,
+  #[ts(optional)]
+  pub texture_side: Option<u32>,
   pub additional_roots: Vec<String>,
   pub source_addon_id: Option<String>,
   pub source_files: Vec<ParticleSourceDraft>,
@@ -222,8 +230,24 @@ fn texture(
   base: &VpkArchive,
   core: Option<&VpkArchive>,
   path: &str,
+  max_side: u32,
 ) -> Result<ParticleTexture, Error> {
   let res = read(skin, base, core, path)?;
+  static TEXTURES: LazyLock<Mutex<VecDeque<(String, ParticleTexture)>>> =
+    LazyLock::new(Mutex::default);
+  let key = format!(
+    "{path}:{max_side}:{}",
+    super::super::modding_edits::fingerprint(&res.data)
+  );
+  {
+    let mut cache = TEXTURES.lock().map_err(msg)?;
+    if let Some(index) = cache.iter().position(|(existing, _)| existing == &key) {
+      let entry = cache.remove(index).unwrap();
+      let texture = entry.1.clone();
+      cache.push_back(entry);
+      return Ok(texture);
+    }
+  }
   let header = VtexHeader::parse(&res).map_err(|e| msg(e.to_string()))?;
   let sequences = header
     .sprite_sheet_sequences(&res.data)
@@ -242,7 +266,7 @@ fn texture(
     })
     .collect();
   let decoded = header
-    .decode_preview(&res.data, 1024)
+    .decode_preview(&res.data, max_side)
     .map_err(|e| msg(e.to_string()))?;
   let mut png = Vec::new();
   image::codecs::png::PngEncoder::new(&mut png)
@@ -253,11 +277,25 @@ fn texture(
       image::ExtendedColorType::Rgba8,
     )
     .map_err(|e| msg(e.to_string()))?;
-  Ok(ParticleTexture {
+  let texture = ParticleTexture {
     path: path.to_owned(),
     data_url: format!("data:image/png;base64,{}", STANDARD.encode(png)),
     sequences,
-  })
+  };
+  let mut cache = TEXTURES.lock().map_err(msg)?;
+  if texture.data_url.len() <= 32 * 1024 * 1024 {
+    cache.push_back((key, texture.clone()));
+    let mut bytes: usize = cache
+      .iter()
+      .map(|(_, texture)| texture.data_url.len())
+      .sum();
+    while bytes > 32 * 1024 * 1024 || cache.len() > 128 {
+      if let Some((_, oldest)) = cache.pop_front() {
+        bytes -= oldest.data_url.len();
+      }
+    }
+  }
+  Ok(texture)
 }
 fn attachments(
   skin: &VpkArchive,
@@ -305,10 +343,18 @@ pub async fn foundry_particle_graph(
   options: Option<ParticleGraphOptions>,
 ) -> Result<FoundryParticleGraph, Error> {
   let ParticleGraphOptions {
+    request_id,
+    texture_side,
     additional_roots,
     source_addon_id,
     source_files,
   } = options.unwrap_or_default();
+  let job = app
+    .state::<Arc<ModelAssets>>()
+    .start_job(request_id.unwrap_or_else(|| {
+      static NEXT_JOB: AtomicU64 = AtomicU64::new(1);
+      format!("particle-{}", NEXT_JOB.fetch_add(1, Ordering::Relaxed))
+    }))?;
   let content = source_addon_id
     .map(|id| {
       super::super::modding_workspace::resolve(&app, &id)
@@ -324,15 +370,18 @@ pub async fn foundry_particle_graph(
   {
     return Err(msg("Particle preview sources exceed 64 MB"));
   }
-  let permit = effect_slot().clone().acquire_owned().await.map_err(msg)?;
+  let permit = job.acquire(effect_slot().clone()).await?;
+  let texture_side = texture_side.unwrap_or(1024).clamp(128, 1024);
   tauri::async_runtime::spawn_blocking(move || {
     let _permit = permit;
+    job.check()?;
     let standalone = entry_path.ends_with(".vpcf_c");
     if !source_files.is_empty() && (content.is_none() || !standalone) {
       return Err(msg("Draft previews require an addon particle source"));
     }
     let mut drafts = BTreeMap::new();
     for file in source_files {
+      job.check()?;
       super::super::modding_workspace::relative(&file.path, false)?;
       if !file.path.ends_with(".vpcf") || file.text.len() > 4 * 1024 * 1024 {
         return Err(msg("Invalid particle preview source"));
@@ -480,6 +529,7 @@ pub async fn foundry_particle_graph(
     let mut pending = roots;
     let mut seen = BTreeSet::new();
     while let Some(path) = pending.pop() {
+      job.check()?;
       if !seen.insert(path.clone()) {
         continue;
       }
@@ -512,6 +562,7 @@ pub async fn foundry_particle_graph(
       .collect();
     let mut material_seen = BTreeSet::new();
     while let Some(path) = material_queue.pop() {
+      job.check()?;
       if !material_seen.insert(path.clone()) {
         continue;
       }
@@ -536,10 +587,11 @@ pub async fn foundry_particle_graph(
       return Err(msg("particle graph exceeds 128 dependencies"));
     }
     for path in assets {
+      job.check()?;
       if path.ends_with(".vmdl") {
         graph.models.push(path);
       } else if path.ends_with(".vtex") {
-        match texture(&skin, base, core, &path) {
+        match texture(&skin, base, core, &path, texture_side) {
           Ok(texture) => {
             let total: usize = graph.textures.iter().map(|t| t.data_url.len()).sum();
             if total + texture.data_url.len() > 64 * 1024 * 1024 {
@@ -551,6 +603,7 @@ pub async fn foundry_particle_graph(
         }
       }
     }
+    job.check()?;
     Ok(graph)
   })
   .await
