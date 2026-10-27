@@ -1,5 +1,3 @@
-import { Button } from "@deadlock-mods/ui/components/button";
-import { GripVertical, RotateCcw } from "@deadlock-mods/ui/icons";
 import {
   closestCenter,
   DndContext,
@@ -46,6 +44,7 @@ const SortableFileRow = ({
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
@@ -56,20 +55,19 @@ const SortableFileRow = ({
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={cn(
-        "flex items-center gap-2 rounded-md py-1 pr-2 pl-1 transition-colors hover:bg-muted/50",
-        isDragging && "relative z-10 bg-muted shadow-md",
-      )}>
+        "flex cursor-grab touch-none items-center gap-3 rounded-md px-2 py-1.5 transition-colors hover:bg-foreground/5 active:cursor-grabbing",
+        isDragging &&
+          "relative z-10 bg-popover shadow-lg ring-1 ring-primary/30",
+      )}
+      {...listeners}>
       <button
+        ref={setActivatorNodeRef}
         type='button'
         aria-label={t("modOrdering.dragFile", { name: file.name })}
-        className='cursor-grab touch-none rounded p-1 text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring active:cursor-grabbing'
-        {...attributes}
-        {...listeners}>
-        <GripVertical className='h-3.5 w-3.5' />
-      </button>
-      <span className='w-5 shrink-0 text-right text-muted-foreground text-xs tabular-nums'>
+        className='w-6 shrink-0 rounded text-center font-semibold text-muted-foreground text-sm tabular-nums focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
+        {...attributes}>
         {position}
-      </span>
+      </button>
       <div className='min-w-0 flex-1'>
         <p className='truncate font-mono text-xs'>{file.name}</p>
         {file.archiveName && (
@@ -103,7 +101,7 @@ export const ModFileOrder = ({
     onChange(arrayMove(files, from, to));
   };
 
-  const canUseAuthorOrder =
+  const differsFromAuthor =
     !!authorOrder &&
     authorOrder.some((name, index) => files[index]?.name !== name);
 
@@ -115,24 +113,9 @@ export const ModFileOrder = ({
 
   return (
     <div
-      className='mr-2 ml-14 pb-1'
+      className='pr-2 pb-2 pl-[60px]'
       aria-label={t("modOrdering.filesOf", { name: modName })}
       role='group'>
-      <div className='flex min-h-7 items-center justify-between gap-2 pl-1'>
-        <p className='text-muted-foreground text-xs'>
-          {t("modOrdering.filesHint")}
-        </p>
-        {canUseAuthorOrder && (
-          <Button
-            icon={<RotateCcw className='h-3 w-3' />}
-            onClick={applyAuthorOrder}
-            size='sm'
-            className='h-6 px-2'
-            variant='ghost'>
-            {t("modOrdering.useAuthorOrder")}
-          </Button>
-        )}
-      </div>
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -141,7 +124,7 @@ export const ModFileOrder = ({
         <SortableContext
           items={files.map((file) => file.vpk)}
           strategy={verticalListSortingStrategy}>
-          <ol className='space-y-0.5'>
+          <ol>
             {files.map((file, index) => (
               <SortableFileRow
                 key={file.vpk}
@@ -152,6 +135,14 @@ export const ModFileOrder = ({
           </ol>
         </SortableContext>
       </DndContext>
+      {differsFromAuthor && (
+        <button
+          type='button'
+          onClick={applyAuthorOrder}
+          className='mt-1 ml-2 rounded text-muted-foreground text-xs underline-offset-4 transition-colors hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'>
+          {t("modOrdering.useAuthorOrder")}
+        </button>
+      )}
     </div>
   );
 };

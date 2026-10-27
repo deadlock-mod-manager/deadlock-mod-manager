@@ -395,7 +395,7 @@ export const ModOrderingDialog = ({
                     items={visibleMods.map((mod) => mod.remoteId)}
                     strategy={verticalListSortingStrategy}>
                     <ol
-                      className='space-y-0.5'
+                      className='space-y-1'
                       onFocus={(event) =>
                         setHandleFocused(
                           event.target.getAttribute("aria-roledescription") ===

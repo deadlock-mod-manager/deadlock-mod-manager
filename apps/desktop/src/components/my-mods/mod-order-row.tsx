@@ -11,11 +11,10 @@ import {
   ArrowUp,
   ArrowUpToLine,
   ChevronRight,
-  GripVertical,
 } from "@deadlock-mods/ui/icons";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { ReactNode } from "react";
+import type { KeyboardEvent, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ModFileOrder,
@@ -41,7 +40,7 @@ const authorOrderFor = (mod: LocalMod, files: OrderedVpkFile[]) => {
 const ModThumbnail = ({ mod }: { mod: LocalMod }) => {
   const coverImage = getModCoverImage(mod);
   return (
-    <div className='flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded bg-secondary'>
+    <div className='flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-md bg-secondary'>
       {coverImage ? (
         <img
           src={coverImage}
@@ -157,12 +156,16 @@ export const SortableModRow = ({
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
   } = useSortable({ id: mod.remoteId, disabled: dragDisabled });
-  const fileCount = files?.length ?? mod.installedVpks?.length ?? 0;
   const canExpand = !!files && files.length > 1;
+  // Space and Enter on these buttons must not pick up the row.
+  const keepKeys = {
+    onKeyDown: (event: KeyboardEvent) => event.stopPropagation(),
+  };
 
   return (
     <li
@@ -170,52 +173,47 @@ export const SortableModRow = ({
       data-mod-row={mod.remoteId}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={cn(
-        "group rounded-md border border-transparent transition-colors duration-700 ease-out",
+        "group rounded-lg transition-colors duration-700 ease-out",
         isDragging
-          ? "border-dashed border-border bg-muted/20 opacity-40"
+          ? "bg-foreground/5 opacity-30"
           : justDropped
-            ? "bg-primary/10 duration-0"
+            ? "bg-primary/15 duration-0"
             : expanded
-              ? "bg-muted/40"
-              : "hover:bg-muted/40 focus-within:bg-muted/40",
+              ? "bg-foreground/[0.04]"
+              : "hover:bg-foreground/[0.04]",
       )}>
-      <div className='flex items-center gap-2 py-1.5 pr-1.5 pl-1'>
+      <div
+        className={cn(
+          "flex items-center gap-3 px-2 py-2",
+          !dragDisabled && "cursor-grab touch-none active:cursor-grabbing",
+        )}
+        {...listeners}>
         <button
+          ref={setActivatorNodeRef}
           type='button'
           aria-label={t("modOrdering.dragMod", { name: mod.name })}
           className={cn(
-            "rounded p-1 text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-            dragDisabled
-              ? "cursor-not-allowed opacity-40"
-              : "cursor-grab touch-none hover:text-foreground active:cursor-grabbing",
+            "w-8 shrink-0 rounded text-center font-semibold text-base tabular-nums transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+            shift === 0 ? "text-muted-foreground" : "text-primary",
           )}
-          {...attributes}
-          {...listeners}>
-          <GripVertical className='h-4 w-4' />
-        </button>
-        <span
-          className={cn(
-            "w-5 shrink-0 text-right text-xs tabular-nums",
-            shift === 0
-              ? "text-muted-foreground"
-              : "font-semibold text-primary",
-          )}>
+          {...attributes}>
           {position}
-        </span>
+        </button>
         <ModThumbnail mod={mod} />
         <ModSummary mod={mod} />
         <ShiftIndicator shift={shift} />
 
-        {canExpand ? (
+        {canExpand && (
           <button
             type='button'
             aria-expanded={expanded}
             onClick={onToggleExpanded}
+            {...keepKeys}
             className={cn(
-              "flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+              "flex shrink-0 cursor-pointer items-center gap-1 rounded-md px-2 py-1 text-xs transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
               filesChanged ? "text-primary" : "text-muted-foreground",
             )}>
-            {t("modOrdering.files", { count: fileCount })}
+            {t("modOrdering.files", { count: files.length })}
             <ChevronRight
               className={cn(
                 "h-3.5 w-3.5 transition-transform duration-200 ease-out",
@@ -223,14 +221,11 @@ export const SortableModRow = ({
               )}
             />
           </button>
-        ) : (
-          <span className='flex shrink-0 items-center gap-1 px-2 text-muted-foreground/70 text-xs'>
-            {t("modOrdering.files", { count: fileCount })}
-            <span className='w-3.5' />
-          </span>
         )}
 
-        <div className='flex shrink-0 items-center opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100'>
+        <div
+          className='flex shrink-0 cursor-default items-center opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100'
+          {...keepKeys}>
           <IconAction
             label={t("modOrdering.moveToTop")}
             disabled={position === 1}
@@ -265,9 +260,8 @@ export const DragPreview = ({
   mod: LocalMod;
   position: number;
 }) => (
-  <div className='flex scale-[1.02] cursor-grabbing items-center gap-2 rounded-md border border-primary/40 bg-popover py-1.5 pr-3 pl-1 shadow-2xl ring-1 ring-primary/20'>
-    <GripVertical className='m-1 h-4 w-4 text-foreground' />
-    <span className='w-5 shrink-0 text-right font-semibold text-primary text-xs tabular-nums'>
+  <div className='flex scale-[1.02] cursor-grabbing items-center gap-3 rounded-lg bg-popover px-2 py-2 shadow-2xl ring-1 ring-primary/30'>
+    <span className='w-8 shrink-0 text-center font-semibold text-base text-primary tabular-nums'>
       {position}
     </span>
     <ModThumbnail mod={mod} />
