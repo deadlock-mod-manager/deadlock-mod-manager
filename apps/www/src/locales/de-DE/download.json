@@ -109,6 +109,10 @@
       }
     }
   },
+  "unofficialSites": {
+    "title": "",
+    "description": ""
+  },
   "history": {
     "title": "Andere Versionen",
     "description": "Zu einem früheren Release zurückkehren oder kommende Änderungen vorab testen.",
