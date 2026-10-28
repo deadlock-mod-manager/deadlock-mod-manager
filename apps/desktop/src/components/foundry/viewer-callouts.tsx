@@ -21,7 +21,16 @@ const PLACE_INTERVAL_MS = 100;
 const LEADER_PX = 110;
 const TAG_HEIGHT_PX = 24;
 
-/** Where each section's middle lands on screen, and which side its tag goes. */
+/** Vertices read per mesh; enough to find a section's middle. */
+const SAMPLES_PER_MESH = 1500;
+
+/**
+ * Where each section's middle lands on screen, and which side its tag goes.
+ *
+ * The middle is the mean of the section's posed vertices. A bounding box would
+ * be cheaper, but three.js boxes skinned meshes in their bind pose, so the tag
+ * would point where the part sits before the animation moves it.
+ */
 const place = (
   callouts: readonly ViewerCallout[],
   root: THREE.Object3D,
@@ -29,17 +38,27 @@ const place = (
   width: number,
   height: number,
 ): PlacedCallout[] => {
-  const boxes = new Map<string, THREE.Box3>();
+  const middles = new Map<string, { sum: THREE.Vector3; count: number }>();
   const wanted = new Set(callouts.map((callout) => callout.texture));
+  const vertex = new THREE.Vector3();
   root.updateMatrixWorld(true);
   root.traverse((child) => {
     if (!(child instanceof THREE.Mesh) || Array.isArray(child.material)) return;
     if (child.parent instanceof THREE.Mesh || !child.material.visible) return;
     const texture = colorTextureOf(child.material);
     if (texture === null || !wanted.has(texture)) return;
-    const box = boxes.get(texture) ?? new THREE.Box3();
-    box.expandByObject(child);
-    boxes.set(texture, box);
+    const positions = child.geometry.getAttribute("position");
+    const stride = Math.max(1, Math.floor(positions.count / SAMPLES_PER_MESH));
+    const middle = middles.get(texture) ?? {
+      sum: new THREE.Vector3(),
+      count: 0,
+    };
+    for (let index = 0; index < positions.count; index += stride) {
+      child.getVertexPosition(index, vertex);
+      middle.sum.add(vertex.applyMatrix4(child.matrixWorld));
+      middle.count++;
+    }
+    middles.set(texture, middle);
   });
   const modelCentre = new THREE.Box3()
     .setFromObject(root)
@@ -47,9 +66,9 @@ const place = (
     .project(camera);
 
   return callouts.flatMap((callout) => {
-    const box = boxes.get(callout.texture);
-    if (!box || box.isEmpty()) return [];
-    const point = box.getCenter(new THREE.Vector3()).project(camera);
+    const middle = middles.get(callout.texture);
+    if (!middle?.count) return [];
+    const point = middle.sum.divideScalar(middle.count).project(camera);
     if (point.z > 1) return [];
     return [
       {

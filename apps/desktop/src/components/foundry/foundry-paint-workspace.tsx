@@ -940,7 +940,7 @@ const BrushPanel = ({ brush }: { brush: PaintBrush }) => {
   );
 };
 
-/** The live-preview switch over the viewport, and the compare hint under it. */
+/** The live-preview switch over the viewport, and the compare hint above the dock. */
 const PreviewOverlay = ({ brush }: { brush: PaintBrush }) => {
   const { t } = useTranslation();
   const title = useSelectionTitle();
@@ -975,7 +975,7 @@ const PreviewOverlay = ({ brush }: { brush: PaintBrush }) => {
         </label>
       </div>
       {brush.showTint && (
-        <div className='pointer-events-none absolute inset-x-0 top-[104px] flex justify-center'>
+        <div className='pointer-events-none absolute inset-x-0 bottom-[124px] flex justify-center'>
           <p className='flex items-center gap-2 rounded-[7px] border bg-card/90 py-[5px] pr-2.5 pl-1.5 text-[11px] text-muted-foreground backdrop-blur-md'>
             <kbd className='rounded border border-white/10 bg-muted px-[7px] py-0.5 font-mono font-semibold text-[10px] text-foreground'>
               {t("foundry.paint.spaceKey")}
