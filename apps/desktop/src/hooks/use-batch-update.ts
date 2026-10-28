@@ -314,17 +314,10 @@ export const useBatchUpdate = () => {
             succeeded: result.succeeded.length,
           })
           .warn("Some mods failed to update");
-      } else if (result.selectionRequired.length === 0) {
+      } else if (!awaitingChoice) {
         toast.success(t("myMods.batchUpdate.complete"));
       }
 
-      if (result.selectionRequired.length > 0) {
-        logger
-          .withMetadata({
-            mods: result.selectionRequired.map((pending) => pending.modId),
-          })
-          .info("Waiting for a VPK choice before updating");
-      }
       const selectionRequired = [
         ...pendingSelections.filter(
           (pending) =>

@@ -703,20 +703,17 @@ impl DownloadManager {
             &downloaded_names,
           )
         });
-        let selected_paths = match &carried {
-          // Nothing carried over: the user picks from this archive again.
-          Some(None) => {
-            selection_required = true;
-            Vec::new()
-          }
-          Some(Some(carried)) => {
-            Self::selected_extracted_vpks(extracted_dir.path(), &extracted_tree, Some(carried))
-          }
-          None => Self::selected_extracted_vpks(
+        let selected_paths = if let Some(None) = carried {
+          selection_required = true;
+          Vec::new()
+        } else {
+          Self::selected_extracted_vpks(
             extracted_dir.path(),
             &extracted_tree,
-            task.file_tree.as_ref(),
-          ),
+            carried
+              .as_ref()
+              .map_or(task.file_tree.as_ref(), Option::as_ref),
+          )
         };
 
         // Each archive's temp dir is gone before the names are known, so
@@ -970,14 +967,14 @@ impl DownloadManager {
 
     let selection = selection?;
     let name_of = |file: &ModFile| source_file_name(file).to_lowercase();
-    let name_counts = |files: &[&ModFile]| {
+    let name_counts = |files: &mut dyn Iterator<Item = &ModFile>| {
       let mut counts: HashMap<String, usize> = HashMap::new();
       for file in files {
         *counts.entry(name_of(file)).or_default() += 1;
       }
       counts
     };
-    let here = name_counts(&extracted_tree.files.iter().collect::<Vec<_>>());
+    let here = name_counts(&mut extracted_tree.files.iter());
     let saved_in = |archive: &str| -> Vec<&ModFile> {
       selection
         .files
@@ -999,13 +996,12 @@ impl DownloadManager {
     let mut ranked: Vec<((usize, usize), &str)> = replaced
       .into_iter()
       .map(|archive| {
-        let saved = saved_in(archive);
-        let found = |file: &&&ModFile| here.contains_key(&name_of(file));
-        let chosen = saved.iter().filter(|file| file.is_selected).filter(found);
-        (
-          (chosen.count(), saved.iter().filter(found).count()),
-          archive,
-        )
+        let found: Vec<&ModFile> = saved_in(archive)
+          .into_iter()
+          .filter(|file| here.contains_key(&name_of(file)))
+          .collect();
+        let chosen = found.iter().filter(|file| file.is_selected).count();
+        ((chosen, found.len()), archive)
       })
       .filter(|((chosen, _), _)| *chosen > 0)
       .collect();
@@ -1016,7 +1012,7 @@ impl DownloadManager {
     }
 
     let saved = saved_in(paired);
-    let before = name_counts(&saved);
+    let before = name_counts(&mut saved.iter().copied());
     let chosen: Vec<&ModFile> = saved.into_iter().filter(|file| file.is_selected).collect();
     let path_of = |file: &ModFile| relative_path(file).to_lowercase();
     let files: Vec<ModFile> = extracted_tree

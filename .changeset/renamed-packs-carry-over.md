@@ -2,4 +2,4 @@
 "@deadlock-mods/desktop": patch
 ---
 
-Fix updates failing for mods with several VPKs after the author re-uploads under a new file name
+Keep multi-VPK mod updates working after an author re-uploads a pack
