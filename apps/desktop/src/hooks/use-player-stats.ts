@@ -14,6 +14,7 @@ import {
   type AnalyticsHeroStats,
   getAnalyticsHeroStats,
   getBadgeDistribution,
+  getBracketCurve,
   getBracketMetrics,
   getEnemyStats,
   getHeroCounterStats,
@@ -328,6 +329,96 @@ export const useBracketBenchmark = (
     isPending: query.isPending,
     isError: query.isError,
   };
+};
+
+export interface LobbyCareer {
+  matches: number;
+  winrate: number;
+  /** (kills + assists) / deaths over every match, deaths floored at one. */
+  kda: number;
+}
+
+/**
+ * Overall records for everyone in a lobby, summed over their heroes. One
+ * request for the whole lobby, made once per set of accounts.
+ */
+export const useLobbyCareers = (accountIds: number[]) => {
+  const ids = useMemo(() => [...new Set(accountIds)].sort(), [accountIds]);
+  const query = useStatsQuery(
+    {
+      key: `lobby:careers:${ids.join(",")}`,
+      ttl: STATS_TTL.heroStats,
+      enabled: ids.length > 0,
+    },
+    () => getPlayerHeroStats(ids),
+  );
+
+  const careers = useMemo(() => {
+    const totals = new Map<
+      number,
+      {
+        matches: number;
+        wins: number;
+        kills: number;
+        deaths: number;
+        assists: number;
+      }
+    >();
+    for (const hero of query.data?.data ?? []) {
+      const total = totals.get(hero.account_id) ?? {
+        matches: 0,
+        wins: 0,
+        kills: 0,
+        deaths: 0,
+        assists: 0,
+      };
+      total.matches += hero.matches_played;
+      total.wins += hero.wins;
+      total.kills += hero.kills;
+      total.deaths += hero.deaths;
+      total.assists += hero.assists;
+      totals.set(hero.account_id, total);
+    }
+    const result = new Map<number, LobbyCareer>();
+    for (const [accountId, total] of totals) {
+      if (total.matches === 0) continue;
+      result.set(accountId, {
+        matches: total.matches,
+        winrate: total.wins / total.matches,
+        kda: (total.kills + total.assists) / Math.max(total.deaths, 1),
+      });
+    }
+    return result;
+  }, [query.data]);
+
+  return { careers, isPending: ids.length > 0 && query.isPending };
+};
+
+/**
+ * How players on one hero in the player's rank bracket stand over a match, for
+ * grading a match while it runs. One request per hero and bracket.
+ */
+export const useLiveHeroBenchmark = (
+  heroId: number | null,
+  badge: number | undefined,
+  scope: StatsScope,
+) => {
+  const tier = Math.floor((badge ?? 0) / 10);
+  const bracket = tier > 0 ? tier : null;
+  return useStatsQuery(
+    {
+      key: `benchmark:live-curve:${heroId}:${bracket ?? "all"}:${statsScopeQuery(scope)}`,
+      ttl: STATS_TTL.benchmark,
+      enabled: heroId !== null,
+    },
+    () =>
+      getBracketCurve({
+        heroId: heroId ?? 0,
+        minBadge: bracket === null ? 0 : bracket * 10 + 1,
+        maxBadge: bracket === null ? 116 : bracket * 10 + 6,
+        scope,
+      }),
+  );
 };
 
 /**

@@ -17,6 +17,7 @@ import {
   matchMetadataSchema,
   mateStatsSchema,
   metricSpreadSchema,
+  performanceCurvePointSchema,
   performancePointSchema,
   playerHeroStatsSchema,
   playerRankSchema,
@@ -49,6 +50,7 @@ export type {
   MatchMetadataStat,
   MateStats,
   MetricSpread,
+  PerformanceCurvePoint,
   PerformancePoint,
   PlayerHeroStats,
   PlayerRank,
@@ -212,6 +214,26 @@ export const getPerformanceCurve = (accountId: number, heroId: number) =>
   getList(
     `/v1/analytics/player-performance-curve?account_ids=${accountId}&hero_ids=${heroId}&resolution=0`,
     performancePointSchema,
+  );
+
+/**
+ * How players on one hero inside a badge range stand at each point of a match,
+ * in steps of game time. What a running match is graded against.
+ */
+export const getBracketCurve = ({
+  heroId,
+  minBadge,
+  maxBadge,
+  scope,
+}: {
+  heroId: number;
+  minBadge: number;
+  maxBadge: number;
+  scope: StatsScope;
+}) =>
+  getList(
+    `/v1/analytics/player-performance-curve?hero_ids=${heroId}&min_average_badge=${minBadge}&max_average_badge=${maxBadge}&resolution=0&${statsScopeQuery(scope)}`,
+    performanceCurvePointSchema,
   );
 
 /** The season definitions the game client ships, including its entry requirements. */
