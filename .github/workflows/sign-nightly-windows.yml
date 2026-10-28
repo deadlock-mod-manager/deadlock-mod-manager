@@ -30,7 +30,6 @@ permissions:
 jobs:
   sign-windows:
     runs-on: windows-latest
-    environment: Nightly
     outputs:
       has-cef: ${{ steps.download-cef.outcome == 'success' }}
     steps:

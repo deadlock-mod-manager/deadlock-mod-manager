@@ -326,8 +326,6 @@ export const useModOptions = (mod: LocalMod | null) => {
                 ...deriveClaimedOriginals(mod, archive.name),
                 ...stagedThisApply,
               ],
-              fileserverPreference:
-                usePersistedStore.getState().fileserverPreference,
               onProgress,
             },
           );
@@ -394,8 +392,6 @@ export const useModOptions = (mod: LocalMod | null) => {
               modId: mod.remoteId,
               profileFolder,
               archives,
-              fileserverPreference:
-                usePersistedStore.getState().fileserverPreference,
             },
           );
 
@@ -504,13 +500,7 @@ export const useModOptions = (mod: LocalMod | null) => {
       if (archives.length > 0) {
         const fetchResult = await invoke<FetchMissingModVariantsResult>(
           "fetch_missing_mod_variants",
-          {
-            modId: mod.remoteId,
-            profileFolder,
-            archives,
-            fileserverPreference:
-              usePersistedStore.getState().fileserverPreference,
-          },
+          { modId: mod.remoteId, profileFolder, archives },
         );
         if (fetchResult.missing_originals.length > 0) {
           throw new RuntimeError(

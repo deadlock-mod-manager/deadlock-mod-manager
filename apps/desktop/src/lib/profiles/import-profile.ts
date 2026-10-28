@@ -26,7 +26,6 @@ export interface ProfileImportFlowDeps {
   setProfileFolderName: State["setProfileFolderName"];
   getProfile: State["getProfile"];
   getActiveProfile: State["getActiveProfile"];
-  fileserverPreference: State["fileserverPreference"];
 }
 
 export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
@@ -38,7 +37,6 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
     applyImportInstalledModsToProfile,
     setProfileFolderName,
     getActiveProfile,
-    fileserverPreference,
   } = deps;
 
   const createProfileFromImport = async (
@@ -129,7 +127,6 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
             profileFolder: folderName,
             mods: preparedMods.map((entry) => entry.profileImportMod),
             importType: "override",
-            fileserverPreference,
           },
         );
 
@@ -265,7 +262,6 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
             profileFolder: activeProfile.folderName || "",
             mods: preparedMods.map((entry) => entry.profileImportMod),
             importType: "override",
-            fileserverPreference,
           },
         );
 

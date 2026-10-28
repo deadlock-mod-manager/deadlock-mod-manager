@@ -41,14 +41,9 @@ on:
         required: false
         type: boolean
         default: true
-      environment:
-        description: "GitHub environment that holds TAURI_PRIVATE_KEY (Release or Nightly)"
-        required: false
-        type: string
-        default: ""
     secrets:
       TAURI_PRIVATE_KEY:
-        required: false
+        required: true
       VITE_GA_MEASUREMENT_ID:
         required: true
       SIGNPATH_API_TOKEN:
@@ -79,7 +74,6 @@ env:
 
 jobs:
   build-cef:
-    environment: ${{ inputs.environment }}
     strategy:
       fail-fast: false
       matrix:
