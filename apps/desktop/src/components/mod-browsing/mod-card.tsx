@@ -42,20 +42,15 @@ interface ModCardProps {
   curatedCollection?: CuratedCollectionNavigationTarget;
 }
 
-const cardEntryPoint = ({
-  collection = "mods",
-  author,
-  curatedCollection,
-}: ModCardProps): ModEntryPoint => {
+const cardEntryPoint = (
+  { collection = "mods", author, curatedCollection }: ModCardProps,
+  searching: boolean,
+): ModEntryPoint => {
   if (curatedCollection) return "collection";
   if (author) return "author";
   if (collection === "dashboard") return "featured";
   if (collection === "library") return "library";
-  const { searchQuery } = selectStoreFilters(
-    usePersistedStore.getState(),
-    collection === "maps",
-  );
-  return searchQuery ? "search" : "catalog";
+  return searching ? "search" : "catalog";
 };
 
 const ModCard = memo((props: ModCardProps) => {
@@ -73,6 +68,9 @@ const ModCard = memo((props: ModCardProps) => {
   const hasUpdate = useModHasUpdate(localMod);
   const showModUpdateBadges = usePersistedStore(
     (state) => state.showModUpdateBadges,
+  );
+  const searching = usePersistedStore(
+    (state) => !!selectStoreFilters(state, collection === "maps").searchQuery,
   );
   const CardWrapper = useThemeOverride("cardWrapper");
 
@@ -92,7 +90,7 @@ const ModCard = memo((props: ModCardProps) => {
   // A config-only upload is a gameinfo.gi config, not a VPK a patch breaks.
   const isOutdated = isModOutdated(mod) && configListingKind !== "confirmed";
 
-  const entryPoint = cardEntryPoint(props);
+  const entryPoint = cardEntryPoint(props, searching);
   const openModDetail = () => {
     analytics.track("catalog_item_opened", {
       mod_id: mod.remoteId,
