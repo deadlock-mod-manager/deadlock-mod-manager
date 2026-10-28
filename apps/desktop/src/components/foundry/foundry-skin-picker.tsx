@@ -1,20 +1,8 @@
 import { Button } from "@deadlock-mods/ui/components/button";
 import { ScrollArea } from "@deadlock-mods/ui/components/scroll-area";
 import { SearchInput } from "@deadlock-mods/ui/components/search-input";
-import { Switch } from "@deadlock-mods/ui/components/switch";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@deadlock-mods/ui/components/tooltip";
 import { cn } from "@deadlock-mods/ui/lib/utils";
-import {
-  CubeIcon,
-  FolderOpenIcon,
-  HammerIcon,
-  ImageIcon,
-  WarningIcon,
-} from "@phosphor-icons/react";
+import { FolderOpenIcon, HammerIcon, ImageIcon } from "@phosphor-icons/react";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -221,10 +209,6 @@ export const FoundrySkinPicker = ({
   const { t } = useTranslation();
   const { importDefaultHero, importMod, importVpk, status } = useFoundry();
   const localMods = usePersistedStore((state) => state.localMods);
-  const preview3d = usePersistedStore((state) => state.foundry3dPreviewEnabled);
-  const setPreview3d = usePersistedStore(
-    (state) => state.setFoundry3dPreviewEnabled,
-  );
   const activeProfile = usePersistedStore(
     (state) => state.profiles[state.activeProfileId],
   );
@@ -380,43 +364,6 @@ export const FoundrySkinPicker = ({
           )}
         </ScrollArea>
       )}
-
-      <div className='flex shrink-0 items-center gap-3 rounded-lg border px-3.5 py-3'>
-        <CubeIcon
-          className='h-[18px] w-[18px] shrink-0 text-muted-foreground'
-          weight='duotone'
-        />
-        <div className='min-w-0 flex-1'>
-          <div className='flex items-center gap-1.5'>
-            <label
-              className='cursor-pointer font-medium text-[13px]'
-              htmlFor='foundry-3d-toggle'>
-              {t("foundry.import.preview3dLabel")}
-            </label>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  aria-label={t("foundry.import.preview3dWarning")}
-                  className='text-amber-500/80 transition-colors hover:text-amber-500'
-                  type='button'>
-                  <WarningIcon className='h-3.5 w-3.5' weight='bold' />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent className='max-w-xs'>
-                {t("foundry.import.preview3dWarning")}
-              </TooltipContent>
-            </Tooltip>
-          </div>
-          <p className='truncate text-[11px] text-muted-foreground'>
-            {t("foundry.import.preview3dHint")}
-          </p>
-        </div>
-        <Switch
-          checked={preview3d}
-          id='foundry-3d-toggle'
-          onCheckedChange={setPreview3d}
-        />
-      </div>
     </div>
   );
 };

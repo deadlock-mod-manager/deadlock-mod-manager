@@ -1,9 +1,7 @@
-import { Button } from "@deadlock-mods/ui/components/button";
 import { cn } from "@deadlock-mods/ui/lib/utils";
-import { CubeIcon, ImageIcon, MusicNotesIcon } from "@phosphor-icons/react";
+import { ImageIcon, MusicNotesIcon } from "@phosphor-icons/react";
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { usePersistedStore } from "@/lib/store";
 import { useFoundry } from "./foundry-context";
 import { FoundryLoadingBar } from "./foundry-loading-bar";
 import { AnimatedModelPreview } from "./animated-model-preview";
@@ -24,16 +22,12 @@ export const FoundryPreview = () => {
     texturePreview,
     previewTint,
     busy,
-    preview3dEnabled,
     primaryModelPath,
     paintParts,
     highlightTextures,
     hiddenParts,
     togglePaintPart,
   } = useFoundry();
-  const setPreview3d = usePersistedStore(
-    (state) => state.setFoundry3dPreviewEnabled,
-  );
   const labels = useMemo(
     () =>
       new Map(
@@ -56,28 +50,6 @@ export const FoundryPreview = () => {
   // again, so both halves of that wait get the same indicator.
   const rebuildingModel =
     showModel && (modelPreview.status === "loading" || busy);
-
-  // With the preview off nothing was decoded, so say so and offer the switch
-  // rather than showing an empty panel that looks like a failure.
-  if (showModel && !preview3dEnabled) {
-    return (
-      <div className='flex h-full w-full flex-col items-center justify-center gap-4 overflow-hidden bg-gradient-to-b from-muted/40 to-background p-8 text-center'>
-        <CubeIcon
-          className='h-14 w-14 text-muted-foreground opacity-40'
-          weight='duotone'
-        />
-        <div className='max-w-sm space-y-1'>
-          <p className='font-medium text-sm'>{t("foundry.preview.disabled")}</p>
-          <p className='text-muted-foreground text-xs'>
-            {t("foundry.preview.disabledHint")}
-          </p>
-        </div>
-        <Button onClick={() => setPreview3d(true)} size='sm' variant='outline'>
-          {t("foundry.preview.enable")}
-        </Button>
-      </div>
-    );
-  }
 
   // The paint tab shows the primary model, the one its sections belong to.
   const modelPath =

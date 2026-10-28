@@ -30,7 +30,6 @@ import {
 } from "@/lib/foundry";
 import logger from "@/lib/logger";
 import { releaseFoundryModel } from "@/lib/model-assets";
-import { usePersistedStore } from "@/lib/store";
 import type { FoundryPreviewTint } from "./foundry-model-viewer";
 import type {
   FoundryCardPreview,
@@ -189,8 +188,6 @@ interface FoundryContextValue {
   /** The model the preview defaults to and an export is named after. */
   primaryModelPath: string | null;
   setPrimaryModelPath: (path: string) => void;
-  /** False when the user turned the 3D preview off; nothing is decoded then. */
-  preview3dEnabled: boolean;
   /** A scene-only tint for the paint tab's live preview; never written to disk. */
   previewTint: FoundryPreviewTint | null;
   setPreviewTint: (tint: FoundryPreviewTint | null) => void;
@@ -279,9 +276,6 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
   >("manifest");
   const [selectedCardKey, setSelectedCardKey] = useState<string | null>(null);
   const [editedPaths, setEditedPaths] = useState<Set<string>>(new Set());
-  const preview3dEnabled = usePersistedStore(
-    (state) => state.foundry3dPreviewEnabled,
-  );
   const [primaryModelPath, setPrimaryModelPath] = useState<string | null>(null);
   const [previewTint, setPreviewTint] = useState<FoundryPreviewTint | null>(
     null,
@@ -410,9 +404,7 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const entryPath = previewModelPath;
-    // Decoding a model is the slow part of opening a skin, so when the preview
-    // is off it is not decoded at all rather than decoded and hidden.
-    if (!preview3dEnabled || !filePath || !isModelEntry(entryPath)) {
+    if (!filePath || !isModelEntry(entryPath)) {
       setModelPreview(IDLE_MODEL);
       return;
     }
@@ -442,13 +434,7 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       controller.abort();
       if (ownedModel) releaseFoundryModel(ownedModel);
     };
-  }, [
-    preview3dEnabled,
-    filePath,
-    workspaceRoot,
-    previewModelPath,
-    editRevision,
-  ]);
+  }, [filePath, workspaceRoot, previewModelPath, editRevision]);
 
   useEffect(() => {
     if (!manifest) {
@@ -884,7 +870,6 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       editedPaths,
       primaryModelPath,
       setPrimaryModelPath,
-      preview3dEnabled,
       // Scoped to the paint tab at the source. The tab panels are all mounted
       // at once (the inactive ones are only hidden with CSS), so the paint
       // panel's effects run even while the user is looking at the asset
@@ -930,7 +915,6 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       selectedCardKey,
       editedPaths,
       primaryModelPath,
-      preview3dEnabled,
       previewTint,
       paintTargets,
       appliedPaint,
