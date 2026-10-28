@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import path from "node:path";
 import { isDeepStrictEqual } from "node:util";
 import { $, expect } from "@wdio/globals";
+import { z } from "zod";
 import { startApplication } from "../support/application";
 import { closeApplication } from "../support/application-exit";
 import {
@@ -22,6 +23,7 @@ import {
 } from "../support/renamed-packs-oracle";
 import { navigate, selectDownloads } from "../support/ui";
 
+const installFileIdentity = z.tuple([z.string(), z.string()]);
 const openMod = async (name: string) => {
   await navigate("mods");
   await $(`[title="${name}"]`).click();
@@ -112,7 +114,7 @@ describe("packs re-uploaded under a new name", () => {
       for (const row of rows) {
         const identity = await row.getAttribute("data-install-file");
         assert(identity);
-        const [, filePath] = JSON.parse(identity) as [string, string];
+        const [, filePath] = installFileIdentity.parse(JSON.parse(identity));
         names.push(path.posix.basename(filePath));
         // Blue is gone, so nothing in the re-upload starts picked.
         await expect(row.$('[role="checkbox"]')).toHaveAttribute(
