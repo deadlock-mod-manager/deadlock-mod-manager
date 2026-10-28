@@ -1,9 +1,11 @@
 import { cn } from "@deadlock-mods/ui/lib/utils";
 import { CheckIcon } from "@phosphor-icons/react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FoundryHeroAssembling } from "./foundry-assembling";
 import { useOptionalFoundry } from "./foundry-context";
 import { FoundryLoadingBar } from "./foundry-loading-bar";
+import { loadSilhouette, type Silhouette } from "./foundry-silhouettes";
 
 type StepState = "done" | "now" | "todo";
 
@@ -99,6 +101,27 @@ export const ModelLoadingStage = ({
 }) => {
   const foundry = useOptionalFoundry();
   const steps = showSteps && foundry?.manifest;
+  const hero = foundry?.manifest
+    ? (foundry.manifest.heroDisplay ?? foundry.manifest.hero)
+    : null;
+  // Undefined while the lookup runs, so a known hero never flashes the
+  // generic figure first.
+  const [silhouette, setSilhouette] = useState<Silhouette | null | undefined>(
+    hero ? undefined : null,
+  );
+  useEffect(() => {
+    if (!hero) {
+      setSilhouette(null);
+      return;
+    }
+    let cancelled = false;
+    void loadSilhouette(hero).then((points) => {
+      if (!cancelled) setSilhouette(points);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [hero]);
 
   return (
     <div className={cn("absolute inset-0 overflow-hidden", className)}>
@@ -106,7 +129,12 @@ export const ModelLoadingStage = ({
         aria-hidden
         className='absolute bottom-[14%] left-1/2 h-16 w-[60%] -translate-x-1/2 rounded-[50%] bg-[radial-gradient(closest-side,oklch(0.72_0.15_50/0.22),transparent)]'
       />
-      <FoundryHeroAssembling className='absolute inset-x-0 top-[3%] bottom-[22%]' />
+      {silhouette !== undefined && (
+        <FoundryHeroAssembling
+          className='absolute inset-x-0 top-[3%] bottom-[27%]'
+          silhouette={silhouette}
+        />
+      )}
       <div className='absolute inset-x-0 bottom-0 flex flex-col items-center gap-2.5 p-6'>
         {steps ? (
           <OpeningSteps />

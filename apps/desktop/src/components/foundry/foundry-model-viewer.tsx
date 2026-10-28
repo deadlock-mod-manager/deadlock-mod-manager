@@ -21,6 +21,10 @@ import {
   type PreviewPlayback,
 } from "@/lib/preview-animation";
 import { PreviewClock } from "@/lib/preview-clock";
+import {
+  captureSilhouette,
+  hasCapturedSilhouette,
+} from "./foundry-silhouettes";
 import { ModelLoadingStage } from "./model-loading-stage";
 import {
   hueOf,
@@ -73,6 +77,8 @@ interface FoundryModelViewerProps {
   highlightTextures?: readonly string[];
   /** Color maps the user hid to reach what is behind them; not drawn or picked. */
   hiddenTextures?: readonly string[];
+  /** The hero whose shape the loading embers should learn from this model. */
+  silhouetteHero?: string;
   /** Makes sections clickable: a click selects one, Shift or Ctrl adds it. */
   onPickPart?: (texture: string, additive: boolean) => void;
   /** The section name shown while the pointer is over it. */
@@ -343,6 +349,7 @@ export const FoundryModelViewer = ({
   tint,
   highlightTextures,
   hiddenTextures,
+  silhouetteHero,
   onPickPart,
   partLabel,
   playback,
@@ -879,6 +886,22 @@ export const FoundryModelViewer = ({
   useEffect(() => {
     applyPreviewTint(snapshotsRef.current, tint);
   }, [tint, loading]);
+
+  // Once posed by the first frames of its animation, the model teaches the
+  // loading embers this hero's shape for next time.
+  useEffect(() => {
+    if (loading || !silhouetteHero || hasCapturedSilhouette(silhouetteHero)) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      const root = modelRef.current;
+      const stage = stageRef.current;
+      if (root && stage) {
+        captureSilhouette(silhouetteHero, stage.renderer, root);
+      }
+    }, 1200);
+    return () => window.clearTimeout(timer);
+  }, [loading, model, silhouetteHero]);
 
   useEffect(() => {
     hiddenRef.current = new Set(

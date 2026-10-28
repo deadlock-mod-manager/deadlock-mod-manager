@@ -54,6 +54,7 @@ interface Props {
   tint?: FoundryPreviewTint | null;
   highlightTextures?: readonly string[];
   hiddenTextures?: readonly string[];
+  silhouetteHero?: string;
   onPickPart?: (texture: string, additive: boolean) => void;
   partLabel?: (texture: string) => string | undefined;
 }
@@ -73,6 +74,7 @@ export const AnimatedModelPreview = ({
   tint,
   highlightTextures,
   hiddenTextures,
+  silhouetteHero,
   onPickPart,
   partLabel,
 }: Props) => {
@@ -269,6 +271,7 @@ export const AnimatedModelPreview = ({
           tint={tint}
           highlightTextures={highlightTextures}
           hiddenTextures={hiddenTextures}
+          silhouetteHero={silhouetteHero}
           onPickPart={onPickPart}
           partLabel={partLabel}
           effects={effects}

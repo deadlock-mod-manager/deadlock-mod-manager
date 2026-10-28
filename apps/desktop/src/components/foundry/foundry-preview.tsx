@@ -65,6 +65,7 @@ export const FoundryPreview = () => {
           tint={previewTint}
           highlightTextures={highlightTextures}
           hiddenTextures={activeTab === "paint" ? hiddenParts : undefined}
+          silhouetteHero={manifest.heroDisplay ?? manifest.hero ?? undefined}
           // Sections are only picked where they can be painted.
           onPickPart={activeTab === "paint" ? togglePaintPart : undefined}
           partLabel={partLabel}
