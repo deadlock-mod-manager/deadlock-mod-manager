@@ -16,7 +16,7 @@ import { useTranslation } from "react-i18next";
 import { DEFAULT_FOUNDRY_SKINS } from "@/lib/foundry-default-skins";
 import type { FoundryTab } from "@/types/foundry";
 import { FoundryAssetsRail } from "./foundry-assets-rail";
-import { FoundryCardsPanel } from "./foundry-cards-panel";
+import { FoundryCardsWorkspace } from "./foundry-cards-workspace";
 import { useFoundry } from "./foundry-context";
 import { FoundryExportDialog } from "./foundry-export-dialog";
 import { FoundryImportDialog } from "./foundry-import-dialog";
@@ -207,15 +207,14 @@ export const FoundryShell = () => {
         {activeTab === "paint" && (
           <FoundryPaintWorkspace sidePanelClassName={SIDE_PANEL_CLASS} />
         )}
-        {(activeTab === "cards" || activeTab === "sounds") && (
+        {activeTab === "cards" && (
+          <FoundryCardsWorkspace sidePanelClassName={SIDE_PANEL_CLASS} />
+        )}
+        {activeTab === "sounds" && (
           <>
             <ScrollArea className='min-w-0 flex-1'>
               <div className='p-2'>
-                {activeTab === "cards" ? (
-                  <FoundryCardsPanel />
-                ) : (
-                  <FoundrySoundsPanel />
-                )}
+                <FoundrySoundsPanel />
               </div>
             </ScrollArea>
             <div className={cn(SIDE_PANEL_CLASS, "w-[292px] border-l")}>

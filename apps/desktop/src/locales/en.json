@@ -2179,8 +2179,42 @@
         "card_gloat": "Gloat",
         "minimap": "Minimap",
         "small": "Small",
-        "other": "Other"
-      }
+        "other": "Other",
+        "mm": "Minimap",
+        "sm": "Small"
+      },
+      "intro": "Drop an image on any slot to replace it. It's cropped and re-encoded to the slot's size.",
+      "groups": {
+        "heroSelect": {
+          "title": "Hero select",
+          "where": "The roster and loadout screens"
+        },
+        "inMatch": {
+          "title": "In match",
+          "where": "Shown on the scoreboard and kill feed"
+        },
+        "hud": {
+          "title": "Map and HUD",
+          "where": "Minimap and small portraits"
+        },
+        "other": {
+          "title": "Other",
+          "where": "More art this skin ships"
+        }
+      },
+      "replaced": "Replaced",
+      "dropToReplace": "Drop to replace",
+      "wrongFile": "Drop a PNG, JPG or WebP image.",
+      "pick": "Pick a card to see where it shows up and replace it.",
+      "meta": "{{group}}, {{size}}, {{state}}",
+      "stateReplaced": "replaced",
+      "stateSkin": "skin art",
+      "stateOriginal": "original art",
+      "inGame": "How players see it",
+      "original": "Original",
+      "dropAtLeast": "Drop at least",
+      "noSkinArtTitle": "No custom card art in this skin yet",
+      "noSkinArtHint": "Anything you replace above is exported as this skin's card art."
     },
     "preview": {
       "empty": "Import a skin to see it here",

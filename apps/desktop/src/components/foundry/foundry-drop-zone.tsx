@@ -13,7 +13,7 @@ const DROP_DIR = "foundry-drops";
  * means a dropped file arrives without a path. Stage its bytes under app data so
  * the backend can read it like a picked file.
  */
-const stageDroppedFile = async (file: File): Promise<string> => {
+export const stageDroppedFile = async (file: File): Promise<string> => {
   await mkdir(DROP_DIR, {
     baseDir: BaseDirectory.AppLocalData,
     recursive: true,
@@ -26,7 +26,7 @@ const stageDroppedFile = async (file: File): Promise<string> => {
   return join(await appLocalDataDir(), DROP_DIR, name);
 };
 
-const extensionOf = (name: string) =>
+export const extensionOf = (name: string) =>
   name.split(".").pop()?.toLowerCase() ?? "";
 
 /**
