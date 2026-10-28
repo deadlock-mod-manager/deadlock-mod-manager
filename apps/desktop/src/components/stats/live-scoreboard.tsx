@@ -481,7 +481,7 @@ export const LiveScoreboard = ({
                 </span>
                 <span className='text-muted-foreground text-xs tabular-nums'>
                   {t("stats.live.teamTotals", {
-                    kills: sum(team.players, (player) => player.kills),
+                    count: sum(team.players, (player) => player.kills),
                     souls: formatCompact(
                       sum(team.players, (player) => player.souls),
                     ),
