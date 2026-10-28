@@ -2426,6 +2426,7 @@
       "hidePart": "Hide in preview",
       "showPart": "Show in preview",
       "hiddenMeta": "Hidden in preview",
+      "resetPart": "Restore {{part}}'s original colors",
       "effectsNote": "Ability effects are painted as one part.",
       "effectsSwitch": "Paint them",
       "selectedCount": "{{count}} sections selected",

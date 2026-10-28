@@ -194,6 +194,22 @@ pub struct FoundryWorkspace {
   pub edited_paths: Vec<String>,
   /// Every sound with volume edits or a replacement.
   pub sound_settings: Vec<FoundrySoundSettings>,
+  /// The paint each painted color map wears.
+  pub applied_paint: Vec<FoundryAppliedPaint>,
+}
+
+/// The paint one color map wears, as the paint tab applied it.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct FoundryAppliedPaint {
+  pub entry_path: String,
+  pub color_hex: String,
+  pub saturation: f32,
+  pub brightness: f32,
+  pub pattern: Option<String>,
+  pub pattern_intensity: f32,
+  pub pattern_phase: f32,
 }
 
 /// How one sound is reworked in the workspace: its volume edits, and whether

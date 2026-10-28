@@ -21,8 +21,8 @@ use super::analyze::classify;
 use super::game::foundry_workspace_root;
 use super::staging::staged_base_game_vpk;
 use super::types::{
-  FoundryBuildResult, FoundryCategory, FoundryEntry, FoundryEntrySource, FoundryReplacementResult,
-  FoundrySoundSettings, FoundryTexture, FoundryWorkspace,
+  FoundryAppliedPaint, FoundryBuildResult, FoundryCategory, FoundryEntry, FoundryEntrySource,
+  FoundryReplacementResult, FoundrySoundSettings, FoundryTexture, FoundryWorkspace,
 };
 
 /// Beside `files/`, the entries this workspace has edited. The tree itself
@@ -55,6 +55,49 @@ pub(crate) fn record_edits(
   let bytes = serde_json::to_vec(&journal.into_iter().collect::<Vec<_>>())
     .map_err(|e| Error::InvalidInput(format!("failed to write edit journal: {e}")))?;
   std::fs::write(workspace_root.join(EDIT_JOURNAL), bytes)?;
+  Ok(())
+}
+
+/// Beside `files/`, the paint each painted color map wears, so a reopened skin
+/// still shows what its sections were painted.
+const PAINT_JOURNAL: &str = "paint.json";
+
+fn read_paint_journal(workspace_root: &Path) -> BTreeMap<String, FoundryAppliedPaint> {
+  std::fs::read(workspace_root.join(PAINT_JOURNAL))
+    .ok()
+    .and_then(|bytes| serde_json::from_slice::<Vec<FoundryAppliedPaint>>(&bytes).ok())
+    .unwrap_or_default()
+    .into_iter()
+    .map(|paint| (paint.entry_path.clone(), paint))
+    .collect()
+}
+
+/// Record `paint` on `entries`, or forget their paint when it is `None`.
+pub(crate) fn record_paint(
+  workspace_root: &Path,
+  entries: &[String],
+  paint: Option<&FoundryAppliedPaint>,
+) -> Result<(), Error> {
+  let mut journal = read_paint_journal(workspace_root);
+  for entry in entries {
+    match paint {
+      Some(paint) => {
+        journal.insert(
+          entry.clone(),
+          FoundryAppliedPaint {
+            entry_path: entry.clone(),
+            ..paint.clone()
+          },
+        );
+      }
+      None => {
+        journal.remove(entry);
+      }
+    }
+  }
+  let bytes = serde_json::to_vec(&journal.into_values().collect::<Vec<_>>())
+    .map_err(|e| Error::InvalidInput(format!("failed to write paint journal: {e}")))?;
+  std::fs::write(workspace_root.join(PAINT_JOURNAL), bytes)?;
   Ok(())
 }
 
@@ -585,6 +628,8 @@ pub(crate) fn replace_workspace_file(
     source_file_path.display(),
   );
   record_edits(&workspace_root, std::slice::from_ref(&entry_path), true)?;
+  // A replaced image no longer wears the paint the texture had.
+  record_paint(&workspace_root, std::slice::from_ref(&entry_path), None)?;
 
   replacement_result(entry_path, &target_path, target_ext, texture)
 }
@@ -603,6 +648,7 @@ pub(crate) fn revert_workspace_file(
     std::fs::remove_file(&target_path)?;
   }
   record_edits(&workspace_root, std::slice::from_ref(&entry_path), false)?;
+  record_paint(&workspace_root, std::slice::from_ref(&entry_path), None)?;
   let mut settings = read_sound_settings(&workspace_root);
   if let Some(stored) = settings.remove(&entry_path) {
     if let Some(source) = stored.source {
@@ -728,7 +774,7 @@ pub(crate) fn prepare_workspace(
       std::fs::remove_dir_all(&files_dir)?;
     }
     // A fresh unpack holds no edits, so neither does its journal.
-    for state in [EDIT_JOURNAL, SOUND_SETTINGS] {
+    for state in [EDIT_JOURNAL, PAINT_JOURNAL, SOUND_SETTINGS] {
       let path = root.join(state);
       if path.exists() {
         std::fs::remove_file(path)?;
@@ -757,6 +803,7 @@ pub(crate) fn prepare_workspace(
   Ok(FoundryWorkspace {
     edited_paths: read_edit_journal(&root),
     sound_settings: sound_settings_list(&root),
+    applied_paint: read_paint_journal(&root).into_values().collect(),
     root: root.to_string_lossy().to_string(),
     files_dir: files_dir.to_string_lossy().to_string(),
     vpk_copy,

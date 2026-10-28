@@ -17,17 +17,18 @@ use crate::errors::Error;
 use super::analyze::{analyze_default_hero, analyze_vpk_path, decode_foundry_cards};
 use super::archive_cache::clear_archive_cache;
 use super::export::{ExportDestination, FoundryExportResult, export_workspace};
-use super::palette::{sample_color_map, skin_palette};
 use super::paint::{describe_paint_targets, model_paint_parts, paint_parts, paint_target};
+use super::palette::{sample_color_map, skin_palette};
 use super::sounds::find_mp3_payload;
 use super::types::{
-  ExportDestinationKind, FoundryBuildResult, FoundryCardPreview, FoundryManifest, FoundryPaintPart,
-  FoundryPaintResult, FoundryPaintTargetInfo, FoundryReplacementResult, FoundrySoundPreview,
-  FoundrySoundSettings, FoundryTexture, FoundryWorkspace, PaintTarget,
+  ExportDestinationKind, FoundryAppliedPaint, FoundryBuildResult, FoundryCardPreview,
+  FoundryManifest, FoundryPaintPart, FoundryPaintResult, FoundryPaintTargetInfo,
+  FoundryReplacementResult, FoundrySoundPreview, FoundrySoundSettings, FoundryTexture,
+  FoundryWorkspace, PaintTarget,
 };
 use super::workspace::{
   adjust_workspace_sound, build_workspace_vpk, entry_bytes_from_sources, hue_of, parse_hex_color,
-  prepare_workspace, record_edits, replace_workspace_file, revert_workspace_file,
+  prepare_workspace, record_edits, record_paint, replace_workspace_file, revert_workspace_file,
 };
 
 /// Parse a skin VPK, detect its hero, and return the entries grouped by editing
@@ -213,6 +214,15 @@ pub async fn foundry_paint_target(
   pattern_intensity: Option<f32>,
   pattern_phase: Option<f32>,
 ) -> Result<FoundryPaintResult, Error> {
+  let applied = FoundryAppliedPaint {
+    entry_path: String::new(),
+    color_hex: color_hex.clone(),
+    saturation: saturation.unwrap_or(1.0),
+    brightness: brightness.unwrap_or(1.0),
+    pattern: pattern.clone(),
+    pattern_intensity: pattern_intensity.unwrap_or(1.0),
+    pattern_phase: pattern_phase.unwrap_or(0.0),
+  };
   let color = parse_hex_color(&color_hex)?;
   let recolor = vpkmanager::Recolor::new(
     f64::from(hue_of(color)),
@@ -231,6 +241,7 @@ pub async fn foundry_paint_target(
       pattern,
     )?;
     record_edits(&root, &result.painted_paths, true)?;
+    record_paint(&root, &result.painted_paths, Some(&applied))?;
     Ok(result)
   })
   .await
@@ -275,6 +286,15 @@ pub async fn foundry_paint_parts(
   if textures.is_empty() {
     return Err(Error::InvalidInput("no parts selected".into()));
   }
+  let applied = FoundryAppliedPaint {
+    entry_path: String::new(),
+    color_hex: color_hex.clone(),
+    saturation: saturation.unwrap_or(1.0),
+    brightness: brightness.unwrap_or(1.0),
+    pattern: pattern.clone(),
+    pattern_intensity: pattern_intensity.unwrap_or(1.0),
+    pattern_phase: pattern_phase.unwrap_or(0.0),
+  };
   let color = parse_hex_color(&color_hex)?;
   let recolor = vpkmanager::Recolor::new(
     f64::from(hue_of(color)),
@@ -294,6 +314,7 @@ pub async fn foundry_paint_parts(
       pattern,
     )?;
     record_edits(&root, &result.painted_paths, true)?;
+    record_paint(&root, &result.painted_paths, Some(&applied))?;
     Ok(result)
   })
   .await

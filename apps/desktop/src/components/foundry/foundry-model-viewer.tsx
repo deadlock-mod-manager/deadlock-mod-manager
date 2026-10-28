@@ -670,6 +670,9 @@ export const FoundryModelViewer = ({
     };
     const onPointerDown = (event: PointerEvent) => {
       pointerDown = { x: event.clientX, y: event.clientY };
+      // Shift-click adds to the pick, but the browser would also extend the
+      // page's text selection up to the click.
+      if (event.shiftKey || event.ctrlKey) event.preventDefault();
     };
     const onPointerUp = (event: PointerEvent) => {
       const start = pointerDown;

@@ -115,11 +115,15 @@ const samePaint = (a: FoundryPaint, b: FoundryPaint) =>
 const appliedFor = (
   selection: FoundryPaintSelection,
   applied: Readonly<Record<string, FoundryPaint>>,
+  parts: readonly FoundryPaintPart[],
 ): FoundryPaint | undefined => {
+  // A reopened workspace only knows each section's paint, so a whole part
+  // reads as painted when all of its sections share one.
   if (selection.kind === "target") {
-    return applied[targetPaintKey(selection.target)];
+    const target = applied[targetPaintKey(selection.target)];
+    if (target) return target;
   }
-  const paints = selection.textures.map(
+  const paints = selectionTextures(selection, parts).map(
     (texture) => applied[partPaintKey(texture)],
   );
   const [first] = paints;
@@ -154,9 +158,7 @@ const usePaintBrush = () => {
     setPreviewTint,
   } = useFoundry();
   const [drafts, setDrafts] = useState<Record<string, FoundryPaint>>({});
-  // Off until the user asks for it: a color the user has not committed to must
-  // not appear on the hero, and the picker always holds *some* value.
-  const [previewEnabled, setPreviewEnabled] = useState(false);
+  const [previewEnabled, setPreviewEnabled] = useState(true);
   // Held down with Space to look at the hero without the pending tint.
   const [comparing, setComparing] = useState(false);
 
@@ -166,7 +168,7 @@ const usePaintBrush = () => {
   );
 
   const key = selectionKey(paintSelection);
-  const applied = appliedFor(paintSelection, appliedPaint);
+  const applied = appliedFor(paintSelection, appliedPaint, paintParts);
   const paint =
     drafts[key] ??
     applied ??
@@ -207,10 +209,13 @@ const usePaintBrush = () => {
   const showTint = previewEnabled && canPreview;
 
   useEffect(() => {
+    // Comparing keeps a tint that covers nothing rather than none at all: with
+    // no tint the viewer brings back the selection glow, which would cast the
+    // "original" in the highlight color.
     setPreviewTint(
-      showTint && !comparing
+      showTint
         ? {
-            textures: tintTextures,
+            textures: comparing ? [] : tintTextures,
             colorHex: paint.colorHex,
             saturation: paint.saturation,
             brightness: paint.brightness,
@@ -349,6 +354,7 @@ const SectionRow = ({
   selected,
   hidden,
   appliedColor,
+  onReset,
   onToggle,
   onToggleHidden,
 }: {
@@ -356,6 +362,8 @@ const SectionRow = ({
   selected: boolean;
   hidden: boolean;
   appliedColor: string | undefined;
+  /** Restores the section's original color map; absent while it is unedited. */
+  onReset: (() => void) | undefined;
   onToggle: () => void;
   onToggleHidden: () => void;
 }) => {
@@ -401,6 +409,16 @@ const SectionRow = ({
           )}
         </span>
       </button>
+      {onReset && (
+        <button
+          aria-label={t("foundry.paint.resetPart", { part: part.label })}
+          className='shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100'
+          onClick={onReset}
+          title={t("foundry.paint.resetPart", { part: part.label })}
+          type='button'>
+          <ArrowCounterClockwiseIcon className='h-[14px] w-[14px]' />
+        </button>
+      )}
       <button
         aria-label={t(
           hidden ? "foundry.paint.showPart" : "foundry.paint.hidePart",
@@ -433,7 +451,16 @@ const PaintRail = ({ brush }: { brush: PaintBrush }) => {
     appliedPaint,
     hiddenParts,
     toggleHiddenPart,
+    editedPaths,
+    revertEntry,
+    workspace,
+    busy,
   } = useFoundry();
+  const reset = (part: FoundryPaintPart) =>
+    revertEntry(part.texture).catch((err) => {
+      logger.withError(err).error("[Foundry] Section reset failed");
+      toast.error(t("foundry.editor.revertFailed"));
+    });
   const hasSections = paintParts.length > 0;
   // A hero without sections can only be painted part by part.
   const scope =
@@ -535,6 +562,11 @@ const PaintRail = ({ brush }: { brush: PaintBrush }) => {
                       }
                       hidden={hiddenParts.includes(part.texture)}
                       key={part.texture}
+                      onReset={
+                        workspace && !busy && editedPaths.has(part.texture)
+                          ? () => reset(part)
+                          : undefined
+                      }
                       onToggle={() => toggle(part.texture)}
                       onToggleHidden={() => toggleHiddenPart(part.texture)}
                       part={part}

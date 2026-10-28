@@ -48,6 +48,7 @@ import type {
   FoundryTab,
   FoundryWorkspace,
 } from "@/types/foundry";
+import { FOUNDRY_PATTERNS } from "@/types/foundry";
 
 type FoundryStatus = "idle" | "analyzing" | "ready" | "error";
 type AsyncStatus = "idle" | "loading" | "ready" | "error";
@@ -602,6 +603,22 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
           prepared.soundSettings.map((sound) => [sound.entryPath, sound]),
         ),
       );
+      setAppliedPaint(
+        Object.fromEntries(
+          prepared.appliedPaint.map((applied) => [
+            partPaintKey(applied.entryPath),
+            {
+              colorHex: applied.colorHex,
+              saturation: applied.saturation,
+              brightness: applied.brightness,
+              pattern:
+                FOUNDRY_PATTERNS.find((id) => id === applied.pattern) ?? "none",
+              patternIntensity: applied.patternIntensity,
+              patternPhase: applied.patternPhase,
+            },
+          ]),
+        ),
+      );
       setWorkspace(prepared);
     } catch (err) {
       logger.withError(err).error("[Foundry] Failed to prepare workspace");
@@ -721,13 +738,11 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       if (entryPath.endsWith(".vtex_c")) {
         setSelectedTextureSource("manifest");
       }
-      // A reverted section no longer wears its paint.
-      if (!edited) {
-        setAppliedPaint((current) => {
-          const { [partPaintKey(entryPath)]: _reverted, ...rest } = current;
-          return rest;
-        });
-      }
+      // A reverted or replaced section no longer wears its paint.
+      setAppliedPaint((current) => {
+        const { [partPaintKey(entryPath)]: _unpainted, ...rest } = current;
+        return rest;
+      });
       setEditRevision((revision) => revision + 1);
     },
     [invalidateEntry],
