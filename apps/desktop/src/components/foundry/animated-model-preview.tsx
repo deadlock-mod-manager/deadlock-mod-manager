@@ -52,7 +52,7 @@ interface Props {
   model: FoundryModel;
   label: string;
   source: PreviewSource;
-  tint?: FoundryPreviewTint | null;
+  tint?: readonly FoundryPreviewTint[] | null;
   highlightTextures?: readonly string[];
   hiddenTextures?: readonly string[];
   silhouetteHero?: string;

@@ -75,7 +75,8 @@ interface FoundryModelViewerProps {
   label: string;
   /** Paints the matching materials on the GPU, without touching any file, so
    *  the paint tab shows a color the instant it is picked. */
-  tint?: FoundryPreviewTint | null;
+  /** Pending colors, later layers over earlier ones; null when not previewing. */
+  tint?: readonly FoundryPreviewTint[] | null;
   /** Color maps of the selected sections, drawn with a faint glow. */
   highlightTextures?: readonly string[];
   /** Color maps the user hid to reach what is behind them; not drawn or picked. */
@@ -206,7 +207,8 @@ const applyHighlight = (
 };
 
 /**
- * Point the paint shader at `tint`, or switch it off when it is null.
+ * Point the paint shader at each layer's textures, or switch it off when the
+ * tint is null. A texture in several layers wears the last.
  *
  * This only writes uniforms, so it costs nothing per change: the scene already
  * redraws every frame and the transform runs on the GPU. Dragging the picker is
@@ -214,22 +216,22 @@ const applyHighlight = (
  */
 const applyPreviewTint = (
   snapshots: MaterialSnapshot[],
-  tint: FoundryPreviewTint | null | undefined,
+  tint: readonly FoundryPreviewTint[] | null | undefined,
 ) => {
-  const hue = tint ? hueOf(tint.colorHex) : 0;
-  const textures = new Set(
-    tint?.textures.map((texture) => texture.toLowerCase()),
-  );
+  const layers = new Map<string, FoundryPreviewTint>();
+  for (const layer of tint ?? []) {
+    for (const texture of layer.textures) {
+      layers.set(texture.toLowerCase(), layer);
+    }
+  }
   for (const snapshot of snapshots) {
-    const painted =
-      tint != null &&
-      snapshot.texture !== null &&
-      textures.has(snapshot.texture);
-    snapshot.uniforms.uPaintActive.value = painted ? 1 : 0;
-    if (!painted) continue;
-    snapshot.uniforms.uPaintHue.value = hue;
-    snapshot.uniforms.uPaintSaturation.value = tint.saturation;
-    snapshot.uniforms.uPaintBrightness.value = tint.brightness;
+    const layer =
+      snapshot.texture === null ? undefined : layers.get(snapshot.texture);
+    snapshot.uniforms.uPaintActive.value = layer ? 1 : 0;
+    if (!layer) continue;
+    snapshot.uniforms.uPaintHue.value = hueOf(layer.colorHex);
+    snapshot.uniforms.uPaintSaturation.value = layer.saturation;
+    snapshot.uniforms.uPaintBrightness.value = layer.brightness;
   }
 };
 

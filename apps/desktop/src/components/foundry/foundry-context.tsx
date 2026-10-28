@@ -210,8 +210,8 @@ interface FoundryContextValue {
   primaryModelPath: string | null;
   setPrimaryModelPath: (path: string) => void;
   /** A scene-only tint for the paint tab's live preview; never written to disk. */
-  previewTint: FoundryPreviewTint | null;
-  setPreviewTint: (tint: FoundryPreviewTint | null) => void;
+  previewTint: readonly FoundryPreviewTint[] | null;
+  setPreviewTint: (tint: readonly FoundryPreviewTint[] | null) => void;
   /** How much of the hero each paint target covers, once the skin is scanned. */
   paintTargets: FoundryPaintTargetInfo[];
   /** The paint applied this session, keyed by `targetPaintKey` / `partPaintKey`. */
@@ -303,9 +303,9 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
     Map<string, FoundrySoundSettings>
   >(new Map());
   const [primaryModelPath, setPrimaryModelPath] = useState<string | null>(null);
-  const [previewTint, setPreviewTint] = useState<FoundryPreviewTint | null>(
-    null,
-  );
+  const [previewTint, setPreviewTint] = useState<
+    readonly FoundryPreviewTint[] | null
+  >(null);
   const [paintTargets, setPaintTargets] = useState<FoundryPaintTargetInfo[]>(
     [],
   );

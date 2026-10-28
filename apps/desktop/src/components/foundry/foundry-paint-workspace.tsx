@@ -31,6 +31,7 @@ import type {
   FoundryPaintTargetId,
   FoundryPaintTargetInfo,
 } from "@/types/foundry";
+import type { FoundryPreviewTint } from "./foundry-model-viewer";
 import {
   partPaintKey,
   selectionTextures,
@@ -132,6 +133,26 @@ const appliedFor = (
     : undefined;
 };
 
+/** The color an apply would change, ignoring patterns the shader can't show. */
+const isPendingColor = (
+  paint: FoundryPaint,
+  applied: FoundryPaint | undefined,
+) =>
+  !applied ||
+  applied.colorHex !== paint.colorHex ||
+  applied.saturation !== paint.saturation ||
+  applied.brightness !== paint.brightness;
+
+const tintLayer = (
+  textures: readonly string[],
+  paint: FoundryPaint,
+): FoundryPreviewTint => ({
+  textures,
+  colorHex: paint.colorHex,
+  saturation: paint.saturation,
+  brightness: paint.brightness,
+});
+
 /** Forge's painter takes the hero by name, lowercased with underscores. */
 const heroPainterUrl = (hero: string | null) =>
   hero
@@ -157,7 +178,11 @@ const usePaintBrush = () => {
     paintSelectedParts,
     setPreviewTint,
   } = useFoundry();
-  const [drafts, setDrafts] = useState<Record<string, FoundryPaint>>({});
+  // Unapplied paint per selection. Each keeps its selection so the model can
+  // show every pending color, not only the one being edited.
+  const [drafts, setDrafts] = useState<
+    Record<string, { selection: FoundryPaintSelection; paint: FoundryPaint }>
+  >({});
   const [previewEnabled, setPreviewEnabled] = useState(true);
   // Held down with Space to look at the hero without the pending tint.
   const [comparing, setComparing] = useState(false);
@@ -170,7 +195,7 @@ const usePaintBrush = () => {
   const key = selectionKey(paintSelection);
   const applied = appliedFor(paintSelection, appliedPaint, paintParts);
   const paint =
-    drafts[key] ??
+    drafts[key]?.paint ??
     applied ??
     defaultPaint(
       paintSelection.kind === "target" ? paintSelection.target : "body",
@@ -196,11 +221,7 @@ const usePaintBrush = () => {
   const colorDrivesParticlesOnly = patterned && (info?.particleCount ?? 0) > 0;
   const colorIgnored = patterned && !colorDrivesParticlesOnly;
 
-  const isDirty =
-    !applied ||
-    applied.colorHex !== paint.colorHex ||
-    applied.saturation !== paint.saturation ||
-    applied.brightness !== paint.brightness;
+  const isDirty = isPendingColor(paint, applied);
 
   // The hero is tinted only when the user asked for it, the paint is still
   // pending (an applied paint is already in the textures, tinting would double
@@ -208,33 +229,66 @@ const usePaintBrush = () => {
   const canPreview = isDirty && !patterned && tintTextures.length > 0;
   const showTint = previewEnabled && canPreview;
 
-  useEffect(() => {
-    // Comparing keeps a tint that covers nothing rather than none at all: with
-    // no tint the viewer brings back the selection glow, which would cast the
-    // "original" in the highlight color.
-    setPreviewTint(
-      showTint
-        ? {
-            textures: comparing ? [] : tintTextures,
-            colorHex: paint.colorHex,
-            saturation: paint.saturation,
-            brightness: paint.brightness,
-          }
-        : null,
-    );
-    return () => setPreviewTint(null);
+  // The other selections' pending colors, under the one being edited.
+  const tintLayers = useMemo(() => {
+    const layers = Object.entries(drafts).flatMap(([draftKey, draft]) => {
+      if (draftKey === key || draft.paint.pattern !== "none") return [];
+      const draftApplied = appliedFor(
+        draft.selection,
+        appliedPaint,
+        paintParts,
+      );
+      if (!isPendingColor(draft.paint, draftApplied)) return [];
+      return [
+        tintLayer(selectionTextures(draft.selection, paintParts), draft.paint),
+      ];
+    });
+    if (canPreview) {
+      layers.push({
+        textures: tintTextures,
+        colorHex: paint.colorHex,
+        saturation: paint.saturation,
+        brightness: paint.brightness,
+      });
+    }
+    return layers.filter((layer) => layer.textures.length > 0);
+    // The paint's fields, not the object: with no draft it is rebuilt every
+    // render, and a new layer list each time would loop through the context.
   }, [
-    showTint,
-    comparing,
+    drafts,
+    key,
+    appliedPaint,
+    paintParts,
+    canPreview,
     tintTextures,
     paint.colorHex,
     paint.saturation,
     paint.brightness,
-    setPreviewTint,
   ]);
+  const tinting = previewEnabled && tintLayers.length > 0;
+  // Each section's unapplied color, so the list can flag what Paint would
+  // change. Only colors the user picked: a fresh selection previews the
+  // default brush, which nobody chose yet.
+  const pendingColors = useMemo(() => {
+    const picked =
+      canPreview && !(key in drafts) ? tintLayers.slice(0, -1) : tintLayers;
+    return new Map(
+      picked.flatMap((layer) =>
+        layer.textures.map((texture) => [texture, layer.colorHex] as const),
+      ),
+    );
+  }, [tintLayers, canPreview, key, drafts]);
 
   useEffect(() => {
-    if (!showTint) return;
+    // Comparing keeps a tint that covers nothing rather than none at all: with
+    // no tint the viewer brings back the selection glow, which would cast the
+    // "original" in the highlight color.
+    setPreviewTint(tinting ? (comparing ? [] : tintLayers) : null);
+    return () => setPreviewTint(null);
+  }, [tinting, comparing, tintLayers, setPreviewTint]);
+
+  useEffect(() => {
+    if (!tinting) return;
     const typing = (event: KeyboardEvent) =>
       event.target instanceof HTMLInputElement ||
       event.target instanceof HTMLTextAreaElement;
@@ -253,13 +307,16 @@ const usePaintBrush = () => {
       window.removeEventListener("keyup", up);
       setComparing(false);
     };
-  }, [showTint]);
+  }, [tinting]);
 
   const update = useCallback(
     (patch: Partial<FoundryPaint>) => {
-      setDrafts((current) => ({ ...current, [key]: { ...paint, ...patch } }));
+      setDrafts((current) => ({
+        ...current,
+        [key]: { selection: paintSelection, paint: { ...paint, ...patch } },
+      }));
     },
-    [key, paint],
+    [key, paint, paintSelection],
   );
 
   const resetDraft = useCallback(() => {
@@ -283,17 +340,34 @@ const usePaintBrush = () => {
           );
         }
       }
-      // The baked textures are the truth now, so the scene tint has nothing
-      // left to add; leaving it on would paint the color a second time.
-      setPreviewEnabled(false);
-      // Targets and sections overlap, so a draft for another selection may now
-      // hold a color its textures no longer wear.
-      setDrafts({});
+      // The painted textures now wear this color, so drafts covering any of
+      // them are stale; the rest stay pending and keep showing on the model.
+      const painted = new Set(tintTextures);
+      setDrafts((current) =>
+        Object.fromEntries(
+          Object.entries(current).filter(
+            ([draftKey, draft]) =>
+              draftKey !== key &&
+              !selectionTextures(draft.selection, paintParts).some((texture) =>
+                painted.has(texture),
+              ),
+          ),
+        ),
+      );
     } catch (err) {
       logger.withError(err).error("[Foundry] Paint failed");
       toast.error(t("foundry.paint.failed"));
     }
-  }, [paint, paintSelectedParts, paintSelection, paintTarget, t]);
+  }, [
+    key,
+    paint,
+    paintParts,
+    paintSelectedParts,
+    paintSelection,
+    paintTarget,
+    t,
+    tintTextures,
+  ]);
 
   return {
     paint,
@@ -310,6 +384,8 @@ const usePaintBrush = () => {
     previewEnabled,
     setPreviewEnabled,
     showTint,
+    tinting,
+    pendingColors,
     update,
     resetDraft,
     apply,
@@ -354,6 +430,7 @@ const SectionRow = ({
   selected,
   hidden,
   appliedColor,
+  pendingColor,
   onReset,
   onToggle,
   onToggleHidden,
@@ -362,6 +439,8 @@ const SectionRow = ({
   selected: boolean;
   hidden: boolean;
   appliedColor: string | undefined;
+  /** A color picked for this section but not painted yet. */
+  pendingColor: string | undefined;
   /** Restores the section's original color map; absent while it is unedited. */
   onReset: (() => void) | undefined;
   onToggle: () => void;
@@ -436,7 +515,16 @@ const SectionRow = ({
           <EyeIcon className='h-[15px] w-[15px]' />
         )}
       </button>
-      {appliedColor && <Swatch color={appliedColor} />}
+      {pendingColor ? (
+        <span title={t("foundry.paint.pendingPart")}>
+          <Swatch
+            className='border-dashed border-foreground/60'
+            color={pendingColor}
+          />
+        </span>
+      ) : (
+        appliedColor && <Swatch color={appliedColor} />
+      )}
     </div>
   );
 };
@@ -561,6 +649,7 @@ const PaintRail = ({ brush }: { brush: PaintBrush }) => {
                         appliedPaint[partPaintKey(part.texture)]?.colorHex
                       }
                       hidden={hiddenParts.includes(part.texture)}
+                      pendingColor={brush.pendingColors.get(part.texture)}
                       key={part.texture}
                       onReset={
                         workspace && !busy && editedPaths.has(part.texture)
@@ -1006,7 +1095,7 @@ const PreviewOverlay = ({ brush }: { brush: PaintBrush }) => {
           />
         </label>
       </div>
-      {brush.showTint && (
+      {brush.tinting && (
         <div className='pointer-events-none absolute inset-x-0 bottom-[124px] flex justify-center'>
           <p className='flex items-center gap-2 rounded-[7px] border bg-card/90 py-[5px] pr-2.5 pl-1.5 text-[11px] text-muted-foreground backdrop-blur-md'>
             <kbd className='rounded border border-white/10 bg-muted px-[7px] py-0.5 font-mono font-semibold text-[10px] text-foreground'>
