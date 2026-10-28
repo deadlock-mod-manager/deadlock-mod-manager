@@ -8,6 +8,7 @@ import { ErrorState } from "./error-state";
 import { LatestRelease } from "./latest-release";
 import { LoadingState } from "./loading-state";
 import { ReleaseHistory } from "./release-history";
+import { UnofficialSitesWarning } from "./unofficial-sites-warning";
 
 export const DownloadsContainer = () => {
   const [userOS, setUserOS] = useState<DetectedOS>("unknown");
@@ -38,6 +39,7 @@ export const DownloadsContainer = () => {
       <DownloadsHero latest={releases.latest} />
       <div className='container mx-auto flex max-w-5xl flex-col gap-16 px-4 py-16'>
         <LatestRelease release={releases.latest} userOS={userOS} />
+        <UnofficialSitesWarning />
         <ReleaseHistory
           latestVersion={releases.latest.version}
           releases={releases.allVersions}

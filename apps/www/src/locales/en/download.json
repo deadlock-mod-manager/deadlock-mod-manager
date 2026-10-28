@@ -109,6 +109,10 @@
       }
     }
   },
+  "unofficialSites": {
+    "title": "Watch out for lookalike sites",
+    "description": "Download Deadlock Mod Manager from this page or our <github>GitHub releases</github>. We don't run <code>deadlockmodmanager.com</code>, <code>deadlockmodmanager.org</code> or <code>deadlockmodmanager.net</code>. They use our name, and some host installers on their own servers that could be swapped at any time."
+  },
   "history": {
     "title": "Other versions",
     "description": "Roll back to an earlier release or try upcoming changes early.",
