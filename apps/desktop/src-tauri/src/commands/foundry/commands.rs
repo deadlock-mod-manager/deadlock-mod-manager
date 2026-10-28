@@ -25,7 +25,7 @@ use super::types::{
 };
 use super::workspace::{
   build_workspace_vpk, entry_bytes_from_sources, hue_of, parse_hex_color, prepare_workspace,
-  replace_workspace_file, revert_workspace_file,
+  record_edits, replace_workspace_file, revert_workspace_file,
 };
 
 /// Parse a skin VPK, detect its hero, and return the entries grouped by editing
@@ -190,14 +190,17 @@ pub async fn foundry_paint_target(
   );
   let pattern = parse_pattern(pattern.as_deref(), pattern_intensity, pattern_phase)?;
   tauri::async_runtime::spawn_blocking(move || {
-    paint_target(
-      PathBuf::from(workspace_root),
+    let root = PathBuf::from(workspace_root);
+    let result = paint_target(
+      root.clone(),
       PathBuf::from(file_path),
       target,
       hero_display,
       recolor,
       pattern,
-    )
+    )?;
+    record_edits(&root, &result.painted_paths, true)?;
+    Ok(result)
   })
   .await
   .map_err(|e| Error::InvalidInput(format!("paint task failed: {e}")))?
@@ -249,15 +252,18 @@ pub async fn foundry_paint_parts(
   );
   let pattern = parse_pattern(pattern.as_deref(), pattern_intensity, pattern_phase)?;
   tauri::async_runtime::spawn_blocking(move || {
-    paint_parts(
-      PathBuf::from(workspace_root),
+    let root = PathBuf::from(workspace_root);
+    let result = paint_parts(
+      root.clone(),
       PathBuf::from(file_path),
       &model_path,
       hero_display,
       textures,
       recolor,
       pattern,
-    )
+    )?;
+    record_edits(&root, &result.painted_paths, true)?;
+    Ok(result)
   })
   .await
   .map_err(|e| Error::InvalidInput(format!("paint task failed: {e}")))?

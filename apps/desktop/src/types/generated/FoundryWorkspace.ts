@@ -26,4 +26,8 @@ export type FoundryWorkspace = {
    * reused (so in-progress edits are preserved).
    */
   created: boolean;
+  /**
+   * Entries edited in this workspace, including in earlier sessions.
+   */
+  editedPaths: Array<string>;
 };

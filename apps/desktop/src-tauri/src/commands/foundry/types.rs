@@ -190,6 +190,8 @@ pub struct FoundryWorkspace {
   /// True when this run performed the extraction; false when a prior unpack was
   /// reused (so in-progress edits are preserved).
   pub created: bool,
+  /// Entries edited in this workspace, including in earlier sessions.
+  pub edited_paths: Vec<String>,
 }
 
 /// Result of bundling the editable Foundry `files/` tree into a VPK.

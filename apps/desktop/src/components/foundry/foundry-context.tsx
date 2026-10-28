@@ -563,9 +563,15 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
         ? manifestEntryPaths(loaded)
         : null;
     try {
-      setWorkspace(
-        await prepareFoundryWorkspace(loaded.filePath, name, entries),
+      const prepared = await prepareFoundryWorkspace(
+        loaded.filePath,
+        name,
+        entries,
       );
+      // A reused workspace keeps edits from earlier sessions; its journal says
+      // which, so export and undo see them too.
+      setEditedPaths(new Set(prepared.editedPaths));
+      setWorkspace(prepared);
     } catch (err) {
       logger.withError(err).error("[Foundry] Failed to prepare workspace");
       setWorkspace(null);
