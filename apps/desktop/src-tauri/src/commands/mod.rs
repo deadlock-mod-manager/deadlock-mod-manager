@@ -27,6 +27,7 @@ pub mod ingest;
 pub mod live_match;
 pub mod localization;
 pub mod logs;
+#[cfg(feature = "match-sync")]
 pub mod match_sync;
 pub mod mod_folder_repair;
 pub mod mod_interchange;

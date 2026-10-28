@@ -1,37 +1,42 @@
-mod api_client;
-pub mod auth;
-mod error;
 mod game_check;
-mod gc_client;
-mod model;
-mod quota;
 pub mod settings;
-mod sync;
-mod throttle;
 
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, LazyLock};
 use std::time::Duration;
 
+use deadlock_match_sync::api_client::{ApiClient, HttpClientFactory, StoredHistories};
+use deadlock_match_sync::auth::{self, FixedAccountAuth};
+use deadlock_match_sync::game_check::GameRunningCheck;
+use deadlock_match_sync::gc_client::{self, GcMatchClient, SteamGcClient};
+use deadlock_match_sync::model::{
+  self, AccountStatus, AuthContext, FETCH_QUOTA_LIMIT, FETCH_QUOTA_WINDOW_SECS, QuotaKind,
+  SyncProgress,
+};
+use deadlock_match_sync::quota;
+use deadlock_match_sync::sync::{SyncEngine, SyncPersistence};
+use deadlock_match_sync::throttle::Throttle;
 use serde::Serialize;
 use tauri::Emitter;
 use tokio::sync::Mutex;
 
 use crate::app_runtime::AppHandle;
 
-use api_client::ApiClient;
-use auth::FixedAccountAuth;
-use game_check::GameRunningCheck;
 use game_check::SysGameRunningCheck;
-use gc_client::GcMatchClient;
-use gc_client::SteamGcClient;
-pub use model::LocalMatch;
-use model::{AccountStatus, AuthContext, FETCH_QUOTA_LIMIT, FETCH_QUOTA_WINDOW_SECS, SyncProgress};
-use sync::{SyncEngine, SyncPersistence};
-use throttle::Throttle;
 
-pub use error::MatchSyncError;
+pub use deadlock_match_sync::error::MatchSyncError;
+pub use deadlock_match_sync::model::LocalMatch;
+
+impl From<MatchSyncError> for crate::errors::Error {
+  fn from(err: MatchSyncError) -> Self {
+    crate::errors::Error::MatchSync {
+      subcode: err.subcode(),
+      message: err.to_string(),
+    }
+  }
+}
 
 // One GC request every 2 minutes: GetMatchMetaData is rate-limited per-account by
 // Steam's GC, and a fast throttle (the old 2s value) reliably tripped that limit.
@@ -55,8 +60,11 @@ fn emit_error(app: &AppHandle, err: &MatchSyncError) {
 }
 
 // One serializer for every run so concurrent syncs can't race a per-account persisted
-// quota (a lost update there would let the hard cap be exceeded).
+// quota (a lost update there would let the hard cap be exceeded). Holding it also means
+// no pass is writing friends' data, which the worker relies on to clear it.
 static SYNC_LOCK: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
+// Outlives the per-pass API clients; cleared in `forget_friends`.
+static STORED_HISTORIES: LazyLock<Arc<StoredHistories>> = LazyLock::new(Default::default);
 static FULL_SYNC_RUNNING: AtomicBool = AtomicBool::new(false);
 static FULL_SYNC_CANCEL: AtomicBool = AtomicBool::new(false);
 static BACKGROUND_RUNNING: AtomicBool = AtomicBool::new(false);
@@ -68,7 +76,7 @@ static GC_REQUEST_COUNTER: LazyLock<Arc<AtomicU64>> = LazyLock::new(|| Arc::new(
 // session, keyed by steam_id64. Never hold this lock across an `.await`.
 struct AccountResources {
   throttle: Arc<Throttle>,
-  gc_client: Arc<SteamGcClient>,
+  gc_client: SteamGcClient,
 }
 
 static ACCOUNT_RESOURCES: LazyLock<std::sync::Mutex<HashMap<u64, Arc<AccountResources>>>> =
@@ -79,7 +87,7 @@ fn resources_for(steam_id64: u64) -> Arc<AccountResources> {
   Arc::clone(map.entry(steam_id64).or_insert_with(|| {
     Arc::new(AccountResources {
       throttle: Arc::new(Throttle::new(GC_MIN_INTERVAL)),
-      gc_client: Arc::new(SteamGcClient::new()),
+      gc_client: SteamGcClient::new(),
     })
   }))
 }
@@ -116,11 +124,19 @@ impl SyncPersistence for AppPersistence {
   fn now(&self) -> i64 {
     settings::now_secs()
   }
-  fn load_quota(&self) -> Result<quota::QuotaWindow, MatchSyncError> {
-    settings::load_quota(&self.app, self.steam_id64)
+  fn load_quota(&self, kind: QuotaKind) -> Result<quota::QuotaWindow, MatchSyncError> {
+    settings::load_quota(&self.app, self.steam_id64, kind)
   }
-  fn save_quota(&self, quota: &quota::QuotaWindow) -> Result<(), MatchSyncError> {
-    settings::save_quota(&self.app, self.steam_id64, quota)
+  fn save_quota(&self, kind: QuotaKind, quota: &quota::QuotaWindow) -> Result<(), MatchSyncError> {
+    settings::save_quota(&self.app, self.steam_id64, kind, quota)
+  }
+  fn friend_cooldowns(&self) -> HashMap<u32, i64> {
+    settings::load_friend_cooldowns(&self.app).unwrap_or_default()
+  }
+  fn set_friend_cooldowns(&self, cooldowns: &[(u32, i64)]) {
+    if let Err(e) = settings::set_friend_cooldowns(&self.app, cooldowns, self.now()) {
+      log::error!("match-sync: failed to persist friend cooldowns: {e}");
+    }
   }
   fn load_fetched(&self) -> Vec<u64> {
     settings::load_fetched_ids(&self.app, self.steam_id64).unwrap_or_default()
@@ -147,9 +163,9 @@ impl SyncPersistence for AppPersistence {
     );
   }
   fn record_gc_error(&self, err: &MatchSyncError) {
-    // Only a broken GC connection warrants a backoff; the hook is only ever called from
-    // GC swallow points, but match defensively so a future caller can't misfire it.
-    if matches!(err, MatchSyncError::GcUnavailable(_)) {
+    // The engine reports every GC failure it swallows; only a broken connection backs the
+    // account off.
+    if err.backs_off_gc() {
       self.gc_error_seen.store(true, Ordering::Relaxed);
     }
   }
@@ -157,12 +173,43 @@ impl SyncPersistence for AppPersistence {
 
 type ProdEngine = SyncEngine<
   FixedAccountAuth,
-  Arc<SteamGcClient>,
+  SteamGcClient,
   ApiClient,
   ApiClient,
   AppPersistence,
   SysGameRunningCheck,
 >;
+
+// deadlock-api requests go through the app's proxy settings.
+fn api_client() -> ApiClient {
+  let http: HttpClientFactory = Arc::new(|timeout| {
+    crate::proxy::build_http_client(|b| b.timeout(timeout)).map_err(|e| e.to_string())
+  });
+  ApiClient::new(http, Arc::clone(&STORED_HISTORIES))
+}
+
+// Every account remembered in `loginusers.vdf` as (SteamID64, lowercase account name),
+// with Steam's install directory, where their saved sessions live.
+fn remembered_accounts() -> Result<(PathBuf, Vec<(u64, String)>), MatchSyncError> {
+  let steam = steamlocate::SteamDir::locate()
+    .map_err(|e| MatchSyncError::AuthUnavailable(format!("Steam not found: {e}")))?;
+  let accounts = crate::steam_user::remembered_accounts(steam.path())
+    .map_err(MatchSyncError::AuthUnavailable)?
+    .into_iter()
+    .map(|account| (account.steam_id64, account.account_name.to_lowercase()))
+    .collect();
+  Ok((steam.path().to_path_buf(), accounts))
+}
+
+fn list_available_accounts() -> Result<Vec<(u64, String)>, MatchSyncError> {
+  let (steam_dir, accounts) = remembered_accounts()?;
+  auth::list_available_accounts(&steam_dir, accounts)
+}
+
+fn recover_all() -> Result<Vec<AuthContext>, MatchSyncError> {
+  let (steam_dir, accounts) = remembered_accounts()?;
+  auth::recover_all(&steam_dir, accounts)
+}
 
 fn build_engine(
   app: AppHandle,
@@ -174,9 +221,9 @@ fn build_engine(
   let resources = resources_for(ctx.steam_id64);
   SyncEngine::new(
     FixedAccountAuth(ctx.clone()),
-    Arc::clone(&resources.gc_client),
-    ApiClient::default(),
-    ApiClient::default(),
+    resources.gc_client.clone(),
+    api_client(),
+    api_client(),
     AppPersistence {
       app,
       steam_id64: ctx.steam_id64,
@@ -287,13 +334,13 @@ pub fn status(app: &AppHandle) -> Result<MatchSyncStatusDto, MatchSyncError> {
   let config = settings::load_config(app)?;
   let now = settings::now_secs();
   // Opt-out must also prevent reads of Steam's saved-session configuration.
-  let available = discover_accounts(&config, auth::list_available_accounts, prune_resources);
+  let available = discover_accounts(&config, list_available_accounts, prune_resources);
 
   let accounts = available
     .into_iter()
     .map(|(steam_id64, account_name)| {
-      let quota = settings::load_quota(app, steam_id64).unwrap_or_else(|e| {
-        log::warn!("match-sync: quota load failed for {steam_id64}: {e}");
+      let quota = settings::load_quota(app, steam_id64, QuotaKind::Salts).unwrap_or_else(|e| {
+        log::warn!("match-sync: quota load failed: {e}");
         quota::QuotaWindow::new(Vec::new(), FETCH_QUOTA_LIMIT, FETCH_QUOTA_WINDOW_SECS)
       });
       AccountStatus {
@@ -343,7 +390,7 @@ pub async fn recent_local_matches(app: &AppHandle, account_id: u32) -> Vec<Local
     return Vec::new();
   }
 
-  let contexts = match auth::recover_all() {
+  let contexts = match recover_all() {
     Ok(contexts) => contexts,
     Err(e) => {
       log::debug!("match-sync: no Steam session for local history: {e}");
@@ -362,7 +409,10 @@ pub async fn recent_local_matches(app: &AppHandle, account_id: u32) -> Vec<Local
   if !resources.throttle.try_acquire().await {
     return Vec::new();
   }
-  let result = resources.gc_client.fetch_match_history(&ctx, None).await;
+  let result = resources
+    .gc_client
+    .fetch_match_history(&ctx, account_id, None)
+    .await;
   resources.gc_client.disconnect().await;
   match result {
     Ok(page) => page.matches,
@@ -414,9 +464,11 @@ pub fn reset_config(app: &AppHandle) -> Result<(), MatchSyncError> {
 // accounts stay remembered, so they are never pruned here.
 pub fn prune_forgotten_accounts(app: &AppHandle) {
   if !should_monitor(app) {
+    // No worker runs while sync is inactive, so nothing can write them back.
+    forget_friends(app);
     return;
   }
-  match auth::all_remembered_accounts() {
+  match remembered_accounts().map(|(_, accounts)| accounts) {
     Ok(accounts) => {
       let ids: Vec<u64> = accounts.iter().map(|(id, _)| *id).collect();
       prune_resources(&ids);
@@ -425,6 +477,15 @@ pub fn prune_forgotten_accounts(app: &AppHandle) {
       }
     }
     Err(e) => log::warn!("match-sync: could not list remembered accounts for pruning: {e}"),
+  }
+}
+
+// Friends' account ids are kept for match sync only, so they go once it is inactive. Only
+// background passes write them: call this when none can be running.
+fn forget_friends(app: &AppHandle) {
+  STORED_HISTORIES.clear();
+  if let Err(e) = settings::clear_friend_cooldowns(app) {
+    log::warn!("match-sync: failed to clear friend cooldowns: {e}");
   }
 }
 
@@ -537,7 +598,7 @@ async fn run_account_batch<F, Fut>(
 // Sequentially full-syncs every currently-decryptable account, each with its own quota
 // bucket and throttle.
 async fn run_full_sync_batch(app: &AppHandle, config: &model::MatchSyncConfig) {
-  let contexts = match auth::recover_all() {
+  let contexts = match recover_all() {
     Ok(c) => c,
     Err(e) => {
       log::warn!("match-sync: full sync failed: {e}");
@@ -577,7 +638,7 @@ pub async fn release_for_game_launch() {
     .lock()
     .unwrap()
     .values()
-    .map(|resources| Arc::clone(&resources.gc_client))
+    .map(|resources| resources.gc_client.clone())
     .collect();
   futures::future::join_all(clients.iter().map(|client| client.release())).await;
 }
@@ -599,7 +660,7 @@ async fn background_pass(app: &AppHandle) {
   let Ok(_guard) = SYNC_LOCK.try_lock() else {
     return;
   };
-  let contexts = match auth::recover_all() {
+  let contexts = match recover_all() {
     Ok(c) => c,
     Err(e) => {
       log::warn!("match-sync: background pass could not recover any account: {e}");
@@ -613,7 +674,7 @@ async fn background_pass(app: &AppHandle) {
     "background pass",
     false,
     |app, ctx, now| {
-      settings::load_quota(app, ctx.steam_id64)
+      settings::load_quota(app, ctx.steam_id64, QuotaKind::Salts)
         .map(|q| q.remaining(now) == 0)
         .unwrap_or(true)
     },
@@ -629,13 +690,16 @@ pub fn start_background_worker(app: AppHandle) {
   if !should_monitor(&app) {
     return;
   }
+  // Sync is on, so lift a cancel from an opt-out that came before. A worker still running
+  // from before a quick disable/re-enable keeps going, and would otherwise abort every
+  // pass from then on.
+  BACKGROUND_CANCEL.store(false, Ordering::Relaxed);
   if BACKGROUND_RUNNING
     .compare_exchange(false, true, Ordering::AcqRel, Ordering::Relaxed)
     .is_err()
   {
     return;
   }
-  BACKGROUND_CANCEL.store(false, Ordering::Relaxed);
   tokio::spawn(async move {
     while should_monitor(&app) {
       background_pass(&app).await;
@@ -644,6 +708,12 @@ pub fn start_background_worker(app: AppHandle) {
         tokio::time::sleep(Duration::from_secs(5)).await;
         slept += 5;
       }
+    }
+    // Under the sync lock, so a pass started elsewhere (on game exit) has finished writing
+    // them; and before a restarted worker can run one that writes them again.
+    {
+      let _guard = SYNC_LOCK.lock().await;
+      forget_friends(&app);
     }
     BACKGROUND_RUNNING.store(false, Ordering::Relaxed);
     // A quick disable/re-enable while this task was still shutting down could have
@@ -656,7 +726,7 @@ pub fn start_background_worker(app: AppHandle) {
 
 #[cfg(test)]
 mod config_tests {
-  use super::model::MatchSyncConfig;
+  use deadlock_match_sync::model::MatchSyncConfig;
 
   #[test]
   fn active_requires_both_enabled_and_consent() {

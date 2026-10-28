@@ -15,7 +15,7 @@ import { getErrorMessage } from "@/lib/errors";
 import { getQueuedDownloads } from "@/lib/mods/mod-variants";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
-import { findLocalMod } from "@/lib/store/selectors";
+import { findLocalMod, selectStoreFilters } from "@/lib/store/selectors";
 import { type ModDownloadItem, ModStatus } from "@/types/mods";
 import { invokeGuarded } from "@/lib/game-guard";
 
@@ -53,9 +53,16 @@ export const queueModDownload = (
 
   addLocalMod(mod, { downloads: allFiles, selectedDownloads: selectedFiles });
 
+  // Archives install in the mod's download order, which sets the default
+  // load order of their VPKs.
+  const fileNames = allFiles.map((file) => file.name);
+  const orderedFiles = [...selectedFiles].sort(
+    (a, b) => fileNames.indexOf(a.name) - fileNames.indexOf(b.name),
+  );
+
   return downloadManager.addToQueue({
     ...mod,
-    downloads: selectedFiles,
+    downloads: orderedFiles,
     profileFolder,
     analyticsEntryPoint,
     analyticsOperationKind,
@@ -140,7 +147,10 @@ export const useDownload = (
         entryPoint ??
         modEntryPoint(
           pathname,
-          !!usePersistedStore.getState().modsFilters.searchQuery,
+          !!selectStoreFilters(
+            usePersistedStore.getState(),
+            pathname === "/maps",
+          ).searchQuery,
         ),
       onComplete: () => {
         setIsDialogOpen(false);

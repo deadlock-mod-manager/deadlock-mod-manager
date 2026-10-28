@@ -795,7 +795,51 @@ mod tests {
   }
 
   #[test]
-  fn variant_swap_enables_the_selection_in_name_order() {
+  fn reorder_by_remote_id_reorders_files_inside_a_mod() {
+    let game = game_dir();
+    let addons = game.path().join("game/citadel/addons");
+    fs::create_dir_all(&addons).unwrap();
+    fs::write(addons.join("pak01_dir.vpk"), b"blue bytes").unwrap();
+    fs::write(addons.join("pak02_dir.vpk"), b"red bytes").unwrap();
+    let base = crate::mod_manager::shard::ProfileBase::new(addons.clone()).unwrap();
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mark_enabled(
+      "42",
+      vec!["pak01_dir.vpk".into(), "pak02_dir.vpk".into()],
+      vec!["blue.vpk".into(), "red.vpk".into()],
+      Some(0),
+      shard::ShardIndex::FIRST,
+    );
+    manifest.save(&base).unwrap();
+
+    test_manager(game.path())
+      .reorder_mods_by_remote_id(
+        vec![(
+          "42".into(),
+          vec!["pak02_dir.vpk".into(), "pak01_dir.vpk".into()],
+          0,
+        )],
+        None,
+      )
+      .unwrap();
+
+    assert_eq!(
+      fs::read(addons.join("pak01_dir.vpk")).unwrap(),
+      b"red bytes"
+    );
+    assert_eq!(
+      fs::read(addons.join("pak02_dir.vpk")).unwrap(),
+      b"blue bytes"
+    );
+    let saved = ProfileVpkManifest::load(&base).unwrap();
+    assert_eq!(
+      saved.mods["42"].original_vpk_names,
+      vec!["red.vpk", "blue.vpk"]
+    );
+  }
+
+  #[test]
+  fn variant_swap_enables_the_selection_in_the_given_order() {
     let game = game_dir();
     let addons = game.path().join("game/citadel/addons");
     fs::create_dir_all(&addons).unwrap();
@@ -810,10 +854,10 @@ mod tests {
         vec!["red.vpk".into(), "blue.vpk".into()],
       )
       .unwrap();
-    assert_eq!(result.original_vpk_names, vec!["blue.vpk", "red.vpk"]);
+    assert_eq!(result.original_vpk_names, vec!["red.vpk", "blue.vpk"]);
     assert_eq!(
       fs::read(addons.join(&result.installed_vpks[0])).unwrap(),
-      b"blue bytes"
+      b"red bytes"
     );
   }
 
@@ -868,6 +912,55 @@ mod tests {
     let manifest = ProfileVpkManifest::load(&ProfileBase::new(addons).unwrap()).unwrap();
     assert_eq!(manifest.mods["42"].original_vpk_names, vec!["blue.vpk"]);
     assert_eq!(manifest.mods["42"].current_vpks, installed.installed_vpks);
+  }
+
+  #[test]
+  fn reenable_without_file_tree_keeps_the_disabled_file_order() {
+    let game = game_dir();
+    let citadel = game.path().join("game/citadel");
+    fs::write(
+      citadel.join("gameinfo.gi"),
+      "\"GameInfo\"\n{\n\"FileSystem\"\n{\nSearchPaths\n{\nGame citadel\n}\n}\n}\n",
+    )
+    .unwrap();
+    let addons = citadel.join("addons");
+    fs::create_dir_all(&addons).unwrap();
+    fs::write(addons.join("42_blue.vpk"), b"blue bytes").unwrap();
+    fs::write(addons.join("42_red.vpk"), b"red bytes").unwrap();
+    let base = ProfileBase::new(addons.clone()).unwrap();
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mark_disabled(
+      "42",
+      vec!["42_red.vpk".into(), "42_blue.vpk".into()],
+      vec!["red.vpk".into(), "blue.vpk".into()],
+    );
+    manifest.save(&base).unwrap();
+    let mut manager = test_manager(game.path());
+    manager
+      .config_manager
+      .setup_game_for_mods(game.path())
+      .unwrap();
+
+    let installed = manager
+      .install_mod(
+        Mod {
+          id: "42".into(),
+          name: "Ordered fixture".into(),
+          is_map: false,
+          installed_vpks: Vec::new(),
+          file_tree: None,
+          install_order: None,
+          original_vpk_names: Vec::new(),
+        },
+        None,
+      )
+      .unwrap();
+
+    assert_eq!(installed.original_vpk_names, vec!["red.vpk", "blue.vpk"]);
+    assert_eq!(
+      fs::read(addons.join(&installed.installed_vpks[0])).unwrap(),
+      b"red bytes"
+    );
   }
 
   #[test]
@@ -1706,6 +1799,29 @@ mod tests {
     assert_eq!(
       fs::read(addons_path.join(&updated.installed_vpks[0])).unwrap(),
       b"blue"
+    );
+  }
+
+  #[test]
+  fn update_mod_from_prepared_enables_files_in_file_tree_order() {
+    let game = game_dir();
+    let addons_path = game.path().join("game").join("citadel").join("addons");
+    fs::create_dir_all(&addons_path).unwrap();
+    let prepared_dir = game.path().join("prepared");
+    fs::create_dir_all(&prepared_dir).unwrap();
+    let red = prepared_dir.join("red.vpk");
+    let blue = prepared_dir.join("blue.vpk");
+    fs::write(&red, b"red").unwrap();
+    fs::write(&blue, b"blue").unwrap();
+    let names = ["red.vpk".to_string(), "blue.vpk".to_string()];
+    let tree = ModFileTree::from_options(&names, &names.iter().cloned().collect());
+    let updated = test_manager(game.path())
+      .update_mod_from_prepared("target", "Target", &[blue, red], Some(tree), None, true)
+      .unwrap();
+    assert_eq!(updated.original_vpk_names, ["red.vpk", "blue.vpk"]);
+    assert_eq!(
+      fs::read(addons_path.join(&updated.installed_vpks[0])).unwrap(),
+      b"red"
     );
   }
 

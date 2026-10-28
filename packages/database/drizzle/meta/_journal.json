@@ -428,6 +428,13 @@
       "when": 1792957938077,
       "tag": "0060_mod_author_contacts",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1793115140928,
+      "tag": "0061_mod_download_position",
+      "breakpoints": true
     }
   ]
 }

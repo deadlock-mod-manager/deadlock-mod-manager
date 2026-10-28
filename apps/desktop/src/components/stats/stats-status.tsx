@@ -8,6 +8,7 @@ import { RefreshCw } from "@deadlock-mods/ui/icons";
 import { formatDistanceToNow } from "date-fns";
 import { useTranslation } from "react-i18next";
 import { MatchSyncToggle } from "@/components/stats/match-sync-toggle";
+import { isMatchSyncBuilt } from "@/lib/runtime-bootstrap";
 import { cn } from "@/lib/utils";
 
 interface StatsFreshness {
@@ -79,7 +80,7 @@ export const StatsStatus = ({ freshness }: StatsStatusProps) => {
         </>
       )}
 
-      <MatchSyncToggle />
+      {isMatchSyncBuilt() && <MatchSyncToggle />}
     </div>
   );
 };

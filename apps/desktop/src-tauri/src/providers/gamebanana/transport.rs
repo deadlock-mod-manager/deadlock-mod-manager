@@ -524,10 +524,9 @@ mod tests {
       .await;
     assert!(matches!(&result, Ok(ApiResponse::Rejected { code }) if code == "COMMENT_MODE_HIDDEN"));
 
-    let not_enrolled = serve_once(
-      "HTTP/1.1 200 OK\r\nContent-Length: 30\r\n\r\n{\"_sErrorCode\":\"NOT_ENROLLED\"}",
-    )
-    .await;
+    let not_enrolled =
+      serve_once("HTTP/1.1 200 OK\r\nContent-Length: 30\r\n\r\n{\"_sErrorCode\":\"NOT_ENROLLED\"}")
+        .await;
     let result = transport
       .get_json_or_rejection::<Vec<String>>("remote install queue", not_enrolled, &cancel)
       .await;

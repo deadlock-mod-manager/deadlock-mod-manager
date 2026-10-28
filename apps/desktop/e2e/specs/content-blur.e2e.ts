@@ -5,7 +5,7 @@ import { $, browser, expect } from "@wdio/globals";
 import { z } from "zod";
 import { startApplication } from "../support/application";
 import { closeApplication } from "../support/application-exit";
-import { navigate, reveal } from "../support/ui";
+import { navigate } from "../support/ui";
 import {
   openSettings,
   readSettings,
@@ -13,24 +13,31 @@ import {
 } from "../support/settings-actions";
 import { observeUntil } from "../support/observations";
 
-const image = () => $('img[alt="E2E Local Adult Skin"]');
+const IMAGE = 'img[alt="E2E Local Adult Skin"]';
+const image = () => $(IMAGE);
+// Linux hides the image and draws a blurred canvas copy beside it; other
+// platforms blur the image with a CSS filter. The card is found in the page
+// because WebKitGTK's driver can't hand its element to a script.
 const assertBlur = async (blurred: boolean) => {
-  const target = await image();
-  await reveal(target);
+  await image().waitForExist();
   await browser.waitUntil(
-    async () => {
-      const filters = await browser.execute((element: HTMLElement) => {
-        const filters: string[] = [];
+    async () =>
+      (await browser.execute((selector: string) => {
+        const element = document.querySelector<HTMLElement>(selector);
+        if (!element) return null;
+        element
+          .closest('[role="button"]')
+          ?.scrollIntoView({ block: "center", behavior: "instant" });
         for (
           let node: HTMLElement | null = element;
           node;
           node = node.parentElement
         )
-          filters.push(getComputedStyle(node).filter);
-        return filters;
-      }, target);
-      return filters.includes("blur(16px)") === blurred;
-    },
+          if (getComputedStyle(node).filter === "blur(16px)") return true;
+        return !!element.parentElement?.parentElement?.querySelector(
+          ":scope > canvas",
+        );
+      }, IMAGE)) === blurred,
     { timeoutMsg: `Expected adult preview blur to be ${blurred}` },
   );
 };
@@ -44,8 +51,9 @@ describe("NSFW preview preferences", () => {
     await navigate("skins");
     if (editing) {
       await assertBlur(true);
-      const card = await image().$('./ancestor::*[@role="button"][1]');
-      await card.$("button=Show").click();
+      await $(
+        '//img[@alt="E2E Local Adult Skin"]/../..//button[normalize-space()="Show"]',
+      ).click();
       await assertBlur(false);
       await observeUntil(
         "Remembered reveal persisted",

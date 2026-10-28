@@ -9,6 +9,7 @@ import {
   getHeroes,
   getItems,
 } from "@/lib/deadlock-api";
+import { isMatchSyncBuilt } from "@/lib/runtime-bootstrap";
 import {
   type AnalyticsHeroStats,
   getAnalyticsHeroStats,
@@ -574,7 +575,7 @@ export const usePlayerStats = (
         accountId,
       });
     },
-    enabled,
+    enabled: enabled && isMatchSyncBuilt(),
     staleTime: STATS_TTL.matchHistory,
     retry: false,
     meta: { skipGlobalErrorHandler: true },

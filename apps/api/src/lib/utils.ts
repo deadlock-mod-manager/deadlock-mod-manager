@@ -22,7 +22,7 @@ export const formatModDownloads = (
 
   return toModDownloadDto(
     downloads
-      .sort((a, b) => b.size - a.size)
+      .sort((a, b) => a.position - b.position || b.size - a.size)
       .map((download) => ({
         ...download,
         url: mirroringEnabled

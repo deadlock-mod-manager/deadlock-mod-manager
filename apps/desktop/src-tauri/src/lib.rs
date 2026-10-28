@@ -24,6 +24,10 @@ mod hero_detector;
 mod ingest_tool;
 mod live_match;
 mod logs;
+#[cfg(feature = "match-sync")]
+mod match_sync;
+#[cfg(not(feature = "match-sync"))]
+#[path = "match_sync/disabled.rs"]
 mod match_sync;
 mod mod_manager;
 pub mod providers;
@@ -282,7 +286,7 @@ pub fn run() {
       commands::fonts::debug_trigger_font_install,
       #[cfg(debug_assertions)]
       commands::downloads::debug_queue_local_zip,
-      #[cfg(debug_assertions)]
+      #[cfg(all(debug_assertions, feature = "match-sync"))]
       commands::match_sync::debug_reset_match_sync_config,
       commands::downloads::clear_download_cache,
       commands::downloads::get_download_cache_location,
@@ -292,6 +296,7 @@ pub fn run() {
       commands::mods::purge_mod,
       commands::mods::reorder_mods,
       commands::mods::reorder_mods_by_remote_id,
+      commands::mods::get_enabled_mod_vpk_files,
       commands::localization::analyze_localization_overlay,
       commands::localization::apply_localization_overlay,
       commands::localization::get_mod_compatibility_settings,
@@ -403,12 +408,19 @@ pub fn run() {
       game_presence::get_game_presence_heroes,
       game_presence::start_game_presence_watcher,
       game_presence::stop_game_presence_watcher,
+      #[cfg(feature = "match-sync")]
       commands::match_sync::get_match_sync_status,
+      #[cfg(feature = "match-sync")]
       commands::match_sync::get_local_match_history,
+      #[cfg(feature = "match-sync")]
       commands::match_sync::set_match_sync_consent,
+      #[cfg(feature = "match-sync")]
       commands::match_sync::set_match_sync_enabled,
+      #[cfg(feature = "match-sync")]
       commands::match_sync::start_full_match_sync,
+      #[cfg(feature = "match-sync")]
       commands::match_sync::cancel_full_match_sync,
+      #[cfg(feature = "match-sync")]
       commands::match_sync::resume_match_sync_monitoring,
       commands::steam_user::get_steam_accounts,
       commands::live_match::get_live_match,

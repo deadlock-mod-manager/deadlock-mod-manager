@@ -183,6 +183,7 @@ jobs:
             apps/desktop -> target
             packages/vpkmanager -> target
             packages/source2-model -> target
+            packages/deadlock-match-sync -> target
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -196,6 +197,15 @@ jobs:
         run: |
           cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --locked \
             -- --skip download_manager::downloader::tests::test_download_file
+
+      - name: Run match sync tests
+        run: cargo test --manifest-path packages/deadlock-match-sync/Cargo.toml --locked
+
+      # Builds without match sync must keep compiling.
+      - name: Check build without match sync
+        run: |
+          cargo check --manifest-path apps/desktop/src-tauri/Cargo.toml --locked --all-targets \
+            --no-default-features --features tauri-wry
 
       - name: Run Source 2 codec tests
         env:
