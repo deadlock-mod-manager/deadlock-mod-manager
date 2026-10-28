@@ -9,6 +9,7 @@ import {
   type DashboardWidget,
   DEFAULT_LAYOUT,
   duplicateWidget,
+  LIVE_PANELS,
   moveTab,
   moveWidgetToTab,
   parseLayout,
@@ -19,7 +20,9 @@ import {
   type TabIcon,
   updateTab,
   upsertWidget,
+  withoutPanels,
 } from "@/lib/stats/dashboard/layout";
+import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { emptyTab, tabFromTemplate } from "@/lib/stats/dashboard/templates";
 import { usePersistedStore } from "@/lib/store";
 import type { GridActions } from "./dashboard-grid";
@@ -41,10 +44,23 @@ export const useDashboardEditor = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const storedLayout = usePersistedStore((state) => state.statsDashboard);
   const setStoredLayout = usePersistedStore((state) => state.setStatsDashboard);
-  const { layout: savedLayout, recovered } = useMemo(
-    () => parseLayout(storedLayout),
-    [storedLayout],
+  const liveEnabled = useExperimentalFeature("live-scoreboard");
+  // While the Live Scoreboard toggle is off its tab is hidden, and the default
+  // the editor saves against and resets to leaves it out as well.
+  const defaultLayout = useMemo(
+    () =>
+      liveEnabled ? DEFAULT_LAYOUT : withoutPanels(DEFAULT_LAYOUT, LIVE_PANELS),
+    [liveEnabled],
   );
+  const { layout: savedLayout, recovered } = useMemo(() => {
+    const parsed = parseLayout(storedLayout);
+    if (liveEnabled) return parsed;
+    const visible = withoutPanels(parsed.layout, LIVE_PANELS);
+    return {
+      ...parsed,
+      layout: visible.tabs.length > 0 ? visible : defaultLayout,
+    };
+  }, [storedLayout, liveEnabled, defaultLayout]);
 
   const [draft, setDraft] = useState<DashboardLayout | null>(null);
   const [editorTarget, setEditorTarget] = useState<EditorTarget | null>(null);
@@ -144,7 +160,7 @@ export const useDashboardEditor = () => {
       // Saving the untouched default stores nothing, so later releases can
       // still improve the default for everyone who never customised it.
       setStoredLayout(
-        JSON.stringify(draft) === JSON.stringify(DEFAULT_LAYOUT) ? null : draft,
+        JSON.stringify(draft) === JSON.stringify(defaultLayout) ? null : draft,
       );
       setDraft(null);
     },
@@ -166,7 +182,7 @@ export const useDashboardEditor = () => {
     dismissConfirm: () => setPendingConfirm(null),
     confirm: () => {
       if (pendingConfirm?.kind === "reset") {
-        setDraft(cloneLayout(DEFAULT_LAYOUT));
+        setDraft(cloneLayout(defaultLayout));
       } else if (pendingConfirm?.kind === "discard") {
         setDraft(null);
       } else if (pendingConfirm?.kind === "deleteTab" && draft) {

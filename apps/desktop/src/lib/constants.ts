@@ -133,6 +133,7 @@ export const EXPERIMENTAL_FEATURES = [
   "conflict-detection",
   "performance-configs",
   "cloud-backup",
+  "live-scoreboard",
 ] as const;
 
 /**

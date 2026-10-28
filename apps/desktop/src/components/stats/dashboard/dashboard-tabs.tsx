@@ -44,6 +44,7 @@ import {
   TAB_ICONS,
   type TabIcon,
 } from "@/lib/stats/dashboard/layout";
+import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { TAB_TEMPLATE_IDS } from "@/lib/stats/dashboard/templates";
 import { cn } from "@/lib/utils";
 import { useTabTitle } from "./use-tab-title";
@@ -227,6 +228,10 @@ export const DashboardTabs = ({
 }: DashboardTabsProps) => {
   const { t } = useTranslation();
   const tabTitle = useTabTitle();
+  const liveEnabled = useExperimentalFeature("live-scoreboard");
+  const templateIds = liveEnabled
+    ? TAB_TEMPLATE_IDS
+    : TAB_TEMPLATE_IDS.filter((templateId) => templateId !== "live");
   const activeIndex = tabs.findIndex((tab) => tab.id === activeTabId);
   const activeTab = tabs[activeIndex];
 
@@ -300,7 +305,7 @@ export const DashboardTabs = ({
             <DropdownMenuLabel className='text-muted-foreground text-xs'>
               {t("stats.dashboard.tabs.fromTemplate")}
             </DropdownMenuLabel>
-            {TAB_TEMPLATE_IDS.map((templateId) => (
+            {templateIds.map((templateId) => (
               <DropdownMenuItem
                 key={templateId}
                 onSelect={() => onAddTab(templateId)}>
