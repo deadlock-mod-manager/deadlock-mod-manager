@@ -401,4 +401,78 @@ mod tests {
   fn refuses_a_file_that_is_not_a_layout() {
     assert!(patch_layout(b"not a resource").is_err());
   }
+
+  /// Packs `files` into `output`, the way an addon or the game's pak is laid out.
+  fn pack(output: &Path, files: &[(&str, &[u8])]) {
+    let staging = tempfile::tempdir().unwrap();
+    for (path, bytes) in files {
+      let target = staging.path().join(path);
+      fs::create_dir_all(target.parent().unwrap()).unwrap();
+      fs::write(target, bytes).unwrap();
+    }
+    vpkmanager::pack_directory(staging.path(), output).unwrap();
+  }
+
+  #[test]
+  fn update_leaves_a_pack_with_other_mods_alone() {
+    let root = tempfile::tempdir().unwrap();
+    let addons = root.path().join("addons");
+    let merged = addons.join("pak01_dir.vpk");
+    pack(
+      &merged,
+      &[
+        (TEAM_LAYOUT, b"layout"),
+        (SCRIPT_RESOURCE, b"script"),
+        ("panorama/images/other_mod.png", b"someone else's file"),
+      ],
+    );
+    let before = fs::read(&merged).unwrap();
+
+    // Refused before the game is ever read, so no install is needed.
+    let error = update(&root.path().join("no-game"), &addons, None).unwrap_err();
+
+    assert!(error.to_string().contains("holds more than the live bridge"));
+    assert_eq!(fs::read(&merged).unwrap(), before);
+  }
+
+  #[test]
+  fn a_layout_the_bridge_cannot_patch_is_incompatible_not_current() {
+    let game = tempfile::tempdir().unwrap();
+    let citadel = game.path().join("game").join("citadel");
+    // A game whose top-bar layout is no compiled layout the bridge knows.
+    pack(
+      &citadel.join("pak01_dir.vpk"),
+      &[(TEAM_LAYOUT, b"a reshaped layout")],
+    );
+    let addons = citadel.join("addons");
+    pack(
+      &addons.join("pak01_dir.vpk"),
+      &[(TEAM_LAYOUT, b"old layout"), (SCRIPT_RESOURCE, b"script")],
+    );
+
+    assert_eq!(
+      status(game.path(), &addons),
+      BridgeStatus {
+        installed: true,
+        outdated: false,
+        incompatible: true,
+      }
+    );
+  }
+
+  #[test]
+  fn an_unreadable_game_is_not_called_incompatible() {
+    let game = tempfile::tempdir().unwrap();
+    let addons = game.path().join("addons");
+    pack(
+      &addons.join("pak01_dir.vpk"),
+      &[(TEAM_LAYOUT, b"layout"), (SCRIPT_RESOURCE, b"script")],
+    );
+
+    let current = status(game.path(), &addons);
+
+    assert!(current.installed);
+    assert!(!current.outdated);
+    assert!(!current.incompatible);
+  }
 }
