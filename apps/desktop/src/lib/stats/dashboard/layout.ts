@@ -278,13 +278,17 @@ const RETIRED_PANELS: ReadonlySet<string> = new Set(["live"]);
 /** Panels behind the experimental Live Scoreboard toggle. */
 export const LIVE_PANELS: ReadonlySet<string> = new Set(["liveScoreboard"]);
 
+const listedIn =
+  (panels: ReadonlySet<string>) =>
+  (widget: DashboardWidget): boolean =>
+    widget.source.kind === "panel" && panels.has(widget.source.panel);
+
 /** Removes the given panels, and the tabs that held nothing else. */
 export const withoutPanels = (
   layout: DashboardLayout,
   panels: ReadonlySet<string>,
 ): DashboardLayout => {
-  const isListed = (widget: DashboardWidget) =>
-    widget.source.kind === "panel" && panels.has(widget.source.panel);
+  const isListed = listedIn(panels);
   const tabs = layout.tabs
     .filter((tab) => tab.widgets.length === 0 || !tab.widgets.every(isListed))
     .map((tab) => ({
@@ -292,6 +296,25 @@ export const withoutPanels = (
       widgets: tab.widgets.filter((widget) => !isListed(widget)),
     }));
   return { ...layout, tabs };
+};
+
+/**
+ * Puts back the tabs of `source` that hold only the given panels, after the
+ * ones `layout` has. Saving with a panel hidden then keeps its tab for later.
+ */
+export const withPanelTabsOf = (
+  layout: DashboardLayout,
+  source: DashboardLayout,
+  panels: ReadonlySet<string>,
+): DashboardLayout => {
+  const isListed = listedIn(panels);
+  const restored = source.tabs.filter(
+    (tab) =>
+      tab.widgets.length > 0 &&
+      tab.widgets.every(isListed) &&
+      !layout.tabs.some((kept) => kept.id === tab.id),
+  );
+  return { ...layout, tabs: [...layout.tabs, ...restored] };
 };
 
 const dropRetiredPanels = (layout: DashboardLayout): DashboardLayout => {

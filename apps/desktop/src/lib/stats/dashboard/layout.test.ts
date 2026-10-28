@@ -11,6 +11,7 @@ import {
   reorderWidget,
   upsertWidget,
   withoutPanels,
+  withPanelTabsOf,
 } from "./layout";
 
 const widget = (id: string): DashboardWidget => ({
@@ -88,6 +89,17 @@ describe("dashboard layout", () => {
     const hidden = withoutPanels(saved, LIVE_PANELS);
     expect(hidden.tabs.map((tab) => tab.id)).toEqual(["a", "b"]);
     expect(saved.tabs).toHaveLength(3);
+
+    const restored = withPanelTabsOf(hidden, saved, LIVE_PANELS);
+    expect(restored).toEqual(saved);
+    expect(withPanelTabsOf(saved, saved, LIVE_PANELS)).toEqual(saved);
+  });
+
+  it("saving the default with the live tab hidden still matches the default", () => {
+    const hidden = withoutPanels(DEFAULT_LAYOUT, LIVE_PANELS);
+    expect(withPanelTabsOf(hidden, DEFAULT_LAYOUT, LIVE_PANELS)).toEqual(
+      DEFAULT_LAYOUT,
+    );
   });
 
   it("moves a widget onto another widget's slot", () => {
