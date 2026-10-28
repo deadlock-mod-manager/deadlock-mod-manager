@@ -78,6 +78,7 @@ export type UIState = {
   lastSeenVersion: string | null;
   audioVolume: number; // Volume as percentage (0-100)
   modsFilters: ModsFilters;
+  mapsFilters: ModsFilters;
   crosshairFilters: CrosshairFilters;
   hasCompletedOnboarding: boolean;
   // Sidebar entries marked "New" that the user has opened at least once.
@@ -97,6 +98,8 @@ export type UIState = {
   setAudioVolume: (volume: number) => void;
   updateModsFilters: (filters: Partial<ModsFilters>) => void;
   resetModsFilters: () => void;
+  updateMapsFilters: (filters: Partial<ModsFilters>) => void;
+  resetMapsFilters: () => void;
   updateCrosshairFilters: (filters: Partial<CrosshairFilters>) => void;
   resetCrosshairFilters: () => void;
   setHasCompletedOnboarding: (completed: boolean) => void;
@@ -137,6 +140,7 @@ const DEFAULT_CROSSHAIR_FILTERS: CrosshairFilters = {
 
 export const uiDeepMergeKeys = [
   "modsFilters",
+  "mapsFilters",
   "crosshairFilters",
   "experimentalFeatures",
 ] as const satisfies readonly (keyof UIState)[];
@@ -150,6 +154,7 @@ export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
   lastSeenVersion: null,
   audioVolume: 50, // Default to 50%
   modsFilters: DEFAULT_MODS_FILTERS,
+  mapsFilters: DEFAULT_MODS_FILTERS,
   crosshairFilters: DEFAULT_CROSSHAIR_FILTERS,
   hasCompletedOnboarding: false,
   seenNavItems: {},
@@ -189,6 +194,16 @@ export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
   resetModsFilters: () =>
     set(() => ({
       modsFilters: DEFAULT_MODS_FILTERS,
+    })),
+
+  updateMapsFilters: (filters: Partial<ModsFilters>) =>
+    set((state) => ({
+      mapsFilters: { ...state.mapsFilters, ...filters },
+    })),
+
+  resetMapsFilters: () =>
+    set(() => ({
+      mapsFilters: DEFAULT_MODS_FILTERS,
     })),
 
   updateCrosshairFilters: (filters: Partial<CrosshairFilters>) =>
