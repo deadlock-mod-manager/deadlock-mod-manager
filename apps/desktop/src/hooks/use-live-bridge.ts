@@ -63,16 +63,21 @@ export const useLiveBridge = () => {
   const { processMod } = useModProcessor();
   const { performInstall } = useInstallAction();
   const queryClient = useQueryClient();
-  const inLibrary = usePersistedStore((state) =>
-    state.localMods.some((mod) => mod.remoteUrl === LIVE_BRIDGE_LINK),
+  // Installing, enabling, disabling or deleting the bridge in the library
+  // changes this, which re-runs the cached addons check below.
+  const libraryStatus = usePersistedStore(
+    (state) =>
+      state.localMods.find((mod) => mod.remoteUrl === LIVE_BRIDGE_LINK)
+        ?.status ?? null,
   );
+  const inLibrary = libraryStatus !== null;
   const profileFolder = usePersistedStore(
     (state) => state.getActiveProfile()?.folderName ?? null,
   );
   // The addons folder is what the game loads, and it also finds a copy that
   // was added by hand. Outdated means built from an older game or bridge.
   const status = useQuery({
-    queryKey: ["live-bridge-status", profileFolder],
+    queryKey: ["live-bridge-status", profileFolder, libraryStatus],
     queryFn: () =>
       invoke<{ installed: boolean; outdated: boolean; incompatible: boolean }>(
         "live_bridge_status",
