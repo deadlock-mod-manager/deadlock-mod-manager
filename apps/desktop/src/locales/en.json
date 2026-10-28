@@ -2178,13 +2178,15 @@
         "small": "Small",
         "other": "Other",
         "mm": "Minimap",
-        "sm": "Small"
+        "sm": "Small",
+        "background": "Background",
+        "weapon": "Weapon art"
       },
       "intro": "Drop an image on any slot to replace it. It's cropped and re-encoded to the slot's size.",
       "groups": {
         "heroSelect": {
           "title": "Hero select",
-          "where": "The roster and loadout screens"
+          "where": "The roster, loadout and hero-select screens"
         },
         "inMatch": {
           "title": "In match",
@@ -2197,6 +2199,14 @@
         "other": {
           "title": "Other",
           "where": "More art this skin ships"
+        },
+        "abilities": {
+          "title": "Abilities",
+          "where": "Icons on the HUD and in the shop"
+        },
+        "weapon": {
+          "title": "Weapon",
+          "where": "The weapon panel in the shop and stats"
         }
       },
       "replaced": "Replaced",

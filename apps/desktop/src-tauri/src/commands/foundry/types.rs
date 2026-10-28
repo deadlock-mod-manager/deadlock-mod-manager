@@ -292,6 +292,10 @@ pub(crate) const VARIANT_ORDER: &[&str] = &[
   "card_critical",
   "card_gloat",
   "minimap",
+  "mm",
   "small",
+  "sm",
+  "background",
+  "weapon",
   "other",
 ];

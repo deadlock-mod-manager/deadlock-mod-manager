@@ -11,7 +11,7 @@ use vpk_parser::VpkParser;
 use crate::errors::Error;
 
 use super::game::paths_equal;
-use super::hero::{card_prefixes, hero_asset_terms, panorama_codenames};
+use super::hero::{art_names, card_prefixes, hero_asset_terms, panorama_codenames};
 use super::sounds::group_sounds;
 use super::staging::{stage_source_vpk, staged_base_game_vpk};
 use super::vdata::primary_model_path;
@@ -44,7 +44,14 @@ fn is_default_hero_asset(path: &str, card_prefixes: &[String], terms: &[String])
   in_hero_area && terms.iter().any(|term| lower.contains(term))
 }
 
-pub(crate) fn card_variant(path: &str, codenames: &[&str]) -> String {
+pub(crate) fn card_variant(path: &str, names: &[String]) -> String {
+  let lower = path.to_ascii_lowercase();
+  if lower.contains("/heroes/backgrounds/") {
+    return "background".to_string();
+  }
+  if lower.contains("/heroes/guns/") {
+    return "weapon".to_string();
+  }
   let filename = Path::new(path)
     .file_name()
     .and_then(|name| name.to_str())
@@ -55,16 +62,18 @@ pub(crate) fn card_variant(path: &str, codenames: &[&str]) -> String {
     .or_else(|| filename.strip_suffix(".vtex"))
     .unwrap_or(&filename);
 
-  let without_codename = codenames
+  let without_codename = names
     .iter()
-    .find_map(|codename| stem.strip_prefix(&format!("{codename}_")))
+    .find_map(|name| stem.strip_prefix(&format!("{name}_")))
     .unwrap_or(stem);
   let variant = without_codename
     .strip_suffix("_psd")
     .or_else(|| without_codename.strip_suffix("_png"))
     .unwrap_or(without_codename);
 
-  if variant.is_empty() {
+  if lower.contains("/hud/abilities/") {
+    format!("ability_{variant}")
+  } else if variant.is_empty() {
     "card".to_string()
   } else {
     variant.to_string()
@@ -180,7 +189,7 @@ fn append_default_hero_sounds(
   }
 
   let codenames = panorama_codenames(hero_display);
-  let prefixes = card_prefixes(&codenames);
+  let prefixes = card_prefixes(&art_names(hero_display, &codenames));
   let terms = hero_asset_terms(hero_display, &codenames);
   let entries = VpkParser::parse_directory_from_file(&vpk_path)
     .map_err(|e| Error::InvalidInput(format!("Failed to parse base VPK: {e}")))?;
@@ -251,13 +260,12 @@ pub(crate) fn analyze_vpk_path(path: &Path) -> Result<FoundryManifest, Error> {
 
   let detection = detect_hero(&entries);
   let is_hero_skin = detection.category == "hero";
-  let codenames = detection
+  let hero_name = detection
     .hero_display
     .as_deref()
     .or(detection.hero.as_deref())
-    .map(panorama_codenames)
     .unwrap_or_default();
-  let prefixes = card_prefixes(&codenames);
+  let prefixes = card_prefixes(&art_names(hero_name, &panorama_codenames(hero_name)));
 
   let mut manifest = empty_manifest(file_path);
   manifest.source_path = path.to_string_lossy().to_string();
@@ -292,7 +300,7 @@ pub(crate) fn analyze_default_hero(hero_display: String) -> Result<FoundryManife
   })?;
   let file_path = vpk_path.to_string_lossy().to_string();
   let codenames = panorama_codenames(&hero_display);
-  let prefixes = card_prefixes(&codenames);
+  let prefixes = card_prefixes(&art_names(&hero_display, &codenames));
   let terms = hero_asset_terms(&hero_display, &codenames);
 
   let entries = VpkParser::parse_directory_from_file(&vpk_path)
@@ -328,7 +336,17 @@ struct CardDecodeJob {
 }
 
 fn decode_card_preview(job: CardDecodeJob) -> Option<FoundryCardPreview> {
-  let decoded = source2_model::decode_texture_png(&job.vpk_path, &job.entry_path).ok()?;
+  // An edited card points at its loose workspace file rather than an archive.
+  let edited = job
+    .vpk_path
+    .extension()
+    .is_some_and(|ext| ext.eq_ignore_ascii_case("vtex_c"));
+  let decoded = if edited {
+    source2_model::decode_texture_file(&job.vpk_path)
+  } else {
+    source2_model::decode_texture_png(&job.vpk_path, &job.entry_path)
+  }
+  .ok()?;
   let b64 = base64::engine::general_purpose::STANDARD.encode(&decoded.png);
   Some(FoundryCardPreview {
     source: job.source,
@@ -344,9 +362,9 @@ fn decode_card_preview(job: CardDecodeJob) -> Option<FoundryCardPreview> {
 fn collect_card_jobs(
   vpk_path: &Path,
   source: FoundryCardSource,
-  codenames: &[&str],
+  names: &[String],
 ) -> Result<Vec<CardDecodeJob>, Error> {
-  let prefixes = card_prefixes(codenames);
+  let prefixes = card_prefixes(names);
   let entries = source2_model::vpk_extract::list_entries(vpk_path)
     .map_err(|e| Error::InvalidInput(format!("failed to list VPK entries: {e}")))?;
   let mut jobs = entries
@@ -359,7 +377,7 @@ fn collect_card_jobs(
         .and_then(|name| name.to_str())
         .unwrap_or(&entry_path)
         .to_string(),
-      variant: card_variant(&entry_path, codenames),
+      variant: card_variant(&entry_path, names),
       vpk_path: vpk_path.to_path_buf(),
       entry_path,
     })
@@ -406,6 +424,7 @@ pub(crate) fn decode_foundry_cards(
   if codenames.is_empty() {
     return Ok(Vec::new());
   }
+  let names = art_names(&hero_name, &codenames);
 
   let default_vpk = staged_base_game_vpk()?;
   let mut jobs = if default_vpk
@@ -414,22 +433,20 @@ pub(crate) fn decode_foundry_cards(
   {
     Vec::new()
   } else {
-    collect_card_jobs(&file_path, FoundryCardSource::Mod, &codenames)?
+    collect_card_jobs(&file_path, FoundryCardSource::Mod, &names)?
   };
   if let Some(default_vpk) = default_vpk {
-    match collect_card_jobs(&default_vpk, FoundryCardSource::Default, &codenames) {
+    match collect_card_jobs(&default_vpk, FoundryCardSource::Default, &names) {
       Ok(default_jobs) => jobs.extend(default_jobs),
       Err(error) => log::warn!("[Foundry] Failed to collect default cards: {error}"),
     }
   }
 
   // An edited card in the workspace wins over the packed original, so the
-  // gallery reflects what an export would actually contain.
+  // gallery reflects what an export would actually contain. That holds for a
+  // base-game card too: replacing one writes it into the workspace.
   if let Some(files_dir) = workspace_root.map(|root| root.join("files")) {
     for job in &mut jobs {
-      if job.source != FoundryCardSource::Mod {
-        continue;
-      }
       let Ok(relative) = super::workspace::safe_entry_relative(&job.entry_path) else {
         continue;
       };
@@ -449,7 +466,7 @@ mod tests {
 
   #[test]
   fn hero_cards_are_split_out_of_plain_textures() {
-    let prefixes = card_prefixes(&["haze"]);
+    let prefixes = card_prefixes(&art_names("Haze", &["haze"]));
     assert_eq!(
       classify(
         "vtex_c",
@@ -486,13 +503,42 @@ mod tests {
 
   #[test]
   fn card_variants_drop_the_codename_and_source_suffix() {
+    let names = art_names("Haze", &["haze"]);
     assert_eq!(
-      card_variant("panorama/images/heroes/haze_card_psd.vtex_c", &["haze"]),
+      card_variant("panorama/images/heroes/haze_card_psd.vtex_c", &names),
       "card"
     );
     assert_eq!(
-      card_variant("panorama/images/heroes/haze_minimap.vtex_c", &["haze"]),
+      card_variant("panorama/images/heroes/haze_minimap.vtex_c", &names),
       "minimap"
     );
+  }
+
+  #[test]
+  fn backgrounds_guns_and_ability_icons_count_as_hero_art() {
+    // Abrams files his art under three names: atlas cards, bull guns and
+    // abilities, and his display name for the background.
+    let names = art_names("Abrams", &["atlas", "bull"]);
+    let prefixes = card_prefixes(&names);
+    for (path, variant) in [
+      ("panorama/images/heroes/backgrounds/abrams_bg_psd.vtex_c", "background"),
+      ("panorama/images/heroes/guns/bull_gun_psd.vtex_c", "weapon"),
+      ("panorama/images/hud/abilities/bull_charge_psd.vtex_c", "ability_charge"),
+    ] {
+      assert!(is_hero_card_path(path, &prefixes), "{path}");
+      assert_eq!(card_variant(path, &names), variant);
+    }
+    let dynamo = art_names("Dynamo", &["dynamo", "sumo"]);
+    assert_eq!(
+      card_variant(
+        "panorama/images/hud/abilities/sumo/sumo_pork_bun_psd.vtex_c",
+        &dynamo
+      ),
+      "ability_pork_bun"
+    );
+    assert!(!is_hero_card_path(
+      "panorama/images/heroes/backgrounds/haze_bg_psd.vtex_c",
+      &prefixes
+    ));
   }
 }

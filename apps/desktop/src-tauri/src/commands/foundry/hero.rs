@@ -65,10 +65,41 @@ pub(crate) fn panorama_codenames(hero_name: &str) -> Vec<&'static str> {
   }
 }
 
-pub(crate) fn card_prefixes(codenames: &[&str]) -> Vec<String> {
-  codenames
+/// Every name a hero's 2D art is filed under. Cards use the codename, but the
+/// backgrounds, guns and ability icons mix codenames with the display name
+/// (`grey_talon_bg`, `ratking_gun`, `bull_charge`), so both forms are tried.
+pub(crate) fn art_names(hero_name: &str, codenames: &[&str]) -> Vec<String> {
+  let mut names: Vec<String> = codenames.iter().map(|name| (*name).to_string()).collect();
+  let words: Vec<String> = hero_name
+    .to_ascii_lowercase()
+    .split(|c: char| !c.is_ascii_alphanumeric())
+    .filter(|word| !word.is_empty() && *word != "the")
+    .map(str::to_string)
+    .collect();
+  if let (Some(first), Some(last)) = (words.first(), words.last()) {
+    names.extend([words.join(""), words.join("_"), first.clone(), last.clone()]);
+  }
+  // Longest first, so stripping a name off a filename takes `lady_geist`
+  // before `lady`.
+  names.sort_by(|a, b| b.len().cmp(&a.len()).then_with(|| a.cmp(b)));
+  names.dedup();
+  names
+}
+
+/// Where a hero's swappable 2D art lives: cards and portraits, the hero-select
+/// background, the weapon art, and the ability icons.
+pub(crate) fn card_prefixes(names: &[String]) -> Vec<String> {
+  names
     .iter()
-    .map(|codename| format!("panorama/images/heroes/{codename}_"))
+    .flat_map(|name| {
+      [
+        format!("panorama/images/heroes/{name}_"),
+        format!("panorama/images/heroes/backgrounds/{name}_bg"),
+        format!("panorama/images/heroes/guns/{name}_"),
+        format!("panorama/images/hud/abilities/{name}/"),
+        format!("panorama/images/hud/abilities/{name}_"),
+      ]
+    })
     .collect()
 }
 

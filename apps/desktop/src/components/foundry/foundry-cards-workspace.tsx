@@ -24,11 +24,21 @@ import {
 /** Image formats the backend can re-encode into a `.vtex_c` container. */
 const IMAGE_EXTENSIONS = ["png", "jpg", "jpeg", "webp"];
 
-type SlotGroupId = "heroSelect" | "inMatch" | "hud" | "other";
+type SlotGroupId =
+  | "heroSelect"
+  | "inMatch"
+  | "abilities"
+  | "hud"
+  | "weapon"
+  | "other";
+
+const ABILITY_PREFIX = "ability_";
 
 const GROUP_OF = new Map<string, SlotGroupId>([
   ["card", "heroSelect"],
   ["vertical", "heroSelect"],
+  ["background", "heroSelect"],
+  ["weapon", "weapon"],
   ["card_critical", "inMatch"],
   ["card_gloat", "inMatch"],
   ["minimap", "hud"],
@@ -37,11 +47,22 @@ const GROUP_OF = new Map<string, SlotGroupId>([
   ["sm", "hud"],
 ]);
 const groupOf = (card: FoundryCardPreview): SlotGroupId =>
-  GROUP_OF.get(card.variant) ?? "other";
-const GROUP_ORDER: SlotGroupId[] = ["heroSelect", "inMatch", "hud", "other"];
+  card.variant.startsWith(ABILITY_PREFIX)
+    ? "abilities"
+    : (GROUP_OF.get(card.variant) ?? "other");
+const GROUP_ORDER: SlotGroupId[] = [
+  "heroSelect",
+  "inMatch",
+  "abilities",
+  "hud",
+  "weapon",
+  "other",
+];
 
 /** How tall each slot is drawn; widths follow the card's own proportions. */
 const SLOT_HEIGHT = new Map<string, number>([
+  ["background", 104],
+  ["weapon", 72],
   ["card", 256],
   ["vertical", 186],
   ["card_critical", 196],
@@ -52,6 +73,7 @@ const SLOT_HEIGHT = new Map<string, number>([
   ["sm", 104],
 ]);
 const DEFAULT_SLOT_HEIGHT = 112;
+const ABILITY_SLOT_HEIGHT = 64;
 
 const cardKey = (card: FoundryCardPreview) => `${card.source}:${card.path}`;
 
@@ -69,10 +91,18 @@ const slotCards = (
   return [...byPath.values()];
 };
 
+/** "pork_bun" to "Pork bun", for the variants the game names after the art. */
+const humanize = (name: string) => {
+  const words = name.replaceAll("_", " ").trim();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+};
+
 const variantLabel = (t: TFunction, card: FoundryCardPreview) =>
-  t(`foundry.cards.variants.${card.variant}`, {
-    defaultValue: card.variant.replaceAll("_", " "),
-  });
+  card.variant.startsWith(ABILITY_PREFIX)
+    ? humanize(card.variant.slice(ABILITY_PREFIX.length))
+    : t(`foundry.cards.variants.${card.variant}`, {
+        defaultValue: humanize(card.variant),
+      });
 
 const CardSlot = ({
   card,
@@ -91,7 +121,9 @@ const CardSlot = ({
 }) => {
   const { t } = useTranslation();
   const [over, setOver] = useState(false);
-  const height = SLOT_HEIGHT.get(card.variant) ?? DEFAULT_SLOT_HEIGHT;
+  const height = card.variant.startsWith(ABILITY_PREFIX)
+    ? ABILITY_SLOT_HEIGHT
+    : (SLOT_HEIGHT.get(card.variant) ?? DEFAULT_SLOT_HEIGHT);
   const width = Math.round((height * card.width) / Math.max(card.height, 1));
   const label = variantLabel(t, card);
 
@@ -262,7 +294,7 @@ const CardInspector = ({ card }: { card: FoundryCardPreview | null }) => {
         <h3 className='font-semibold text-[10px] text-muted-foreground uppercase tracking-[0.08em]'>
           {t("foundry.cards.inGame")}
         </h3>
-        {group === "heroSelect" ? (
+        {group === "heroSelect" && card.variant !== "background" ? (
           <HeroSelectStage card={card} />
         ) : (
           <div className='flex h-[200px] items-center justify-center rounded-lg bg-gradient-to-b from-muted/60 to-background'>
