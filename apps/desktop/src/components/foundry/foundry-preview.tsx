@@ -60,7 +60,7 @@ export const FoundryPreview = () => {
   // rather than showing an empty panel that looks like a failure.
   if (showModel && !preview3dEnabled) {
     return (
-      <div className='flex h-full w-full flex-col items-center justify-center gap-4 overflow-hidden rounded-lg border bg-gradient-to-b from-muted/40 to-background p-8 text-center'>
+      <div className='flex h-full w-full flex-col items-center justify-center gap-4 overflow-hidden bg-gradient-to-b from-muted/40 to-background p-8 text-center'>
         <CubeIcon
           className='h-14 w-14 text-muted-foreground opacity-40'
           weight='duotone'
@@ -83,7 +83,7 @@ export const FoundryPreview = () => {
     activeTab === "paint" ? primaryModelPath : selectedEntryPath;
   if (model && !rebuildingModel && manifest && modelPath) {
     return (
-      <div className='relative flex h-full w-full items-center justify-center overflow-hidden rounded-lg border bg-gradient-to-b from-muted/40 to-background'>
+      <div className='relative flex h-full w-full items-center justify-center overflow-hidden bg-gradient-to-b from-muted/40 to-background'>
         <AnimatedModelPreview
           key={`${manifest.filePath}:${modelPath}`}
           source={{ filePath: manifest.filePath, entryPath: modelPath }}
@@ -103,8 +103,9 @@ export const FoundryPreview = () => {
   // panel never sits empty.
   if (rebuildingModel) {
     return (
-      <div className='relative h-full w-full overflow-hidden rounded-lg border bg-gradient-to-b from-muted/40 to-background'>
+      <div className='relative h-full w-full overflow-hidden bg-gradient-to-b from-muted/40 to-background'>
         <ModelLoadingStage
+          showSteps={!busy}
           status={t(
             busy ? "foundry.preview.painting" : "foundry.preview.loading",
           )}
@@ -126,7 +127,7 @@ export const FoundryPreview = () => {
           : t("foundry.preview.empty");
 
   return (
-    <div className='relative flex h-full w-full items-center justify-center overflow-hidden rounded-lg border bg-gradient-to-b from-muted/40 to-background'>
+    <div className='relative flex h-full w-full items-center justify-center overflow-hidden bg-gradient-to-b from-muted/40 to-background'>
       {imageUrl ? (
         <img
           alt={t("foundry.preview.alt")}

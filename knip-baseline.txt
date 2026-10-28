@@ -298,7 +298,6 @@
 ["types","apps/desktop/src/plugins/themes/custom/index.ts",[["","ThemeSettingsPanelProps"]]]
 ["types","apps/desktop/src/types/add-mods.ts",[["","FileInputAttributes"]]]
 ["types","apps/desktop/src/types/foundry.ts",[["","FoundryCardSource"]]]
-["types","apps/desktop/src/types/foundry.ts",[["","FoundryCategory"]]]
 ["types","apps/desktop/src/types/foundry.ts",[["","FoundryEntrySource"]]]
 ["types","apps/desktop/src/types/foundry.ts",[["","FoundrySoundGroupKind"]]]
 ["types","apps/desktop/src/types/plugins.ts",[["","PluginTag"]]]

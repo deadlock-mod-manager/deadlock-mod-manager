@@ -95,11 +95,13 @@ export const createAssemblingFigure = ({
   spin = 0.5,
   sampler = sampleFigurePoint,
   count = 1600,
+  color = 0xe7c98a,
 }: {
   loop?: boolean;
   spin?: number;
   sampler?: (out: THREE.Vector3) => void;
   count?: number;
+  color?: number;
 } = {}) => {
   const targets = new Float32Array(count * 3);
   const starts = new Float32Array(count * 3);
@@ -141,7 +143,7 @@ export const createAssemblingFigure = ({
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
   const material = new THREE.PointsMaterial({
-    color: 0xe7c98a,
+    color,
     size: 0.04,
     sizeAttenuation: true,
     transparent: true,
@@ -208,12 +210,14 @@ const AssemblingCanvas = ({
   distance,
   spin,
   count,
+  color,
 }: {
   className?: string;
   sampler: (out: THREE.Vector3) => void;
   distance: number;
   spin: number;
   count?: number;
+  color?: number;
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -231,7 +235,13 @@ const AssemblingCanvas = ({
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     container.appendChild(renderer.domElement);
 
-    const figure = createAssemblingFigure({ loop: true, sampler, spin, count });
+    const figure = createAssemblingFigure({
+      loop: true,
+      sampler,
+      spin,
+      count,
+      color,
+    });
     scene.add(figure.points);
 
     const clock = new THREE.Clock();
@@ -267,7 +277,7 @@ const AssemblingCanvas = ({
       renderer.forceContextLoss();
       renderer.domElement.remove();
     };
-  }, [sampler, distance, spin, count]);
+  }, [sampler, distance, spin, count, color]);
 
   return (
     <div
@@ -294,5 +304,21 @@ export const FoundryCardAssembling = ({
     distance={3.2}
     sampler={sampleCardPoint}
     spin={0}
+  />
+);
+
+/** A hero built from embers, shown while a model decodes. */
+export const FoundryHeroAssembling = ({
+  className,
+}: {
+  className?: string;
+}) => (
+  <AssemblingCanvas
+    className={className}
+    color={0xf28a4b}
+    count={3200}
+    distance={4.6}
+    sampler={sampleFigurePoint}
+    spin={0.35}
   />
 );

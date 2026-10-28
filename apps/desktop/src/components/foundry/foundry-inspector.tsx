@@ -1,12 +1,32 @@
-import { Badge } from "@deadlock-mods/ui/components/badge";
 import { ScrollArea } from "@deadlock-mods/ui/components/scroll-area";
-import { SlidersIcon } from "@phosphor-icons/react";
+import { toast } from "@deadlock-mods/ui/components/sonner";
+import {
+  CircleHalfIcon,
+  CopyIcon,
+  CubeIcon,
+  FileIcon,
+  ImageIcon,
+  MusicNotesIcon,
+} from "@phosphor-icons/react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { FoundryEntry, FoundryManifest } from "@/types/foundry";
+import type {
+  FoundryCategory,
+  FoundryEntry,
+  FoundryManifest,
+} from "@/types/foundry";
 import { useFoundry } from "./foundry-context";
 import { FoundryEditorControls } from "./foundry-editor-controls";
 import { formatBytes } from "./foundry-entry-list";
+
+const CATEGORY_ICONS = {
+  model: CubeIcon,
+  material: CircleHalfIcon,
+  texture: ImageIcon,
+  card: ImageIcon,
+  sound: MusicNotesIcon,
+  other: FileIcon,
+} satisfies Record<FoundryCategory, React.ElementType>;
 
 const allEntries = (manifest: FoundryManifest): FoundryEntry[] => [
   ...manifest.models,
@@ -17,34 +37,18 @@ const allEntries = (manifest: FoundryManifest): FoundryEntry[] => [
   ...manifest.other,
 ];
 
-const Field = ({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) => (
-  <div>
-    <dt className='text-muted-foreground text-xs'>{label}</dt>
-    <dd className='font-medium'>{children}</dd>
-  </div>
-);
-
 /**
- * Right-hand properties panel: details for the selected entry, plus the editing
- * controls that act on it (recolor, replace, revert).
+ * Right-hand panel for the selected file: what it is, where it lives, and the
+ * edits that act on it.
  */
 export const FoundryInspector = () => {
   const { t } = useTranslation();
   const {
     manifest,
-    activeTab,
     selectedEntryPath,
     modelPreview,
     texturePreview,
     cardPreviews,
-    editedPaths,
-    primaryModelPath,
   } = useFoundry();
 
   const selected = useMemo<FoundryEntry | null>(() => {
@@ -70,91 +74,78 @@ export const FoundryInspector = () => {
     };
   }, [manifest, selectedEntryPath, cardPreviews.defaultCards]);
 
-  // The paint tab works on whole parts of the hero, not on the selected file, so
-  // a per-entry properties panel there would only be noise.
-  if (activeTab === "paint") {
-    return null;
+  if (!selected) {
+    return (
+      <p className='p-4 text-muted-foreground text-sm'>
+        {t("foundry.inspector.noSelection")}
+      </p>
+    );
   }
+
+  const Icon = CATEGORY_ICONS[selected.category];
+  const facts = [
+    t(`foundry.inspector.kinds.${selected.category}`),
+    texturePreview.status === "ready" &&
+    texturePreview.width &&
+    texturePreview.height
+      ? `${texturePreview.width} × ${texturePreview.height}`
+      : null,
+    selected.size > 0 ? formatBytes(selected.size) : null,
+    t(`foundry.inspector.from.${selected.source}`),
+  ].filter(Boolean);
+  const modelStats =
+    modelPreview.status === "ready" &&
+    modelPreview.vertexCount &&
+    modelPreview.indexCount
+      ? t("foundry.inspector.modelStats", {
+          vertices: modelPreview.vertexCount.toLocaleString(),
+          triangles: Math.floor(modelPreview.indexCount / 3).toLocaleString(),
+        })
+      : null;
+
+  const copyPath = () => {
+    navigator.clipboard
+      .writeText(selected.path)
+      .then(() => toast.success(t("foundry.inspector.pathCopied")))
+      .catch(() => undefined);
+  };
 
   return (
     <ScrollArea className='h-full'>
-      <div className='space-y-4 p-4'>
-        <div className='flex items-center gap-2 text-muted-foreground'>
-          <SlidersIcon className='h-4 w-4' weight='duotone' />
-          <span className='font-medium text-sm'>
-            {t("foundry.inspector.title")}
+      <div className='space-y-2.5 px-4 py-3.5'>
+        <div className='flex items-center gap-2.5'>
+          <span className='flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[7px] bg-secondary text-secondary-foreground'>
+            <Icon className='h-[17px] w-[17px]' />
           </span>
+          <div className='min-w-0'>
+            <p className='truncate font-mono font-semibold text-sm'>
+              {selected.filename}
+            </p>
+            <p className='truncate text-[11px] text-muted-foreground'>
+              {facts.join(", ")}
+            </p>
+            {modelStats && (
+              <p className='truncate text-[11px] text-muted-foreground'>
+                {modelStats}
+              </p>
+            )}
+          </div>
         </div>
-
-        {selected ? (
-          <>
-            <dl className='space-y-2 text-sm'>
-              <div>
-                <dt className='text-muted-foreground text-xs'>
-                  {t("foundry.inspector.file")}
-                </dt>
-                <dd className='flex items-start gap-2'>
-                  <span className='min-w-0 break-all font-medium'>
-                    {selected.filename}
-                  </span>
-                  {primaryModelPath === selected.path && (
-                    <Badge className='shrink-0 text-[10px]' variant='secondary'>
-                      {t("foundry.primary")}
-                    </Badge>
-                  )}
-                  {editedPaths.has(selected.path) && (
-                    <Badge className='shrink-0 text-[10px]'>
-                      {t("foundry.edited")}
-                    </Badge>
-                  )}
-                </dd>
-              </div>
-              <div>
-                <dt className='text-muted-foreground text-xs'>
-                  {t("foundry.inspector.path")}
-                </dt>
-                <dd className='break-all font-mono text-xs'>{selected.path}</dd>
-              </div>
-              <div className='flex gap-6'>
-                <Field label={t("foundry.inspector.type")}>
-                  {selected.ext}
-                </Field>
-                <Field label={t("foundry.inspector.size")}>
-                  {formatBytes(selected.size)}
-                </Field>
-                <Field label={t("foundry.inspector.source")}>
-                  {t(`foundry.inspector.sources.${selected.source}`)}
-                </Field>
-              </div>
-              {texturePreview.status === "ready" &&
-                texturePreview.width &&
-                texturePreview.height && (
-                  <Field label={t("foundry.inspector.dimensions")}>
-                    {texturePreview.width} × {texturePreview.height}
-                  </Field>
-                )}
-              {modelPreview.status === "ready" &&
-                modelPreview.vertexCount &&
-                modelPreview.indexCount && (
-                  <div className='flex gap-6'>
-                    <Field label={t("foundry.inspector.vertices")}>
-                      {modelPreview.vertexCount.toLocaleString()}
-                    </Field>
-                    <Field label={t("foundry.inspector.triangles")}>
-                      {Math.floor(modelPreview.indexCount / 3).toLocaleString()}
-                    </Field>
-                  </div>
-                )}
-            </dl>
-
-            <FoundryEditorControls entry={selected} />
-          </>
-        ) : (
-          <p className='text-muted-foreground text-sm'>
-            {t("foundry.inspector.noSelection")}
+        <div className='flex items-start gap-2 rounded-md border bg-background px-2.5 py-[7px]'>
+          <p className='min-w-0 flex-1 break-all font-mono text-[11px] text-muted-foreground'>
+            {selected.path}
           </p>
-        )}
+          <button
+            aria-label={t("foundry.inspector.copyPath")}
+            className='mt-px text-muted-foreground transition-colors hover:text-foreground'
+            onClick={copyPath}
+            title={t("foundry.inspector.copyPath")}
+            type='button'>
+            <CopyIcon className='h-[13px] w-[13px]' />
+          </button>
+        </div>
       </div>
+      <FoundryEditorControls entry={selected} />
     </ScrollArea>
   );
 };

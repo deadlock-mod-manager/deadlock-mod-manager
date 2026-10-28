@@ -103,6 +103,21 @@ const DEFAULT_SELECTION: FoundryPaintSelection = {
   target: "body",
 };
 
+/** A picked file's name without its folder or extension. */
+const fileStem = (path: string) =>
+  path
+    .split(/[\\/]/)
+    .pop()
+    ?.replace(/\.vpk$/i, "") ?? path;
+
+/** Where the open skin came from, for the workspace header. */
+export interface FoundrySkinOrigin {
+  kind: "mod" | "default" | "file";
+  name: string;
+  author: string | null;
+  imageUrl: string | null;
+}
+
 /** The key `appliedPaint` keeps one target's or one section's paint under. */
 export const targetPaintKey = (target: FoundryPaintTargetId) =>
   `target:${target}`;
@@ -160,6 +175,7 @@ const withPaintedSections = (
 interface FoundryContextValue {
   status: FoundryStatus;
   manifest: FoundryManifest | null;
+  skinOrigin: FoundrySkinOrigin | null;
   workspace: FoundryWorkspace | null;
   error: string | null;
   activeTab: FoundryTab;
@@ -198,10 +214,14 @@ interface FoundryContextValue {
   importVpk: (filePath: string) => Promise<FoundryManifest | null>;
   importMod: (
     modId: string,
-    installedVpks?: string[],
-    profileFolder?: string | null,
+    installedVpks: string[],
+    profileFolder: string | null,
+    origin: FoundrySkinOrigin,
   ) => Promise<FoundryManifest | null>;
-  importDefaultHero: (heroDisplay: string) => Promise<FoundryManifest | null>;
+  importDefaultHero: (
+    heroDisplay: string,
+    imageUrl: string | null,
+  ) => Promise<FoundryManifest | null>;
   replaceEntry: (entryPath: string, sourceFilePath: string) => Promise<void>;
   paintTarget: (
     target: FoundryPaintTargetId,
@@ -239,6 +259,7 @@ const manifestEntryPaths = (manifest: FoundryManifest): string[] =>
 export const FoundryProvider = ({ children }: { children: ReactNode }) => {
   const [status, setStatus] = useState<FoundryStatus>("idle");
   const [manifest, setManifest] = useState<FoundryManifest | null>(null);
+  const [skinOrigin, setSkinOrigin] = useState<FoundrySkinOrigin | null>(null);
   const [workspace, setWorkspace] = useState<FoundryWorkspace | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<FoundryTab>("assets");
@@ -288,6 +309,7 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
     void releaseFoundryArchives();
     setStatus("idle");
     setManifest(null);
+    setSkinOrigin(null);
     setWorkspace(null);
     setError(null);
     setActiveTab("assets");
@@ -555,7 +577,11 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const loadManifest = useCallback(
-    async (load: () => Promise<FoundryManifest>, requireHeroSkin: boolean) => {
+    async (
+      load: () => Promise<FoundryManifest>,
+      requireHeroSkin: boolean,
+      origin: FoundrySkinOrigin,
+    ) => {
       clearCaches();
       setCardPreviews(IDLE_CARDS);
       setWorkspace(null);
@@ -571,6 +597,7 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
           return null;
         }
         setManifest(result);
+        setSkinOrigin(origin);
         const initialModel = getPrimaryModelPath(result);
         setPrimaryModelPath(initialModel);
         selectEntryPath(initialModel);
@@ -591,30 +618,46 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const importVpk = useCallback(
-    (path: string) => loadManifest(() => analyzeFoundryVpk(path), true),
+    (path: string) =>
+      loadManifest(() => analyzeFoundryVpk(path), true, {
+        kind: "file",
+        name: fileStem(path),
+        author: null,
+        imageUrl: null,
+      }),
     [loadManifest],
   );
 
   const importMod = useCallback(
     (
       modId: string,
-      installedVpks: string[] = [],
-      profileFolder: string | null = null,
+      installedVpks: string[],
+      profileFolder: string | null,
+      origin: FoundrySkinOrigin,
     ) =>
-      loadManifest(async () => {
-        const resolved = await resolveModVpk(
-          modId,
-          installedVpks,
-          profileFolder,
-        );
-        return await analyzeFoundryVpk(resolved);
-      }, true),
+      loadManifest(
+        async () => {
+          const resolved = await resolveModVpk(
+            modId,
+            installedVpks,
+            profileFolder,
+          );
+          return await analyzeFoundryVpk(resolved);
+        },
+        true,
+        origin,
+      ),
     [loadManifest],
   );
 
   const importDefaultHero = useCallback(
-    (heroDisplay: string) =>
-      loadManifest(() => analyzeDefaultFoundryHero(heroDisplay), false),
+    (heroDisplay: string, imageUrl: string | null) =>
+      loadManifest(() => analyzeDefaultFoundryHero(heroDisplay), false, {
+        kind: "default",
+        name: heroDisplay,
+        author: null,
+        imageUrl,
+      }),
     [loadManifest],
   );
 
@@ -819,6 +862,7 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
     () => ({
       status,
       manifest,
+      skinOrigin,
       workspace,
       error,
       activeTab,
@@ -863,6 +907,7 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
     [
       status,
       manifest,
+      skinOrigin,
       workspace,
       error,
       activeTab,
@@ -901,6 +946,10 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
     <FoundryContext.Provider value={value}>{children}</FoundryContext.Provider>
   );
 };
+
+/** The Foundry's state when rendered inside it, else null. */
+export const useOptionalFoundry = (): FoundryContextValue | null =>
+  useContext(FoundryContext);
 
 export const useFoundry = (): FoundryContextValue => {
   const ctx = useContext(FoundryContext);

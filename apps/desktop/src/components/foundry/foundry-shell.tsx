@@ -1,17 +1,7 @@
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Button } from "@deadlock-mods/ui/components/button";
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@deadlock-mods/ui/components/resizable";
 import { ScrollArea } from "@deadlock-mods/ui/components/scroll-area";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@deadlock-mods/ui/components/tabs";
+import { cn } from "@deadlock-mods/ui/lib/utils";
 import {
   CubeIcon,
   ExportIcon,
@@ -21,12 +11,13 @@ import {
   RepeatIcon,
   XCircleIcon,
 } from "@phosphor-icons/react";
-import { useCallback, useMemo, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { FoundryEntry, FoundryTab } from "@/types/foundry";
+import { DEFAULT_FOUNDRY_SKINS } from "@/lib/foundry-default-skins";
+import type { FoundryTab } from "@/types/foundry";
+import { FoundryAssetsRail } from "./foundry-assets-rail";
 import { FoundryCardsPanel } from "./foundry-cards-panel";
 import { useFoundry } from "./foundry-context";
-import { FoundryEntryList } from "./foundry-entry-list";
 import { FoundryExportDialog } from "./foundry-export-dialog";
 import { FoundryImportDialog } from "./foundry-import-dialog";
 import { FoundryInspector } from "./foundry-inspector";
@@ -37,108 +28,147 @@ import { FoundrySoundsPanel } from "./foundry-sounds-panel";
 const TABS: FoundryTab[] = ["assets", "paint", "cards", "sounds"];
 
 const TAB_ICONS = {
-  assets: (
-    <CubeIcon aria-hidden className='h-4 w-4 shrink-0' weight='duotone' />
-  ),
-  paint: (
-    <PaintBrushIcon aria-hidden className='h-4 w-4 shrink-0' weight='duotone' />
-  ),
-  cards: (
-    <ImageIcon aria-hidden className='h-4 w-4 shrink-0' weight='duotone' />
-  ),
-  sounds: (
-    <MusicNotesIcon aria-hidden className='h-4 w-4 shrink-0' weight='duotone' />
-  ),
-} satisfies Record<FoundryTab, React.ReactNode>;
+  assets: CubeIcon,
+  paint: PaintBrushIcon,
+  cards: ImageIcon,
+  sounds: MusicNotesIcon,
+} satisfies Record<FoundryTab, React.ElementType>;
 
-const TABS_LIST_CLASS_NAME =
-  "grid h-auto w-full max-w-[22rem] grid-cols-4 gap-1 bg-muted/50 p-1";
+const SIDE_PANEL_CLASS =
+  "flex h-full shrink-0 flex-col overflow-hidden bg-card";
 
-/**
- * A `.vmdl_c` assembles the whole character, so it leads the list; the loose
- * `.vmesh_c` parts follow, then the materials.
- */
-const modelRank = (entry: FoundryEntry): number =>
-  entry.path.endsWith(".vmdl_c") ? 0 : entry.path.endsWith(".vmesh_c") ? 1 : 2;
-
-const prioritizeWholeModels = (entries: FoundryEntry[]): FoundryEntry[] =>
-  [...entries].sort((a, b) => modelRank(a) - modelRank(b));
-
-export const FoundryShell = () => {
+/** The skin's identity: portrait, hero, counts and where it came from. */
+const SkinIdentity = () => {
   const { t } = useTranslation();
-  const {
-    manifest,
-    workspace,
-    busy,
-    activeTab,
-    reset,
-    setActiveTab,
-    selectedEntryPath,
-    setSelectedEntryPath,
-    editedPaths,
-    primaryModelPath,
-  } = useFoundry();
-  const [importOpen, setImportOpen] = useState(false);
-  const [exportOpen, setExportOpen] = useState(false);
-
-  const entriesForTab = useMemo<FoundryEntry[]>(() => {
-    if (!manifest) return [];
-    if (activeTab === "assets") {
-      // Everything the VPK holds, models first, so the skin file is one click
-      // away and the rest is still there to inspect.
-      return [
-        ...prioritizeWholeModels(manifest.models),
-        ...manifest.materials,
-        ...manifest.textures,
-        ...manifest.cards,
-        ...manifest.sounds,
-        ...manifest.other,
-      ];
-    }
-    return [];
-  }, [manifest, activeTab]);
-
-  const onSelect = useCallback(
-    (entry: FoundryEntry) => setSelectedEntryPath(entry.path),
-    [setSelectedEntryPath],
-  );
-
-  const heroName = manifest?.heroDisplay ?? manifest?.hero ?? null;
-
+  const { manifest, skinOrigin, editedPaths } = useFoundry();
   if (!manifest) return null;
 
-  // The 3D preview stays up for the asset browser and the paint tab; cards and
-  // sounds get the full width instead.
-  const showPreviewPanel = activeTab === "assets" || activeTab === "paint";
-  // Painting works on parts, not files, so the per-entry inspector is dropped
-  // and the 3D preview takes the space instead.
-  const showInspector = activeTab !== "paint";
+  const hero = manifest.heroDisplay ?? manifest.hero;
+  const portrait =
+    skinOrigin?.imageUrl ??
+    DEFAULT_FOUNDRY_SKINS.find((skin) => skin.hero === hero)?.image ??
+    null;
+  const source =
+    skinOrigin?.kind === "mod"
+      ? skinOrigin.author
+        ? t("foundry.header.fromMod", {
+            name: skinOrigin.name,
+            author: skinOrigin.author,
+          })
+        : skinOrigin.name
+      : skinOrigin?.kind === "file"
+        ? t("foundry.header.fromFile", { name: skinOrigin.name })
+        : t("foundry.header.baseGame");
 
   return (
-    <div className='flex h-full flex-col gap-3'>
-      {/* Toolbar */}
-      <div className='flex items-center justify-between gap-3'>
+    <div className='flex min-w-0 items-center gap-3'>
+      <div className='h-10 w-10 shrink-0 overflow-hidden rounded-lg border bg-muted'>
+        {portrait && (
+          <img
+            alt=''
+            className='h-full w-full object-cover object-top'
+            src={portrait}
+          />
+        )}
+      </div>
+      <div className='flex min-w-0 flex-col gap-0.5'>
         <div className='flex items-center gap-2'>
-          <h2 className='font-semibold text-lg'>
-            {heroName ?? t("foundry.preview.unknownHero")}
+          <h2 className='truncate font-semibold text-lg leading-tight'>
+            {hero ?? t("foundry.preview.unknownHero")}
           </h2>
-          <Badge variant='secondary'>
-            {t("foundry.toolbar.entryCount", { count: manifest.entryCount })}
+          <Badge className='shrink-0' variant='outline'>
+            {t("foundry.toolbar.entryCount", {
+              count: manifest.entryCount,
+              formattedCount: manifest.entryCount.toLocaleString(),
+            })}
           </Badge>
           {editedPaths.size > 0 && (
-            <Badge>
+            <Badge className='shrink-0'>
               {t("foundry.toolbar.editCount", { count: editedPaths.size })}
             </Badge>
           )}
         </div>
-        <div className='flex items-center gap-2'>
+        <p className='truncate text-muted-foreground text-xs'>{source}</p>
+      </div>
+    </div>
+  );
+};
+
+/** Assets, Paint, Cards and Sounds, each with how much of it the skin has. */
+const ModeTabs = () => {
+  const { t } = useTranslation();
+  const { activeTab, setActiveTab, manifest, paintParts } = useFoundry();
+  if (!manifest) return null;
+
+  const counts = {
+    assets: manifest.entryCount,
+    paint: paintParts.length,
+    cards: manifest.cards.length,
+    sounds: manifest.sounds.length,
+  } satisfies Record<FoundryTab, number>;
+
+  return (
+    <div
+      aria-label={t("foundry.header.modes")}
+      className='flex shrink-0 gap-0.5 rounded-lg border bg-card p-[3px]'
+      role='tablist'>
+      {TABS.map((tab) => {
+        const Icon = TAB_ICONS[tab];
+        const active = tab === activeTab;
+        return (
+          <button
+            aria-selected={active}
+            className={cn(
+              "flex items-center gap-[7px] rounded-md px-3 py-1.5 font-medium text-[13px] transition-colors",
+              active
+                ? "bg-secondary font-semibold text-foreground"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            role='tab'
+            type='button'>
+            <Icon
+              className={cn("h-[15px] w-[15px]", active && "text-primary")}
+              weight={active ? "duotone" : "regular"}
+            />
+            {t(`foundry.tabs.${tab}`)}
+            <span
+              className={cn(
+                "font-mono text-[11px]",
+                active ? "text-secondary-foreground" : "opacity-60",
+              )}>
+              {counts[tab].toLocaleString()}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+};
+
+/** The editor: skin header on top, the active mode's workspace below. */
+export const FoundryShell = () => {
+  const { t } = useTranslation();
+  const { manifest, workspace, busy, activeTab, reset } = useFoundry();
+  const [importOpen, setImportOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+
+  if (!manifest) return null;
+
+  return (
+    <div className='flex h-full flex-col gap-3'>
+      <div className='flex shrink-0 items-center gap-5'>
+        <SkinIdentity />
+        <ModeTabs />
+        <div className='flex flex-1 items-center justify-end gap-2'>
           <Button
-            className='text-muted-foreground hover:bg-muted hover:text-foreground'
+            className='text-muted-foreground hover:text-foreground'
             icon={<XCircleIcon className='h-4 w-4' />}
             onClick={reset}
             size='sm'
             variant='ghost'>
-            {t("foundry.toolbar.clear")}
+            {t("foundry.header.close")}
           </Button>
           <Button
             icon={<RepeatIcon className='h-4 w-4' />}
@@ -147,113 +177,64 @@ export const FoundryShell = () => {
             variant='outline'>
             {t("foundry.toolbar.changeSkin")}
           </Button>
-          <div aria-hidden className='mx-1 h-5 w-px bg-border' />
           <Button
             disabled={!workspace || busy}
             icon={<ExportIcon className='h-4 w-4' weight='bold' />}
             onClick={() => setExportOpen(true)}
             size='sm'
-            title={workspace ? undefined : t("foundry.editor.workspacePending")}
-            variant='default'>
+            title={
+              workspace ? undefined : t("foundry.editor.workspacePending")
+            }>
             {t("foundry.toolbar.export")}
           </Button>
         </div>
       </div>
 
-      {/* Workspace */}
-      <ResizablePanelGroup
-        className='flex-1 rounded-lg border'
-        direction='horizontal'
-        key={`${showPreviewPanel ? "preview" : "no-preview"}-${
-          showInspector ? "inspector" : "no-inspector"
-        }`}>
-        <ResizablePanel
-          className='bg-background/80 backdrop-blur-md'
-          defaultSize={showPreviewPanel ? 26 : 74}
-          minSize={showPreviewPanel ? 18 : 40}>
-          <Tabs
-            className='flex h-full flex-col'
-            onValueChange={(value) => setActiveTab(value as FoundryTab)}
-            value={activeTab}>
-            <div className='shrink-0 border-b bg-background/95 p-2'>
-              <TabsList className={TABS_LIST_CLASS_NAME}>
-                {TABS.map((tab) => (
-                  <TabsTrigger
-                    className='h-12 min-w-0 flex-col gap-1 px-1 py-1.5 text-xs transition-colors hover:bg-background/60 hover:text-foreground data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none'
-                    key={tab}
-                    title={t(`foundry.tabs.${tab}`)}
-                    value={tab}>
-                    {TAB_ICONS[tab]}
-                    <span className='max-w-full truncate'>
-                      {t(`foundry.tabs.${tab}`)}
-                    </span>
-                  </TabsTrigger>
-                ))}
-              </TabsList>
+      <div className='flex min-h-0 flex-1 overflow-hidden rounded-[10px] border bg-background'>
+        {activeTab === "assets" && (
+          <>
+            <div className={cn(SIDE_PANEL_CLASS, "w-[248px] border-r")}>
+              <FoundryAssetsRail />
             </div>
-            {TABS.map((tab) => (
-              <TabsContent
-                className='mt-0 flex-1 overflow-hidden data-[state=inactive]:hidden'
-                key={tab}
-                value={tab}>
-                <div className='border-b px-3 py-2'>
-                  <p className='font-medium text-sm'>
-                    {t(`foundry.tabs.${tab}`)}
-                  </p>
-                  <p className='text-muted-foreground text-xs'>
-                    {t(`foundry.tabs.${tab}Hint`)}
-                  </p>
-                </div>
-                <ScrollArea className='h-[calc(100%-3.25rem)]'>
-                  <div className='p-2'>
-                    {tab === "paint" ? (
-                      <FoundryPaintPanel />
-                    ) : tab === "cards" ? (
-                      <FoundryCardsPanel />
-                    ) : tab === "sounds" ? (
-                      <FoundrySoundsPanel />
-                    ) : (
-                      <FoundryEntryList
-                        editedPaths={editedPaths}
-                        emptyLabel={t(`foundry.tabs.${tab}Empty`)}
-                        entries={entriesForTab}
-                        onSelect={onSelect}
-                        primaryPath={primaryModelPath}
-                        selectedPath={selectedEntryPath}
-                      />
-                    )}
-                  </div>
-                </ScrollArea>
-              </TabsContent>
-            ))}
-          </Tabs>
-        </ResizablePanel>
-
-        {showPreviewPanel && (
-          <>
-            <ResizableHandle withHandle />
-
-            <ResizablePanel defaultSize={48} minSize={30}>
-              <div className='h-full p-3'>
-                <FoundryPreview />
-              </div>
-            </ResizablePanel>
-          </>
-        )}
-
-        {showInspector && (
-          <>
-            <ResizableHandle withHandle />
-
-            <ResizablePanel
-              className='bg-background/80 backdrop-blur-md'
-              defaultSize={26}
-              minSize={18}>
+            <div className='min-w-0 flex-1'>
+              <FoundryPreview />
+            </div>
+            <div className={cn(SIDE_PANEL_CLASS, "w-[292px] border-l")}>
               <FoundryInspector />
-            </ResizablePanel>
+            </div>
           </>
         )}
-      </ResizablePanelGroup>
+        {activeTab === "paint" && (
+          <>
+            <div className={cn(SIDE_PANEL_CLASS, "w-[320px] border-r")}>
+              <ScrollArea className='h-full'>
+                <div className='p-2'>
+                  <FoundryPaintPanel />
+                </div>
+              </ScrollArea>
+            </div>
+            <div className='min-w-0 flex-1'>
+              <FoundryPreview />
+            </div>
+          </>
+        )}
+        {(activeTab === "cards" || activeTab === "sounds") && (
+          <>
+            <ScrollArea className='min-w-0 flex-1'>
+              <div className='p-2'>
+                {activeTab === "cards" ? (
+                  <FoundryCardsPanel />
+                ) : (
+                  <FoundrySoundsPanel />
+                )}
+              </div>
+            </ScrollArea>
+            <div className={cn(SIDE_PANEL_CLASS, "w-[292px] border-l")}>
+              <FoundryInspector />
+            </div>
+          </>
+        )}
+      </div>
 
       <FoundryImportDialog onOpenChange={setImportOpen} open={importOpen} />
       <FoundryExportDialog onOpenChange={setExportOpen} open={exportOpen} />

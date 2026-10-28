@@ -2144,11 +2144,12 @@
       "preview3dWarning": "Some models fail to load, and a few can crash your graphics driver. If a skin won't open, turn this off."
     },
     "toolbar": {
-      "entryCount": "{{count}} files",
+      "entryCount": "{{formattedCount}} files",
       "changeSkin": "Change skin",
       "clear": "Clear",
       "export": "Export VPK",
-      "editCount": "{{count}} edited"
+      "editCount": "{{count}} edited",
+      "entryCount_one": "1 file"
     },
     "tabs": {
       "assets": "Assets",
@@ -2214,7 +2215,23 @@
         "mod": "Mod",
         "default": "Base game",
         "workspace": "Edited"
-      }
+      },
+      "kinds": {
+        "model": "Model",
+        "material": "Material",
+        "texture": "Texture",
+        "card": "Card",
+        "sound": "Sound",
+        "other": "File"
+      },
+      "from": {
+        "mod": "from the mod",
+        "default": "from the base game",
+        "workspace": "edited"
+      },
+      "modelStats": "{{vertices}} vertices, {{triangles}} triangles",
+      "copyPath": "Copy path",
+      "pathCopied": "Path copied"
     },
     "errors": {
       "notHeroSkinTitle": "Not a hero skin",
@@ -2231,7 +2248,7 @@
       "unmute": "Unmute"
     },
     "editor": {
-      "replaceLabel": "Replace",
+      "replaceLabel": "Replace file",
       "replace": "Choose file…",
       "replaceTitle": "Choose a replacement file",
       "replaceImageHint": "Pick a PNG or JPG. It's cropped and re-encoded into this texture.",
@@ -2244,9 +2261,10 @@
       "workspacePending": "Preparing the editable copy of this skin…",
       "replaceSoundHint": "Pick an MP3 or WAV. It's rebuilt into this clip's container.",
       "primaryLabel": "Primary model",
-      "primaryHint": "The model the preview opens on and the export is named after.",
+      "primaryHint": "The preview opens this model and the export is named after it.",
       "setPrimary": "Mark as primary",
-      "isPrimary": "Primary model"
+      "isPrimary": "Primary model",
+      "revertToOriginal": "Revert to original"
     },
     "export": {
       "dialogTitle": "Export this skin",
@@ -2337,7 +2355,63 @@
         "circuit": "Circuit"
       }
     },
-    "primary": "Primary"
+    "primary": "Primary",
+    "picker": {
+      "subtitle": "Pick a skin to recolor, re-card and re-sound, then export it as a new VPK.",
+      "sourceLabel": "Skin source",
+      "sources": {
+        "installed": "Installed skins",
+        "heroes": "Base heroes"
+      },
+      "search": "Search skins, heroes or authors",
+      "openFile": "Open VPK file",
+      "open": "Open in Foundry",
+      "by": "By {{author}}",
+      "noMatches": "No skins match your search.",
+      "moreWays": "More ways to get a skin",
+      "forgeDescription": "The community's skin workshop and asset browser.",
+      "commissionsDescription": "Pay a mod author to make a custom skin or sound pack for you.",
+      "scope": "Hero skins only. Map and audio-only mods don't show up here."
+    },
+    "header": {
+      "fromMod": "{{name}}, by {{author}}",
+      "fromFile": "{{name}}.vpk, from a local file",
+      "baseGame": "Base game skin",
+      "close": "Close",
+      "modes": "Foundry modes"
+    },
+    "assets": {
+      "filter": "Filter {{formattedCount}} files",
+      "groups": {
+        "all": "All",
+        "models": "Models",
+        "materials": "Materials",
+        "textures": "Textures",
+        "cards": "Cards",
+        "sounds": "Sounds",
+        "other": "Other"
+      },
+      "noMatches": "No files match that filter.",
+      "edited": "{{count}} files edited",
+      "edited_one": "1 file edited",
+      "noEdits": "No edits yet"
+    },
+    "drop": {
+      "choose": "or choose a file",
+      "image": "Drop a PNG, JPG or WebP",
+      "sound": "Drop an MP3 or WAV",
+      "file": "Drop a .{{ext}} here"
+    },
+    "opening": {
+      "label": "Opening the skin",
+      "files": "{{formattedCount}} files",
+      "unpacked": "Unpacked the VPK",
+      "sections": "Found {{count}} paintable sections",
+      "sections_one": "Found 1 paintable section",
+      "findingSections": "Finding paintable sections",
+      "assembling": "Assembling {{hero}}",
+      "workspace": "Making an editable copy"
+    }
   },
   "servers": {
     "title": "Server Browser",
