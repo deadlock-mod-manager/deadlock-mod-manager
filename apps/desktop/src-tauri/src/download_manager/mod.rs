@@ -626,6 +626,7 @@ impl DownloadManager {
         .filter_map(|path| path.file_name()?.to_str())
         .collect();
       let mut selection_required = false;
+      let mut replaced_archives: HashMap<String, &str> = HashMap::new();
 
       for (archive_index, downloaded_file) in downloaded_files.iter().enumerate() {
         if !extractor.is_supported_archive(downloaded_file) {
@@ -703,17 +704,20 @@ impl DownloadManager {
             &downloaded_names,
           )
         });
-        let selected_paths = if let Some(None) = carried {
-          selection_required = true;
-          Vec::new()
-        } else {
-          Self::selected_extracted_vpks(
+        let selected_paths = match &carried {
+          Some(None) => {
+            selection_required = true;
+            Vec::new()
+          }
+          Some(Some((carried, replaced))) => {
+            replaced_archives.insert(archive_name.to_string(), replaced);
+            Self::selected_extracted_vpks(extracted_dir.path(), &extracted_tree, Some(carried))
+          }
+          None => Self::selected_extracted_vpks(
             extracted_dir.path(),
             &extracted_tree,
-            carried
-              .as_ref()
-              .map_or(task.file_tree.as_ref(), Option::as_ref),
-          )
+            task.file_tree.as_ref(),
+          ),
         };
 
         // Each archive's temp dir is gone before the names are known, so
@@ -732,8 +736,14 @@ impl DownloadManager {
         extracted_dir.close()?;
       }
 
-      let tree = ModFileTree::from_extracted(prepared_files);
+      let mut tree = ModFileTree::from_extracted(prepared_files);
       if selection_required {
+        Self::keep_saved_order(
+          &mut tree,
+          task.file_tree.as_ref(),
+          &replaced_archives,
+          &downloaded_names,
+        );
         // Held files go with the prepared directory; the pick downloads again.
         return Ok(PreparedDownload {
           vpk_paths: Vec::new(),
@@ -765,6 +775,13 @@ impl DownloadManager {
           "No VPKs matched the update selection".to_string(),
         ));
       }
+      // Slots hold indexes into the tree, so it is only reordered now.
+      Self::keep_saved_order(
+        &mut tree,
+        task.file_tree.as_ref(),
+        &replaced_archives,
+        &downloaded_names,
+      );
 
       Ok(PreparedDownload {
         vpk_paths: prepared_paths,
@@ -957,12 +974,13 @@ impl DownloadManager {
   /// doesn't download, the one with the most chosen VPKs found here (then the
   /// most VPK names shared) is taken as its old upload, and its choices carry
   /// over. Files it didn't choose, new ones included, stay out: they are
-  /// usually other variants. `None` leaves the choice to the user.
-  fn carry_selection_to_archive(
+  /// usually other variants. Returns the carried selection and the saved
+  /// archive it came from; `None` leaves the choice to the user.
+  fn carry_selection_to_archive<'a>(
     extracted_tree: &crate::mod_manager::file_tree::ModFileTree,
-    selection: Option<&crate::mod_manager::file_tree::ModFileTree>,
+    selection: Option<&'a crate::mod_manager::file_tree::ModFileTree>,
     downloaded_names: &[&str],
-  ) -> Option<crate::mod_manager::file_tree::ModFileTree> {
+  ) -> Option<(crate::mod_manager::file_tree::ModFileTree, &'a str)> {
     use crate::mod_manager::file_tree::{ModFile, ModFileTree, relative_path, source_file_name};
 
     let selection = selection?;
@@ -1038,11 +1056,77 @@ impl DownloadManager {
       return None;
     }
     let total_files = files.len();
-    Some(ModFileTree {
-      files,
-      total_files,
-      has_multiple_files: total_files > 1,
-    })
+    Some((
+      ModFileTree {
+        files,
+        total_files,
+        has_multiple_files: total_files > 1,
+      },
+      paired,
+    ))
+  }
+
+  /// An update keeps the mod's load order. A file the saved tree lists takes
+  /// its place there, found by its path in the archive it came from (the
+  /// replaced one for a re-upload) or else by its name. A new file goes where
+  /// the author put it: before the first file from a later download.
+  fn keep_saved_order(
+    tree: &mut crate::mod_manager::file_tree::ModFileTree,
+    saved: Option<&crate::mod_manager::file_tree::ModFileTree>,
+    replaced_archives: &HashMap<String, &str>,
+    downloaded_names: &[&str],
+  ) {
+    use crate::mod_manager::file_tree::{ModFile, relative_path};
+
+    let Some(saved) = saved else {
+      return;
+    };
+    let path_key =
+      |archive: &str, file: &ModFile| (archive.to_string(), relative_path(file).to_lowercase());
+    let by_path: HashMap<(String, String), usize> = saved
+      .files
+      .iter()
+      .enumerate()
+      .map(|(index, file)| (path_key(&file.archive_name, file), index))
+      .collect();
+    let by_name: HashMap<&str, usize> = saved
+      .files
+      .iter()
+      .enumerate()
+      .map(|(index, file)| (file.name.as_str(), index))
+      .collect();
+    let (mut kept, added): (Vec<_>, Vec<_>) = std::mem::take(&mut tree.files)
+      .into_iter()
+      .map(|file| {
+        let archive = replaced_archives
+          .get(&file.archive_name)
+          .copied()
+          .unwrap_or(&file.archive_name);
+        let position = by_path
+          .get(&path_key(archive, &file))
+          .or_else(|| by_name.get(file.name.as_str()))
+          .copied();
+        (position, file)
+      })
+      .partition(|(position, _)| position.is_some());
+    kept.sort_by_key(|(position, _)| *position);
+
+    let archive_rank = |file: &ModFile| {
+      downloaded_names
+        .iter()
+        .position(|name| *name == file.archive_name)
+        .unwrap_or(downloaded_names.len())
+    };
+    let mut files: Vec<ModFile> = kept.into_iter().map(|(_, file)| file).collect();
+    for (_, file) in added {
+      let rank = archive_rank(&file);
+      let before = files
+        .iter()
+        .position(|existing| archive_rank(existing) > rank)
+        .unwrap_or(files.len());
+      files.insert(before, file);
+    }
+    tree.files = files;
   }
 
   fn downloaded_vpk_is_selected(
@@ -1989,7 +2073,7 @@ mod tests {
     downloaded: &[&str],
   ) -> Option<Vec<String>> {
     DownloadManager::carry_selection_to_archive(extracted, Some(selection), downloaded).map(
-      |carried| {
+      |(carried, _)| {
         DownloadManager::selected_extracted_vpks(
           std::path::Path::new("extracted"),
           extracted,
@@ -2156,6 +2240,67 @@ mod tests {
       file("b.zip", "b.zip/two.vpk", true),
     ]);
     assert_eq!(carried_selection(&extracted, &tied, &[new]), None);
+  }
+
+  fn saved_order(
+    prepared: Vec<ModFile>,
+    saved: &ModFileTree,
+    replaced: &[(&str, &'static str)],
+    downloaded: &[&str],
+  ) -> Vec<String> {
+    let mut prepared = tree(prepared);
+    let replaced = replaced
+      .iter()
+      .map(|(archive, old)| (archive.to_string(), *old))
+      .collect();
+    DownloadManager::keep_saved_order(&mut prepared, Some(saved), &replaced, downloaded);
+    prepared.files.into_iter().map(|file| file.path).collect()
+  }
+
+  #[test]
+  fn update_keeps_the_saved_load_order_and_places_new_files_by_download() {
+    // The player moved b.zip's file ahead of a.zip's.
+    let saved = tree(vec![
+      file("b.zip", "b.zip/two.vpk", true),
+      file("a.zip", "a.zip/one.vpk", true),
+    ]);
+    let prepared = vec![
+      file("a.zip", "a.zip/one.vpk", true),
+      file("a.zip", "a.zip/added.vpk", true),
+      file("b.zip", "b.zip/two.vpk", true),
+    ];
+
+    // A new file in the first download goes before the first file of a later one.
+    assert_eq!(
+      saved_order(prepared, &saved, &[], &["a.zip", "b.zip"]),
+      ["a.zip/added.vpk", "b.zip/two.vpk", "a.zip/one.vpk"]
+    );
+  }
+
+  #[test]
+  fn update_keeps_the_saved_load_order_across_a_reupload() {
+    let saved = tree(vec![
+      file("pack_1a2b3.zip", "pack_1a2b3.zip/red/pak01_dir.vpk", true),
+      file("pack_1a2b3.zip", "pack_1a2b3.zip/blue/pak01_dir.vpk", true),
+    ]);
+    // Install names come from the archive, so only the path still matches.
+    let mut blue = file("pack_4c5d6.zip", "pack_4c5d6.zip/blue/pak01_dir.vpk", true);
+    blue.name = "pak01-blue-new_dir.vpk".to_string();
+    let mut red = file("pack_4c5d6.zip", "pack_4c5d6.zip/red/pak01_dir.vpk", true);
+    red.name = "pak01-red-new_dir.vpk".to_string();
+
+    assert_eq!(
+      saved_order(
+        vec![blue, red],
+        &saved,
+        &[("pack_4c5d6.zip", "pack_1a2b3.zip")],
+        &["pack_4c5d6.zip"],
+      ),
+      [
+        "pack_4c5d6.zip/red/pak01_dir.vpk",
+        "pack_4c5d6.zip/blue/pak01_dir.vpk"
+      ]
+    );
   }
 
   #[test]
