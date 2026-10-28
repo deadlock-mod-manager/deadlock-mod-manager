@@ -307,17 +307,6 @@ export const useBatchUpdate = () => {
           failed_mod_count: result.failed.length,
         },
       );
-      if (result.failed.length > 0) {
-        logger
-          .withMetadata({
-            failed: result.failed.length,
-            succeeded: result.succeeded.length,
-          })
-          .warn("Some mods failed to update");
-      } else if (!awaitingChoice) {
-        toast.success(t("myMods.batchUpdate.complete"));
-      }
-
       const selectionRequired = [
         ...pendingSelections.filter(
           (pending) =>
@@ -332,6 +321,16 @@ export const useBatchUpdate = () => {
         }),
       ];
       setPendingSelections(selectionRequired);
+      if (result.failed.length > 0) {
+        logger
+          .withMetadata({
+            failed: result.failed.length,
+            succeeded: result.succeeded.length,
+          })
+          .warn("Some mods failed to update");
+      } else if (selectionRequired.length === 0) {
+        toast.success(t("myMods.batchUpdate.complete"));
+      }
       return { ...result, selectionRequired };
     } catch (error) {
       attempt.finish(
