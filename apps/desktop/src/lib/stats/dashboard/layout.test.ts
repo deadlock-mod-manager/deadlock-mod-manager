@@ -3,12 +3,14 @@ import {
   type DashboardLayout,
   type DashboardWidget,
   DEFAULT_LAYOUT,
+  LIVE_PANELS,
   moveTab,
   moveWidgetToTab,
   parseLayout,
   removeTab,
   reorderWidget,
   upsertWidget,
+  withoutPanels,
 } from "./layout";
 
 const widget = (id: string): DashboardWidget => ({
@@ -71,6 +73,21 @@ describe("dashboard layout", () => {
     expect(recovered).toBe(false);
     expect(parsed.tabs.map((tab) => tab.id)).toEqual(["a", "b"]);
     expect(ids(parsed, "a")).toEqual(["1", "2", "3"]);
+  });
+
+  it("hides listed panels and the tabs that only held them", () => {
+    const saved = structuredClone(layout);
+    saved.tabs.push({
+      id: "live",
+      title: null,
+      icon: "radio",
+      widgets: [
+        { ...widget("4"), source: { kind: "panel", panel: "liveScoreboard" } },
+      ],
+    });
+    const hidden = withoutPanels(saved, LIVE_PANELS);
+    expect(hidden.tabs.map((tab) => tab.id)).toEqual(["a", "b"]);
+    expect(saved.tabs).toHaveLength(3);
   });
 
   it("moves a widget onto another widget's slot", () => {

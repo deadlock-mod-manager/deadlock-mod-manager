@@ -57,6 +57,7 @@ const DEFAULT_EXPERIMENTAL_FEATURES: Record<ExperimentalFeature, boolean> = {
   "conflict-detection": true,
   "performance-configs": true,
   "cloud-backup": true,
+  "live-scoreboard": false,
 };
 
 export type CrosshairFilters = {

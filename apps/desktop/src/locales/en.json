@@ -4432,6 +4432,10 @@
       "cloud-backup": {
         "title": "Cloud Backup",
         "description": "Back up mod profiles to your account and restore them on another PC. Requires signing in."
+      },
+      "live-scoreboard": {
+        "title": "Live Scoreboard",
+        "description": "Add a Live tab to the Stats page that reads the scoreboard of the match you are in. Installs a small HUD mod and launches the game with -condebug."
       }
     }
   },
