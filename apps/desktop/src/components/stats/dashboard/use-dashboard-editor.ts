@@ -21,6 +21,7 @@ import {
   updateTab,
   upsertWidget,
   withoutPanels,
+  withPanelTabsOf,
 } from "@/lib/stats/dashboard/layout";
 import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { emptyTab, tabFromTemplate } from "@/lib/stats/dashboard/templates";
@@ -45,22 +46,22 @@ export const useDashboardEditor = () => {
   const storedLayout = usePersistedStore((state) => state.statsDashboard);
   const setStoredLayout = usePersistedStore((state) => state.setStatsDashboard);
   const liveEnabled = useExperimentalFeature("live-scoreboard");
-  // While the Live Scoreboard toggle is off its tab is hidden, and the default
-  // the editor saves against and resets to leaves it out as well.
+  // While the Live Scoreboard toggle is off its tab is hidden from the page
+  // and from a reset, and saving puts it back so turning it on brings it back.
   const defaultLayout = useMemo(
     () =>
       liveEnabled ? DEFAULT_LAYOUT : withoutPanels(DEFAULT_LAYOUT, LIVE_PANELS),
     [liveEnabled],
   );
+  const parsed = useMemo(() => parseLayout(storedLayout), [storedLayout]);
   const { layout: savedLayout, recovered } = useMemo(() => {
-    const parsed = parseLayout(storedLayout);
     if (liveEnabled) return parsed;
     const visible = withoutPanels(parsed.layout, LIVE_PANELS);
     return {
       ...parsed,
       layout: visible.tabs.length > 0 ? visible : defaultLayout,
     };
-  }, [storedLayout, liveEnabled, defaultLayout]);
+  }, [parsed, liveEnabled, defaultLayout]);
 
   const [draft, setDraft] = useState<DashboardLayout | null>(null);
   const [editorTarget, setEditorTarget] = useState<EditorTarget | null>(null);
@@ -157,10 +158,13 @@ export const useDashboardEditor = () => {
     startEditing: () => setDraft(cloneLayout(savedLayout)),
     save: () => {
       if (!draft) return;
+      const next = liveEnabled
+        ? draft
+        : withPanelTabsOf(draft, parsed.layout, LIVE_PANELS);
       // Saving the untouched default stores nothing, so later releases can
       // still improve the default for everyone who never customised it.
       setStoredLayout(
-        JSON.stringify(draft) === JSON.stringify(defaultLayout) ? null : draft,
+        JSON.stringify(next) === JSON.stringify(DEFAULT_LAYOUT) ? null : next,
       );
       setDraft(null);
     },
