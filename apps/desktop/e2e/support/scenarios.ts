@@ -64,6 +64,10 @@ import {
   variantNamesRoutes,
   assertVariantNamesNetwork,
 } from "./variant-names-fixtures";
+import {
+  assertRenamedPacksNetwork,
+  renamedPacksRoutes,
+} from "./renamed-packs-fixtures";
 import { monkeyRoutes, prepareMonkeyWorld } from "./monkey-fixtures";
 import {
   appUpdateRoutes,
@@ -679,6 +683,13 @@ export const scenarios = {
     phases: ["variants", "restart"],
     routes: variantNamesRoutes,
     verifyNetwork: assertVariantNamesNetwork,
+  },
+  "gamebanana-renamed-packs": {
+    ...catalog,
+    spec: "gamebanana-renamed-packs",
+    phases: ["update"],
+    routes: renamedPacksRoutes,
+    verifyNetwork: assertRenamedPacksNetwork,
   },
   "gamebanana-update-broken-profile": {
     ...catalog,

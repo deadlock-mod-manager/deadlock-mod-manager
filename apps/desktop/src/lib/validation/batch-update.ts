@@ -14,4 +14,13 @@ export const BatchUpdateResultSchema = z.object({
   failed: z.array(z.tuple([z.string(), z.string()])),
   installedMods: z.array(InstalledModInfoSchema),
   vpkMappings: z.array(z.tuple([z.string(), z.array(z.string())])).optional(),
+  selectionRequired: z
+    .array(
+      z.object({
+        modId: z.string(),
+        modName: z.string(),
+        fileTree: profileModFileTreeSchema,
+      }),
+    )
+    .default([]),
 });

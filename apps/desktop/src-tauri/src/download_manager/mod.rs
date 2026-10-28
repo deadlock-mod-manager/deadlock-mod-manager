@@ -179,6 +179,9 @@ pub struct PreparedDownload {
   /// What was actually prepared, so the installed mod stops reporting the
   /// selection it was updated from.
   pub file_tree: Option<crate::mod_manager::file_tree::ModFileTree>,
+  /// No saved choice fits an archive with several VPKs, so nothing was
+  /// prepared and `file_tree` is what the user picks from.
+  pub selection_required: bool,
   scratch_paths: Vec<PathBuf>,
 }
 
@@ -540,6 +543,7 @@ impl DownloadManager {
         Ok(PreparedDownload {
           vpk_paths: Vec::new(),
           file_tree: None,
+          selection_required: false,
           scratch_paths: Vec::new(),
         })
       }
@@ -548,23 +552,22 @@ impl DownloadManager {
           Self::prepare_downloaded_vpks(operation_id, &task, &downloaded_files, &app_handle).await;
         let mut scratch_paths = downloaded_files;
         scratch_paths.push(task.target_dir.join(format!("prepared-{operation_id}")));
-        let (vpk_paths, file_tree) = match prepared {
-          Ok(prepared) => prepared,
+        match prepared {
+          Ok(prepared) => Ok(PreparedDownload {
+            scratch_paths,
+            ..prepared
+          }),
           Err(error) => {
             PreparedDownload {
               vpk_paths: Vec::new(),
               file_tree: None,
+              selection_required: false,
               scratch_paths,
             }
             .remove_scratch_files();
-            return Err(error);
+            Err(error)
           }
-        };
-        Ok(PreparedDownload {
-          vpk_paths,
-          file_tree,
-          scratch_paths,
-        })
+        }
       }
     }
   }
@@ -598,13 +601,7 @@ impl DownloadManager {
     task: &DownloadTask,
     downloaded_files: &[PathBuf],
     app_handle: &AppHandle,
-  ) -> Result<
-    (
-      Vec<PathBuf>,
-      Option<crate::mod_manager::file_tree::ModFileTree>,
-    ),
-    Error,
-  > {
+  ) -> Result<PreparedDownload, Error> {
     use crate::mod_manager::archive_extractor::ArchiveExtractor;
     use crate::mod_manager::file_tree::{FileTreeAnalyzer, ModFileTree};
 
@@ -624,6 +621,12 @@ impl DownloadManager {
         Held(usize),
       }
       let mut slots = Vec::new();
+      let downloaded_names: Vec<&str> = downloaded_files
+        .iter()
+        .filter_map(|path| path.file_name()?.to_str())
+        .collect();
+      let mut selection_required = false;
+      let mut replaced_archives: HashMap<String, &str> = HashMap::new();
 
       for (archive_index, downloaded_file) in downloaded_files.iter().enumerate() {
         if !extractor.is_supported_archive(downloaded_file) {
@@ -692,20 +695,30 @@ impl DownloadManager {
           .unwrap_or_default();
         let extracted_tree =
           analyzer.get_file_tree_from_extracted(extracted_dir.path(), archive_name)?;
-        let selected_paths = Self::selected_extracted_vpks(
-          extracted_dir.path(),
-          &extracted_tree,
-          task.file_tree.as_ref(),
-        );
-
-        if extracted_tree.has_multiple_files
-          && !Self::selection_covers_archive(task.file_tree.as_ref(), archive_name)
-        {
-          return Err(Error::InvalidInput(format!(
-            "A VPK selection is required to update mod {}",
-            task.mod_id
-          )));
-        }
+        let carried = (extracted_tree.has_multiple_files
+          && !Self::selection_covers_archive(task.file_tree.as_ref(), archive_name))
+        .then(|| {
+          Self::carry_selection_to_archive(
+            &extracted_tree,
+            task.file_tree.as_ref(),
+            &downloaded_names,
+          )
+        });
+        let selected_paths = match &carried {
+          Some(None) => {
+            selection_required = true;
+            Vec::new()
+          }
+          Some(Some((carried, replaced))) => {
+            replaced_archives.insert(archive_name.to_string(), replaced);
+            Self::selected_extracted_vpks(extracted_dir.path(), &extracted_tree, Some(carried))
+          }
+          None => Self::selected_extracted_vpks(
+            extracted_dir.path(),
+            &extracted_tree,
+            task.file_tree.as_ref(),
+          ),
+        };
 
         // Each archive's temp dir is gone before the names are known, so
         // selected files wait under their index in the tree.
@@ -723,7 +736,23 @@ impl DownloadManager {
         extracted_dir.close()?;
       }
 
-      let tree = ModFileTree::from_extracted(prepared_files);
+      let mut tree = ModFileTree::from_extracted(prepared_files);
+      if selection_required {
+        Self::keep_saved_order(
+          &mut tree,
+          task.file_tree.as_ref(),
+          &replaced_archives,
+          &downloaded_names,
+        );
+        // Held files go with the prepared directory; the pick downloads again.
+        return Ok(PreparedDownload {
+          vpk_paths: Vec::new(),
+          file_tree: Some(tree),
+          selection_required: true,
+          scratch_paths: Vec::new(),
+        });
+      }
+
       let mut prepared_paths = Vec::new();
       for slot in slots {
         match slot {
@@ -746,8 +775,20 @@ impl DownloadManager {
           "No VPKs matched the update selection".to_string(),
         ));
       }
+      // Slots hold indexes into the tree, so it is only reordered now.
+      Self::keep_saved_order(
+        &mut tree,
+        task.file_tree.as_ref(),
+        &replaced_archives,
+        &downloaded_names,
+      );
 
-      Ok((prepared_paths, (!tree.files.is_empty()).then_some(tree)))
+      Ok(PreparedDownload {
+        vpk_paths: prepared_paths,
+        file_tree: (!tree.files.is_empty()).then_some(tree),
+        selection_required: false,
+        scratch_paths: Vec::new(),
+      })
     }
     .await;
 
@@ -926,6 +967,166 @@ impl DownloadManager {
         .iter()
         .any(|file| file.archive_name.is_empty() || file.archive_name == archive_name)
     })
+  }
+
+  /// A re-upload under a new file name leaves the selection scoped to an
+  /// archive that no longer downloads. Of the saved archives this update
+  /// doesn't download, the one with the most chosen VPKs found here (then the
+  /// most VPK names shared) is taken as its old upload, and its choices carry
+  /// over. Files it didn't choose, new ones included, stay out: they are
+  /// usually other variants. Returns the carried selection and the saved
+  /// archive it came from; `None` leaves the choice to the user.
+  fn carry_selection_to_archive<'a>(
+    extracted_tree: &crate::mod_manager::file_tree::ModFileTree,
+    selection: Option<&'a crate::mod_manager::file_tree::ModFileTree>,
+    downloaded_names: &[&str],
+  ) -> Option<(crate::mod_manager::file_tree::ModFileTree, &'a str)> {
+    use crate::mod_manager::file_tree::{ModFile, ModFileTree, relative_path, source_file_name};
+
+    let selection = selection?;
+    let name_of = |file: &ModFile| source_file_name(file).to_lowercase();
+    let name_counts = |files: &mut dyn Iterator<Item = &ModFile>| {
+      let mut counts: HashMap<String, usize> = HashMap::new();
+      for file in files {
+        *counts.entry(name_of(file)).or_default() += 1;
+      }
+      counts
+    };
+    let here = name_counts(&mut extracted_tree.files.iter());
+    let saved_in = |archive: &str| -> Vec<&ModFile> {
+      selection
+        .files
+        .iter()
+        .filter(|file| file.archive_name == archive)
+        .collect()
+    };
+
+    let mut replaced: Vec<&str> = selection
+      .files
+      .iter()
+      .map(|file| file.archive_name.as_str())
+      .filter(|archive| !archive.is_empty() && !downloaded_names.contains(archive))
+      .collect();
+    replaced.sort_unstable();
+    replaced.dedup();
+
+    // A sibling variant can share more names, so chosen ones rank first.
+    let mut ranked: Vec<((usize, usize), &str)> = replaced
+      .into_iter()
+      .map(|archive| {
+        let found: Vec<&ModFile> = saved_in(archive)
+          .into_iter()
+          .filter(|file| here.contains_key(&name_of(file)))
+          .collect();
+        let chosen = found.iter().filter(|file| file.is_selected).count();
+        ((chosen, found.len()), archive)
+      })
+      .filter(|((chosen, _), _)| *chosen > 0)
+      .collect();
+    ranked.sort_by_key(|(rank, _)| std::cmp::Reverse(*rank));
+    let &(best, paired) = ranked.first()?;
+    if ranked.get(1).is_some_and(|(rank, _)| *rank == best) {
+      return None;
+    }
+
+    let saved = saved_in(paired);
+    let before = name_counts(&mut saved.iter().copied());
+    let chosen: Vec<&ModFile> = saved.into_iter().filter(|file| file.is_selected).collect();
+    let path_of = |file: &ModFile| relative_path(file).to_lowercase();
+    let files: Vec<ModFile> = extracted_tree
+      .files
+      .iter()
+      .map(|file| {
+        let name = name_of(file);
+        // A name alone only counts when it names one file before and after,
+        // so it can't pick a variant the user turned down.
+        let is_selected = chosen.iter().any(|listed| path_of(listed) == path_of(file))
+          || (here[&name] == 1
+            && before.get(&name) == Some(&1)
+            && chosen.iter().any(|listed| name_of(listed) == name));
+        ModFile {
+          path: format!("{}/{}", file.archive_name, relative_path(file)),
+          is_selected,
+          ..file.clone()
+        }
+      })
+      .collect();
+
+    if !files.iter().any(|file| file.is_selected) {
+      return None;
+    }
+    let total_files = files.len();
+    Some((
+      ModFileTree {
+        files,
+        total_files,
+        has_multiple_files: total_files > 1,
+      },
+      paired,
+    ))
+  }
+
+  /// An update keeps the mod's load order. A file the saved tree lists takes
+  /// its place there, found by its path in the archive it came from (the
+  /// replaced one for a re-upload) or else by its name. A new file goes where
+  /// the author put it: before the first file from a later download.
+  fn keep_saved_order(
+    tree: &mut crate::mod_manager::file_tree::ModFileTree,
+    saved: Option<&crate::mod_manager::file_tree::ModFileTree>,
+    replaced_archives: &HashMap<String, &str>,
+    downloaded_names: &[&str],
+  ) {
+    use crate::mod_manager::file_tree::{ModFile, relative_path};
+
+    let Some(saved) = saved else {
+      return;
+    };
+    let path_key =
+      |archive: &str, file: &ModFile| (archive.to_string(), relative_path(file).to_lowercase());
+    let by_path: HashMap<(String, String), usize> = saved
+      .files
+      .iter()
+      .enumerate()
+      .map(|(index, file)| (path_key(&file.archive_name, file), index))
+      .collect();
+    let by_name: HashMap<&str, usize> = saved
+      .files
+      .iter()
+      .enumerate()
+      .map(|(index, file)| (file.name.as_str(), index))
+      .collect();
+    let (mut kept, added): (Vec<_>, Vec<_>) = std::mem::take(&mut tree.files)
+      .into_iter()
+      .map(|file| {
+        let archive = replaced_archives
+          .get(&file.archive_name)
+          .copied()
+          .unwrap_or(&file.archive_name);
+        let position = by_path
+          .get(&path_key(archive, &file))
+          .or_else(|| by_name.get(file.name.as_str()))
+          .copied();
+        (position, file)
+      })
+      .partition(|(position, _)| position.is_some());
+    kept.sort_by_key(|(position, _)| *position);
+
+    let archive_rank = |file: &ModFile| {
+      downloaded_names
+        .iter()
+        .position(|name| *name == file.archive_name)
+        .unwrap_or(downloaded_names.len())
+    };
+    let mut files: Vec<ModFile> = kept.into_iter().map(|(_, file)| file).collect();
+    for (_, file) in added {
+      let rank = archive_rank(&file);
+      let before = files
+        .iter()
+        .position(|existing| archive_rank(existing) > rank)
+        .unwrap_or(files.len());
+      files.insert(before, file);
+    }
+    tree.files = files;
   }
 
   fn downloaded_vpk_is_selected(
@@ -1864,6 +2065,242 @@ mod tests {
       Some(&selection),
       "red.rar"
     ));
+  }
+
+  fn carried_selection(
+    extracted: &ModFileTree,
+    selection: &ModFileTree,
+    downloaded: &[&str],
+  ) -> Option<Vec<String>> {
+    DownloadManager::carry_selection_to_archive(extracted, Some(selection), downloaded).map(
+      |(carried, _)| {
+        DownloadManager::selected_extracted_vpks(
+          std::path::Path::new("extracted"),
+          extracted,
+          Some(&carried),
+        )
+        .into_iter()
+        .map(|path| {
+          path
+            .strip_prefix("extracted")
+            .unwrap()
+            .to_string_lossy()
+            .replace('\\', "/")
+        })
+        .collect()
+      },
+    )
+  }
+
+  #[test]
+  fn update_selection_carries_over_to_a_reuploaded_archive() {
+    let new = "bonus_pack_1_3a4f9.zip";
+    let extracted = tree(vec![
+      file(new, "kaze_yuzu.vpk", true),
+      file(new, "ember.vpk", true),
+      file(new, "brand_new.vpk", true),
+    ]);
+    let selection = tree(vec![
+      file("bonus_pack_1.zip", "bonus_pack_1.zip/kaze_yuzu.vpk", true),
+      file("bonus_pack_1.zip", "bonus_pack_1.zip/ember.vpk", false),
+    ]);
+
+    assert_eq!(
+      carried_selection(&extracted, &selection, &[new]),
+      Some(vec!["kaze_yuzu.vpk".to_string()])
+    );
+  }
+
+  #[test]
+  fn update_selection_carries_each_pack_its_own_choices() {
+    let selection = tree(vec![
+      file("pack_a.zip", "pack_a.zip/pak01_dir.vpk", true),
+      file("pack_a.zip", "pack_a.zip/a_only.vpk", false),
+      file("pack_a.zip", "pack_a.zip/a_extra.vpk", false),
+      file("pack_b.zip", "pack_b.zip/pak01_dir.vpk", false),
+      file("pack_b.zip", "pack_b.zip/b_only.vpk", true),
+    ]);
+    let downloaded = ["pack_a_v2.zip", "pack_b_v2.zip"];
+    let pack_a = tree(vec![
+      file("pack_a_v2.zip", "pak01_dir.vpk", true),
+      file("pack_a_v2.zip", "a_only.vpk", true),
+      file("pack_a_v2.zip", "a_extra.vpk", true),
+    ]);
+    let pack_b = tree(vec![
+      file("pack_b_v2.zip", "pak01_dir.vpk", true),
+      file("pack_b_v2.zip", "b_only.vpk", true),
+    ]);
+
+    assert_eq!(
+      carried_selection(&pack_a, &selection, &downloaded),
+      Some(vec!["pak01_dir.vpk".to_string()])
+    );
+    assert_eq!(
+      carried_selection(&pack_b, &selection, &downloaded),
+      Some(vec!["b_only.vpk".to_string()])
+    );
+  }
+
+  #[test]
+  fn update_selection_carries_over_moved_files_with_a_unique_name() {
+    let new = "mod_v2.zip";
+    let selection = tree(vec![
+      file("mod.zip", "mod.zip/kaze.vpk", true),
+      file("mod.zip", "mod.zip/pak01_dir.vpk", true),
+      file("mod.zip", "mod.zip/other.vpk", false),
+    ]);
+    let extracted = tree(vec![
+      file(new, "colours/kaze.vpk", true),
+      file(new, "red/pak01_dir.vpk", true),
+      file(new, "blue/pak01_dir.vpk", true),
+      file(new, "other.vpk", true),
+    ]);
+
+    assert_eq!(
+      carried_selection(&extracted, &selection, &[new]),
+      Some(vec!["colours/kaze.vpk".to_string()])
+    );
+  }
+
+  #[test]
+  fn update_selection_asks_about_a_pack_with_nothing_chosen() {
+    // Carrying "nothing" over would leave the update with no VPKs to install.
+    let new = "mod_v2.zip";
+    let selection = tree(vec![
+      file("mod.zip", "mod.zip/one.vpk", false),
+      file("mod.zip", "mod.zip/two.vpk", false),
+    ]);
+    let extracted = tree(vec![file(new, "one.vpk", true), file(new, "two.vpk", true)]);
+
+    assert_eq!(carried_selection(&extracted, &selection, &[new]), None);
+  }
+
+  #[test]
+  fn update_selection_pairs_with_the_archive_whose_choices_are_found() {
+    // Blue wasn't downloaded this time and shares more names, but nothing
+    // in it was chosen.
+    let selection = tree(vec![
+      file("red.zip", "red.zip/pak01_dir.vpk", true),
+      file("blue.zip", "blue.zip/pak01_dir.vpk", false),
+      file("blue.zip", "blue.zip/extra.vpk", false),
+    ]);
+    let extracted = tree(vec![
+      file("red_v2.zip", "pak01_dir.vpk", true),
+      file("red_v2.zip", "extra.vpk", true),
+    ]);
+
+    assert_eq!(
+      carried_selection(&extracted, &selection, &["red_v2.zip"]),
+      Some(vec!["pak01_dir.vpk".to_string()])
+    );
+  }
+
+  #[test]
+  fn update_selection_never_picks_a_turned_down_variant_by_name() {
+    let new = "mod_v2.zip";
+    let selection = tree(vec![
+      file("mod.zip", "mod.zip/red/pak01_dir.vpk", false),
+      file("mod.zip", "mod.zip/blue/pak01_dir.vpk", true),
+    ]);
+    // Blue is gone and red moved, so only the name could still match.
+    let extracted = tree(vec![
+      file(new, "skins/pak01_dir.vpk", true),
+      file(new, "other.vpk", true),
+    ]);
+
+    assert_eq!(carried_selection(&extracted, &selection, &[new]), None);
+  }
+
+  #[test]
+  fn update_selection_asks_when_nothing_carries_over() {
+    let new = "mod_v2.zip";
+    let extracted = tree(vec![file(new, "one.vpk", true), file(new, "two.vpk", true)]);
+
+    // The chosen VPK is gone from the new upload.
+    let gone = tree(vec![
+      file("mod.zip", "mod.zip/one.vpk", false),
+      file("mod.zip", "mod.zip/removed.vpk", true),
+    ]);
+    assert_eq!(carried_selection(&extracted, &gone, &[new]), None);
+
+    // No replaced archive shares a name with it.
+    let unrelated = tree(vec![file("mod.zip", "mod.zip/other.vpk", true)]);
+    assert_eq!(carried_selection(&extracted, &unrelated, &[new]), None);
+
+    // The archive it was saved for still downloads, so it was not replaced.
+    let current = tree(vec![file("mod.zip", "mod.zip/one.vpk", true)]);
+    assert_eq!(
+      carried_selection(&extracted, &current, &[new, "mod.zip"]),
+      None
+    );
+
+    // Two replaced archives fit it equally well.
+    let tied = tree(vec![
+      file("a.zip", "a.zip/one.vpk", true),
+      file("b.zip", "b.zip/two.vpk", true),
+    ]);
+    assert_eq!(carried_selection(&extracted, &tied, &[new]), None);
+  }
+
+  fn saved_order(
+    prepared: Vec<ModFile>,
+    saved: &ModFileTree,
+    replaced: &[(&str, &'static str)],
+    downloaded: &[&str],
+  ) -> Vec<String> {
+    let mut prepared = tree(prepared);
+    let replaced = replaced
+      .iter()
+      .map(|(archive, old)| (archive.to_string(), *old))
+      .collect();
+    DownloadManager::keep_saved_order(&mut prepared, Some(saved), &replaced, downloaded);
+    prepared.files.into_iter().map(|file| file.path).collect()
+  }
+
+  #[test]
+  fn update_keeps_the_saved_load_order_and_places_new_files_by_download() {
+    // The player moved b.zip's file ahead of a.zip's.
+    let saved = tree(vec![
+      file("b.zip", "b.zip/two.vpk", true),
+      file("a.zip", "a.zip/one.vpk", true),
+    ]);
+    let prepared = vec![
+      file("a.zip", "a.zip/one.vpk", true),
+      file("a.zip", "a.zip/added.vpk", true),
+      file("b.zip", "b.zip/two.vpk", true),
+    ];
+
+    // A new file in the first download goes before the first file of a later one.
+    assert_eq!(
+      saved_order(prepared, &saved, &[], &["a.zip", "b.zip"]),
+      ["a.zip/added.vpk", "b.zip/two.vpk", "a.zip/one.vpk"]
+    );
+  }
+
+  #[test]
+  fn update_keeps_the_saved_load_order_across_a_reupload() {
+    let saved = tree(vec![
+      file("pack_1a2b3.zip", "pack_1a2b3.zip/red/pak01_dir.vpk", true),
+      file("pack_1a2b3.zip", "pack_1a2b3.zip/blue/pak01_dir.vpk", true),
+    ]);
+    // Install names come from the archive, so only the path still matches.
+    let mut blue = file("pack_4c5d6.zip", "pack_4c5d6.zip/blue/pak01_dir.vpk", true);
+    blue.name = "pak01-blue-new_dir.vpk".to_string();
+    let mut red = file("pack_4c5d6.zip", "pack_4c5d6.zip/red/pak01_dir.vpk", true);
+    red.name = "pak01-red-new_dir.vpk".to_string();
+
+    assert_eq!(
+      saved_order(
+        vec![blue, red],
+        &saved,
+        &[("pack_4c5d6.zip", "pack_1a2b3.zip")],
+        &["pack_4c5d6.zip"],
+      ),
+      [
+        "pack_4c5d6.zip/red/pak01_dir.vpk",
+        "pack_4c5d6.zip/blue/pak01_dir.vpk"
+      ]
+    );
   }
 
   #[test]

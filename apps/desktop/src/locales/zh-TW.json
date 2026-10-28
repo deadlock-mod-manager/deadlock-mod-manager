@@ -636,6 +636,7 @@
       "installedAt": "Installed",
       "newVersion": "Available Update",
       "partialSuccess": "{{succeeded}} updated, {{failed}} failed",
+      "selectionCanceled": "",
       "selectVariant": "Select variant",
       "title": "Update All Mods",
       "updatedAt": "Last Updated",

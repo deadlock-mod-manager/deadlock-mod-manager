@@ -181,6 +181,15 @@ export interface BatchUpdateResult {
   failed: Array<[string, string]>;
   installedMods: InstalledModInfo[];
   vpkMappings?: Array<[string, string[]]>;
+  /** Mods left untouched until the user picks their VPKs from `fileTree`. */
+  selectionRequired: PendingSelection[];
+}
+
+/** A mod whose saved VPK choice fits none of its new archives. */
+export interface PendingSelection {
+  modId: string;
+  modName: string;
+  fileTree: ModFileTree;
 }
 
 export interface BatchUpdateProgressEvent {

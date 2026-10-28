@@ -32,6 +32,7 @@ import { usePersistedStore } from "@/lib/store";
 import { findLocalMod } from "@/lib/store/selectors";
 import { useBatchUpdate } from "@/hooks/use-batch-update";
 import { BatchUpdateFailureDetails } from "@/components/my-mods/batch-update-failure-details";
+import { FileSelectorDialog } from "@/components/downloads/file-selector-dialog";
 import {
   getBatchUpdateFailure,
   remainingUpdateTargets,
@@ -63,7 +64,10 @@ export const BatchUpdateDialog = ({
     prepareUpdates,
     executeBatchUpdate,
     updateProgress,
+    pendingSelections,
+    dismissSelection,
   } = useBatchUpdate();
+  const pendingSelection = pendingSelections[0];
   const skipModUpdate = usePersistedStore((state) => state.skipModUpdate);
   const queryClient = useQueryClient();
   const [refreshingFiles, setRefreshingFiles] = useState(false);
@@ -80,7 +84,8 @@ export const BatchUpdateDialog = ({
     mutationFn: executeBatchUpdate,
     meta: { skipGlobalErrorHandler: true },
     onSuccess: (result) => {
-      if (result.failed.length === 0) onOpenChange(false);
+      if (result.failed.length === 0 && result.selectionRequired.length === 0)
+        onOpenChange(false);
     },
     onError: (error) => {
       logger.withError(error).error("Failed to update mods");
@@ -91,12 +96,15 @@ export const BatchUpdateDialog = ({
   const localMods = usePersistedStore((state) => state.localMods);
   const profiles = usePersistedStore((state) => state.profiles);
   const targets =
-    batchUpdateMutation.variables?.map(
-      (target) =>
-        updatableMods.find(
-          (update) => update.mod.remoteId === target.mod.remoteId,
-        ) ?? target,
-    ) ?? updatableMods;
+    batchUpdateMutation.variables?.map((target) => {
+      const update = updatableMods.find(
+        (candidate) => candidate.mod.remoteId === target.mod.remoteId,
+      );
+      // A VPK pick only lives on the target it was sent with.
+      return update
+        ? { ...update, selectedFileTree: target.selectedFileTree }
+        : target;
+    }) ?? updatableMods;
   const pendingUpdates = remainingUpdateTargets(
     targets,
     batchUpdateMutation.data,
@@ -164,115 +172,149 @@ export const BatchUpdateDialog = ({
     }
   };
 
+  const handleDismissSelection = () => {
+    if (
+      pendingSelection &&
+      dismissSelection(pendingSelection.modId) === 0 &&
+      !hasFailures
+    ) {
+      onOpenChange(false);
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className='max-w-3xl max-h-[80vh] overflow-y-auto'>
-        <DialogHeader>
-          <DialogTitle>
-            {isSingleMod
-              ? t("modDetail.updateMod")
-              : t("myMods.batchUpdate.title")}
-          </DialogTitle>
-          <DialogDescription>
-            {t("myMods.batchUpdate.description")}
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      {/* Not tied to `open`: the update finishes even if the dialog was closed. */}
+      <FileSelectorDialog
+        isOpen={!!pendingSelection && !batchUpdateMutation.isPending}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) handleDismissSelection();
+        }}
+        fileTree={pendingSelection?.fileTree ?? null}
+        modName={pendingSelection?.modName}
+        onConfirm={(fileTree) => {
+          if (!pendingSelection) return;
+          onOpenChange(true);
+          batchUpdateMutation.mutate([
+            { ...pendingSelection.target, selectedFileTree: fileTree },
+            // This run replaces the last result, so the batch's failures retry
+            // with it instead of vanishing from the dialog.
+            ...pendingUpdates.filter(
+              (update) => update.mod.remoteId !== pendingSelection.modId,
+            ),
+          ]);
+        }}
+        onCancel={handleDismissSelection}
+      />
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className='max-w-3xl max-h-[80vh] overflow-y-auto'>
+          <DialogHeader>
+            <DialogTitle>
+              {isSingleMod
+                ? t("modDetail.updateMod")
+                : t("myMods.batchUpdate.title")}
+            </DialogTitle>
+            <DialogDescription>
+              {t("myMods.batchUpdate.description")}
+            </DialogDescription>
+          </DialogHeader>
 
-        {updateProgress ? (
-          <div className='space-y-4 py-4'>
-            <div className='flex items-center justify-between'>
-              <span className='text-sm font-medium capitalize flex items-center gap-2'>
-                {updateProgress.isBackingUp
-                  ? t("myMods.batchUpdate.backingUp")
-                  : updateProgress.currentStep}{" "}
-                {(updateProgress.isBackingUp ||
-                  updateProgress.isDownloading) && (
-                  <>
-                    {stepPercentage !== undefined && (
-                      <span className='tabular-nums text-muted-foreground'>
-                        {t("downloads.percentage", {
-                          percentage: Math.round(stepPercentage),
-                        })}
-                      </span>
-                    )}
-                    <Loader2 className='size-3.5 animate-spin' />
-                  </>
-                )}
-              </span>
-              <span className='text-sm text-muted-foreground'>
-                {updateProgress.completedMods} / {updateProgress.totalMods}
-              </span>
+          {updateProgress ? (
+            <div className='space-y-4 py-4'>
+              <div className='flex items-center justify-between'>
+                <span className='text-sm font-medium capitalize flex items-center gap-2'>
+                  {updateProgress.isBackingUp
+                    ? t("myMods.batchUpdate.backingUp")
+                    : updateProgress.currentStep}{" "}
+                  {(updateProgress.isBackingUp ||
+                    updateProgress.isDownloading) && (
+                    <>
+                      {stepPercentage !== undefined && (
+                        <span className='tabular-nums text-muted-foreground'>
+                          {t("downloads.percentage", {
+                            percentage: Math.round(stepPercentage),
+                          })}
+                        </span>
+                      )}
+                      <Loader2 className='size-3.5 animate-spin' />
+                    </>
+                  )}
+                </span>
+                <span className='text-sm text-muted-foreground'>
+                  {updateProgress.completedMods} / {updateProgress.totalMods}
+                </span>
+              </div>
+              <Progress value={updateProgress.overallProgress} />
+              {updateProgress.currentMod && (
+                <p className='text-sm text-muted-foreground'>
+                  {updateProgress.currentMod}
+                </p>
+              )}
             </div>
-            <Progress value={updateProgress.overallProgress} />
-            {updateProgress.currentMod && (
-              <p className='text-sm text-muted-foreground'>
-                {updateProgress.currentMod}
-              </p>
-            )}
-          </div>
-        ) : (
-          <div className='space-y-4 py-4'>
-            {hasFailures && (
-              <BatchUpdateFailureDetails
-                key={batchUpdateMutation.submittedAt}
-                failure={failure}
-                result={batchUpdateMutation.data}
-                mods={targets.map((target) => target.mod)}
-              />
-            )}
-            <div className='rounded-lg bg-muted p-3 flex items-start gap-2'>
-              <AlertCircle className='h-5 w-5 text-muted-foreground mt-0.5' />
-              <p className='text-sm text-muted-foreground'>
-                {t("myMods.batchUpdate.backupNote")}
-              </p>
-            </div>
+          ) : (
+            <div className='space-y-4 py-4'>
+              {hasFailures && (
+                <BatchUpdateFailureDetails
+                  key={batchUpdateMutation.submittedAt}
+                  failure={failure}
+                  result={batchUpdateMutation.data}
+                  mods={targets.map((target) => target.mod)}
+                />
+              )}
+              <div className='rounded-lg bg-muted p-3 flex items-start gap-2'>
+                <AlertCircle className='h-5 w-5 text-muted-foreground mt-0.5' />
+                <p className='text-sm text-muted-foreground'>
+                  {t("myMods.batchUpdate.backupNote")}
+                </p>
+              </div>
 
-            <div className='space-y-3'>
-              {pendingUpdates.map((update) => {
-                const { updatedAt } = update;
-                return (
-                  <UpdateModCard
-                    key={update.mod.remoteId}
-                    update={update}
-                    onSelectDownloads={setSelectedDownloads}
-                    onSkip={
-                      !hasFailures &&
-                      !batchUpdateMutation.isPending &&
-                      updatedAt !== undefined
-                        ? () => handleSkip(update.mod, updatedAt)
-                        : undefined
-                    }
-                  />
-                );
-              })}
+              <div className='space-y-3'>
+                {pendingUpdates.map((update) => {
+                  const { updatedAt } = update;
+                  return (
+                    <UpdateModCard
+                      key={update.mod.remoteId}
+                      update={update}
+                      onSelectDownloads={setSelectedDownloads}
+                      onSkip={
+                        !hasFailures &&
+                        !batchUpdateMutation.isPending &&
+                        updatedAt !== undefined
+                          ? () => handleSkip(update.mod, updatedAt)
+                          : undefined
+                      }
+                    />
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        )}
-
-        <DialogFooter>
-          {!updateProgress && (
-            <>
-              <Button
-                variant='outline'
-                onClick={() => onOpenChange(false)}
-                disabled={batchUpdateMutation.isPending}>
-                {t(hasFailures ? "common.close" : "common.cancel")}
-              </Button>
-              <Button
-                onClick={() => batchUpdateMutation.mutate(pendingUpdates)}
-                disabled={
-                  batchUpdateMutation.isPending ||
-                  refreshingFiles ||
-                  pendingUpdates.length === 0
-                }
-                icon={<RefreshCw className='h-4 w-4' />}>
-                {updateLabel}
-              </Button>
-            </>
           )}
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+
+          <DialogFooter>
+            {!updateProgress && (
+              <>
+                <Button
+                  variant='outline'
+                  onClick={() => onOpenChange(false)}
+                  disabled={batchUpdateMutation.isPending}>
+                  {t(hasFailures ? "common.close" : "common.cancel")}
+                </Button>
+                <Button
+                  onClick={() => batchUpdateMutation.mutate(pendingUpdates)}
+                  disabled={
+                    batchUpdateMutation.isPending ||
+                    refreshingFiles ||
+                    pendingUpdates.length === 0
+                  }
+                  icon={<RefreshCw className='h-4 w-4' />}>
+                  {updateLabel}
+                </Button>
+              </>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

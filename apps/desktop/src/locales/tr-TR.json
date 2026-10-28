@@ -2752,6 +2752,7 @@
       "updatingPercent": "Güncelleniyor: %{{percent}}...",
       "complete": "Güncelleme tamamlandı",
       "partialSuccess": "{{succeeded}} güncellendi, {{failed}} başarısız oldu",
+      "selectionCanceled": "",
       "error": "Modlar güncellenemedi",
       "failureDescription": "Yeniden denemeden önce aşağıdaki hata ayrıntılarını inceleyin.",
       "backupFailedTitle": "Güncellemeler durduruldu: Yedekleme başarısız oldu",

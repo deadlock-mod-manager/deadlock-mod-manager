@@ -129,7 +129,7 @@ pub fn is_plain_vpk_name(name: &str) -> bool {
     && name.to_ascii_lowercase().ends_with(".vpk")
 }
 
-fn source_file_name(file: &ModFile) -> &str {
+pub(crate) fn source_file_name(file: &ModFile) -> &str {
   let name = path_file_name(&file.path);
   if name.is_empty() { &file.name } else { name }
 }

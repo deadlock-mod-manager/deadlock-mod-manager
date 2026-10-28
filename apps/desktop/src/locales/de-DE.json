@@ -2752,6 +2752,7 @@
       "updatingPercent": "",
       "complete": "Update abgeschlossen",
       "partialSuccess": "{{succeeded}} aktualisiert, {{failed}} fehlgeschlagen",
+      "selectionCanceled": "",
       "error": "Fehler beim Aktualisieren der Mods",
       "failureDescription": "",
       "backupFailedTitle": "",

@@ -2752,6 +2752,7 @@
       "updatingPercent": "Updating {{percent}}%...",
       "complete": "Update complete",
       "partialSuccess": "{{succeeded}} updated, {{failed}} failed",
+      "selectionCanceled": "{{name}} was not updated: no VPKs were picked",
       "error": "Failed to update mods",
       "failureDescription": "Review the error details below before trying again.",
       "backupFailedTitle": "Updates stopped: backup failed",
