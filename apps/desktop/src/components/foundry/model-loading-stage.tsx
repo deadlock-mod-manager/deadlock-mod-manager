@@ -7,17 +7,15 @@ import { useOptionalFoundry } from "./foundry-context";
 import { FoundryLoadingBar } from "./foundry-loading-bar";
 import { loadSilhouette, type Silhouette } from "./foundry-silhouettes";
 
-type StepState = "done" | "now" | "todo";
+type StepState = "done" | "now";
 
 const StepMark = ({ state }: { state: StepState }) =>
   state === "done" ? (
     <span className='flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-green-400/15'>
       <CheckIcon className='h-2.5 w-2.5 text-green-400' weight='bold' />
     </span>
-  ) : state === "now" ? (
-    <span className='h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-orange-400 border-r-transparent' />
   ) : (
-    <span className='h-4 w-4 shrink-0 rounded-full border-[1.5px] border-muted-foreground/40' />
+    <span className='h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-orange-400 border-r-transparent' />
   );
 
 const Step = ({
@@ -34,7 +32,6 @@ const Step = ({
     <span
       className={cn(
         "min-w-0 flex-1 truncate",
-        state === "todo" && "text-muted-foreground",
         state === "now" && "font-semibold",
       )}>
       {label}
@@ -68,19 +65,21 @@ const OpeningSteps = () => {
         label={t("foundry.opening.unpacked")}
         state='done'
       />
+      {/* In the order they usually finish. They run side by side, so each one
+          that is still going spins rather than waiting its turn. */}
+      <Step
+        label={t("foundry.opening.workspace")}
+        state={workspace ? "done" : "now"}
+      />
       <Step
         label={
           paintParts.length > 0
             ? t("foundry.opening.sections", { count: paintParts.length })
             : t("foundry.opening.findingSections")
         }
-        state={paintParts.length > 0 ? "done" : "todo"}
+        state={paintParts.length > 0 ? "done" : "now"}
       />
       <Step label={t("foundry.opening.assembling", { hero })} state='now' />
-      <Step
-        label={t("foundry.opening.workspace")}
-        state={workspace ? "done" : "todo"}
-      />
     </ol>
   );
 };
@@ -92,15 +91,13 @@ const OpeningSteps = () => {
  */
 export const ModelLoadingStage = ({
   status,
-  showSteps = true,
   className,
 }: {
   status: string;
-  showSteps?: boolean;
   className?: string;
 }) => {
   const foundry = useOptionalFoundry();
-  const steps = showSteps && foundry?.manifest;
+  const steps = foundry?.manifest;
   const hero = foundry?.manifest
     ? (foundry.manifest.heroDisplay ?? foundry.manifest.hero)
     : null;

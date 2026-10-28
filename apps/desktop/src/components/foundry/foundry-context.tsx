@@ -31,7 +31,10 @@ import {
 } from "@/lib/foundry";
 import logger from "@/lib/logger";
 import { releaseFoundryModel } from "@/lib/model-assets";
-import type { FoundryPreviewTint } from "./foundry-model-viewer";
+import type {
+  FoundryPreviewTint,
+  FoundryTextureRefresh,
+} from "./foundry-model-viewer";
 import type {
   FoundryCardPreview,
   FoundryExportRequest,
@@ -204,6 +207,15 @@ interface FoundryContextValue {
   editedPaths: ReadonlySet<string>;
   /** Bumped by every edit, so derived previews know to re-read. */
   editRevision: number;
+  /** Color maps edited since the model loaded, for the viewer to swap in. */
+  textureRefresh: FoundryTextureRefresh;
+  /** Whether the 3D preview is showing a loaded model. */
+  viewerReady: boolean;
+  setViewerReady: (ready: boolean) => void;
+  /** Where the viewer offers a still of the hero as it stands now. */
+  registerHeroCapture: (capture: (() => Promise<Blob | null>) | null) => void;
+  /** A still of the hero as an object URL, or null with no model on screen. */
+  captureHero: () => Promise<string | null>;
   /** Volume edits and replacements, keyed by sound entry path. */
   soundSettings: ReadonlyMap<string, FoundrySoundSettings>;
   /** The model the preview defaults to and an export is named after. */
@@ -263,6 +275,12 @@ interface FoundryContextValue {
 
 const FoundryContext = createContext<FoundryContextValue | null>(null);
 
+/**
+ * Edits the loaded model takes without a rebuild: color maps are swapped in,
+ * and sounds and particle effects are not part of the model.
+ */
+const LIVE_SWAPPED = [".vtex_c", ".vsnd_c", ".vpcf_c"];
+
 const isTextureEntry = (path: string | null): path is string =>
   path?.endsWith(".vtex_c") ?? false;
 
@@ -318,9 +336,41 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
   const [busy, setBusy] = useState(false);
   const [hiddenParts, setHiddenParts] = useState<string[]>([]);
   // Bumped by every edit. Each derived preview keys its cache on it, so one
-  // counter keeps the model, the textures and the card gallery in step; three
-  // separate ones let them drift apart.
+  // counter keeps the textures and the card gallery in step.
   const [editRevision, setEditRevision] = useState(0);
+  // The model is the exception: rebuilding it hides the hero for seconds, so
+  // edits to its color maps are swapped into the loaded model instead, and only
+  // edits to anything else rebuild it.
+  const [modelRevision, setModelRevision] = useState(0);
+  const [textureRefresh, setTextureRefresh] = useState<FoundryTextureRefresh>({
+    paths: [],
+    revision: 0,
+  });
+  const [viewerReady, setViewerReady] = useState(false);
+  const heroCaptureRef = useRef<(() => Promise<Blob | null>) | null>(null);
+  const registerHeroCapture = useCallback(
+    (capture: (() => Promise<Blob | null>) | null) => {
+      heroCaptureRef.current = capture;
+    },
+    [],
+  );
+  const captureHero = useCallback(async () => {
+    const still = await heroCaptureRef.current?.();
+    return still ? URL.createObjectURL(still) : null;
+  }, []);
+  const afterContentChange = useCallback((paths: readonly string[]) => {
+    const textures = paths.filter((path) => path.endsWith(".vtex_c"));
+    if (textures.length > 0) {
+      setTextureRefresh((current) => ({
+        paths: textures,
+        revision: current.revision + 1,
+      }));
+    }
+    if (paths.some((path) => !LIVE_SWAPPED.some((ext) => path.endsWith(ext)))) {
+      setModelRevision((revision) => revision + 1);
+    }
+    setEditRevision((revision) => revision + 1);
+  }, []);
   const texturePreviewCacheRef = useRef<Map<string, TexturePreview>>(new Map());
   const soundCacheRef = useRef<Map<string, string>>(new Map());
 
@@ -461,7 +511,7 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       controller.abort();
       if (ownedModel) releaseFoundryModel(ownedModel);
     };
-  }, [filePath, workspaceRoot, previewModelPath, editRevision]);
+  }, [filePath, workspaceRoot, previewModelPath, modelRevision]);
 
   useEffect(() => {
     if (!manifest) {
@@ -743,9 +793,9 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
         const { [partPaintKey(entryPath)]: _unpainted, ...rest } = current;
         return rest;
       });
-      setEditRevision((revision) => revision + 1);
+      afterContentChange([entryPath]);
     },
-    [invalidateEntry],
+    [invalidateEntry, afterContentChange],
   );
 
   const requireWorkspace = useCallback((): FoundryWorkspace => {
@@ -816,13 +866,13 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
         }));
         // A repaint changes what the model samples and what the cards show.
         texturePreviewCacheRef.current.clear();
-        setEditRevision((revision) => revision + 1);
+        afterContentChange(result.paintedPaths);
         return result;
       } finally {
         setBusy(false);
       }
     },
-    [filePath, manifest, paintParts, requireWorkspace],
+    [afterContentChange, filePath, manifest, paintParts, requireWorkspace],
   );
 
   const paintSelectedParts = useCallback(
@@ -850,13 +900,20 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
           withPaintedSections(current, result.paintedPaths, paint, paintParts),
         );
         texturePreviewCacheRef.current.clear();
-        setEditRevision((revision) => revision + 1);
+        afterContentChange(result.paintedPaths);
         return result;
       } finally {
         setBusy(false);
       }
     },
-    [filePath, manifest, paintParts, primaryModelPath, requireWorkspace],
+    [
+      afterContentChange,
+      filePath,
+      manifest,
+      paintParts,
+      primaryModelPath,
+      requireWorkspace,
+    ],
   );
 
   const revertEntry = useCallback(
@@ -974,6 +1031,11 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       selectedCardKey,
       editedPaths,
       editRevision,
+      textureRefresh,
+      viewerReady,
+      setViewerReady,
+      registerHeroCapture,
+      captureHero,
       soundSettings,
       primaryModelPath,
       setPrimaryModelPath,
@@ -1023,6 +1085,8 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       selectedCardKey,
       editedPaths,
       editRevision,
+      textureRefresh,
+      viewerReady,
       soundSettings,
       primaryModelPath,
       previewTint,

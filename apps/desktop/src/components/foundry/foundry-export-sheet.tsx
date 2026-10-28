@@ -195,10 +195,13 @@ const SectionLabel = ({ children }: { children: React.ReactNode }) => (
 const ExportedView = ({
   result,
   changes,
+  heroStill,
   onClose,
 }: {
   result: FoundryExportResult;
   changes: Change[];
+  /** The finished hero, captured from the viewer when the sheet opened. */
+  heroStill: string | null;
   onClose: () => void;
 }) => {
   const { t } = useTranslation();
@@ -222,9 +225,19 @@ const ExportedView = ({
       <div className='relative h-[300px] w-[260px]'>
         <div className='absolute inset-x-0 bottom-8 mx-auto h-24 w-56 rounded-[50%] bg-[radial-gradient(closest-side,rgb(242_138_75/0.3),transparent)]' />
         <FoundryHeroAssembling
-          className='absolute inset-0'
+          className={cn(
+            "absolute inset-0 transition-opacity duration-700",
+            heroStill && "opacity-40",
+          )}
           silhouette={silhouette}
         />
+        {heroStill && (
+          <img
+            alt={name}
+            className='absolute inset-x-0 top-0 bottom-10 mx-auto h-[calc(100%-2.5rem)] w-auto animate-in fade-in-0 zoom-in-95 object-contain duration-700 [mask-image:radial-gradient(ellipse_at_center,black_55%,transparent_78%)]'
+            src={heroStill}
+          />
+        )}
         <span className='absolute bottom-0 left-1/2 flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full border-[5px] border-card bg-primary text-primary-foreground shadow-[0_0_24px_hsl(var(--primary)/0.45)]'>
           <CheckIcon className='h-6 w-6' weight='bold' />
         </span>
@@ -283,7 +296,7 @@ const ExportedView = ({
  */
 export const FoundryExportSheet = ({ onClose }: { onClose: () => void }) => {
   const { t } = useTranslation();
-  const { manifest, busy, exportVpk } = useFoundry();
+  const { manifest, busy, exportVpk, captureHero } = useFoundry();
   const addLocalMod = usePersistedStore((state) => state.addLocalMod);
   const changes = useChanges();
   const heroName = manifest?.heroDisplay ?? manifest?.hero ?? "Foundry skin";
@@ -294,6 +307,25 @@ export const FoundryExportSheet = ({ onClose }: { onClose: () => void }) => {
     t("foundry.export.defaultModName", { hero: heroName }),
   );
   const [result, setResult] = useState<FoundryExportResult | null>(null);
+  // Taken while the hero is still on screen behind the sheet; the success view
+  // stands it in front of the embers.
+  const [heroStill, setHeroStill] = useState<string | null>(null);
+  useEffect(() => {
+    let still: string | null = null;
+    let cancelled = false;
+    void captureHero().then((url) => {
+      if (cancelled) {
+        if (url) URL.revokeObjectURL(url);
+        return;
+      }
+      still = url;
+      setHeroStill(url);
+    });
+    return () => {
+      cancelled = true;
+      if (still) URL.revokeObjectURL(still);
+    };
+  }, [captureHero]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -410,7 +442,12 @@ export const FoundryExportSheet = ({ onClose }: { onClose: () => void }) => {
         </div>
 
         {result ? (
-          <ExportedView changes={changes} onClose={onClose} result={result} />
+          <ExportedView
+            changes={changes}
+            heroStill={heroStill}
+            onClose={onClose}
+            result={result}
+          />
         ) : (
           <>
             <ScrollArea className='min-h-0 flex-1 border-t'>

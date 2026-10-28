@@ -184,6 +184,7 @@ const usePaintBrush = () => {
     Record<string, { selection: FoundryPaintSelection; paint: FoundryPaint }>
   >({});
   const [previewEnabled, setPreviewEnabled] = useState(true);
+  const [applying, setApplying] = useState(false);
   // Held down with Space to look at the hero without the pending tint.
   const [comparing, setComparing] = useState(false);
 
@@ -244,12 +245,19 @@ const usePaintBrush = () => {
       ];
     });
     if (canPreview) {
-      layers.push({
+      const current = {
         textures: tintTextures,
         colorHex: paint.colorHex,
         saturation: paint.saturation,
         brightness: paint.brightness,
-      });
+      };
+      // A color picked for this selection goes over the rest. One nobody picked
+      // yet is only the brush's default, so it goes under the colors that were.
+      if (key in drafts) {
+        layers.push(current);
+      } else {
+        layers.unshift(current);
+      }
     }
     return layers.filter((layer) => layer.textures.length > 0);
     // The paint's fields, not the object: with no draft it is rebuilt every
@@ -271,7 +279,7 @@ const usePaintBrush = () => {
   // default brush, which nobody chose yet.
   const pendingColors = useMemo(() => {
     const picked =
-      canPreview && !(key in drafts) ? tintLayers.slice(0, -1) : tintLayers;
+      canPreview && !(key in drafts) ? tintLayers.slice(1) : tintLayers;
     return new Map(
       picked.flatMap((layer) =>
         layer.textures.map((texture) => [texture, layer.colorHex] as const),
@@ -327,6 +335,7 @@ const usePaintBrush = () => {
   }, [key]);
 
   const apply = useCallback(async () => {
+    setApplying(true);
     try {
       if (paintSelection.kind === "target") {
         await paintTarget(paintSelection.target, paint);
@@ -357,6 +366,8 @@ const usePaintBrush = () => {
     } catch (err) {
       logger.withError(err).error("[Foundry] Paint failed");
       toast.error(t("foundry.paint.failed"));
+    } finally {
+      setApplying(false);
     }
   }, [
     key,
@@ -386,6 +397,7 @@ const usePaintBrush = () => {
     showTint,
     tinting,
     pendingColors,
+    applying,
     update,
     resetDraft,
     apply,
@@ -1053,8 +1065,9 @@ const BrushPanel = ({ brush }: { brush: PaintBrush }) => {
           className='h-9 w-full font-semibold'
           disabled={brush.disabled}
           icon={<PaintBrushIcon className='h-4 w-4' />}
+          isLoading={brush.applying}
           onClick={brush.apply}>
-          {applyLabel}
+          {brush.applying ? t("foundry.preview.painting") : applyLabel}
         </Button>
       </div>
     </>
@@ -1064,6 +1077,8 @@ const BrushPanel = ({ brush }: { brush: PaintBrush }) => {
 /** The live-preview switch over the viewport, and the compare hint above the dock. */
 const PreviewOverlay = ({ brush }: { brush: PaintBrush }) => {
   const { t } = useTranslation();
+  // The hint would sit on the loading card until the hero is on screen.
+  const { viewerReady } = useFoundry();
   const title = useSelectionTitle();
   if (brush.nothingSelected) return null;
 
@@ -1095,7 +1110,7 @@ const PreviewOverlay = ({ brush }: { brush: PaintBrush }) => {
           />
         </label>
       </div>
-      {brush.tinting && (
+      {brush.tinting && viewerReady && (
         <div className='pointer-events-none absolute inset-x-0 bottom-[124px] flex justify-center'>
           <p className='flex items-center gap-2 rounded-[7px] border bg-card/90 py-[5px] pr-2.5 pl-1.5 text-[11px] text-muted-foreground backdrop-blur-md'>
             <kbd className='rounded border border-white/10 bg-muted px-[7px] py-0.5 font-mono font-semibold text-[10px] text-foreground'>

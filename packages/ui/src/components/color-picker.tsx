@@ -273,6 +273,8 @@ export const ColorPicker = ({
       <div
         className='relative h-28 w-full cursor-crosshair overflow-hidden rounded-md'
         onMouseDown={(event) => {
+          // A drag across the page would otherwise select its text.
+          event.preventDefault();
           const rect = event.currentTarget.getBoundingClientRect();
           trackDrag(pickSaturationValue(rect), event.nativeEvent);
         }}
@@ -293,6 +295,8 @@ export const ColorPicker = ({
       <div
         className='relative h-2.5 w-full cursor-pointer rounded-full'
         onMouseDown={(event) => {
+          // A drag across the page would otherwise select its text.
+          event.preventDefault();
           const rect = event.currentTarget.getBoundingClientRect();
           trackDrag(pickHue(rect), event.nativeEvent);
         }}

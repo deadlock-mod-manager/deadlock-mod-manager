@@ -2,6 +2,7 @@ import { cn } from "@deadlock-mods/ui/lib/utils";
 import { ImageIcon, MusicNotesIcon } from "@phosphor-icons/react";
 import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { decodeFoundryTexture } from "@/lib/foundry";
 import { useFoundry } from "./foundry-context";
 import { FoundryLoadingBar } from "./foundry-loading-bar";
 import { AnimatedModelPreview } from "./animated-model-preview";
@@ -28,7 +29,21 @@ export const FoundryPreview = () => {
     hiddenParts,
     paintSelection,
     togglePaintPart,
+    workspace,
+    textureRefresh,
+    setViewerReady,
+    registerHeroCapture,
   } = useFoundry();
+  const workspaceRoot = workspace?.root ?? null;
+  const filePath = manifest?.filePath ?? null;
+  const readTexture = useCallback(
+    async (path: string) => {
+      if (!filePath) throw new Error("No skin is loaded.");
+      return (await decodeFoundryTexture(filePath, path, workspaceRoot))
+        .dataUrl;
+    },
+    [filePath, workspaceRoot],
+  );
   const labels = useMemo(
     () =>
       new Map(
@@ -58,10 +73,9 @@ export const FoundryPreview = () => {
   const imageUrl = activeTab === "cards" ? texturePreview.dataUrl : null;
   const model = showModel ? modelPreview.model : null;
   const decodingTexture = texturePreview.status === "loading";
-  // A paint bake re-encodes several textures and then the model is decoded
-  // again, so both halves of that wait get the same indicator.
-  const rebuildingModel =
-    showModel && (modelPreview.status === "loading" || busy);
+  // A paint bake only rewrites color maps, which the viewer swaps in place, so
+  // the hero stays on screen through it.
+  const rebuildingModel = showModel && modelPreview.status === "loading";
 
   // The paint tab shows the primary model, the one its sections belong to.
   const modelPath =
@@ -82,7 +96,19 @@ export const FoundryPreview = () => {
           // Sections are only picked where they can be painted.
           onPickPart={activeTab === "paint" ? togglePaintPart : undefined}
           partLabel={partLabel}
+          textureRefresh={textureRefresh}
+          readTexture={readTexture}
+          onReadyChange={setViewerReady}
+          onHeroCapture={registerHeroCapture}
         />
+        {busy && (
+          <div
+            aria-label={t("foundry.preview.painting")}
+            className='absolute inset-x-0 top-0'
+            role='status'>
+            <FoundryLoadingBar className='rounded-none' />
+          </div>
+        )}
       </div>
     );
   }
@@ -92,12 +118,7 @@ export const FoundryPreview = () => {
   if (rebuildingModel) {
     return (
       <div className='relative h-full w-full overflow-hidden bg-gradient-to-b from-muted/40 to-background'>
-        <ModelLoadingStage
-          showSteps={!busy}
-          status={t(
-            busy ? "foundry.preview.painting" : "foundry.preview.loading",
-          )}
-        />
+        <ModelLoadingStage status={t("foundry.preview.loading")} />
       </div>
     );
   }

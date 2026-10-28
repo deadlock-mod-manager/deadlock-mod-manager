@@ -36,6 +36,7 @@ import type { PreviewParticles } from "@/types/generated/PreviewParticles";
 import {
   FoundryModelViewer,
   type FoundryPreviewTint,
+  type FoundryTextureRefresh,
 } from "./foundry-model-viewer";
 import { ViewerAnimationPicker } from "./viewer-animation-picker";
 import { restartEvery, type ViewerEffectFactory } from "./viewer-effects";
@@ -59,6 +60,10 @@ interface Props {
   callouts?: readonly ViewerCallout[];
   onPickPart?: (texture: string, additive: boolean) => void;
   partLabel?: (texture: string) => string | undefined;
+  textureRefresh?: FoundryTextureRefresh;
+  readTexture?: (path: string) => Promise<string>;
+  onReadyChange?: (ready: boolean) => void;
+  onHeroCapture?: (capture: (() => Promise<Blob | null>) | null) => void;
 }
 
 const REST_POSE = "rest";
@@ -80,6 +85,10 @@ export const AnimatedModelPreview = ({
   callouts,
   onPickPart,
   partLabel,
+  textureRefresh,
+  readTexture,
+  onReadyChange,
+  onHeroCapture,
 }: Props) => {
   const { t } = useTranslation();
   const fullscreenRef = useRef<HTMLDivElement>(null);
@@ -278,6 +287,10 @@ export const AnimatedModelPreview = ({
           callouts={callouts}
           onPickPart={onPickPart}
           partLabel={partLabel}
+          textureRefresh={textureRefresh}
+          readTexture={readTexture}
+          onReadyChange={onReadyChange}
+          onHeroCapture={onHeroCapture}
           effects={effects}
           timeRef={timeRef}
           playback={{

@@ -63,6 +63,12 @@ import {
 import { createViewerScene } from "./viewer-scene";
 
 /** A live paint preview: the color maps it covers and the exact paint. */
+/** Color maps whose files changed; a new `revision` asks for another swap. */
+export interface FoundryTextureRefresh {
+  paths: readonly string[];
+  revision: number;
+}
+
 export interface FoundryPreviewTint {
   textures: readonly string[];
   colorHex: string;
@@ -99,6 +105,14 @@ interface FoundryModelViewerProps {
   timeRef?: RefObject<number>;
   /** Drawn over the render, inside the viewport. */
   children?: ReactNode;
+  /** Edited color maps to swap into the loaded model without a rebuild. */
+  textureRefresh?: FoundryTextureRefresh;
+  /** Reads a color map's current image as a data URL. */
+  readTexture?: (path: string) => Promise<string>;
+  /** Told whether a model is on screen, for overlays that sit over the stage. */
+  onReadyChange?: (ready: boolean) => void;
+  /** Receives a still of the hero cropped to its outline, or null once gone. */
+  onHeroCapture?: (capture: (() => Promise<Blob | null>) | null) => void;
 }
 
 interface MaterialSnapshot {
@@ -235,6 +249,65 @@ const applyPreviewTint = (
   }
 };
 
+/** Room left around the hero in a still, as a share of its height. */
+const STILL_PADDING = 0.06;
+
+/**
+ * Render one frame and crop it to the hero's posed outline, for places that
+ * show the finished skin without a live viewer.
+ */
+const captureHeroStill = async (
+  root: THREE.Object3D,
+  camera: THREE.Camera,
+  renderer: THREE.WebGLRenderer,
+  render: () => Promise<Blob | null> | undefined,
+): Promise<Blob | null> => {
+  const frame = await render();
+  if (!frame) return null;
+  const box = new THREE.Box3().setFromObject(root, true);
+  const canvas = renderer.domElement;
+  let [left, top, right, bottom] = [Infinity, Infinity, -Infinity, -Infinity];
+  for (const x of [box.min.x, box.max.x]) {
+    for (const y of [box.min.y, box.max.y]) {
+      for (const z of [box.min.z, box.max.z]) {
+        const point = new THREE.Vector3(x, y, z).project(camera);
+        const px = ((point.x + 1) / 2) * canvas.width;
+        const py = ((1 - point.y) / 2) * canvas.height;
+        left = Math.min(left, px);
+        right = Math.max(right, px);
+        top = Math.min(top, py);
+        bottom = Math.max(bottom, py);
+      }
+    }
+  }
+  const pad = (bottom - top) * STILL_PADDING;
+  left = Math.max(0, Math.floor(left - pad));
+  top = Math.max(0, Math.floor(top - pad));
+  right = Math.min(canvas.width, Math.ceil(right + pad));
+  bottom = Math.min(canvas.height, Math.ceil(bottom + pad));
+  if (right <= left || bottom <= top) return frame;
+
+  const image = await createImageBitmap(frame);
+  const crop = document.createElement("canvas");
+  crop.width = right - left;
+  crop.height = bottom - top;
+  crop
+    .getContext("2d")
+    ?.drawImage(
+      image,
+      left,
+      top,
+      crop.width,
+      crop.height,
+      0,
+      0,
+      crop.width,
+      crop.height,
+    );
+  image.close();
+  return new Promise((resolve) => crop.toBlob(resolve, "image/png"));
+};
+
 /**
  * Hide the meshes drawn with one of `hidden`'s color maps, outline shells
  * included. Materials rather than meshes, because mesh visibility already
@@ -357,6 +430,10 @@ export const FoundryModelViewer = ({
   overlays = [],
   timeRef,
   children,
+  textureRefresh,
+  readTexture,
+  onReadyChange,
+  onHeroCapture,
 }: FoundryModelViewerProps) => {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -889,6 +966,61 @@ export const FoundryModelViewer = ({
   useEffect(() => {
     applyPreviewTint(snapshotsRef.current, tint);
   }, [tint, loading]);
+
+  useEffect(() => {
+    onReadyChange?.(!loading && !failed);
+    return () => onReadyChange?.(false);
+  }, [loading, failed, onReadyChange]);
+
+  useEffect(() => {
+    if (!onHeroCapture || loading || failed) return;
+    onHeroCapture(() => {
+      const root = modelRef.current;
+      const stage = stageRef.current;
+      if (!root || !stage) return Promise.resolve(null);
+      return captureHeroStill(root, stage.camera, stage.renderer, () =>
+        captureRef.current?.(),
+      );
+    });
+    return () => onHeroCapture(null);
+  }, [loading, failed, onHeroCapture]);
+
+  // A repaint rewrites color maps on disk. Swapping just those images into the
+  // loaded materials keeps the hero, its pose and the camera on screen, where
+  // reloading the model would rebuild the whole scene.
+  const refreshRevision = textureRefresh?.revision;
+  const readTextureRef = useRef(readTexture);
+  readTextureRef.current = readTexture;
+  const refreshPathsRef = useRef(textureRefresh?.paths);
+  refreshPathsRef.current = textureRefresh?.paths;
+  useEffect(() => {
+    const read = readTextureRef.current;
+    const paths = refreshPathsRef.current;
+    if (refreshRevision === undefined || !read || !paths?.length) return;
+    let cancelled = false;
+    for (const path of paths) {
+      const key = path.toLowerCase();
+      read(path)
+        .then(async (url) => {
+          const image = new Image();
+          image.src = url;
+          await image.decode();
+          if (cancelled) return;
+          for (const snapshot of snapshotsRef.current) {
+            const map = snapshot.material.map;
+            if (snapshot.texture !== key || !map) continue;
+            map.image = image;
+            map.needsUpdate = true;
+          }
+        })
+        .catch(() => {
+          // The next full load reads the same file; nothing to recover here.
+        });
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshRevision]);
 
   // Once posed by the first frames of its animation, the model teaches the
   // loading embers this hero's shape for next time.
