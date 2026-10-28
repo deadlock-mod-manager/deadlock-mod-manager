@@ -963,7 +963,8 @@
       "overview": "Overview",
       "heroes": "Heroes",
       "items": "Items",
-      "squad": "Squad"
+      "squad": "Squad",
+      "live": "Live"
     },
     "items": {
       "item": "Item",
@@ -997,6 +998,90 @@
       "versus": "You vs everyone",
       "points": "{{value}} pts",
       "tierSlot": "T{{tier}} {{slot}}"
+    },
+    "live": {
+      "checking": "Checking the console log…",
+      "condebugTitle": "Console log is off",
+      "condebugDescription": "The live scoreboard reads your match from the game's console log, which Deadlock only writes with the -condebug launch option. Turn it on, then restart the game.",
+      "openSettings": "Open launch options",
+      "queuedTitle": "Searching for a match",
+      "queuedDescription": "You are in the queue. The scoreboard fills in a few seconds after the match loads.",
+      "queuedBadge": "In queue",
+      "waitingTitle": "No match running",
+      "waitingDescription": "You are in the menus or the hideout. Join a match and both teams show up here while it loads.",
+      "noBridgeTitle": "Waiting for the live bridge",
+      "noBridgeDescription": "A match looks to be running, but the live bridge has not reported. It reports a few seconds after the top bar appears. Launch Deadlock from the mod manager (it adds the -condebug option the bridge needs), restart the game if you installed the bridge while it was open, and check that no other mod replaces the top bar team layout.",
+      "live": "Live",
+      "matchId": "Match {{id}}",
+      "updatedAt": "Updated {{time}}",
+      "friendly": "Your team",
+      "teamTotals": "{{kills}} kills · {{souls}} souls",
+      "teamPending": "No report from this team yet.",
+      "you": "You",
+      "dead": "Dead",
+      "columns": {
+        "player": "Player",
+        "kda": "K/D/A",
+        "souls": "Souls",
+        "level": "Level",
+        "objectiveDamage": "Obj. dmg"
+      },
+      "teams": {
+        "hiddenKing": "Hidden King",
+        "archmother": "Archmother"
+      },
+      "career": "{{matches}} played · {{winrate}} WR · {{kda}} KDA",
+      "onHero": "{{matches}} on {{hero}} · {{winrate}}",
+      "performance": {
+        "playingAs": "Playing as",
+        "versusBracket": "Graded against {{bracket}} players on {{hero}}",
+        "versusEveryone": "Graded against all players on {{hero}}",
+        "firstMinute": "Grades appear after the first minute.",
+        "loading": "Loading benchmarks for this hero…",
+        "unavailable": "No benchmark data for this hero right now.",
+        "unknownHero": "Your hero could not be matched to the hero list, so there is nothing to grade against.",
+        "spectating": "You are not in either team, so there is nothing to grade.",
+        "average": "Avg {{value}} at this point",
+        "metrics": {
+          "kills": "Kills",
+          "deaths": "Deaths",
+          "assists": "Assists",
+          "soulsPerMin": "Souls / min",
+          "objectiveDamagePerMin": "Obj. dmg / min"
+        }
+      },
+      "bridge": {
+        "notInstalledTitle": "Install the live bridge",
+        "notInstalledDescription": "The Live tab reads your match through a small HUD mod that prints the in-game scoreboard to the console log. It is built from your installed game, so it always matches the current patch. Restart Deadlock after installing it.",
+        "install": "Install",
+        "installing": "Installing…",
+        "installFailed": "Could not install the live bridge. Check that the game path is set and try again.",
+        "modDescription": "Feeds the Stats page's Live tab: prints the in-game top bar scoreboard (heroes, K/D/A, souls, level, objective damage) to the console log. Shows nothing in game.",
+        "disabledTitle": "Enable the live bridge",
+        "disabledDescription": "The live bridge is in your library but turned off, so the game does not load it. Enable it, then restart Deadlock.",
+        "enable": "Enable",
+        "outdated": "The live bridge was built for an older version of Deadlock or of the bridge. It is being rebuilt from your current game.",
+        "outdatedWhileRunning": "Deadlock or the live bridge was updated. The bridge rebuilds itself from the new game files as soon as you close Deadlock.",
+        "update": "Update now",
+        "updating": "Updating…",
+        "updated": "Live bridge updated for the current game version. Restart Deadlock if it is open.",
+        "updateFailed": "Could not update the live bridge. Close Deadlock and try again from the Live tab."
+      },
+      "notRunningTitle": "Deadlock is not running",
+      "notRunningDescription": "Launch the game and start a match. The scoreboard shows up here a few seconds after the match loads.",
+      "matchOverTitle": "Match over",
+      "matchOverDescription": "The match has ended. Queue up again and the next lobby shows up here.",
+      "pregame": {
+        "badge": "Match loading",
+        "hint": "Both teams until the match starts; then only your team and your stats.",
+        "enemy": "Enemy team",
+        "avgKda": "Avg KDA",
+        "winrate": "Win %",
+        "matches": "Matches",
+        "noRecord": "No public record",
+        "loadingTitle": "Match found",
+        "loadingDescription": "The lineup shows up here as soon as the match loads in."
+      }
     },
     "player": {
       "onHeroShort": "{{matches}} × this hero, {{winrate}}",
@@ -1328,6 +1413,7 @@
         "heroes": "Heroes",
         "items": "Items",
         "squad": "Squad",
+        "live": "Live",
         "performance": "Performance",
         "habits": "Habits",
         "ranked": "Ranked",
@@ -1591,6 +1677,10 @@
         "heroPool": {
           "title": "Hero pool",
           "description": "Your most played heroes with their winrates."
+        },
+        "liveScoreboard": {
+          "title": "Live scoreboard",
+          "description": "Your running match as the in-game top bar shows it, read from the game's console log by the live bridge HUD mod."
         }
       },
       "presets": {

@@ -40,6 +40,7 @@ import { useIngestToolInit } from "./hooks/use-ingest-tool-init";
 import { useLanguageListener } from "./hooks/use-language-listener";
 import { useMissingVpkDetection } from "./hooks/use-missing-vpk-detection";
 import { LibraryMaintenanceRenderer } from "./components/library-maintenance-renderer";
+import { LiveBridgeRenderer } from "./components/live-bridge-renderer";
 import { useGameBananaCatalogSync } from "./hooks/use-gamebanana-catalog-sync";
 import { useRemoteInstallPoll } from "./hooks/use-remote-install";
 import { Layout } from "./layout";
@@ -212,6 +213,7 @@ const App = ({ runtime, storage }: AppProps) => {
                               </>
                             )}
                           <ForgeInstallRenderer />
+                          <LiveBridgeRenderer />
                           <GameGuardRenderer />
                           <DeepLinkListener />
                           <RemoteInstallPairDialog />

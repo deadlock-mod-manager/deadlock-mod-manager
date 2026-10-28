@@ -242,6 +242,12 @@ export const DEFAULT_LAYOUT: DashboardLayout = {
       icon: "users",
       widgets: [panel("squad-explorer", "squad")],
     },
+    {
+      id: "live",
+      title: null,
+      icon: "radio",
+      widgets: [panel("live-scoreboard", "liveScoreboard")],
+    },
   ],
 };
 

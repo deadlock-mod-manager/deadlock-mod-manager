@@ -7,19 +7,22 @@ import {
   Lightbulb,
   ListOrdered,
   Package,
+  Radio,
   Sword,
   Swords,
   Trophy,
   UserRound,
   Users,
 } from "@deadlock-mods/ui/icons";
-import type { ComponentType, ReactNode } from "react";
+import { type ComponentType, type ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { FormChart } from "@/components/stats/form-chart";
 import { HeroPool } from "@/components/stats/hero-pool";
 import { HeroesTab } from "@/components/stats/heroes-tab";
 import { InsightList } from "@/components/stats/insight-list";
 import { ItemsTab } from "@/components/stats/items-tab";
+import { LiveBridgeNotice } from "@/components/stats/live-bridge-notice";
+import { LiveScoreboard } from "@/components/stats/live-scoreboard";
 import { OverviewTiles } from "@/components/stats/overview-tiles";
 import { ProfilePanel } from "@/components/stats/profile-panel";
 import { RankBenchmark } from "@/components/stats/rank-benchmark";
@@ -68,6 +71,7 @@ export const PANEL_IDS = [
   "heroes",
   "items",
   "squad",
+  "liveScoreboard",
 ] as const;
 export type PanelId = (typeof PANEL_IDS)[number];
 
@@ -150,6 +154,23 @@ const SquadPanel = () => {
         partyIds={squad.partyIds}
         profilesById={squad.profilesById}
         rankAssets={rankAssets}
+      />
+    </div>
+  );
+};
+
+const LiveScoreboardPanel = () => {
+  const { stats, heroesById, rankAssets, scope } = useDashboardData();
+  // Without an account these are empty, and the board simply has no career line.
+  const career = useMemo(() => summarize(stats.allMatches), [stats.allMatches]);
+  return (
+    <div className='flex flex-col gap-4'>
+      <LiveBridgeNotice />
+      <LiveScoreboard
+        heroesById={heroesById}
+        rankAssets={rankAssets}
+        scope={scope}
+        you={{ rank: stats.rank, career, heroes: stats.heroes }}
       />
     </div>
   );
@@ -274,6 +295,14 @@ const PANELS = {
     needsAccount: true,
     needsHistory: true,
     render: () => <SquadPanel />,
+  },
+  liveScoreboard: {
+    icon: Radio,
+    skeleton: () => <ListSkeleton rows={6} />,
+    // Read from the running game's console log, so no account is involved.
+    needsAccount: false,
+    needsHistory: false,
+    render: () => <LiveScoreboardPanel />,
   },
 } satisfies Record<PanelId, PanelDef>;
 

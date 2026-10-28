@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 import { CustomSettingType } from "@deadlock-mods/shared";
 import * as tauriCore from "@tauri-apps/api/core";
+import type { LocalMod } from "@/types/mods";
 import type { LocalSetting } from "@/types/settings";
 
 let serverSettings: Promise<{ id: string }[]>;
@@ -20,6 +21,7 @@ mock.module("@tauri-apps/api/core", () => ({
 mock.module("@/lib/plugins", () => ({ getPlugins: () => [] }));
 const { usePersistedStore } = await import("@/lib/store");
 const { getAdditionalArgs } = await import("./launch-options");
+const { LIVE_BRIDGE_LINK } = await import("@/lib/constants");
 
 const launchOption = (id: string, key: string): LocalSetting => ({
   id,
@@ -36,6 +38,7 @@ describe("getAdditionalArgs", () => {
   beforeEach(() => {
     usePersistedStore.setState({
       gamePresenceEnabled: false,
+      localMods: [],
       settings: {
         custom_setting_old: launchOption("custom_setting_old", "+old_option"),
         custom_setting_new: launchOption("custom_setting_new", "+new_option"),
@@ -61,5 +64,15 @@ describe("getAdditionalArgs", () => {
     expect(await getAdditionalArgs()).toBe(
       "+old_option true +new_option true +user_option true",
     );
+  });
+
+  it("writes the console log while the live bridge is installed", async () => {
+    serverSettings = Promise.resolve([]);
+    usePersistedStore.setState({
+      settings: {},
+      localMods: [{ remoteUrl: LIVE_BRIDGE_LINK } as LocalMod],
+    });
+
+    expect(await getAdditionalArgs()).toBe("-condebug");
   });
 });

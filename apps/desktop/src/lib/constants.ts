@@ -134,3 +134,9 @@ export const EXPERIMENTAL_FEATURES = [
   "performance-configs",
   "cloud-backup",
 ] as const;
+
+/**
+ * Marks the live bridge HUD mod in the library, the way `local://manual` marks
+ * hand-added mods. The Live tab needs it, and it needs `-condebug`.
+ */
+export const LIVE_BRIDGE_LINK = "local://dmm-live-bridge";
