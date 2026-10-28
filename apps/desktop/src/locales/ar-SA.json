@@ -2138,17 +2138,15 @@
       "searchPlaceholder": "",
       "noDefaultSkins": "",
       "noHeroSkins": "",
-      "fileHint": "",
-      "preview3dLabel": "",
-      "preview3dHint": "",
-      "preview3dWarning": ""
+      "fileHint": ""
     },
     "toolbar": {
       "entryCount": "",
       "changeSkin": "",
       "clear": "",
       "export": "",
-      "editCount": ""
+      "editCount": "",
+      "entryCount_one": ""
     },
     "tabs": {
       "assets": "",
@@ -2178,8 +2176,52 @@
         "card_gloat": "",
         "minimap": "",
         "small": "",
-        "other": ""
-      }
+        "other": "",
+        "mm": "",
+        "sm": "",
+        "background": "",
+        "weapon": ""
+      },
+      "intro": "",
+      "groups": {
+        "heroSelect": {
+          "title": "",
+          "where": ""
+        },
+        "inMatch": {
+          "title": "",
+          "where": ""
+        },
+        "hud": {
+          "title": "",
+          "where": ""
+        },
+        "other": {
+          "title": "",
+          "where": ""
+        },
+        "abilities": {
+          "title": "",
+          "where": ""
+        },
+        "weapon": {
+          "title": "",
+          "where": ""
+        }
+      },
+      "replaced": "",
+      "dropToReplace": "",
+      "wrongFile": "",
+      "pick": "",
+      "meta": "",
+      "stateReplaced": "",
+      "stateSkin": "",
+      "stateOriginal": "",
+      "inGame": "",
+      "original": "",
+      "dropAtLeast": "",
+      "noSkinArtTitle": "",
+      "noSkinArtHint": ""
     },
     "preview": {
       "empty": "",
@@ -2194,10 +2236,7 @@
       "alt": "",
       "startSpin": "",
       "stopSpin": "",
-      "painting": "",
-      "disabled": "",
-      "disabledHint": "",
-      "enable": ""
+      "painting": ""
     },
     "inspector": {
       "title": "",
@@ -2214,7 +2253,23 @@
         "mod": "",
         "default": "",
         "workspace": ""
-      }
+      },
+      "kinds": {
+        "model": "",
+        "material": "",
+        "texture": "",
+        "card": "",
+        "sound": "",
+        "other": ""
+      },
+      "from": {
+        "mod": "",
+        "default": "",
+        "workspace": ""
+      },
+      "modelStats": "",
+      "copyPath": "",
+      "pathCopied": ""
     },
     "errors": {
       "notHeroSkinTitle": "",
@@ -2228,7 +2283,31 @@
       "pause": "",
       "volume": "",
       "mute": "",
-      "unmute": ""
+      "unmute": "",
+      "abilities": "",
+      "hero": "",
+      "abilitySlot": "",
+      "clipCount": "",
+      "clipCount_one": "",
+      "replacedCount": "",
+      "playAll": "",
+      "replace": "",
+      "pick": "",
+      "compare": "",
+      "listen": "",
+      "yours": "",
+      "original": "",
+      "flipHint": "",
+      "dropHint": "",
+      "wrongFile": "",
+      "inGame": "",
+      "gain": "",
+      "gainValue": "",
+      "normalize": "",
+      "normalizeHint": "",
+      "muteClip": "",
+      "muteClipHint": "",
+      "adjustFailed": ""
     },
     "editor": {
       "replaceLabel": "",
@@ -2246,7 +2325,8 @@
       "primaryLabel": "",
       "primaryHint": "",
       "setPrimary": "",
-      "isPrimary": ""
+      "isPrimary": "",
+      "revertToOriginal": ""
     },
     "export": {
       "dialogTitle": "",
@@ -2290,12 +2370,19 @@
       "coverage": "",
       "coverage_one": "",
       "nothingToPaint": "",
+      "sectionsLabel": "",
+      "sectionsHint": "",
+      "clearSelection": "",
+      "pickHint": "",
+      "partsSkipped": "",
+      "partsSkipped_one": "",
       "colorLabel": "",
       "red": "",
       "green": "",
       "blue": "",
       "eyedropper": "",
       "apply": "",
+      "applySections": "",
       "failed": "",
       "hint": "",
       "saturationLabel": "",
@@ -2328,9 +2415,141 @@
         "deco": "",
         "frost": "",
         "circuit": ""
-      }
+      },
+      "whatToPaint": "",
+      "scope": {
+        "sections": "",
+        "whole": ""
+      },
+      "railPickHint": "",
+      "selectAll": "",
+      "hidePart": "",
+      "showPart": "",
+      "hiddenMeta": "",
+      "resetPart": "",
+      "pendingPart": "",
+      "effectsNote": "",
+      "effectsSwitch": "",
+      "selectedCount": "",
+      "selectedCount_one": "",
+      "nothingSelected": "",
+      "emptyTitle": "",
+      "emptyHint": "",
+      "reset": "",
+      "hex": "",
+      "recent": "",
+      "presets": "",
+      "adjustLabel": "",
+      "patternsAll": "",
+      "patternsFewer": "",
+      "freehand": "",
+      "heroPainter": "",
+      "rewrites": "",
+      "rewrites_one": "",
+      "sectionsMeta": "",
+      "sectionsMeta_one": "",
+      "previewOn": "",
+      "previewUnavailableShort": "",
+      "spaceKey": "",
+      "compare": "",
+      "fromSkin": ""
     },
-    "primary": ""
+    "primary": "",
+    "picker": {
+      "subtitle": "",
+      "sourceLabel": "",
+      "sources": {
+        "installed": "",
+        "heroes": ""
+      },
+      "search": "",
+      "openFile": "",
+      "open": "",
+      "by": "",
+      "noMatches": "",
+      "moreWays": "",
+      "forgeDescription": "",
+      "commissionsDescription": "",
+      "scope": ""
+    },
+    "header": {
+      "fromMod": "",
+      "fromFile": "",
+      "baseGame": "",
+      "close": "",
+      "modes": ""
+    },
+    "assets": {
+      "filter": "",
+      "groups": {
+        "all": "",
+        "models": "",
+        "materials": "",
+        "textures": "",
+        "cards": "",
+        "sounds": "",
+        "other": ""
+      },
+      "noMatches": "",
+      "edited": "",
+      "edited_one": "",
+      "noEdits": ""
+    },
+    "drop": {
+      "choose": "",
+      "image": "",
+      "sound": "",
+      "file": ""
+    },
+    "opening": {
+      "label": "",
+      "files": "",
+      "unpacked": "",
+      "sections": "",
+      "sections_one": "",
+      "findingSections": "",
+      "assembling": "",
+      "workspace": ""
+    },
+    "exportSheet": {
+      "title": "",
+      "changeCount": "",
+      "changeCount_one": "",
+      "noChanges": "",
+      "changed": "",
+      "where": "",
+      "groups": {
+        "paint": "",
+        "cards": "",
+        "sounds": "",
+        "files": ""
+      },
+      "repainted": "",
+      "replaced": "",
+      "edited": "",
+      "undo": "",
+      "build": {
+        "newMod": "",
+        "file": "",
+        "replaceSource": ""
+      },
+      "untouched": "",
+      "doneNewMod": "",
+      "doneNewModHint": "",
+      "doneFile": "",
+      "facts": {
+        "paint": "",
+        "paint_one": "",
+        "cards": "",
+        "cards_one": "",
+        "sounds": "",
+        "sounds_one": "",
+        "files": "",
+        "files_one": ""
+      },
+      "openMyMods": "",
+      "keepEditing": ""
+    }
   },
   "servers": {
     "title": "",
@@ -7170,6 +7389,13 @@
     "screenshotSaved": "",
     "recordingBadge": "",
     "exitFullscreen": "",
-    "controlsHelp": ""
+    "controlsHelp": "",
+    "studio": "",
+    "passChips": {
+      "bloom": "",
+      "antialias": "",
+      "outlines": "",
+      "wireframe": ""
+    }
   }
 }
