@@ -1066,7 +1066,8 @@
         "update": "Update now",
         "updating": "Updating…",
         "updated": "Live bridge updated for the current game version. Restart Deadlock if it is open.",
-        "updateFailed": "Could not update the live bridge. Close Deadlock and try again from the Live tab."
+        "updateFailed": "Could not update the live bridge. Close Deadlock and try again from the Live tab.",
+        "incompatible": "A Deadlock update changed the in-game top bar in a way the live bridge cannot follow yet. Turn off the Live Scoreboard Bridge in My Mods until the mod manager is updated, or the top bar may not show correctly."
       },
       "notRunningTitle": "Deadlock is not running",
       "notRunningDescription": "Launch the game and start a match. The scoreboard shows up here a few seconds after the match loads.",

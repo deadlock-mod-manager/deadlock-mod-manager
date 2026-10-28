@@ -15,7 +15,7 @@
 //! panels and prints one line per team whenever they change:
 //!
 //! ```text
-//! 12:10:02 [PanoramaScript] [DMM-LIVE] {"v":1,"side":"friendly","clock":"6:25","players":[...]}
+//! 10/28 12:10:02 [PanoramaScript] [DMM-LIVE] {"v":1,"side":"friendly","clock":"6:25","players":[...]}
 //! ```
 
 use std::path::{Path, PathBuf};
@@ -195,9 +195,6 @@ impl From<BridgePlayer> for LiveScoreboardPlayer {
   }
 }
 
-/// Applies one bridge line to the board. Lines from a bridge version this
-/// build does not know, or that fail to parse, are skipped rather than
-/// clearing what is already on screen.
 /// An account id from either a SteamID64 or a bare 32-bit account id.
 fn account_id(raw: &str) -> Option<u32> {
   let value: u64 = raw.trim().parse().ok()?;
@@ -233,6 +230,9 @@ fn apply_roster_line(line: &str, board: &mut Option<LiveScoreboard>) {
   board.get_or_insert_with(LiveScoreboard::default).roster = roster;
 }
 
+/// Applies one bridge line to the board. Lines from a bridge version this
+/// build does not know, or that fail to parse, are skipped rather than
+/// clearing what is already on screen.
 fn apply_bridge_line(line: &str, board: &mut Option<LiveScoreboard>) {
   let Some(start) = line.find(BRIDGE_TAG) else {
     return;
@@ -243,13 +243,13 @@ fn apply_bridge_line(line: &str, board: &mut Option<LiveScoreboard>) {
   if report.v != BRIDGE_VERSION {
     return;
   }
-  let players: Vec<LiveScoreboardPlayer> = report.players.into_iter().map(Into::into).collect();
-  let board = board.get_or_insert_with(LiveScoreboard::default);
   let slot = match report.side.as_str() {
     "friendly" => 0,
     "enemy" => 1,
     _ => return,
   };
+  let players: Vec<LiveScoreboardPlayer> = report.players.into_iter().map(Into::into).collect();
+  let board = board.get_or_insert_with(LiveScoreboard::default);
   board.slots[slot] = players;
   let local_slot = if board.slots[1].iter().any(|player| player.is_local) {
     1
@@ -682,6 +682,16 @@ mod tests {
 
     let next = fold_phase("Lobby 2 for Match 333 created\n", played);
     assert!(next.scoreboard.is_none());
+  }
+
+  #[test]
+  fn a_report_for_an_unknown_side_starts_no_board() {
+    let phase = fold_phase(
+      "[DMM-LIVE] {\"v\":1,\"side\":\"TeamRenamed\",\"players\":[]}\n",
+      LivePhase::default(),
+    );
+
+    assert!(phase.scoreboard.is_none());
   }
 
   #[test]

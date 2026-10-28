@@ -1,5 +1,10 @@
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useIsMutating,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { join } from "@tauri-apps/api/path";
 import { useTranslation } from "react-i18next";
@@ -35,6 +40,13 @@ const LIVE_BRIDGE_LOGO = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 5
   </g>
 </svg>`;
 
+// Shared by every caller, so the renderer's automatic update and the notice's
+// button see one update in flight rather than starting a second.
+const UPDATE_KEY = ["live-bridge-update"];
+// Checking opens every addon's directory tree, so it is not repeated on every
+// focus or mount.
+const STATUS_STALE_MS = 5 * 60 * 1000;
+
 const findBridge = () =>
   usePersistedStore
     .getState()
@@ -62,9 +74,11 @@ export const useLiveBridge = () => {
   const status = useQuery({
     queryKey: ["live-bridge-status", profileFolder],
     queryFn: () =>
-      invoke<{ installed: boolean; outdated: boolean }>("live_bridge_status", {
-        profileFolder,
-      }),
+      invoke<{ installed: boolean; outdated: boolean; incompatible: boolean }>(
+        "live_bridge_status",
+        { profileFolder },
+      ),
+    staleTime: STATUS_STALE_MS,
     meta: { skipGlobalErrorHandler: true },
   });
   const isEnabled = status.data?.installed === true;
@@ -111,6 +125,7 @@ export const useLiveBridge = () => {
 
   // Rebuilt in place from the current game; the library's copy goes with it.
   const update = useMutation({
+    mutationKey: UPDATE_KEY,
     mutationFn: async () => {
       const bridge = findBridge();
       const libraryCopy = bridge
@@ -137,6 +152,8 @@ export const useLiveBridge = () => {
     // Only once the addons folder has been checked, so the prompt never flashes.
     needsSetup: status.data?.installed === false,
     isOutdated: status.data?.outdated === true,
+    isIncompatible: status.data?.incompatible === true,
+    isUpdating: useIsMutating({ mutationKey: UPDATE_KEY }) > 0,
     install,
     update,
   };

@@ -11,6 +11,7 @@
 use std::fs;
 use std::io::{Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 
 use serde::Serialize;
 use vpk_parser::VpkParser;
@@ -181,18 +182,43 @@ fn build_script() -> Result<Vec<u8>, Error> {
     .map_err(|error| invalid(format!("Could not build the bridge script: {error}")))
 }
 
+/// Why the bridge files for the current game could not be built.
+#[derive(Debug)]
+enum ExpectedError {
+  /// The game's files could not be read.
+  Read(Error),
+  /// The game's top-bar layout no longer has the shape the bridge patches.
+  Incompatible(Error),
+}
+
+impl From<ExpectedError> for Error {
+  fn from(error: ExpectedError) -> Self {
+    match error {
+      ExpectedError::Read(error) | ExpectedError::Incompatible(error) => error,
+    }
+  }
+}
+
 /// The two files a bridge built right now would hold: the current game's
 /// layout with the include, and this build's script. Both builds are
 /// deterministic, so an installed bridge is up to date exactly when its files
 /// match these byte for byte.
-fn expected_files(game_path: &Path) -> Result<(Vec<u8>, Vec<u8>), Error> {
+fn expected_files(game_path: &Path) -> Result<(Vec<u8>, Vec<u8>), ExpectedError> {
   let pak_dir = game_path.join("game").join("citadel").join("pak01_dir.vpk");
-  let layout = patch_layout(&read_vpk_file(&pak_dir, TEAM_LAYOUT)?)?;
-  Ok((layout, build_script()?))
+  let base = read_vpk_file(&pak_dir, TEAM_LAYOUT).map_err(ExpectedError::Read)?;
+  let layout = patch_layout(&base).map_err(ExpectedError::Incompatible)?;
+  Ok((layout, build_script().map_err(ExpectedError::Read)?))
 }
+
+/// One build at a time: the renderer's automatic update and the notice's
+/// button can both start one, and they share the staging folder.
+static BUILD_LOCK: Mutex<()> = Mutex::new(());
 
 /// Writes the bridge VPK to `destination`, built from the game at `game_path`.
 pub fn build(game_path: &Path, destination: &Path) -> Result<(), Error> {
+  let _guard = BUILD_LOCK
+    .lock()
+    .map_err(|_| invalid("A previous live bridge build panicked"))?;
   let (layout, script) = expected_files(game_path)?;
 
   let work = std::env::temp_dir().join(format!("dmm-live-bridge-{}", std::process::id()));
@@ -246,30 +272,37 @@ pub struct BridgeStatus {
   pub installed: bool,
   /// Built from an older game layout or an older bridge script.
   pub outdated: bool,
+  /// The game's top-bar layout changed in a way this build cannot patch, so
+  /// the installed bridge holds an old copy of it and should be turned off.
+  pub incompatible: bool,
 }
 
 pub fn status(game_path: &Path, addons_dir: &Path) -> BridgeStatus {
-  let Some(installed) = find_installed(addons_dir) else {
-    return BridgeStatus {
-      installed: false,
-      outdated: false,
-    };
+  let mut status = BridgeStatus {
+    installed: false,
+    outdated: false,
+    incompatible: false,
   };
-  let outdated = match expected_files(game_path) {
+  let Some(installed) = find_installed(addons_dir) else {
+    return status;
+  };
+  status.installed = true;
+  match expected_files(game_path) {
     Ok((layout, script)) => {
-      read_vpk_file(&installed, TEAM_LAYOUT).ok().as_deref() != Some(layout.as_slice())
-        || read_vpk_file(&installed, SCRIPT_RESOURCE).ok().as_deref() != Some(script.as_slice())
+      status.outdated = read_vpk_file(&installed, TEAM_LAYOUT).ok().as_deref()
+        != Some(layout.as_slice())
+        || read_vpk_file(&installed, SCRIPT_RESOURCE).ok().as_deref() != Some(script.as_slice());
+    }
+    Err(ExpectedError::Incompatible(error)) => {
+      log::warn!("Live bridge: the game's top-bar layout cannot be patched: {error}");
+      status.incompatible = true;
     }
     // A game that cannot be read is not a reason to call the bridge outdated.
-    Err(error) => {
-      log::warn!("Live bridge: could not build the expected files: {error}");
-      false
+    Err(ExpectedError::Read(error)) => {
+      log::warn!("Live bridge: could not read the game's files: {error}");
     }
-  };
-  BridgeStatus {
-    installed: true,
-    outdated,
   }
+  status
 }
 
 /// Rebuilds the installed bridge in place, and the library's copy with it so
@@ -282,6 +315,21 @@ pub fn update(
 ) -> Result<(), Error> {
   let installed = find_installed(addons_dir)
     .ok_or_else(|| invalid("The live bridge is not installed in this profile"))?;
+  // Rebuilding writes only the bridge's two files, so a pack that also holds
+  // other mods' files would lose them.
+  let only_bridge = VpkParser::parse_directory_from_file(&installed).is_ok_and(|files| {
+    files.len() == 2
+      && files.iter().all(|file| {
+        file.full_path.eq_ignore_ascii_case(TEAM_LAYOUT)
+          || file.full_path.eq_ignore_ascii_case(SCRIPT_RESOURCE)
+      })
+  });
+  if !only_bridge {
+    return Err(invalid(format!(
+      "{} holds more than the live bridge, so it is not rebuilt",
+      installed.display()
+    )));
+  }
   build(game_path, &installed)?;
   if let Some(copy) = library_copy {
     fs::copy(&installed, copy)?;
@@ -322,6 +370,7 @@ mod tests {
     let current = BridgeStatus {
       installed: true,
       outdated: false,
+      incompatible: false,
     };
     assert_eq!(status(game, addons), current);
 

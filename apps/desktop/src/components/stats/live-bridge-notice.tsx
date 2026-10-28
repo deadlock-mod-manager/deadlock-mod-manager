@@ -1,6 +1,6 @@
 import { Alert, AlertDescription } from "@deadlock-mods/ui/components/alert";
 import { Button } from "@deadlock-mods/ui/components/button";
-import { Loader2, RefreshCw } from "@deadlock-mods/ui/icons";
+import { Loader2, RefreshCw, TriangleAlert } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
 import { useLiveBridge } from "@/hooks/use-live-bridge";
 import { useGameRunning } from "@/hooks/use-mod-health";
@@ -12,9 +12,19 @@ import { useGameRunning } from "@/hooks/use-mod-health";
  */
 export const LiveBridgeNotice = () => {
   const { t } = useTranslation();
-  const { isOutdated, update } = useLiveBridge();
+  const { isOutdated, isIncompatible, isUpdating, update } = useLiveBridge();
   const gameRunning = useGameRunning();
 
+  if (isIncompatible) {
+    return (
+      <Alert variant='warning'>
+        <TriangleAlert className='h-4 w-4' />
+        <AlertDescription>
+          {t("stats.live.bridge.incompatible")}
+        </AlertDescription>
+      </Alert>
+    );
+  }
   if (!isOutdated) return null;
 
   return (
@@ -28,12 +38,12 @@ export const LiveBridgeNotice = () => {
         </span>
         {!gameRunning && (
           <Button
-            disabled={update.isPending}
+            disabled={isUpdating}
             onClick={() => update.mutate()}
             size='sm'
             variant='outline'>
-            {update.isPending && <Loader2 className='h-4 w-4 animate-spin' />}
-            {update.isPending
+            {isUpdating && <Loader2 className='h-4 w-4 animate-spin' />}
+            {isUpdating
               ? t("stats.live.bridge.updating")
               : t("stats.live.bridge.update")}
           </Button>
