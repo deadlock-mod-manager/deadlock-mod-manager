@@ -99,8 +99,8 @@ const MODEL_TARGETS: FoundryPaintTargetId[] = [
 ];
 
 const DEFAULT_SELECTION: FoundryPaintSelection = {
-  kind: "target",
-  target: "body",
+  kind: "parts",
+  textures: [],
 };
 
 /** A picked file's name without its folder or extension. */
@@ -207,6 +207,9 @@ interface FoundryContextValue {
   togglePaintPart: (texture: string, additive: boolean) => void;
   /** The selection's color maps while the paint tab is open, else none. */
   highlightTextures: readonly string[];
+  /** Sections hidden in the paint tab's preview, so what is behind shows. */
+  hiddenParts: readonly string[];
+  toggleHiddenPart: (texture: string) => void;
   busy: boolean;
   setActiveTab: (tab: FoundryTab) => void;
   setSelectedEntryPath: (path: string | null) => void;
@@ -292,6 +295,7 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
   const [paintSelection, setPaintSelection] =
     useState<FoundryPaintSelection>(DEFAULT_SELECTION);
   const [busy, setBusy] = useState(false);
+  const [hiddenParts, setHiddenParts] = useState<string[]>([]);
   // Bumped by every edit. Each derived preview keys its cache on it, so one
   // counter keeps the model, the textures and the card gallery in step; three
   // separate ones let them drift apart.
@@ -323,6 +327,7 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
     setAppliedPaint({});
     setPaintParts([]);
     setPaintSelection(DEFAULT_SELECTION);
+    setHiddenParts([]);
     setTexturePreview(IDLE_TEXTURE);
     setModelPreview(IDLE_MODEL);
     setCardPreviews(IDLE_CARDS);
@@ -539,18 +544,22 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
           current.kind === "parts" &&
           current.textures.length === 1 &&
           current.textures[0] === texture;
-        return alone
-          ? DEFAULT_SELECTION
-          : { kind: "parts", textures: [texture] };
+        return { kind: "parts", textures: alone ? [] : [texture] };
       }
       const textures = current.kind === "parts" ? current.textures : [];
       const next = textures.includes(texture)
         ? textures.filter((entry) => entry !== texture)
         : [...textures, texture];
-      return next.length > 0
-        ? { kind: "parts", textures: next }
-        : DEFAULT_SELECTION;
+      return { kind: "parts", textures: next };
     });
+  }, []);
+
+  const toggleHiddenPart = useCallback((texture: string) => {
+    setHiddenParts((current) =>
+      current.includes(texture)
+        ? current.filter((entry) => entry !== texture)
+        : [...current, texture],
+    );
   }, []);
 
   /**
@@ -889,6 +898,8 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       setPaintSelection,
       togglePaintPart,
       highlightTextures,
+      hiddenParts,
+      toggleHiddenPart,
       busy,
       setActiveTab,
       setSelectedEntryPath: selectEntryPath,
@@ -926,6 +937,8 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       paintSelection,
       togglePaintPart,
       highlightTextures,
+      hiddenParts,
+      toggleHiddenPart,
       busy,
       selectEntryPath,
       previewCard,

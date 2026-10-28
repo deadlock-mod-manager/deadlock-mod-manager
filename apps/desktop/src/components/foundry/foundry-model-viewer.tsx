@@ -71,6 +71,8 @@ interface FoundryModelViewerProps {
   tint?: FoundryPreviewTint | null;
   /** Color maps of the selected sections, drawn with a faint glow. */
   highlightTextures?: readonly string[];
+  /** Color maps the user hid to reach what is behind them; not drawn or picked. */
+  hiddenTextures?: readonly string[];
   /** Makes sections clickable: a click selects one, Shift or Ctrl adds it. */
   onPickPart?: (texture: string, additive: boolean) => void;
   /** The section name shown while the pointer is over it. */
@@ -229,6 +231,29 @@ const applyPreviewTint = (
   }
 };
 
+/**
+ * Hide the meshes drawn with one of `hidden`'s color maps, outline shells
+ * included. Materials rather than meshes, because mesh visibility already
+ * belongs to the model's body groups.
+ */
+const applyHiddenParts = (
+  root: THREE.Object3D,
+  hidden: ReadonlySet<string>,
+) => {
+  root.traverse((child) => {
+    if (!(child instanceof THREE.Mesh) || Array.isArray(child.material)) return;
+    const texture = colorTextureOf(child.material);
+    if (texture === null) return;
+    const visible = !hidden.has(texture);
+    child.material.visible = visible;
+    for (const shell of child.children) {
+      if (shell instanceof THREE.Mesh && !Array.isArray(shell.material)) {
+        shell.material.visible = visible;
+      }
+    }
+  });
+};
+
 // DMM-themed gizmo palette (dark surface, gold primary accent).
 const GIZMO_AXES: {
   dir: [number, number, number];
@@ -317,6 +342,7 @@ export const FoundryModelViewer = ({
   label,
   tint,
   highlightTextures,
+  hiddenTextures,
   onPickPart,
   partLabel,
   playback,
@@ -334,6 +360,7 @@ export const FoundryModelViewer = ({
   const fitRef = useRef<(() => void) | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const snapshotsRef = useRef<MaterialSnapshot[]>([]);
+  const hiddenRef = useRef<ReadonlySet<string>>(new Set());
   const [hovered, setHovered] = useState<string | null>(null);
   // The frame loop and pick handler read the latest props through refs, so a
   // changed callback never rebuilds the scene.
@@ -599,7 +626,12 @@ export const FoundryModelViewer = ({
       );
       pickCamera.updateProjectionMatrix();
       const saved = picks.map((target) => target.mesh.material);
-      for (const target of picks) target.mesh.material = target.pickMaterial;
+      for (const target of picks) {
+        target.pickMaterial.visible = !(
+          target.texture && hiddenRef.current.has(target.texture)
+        );
+        target.mesh.material = target.pickMaterial;
+      }
       // The outline shells keep their own material and would read as an ID.
       outlines?.setVisible(false);
       const previousTarget = renderer.getRenderTarget();
@@ -847,6 +879,14 @@ export const FoundryModelViewer = ({
   useEffect(() => {
     applyPreviewTint(snapshotsRef.current, tint);
   }, [tint, loading]);
+
+  useEffect(() => {
+    hiddenRef.current = new Set(
+      hiddenTextures?.map((texture) => texture.toLowerCase()),
+    );
+    const root = modelRef.current;
+    if (root && !loading) applyHiddenParts(root, hiddenRef.current);
+  }, [hiddenTextures, loading, model]);
 
   useEffect(() => {
     // The selection glow would shift the color being previewed, so it gives

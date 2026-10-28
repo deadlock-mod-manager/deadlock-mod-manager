@@ -10,7 +10,6 @@ import {
 } from "react";
 import { Button } from "@deadlock-mods/ui/components/button";
 import { Input } from "@deadlock-mods/ui/components/input";
-import { Label } from "@deadlock-mods/ui/components/label";
 import { cn } from "@deadlock-mods/ui/lib/utils";
 
 export type Rgb = { r: number; g: number; b: number };
@@ -130,11 +129,6 @@ const fromHsv = (h: number, s: number, v: number): ColorState => ({
   ...hsvToRgb(h, s, v),
 });
 
-const channelFromInput = (raw: string, previous: number): number => {
-  const parsed = Number.parseInt(raw, 10);
-  return Number.isNaN(parsed) ? previous : Math.max(0, Math.min(255, parsed));
-};
-
 /** The browser's native eyedropper, when the platform webview exposes it. */
 type EyeDropperResult = { sRGBHex: string };
 type EyeDropperCtor = new () => { open: () => Promise<EyeDropperResult> };
@@ -172,18 +166,16 @@ export interface ColorPickerProps {
   /** Hidden when false, e.g. on a platform without the native eyedropper. */
   showEyedropper?: boolean;
   labels?: {
-    red?: string;
-    green?: string;
-    blue?: string;
+    hex?: string;
     eyedropper?: string;
   };
   className?: string;
 }
 
 /**
- * An inline HSV color picker: a saturation/value field, a hue strip, RGB inputs
- * and the platform eyedropper. Emits `#rrggbb` on every change, so a caller can
- * drive a live preview from it directly.
+ * An inline HSV color picker: a saturation/value field, a hue strip, a hex
+ * field and the platform eyedropper. Emits `#rrggbb` on every change, so a
+ * caller can drive a live preview from it directly.
  */
 export const ColorPicker = ({
   value,
@@ -200,6 +192,7 @@ export const ColorPicker = ({
   // Follow the controlled value, but ignore the echo of our own emit: comparing
   // hex keeps a drag from resetting the picker on every frame.
   const currentHex = useMemo(() => rgbToHex(r, g, b), [r, g, b]);
+  const [hexDraft, setHexDraft] = useState<string | null>(null);
   useEffect(() => {
     const normalized = normalizeHex(value, fallbackHex);
     if (normalized === currentHex) {
@@ -264,17 +257,21 @@ export const ColorPicker = ({
     }
   };
 
-  const channels: Array<[string, number, (next: number) => ColorState]> = [
-    [labels?.red ?? "R", r, (next) => fromRgb(next, g, b)],
-    [labels?.green ?? "G", g, (next) => fromRgb(r, next, b)],
-    [labels?.blue ?? "B", b, (next) => fromRgb(r, g, next)],
-  ];
+  // The field only commits a complete color, so typing through a partial hex
+  // never jumps the picker around.
+  const editHex = (raw: string) => {
+    setHexDraft(raw);
+    const rgb = isValidHex(raw) ? hexToRgb(raw) : null;
+    if (rgb) {
+      emit(fromRgb(rgb.r, rgb.g, rgb.b));
+    }
+  };
 
   return (
-    <div className={cn("flex flex-col gap-3", className)}>
-      {/** biome-ignore lint/a11y/noStaticElementInteractions: the RGB inputs below are the keyboard path */}
+    <div className={cn("flex flex-col gap-2.5", className)}>
+      {/** biome-ignore lint/a11y/noStaticElementInteractions: the hex field below is the keyboard path */}
       <div
-        className='relative h-32 w-full cursor-crosshair rounded-md border'
+        className='relative h-28 w-full cursor-crosshair overflow-hidden rounded-md'
         onMouseDown={(event) => {
           const rect = event.currentTarget.getBoundingClientRect();
           trackDrag(pickSaturationValue(rect), event.nativeEvent);
@@ -283,14 +280,18 @@ export const ColorPicker = ({
           background: `linear-gradient(to top, black, transparent), linear-gradient(to right, white, ${hueColor})`,
         }}>
         <div
-          className='-mt-1.5 -ml-1.5 pointer-events-none absolute h-3 w-3 rounded-full border-2 border-white shadow'
-          style={{ left: `${s}%`, top: `${100 - v}%` }}
+          className='-mt-[7px] -ml-[7px] pointer-events-none absolute h-3.5 w-3.5 rounded-full border-2 border-white shadow'
+          style={{
+            left: `${s}%`,
+            top: `${100 - v}%`,
+            backgroundColor: currentHex,
+          }}
         />
       </div>
 
-      {/** biome-ignore lint/a11y/noStaticElementInteractions: the RGB inputs below are the keyboard path */}
+      {/** biome-ignore lint/a11y/noStaticElementInteractions: the hex field below is the keyboard path */}
       <div
-        className='relative h-3 w-full cursor-pointer rounded-md border'
+        className='relative h-2.5 w-full cursor-pointer rounded-full'
         onMouseDown={(event) => {
           const rect = event.currentTarget.getBoundingClientRect();
           trackDrag(pickHue(rect), event.nativeEvent);
@@ -300,23 +301,29 @@ export const ColorPicker = ({
             "linear-gradient(90deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000)",
         }}>
         <div
-          className='-translate-y-1/2 -ml-2 pointer-events-none absolute top-1/2 h-4 w-4 rounded-full border-2 border-white shadow'
-          style={{ left: `${(h / 360) * 100}%` }}
+          className='-translate-y-1/2 -ml-[7px] pointer-events-none absolute top-1/2 h-3.5 w-3.5 rounded-full border-2 border-white shadow'
+          style={{ left: `${(h / 360) * 100}%`, backgroundColor: hueColor }}
         />
       </div>
 
       <div className='flex items-center gap-2'>
-        <div
-          className='h-7 w-7 shrink-0 rounded border'
-          style={{ backgroundColor: currentHex }}
-        />
-        <span className='flex-1 font-mono text-muted-foreground text-xs uppercase'>
-          {currentHex}
-        </span>
+        <label className='flex h-8 flex-1 items-center gap-2 rounded-md border bg-background px-2.5 focus-within:ring-1 focus-within:ring-ring'>
+          <span className='font-semibold text-[10px] text-muted-foreground tracking-[0.06em]'>
+            {labels?.hex ?? "HEX"}
+          </span>
+          <Input
+            className='h-auto border-0 bg-transparent p-0 font-mono text-[13px] uppercase shadow-none focus-visible:ring-0 md:text-[13px]'
+            maxLength={7}
+            onBlur={() => setHexDraft(null)}
+            onChange={(event) => editHex(event.target.value)}
+            spellCheck={false}
+            value={hexDraft ?? currentHex.slice(1)}
+          />
+        </label>
         {showEyedropper && eyeDropperConstructor() && (
           <Button
             aria-label={labels?.eyedropper ?? "Pick a color from the screen"}
-            className='h-7 w-7'
+            className='h-8 w-8'
             disabled={eyedropperActive}
             onClick={pickWithEyedropper}
             size='icon'
@@ -325,24 +332,6 @@ export const ColorPicker = ({
             <EyedropperIcon className='h-4 w-4' />
           </Button>
         )}
-      </div>
-
-      <div className='grid grid-cols-3 gap-2'>
-        {channels.map(([label, channelValue, next]) => (
-          <div key={label}>
-            <Label className='mb-1 block text-muted-foreground text-xs'>
-              {label}
-            </Label>
-            <Input
-              className='h-7 text-xs'
-              inputMode='numeric'
-              onChange={(event) =>
-                emit(next(channelFromInput(event.target.value, channelValue)))
-              }
-              value={channelValue}
-            />
-          </div>
-        ))}
       </div>
     </div>
   );

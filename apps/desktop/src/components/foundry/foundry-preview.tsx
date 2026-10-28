@@ -28,6 +28,7 @@ export const FoundryPreview = () => {
     primaryModelPath,
     paintParts,
     highlightTextures,
+    hiddenParts,
     togglePaintPart,
   } = useFoundry();
   const setPreview3d = usePersistedStore(
@@ -91,6 +92,7 @@ export const FoundryPreview = () => {
           label={selectedEntryPath ?? t("foundry.preview.alt")}
           tint={previewTint}
           highlightTextures={highlightTextures}
+          hiddenTextures={activeTab === "paint" ? hiddenParts : undefined}
           // Sections are only picked where they can be painted.
           onPickPart={activeTab === "paint" ? togglePaintPart : undefined}
           partLabel={partLabel}

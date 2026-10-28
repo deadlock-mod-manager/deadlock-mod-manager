@@ -53,6 +53,7 @@ interface Props {
   source: PreviewSource;
   tint?: FoundryPreviewTint | null;
   highlightTextures?: readonly string[];
+  hiddenTextures?: readonly string[];
   onPickPart?: (texture: string, additive: boolean) => void;
   partLabel?: (texture: string) => string | undefined;
 }
@@ -71,6 +72,7 @@ export const AnimatedModelPreview = ({
   source,
   tint,
   highlightTextures,
+  hiddenTextures,
   onPickPart,
   partLabel,
 }: Props) => {
@@ -266,6 +268,7 @@ export const AnimatedModelPreview = ({
           label={label}
           tint={tint}
           highlightTextures={highlightTextures}
+          hiddenTextures={hiddenTextures}
           onPickPart={onPickPart}
           partLabel={partLabel}
           effects={effects}
@@ -324,7 +327,7 @@ export const AnimatedModelPreview = ({
           )}
         </FoundryModelViewer>
       </div>
-      <div className='shrink-0 space-y-2 border-t bg-muted/30 px-3 py-2'>
+      <div className='@container/transport shrink-0 space-y-2 border-t bg-muted/30 px-3 py-2'>
         <div className='flex flex-wrap items-center gap-2'>
           <Button
             size='icon'
@@ -338,7 +341,7 @@ export const AnimatedModelPreview = ({
           <Button
             size='icon'
             variant='ghost'
-            className='size-8 shrink-0'
+            className='hidden size-8 shrink-0 @[44rem]/transport:inline-flex'
             disabled={!current}
             aria-label={t("modelPreview.restart")}
             title={t("modelPreview.restart")}
@@ -353,7 +356,7 @@ export const AnimatedModelPreview = ({
           <Button
             size='sm'
             variant='ghost'
-            className='h-8 shrink-0 gap-1.5 px-2 text-muted-foreground text-xs hover:text-foreground'
+            className='hidden h-8 shrink-0 gap-1.5 px-2 text-muted-foreground text-xs hover:text-foreground @[44rem]/transport:inline-flex'
             disabled={
               action?.id === "idle" ||
               !actions.some((candidate) => candidate.id === "idle")
@@ -368,14 +371,19 @@ export const AnimatedModelPreview = ({
             animation={current}
             timeRef={timeRef}
             onSeek={seekTo}
-            className='min-w-64 flex-1 basis-64 px-1'
+            className='min-w-40 flex-1 basis-40 px-1'
           />
           {cloth.data && (
-            <EffectToggle icon={WindIcon} on={clothOn} onChange={setClothOn}>
-              {t("modelPreview.cloth")}
-            </EffectToggle>
+            <EffectToggle
+              icon={WindIcon}
+              label={t("modelPreview.cloth")}
+              on={clothOn}
+              onChange={setClothOn}
+            />
           )}
-          <SpeedPicker speed={speed} onChange={setSpeed} />
+          <div className='hidden @[40rem]/transport:block'>
+            <SpeedPicker speed={speed} onChange={setSpeed} />
+          </div>
         </div>
         {status && (
           <p className='text-muted-foreground text-xs' role='status'>

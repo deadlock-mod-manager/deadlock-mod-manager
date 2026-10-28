@@ -21,7 +21,7 @@ import { useFoundry } from "./foundry-context";
 import { FoundryExportDialog } from "./foundry-export-dialog";
 import { FoundryImportDialog } from "./foundry-import-dialog";
 import { FoundryInspector } from "./foundry-inspector";
-import { FoundryPaintPanel } from "./foundry-paint-panel";
+import { FoundryPaintWorkspace } from "./foundry-paint-workspace";
 import { FoundryPreview } from "./foundry-preview";
 import { FoundrySoundsPanel } from "./foundry-sounds-panel";
 
@@ -205,18 +205,7 @@ export const FoundryShell = () => {
           </>
         )}
         {activeTab === "paint" && (
-          <>
-            <div className={cn(SIDE_PANEL_CLASS, "w-[320px] border-r")}>
-              <ScrollArea className='h-full'>
-                <div className='p-2'>
-                  <FoundryPaintPanel />
-                </div>
-              </ScrollArea>
-            </div>
-            <div className='min-w-0 flex-1'>
-              <FoundryPreview />
-            </div>
-          </>
+          <FoundryPaintWorkspace sidePanelClassName={SIDE_PANEL_CLASS} />
         )}
         {(activeTab === "cards" || activeTab === "sounds") && (
           <>
