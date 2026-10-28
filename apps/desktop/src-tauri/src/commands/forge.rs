@@ -40,7 +40,7 @@ pub async fn place_forge_payload(
 
 /// Checked rather than trusted, since it comes from the renderer. Traversal is
 /// refused outright rather than normalised away.
-fn contained_destination(mods_root: &Path, destination: &str) -> Result<PathBuf, Error> {
+pub(crate) fn contained_destination(mods_root: &Path, destination: &str) -> Result<PathBuf, Error> {
   let destination = PathBuf::from(destination);
 
   let escapes = destination
