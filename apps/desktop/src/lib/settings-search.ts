@@ -379,8 +379,8 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
     descriptionKey: "settings.addonsBackupDescription",
     settings: [
       {
-        titleKey: "settings.autoBackupEnabled",
-        descriptionKey: "settings.autoBackupEnabledDescription",
+        titleKey: "settings.backupMode",
+        descriptionKey: "settings.backupModeDescription",
       },
       {
         titleKey: "settings.maxBackupCount",

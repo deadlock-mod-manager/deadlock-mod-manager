@@ -373,6 +373,7 @@ pub fn run() {
       commands::auth::get_auth_token,
       commands::auth::clear_auth_token,
       commands::backups::create_addons_backup,
+      commands::backups::estimate_update_backup_size,
       commands::backups::list_addons_backups,
       commands::backups::restore_addons_backup,
       commands::mod_folder_repair::repair_mod_folder,

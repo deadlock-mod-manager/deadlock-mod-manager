@@ -10,6 +10,7 @@ import logger from "@/lib/logger";
 import { applyDownloadProgress } from "@/lib/mods/batch-update-progress";
 import { usePersistedStore } from "@/lib/store";
 import { BatchUpdateResultSchema } from "@/lib/validation/batch-update";
+import type { BackupMode } from "@/types/backup";
 import type {
   BatchUpdateProgressEvent,
   BatchUpdateResult,
@@ -21,6 +22,9 @@ import type {
 } from "@/types/mods";
 import { ModStatus } from "@/types/mods";
 import { invokeGuarded } from "@/lib/game-guard";
+
+export const backsUpUpdate = (mode: BackupMode, modCount: number) =>
+  mode === "always" || (mode === "batch" && modCount > 1);
 
 const getUpdateProgress = () =>
   usePersistedStore.getState().batchUpdateProgress;
@@ -89,7 +93,7 @@ export const useBatchUpdate = () => {
     (state) => state.updateModVpksAfterReorder,
   );
   const localMods = usePersistedStore((state) => state.localMods);
-  const backupEnabled = usePersistedStore((state) => state.backupEnabled);
+  const backupMode = usePersistedStore((state) => state.backupMode);
   const maxBackupCount = usePersistedStore((state) => state.maxBackupCount);
   const updateProgress = usePersistedStore(
     (state) => state.batchUpdateProgress,
@@ -238,6 +242,7 @@ export const useBatchUpdate = () => {
           })),
           fileTree: um.selectedFileTree,
           installedVpks: localMod?.installedVpks ?? [],
+          installedFileTree: localMod?.installedFileTree,
           isMap: um.mod.isMap,
         };
       });
@@ -246,9 +251,9 @@ export const useBatchUpdate = () => {
         mods: batchUpdateMods,
         profileFolder,
         // Mods sent back for a VPK choice were left untouched by the run that
-        // already backed up addons.
+        // already backed them up.
         skipBackup:
-          !backupEnabled ||
+          !backsUpUpdate(backupMode, targets.length) ||
           targets.every((target) =>
             pendingSelections.some(
               (pending) => pending.modId === target.mod.remoteId,

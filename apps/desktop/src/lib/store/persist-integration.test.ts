@@ -124,7 +124,7 @@ const seededState = {
   crosshairsEnabled: true,
   linuxGpuOptimization: "auto",
   enabledPlugins: {},
-  backupEnabled: true,
+  backupMode: "always" as const,
   maxBackupCount: 5,
   fileserverPreference: "default" as const,
   audioVolume: 50,
@@ -269,7 +269,7 @@ describe("persisted store integration with real production fixture", () => {
     });
     expect(s.crosshairFilters).toEqual(seededState.crosshairFilters);
     expect(s.linuxGpuOptimization).toBe("auto");
-    expect(s.backupEnabled).toBe(seededState.backupEnabled);
+    expect(s.backupMode).toBe(seededState.backupMode);
     expect(s.maxBackupCount).toBe(seededState.maxBackupCount);
     expect(s.showOccultGeometry).toBe(seededState.showOccultGeometry);
     expect(s.animateOccultGeometry).toBe(seededState.animateOccultGeometry);

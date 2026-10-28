@@ -19,7 +19,7 @@ import {
 } from "@phosphor-icons/react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { RestoreStrategy } from "@/types/backup";
+import { type RestoreStrategy, UPDATE_BACKUP_PREFIX } from "@/types/backup";
 
 interface RestoreBackupDialogProps {
   open: boolean;
@@ -37,9 +37,11 @@ export const RestoreBackupDialog = ({
   const { t } = useTranslation();
   const [strategy, setStrategy] = useState<RestoreStrategy>("replace");
   const isRepair = backupFileName.startsWith("addons-backup-repair-");
+  const isUpdate = backupFileName.startsWith(UPDATE_BACKUP_PREFIX);
+  const isPartial = isRepair || isUpdate;
 
   const handleConfirm = () => {
-    onConfirm(isRepair ? "merge" : strategy);
+    onConfirm(isPartial ? "merge" : strategy);
     onOpenChange(false);
   };
 
@@ -52,13 +54,15 @@ export const RestoreBackupDialog = ({
             {t(
               isRepair
                 ? "repairModFolder.restoreWarning"
-                : "settings.restoreStrategyWarning",
+                : isUpdate
+                  ? "settings.updateBackupRestoreWarning"
+                  : "settings.restoreStrategyWarning",
             )}
           </DialogDescription>
         </DialogHeader>
 
         <div className='space-y-4 py-4'>
-          {!isRepair && (
+          {!isPartial && (
             <div className='space-y-2'>
               <Label className='text-sm font-medium'>
                 {t("settings.restoreStrategy")}

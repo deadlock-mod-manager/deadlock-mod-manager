@@ -242,6 +242,9 @@ pub struct BatchUpdateMod {
   pub file_tree: Option<ModFileTree>,
   #[serde(default)]
   pub installed_vpks: Vec<String>,
+  /// The file tree of the installed version, kept with its update backup.
+  #[serde(default)]
+  pub installed_file_tree: Option<ModFileTree>,
   #[serde(default)]
   pub is_map: bool,
 }
@@ -303,7 +306,7 @@ pub async fn batch_update_mods(
   guard_permit: Option<String>,
 ) -> Result<BatchUpdateResult, Error> {
   crate::game_guard::ensure_game_idle_locked("batch_update_mods", guard_permit.as_deref())?;
-  use crate::mod_manager::addons_backup_manager::AddonsBackupManager;
+  use crate::mod_manager::manager::update_backup::{UPDATE_BACKUP_PREFIX, UpdateBackupTarget};
 
   log::info!(
     "Starting batch mod update: {} mods, profile: {}, skip_backup: {}, max_backups: {}",
@@ -336,19 +339,15 @@ pub async fn batch_update_mods(
   }
   let has_updatable_mods = resolved_downloads.iter().any(Result::is_ok);
 
-  let (addons_path, filename) = {
-    let mut mod_manager = MANAGER.lock().unwrap();
-    mod_manager.set_backup_manager_app_handle(app_handle.clone());
-    let backup_manager = mod_manager.get_addons_backup_manager();
-
-    let addons_path = backup_manager.get_addons_path()?;
-    let filename = backup_manager.generate_backup_filename();
-
-    (addons_path, filename)
+  let profile_folder_option = if profile_folder.is_empty() {
+    None
+  } else {
+    Some(profile_folder.clone())
   };
+  let mut backup_name = String::new();
 
   if !skip_backup && has_updatable_mods {
-    log::info!("Creating addons backup before updating mods");
+    log::info!("Backing up the mods being updated");
     app_handle
       .emit(
         "batch-update-progress",
@@ -363,42 +362,47 @@ pub async fn batch_update_mods(
       )
       .ok();
 
-    let backup_dir = {
-      let mut mod_manager = MANAGER.lock().unwrap();
-      let backup_manager = mod_manager.get_addons_backup_manager();
-      backup_manager.get_backup_directory()?
-    };
-
-    let backup_result = tokio::task::spawn_blocking({
-      let addons_path = addons_path.clone();
-      let filename = filename.clone();
-      let app_handle = app_handle.clone();
-      move || {
-        AddonsBackupManager::create_backup_async(addons_path, backup_dir, filename, app_handle)
-      }
-    })
-    .await;
-
-    match backup_result {
-      Ok(Ok(_)) => log::info!("Backup created successfully: {}", filename),
-      Ok(Err(e)) => {
-        log::error!("Failed to create backup: {:?}", e);
-        return Err(e);
-      }
-      Err(e) => {
-        log::error!("Failed to spawn backup task: {:?}", e);
-        return Err(Error::BackupCreationFailed(format!(
-          "Failed to create backup before update: {:?}",
-          e
-        )));
-      }
-    }
-
-    if max_backups > 0 {
-      let mut mod_manager = MANAGER.lock().unwrap();
-      let backup_manager = mod_manager.get_addons_backup_manager();
-      if let Err(e) = backup_manager.prune_old_backups(max_backups) {
-        log::error!("Failed to prune old backups: {:?}", e);
+    let updating: Vec<UpdateBackupTarget> = mods
+      .iter()
+      .zip(&resolved_downloads)
+      .filter(|(_, downloads)| downloads.is_ok())
+      .map(|(mod_data, _)| UpdateBackupTarget {
+        mod_id: mod_data.mod_id.clone(),
+        mod_name: mod_data.mod_name.clone(),
+        file_tree: mod_data.installed_file_tree.clone(),
+      })
+      .collect();
+    let mut mod_manager = MANAGER.lock().unwrap();
+    mod_manager.set_backup_manager_app_handle(app_handle.clone());
+    let backup_manager = mod_manager.get_addons_backup_manager();
+    let backup_dir = backup_manager.get_backup_directory()?;
+    let filename = format!(
+      "{UPDATE_BACKUP_PREFIX}{}",
+      chrono::Local::now().format("%Y-%m-%d_%H-%M-%S")
+    );
+    let backup = mod_manager
+      .create_update_backup(
+        profile_folder_option.as_deref(),
+        &updating,
+        &backup_dir,
+        &filename,
+      )
+      .map_err(|error| {
+        Error::BackupCreationFailed(format!("Failed to back up mods before updating: {error}"))
+      })?;
+    if let Some(backup) = backup {
+      log::info!(
+        "Backed up {} mod(s) to {} ({} bytes)",
+        backup.mod_names.len(),
+        backup.file_name,
+        backup.file_size
+      );
+      backup_name = backup.file_name;
+      if max_backups > 0 {
+        let backup_manager = mod_manager.get_addons_backup_manager();
+        if let Err(e) = backup_manager.prune_old_backups(max_backups) {
+          log::error!("Failed to prune old backups: {:?}", e);
+        }
       }
     }
   } else {
@@ -552,11 +556,6 @@ pub async fn batch_update_mods(
     )
     .ok();
 
-  let profile_folder_option = if profile_folder.is_empty() {
-    None
-  } else {
-    Some(profile_folder.clone())
-  };
   let mut vpk_mappings = Vec::new();
   if !succeeded.is_empty() {
     let mut mod_manager = MANAGER.lock().unwrap();
@@ -587,7 +586,7 @@ pub async fn batch_update_mods(
   );
 
   Ok(BatchUpdateResult {
-    backup_name: filename,
+    backup_name,
     succeeded,
     failed,
     installed_mods,

@@ -22,7 +22,8 @@ import {
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { invoke } from "@tauri-apps/api/core";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { modDownloadsQueryOptions } from "@/hooks/use-mod-downloads";
 import { DateDisplay } from "@/components/date-display";
 import { UpdateChangelog } from "@/components/my-mods/update-changelog";
@@ -30,7 +31,7 @@ import { formatSize } from "@/lib/utils";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { findLocalMod } from "@/lib/store/selectors";
-import { useBatchUpdate } from "@/hooks/use-batch-update";
+import { backsUpUpdate, useBatchUpdate } from "@/hooks/use-batch-update";
 import { BatchUpdateFailureDetails } from "@/components/my-mods/batch-update-failure-details";
 import { FileSelectorDialog } from "@/components/downloads/file-selector-dialog";
 import {
@@ -118,6 +119,31 @@ export const BatchUpdateDialog = ({
     : undefined;
   const hasFailures =
     !!failure || (batchUpdateMutation.data?.failed.length ?? 0) > 0;
+  const backupMode = usePersistedStore((state) => state.backupMode);
+  const profileFolder = usePersistedStore(
+    (state) => state.getActiveProfile()?.folderName ?? null,
+  );
+  const backsUp = backsUpUpdate(backupMode, pendingUpdates.length);
+  const { data: backupSize } = useQuery({
+    queryKey: ["update-backup-size", profileFolder, updateIds],
+    queryFn: () =>
+      invoke<number>("estimate_update_backup_size", {
+        modIds: updatesRef.current.map((update) => update.mod.remoteId),
+        profileFolder,
+      }),
+    enabled: open && backsUp,
+    staleTime: 0,
+    gcTime: 0,
+  });
+  let backupNote = t("myMods.batchUpdate.noBackupNote");
+  if (backsUp) {
+    backupNote =
+      backupSize === undefined
+        ? t("myMods.batchUpdate.backupNote")
+        : t("myMods.batchUpdate.backupNoteWithSize", {
+            size: formatSize(backupSize),
+          });
+  }
 
   let updateLabel = t(isSingleMod ? "modDetail.updateMod" : "myMods.updateAll");
   if (hasFailures) {
@@ -263,9 +289,7 @@ export const BatchUpdateDialog = ({
               )}
               <div className='rounded-lg bg-muted p-3 flex items-start gap-2'>
                 <AlertCircle className='h-5 w-5 text-muted-foreground mt-0.5' />
-                <p className='text-sm text-muted-foreground'>
-                  {t("myMods.batchUpdate.backupNote")}
-                </p>
+                <p className='text-sm text-muted-foreground'>{backupNote}</p>
               </div>
 
               <div className='space-y-3'>

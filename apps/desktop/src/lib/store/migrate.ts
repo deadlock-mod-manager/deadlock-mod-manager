@@ -1,5 +1,6 @@
 import { z } from "zod";
 import logger from "@/lib/logger";
+import { BACKUP_MODES, type BackupMode } from "@/types/backup";
 import { isPlainObject } from "./merge";
 
 type MutableState = Record<string, unknown>;
@@ -625,6 +626,19 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
         (value): value is string =>
           typeof value === "string" && LEGACY_GAMEBANANA_ID.test(value),
       );
+    },
+  },
+  {
+    to: 38,
+    label: "backup-mode",
+    apply: (state) => {
+      // Update backups now hold only the mods being updated, so the on/off
+      // switch became a mode. On keeps backing up every update.
+      if (!("backupEnabled" in state)) return;
+      if (!BACKUP_MODES.includes(state.backupMode as BackupMode)) {
+        state.backupMode = state.backupEnabled === false ? "off" : "always";
+      }
+      delete state.backupEnabled;
     },
   },
 ];

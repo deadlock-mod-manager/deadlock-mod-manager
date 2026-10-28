@@ -150,6 +150,8 @@ export interface ProfileImportMod {
   }>;
   fileTree?: ModFileTree;
   installedVpks?: string[];
+  /** The installed version's file tree, kept with its update backup. */
+  installedFileTree?: ModFileTree;
   isMap?: boolean;
 }
 
