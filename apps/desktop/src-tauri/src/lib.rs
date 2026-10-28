@@ -352,6 +352,7 @@ pub fn run() {
       commands::foundry::foundry_export_workspace,
       commands::foundry::foundry_replace_workspace_file,
       commands::foundry::foundry_paint_targets,
+      commands::foundry::foundry_skin_palette,
       commands::foundry::foundry_paint_target,
       commands::foundry::foundry_model_parts,
       commands::foundry::foundry_paint_parts,

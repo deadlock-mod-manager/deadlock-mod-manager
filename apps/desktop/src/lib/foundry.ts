@@ -116,6 +116,18 @@ export const revertFoundryFile = async (
   });
 };
 
+/** The colors a skin's original color maps wear, as `#rrggbb`. */
+export const foundrySkinPalette = async (
+  filePath: string,
+  textures: string[],
+): Promise<string[]> => {
+  return await invoke<string[]>("foundry_skin_palette", {
+    filePath,
+    textures,
+    workspaceRoot: null,
+  });
+};
+
 /** Set one sound's in-game volume edits; the backend rebuilds the clip. */
 export const adjustFoundrySound = async (
   workspaceRoot: string,

@@ -17,6 +17,7 @@ use crate::errors::Error;
 use super::analyze::{analyze_default_hero, analyze_vpk_path, decode_foundry_cards};
 use super::archive_cache::clear_archive_cache;
 use super::export::{ExportDestination, FoundryExportResult, export_workspace};
+use super::palette::{sample_color_map, skin_palette};
 use super::paint::{describe_paint_targets, model_paint_parts, paint_parts, paint_target};
 use super::sounds::find_mp3_payload;
 use super::types::{
@@ -145,6 +146,35 @@ pub async fn foundry_replace_workspace_file(
   })
   .await
   .map_err(|e| Error::InvalidInput(format!("workspace replacement task failed: {e}")))?
+}
+
+/// The colors the skin's color maps already wear, as `#rrggbb`, for swatches.
+#[tauri::command]
+pub async fn foundry_skin_palette(
+  file_path: String,
+  textures: Vec<String>,
+  workspace_root: Option<String>,
+) -> Result<Vec<String>, Error> {
+  let vpk_path = PathBuf::from(&file_path);
+  tauri::async_runtime::spawn_blocking(move || {
+    let workspace = workspace_root.map(PathBuf::from);
+    let maps: Vec<Vec<u8>> = textures
+      .iter()
+      .filter_map(|texture| {
+        entry_bytes_from_sources(workspace.as_deref(), &vpk_path, texture)
+          .ok()
+          .and_then(sample_color_map)
+      })
+      .collect();
+    Ok(
+      skin_palette(&maps)
+        .into_iter()
+        .map(|[r, g, b]| format!("#{r:02x}{g:02x}{b:02x}"))
+        .collect(),
+    )
+  })
+  .await
+  .map_err(|e| Error::InvalidInput(format!("skin palette task failed: {e}")))?
 }
 
 /// How much of the hero each paint target covers in the loaded skin.
