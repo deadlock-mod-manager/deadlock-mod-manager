@@ -39,6 +39,7 @@ import {
 } from "./foundry-model-viewer";
 import { ViewerAnimationPicker } from "./viewer-animation-picker";
 import { restartEvery, type ViewerEffectFactory } from "./viewer-effects";
+import type { ViewerCallout } from "./viewer-callouts";
 import { overlaySurface } from "./viewer-tools";
 import {
   AbilityBar,
@@ -55,6 +56,7 @@ interface Props {
   highlightTextures?: readonly string[];
   hiddenTextures?: readonly string[];
   silhouetteHero?: string;
+  callouts?: readonly ViewerCallout[];
   onPickPart?: (texture: string, additive: boolean) => void;
   partLabel?: (texture: string) => string | undefined;
 }
@@ -75,6 +77,7 @@ export const AnimatedModelPreview = ({
   highlightTextures,
   hiddenTextures,
   silhouetteHero,
+  callouts,
   onPickPart,
   partLabel,
 }: Props) => {
@@ -272,6 +275,7 @@ export const AnimatedModelPreview = ({
           highlightTextures={highlightTextures}
           hiddenTextures={hiddenTextures}
           silhouetteHero={silhouetteHero}
+          callouts={callouts}
           onPickPart={onPickPart}
           partLabel={partLabel}
           effects={effects}

@@ -26,6 +26,7 @@ export const FoundryPreview = () => {
     paintParts,
     highlightTextures,
     hiddenParts,
+    paintSelection,
     togglePaintPart,
   } = useFoundry();
   const labels = useMemo(
@@ -34,6 +35,17 @@ export const FoundryPreview = () => {
         paintParts.map((part) => [part.texture.toLowerCase(), part.label]),
       ),
     [paintParts],
+  );
+  // The paint tab labels the sections it is about to paint on the model.
+  const callouts = useMemo(
+    () =>
+      activeTab === "paint" && paintSelection.kind === "parts"
+        ? paintSelection.textures.map((texture) => ({
+            texture: texture.toLowerCase(),
+            label: labels.get(texture.toLowerCase()) ?? texture,
+          }))
+        : undefined,
+    [activeTab, paintSelection, labels],
   );
   const partLabel = useCallback(
     (texture: string) => labels.get(texture.toLowerCase()),
@@ -66,6 +78,7 @@ export const FoundryPreview = () => {
           highlightTextures={highlightTextures}
           hiddenTextures={activeTab === "paint" ? hiddenParts : undefined}
           silhouetteHero={manifest.heroDisplay ?? manifest.hero ?? undefined}
+          callouts={callouts}
           // Sections are only picked where they can be painted.
           onPickPart={activeTab === "paint" ? togglePaintPart : undefined}
           partLabel={partLabel}

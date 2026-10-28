@@ -2431,7 +2431,8 @@
       "previewOn": "Previewing on {{target}}",
       "previewUnavailableShort": "Patterns show after you paint",
       "spaceKey": "Space",
-      "compare": "Hold to see the original"
+      "compare": "Hold to see the original",
+      "fromSkin": "From this skin"
     },
     "primary": "Primary",
     "picker": {
@@ -7368,6 +7369,13 @@
     "screenshotSaved": "Screenshot saved",
     "recordingBadge": "REC",
     "exitFullscreen": "Exit fullscreen",
-    "controlsHelp": "Controls"
+    "controlsHelp": "Controls",
+    "studio": "Studio",
+    "passChips": {
+      "bloom": "Bloom",
+      "antialias": "SMAA",
+      "outlines": "Outlines",
+      "wireframe": "Wireframe"
+    }
   }
 }

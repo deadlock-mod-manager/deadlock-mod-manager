@@ -4,6 +4,7 @@ import { CompassIcon, CubeIcon } from "@phosphor-icons/react";
 import {
   type ReactNode,
   type RefObject,
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -12,7 +13,6 @@ import { useTranslation } from "react-i18next";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
-import { z } from "zod";
 import { retainFoundryModel } from "@/lib/model-assets";
 import type { FoundryModel } from "@/types/foundry";
 import { loadPreviewModel } from "./model-loader";
@@ -21,6 +21,8 @@ import {
   type PreviewPlayback,
 } from "@/lib/preview-animation";
 import { PreviewClock } from "@/lib/preview-clock";
+import { type ViewerCallout, ViewerCallouts } from "./viewer-callouts";
+import { colorTextureOf } from "./viewer-color-texture";
 import {
   captureSilhouette,
   hasCapturedSilhouette,
@@ -41,6 +43,7 @@ import type {
 import {
   DEFAULT_LOOK,
   overlaySurface,
+  ViewerActivePasses,
   ViewerBackgroundButton,
   type ViewerLook,
   type ViewerOverlayToggle,
@@ -79,6 +82,8 @@ interface FoundryModelViewerProps {
   hiddenTextures?: readonly string[];
   /** The hero whose shape the loading embers should learn from this model. */
   silhouetteHero?: string;
+  /** Sections to label on the model, with a leader line to each. */
+  callouts?: readonly ViewerCallout[];
   /** Makes sections clickable: a click selects one, Shift or Ctrl adds it. */
   onPickPart?: (texture: string, additive: boolean) => void;
   /** The section name shown while the pointer is over it. */
@@ -127,15 +132,6 @@ const isTintable = (material: THREE.Material): material is PaintableMaterial =>
   material instanceof THREE.MeshPhysicalMaterial ||
   material instanceof THREE.MeshPhongMaterial ||
   material instanceof THREE.MeshLambertMaterial;
-
-/** `material.userData.colorTexture`, written by our GLB exporter's material extras. */
-const colorTextureExtras = z.string();
-
-/** The color map the decoder recorded for a material, lowercased. */
-const colorTextureOf = (material: THREE.Material): string | null => {
-  const parsed = colorTextureExtras.safeParse(material.userData.colorTexture);
-  return parsed.success ? parsed.data.toLowerCase() : null;
-};
 
 /** Clone every material so tinting one model never bleeds into another. */
 const cloneSceneMaterials = (root: THREE.Object3D) => {
@@ -350,6 +346,7 @@ export const FoundryModelViewer = ({
   highlightTextures,
   hiddenTextures,
   silhouetteHero,
+  callouts,
   onPickPart,
   partLabel,
   playback,
@@ -396,6 +393,7 @@ export const FoundryModelViewer = ({
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
   const actionRef = useRef<THREE.AnimationAction | null>(null);
   const stageRef = useRef<Omit<ViewerEffectContext, "model"> | null>(null);
+  const getCamera = useCallback(() => stageRef.current?.camera ?? null, []);
   const activeEffectsRef = useRef<ViewerEffect[]>([]);
   useEffect(() => {
     playbackRef.current = playback;
@@ -977,6 +975,9 @@ export const FoundryModelViewer = ({
           background={background}
           onBackgroundChange={setBackground}
         />
+        <ViewerActivePasses look={look} />
+      </div>
+      <div className='absolute bottom-3 left-3'>
         <ViewerWipBadge />
       </div>
       <ViewerToolRail
@@ -996,6 +997,14 @@ export const FoundryModelViewer = ({
         }}
       />
       {!loading && !failed && children}
+      {callouts && !loading && (
+        <ViewerCallouts
+          callouts={callouts}
+          containerRef={containerRef}
+          getCamera={getCamera}
+          modelRef={modelRef}
+        />
+      )}
       {hoveredLabel && (
         <p
           className={cn(

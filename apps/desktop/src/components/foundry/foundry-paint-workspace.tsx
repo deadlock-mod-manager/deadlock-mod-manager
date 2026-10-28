@@ -39,6 +39,7 @@ import {
 } from "./foundry-context";
 import { FoundryPatternPicker } from "./foundry-pattern-picker";
 import { FoundryPreview } from "./foundry-preview";
+import { useSkinPalette } from "./foundry-skin-palette";
 
 const TARGET_ORDER: FoundryPaintTargetId[] = [
   "body",
@@ -633,6 +634,48 @@ const PaintRail = ({ brush }: { brush: PaintBrush }) => {
   );
 };
 
+const SwatchRow = ({
+  label,
+  colors = [],
+  current,
+  loading,
+  onPick,
+}: {
+  label: string;
+  colors?: readonly string[];
+  current?: string;
+  loading?: boolean;
+  onPick?: (color: string) => void;
+}) => (
+  <div className='space-y-1.5'>
+    <p className='text-[11px] text-muted-foreground'>{label}</p>
+    <div className='flex flex-wrap gap-1.5'>
+      {loading
+        ? ["a", "b", "c", "d", "e", "f"].map((slot) => (
+            <span
+              className='h-6 w-6 animate-pulse rounded-[5px] bg-muted'
+              key={slot}
+            />
+          ))
+        : colors.map((color) => (
+            <button
+              aria-label={color}
+              className={cn(
+                "h-6 w-6 rounded-[5px] border border-white/10 transition-transform hover:scale-110",
+                color === current &&
+                  "ring-2 ring-primary ring-offset-1 ring-offset-card",
+              )}
+              key={color}
+              onClick={() => onPick?.(color)}
+              style={{ backgroundColor: color }}
+              title={color}
+              type='button'
+            />
+          ))}
+    </div>
+  </div>
+);
+
 /** What the brush is pointed at, for the brush header and the apply button. */
 const useSelectionTitle = () => {
   const { t } = useTranslation();
@@ -683,7 +726,9 @@ const ScaleSlider = ({
 /** The right column: color, adjustments and pattern, then Paint. */
 const BrushPanel = ({ brush }: { brush: PaintBrush }) => {
   const { t } = useTranslation();
-  const { manifest, workspace, paintSelection, appliedPaint } = useFoundry();
+  const { manifest, workspace, paintSelection, appliedPaint, paintParts } =
+    useFoundry();
+  const palette = useSkinPalette(manifest?.filePath ?? null, paintParts);
   const [allPatterns, setAllPatterns] = useState(false);
   const title = useSelectionTitle();
   const { paint, update } = brush;
@@ -760,31 +805,28 @@ const BrushPanel = ({ brush }: { brush: PaintBrush }) => {
             onChange={(colorHex) => update({ colorHex })}
             value={paint.colorHex}
           />
-          <div className='space-y-1.5'>
-            <p className='text-[11px] text-muted-foreground'>
-              {t(
-                recent.length > 0
-                  ? "foundry.paint.recent"
+          {palette === null ? (
+            <SwatchRow label={t("foundry.paint.fromSkin")} loading />
+          ) : (
+            <SwatchRow
+              colors={palette.length > 0 ? palette : PRESET_COLORS}
+              current={paint.colorHex}
+              label={t(
+                palette.length > 0
+                  ? "foundry.paint.fromSkin"
                   : "foundry.paint.presets",
               )}
-            </p>
-            <div className='flex flex-wrap gap-1.5'>
-              {(recent.length > 0 ? recent : PRESET_COLORS).map((color) => (
-                <button
-                  aria-label={color}
-                  className={cn(
-                    "h-6 w-6 rounded-[5px] border border-white/10 transition-transform hover:scale-110",
-                    color === paint.colorHex &&
-                      "ring-2 ring-primary ring-offset-1 ring-offset-card",
-                  )}
-                  key={color}
-                  onClick={() => update({ colorHex: color })}
-                  style={{ backgroundColor: color }}
-                  type='button'
-                />
-              ))}
-            </div>
-          </div>
+              onPick={(colorHex) => update({ colorHex })}
+            />
+          )}
+          {recent.length > 0 && (
+            <SwatchRow
+              colors={recent}
+              current={paint.colorHex}
+              label={t("foundry.paint.recent")}
+              onPick={(colorHex) => update({ colorHex })}
+            />
+          )}
         </section>
 
         <section
