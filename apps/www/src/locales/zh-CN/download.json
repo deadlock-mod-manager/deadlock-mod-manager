@@ -109,6 +109,10 @@
       }
     }
   },
+  "unofficialSites": {
+    "title": "",
+    "description": ""
+  },
   "history": {
     "title": "",
     "description": "",

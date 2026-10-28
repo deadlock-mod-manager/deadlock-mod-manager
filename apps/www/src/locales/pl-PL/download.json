@@ -109,6 +109,10 @@
       }
     }
   },
+  "unofficialSites": {
+    "title": "",
+    "description": ""
+  },
   "history": {
     "title": "Inne wersje",
     "description": "Wróć do wcześniejszego wydania albo wypróbuj nadchodzące zmiany przed innymi.",

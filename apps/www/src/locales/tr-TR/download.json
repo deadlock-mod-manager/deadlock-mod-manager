@@ -109,6 +109,10 @@
       }
     }
   },
+  "unofficialSites": {
+    "title": "",
+    "description": ""
+  },
   "history": {
     "title": "Diğer sürümler",
     "description": "Önceki bir sürüme dönün veya gelecek değişiklikleri erkenden deneyin.",
