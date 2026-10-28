@@ -2298,8 +2298,16 @@
       "yours": "Yours",
       "original": "Original",
       "flipHint": "Press Tab to flip between yours and the original while it plays.",
-      "dropHint": "Drop an MP3 or WAV on a clip to replace it",
-      "wrongFile": "Drop an MP3 or WAV file."
+      "dropHint": "Drop an MP3, WAV, OGG or FLAC on a clip to replace it",
+      "wrongFile": "Drop an MP3, WAV, OGG or FLAC file.",
+      "inGame": "In game",
+      "gain": "Volume",
+      "gainValue": "{{value}} dB",
+      "normalize": "Match original loudness",
+      "normalizeHint": "Levels your clip to the game's mix",
+      "muteClip": "Mute this sound",
+      "muteClipHint": "Exports silence in its place",
+      "adjustFailed": "Couldn't change this sound."
     },
     "editor": {
       "replaceLabel": "Replace file",
@@ -2313,7 +2321,7 @@
       "reverted": "Reverted {{file}}",
       "revertFailed": "Couldn't revert that file.",
       "workspacePending": "Preparing the editable copy of this skin…",
-      "replaceSoundHint": "Pick an MP3 or WAV. It's rebuilt into this clip's container.",
+      "replaceSoundHint": "Pick an MP3, WAV, OGG or FLAC. It's rebuilt into this clip's container.",
       "primaryLabel": "Primary model",
       "primaryHint": "The preview opens this model and the export is named after it.",
       "setPrimary": "Mark as primary",
@@ -2488,7 +2496,7 @@
     "drop": {
       "choose": "or choose a file",
       "image": "Drop a PNG, JPG or WebP",
-      "sound": "Drop an MP3 or WAV",
+      "sound": "Drop an MP3, WAV, OGG or FLAC",
       "file": "Drop a .{{ext}} here"
     },
     "opening": {

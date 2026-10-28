@@ -358,6 +358,7 @@ pub fn run() {
       commands::foundry::foundry_pattern_swatch,
       commands::foundry::foundry_release_archives,
       commands::foundry::foundry_revert_workspace_file,
+      commands::foundry::foundry_adjust_sound,
       commands::foundry::foundry_decode_texture,
       commands::foundry::foundry_decode_cards,
       commands::foundry::foundry_decode_model,

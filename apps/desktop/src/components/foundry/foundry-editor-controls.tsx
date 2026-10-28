@@ -23,7 +23,7 @@ const IMAGE_EXTENSIONS = [
 ];
 
 /** Audio the backend can mint into a `.vsnd_c`, plus the compiled form itself. */
-const SOUND_EXTENSIONS = ["mp3", "wav", "vsnd_c"];
+const SOUND_EXTENSIONS = ["mp3", "wav", "ogg", "flac", "vsnd_c"];
 
 const isTexture = (entry: FoundryEntry): boolean => entry.ext === "vtex_c";
 const isSound = (entry: FoundryEntry): boolean => entry.ext === "vsnd_c";

@@ -7,11 +7,13 @@
 //! write into that tree, and Export packs the tree into a fresh VPK. The source
 //! VPK is only ever read.
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Component, Path, PathBuf};
 
 use base64::Engine;
+use serde::{Deserialize, Serialize};
 use vpk_parser::{VpkParseOptions, VpkParser};
+use vpkmanager::{SoundAdjust, SoundSource};
 
 use crate::errors::Error;
 
@@ -20,7 +22,7 @@ use super::game::foundry_workspace_root;
 use super::staging::staged_base_game_vpk;
 use super::types::{
   FoundryBuildResult, FoundryCategory, FoundryEntry, FoundryEntrySource, FoundryReplacementResult,
-  FoundryTexture, FoundryWorkspace,
+  FoundrySoundSettings, FoundryTexture, FoundryWorkspace,
 };
 
 /// Beside `files/`, the entries this workspace has edited. The tree itself
@@ -54,6 +56,139 @@ pub(crate) fn record_edits(
     .map_err(|e| Error::InvalidInput(format!("failed to write edit journal: {e}")))?;
   std::fs::write(workspace_root.join(EDIT_JOURNAL), bytes)?;
   Ok(())
+}
+
+/// Beside `files/`, each reworked sound's volume edits and replacement.
+const SOUND_SETTINGS: &str = "sound-settings.json";
+/// Replacement audio as the user gave it, so a later volume change rebuilds from
+/// the source instead of from audio that was already processed once.
+const SOUND_SOURCES: &str = "sound-sources";
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct StoredSound {
+  gain_db: f32,
+  normalize: bool,
+  mute: bool,
+  /// The replacement's file name under [`SOUND_SOURCES`], if any.
+  source: Option<String>,
+}
+
+impl StoredSound {
+  fn adjust(&self) -> SoundAdjust {
+    SoundAdjust {
+      gain_db: self.gain_db,
+      normalize: self.normalize,
+      mute: self.mute,
+    }
+  }
+}
+
+fn read_sound_settings(workspace_root: &Path) -> BTreeMap<String, StoredSound> {
+  std::fs::read(workspace_root.join(SOUND_SETTINGS))
+    .ok()
+    .and_then(|bytes| serde_json::from_slice(&bytes).ok())
+    .unwrap_or_default()
+}
+
+fn write_sound_settings(
+  workspace_root: &Path,
+  settings: &BTreeMap<String, StoredSound>,
+) -> Result<(), Error> {
+  let bytes = serde_json::to_vec(settings)
+    .map_err(|e| Error::InvalidInput(format!("failed to write sound settings: {e}")))?;
+  std::fs::write(workspace_root.join(SOUND_SETTINGS), bytes)?;
+  Ok(())
+}
+
+pub(crate) fn sound_settings_list(workspace_root: &Path) -> Vec<FoundrySoundSettings> {
+  read_sound_settings(workspace_root)
+    .into_iter()
+    .map(|(entry_path, stored)| FoundrySoundSettings {
+      entry_path,
+      gain_db: stored.gain_db,
+      normalize: stored.normalize,
+      mute: stored.mute,
+      replaced: stored.source.is_some(),
+    })
+    .collect()
+}
+
+/// Mint the clip `stored` describes: the replacement or the original, with its
+/// volume edits. A plain MP3/WAV/compiled swap keeps the existing lossless path.
+fn build_sound(
+  workspace_root: &Path,
+  donor: &[u8],
+  stored: &StoredSound,
+) -> Result<Vec<u8>, Error> {
+  let adjust = stored.adjust();
+  let source = stored
+    .source
+    .as_ref()
+    .map(|name| {
+      let path = workspace_root.join(SOUND_SOURCES).join(name);
+      let extension = entry_extension(name);
+      std::fs::read(path).map(|bytes| (bytes, extension))
+    })
+    .transpose()?;
+
+  let built = match &source {
+    Some((bytes, extension)) if adjust.is_identity() => {
+      match vpkmanager::classify_sound_input(extension) {
+        Some(input) => vpkmanager::swap_sound(donor, bytes, input),
+        None => vpkmanager::rebuild_sound(donor, SoundSource::File { bytes, extension }, adjust),
+      }
+    }
+    Some((_, extension)) if extension == "vsnd_c" => {
+      return Err(Error::InvalidInput(
+        "volume edits need the replacement as MP3, WAV, OGG or FLAC".to_string(),
+      ));
+    }
+    Some((bytes, extension)) => {
+      vpkmanager::rebuild_sound(donor, SoundSource::File { bytes, extension }, adjust)
+    }
+    None => vpkmanager::rebuild_sound(donor, SoundSource::Original, adjust),
+  };
+  built.map_err(|e| Error::InvalidInput(format!("failed to write sound: {e}")))
+}
+
+/// Change one sound's volume edits and rebuild it. With no edits left and no
+/// replacement, the clip goes back to the packed original.
+pub(crate) fn adjust_workspace_sound(
+  workspace_root: PathBuf,
+  entry_path: String,
+  template_vpk_path: Option<PathBuf>,
+  adjust: SoundAdjust,
+) -> Result<FoundrySoundSettings, Error> {
+  let mut settings = read_sound_settings(&workspace_root);
+  let mut stored = settings.remove(&entry_path).unwrap_or_default();
+  stored.gain_db = adjust.gain_db;
+  stored.normalize = adjust.normalize;
+  stored.mute = adjust.mute;
+
+  if adjust.is_identity() && stored.source.is_none() {
+    write_sound_settings(&workspace_root, &settings)?;
+    revert_workspace_file(workspace_root, entry_path.clone(), template_vpk_path)?;
+  } else {
+    let donor = packed_entry_bytes(template_vpk_path.as_deref(), &entry_path)?;
+    let bytes = build_sound(&workspace_root, &donor, &stored)?;
+    let target = workspace_files_dir(&workspace_root)?.join(safe_entry_relative(&entry_path)?);
+    if let Some(parent) = target.parent() {
+      std::fs::create_dir_all(parent)?;
+    }
+    std::fs::write(&target, bytes)?;
+    record_edits(&workspace_root, std::slice::from_ref(&entry_path), true)?;
+    settings.insert(entry_path.clone(), stored.clone());
+    write_sound_settings(&workspace_root, &settings)?;
+  }
+
+  Ok(FoundrySoundSettings {
+    entry_path,
+    gain_db: stored.gain_db,
+    normalize: stored.normalize,
+    mute: stored.mute,
+    replaced: stored.source.is_some(),
+  })
 }
 
 /// Sanitize a human name (hero / mod name) into a folder-safe workspace id
@@ -404,19 +539,31 @@ pub(crate) fn replace_workspace_file(
     std::fs::write(&target_path, replaced.bytes)?;
     Some(texture_preview_from_file(&target_path)?)
   } else if target_ext == "vsnd_c" {
-    let Some(input) = vpkmanager::classify_sound_input(&source_ext) else {
+    if vpkmanager::classify_sound_input(&source_ext).is_none()
+      && !vpkmanager::is_decodable_audio(&source_ext)
+    {
       return Err(Error::InvalidInput(format!(
-        "a sound replacement must be .mp3, .wav or .vsnd_c, not .{source_ext}"
+        "a sound replacement must be .mp3, .wav, .ogg, .flac or .vsnd_c, not .{source_ext}"
       )));
-    };
-    let replacement = std::fs::read(&source_file_path)?;
+    }
+    let mut settings = read_sound_settings(&workspace_root);
+    let mut stored = settings.remove(&entry_path).unwrap_or_default();
+    let sources_dir = workspace_root.join(SOUND_SOURCES);
+    std::fs::create_dir_all(&sources_dir)?;
+    if let Some(previous) = stored.source.take() {
+      let _ = std::fs::remove_file(sources_dir.join(previous));
+    }
+    let source_name = format!("{}.{source_ext}", sanitize_workspace_name(&entry_path));
+    std::fs::copy(&source_file_path, sources_dir.join(&source_name))?;
+    stored.source = Some(source_name);
+
     // The donor is always the packed original, never the workspace copy: a
     // second swap should rebuild from the game's container rather than from the
     // one the first swap already rewrote.
     let donor = packed_entry_bytes(template_vpk_path.as_deref(), &entry_path)?;
-    let swapped = vpkmanager::swap_sound(&donor, &replacement, input)
-      .map_err(|e| Error::InvalidInput(format!("failed to write replacement sound: {e}")))?;
-    std::fs::write(&target_path, swapped)?;
+    std::fs::write(&target_path, build_sound(&workspace_root, &donor, &stored)?)?;
+    settings.insert(entry_path.clone(), stored);
+    write_sound_settings(&workspace_root, &settings)?;
     None
   } else {
     if source_ext != target_ext {
@@ -456,6 +603,13 @@ pub(crate) fn revert_workspace_file(
     std::fs::remove_file(&target_path)?;
   }
   record_edits(&workspace_root, std::slice::from_ref(&entry_path), false)?;
+  let mut settings = read_sound_settings(&workspace_root);
+  if let Some(stored) = settings.remove(&entry_path) {
+    if let Some(source) = stored.source {
+      let _ = std::fs::remove_file(workspace_root.join(SOUND_SOURCES).join(source));
+    }
+    write_sound_settings(&workspace_root, &settings)?;
+  }
 
   let Some(vpk_path) = template_vpk_path.filter(|path| path.exists()) else {
     return Ok(());
@@ -574,9 +728,15 @@ pub(crate) fn prepare_workspace(
       std::fs::remove_dir_all(&files_dir)?;
     }
     // A fresh unpack holds no edits, so neither does its journal.
-    let journal = root.join(EDIT_JOURNAL);
-    if journal.exists() {
-      std::fs::remove_file(journal)?;
+    for state in [EDIT_JOURNAL, SOUND_SETTINGS] {
+      let path = root.join(state);
+      if path.exists() {
+        std::fs::remove_file(path)?;
+      }
+    }
+    let sources = root.join(SOUND_SOURCES);
+    if sources.exists() {
+      std::fs::remove_dir_all(sources)?;
     }
     std::fs::create_dir_all(&files_dir)?;
     let count = match &entries {
@@ -596,6 +756,7 @@ pub(crate) fn prepare_workspace(
 
   Ok(FoundryWorkspace {
     edited_paths: read_edit_journal(&root),
+    sound_settings: sound_settings_list(&root),
     root: root.to_string_lossy().to_string(),
     files_dir: files_dir.to_string_lossy().to_string(),
     vpk_copy,

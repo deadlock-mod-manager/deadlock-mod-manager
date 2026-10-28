@@ -1,5 +1,6 @@
 import { ScrollArea } from "@deadlock-mods/ui/components/scroll-area";
 import { Slider } from "@deadlock-mods/ui/components/slider";
+import { Switch } from "@deadlock-mods/ui/components/switch";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { cn } from "@deadlock-mods/ui/lib/utils";
 import {
@@ -27,7 +28,11 @@ import type {
   FoundrySoundGroupKind,
 } from "@/types/foundry";
 import { chunkEntries, chunkSizeStyle } from "./foundry-chunks";
-import { useFoundry } from "./foundry-context";
+import {
+  type FoundrySoundAdjust,
+  NO_SOUND_ADJUST,
+  useFoundry,
+} from "./foundry-context";
 import {
   extensionOf,
   FoundryDropZone,
@@ -35,7 +40,11 @@ import {
 } from "./foundry-drop-zone";
 
 /** Audio the backend can mint into a `.vsnd_c`, plus the compiled form itself. */
-const SOUND_EXTENSIONS = ["mp3", "wav", "vsnd_c"];
+const SOUND_EXTENSIONS = ["mp3", "wav", "ogg", "flac", "vsnd_c"];
+
+/** The in-game volume range, in dB. Cuts go further than boosts, which clip. */
+const GAIN_MIN_DB = -24;
+const GAIN_MAX_DB = 12;
 
 /** Groups this small decode every clip's waveform up front. */
 const EAGER_WAVEFORM_LIMIT = 40;
@@ -603,6 +612,121 @@ const GroupNav = ({
   );
 };
 
+const SwitchRow = ({
+  label,
+  hint,
+  checked,
+  disabled,
+  onCheckedChange,
+}: {
+  label: string;
+  hint: string;
+  checked: boolean;
+  disabled: boolean;
+  onCheckedChange: (checked: boolean) => void;
+}) => (
+  <label className='flex items-center gap-3'>
+    <span className='min-w-0 flex-1'>
+      <span className='block font-medium text-xs'>{label}</span>
+      <span className='block text-[11px] text-muted-foreground'>{hint}</span>
+    </span>
+    <Switch
+      checked={checked}
+      disabled={disabled}
+      onCheckedChange={onCheckedChange}
+    />
+  </label>
+);
+
+/**
+ * How loud the clip plays in the game. Each change rebuilds the clip from its
+ * source, so edits never stack on audio that was already processed.
+ */
+const InGameSection = ({
+  entryPath,
+  disabled,
+}: {
+  entryPath: string;
+  disabled: boolean;
+}) => {
+  const { t } = useTranslation();
+  const { soundSettings, adjustSound } = useFoundry();
+  const saved = soundSettings.get(entryPath) ?? NO_SOUND_ADJUST;
+  const [draftGain, setDraftGain] = useState<number | null>(null);
+  const gain = draftGain ?? saved.gainDb;
+
+  const apply = (change: Partial<FoundrySoundAdjust>) => {
+    adjustSound(entryPath, {
+      gainDb: saved.gainDb,
+      normalize: saved.normalize,
+      mute: saved.mute,
+      ...change,
+    })
+      .catch((err) => {
+        logger.withError(err).error("[Foundry] Sound adjust failed");
+        toast.error(t("foundry.sounds.adjustFailed"));
+      })
+      .finally(() => setDraftGain(null));
+  };
+
+  return (
+    <section className='space-y-3.5 border-b px-4 py-3.5'>
+      <h3 className='font-semibold text-[10px] text-muted-foreground uppercase tracking-[0.08em]'>
+        {t("foundry.sounds.inGame")}
+      </h3>
+      <div className='space-y-2'>
+        <div className='flex items-center text-xs'>
+          <span className='font-medium'>{t("foundry.sounds.gain")}</span>
+          <span className='ml-auto font-mono text-[11px] text-muted-foreground'>
+            {t("foundry.sounds.gainValue", {
+              value: gain > 0 ? `+${gain}` : gain,
+            })}
+          </span>
+        </div>
+        <div className='relative'>
+          <Slider
+            aria-label={t("foundry.sounds.gain")}
+            disabled={disabled || saved.mute}
+            max={GAIN_MAX_DB}
+            min={GAIN_MIN_DB}
+            onValueChange={([next]) => setDraftGain(next)}
+            onValueCommit={([next]) => {
+              if (next === saved.gainDb) {
+                setDraftGain(null);
+              } else {
+                apply({ gainDb: next });
+              }
+            }}
+            step={1}
+            value={[gain]}
+          />
+          <span
+            aria-hidden
+            className='pointer-events-none absolute top-1/2 h-2.5 w-0.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-foreground/50'
+            style={{
+              left: `${(-GAIN_MIN_DB / (GAIN_MAX_DB - GAIN_MIN_DB)) * 100}%`,
+            }}
+          />
+        </div>
+      </div>
+      <SwitchRow
+        checked={saved.normalize}
+        disabled={disabled || saved.mute}
+        hint={t("foundry.sounds.normalizeHint")}
+        label={t("foundry.sounds.normalize")}
+        onCheckedChange={(normalize) => apply({ normalize })}
+      />
+      <SwitchRow
+        checked={saved.mute}
+        disabled={disabled}
+        hint={t("foundry.sounds.muteClipHint")}
+        label={t("foundry.sounds.muteClip")}
+        onCheckedChange={(mute) => apply({ mute })}
+      />
+    </section>
+  );
+};
+
 const ClipInspector = ({
   entry,
   group,
@@ -776,6 +900,7 @@ const ClipInspector = ({
             {t("foundry.editor.revertToOriginal")}
           </button>
         </section>
+        <InGameSection disabled={disabled} entryPath={entry.path} />
       </ScrollArea>
       <div className='flex shrink-0 items-center gap-2.5 border-t px-4 py-3'>
         <button
@@ -824,6 +949,7 @@ export const FoundrySoundsWorkspace = ({
     selectedEntryPath,
     setSelectedEntryPath,
     editedPaths,
+    editRevision: revision,
     workspace,
     busy,
     replaceEntry,
@@ -831,8 +957,6 @@ export const FoundrySoundsWorkspace = ({
   const player = useSoundPlayer();
   const groups = useMemo(() => manifest?.soundGroups ?? [], [manifest]);
   const [activeId, setActiveId] = useState<string | null>(null);
-  // Edits re-mint a clip, so its cached waveform has to be decoded again.
-  const revision = editedPaths.size;
 
   const groupOfPath = useMemo(() => {
     const map = new Map<string, FoundrySoundGroup>();

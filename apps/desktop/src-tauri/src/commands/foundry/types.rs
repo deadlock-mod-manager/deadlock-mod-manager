@@ -192,6 +192,21 @@ pub struct FoundryWorkspace {
   pub created: bool,
   /// Entries edited in this workspace, including in earlier sessions.
   pub edited_paths: Vec<String>,
+  /// Every sound with volume edits or a replacement.
+  pub sound_settings: Vec<FoundrySoundSettings>,
+}
+
+/// How one sound is reworked in the workspace: its volume edits, and whether
+/// a replacement stands in for the original audio.
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct FoundrySoundSettings {
+  pub entry_path: String,
+  pub gain_db: f32,
+  pub normalize: bool,
+  pub mute: bool,
+  pub replaced: bool,
 }
 
 /// Result of bundling the editable Foundry `files/` tree into a VPK.

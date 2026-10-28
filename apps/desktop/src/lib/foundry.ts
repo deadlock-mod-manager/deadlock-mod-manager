@@ -13,6 +13,7 @@ import type {
   FoundryPaintTargetInfo,
   FoundryReplacementResult,
   FoundrySoundPreview,
+  FoundrySoundSettings,
   FoundryTexture,
   FoundryWorkspace,
 } from "@/types/foundry";
@@ -112,6 +113,21 @@ export const revertFoundryFile = async (
     workspaceRoot,
     entryPath,
     templateVpkPath,
+  });
+};
+
+/** Set one sound's in-game volume edits; the backend rebuilds the clip. */
+export const adjustFoundrySound = async (
+  workspaceRoot: string,
+  entryPath: string,
+  templateVpkPath: string | null,
+  adjust: { gainDb: number; normalize: boolean; mute: boolean },
+): Promise<FoundrySoundSettings> => {
+  return await invoke<FoundrySoundSettings>("foundry_adjust_sound", {
+    workspaceRoot,
+    entryPath,
+    templateVpkPath,
+    ...adjust,
   });
 };
 

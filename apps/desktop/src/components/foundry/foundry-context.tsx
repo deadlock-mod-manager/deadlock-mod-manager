@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 import {
+  adjustFoundrySound,
   analyzeDefaultFoundryHero,
   analyzeFoundryVpk,
   decodeFoundryCards,
@@ -43,6 +44,7 @@ import type {
   FoundryPaintTargetId,
   FoundryPaintResult,
   FoundryPaintTargetInfo,
+  FoundrySoundSettings,
   FoundryTab,
   FoundryWorkspace,
 } from "@/types/foundry";
@@ -96,6 +98,20 @@ const MODEL_TARGETS: FoundryPaintTargetId[] = [
   "weapon",
   "bodyAndWeapon",
 ];
+
+export type FoundrySoundAdjust = Pick<
+  FoundrySoundSettings,
+  "gainDb" | "normalize" | "mute"
+>;
+
+export const NO_SOUND_ADJUST: FoundrySoundAdjust = {
+  gainDb: 0,
+  normalize: false,
+  mute: false,
+};
+
+const isNoSoundAdjust = (adjust: FoundrySoundAdjust) =>
+  adjust.gainDb === 0 && !adjust.normalize && !adjust.mute;
 
 const DEFAULT_SELECTION: FoundryPaintSelection = {
   kind: "parts",
@@ -185,6 +201,10 @@ interface FoundryContextValue {
   selectedCardKey: string | null;
   /** Entry paths the user has edited in this session. */
   editedPaths: ReadonlySet<string>;
+  /** Bumped by every edit, so derived previews know to re-read. */
+  editRevision: number;
+  /** Volume edits and replacements, keyed by sound entry path. */
+  soundSettings: ReadonlyMap<string, FoundrySoundSettings>;
   /** The model the preview defaults to and an export is named after. */
   primaryModelPath: string | null;
   setPrimaryModelPath: (path: string) => void;
@@ -232,6 +252,8 @@ interface FoundryContextValue {
     paint: FoundryPaint,
   ) => Promise<FoundryPaintResult>;
   revertEntry: (entryPath: string) => Promise<void>;
+  /** Set a sound's in-game volume, normalize and mute. */
+  adjustSound: (entryPath: string, adjust: FoundrySoundAdjust) => Promise<void>;
   /** A playable data URL for a clip; `original` skips the workspace's edits. */
   playSound: (entryPath: string, original?: boolean) => Promise<string>;
   exportVpk: (request: FoundryExportRequest) => Promise<FoundryExportResult>;
@@ -276,6 +298,9 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
   >("manifest");
   const [selectedCardKey, setSelectedCardKey] = useState<string | null>(null);
   const [editedPaths, setEditedPaths] = useState<Set<string>>(new Set());
+  const [soundSettings, setSoundSettings] = useState<
+    Map<string, FoundrySoundSettings>
+  >(new Map());
   const [primaryModelPath, setPrimaryModelPath] = useState<string | null>(null);
   const [previewTint, setPreviewTint] = useState<FoundryPreviewTint | null>(
     null,
@@ -316,6 +341,7 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
     setSelectedTextureSource("manifest");
     setSelectedCardKey(null);
     setEditedPaths(new Set());
+    setSoundSettings(new Map());
     setPrimaryModelPath(null);
     setPreviewTint(null);
     setPaintTargets([]);
@@ -571,6 +597,11 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       // A reused workspace keeps edits from earlier sessions; its journal says
       // which, so export and undo see them too.
       setEditedPaths(new Set(prepared.editedPaths));
+      setSoundSettings(
+        new Map(
+          prepared.soundSettings.map((sound) => [sound.entryPath, sound]),
+        ),
+      );
       setWorkspace(prepared);
     } catch (err) {
       logger.withError(err).error("[Foundry] Failed to prepare workspace");
@@ -588,6 +619,7 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       setCardPreviews(IDLE_CARDS);
       setWorkspace(null);
       setEditedPaths(new Set());
+      setSoundSettings(new Map());
       setStatus("analyzing");
       setError(null);
       try {
@@ -719,6 +751,17 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
           sourceFilePath,
           filePath,
         );
+        if (entryPath.endsWith(".vsnd_c")) {
+          setSoundSettings((current) =>
+            new Map(current).set(entryPath, {
+              ...(current.get(entryPath) ?? {
+                entryPath,
+                ...NO_SOUND_ADJUST,
+              }),
+              replaced: true,
+            }),
+          );
+        }
         afterEdit(entryPath, true);
       } finally {
         setBusy(false);
@@ -807,7 +850,41 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       setBusy(true);
       try {
         await revertFoundryFile(active.root, entryPath, filePath);
+        setSoundSettings((current) => {
+          const next = new Map(current);
+          next.delete(entryPath);
+          return next;
+        });
         afterEdit(entryPath, false);
+      } finally {
+        setBusy(false);
+      }
+    },
+    [afterEdit, filePath, requireWorkspace],
+  );
+
+  const adjustSound = useCallback(
+    async (entryPath: string, adjust: FoundrySoundAdjust) => {
+      const active = requireWorkspace();
+      setBusy(true);
+      try {
+        const settings = await adjustFoundrySound(
+          active.root,
+          entryPath,
+          filePath,
+          adjust,
+        );
+        const kept = settings.replaced || !isNoSoundAdjust(settings);
+        setSoundSettings((current) => {
+          const next = new Map(current);
+          if (kept) {
+            next.set(entryPath, settings);
+          } else {
+            next.delete(entryPath);
+          }
+          return next;
+        });
+        afterEdit(entryPath, kept);
       } finally {
         setBusy(false);
       }
@@ -881,6 +958,8 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       cardPreviews,
       selectedCardKey,
       editedPaths,
+      editRevision,
+      soundSettings,
       primaryModelPath,
       setPrimaryModelPath,
       // Scoped to the paint tab at the source. The tab panels are all mounted
@@ -910,6 +989,7 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       paintTarget,
       paintSelectedParts,
       revertEntry,
+      adjustSound,
       playSound,
       exportVpk,
       reset,
@@ -927,6 +1007,8 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       cardPreviews,
       selectedCardKey,
       editedPaths,
+      editRevision,
+      soundSettings,
       primaryModelPath,
       previewTint,
       paintTargets,
@@ -947,6 +1029,7 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       paintTarget,
       paintSelectedParts,
       revertEntry,
+      adjustSound,
       playSound,
       exportVpk,
       reset,

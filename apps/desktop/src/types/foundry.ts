@@ -20,6 +20,7 @@ export type { FoundryReplacementResult } from "./generated/FoundryReplacementRes
 export type { FoundrySoundGroup } from "./generated/FoundrySoundGroup";
 export type { FoundrySoundGroupKind } from "./generated/FoundrySoundGroupKind";
 export type { FoundrySoundPreview } from "./generated/FoundrySoundPreview";
+export type { FoundrySoundSettings } from "./generated/FoundrySoundSettings";
 export type { FoundryTexture } from "./generated/FoundryTexture";
 export type { FoundryWorkspace } from "./generated/FoundryWorkspace";
 export type { PaintTarget as FoundryPaintTargetId } from "./generated/PaintTarget";

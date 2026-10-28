@@ -12,6 +12,16 @@ path = "src/lib.rs"
 
 [dependencies]
 thiserror = "2.0"
+# Decodes sound replacements the game can't take as-is (OGG, FLAC) and the
+# MP3s volume and mute edits have to rework, into PCM for a PCM16 container.
+symphonia = { version = "0.5", default-features = false, features = [
+  "flac",
+  "mp3",
+  "ogg",
+  "pcm",
+  "vorbis",
+  "wav",
+] }
 crc = "3.0"
 # Vendored Source 2 codecs (see src/source2). These are their dependencies.
 bitflags = "2"

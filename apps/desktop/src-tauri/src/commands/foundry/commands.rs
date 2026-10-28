@@ -10,6 +10,7 @@ use std::path::PathBuf;
 use base64::Engine;
 use image::codecs::png::PngEncoder;
 use image::{ExtendedColorType, ImageEncoder};
+use vpkmanager::source2::sound::VsndAudio;
 
 use crate::errors::Error;
 
@@ -21,11 +22,11 @@ use super::sounds::find_mp3_payload;
 use super::types::{
   ExportDestinationKind, FoundryBuildResult, FoundryCardPreview, FoundryManifest, FoundryPaintPart,
   FoundryPaintResult, FoundryPaintTargetInfo, FoundryReplacementResult, FoundrySoundPreview,
-  FoundryTexture, FoundryWorkspace, PaintTarget,
+  FoundrySoundSettings, FoundryTexture, FoundryWorkspace, PaintTarget,
 };
 use super::workspace::{
-  build_workspace_vpk, entry_bytes_from_sources, hue_of, parse_hex_color, prepare_workspace,
-  record_edits, replace_workspace_file, revert_workspace_file,
+  adjust_workspace_sound, build_workspace_vpk, entry_bytes_from_sources, hue_of, parse_hex_color,
+  prepare_workspace, record_edits, replace_workspace_file, revert_workspace_file,
 };
 
 /// Parse a skin VPK, detect its hero, and return the entries grouped by editing
@@ -334,6 +335,33 @@ pub async fn foundry_revert_workspace_file(
   .map_err(|e| Error::InvalidInput(format!("workspace revert task failed: {e}")))?
 }
 
+/// Set one sound's volume, normalize and mute, rebuilding it from its
+/// replacement or the original clip.
+#[tauri::command]
+pub async fn foundry_adjust_sound(
+  workspace_root: String,
+  entry_path: String,
+  template_vpk_path: Option<String>,
+  gain_db: f32,
+  normalize: bool,
+  mute: bool,
+) -> Result<FoundrySoundSettings, Error> {
+  tauri::async_runtime::spawn_blocking(move || {
+    adjust_workspace_sound(
+      PathBuf::from(workspace_root),
+      entry_path,
+      template_vpk_path.map(PathBuf::from),
+      vpkmanager::SoundAdjust {
+        gain_db,
+        normalize,
+        mute,
+      },
+    )
+  })
+  .await
+  .map_err(|e| Error::InvalidInput(format!("sound adjust task failed: {e}")))?
+}
+
 /// Decode a `.vtex_c` entry (card or texture) to a PNG data URL, preferring the
 /// workspace's edited copy when one exists.
 #[tauri::command]
@@ -398,15 +426,24 @@ pub async fn foundry_decode_sound(
       &vpk_path,
       &entry_path,
     )?;
-    let Some(mp3) = find_mp3_payload(&bytes) else {
-      return Err(Error::InvalidInput(format!(
-        "sound preview is not available for {entry_path}"
-      )));
+    // Clips the Foundry minted are PCM16, which a byte scan for MP3 frames can
+    // misread, so the container is read properly first.
+    let (audio, mime_type) = match vpkmanager::source2::sound::extract_vsnd_audio(&bytes) {
+      Ok(VsndAudio::WavPcm16 { wav, .. }) => (wav, "audio/wav"),
+      Ok(VsndAudio::Mp3(mp3)) => (mp3, "audio/mpeg"),
+      Err(_) => match find_mp3_payload(&bytes) {
+        Some(mp3) => (mp3.to_vec(), "audio/mpeg"),
+        None => {
+          return Err(Error::InvalidInput(format!(
+            "sound preview is not available for {entry_path}"
+          )));
+        }
+      },
     };
-    let b64 = base64::engine::general_purpose::STANDARD.encode(mp3);
+    let b64 = base64::engine::general_purpose::STANDARD.encode(audio);
     Ok(FoundrySoundPreview {
-      data_url: format!("data:audio/mpeg;base64,{b64}"),
-      mime_type: "audio/mpeg".to_string(),
+      data_url: format!("data:{mime_type};base64,{b64}"),
+      mime_type: mime_type.to_string(),
     })
   })
   .await
