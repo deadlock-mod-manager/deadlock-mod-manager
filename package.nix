@@ -36,7 +36,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
   cargoRoot = "apps/desktop";
   buildAndTestSubdir = finalAttrs.cargoRoot;
 
-  cargoHash = "sha256-gkG/wUxWDpptcNqJ1KBL1QsiRb7Hl+3RF65bSYYoIio=";
+  cargoHash = "sha256-seUcVlXwwbO+4MVDHqV+hK9hi3odujK/M1IP8hFa2IU=";
 
   nativeBuildInputs = [
     rustPlatform.cargoSetupHook cargo-tauri.hook nodejs
