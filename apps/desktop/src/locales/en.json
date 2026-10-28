@@ -2489,6 +2489,45 @@
       "findingSections": "Finding paintable sections",
       "assembling": "Assembling {{hero}}",
       "workspace": "Making an editable copy"
+    },
+    "exportSheet": {
+      "title": "Export {{hero}}",
+      "changeCount": "{{count}} changes go into one VPK",
+      "changeCount_one": "1 change goes into the VPK",
+      "noChanges": "Nothing changed yet, so the VPK matches the original.",
+      "changed": "What's changed",
+      "where": "Where it goes",
+      "groups": {
+        "paint": "Paint",
+        "cards": "Cards",
+        "sounds": "Sounds",
+        "files": "Files"
+      },
+      "repainted": "Repainted",
+      "replaced": "Replaced",
+      "edited": "Edited",
+      "undo": "Undo {{name}}",
+      "build": {
+        "newMod": "Build VPK and add to library",
+        "file": "Build VPK and save",
+        "replaceSource": "Build VPK and replace the mod"
+      },
+      "untouched": "Your original files stay untouched.",
+      "doneNewMod": "{{name}} is in your library",
+      "doneNewModHint": "Install it from My Mods like any other mod. Your Foundry workspace is still open if you want another pass.",
+      "doneFile": "Your VPK is saved",
+      "facts": {
+        "paint": "{{count}} repaints",
+        "paint_one": "1 repaint",
+        "cards": "{{count}} cards",
+        "cards_one": "1 card",
+        "sounds": "{{count}} sounds",
+        "sounds_one": "1 sound",
+        "files": "{{count}} files",
+        "files_one": "1 file"
+      },
+      "openMyMods": "Open in My Mods",
+      "keepEditing": "Keep editing"
     }
   },
   "servers": {

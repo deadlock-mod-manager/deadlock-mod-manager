@@ -683,6 +683,13 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       if (entryPath.endsWith(".vtex_c")) {
         setSelectedTextureSource("manifest");
       }
+      // A reverted section no longer wears its paint.
+      if (!edited) {
+        setAppliedPaint((current) => {
+          const { [partPaintKey(entryPath)]: _reverted, ...rest } = current;
+          return rest;
+        });
+      }
       setEditRevision((revision) => revision + 1);
     },
     [invalidateEntry],

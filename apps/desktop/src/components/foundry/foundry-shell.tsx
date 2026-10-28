@@ -17,7 +17,7 @@ import type { FoundryTab } from "@/types/foundry";
 import { FoundryAssetsRail } from "./foundry-assets-rail";
 import { FoundryCardsWorkspace } from "./foundry-cards-workspace";
 import { useFoundry } from "./foundry-context";
-import { FoundryExportDialog } from "./foundry-export-dialog";
+import { FoundryExportSheet } from "./foundry-export-sheet";
 import { FoundryImportDialog } from "./foundry-import-dialog";
 import { FoundryInspector } from "./foundry-inspector";
 import { FoundryPaintWorkspace } from "./foundry-paint-workspace";
@@ -189,7 +189,7 @@ export const FoundryShell = () => {
         </div>
       </div>
 
-      <div className='flex min-h-0 flex-1 overflow-hidden rounded-[10px] border bg-background'>
+      <div className='relative flex min-h-0 flex-1 overflow-hidden rounded-[10px] border bg-background'>
         {activeTab === "assets" && (
           <>
             <div className={cn(SIDE_PANEL_CLASS, "w-[248px] border-r")}>
@@ -212,10 +212,12 @@ export const FoundryShell = () => {
         {activeTab === "sounds" && (
           <FoundrySoundsWorkspace sidePanelClassName={SIDE_PANEL_CLASS} />
         )}
+        {exportOpen && (
+          <FoundryExportSheet onClose={() => setExportOpen(false)} />
+        )}
       </div>
 
       <FoundryImportDialog onOpenChange={setImportOpen} open={importOpen} />
-      <FoundryExportDialog onOpenChange={setExportOpen} open={exportOpen} />
     </div>
   );
 };
