@@ -134,8 +134,6 @@ export const LiveScoreboard = ({
   const live = useLiveMatchDetection(true);
   const bridge = useLiveBridge();
   const gameRunning = useGameRunning();
-  // console.log outlives the game, so once Deadlock is closed whatever it says
-  // about a match, a queue or the board is from a finished session.
   const raw = live.data;
   // console.log outlives the game, so with Deadlock closed nothing in it is
   // current. Only a lobby line marks a real match; the hideout runs the same

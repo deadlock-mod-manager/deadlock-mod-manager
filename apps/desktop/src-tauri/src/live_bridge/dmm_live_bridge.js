@@ -258,8 +258,7 @@
     );
   };
 
-  var tick = function () {
-    if (!root || (root.IsValid && !root.IsValid())) return;
+  var report = function () {
     elapsed += TICK_SECONDS;
 
     var panels = [];
@@ -288,7 +287,15 @@
 
     // Two copies run, one per team panel; one roster is enough.
     if (side() === "friendly") readRoster();
+  };
 
+  // A panel can disappear between two lookups. That costs one report, never
+  // the rest of the match, so the next tick is scheduled whatever happens.
+  var tick = function () {
+    if (!root || (root.IsValid && !root.IsValid())) return;
+    try {
+      report();
+    } catch (error) {}
     $.Schedule(TICK_SECONDS, tick);
   };
 
