@@ -1,6 +1,5 @@
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Button } from "@deadlock-mods/ui/components/button";
-import { ScrollArea } from "@deadlock-mods/ui/components/scroll-area";
 import { cn } from "@deadlock-mods/ui/lib/utils";
 import {
   CubeIcon,
@@ -23,7 +22,7 @@ import { FoundryImportDialog } from "./foundry-import-dialog";
 import { FoundryInspector } from "./foundry-inspector";
 import { FoundryPaintWorkspace } from "./foundry-paint-workspace";
 import { FoundryPreview } from "./foundry-preview";
-import { FoundrySoundsPanel } from "./foundry-sounds-panel";
+import { FoundrySoundsWorkspace } from "./foundry-sounds-workspace";
 
 const TABS: FoundryTab[] = ["assets", "paint", "cards", "sounds"];
 
@@ -211,16 +210,7 @@ export const FoundryShell = () => {
           <FoundryCardsWorkspace sidePanelClassName={SIDE_PANEL_CLASS} />
         )}
         {activeTab === "sounds" && (
-          <>
-            <ScrollArea className='min-w-0 flex-1'>
-              <div className='p-2'>
-                <FoundrySoundsPanel />
-              </div>
-            </ScrollArea>
-            <div className={cn(SIDE_PANEL_CLASS, "w-[292px] border-l")}>
-              <FoundryInspector />
-            </div>
-          </>
+          <FoundrySoundsWorkspace sidePanelClassName={SIDE_PANEL_CLASS} />
         )}
       </div>
 

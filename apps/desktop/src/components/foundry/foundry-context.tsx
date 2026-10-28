@@ -235,7 +235,8 @@ interface FoundryContextValue {
     paint: FoundryPaint,
   ) => Promise<FoundryPaintResult>;
   revertEntry: (entryPath: string) => Promise<void>;
-  playSound: (entryPath: string) => Promise<string>;
+  /** A playable data URL for a clip; `original` skips the workspace's edits. */
+  playSound: (entryPath: string, original?: boolean) => Promise<string>;
   exportVpk: (request: FoundryExportRequest) => Promise<FoundryExportResult>;
   reset: () => void;
 }
@@ -816,17 +817,17 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const playSound = useCallback(
-    async (entryPath: string) => {
+    async (entryPath: string, original = false) => {
       if (!filePath) {
         throw new Error("No skin is loaded.");
       }
-      const cacheKey = `${filePath}\n${entryPath}`;
+      const cacheKey = `${filePath}\n${entryPath}${original ? "\noriginal" : ""}`;
       const cached = soundCacheRef.current.get(cacheKey);
       if (cached) return cached;
       const preview = await decodeFoundrySound(
         filePath,
         entryPath,
-        workspaceRoot,
+        original ? null : workspaceRoot,
       );
       soundCacheRef.current.set(cacheKey, preview.dataUrl);
       return preview.dataUrl;
