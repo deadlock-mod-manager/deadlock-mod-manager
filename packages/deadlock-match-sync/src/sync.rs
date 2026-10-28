@@ -81,15 +81,15 @@ fn newest_first_fresh(ids: Vec<u64>, processed: &HashSet<u64>) -> Vec<u64> {
   ids
 }
 
-// A best-effort step's value, or `None` once the reason it's missing is logged. Only a
-// game launch is passed on, since that must stop the pass.
+// A best-effort step's value, or `None` once the reason it's missing is logged. Only an
+// error that ends the pass is passed on.
 fn best_effort<T>(
   result: Result<T, MatchSyncError>,
   what: &str,
 ) -> Result<Option<T>, MatchSyncError> {
   match result {
     Ok(value) => Ok(Some(value)),
-    Err(MatchSyncError::GameRunning) => Err(MatchSyncError::GameRunning),
+    Err(e) if e.ends_pass() => Err(e),
     Err(e) => {
       log::warn!("match-sync: {what} unavailable: {e}");
       Ok(None)
@@ -191,7 +191,7 @@ where
 
     let salts = match fetched.await {
       Ok(salts) => salts,
-      Err(MatchSyncError::GameRunning) => return Err(MatchSyncError::GameRunning),
+      Err(e) if e.ends_pass() => return Err(e),
       // Steam itself is rate-limiting this account: treat the 24h bucket as fully
       // spent so we stop hammering it and only try again once it naturally frees up.
       Err(MatchSyncError::GcRateLimited) => {
@@ -272,7 +272,7 @@ where
   ) -> Result<Option<MatchHistoryPage>, MatchSyncError> {
     let e = match self.gc_history_page(ctx, ctx.account_id(), cursor).await {
       Ok(page) => return Ok(Some(page)),
-      Err(MatchSyncError::GameRunning) => return Err(MatchSyncError::GameRunning),
+      Err(e) if e.ends_pass() => return Err(e),
       Err(e) => e.refusal_as_outage(),
     };
     log::warn!("match-sync: GC match history unavailable: {e}");

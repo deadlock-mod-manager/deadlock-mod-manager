@@ -6,18 +6,18 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use super::{LoopControl, RunState, SyncEngine, best_effort, newest_first_fresh};
-use crate::match_sync::api_client::{BackfillSource, SaltsSink};
-use crate::match_sync::auth::SteamAuthProvider;
-use crate::match_sync::error::{GcRefusal, MatchSyncError};
-use crate::match_sync::friends;
-use crate::match_sync::game_check::GameRunningCheck;
-use crate::match_sync::gc_client::GcMatchClient;
-use crate::match_sync::model::{
+use crate::api_client::{BackfillSource, SaltsSink};
+use crate::auth::SteamAuthProvider;
+use crate::error::{GcRefusal, MatchSyncError};
+use crate::friends;
+use crate::game_check::GameRunningCheck;
+use crate::gc_client::GcMatchClient;
+use crate::model::{
   ActiveFriend, AuthContext, FRIEND_COOLDOWN_SECS, MAX_FRIEND_HISTORIES_PER_PASS,
   PRIVATE_FRIEND_COOLDOWN_SECS, QuotaKind, SaltsCheck, UNFINISHED_FRIEND_COOLDOWN_SECS,
 };
-use crate::match_sync::quota::QuotaWindow;
-use crate::match_sync::sync::SyncPersistence;
+use crate::quota::QuotaWindow;
+use crate::sync::SyncPersistence;
 
 // One friend's history lookup: the matches it turned up, and how long the friend is left
 // alone once those are dealt with.
@@ -93,7 +93,7 @@ where
             log::warn!("match-sync: a friend's match history is unavailable: {e}");
             (FRIEND_COOLDOWN_SECS, Vec::new())
           }
-          Err(MatchSyncError::GameRunning) => return Err(MatchSyncError::GameRunning),
+          Err(e) if e.ends_pass() => return Err(e),
           Err(MatchSyncError::GcRateLimited) => {
             log::warn!("match-sync: Steam GC rate-limited friend history lookups");
             self.exhaust_history_quota(&mut history_quota);

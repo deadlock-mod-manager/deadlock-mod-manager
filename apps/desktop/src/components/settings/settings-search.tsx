@@ -3,6 +3,7 @@ import { platform } from "@tauri-apps/plugin-os";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { HintAnchor } from "@/components/feature-hints/hint-anchor";
+import { isMatchSyncBuilt } from "@/lib/runtime-bootstrap";
 import {
   SETTINGS_SEARCH_INDEX,
   type SettingsSearchResult,
@@ -31,11 +32,13 @@ export const SettingsSearch = ({ children, onSelect }: SettingsSearchProps) => {
     usePersistedStore.getState().countFeatureHintEvent("settingsVisits");
   }, []);
 
-  const results = useMemo(
-    () =>
-      searchSettings(query, (key) => t(key), SETTINGS_SEARCH_INDEX, platform()),
-    [query, t],
-  );
+  const results = useMemo(() => {
+    // Builds without match sync have no match sync settings to find.
+    const sections = SETTINGS_SEARCH_INDEX.filter(
+      (section) => section.id !== "match-sync" || isMatchSyncBuilt(),
+    );
+    return searchSettings(query, (key) => t(key), sections, platform());
+  }, [query, t]);
 
   useEffect(() => {
     const focusOnFind = (event: KeyboardEvent) => {

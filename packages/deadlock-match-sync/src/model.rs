@@ -56,7 +56,7 @@ pub struct AuthContext {
 impl AuthContext {
   // deadlock-api expects the 32-bit Steam3 account id, not the SteamID64.
   pub fn account_id(&self) -> u32 {
-    crate::steam_user::account_id_of(self.steam_id64)
+    crate::steam_id::account_id_of(self.steam_id64)
   }
 }
 

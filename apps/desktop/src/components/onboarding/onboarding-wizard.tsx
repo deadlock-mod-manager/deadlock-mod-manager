@@ -18,6 +18,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { APP_NAME } from "@/lib/constants";
+import { isMatchSyncBuilt } from "@/lib/runtime-bootstrap";
 import { OnboardingStepper } from "./onboarding-stepper";
 import { OnboardingStepAddons } from "./step-addons";
 import { OnboardingStepApi } from "./step-api";
@@ -38,6 +39,9 @@ type StepConfig = {
   component: React.ComponentType<StepComponentProps>;
   requiresCompletion: boolean;
   requiresErrorHandler?: boolean;
+  // Left out of builds without match sync. Only the last step may set it, so the
+  // remaining steps stay numbered 1..n.
+  requiresMatchSync?: boolean;
 };
 
 const STEP_CONFIGS: StepConfig[] = [
@@ -80,10 +84,9 @@ const STEP_CONFIGS: StepConfig[] = [
     component:
       OnboardingStepMatchSync as React.ComponentType<StepComponentProps>,
     requiresCompletion: false,
+    requiresMatchSync: true,
   },
 ];
-
-const TOTAL_STEPS = STEP_CONFIGS.length;
 
 export const OnboardingWizard = () => {
   const { t } = useTranslation();
@@ -93,11 +96,19 @@ export const OnboardingWizard = () => {
 
   const { showOnboarding, completeOnboarding, skipOnboarding } =
     useOnboarding();
+  const stepConfigs = useMemo(
+    () =>
+      STEP_CONFIGS.filter(
+        (config) => !config.requiresMatchSync || isMatchSyncBuilt(),
+      ),
+    [],
+  );
+  const totalSteps = stepConfigs.length;
   const showOnboardingRef = useRef(showOnboarding);
   const isHandlingCloseRef = useRef(false);
   const currentStepConfig = useMemo(
-    () => STEP_CONFIGS.find((config) => config.step === currentStep),
-    [currentStep],
+    () => stepConfigs.find((config) => config.step === currentStep),
+    [stepConfigs, currentStep],
   );
 
   const isCurrentStepComplete = useMemo(
@@ -110,7 +121,10 @@ export const OnboardingWizard = () => {
     return !currentStepConfig.requiresCompletion || isCurrentStepComplete;
   }, [currentStepConfig, isCurrentStepComplete]);
 
-  const isLastStep = useMemo(() => currentStep === TOTAL_STEPS, [currentStep]);
+  const isLastStep = useMemo(
+    () => currentStep === totalSteps,
+    [currentStep, totalSteps],
+  );
 
   const handleNext = useCallback(() => {
     if (isLastStep) {
@@ -225,7 +239,7 @@ export const OnboardingWizard = () => {
               <div className='mt-5'>
                 <OnboardingStepper
                   currentStep={currentStep}
-                  totalSteps={TOTAL_STEPS}
+                  totalSteps={totalSteps}
                   completedSteps={completedSteps}
                 />
               </div>

@@ -117,8 +117,13 @@ pub trait SaltsSink: Send + Sync {
   ) -> impl Future<Output = Result<(), MatchSyncError>> + Send;
 }
 
+// Builds an HTTP client with the given request timeout. Called for every request, so the
+// app's proxy settings apply as soon as they change.
+pub type HttpClientFactory = Arc<dyn Fn(Duration) -> Result<reqwest::Client, String> + Send + Sync>;
+
 pub struct ApiClient {
   base_url: String,
+  http: HttpClientFactory,
   // The claim cookie of the last global to-fetch list, held here rather than in a
   // cookie store since every request builds a fresh client.
   claim: Mutex<Option<String>>,
@@ -126,9 +131,10 @@ pub struct ApiClient {
 }
 
 impl ApiClient {
-  pub fn new(histories: Arc<StoredHistories>) -> Self {
+  pub fn new(http: HttpClientFactory, histories: Arc<StoredHistories>) -> Self {
     Self {
       base_url: DEFAULT_BASE_URL.to_string(),
+      http,
       claim: Mutex::new(None),
       histories,
     }
@@ -150,8 +156,7 @@ struct StoredMatch {
 
 impl ApiClient {
   fn client(&self) -> Result<reqwest::Client, MatchSyncError> {
-    crate::proxy::build_http_client(|b| b.timeout(REQUEST_TIMEOUT))
-      .map_err(|e| MatchSyncError::Api(e.to_string()))
+    (self.http)(REQUEST_TIMEOUT).map_err(MatchSyncError::Api)
   }
 
   fn set_claim(&self, claim: Option<String>) {

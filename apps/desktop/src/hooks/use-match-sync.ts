@@ -4,6 +4,8 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useEffect, useState } from "react";
 
+import { isMatchSyncBuilt } from "@/lib/runtime-bootstrap";
+
 export type AccountStatus = {
   steamId64: number;
   accountName: string;
@@ -50,6 +52,7 @@ export const useMatchSync = () => {
     queryKey: MATCH_SYNC_STATUS_KEY,
     queryFn: (): Promise<MatchSyncStatus> =>
       invoke<MatchSyncStatus>("get_match_sync_status"),
+    enabled: isMatchSyncBuilt(),
     // Poll while a full sync is running so the quota/progress stay current.
     refetchInterval: (query) =>
       query.state.data?.fullSyncRunning ? 2000 : false,

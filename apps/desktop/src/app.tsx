@@ -204,12 +204,13 @@ const App = ({ runtime, storage }: AppProps) => {
                           {integrations?.presence !== "disabled" && (
                             <GamePresenceRenderer />
                           )}
-                          {integrations?.matchSync !== "disabled" && (
-                            <>
-                              <MatchSyncRenderer />
-                              <MatchSyncNoticeDialog />
-                            </>
-                          )}
+                          {runtime.features.matchSync &&
+                            integrations?.matchSync !== "disabled" && (
+                              <>
+                                <MatchSyncRenderer />
+                                <MatchSyncNoticeDialog />
+                              </>
+                            )}
                           <ForgeInstallRenderer />
                           <GameGuardRenderer />
                           <DeepLinkListener />
