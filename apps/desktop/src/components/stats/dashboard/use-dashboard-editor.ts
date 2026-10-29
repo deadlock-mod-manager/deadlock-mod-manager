@@ -9,7 +9,6 @@ import {
   type DashboardWidget,
   DEFAULT_LAYOUT,
   duplicateWidget,
-  LIVE_PANELS,
   moveTab,
   moveWidgetToTab,
   parseLayout,
@@ -23,11 +22,11 @@ import {
   withoutPanels,
   withPanelTabsOf,
 } from "@/lib/stats/dashboard/layout";
-import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { emptyTab, tabFromTemplate } from "@/lib/stats/dashboard/templates";
 import { usePersistedStore } from "@/lib/store";
 import type { GridActions } from "./dashboard-grid";
 import type { WidgetHealth } from "./dashboard-widget";
+import { useHiddenPanels } from "./panels";
 
 export type PendingConfirm =
   | { kind: "reset" }
@@ -45,23 +44,21 @@ export const useDashboardEditor = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const storedLayout = usePersistedStore((state) => state.statsDashboard);
   const setStoredLayout = usePersistedStore((state) => state.setStatsDashboard);
-  const liveEnabled = useExperimentalFeature("live-scoreboard");
-  // While the Live Scoreboard toggle is off its tab is hidden from the page
-  // and from a reset, and saving puts it back so turning it on brings it back.
+  const hiddenPanels = useHiddenPanels();
+  // Panels behind an experimental feature that is off are hidden from the page
+  // and from a reset, and saving puts their tabs back for when it is turned on.
   const defaultLayout = useMemo(
-    () =>
-      liveEnabled ? DEFAULT_LAYOUT : withoutPanels(DEFAULT_LAYOUT, LIVE_PANELS),
-    [liveEnabled],
+    () => withoutPanels(DEFAULT_LAYOUT, hiddenPanels),
+    [hiddenPanels],
   );
   const parsed = useMemo(() => parseLayout(storedLayout), [storedLayout]);
   const { layout: savedLayout, recovered } = useMemo(() => {
-    if (liveEnabled) return parsed;
-    const visible = withoutPanels(parsed.layout, LIVE_PANELS);
+    const visible = withoutPanels(parsed.layout, hiddenPanels);
     return {
       ...parsed,
       layout: visible.tabs.length > 0 ? visible : defaultLayout,
     };
-  }, [parsed, liveEnabled, defaultLayout]);
+  }, [parsed, hiddenPanels, defaultLayout]);
 
   const [draft, setDraft] = useState<DashboardLayout | null>(null);
   const [editorTarget, setEditorTarget] = useState<EditorTarget | null>(null);
@@ -158,9 +155,7 @@ export const useDashboardEditor = () => {
     startEditing: () => setDraft(cloneLayout(savedLayout)),
     save: () => {
       if (!draft) return;
-      const next = liveEnabled
-        ? draft
-        : withPanelTabsOf(draft, parsed.layout, LIVE_PANELS);
+      const next = withPanelTabsOf(draft, parsed.layout, hiddenPanels);
       // Saving the untouched default stores nothing, so later releases can
       // still improve the default for everyone who never customised it.
       setStoredLayout(
