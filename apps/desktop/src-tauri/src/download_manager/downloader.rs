@@ -376,7 +376,18 @@ where
       request = request.header(RANGE, format!("bytes={resume_from}-"));
     }
 
-    let response = match request.send().await {
+    // The read loop only sees the token once headers arrive; a connect or a server
+    // holding its headers back would keep a cancelled download alive until a timeout.
+    let sent = tokio::select! {
+      biased;
+      () = cancel_token.cancelled() => {
+        log::info!("Download cancelled before the server responded");
+        remove_partial_pair(&partial_path, &meta_path).await;
+        return Err(Error::DownloadCancelled);
+      }
+      sent = request.send() => sent,
+    };
+    let response = match sent {
       Ok(response) => response,
       Err(e) => {
         // A redirect the policy rejected fails the same way on every attempt.
@@ -747,6 +758,62 @@ mod tests {
       window.rate(silent, bytes) < 200_000.0,
       "five seconds without data still reported the earlier rate, hiding the stall from the user"
     );
+  }
+
+  #[tokio::test]
+  async fn cancel_ends_a_request_whose_headers_never_arrive() {
+    use tempfile::tempdir;
+    use tokio::net::TcpListener;
+
+    let dir = tempdir().unwrap();
+    let target = dir.path().join("mod.zip");
+    // A resumable partial, so the request is a Range reconnect.
+    let partial = partial_download_path(&target);
+    let meta = partial_meta_path(&partial);
+    tokio::fs::write(&partial, b"first bytes").await.unwrap();
+    let stored = PartialMeta {
+      etag: Some("\"v1\"".to_string()),
+      last_modified: None,
+    };
+    write_partial_meta(&meta, &stored).await.unwrap();
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let url = format!("http://{}/mod.zip", listener.local_addr().unwrap());
+    let cancel_token = CancellationToken::new();
+
+    let download = tokio::spawn({
+      let target = target.clone();
+      let cancel_token = cancel_token.clone();
+      async move {
+        download_file_resumable(
+          &url,
+          &target,
+          0,
+          |_| {},
+          cancel_token,
+          PauseHandle::new(),
+          None,
+          None,
+          false,
+        )
+        .await
+      }
+    });
+    // Accepted and never answered, like a server that withholds its headers.
+    let (_connection, _) = tokio::time::timeout(Duration::from_secs(5), listener.accept())
+      .await
+      .expect("download never connected to the fixture")
+      .unwrap();
+    cancel_token.cancel();
+
+    let result = tokio::time::timeout(Duration::from_secs(5), download)
+      .await
+      .expect("cancel waited for headers that never arrived")
+      .unwrap();
+    assert!(
+      matches!(result, Err(Error::DownloadCancelled)),
+      "{result:?}"
+    );
+    assert!(!partial.exists() && !meta.exists());
   }
 
   #[tokio::test]
