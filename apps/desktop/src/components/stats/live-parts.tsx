@@ -6,6 +6,7 @@ import { formatPercent } from "@/lib/stats/format";
 import type { Grade } from "@/lib/stats/live-grades";
 import type { WinRecord } from "@/lib/stats/live-lobby";
 import { cn } from "@/lib/utils";
+import type { Team } from "@/types/generated/Team";
 
 export const GRADE_STYLES = {
   D: {
@@ -35,14 +36,17 @@ export const GRADE_STYLES = {
   },
 } satisfies Record<Grade, { text: string; pill: string; zone: string }>;
 
-/** The game's team numbers: 2 is the Hidden King, 3 the Archmother. */
-export const teamColor = (team: number) =>
-  team === 3 ? "var(--team-1)" : "var(--team-0)";
+const TEAMS = {
+  hiddenKing: { color: "var(--team-0)", name: "stats.live.teams.hiddenKing" },
+  archmother: { color: "var(--team-1)", name: "stats.live.teams.archmother" },
+} satisfies Record<Team, { color: string; name: string }>;
 
-export const teamName = (team: number) =>
-  team === 3 ? "stats.live.teams.archmother" : "stats.live.teams.hiddenKing";
+export const teamColor = (team: Team) => TEAMS[team].color;
 
-export const otherTeam = (team: number) => (team === 3 ? 2 : 3);
+export const teamName = (team: Team) => TEAMS[team].name;
+
+export const otherTeam = (team: Team): Team =>
+  team === "hiddenKing" ? "archmother" : "hiddenKing";
 
 export const GradePill = ({
   grade,

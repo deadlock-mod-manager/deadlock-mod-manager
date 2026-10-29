@@ -8,13 +8,14 @@ import {
   teamColor,
   teamName,
 } from "@/components/stats/live-parts";
-import type { LiveScoreboardPlayer } from "@/hooks/use-live-match";
 import type { DeadlockHero } from "@/lib/deadlock-api";
 import type { RankAsset } from "@/lib/stats/api";
 import { formatDecimal, formatPercent, formatWhole } from "@/lib/stats/format";
 import type { Grade } from "@/lib/stats/live-grades";
 import type { CareerRecord } from "@/lib/stats/live-lobby";
 import { cn } from "@/lib/utils";
+import type { LiveScoreboardPlayer } from "@/types/generated/LiveScoreboardPlayer";
+import type { Team } from "@/types/generated/Team";
 
 interface LiveNowStripProps {
   player: LiveScoreboardPlayer;
@@ -23,7 +24,7 @@ interface LiveNowStripProps {
   /** The match has ended and this is its last report. */
   isOver: boolean;
   minutes: number | null;
-  team: number;
+  team: Team;
   badge: number | undefined;
   rankAssets: RankAsset[];
   onHero: CareerRecord | undefined;

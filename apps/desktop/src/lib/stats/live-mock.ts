@@ -1,11 +1,10 @@
-import type {
-  LiveMatchStatus,
-  LiveScoreboardPlayer,
-  SoulsPoint,
-} from "@/hooks/use-live-match";
+import type { SoulsPoint } from "@/hooks/use-live-match";
 import type { MatchHistoryEntry, PerformanceCurvePoint } from "@/lib/stats/api";
 import type { Grade } from "@/lib/stats/live-grades";
 import type { LiveLobby } from "@/lib/stats/live-lobby";
+import type { GamePhase } from "@/types/generated/GamePhase";
+import type { LiveMatchStatus } from "@/types/generated/LiveMatchStatus";
+import type { LiveScoreboardPlayer } from "@/types/generated/LiveScoreboardPlayer";
 
 /**
  * Dev-only fixtures for the Live tab, so every state can be checked against the
@@ -190,6 +189,7 @@ const toPlayer = (
   hidden: boolean,
 ): LiveScoreboardPlayer => ({
   name,
+  accountId: name in RECORDS ? accountOf(name) : null,
   heroId: null,
   heroName,
   level: hidden ? null : level,
@@ -202,15 +202,17 @@ const toPlayer = (
   isDead: !hidden && !!dead,
 });
 
-const pad = (value: number) => String(value).padStart(2, "0");
-
-/** The console log's `MM/DD HH:MM:SS`, local time. */
-const consoleTimestamp = (ms: number) => {
-  const date = new Date(ms);
-  return `${pad(date.getMonth() + 1)}/${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
-};
-
 const MATCH_ID = "38201445";
+
+/** Where each scenario's match is; the rest have no lobby. */
+const LOBBY_PHASES = {
+  notInstalled: null,
+  closed: null,
+  queued: null,
+  pregame: "pregame",
+  inMatch: "inProgress",
+  matchOver: "ended",
+} satisfies Record<LiveMockScenario, GamePhase | null>;
 
 const hoursAgo = (hours: number) =>
   Math.floor(Date.now() / 1000 - hours * 3600);
@@ -257,40 +259,25 @@ export const buildLiveMock = (
   const heroId = (name: string) => heroIdOf(name) ?? 0;
   const pregame = scenario === "pregame";
   const board = {
-    clock: pregame ? null : "18:00",
+    clockSeconds: pregame ? null : NOW_MINUTES * 60,
     friendly: FRIENDLY.map((row) => toPlayer(row, pregame)),
     enemy: ENEMY.map((row) => toPlayer(row, pregame)),
-    friendlyTeam: 2,
-    updatedAt: consoleTimestamp(Date.now() - 2000),
-    roster: Object.keys(RECORDS).map((name) => ({
-      name,
-      accountId: accountOf(name),
-    })),
+    team: "hiddenKing" as const,
+    reportedAt: Date.now() - 2000,
   };
   const heroOfName = new Map(
     [...FRIENDLY, ...ENEMY].map(([name, hero]) => [name, heroId(hero)]),
   );
   const lastMatch = match(heroId("Haze"), true, 0.62, [11, 2, 9, 38_200]);
-  const inLobby =
-    scenario === "pregame" ||
-    scenario === "inMatch" ||
-    scenario === "matchOver";
+  const phase = LOBBY_PHASES[scenario];
 
   return {
     status: {
       consoleLogAvailable: true,
       queued: scenario === "queued",
-      current: inLobby ? { matchId: MATCH_ID, lobbyId: "1" } : null,
+      current: phase ? { matchId: MATCH_ID, lobbyId: "1", phase } : null,
       recentMatchIds: [],
-      scoreboard: inLobby ? board : null,
-      gameState:
-        scenario === "pregame"
-          ? "PreGameWait"
-          : scenario === "inMatch"
-            ? "GameInProgress"
-            : scenario === "matchOver"
-              ? "PostGame"
-              : null,
+      scoreboard: phase ? board : null,
     },
     gameRunning: scenario !== "closed" && scenario !== "notInstalled",
     bridgeNeedsSetup: scenario === "notInstalled",

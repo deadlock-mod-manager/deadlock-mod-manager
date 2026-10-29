@@ -12,19 +12,19 @@ import {
   UnrankedTag,
   WinratePill,
 } from "@/components/stats/live-parts";
-import type { LiveScoreboardPlayer } from "@/hooks/use-live-match";
 import type { DeadlockHero } from "@/lib/deadlock-api";
 import type { RankAsset } from "@/lib/stats/api";
 import { formatThousands, formatWhole } from "@/lib/stats/format";
 import type { LiveLobby } from "@/lib/stats/live-lobby";
 import { cn } from "@/lib/utils";
+import type { LiveScoreboardPlayer } from "@/types/generated/LiveScoreboardPlayer";
+import type { Team } from "@/types/generated/Team";
 
 interface LiveTeamBoardProps {
   friendly: LiveScoreboardPlayer[];
   enemy: LiveScoreboardPlayer[];
-  friendlyTeam: number;
+  friendlyTeam: Team;
   heroFor: (player: LiveScoreboardPlayer) => DeadlockHero | undefined;
-  accountOf: (name: string) => number | null;
   lobby: LiveLobby;
   rankAssets: RankAsset[];
 }
@@ -49,7 +49,6 @@ export const LiveTeamBoard = ({
   enemy,
   friendlyTeam,
   heroFor,
-  accountOf,
   lobby,
   rankAssets,
 }: LiveTeamBoardProps) => {
@@ -122,7 +121,7 @@ export const LiveTeamBoard = ({
           )}
           {players.map((player, index) => {
             const hero = heroFor(player);
-            const accountId = accountOf(player.name);
+            const { accountId } = player;
             const record =
               accountId === null ? undefined : lobby.records.get(accountId);
             const onHero = hero ? record?.heroes.get(hero.id) : undefined;
