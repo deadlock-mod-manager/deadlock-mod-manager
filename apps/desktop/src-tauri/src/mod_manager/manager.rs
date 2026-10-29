@@ -129,20 +129,22 @@ impl ModManager {
       .steam_manager
       .get_game_path()
       .ok_or(Error::GamePathNotSet)?;
+    ProfileBase::new(Self::profile_addons_dir(game_path, profile_folder)?)
+  }
 
+  /// The addons folder of `profile_folder`, or the root one for `None`.
+  pub(crate) fn profile_addons_dir(
+    game_path: &Path,
+    profile_folder: Option<&str>,
+  ) -> Result<PathBuf, Error> {
     let addons_path = game_path.join("game").join("citadel").join("addons");
-    let profile_path = match profile_folder {
-      Some(folder) => {
-        if !Self::is_safe_profile_folder(folder) {
-          return Err(Error::InvalidInput(format!(
-            "Invalid profile folder path: {folder}"
-          )));
-        }
-        addons_path.join(folder)
-      }
-      None => addons_path,
-    };
-    ProfileBase::new(profile_path)
+    match profile_folder {
+      Some(folder) if !Self::is_safe_profile_folder(folder) => Err(Error::InvalidInput(format!(
+        "Invalid profile folder path: {folder}"
+      ))),
+      Some(folder) => Ok(addons_path.join(folder)),
+      None => Ok(addons_path),
+    }
   }
 
   /// Profile folders may nest (`profiles/imported`), so this permits separators

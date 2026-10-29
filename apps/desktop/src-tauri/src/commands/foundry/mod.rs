@@ -19,7 +19,7 @@
 mod ability_vfx;
 mod analyze;
 mod animation;
-mod archive_cache;
+pub(crate) mod archive_cache;
 mod cloth;
 mod commands;
 mod export;

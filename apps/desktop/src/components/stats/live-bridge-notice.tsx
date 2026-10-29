@@ -15,10 +15,11 @@ const DANGER = "#f2766b";
  */
 export const LiveBridgeNotice = () => {
   const { t } = useTranslation();
-  const { isOutdated, isIncompatible, isUpdating, update } = useLiveBridge();
+  const { status, isUpdating, update } = useLiveBridge();
   const gameRunning = useGameRunning();
 
-  if (!isIncompatible && !isOutdated) return null;
+  if (status !== "outdated" && status !== "incompatible") return null;
+  const isIncompatible = status === "incompatible";
 
   const color = isIncompatible ? DANGER : WARN;
   const Icon = isIncompatible ? TriangleAlert : RefreshCw;
@@ -43,7 +44,7 @@ export const LiveBridgeNotice = () => {
               : t("stats.live.bridge.outdated")}
         </span>
       </div>
-      {isOutdated && !isIncompatible && !gameRunning && (
+      {!isIncompatible && !gameRunning && (
         <Button
           className='shrink-0 self-center'
           disabled={isUpdating}

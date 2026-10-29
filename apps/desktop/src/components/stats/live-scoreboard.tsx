@@ -179,7 +179,9 @@ const LiveView = ({
       ? raw.scoreboard
       : null;
   const queued = gameRunning && !!raw?.queued;
-  const needsSetup = mock ? mock.bridgeNeedsSetup : bridge.needsSetup;
+  const needsSetup = mock
+    ? mock.bridgeNeedsSetup
+    : bridge.status === "notInstalled";
 
   const heroFor = (player: LiveScoreboardPlayer) =>
     (player.heroId === null ? undefined : heroesById.get(player.heroId)) ??
