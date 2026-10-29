@@ -16,7 +16,7 @@ import { getModsStorePath } from "@/lib/download-cache";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import type { BridgeStatus } from "@/types/generated/BridgeStatus";
-import type { LocalMod } from "@/types/mods";
+import { type LocalMod, ModStatus } from "@/types/mods";
 
 const LIVE_BRIDGE_NAME = "Live Scoreboard Bridge";
 const LIVE_BRIDGE_AUTHOR = "Okaza";
@@ -65,21 +65,27 @@ export const useLiveBridge = () => {
   const { processMod } = useModProcessor();
   const { performInstall } = useInstallAction();
   const queryClient = useQueryClient();
-  // Installing, enabling, disabling or deleting the bridge in the library
-  // changes this, which re-runs the cached addons check below.
-  const libraryStatus = usePersistedStore(
-    (state) => bridgeIn(state.localMods)?.status ?? null,
-  );
-  const inLibrary = libraryStatus !== null;
+  const inLibrary = usePersistedStore((state) => !!bridgeIn(state.localMods));
+  // The enabled bridge's file in the addons folder, as the library recorded
+  // it. Enabling, disabling or deleting the bridge changes this, which re-runs
+  // the cached check below.
+  const installedVpk = usePersistedStore((state) => {
+    const bridge = bridgeIn(state.localMods);
+    return bridge?.status === ModStatus.Installed
+      ? (bridge.installedVpks?.[0] ?? null)
+      : null;
+  });
   const profileFolder = usePersistedStore(
     (state) => state.getActiveProfile()?.folderName ?? null,
   );
-  // The addons folder is what the game loads, and it also finds a copy that
-  // was added by hand. Outdated means built from an older game or bridge.
+  // Outdated means built from an older game or bridge.
   const status = useQuery({
-    queryKey: ["live-bridge-status", profileFolder, libraryStatus],
+    queryKey: ["live-bridge-status", profileFolder, installedVpk],
     queryFn: () =>
-      invoke<BridgeStatus>("live_bridge_status", { profileFolder }),
+      invoke<BridgeStatus>("live_bridge_status", {
+        profileFolder,
+        installedVpk,
+      }),
     staleTime: STATUS_STALE_MS,
     meta: { skipGlobalErrorHandler: true },
   });
@@ -124,20 +130,25 @@ export const useLiveBridge = () => {
     },
   });
 
-  // Rebuilt in place from the current game; the library's copy goes with it.
+  // Rebuilt into the library's copy, which then replaces the enabled one.
   const update = useMutation({
     mutationKey: UPDATE_KEY,
     mutationFn: async () => {
       const bridge = findBridge();
-      const libraryCopy = bridge
-        ? await join(
-            await getModsStorePath(),
-            bridge.id,
-            "files",
-            LIVE_BRIDGE_FILE,
-          )
-        : null;
-      await invoke("update_live_bridge", { profileFolder, libraryCopy });
+      if (!bridge || !installedVpk) {
+        throw new Error("The live bridge is not enabled");
+      }
+      const libraryCopy = await join(
+        await getModsStorePath(),
+        bridge.id,
+        "files",
+        LIVE_BRIDGE_FILE,
+      );
+      await invoke("update_live_bridge", {
+        profileFolder,
+        libraryCopy,
+        installedVpk,
+      });
     },
     onSettled: refreshEnabled,
     onSuccess: () => toast.success(t("stats.live.bridge.updated")),
@@ -149,7 +160,7 @@ export const useLiveBridge = () => {
 
   return {
     inLibrary,
-    // `null` until the addons folder has been checked, so prompts never flash.
+    // `null` until the bridge has been checked, so prompts never flash.
     status: status.data ?? null,
     isUpdating: useIsMutating({ mutationKey: UPDATE_KEY }) > 0,
     install,
