@@ -307,9 +307,10 @@ export const useModOptions = (mod: LocalMod | null) => {
             count: selectedArchives.length,
           };
           // Rust sends the first phase, so a reused archive shows no download.
+          // The listed size only stands in until the transfer reports a total.
           const onProgress = new Channel<StageArchiveProgress>((message) =>
             setProgress(
-              message.phase === "downloading"
+              message.phase === "downloading" && message.downloaded === 0
                 ? {
                     ...position,
                     ...message,
