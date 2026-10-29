@@ -455,3 +455,7 @@ export const duplicateWidget = (
     });
     return { ...tab, widgets };
   });
+
+/** A tab that holds only the Live panel, so the page's filters mean nothing there. */
+export const isLiveTab = (tab: DashboardTab): boolean =>
+  tab.widgets.length > 0 && tab.widgets.every(listedIn(LIVE_PANELS));

@@ -87,3 +87,7 @@ export const formatThousands = (value: number): string =>
   Math.abs(value) >= 1000
     ? `${formatDecimal(value / 1000, 1)}k`
     : String(Math.round(value));
+
+/** A whole number with the locale's grouping: "18,400". */
+export const formatWhole = (value: number): string =>
+  Math.round(value).toLocaleString(activeLocale());
