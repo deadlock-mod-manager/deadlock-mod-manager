@@ -2,4 +2,4 @@
 "@deadlock-mods/desktop": patch
 ---
 
-Re-enable disabled mod variants without downloading them again
+Re-enable disabled variants from disk when their files are present and current
