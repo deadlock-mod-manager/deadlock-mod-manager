@@ -81,6 +81,8 @@ describe("queued download retry", () => {
       );
       while (Date.now() < queued + NOTICE_DELAY_MS + 4_000) {
         expect(await notice(DOWNLOAD_NAME).isDisplayed()).toBe(false);
+        // The notice only renders while downloading, so a finished retry would hide it.
+        expect(await statusOf(world, DOWNLOAD_MOD)).toBe("downloading");
         await browser.pause(250);
       }
       // The blocker is still running, so the retry never left the queue.
