@@ -280,7 +280,7 @@ fn parse_gamebanana_file_token(
   Ok((submission, file_id))
 }
 
-fn validate_download_file_name(file_name: &str) -> Result<(), Error> {
+pub(crate) fn validate_download_file_name(file_name: &str) -> Result<(), Error> {
   if file_name.is_empty()
     || file_name.len() > 255
     || file_name.contains('/')

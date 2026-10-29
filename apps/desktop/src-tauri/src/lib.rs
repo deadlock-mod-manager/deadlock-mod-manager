@@ -22,6 +22,7 @@ mod game_presence;
 mod game_session;
 mod hero_detector;
 mod ingest_tool;
+mod install_sources;
 mod live_bridge;
 mod live_match;
 mod logs;
@@ -411,6 +412,11 @@ pub fn run() {
       commands::forge::stop_forge_bridge,
       commands::forge::place_forge_payload,
       commands::forge::finish_forge_install,
+      commands::source_install::take_pending_source_installs,
+      commands::source_install::resolve_source_install,
+      commands::source_install::download_source_install,
+      commands::source_install::place_source_install,
+      commands::source_install::finish_source_install,
       game_presence::get_game_presence_status,
       game_presence::get_game_presence_heroes,
       game_presence::start_game_presence_watcher,

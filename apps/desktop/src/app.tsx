@@ -43,6 +43,7 @@ import { LibraryMaintenanceRenderer } from "./components/library-maintenance-ren
 import { LiveBridgeRenderer } from "./components/live-bridge-renderer";
 import { useGameBananaCatalogSync } from "./hooks/use-gamebanana-catalog-sync";
 import { useRemoteInstallPoll } from "./hooks/use-remote-install";
+import { useSourceInstall } from "./hooks/use-source-install";
 import { Layout } from "./layout";
 import { queryClient } from "./lib/client";
 import { downloadManager } from "./lib/download/manager";
@@ -68,6 +69,7 @@ const DeepLinkListener = () => {
   const installFromLink = useOneClickInstall();
   useDeepLink(installFromLink);
   useRemoteInstallPoll(installFromLink);
+  useSourceInstall();
   return null;
 };
 

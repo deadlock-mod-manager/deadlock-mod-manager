@@ -16,6 +16,7 @@ pub const EVENT_AUTH_ERROR: &str = "auth-callback-error";
 pub const EVENT_DEEP_LINK_RECEIVED: &str = "deep-link-received";
 pub const EVENT_FORGE_LAUNCH: &str = "forge-launch-requested";
 pub const EVENT_REMOTE_INSTALL_PAIR: &str = "remote-install-pair-requested";
+pub const EVENT_SOURCE_INSTALL_REQUESTED: &str = "source-install-requested";
 
 pub const PATH_OIDC_CALLBACK: &str = "//auth/callback";
 pub const PATH_LEGACY_AUTH_CALLBACK: &str = "//auth-callback";
@@ -191,6 +192,17 @@ pub fn handle_deep_link_url(
 
   if data_part.starts_with(PATH_FORGE_LAUNCH) {
     emit_to_main_window(app_handle, EVENT_FORGE_LAUNCH, ())?;
+    return Ok(());
+  }
+
+  if data_part.starts_with(crate::install_sources::PATH_INSTALL) {
+    match crate::install_sources::parse_install_link(data_part) {
+      Some(link) => {
+        crate::install_sources::queue_pending(link);
+        emit_to_main_window(app_handle, EVENT_SOURCE_INSTALL_REQUESTED, ())?;
+      }
+      None => log::error!("Invalid or unknown source install link"),
+    }
     return Ok(());
   }
 

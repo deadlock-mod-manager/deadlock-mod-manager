@@ -6998,6 +6998,16 @@
     "openEnabled": "1-click installs enabled.",
     "fallbackName": "DeadlockForge mod"
   },
+  "sourceInstall": {
+    "confirmTitle": "Install this mod from {{source}}?",
+    "confirmBody": "{{source}} wants to send \"{{name}}\" ({{size}}) to Deadlock Mod Manager. It will be added to your mods but stays disabled until you enable it.",
+    "confirmAction": "Install",
+    "confirmCancel": "Cancel",
+    "downloading": "Downloading {{name}} from {{source}}",
+    "alreadyAdded": "{{name}} is already in your mods. Remove it first to install another version.",
+    "modDescription": "Installed from {{source}}",
+    "installFailed": "Failed to install the mod from {{source}}"
+  },
   "modCategories": {
     "maps": "Maps",
     "skins": "Skins",

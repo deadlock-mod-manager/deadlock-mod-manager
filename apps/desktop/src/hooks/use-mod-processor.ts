@@ -37,6 +37,8 @@ export interface ModMetadata {
   link?: string;
   description?: string;
   imageFile?: File | null;
+  // A cover hosted by the mod's source, shown instead of the local preview.
+  imageUrl?: string | null;
 }
 
 // Every source is on disk by now: picked, dropped as a path, or staged when it
@@ -83,6 +85,37 @@ export const useModProcessor = () => {
     }
   };
 
+  const placeSourceDownload = async (
+    source: Extract<ModSource, { kind: "sourcePath" }>,
+    filesDir: string,
+    modDir: string,
+  ): Promise<void> => {
+    if (VPK_PATTERN.test(source.fileName)) {
+      await invoke("place_source_install", {
+        path: source.path,
+        destination: await join(filesDir, source.fileName),
+      });
+      return;
+    }
+
+    // Kept beside the files folder, as a picked archive is.
+    const archivePath = await join(modDir, source.fileName);
+    await invoke("place_source_install", {
+      path: source.path,
+      destination: archivePath,
+    });
+
+    const format = source.fileName.split(".").pop()?.toUpperCase();
+    setProcessing(true, t("addMods.extractingArchive", { format }));
+    const vpks = await invoke<string[]>("extract_archive", {
+      archivePath,
+      targetPath: filesDir,
+    });
+    if (vpks.length === 0) {
+      throw new Error(t("addMods.noVpkFoundInContent"));
+    }
+  };
+
   const processPreviewImage = async (
     metadata: ModMetadata,
     modDir: string,
@@ -113,6 +146,12 @@ export const useModProcessor = () => {
     filesDir: string,
     detectedSource: ModSource,
   ): Promise<boolean> => {
+    // Placing a site's download already refused one without VPKs, and its
+    // VPKs may sit in subfolders.
+    if (detectedSource.kind === "sourcePath") {
+      return true;
+    }
+
     const filesList = await readDir(filesDir, {
       baseDir: BaseDirectory.AppLocalData,
     });
@@ -164,6 +203,20 @@ export const useModProcessor = () => {
       });
     } else if (detectedSource.kind === "liveBridge") {
       await invoke("build_live_bridge", { modId });
+    } else if (detectedSource.kind === "sourcePath") {
+      try {
+        await placeSourceDownload(detectedSource, filesDir, modDir);
+      } catch (error) {
+        // Nothing reached the library, so leave no folder behind.
+        await invoke("remove_mod_folder", { modPath: modDir }).catch(
+          (cleanupError) =>
+            logger
+              .withError(cleanupError)
+              .warn("Failed to remove an incomplete mod folder"),
+        );
+        setProcessing(false);
+        throw error;
+      }
     } else {
       try {
         if (detectedSource.kind === "vpk") {
@@ -251,7 +304,7 @@ export const useModProcessor = () => {
       remoteAddedAt: new Date(modMetadata.createdAt),
       remoteUpdatedAt: new Date(modMetadata.createdAt),
       tags: [],
-      images: [imageDataUrl],
+      images: [metadata.imageUrl ?? imageDataUrl],
       hero: null,
       isAudio: false,
       isMap: category === ModCategory.MAPS,

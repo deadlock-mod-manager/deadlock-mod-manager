@@ -33,8 +33,12 @@ export type DetectedSource =
   | { kind: "archive"; file: File }
   | { kind: "vpk"; file: File };
 
-// A VPK already on disk, placed natively rather than read through the renderer.
-export type StagedSource = { kind: "vpkPath"; path: string; fileName: string };
+// Files already on disk, placed natively rather than read through the renderer.
+export type StagedSource =
+  // A DeadlockForge VPK.
+  | { kind: "vpkPath"; path: string; fileName: string }
+  // A mod site's VPK or archive, downloaded and verified by Rust.
+  | { kind: "sourcePath"; path: string; fileName: string };
 
 /** The live bridge HUD mod, built from the installed game by the backend. */
 type LiveBridgeSource = { kind: "liveBridge" };
