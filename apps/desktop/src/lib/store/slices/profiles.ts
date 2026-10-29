@@ -30,6 +30,7 @@ import {
   needsInstallStateRepair,
   placeholderModFromManifest,
 } from "../utils/manifest-install-state";
+import { isPlainObject } from "../merge";
 import { applyToModsInProfile } from "../utils/mod-slice";
 import { invokeGuarded } from "@/lib/game-guard";
 
@@ -202,6 +203,47 @@ const normalizeRecoveredProfileIds = (
 
 type ProfilesSliceStore = ProfilesState & {
   localMods: LocalMod[];
+};
+
+type ActiveProfileState = Pick<
+  ProfilesSliceStore,
+  "profiles" | "activeProfileId" | "localMods"
+>;
+
+/**
+ * An active profile id with no profile behind it turns every profile-scoped
+ * write into a no-op, so downloads never leave "downloading". The default
+ * profile takes over, holding the library the user was looking at rather than
+ * its own, possibly stale, snapshot.
+ */
+export const repairMissingActiveProfile = <T extends ActiveProfileState>(
+  state: T,
+): T => {
+  // A corrupt persisted value would otherwise be spread character by character.
+  const profiles: Record<ProfileId, ModProfile> = isPlainObject(state.profiles)
+    ? state.profiles
+    : {};
+  if (profiles[state.activeProfileId]) {
+    return state;
+  }
+
+  logger
+    .withMetadata({
+      missingProfileId: state.activeProfileId,
+      modsCount: state.localMods.length,
+    })
+    .warn("Active profile is missing; falling back to the default profile");
+
+  const defaultProfile = profiles[DEFAULT_PROFILE_ID] ?? createDefaultProfile();
+
+  return {
+    ...state,
+    activeProfileId: DEFAULT_PROFILE_ID,
+    profiles: {
+      ...profiles,
+      [DEFAULT_PROFILE_ID]: { ...defaultProfile, mods: [...state.localMods] },
+    },
+  };
 };
 
 type ManifestRepair = {

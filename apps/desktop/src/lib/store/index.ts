@@ -58,6 +58,7 @@ import {
   createProfilesSlice,
   profilesDeepMergeKeys,
   type ProfilesState,
+  repairMissingActiveProfile,
 } from "./slices/profiles";
 import {
   createScrollSlice,
@@ -119,6 +120,8 @@ const allDeepMergeKeys = new Set<string>([
   ...cloudBackupsDeepMergeKeys,
 ]);
 
+const persistMerge = buildPersistMerge(allDeepMergeKeys);
+
 export const usePersistedStore = create<State>()(
   persist(
     (...a) => ({
@@ -146,7 +149,10 @@ export const usePersistedStore = create<State>()(
       storage: createJSONStorage(() => storage),
       skipHydration: true,
       migrate: safeMigrate,
-      merge: buildPersistMerge(allDeepMergeKeys),
+      // Runs on every hydration, before the download manager scans for stale
+      // statuses that it can only clear through the active profile.
+      merge: (persisted, current) =>
+        repairMissingActiveProfile(persistMerge(persisted, current)),
       onRehydrateStorage: () => (hydrated, error) => {
         if (error) {
           logger.withError(error).error("Persist rehydrate failed");

@@ -444,6 +444,69 @@ describe("V1 active profile upgrade", () => {
   });
 });
 
+describe("missing active profile", () => {
+  const library = ["1", "2"].map((remoteId) =>
+    Object.assign({}, seededState.localMods[0], {
+      id: `mod_${remoteId}`,
+      remoteId,
+      status: ModStatus.Downloading,
+    }),
+  );
+  const otherProfile = {
+    ...seededState.profiles.default,
+    id: "profile_2",
+    isDefault: false,
+    folderName: "profile_2_other",
+    mods: [],
+  };
+
+  it("hands the visible library to the default profile so status writes land", async () => {
+    const { LATEST_VERSION } = await import("./migrate");
+    seedFromVersion(LATEST_VERSION, {
+      ...seededState,
+      localMods: library,
+      profiles: {
+        default: seededState.profiles.default,
+        profile_2: otherProfile,
+      },
+      activeProfileId: "profile_deleted",
+    });
+    const { usePersistedStore } = await importStoreFreshly();
+    await usePersistedStore.persist.rehydrate();
+
+    const state = usePersistedStore.getState();
+    expect(state.activeProfileId).toBe(createProfileId("default"));
+    expect(state.profiles[createProfileId("default")].mods).toEqual(
+      state.localMods,
+    );
+    expect(state.profiles[createProfileId("profile_2")].mods).toEqual([]);
+
+    state.setModStatus("1", ModStatus.FailedToDownload);
+    expect(usePersistedStore.getState().localMods[0].status).toBe(
+      ModStatus.FailedToDownload,
+    );
+  });
+
+  it("recreates the default profile when it is gone as well", async () => {
+    const { LATEST_VERSION } = await import("./migrate");
+    seedFromVersion(LATEST_VERSION, {
+      ...seededState,
+      localMods: library,
+      profiles: { profile_2: otherProfile },
+      activeProfileId: "profile_deleted",
+    });
+    const { usePersistedStore } = await importStoreFreshly();
+    await usePersistedStore.persist.rehydrate();
+
+    const state = usePersistedStore.getState();
+    const defaultProfile = state.profiles[createProfileId("default")];
+    expect(state.activeProfileId).toBe(createProfileId("default"));
+    expect(defaultProfile.isDefault).toBe(true);
+    expect(defaultProfile.mods).toEqual(state.localMods);
+    expect(state.profiles[createProfileId("profile_2")]).toBeDefined();
+  });
+});
+
 describe("NSFW choice reset", () => {
   it("clears show and hide choices while preserving global NSFW settings", async () => {
     seedFromVersion(15, seededState);
