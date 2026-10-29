@@ -8,6 +8,7 @@ import {
 import { invoke } from "@tauri-apps/api/core";
 import { join } from "@tauri-apps/api/path";
 import { useTranslation } from "react-i18next";
+import LIVE_BRIDGE_LOGO from "@/assets/live-bridge.svg?raw";
 import { useProgress } from "@/components/downloads/progress-indicator";
 import { useInstallAction } from "@/hooks/use-install-action";
 import { useModProcessor } from "@/hooks/use-mod-processor";
@@ -21,26 +22,6 @@ import { type LocalMod, ModStatus } from "@/types/mods";
 const LIVE_BRIDGE_NAME = "Live Scoreboard Bridge";
 const LIVE_BRIDGE_AUTHOR = "Okaza";
 const LIVE_BRIDGE_FILE = "dmm-live-bridge.vpk";
-
-const LIVE_BRIDGE_LOGO = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#1c1426"/>
-      <stop offset="1" stop-color="#0c0a10"/>
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
-  <g fill="none" stroke="#f97316" stroke-linecap="round" stroke-width="22">
-    <path d="M176 196a112 112 0 0 1 160 0"/>
-    <path d="M126 146a182 182 0 0 1 260 0" opacity="0.6"/>
-  </g>
-  <circle cx="256" cy="246" r="26" fill="#f97316"/>
-  <g fill="#f5f5f4">
-    <rect x="136" y="312" width="64" height="104" rx="12" opacity="0.55"/>
-    <rect x="224" y="288" width="64" height="128" rx="12"/>
-    <rect x="312" y="336" width="64" height="80" rx="12" opacity="0.8"/>
-  </g>
-</svg>`;
 
 // Shared by every caller, so the renderer's automatic update and the notice's
 // button see one update in flight rather than starting a second.
