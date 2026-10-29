@@ -14,6 +14,8 @@ import { isLocalMod } from "@/lib/mods/installed-helpers";
 import {
   deriveActiveArchiveNames,
   deriveActiveVariantCount,
+  deriveFilesForArchive,
+  deriveReusableFilesForArchive,
 } from "@/lib/mods/mod-variants";
 import {
   insertFilesInAuthorOrder,
@@ -53,6 +55,7 @@ interface SwapModOptionsResult {
 
 interface StageDownloadArchiveResult {
   staged: { original: string; path: string; size: number }[];
+  reused: boolean;
 }
 
 interface MissingVariantArchive {
@@ -176,9 +179,7 @@ const deriveOriginalsForArchive = (
   mod: LocalMod,
   archiveName: string,
 ): string[] => {
-  return (mod.installedFileTree?.files ?? [])
-    .filter((f) => f.archive_name === archiveName)
-    .map((f) => f.name);
+  return deriveFilesForArchive(mod, archiveName).map((f) => f.name);
 };
 
 // Trees saved before variant names were made unique can give several archives
@@ -305,15 +306,19 @@ export const useModOptions = (mod: LocalMod | null) => {
             index,
             count: selectedArchives.length,
           };
-          setProgress({
-            ...position,
-            phase: "downloading",
-            downloaded: 0,
-            total: archive.size || null,
-          });
+          // Rust sends the first phase, so a reused archive shows no download.
           const onProgress = new Channel<StageArchiveProgress>((message) =>
-            setProgress({ ...position, ...message }),
+            setProgress(
+              message.phase === "downloading"
+                ? {
+                    ...position,
+                    ...message,
+                    total: message.total ?? (archive.size || null),
+                  }
+                : { ...position, ...message },
+            ),
           );
+          const reusableFiles = deriveReusableFilesForArchive(mod, archive);
           const result = await invoke<StageDownloadArchiveResult>(
             "stage_download_archive",
             {
@@ -326,10 +331,18 @@ export const useModOptions = (mod: LocalMod | null) => {
                 ...deriveClaimedOriginals(mod, archive.name),
                 ...stagedThisApply,
               ],
+              reusableOriginals: reusableFiles.map((f) => f.name),
               onProgress,
             },
           );
-          for (const { original, path, size } of result.staged) {
+          const staged = result.reused
+            ? reusableFiles.map((f) => ({
+                original: f.name,
+                path: f.path,
+                size: f.size,
+              }))
+            : result.staged;
+          for (const { original, path, size } of staged) {
             stagedOriginalsMapRef.current.set(original, {
               archiveName: archive.name,
               path,
@@ -453,6 +466,8 @@ export const useModOptions = (mod: LocalMod | null) => {
       setActiveVariantArchive(mod.remoteId, allCheckedArchiveNames.join(","));
 
       if (selectedArchives.length > 0) {
+        // Existing entries keep their URL: a replaced upload's files weren't
+        // written, so reuse stays off and the update check still offers it.
         const existingNames = new Set(
           (mod.selectedDownloads ?? []).map((d) => d.name),
         );

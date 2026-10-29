@@ -1,4 +1,9 @@
-import type { LocalMod, ModDownloadItem, ModFileTree } from "@/types/mods";
+import type {
+  LocalMod,
+  ModDownloadItem,
+  ModFile,
+  ModFileTree,
+} from "@/types/mods";
 import type { VpkManifest } from "@/types/profiles";
 
 /**
@@ -132,4 +137,33 @@ export const applyDownloadTimeSelection = (
   }
 
   return { ...fileTree, files };
+};
+
+export const deriveFilesForArchive = (
+  mod: LocalMod,
+  archiveName: string,
+): ModFile[] =>
+  (mod.installedFileTree?.files ?? []).filter(
+    (f) => f.archive_name === archiveName,
+  );
+
+// A replaced upload isn't reused: the tree may miss its files, and only a mod
+// update replaces the parked ones. Nor is a tree with entries without an
+// archive, since any of them may be this archive's file.
+export const deriveReusableFilesForArchive = (
+  mod: LocalMod,
+  archive: ModDownloadItem,
+): ModFile[] => {
+  const stored = mod.selectedDownloads?.find((d) => d.name === archive.name);
+  const isSameUpload =
+    stored?.url === archive.url &&
+    (!stored.md5Checksum ||
+      !archive.md5Checksum ||
+      stored.md5Checksum === archive.md5Checksum);
+  const isFullyTagged = (mod.installedFileTree?.files ?? []).every(
+    (f) => f.archive_name,
+  );
+  return isSameUpload && isFullyTagged
+    ? deriveFilesForArchive(mod, archive.name)
+    : [];
 };

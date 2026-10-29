@@ -15,7 +15,9 @@ use serde::{Deserialize, Serialize};
 use tauri::{Emitter, State};
 use ts_rs::TS;
 
-use super::downloads::{FileserverPreference, get_download_manager, resolve_download_files};
+use super::downloads::{
+  FileserverPreference, ensure_download_allowed, get_download_manager, resolve_download_files,
+};
 use super::fonts::{apply_font_cleanup, prepare_font_cleanup};
 use super::state::MANAGER;
 use crate::download_manager::{DownloadFileDto, DownloadTask};
@@ -907,6 +909,8 @@ pub async fn fetch_missing_mod_variants(
 #[derive(Debug, Clone, Serialize)]
 pub struct StageDownloadArchiveResult {
   pub staged: Vec<StagedVpk>,
+  /// Every name was already parked: nothing was fetched and `staged` is empty.
+  pub reused: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -959,6 +963,8 @@ pub async fn stage_download_archive(
   known_originals: Vec<String>,
   // Names the tree gives other archives' files.
   claimed_originals: Vec<String>,
+  // This archive's tree names; empty when its upload was replaced.
+  reusable_originals: Vec<String>,
   on_progress: tauri::ipc::Channel<StageArchiveProgress>,
 ) -> Result<StageDownloadArchiveResult, Error> {
   log::info!("Staging download archive for {mod_id} (profile: {profile_folder:?}): {archive_name}");
@@ -978,6 +984,29 @@ pub async fn stage_download_archive(
   }
 
   let safe_archive_name = sanitize_archive_name(&archive_name)?;
+  ensure_download_allowed(&policy, &mod_id)?;
+  let prefix = format!("{mod_id}_");
+  let lowercase = |names: &[String]| -> std::collections::HashSet<String> {
+    names.iter().map(|name| name.to_lowercase()).collect()
+  };
+  let claimed = lowercase(&claimed_originals);
+  let parked: Vec<String> = VpkManager::new()
+    .find_prefixed_vpks(&addons_path, &mod_id)?
+    .into_iter()
+    .filter_map(|name| name.strip_prefix(&prefix).map(str::to_string))
+    .collect();
+  if archive_is_parked(&reusable_originals, &known_originals, &parked, &claimed) {
+    log::info!("Reusing parked VPKs of archive {safe_archive_name}: {reusable_originals:?}");
+    return Ok(StageDownloadArchiveResult {
+      staged: Vec::new(),
+      reused: true,
+    });
+  }
+
+  let _ = on_progress.send(StageArchiveProgress::Downloading {
+    downloaded: 0,
+    total: None,
+  });
   let file = resolve_download_files(
     &catalog_state,
     &policy,
@@ -1056,13 +1085,9 @@ pub async fn stage_download_archive(
   }
 
   let _ = on_progress.send(StageArchiveProgress::Copying);
-  let prefix = format!("{mod_id}_");
-  let lowercase = |names: &[String]| -> std::collections::HashSet<String> {
-    names.iter().map(|name| name.to_lowercase()).collect()
-  };
   let known = lowercase(&known_originals);
-  let claimed = lowercase(&claimed_originals);
-  // Names other variants of the mod already hold, enabled or not.
+  // Names other variants of the mod already hold, enabled or not. Listed again
+  // because another staging run may have added some during the download.
   let mut taken: std::collections::HashSet<String> = VpkManager::new()
     .find_prefixed_vpks(&addons_path, &mod_id)?
     .iter()
@@ -1107,7 +1132,24 @@ pub async fn stage_download_archive(
     staged
   );
 
-  Ok(StageDownloadArchiveResult { staged })
+  Ok(StageDownloadArchiveResult {
+    staged,
+    reused: false,
+  })
+}
+
+/// Parked files are the installed version's (updates move them aside). A name
+/// another entry shares or claims never qualifies: its bytes may not be ours.
+fn archive_is_parked(
+  reusable_originals: &[String],
+  owned: &[String],
+  parked: &[String],
+  claimed: &std::collections::HashSet<String>,
+) -> bool {
+  !reusable_originals.is_empty()
+    && reusable_originals.iter().all(|name| {
+      owned.contains(name) && !claimed.contains(&name.to_lowercase()) && parked.contains(name)
+    })
 }
 
 /// A file already staged with identical contents is this one - a retry after
@@ -1384,6 +1426,72 @@ mod tests {
     // `Blue.rar` qualifies to the same name as `blue.zip`.
     let staged: &[(&str, &[u8])] = &[("pak01_dir.vpk", b"red!"), ("pak01-blue_dir.vpk", b"BLUE")];
     assert_eq!(stage(staged), "pak01-blue-2_dir.vpk");
+  }
+
+  fn names(names: &[&str]) -> Vec<String> {
+    names.iter().map(|name| name.to_string()).collect()
+  }
+
+  #[test]
+  fn an_archive_with_every_file_parked_is_reused() {
+    let archive = names(&["pak01-blue_dir.vpk", "pak02-blue_dir.vpk"]);
+    let parked = names(&["pak01_dir.vpk", "pak01-blue_dir.vpk", "pak02-blue_dir.vpk"]);
+    assert!(archive_is_parked(
+      &archive,
+      &archive,
+      &parked,
+      &HashSet::new()
+    ));
+  }
+
+  #[test]
+  fn an_archive_missing_a_parked_file_is_fetched() {
+    let archive = names(&["pak01-blue_dir.vpk", "pak02-blue_dir.vpk"]);
+    let parked = names(&["pak01-blue_dir.vpk"]);
+    assert!(!archive_is_parked(
+      &archive,
+      &archive,
+      &parked,
+      &HashSet::new()
+    ));
+  }
+
+  #[test]
+  fn an_archive_the_tree_lists_no_files_for_is_fetched() {
+    let parked = names(&["pak01_dir.vpk"]);
+    assert!(!archive_is_parked(&[], &[], &parked, &HashSet::new()));
+  }
+
+  #[test]
+  fn a_name_another_archive_claims_in_any_case_is_never_reused() {
+    let archive = names(&["Pak01_dir.vpk"]);
+    let claimed = HashSet::from(["pak01_dir.vpk".to_string()]);
+    assert!(!archive_is_parked(&archive, &archive, &archive, &claimed));
+  }
+
+  #[test]
+  fn a_name_the_archive_does_not_own_is_never_reused() {
+    // Another archive's entry in a legacy tree also lists pak01_dir.vpk.
+    let archive = names(&["pak01_dir.vpk", "pak02_dir.vpk"]);
+    let owned = names(&["pak02_dir.vpk"]);
+    assert!(!archive_is_parked(
+      &archive,
+      &owned,
+      &archive,
+      &HashSet::new()
+    ));
+  }
+
+  #[test]
+  fn a_parked_name_only_matches_with_the_same_case() {
+    let archive = names(&["Pak01_dir.vpk"]);
+    let parked = names(&["pak01_dir.vpk"]);
+    assert!(!archive_is_parked(
+      &archive,
+      &archive,
+      &parked,
+      &HashSet::new()
+    ));
   }
 
   #[test]

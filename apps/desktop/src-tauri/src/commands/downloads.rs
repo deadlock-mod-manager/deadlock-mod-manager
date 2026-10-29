@@ -64,6 +64,15 @@ pub async fn queue_download(
   manager.queue_download(task).await
 }
 
+pub(crate) fn ensure_download_allowed(
+  policy: &super::policy::PolicyState,
+  mod_id: &str,
+) -> Result<(), Error> {
+  crate::providers::SubmissionRef::parse_slug(mod_id)
+    .map_err(|_| Error::InvalidInput("Invalid download identity".to_string()))?;
+  policy.ensure_download_allowed(mod_id)
+}
+
 pub(crate) async fn resolve_download_files(
   catalog_state: &super::gamebanana_catalog::GameBananaCatalogState,
   policy: &super::policy::PolicyState,
@@ -71,9 +80,7 @@ pub(crate) async fn resolve_download_files(
   files: &[DownloadFileDto],
   fileserver_preference: FileserverPreference,
 ) -> Result<Vec<DownloadFileDto>, Error> {
-  crate::providers::SubmissionRef::parse_slug(mod_id)
-    .map_err(|_| Error::InvalidInput("Invalid download identity".to_string()))?;
-  policy.ensure_download_allowed(mod_id)?;
+  ensure_download_allowed(policy, mod_id)?;
   if files.is_empty() || files.len() > 100 {
     return Err(Error::InvalidInput(
       "A download must contain between 1 and 100 files".to_string(),

@@ -3,6 +3,7 @@ import {
   applyDownloadTimeSelection,
   deriveActiveArchiveNames,
   deriveActiveVariantCount,
+  deriveReusableFilesForArchive,
   getQueuedDownloads,
   requiresFileSelection,
 } from "@/lib/mods/mod-variants";
@@ -301,5 +302,72 @@ describe("applyDownloadTimeSelection", () => {
         tree([file("pak01_dir.vpk", true), file("pak02_dir.vpk", true)]),
       ),
     ).toBeNull();
+  });
+});
+
+const upload = (
+  url: string,
+  md5Checksum: string | null = null,
+  name = "blue.zip",
+): ModDownloadItem => ({
+  url,
+  size: 1024,
+  name,
+  createdAt: null,
+  updatedAt: null,
+  md5Checksum,
+});
+
+describe("deriveReusableFilesForArchive", () => {
+  const blue = file("pak01_dir.vpk", false, "blue.zip");
+  const red = file("pak02_dir.vpk", true, "red.zip");
+  const reusable = (
+    stored: ModDownloadItem | undefined,
+    live: ModDownloadItem,
+    files = [blue, red],
+  ) =>
+    deriveReusableFilesForArchive(
+      withTree(files, { selectedDownloads: stored ? [stored] : [] }),
+      live,
+    );
+
+  it("reuses the archive's own files when the stored upload is the live one", () => {
+    expect(reusable(upload("dl/1", "aaa"), upload("dl/1", "aaa"))).toEqual([
+      blue,
+    ]);
+  });
+
+  it("checks the stored upload with the archive's name, not the first one", () => {
+    const mod = withTree([blue, red], {
+      selectedDownloads: [
+        upload("dl/9", null, "red.zip"),
+        upload("dl/1", null, "blue.zip"),
+      ],
+    });
+    expect(deriveReusableFilesForArchive(mod, upload("dl/1"))).toEqual([blue]);
+  });
+
+  it("fetches an archive with no recorded upload", () => {
+    expect(reusable(undefined, upload("dl/1"))).toEqual([]);
+  });
+
+  it("fetches a replaced upload with a new URL", () => {
+    expect(reusable(upload("dl/1"), upload("dl/2"))).toEqual([]);
+  });
+
+  it("fetches an upload whose checksum changed under the same URL", () => {
+    expect(reusable(upload("dl/1", "aaa"), upload("dl/1", "bbb"))).toEqual([]);
+  });
+
+  it("compares URLs alone when either upload has no checksum", () => {
+    expect(reusable(upload("dl/1"), upload("dl/1", "bbb"))).toEqual([blue]);
+    expect(reusable(upload("dl/1", "aaa"), upload("dl/1"))).toEqual([blue]);
+  });
+
+  it("fetches when a tree entry has no archive, since it may be this archive's", () => {
+    const legacy = file("pak03_dir.vpk", true);
+    expect(
+      reusable(upload("dl/1"), upload("dl/1"), [blue, red, legacy]),
+    ).toEqual([]);
   });
 });
