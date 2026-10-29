@@ -1,3 +1,4 @@
+import { ExtractionError } from "@deadlock-mods/common/client-errors";
 import type { ModDto } from "@deadlock-mods/shared";
 import {
   type HeroDetectionResult,
@@ -112,7 +113,7 @@ export const useModProcessor = () => {
       targetPath: filesDir,
     });
     if (vpks.length === 0) {
-      throw new Error(t("addMods.noVpkFoundInContent"));
+      throw new ExtractionError(t("addMods.noVpkFoundInContent"));
     }
   };
 
