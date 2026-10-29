@@ -9,6 +9,7 @@ import { formatDecimal, formatWhole } from "@/lib/stats/format";
 import {
   GRADE_STARTS,
   GRADES,
+  isPerMinute,
   type LiveGradeRow,
   type LiveMetric,
 } from "@/lib/stats/live-grades";
@@ -29,16 +30,11 @@ interface LivePaceProps {
   minutes: number | null;
 }
 
-const PER_MINUTE = new Set<LiveMetric>([
-  "soulsPerMin",
-  "objectiveDamagePerMin",
-]);
-
 const formatValue = (metric: LiveMetric, value: number) =>
-  PER_MINUTE.has(metric) ? formatWhole(value) : value.toFixed(0);
+  isPerMinute(metric) ? formatWhole(value) : value.toFixed(0);
 
 const formatAverage = (metric: LiveMetric, value: number) =>
-  PER_MINUTE.has(metric) ? formatWhole(value) : formatDecimal(value, 1);
+  isPerMinute(metric) ? formatWhole(value) : formatDecimal(value, 1);
 
 const Ruler = ({ row }: { row: LiveGradeRow }) => {
   const style = GRADE_STYLES[row.grade];
@@ -93,7 +89,7 @@ export const LivePace = ({
 
   const detail = (row: LiveGradeRow) => {
     if (row.metric === "deaths") return t("stats.live.pace.fewerIsBetter");
-    if (PER_MINUTE.has(row.metric) && minutes) {
+    if (isPerMinute(row.metric) && minutes) {
       return t("stats.live.pace.soFarTotal", {
         value: formatWhole(row.value * minutes),
       });

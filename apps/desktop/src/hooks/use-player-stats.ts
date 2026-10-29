@@ -12,6 +12,7 @@ import {
 import { isMatchSyncBuilt } from "@/lib/runtime-bootstrap";
 import {
   type AnalyticsHeroStats,
+  badgeBracket,
   getAnalyticsHeroStats,
   getBadgeDistribution,
   getBracketCurve,
@@ -306,19 +307,13 @@ export const useBracketBenchmark = (
   stats: Pick<ReturnType<typeof usePlayerStats>, "matches" | "heroes" | "rank">,
   scope: StatsScope,
 ) => {
-  const tier = Math.floor((stats.rank?.badge ?? 0) / 10);
-  const bracket = tier > 0 ? tier : null;
+  const { tier: bracket, minBadge, maxBadge } = badgeBracket(stats.rank?.badge);
   const query = useStatsQuery(
     {
       key: `benchmark:bracket:${bracket ?? "all"}:${statsScopeQuery(scope)}`,
       ttl: STATS_TTL.benchmark,
     },
-    () =>
-      getBracketMetrics({
-        minBadge: bracket === null ? 0 : bracket * 10 + 1,
-        maxBadge: bracket === null ? 116 : bracket * 10 + 6,
-        scope,
-      }),
+    () => getBracketMetrics({ minBadge, maxBadge, scope }),
   );
 
   const rows = useMemo(
@@ -469,8 +464,7 @@ export const useLiveHeroBenchmark = (
   badge: number | undefined,
   scope: StatsScope,
 ) => {
-  const tier = Math.floor((badge ?? 0) / 10);
-  const bracket = tier > 0 ? tier : null;
+  const { tier: bracket, minBadge, maxBadge } = badgeBracket(badge);
   return useStatsQuery(
     {
       key: `benchmark:live-curve:${heroId}:${bracket ?? "all"}:${statsScopeQuery(scope)}`,
@@ -480,8 +474,8 @@ export const useLiveHeroBenchmark = (
     () =>
       getBracketCurve({
         heroId: heroId ?? 0,
-        minBadge: bracket === null ? 0 : bracket * 10 + 1,
-        maxBadge: bracket === null ? 116 : bracket * 10 + 6,
+        minBadge,
+        maxBadge,
         scope,
       }),
   );
