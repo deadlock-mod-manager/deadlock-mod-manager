@@ -33,7 +33,7 @@ describe("isolated E2E worlds", () => {
       const scriptPath = path.join(world.artifactsDirectory, "hold-lock.ps1");
       await writeFile(
         scriptPath,
-        'param([string]$FilePath)\n$stream = [IO.File]::Open($FilePath, [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)\ntry { [Console]::WriteLine("locked"); Start-Sleep -Milliseconds 800 } finally { $stream.Dispose() }\n',
+        'param([string]$FilePath)\n$stream = [IO.File]::Open($FilePath, [IO.FileMode]::Open, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)\ntry { [Console]::WriteLine("locked"); [Threading.Thread]::Sleep(800) } finally { $stream.Dispose() }\n',
       );
       const child = spawn(
         "powershell.exe",
