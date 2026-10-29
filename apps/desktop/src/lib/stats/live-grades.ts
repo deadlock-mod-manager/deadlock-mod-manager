@@ -68,16 +68,6 @@ export interface LivePlayerNumbers {
 /** Grades only mean something once a little of the match has been played. */
 export const MIN_GRADED_MINUTES = 1;
 
-/** `"12:34"` or `"1:02:03"` as minutes; `null` for anything else. */
-export const clockMinutes = (clock: string | null): number | null => {
-  if (!clock || !/^\d+(:\d{1,2}){1,2}$/.test(clock.trim())) return null;
-  const seconds = clock
-    .trim()
-    .split(":")
-    .reduce((total, part) => total * 60 + Number(part), 0);
-  return seconds / 60;
-};
-
 /** Standard normal CDF (Abramowitz-Stegun 7.1.26, error below 1.5e-7). */
 const normalCdf = (z: number): number => {
   const x = Math.abs(z) / Math.SQRT2;

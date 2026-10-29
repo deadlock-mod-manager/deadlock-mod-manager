@@ -11,28 +11,57 @@
 //! This needs `-condebug`, which the app already passes when launching the game.
 //!
 //! With the live bridge HUD mod installed, the same log also carries the
-//! scoreboard. The mod reads the values the game puts on its top-bar player
-//! panels and prints one line per team whenever they change:
-//!
-//! ```text
-//! 10/28 12:10:02 [PanoramaScript] [DMM-LIVE] {"v":1,"side":"friendly","clock":"6:25","players":[...]}
-//! ```
+//! scoreboard; [`bridge`] reads those lines.
+
+mod bridge;
 
 use std::path::{Path, PathBuf};
 use std::sync::{LazyLock, Mutex};
 
 use regex::Regex;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
+use ts_rs::TS;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+use bridge::{BridgeState, LiveScoreboard};
+
+/// Where the match is. The game logs its state as it moves through them.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "camelCase")]
+pub enum GamePhase {
+  /// From joining the lobby until the zipline.
+  Pregame,
+  InProgress,
+  /// Any later state, e.g. the post-game screen.
+  Ended,
+}
+
+impl GamePhase {
+  fn from_state(name: &str) -> Self {
+    match name {
+      "WaitingForPlayersToJoin"
+      | "HeroSelection"
+      | "MatchIntro"
+      | "WaitForMapToLoad"
+      | "PreGameWait" => Self::Pregame,
+      "GameInProgress" => Self::InProgress,
+      _ => Self::Ended,
+    }
+  }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
+#[ts(export, rename_all = "camelCase")]
 #[serde(rename_all = "camelCase")]
 pub struct LiveMatch {
   /// Both ids exceed `Number.MAX_SAFE_INTEGER`, so they cross the bridge as text.
   pub match_id: String,
   pub lobby_id: String,
+  pub phase: GamePhase,
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, TS)]
+#[ts(export, rename_all = "camelCase")]
 #[serde(rename_all = "camelCase")]
 pub struct LiveMatchStatus {
   /// False when the game never ran with `-condebug`; without the log there is
@@ -46,227 +75,6 @@ pub struct LiveMatchStatus {
   /// What the live bridge mod last reported. `None` until it reports, so the
   /// UI can tell a missing mod from a match that has not started.
   pub scoreboard: Option<LiveScoreboard>,
-  /// The game's state name: `WaitingForPlayersToJoin`, `HeroSelection`,
-  /// `MatchIntro`, `WaitForMapToLoad` and `PreGameWait` come before the
-  /// zipline, `GameInProgress` is the match itself.
-  pub game_state: Option<String>,
-}
-
-/// One player as the top bar shows them. Fields the HUD could not resolve stay
-/// `None` rather than reading as zero.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct LiveScoreboardPlayer {
-  pub name: String,
-  pub hero_id: Option<i64>,
-  pub hero_name: Option<String>,
-  pub souls: Option<u64>,
-  pub level: Option<i64>,
-  pub kills: Option<i64>,
-  pub deaths: Option<i64>,
-  pub assists: Option<i64>,
-  pub objective_damage: Option<i64>,
-  pub is_local: bool,
-  pub is_dead: bool,
-}
-
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct LiveScoreboard {
-  /// The in-game clock as the top bar prints it, e.g. `"12:34"`.
-  pub clock: Option<String>,
-  /// The local player's team, then the other one.
-  pub friendly: Vec<LiveScoreboardPlayer>,
-  pub enemy: Vec<LiveScoreboardPlayer>,
-  /// The game's team number of `friendly`: 2 is the Hidden King, 3 the
-  /// Archmother.
-  pub friendly_team: u8,
-  /// Log timestamp of the newest report, e.g. `"10/28 00:41:07"`.
-  pub updated_at: Option<String>,
-  /// Everyone the pre-match versus screen listed, with the account behind them
-  /// when the HUD exposed it. Empty when the screen was never shown.
-  pub roster: Vec<LiveRosterPlayer>,
-  /// The two top-bar team panels as reported. Their ids (`TeamFriendly`,
-  /// `TeamEnemy`) are fixed slots for teams 2 and 3, not relative to the local
-  /// player, so which one is "friendly" is decided by where the local player sits.
-  #[serde(skip)]
-  slots: [Vec<LiveScoreboardPlayer>; 2],
-}
-
-/// The bridge's wire format. Keys are short because a line is written every
-/// time a number on the scoreboard changes.
-#[derive(Deserialize)]
-struct BridgeReport {
-  v: u32,
-  side: String,
-  clock: Option<String>,
-  players: Vec<BridgePlayer>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct LiveRosterPlayer {
-  pub name: String,
-  /// The 32-bit account id deadlock-api keys players by.
-  pub account_id: Option<u32>,
-}
-
-#[derive(Deserialize)]
-struct RosterReport {
-  v: u32,
-  teams: Vec<RosterTeam>,
-}
-
-#[derive(Deserialize)]
-struct RosterTeam {
-  players: Vec<RosterEntry>,
-}
-
-#[derive(Deserialize)]
-struct RosterEntry {
-  n: Option<String>,
-  /// Whatever the avatar panel exposed, by property name.
-  #[serde(default)]
-  ids: std::collections::BTreeMap<String, String>,
-}
-
-#[derive(Deserialize)]
-struct BridgePlayer {
-  n: Option<String>,
-  hid: Option<i64>,
-  hn: Option<String>,
-  s: Option<String>,
-  l: Option<i64>,
-  k: Option<i64>,
-  d: Option<i64>,
-  a: Option<i64>,
-  o: Option<i64>,
-  me: Option<bool>,
-  dead: Option<bool>,
-}
-
-const BRIDGE_TAG: &str = "[DMM-LIVE] ";
-const ROSTER_TAG: &str = "[DMM-LIVE-ROSTER] ";
-/// SteamID64 of account 0 in the public universe.
-const STEAM_ID64_BASE: u64 = 76_561_197_960_265_728;
-const BRIDGE_VERSION: u32 = 1;
-
-/// Drops inline markup: the top bar styles the thousands suffix, so souls read
-/// as `2.0<span class="demote">k</span>`.
-fn strip_tags(text: &str) -> String {
-  let mut out = String::with_capacity(text.len());
-  let mut in_tag = false;
-  for c in text.chars() {
-    match c {
-      '<' => in_tag = true,
-      '>' => in_tag = false,
-      _ if !in_tag => out.push(c),
-      _ => {}
-    }
-  }
-  out
-}
-
-/// Souls as the top bar prints them: `"980"`, `"9,870"` or `"12.3k"`.
-fn parse_souls(text: &str) -> Option<u64> {
-  let text = strip_tags(text).trim().replace(',', "");
-  if let Some(thousands) = text.strip_suffix(['k', 'K']) {
-    let value: f64 = thousands.parse().ok()?;
-    return (value >= 0.0).then(|| (value * 1000.0).round() as u64);
-  }
-  text.parse().ok()
-}
-
-impl From<BridgePlayer> for LiveScoreboardPlayer {
-  fn from(player: BridgePlayer) -> Self {
-    Self {
-      name: player.n.unwrap_or_default(),
-      hero_id: player.hid,
-      hero_name: player.hn,
-      souls: player.s.as_deref().and_then(parse_souls),
-      level: player.l,
-      kills: player.k,
-      deaths: player.d,
-      assists: player.a,
-      objective_damage: player.o,
-      is_local: player.me.unwrap_or(false),
-      is_dead: player.dead.unwrap_or(false),
-    }
-  }
-}
-
-/// An account id from either a SteamID64 or a bare 32-bit account id.
-fn account_id(raw: &str) -> Option<u32> {
-  let value: u64 = raw.trim().parse().ok()?;
-  let account = value.checked_sub(STEAM_ID64_BASE).unwrap_or(value);
-  u32::try_from(account).ok().filter(|id| *id > 0)
-}
-
-fn apply_roster_line(line: &str, board: &mut Option<LiveScoreboard>) {
-  let Some(start) = line.find(ROSTER_TAG) else {
-    return;
-  };
-  let Ok(report) = serde_json::from_str::<RosterReport>(&line[start + ROSTER_TAG.len()..]) else {
-    return;
-  };
-  if report.v != BRIDGE_VERSION {
-    return;
-  }
-  let roster = report
-    .teams
-    .into_iter()
-    .flat_map(|team| team.players)
-    .filter_map(|entry| {
-      let name = entry.n?;
-      // Prefer an explicit account id, then anything that parses as one.
-      let account_id = ["accountid", "accountId", "attr_accountid"]
-        .iter()
-        .filter_map(|key| entry.ids.get(*key))
-        .chain(entry.ids.values())
-        .find_map(|raw| account_id(raw));
-      Some(LiveRosterPlayer { name, account_id })
-    })
-    .collect();
-  board.get_or_insert_with(LiveScoreboard::default).roster = roster;
-}
-
-/// Applies one bridge line to the board. Lines from a bridge version this
-/// build does not know, or that fail to parse, are skipped rather than
-/// clearing what is already on screen.
-fn apply_bridge_line(line: &str, board: &mut Option<LiveScoreboard>) {
-  let Some(start) = line.find(BRIDGE_TAG) else {
-    return;
-  };
-  let Ok(report) = serde_json::from_str::<BridgeReport>(&line[start + BRIDGE_TAG.len()..]) else {
-    return;
-  };
-  if report.v != BRIDGE_VERSION {
-    return;
-  }
-  let slot = match report.side.as_str() {
-    "friendly" => 0,
-    "enemy" => 1,
-    _ => return,
-  };
-  let players: Vec<LiveScoreboardPlayer> = report.players.into_iter().map(Into::into).collect();
-  let board = board.get_or_insert_with(LiveScoreboard::default);
-  board.slots[slot] = players;
-  let local_slot = if board.slots[1].iter().any(|player| player.is_local) {
-    1
-  } else {
-    0
-  };
-  board.friendly = board.slots[local_slot].clone();
-  board.enemy = board.slots[1 - local_slot].clone();
-  // The top-bar layout gives the `TeamFriendly` slot team 2, `TeamEnemy` team 3.
-  board.friendly_team = if local_slot == 0 { 2 } else { 3 };
-  if report.clock.is_some() {
-    board.clock = report.clock;
-  }
-  // `MM/DD HH:MM:SS` at the start of every console line.
-  if line.as_bytes().get(2) == Some(&b'/') {
-    board.updated_at = line.get(..14).map(str::to_owned);
-  }
 }
 
 fn console_log_path(game_path: &Path) -> PathBuf {
@@ -305,13 +113,9 @@ pub struct LivePhase {
   pub current: Option<LiveMatch>,
   /// Every match id seen this session, newest last, capped at `RECENT_LIMIT`.
   pub recent_match_ids: Vec<String>,
-  /// The bridge's latest board. Kept after the lobby closes so the last match
+  /// What the bridge reported. Kept after the lobby closes so the last match
   /// stays readable, and dropped when the next lobby is created.
-  pub scoreboard: Option<LiveScoreboard>,
-  /// The game's own state name from its newest `ChangeGameState` line, e.g.
-  /// `HeroSelection` or `GameInProgress`. Reset when a lobby is created, so
-  /// the hideout's states never stand in for a match's.
-  pub game_state: Option<String>,
+  bridge: Option<BridgeState>,
 }
 
 /// Folds the matchmaking, lobby and live bridge lines of `log` onto an
@@ -340,23 +144,19 @@ pub fn fold_phase(log: &str, previous: LivePhase) -> LivePhase {
   // Line by line, because a lobby line resets the board and has to be seen in
   // order with the bridge lines around it.
   for line in log.lines() {
-    if line.contains(BRIDGE_TAG) {
-      apply_bridge_line(line, &mut phase.scoreboard);
-      continue;
-    }
-    if line.contains(ROSTER_TAG) {
-      apply_roster_line(line, &mut phase.scoreboard);
+    if bridge::apply_line(line, &mut phase.bridge) {
       continue;
     }
     // The hideout's local server logs `ChangeGameState: HeroSelection (3)`; in
-    // a match the client logs `OnGameStateChanged: GameInProgress (7)`.
+    // a match the client logs `OnGameStateChanged: GameInProgress (7)`. Only a
+    // lobby's states count, so the hideout's never stand in for a match's.
     if let Some(rest) = line
       .split_once("OnGameStateChanged: ")
       .or_else(|| line.split_once("ChangeGameState: "))
       .map(|(_, rest)| rest)
     {
-      if let Some((name, _)) = rest.split_once(" (") {
-        phase.game_state = Some(name.trim().to_owned());
+      if let (Some(live), Some((name, _))) = (phase.current.as_mut(), rest.split_once(" (")) {
+        live.phase = GamePhase::from_state(name.trim());
       }
       continue;
     }
@@ -380,9 +180,12 @@ pub fn fold_phase(log: &str, previous: LivePhase) -> LivePhase {
           }
         }
         phase.queued = false;
-        phase.current = Some(LiveMatch { match_id, lobby_id });
-        phase.scoreboard = None;
-        phase.game_state = None;
+        phase.current = Some(LiveMatch {
+          match_id,
+          lobby_id,
+          phase: GamePhase::Pregame,
+        });
+        phase.bridge = None;
       } else if phase
         .current
         .as_ref()
@@ -427,8 +230,7 @@ pub fn status(game_path: &Path) -> LiveMatchStatus {
     queued: phase.queued,
     current: phase.current,
     recent_match_ids: phase.recent_match_ids,
-    scoreboard: phase.scoreboard,
-    game_state: phase.game_state,
+    scoreboard: phase.bridge.as_ref().map(BridgeState::board),
   }
 }
 
@@ -472,6 +274,7 @@ fn phase(path: &Path) -> Option<LivePhase> {
 
 #[cfg(test)]
 mod tests {
+  use super::bridge::Team;
   use super::*;
 
   const CREATED: &str = "08/02 12:03:37 Lobby 174072581626958477 for Match 96996563 created";
@@ -566,20 +369,22 @@ mod tests {
     assert!(!cancelled.queued);
   }
 
-  const FRIENDLY: &str = r#"10/28 00:41:07 [PanoramaScript] [DMM-LIVE] {"v":1,"side":"friendly","clock":"12:34","players":[{"n":"Okaza","hid":13,"hn":"Haze","s":"12.3k","l":14,"k":5,"d":1,"a":7,"o":4210,"me":true,"dead":false}]}"#;
-  const ENEMY: &str = r#"10/28 00:41:09 [PanoramaScript] [DMM-LIVE] {"v":1,"side":"enemy","clock":"12:36","players":[{"n":"Rival","hid":6,"hn":"Abrams","s":"9,870","l":12,"k":2,"d":3,"a":4,"o":null,"me":false,"dead":true}]}"#;
+  const FRIENDLY: &str = r#"10/28 00:41:07 [PanoramaScript] [DMM-LIVE] {"v":2,"side":"friendly","clock":"12:34","players":[{"n":"Okaza","hid":13,"hn":"Haze","s":"12.3k","l":14,"k":5,"d":1,"a":7,"o":4210,"me":true,"dead":false}]}"#;
+  const ENEMY: &str = r#"10/28 00:41:09 [PanoramaScript] [DMM-LIVE] {"v":2,"side":"enemy","clock":"12:36","players":[{"n":"Rival","hid":6,"hn":"Abrams","s":"9,870","l":12,"k":2,"d":3,"a":4,"o":null,"me":false,"dead":true}]}"#;
+
+  fn board(phase: &LivePhase) -> LiveScoreboard {
+    phase.bridge.as_ref().expect("a board").board()
+  }
 
   #[test]
   fn reads_both_teams_from_the_bridge() {
-    let board = fold_phase(
+    let board = board(&fold_phase(
       &format!("{CREATED}\n{FRIENDLY}\n{ENEMY}\n"),
       LivePhase::default(),
-    )
-    .scoreboard
-    .unwrap();
+    ));
 
-    assert_eq!(board.clock.as_deref(), Some("12:36"));
-    assert_eq!(board.updated_at.as_deref(), Some("10/28 00:41:09"));
+    assert_eq!(board.clock_seconds, Some(12 * 60 + 36));
+    assert!(board.reported_at.is_some());
     let me = &board.friendly[0];
     assert_eq!(me.name, "Okaza");
     assert_eq!(me.hero_id, Some(13));
@@ -593,15 +398,16 @@ mod tests {
   }
 
   #[test]
-  fn reads_the_phase_and_the_roster() {
-    let roster = r#"10/28 04:30:01 [PanoramaScript] [DMM-LIVE-ROSTER] {"v":1,"teams":[{"t":1,"players":[{"n":"Okaza","ids":{"steamid":"76561198276744320"}},{"n":"Bot0","ids":{}}]},{"t":2,"players":[{"n":"Rival","ids":{"accountid":"1234"}}]}]}"#;
-    let board = fold_phase(&format!("{roster}\n"), LivePhase::default())
-      .scoreboard
-      .unwrap();
+  fn gives_players_the_accounts_the_versus_screen_listed() {
+    let roster = r#"10/28 04:30:01 [PanoramaScript] [DMM-LIVE-ROSTER] {"v":2,"teams":[{"players":[{"n":"Okaza","id":"76561198276744320"},{"n":"Bot0","id":null}]},{"players":[{"n":"Rival","id":"1234"}]}]}"#;
+    // The roster comes before the top bar exists, and must still apply to it.
+    let board = board(&fold_phase(
+      &format!("{roster}\n{FRIENDLY}\n{ENEMY}\n"),
+      LivePhase::default(),
+    ));
 
-    assert_eq!(board.roster[0].account_id, Some(316_478_592));
-    assert_eq!(board.roster[1].account_id, None);
-    assert_eq!(board.roster[2].account_id, Some(1234));
+    assert_eq!(board.friendly[0].account_id, Some(316_478_592));
+    assert_eq!(board.enemy[0].account_id, Some(1234));
   }
 
   #[test]
@@ -613,62 +419,46 @@ mod tests {
     assert!(in_hideout.current.is_none());
 
     // Captured from a real match: the client logs OnGameStateChanged.
-    let joined = fold_phase(
-      &format!("{CREATED}\n10/28 04:34:07 OnGameStateChanged: MatchIntro (4)\n"),
-      in_hideout,
+    let joined = fold_phase(&format!("{CREATED}\n"), in_hideout);
+    assert_eq!(joined.current.as_ref().unwrap().phase, GamePhase::Pregame);
+    let intro = fold_phase(
+      "10/28 04:34:07 OnGameStateChanged: MatchIntro (4)\n",
+      joined,
     );
-    assert_eq!(joined.game_state.as_deref(), Some("MatchIntro"));
+    assert_eq!(intro.current.as_ref().unwrap().phase, GamePhase::Pregame);
 
     let started = fold_phase(
       "10/28 04:34:43 OnGameStateChanged: GameInProgress (7)\n",
-      joined,
+      intro,
     );
-    assert_eq!(started.game_state.as_deref(), Some("GameInProgress"));
-  }
-
-  #[test]
-  fn parses_souls_the_way_the_top_bar_prints_them() {
-    assert_eq!(parse_souls("980"), Some(980));
-    assert_eq!(parse_souls("9,870"), Some(9_870));
-    assert_eq!(parse_souls("12.3k"), Some(12_300));
     assert_eq!(
-      parse_souls(r#"2.0<span class="demote">k</span>"#),
-      Some(2_000)
+      started.current.as_ref().unwrap().phase,
+      GamePhase::InProgress
     );
-    assert_eq!(parse_souls("?"), None);
   }
 
   #[test]
   fn the_local_players_team_is_friendly_whichever_slot_it_is_in() {
     // Captured from a real match: the local player sat in the `TeamEnemy` slot.
-    let enemy_slot = r#"10/28 03:31:52 [PanoramaScript] [DMM-LIVE] {"v":1,"side":"enemy","clock":null,"players":[{"n":"Snôòpy","hid":null,"hn":"Wraith","s":"2.0<span class=\"demote\">k</span>","l":4,"k":0,"d":0,"a":0,"o":9,"me":true,"dead":false}]}"#;
-    let friendly_slot = r#"10/28 03:31:52 [PanoramaScript] [DMM-LIVE] {"v":1,"side":"friendly","clock":null,"players":[{"n":"Paige","hid":null,"hn":"Paige","s":"1.2<span class=\"demote\">k</span>","l":2,"k":0,"d":0,"a":0,"o":0,"me":false,"dead":false}]}"#;
+    let enemy_slot = r#"10/28 03:31:52 [PanoramaScript] [DMM-LIVE] {"v":2,"side":"enemy","clock":null,"players":[{"n":"Snôòpy","hid":null,"hn":"Wraith","s":"2.0<span class=\"demote\">k</span>","l":4,"k":0,"d":0,"a":0,"o":9,"me":true,"dead":false}]}"#;
+    let friendly_slot = r#"10/28 03:31:52 [PanoramaScript] [DMM-LIVE] {"v":2,"side":"friendly","clock":null,"players":[{"n":"Paige","hid":null,"hn":"Paige","s":"1.2<span class=\"demote\">k</span>","l":2,"k":0,"d":0,"a":0,"o":0,"me":false,"dead":false}]}"#;
 
-    let board = fold_phase(
+    let phase = fold_phase(
       &format!("{friendly_slot}\n{enemy_slot}\n"),
       LivePhase::default(),
-    )
-    .scoreboard
-    .unwrap();
+    );
+    let first = board(&phase);
 
-    assert_eq!(board.friendly[0].name, "Snôòpy");
-    assert_eq!(board.friendly[0].souls, Some(2_000));
-    assert_eq!(board.enemy[0].name, "Paige");
+    assert_eq!(first.friendly[0].name, "Snôòpy");
+    assert_eq!(first.friendly[0].souls, Some(2_000));
+    assert_eq!(first.enemy[0].name, "Paige");
     // Statlocker showed this player on the Archmother.
-    assert_eq!(board.friendly_team, 3);
+    assert_eq!(first.team, Team::Archmother);
 
     // A later report for the other slot must not move the teams around.
-    let board = fold_phase(
-      friendly_slot,
-      LivePhase {
-        scoreboard: Some(board),
-        ..Default::default()
-      },
-    )
-    .scoreboard
-    .unwrap();
-    assert_eq!(board.friendly[0].name, "Snôòpy");
-    assert_eq!(board.enemy[0].name, "Paige");
+    let later = board(&fold_phase(friendly_slot, phase));
+    assert_eq!(later.friendly[0].name, "Snôòpy");
+    assert_eq!(later.enemy[0].name, "Paige");
   }
 
   #[test]
@@ -678,31 +468,31 @@ mod tests {
       LivePhase::default(),
     );
     // The finished match stays readable until the next one forms.
-    assert!(played.scoreboard.is_some());
+    assert!(played.bridge.is_some());
 
     let next = fold_phase("Lobby 2 for Match 333 created\n", played);
-    assert!(next.scoreboard.is_none());
+    assert!(next.bridge.is_none());
   }
 
   #[test]
   fn a_report_for_an_unknown_side_starts_no_board() {
     let phase = fold_phase(
-      "[DMM-LIVE] {\"v\":1,\"side\":\"TeamRenamed\",\"players\":[]}\n",
+      "[DMM-LIVE] {\"v\":2,\"side\":\"TeamRenamed\",\"players\":[]}\n",
       LivePhase::default(),
     );
 
-    assert!(phase.scoreboard.is_none());
+    assert!(phase.bridge.is_none());
   }
 
   #[test]
   fn skips_bridge_lines_it_cannot_read() {
     let phase = fold_phase(
       &format!(
-        "{FRIENDLY}\n[DMM-LIVE] not json\n[DMM-LIVE] {{\"v\":2,\"side\":\"friendly\",\"players\":[]}}\n"
+        "{FRIENDLY}\n[DMM-LIVE] not json\n[DMM-LIVE] {{\"v\":1,\"side\":\"friendly\",\"players\":[]}}\n"
       ),
       LivePhase::default(),
     );
 
-    assert_eq!(phase.scoreboard.unwrap().friendly.len(), 1);
+    assert_eq!(board(&phase).friendly.len(), 1);
   }
 }

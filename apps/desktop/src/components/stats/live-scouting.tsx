@@ -13,10 +13,6 @@ import {
   teamName,
   WinratePill,
 } from "@/components/stats/live-parts";
-import type {
-  LiveScoreboard,
-  LiveScoreboardPlayer,
-} from "@/hooks/use-live-match";
 import type { DeadlockHero } from "@/lib/deadlock-api";
 import { type RankAsset, rankLabel } from "@/lib/stats/api";
 import {
@@ -34,11 +30,13 @@ import {
   type WinRecord,
 } from "@/lib/stats/live-lobby";
 import { cn } from "@/lib/utils";
+import type { LiveScoreboard } from "@/types/generated/LiveScoreboard";
+import type { LiveScoreboardPlayer } from "@/types/generated/LiveScoreboardPlayer";
+import type { Team } from "@/types/generated/Team";
 
 interface LiveScoutingProps {
   board: LiveScoreboard;
   heroFor: (player: LiveScoreboardPlayer) => DeadlockHero | undefined;
-  accountOf: (name: string) => number | null;
   lobby: LiveLobby;
   rankAssets: RankAsset[];
 }
@@ -73,7 +71,6 @@ const mean = (values: number[]) =>
 export const LiveScouting = ({
   board,
   heroFor,
-  accountOf,
   lobby,
   rankAssets,
 }: LiveScoutingProps) => {
@@ -82,12 +79,12 @@ export const LiveScouting = ({
     players.map((player) => ({
       player,
       hero: heroFor(player),
-      accountId: accountOf(player.name),
+      accountId: player.accountId,
     }));
   const friendly = scout(board.friendly);
   const enemy = scout(board.enemy);
   const you = friendly.find((entry) => entry.player.isLocal);
-  const enemyTeam = otherTeam(board.friendlyTeam);
+  const enemyTeam = otherTeam(board.team);
 
   const recordOf = (entry: Scouted) =>
     entry.accountId === null ? undefined : lobby.records.get(entry.accountId);
@@ -210,8 +207,8 @@ export const LiveScouting = ({
     return tags;
   };
 
-  const renderTeam = (team: Scouted[], number: number, isEnemy: boolean) => {
-    const color = teamColor(number);
+  const renderTeam = (players: Scouted[], team: Team, isEnemy: boolean) => {
+    const color = teamColor(team);
     return (
       <div
         className={cn(
@@ -225,7 +222,7 @@ export const LiveScouting = ({
               style={{ backgroundColor: color }}
             />
             <span className='font-medium text-[15px] leading-[19px]'>
-              {t(teamName(number))}
+              {t(teamName(team))}
             </span>
             {!isEnemy && (
               <span className='text-muted-foreground text-xs leading-4'>
@@ -241,7 +238,7 @@ export const LiveScouting = ({
             <span className='w-[98px]'>{t("stats.live.scouting.form")}</span>
           </span>
         </div>
-        {team.map((entry, index) => {
+        {players.map((entry, index) => {
           const onHero = onHeroOf(entry);
           const record = recordOf(entry);
           const form =
@@ -388,7 +385,7 @@ export const LiveScouting = ({
           "flex flex-wrap items-center gap-x-6 gap-y-4 px-[23px] py-[17px]",
         )}
         style={{
-          backgroundImage: `linear-gradient(90deg, ${tint(teamColor(board.friendlyTeam), 8)}, transparent 40%, transparent 60%, ${tint(teamColor(enemyTeam), 8)})`,
+          backgroundImage: `linear-gradient(90deg, ${tint(teamColor(board.team), 8)}, transparent 40%, transparent 60%, ${tint(teamColor(enemyTeam), 8)})`,
         }}>
         <div className='flex min-w-0 flex-1 flex-col gap-1.5'>
           <span className='flex w-fit items-center gap-1.5 rounded-full bg-[#fbbf24]/[0.12] px-2 py-[3px] font-bold font-mono text-[#fbbf24] text-[11px] uppercase leading-[14px] tracking-[0.4px]'>
@@ -413,10 +410,7 @@ export const LiveScouting = ({
               both && (comparison.ours ?? 0) > (comparison.theirs ?? 0);
             const behind =
               both && (comparison.ours ?? 0) < (comparison.theirs ?? 0);
-            const [left, right] = [
-              teamColor(board.friendlyTeam),
-              teamColor(enemyTeam),
-            ];
+            const [left, right] = [teamColor(board.team), teamColor(enemyTeam)];
             return (
               <div
                 className={cn(
@@ -461,7 +455,7 @@ export const LiveScouting = ({
       </div>
 
       <div className='grid gap-4 xl:grid-cols-2'>
-        {renderTeam(friendly, board.friendlyTeam, false)}
+        {renderTeam(friendly, board.team, false)}
         {renderTeam(enemy, enemyTeam, true)}
       </div>
 

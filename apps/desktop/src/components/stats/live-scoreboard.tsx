@@ -19,11 +19,9 @@ import {
   LiveSessionCard,
 } from "@/components/stats/live-states";
 import { LiveTeamBoard } from "@/components/stats/live-team-board";
-import { reportedAt } from "@/components/stats/live-toolbar";
 import { LiveTopBar } from "@/components/stats/live-top-bar";
 import { useLiveBridge } from "@/hooks/use-live-bridge";
 import {
-  type LiveScoreboardPlayer,
   useFinalGrades,
   useLiveMatchDetection,
   usePublishLiveHeadline,
@@ -40,8 +38,8 @@ import {
   type RankAsset,
   resolveRank,
 } from "@/lib/stats/api";
+import { formatClock } from "@/lib/stats/format";
 import {
-  clockMinutes,
   liveGradeRows,
   MIN_GRADED_MINUTES,
   overallGrade,
@@ -52,6 +50,7 @@ import {
 } from "@/lib/stats/live-mock";
 import type { StatsScope } from "@/lib/stats/scope";
 import { cn } from "@/lib/utils";
+import type { LiveScoreboardPlayer } from "@/types/generated/LiveScoreboardPlayer";
 
 /** What the page already knows about the selected account. */
 interface LiveScoreboardYou {
@@ -67,16 +66,6 @@ interface LiveScoreboardProps {
   you: LiveScoreboardYou;
 }
 
-/** The game's states between joining a match and the zipline. */
-const PREGAME_STATES = new Set([
-  "WaitingForPlayersToJoin",
-  "HeroSelection",
-  "MatchIntro",
-  "WaitForMapToLoad",
-  "PreGameWait",
-]);
-const IN_PROGRESS_STATE = "GameInProgress";
-
 const WARN_COLOR = "#fbbf24";
 const AMBER = "#f59e0b";
 const MUTED = "hsl(var(--muted-foreground))";
@@ -88,10 +77,8 @@ const BRIDGE_STALE_MS = 45_000;
  * Whether the bridge reported recently. Bot and practice matches log no lobby
  * line, so this is what tells them apart from a finished match.
  */
-const isRecentReport = (updatedAt: string | null, now: number): boolean => {
-  const reported = reportedAt(updatedAt, now);
-  return reported !== null && now - reported < BRIDGE_STALE_MS;
-};
+const isRecentReport = (reportedAt: number | null, now: number): boolean =>
+  reportedAt !== null && now - reportedAt < BRIDGE_STALE_MS;
 
 /** Development builds only: switches the tab between its fixtures. */
 const MockPicker = ({
@@ -178,16 +165,14 @@ const LiveView = ({
   // console.log outlives the game, so with Deadlock closed nothing in it is
   // current. Only a lobby line marks a real match; the hideout runs the same
   // top bar without one.
-  const inMatch = gameRunning && !!raw?.current;
-  const gameState = inMatch ? (raw?.gameState ?? null) : null;
-  const isPregame =
-    inMatch && (gameState === null || PREGAME_STATES.has(gameState));
-  const isInProgress = inMatch && gameState === IN_PROGRESS_STATE;
-  const isOver = inMatch && !isPregame && !isInProgress;
+  const phase = gameRunning ? (raw?.current?.phase ?? null) : null;
+  const isPregame = phase === "pregame";
+  const isInProgress = phase === "inProgress";
+  const isOver = phase === "ended";
   // In the match the bridge reports throughout, so a quiet board is from a
   // session that never wrote the log. Before it, the top bar may not exist yet.
   const reportedRecently =
-    !!mock || isRecentReport(raw?.scoreboard?.updatedAt ?? null, Date.now());
+    !!mock || isRecentReport(raw?.scoreboard?.reportedAt ?? null, Date.now());
   const board =
     raw?.scoreboard &&
     (isPregame || isOver || (isInProgress && reportedRecently))
@@ -202,24 +187,21 @@ const LiveView = ({
       ? undefined
       : heroesByName.get(player.heroName.toLowerCase()));
 
-  const accountsByName = useMemo(
+  const lobbyAccounts = useMemo(
     () =>
-      new Map(
-        (board?.roster ?? []).flatMap((entry) =>
-          entry.accountId === null ? [] : [[entry.name, entry.accountId]],
-        ),
+      [...(board?.friendly ?? []), ...(board?.enemy ?? [])].flatMap((player) =>
+        player.accountId === null ? [] : [player.accountId],
       ),
-    [board?.roster],
+    [board?.friendly, board?.enemy],
   );
-  const accountOf = (name: string) => accountsByName.get(name) ?? null;
 
   const localPlayer = board?.friendly.find((player) => player.isLocal);
   const localHero = localPlayer ? heroFor(localPlayer) : undefined;
   const yourAccountId = mock
     ? mock.yourAccountId
-    : (you.accountId ?? (localPlayer ? accountOf(localPlayer.name) : null));
+    : (you.accountId ?? localPlayer?.accountId ?? null);
   const realLobby = useLiveLobby({
-    accountIds: mock ? [] : [...accountsByName.values()],
+    accountIds: mock ? [] : lobbyAccounts,
     yourAccountId: mock ? null : yourAccountId,
     yourHeroId: mock ? null : (localHero?.id ?? null),
   });
@@ -235,7 +217,9 @@ const LiveView = ({
     scope,
   );
   const curve = mock?.curve ?? benchmark.data?.data ?? [];
-  const minutes = clockMinutes(board?.clock ?? null);
+  const clockSeconds = board?.clockSeconds ?? null;
+  const minutes = clockSeconds === null ? null : clockSeconds / 60;
+  const clock = clockSeconds === null ? null : formatClock(clockSeconds);
   const rows = useMemo(
     () =>
       localPlayer && minutes !== null
@@ -259,7 +243,7 @@ const LiveView = ({
     board && (isPregame || isInProgress)
       ? {
           source: isPregame ? "versusScreen" : "topBar",
-          updatedAt: board.updatedAt,
+          reportedAt: board.reportedAt,
           matchId,
         }
       : null,
@@ -336,7 +320,6 @@ const LiveView = ({
   if (board && isPregame) {
     return (
       <LiveScouting
-        accountOf={accountOf}
         board={board}
         heroFor={heroFor}
         lobby={lobby}
@@ -361,7 +344,7 @@ const LiveView = ({
       <div className='flex flex-col gap-4 pb-8'>
         {isOver && (
           <LiveMatchOverBanner
-            clock={board.clock}
+            clock={clock}
             inHistory={matches.some(
               (match) => String(match.match_id) === matchId,
             )}
@@ -373,7 +356,7 @@ const LiveView = ({
           <LiveNowStrip
             badge={badge}
             bracketName={bracketName}
-            clock={board.clock}
+            clock={clock}
             hero={localHero}
             isOver={isOver}
             minutes={minutes}
@@ -385,7 +368,7 @@ const LiveView = ({
             overall={overall}
             player={localPlayer}
             rankAssets={rankAssets}
-            team={board.friendlyTeam}
+            team={board.team}
           />
         ) : (
           <div className='stats-surface rounded-xl border p-4 text-center text-muted-foreground text-sm'>
@@ -395,13 +378,13 @@ const LiveView = ({
         <LiveTopBar
           enemy={board.enemy}
           friendly={board.friendly}
-          friendlyTeam={board.friendlyTeam}
+          friendlyTeam={board.team}
           heroFor={heroFor}
         />
         {localPlayer && (
           <div className='grid gap-4 xl:grid-cols-[minmax(0,1.95fr)_minmax(0,1fr)]'>
             <LivePace
-              clock={board.clock}
+              clock={clock}
               minutes={minutes}
               notice={notice}
               peers={bracketName ? `${bracketName} ${heroName}` : heroName}
@@ -415,7 +398,7 @@ const LiveView = ({
                 <div className='relative min-h-[26rem] xl:min-h-0'>
                   <LiveSoulsCurve
                     className='xl:absolute xl:inset-0'
-                    color={teamColor(board.friendlyTeam)}
+                    color={teamColor(board.team)}
                     curve={curve}
                     minutes={minutes}
                     souls={localPlayer.souls}
@@ -426,10 +409,9 @@ const LiveView = ({
           </div>
         )}
         <LiveTeamBoard
-          accountOf={accountOf}
           enemy={board.enemy}
           friendly={board.friendly}
-          friendlyTeam={board.friendlyTeam}
+          friendlyTeam={board.team}
           heroFor={heroFor}
           lobby={lobby}
           rankAssets={rankAssets}

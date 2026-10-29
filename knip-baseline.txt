@@ -269,7 +269,6 @@
 ["types","apps/desktop/src/hooks/use-install-with-collection.ts",[["","UseInstallWithCollectionReturn"]]]
 ["types","apps/desktop/src/hooks/use-install.ts",[["","InstallFunction"]]]
 ["types","apps/desktop/src/hooks/use-install.ts",[["","InstallOptions"]]]
-["types","apps/desktop/src/hooks/use-live-match.ts",[["","LiveMatchInfo"]]]
 ["types","apps/desktop/src/hooks/use-match-sync.ts",[["","AccountStatus"]]]
 ["types","apps/desktop/src/hooks/use-nuke-reinstall.ts",[["","NukePhase"]]]
 ["types","apps/desktop/src/hooks/use-oidc-session.ts",[["","OIDCSession"]]]

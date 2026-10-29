@@ -8,15 +8,16 @@ import {
   teamColor,
   teamName,
 } from "@/components/stats/live-parts";
-import type { LiveScoreboardPlayer } from "@/hooks/use-live-match";
 import type { DeadlockHero } from "@/lib/deadlock-api";
 import { formatThousands } from "@/lib/stats/format";
 import { cn } from "@/lib/utils";
+import type { LiveScoreboardPlayer } from "@/types/generated/LiveScoreboardPlayer";
+import type { Team } from "@/types/generated/Team";
 
 interface LiveTopBarProps {
   friendly: LiveScoreboardPlayer[];
   enemy: LiveScoreboardPlayer[];
-  friendlyTeam: number;
+  friendlyTeam: Team;
   heroFor: (player: LiveScoreboardPlayer) => DeadlockHero | undefined;
 }
 

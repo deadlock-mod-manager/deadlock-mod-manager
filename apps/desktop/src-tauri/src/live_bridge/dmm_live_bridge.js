@@ -17,9 +17,8 @@
 
 (function () {
   var TAG = "[DMM-LIVE]";
-  var DIAG_TAG = "[DMM-LIVE-DIAG]";
   var ROSTER_TAG = "[DMM-LIVE-ROSTER]";
-  var VERSION = 1;
+  var VERSION = 2;
   var TICK_SECONDS = 2;
   // Unchanged boards are repeated this often so the app can tell a quiet match
   // from a bridge that stopped.
@@ -29,7 +28,6 @@
   var lastLine = "";
   var lastEmit = 0;
   var elapsed = 0;
-  var diagnosed = false;
 
   var resolve = function (token, panel) {
     try {
@@ -119,7 +117,7 @@
       n: resolve("{s:player_name}", panel),
       hid: resolveInt(["{i:hero_id}", "{d:hero_id}"], panel),
       hn: resolve("{s:hero_name}", panel),
-      s: stripTags(resolve("{s:gold}", panel)),
+      s: resolve("{s:gold}", panel),
       l: resolveInt(["{i:player_level}"], panel),
       k: resolveInt(["{i:kills}"], panel),
       d: resolveInt(["{i:deaths}"], panel),
@@ -134,20 +132,6 @@
     if (root.id === "TeamFriendly") return "friendly";
     if (root.id === "TeamEnemy") return "enemy";
     return root.id || "unknown";
-  };
-
-  // What the labels under the team panel show. If the dialog variables cannot
-  // be resolved, this is what tells whether reading label text would work.
-  var sampleLabels = function (panel, out, depth) {
-    if (depth > 12 || out.length >= 16) return;
-    var children = childrenOf(panel);
-    for (var i = 0; i < children.length && out.length < 16; i++) {
-      var child = children[i];
-      if (child.paneltype === "Label") {
-        out.push((child.id || "?") + "=" + String(child.text).slice(0, 24));
-      }
-      sampleLabels(child, out, depth + 1);
-    }
   };
 
   var hudRoot = function () {
@@ -174,31 +158,31 @@
     return null;
   };
 
-  // Whatever identifies the account behind an avatar. Which of these the
-  // game's avatar panel exposes is not documented, so every likely one is read.
-  var avatarIds = function (avatar) {
-    var ids = {};
-    var keys = ["steamid", "accountid", "steamId", "accountId", "xuid"];
-    for (var i = 0; i < keys.length; i++) {
+  // The account behind an avatar, as a SteamID64 or a 32-bit account id.
+  // Which property the game's avatar panel exposes it under is not documented,
+  // so the likely ones are tried in turn.
+  var ID_KEYS = ["steamid", "accountid", "steamId", "accountId", "xuid"];
+  var avatarId = function (avatar) {
+    for (var i = 0; i < ID_KEYS.length; i++) {
       try {
-        var value = avatar[keys[i]];
+        var value = avatar[ID_KEYS[i]];
         if (
           value !== undefined &&
           value !== null &&
           value !== "" &&
           value !== 0
         ) {
-          ids[keys[i]] = String(value);
+          return String(value);
         }
       } catch (error) {}
       try {
         var attribute = avatar.GetAttributeString
-          ? avatar.GetAttributeString(keys[i], "")
+          ? avatar.GetAttributeString(ID_KEYS[i], "")
           : "";
-        if (attribute) ids["attr_" + keys[i]] = attribute;
+        if (attribute) return attribute;
       } catch (error) {}
     }
-    return ids;
+    return null;
   };
 
   // The pre-match versus screen lists every player with their avatar, which is
@@ -222,9 +206,9 @@
         var name = entry.FindChildTraverse
           ? entry.FindChildTraverse("UserName")
           : null;
-        players.push({ n: textOf(name), ids: avatar ? avatarIds(avatar) : {} });
+        players.push({ n: textOf(name), id: avatar ? avatarId(avatar) : null });
       }
-      teams.push({ t: t + 1, players: players });
+      teams.push({ players: players });
     }
     if (teams.length === 0) return;
     var line = JSON.stringify({ v: VERSION, teams: teams });
@@ -234,38 +218,11 @@
     }
   };
 
-  var diagnose = function (panels) {
-    diagnosed = true;
-    var types = [];
-    for (var i = 0; i < panels.length; i++) {
-      types.push(panels[i].paneltype + "#" + panels[i].id);
-    }
-    var labels = [];
-    sampleLabels(root, labels, 0);
-    $.Msg(
-      DIAG_TAG +
-        " " +
-        JSON.stringify({
-          v: VERSION,
-          side: side(),
-          root: root.paneltype + "#" + root.id,
-          players: panels.length,
-          panels: types,
-          sample: panels.length > 0 ? readPlayer(panels[0]) : null,
-          clock: readClock(),
-          labels: labels,
-        }),
-    );
-  };
-
   var report = function () {
     elapsed += TICK_SECONDS;
 
     var panels = [];
     findPlayerPanels(root, panels, 0);
-    if (!diagnosed && (panels.length > 0 || elapsed >= 30)) {
-      diagnose(panels);
-    }
 
     if (panels.length > 0) {
       var players = [];

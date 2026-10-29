@@ -1,7 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import type { PerformanceCurvePoint } from "@/lib/stats/api";
 import {
-  clockMinutes,
   curveAt,
   gradeFor,
   type LivePlayerNumbers,
@@ -58,18 +57,6 @@ const player = (numbers: Partial<LivePlayerNumbers>): LivePlayerNumbers => ({
   souls: null,
   objectiveDamage: null,
   ...numbers,
-});
-
-describe("clockMinutes", () => {
-  it("reads the top bar clock", () => {
-    expect(clockMinutes("12:30")).toBe(12.5);
-    expect(clockMinutes("1:02:00")).toBe(62);
-  });
-
-  it("rejects anything else", () => {
-    expect(clockMinutes(null)).toBeNull();
-    expect(clockMinutes("Paused")).toBeNull();
-  });
 });
 
 describe("gradeFor", () => {
