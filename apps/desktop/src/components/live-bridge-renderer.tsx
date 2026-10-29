@@ -10,10 +10,10 @@ import { useGameRunning } from "@/hooks/use-mod-health";
  * per outdated state, so a failure does not loop.
  */
 const LiveBridgeUpdater = () => {
-  const bridge = useLiveBridge();
+  const { status, isUpdating, update } = useLiveBridge();
   const gameRunning = useGameRunning();
   const attempted = useRef(false);
-  const { isOutdated, isUpdating, update } = bridge;
+  const isOutdated = status === "outdated";
 
   useEffect(() => {
     if (!isOutdated) {

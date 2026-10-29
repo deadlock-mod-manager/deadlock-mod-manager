@@ -15,6 +15,7 @@ import { LIVE_BRIDGE_LINK, ModCategory } from "@/lib/constants";
 import { getModsStorePath } from "@/lib/download-cache";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
+import type { BridgeStatus } from "@/types/generated/BridgeStatus";
 
 const LIVE_BRIDGE_NAME = "Live Scoreboard Bridge";
 const LIVE_BRIDGE_AUTHOR = "Okaza";
@@ -79,14 +80,10 @@ export const useLiveBridge = () => {
   const status = useQuery({
     queryKey: ["live-bridge-status", profileFolder, libraryStatus],
     queryFn: () =>
-      invoke<{ installed: boolean; outdated: boolean; incompatible: boolean }>(
-        "live_bridge_status",
-        { profileFolder },
-      ),
+      invoke<BridgeStatus>("live_bridge_status", { profileFolder }),
     staleTime: STATUS_STALE_MS,
     meta: { skipGlobalErrorHandler: true },
   });
-  const isEnabled = status.data?.installed === true;
   const refreshEnabled = () =>
     queryClient.invalidateQueries({ queryKey: ["live-bridge-status"] });
 
@@ -153,11 +150,8 @@ export const useLiveBridge = () => {
 
   return {
     inLibrary,
-    isEnabled,
-    // Only once the addons folder has been checked, so the prompt never flashes.
-    needsSetup: status.data?.installed === false,
-    isOutdated: status.data?.outdated === true,
-    isIncompatible: status.data?.incompatible === true,
+    // `null` until the addons folder has been checked, so prompts never flash.
+    status: status.data ?? null,
     isUpdating: useIsMutating({ mutationKey: UPDATE_KEY }) > 0,
     install,
     update,
