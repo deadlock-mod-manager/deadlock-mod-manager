@@ -14,7 +14,7 @@ import {
   UserRound,
   Users,
 } from "@deadlock-mods/ui/icons";
-import type { ComponentType, ReactNode } from "react";
+import { type ComponentType, type ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { FormChart } from "@/components/stats/form-chart";
 import { HeroPool } from "@/components/stats/hero-pool";
@@ -38,6 +38,8 @@ import {
 } from "@/hooks/use-player-stats";
 import { resolveRank } from "@/lib/stats/api";
 import { summarize } from "@/lib/stats/derive";
+import { usePersistedStore } from "@/lib/store";
+import type { ExperimentalFeature } from "@/lib/store/slices/ui";
 import { type DashboardData, useDashboardData } from "./dashboard-context";
 import {
   ChartSkeleton,
@@ -81,6 +83,8 @@ type AccountData = DashboardData & { accountId: number };
 type PanelDef = {
   icon: ComponentType<{ className?: string }>;
   needsHistory: boolean;
+  /** Only offered, and only shown, while this experimental feature is on. */
+  experimental?: ExperimentalFeature;
   /** Shaped like the panel's cards, so the page keeps its layout while loading. */
   skeleton: () => ReactNode;
 } & (
@@ -301,12 +305,28 @@ const PANELS = {
     // Read from the running game's console log, so no account is involved.
     needsAccount: false,
     needsHistory: false,
+    experimental: "live-scoreboard",
     render: () => <LiveScoreboardPanel />,
   },
 } satisfies Record<PanelId, PanelDef>;
 
 const isPanelId = (id: string): id is PanelId =>
   PANEL_IDS.some((panel) => panel === id);
+
+/** Panels whose experimental feature is off: hidden from the page and the pickers. */
+export const useHiddenPanels = (): ReadonlySet<string> => {
+  const features = usePersistedStore((state) => state.experimentalFeatures);
+  return useMemo(
+    () =>
+      new Set(
+        PANEL_IDS.filter((id) => {
+          const feature = panelDef(id)?.experimental;
+          return feature !== undefined && !features[feature];
+        }),
+      ),
+    [features],
+  );
+};
 
 export const panelDef = (id: string): PanelDef | undefined =>
   isPanelId(id) ? PANELS[id] : undefined;

@@ -41,14 +41,16 @@ import { type ComponentType, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   type DashboardTab,
+  DEFAULT_LAYOUT,
+  holdsOnly,
   isLiveTab,
   TAB_ICONS,
   type TabIcon,
 } from "@/lib/stats/dashboard/layout";
-import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { useLiveHeadline } from "@/hooks/use-live-match";
 import { TAB_TEMPLATE_IDS } from "@/lib/stats/dashboard/templates";
 import { cn } from "@/lib/utils";
+import { useHiddenPanels } from "./panels";
 import { useTabTitle } from "./use-tab-title";
 
 const ICONS = {
@@ -230,10 +232,12 @@ export const DashboardTabs = ({
 }: DashboardTabsProps) => {
   const { t } = useTranslation();
   const tabTitle = useTabTitle();
-  const liveEnabled = useExperimentalFeature("live-scoreboard");
-  const templateIds = liveEnabled
-    ? TAB_TEMPLATE_IDS
-    : TAB_TEMPLATE_IDS.filter((templateId) => templateId !== "live");
+  const hiddenPanels = useHiddenPanels();
+  // A built-in tab that holds only hidden panels is not offered either.
+  const templateIds = TAB_TEMPLATE_IDS.filter((templateId) => {
+    const builtIn = DEFAULT_LAYOUT.tabs.find((tab) => tab.id === templateId);
+    return !builtIn || !holdsOnly(builtIn, hiddenPanels);
+  });
   const activeIndex = tabs.findIndex((tab) => tab.id === activeTabId);
   const activeTab = tabs[activeIndex];
   // The Live panel says when its board is live; the tab only mirrors it.
@@ -247,7 +251,7 @@ export const DashboardTabs = ({
         <TabsList className='h-auto w-max gap-1 bg-transparent p-0'>
           {tabs.map((tab) => {
             const Icon = ICONS[tab.icon];
-            const isLive = liveEnabled && isLiveTab(tab);
+            const isLive = isLiveTab(tab);
             return (
               <TabsTrigger
                 className={cn(

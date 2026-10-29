@@ -275,13 +275,18 @@ export const parseLayout = (stored: DashboardLayout | null) => {
 /** Panels the app no longer has. Saved layouts lose them instead of showing them broken. */
 const RETIRED_PANELS: ReadonlySet<string> = new Set(["live"]);
 
-/** Panels behind the experimental Live Scoreboard toggle. */
-export const LIVE_PANELS: ReadonlySet<string> = new Set(["liveScoreboard"]);
+const LIVE_PANELS: ReadonlySet<string> = new Set(["liveScoreboard"]);
 
 const listedIn =
   (panels: ReadonlySet<string>) =>
   (widget: DashboardWidget): boolean =>
     widget.source.kind === "panel" && panels.has(widget.source.panel);
+
+/** Whether every widget on `tab` is one of `panels`. An empty tab holds none. */
+export const holdsOnly = (
+  tab: DashboardTab,
+  panels: ReadonlySet<string>,
+): boolean => tab.widgets.length > 0 && tab.widgets.every(listedIn(panels));
 
 /** Removes the given panels, and the tabs that held nothing else. */
 export const withoutPanels = (
@@ -290,7 +295,7 @@ export const withoutPanels = (
 ): DashboardLayout => {
   const isListed = listedIn(panels);
   const tabs = layout.tabs
-    .filter((tab) => tab.widgets.length === 0 || !tab.widgets.every(isListed))
+    .filter((tab) => !holdsOnly(tab, panels))
     .map((tab) => ({
       ...tab,
       widgets: tab.widgets.filter((widget) => !isListed(widget)),
@@ -307,12 +312,9 @@ export const withPanelTabsOf = (
   source: DashboardLayout,
   panels: ReadonlySet<string>,
 ): DashboardLayout => {
-  const isListed = listedIn(panels);
   const restored = source.tabs.filter(
     (tab) =>
-      tab.widgets.length > 0 &&
-      tab.widgets.every(isListed) &&
-      !layout.tabs.some((kept) => kept.id === tab.id),
+      holdsOnly(tab, panels) && !layout.tabs.some((kept) => kept.id === tab.id),
   );
   return { ...layout, tabs: [...layout.tabs, ...restored] };
 };
@@ -458,4 +460,4 @@ export const duplicateWidget = (
 
 /** A tab that holds only the Live panel, so the page's filters mean nothing there. */
 export const isLiveTab = (tab: DashboardTab): boolean =>
-  tab.widgets.length > 0 && tab.widgets.every(listedIn(LIVE_PANELS));
+  holdsOnly(tab, LIVE_PANELS);

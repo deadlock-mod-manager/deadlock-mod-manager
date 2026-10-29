@@ -3,7 +3,6 @@ import {
   type DashboardLayout,
   type DashboardWidget,
   DEFAULT_LAYOUT,
-  LIVE_PANELS,
   moveTab,
   moveWidgetToTab,
   parseLayout,
@@ -37,6 +36,8 @@ const layout: DashboardLayout = {
 
 const ids = (value: DashboardLayout, tabId: string) =>
   value.tabs.find((tab) => tab.id === tabId)?.widgets.map((entry) => entry.id);
+
+const LIVE = new Set(["liveScoreboard"]);
 
 describe("dashboard layout", () => {
   it("falls back to the default for a layout that no longer parses", () => {
@@ -86,18 +87,18 @@ describe("dashboard layout", () => {
         { ...widget("4"), source: { kind: "panel", panel: "liveScoreboard" } },
       ],
     });
-    const hidden = withoutPanels(saved, LIVE_PANELS);
+    const hidden = withoutPanels(saved, LIVE);
     expect(hidden.tabs.map((tab) => tab.id)).toEqual(["a", "b"]);
     expect(saved.tabs).toHaveLength(3);
 
-    const restored = withPanelTabsOf(hidden, saved, LIVE_PANELS);
+    const restored = withPanelTabsOf(hidden, saved, LIVE);
     expect(restored).toEqual(saved);
-    expect(withPanelTabsOf(saved, saved, LIVE_PANELS)).toEqual(saved);
+    expect(withPanelTabsOf(saved, saved, LIVE)).toEqual(saved);
   });
 
   it("saving the default with the live tab hidden still matches the default", () => {
-    const hidden = withoutPanels(DEFAULT_LAYOUT, LIVE_PANELS);
-    expect(withPanelTabsOf(hidden, DEFAULT_LAYOUT, LIVE_PANELS)).toEqual(
+    const hidden = withoutPanels(DEFAULT_LAYOUT, LIVE);
+    expect(withPanelTabsOf(hidden, DEFAULT_LAYOUT, LIVE)).toEqual(
       DEFAULT_LAYOUT,
     );
   });
