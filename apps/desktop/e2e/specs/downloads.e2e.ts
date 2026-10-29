@@ -32,6 +32,10 @@ const retry = async (): Promise<void> => {
   await button.waitForClickable();
   await button.click();
 };
+const toast = (title: string) =>
+  $(
+    `//*[@data-sonner-toast]//*[@data-title and starts-with(normalize-space(), "${title}")]`,
+  );
 const pause = async (world: string): Promise<void> => {
   await waitStatus(world, "downloading");
   const partial = path.join(
@@ -134,6 +138,10 @@ describe("real Rust downloads", () => {
           "downloads-redirect",
         ].includes(scenario ?? "")
       ) {
+        if (scenario === "downloads-auth")
+          await toast(
+            `Failed to download ${DOWNLOAD_NAME}: `,
+          ).waitForDisplayed();
         // The seed is already failed. Wait for this attempt's UI result before
         // accepting the same status from the asynchronous persisted store.
         await expect(card().$("button=Retry")).toBeDisplayed();
@@ -146,6 +154,12 @@ describe("real Rust downloads", () => {
         );
         await assertDownloadDisk(world, "failed", "failedToDownload");
         await retry();
+        if (scenario === "downloads-auth") {
+          await toast(`${DOWNLOAD_NAME} downloaded!`).waitForDisplayed();
+          await browser.saveScreenshot(
+            path.join(world, "artifacts", "download-toasts.png"),
+          );
+        }
         await waitStatus(world, "downloaded");
       } else await waitStatus(world, "downloaded");
       if (scenario !== "downloads-cancel" && scenario !== "downloads-restart")

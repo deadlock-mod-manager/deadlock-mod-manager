@@ -154,10 +154,15 @@ export const useDownload = (
         ),
       onComplete: () => {
         setIsDialogOpen(false);
-        toast.success(`${mod.name} downloaded!`);
+        toast.success(t("downloads.downloadComplete", { name: mod.name }));
       },
       onError: (error) => {
-        toast.error(`Failed to download ${mod.name}: ${error.message}`);
+        toast.error(
+          t("downloads.downloadError", {
+            name: mod.name,
+            message: error.message,
+          }),
+        );
         setIsDialogOpen(false);
       },
     });
@@ -169,12 +174,12 @@ export const useDownload = (
    */
   const initiateDownload = (files: ModDownloadDto[] = availableFiles) => {
     if (!mod) {
-      toast.error("Failed to fetch mod download data. Try again later.");
+      toast.error(t("downloads.retryFetchError"));
       return;
     }
 
     if (!files || files.length === 0) {
-      toast.error("No downloadable files found for this mod.");
+      toast.error(t("downloads.retryNoFiles"));
       return;
     }
 
@@ -191,7 +196,7 @@ export const useDownload = (
     if (mod) {
       downloadManager.pauseDownload(mod.remoteId).catch((err) => {
         const message = err instanceof Error ? err.message : String(err);
-        toast.error(`Could not pause download: ${message}`);
+        toast.error(t("downloads.pauseError", { message }));
       });
     }
   };
@@ -200,7 +205,7 @@ export const useDownload = (
     if (mod) {
       downloadManager.resumeDownload(mod.remoteId).catch((err) => {
         const message = err instanceof Error ? err.message : String(err);
-        toast.error(`Could not resume download: ${message}`);
+        toast.error(t("downloads.resumeError", { message }));
       });
     }
   };
