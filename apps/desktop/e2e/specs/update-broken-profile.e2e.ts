@@ -8,10 +8,12 @@ import { brokenProfileDirectory } from "../support/broken-profile-fixtures";
 import { chooseInstallFiles } from "../support/catalog-actions";
 import { step } from "../support/evidence";
 import { readCatalogState } from "../support/gamebanana-oracle";
-import { MULTIPAK_MODS } from "../support/multipak-update-fixtures";
+import {
+  MULTIPAK_MODS,
+  multipakVpk,
+} from "../support/multipak-update-fixtures";
 import { assertMultipakDisk } from "../support/multipak-update-oracle";
-import { observeUntil } from "../support/observations";
-import { BETA } from "../support/profile-fixtures";
+import { fingerprint, observeUntil } from "../support/observations";
 import { navigate } from "../support/ui";
 import { assertOwnedWorld, collectFileInventory } from "../support/world";
 
@@ -98,25 +100,38 @@ describe("updates beside a broken inactive profile", () => {
       await assertBetaUntouched("updated");
     });
 
-    const backupPath = await step("backup copies every profile", async () => {
-      const backups = await browser.execute(() =>
-        window.__TAURI_INTERNALS__.invoke<
-          Array<{ file_name: string; file_path: string }>
-        >("list_addons_backups"),
-      );
-      assert.equal(backups.length, 1);
-      const backup = path.resolve(backups[0].file_path);
-      assert.equal(
-        backup,
-        path.join(citadel, "addons-backups", backups[0].file_name),
-      );
-      assert.deepEqual(
-        await collectFileInventory(path.join(backup, "addons", BETA.folder)),
-        betaBefore,
-        "The backup keeps the broken profile as it was",
-      );
-      return backup;
-    });
+    const backupPath = await step(
+      "backup holds only the updated mods",
+      async () => {
+        const backups = await browser.execute(() =>
+          window.__TAURI_INTERNALS__.invoke<
+            Array<{ file_name: string; file_path: string }>
+          >("list_addons_backups"),
+        );
+        assert.equal(backups.length, 1);
+        const backup = path.resolve(backups[0].file_path);
+        assert.equal(
+          backup,
+          path.join(citadel, "addons-backups", backups[0].file_name),
+        );
+        const { "update.json": index, ...files } =
+          await collectFileInventory(backup);
+        assert(index, "The update backup has an index");
+        assert.deepEqual(
+          files,
+          Object.fromEntries(
+            MULTIPAK_MODS.flatMap((mod) =>
+              mod.versions.v1.map((name) => [
+                `${mod.id}/vpks/${name}`,
+                fingerprint(multipakVpk(mod.id, "v1", name)),
+              ]),
+            ),
+          ),
+          "The backup holds the v1 files and nothing of the broken profile",
+        );
+        return backup;
+      },
+    );
     const backupBefore = await collectFileInventory(backupPath);
 
     await step("restore the pre-update backup", async () => {
@@ -129,11 +144,10 @@ describe("updates beside a broken inactive profile", () => {
       await $(
         '//*[@data-sonner-toast]//*[@data-title and normalize-space()="Backup restored successfully"]',
       ).waitForDisplayed();
-      assert.deepEqual(
-        await collectFileInventory(path.join(citadel, "addons")),
-        await collectFileInventory(path.join(backupPath, "addons")),
-        "Restore puts back the v1 addons",
-      );
+      await assertMultipakDisk(world, "restored-v1", {
+        version: "v1",
+        a: "enabled",
+      });
       assert.deepEqual(await collectFileInventory(backupPath), backupBefore);
       await assertBetaUntouched("restored");
     });

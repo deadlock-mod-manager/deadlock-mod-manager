@@ -175,7 +175,18 @@ export const assertCatalogDisk = async (
   );
   if (scenario === "gamebanana-force-update" && phase !== "initial-install") {
     const initial = z
-      .object({ inventory: z.record(z.string(), z.string()) })
+      .object({
+        manifest: z.object({
+          mods: z.record(
+            z.string(),
+            z.object({
+              currentVpks: z.array(z.string()),
+              originalVpkNames: z.array(z.string()),
+            }),
+          ),
+        }),
+        inventory: z.record(z.string(), z.string()),
+      })
       .parse(
         JSON.parse(
           await readFile(
@@ -188,18 +199,29 @@ export const assertCatalogDisk = async (
       new Set(backupPaths.map((name) => name.split("/")[3])).size,
       1,
     );
+    const backup = Object.fromEntries(
+      backupPaths.map((name) => [
+        name.split("/").slice(4).join("/"),
+        game[name],
+      ]),
+    );
+    const { "update.json": index, ...backedUp } = backup;
+    assert(index, "The update backup has an index");
+    const initialEntry = initial.manifest.mods[CATALOG_MOD_ID];
     assert.deepEqual(
+      backedUp,
       Object.fromEntries(
-        backupPaths.map((name) => [
-          name.split("/").slice(4).join("/"),
-          game[name],
-        ]),
-      ),
-      Object.fromEntries(
-        Object.entries(initial.inventory).map(([name, hash]) => [
-          `addons/${name}`,
-          hash,
-        ]),
+        Object.entries(initial.inventory)
+          .filter(([name]) => name !== ".dmm.json")
+          .map(([name, hash]) => {
+            const slot = initialEntry.currentVpks.indexOf(name);
+            return [
+              slot === -1
+                ? `${CATALOG_MOD_ID}/parked/${name}`
+                : `${CATALOG_MOD_ID}/vpks/${initialEntry.originalVpkNames[slot]}`,
+              hash,
+            ];
+          }),
       ),
     );
   } else assert.deepEqual(backupPaths, []);
