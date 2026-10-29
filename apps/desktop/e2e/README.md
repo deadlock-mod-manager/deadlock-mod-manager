@@ -177,6 +177,7 @@ M4 uses real Rust HTTP transfers against binary fixture responses. Run any case 
 | `downloads-corrupt` | A same-length corrupt payload fails MD5 validation without publishing a file; UI retry succeeds |
 | `downloads-redirect` | Reject a redirect to a production host without making an external request; UI retry succeeds |
 | `downloads-variants` | Retry preserves a previously selected variant, including after a 401 and restart; the unselected URL has no registered fixture |
+| `downloads-queued-retry` | After a 401, retry the download while another throttled download holds the queue; the waiting card shows no health notice, and the retry completes once the queue frees up |
 
 Each world starts with a failed download record and persisted file selection, so Retry exercises the real frontend purge/queue flow without depending on the remote catalog. Variant coverage here is persisted selection and retry, not the initial catalog file chooser. Cancellation uses real IPC because the current UI does not expose a cancel control. Successful transfers are checked again in a new application process. The oracle compares SHA-256 hashes, partial prefixes and metadata, exact cache contents, the empty addon manifest, and protected game/Steam files. `download-*.json` captures disk/state evidence; `network.ndjson` includes Range headers, response status and bytes sent. UI retries deliberately purge stale data; only interrupted transfers within a running process resume with Range.
 

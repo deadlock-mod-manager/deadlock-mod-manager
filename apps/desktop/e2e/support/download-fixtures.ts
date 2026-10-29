@@ -24,6 +24,23 @@ export const downloadPayload = (variant = "selected") =>
       contents: `${variant}\n${"fixture-payload\n".repeat(32768)}`,
     },
   ]);
+export const QUEUE_MOD = "local-00000000-0000-4000-8000-000000000005";
+export const QUEUE_NAME = "E2E Queue Blocker";
+const QUEUE_FILE = "blocker.vpk";
+// About 200 KB/s for minutes, so this transfer holds the backend's
+// one-at-a-time queue while a retried download waits behind it.
+const queuePayload = () =>
+  Buffer.alloc(40 * 1024 * 1024, "e2e-queue-payload\n");
+const queueRoute = (): FixtureRoute => ({
+  method: "GET",
+  path: `/downloads/${QUEUE_FILE}`,
+  status: 200,
+  body: queuePayload(),
+  range: true,
+  headers: { etag: '"e2e-queue-v1"' },
+  chunkBytes: 20 * 1024,
+  chunkDelayMs: 100,
+});
 export const downloadRoutes = (scenario: string): FixtureRoute[] => {
   const body = downloadPayload();
   const good = {
@@ -39,6 +56,7 @@ export const downloadRoutes = (scenario: string): FixtureRoute[] => {
   switch (scenario) {
     case "downloads-auth":
     case "downloads-variants":
+    case "downloads-queued-retry":
       sequence = [{ status: 401, body: "Authentication required" }, good];
       break;
     case "downloads-redirect":
@@ -72,9 +90,11 @@ export const downloadRoutes = (scenario: string): FixtureRoute[] => {
     default:
       sequence = [slow];
   }
-  return [
+  const routes: FixtureRoute[] = [
     { method: "GET", path: `/downloads/${DOWNLOAD_FILE}`, ...good, sequence },
   ];
+  if (scenario === "downloads-queued-retry") routes.push(queueRoute());
+  return routes;
 };
 
 export const prepareDownloadWorld = async (
@@ -111,6 +131,26 @@ export const prepareDownloadWorld = async (
     downloads,
     selectedDownloads: [selected],
   };
+  const mods = [mod];
+  if (scenario === "downloads-queued-retry") {
+    const blocker = queuePayload();
+    const file: ModDownloadItem = {
+      ...selected,
+      name: QUEUE_FILE,
+      url: `${origin}/downloads/${QUEUE_FILE}`,
+      size: blocker.length,
+      md5Checksum: createHash("md5").update(blocker).digest("hex"),
+      description: "Queue blocker",
+    };
+    mods.push({
+      ...fixtureMod(QUEUE_MOD, 1),
+      name: QUEUE_NAME,
+      status: ModStatus.FailedToDownload,
+      installedVpks: [],
+      downloads: [file],
+      selectedDownloads: [file],
+    });
+  }
   const storePath = path.join(world.configuration.roots.appData, "state.json");
   const persisted = z
     .object({ state: z.record(z.string(), z.json()), version: z.number() })
@@ -121,7 +161,7 @@ export const prepareDownloadWorld = async (
     folderName: null,
     isDefault: true,
     createdAt: new Date(0),
-    mods: [mod],
+    mods,
     enabledMods: {},
   };
   await writeFile(
@@ -132,7 +172,7 @@ export const prepareDownloadWorld = async (
         state: {
           ...persisted.state,
           activeProfileId: "default",
-          localMods: [mod],
+          localMods: mods,
           profiles: { default: profile },
         },
       }),
@@ -158,6 +198,15 @@ export const assertDownloadNetwork = (
     request.url.startsWith("/downloads/"),
   );
   assert.ok(requests.length > 0, "Download must reach the real HTTP fixture");
+  if (scenario === "downloads-queued-retry") {
+    const statuses = (file: string) =>
+      requests
+        .filter((request) => request.url === `/downloads/${file}`)
+        .map((request) => request.responseStatus);
+    assert.deepEqual(statuses(DOWNLOAD_FILE), [401, 200]);
+    assert.deepEqual(statuses(QUEUE_FILE), [200]);
+    return;
+  }
   assert.ok(
     requests.every((request) => request.url === `/downloads/${DOWNLOAD_FILE}`),
   );

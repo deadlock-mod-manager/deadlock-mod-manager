@@ -641,6 +641,11 @@ export const scenarios = {
   "downloads-variants": downloads,
   "downloads-queue-error-toast": queueError,
   "downloads-queue-error-model-tab": { ...queueError, phases: ["model-tab"] },
+  "downloads-queued-retry": {
+    ...downloads,
+    spec: "download-queue",
+    phases: ["queue"],
+  },
   "filesystem-backup-replace": filesystem,
   "filesystem-backup-merge": filesystem,
   "filesystem-lock": { ...filesystem, platforms: ["win32"] },
