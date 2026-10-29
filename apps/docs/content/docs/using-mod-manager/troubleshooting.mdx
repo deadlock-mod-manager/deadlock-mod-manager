@@ -224,6 +224,35 @@ The thread does not confirm a fix for the separate recurring “Something went w
    - Some mods may have regional download restrictions
    - Try using a VPN to a different region if necessary
 
+### Windows: Downloads Are Very Slow
+
+**Symptoms:** GameBanana downloads crawl at a few hundred KB/s on Windows, whichever download routing option you pick, while speed tests and other downloads on the same PC are fast. A 250 MB mod takes 15 minutes or more.
+
+**Cause:** Windows' TCP receive window auto-tuning is turned off. Without it, each connection can only have 64 KB in flight, so its speed is capped by the distance to the server rather than by your internet plan. GameBanana's file servers are far from many players (around 240 ms away from Southeast Asia, for example), where this cap works out to roughly 250 KB/s per download. Auto-tuning is on by default. It is usually turned off by an old "fix slow downloads" or game patching guide that recommends `netsh int tcp set global autotuninglevel=disabled`, or by a "network optimizer" tool.
+
+#### Check Whether Auto-Tuning Is Off
+
+Open PowerShell and run:
+
+```powershell
+Get-NetTCPSetting -SettingName Internet | Select-Object AutoTuningLevelLocal
+```
+
+If it prints `Disabled`, `HighlyRestricted` or `Restricted`, this is the likely cause. `netsh interface tcp show global` shows the same setting as **Receive Window Auto-Tuning Level**.
+
+#### Turn Auto-Tuning Back On
+
+1. Press **Start**, type **PowerShell**, right-click **Windows PowerShell**, and choose **Run as administrator**
+2. Run:
+
+   ```powershell
+   netsh interface tcp set global autotuninglevel=normal
+   ```
+
+3. Cancel any download that is still running and start it again, since it keeps using its old connection. You don't need to restart your PC
+
+If downloads get slow again later, check the setting again: some optimizer tools turn it back off when they run. If you turned it off on purpose, for example to work around a router problem, run the same command with `autotuninglevel=disabled` to go back.
+
 ### Mod Installation Failures
 
 **Symptoms:** Downloads complete but mods don't install properly.
