@@ -14,7 +14,7 @@ import {
   UserRound,
   Users,
 } from "@deadlock-mods/ui/icons";
-import { type ComponentType, type ReactNode, useMemo } from "react";
+import type { ComponentType, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { FormChart } from "@/components/stats/form-chart";
 import { HeroPool } from "@/components/stats/hero-pool";
@@ -160,9 +160,8 @@ const SquadPanel = () => {
 };
 
 const LiveScoreboardPanel = () => {
-  const { stats, heroesById, rankAssets, scope } = useDashboardData();
-  // Without an account these are empty, and the board simply has no career line.
-  const career = useMemo(() => summarize(stats.allMatches), [stats.allMatches]);
+  const { accountId, stats, heroesById, rankAssets, scope } =
+    useDashboardData();
   return (
     <div className='flex flex-col gap-4'>
       <LiveBridgeNotice />
@@ -170,7 +169,7 @@ const LiveScoreboardPanel = () => {
         heroesById={heroesById}
         rankAssets={rankAssets}
         scope={scope}
-        you={{ rank: stats.rank, career, heroes: stats.heroes }}
+        you={{ accountId, rank: stats.rank, matches: stats.allMatches }}
       />
     </div>
   );

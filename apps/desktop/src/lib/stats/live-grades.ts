@@ -7,11 +7,12 @@ import type { PerformanceCurvePoint } from "@/lib/stats/api";
  * every early game as behind; the bracket's curve compares like with like.
  */
 
+/** Souls first: it is the number the rest of the Live tab is built around. */
 const LIVE_METRICS = [
+  "soulsPerMin",
   "kills",
   "deaths",
   "assists",
-  "soulsPerMin",
   "objectiveDamagePerMin",
 ] as const;
 export type LiveMetric = (typeof LIVE_METRICS)[number];
@@ -182,4 +183,13 @@ export const liveGradeRows = ({
       },
     ];
   });
+};
+
+/** One grade for the match so far: the average share of the bracket beaten. */
+export const overallGrade = (
+  rows: LiveGradeRow[],
+): { beats: number; grade: Grade } | null => {
+  if (rows.length === 0) return null;
+  const beats = rows.reduce((sum, row) => sum + row.beats, 0) / rows.length;
+  return { beats, grade: gradeFor(beats) };
 };

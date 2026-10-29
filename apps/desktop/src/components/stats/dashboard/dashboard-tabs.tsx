@@ -41,10 +41,12 @@ import { type ComponentType, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   type DashboardTab,
+  isLiveTab,
   TAB_ICONS,
   type TabIcon,
 } from "@/lib/stats/dashboard/layout";
 import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
+import { useLiveHeadline } from "@/hooks/use-live-match";
 import { TAB_TEMPLATE_IDS } from "@/lib/stats/dashboard/templates";
 import { cn } from "@/lib/utils";
 import { useTabTitle } from "./use-tab-title";
@@ -66,7 +68,7 @@ const ICONS = {
 
 // Quiet tabs: only the active one gets a surface, a hairline and a primary icon.
 const TAB_TRIGGER_CLASS =
-  "h-9 gap-2 rounded-lg border border-transparent px-3.5 font-semibold text-[13.5px] text-muted-foreground data-[state=active]:border-primary/15 data-[state=active]:bg-secondary data-[state=active]:text-foreground data-[state=active]:shadow-none [&[data-state=active]>svg:first-child]:text-primary";
+  "h-[34px] gap-2 rounded-lg border border-transparent px-[13px] font-semibold text-[13.5px] text-muted-foreground data-[state=active]:border-primary/15 data-[state=active]:bg-secondary data-[state=active]:text-foreground data-[state=active]:shadow-none [&[data-state=active]>svg:first-child]:text-primary";
 
 interface TabSettingsProps {
   tab: DashboardTab;
@@ -234,6 +236,8 @@ export const DashboardTabs = ({
     : TAB_TEMPLATE_IDS.filter((templateId) => templateId !== "live");
   const activeIndex = tabs.findIndex((tab) => tab.id === activeTabId);
   const activeTab = tabs[activeIndex];
+  // The Live panel says when its board is live; the tab only mirrors it.
+  const inMatch = useLiveHeadline()?.source === "topBar";
 
   return (
     // Many tabs outgrow a narrow window before anything else in the header
@@ -243,15 +247,35 @@ export const DashboardTabs = ({
         <TabsList className='h-auto w-max gap-1 bg-transparent p-0'>
           {tabs.map((tab) => {
             const Icon = ICONS[tab.icon];
+            const isLive = liveEnabled && isLiveTab(tab);
             return (
               <TabsTrigger
-                className={TAB_TRIGGER_CLASS}
+                className={cn(
+                  TAB_TRIGGER_CLASS,
+                  isLive && "data-[state=active]:border-red-400/25",
+                )}
                 data-broken={brokenTabIds.has(tab.id)}
                 data-tab-id={tab.id}
                 key={tab.id}
                 value={tab.id}>
-                <Icon className='h-4 w-4' />
+                {isLive ? (
+                  <span className='flex h-[15px] w-[15px] items-center justify-center'>
+                    <span
+                      className={cn(
+                        "h-[7px] w-[7px] rounded-full bg-red-400 shadow-[0_0_8px] shadow-red-400/70",
+                        inMatch && "animate-pulse",
+                      )}
+                    />
+                  </span>
+                ) : (
+                  <Icon className='h-[15px] w-[15px]' />
+                )}
                 {tabTitle(tab)}
+                {isLive && (
+                  <span className='rounded bg-foreground/[0.06] px-1.5 py-px font-mono font-semibold text-[9.5px] text-muted-foreground tracking-wider'>
+                    {t("stats.dashboard.tabs.beta")}
+                  </span>
+                )}
                 {counts?.[tab.id] !== undefined && (
                   <span className='min-w-[2ch] font-medium font-mono text-[11.5px] text-muted-foreground/70'>
                     {counts[tab.id]}

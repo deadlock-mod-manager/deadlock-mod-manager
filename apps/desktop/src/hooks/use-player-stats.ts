@@ -1,6 +1,6 @@
 import { RuntimeError } from "@deadlock-mods/common/client-errors";
 import { DeadlockHeroes, normalizeHero } from "@deadlock-mods/shared";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -46,6 +46,13 @@ import {
   mergeHeroStats,
   mergeLocalMatches,
 } from "@/lib/stats/derive";
+import {
+  type LiveLobby,
+  lobbyRecords,
+  matchupsFor,
+  recentForm,
+  type WinRecord,
+} from "@/lib/stats/live-lobby";
 import { playerFromMatch } from "@/lib/stats/match-detail";
 import {
   ALL_STATS_SCOPE,
@@ -331,20 +338,42 @@ export const useBracketBenchmark = (
   };
 };
 
-export interface LobbyCareer {
-  matches: number;
-  winrate: number;
-  /** (kills + assists) / deaths over every match, deaths floored at one. */
-  kda: number;
-}
+/** A per-account query keyed like `usePlayerScopedQuery`, so caches are shared. */
+const playerQuery = <T>(
+  accountId: number,
+  key: string,
+  ttl: number,
+  fetcher: (id: number) => Promise<T>,
+) => {
+  const cacheKey = `${PLAYER_CACHE_PREFIX}${key}:${accountId}`;
+  return {
+    queryKey: ["stats", cacheKey],
+    queryFn: () => cachedFetch(cacheKey, ttl, () => fetcher(accountId)),
+    staleTime: ttl,
+    gcTime: ttl * 2,
+    refetchOnWindowFocus: false,
+    retry: 1,
+    meta: { skipGlobalErrorHandler: true },
+  };
+};
 
 /**
- * Overall records for everyone in a lobby, summed over their heroes. One
- * request for the whole lobby, made once per set of accounts.
+ * What the Live tab knows about a lobby beyond the top bar. Records for the
+ * whole lobby are one request; ranks and recent form are one per player, so
+ * they are cached per account and shared with the player cards. Who you met
+ * before and how your hero fares against theirs come from your own account.
  */
-export const useLobbyCareers = (accountIds: number[]) => {
+export const useLiveLobby = ({
+  accountIds,
+  yourAccountId,
+  yourHeroId,
+}: {
+  accountIds: number[];
+  yourAccountId: number | null;
+  yourHeroId: number | null;
+}): LiveLobby => {
   const ids = useMemo(() => [...new Set(accountIds)].sort(), [accountIds]);
-  const query = useStatsQuery(
+  const heroStats = useStatsQuery(
     {
       key: `lobby:careers:${ids.join(",")}`,
       ttl: STATS_TTL.heroStats,
@@ -352,46 +381,83 @@ export const useLobbyCareers = (accountIds: number[]) => {
     },
     () => getPlayerHeroStats(ids),
   );
+  // A stable `combine` keeps these maps from rebuilding on every live poll.
+  const ranks = useQueries({
+    queries: ids.map((id) =>
+      playerQuery(id, "rank", STATS_TTL.rank, getPlayerRank),
+    ),
+    combine: useCallback(
+      (results: { data?: { data: PlayerRank } }[]) =>
+        new Map(
+          ids.flatMap((id, index) => {
+            const rank = results[index]?.data?.data;
+            return rank ? [[id, rank.badge] as const] : [];
+          }),
+        ),
+      [ids],
+    ),
+  });
+  const form = useQueries({
+    queries: ids.map((id) =>
+      playerQuery(id, "match-history", STATS_TTL.matchHistory, getMatchHistory),
+    ),
+    combine: useCallback(
+      (results: { data?: { data: MatchHistoryEntry[] } }[]) =>
+        new Map(
+          ids.flatMap((id, index) => {
+            const history = results[index]?.data?.data;
+            return history ? [[id, recentForm(history)] as const] : [];
+          }),
+        ),
+      [ids],
+    ),
+  });
+  const encounters = usePlayerHistory(yourAccountId, ids.length > 0);
+  const counters = usePlayerScopedQuery(
+    yourAccountId,
+    {
+      key: "counters",
+      ttl: STATS_TTL.heroStats,
+      enabled: yourHeroId !== null,
+    },
+    (id) => getHeroCounterStats(id),
+  );
 
-  const careers = useMemo(() => {
-    const totals = new Map<
-      number,
-      {
-        matches: number;
-        wins: number;
-        kills: number;
-        deaths: number;
-        assists: number;
-      }
-    >();
-    for (const hero of query.data?.data ?? []) {
-      const total = totals.get(hero.account_id) ?? {
-        matches: 0,
-        wins: 0,
-        kills: 0,
-        deaths: 0,
-        assists: 0,
-      };
-      total.matches += hero.matches_played;
-      total.wins += hero.wins;
-      total.kills += hero.kills;
-      total.deaths += hero.deaths;
-      total.assists += hero.assists;
-      totals.set(hero.account_id, total);
-    }
-    const result = new Map<number, LobbyCareer>();
-    for (const [accountId, total] of totals) {
-      if (total.matches === 0) continue;
-      result.set(accountId, {
-        matches: total.matches,
-        winrate: total.wins / total.matches,
-        kda: (total.kills + total.assists) / Math.max(total.deaths, 1),
-      });
-    }
-    return result;
-  }, [query.data]);
+  const records = useMemo(
+    () => lobbyRecords(heroStats.data?.data ?? []),
+    [heroStats.data],
+  );
+  const met = useMemo(() => {
+    const toRecord = (entry: { wins: number; matches_played: number }) => ({
+      matches: entry.matches_played,
+      wins: entry.wins,
+    });
+    return {
+      mates: new Map(
+        [...encounters.mates].map(([id, mate]) => [id, toRecord(mate)]),
+      ),
+      enemies: new Map(
+        [...encounters.enemies].map(([id, enemy]) => [id, toRecord(enemy)]),
+      ),
+    };
+  }, [encounters.mates, encounters.enemies]);
+  const matchups = useMemo(
+    () =>
+      yourHeroId === null
+        ? new Map<number, WinRecord>()
+        : matchupsFor(counters.data?.data ?? [], yourHeroId),
+    [counters.data, yourHeroId],
+  );
 
-  return { careers, isPending: ids.length > 0 && query.isPending };
+  return {
+    records,
+    ranks,
+    form,
+    mates: met.mates,
+    enemies: met.enemies,
+    matchups,
+    isPending: ids.length > 0 && heroStats.isPending,
+  };
 };
 
 /**

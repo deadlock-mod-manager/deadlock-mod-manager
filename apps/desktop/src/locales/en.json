@@ -1005,55 +1005,37 @@
       "condebugDescription": "The live scoreboard reads your match from the game's console log, which Deadlock only writes with the -condebug launch option. Turn it on, then restart the game.",
       "openSettings": "Open launch options",
       "queuedTitle": "Searching for a match",
-      "queuedDescription": "You are in the queue. The scoreboard fills in a few seconds after the match loads.",
-      "queuedBadge": "In queue",
       "waitingTitle": "No match running",
       "waitingDescription": "You are in the menus or the hideout. Join a match and both teams show up here while it loads.",
       "noBridgeTitle": "Waiting for the live bridge",
       "noBridgeDescription": "A match looks to be running, but the live bridge has not reported. It reports a few seconds after the top bar appears. Launch Deadlock from the mod manager (it adds the -condebug option the bridge needs), restart the game if you installed the bridge while it was open, and check that no other mod replaces the top bar team layout.",
       "live": "Live",
-      "matchId": "Match {{id}}",
-      "updatedAt": "Updated {{time}}",
       "friendly": "Your team",
-      "teamTotals_one": "{{count}} kill · {{souls}} souls",
-      "teamTotals_other": "{{count}} kills · {{souls}} souls",
       "teamPending": "No report from this team yet.",
       "you": "You",
-      "dead": "Dead",
       "columns": {
         "player": "Player",
-        "kda": "K/D/A",
-        "souls": "Souls",
-        "level": "Level",
-        "objectiveDamage": "Obj. dmg"
+        "souls": "Souls"
       },
       "teams": {
         "hiddenKing": "Hidden King",
         "archmother": "Archmother"
       },
-      "career": "{{matches}} played · {{winrate}} WR · {{kda}} KDA",
-      "onHero": "{{matches}} on {{hero}} · {{winrate}}",
       "performance": {
-        "playingAs": "Playing as",
-        "versusBracket": "Graded against {{bracket}} players on {{hero}}",
-        "versusEveryone": "Graded against all players on {{hero}}",
         "firstMinute": "Grades appear after the first minute.",
         "loading": "Loading benchmarks for this hero…",
         "unavailable": "No benchmark data for this hero right now.",
         "unknownHero": "Your hero could not be matched to the hero list, so there is nothing to grade against.",
         "spectating": "You are not in either team, so there is nothing to grade.",
-        "average": "Avg {{value}} at this point",
         "metrics": {
           "kills": "Kills",
           "deaths": "Deaths",
           "assists": "Assists",
           "soulsPerMin": "Souls / min",
-          "objectiveDamagePerMin": "Obj. dmg / min"
+          "objectiveDamagePerMin": "Objective dmg / min"
         }
       },
       "bridge": {
-        "notInstalledTitle": "Install the live bridge",
-        "notInstalledDescription": "The Live tab reads your match through a small HUD mod that prints the in-game scoreboard to the console log. It is built from your installed game, so it always matches the current patch. Restart Deadlock after installing it.",
         "install": "Install",
         "installing": "Installing…",
         "installFailed": "Could not install the live bridge. Check that the game path is set and try again.",
@@ -1067,22 +1049,153 @@
         "updating": "Updating…",
         "updated": "Live bridge updated for the current game version. Restart Deadlock if it is open.",
         "updateFailed": "Could not update the live bridge. Close Deadlock and try again from the Live tab.",
-        "incompatible": "A Deadlock update changed the in-game top bar in a way the live bridge cannot follow yet. Turn off the Live Scoreboard Bridge in My Mods until the mod manager is updated, or the top bar may not show correctly."
+        "incompatible": "A Deadlock update changed the in-game top bar in a way the live bridge cannot follow yet. Turn off the Live Scoreboard Bridge in My Mods until the mod manager is updated, or the top bar may not show correctly.",
+        "incompatibleTitle": "This patch moved the top bar",
+        "outdatedTitle": "The live bridge needs a rebuild"
       },
-      "notRunningTitle": "Deadlock is not running",
-      "notRunningDescription": "Launch the game and start a match. The scoreboard shows up here a few seconds after the match loads.",
+      "notRunningTitle": "Deadlock isn't running",
       "matchOverTitle": "Match over",
       "matchOverDescription": "The match has ended. Queue up again and the next lobby shows up here.",
       "pregame": {
-        "badge": "Match loading",
-        "hint": "Both teams until the match starts; then only your team and your stats.",
         "enemy": "Enemy team",
-        "avgKda": "Avg KDA",
-        "winrate": "Win %",
-        "matches": "Matches",
         "noRecord": "No public record",
         "loadingTitle": "Match found",
         "loadingDescription": "The lineup shows up here as soon as the match loads in."
+      },
+      "now": {
+        "perMinute": "{{value}} / min",
+        "liveAt": "LIVE {{clock}}",
+        "onHero": "{{winrate}} on {{hero}}",
+        "kda": "KDA {{value}}",
+        "overall": "Overall pace",
+        "overallDetail": "Ahead of {{share}} of {{bracket}} players at {{clock}}",
+        "finalAt": "FINAL {{clock}}",
+        "final": "Final pace",
+        "souls": "Souls",
+        "objective": "Obj damage"
+      },
+      "topBar": {
+        "lead": "{{souls}} souls",
+        "kills": "Kills {{ours}} to {{theirs}}"
+      },
+      "pace": {
+        "title": "Pace against your bracket",
+        "description": "{{peers}} players at {{clock}}. Souls and objective damage as a rate, the rest as totals.",
+        "fewerIsBetter": "fewer is better",
+        "soFarTotal": "{{value}} so far",
+        "soFar": "so far",
+        "average": "Avg {{value}}",
+        "footnote": "Grades compare you to the bracket's curve at the same minute. The line marks the bracket average."
+      },
+      "souls": {
+        "title": "Souls over time",
+        "description": "Your souls this match against the bracket's curve",
+        "you": "You",
+        "bracket": "Bracket",
+        "band": "Middle 68%",
+        "projected": "Projected",
+        "recent": "Last {{minutes}} min",
+        "atEnd": "Same lead at {{clock}}"
+      },
+      "board": {
+        "description": "Sorted by souls. Records are each player's games on the hero they're playing and on all heroes.",
+        "level": "Lvl",
+        "onHero": "On this hero",
+        "allHeroes": "All heroes",
+        "rank": "Rank",
+        "respawning": "Respawning",
+        "games_one": "{{count}} game",
+        "games_other": "{{count}} games",
+        "firstGame": "First game",
+        "unranked": "Unranked",
+        "team": "Team"
+      },
+      "scouting": {
+        "badge": "Pregame",
+        "title": "Scouting report",
+        "hint": "Heroes are locked. Grades start once you leave the zipline.",
+        "form": "Last 10",
+        "compare": {
+          "rank": "Avg rank",
+          "onHero": "Games on hero",
+          "winrate": "Hero win rate",
+          "matches": "Total matches"
+        },
+        "beatYou": "Beat you {{lost}} of {{count}}",
+        "againstYou": "Against you {{count}}×",
+        "withYou": "With you {{count}}×",
+        "firstGame": "First game on hero",
+        "oneTrick": "One-trick",
+        "winStreak": "{{count}} win streak",
+        "lossStreak": "{{count}} loss streak",
+        "noneYet": "None yet",
+        "acrossMatchups_one": "Across these matchups, {{count}} game",
+        "acrossMatchups_other": "Across these matchups, {{count}} games",
+        "matchupsTitle": "Your {{hero}} into their lineup",
+        "matchupsDescription": "Your record on {{hero}} against each enemy hero, all time",
+        "versus": "vs {{hero}}",
+        "tooFew": "Too few",
+        "hardest": "Hardest",
+        "best": "Best",
+        "onHero": "On hero",
+        "kda": "KDA"
+      },
+      "states": {
+        "install": {
+          "title": "Follow your match live",
+          "description": "The live bridge is a small HUD mod. It copies the in-game top bar into the game's console log, and the app reads it from there.",
+          "readsTopBar": "Reads only what the top bar shows",
+          "builtFromGame": "Built from your installed game, rebuilt after patches",
+          "turnOff": "Turn it off any time in My Mods",
+          "action": "Install live bridge",
+          "howItWorks": "How it works"
+        },
+        "closed": {
+          "description": "The board fills in when you load into a match.",
+          "matches_one": "{{count}} match",
+          "matches_other": "{{count}} matches",
+          "today": "Today",
+          "record": "Record",
+          "best": "Best",
+          "launch": "Launch modded"
+        },
+        "win": "W",
+        "loss": "L",
+        "victory": "Victory",
+        "defeat": "Defeat",
+        "queued": {
+          "description": "Lineups appear on the versus screen.",
+          "ended_one": "ended {{count}} min ago",
+          "ended_other": "ended {{count}} min ago",
+          "lastMatch": "Last match",
+          "open": "Open last match",
+          "souls": "{{souls}} souls",
+          "gradeNote": "Final grade from the live board. Full match details open once deadlock-api has the match.",
+          "historyNote": "From your match history."
+        },
+        "over": {
+          "ended": "Match ended",
+          "description": "The match ended at {{clock}}. This is the last board, kept until your next lobby.",
+          "details": "Match details",
+          "detailsSoon": "Available in a few minutes"
+        },
+        "preview": "Your match shows up here",
+        "session": {
+          "description": "Your matches since midnight",
+          "empty": "No matches yet today"
+        }
+      },
+      "status": {
+        "connected": "Live bridge connected",
+        "updated_one": "updated {{count}}s ago",
+        "updated_other": "updated {{count}}s ago",
+        "match": "Match",
+        "copy": "Copy match ID",
+        "versusScreen": "Reading the versus screen"
+      },
+      "labels": {
+        "kda": "K / D / A",
+        "objDmg": "Obj dmg"
       }
     },
     "player": {
@@ -1408,7 +1521,8 @@
         "add": "Tab",
         "empty": "Empty tab",
         "fromTemplate": "From a template",
-        "done": "Done"
+        "done": "Done",
+        "beta": "BETA"
       },
       "templates": {
         "overview": "Overview",
