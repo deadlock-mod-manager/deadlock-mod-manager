@@ -187,8 +187,8 @@ export const assertDownloadNetwork = (
       assert.equal(requests[0].responseStatus, 302);
     if (scenario === "downloads-cancel-connecting")
       assert.equal(
-        requests[0].responseStatus,
-        undefined,
+        requests[0].closedBeforeHeaders,
+        true,
         "The cancelled request must close before its headers arrive",
       );
     assert.equal(requests.at(-1)?.responseStatus, 200);

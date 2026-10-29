@@ -14,6 +14,7 @@ export type FixtureRequest = {
   bodyBytes: number;
   responseStatus?: number;
   responseBytes?: number;
+  closedBeforeHeaders?: boolean;
   error?: string;
 };
 
@@ -62,7 +63,10 @@ const sendFixture = async (
 ): Promise<void> => {
   if (fixture.headerDelayMs) {
     await delay(response, fixture.headerDelayMs);
-    if (response.destroyed) return;
+    if (response.destroyed) {
+      record.closedBeforeHeaders = true;
+      return;
+    }
   }
   const body = Buffer.isBuffer(fixture.body)
     ? fixture.body

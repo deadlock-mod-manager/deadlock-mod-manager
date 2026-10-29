@@ -379,12 +379,13 @@ where
     // The read loop only sees the token once headers arrive; a connect or a server
     // holding its headers back would keep a cancelled download alive until a timeout.
     let sent = tokio::select! {
-      sent = request.send() => sent,
+      biased;
       () = cancel_token.cancelled() => {
         log::info!("Download cancelled before the server responded");
         remove_partial_pair(&partial_path, &meta_path).await;
         return Err(Error::DownloadCancelled);
       }
+      sent = request.send() => sent,
     };
     let response = match sent {
       Ok(response) => response,
@@ -798,7 +799,10 @@ mod tests {
       }
     });
     // Accepted and never answered, like a server that withholds its headers.
-    let (_connection, _) = listener.accept().await.unwrap();
+    let (_connection, _) = tokio::time::timeout(Duration::from_secs(5), listener.accept())
+      .await
+      .expect("download never connected to the fixture")
+      .unwrap();
     cancel_token.cancel();
 
     let result = tokio::time::timeout(Duration::from_secs(5), download)
