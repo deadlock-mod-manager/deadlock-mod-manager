@@ -92,7 +92,7 @@
           "term": "GameBanana yapılandırmaları",
           "body": "<gamebanana>GameBanana</gamebanana> kimliklerine göre listelenir. Birini içe aktardığınızda dosyalar GameBanana’dan indirilir."
         },
-        "updates": "Uygulama bu verinin bir kopyasıyla birlikte gelir; başlangıçta ve sonrasında en fazla saatte bir kez daha yeni bir sürüm olup olmadığını Mod Manager sunucusundan kontrol eder."
+        "updates": "Uygulama, bu verinin bir kopyasıyla birlikte gelir; başlangıçta ve sonrasında en fazla saatte bir mod yöneticisinin sunucusunda daha yeni bir sürüm olup olmadığını kontrol eder."
       },
       "statuses": {
         "title": "Her ayara ne olur",
@@ -2138,24 +2138,22 @@
       "searchPlaceholder": "Görünümlerinizde ara…",
       "noDefaultSkins": "Aramanızla eşleşen varsayılan görünüm yok.",
       "noHeroSkins": "Kitaplığınızda henüz kahraman görünümü bulunamadı. Bir görünüm yükleyin veya yerel bir VPK içe aktarın.",
-      "fileHint": "Diskinizden bir kahraman görünümü VPK’si içe aktarın. Harita modları kabul edilmez.",
-      "preview3dLabel": "3B önizlemeyi yükle",
-      "preview3dHint": "Görünüm açmanın en yavaş adımıdır. Renklendirme, kartlar ve sesler onsuz da çalışır.",
-      "preview3dWarning": "Bazı modeller yüklenmeyebilir; bazıları ekran kartı sürücüsünün çökmesine neden olabilir. Bir görünüm açılmazsa bunu kapatın."
+      "fileHint": "Diskinizden bir kahraman görünümü VPK’si içe aktarın. Harita modları kabul edilmez."
     },
     "toolbar": {
-      "entryCount": "{{count}} dosya",
+      "entryCount": "",
       "changeSkin": "Görünümü değiştir",
       "clear": "Temizle",
       "export": "VPK olarak dışa aktar",
-      "editCount": "{{count}} düzenlendi"
+      "editCount": "{{count}} düzenlendi",
+      "entryCount_one": ""
     },
     "tabs": {
       "assets": "Varlıklar",
       "assetsHint": "Bu VPK’deki her şey. Önizlemek için modeli seçin",
       "assetsEmpty": "Bu VPK boş.",
       "paint": "Renklendir",
-      "paintHint": "Gövdeyi, silahı ve yetenek efektlerini yeniden renklendirin",
+      "paintHint": "",
       "paintEmpty": "Bu görünümde renklendirilebilecek bir şey yok.",
       "cards": "Kartlar",
       "cardsHint": "Seçim ve portre görselleri",
@@ -2178,8 +2176,52 @@
         "card_gloat": "Övünme",
         "minimap": "Mini harita",
         "small": "Küçük",
-        "other": "Diğer"
-      }
+        "other": "Diğer",
+        "mm": "",
+        "sm": "",
+        "background": "",
+        "weapon": ""
+      },
+      "intro": "",
+      "groups": {
+        "heroSelect": {
+          "title": "",
+          "where": ""
+        },
+        "inMatch": {
+          "title": "",
+          "where": ""
+        },
+        "hud": {
+          "title": "",
+          "where": ""
+        },
+        "other": {
+          "title": "",
+          "where": ""
+        },
+        "abilities": {
+          "title": "",
+          "where": ""
+        },
+        "weapon": {
+          "title": "",
+          "where": ""
+        }
+      },
+      "replaced": "",
+      "dropToReplace": "",
+      "wrongFile": "",
+      "pick": "",
+      "meta": "",
+      "stateReplaced": "",
+      "stateSkin": "",
+      "stateOriginal": "",
+      "inGame": "",
+      "original": "",
+      "dropAtLeast": "",
+      "noSkinArtTitle": "",
+      "noSkinArtHint": ""
     },
     "preview": {
       "empty": "Burada görmek için bir görünüm içe aktarın",
@@ -2194,10 +2236,7 @@
       "alt": "Görünüm önizlemesi",
       "startSpin": "Otomatik döndür",
       "stopSpin": "Döndürmeyi durdur",
-      "painting": "Renklendiriliyor…",
-      "disabled": "3B önizleme kapalı",
-      "disabledHint": "Hiçbir şey çözümlenmediği için bu görünüm daha hızlı açıldı. Renklendirme, kartlar ve sesler çalışmaya devam eder.",
-      "enable": "Önizlemeyi aç"
+      "painting": "Renklendiriliyor…"
     },
     "inspector": {
       "title": "Özellikler",
@@ -2214,7 +2253,23 @@
         "mod": "Mod",
         "default": "Temel oyun",
         "workspace": "Düzenlendi"
-      }
+      },
+      "kinds": {
+        "model": "",
+        "material": "",
+        "texture": "",
+        "card": "",
+        "sound": "",
+        "other": ""
+      },
+      "from": {
+        "mod": "",
+        "default": "",
+        "workspace": ""
+      },
+      "modelStats": "",
+      "copyPath": "",
+      "pathCopied": ""
     },
     "errors": {
       "notHeroSkinTitle": "Kahraman görünümü değil",
@@ -2228,10 +2283,34 @@
       "pause": "Duraklat",
       "volume": "Önizleme ses düzeyi",
       "mute": "Sesi kapat",
-      "unmute": "Sesi aç"
+      "unmute": "Sesi aç",
+      "abilities": "",
+      "hero": "",
+      "abilitySlot": "",
+      "clipCount": "",
+      "clipCount_one": "",
+      "replacedCount": "",
+      "playAll": "",
+      "replace": "",
+      "pick": "",
+      "compare": "",
+      "listen": "",
+      "yours": "",
+      "original": "",
+      "flipHint": "",
+      "dropHint": "",
+      "wrongFile": "",
+      "inGame": "",
+      "gain": "",
+      "gainValue": "",
+      "normalize": "",
+      "normalizeHint": "",
+      "muteClip": "",
+      "muteClipHint": "",
+      "adjustFailed": ""
     },
     "editor": {
-      "replaceLabel": "Değiştir",
+      "replaceLabel": "",
       "replace": "Dosya seçin…",
       "replaceTitle": "Yerine konacak dosyayı seçin",
       "replaceImageHint": "Bir PNG veya JPG seçin. Görsel kırpılıp bu doku için yeniden kodlanır.",
@@ -2242,11 +2321,12 @@
       "reverted": "{{file}} geri alındı",
       "revertFailed": "Bu dosya geri alınamadı.",
       "workspacePending": "Bu görünümün düzenlenebilir kopyası hazırlanıyor…",
-      "replaceSoundHint": "Bir MP3 veya WAV seçin. Ses, bu klibin kapsayıcısında yeniden oluşturulur.",
+      "replaceSoundHint": "",
       "primaryLabel": "Birincil model",
-      "primaryHint": "Önizleme açıldığında gösterilen ve dışa aktarılan dosyaya adını veren model.",
+      "primaryHint": "",
       "setPrimary": "Birincil olarak işaretle",
-      "isPrimary": "Birincil model"
+      "isPrimary": "Birincil model",
+      "revertToOriginal": ""
     },
     "export": {
       "dialogTitle": "Bu görünümü dışa aktar",
@@ -2290,14 +2370,21 @@
       "coverage": "{{count}} doku",
       "coverage_one": "1 doku",
       "nothingToPaint": "Bu görünümde yok",
+      "sectionsLabel": "",
+      "sectionsHint": "",
+      "clearSelection": "",
+      "pickHint": "",
+      "partsSkipped": "",
+      "partsSkipped_one": "",
       "colorLabel": "Renk",
       "red": "R",
       "green": "G",
       "blue": "B",
       "eyedropper": "Ekrandan bir renk seçin",
       "apply": "{{target}} öğesini renklendir",
+      "applySections": "",
       "failed": "Bu bölüm renklendirilemedi.",
-      "hint": "Renklendirme, bölümün kapsadığı tüm renk haritalarını yeniden yazar. Modelde bir rengi denemek için Önizleme’yi açın; siz uygulayana kadar hiçbir şey yazılmaz.",
+      "hint": "",
       "saturationLabel": "Doygunluk",
       "brightnessLabel": "Parlaklık",
       "preview": "Önizleme",
@@ -2328,9 +2415,141 @@
         "deco": "Dekoratif",
         "frost": "Ayaz",
         "circuit": "Devre"
-      }
+      },
+      "whatToPaint": "",
+      "scope": {
+        "sections": "",
+        "whole": ""
+      },
+      "railPickHint": "",
+      "selectAll": "",
+      "hidePart": "",
+      "showPart": "",
+      "hiddenMeta": "",
+      "resetPart": "",
+      "pendingPart": "",
+      "effectsNote": "",
+      "effectsSwitch": "",
+      "selectedCount": "",
+      "selectedCount_one": "",
+      "nothingSelected": "",
+      "emptyTitle": "",
+      "emptyHint": "",
+      "reset": "",
+      "hex": "",
+      "recent": "",
+      "presets": "",
+      "adjustLabel": "",
+      "patternsAll": "",
+      "patternsFewer": "",
+      "freehand": "",
+      "heroPainter": "",
+      "rewrites": "",
+      "rewrites_one": "",
+      "sectionsMeta": "",
+      "sectionsMeta_one": "",
+      "previewOn": "",
+      "previewUnavailableShort": "",
+      "spaceKey": "",
+      "compare": "",
+      "fromSkin": ""
     },
-    "primary": "Birincil"
+    "primary": "Birincil",
+    "picker": {
+      "subtitle": "",
+      "sourceLabel": "",
+      "sources": {
+        "installed": "",
+        "heroes": ""
+      },
+      "search": "",
+      "openFile": "",
+      "open": "",
+      "by": "",
+      "noMatches": "",
+      "moreWays": "",
+      "forgeDescription": "",
+      "commissionsDescription": "",
+      "scope": ""
+    },
+    "header": {
+      "fromMod": "",
+      "fromFile": "",
+      "baseGame": "",
+      "close": "",
+      "modes": ""
+    },
+    "assets": {
+      "filter": "",
+      "groups": {
+        "all": "",
+        "models": "",
+        "materials": "",
+        "textures": "",
+        "cards": "",
+        "sounds": "",
+        "other": ""
+      },
+      "noMatches": "",
+      "edited": "",
+      "edited_one": "",
+      "noEdits": ""
+    },
+    "drop": {
+      "choose": "",
+      "image": "",
+      "sound": "",
+      "file": ""
+    },
+    "opening": {
+      "label": "",
+      "files": "",
+      "unpacked": "",
+      "sections": "",
+      "sections_one": "",
+      "findingSections": "",
+      "assembling": "",
+      "workspace": ""
+    },
+    "exportSheet": {
+      "title": "",
+      "changeCount": "",
+      "changeCount_one": "",
+      "noChanges": "",
+      "changed": "",
+      "where": "",
+      "groups": {
+        "paint": "",
+        "cards": "",
+        "sounds": "",
+        "files": ""
+      },
+      "repainted": "",
+      "replaced": "",
+      "edited": "",
+      "undo": "",
+      "build": {
+        "newMod": "",
+        "file": "",
+        "replaceSource": ""
+      },
+      "untouched": "",
+      "doneNewMod": "",
+      "doneNewModHint": "",
+      "doneFile": "",
+      "facts": {
+        "paint": "",
+        "paint_one": "",
+        "cards": "",
+        "cards_one": "",
+        "sounds": "",
+        "sounds_one": "",
+        "files": "",
+        "files_one": ""
+      },
+      "openMyMods": "",
+      "keepEditing": ""
+    }
   },
   "servers": {
     "title": "Sunucu Tarayıcısı",
@@ -2736,7 +2955,7 @@
     "updateAvailableCount_other": "{{count}} güncelleme mevcut",
     "batchUpdate": {
       "title": "Tüm modları güncelle",
-      "description": "",
+      "description": "Aşağıdaki modlar için güncelleme mevcut.",
       "currentVersion": "Yüklü",
       "newVersion": "Mevcut güncelleme",
       "installedAt": "Yüklü",
@@ -2746,15 +2965,15 @@
       "outdatedDescription": "Yazar, daha yeni bir dosya sunduğu için bu dosyayı arşivledi",
       "keepOneFile": "Bir dosyayı koru",
       "oneFileRequired": "Bu modu güncellemek için en az bir dosya seçili kalmalıdır",
-      "backupNote": "",
-      "backupNoteWithSize": "",
-      "noBackupNote": "",
-      "backingUp": "",
+      "backupNote": "Yüklenen sürümler önce yedeklenir ",
+      "backupNoteWithSize": "Yüklenen sürümler önce yedeklenir ({{size}})",
+      "noBackupNote": "Bu güncelleme için yedekleme yapılmıyor. Bunu ayarlardan değiştirebilirsiniz.",
+      "backingUp": "Modları yedekleyin",
       "updating": "Modlar güncelleniyor...",
       "updatingPercent": "Güncelleniyor: %{{percent}}...",
       "complete": "Güncelleme tamamlandı",
       "partialSuccess": "{{succeeded}} güncellendi, {{failed}} başarısız oldu",
-      "selectionCanceled": "",
+      "selectionCanceled": "{{name}} güncellenmedi. Hiçbir VPK seçilmedi",
       "error": "Modlar güncellenemedi",
       "failureDescription": "Yeniden denemeden önce aşağıdaki hata ayrıntılarını inceleyin.",
       "backupFailedTitle": "Güncellemeler durduruldu: Yedekleme başarısız oldu",
@@ -3034,35 +3253,35 @@
     },
     "manageOrderTooltip": "Modların yüklenme sırasını yönetin",
     "title": "Mod Yükleme Sırasını Yönet",
-    "description": "",
+    "description": "Yeniden sıralamak için sürükleyin. İki mod aynı dosyayı değiştirdiğinde, daha üstte yer alan mod geçerli olur; bir modun içindeki dosyalar için de aynı kural geçerlidir.",
     "noMods": "Sıralanacak yüklü mod yok",
-    "searchPlaceholder": "",
-    "searchDragHint": "",
-    "noMatches": "",
-    "modCount_one": "",
-    "modCount_other": "",
-    "matchCount": "",
-    "files_one": "",
-    "files_other": "",
-    "filesOf": "",
-    "useAuthorOrder": "",
-    "dragMod": "",
-    "dragFile": "",
-    "moveToTop": "",
-    "moveToBottom": "",
-    "discardChanges": "",
-    "unsavedChanges_one": "",
-    "unsavedChanges_other": "",
-    "keyboardHint": "",
-    "movedUp_one": "",
-    "movedUp_other": "",
-    "movedDown_one": "",
-    "movedDown_other": "",
+    "searchPlaceholder": "Mod arayın",
+    "searchDragHint": "Sürüklemek için aramayı temizleyin. En üste taşı ve En alta taşı hâlâ çalışır.",
+    "noMatches": "Aramanızla eşleşen mod bulunamadı",
+    "modCount_one": "{{count}} mod",
+    "modCount_other": "{{count}} mod",
+    "matchCount": "{{count}} / {{total}}",
+    "files_one": "{{count}} dosya",
+    "files_other": "{{count}} dosya",
+    "filesOf": "{{name}} dosyaları",
+    "useAuthorOrder": "Geliştirici sıralamasını kullan",
+    "dragMod": "{{name}} öğesini yeniden sırala",
+    "dragFile": "{{name}} öğesini yeniden sırala",
+    "moveToTop": "En üste taşı",
+    "moveToBottom": "En alta taşı",
+    "discardChanges": "Değişiklikleri geri al",
+    "unsavedChanges_one": "{{count}} kaydedilmemiş değişiklik",
+    "unsavedChanges_other": "{{count}} kaydedilmemiş değişiklikler",
+    "keyboardHint": "Tutmak veya bırakmak için Boşluk, taşımak için ok tuşları",
+    "movedUp_one": "{{count}} sıra yukarı taşındı",
+    "movedUp_other": "{{count}} sıra yukarı taşındı",
+    "movedDown_one": "{{count}} sıra aşağı taşındı",
+    "movedDown_other": "{{count}} sıra aşağı taşındı",
     "announce": {
-      "pickedUp": "",
-      "over": "",
-      "dropped": "",
-      "cancelled": ""
+      "pickedUp": "{{name}} seçildi",
+      "over": "{{name}}, {{position}} konumunun üzerinde",
+      "dropped": "{{name}}, {{position}} konumuna bırakıldı",
+      "cancelled": "{{name}} taşınması iptal edildi"
     },
     "orderSaved": "Mod sırası başarıyla kaydedildi",
     "orderSaveFailed": "Mod sırası kaydedilemedi",
@@ -3673,15 +3892,15 @@
     "backupProgressScanning": "Eklentiler klasörü taranıyor...",
     "backupProgressCopying": "VPK dosyaları kopyalanıyor...",
     "backupProgressFinalizing": "Yedekleme tamamlanıyor...",
-    "backupMode": "",
-    "backupModeDescription": "",
-    "backupModeOff": "",
-    "backupModeBatch": "",
-    "backupModeAlways": "",
-    "updateBackupOf": "",
-    "updateBackupRestoreWarning": "",
+    "backupMode": "Güncellemeden önce yedekle",
+    "backupModeDescription": "Güncellemenin değiştirdiği modları kopyalar; böylece aşağıdaki listeden onları geri alabilirsiniz",
+    "backupModeOff": "Kapalı",
+    "backupModeBatch": "Birden fazla modu güncellerken",
+    "backupModeAlways": "Her güncellemede",
+    "updateBackupOf": "{{mods}} güncellenmeden önce",
+    "updateBackupRestoreWarning": "Bu işlem, bu modların güncelleme öncesindeki sürümlerini geri yükler. Diğer modlarınız olduğu gibi kalır.",
     "maxBackupCount": "Saklanacak En Fazla Yedek Sayısı",
-    "maxBackupCountDescription": "",
+    "maxBackupCountDescription": "Tam yedeklere ve güncelleme yedeklerine ayrı ayrı uygulanır. Eski olanlar otomatik olarak kaldırılır.",
     "unlimitedBackups": "Sınırsız",
     "backupsPruned": "{{count}} eski yedek (veya yedekler) silindi",
     "backupWillRemoveOldest": "En eski yedek silinecek",
@@ -4066,7 +4285,7 @@
     "featureTips": "Özellik ipuçlarını göster",
     "featureTipsDescription": "Henüz denemediğiniz özellikleri belirtir ve birkaç günde en fazla bir ipucu gösterir.",
     "modelPreview": "3B model önizlemesi",
-    "modelPreviewDescription": "Kostüm modellerini Kahraman Kostümleri panelinde ve Mod Atölyesi’nde görüntüleyin.",
+    "modelPreviewDescription": "",
     "modelPreviewWarning": "Önizleme, karakter modelinin tamamını çözümler ve GPU’nuzda görüntüler. Kostümü açmanın en yavaş kısmıdır ve her kostüm çözümlenemez. Alışılmadık veya bozuk bir model yüklenemeyebilir ya da nadiren grafik sürücüsünde sorun çıkarabilir. Davranış, grafik sürücülerine ve platformlara göre değişir; önizlemeler yavaşsa, boş görünüyorsa veya çökmeye neden oluyorsa bu özelliği kapatın.",
     "heroSkins": "Kahraman Kostümleri Sayfası",
     "heroSkinsDescription": "Kahraman Kostümleri sayfasında nelerin listelendiği ve buradan bir öğe seçtiğinizde ne olacağı.",
@@ -7170,6 +7389,13 @@
     "screenshotSaved": "Ekran görüntüsü kaydedildi",
     "recordingBadge": "KAYIT",
     "exitFullscreen": "Tam ekrandan çık",
-    "controlsHelp": "Kontroller"
+    "controlsHelp": "Kontroller",
+    "studio": "",
+    "passChips": {
+      "bloom": "",
+      "antialias": "",
+      "outlines": "",
+      "wireframe": ""
+    }
   }
 }

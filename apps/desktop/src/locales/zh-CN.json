@@ -2138,24 +2138,22 @@
       "searchPlaceholder": "搜索你的皮肤…",
       "noDefaultSkins": "没有符合搜索条件的默认皮肤。",
       "noHeroSkins": "你的模组库中还没有英雄皮肤。请先安装一个英雄皮肤，或导入本地 VPK。",
-      "fileHint": "从磁盘导入任意英雄皮肤 VPK。地图模组会被拒绝。",
-      "preview3dLabel": "加载 3D 预览",
-      "preview3dHint": "打开皮肤时最慢的一步。关闭后仍然可以上色、替换卡面与音效。",
-      "preview3dWarning": "部分模型会加载失败，少数甚至会导致显卡驱动崩溃。如果某个皮肤无法打开，请关闭此项。"
+      "fileHint": "从磁盘导入任意英雄皮肤 VPK。地图模组会被拒绝。"
     },
     "toolbar": {
-      "entryCount": "{{count}} 个文件",
+      "entryCount": "",
       "changeSkin": "更换皮肤",
       "clear": "清除",
       "export": "导出 VPK",
-      "editCount": "已编辑 {{count}} 项"
+      "editCount": "已编辑 {{count}} 项",
+      "entryCount_one": ""
     },
     "tabs": {
       "assets": "素材",
       "assetsHint": "",
       "assetsEmpty": "此 VPK 是空的。",
       "paint": "上色",
-      "paintHint": "为身体、枪械与技能特效重新着色",
+      "paintHint": "",
       "paintEmpty": "此皮肤中没有可上色的内容。",
       "cards": "卡面",
       "cardsHint": "选择卡面与头像图片",
@@ -2178,8 +2176,52 @@
         "card_gloat": "嘲讽",
         "minimap": "小地图",
         "small": "小尺寸",
-        "other": "其他"
-      }
+        "other": "其他",
+        "mm": "",
+        "sm": "",
+        "background": "",
+        "weapon": ""
+      },
+      "intro": "",
+      "groups": {
+        "heroSelect": {
+          "title": "",
+          "where": ""
+        },
+        "inMatch": {
+          "title": "",
+          "where": ""
+        },
+        "hud": {
+          "title": "",
+          "where": ""
+        },
+        "other": {
+          "title": "",
+          "where": ""
+        },
+        "abilities": {
+          "title": "",
+          "where": ""
+        },
+        "weapon": {
+          "title": "",
+          "where": ""
+        }
+      },
+      "replaced": "",
+      "dropToReplace": "",
+      "wrongFile": "",
+      "pick": "",
+      "meta": "",
+      "stateReplaced": "",
+      "stateSkin": "",
+      "stateOriginal": "",
+      "inGame": "",
+      "original": "",
+      "dropAtLeast": "",
+      "noSkinArtTitle": "",
+      "noSkinArtHint": ""
     },
     "preview": {
       "empty": "导入皮肤后即可在此查看",
@@ -2194,10 +2236,7 @@
       "alt": "皮肤预览",
       "startSpin": "自动旋转",
       "stopSpin": "停止旋转",
-      "painting": "正在上色…",
-      "disabled": "3D 预览已关闭",
-      "disabledHint": "未进行解码，因此这个皮肤打开得更快。上色、卡面与音效功能均不受影响。",
-      "enable": "打开预览"
+      "painting": "正在上色…"
     },
     "inspector": {
       "title": "属性",
@@ -2214,7 +2253,23 @@
         "mod": "模组",
         "default": "游戏本体",
         "workspace": "已编辑"
-      }
+      },
+      "kinds": {
+        "model": "",
+        "material": "",
+        "texture": "",
+        "card": "",
+        "sound": "",
+        "other": ""
+      },
+      "from": {
+        "mod": "",
+        "default": "",
+        "workspace": ""
+      },
+      "modelStats": "",
+      "copyPath": "",
+      "pathCopied": ""
     },
     "errors": {
       "notHeroSkinTitle": "不是英雄皮肤",
@@ -2228,10 +2283,34 @@
       "pause": "暂停",
       "volume": "试听音量",
       "mute": "静音",
-      "unmute": "取消静音"
+      "unmute": "取消静音",
+      "abilities": "",
+      "hero": "",
+      "abilitySlot": "",
+      "clipCount": "",
+      "clipCount_one": "",
+      "replacedCount": "",
+      "playAll": "",
+      "replace": "",
+      "pick": "",
+      "compare": "",
+      "listen": "",
+      "yours": "",
+      "original": "",
+      "flipHint": "",
+      "dropHint": "",
+      "wrongFile": "",
+      "inGame": "",
+      "gain": "",
+      "gainValue": "",
+      "normalize": "",
+      "normalizeHint": "",
+      "muteClip": "",
+      "muteClipHint": "",
+      "adjustFailed": ""
     },
     "editor": {
-      "replaceLabel": "替换",
+      "replaceLabel": "",
       "replace": "选择文件…",
       "replaceTitle": "选择替换用的文件",
       "replaceImageHint": "",
@@ -2244,9 +2323,10 @@
       "workspacePending": "正在准备该皮肤的可编辑副本…",
       "replaceSoundHint": "",
       "primaryLabel": "主模型",
-      "primaryHint": "预览默认打开的模型，导出文件也以它命名。",
+      "primaryHint": "",
       "setPrimary": "设为主模型",
-      "isPrimary": "主模型"
+      "isPrimary": "主模型",
+      "revertToOriginal": ""
     },
     "export": {
       "dialogTitle": "导出此皮肤",
@@ -2290,14 +2370,21 @@
       "coverage": "{{count}} 张纹理",
       "coverage_one": "1 张纹理",
       "nothingToPaint": "此皮肤中没有",
+      "sectionsLabel": "",
+      "sectionsHint": "",
+      "clearSelection": "",
+      "pickHint": "",
+      "partsSkipped": "",
+      "partsSkipped_one": "",
       "colorLabel": "颜色",
       "red": "",
       "green": "",
       "blue": "",
       "eyedropper": "从屏幕取色",
       "apply": "为 {{target}} 上色",
+      "applySections": "",
       "failed": "无法为该部位上色。",
-      "hint": "上色会重写该部位涉及的所有颜色贴图。打开预览可在模型上试色；在你点击应用之前不会写入任何内容。",
+      "hint": "",
       "saturationLabel": "饱和度",
       "brightnessLabel": "亮度",
       "preview": "预览",
@@ -2328,9 +2415,141 @@
         "deco": "装饰",
         "frost": "冰霜",
         "circuit": "电路"
-      }
+      },
+      "whatToPaint": "",
+      "scope": {
+        "sections": "",
+        "whole": ""
+      },
+      "railPickHint": "",
+      "selectAll": "",
+      "hidePart": "",
+      "showPart": "",
+      "hiddenMeta": "",
+      "resetPart": "",
+      "pendingPart": "",
+      "effectsNote": "",
+      "effectsSwitch": "",
+      "selectedCount": "",
+      "selectedCount_one": "",
+      "nothingSelected": "",
+      "emptyTitle": "",
+      "emptyHint": "",
+      "reset": "",
+      "hex": "",
+      "recent": "",
+      "presets": "",
+      "adjustLabel": "",
+      "patternsAll": "",
+      "patternsFewer": "",
+      "freehand": "",
+      "heroPainter": "",
+      "rewrites": "",
+      "rewrites_one": "",
+      "sectionsMeta": "",
+      "sectionsMeta_one": "",
+      "previewOn": "",
+      "previewUnavailableShort": "",
+      "spaceKey": "",
+      "compare": "",
+      "fromSkin": ""
     },
-    "primary": "主模型"
+    "primary": "主模型",
+    "picker": {
+      "subtitle": "",
+      "sourceLabel": "",
+      "sources": {
+        "installed": "",
+        "heroes": ""
+      },
+      "search": "",
+      "openFile": "",
+      "open": "",
+      "by": "",
+      "noMatches": "",
+      "moreWays": "",
+      "forgeDescription": "",
+      "commissionsDescription": "",
+      "scope": ""
+    },
+    "header": {
+      "fromMod": "",
+      "fromFile": "",
+      "baseGame": "",
+      "close": "",
+      "modes": ""
+    },
+    "assets": {
+      "filter": "",
+      "groups": {
+        "all": "",
+        "models": "",
+        "materials": "",
+        "textures": "",
+        "cards": "",
+        "sounds": "",
+        "other": ""
+      },
+      "noMatches": "",
+      "edited": "",
+      "edited_one": "",
+      "noEdits": ""
+    },
+    "drop": {
+      "choose": "",
+      "image": "",
+      "sound": "",
+      "file": ""
+    },
+    "opening": {
+      "label": "",
+      "files": "",
+      "unpacked": "",
+      "sections": "",
+      "sections_one": "",
+      "findingSections": "",
+      "assembling": "",
+      "workspace": ""
+    },
+    "exportSheet": {
+      "title": "",
+      "changeCount": "",
+      "changeCount_one": "",
+      "noChanges": "",
+      "changed": "",
+      "where": "",
+      "groups": {
+        "paint": "",
+        "cards": "",
+        "sounds": "",
+        "files": ""
+      },
+      "repainted": "",
+      "replaced": "",
+      "edited": "",
+      "undo": "",
+      "build": {
+        "newMod": "",
+        "file": "",
+        "replaceSource": ""
+      },
+      "untouched": "",
+      "doneNewMod": "",
+      "doneNewModHint": "",
+      "doneFile": "",
+      "facts": {
+        "paint": "",
+        "paint_one": "",
+        "cards": "",
+        "cards_one": "",
+        "sounds": "",
+        "sounds_one": "",
+        "files": "",
+        "files_one": ""
+      },
+      "openMyMods": "",
+      "keepEditing": ""
+    }
   },
   "servers": {
     "title": "浏览服务器",
@@ -4066,7 +4285,7 @@
     "featureTips": "",
     "featureTipsDescription": "",
     "modelPreview": "3D 模型预览",
-    "modelPreviewDescription": "在英雄皮肤面板与 Mod Foundry 中渲染皮肤模型。",
+    "modelPreviewDescription": "",
     "modelPreviewWarning": "",
     "heroSkins": "英雄皮肤页面",
     "heroSkinsDescription": "英雄皮肤页面列出哪些内容，以及在那里选择条目时的行为。",
@@ -7170,6 +7389,13 @@
     "screenshotSaved": "",
     "recordingBadge": "",
     "exitFullscreen": "",
-    "controlsHelp": ""
+    "controlsHelp": "",
+    "studio": "",
+    "passChips": {
+      "bloom": "",
+      "antialias": "",
+      "outlines": "",
+      "wireframe": ""
+    }
   }
 }
