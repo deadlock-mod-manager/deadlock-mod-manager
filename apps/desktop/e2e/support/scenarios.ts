@@ -613,6 +613,7 @@ export const scenarios = {
   "downloads-pause": downloads,
   "downloads-range": downloads,
   "downloads-cancel": { ...downloads, coverage: "ipc-recovery" },
+  "downloads-cancel-connecting": downloads,
   "downloads-restart": {
     ...downloads,
     exit: (phase: string) => (phase === "transfer" ? "interrupt" : "normal"),

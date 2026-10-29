@@ -1,6 +1,7 @@
 import { navigate } from "../support/ui";
+import { step } from "../support/evidence";
 import { observeUntil } from "../support/observations";
-import { collectFileInventory } from "../support/world";
+import { assertOwnedWorld, collectFileInventory } from "../support/world";
 import { startApplication } from "../support/application";
 import { closeApplication } from "../support/application-exit";
 import { $, browser, expect } from "@wdio/globals";
@@ -65,6 +66,41 @@ const pause = async (world: string): Promise<void> => {
   await expect(card().$("button=Resume")).toBeDisplayed();
   await assertDownloadDisk(world, "paused", "paused");
 };
+const downloadRequests = async (world: string) => {
+  const { configuration } = await assertOwnedWorld(world);
+  const origin = configuration.endpoints[0].origin;
+  return z
+    .object({ requests: z.array(z.object({ url: z.string() })) })
+    .parse(await (await fetch(`${origin}/__control/requests`)).json())
+    .requests.filter(({ url }) => url === `/downloads/${DOWNLOAD_FILE}`);
+};
+const cancelWhileConnecting = async (world: string): Promise<void> => {
+  await step("cancel while the server withholds headers", async () => {
+    await observeUntil(
+      "Download request did not reach the server",
+      () => downloadRequests(world),
+      (requests) => requests.length === 1,
+    );
+    const button = await card().$("button=Cancel");
+    await button.waitForClickable();
+    await button.click();
+    await waitStatus(world, "failedToDownload");
+    await expect(card().$("button=Retry")).toBeDisplayed();
+    await assertDownloadDisk(world, "cancelled", "failedToDownload");
+  });
+  // The downloader handles one mod at a time, so a cancelled request that is
+  // still waiting holds back the retry.
+  await step("retry reaches the server", async () => {
+    await retry();
+    await observeUntil(
+      "Retry stayed queued behind the cancelled request",
+      () => downloadRequests(world),
+      (requests) => requests.length === 2,
+      10_000,
+    );
+  });
+  await waitStatus(world, "downloaded");
+};
 
 describe("real Rust downloads", () => {
   it("keeps UI, partial files and selected payload consistent across failure and restart", async () => {
@@ -126,6 +162,8 @@ describe("real Rust downloads", () => {
           await card().$("button=Resume").click();
           await waitStatus(world, "downloaded");
         }
+      } else if (scenario === "downloads-cancel-connecting") {
+        await cancelWhileConnecting(world);
       } else if (
         [
           "downloads-auth",

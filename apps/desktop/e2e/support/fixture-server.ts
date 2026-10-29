@@ -22,6 +22,7 @@ export type FixtureResponse = {
   headers?: Record<string, string>;
   body: string | Buffer;
   range?: boolean;
+  headerDelayMs?: number;
   chunkBytes?: number;
   chunkDelayMs?: number;
   disconnectAfterBytes?: number;
@@ -41,12 +42,28 @@ export type FixtureServer = {
   close: (artifactsDirectory?: string) => Promise<void>;
 };
 
+// Ends early when the client closes the connection.
+const delay = (response: ServerResponse, ms: number): Promise<void> =>
+  new Promise<void>((resolve) => {
+    const done = () => {
+      clearTimeout(timer);
+      response.off("close", done);
+      resolve();
+    };
+    const timer = setTimeout(done, ms);
+    response.once("close", done);
+  });
+
 const sendFixture = async (
   request: IncomingMessage,
   response: ServerResponse,
   fixture: FixtureResponse,
   record: FixtureRequest,
 ): Promise<void> => {
+  if (fixture.headerDelayMs) {
+    await delay(response, fixture.headerDelayMs);
+    if (response.destroyed) return;
+  }
   const body = Buffer.isBuffer(fixture.body)
     ? fixture.body
     : Buffer.from(fixture.body);
@@ -90,16 +107,7 @@ const sendFixture = async (
     response.write(chunk);
     record.responseBytes += chunk.length;
     offset += chunk.length;
-    if (fixture.chunkDelayMs)
-      await new Promise<void>((resolve) => {
-        const done = () => {
-          clearTimeout(timer);
-          response.off("close", done);
-          resolve();
-        };
-        const timer = setTimeout(done, fixture.chunkDelayMs);
-        response.once("close", done);
-      });
+    if (fixture.chunkDelayMs) await delay(response, fixture.chunkDelayMs);
   }
   if (fixture.disconnectAfterBytes !== undefined) response.destroy();
   else response.end();
