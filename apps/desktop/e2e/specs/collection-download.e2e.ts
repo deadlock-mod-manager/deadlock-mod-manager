@@ -1,5 +1,6 @@
 import { $, browser, expect } from "@wdio/globals";
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { startApplication } from "../support/application";
 import { closeApplication } from "../support/application-exit";
@@ -8,15 +9,20 @@ import {
   collectionMods,
 } from "../support/collection-fixtures";
 import { step } from "../support/evidence";
+import { catalogVpk } from "../support/gamebanana-fixtures";
 import { readCatalogState } from "../support/gamebanana-oracle";
 import { observeUntil } from "../support/observations";
 import { navigate, waitForDisplayed } from "../support/ui";
+import { assertOwnedWorld } from "../support/world";
 
 const [steady, flaky] = collectionMods;
 const enabledSwitch = (name: string) =>
   `[role="switch"][aria-label="Enable mod ${name}"]`;
 const inLibraryCount = () =>
   $('//span[normalize-space()="in library"]/preceding-sibling::span[1]');
+// Only mods still to download can be ticked for a partial download.
+const selectBox = (name: string) =>
+  $(`[role="checkbox"][aria-label="${name}"]`);
 
 const confirmDownload = async (label: string) => {
   await $(`button=${label}`).click();
@@ -74,6 +80,8 @@ describe("collection downloads", () => {
     await step("the failed mod is still offered for download", async () => {
       await expect(inLibraryCount()).toHaveText("1");
       await expect($("button=Download 1 mod")).toBeEnabled();
+      await expect(selectBox(flaky.name)).toExist();
+      await expect(selectBox(steady.name)).not.toExist();
     });
 
     await step("downloading the collection again retries it", async () => {
@@ -89,5 +97,18 @@ describe("collection downloads", () => {
       (await readCatalogState(world)).localMods.map((mod) => mod.status),
       ["downloaded", "downloaded"],
     );
+    // Downloaded mods stay parked in addons until they are enabled.
+    const { configuration } = await assertOwnedWorld(world);
+    const addons = path.join(
+      configuration.roots.game,
+      "game",
+      "citadel",
+      "addons",
+    );
+    for (const mod of collectionMods)
+      assert.deepEqual(
+        await readFile(path.join(addons, `${mod.id}_${mod.id}.vpk`)),
+        catalogVpk(mod.name),
+      );
   });
 });
