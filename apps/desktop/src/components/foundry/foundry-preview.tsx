@@ -1,13 +1,12 @@
-import { Button } from "@deadlock-mods/ui/components/button";
 import { cn } from "@deadlock-mods/ui/lib/utils";
-import { CubeIcon, ImageIcon, MusicNotesIcon } from "@phosphor-icons/react";
+import { ImageIcon, MusicNotesIcon } from "@phosphor-icons/react";
+import { useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { usePersistedStore } from "@/lib/store";
+import { decodeFoundryTexture } from "@/lib/foundry";
 import { useFoundry } from "./foundry-context";
 import { FoundryLoadingBar } from "./foundry-loading-bar";
 import { AnimatedModelPreview } from "./animated-model-preview";
 import { ModelLoadingStage } from "./model-loading-stage";
-import { getPrimaryModelPath } from "@/lib/foundry";
 
 /**
  * The result surface in the middle of the Foundry: the live 3D turntable while a
@@ -24,10 +23,48 @@ export const FoundryPreview = () => {
     texturePreview,
     previewTint,
     busy,
-    preview3dEnabled,
+    primaryModelPath,
+    paintParts,
+    highlightTextures,
+    hiddenParts,
+    paintSelection,
+    togglePaintPart,
+    workspace,
+    textureRefresh,
+    setViewerReady,
+    registerHeroCapture,
   } = useFoundry();
-  const setPreview3d = usePersistedStore(
-    (state) => state.setFoundry3dPreviewEnabled,
+  const workspaceRoot = workspace?.root ?? null;
+  const filePath = manifest?.filePath ?? null;
+  const readTexture = useCallback(
+    async (path: string) => {
+      if (!filePath) throw new Error("No skin is loaded.");
+      return (await decodeFoundryTexture(filePath, path, workspaceRoot))
+        .dataUrl;
+    },
+    [filePath, workspaceRoot],
+  );
+  const labels = useMemo(
+    () =>
+      new Map(
+        paintParts.map((part) => [part.texture.toLowerCase(), part.label]),
+      ),
+    [paintParts],
+  );
+  // The paint tab labels the sections it is about to paint on the model.
+  const callouts = useMemo(
+    () =>
+      activeTab === "paint" && paintSelection.kind === "parts"
+        ? paintSelection.textures.map((texture) => ({
+            texture: texture.toLowerCase(),
+            label: labels.get(texture.toLowerCase()) ?? texture,
+          }))
+        : undefined,
+    [activeTab, paintSelection, labels],
+  );
+  const partLabel = useCallback(
+    (texture: string) => labels.get(texture.toLowerCase()),
+    [labels],
   );
 
   // Only the asset browser and the paint tab have a 3D surface; cards render
@@ -36,47 +73,42 @@ export const FoundryPreview = () => {
   const imageUrl = activeTab === "cards" ? texturePreview.dataUrl : null;
   const model = showModel ? modelPreview.model : null;
   const decodingTexture = texturePreview.status === "loading";
-  // A paint bake re-encodes several textures and then the model is decoded
-  // again, so both halves of that wait get the same indicator.
-  const rebuildingModel =
-    showModel && (modelPreview.status === "loading" || busy);
+  // A paint bake only rewrites color maps, which the viewer swaps in place, so
+  // the hero stays on screen through it.
+  const rebuildingModel = showModel && modelPreview.status === "loading";
 
-  // With the preview off nothing was decoded, so say so and offer the switch
-  // rather than showing an empty panel that looks like a failure.
-  if (showModel && !preview3dEnabled) {
-    return (
-      <div className='flex h-full w-full flex-col items-center justify-center gap-4 overflow-hidden rounded-lg border bg-gradient-to-b from-muted/40 to-background p-8 text-center'>
-        <CubeIcon
-          className='h-14 w-14 text-muted-foreground opacity-40'
-          weight='duotone'
-        />
-        <div className='max-w-sm space-y-1'>
-          <p className='font-medium text-sm'>{t("foundry.preview.disabled")}</p>
-          <p className='text-muted-foreground text-xs'>
-            {t("foundry.preview.disabledHint")}
-          </p>
-        </div>
-        <Button onClick={() => setPreview3d(true)} size='sm' variant='outline'>
-          {t("foundry.preview.enable")}
-        </Button>
-      </div>
-    );
-  }
-
+  // The paint tab shows the primary model, the one its sections belong to.
   const modelPath =
-    activeTab === "paint" && manifest
-      ? getPrimaryModelPath(manifest)
-      : selectedEntryPath;
+    activeTab === "paint" ? primaryModelPath : selectedEntryPath;
   if (model && !rebuildingModel && manifest && modelPath) {
     return (
-      <div className='relative flex h-full w-full items-center justify-center overflow-hidden rounded-lg border bg-gradient-to-b from-muted/40 to-background'>
+      <div className='relative flex h-full w-full items-center justify-center overflow-hidden bg-gradient-to-b from-muted/40 to-background'>
         <AnimatedModelPreview
           key={`${manifest.filePath}:${modelPath}`}
           source={{ filePath: manifest.filePath, entryPath: modelPath }}
           model={model}
           label={selectedEntryPath ?? t("foundry.preview.alt")}
           tint={previewTint}
+          highlightTextures={highlightTextures}
+          hiddenTextures={activeTab === "paint" ? hiddenParts : undefined}
+          silhouetteHero={manifest.heroDisplay ?? manifest.hero ?? undefined}
+          callouts={callouts}
+          // Sections are only picked where they can be painted.
+          onPickPart={activeTab === "paint" ? togglePaintPart : undefined}
+          partLabel={partLabel}
+          textureRefresh={textureRefresh}
+          readTexture={readTexture}
+          onReadyChange={setViewerReady}
+          onHeroCapture={registerHeroCapture}
         />
+        {busy && (
+          <div
+            aria-label={t("foundry.preview.painting")}
+            className='absolute inset-x-0 top-0'
+            role='status'>
+            <FoundryLoadingBar className='rounded-none' />
+          </div>
+        )}
       </div>
     );
   }
@@ -85,12 +117,8 @@ export const FoundryPreview = () => {
   // panel never sits empty.
   if (rebuildingModel) {
     return (
-      <div className='relative h-full w-full overflow-hidden rounded-lg border bg-gradient-to-b from-muted/40 to-background'>
-        <ModelLoadingStage
-          status={t(
-            busy ? "foundry.preview.painting" : "foundry.preview.loading",
-          )}
-        />
+      <div className='relative h-full w-full overflow-hidden bg-gradient-to-b from-muted/40 to-background'>
+        <ModelLoadingStage status={t("foundry.preview.loading")} />
       </div>
     );
   }
@@ -108,7 +136,7 @@ export const FoundryPreview = () => {
           : t("foundry.preview.empty");
 
   return (
-    <div className='relative flex h-full w-full items-center justify-center overflow-hidden rounded-lg border bg-gradient-to-b from-muted/40 to-background'>
+    <div className='relative flex h-full w-full items-center justify-center overflow-hidden bg-gradient-to-b from-muted/40 to-background'>
       {imageUrl ? (
         <img
           alt={t("foundry.preview.alt")}

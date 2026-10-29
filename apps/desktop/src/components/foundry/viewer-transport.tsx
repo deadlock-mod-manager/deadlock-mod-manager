@@ -13,7 +13,6 @@ import { CaretDownIcon, CaretUpIcon, type Icon } from "@phosphor-icons/react";
 import {
   type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent as ReactPointerEvent,
-  type ReactNode,
   type RefObject,
   useEffect,
   useRef,
@@ -345,13 +344,13 @@ export const Timeline = ({
   return (
     <div
       className={cn(
-        "flex min-w-0 items-center gap-3",
+        "flex min-w-0 items-center gap-2",
         !duration && "opacity-50",
         className,
       )}>
       <span
         ref={currentRef}
-        className='w-14 shrink-0 font-mono text-[11px] text-foreground tabular-nums'>
+        className='w-12 shrink-0 font-mono text-[11px] text-foreground tabular-nums'>
         {formatTime(0)}
       </span>
       <div
@@ -398,7 +397,7 @@ export const Timeline = ({
           className='pointer-events-none absolute top-1/2 left-0 size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-primary bg-foreground opacity-0 shadow-black/50 shadow-sm transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100'
         />
       </div>
-      <span className='w-14 shrink-0 text-right font-mono text-[11px] text-muted-foreground tabular-nums'>
+      <span className='w-12 shrink-0 text-right font-mono text-[11px] text-muted-foreground tabular-nums'>
         {formatTime(duration)}
       </span>
     </div>
@@ -409,16 +408,18 @@ export const EffectToggle = ({
   on,
   onChange,
   icon: ToggleIcon,
-  children,
+  label,
 }: {
   on: boolean;
   onChange: (on: boolean) => void;
   icon: Icon;
-  children: ReactNode;
+  label: string;
 }) => (
   <button
     type='button'
+    aria-label={label}
     aria-pressed={on}
+    title={label}
     onClick={() => onChange(!on)}
     className={cn(
       "flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
@@ -427,7 +428,7 @@ export const EffectToggle = ({
         : "bg-background text-muted-foreground hover:text-foreground",
     )}>
     <ToggleIcon className='size-3.5' weight={on ? "fill" : "regular"} />
-    {children}
+    <span className='hidden @[36rem]/transport:inline'>{label}</span>
   </button>
 );
 

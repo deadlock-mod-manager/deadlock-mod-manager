@@ -9,6 +9,7 @@ import { v4 as uuidv4 } from "uuid";
 import type { StateCreator } from "zustand";
 import type { CreateSettingSchema } from "@/lib/validation/create-setting";
 import type { TrayBehavior } from "@/lib/tray";
+import type { BackupMode } from "@/types/backup";
 import type { LocalSetting, SystemSetting } from "@/types/settings";
 import type { State } from "..";
 import {
@@ -84,7 +85,8 @@ export type SettingsState = {
   closeToTray: boolean;
   gamePresenceTextTemplates: PresenceTextTemplates;
   gamePresenceHeroOverrides: GamePresenceHeroOverrides;
-  backupEnabled: boolean;
+  /** When updates back up the mods they replace first. */
+  backupMode: BackupMode;
   maxBackupCount: number; // 0 means unlimited
 
   addSetting: (setting: LocalSetting) => void;
@@ -150,7 +152,7 @@ export type SettingsState = {
   resetGamePresenceTextTemplates: () => void;
 
   // Backup settings management
-  setBackupEnabled: (enabled: boolean) => void;
+  setBackupMode: (mode: BackupMode) => void;
   setMaxBackupCount: (count: number) => void;
 
   // Plugin management
@@ -193,7 +195,7 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   closeToTray: false,
   gamePresenceTextTemplates: createDefaultGamePresenceTextTemplates(),
   gamePresenceHeroOverrides: {},
-  backupEnabled: true,
+  backupMode: "always",
   maxBackupCount: 5,
   addSetting: (setting: LocalSetting) =>
     set((state) => ({
@@ -412,9 +414,9 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
       gamePresenceTextTemplates: createDefaultGamePresenceTextTemplates(),
     })),
 
-  setBackupEnabled: (enabled: boolean) =>
+  setBackupMode: (mode: BackupMode) =>
     set(() => ({
-      backupEnabled: enabled,
+      backupMode: mode,
     })),
 
   setMaxBackupCount: (count: number) =>

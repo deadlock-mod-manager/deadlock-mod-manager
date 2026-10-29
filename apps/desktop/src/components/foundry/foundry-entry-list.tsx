@@ -1,8 +1,15 @@
-import { Badge } from "@deadlock-mods/ui/components/badge";
 import { cn } from "@deadlock-mods/ui/lib/utils";
+import {
+  CircleHalfIcon,
+  CubeIcon,
+  FileIcon,
+  ImageIcon,
+  MusicNotesIcon,
+  StarIcon,
+} from "@phosphor-icons/react";
 import { memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import type { FoundryEntry } from "@/types/foundry";
+import type { FoundryCategory, FoundryEntry } from "@/types/foundry";
 import { chunkEntries, chunkSizeStyle } from "./foundry-chunks";
 
 const formatBytes = (bytes: number): string => {
@@ -11,17 +18,25 @@ const formatBytes = (bytes: number): string => {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 };
 
+const CATEGORY_ICONS = {
+  model: CubeIcon,
+  material: CircleHalfIcon,
+  texture: ImageIcon,
+  card: ImageIcon,
+  sound: MusicNotesIcon,
+  other: FileIcon,
+} satisfies Record<FoundryCategory, React.ElementType>;
+
 interface FoundryEntryListProps {
   entries: FoundryEntry[];
   selectedPath: string | null;
   onSelect: (entry: FoundryEntry) => void;
-  emptyLabel: string;
   editedPaths?: ReadonlySet<string>;
   /** The model marked as the skin's primary one, badged in the list. */
   primaryPath?: string | null;
 }
 
-const ROW_HEIGHT_PX = 42;
+const ROW_HEIGHT_PX = 30;
 
 const EntryRow = memo(function EntryRow({
   entry,
@@ -37,38 +52,49 @@ const EntryRow = memo(function EntryRow({
   onSelect: (entry: FoundryEntry) => void;
 }) {
   const { t } = useTranslation();
+  const Icon = CATEGORY_ICONS[entry.category];
   return (
     <li>
       <button
+        aria-current={isSelected}
         className={cn(
-          "flex w-full items-center justify-between gap-2 rounded-md border px-3 py-2 text-left text-sm transition-colors",
+          "flex h-[29px] w-full items-center gap-[9px] rounded-md border px-2 text-left transition-colors",
           isSelected
-            ? "border-primary bg-primary/10"
+            ? "border-primary/25 bg-primary/[0.07]"
             : "border-transparent hover:bg-muted",
         )}
         onClick={() => onSelect(entry)}
+        title={entry.path}
         type='button'>
-        <span className='flex min-w-0 flex-1 items-center gap-2'>
-          <span className='truncate' title={entry.path}>
-            {entry.filename}
-          </span>
-          {isPrimary && (
-            <Badge className='shrink-0 text-[10px]' variant='secondary'>
-              {t("foundry.primary")}
-            </Badge>
+        <Icon
+          className={cn(
+            "h-[15px] w-[15px] shrink-0",
+            isSelected ? "text-primary" : "text-muted-foreground",
           )}
+        />
+        <span
+          className={cn(
+            "min-w-0 truncate font-mono text-xs",
+            isSelected && "font-semibold",
+          )}>
+          {entry.filename}
         </span>
-        <div className='flex shrink-0 items-center gap-2'>
-          {isEdited && (
-            <Badge className='text-[10px]'>{t("foundry.edited")}</Badge>
-          )}
-          <span className='text-muted-foreground text-xs'>
-            {formatBytes(entry.size)}
+        {isPrimary && (
+          <span className='flex shrink-0 items-center gap-[3px] rounded bg-secondary px-[5px] py-px font-semibold text-[9px] text-secondary-foreground'>
+            <StarIcon className='h-[9px] w-[9px]' weight='bold' />
+            {t("foundry.primary")}
           </span>
-          <Badge className='text-[10px]' variant='outline'>
-            {entry.ext}
-          </Badge>
-        </div>
+        )}
+        <span className='flex-1' />
+        {isEdited && (
+          <span
+            aria-label={t("foundry.edited")}
+            className='h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400'
+          />
+        )}
+        <span className='shrink-0 font-mono text-[10px] text-muted-foreground/70'>
+          {formatBytes(entry.size)}
+        </span>
       </button>
     </li>
   );
@@ -89,7 +115,7 @@ const EntryChunk = memo(function EntryChunk({
 }) {
   return (
     <ul
-      className='space-y-1 [content-visibility:auto]'
+      className='space-y-px [content-visibility:auto]'
       style={chunkSizeStyle(entries.length, ROW_HEIGHT_PX)}>
       {entries.map((entry) => (
         <EntryRow
@@ -106,29 +132,20 @@ const EntryChunk = memo(function EntryChunk({
 });
 
 /**
- * A selectable list of VPK entries for a Foundry tab. Selecting an entry drives
- * the center preview.
+ * A selectable list of VPK entries. Selecting an entry drives the center
+ * preview.
  */
 export const FoundryEntryList = ({
   entries,
   selectedPath,
   onSelect,
-  emptyLabel,
   editedPaths,
   primaryPath = null,
 }: FoundryEntryListProps) => {
   const chunks = useMemo(() => chunkEntries(entries), [entries]);
 
-  if (entries.length === 0) {
-    return (
-      <p className='px-2 py-6 text-center text-muted-foreground text-sm'>
-        {emptyLabel}
-      </p>
-    );
-  }
-
   return (
-    <div className='space-y-1'>
+    <div className='space-y-px'>
       {chunks.map((chunk) => (
         <EntryChunk
           editedPaths={editedPaths}

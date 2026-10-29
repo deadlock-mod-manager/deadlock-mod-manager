@@ -63,7 +63,8 @@ describe("safeMigrate", () => {
       filterMode: "include",
       currentSort: "last updated",
     });
-    expect(result.backupEnabled).toBe(true);
+    expect(result.backupMode).toBe("always");
+    expect(result.backupEnabled).toBeUndefined();
     expect(result.maxBackupCount).toBe(5);
     expect(result.fileserverPreference).toBe("default");
     expect(result.fileserverLatencyMs).toBeUndefined();
@@ -119,7 +120,7 @@ describe("safeMigrate", () => {
     expect(result.proxyConfig).toEqual(state.proxyConfig);
     expect(result.showOccultGeometry).toBe(false);
     expect(result.animateOccultGeometry).toBe(false);
-    expect(result.backupEnabled).toBe(false);
+    expect(result.backupMode).toBe("off");
     expect(result.maxBackupCount).toBe(99);
     expect(result.fileserverPreference).toBe("auto");
     expect(result.linuxGpuOptimization).toBe("off");
@@ -263,7 +264,7 @@ describe("safeMigrate", () => {
   it("LATEST_VERSION matches the highest step target", () => {
     const max = Math.max(...MIGRATION_STEPS.map((s) => s.to));
     expect(LATEST_VERSION).toBe(max);
-    expect(LATEST_VERSION).toBe(37);
+    expect(LATEST_VERSION).toBe(38);
   });
 
   it("v25 (themes switch): drops the leftover enabledPlugins.themes entry", () => {

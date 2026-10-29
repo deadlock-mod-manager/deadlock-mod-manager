@@ -12,6 +12,7 @@
 //! `source2` module for what was and was not taken.
 
 pub mod audio;
+pub mod audio_edit;
 pub mod error;
 pub mod material_repair;
 pub mod pack;
@@ -22,6 +23,7 @@ pub mod sound_edit;
 pub mod source2;
 pub mod texture_edit;
 
+pub use audio_edit::{SoundAdjust, SoundSource, is_decodable_audio, rebuild_sound};
 pub use error::{Result, VpkManagerError};
 pub use pack::pack_directory;
 pub use particle_edit::recolor_particle_colors;

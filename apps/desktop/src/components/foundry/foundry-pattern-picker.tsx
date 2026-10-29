@@ -48,9 +48,14 @@ const useSwatches = (): Map<PatternName, string> => {
   return swatches;
 };
 
+/** The patterns shown before the grid is expanded, after "none". */
+const FEATURED: PatternName[] = ["camo", "carbon", "holo", "lava", "galaxy"];
+
 interface FoundryPatternPickerProps {
   value: FoundryPatternId;
   onChange: (pattern: FoundryPatternId) => void;
+  /** Every pattern, or "none" and a featured few plus the selected one. */
+  expanded: boolean;
   disabled?: boolean;
 }
 
@@ -58,42 +63,55 @@ interface FoundryPatternPickerProps {
 export const FoundryPatternPicker = ({
   value,
   onChange,
+  expanded,
   disabled,
 }: FoundryPatternPickerProps) => {
   const { t } = useTranslation();
   const swatches = useSwatches();
+  const picked = value === "none" ? null : value;
+  const shown = expanded
+    ? PATTERNS
+    : picked === null || FEATURED.includes(picked)
+      ? FEATURED
+      : [...FEATURED.slice(0, 4), picked];
 
-  const tile = (pattern: FoundryPatternId, children: React.ReactNode) => (
-    <button
-      className={cn(
-        "group relative aspect-square overflow-hidden rounded transition-colors",
-        "border",
-        value === pattern
-          ? "border-primary ring-1 ring-primary"
-          : "border-border/60 hover:border-primary/60",
-        disabled && "pointer-events-none opacity-50",
-      )}
-      disabled={disabled}
-      key={pattern}
-      onClick={() => onChange(pattern)}
-      title={t(`foundry.paint.patterns.${pattern}`)}
-      type='button'>
-      {children}
-      <span className='absolute inset-x-0 bottom-0 truncate bg-background/85 px-0.5 text-[8px] leading-[1.35] text-muted-foreground'>
-        {t(`foundry.paint.patterns.${pattern}`)}
-      </span>
-    </button>
-  );
+  const tile = (pattern: FoundryPatternId, preview: React.ReactNode) => {
+    const selected = value === pattern;
+    return (
+      <button
+        aria-pressed={selected}
+        className={cn(
+          "flex min-w-0 flex-col gap-[5px] text-left",
+          disabled && "pointer-events-none opacity-50",
+        )}
+        disabled={disabled}
+        key={pattern}
+        onClick={() => onChange(pattern)}
+        type='button'>
+        <span
+          className={cn(
+            "flex h-11 w-full items-center justify-center overflow-hidden rounded-md border bg-background transition-colors",
+            selected
+              ? "border-2 border-primary"
+              : "hover:border-muted-foreground/60",
+          )}>
+          {preview}
+        </span>
+        <span
+          className={cn(
+            "truncate text-[11px]",
+            selected ? "font-semibold" : "text-muted-foreground",
+          )}>
+          {t(`foundry.paint.patterns.${pattern}`)}
+        </span>
+      </button>
+    );
+  };
 
   return (
-    <div className='grid grid-cols-6 gap-1'>
-      {tile(
-        "none",
-        <div className='flex h-full w-full items-center justify-center bg-muted/40'>
-          <ProhibitIcon className='h-4 w-4 text-muted-foreground' />
-        </div>,
-      )}
-      {PATTERNS.map((pattern) => {
+    <div className='grid grid-cols-3 gap-x-2 gap-y-2.5'>
+      {tile("none", <ProhibitIcon className='h-4 w-4 text-muted-foreground' />)}
+      {shown.map((pattern) => {
         const swatch = swatches.get(pattern);
         return tile(
           pattern,
@@ -105,7 +123,7 @@ export const FoundryPatternPicker = ({
               src={swatch}
             />
           ) : (
-            <div className='h-full w-full animate-pulse bg-muted/60' />
+            <span className='h-full w-full animate-pulse bg-muted/60' />
           ),
         );
       })}

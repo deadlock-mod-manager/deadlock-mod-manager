@@ -36,9 +36,11 @@ import type { PreviewParticles } from "@/types/generated/PreviewParticles";
 import {
   FoundryModelViewer,
   type FoundryPreviewTint,
+  type FoundryTextureRefresh,
 } from "./foundry-model-viewer";
 import { ViewerAnimationPicker } from "./viewer-animation-picker";
 import { restartEvery, type ViewerEffectFactory } from "./viewer-effects";
+import type { ViewerCallout } from "./viewer-callouts";
 import { overlaySurface } from "./viewer-tools";
 import {
   AbilityBar,
@@ -51,7 +53,17 @@ interface Props {
   model: FoundryModel;
   label: string;
   source: PreviewSource;
-  tint?: FoundryPreviewTint | null;
+  tint?: readonly FoundryPreviewTint[] | null;
+  highlightTextures?: readonly string[];
+  hiddenTextures?: readonly string[];
+  silhouetteHero?: string;
+  callouts?: readonly ViewerCallout[];
+  onPickPart?: (texture: string, additive: boolean) => void;
+  partLabel?: (texture: string) => string | undefined;
+  textureRefresh?: FoundryTextureRefresh;
+  readTexture?: (path: string) => Promise<string>;
+  onReadyChange?: (ready: boolean) => void;
+  onHeroCapture?: (capture: (() => Promise<Blob | null>) | null) => void;
 }
 
 const REST_POSE = "rest";
@@ -62,7 +74,22 @@ const HERO_ABILITIES_KEY = "assets:hero-abilities";
 const RELEASE_CLIP =
   /_(fire|shoot|attack|slam|throw|toss|release|launch)(_|\.|$)/;
 
-export const AnimatedModelPreview = ({ model, label, source, tint }: Props) => {
+export const AnimatedModelPreview = ({
+  model,
+  label,
+  source,
+  tint,
+  highlightTextures,
+  hiddenTextures,
+  silhouetteHero,
+  callouts,
+  onPickPart,
+  partLabel,
+  textureRefresh,
+  readTexture,
+  onReadyChange,
+  onHeroCapture,
+}: Props) => {
   const { t } = useTranslation();
   const fullscreenRef = useRef<HTMLDivElement>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -254,6 +281,16 @@ export const AnimatedModelPreview = ({ model, label, source, tint }: Props) => {
           model={model}
           label={label}
           tint={tint}
+          highlightTextures={highlightTextures}
+          hiddenTextures={hiddenTextures}
+          silhouetteHero={silhouetteHero}
+          callouts={callouts}
+          onPickPart={onPickPart}
+          partLabel={partLabel}
+          textureRefresh={textureRefresh}
+          readTexture={readTexture}
+          onReadyChange={onReadyChange}
+          onHeroCapture={onHeroCapture}
           effects={effects}
           timeRef={timeRef}
           playback={{
@@ -310,7 +347,7 @@ export const AnimatedModelPreview = ({ model, label, source, tint }: Props) => {
           )}
         </FoundryModelViewer>
       </div>
-      <div className='shrink-0 space-y-2 border-t bg-muted/30 px-3 py-2'>
+      <div className='@container/transport shrink-0 space-y-2 border-t bg-muted/30 px-3 py-2'>
         <div className='flex flex-wrap items-center gap-2'>
           <Button
             size='icon'
@@ -324,7 +361,7 @@ export const AnimatedModelPreview = ({ model, label, source, tint }: Props) => {
           <Button
             size='icon'
             variant='ghost'
-            className='size-8 shrink-0'
+            className='hidden size-8 shrink-0 @[44rem]/transport:inline-flex'
             disabled={!current}
             aria-label={t("modelPreview.restart")}
             title={t("modelPreview.restart")}
@@ -339,7 +376,7 @@ export const AnimatedModelPreview = ({ model, label, source, tint }: Props) => {
           <Button
             size='sm'
             variant='ghost'
-            className='h-8 shrink-0 gap-1.5 px-2 text-muted-foreground text-xs hover:text-foreground'
+            className='hidden h-8 shrink-0 gap-1.5 px-2 text-muted-foreground text-xs hover:text-foreground @[44rem]/transport:inline-flex'
             disabled={
               action?.id === "idle" ||
               !actions.some((candidate) => candidate.id === "idle")
@@ -354,14 +391,19 @@ export const AnimatedModelPreview = ({ model, label, source, tint }: Props) => {
             animation={current}
             timeRef={timeRef}
             onSeek={seekTo}
-            className='min-w-64 flex-1 basis-64 px-1'
+            className='min-w-40 flex-1 basis-40 px-1'
           />
           {cloth.data && (
-            <EffectToggle icon={WindIcon} on={clothOn} onChange={setClothOn}>
-              {t("modelPreview.cloth")}
-            </EffectToggle>
+            <EffectToggle
+              icon={WindIcon}
+              label={t("modelPreview.cloth")}
+              on={clothOn}
+              onChange={setClothOn}
+            />
           )}
-          <SpeedPicker speed={speed} onChange={setSpeed} />
+          <div className='hidden @[40rem]/transport:block'>
+            <SpeedPicker speed={speed} onChange={setSpeed} />
+          </div>
         </div>
         {status && (
           <p className='text-muted-foreground text-xs' role='status'>

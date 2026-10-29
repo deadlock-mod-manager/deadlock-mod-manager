@@ -1,9 +1,10 @@
 use crate::app_runtime::AppHandle;
 use crate::errors::Error;
+use crate::mod_manager::manager::update_backup::{UPDATE_BACKUP_PREFIX, update_backup_mod_names};
 use crate::mod_manager::repair_backup::{REPAIR_BACKUP_PREFIX, restore_repair_backup};
 use crate::mod_manager::shard;
 use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
-use chrono::{DateTime, Local};
+use chrono::{Local, TimeZone};
 use log;
 use serde::{Deserialize, Serialize};
 use std::cmp::Reverse;
@@ -35,6 +36,9 @@ pub struct AddonsBackup {
   pub created_at: u64,
   pub file_size: u64,
   pub addons_count: u32,
+  /// Names of the mods an update backup holds; empty for full backups.
+  #[serde(default)]
+  pub mod_names: Vec<String>,
 }
 
 pub enum RestoreStrategy {
@@ -252,6 +256,7 @@ impl AddonsBackupManager {
       created_at,
       file_size: stats.bytes,
       addons_count: stats.vpks,
+      mod_names: Vec::new(),
     })
   }
 
@@ -277,7 +282,7 @@ impl AddonsBackupManager {
 
   /// Names only have second resolution, so an update retried right after a
   /// failed one would collide with its backup. Later ones get a `-N` suffix.
-  fn unused_backup_name(backup_dir: &Path, filename: &str) -> String {
+  pub(crate) fn unused_backup_name(backup_dir: &Path, filename: &str) -> String {
     let mut name = filename.to_string();
     let mut suffix = 1;
     while backup_dir.join(&name).exists() {
@@ -289,10 +294,8 @@ impl AddonsBackupManager {
 
   /// Orders backups `unused_backup_name` made within the same second.
   fn backup_name_suffix(filename: &str) -> u32 {
-    filename
-      .strip_suffix(".7z")
-      .unwrap_or(filename)
-      .get("addons-backup-YYYY-MM-DD_HH-MM-SS".len()..)
+    Self::backup_name_timestamp(filename)
+      .and_then(|rest| rest.get("YYYY-MM-DD_HH-MM-SS".len()..))
       .and_then(|rest| rest.strip_prefix('-'))
       .and_then(|suffix| suffix.parse().ok())
       .unwrap_or(1)
@@ -434,11 +437,17 @@ impl AddonsBackupManager {
     failures
   }
 
-  fn parse_backup_filename(&self, filename: &str) -> Option<u64> {
+  /// The part of a full or update backup name that starts with its timestamp.
+  fn backup_name_timestamp(filename: &str) -> Option<&str> {
     let without_ext = filename.strip_suffix(".7z").unwrap_or(filename);
-    let without_prefix = without_ext.strip_prefix("addons-backup-")?;
+    without_ext
+      .strip_prefix(UPDATE_BACKUP_PREFIX)
+      .or_else(|| without_ext.strip_prefix("addons-backup-"))
+  }
+
+  fn parse_backup_filename(&self, filename: &str) -> Option<u64> {
     // Ignores the suffix `unused_backup_name` adds after the timestamp.
-    let timestamp = without_prefix.get(.."YYYY-MM-DD_HH-MM-SS".len())?;
+    let timestamp = Self::backup_name_timestamp(filename)?.get(.."YYYY-MM-DD_HH-MM-SS".len())?;
 
     let datetime_str = timestamp.replace('_', " ").replace('-', ":");
     let parts: Vec<&str> = datetime_str.split(' ').collect();
@@ -464,8 +473,8 @@ impl AddonsBackupManager {
     let naive_time = chrono::NaiveTime::from_hms_opt(hour, minute, second)?;
     let naive_datetime = chrono::NaiveDateTime::new(naive_date, naive_time);
 
-    let datetime: DateTime<Local> =
-      DateTime::from_naive_utc_and_offset(naive_datetime, *Local::now().offset());
+    // Names hold local time, so read them as local time, not as UTC.
+    let datetime = Local.from_local_datetime(&naive_datetime).earliest()?;
 
     Some(datetime.timestamp() as u64)
   }
@@ -506,6 +515,7 @@ impl AddonsBackupManager {
             created_at,
             file_size: stats.bytes,
             addons_count: stats.vpks,
+            mod_names: update_backup_mod_names(&path),
           });
         }
       }
@@ -668,19 +678,22 @@ impl AddonsBackupManager {
     Ok(())
   }
 
+  /// Keeps the newest `max_count` full backups and, separately, the newest
+  /// `max_count` update backups, so small per-mod backups never push out a
+  /// full one.
   pub fn prune_old_backups(&self, max_count: u32) -> Result<u32, Error> {
-    let backups: Vec<_> = self
-      .list_backups()?
-      .into_iter()
-      .filter(|backup| !backup.file_name.starts_with(REPAIR_BACKUP_PREFIX))
-      .collect();
-    let total = backups.len() as u32;
-
-    if max_count == 0 || total <= max_count {
+    if max_count == 0 {
       return Ok(0);
     }
 
-    let to_remove = &backups[max_count as usize..];
+    let (update_backups, full_backups): (Vec<_>, Vec<_>) = self
+      .list_backups()?
+      .into_iter()
+      .filter(|backup| !backup.file_name.starts_with(REPAIR_BACKUP_PREFIX))
+      .partition(|backup| backup.file_name.starts_with(UPDATE_BACKUP_PREFIX));
+    let to_remove = [update_backups, full_backups]
+      .into_iter()
+      .flat_map(|backups| backups.into_iter().skip(max_count as usize));
     let mut pruned = 0u32;
 
     for backup in to_remove {
@@ -695,7 +708,7 @@ impl AddonsBackupManager {
       }
     }
 
-    log::info!("Pruned {pruned} old backup(s), kept {max_count}");
+    log::info!("Pruned {pruned} old backup(s), kept {max_count} of each kind");
     Ok(pruned)
   }
 
@@ -727,10 +740,11 @@ impl AddonsBackupManager {
       created_at,
       file_size: stats.bytes,
       addons_count: stats.vpks,
+      mod_names: update_backup_mod_names(&backup_path),
     })
   }
 
-  fn resolve_backup_path(&self, file_name: &str) -> Result<PathBuf, Error> {
+  pub(crate) fn resolve_backup_path(&self, file_name: &str) -> Result<PathBuf, Error> {
     if !file_name.starts_with("addons-backup-")
       || file_name.contains("..")
       || file_name.contains('/')
@@ -961,6 +975,57 @@ mod tests {
       manager.parse_backup_filename(name)
     );
     assert!(manager.parse_backup_filename(name).is_some());
+  }
+
+  /// Five one-mod updates used to delete five full backups (#1076).
+  #[test]
+  fn update_backups_and_full_backups_are_pruned_separately() {
+    let temp = tempfile::tempdir().unwrap();
+    let mut manager = AddonsBackupManager::new();
+    manager.set_game_path(temp.path().to_path_buf());
+    let backup_dir = manager.get_backup_directory().unwrap();
+    for minute in 0..3 {
+      fs::create_dir_all(backup_dir.join(format!("addons-backup-2026-10-16_15-0{minute}-00")))
+        .unwrap();
+      fs::create_dir_all(
+        backup_dir.join(format!("{UPDATE_BACKUP_PREFIX}2026-10-16_16-0{minute}-00")),
+      )
+      .unwrap();
+    }
+
+    assert_eq!(manager.prune_old_backups(2).unwrap(), 2);
+
+    let mut names: Vec<_> = manager
+      .list_backups()
+      .unwrap()
+      .into_iter()
+      .map(|backup| backup.file_name)
+      .collect();
+    names.sort();
+    assert_eq!(
+      names,
+      [
+        "addons-backup-2026-10-16_15-01-00".to_string(),
+        "addons-backup-2026-10-16_15-02-00".to_string(),
+        format!("{UPDATE_BACKUP_PREFIX}2026-10-16_16-01-00"),
+        format!("{UPDATE_BACKUP_PREFIX}2026-10-16_16-02-00"),
+      ]
+    );
+  }
+
+  #[test]
+  fn backup_names_are_read_as_local_time() {
+    let manager = AddonsBackupManager::new();
+    let expected = Local
+      .with_ymd_and_hms(2026, 10, 28, 17, 0, 28)
+      .unwrap()
+      .timestamp() as u64;
+    for name in [
+      "addons-backup-2026-10-28_17-00-28".to_string(),
+      format!("{UPDATE_BACKUP_PREFIX}2026-10-28_17-00-28"),
+    ] {
+      assert_eq!(manager.parse_backup_filename(&name), Some(expected));
+    }
   }
 
   #[test]

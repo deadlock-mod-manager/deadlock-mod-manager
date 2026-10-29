@@ -4,6 +4,7 @@ import { CompassIcon, CubeIcon } from "@phosphor-icons/react";
 import {
   type ReactNode,
   type RefObject,
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -20,6 +21,12 @@ import {
   type PreviewPlayback,
 } from "@/lib/preview-animation";
 import { PreviewClock } from "@/lib/preview-clock";
+import { type ViewerCallout, ViewerCallouts } from "./viewer-callouts";
+import { colorTextureOf } from "./viewer-color-texture";
+import {
+  captureSilhouette,
+  hasCapturedSilhouette,
+} from "./foundry-silhouettes";
 import { ModelLoadingStage } from "./model-loading-stage";
 import {
   hueOf,
@@ -36,6 +43,7 @@ import type {
 import {
   DEFAULT_LOOK,
   overlaySurface,
+  ViewerActivePasses,
   ViewerBackgroundButton,
   type ViewerLook,
   type ViewerOverlayToggle,
@@ -54,9 +62,15 @@ import {
 } from "./viewer-mesh-groups";
 import { createViewerScene } from "./viewer-scene";
 
-/** A live paint preview: which part, and the exact paint being previewed. */
+/** A live paint preview: the color maps it covers and the exact paint. */
+/** Color maps whose files changed; a new `revision` asks for another swap. */
+export interface FoundryTextureRefresh {
+  paths: readonly string[];
+  revision: number;
+}
+
 export interface FoundryPreviewTint {
-  target: "body" | "weapon" | "bodyAndWeapon" | "abilities";
+  textures: readonly string[];
   colorHex: string;
   saturation: number;
   brightness: number;
@@ -67,7 +81,20 @@ interface FoundryModelViewerProps {
   label: string;
   /** Paints the matching materials on the GPU, without touching any file, so
    *  the paint tab shows a color the instant it is picked. */
-  tint?: FoundryPreviewTint | null;
+  /** Pending colors, later layers over earlier ones; null when not previewing. */
+  tint?: readonly FoundryPreviewTint[] | null;
+  /** Color maps of the selected sections, drawn with a faint glow. */
+  highlightTextures?: readonly string[];
+  /** Color maps the user hid to reach what is behind them; not drawn or picked. */
+  hiddenTextures?: readonly string[];
+  /** The hero whose shape the loading embers should learn from this model. */
+  silhouetteHero?: string;
+  /** Sections to label on the model, with a leader line to each. */
+  callouts?: readonly ViewerCallout[];
+  /** Makes sections clickable: a click selects one, Shift or Ctrl adds it. */
+  onPickPart?: (texture: string, additive: boolean) => void;
+  /** The section name shown while the pointer is over it. */
+  partLabel?: (texture: string) => string | undefined;
   playback?: PreviewPlayback;
   /** Simulations attached to the loaded model; rebuilt when the array changes, so memoize it. */
   effects?: ViewerEffectFactory[];
@@ -78,15 +105,41 @@ interface FoundryModelViewerProps {
   timeRef?: RefObject<number>;
   /** Drawn over the render, inside the viewport. */
   children?: ReactNode;
+  /** Edited color maps to swap into the loaded model without a rebuild. */
+  textureRefresh?: FoundryTextureRefresh;
+  /** Reads a color map's current image as a data URL. */
+  readTexture?: (path: string) => Promise<string>;
+  /** Told whether a model is on screen, for overlays that sit over the stage. */
+  onReadyChange?: (ready: boolean) => void;
+  /** Receives a still of the hero cropped to its outline, or null once gone. */
+  onHeroCapture?: (capture: (() => Promise<Blob | null>) | null) => void;
 }
 
 interface MaterialSnapshot {
   /** The paint shader's uniforms for this material. */
   uniforms: PaintUniforms;
-  /** Material and mesh names joined, which is what the part match reads. */
-  name: string;
+  /** The material's color map (lowercase), or null when it has none. */
+  texture: string | null;
   material: PaintableMaterial;
 }
+
+/** A mesh with its flat ID material for the GPU pick pass. */
+interface PickTarget {
+  mesh: THREE.Mesh;
+  texture: string | null;
+  pickMaterial: THREE.MeshBasicMaterial;
+}
+
+/** Hovered parts glow brighter than selected ones, so the pointer reads. */
+const HOVER_GLOW = 0.32;
+const SELECTED_GLOW = 0.14;
+
+/** A pointer that moved more than this between press and release orbited. */
+const CLICK_SLOP_PX = 4;
+
+/** How often a still pointer is re-picked while the model or camera moves.
+ *  Each pick is a synchronous pixel read, so not every frame. */
+const REPICK_INTERVAL_MS = 100;
 
 const isTintable = (material: THREE.Material): material is PaintableMaterial =>
   material instanceof THREE.MeshBasicMaterial ||
@@ -94,46 +147,6 @@ const isTintable = (material: THREE.Material): material is PaintableMaterial =>
   material instanceof THREE.MeshPhysicalMaterial ||
   material instanceof THREE.MeshPhongMaterial ||
   material instanceof THREE.MeshLambertMaterial;
-
-const WEAPON_TOKENS = [
-  "weapon",
-  "gun",
-  "rifle",
-  "pistol",
-  "shotgun",
-  "cannon",
-  "launcher",
-  "bow",
-  "arrow",
-  "blade",
-  "sword",
-  "knife",
-  "staff",
-  "wand",
-  "mace",
-  "club",
-  "revolver",
-  "smg",
-  "bullet",
-  "melee",
-];
-
-/**
- * Whether a material belongs to the part being painted. This mirrors the
- * backend's material classification (`commands/foundry/paint.rs`) so the preview
- * highlights exactly what an Apply would rewrite. Ability effects are not part
- * of the model, so nothing on the mesh matches them.
- */
-const materialMatchesTarget = (
-  snapshot: MaterialSnapshot,
-  target: FoundryPreviewTint["target"],
-): boolean => {
-  if (target === "abilities") return false;
-  if (target === "bodyAndWeapon") return true;
-  const name = snapshot.name.toLowerCase();
-  const isWeapon = WEAPON_TOKENS.some((token) => name.includes(token));
-  return target === "weapon" ? isWeapon : !isWeapon;
-};
 
 /** Clone every material so tinting one model never bleeds into another. */
 const cloneSceneMaterials = (root: THREE.Object3D) => {
@@ -158,7 +171,7 @@ const installPaintShaders = (root: THREE.Object3D): MaterialSnapshot[] => {
       snapshots.push({
         material,
         uniforms: installPaintShader(material),
-        name: [material.name, child.name].filter(Boolean).join(" "),
+        texture: colorTextureOf(material),
       });
     }
   });
@@ -166,7 +179,50 @@ const installPaintShaders = (root: THREE.Object3D): MaterialSnapshot[] => {
 };
 
 /**
- * Point the paint shader at `tint`, or switch it off when it is null.
+ * One flat-colored stand-in material per mesh for the pick pass. The IDs start
+ * at 1 so a cleared pixel (0) means "nothing under the pointer". Built before
+ * the outline shells are attached, so those never become pick targets.
+ */
+const buildPickTargets = (root: THREE.Object3D): PickTarget[] => {
+  const targets: PickTarget[] = [];
+  root.traverse((child) => {
+    if (!(child instanceof THREE.Mesh) || Array.isArray(child.material)) return;
+    const id = targets.length + 1;
+    targets.push({
+      mesh: child,
+      texture: colorTextureOf(child.material),
+      pickMaterial: new THREE.MeshBasicMaterial({
+        color: new THREE.Color().setHex(id, THREE.LinearSRGBColorSpace),
+        toneMapped: false,
+        side: THREE.DoubleSide,
+      }),
+    });
+  });
+  return targets;
+};
+
+/** Glow the hovered part and, more faintly, the selected ones. */
+const applyHighlight = (
+  snapshots: MaterialSnapshot[],
+  selected: ReadonlySet<string>,
+  hovered: string | null,
+) => {
+  for (const snapshot of snapshots) {
+    const texture = snapshot.texture;
+    snapshot.uniforms.uPaintHighlight.value =
+      texture === null
+        ? 0
+        : texture === hovered
+          ? HOVER_GLOW
+          : selected.has(texture)
+            ? SELECTED_GLOW
+            : 0;
+  }
+};
+
+/**
+ * Point the paint shader at each layer's textures, or switch it off when the
+ * tint is null. A texture in several layers wears the last.
  *
  * This only writes uniforms, so it costs nothing per change: the scene already
  * redraws every frame and the transform runs on the GPU. Dragging the picker is
@@ -174,18 +230,105 @@ const installPaintShaders = (root: THREE.Object3D): MaterialSnapshot[] => {
  */
 const applyPreviewTint = (
   snapshots: MaterialSnapshot[],
-  tint: FoundryPreviewTint | null | undefined,
+  tint: readonly FoundryPreviewTint[] | null | undefined,
 ) => {
-  const hue = tint ? hueOf(tint.colorHex) : 0;
-  for (const snapshot of snapshots) {
-    const painted =
-      tint != null && materialMatchesTarget(snapshot, tint.target);
-    snapshot.uniforms.uPaintActive.value = painted ? 1 : 0;
-    if (!painted) continue;
-    snapshot.uniforms.uPaintHue.value = hue;
-    snapshot.uniforms.uPaintSaturation.value = tint.saturation;
-    snapshot.uniforms.uPaintBrightness.value = tint.brightness;
+  const layers = new Map<string, FoundryPreviewTint>();
+  for (const layer of tint ?? []) {
+    for (const texture of layer.textures) {
+      layers.set(texture.toLowerCase(), layer);
+    }
   }
+  for (const snapshot of snapshots) {
+    const layer =
+      snapshot.texture === null ? undefined : layers.get(snapshot.texture);
+    snapshot.uniforms.uPaintActive.value = layer ? 1 : 0;
+    if (!layer) continue;
+    snapshot.uniforms.uPaintHue.value = hueOf(layer.colorHex);
+    snapshot.uniforms.uPaintSaturation.value = layer.saturation;
+    snapshot.uniforms.uPaintBrightness.value = layer.brightness;
+  }
+};
+
+/** Room left around the hero in a still, as a share of its height. */
+const STILL_PADDING = 0.06;
+
+/**
+ * Render one frame and crop it to the hero's posed outline, for places that
+ * show the finished skin without a live viewer.
+ */
+const captureHeroStill = async (
+  root: THREE.Object3D,
+  camera: THREE.Camera,
+  renderer: THREE.WebGLRenderer,
+  render: () => Promise<Blob | null> | undefined,
+): Promise<Blob | null> => {
+  const frame = await render();
+  if (!frame) return null;
+  const box = new THREE.Box3().setFromObject(root, true);
+  const canvas = renderer.domElement;
+  let [left, top, right, bottom] = [Infinity, Infinity, -Infinity, -Infinity];
+  for (const x of [box.min.x, box.max.x]) {
+    for (const y of [box.min.y, box.max.y]) {
+      for (const z of [box.min.z, box.max.z]) {
+        const point = new THREE.Vector3(x, y, z).project(camera);
+        const px = ((point.x + 1) / 2) * canvas.width;
+        const py = ((1 - point.y) / 2) * canvas.height;
+        left = Math.min(left, px);
+        right = Math.max(right, px);
+        top = Math.min(top, py);
+        bottom = Math.max(bottom, py);
+      }
+    }
+  }
+  const pad = (bottom - top) * STILL_PADDING;
+  left = Math.max(0, Math.floor(left - pad));
+  top = Math.max(0, Math.floor(top - pad));
+  right = Math.min(canvas.width, Math.ceil(right + pad));
+  bottom = Math.min(canvas.height, Math.ceil(bottom + pad));
+  if (right <= left || bottom <= top) return frame;
+
+  const image = await createImageBitmap(frame);
+  const crop = document.createElement("canvas");
+  crop.width = right - left;
+  crop.height = bottom - top;
+  crop
+    .getContext("2d")
+    ?.drawImage(
+      image,
+      left,
+      top,
+      crop.width,
+      crop.height,
+      0,
+      0,
+      crop.width,
+      crop.height,
+    );
+  image.close();
+  return new Promise((resolve) => crop.toBlob(resolve, "image/png"));
+};
+
+/**
+ * Hide the meshes drawn with one of `hidden`'s color maps, outline shells
+ * included. Materials rather than meshes, because mesh visibility already
+ * belongs to the model's body groups.
+ */
+const applyHiddenParts = (
+  root: THREE.Object3D,
+  hidden: ReadonlySet<string>,
+) => {
+  root.traverse((child) => {
+    if (!(child instanceof THREE.Mesh) || Array.isArray(child.material)) return;
+    const texture = colorTextureOf(child.material);
+    if (texture === null) return;
+    const visible = !hidden.has(texture);
+    child.material.visible = visible;
+    for (const shell of child.children) {
+      if (shell instanceof THREE.Mesh && !Array.isArray(shell.material)) {
+        shell.material.visible = visible;
+      }
+    }
+  });
 };
 
 // DMM-themed gizmo palette (dark surface, gold primary accent).
@@ -275,12 +418,22 @@ export const FoundryModelViewer = ({
   model,
   label,
   tint,
+  highlightTextures,
+  hiddenTextures,
+  silhouetteHero,
+  callouts,
+  onPickPart,
+  partLabel,
   playback,
   effects,
   fullscreenTarget,
   overlays = [],
   timeRef,
   children,
+  textureRefresh,
+  readTexture,
+  onReadyChange,
+  onHeroCapture,
 }: FoundryModelViewerProps) => {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -290,6 +443,15 @@ export const FoundryModelViewer = ({
   const fitRef = useRef<(() => void) | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const snapshotsRef = useRef<MaterialSnapshot[]>([]);
+  const hiddenRef = useRef<ReadonlySet<string>>(new Set());
+  const [hovered, setHovered] = useState<string | null>(null);
+  // The frame loop and pick handler read the latest props through refs, so a
+  // changed callback never rebuilds the scene.
+  const onPickRef = useRef(onPickPart);
+  onPickRef.current = onPickPart;
+  const pickable = Boolean(onPickPart);
+  const pickableRef = useRef(pickable);
+  pickableRef.current = pickable;
   const [loading, setLoading] = useState(true);
   const [scanGone, setScanGone] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -310,6 +472,7 @@ export const FoundryModelViewer = ({
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
   const actionRef = useRef<THREE.AnimationAction | null>(null);
   const stageRef = useRef<Omit<ViewerEffectContext, "model"> | null>(null);
+  const getCamera = useCallback(() => stageRef.current?.camera ?? null, []);
   const activeEffectsRef = useRef<ViewerEffect[]>([]);
   useEffect(() => {
     playbackRef.current = playback;
@@ -512,7 +675,105 @@ export const FoundryModelViewer = ({
 
     let disposed = false;
     let loadedRoot: THREE.Object3D | null = null;
+    let picks: PickTarget[] = [];
     let frame = 0;
+
+    // GPU picking: the model is drawn into a 1x1 target under the pointer with
+    // one flat color per mesh, and the pixel read back names the section. A CPU
+    // raycast would have to skin every vertex of a 100k-triangle hero per move.
+    const pickTarget = new THREE.WebGLRenderTarget(1, 1);
+    const pickCamera = new THREE.PerspectiveCamera();
+    const pickPixel = new Uint8Array(4);
+    const pickPointer = { x: 0, y: 0, inside: false, dirty: false };
+    let pointerDown: { x: number; y: number } | null = null;
+    let lastHovered: string | null = null;
+    let lastPick = 0;
+
+    const setHover = (texture: string | null) => {
+      if (texture === lastHovered) return;
+      lastHovered = texture;
+      setHovered(texture);
+    };
+
+    const pickAtPointer = (): string | null => {
+      const root = loadedRoot;
+      if (!root || picks.length === 0) return null;
+      const canvas = renderer.domElement;
+      pickCamera.copy(camera);
+      pickCamera.setViewOffset(
+        canvas.clientWidth,
+        canvas.clientHeight,
+        Math.floor(pickPointer.x),
+        Math.floor(pickPointer.y),
+        1,
+        1,
+      );
+      pickCamera.updateProjectionMatrix();
+      const saved = picks.map((target) => target.mesh.material);
+      for (const target of picks) {
+        target.pickMaterial.visible = !(
+          target.texture && hiddenRef.current.has(target.texture)
+        );
+        target.mesh.material = target.pickMaterial;
+      }
+      // The outline shells keep their own material and would read as an ID.
+      outlines?.setVisible(false);
+      const previousTarget = renderer.getRenderTarget();
+      const previousClear = renderer.getClearColor(new THREE.Color());
+      const previousAlpha = renderer.getClearAlpha();
+      renderer.setRenderTarget(pickTarget);
+      renderer.setClearColor(0x000000, 0);
+      renderer.clear();
+      renderer.render(root, pickCamera);
+      renderer.readRenderTargetPixels(pickTarget, 0, 0, 1, 1, pickPixel);
+      renderer.setRenderTarget(previousTarget);
+      renderer.setClearColor(previousClear, previousAlpha);
+      outlines?.setVisible(lookRef.current.outlines);
+      picks.forEach((target, index) => {
+        target.mesh.material = saved[index];
+      });
+      const id = (pickPixel[0] << 16) | (pickPixel[1] << 8) | pickPixel[2];
+      return id > 0 ? (picks[id - 1]?.texture ?? null) : null;
+    };
+
+    const onPointerMove = (event: PointerEvent) => {
+      const rect = renderer.domElement.getBoundingClientRect();
+      pickPointer.x = event.clientX - rect.left;
+      pickPointer.y = event.clientY - rect.top;
+      pickPointer.inside = true;
+      pickPointer.dirty = true;
+    };
+    const onPointerLeave = () => {
+      pickPointer.inside = false;
+      setHover(null);
+    };
+    const onPointerDown = (event: PointerEvent) => {
+      pointerDown = { x: event.clientX, y: event.clientY };
+      // Shift-click adds to the pick, but the browser would also extend the
+      // page's text selection up to the click.
+      if (event.shiftKey || event.ctrlKey) event.preventDefault();
+    };
+    const onPointerUp = (event: PointerEvent) => {
+      const start = pointerDown;
+      pointerDown = null;
+      if (
+        !start ||
+        !pickableRef.current ||
+        Math.hypot(event.clientX - start.x, event.clientY - start.y) >
+          CLICK_SLOP_PX
+      ) {
+        return;
+      }
+      onPointerMove(event);
+      const texture = pickAtPointer();
+      if (texture) {
+        onPickRef.current?.(texture, event.shiftKey || event.ctrlKey);
+      }
+    };
+    renderer.domElement.addEventListener("pointermove", onPointerMove);
+    renderer.domElement.addEventListener("pointerleave", onPointerLeave);
+    renderer.domElement.addEventListener("pointerdown", onPointerDown);
+    renderer.domElement.addEventListener("pointerup", onPointerUp);
 
     const resize = () => {
       const width = Math.max(container.clientWidth, 1);
@@ -556,6 +817,7 @@ export const FoundryModelViewer = ({
         setBodyChoice(table?.defaults ?? {});
         cloneSceneMaterials(gltf.scene);
         snapshotsRef.current = installPaintShaders(gltf.scene);
+        picks = buildPickTargets(gltf.scene);
         outlines = attachNprOutlines(gltf.scene);
         outlines.setViewportHeight(Math.max(container.clientHeight, 1));
         applyLook();
@@ -625,6 +887,22 @@ export const FoundryModelViewer = ({
       renderer.domElement.dataset.seeking = String(clock.seeking);
       for (const effect of activeEffectsRef.current) effect.update(0);
       controls.update();
+      // Re-pick when the pointer moved, and now and then while the camera or
+      // the pose moves under a still pointer.
+      const moving =
+        controls.autoRotate ||
+        (mixerRef.current !== null && (playback?.playing ?? true));
+      if (
+        pickableRef.current &&
+        pickPointer.inside &&
+        (pickPointer.dirty || (moving && now - lastPick >= REPICK_INTERVAL_MS))
+      ) {
+        pickPointer.dirty = false;
+        lastPick = now;
+        setHover(pickAtPointer());
+      } else if (!pickableRef.current && lastHovered !== null) {
+        setHover(null);
+      }
       postFx.render();
 
       // Mirror the main camera's orientation so the gizmo turns with the model.
@@ -638,6 +916,13 @@ export const FoundryModelViewer = ({
       loadController.abort();
       window.cancelAnimationFrame(frame);
       gizmoRenderer.domElement.removeEventListener("pointerdown", onGizmoClick);
+      renderer.domElement.removeEventListener("pointermove", onPointerMove);
+      renderer.domElement.removeEventListener("pointerleave", onPointerLeave);
+      renderer.domElement.removeEventListener("pointerdown", onPointerDown);
+      renderer.domElement.removeEventListener("pointerup", onPointerUp);
+      for (const pick of picks) pick.pickMaterial.dispose();
+      pickTarget.dispose();
+      setHover(null);
       resizeObserver.disconnect();
       visibility.disconnect();
       clockRef.current = null;
@@ -682,6 +967,100 @@ export const FoundryModelViewer = ({
     applyPreviewTint(snapshotsRef.current, tint);
   }, [tint, loading]);
 
+  useEffect(() => {
+    onReadyChange?.(!loading && !failed);
+    return () => onReadyChange?.(false);
+  }, [loading, failed, onReadyChange]);
+
+  useEffect(() => {
+    if (!onHeroCapture || loading || failed) return;
+    onHeroCapture(() => {
+      const root = modelRef.current;
+      const stage = stageRef.current;
+      if (!root || !stage) return Promise.resolve(null);
+      return captureHeroStill(root, stage.camera, stage.renderer, () =>
+        captureRef.current?.(),
+      );
+    });
+    return () => onHeroCapture(null);
+  }, [loading, failed, onHeroCapture]);
+
+  // A repaint rewrites color maps on disk. Swapping just those images into the
+  // loaded materials keeps the hero, its pose and the camera on screen, where
+  // reloading the model would rebuild the whole scene.
+  const refreshRevision = textureRefresh?.revision;
+  const readTextureRef = useRef(readTexture);
+  readTextureRef.current = readTexture;
+  const refreshPathsRef = useRef(textureRefresh?.paths);
+  refreshPathsRef.current = textureRefresh?.paths;
+  useEffect(() => {
+    const read = readTextureRef.current;
+    const paths = refreshPathsRef.current;
+    if (refreshRevision === undefined || !read || !paths?.length) return;
+    let cancelled = false;
+    for (const path of paths) {
+      const key = path.toLowerCase();
+      read(path)
+        .then(async (url) => {
+          const image = new Image();
+          image.src = url;
+          await image.decode();
+          if (cancelled) return;
+          for (const snapshot of snapshotsRef.current) {
+            const map = snapshot.material.map;
+            if (snapshot.texture !== key || !map) continue;
+            map.image = image;
+            map.needsUpdate = true;
+          }
+        })
+        .catch(() => {
+          // The next full load reads the same file; nothing to recover here.
+        });
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshRevision]);
+
+  // Once posed by the first frames of its animation, the model teaches the
+  // loading embers this hero's shape for next time.
+  useEffect(() => {
+    if (loading || !silhouetteHero || hasCapturedSilhouette(silhouetteHero)) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      const root = modelRef.current;
+      const stage = stageRef.current;
+      if (root && stage) {
+        captureSilhouette(silhouetteHero, stage.renderer, root);
+      }
+    }, 1200);
+    return () => window.clearTimeout(timer);
+  }, [loading, model, silhouetteHero]);
+
+  useEffect(() => {
+    hiddenRef.current = new Set(
+      hiddenTextures?.map((texture) => texture.toLowerCase()),
+    );
+    const root = modelRef.current;
+    if (root && !loading) applyHiddenParts(root, hiddenRef.current);
+  }, [hiddenTextures, loading, model]);
+
+  useEffect(() => {
+    // The selection glow would shift the color being previewed, so it gives
+    // way to the tint; the hover glow stays so the pointer still reads.
+    applyHighlight(
+      snapshotsRef.current,
+      new Set(
+        tint ? [] : highlightTextures?.map((texture) => texture.toLowerCase()),
+      ),
+      pickable ? hovered : null,
+    );
+  }, [highlightTextures, hovered, pickable, tint, loading]);
+
+  const hoveredLabel =
+    pickable && hovered ? (partLabel?.(hovered) ?? null) : null;
+
   return (
     <div className='@container relative h-full w-full overflow-hidden bg-background'>
       <div
@@ -689,6 +1068,7 @@ export const FoundryModelViewer = ({
         className={cn(
           "h-full w-full transition-opacity duration-700 ease-out",
           loading && "opacity-0",
+          hoveredLabel && "cursor-pointer",
         )}
         title={label}
       />
@@ -732,6 +1112,9 @@ export const FoundryModelViewer = ({
           background={background}
           onBackgroundChange={setBackground}
         />
+        <ViewerActivePasses look={look} />
+      </div>
+      <div className='absolute bottom-3 left-3'>
         <ViewerWipBadge />
       </div>
       <ViewerToolRail
@@ -751,6 +1134,26 @@ export const FoundryModelViewer = ({
         }}
       />
       {!loading && !failed && children}
+      {callouts && !loading && (
+        <ViewerCallouts
+          callouts={callouts}
+          containerRef={containerRef}
+          getCamera={getCamera}
+          modelRef={modelRef}
+        />
+      )}
+      {hoveredLabel && (
+        <p
+          className={cn(
+            overlaySurface,
+            "pointer-events-none absolute top-14 left-3 flex h-7 max-w-[calc(100%-7rem)] items-center gap-2 rounded-full px-2.5 text-[11px]",
+          )}>
+          <span className='truncate font-medium'>{hoveredLabel}</span>
+          <span className='shrink-0 text-muted-foreground'>
+            {t("foundry.paint.pickHint")}
+          </span>
+        </p>
+      )}
 
       {!scanGone && !failed && (
         <div

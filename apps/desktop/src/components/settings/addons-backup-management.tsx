@@ -30,13 +30,16 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { RestoreBackupDialog } from "@/components/settings/restore-backup-dialog";
-import {
-  SettingRow,
-  SettingToggleRow,
-} from "@/components/settings/setting-row";
+import { SettingRow } from "@/components/settings/setting-row";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
-import type { AddonsBackup, RestoreStrategy } from "@/types/backup";
+import {
+  type AddonsBackup,
+  BACKUP_MODES,
+  type BackupMode,
+  type RestoredBackup,
+  type RestoreStrategy,
+} from "@/types/backup";
 import { invokeGuarded } from "@/lib/game-guard";
 
 const formatFileSize = (bytes: number): string => {
@@ -69,6 +72,13 @@ const MAX_BACKUP_OPTIONS = [
 ];
 
 const MAX_BACKUP_DESCRIPTION_ID = "settings-max-backup-count-description";
+const BACKUP_MODE_DESCRIPTION_ID = "settings-backup-mode-description";
+
+const BACKUP_MODE_LABELS = {
+  off: "settings.backupModeOff",
+  batch: "settings.backupModeBatch",
+  always: "settings.backupModeAlways",
+} as const satisfies Record<BackupMode, string>;
 
 export const AddonsBackupManagement = () => {
   const { t } = useTranslation();
@@ -81,8 +91,8 @@ export const AddonsBackupManagement = () => {
   const [backupProgress, setBackupProgress] = useState<BackupProgress | null>(
     null,
   );
-  const backupEnabled = usePersistedStore((state) => state.backupEnabled);
-  const setBackupEnabled = usePersistedStore((state) => state.setBackupEnabled);
+  const backupMode = usePersistedStore((state) => state.backupMode);
+  const setBackupMode = usePersistedStore((state) => state.setBackupMode);
   const maxBackupCount = usePersistedStore((state) => state.maxBackupCount);
   const setMaxBackupCount = usePersistedStore(
     (state) => state.setMaxBackupCount,
@@ -175,14 +185,29 @@ export const AddonsBackupManagement = () => {
 
     try {
       toast.loading(t("settings.restoringBackup"));
-      await invokeGuarded("restore_addons_backup", {
-        fileName: selectedBackup,
-        strategy,
-      });
+      const restored = await invokeGuarded<RestoredBackup>(
+        "restore_addons_backup",
+        { fileName: selectedBackup, strategy },
+      );
       const activeProfile = getActiveProfile();
       if (activeProfile) {
         await restoreModsFromManifest();
         await syncProfileEnabledMods(activeProfile.id);
+      }
+      // Mod Options reads the file tree, which the manifest doesn't record.
+      const { profiles, setInstalledVpks } = usePersistedStore.getState();
+      const restoredProfile = Object.values(profiles).find(
+        (profile) => profile.folderName === restored.profileFolder,
+      );
+      for (const mod of restored.mods) {
+        if (restoredProfile && mod.fileTree) {
+          setInstalledVpks(
+            mod.modId,
+            mod.installedVpks,
+            mod.fileTree,
+            restoredProfile.id,
+          );
+        }
       }
       toast.dismiss();
       toast.success(t("settings.backupRestored"));
@@ -311,6 +336,13 @@ export const AddonsBackupManagement = () => {
                       {t("repairModFolder.action")}
                     </span>
                   )}
+                  {backup.mod_names.length > 0 && (
+                    <span className='block text-xs text-muted-foreground'>
+                      {t("settings.updateBackupOf", {
+                        mods: backup.mod_names.join(", "),
+                      })}
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell>{formatFileSize(backup.file_size)}</TableCell>
                 <TableCell>{backup.addons_count}</TableCell>
@@ -341,13 +373,29 @@ export const AddonsBackupManagement = () => {
   return (
     <div className='space-y-4'>
       <div className='space-y-4 rounded-lg border p-4'>
-        <SettingToggleRow
-          checked={backupEnabled}
-          description={t("settings.autoBackupEnabledDescription")}
-          id='toggle-auto-backup'
-          onCheckedChange={setBackupEnabled}
-          title={t("settings.autoBackupEnabled")}
-        />
+        <SettingRow
+          description={t("settings.backupModeDescription")}
+          descriptionId={BACKUP_MODE_DESCRIPTION_ID}
+          title={t("settings.backupMode")}>
+          <Select
+            value={backupMode}
+            onValueChange={(value) => setBackupMode(value as BackupMode)}>
+            <SelectTrigger
+              aria-describedby={BACKUP_MODE_DESCRIPTION_ID}
+              aria-label={t("settings.backupMode")}
+              className='w-56 normal-case'
+              id='settings-backup-mode'>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {BACKUP_MODES.map((mode) => (
+                <SelectItem key={mode} value={mode}>
+                  {t(BACKUP_MODE_LABELS[mode])}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </SettingRow>
 
         <SettingRow
           description={t("settings.maxBackupCountDescription")}

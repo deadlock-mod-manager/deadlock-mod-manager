@@ -3,31 +3,31 @@ import * as THREE from "three";
 /**
  * The live paint preview, run on the GPU.
  *
- * Baking a recolor costs seconds: every affected texture has to be decoded,
+ * Baking a paint costs seconds: every affected texture has to be decoded,
  * transformed and re-encoded as BC7 with a full mip chain. That is the right
- * price for the artifact an export ships, and completely the wrong price for
- * dragging a color picker.
- *
- * So the preview does the same transform in a fragment shader instead. It is the
- * identical HSV operation the Rust path applies per texel
- * (`vpkmanager::texture_edit::set_color`), just evaluated per screen pixel — no
- * re-encode, no disk, no reload, and exact rather than the approximation a
- * material tint would give.
+ * price for the files an export ships, and the wrong price for dragging a color
+ * picker. So the preview runs the same recolor in the fragment shader:
+ * `vpkmanager::texture_edit::set_color` — set the hue, scale saturation and
+ * value — evaluated on the sRGB texel, as Rust does on the 8-bit pixel.
  *
  * The duplication is deliberate but real: this GLSL and the Rust function must
- * stay in step. Both are the canonical "set hue, scale saturation and value,
- * leave neutral pixels alone" transform; change one and change the other.
+ * stay in step. Change one, change the other.
  */
-
-/** Below this saturation a pixel is neutral (white trim, black shadow, grey
- *  metal) and keeps its color, exactly as the Rust path decides. */
-const NEUTRAL_SATURATION = 0.08;
 
 const PAINT_UNIFORMS = `
 uniform float uPaintActive;
 uniform float uPaintHue;
 uniform float uPaintSaturation;
 uniform float uPaintBrightness;
+uniform float uPaintHighlight;
+uniform vec3 uPaintHighlightColor;
+
+vec3 foundryToSrgb(vec3 c) {
+  return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c));
+}
+vec3 foundryToLinear(vec3 c) {
+  return mix(c / 12.92, pow((c + 0.055) / 1.055, vec3(2.4)), step(0.04045, c));
+}
 
 vec3 foundryRgbToHsv(vec3 c) {
   float maxC = max(c.r, max(c.g, c.b));
@@ -61,13 +61,9 @@ vec3 foundryHsvToRgb(vec3 hsv) {
   return rgb + (hsv.z - chroma);
 }
 
-vec3 foundryPaint(vec3 color) {
-  vec3 hsv = foundryRgbToHsv(color);
-  if (hsv.y < ${NEUTRAL_SATURATION.toFixed(3)}) {
-    // Neutral pixels keep their hue; only brightness may move, matching the
-    // Rust path so white trim does not suddenly take the paint color.
-    return clamp(color * uPaintBrightness, 0.0, 1.0);
-  }
+// texture_edit::set_color, on the sRGB texel.
+vec3 foundryPaint(vec3 srgb) {
+  vec3 hsv = foundryRgbToHsv(srgb);
   return foundryHsvToRgb(vec3(
     mod(uPaintHue, 360.0),
     clamp(hsv.y * uPaintSaturation, 0.0, 1.0),
@@ -77,16 +73,38 @@ vec3 foundryPaint(vec3 color) {
 `;
 
 /**
- * three.js hands the sampled albedo to the lighting model as `diffuseColor`, so
- * the paint is applied right after the map is read and before anything is lit.
+ * The paint goes on the map sample itself, before three.js multiplies in the
+ * material's color factor: the bake rewrites the texture, not the factor.
+ * Only materials with a color map get it, since the paint rewrites that map.
  */
 const MAP_HOOK = "#include <map_fragment>";
+const MAP_MULTIPLY = "diffuseColor *= sampledDiffuseColor;";
+const PAINTED_MAP_FRAGMENT = THREE.ShaderChunk.map_fragment.replace(
+  MAP_MULTIPLY,
+  `if (uPaintActive > 0.5) {
+    sampledDiffuseColor.rgb = foundryToLinear(
+      foundryPaint(foundryToSrgb(clamp(sampledDiffuseColor.rgb, 0.0, 1.0))));
+  }
+  ${MAP_MULTIPLY}`,
+);
+
+/**
+ * Hover and selection glow is added as emission, after the material's own, so
+ * it brightens a part without changing the colour the paint preview shows.
+ */
+const EMISSIVE_HOOK = "#include <emissivemap_fragment>";
+
+/** The glow a hovered or selected section takes, in the app's gold accent. */
+const HIGHLIGHT_COLOR = new THREE.Color("#e7c36a");
 
 export interface PaintUniforms {
   uPaintActive: { value: number };
   uPaintHue: { value: number };
   uPaintSaturation: { value: number };
   uPaintBrightness: { value: number };
+  /** 0 for none; the hovered part glows brighter than the selected ones. */
+  uPaintHighlight: { value: number };
+  uPaintHighlightColor: { value: THREE.Color };
 }
 
 /** Material types whose shader the paint preview can hook into. */
@@ -100,8 +118,8 @@ export type PaintableMaterial =
 /**
  * Install the paint shader on a material and return its uniforms.
  *
- * The uniforms start inert (`uPaintActive = 0`), so a material that is never
- * painted renders bit-identically to before.
+ * The uniforms start inert, so a material that is never painted renders
+ * bit-identically to before.
  */
 export const installPaintShader = (
   material: PaintableMaterial,
@@ -111,18 +129,19 @@ export const installPaintShader = (
     uPaintHue: { value: 0 },
     uPaintSaturation: { value: 1 },
     uPaintBrightness: { value: 1 },
+    uPaintHighlight: { value: 0 },
+    uPaintHighlightColor: { value: HIGHLIGHT_COLOR.clone() },
   };
 
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
     shader.fragmentShader = shader.fragmentShader
       .replace("void main() {", `${PAINT_UNIFORMS}\nvoid main() {`)
+      .replace(MAP_HOOK, PAINTED_MAP_FRAGMENT)
       .replace(
-        MAP_HOOK,
-        `${MAP_HOOK}
-        if (uPaintActive > 0.5) {
-          diffuseColor.rgb = foundryPaint(diffuseColor.rgb);
-        }`,
+        EMISSIVE_HOOK,
+        `${EMISSIVE_HOOK}
+        totalEmissiveRadiance += uPaintHighlightColor * uPaintHighlight;`,
       );
   };
 
@@ -133,9 +152,15 @@ export const installPaintShader = (
   return uniforms;
 };
 
-/** The hue of a `#rrggbb` color, in degrees. */
+/** The hue of a `#rrggbb` color, in degrees, read off the sRGB bytes as the
+ *  backend's `hue_of` does (a `THREE.Color` would hand back linear values). */
 export const hueOf = (colorHex: string): number => {
-  const color = new THREE.Color(colorHex);
+  const value = Number.parseInt(colorHex.replace("#", ""), 16) || 0;
+  const color = {
+    r: ((value >> 16) & 255) / 255,
+    g: ((value >> 8) & 255) / 255,
+    b: (value & 255) / 255,
+  };
   const max = Math.max(color.r, color.g, color.b);
   const min = Math.min(color.r, color.g, color.b);
   const delta = max - min;

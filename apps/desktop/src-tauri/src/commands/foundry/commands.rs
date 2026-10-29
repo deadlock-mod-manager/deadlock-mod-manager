@@ -10,22 +10,25 @@ use std::path::PathBuf;
 use base64::Engine;
 use image::codecs::png::PngEncoder;
 use image::{ExtendedColorType, ImageEncoder};
+use vpkmanager::source2::sound::VsndAudio;
 
 use crate::errors::Error;
 
 use super::analyze::{analyze_default_hero, analyze_vpk_path, decode_foundry_cards};
 use super::archive_cache::clear_archive_cache;
 use super::export::{ExportDestination, FoundryExportResult, export_workspace};
-use super::paint::{describe_paint_targets, paint_target};
+use super::paint::{describe_paint_targets, model_paint_parts, paint_parts, paint_target};
+use super::palette::{sample_color_map, skin_palette};
 use super::sounds::find_mp3_payload;
 use super::types::{
-  ExportDestinationKind, FoundryBuildResult, FoundryCardPreview, FoundryManifest,
-  FoundryPaintResult, FoundryPaintTargetInfo, FoundryReplacementResult, FoundrySoundPreview,
-  FoundryTexture, FoundryWorkspace, PaintTarget,
+  ExportDestinationKind, FoundryAppliedPaint, FoundryBuildResult, FoundryCardPreview,
+  FoundryManifest, FoundryPaintPart, FoundryPaintResult, FoundryPaintTargetInfo,
+  FoundryReplacementResult, FoundrySoundPreview, FoundrySoundSettings, FoundryTexture,
+  FoundryWorkspace, PaintTarget,
 };
 use super::workspace::{
-  build_workspace_vpk, entry_bytes_from_sources, hue_of, parse_hex_color, prepare_workspace,
-  replace_workspace_file, revert_workspace_file,
+  adjust_workspace_sound, build_workspace_vpk, entry_bytes_from_sources, hue_of, parse_hex_color,
+  prepare_workspace, record_edits, record_paint, replace_workspace_file, revert_workspace_file,
 };
 
 /// Parse a skin VPK, detect its hero, and return the entries grouped by editing
@@ -146,6 +149,35 @@ pub async fn foundry_replace_workspace_file(
   .map_err(|e| Error::InvalidInput(format!("workspace replacement task failed: {e}")))?
 }
 
+/// The colors the skin's color maps already wear, as `#rrggbb`, for swatches.
+#[tauri::command]
+pub async fn foundry_skin_palette(
+  file_path: String,
+  textures: Vec<String>,
+  workspace_root: Option<String>,
+) -> Result<Vec<String>, Error> {
+  let vpk_path = PathBuf::from(&file_path);
+  tauri::async_runtime::spawn_blocking(move || {
+    let workspace = workspace_root.map(PathBuf::from);
+    let maps: Vec<Vec<u8>> = textures
+      .iter()
+      .filter_map(|texture| {
+        entry_bytes_from_sources(workspace.as_deref(), &vpk_path, texture)
+          .ok()
+          .and_then(sample_color_map)
+      })
+      .collect();
+    Ok(
+      skin_palette(&maps)
+        .into_iter()
+        .map(|[r, g, b]| format!("#{r:02x}{g:02x}{b:02x}"))
+        .collect(),
+    )
+  })
+  .await
+  .map_err(|e| Error::InvalidInput(format!("skin palette task failed: {e}")))?
+}
+
 /// How much of the hero each paint target covers in the loaded skin.
 #[tauri::command]
 pub async fn foundry_paint_targets(
@@ -182,6 +214,15 @@ pub async fn foundry_paint_target(
   pattern_intensity: Option<f32>,
   pattern_phase: Option<f32>,
 ) -> Result<FoundryPaintResult, Error> {
+  let applied = FoundryAppliedPaint {
+    entry_path: String::new(),
+    color_hex: color_hex.clone(),
+    saturation: saturation.unwrap_or(1.0),
+    brightness: brightness.unwrap_or(1.0),
+    pattern: pattern.clone(),
+    pattern_intensity: pattern_intensity.unwrap_or(1.0),
+    pattern_phase: pattern_phase.unwrap_or(0.0),
+  };
   let color = parse_hex_color(&color_hex)?;
   let recolor = vpkmanager::Recolor::new(
     f64::from(hue_of(color)),
@@ -190,14 +231,91 @@ pub async fn foundry_paint_target(
   );
   let pattern = parse_pattern(pattern.as_deref(), pattern_intensity, pattern_phase)?;
   tauri::async_runtime::spawn_blocking(move || {
-    paint_target(
-      PathBuf::from(workspace_root),
+    let root = PathBuf::from(workspace_root);
+    let result = paint_target(
+      root.clone(),
       PathBuf::from(file_path),
       target,
       hero_display,
       recolor,
       pattern,
+    )?;
+    record_edits(&root, &result.painted_paths, true)?;
+    record_paint(&root, &result.painted_paths, Some(&applied))?;
+    Ok(result)
+  })
+  .await
+  .map_err(|e| Error::InvalidInput(format!("paint task failed: {e}")))?
+}
+
+/// The paintable sections of a model, for the paint tab's section list and the
+/// viewer's click-to-select.
+#[tauri::command]
+pub async fn foundry_model_parts(
+  file_path: String,
+  model_path: String,
+  hero_display: Option<String>,
+) -> Result<Vec<FoundryPaintPart>, Error> {
+  tauri::async_runtime::spawn_blocking(move || {
+    model_paint_parts(
+      &PathBuf::from(file_path),
+      &model_path,
+      hero_display.as_deref(),
     )
+  })
+  .await
+  .map_err(|e| Error::InvalidInput(format!("part scan failed: {e}")))?
+}
+
+/// Paint individual sections of the model, identified by their color maps.
+/// Same paint as [`foundry_paint_target`], applied to exactly these maps.
+#[tauri::command]
+pub async fn foundry_paint_parts(
+  workspace_root: String,
+  file_path: String,
+  model_path: String,
+  hero_display: Option<String>,
+  textures: Vec<String>,
+  color_hex: String,
+  saturation: Option<f32>,
+  brightness: Option<f32>,
+  pattern: Option<String>,
+  pattern_intensity: Option<f32>,
+  pattern_phase: Option<f32>,
+) -> Result<FoundryPaintResult, Error> {
+  if textures.is_empty() {
+    return Err(Error::InvalidInput("no parts selected".into()));
+  }
+  let applied = FoundryAppliedPaint {
+    entry_path: String::new(),
+    color_hex: color_hex.clone(),
+    saturation: saturation.unwrap_or(1.0),
+    brightness: brightness.unwrap_or(1.0),
+    pattern: pattern.clone(),
+    pattern_intensity: pattern_intensity.unwrap_or(1.0),
+    pattern_phase: pattern_phase.unwrap_or(0.0),
+  };
+  let color = parse_hex_color(&color_hex)?;
+  let recolor = vpkmanager::Recolor::new(
+    f64::from(hue_of(color)),
+    f64::from(saturation.unwrap_or(1.0).clamp(0.0, 3.0)),
+    f64::from(brightness.unwrap_or(1.0).clamp(0.2, 2.0)),
+  );
+  let pattern = parse_pattern(pattern.as_deref(), pattern_intensity, pattern_phase)?;
+  tauri::async_runtime::spawn_blocking(move || {
+    let root = PathBuf::from(workspace_root);
+    let result = paint_parts(
+      root.clone(),
+      PathBuf::from(file_path),
+      &model_path,
+      hero_display,
+      textures,
+      recolor,
+      pattern,
+    )?;
+    record_edits(&root, &result.painted_paths, true)?;
+    record_paint(&root, &result.painted_paths, Some(&applied))?;
+    Ok(result)
   })
   .await
   .map_err(|e| Error::InvalidInput(format!("paint task failed: {e}")))?
@@ -268,6 +386,33 @@ pub async fn foundry_revert_workspace_file(
   .map_err(|e| Error::InvalidInput(format!("workspace revert task failed: {e}")))?
 }
 
+/// Set one sound's volume, normalize and mute, rebuilding it from its
+/// replacement or the original clip.
+#[tauri::command]
+pub async fn foundry_adjust_sound(
+  workspace_root: String,
+  entry_path: String,
+  template_vpk_path: Option<String>,
+  gain_db: f32,
+  normalize: bool,
+  mute: bool,
+) -> Result<FoundrySoundSettings, Error> {
+  tauri::async_runtime::spawn_blocking(move || {
+    adjust_workspace_sound(
+      PathBuf::from(workspace_root),
+      entry_path,
+      template_vpk_path.map(PathBuf::from),
+      vpkmanager::SoundAdjust {
+        gain_db,
+        normalize,
+        mute,
+      },
+    )
+  })
+  .await
+  .map_err(|e| Error::InvalidInput(format!("sound adjust task failed: {e}")))?
+}
+
 /// Decode a `.vtex_c` entry (card or texture) to a PNG data URL, preferring the
 /// workspace's edited copy when one exists.
 #[tauri::command]
@@ -332,15 +477,24 @@ pub async fn foundry_decode_sound(
       &vpk_path,
       &entry_path,
     )?;
-    let Some(mp3) = find_mp3_payload(&bytes) else {
-      return Err(Error::InvalidInput(format!(
-        "sound preview is not available for {entry_path}"
-      )));
+    // Clips the Foundry minted are PCM16, which a byte scan for MP3 frames can
+    // misread, so the container is read properly first.
+    let (audio, mime_type) = match vpkmanager::source2::sound::extract_vsnd_audio(&bytes) {
+      Ok(VsndAudio::WavPcm16 { wav, .. }) => (wav, "audio/wav"),
+      Ok(VsndAudio::Mp3(mp3)) => (mp3, "audio/mpeg"),
+      Err(_) => match find_mp3_payload(&bytes) {
+        Some(mp3) => (mp3.to_vec(), "audio/mpeg"),
+        None => {
+          return Err(Error::InvalidInput(format!(
+            "sound preview is not available for {entry_path}"
+          )));
+        }
+      },
     };
-    let b64 = base64::engine::general_purpose::STANDARD.encode(mp3);
+    let b64 = base64::engine::general_purpose::STANDARD.encode(audio);
     Ok(FoundrySoundPreview {
-      data_url: format!("data:audio/mpeg;base64,{b64}"),
-      mime_type: "audio/mpeg".to_string(),
+      data_url: format!("data:{mime_type};base64,{b64}"),
+      mime_type: mime_type.to_string(),
     })
   })
   .await

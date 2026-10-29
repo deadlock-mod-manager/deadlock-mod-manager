@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next";
 import { FoundryEmptyState } from "@/components/foundry/foundry-empty-state";
 import { useFoundry } from "@/components/foundry/foundry-context";
 import { FoundryShell } from "@/components/foundry/foundry-shell";
-import PageTitle from "@/components/shared/page-title";
 
 const FoundryWorkspace = () => {
   const { t } = useTranslation();
@@ -29,22 +28,10 @@ const FoundryWorkspace = () => {
   return <FoundryEmptyState />;
 };
 
-const Foundry = () => {
-  const { t } = useTranslation();
-
-  return (
-    <div className='flex h-full w-full flex-col overflow-hidden pl-4 pr-2 pb-3'>
-      <div className='mb-4 shrink-0'>
-        <PageTitle
-          subtitle={t("foundry.subtitle")}
-          title={t("foundry.title")}
-        />
-      </div>
-      <div className='min-h-0 flex-1'>
-        <FoundryWorkspace />
-      </div>
-    </div>
-  );
-};
+const Foundry = () => (
+  <div className='flex h-full w-full flex-col overflow-hidden px-7 pt-6 pb-4'>
+    <FoundryWorkspace />
+  </div>
+);
 
 export default Foundry;

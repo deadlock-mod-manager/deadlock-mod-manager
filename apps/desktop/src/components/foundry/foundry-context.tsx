@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 import {
+  adjustFoundrySound,
   analyzeDefaultFoundryHero,
   analyzeFoundryVpk,
   decodeFoundryCards,
@@ -17,8 +18,10 @@ import {
   decodeFoundrySound,
   decodeFoundryTexture,
   exportFoundryWorkspace,
+  foundryModelParts,
   foundryPaintTargets,
   getPrimaryModelPath,
+  paintFoundryParts,
   paintFoundryTarget,
   prepareFoundryWorkspace,
   releaseFoundryArchives,
@@ -28,8 +31,10 @@ import {
 } from "@/lib/foundry";
 import logger from "@/lib/logger";
 import { releaseFoundryModel } from "@/lib/model-assets";
-import { usePersistedStore } from "@/lib/store";
-import type { FoundryPreviewTint } from "./foundry-model-viewer";
+import type {
+  FoundryPreviewTint,
+  FoundryTextureRefresh,
+} from "./foundry-model-viewer";
 import type {
   FoundryCardPreview,
   FoundryExportRequest,
@@ -37,12 +42,16 @@ import type {
   FoundryManifest,
   FoundryModel,
   FoundryPaint,
+  FoundryPaintPart,
+  FoundryPaintSelection,
   FoundryPaintTargetId,
   FoundryPaintResult,
   FoundryPaintTargetInfo,
+  FoundrySoundSettings,
   FoundryTab,
   FoundryWorkspace,
 } from "@/types/foundry";
+import { FOUNDRY_PATTERNS } from "@/types/foundry";
 
 type FoundryStatus = "idle" | "analyzing" | "ready" | "error";
 type AsyncStatus = "idle" | "loading" | "ready" | "error";
@@ -87,9 +96,105 @@ const IDLE_CARDS: CardPreviews = {
   defaultCards: [],
 };
 
+/** The targets whose textures are sections of the model. */
+const MODEL_TARGETS: FoundryPaintTargetId[] = [
+  "body",
+  "weapon",
+  "bodyAndWeapon",
+];
+
+export type FoundrySoundAdjust = Pick<
+  FoundrySoundSettings,
+  "gainDb" | "normalize" | "mute"
+>;
+
+export const NO_SOUND_ADJUST: FoundrySoundAdjust = {
+  gainDb: 0,
+  normalize: false,
+  mute: false,
+};
+
+const isNoSoundAdjust = (adjust: FoundrySoundAdjust) =>
+  adjust.gainDb === 0 && !adjust.normalize && !adjust.mute;
+
+const DEFAULT_SELECTION: FoundryPaintSelection = {
+  kind: "parts",
+  textures: [],
+};
+
+/** A picked file's name without its folder or extension. */
+const fileStem = (path: string) =>
+  path
+    .split(/[\\/]/)
+    .pop()
+    ?.replace(/\.vpk$/i, "") ?? path;
+
+/** Where the open skin came from, for the workspace header. */
+export interface FoundrySkinOrigin {
+  kind: "mod" | "default" | "file";
+  name: string;
+  author: string | null;
+  imageUrl: string | null;
+}
+
+/** The key `appliedPaint` keeps one target's or one section's paint under. */
+export const targetPaintKey = (target: FoundryPaintTargetId) =>
+  `target:${target}`;
+export const partPaintKey = (texture: string) => `part:${texture}`;
+
+/**
+ * The color maps a selection covers on the model, for the viewer to tint and
+ * highlight. Targets are resolved through the model's own section list, so a
+ * preview colors exactly what an apply would rewrite. Ability effects are not
+ * part of the model, so they cover nothing here.
+ */
+export const selectionTextures = (
+  selection: FoundryPaintSelection,
+  parts: readonly FoundryPaintPart[],
+): string[] => {
+  if (selection.kind === "parts") return selection.textures;
+  switch (selection.target) {
+    case "abilities":
+      return [];
+    case "bodyAndWeapon":
+      return parts.map((part) => part.texture);
+    default:
+      return parts
+        .filter((part) => part.target === selection.target)
+        .map((part) => part.texture);
+  }
+};
+
+/**
+ * Record a paint on the sections it reached. A target holding one of them no
+ * longer wears a single paint, so its own entry is dropped; the caller sets
+ * the target it painted afterwards.
+ */
+const withPaintedSections = (
+  applied: Readonly<Record<string, FoundryPaint>>,
+  paintedPaths: readonly string[],
+  paint: FoundryPaint,
+  parts: readonly FoundryPaintPart[],
+) => {
+  const next = { ...applied };
+  const painted = new Set(paintedPaths);
+  for (const texture of paintedPaths) next[partPaintKey(texture)] = paint;
+  for (const target of MODEL_TARGETS) {
+    if (
+      selectionTextures({ kind: "target", target }, parts).some((texture) =>
+        painted.has(texture),
+      )
+    ) {
+      delete next[targetPaintKey(target)];
+    }
+  }
+  return next;
+};
+
 interface FoundryContextValue {
   status: FoundryStatus;
   manifest: FoundryManifest | null;
+  skinOrigin: FoundrySkinOrigin | null;
   workspace: FoundryWorkspace | null;
   error: string | null;
   activeTab: FoundryTab;
@@ -100,18 +205,41 @@ interface FoundryContextValue {
   selectedCardKey: string | null;
   /** Entry paths the user has edited in this session. */
   editedPaths: ReadonlySet<string>;
+  /** Bumped by every edit, so derived previews know to re-read. */
+  editRevision: number;
+  /** Color maps edited since the model loaded, for the viewer to swap in. */
+  textureRefresh: FoundryTextureRefresh;
+  /** Whether the 3D preview is showing a loaded model. */
+  viewerReady: boolean;
+  setViewerReady: (ready: boolean) => void;
+  /** Where the viewer offers a still of the hero as it stands now. */
+  registerHeroCapture: (capture: (() => Promise<Blob | null>) | null) => void;
+  /** A still of the hero as an object URL, or null with no model on screen. */
+  captureHero: () => Promise<string | null>;
+  /** Volume edits and replacements, keyed by sound entry path. */
+  soundSettings: ReadonlyMap<string, FoundrySoundSettings>;
   /** The model the preview defaults to and an export is named after. */
   primaryModelPath: string | null;
   setPrimaryModelPath: (path: string) => void;
-  /** False when the user turned the 3D preview off; nothing is decoded then. */
-  preview3dEnabled: boolean;
   /** A scene-only tint for the paint tab's live preview; never written to disk. */
-  previewTint: FoundryPreviewTint | null;
-  setPreviewTint: (tint: FoundryPreviewTint | null) => void;
+  previewTint: readonly FoundryPreviewTint[] | null;
+  setPreviewTint: (tint: readonly FoundryPreviewTint[] | null) => void;
   /** How much of the hero each paint target covers, once the skin is scanned. */
   paintTargets: FoundryPaintTargetInfo[];
-  /** The paint applied per target this session, for the panel to reflect. */
-  appliedPaint: Readonly<Partial<Record<FoundryPaintTargetId, FoundryPaint>>>;
+  /** The paint applied this session, keyed by `targetPaintKey` / `partPaintKey`. */
+  appliedPaint: Readonly<Record<string, FoundryPaint>>;
+  /** The primary model's paintable sections, in draw order. */
+  paintParts: FoundryPaintPart[];
+  /** What the paint tab is about to paint. */
+  paintSelection: FoundryPaintSelection;
+  setPaintSelection: (selection: FoundryPaintSelection) => void;
+  /** Select one section, or add it to / take it out of a hand-picked set. */
+  togglePaintPart: (texture: string, additive: boolean) => void;
+  /** The selection's color maps while the paint tab is open, else none. */
+  highlightTextures: readonly string[];
+  /** Sections hidden in the paint tab's preview, so what is behind shows. */
+  hiddenParts: readonly string[];
+  toggleHiddenPart: (texture: string) => void;
   busy: boolean;
   setActiveTab: (tab: FoundryTab) => void;
   setSelectedEntryPath: (path: string | null) => void;
@@ -119,22 +247,39 @@ interface FoundryContextValue {
   importVpk: (filePath: string) => Promise<FoundryManifest | null>;
   importMod: (
     modId: string,
-    installedVpks?: string[],
-    profileFolder?: string | null,
+    installedVpks: string[],
+    profileFolder: string | null,
+    origin: FoundrySkinOrigin,
   ) => Promise<FoundryManifest | null>;
-  importDefaultHero: (heroDisplay: string) => Promise<FoundryManifest | null>;
+  importDefaultHero: (
+    heroDisplay: string,
+    imageUrl: string | null,
+  ) => Promise<FoundryManifest | null>;
   replaceEntry: (entryPath: string, sourceFilePath: string) => Promise<void>;
   paintTarget: (
     target: FoundryPaintTargetId,
     paint: FoundryPaint,
   ) => Promise<FoundryPaintResult>;
+  paintSelectedParts: (
+    textures: string[],
+    paint: FoundryPaint,
+  ) => Promise<FoundryPaintResult>;
   revertEntry: (entryPath: string) => Promise<void>;
-  playSound: (entryPath: string) => Promise<string>;
+  /** Set a sound's in-game volume, normalize and mute. */
+  adjustSound: (entryPath: string, adjust: FoundrySoundAdjust) => Promise<void>;
+  /** A playable data URL for a clip; `original` skips the workspace's edits. */
+  playSound: (entryPath: string, original?: boolean) => Promise<string>;
   exportVpk: (request: FoundryExportRequest) => Promise<FoundryExportResult>;
   reset: () => void;
 }
 
 const FoundryContext = createContext<FoundryContextValue | null>(null);
+
+/**
+ * Edits the loaded model takes without a rebuild: color maps are swapped in,
+ * and sounds and particle effects are not part of the model.
+ */
+const LIVE_SWAPPED = [".vtex_c", ".vsnd_c", ".vpcf_c"];
 
 const isTextureEntry = (path: string | null): path is string =>
   path?.endsWith(".vtex_c") ?? false;
@@ -156,6 +301,7 @@ const manifestEntryPaths = (manifest: FoundryManifest): string[] =>
 export const FoundryProvider = ({ children }: { children: ReactNode }) => {
   const [status, setStatus] = useState<FoundryStatus>("idle");
   const [manifest, setManifest] = useState<FoundryManifest | null>(null);
+  const [skinOrigin, setSkinOrigin] = useState<FoundrySkinOrigin | null>(null);
   const [workspace, setWorkspace] = useState<FoundryWorkspace | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<FoundryTab>("assets");
@@ -171,24 +317,60 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
   >("manifest");
   const [selectedCardKey, setSelectedCardKey] = useState<string | null>(null);
   const [editedPaths, setEditedPaths] = useState<Set<string>>(new Set());
-  const preview3dEnabled = usePersistedStore(
-    (state) => state.foundry3dPreviewEnabled,
-  );
+  const [soundSettings, setSoundSettings] = useState<
+    Map<string, FoundrySoundSettings>
+  >(new Map());
   const [primaryModelPath, setPrimaryModelPath] = useState<string | null>(null);
-  const [previewTint, setPreviewTint] = useState<FoundryPreviewTint | null>(
-    null,
-  );
+  const [previewTint, setPreviewTint] = useState<
+    readonly FoundryPreviewTint[] | null
+  >(null);
   const [paintTargets, setPaintTargets] = useState<FoundryPaintTargetInfo[]>(
     [],
   );
   const [appliedPaint, setAppliedPaint] = useState<
-    Partial<Record<FoundryPaintTargetId, FoundryPaint>>
+    Record<string, FoundryPaint>
   >({});
+  const [paintParts, setPaintParts] = useState<FoundryPaintPart[]>([]);
+  const [paintSelection, setPaintSelection] =
+    useState<FoundryPaintSelection>(DEFAULT_SELECTION);
   const [busy, setBusy] = useState(false);
+  const [hiddenParts, setHiddenParts] = useState<string[]>([]);
   // Bumped by every edit. Each derived preview keys its cache on it, so one
-  // counter keeps the model, the textures and the card gallery in step; three
-  // separate ones let them drift apart.
+  // counter keeps the textures and the card gallery in step.
   const [editRevision, setEditRevision] = useState(0);
+  // The model is the exception: rebuilding it hides the hero for seconds, so
+  // edits to its color maps are swapped into the loaded model instead, and only
+  // edits to anything else rebuild it.
+  const [modelRevision, setModelRevision] = useState(0);
+  const [textureRefresh, setTextureRefresh] = useState<FoundryTextureRefresh>({
+    paths: [],
+    revision: 0,
+  });
+  const [viewerReady, setViewerReady] = useState(false);
+  const heroCaptureRef = useRef<(() => Promise<Blob | null>) | null>(null);
+  const registerHeroCapture = useCallback(
+    (capture: (() => Promise<Blob | null>) | null) => {
+      heroCaptureRef.current = capture;
+    },
+    [],
+  );
+  const captureHero = useCallback(async () => {
+    const still = await heroCaptureRef.current?.();
+    return still ? URL.createObjectURL(still) : null;
+  }, []);
+  const afterContentChange = useCallback((paths: readonly string[]) => {
+    const textures = paths.filter((path) => path.endsWith(".vtex_c"));
+    if (textures.length > 0) {
+      setTextureRefresh((current) => ({
+        paths: textures,
+        revision: current.revision + 1,
+      }));
+    }
+    if (paths.some((path) => !LIVE_SWAPPED.some((ext) => path.endsWith(ext)))) {
+      setModelRevision((revision) => revision + 1);
+    }
+    setEditRevision((revision) => revision + 1);
+  }, []);
   const texturePreviewCacheRef = useRef<Map<string, TexturePreview>>(new Map());
   const soundCacheRef = useRef<Map<string, string>>(new Map());
 
@@ -202,6 +384,7 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
     void releaseFoundryArchives();
     setStatus("idle");
     setManifest(null);
+    setSkinOrigin(null);
     setWorkspace(null);
     setError(null);
     setActiveTab("assets");
@@ -209,10 +392,14 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
     setSelectedTextureSource("manifest");
     setSelectedCardKey(null);
     setEditedPaths(new Set());
+    setSoundSettings(new Map());
     setPrimaryModelPath(null);
     setPreviewTint(null);
     setPaintTargets([]);
     setAppliedPaint({});
+    setPaintParts([]);
+    setPaintSelection(DEFAULT_SELECTION);
+    setHiddenParts([]);
     setTexturePreview(IDLE_TEXTURE);
     setModelPreview(IDLE_MODEL);
     setCardPreviews(IDLE_CARDS);
@@ -294,9 +481,7 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const entryPath = previewModelPath;
-    // Decoding a model is the slow part of opening a skin, so when the preview
-    // is off it is not decoded at all rather than decoded and hidden.
-    if (!preview3dEnabled || !filePath || !isModelEntry(entryPath)) {
+    if (!filePath || !isModelEntry(entryPath)) {
       setModelPreview(IDLE_MODEL);
       return;
     }
@@ -326,13 +511,7 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       controller.abort();
       if (ownedModel) releaseFoundryModel(ownedModel);
     };
-  }, [
-    preview3dEnabled,
-    filePath,
-    workspaceRoot,
-    previewModelPath,
-    editRevision,
-  ]);
+  }, [filePath, workspaceRoot, previewModelPath, modelRevision]);
 
   useEffect(() => {
     if (!manifest) {
@@ -395,6 +574,58 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [manifest, workspaceRoot]);
 
+  // The sections follow the primary model: they are what the paint tab's
+  // preview shows and what a click on it selects.
+  useEffect(() => {
+    // A selection of another model's sections means nothing on this one.
+    setPaintSelection(DEFAULT_SELECTION);
+    if (!manifest || !primaryModelPath) {
+      setPaintParts([]);
+      return;
+    }
+    let cancelled = false;
+    foundryModelParts(
+      manifest.filePath,
+      primaryModelPath,
+      manifest.heroDisplay ?? null,
+    )
+      .then((parts) => {
+        if (!cancelled) setPaintParts(parts);
+      })
+      .catch((err) => {
+        logger.withError(err).error("[Foundry] Failed to list paint parts");
+        if (!cancelled) setPaintParts([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [manifest, primaryModelPath]);
+
+  const togglePaintPart = useCallback((texture: string, additive: boolean) => {
+    setPaintSelection((current) => {
+      if (!additive) {
+        const alone =
+          current.kind === "parts" &&
+          current.textures.length === 1 &&
+          current.textures[0] === texture;
+        return { kind: "parts", textures: alone ? [] : [texture] };
+      }
+      const textures = current.kind === "parts" ? current.textures : [];
+      const next = textures.includes(texture)
+        ? textures.filter((entry) => entry !== texture)
+        : [...textures, texture];
+      return { kind: "parts", textures: next };
+    });
+  }, []);
+
+  const toggleHiddenPart = useCallback((texture: string) => {
+    setHiddenParts((current) =>
+      current.includes(texture)
+        ? current.filter((entry) => entry !== texture)
+        : [...current, texture],
+    );
+  }, []);
+
   /**
    * Unpack the loaded skin in the background. Editing is unavailable until this
    * lands, but previewing the model and cards is not, so a failure here is
@@ -409,9 +640,36 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
         ? manifestEntryPaths(loaded)
         : null;
     try {
-      setWorkspace(
-        await prepareFoundryWorkspace(loaded.filePath, name, entries),
+      const prepared = await prepareFoundryWorkspace(
+        loaded.filePath,
+        name,
+        entries,
       );
+      // A reused workspace keeps edits from earlier sessions; its journal says
+      // which, so export and undo see them too.
+      setEditedPaths(new Set(prepared.editedPaths));
+      setSoundSettings(
+        new Map(
+          prepared.soundSettings.map((sound) => [sound.entryPath, sound]),
+        ),
+      );
+      setAppliedPaint(
+        Object.fromEntries(
+          prepared.appliedPaint.map((applied) => [
+            partPaintKey(applied.entryPath),
+            {
+              colorHex: applied.colorHex,
+              saturation: applied.saturation,
+              brightness: applied.brightness,
+              pattern:
+                FOUNDRY_PATTERNS.find((id) => id === applied.pattern) ?? "none",
+              patternIntensity: applied.patternIntensity,
+              patternPhase: applied.patternPhase,
+            },
+          ]),
+        ),
+      );
+      setWorkspace(prepared);
     } catch (err) {
       logger.withError(err).error("[Foundry] Failed to prepare workspace");
       setWorkspace(null);
@@ -419,11 +677,16 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const loadManifest = useCallback(
-    async (load: () => Promise<FoundryManifest>, requireHeroSkin: boolean) => {
+    async (
+      load: () => Promise<FoundryManifest>,
+      requireHeroSkin: boolean,
+      origin: FoundrySkinOrigin,
+    ) => {
       clearCaches();
       setCardPreviews(IDLE_CARDS);
       setWorkspace(null);
       setEditedPaths(new Set());
+      setSoundSettings(new Map());
       setStatus("analyzing");
       setError(null);
       try {
@@ -435,6 +698,7 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
           return null;
         }
         setManifest(result);
+        setSkinOrigin(origin);
         const initialModel = getPrimaryModelPath(result);
         setPrimaryModelPath(initialModel);
         selectEntryPath(initialModel);
@@ -455,30 +719,46 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const importVpk = useCallback(
-    (path: string) => loadManifest(() => analyzeFoundryVpk(path), true),
+    (path: string) =>
+      loadManifest(() => analyzeFoundryVpk(path), true, {
+        kind: "file",
+        name: fileStem(path),
+        author: null,
+        imageUrl: null,
+      }),
     [loadManifest],
   );
 
   const importMod = useCallback(
     (
       modId: string,
-      installedVpks: string[] = [],
-      profileFolder: string | null = null,
+      installedVpks: string[],
+      profileFolder: string | null,
+      origin: FoundrySkinOrigin,
     ) =>
-      loadManifest(async () => {
-        const resolved = await resolveModVpk(
-          modId,
-          installedVpks,
-          profileFolder,
-        );
-        return await analyzeFoundryVpk(resolved);
-      }, true),
+      loadManifest(
+        async () => {
+          const resolved = await resolveModVpk(
+            modId,
+            installedVpks,
+            profileFolder,
+          );
+          return await analyzeFoundryVpk(resolved);
+        },
+        true,
+        origin,
+      ),
     [loadManifest],
   );
 
   const importDefaultHero = useCallback(
-    (heroDisplay: string) =>
-      loadManifest(() => analyzeDefaultFoundryHero(heroDisplay), false),
+    (heroDisplay: string, imageUrl: string | null) =>
+      loadManifest(() => analyzeDefaultFoundryHero(heroDisplay), false, {
+        kind: "default",
+        name: heroDisplay,
+        author: null,
+        imageUrl,
+      }),
     [loadManifest],
   );
 
@@ -508,9 +788,14 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       if (entryPath.endsWith(".vtex_c")) {
         setSelectedTextureSource("manifest");
       }
-      setEditRevision((revision) => revision + 1);
+      // A reverted or replaced section no longer wears its paint.
+      setAppliedPaint((current) => {
+        const { [partPaintKey(entryPath)]: _unpainted, ...rest } = current;
+        return rest;
+      });
+      afterContentChange([entryPath]);
     },
-    [invalidateEntry],
+    [invalidateEntry, afterContentChange],
   );
 
   const requireWorkspace = useCallback((): FoundryWorkspace => {
@@ -531,6 +816,17 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
           sourceFilePath,
           filePath,
         );
+        if (entryPath.endsWith(".vsnd_c")) {
+          setSoundSettings((current) =>
+            new Map(current).set(entryPath, {
+              ...(current.get(entryPath) ?? {
+                entryPath,
+                ...NO_SOUND_ADJUST,
+              }),
+              replaced: true,
+            }),
+          );
+        }
         afterEdit(entryPath, true);
       } finally {
         setBusy(false);
@@ -559,16 +855,65 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
           for (const path of result.paintedPaths) next.add(path);
           return next;
         });
-        setAppliedPaint((current) => ({ ...current, [target]: paint }));
+        setAppliedPaint((current) => ({
+          ...withPaintedSections(
+            current,
+            result.paintedPaths,
+            paint,
+            paintParts,
+          ),
+          [targetPaintKey(target)]: paint,
+        }));
         // A repaint changes what the model samples and what the cards show.
         texturePreviewCacheRef.current.clear();
-        setEditRevision((revision) => revision + 1);
+        afterContentChange(result.paintedPaths);
         return result;
       } finally {
         setBusy(false);
       }
     },
-    [filePath, manifest, requireWorkspace],
+    [afterContentChange, filePath, manifest, paintParts, requireWorkspace],
+  );
+
+  const paintSelectedParts = useCallback(
+    async (textures: string[], paint: FoundryPaint) => {
+      const active = requireWorkspace();
+      if (!filePath || !primaryModelPath) {
+        throw new Error("No model is loaded.");
+      }
+      setBusy(true);
+      try {
+        const result = await paintFoundryParts(
+          active.root,
+          filePath,
+          primaryModelPath,
+          manifest?.heroDisplay ?? null,
+          textures,
+          paint,
+        );
+        setEditedPaths((current) => {
+          const next = new Set(current);
+          for (const path of result.paintedPaths) next.add(path);
+          return next;
+        });
+        setAppliedPaint((current) =>
+          withPaintedSections(current, result.paintedPaths, paint, paintParts),
+        );
+        texturePreviewCacheRef.current.clear();
+        afterContentChange(result.paintedPaths);
+        return result;
+      } finally {
+        setBusy(false);
+      }
+    },
+    [
+      afterContentChange,
+      filePath,
+      manifest,
+      paintParts,
+      primaryModelPath,
+      requireWorkspace,
+    ],
   );
 
   const revertEntry = useCallback(
@@ -577,6 +922,11 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       setBusy(true);
       try {
         await revertFoundryFile(active.root, entryPath, filePath);
+        setSoundSettings((current) => {
+          const next = new Map(current);
+          next.delete(entryPath);
+          return next;
+        });
         afterEdit(entryPath, false);
       } finally {
         setBusy(false);
@@ -585,18 +935,47 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
     [afterEdit, filePath, requireWorkspace],
   );
 
+  const adjustSound = useCallback(
+    async (entryPath: string, adjust: FoundrySoundAdjust) => {
+      const active = requireWorkspace();
+      setBusy(true);
+      try {
+        const settings = await adjustFoundrySound(
+          active.root,
+          entryPath,
+          filePath,
+          adjust,
+        );
+        const kept = settings.replaced || !isNoSoundAdjust(settings);
+        setSoundSettings((current) => {
+          const next = new Map(current);
+          if (kept) {
+            next.set(entryPath, settings);
+          } else {
+            next.delete(entryPath);
+          }
+          return next;
+        });
+        afterEdit(entryPath, kept);
+      } finally {
+        setBusy(false);
+      }
+    },
+    [afterEdit, filePath, requireWorkspace],
+  );
+
   const playSound = useCallback(
-    async (entryPath: string) => {
+    async (entryPath: string, original = false) => {
       if (!filePath) {
         throw new Error("No skin is loaded.");
       }
-      const cacheKey = `${filePath}\n${entryPath}`;
+      const cacheKey = `${filePath}\n${entryPath}${original ? "\noriginal" : ""}`;
       const cached = soundCacheRef.current.get(cacheKey);
       if (cached) return cached;
       const preview = await decodeFoundrySound(
         filePath,
         entryPath,
-        workspaceRoot,
+        original ? null : workspaceRoot,
       );
       soundCacheRef.current.set(cacheKey, preview.dataUrl);
       return preview.dataUrl;
@@ -629,10 +1008,19 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
     [editedPaths.size, manifest, requireWorkspace],
   );
 
+  const highlightTextures = useMemo(
+    () =>
+      activeTab === "paint"
+        ? selectionTextures(paintSelection, paintParts)
+        : [],
+    [activeTab, paintSelection, paintParts],
+  );
+
   const value = useMemo<FoundryContextValue>(
     () => ({
       status,
       manifest,
+      skinOrigin,
       workspace,
       error,
       activeTab,
@@ -642,9 +1030,15 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       cardPreviews,
       selectedCardKey,
       editedPaths,
+      editRevision,
+      textureRefresh,
+      viewerReady,
+      setViewerReady,
+      registerHeroCapture,
+      captureHero,
+      soundSettings,
       primaryModelPath,
       setPrimaryModelPath,
-      preview3dEnabled,
       // Scoped to the paint tab at the source. The tab panels are all mounted
       // at once (the inactive ones are only hidden with CSS), so the paint
       // panel's effects run even while the user is looking at the asset
@@ -654,6 +1048,13 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       setPreviewTint,
       paintTargets,
       appliedPaint,
+      paintParts,
+      paintSelection,
+      setPaintSelection,
+      togglePaintPart,
+      highlightTextures,
+      hiddenParts,
+      toggleHiddenPart,
       busy,
       setActiveTab,
       setSelectedEntryPath: selectEntryPath,
@@ -663,7 +1064,9 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       importDefaultHero,
       replaceEntry,
       paintTarget,
+      paintSelectedParts,
       revertEntry,
+      adjustSound,
       playSound,
       exportVpk,
       reset,
@@ -671,6 +1074,7 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
     [
       status,
       manifest,
+      skinOrigin,
       workspace,
       error,
       activeTab,
@@ -680,11 +1084,20 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       cardPreviews,
       selectedCardKey,
       editedPaths,
+      editRevision,
+      textureRefresh,
+      viewerReady,
+      soundSettings,
       primaryModelPath,
-      preview3dEnabled,
       previewTint,
       paintTargets,
       appliedPaint,
+      paintParts,
+      paintSelection,
+      togglePaintPart,
+      highlightTextures,
+      hiddenParts,
+      toggleHiddenPart,
       busy,
       selectEntryPath,
       previewCard,
@@ -693,7 +1106,9 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       importDefaultHero,
       replaceEntry,
       paintTarget,
+      paintSelectedParts,
       revertEntry,
+      adjustSound,
       playSound,
       exportVpk,
       reset,
@@ -704,6 +1119,10 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
     <FoundryContext.Provider value={value}>{children}</FoundryContext.Provider>
   );
 };
+
+/** The Foundry's state when rendered inside it, else null. */
+export const useOptionalFoundry = (): FoundryContextValue | null =>
+  useContext(FoundryContext);
 
 export const useFoundry = (): FoundryContextValue => {
   const ctx = useContext(FoundryContext);

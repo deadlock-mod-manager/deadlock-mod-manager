@@ -7,7 +7,10 @@ import type { PaintTarget } from "./PaintTarget";
  * still succeeds, because one odd texture should not block repainting a hero.
  */
 export type FoundryPaintResult = {
-  target: PaintTarget;
+  /**
+   * The target painted, or `None` for a selection of individual sections.
+   */
+  target: PaintTarget | null;
   paintedPaths: Array<string>;
   skippedPaths: Array<string>;
 };

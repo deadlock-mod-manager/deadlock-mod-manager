@@ -31,6 +31,7 @@ mod lifecycle;
 mod localization;
 mod model_conflict_switch;
 mod reorder;
+pub(crate) mod update_backup;
 
 pub struct ModManager {
   steam_manager: SteamManager,
@@ -608,7 +609,7 @@ mod tests {
     }
   }
 
-  fn game_dir() -> tempfile::TempDir {
+  pub(super) fn game_dir() -> tempfile::TempDir {
     let game = tempfile::tempdir().unwrap();
     let citadel = game.path().join("game").join("citadel");
     fs::create_dir_all(&citadel).unwrap();

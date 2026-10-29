@@ -1,7 +1,7 @@
 import type { ModAuthorDto } from "@deadlock-mods/shared";
 import { skipToken, useQuery } from "@tanstack/react-query";
 import { z } from "zod";
-import { useCommissionsUrl } from "@/hooks/use-commissions-url";
+import { COMMISSIONS_URL } from "@/lib/constants";
 import { fetch } from "@/lib/fetch";
 import { STALE_TIME_API } from "@/lib/query-constants";
 
@@ -15,14 +15,12 @@ export type CommissionAvailability = z.infer<
   typeof CommissionAuthorSchema
 >["author"]["availability"];
 
-/** Resolves `path` against the commissions site, which may live on a sub-path. */
-const commissionsLink = (base: string, path: string) =>
-  new URL(path, base.endsWith("/") ? base : `${base}/`).toString();
+const commissionsLink = (path: string) =>
+  new URL(path, COMMISSIONS_URL).toString();
 
-const findCommissionAuthor = async (base: string, remoteId: string) => {
+const findCommissionAuthor = async (remoteId: string) => {
   const response = await fetch(
     commissionsLink(
-      base,
       `api/authors/gamebanana/${encodeURIComponent(remoteId)}`,
     ),
     { method: "GET" },
@@ -38,7 +36,6 @@ const findCommissionAuthor = async (base: string, remoteId: string) => {
       author.availability === "closed"
         ? null
         : commissionsLink(
-            base,
             `requests/new?gamebanana=${encodeURIComponent(remoteId)}`,
           ),
   };
@@ -52,13 +49,15 @@ const findCommissionAuthor = async (base: string, remoteId: string) => {
 export const useCommissionAuthor = (
   author: ModAuthorDto | null | undefined,
 ) => {
-  const base = useCommissionsUrl();
   const remoteId =
     author?.provider === "gamebanana" ? author.remoteId : undefined;
   const { data } = useQuery({
-    queryKey: ["commission-author", base, remoteId],
+    queryKey: ["commission-author", remoteId],
     queryFn:
-      base && remoteId ? () => findCommissionAuthor(base, remoteId) : skipToken,
+      // The E2E harness only reaches fixture servers, never the live site.
+      remoteId && import.meta.env.VITE_DMM_E2E_HARNESS !== "1"
+        ? () => findCommissionAuthor(remoteId)
+        : skipToken,
     staleTime: STALE_TIME_API,
     retry: false,
     meta: { skipGlobalErrorHandler: true },

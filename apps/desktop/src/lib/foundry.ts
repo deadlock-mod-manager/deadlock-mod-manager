@@ -6,12 +6,14 @@ import type {
   FoundryExportResult,
   FoundryManifest,
   FoundryPaint,
+  FoundryPaintPart,
   FoundryPaintResult,
   FoundryPatternId,
   FoundryPaintTargetId,
   FoundryPaintTargetInfo,
   FoundryReplacementResult,
   FoundrySoundPreview,
+  FoundrySoundSettings,
   FoundryTexture,
   FoundryWorkspace,
 } from "@/types/foundry";
@@ -114,6 +116,33 @@ export const revertFoundryFile = async (
   });
 };
 
+/** The colors a skin's original color maps wear, as `#rrggbb`. */
+export const foundrySkinPalette = async (
+  filePath: string,
+  textures: string[],
+): Promise<string[]> => {
+  return await invoke<string[]>("foundry_skin_palette", {
+    filePath,
+    textures,
+    workspaceRoot: null,
+  });
+};
+
+/** Set one sound's in-game volume edits; the backend rebuilds the clip. */
+export const adjustFoundrySound = async (
+  workspaceRoot: string,
+  entryPath: string,
+  templateVpkPath: string | null,
+  adjust: { gainDb: number; normalize: boolean; mute: boolean },
+): Promise<FoundrySoundSettings> => {
+  return await invoke<FoundrySoundSettings>("foundry_adjust_sound", {
+    workspaceRoot,
+    entryPath,
+    templateVpkPath,
+    ...adjust,
+  });
+};
+
 /**
  * Decode a `.vtex_c` entry (card or texture) to a PNG data URL for previewing,
  * preferring the workspace's edited copy when one exists.
@@ -176,6 +205,43 @@ export const paintFoundryTarget = async (
     filePath,
     target,
     heroDisplay,
+    colorHex: paint.colorHex,
+    saturation: paint.saturation,
+    brightness: paint.brightness,
+    pattern: paint.pattern === "none" ? null : paint.pattern,
+    patternIntensity: paint.patternIntensity,
+    patternPhase: paint.patternPhase,
+  });
+};
+
+/** The paintable sections of a model: every color map it draws with. */
+export const foundryModelParts = async (
+  filePath: string,
+  modelPath: string,
+  heroDisplay: string | null,
+): Promise<FoundryPaintPart[]> => {
+  return await invoke<FoundryPaintPart[]>("foundry_model_parts", {
+    filePath,
+    modelPath,
+    heroDisplay,
+  });
+};
+
+/** Paint the chosen sections of a model, identified by their color maps. */
+export const paintFoundryParts = async (
+  workspaceRoot: string,
+  filePath: string,
+  modelPath: string,
+  heroDisplay: string | null,
+  textures: string[],
+  paint: FoundryPaint,
+): Promise<FoundryPaintResult> => {
+  return await invoke<FoundryPaintResult>("foundry_paint_parts", {
+    workspaceRoot,
+    filePath,
+    modelPath,
+    heroDisplay,
+    textures,
     colorHex: paint.colorHex,
     saturation: paint.saturation,
     brightness: paint.brightness,

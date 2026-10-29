@@ -1,91 +1,67 @@
-import { cn } from "@deadlock-mods/ui/lib/utils";
+import { toast } from "@deadlock-mods/ui/components/sonner";
 import {
   ArrowSquareOutIcon,
   FireIcon,
-  HammerIcon,
+  InfoIcon,
   PaintBrushIcon,
-  UploadSimpleIcon,
 } from "@phosphor-icons/react";
-import { toast } from "@deadlock-mods/ui/components/sonner";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
-import { useCommissionsUrl } from "@/hooks/use-commissions-url";
+import { COMMISSIONS_URL } from "@/lib/constants";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
-import { useFoundry } from "./foundry-context";
-import { FoundryImportDialog } from "./foundry-import-dialog";
-import { FoundryLoadingBar } from "./foundry-loading-bar";
+import { FoundrySkinPicker } from "./foundry-skin-picker";
 
 const DEADLOCK_FORGE_URL = "https://deadlockforge.net/";
 
-/**
- * One of the two entry points. The card lifts and warms on hover so the pair
- * reads as a choice between equals, rather than a headline with a footnote.
- */
-const EntryCard = ({
+const openExternal = (url: string, label: string) => {
+  openUrl(url).catch((error) => {
+    logger.withError(error).error(`[Foundry] Could not open ${label}`);
+  });
+};
+
+const ExternalLink = ({
   icon,
   title,
   description,
-  action,
+  domain,
   onClick,
-  disabled,
-  external,
-  children,
 }: {
   icon: React.ReactNode;
   title: string;
   description: string;
-  action: string;
+  domain: string;
   onClick: () => void;
-  disabled?: boolean;
-  external?: boolean;
-  children?: React.ReactNode;
 }) => (
   <button
-    className={cn(
-      "group relative flex w-full flex-col items-center gap-4 overflow-hidden rounded-2xl border p-8 text-center transition-all duration-300",
-      "border-border/60 bg-card hover:-translate-y-1 hover:border-primary/50",
-      "hover:shadow-[0_18px_50px_-24px_hsl(var(--primary))]",
-      disabled && "pointer-events-none opacity-60",
-    )}
-    disabled={disabled}
+    className='flex w-full gap-3 rounded-lg border bg-card p-3.5 text-left transition-colors hover:border-primary/60'
     onClick={onClick}
     type='button'>
-    {/* A soft glow behind the icon, revealed on hover. */}
-    <span
-      aria-hidden
-      className='pointer-events-none absolute inset-x-0 top-0 h-40 bg-[radial-gradient(circle_at_50%_0%,hsl(var(--primary)/0.18),transparent_70%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100'
-    />
-
-    <span className='relative flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-transform duration-300 group-hover:scale-105'>
+    <span className='flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[7px] bg-secondary text-secondary-foreground'>
       {icon}
     </span>
-
-    <span className='relative space-y-1.5'>
-      <span className='block font-semibold text-xl'>{title}</span>
-      <span className='block max-w-xs text-muted-foreground text-sm leading-relaxed'>
+    <span className='flex min-w-0 flex-col gap-[3px]'>
+      <span className='flex items-center gap-1.5 font-semibold text-[13px]'>
+        {title}
+        <ArrowSquareOutIcon className='h-[13px] w-[13px] text-muted-foreground' />
+      </span>
+      <span className='text-muted-foreground text-xs leading-[1.4]'>
         {description}
       </span>
+      <span className='font-mono text-[11px] text-muted-foreground/70'>
+        {domain}
+      </span>
     </span>
-
-    <span className='relative flex items-center gap-1.5 font-medium text-primary text-sm'>
-      {action}
-      {external && <ArrowSquareOutIcon className='h-4 w-4' />}
-    </span>
-
-    {children}
   </button>
 );
 
 /**
- * Landing surface shown before a skin is loaded: build one here, or head over to
- * Deadlock Forge for the community's tooling.
+ * The Foundry's start page: the skin picker is the page, with the community's
+ * other skin sources beside it.
  */
 export const FoundryEmptyState = () => {
   const { t } = useTranslation();
-  const { status } = useFoundry();
   const confirm = useConfirm();
   const forgeInstallEnabled = usePersistedStore(
     (state) => state.forgeInstallEnabled,
@@ -93,104 +69,64 @@ export const FoundryEmptyState = () => {
   const setForgeInstallEnabled = usePersistedStore(
     (state) => state.setForgeInstallEnabled,
   );
-  const commissionsUrl = useCommissionsUrl();
-  const [importOpen, setImportOpen] = useState(false);
-  const analyzing = status === "analyzing";
-
-  const openForge = () => {
-    openUrl(DEADLOCK_FORGE_URL).catch((error) => {
-      logger.withError(error).error("[Foundry] Could not open Deadlock Forge");
-    });
-  };
 
   // The 1-click handoff only works if the bridge is on, and the site gives no
   // hint that it is off. Offer the switch here, then leave for the site either
   // way.
   const handleForgeClick = async () => {
-    if (forgeInstallEnabled) {
-      openForge();
-      return;
+    if (!forgeInstallEnabled) {
+      const accepted = !!(await confirm({
+        title: t("forge.openTitle"),
+        body: t("forge.openBody"),
+        actionButton: t("forge.openAction"),
+        actionButtonVariant: "default",
+        cancelButton: t("forge.openCancel"),
+      }));
+      if (accepted) {
+        setForgeInstallEnabled(true);
+        toast.success(t("forge.openEnabled"));
+      }
     }
-
-    const accepted = !!(await confirm({
-      title: t("forge.openTitle"),
-      body: t("forge.openBody"),
-      actionButton: t("forge.openAction"),
-      actionButtonVariant: "default",
-      cancelButton: t("forge.openCancel"),
-    }));
-
-    if (accepted) {
-      setForgeInstallEnabled(true);
-      toast.success(t("forge.openEnabled"));
-    }
-
-    openForge();
-  };
-
-  const openCommissions = (url: string) => {
-    openUrl(url).catch((error) => {
-      logger.withError(error).error("[Foundry] Could not open Commissions");
-    });
+    openExternal(DEADLOCK_FORGE_URL, "Deadlock Forge");
   };
 
   return (
-    <div className='flex h-full w-full flex-col items-center justify-center gap-8 p-8'>
-      <div className='max-w-xl space-y-2 text-center'>
-        <h2 className='font-semibold text-2xl'>{t("foundry.empty.title")}</h2>
-        <p className='text-muted-foreground text-sm'>
-          {t("foundry.empty.description")}
-        </p>
+    <div className='flex h-full w-full gap-7'>
+      <div className='flex min-w-0 flex-1 flex-col gap-4'>
+        <div className='shrink-0 space-y-1'>
+          <h1 className='font-semibold text-[22px]'>{t("foundry.title")}</h1>
+          <p className='text-[13px] text-muted-foreground'>
+            {t("foundry.picker.subtitle")}
+          </p>
+        </div>
+        <FoundrySkinPicker className='flex-1' />
       </div>
 
-      <div
-        className={cn(
-          "grid w-full gap-4 sm:grid-cols-2",
-          commissionsUrl ? "max-w-5xl lg:grid-cols-3" : "max-w-3xl",
-        )}>
-        <EntryCard
-          action={
-            analyzing ? t("foundry.import.analyzing") : t("foundry.import.cta")
-          }
-          description={t("foundry.empty.foundryDescription")}
-          disabled={analyzing}
-          icon={<HammerIcon className='h-8 w-8' weight='duotone' />}
-          onClick={() => setImportOpen(true)}
-          title={t("foundry.empty.foundryTitle")}>
-          {analyzing && (
-            <span className='relative w-40'>
-              <FoundryLoadingBar />
-            </span>
-          )}
-        </EntryCard>
-
-        <EntryCard
-          action={t("foundry.empty.forgeAction")}
-          description={t("foundry.empty.forgeDescription")}
-          external
-          icon={<FireIcon className='h-8 w-8' weight='duotone' />}
+      <aside className='flex w-72 shrink-0 flex-col gap-3 pt-[62px]'>
+        <p className='font-semibold text-[10px] text-muted-foreground uppercase tracking-[0.08em]'>
+          {t("foundry.picker.moreWays")}
+        </p>
+        <ExternalLink
+          description={t("foundry.picker.forgeDescription")}
+          domain='deadlockforge.net'
+          icon={<FireIcon className='h-[17px] w-[17px]' weight='duotone' />}
           onClick={handleForgeClick}
           title={t("foundry.empty.forgeTitle")}
         />
-
-        {commissionsUrl && (
-          <EntryCard
-            action={t("foundry.empty.commissionsAction")}
-            description={t("foundry.empty.commissionsDescription")}
-            external
-            icon={<PaintBrushIcon className='h-8 w-8' weight='duotone' />}
-            onClick={() => openCommissions(commissionsUrl)}
-            title={t("foundry.empty.commissionsTitle")}
-          />
-        )}
-      </div>
-
-      <p className='flex items-center gap-1.5 text-muted-foreground text-xs'>
-        <UploadSimpleIcon className='h-3.5 w-3.5' />
-        {t("foundry.empty.hint")}
-      </p>
-
-      <FoundryImportDialog onOpenChange={setImportOpen} open={importOpen} />
+        <ExternalLink
+          description={t("foundry.picker.commissionsDescription")}
+          domain='commissions.deadlockmods.app'
+          icon={
+            <PaintBrushIcon className='h-[17px] w-[17px]' weight='duotone' />
+          }
+          onClick={() => openExternal(COMMISSIONS_URL, "Commissions")}
+          title={t("foundry.empty.commissionsTitle")}
+        />
+        <p className='flex gap-2 px-0.5 py-1 text-[11px] text-muted-foreground/70 leading-[1.4]'>
+          <InfoIcon className='mt-px h-[13px] w-[13px] shrink-0' />
+          {t("foundry.picker.scope")}
+        </p>
+      </aside>
     </div>
   );
 };

@@ -206,12 +206,11 @@ describe("settings persistence", () => {
     } else if (scenario === "settings-backups-presence") {
       await openSettings("backups");
       if (editing) {
-        await setSwitch("#toggle-auto-backup", false);
+        await selectSetting("#settings-backup-mode", "Off");
         await selectSetting('[aria-label="Maximum backups to keep"]', "3");
       }
-      await expect($("#toggle-auto-backup")).toHaveAttribute(
-        "aria-checked",
-        "false",
+      await expect($("#settings-backup-mode")).toHaveText(
+        expect.stringContaining("Off"),
       );
       await expect($('[aria-label="Maximum backups to keep"]')).toHaveText("3");
       await openSettings("discord");
@@ -224,7 +223,7 @@ describe("settings persistence", () => {
         "Backup and presence preferences persisted",
         () => readSettings(world),
         (state) =>
-          state.backupEnabled === false &&
+          state.backupMode === "off" &&
           state.maxBackupCount === 3 &&
           state.gamePresenceEnabled === false,
       );
@@ -259,7 +258,7 @@ describe("settings persistence", () => {
       "nsfwSettings",
       "telemetrySettings",
       "audioVolume",
-      "backupEnabled",
+      "backupMode",
       "maxBackupCount",
       "gamePresenceEnabled",
       ...[...applicationToggles, ...modsToggles].map((control) => control.key),

@@ -17,7 +17,7 @@ use crate::errors::Error;
 
 use super::archive_cache::open_archive;
 use super::hero::{panorama_codenames, sound_codename_for_hero};
-use super::types::{FoundryPaintResult, FoundryPaintTargetInfo, PaintTarget};
+use super::types::{FoundryPaintPart, FoundryPaintResult, FoundryPaintTargetInfo, PaintTarget};
 use super::workspace::{safe_entry_relative, workspace_files_dir};
 
 /// Path tokens that mark a material as belonging to a weapon.
@@ -300,7 +300,239 @@ pub(crate) fn paint_target(
   );
 
   Ok(FoundryPaintResult {
-    target,
+    target: Some(target),
+    painted_paths: painted,
+    skipped_paths: skipped,
+  })
+}
+
+fn material_stem(material: &str) -> String {
+  material
+    .rsplit('/')
+    .next()
+    .unwrap_or(material)
+    .trim_end_matches("_c")
+    .trim_end_matches(".vmat")
+    .to_ascii_lowercase()
+}
+
+/// `v2`, `v3`: a version tag, not part of a name.
+fn is_version_tag(word: &str) -> bool {
+  word.len() >= 2 && word.starts_with('v') && word[1..].chars().all(|c| c.is_ascii_digit())
+}
+
+/// A word that only names the hero: a codename, optionally with a version tag
+/// fused on (`hazev2`, `miragev3`).
+fn is_hero_word(word: &str, hero_terms: &[String]) -> bool {
+  hero_terms.iter().any(|term| {
+    word
+      .strip_prefix(term.as_str())
+      .is_some_and(|rest| rest.is_empty() || is_version_tag(rest))
+  })
+}
+
+/// A readable section name from a material path: the file stem without the
+/// hero's codename or a version tag, in sentence case.
+fn part_label(material: &str, hero_terms: &[String]) -> String {
+  let stem = material_stem(material);
+  let words = stem
+    .split('_')
+    .filter(|word| !word.is_empty() && !is_hero_word(word, hero_terms) && !is_version_tag(word))
+    .collect::<Vec<_>>();
+  let text = if words.is_empty() {
+    stem.replace('_', " ")
+  } else {
+    words.join(" ")
+  };
+  let mut chars = text.chars();
+  chars.next().map_or_else(String::new, |first| {
+    first.to_uppercase().chain(chars).collect()
+  })
+}
+
+/// Read an entry from the skin, falling back to the base game: a skin often
+/// ships only the textures it changes, while the model and materials it
+/// paints over stay in `pak01`.
+fn extract_either(
+  skin: &source2_model::vpk_extract::VpkArchive,
+  base: Option<&source2_model::vpk_extract::VpkArchive>,
+  entry_path: &str,
+) -> Result<Vec<u8>, Error> {
+  skin
+    .extract_entry(entry_path)
+    .or_else(|error| match base {
+      Some(base) => base.extract_entry(entry_path),
+      None => Err(error),
+    })
+    .map_err(|e| Error::InvalidInput(format!("{e}")))
+}
+
+fn base_archive() -> Option<std::sync::Arc<source2_model::vpk_extract::VpkArchive>> {
+  match super::staging::staged_base_game_vpk() {
+    Ok(Some(path)) => open_archive(&path, None).ok(),
+    Ok(None) => None,
+    Err(error) => {
+      log::warn!("[Foundry] No base pak for paint parts: {error}");
+      None
+    }
+  }
+}
+
+/// The paintable sections of one model, in the order the model draws them.
+///
+/// Materials come from the model's default look (LOD0, default body groups),
+/// the same selection the 3D preview draws, so every section listed is one
+/// the user can see and click.
+pub(crate) fn model_paint_parts(
+  vpk_path: &Path,
+  model_path: &str,
+  hero_display: Option<&str>,
+) -> Result<Vec<FoundryPaintPart>, Error> {
+  let skin = open_archive(vpk_path, None)?;
+  let base = base_archive();
+  let base = base.as_deref();
+  let model_archive = if skin.contains_entry(model_path) {
+    &*skin
+  } else {
+    base.ok_or_else(|| Error::InvalidInput(format!("{model_path} is not in this skin")))?
+  };
+  let materials = source2_model::model_materials(model_archive, model_path)
+    .map_err(|e| Error::InvalidInput(format!("failed to read the model's materials: {e}")))?;
+  let mut terms = hero_terms(hero_display);
+  // Materials are named after the artist's codename for the hero, which is
+  // not always the game's (Mina's are `mina_*`, her codename `vampirebat`).
+  // Whatever most of them start with names the hero, not the part.
+  let mut prefixes = std::collections::HashMap::<String, usize>::new();
+  for material in &materials {
+    if let Some(first) = material_stem(material).split('_').next() {
+      *prefixes.entry(first.to_string()).or_default() += 1;
+    }
+  }
+  if let Some((prefix, count)) = prefixes.into_iter().max_by_key(|(_, count)| *count)
+    && count * 2 >= materials.len()
+    && count >= 2
+  {
+    terms.push(prefix);
+  }
+
+  let mut parts: Vec<FoundryPaintPart> = Vec::new();
+  for material in materials {
+    let lower = material.to_ascii_lowercase();
+    if lower.contains("particle") || lower.contains("/effects/") || is_non_hero_path(&lower) {
+      continue;
+    }
+    let texture = source2_model::material_color_texture(&skin, &material)
+      .or_else(|| base.and_then(|base| source2_model::material_color_texture(base, &material)));
+    let Some(texture) = texture else {
+      continue;
+    };
+    if !skin.contains_entry(&texture) && !base.is_some_and(|base| base.contains_entry(&texture)) {
+      continue;
+    }
+    if let Some(part) = parts
+      .iter_mut()
+      .find(|part| part.texture.eq_ignore_ascii_case(&texture))
+    {
+      part.materials.push(material);
+      continue;
+    }
+    parts.push(FoundryPaintPart {
+      label: part_label(&material, &terms),
+      target: if is_weapon_path(&lower) {
+        PaintTarget::Weapon
+      } else {
+        PaintTarget::Body
+      },
+      texture,
+      materials: vec![material],
+    });
+  }
+
+  // Two maps named alike ("Body" twice) must still read apart.
+  let labels = parts
+    .iter()
+    .map(|part| part.label.clone())
+    .collect::<Vec<_>>();
+  for (index, part) in parts.iter_mut().enumerate() {
+    let same = labels
+      .iter()
+      .filter(|label| **label == labels[index])
+      .count();
+    if same > 1 {
+      let nth = labels[..index]
+        .iter()
+        .filter(|label| **label == labels[index])
+        .count();
+      part.label = format!("{} {}", labels[index], nth + 1);
+    }
+  }
+  Ok(parts)
+}
+
+/// Paint the chosen sections of a model, and only those.
+///
+/// The requested maps are checked against the model's own sections first:
+/// the paths arrive from the webview, and nothing outside the hero being
+/// edited may be rewritten.
+pub(crate) fn paint_parts(
+  workspace_root: PathBuf,
+  vpk_path: PathBuf,
+  model_path: &str,
+  hero_display: Option<String>,
+  textures: Vec<String>,
+  recolor: vpkmanager::Recolor,
+  pattern: Option<vpkmanager::Pattern>,
+) -> Result<FoundryPaintResult, Error> {
+  let files_dir = workspace_files_dir(&workspace_root)?;
+  let parts = model_paint_parts(&vpk_path, model_path, hero_display.as_deref())?;
+  let skin = open_archive(&vpk_path, None)?;
+  let base = base_archive();
+
+  let mut painted = Vec::new();
+  let mut skipped = Vec::new();
+  // As for a whole target: a pattern brings its own palette and replaces the
+  // picked color rather than sitting on it.
+  let texture_recolor = if pattern.is_some() {
+    None
+  } else {
+    Some(recolor)
+  };
+  // Every map is checked before the first write, so a bad request leaves the
+  // workspace untouched instead of half painted.
+  let selected = textures
+    .iter()
+    .map(|texture| {
+      parts
+        .iter()
+        .find(|part| part.texture.eq_ignore_ascii_case(texture))
+        .ok_or_else(|| {
+          Error::InvalidInput(format!("{texture} is not a paintable part of {model_path}"))
+        })
+    })
+    .collect::<Result<Vec<_>, Error>>()?;
+  for part in selected {
+    let result = extract_either(&skin, base.as_deref(), &part.texture).and_then(|original| {
+      let edited = vpkmanager::paint_texture(&original, texture_recolor, pattern)
+        .map_err(|e| Error::InvalidInput(format!("{e}")))?;
+      write_workspace_entry(&files_dir, &part.texture, &edited.bytes)
+    });
+    match result {
+      Ok(()) => painted.push(part.texture.clone()),
+      Err(error) => {
+        log::warn!("[Foundry] Skipped painting {}: {error}", part.texture);
+        skipped.push(part.texture.clone());
+      }
+    }
+  }
+
+  log::info!(
+    "[Foundry] Painted {} of {} sections ({} skipped)",
+    painted.len(),
+    textures.len(),
+    skipped.len(),
+  );
+  Ok(FoundryPaintResult {
+    target: None,
     painted_paths: painted,
     skipped_paths: skipped,
   })
@@ -360,6 +592,34 @@ fn repaint_particle(
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  #[test]
+  fn part_labels_drop_the_codename_and_version() {
+    let terms = vec!["bebop".to_string(), "haze".to_string()];
+    assert_eq!(
+      part_label(
+        "models/heroes_staging/bebop/materials/bebop_upper_body.vmat_c",
+        &terms
+      ),
+      "Upper body"
+    );
+    assert_eq!(
+      part_label(
+        "models/heroes_staging/haze_v2/materials/haze_v2_gun.vmat_c",
+        &terms
+      ),
+      "Gun"
+    );
+    assert_eq!(
+      part_label(
+        "models/heroes_staging/haze/materials/hazev2_head.vmat_c",
+        &terms
+      ),
+      "Head"
+    );
+    // Nothing but the codename left: keep the name rather than an empty label.
+    assert_eq!(part_label("materials/haze.vmat_c", &terms), "Haze");
+  }
 
   /// Real material paths from the shipped `pak01_dir.vpk`.
   #[test]

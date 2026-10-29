@@ -1,5 +1,5 @@
 import { cn } from "@deadlock-mods/ui/lib/utils";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 
 /** Signed random jitter in [-0.5, 0.5). */
@@ -95,11 +95,15 @@ export const createAssemblingFigure = ({
   spin = 0.5,
   sampler = sampleFigurePoint,
   count = 1600,
+  color = 0xe7c98a,
+  size = 0.04,
 }: {
   loop?: boolean;
   spin?: number;
   sampler?: (out: THREE.Vector3) => void;
   count?: number;
+  color?: number;
+  size?: number;
 } = {}) => {
   const targets = new Float32Array(count * 3);
   const starts = new Float32Array(count * 3);
@@ -141,8 +145,8 @@ export const createAssemblingFigure = ({
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
   const material = new THREE.PointsMaterial({
-    color: 0xe7c98a,
-    size: 0.04,
+    color,
+    size,
     sizeAttenuation: true,
     transparent: true,
     opacity: 0,
@@ -208,12 +212,16 @@ const AssemblingCanvas = ({
   distance,
   spin,
   count,
+  color,
+  size,
 }: {
   className?: string;
   sampler: (out: THREE.Vector3) => void;
   distance: number;
   spin: number;
   count?: number;
+  color?: number;
+  size?: number;
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -231,7 +239,14 @@ const AssemblingCanvas = ({
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     container.appendChild(renderer.domElement);
 
-    const figure = createAssemblingFigure({ loop: true, sampler, spin, count });
+    const figure = createAssemblingFigure({
+      loop: true,
+      sampler,
+      spin,
+      count,
+      color,
+      size,
+    });
     scene.add(figure.points);
 
     const clock = new THREE.Clock();
@@ -267,7 +282,7 @@ const AssemblingCanvas = ({
       renderer.forceContextLoss();
       renderer.domElement.remove();
     };
-  }, [sampler, distance, spin, count]);
+  }, [sampler, distance, spin, count, color, size]);
 
   return (
     <div
@@ -296,3 +311,48 @@ export const FoundryCardAssembling = ({
     spin={0}
   />
 );
+
+/** A point drawn from a captured silhouette, scattered a hair for depth. */
+const silhouetteSampler =
+  (points: Float32Array) =>
+  (out: THREE.Vector3): void => {
+    const i = Math.floor(Math.random() * (points.length / 3)) * 3;
+    out.set(
+      points[i] + jitter() * 0.015,
+      points[i + 1] + jitter() * 0.015,
+      points[i + 2] + jitter() * 0.015,
+    );
+  };
+
+/**
+ * A hero built from embers, shown while a model decodes: the hero's own shape
+ * when a silhouette is known, a generic figure otherwise.
+ */
+export const FoundryHeroAssembling = ({
+  className,
+  silhouette,
+}: {
+  className?: string;
+  silhouette: Float32Array | null;
+}) => {
+  const sampler = useMemo(
+    () => (silhouette ? silhouetteSampler(silhouette) : sampleFigurePoint),
+    [silhouette],
+  );
+  return (
+    <AssemblingCanvas
+      className={cn(
+        "[filter:drop-shadow(0_0_6px_rgb(242_138_75/0.55))]",
+        className,
+      )}
+      color={0xf28a4b}
+      count={silhouette ? 7000 : 3200}
+      distance={silhouette ? 3.9 : 4.6}
+      sampler={sampler}
+      size={silhouette ? 0.032 : 0.04}
+      // A known hero holds still and faces the camera, the way players
+      // recognise them; the generic figure turns to read as a figure at all.
+      spin={silhouette ? 0 : 0.35}
+    />
+  );
+};
