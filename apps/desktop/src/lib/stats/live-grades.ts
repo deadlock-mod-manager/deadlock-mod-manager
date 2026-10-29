@@ -7,30 +7,68 @@ import type { PerformanceCurvePoint } from "@/lib/stats/api";
  * every early game as behind; the bracket's curve compares like with like.
  */
 
-/** Souls first: it is the number the rest of the Live tab is built around. */
-const LIVE_METRICS = [
-  "soulsPerMin",
-  "kills",
-  "deaths",
-  "assists",
-  "objectiveDamagePerMin",
-] as const;
-export type LiveMetric = (typeof LIVE_METRICS)[number];
+export interface LivePlayerNumbers {
+  kills: number | null;
+  deaths: number | null;
+  assists: number | null;
+  souls: number | null;
+  objectiveDamage: number | null;
+}
 
-/** Which curve stat each metric is compared on: totals so far, not rates. */
-const CURVE_STATS = {
-  kills: "kills",
-  deaths: "deaths",
-  assists: "assists",
-  soulsPerMin: "net_worth",
-  objectiveDamagePerMin: "boss_damage",
-} as const satisfies Record<LiveMetric, string>;
-type CurveStat = (typeof CURVE_STATS)[LiveMetric];
+type CurveStat = "net_worth" | "kills" | "deaths" | "assists" | "boss_damage";
 
-const PER_MINUTE = new Set<LiveMetric>([
-  "soulsPerMin",
-  "objectiveDamagePerMin",
-]);
+/**
+ * Souls first: it is the number the rest of the Live tab is built around. Each
+ * metric is compared on a curve stat, as a total so far rather than a rate.
+ */
+const METRICS = [
+  {
+    metric: "soulsPerMin",
+    stat: "net_worth",
+    read: (player: LivePlayerNumbers) => player.souls,
+    perMinute: true,
+    fewerIsBetter: false,
+  },
+  {
+    metric: "kills",
+    stat: "kills",
+    read: (player: LivePlayerNumbers) => player.kills,
+    perMinute: false,
+    fewerIsBetter: false,
+  },
+  {
+    metric: "deaths",
+    stat: "deaths",
+    read: (player: LivePlayerNumbers) => player.deaths,
+    perMinute: false,
+    fewerIsBetter: true,
+  },
+  {
+    metric: "assists",
+    stat: "assists",
+    read: (player: LivePlayerNumbers) => player.assists,
+    perMinute: false,
+    fewerIsBetter: false,
+  },
+  {
+    metric: "objectiveDamagePerMin",
+    stat: "boss_damage",
+    read: (player: LivePlayerNumbers) => player.objectiveDamage,
+    perMinute: true,
+    fewerIsBetter: false,
+  },
+] as const satisfies readonly {
+  metric: string;
+  stat: CurveStat;
+  read: (player: LivePlayerNumbers) => number | null;
+  perMinute: boolean;
+  fewerIsBetter: boolean;
+}[];
+export type LiveMetric = (typeof METRICS)[number]["metric"];
+
+/** Shown as a rate per minute rather than a count. */
+export const isPerMinute = (metric: LiveMetric): boolean =>
+  METRICS.some((entry) => entry.metric === metric && entry.perMinute);
 
 export const GRADES = ["D", "C", "B", "A", "S"] as const;
 export type Grade = (typeof GRADES)[number];
@@ -55,14 +93,6 @@ export interface LiveGradeRow {
   /** Share of the bracket the player is ahead of, 0-1, flipped for deaths. */
   beats: number;
   grade: Grade;
-}
-
-export interface LivePlayerNumbers {
-  kills: number | null;
-  deaths: number | null;
-  assists: number | null;
-  souls: number | null;
-  objectiveDamage: number | null;
 }
 
 /** Grades only mean something once a little of the match has been played. */
@@ -116,24 +146,6 @@ export const curveAt = (
   return { avg: previous.avg, std: previous.std };
 };
 
-const totalOf = (
-  metric: LiveMetric,
-  player: LivePlayerNumbers,
-): number | null => {
-  switch (metric) {
-    case "kills":
-      return player.kills;
-    case "deaths":
-      return player.deaths;
-    case "assists":
-      return player.assists;
-    case "soulsPerMin":
-      return player.souls;
-    case "objectiveDamagePerMin":
-      return player.objectiveDamage;
-  }
-};
-
 export const liveGradeRows = ({
   player,
   minutes,
@@ -146,9 +158,9 @@ export const liveGradeRows = ({
   if (minutes < MIN_GRADED_MINUTES || curve.length === 0) return [];
   const seconds = minutes * 60;
 
-  return LIVE_METRICS.flatMap((metric) => {
-    const total = totalOf(metric, player);
-    const expected = curveAt(curve, CURVE_STATS[metric], seconds);
+  return METRICS.flatMap(({ metric, stat, read, perMinute, fewerIsBetter }) => {
+    const total = read(player);
+    const expected = curveAt(curve, stat, seconds);
     if (total === null || !expected) return [];
 
     // A bracket where everyone sits on the same number has no spread to place
@@ -161,8 +173,8 @@ export const liveGradeRows = ({
           : total < expected.avg
             ? 0.25
             : 0.5;
-    const beats = metric === "deaths" ? 1 - below : below;
-    const scale = PER_MINUTE.has(metric) ? minutes : 1;
+    const beats = fewerIsBetter ? 1 - below : below;
+    const scale = perMinute ? minutes : 1;
     return [
       {
         metric,

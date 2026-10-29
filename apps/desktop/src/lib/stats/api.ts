@@ -296,6 +296,17 @@ export const resolveRank = (
   };
 };
 
+/**
+ * The badges of a badge's rank tier, or every badge for the unranked. Tiers
+ * hold subranks 1 to 6, so tier 7 spans badges 71 to 76.
+ */
+export const badgeBracket = (badge: number | undefined) => {
+  const tier = Math.floor((badge ?? 0) / 10);
+  return tier > 0
+    ? { tier, minBadge: tier * 10 + 1, maxBadge: tier * 10 + 6 }
+    : { tier: null, minBadge: 0, maxBadge: 116 };
+};
+
 /** "Name subrank" for a badge, or null when no asset names its tier. */
 export const rankLabel = (
   badge: number | undefined,

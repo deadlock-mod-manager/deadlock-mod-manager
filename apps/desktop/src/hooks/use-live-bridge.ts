@@ -16,6 +16,7 @@ import { getModsStorePath } from "@/lib/download-cache";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import type { BridgeStatus } from "@/types/generated/BridgeStatus";
+import type { LocalMod } from "@/types/mods";
 
 const LIVE_BRIDGE_NAME = "Live Scoreboard Bridge";
 const LIVE_BRIDGE_AUTHOR = "Okaza";
@@ -48,10 +49,10 @@ const UPDATE_KEY = ["live-bridge-update"];
 // focus or mount.
 const STATUS_STALE_MS = 5 * 60 * 1000;
 
-const findBridge = () =>
-  usePersistedStore
-    .getState()
-    .localMods.find((mod) => mod.remoteUrl === LIVE_BRIDGE_LINK);
+const bridgeIn = (mods: LocalMod[]) =>
+  mods.find((mod) => mod.remoteUrl === LIVE_BRIDGE_LINK);
+
+const findBridge = () => bridgeIn(usePersistedStore.getState().localMods);
 
 /**
  * The live bridge HUD mod that feeds the Live tab: whether it is in the
@@ -67,9 +68,7 @@ export const useLiveBridge = () => {
   // Installing, enabling, disabling or deleting the bridge in the library
   // changes this, which re-runs the cached addons check below.
   const libraryStatus = usePersistedStore(
-    (state) =>
-      state.localMods.find((mod) => mod.remoteUrl === LIVE_BRIDGE_LINK)
-        ?.status ?? null,
+    (state) => bridgeIn(state.localMods)?.status ?? null,
   );
   const inLibrary = libraryStatus !== null;
   const profileFolder = usePersistedStore(
