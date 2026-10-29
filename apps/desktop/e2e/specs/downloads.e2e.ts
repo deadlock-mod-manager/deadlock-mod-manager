@@ -138,10 +138,13 @@ describe("real Rust downloads", () => {
           "downloads-redirect",
         ].includes(scenario ?? "")
       ) {
-        if (scenario === "downloads-auth")
-          await toast(
-            `Failed to download ${DOWNLOAD_NAME}: `,
-          ).waitForDisplayed();
+        if (scenario === "downloads-auth") {
+          const failure = toast(`Failed to download ${DOWNLOAD_NAME}: `);
+          await failure.waitForDisplayed();
+          await expect(failure).not.toHaveText(
+            expect.stringContaining("{{message}}"),
+          );
+        }
         // The seed is already failed. Wait for this attempt's UI result before
         // accepting the same status from the asynchronous persisted store.
         await expect(card().$("button=Retry")).toBeDisplayed();
