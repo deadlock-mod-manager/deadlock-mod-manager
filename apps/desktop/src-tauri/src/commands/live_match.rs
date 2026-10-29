@@ -1,4 +1,5 @@
-use std::path::Path;
+use std::ffi::OsStr;
+use std::path::{Path, PathBuf};
 
 use crate::app_runtime::AppHandle;
 use crate::commands::forge::contained_destination;
@@ -55,39 +56,53 @@ pub async fn build_live_bridge(app_handle: AppHandle, destination: String) -> Re
   .await
 }
 
-/// Whether the live bridge is in the profile's addons folder, however it got
-/// there, and whether it was built from an older game or an older bridge.
+/// The enabled bridge's file in the profile's addons folder. `installed_vpk`
+/// is the name the library recorded for it, so it must be a bare file name.
+fn installed_bridge(
+  game_path: &Path,
+  profile_folder: Option<&str>,
+  installed_vpk: &str,
+) -> Result<PathBuf, Error> {
+  if Path::new(installed_vpk).file_name() != Some(OsStr::new(installed_vpk)) {
+    return Err(Error::InvalidInput(format!(
+      "Invalid addon file name: {installed_vpk}"
+    )));
+  }
+  Ok(ModManager::profile_addons_dir(game_path, profile_folder)?.join(installed_vpk))
+}
+
+/// Whether the enabled live bridge was built from the current game and bridge.
+/// `installed_vpk` is `None` when the library has no enabled bridge.
 #[tauri::command]
 pub async fn live_bridge_status(
   profile_folder: Option<String>,
+  installed_vpk: Option<String>,
 ) -> Result<live_bridge::BridgeStatus, Error> {
   with_game("Checking", move |game_path| {
-    let addons = ModManager::profile_addons_dir(game_path, profile_folder.as_deref())?;
-    Ok(live_bridge::status(game_path, &addons))
+    let installed = installed_vpk
+      .map(|name| installed_bridge(game_path, profile_folder.as_deref(), &name))
+      .transpose()?;
+    Ok(live_bridge::status(game_path, installed.as_deref()))
   })
   .await
 }
 
-/// Rebuilds the installed bridge from the current game. `library_copy` is the
-/// bridge's file in the mods store, refreshed along with it. Refused while the
-/// game runs, like every other write to the game's files.
+/// Rebuilds the bridge's file in the mods store from the current game and
+/// copies it over the enabled one. Refused while the game runs, like every
+/// other write to the game's files.
 #[tauri::command]
 pub async fn update_live_bridge(
   app_handle: AppHandle,
   profile_folder: Option<String>,
-  library_copy: Option<String>,
+  library_copy: String,
+  installed_vpk: String,
 ) -> Result<(), Error> {
-  let library_copy = match library_copy {
-    Some(copy) => {
-      let mods_root = crate::mod_manager::mods_store::dir(&app_handle)?;
-      Some(contained_destination(&mods_root, &copy)?)
-    }
-    None => None,
-  };
+  let mods_root = crate::mod_manager::mods_store::dir(&app_handle)?;
+  let library_copy = contained_destination(&mods_root, &library_copy)?;
   with_game("Updating", move |game_path| {
     crate::game_guard::ensure_game_idle_locked("update_live_bridge", None)?;
-    let addons = ModManager::profile_addons_dir(game_path, profile_folder.as_deref())?;
-    live_bridge::update(game_path, &addons, library_copy.as_deref())
+    let installed = installed_bridge(game_path, profile_folder.as_deref(), &installed_vpk)?;
+    live_bridge::update(game_path, &library_copy, &installed)
   })
   .await
 }

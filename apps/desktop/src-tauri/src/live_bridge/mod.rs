@@ -9,13 +9,12 @@
 //! the game's layout plus one `SCRIPTS` include, and the script itself.
 
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::Mutex;
 
 use serde::Serialize;
 use source2_model::vpk_extract::VpkArchive;
 use ts_rs::TS;
-use vpk_parser::VpkParser;
 use vpkmanager::source2::kv3::{self, Seg, Value};
 use vpkmanager::source2::resource::Resource;
 
@@ -214,32 +213,11 @@ pub fn build(game_path: &Path, destination: &Path) -> Result<(), Error> {
   result
 }
 
-/// The addon VPK in `addons_dir` that carries the bridge script, however it got
-/// there. Only directory trees are read, never the archives' contents.
-fn find_installed(addons_dir: &Path) -> Option<PathBuf> {
-  fs::read_dir(addons_dir)
-    .ok()?
-    .flatten()
-    .map(|entry| entry.path())
-    .find(|path| {
-      let is_dir_vpk = path
-        .file_name()
-        .and_then(|name| name.to_str())
-        .is_some_and(|name| name.ends_with("_dir.vpk"));
-      is_dir_vpk
-        && VpkParser::parse_directory_from_file(path).is_ok_and(|files| {
-          files
-            .iter()
-            .any(|file| file.full_path.eq_ignore_ascii_case(SCRIPT_RESOURCE))
-        })
-    })
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
 pub enum BridgeStatus {
-  /// Not in the addons folder, so the game does not load it.
+  /// Not enabled in the profile, so the game does not load it.
   NotInstalled,
   /// Installed, and what a build right now would produce.
   Current,
@@ -250,8 +228,10 @@ pub enum BridgeStatus {
   Incompatible,
 }
 
-pub fn status(game_path: &Path, addons_dir: &Path) -> BridgeStatus {
-  let Some(installed) = find_installed(addons_dir) else {
+/// `installed` is the bridge's file in the profile's addons folder, as the
+/// library recorded it when the mod was enabled.
+pub fn status(game_path: &Path, installed: Option<&Path>) -> BridgeStatus {
+  let Some(installed) = installed.filter(|path| path.is_file()) else {
     return BridgeStatus::NotInstalled;
   };
   match expected_files(game_path) {
@@ -281,40 +261,19 @@ pub fn status(game_path: &Path, addons_dir: &Path) -> BridgeStatus {
   }
 }
 
-/// Rebuilds the installed bridge in place, and the library's copy with it so
-/// turning the mod off and on again does not bring the old one back. The addon
-/// keeps its file name, so the library's record of it stays valid.
-pub fn update(
-  game_path: &Path,
-  addons_dir: &Path,
-  library_copy: Option<&Path>,
-) -> Result<(), Error> {
-  let installed = find_installed(addons_dir)
-    .ok_or_else(|| invalid("The live bridge is not installed in this profile"))?;
-  // Rebuilding writes only the bridge's two files, so a pack that also holds
-  // other mods' files would lose them.
-  let only_bridge = VpkParser::parse_directory_from_file(&installed).is_ok_and(|files| {
-    files.len() == 2
-      && files.iter().all(|file| {
-        file.full_path.eq_ignore_ascii_case(TEAM_LAYOUT)
-          || file.full_path.eq_ignore_ascii_case(SCRIPT_RESOURCE)
-      })
-  });
-  if !only_bridge {
-    return Err(invalid(format!(
-      "{} holds more than the live bridge, so it is not rebuilt",
-      installed.display()
-    )));
-  }
-  build(game_path, &installed)?;
-  if let Some(copy) = library_copy {
-    fs::copy(&installed, copy)?;
-  }
+/// Rebuilds the library's copy of the bridge and copies it over the enabled
+/// one, so the game loads the new build and turning the mod off and on again
+/// does not bring the old one back.
+pub fn update(game_path: &Path, library_copy: &Path, installed: &Path) -> Result<(), Error> {
+  build(game_path, library_copy)?;
+  fs::copy(library_copy, installed)?;
   Ok(())
 }
 
 #[cfg(test)]
 mod tests {
+  use vpk_parser::VpkParser;
+
   use super::*;
 
   #[test]
@@ -331,7 +290,6 @@ mod tests {
   #[ignore = "needs an installed game"]
   fn builds_from_the_installed_game() {
     let game = std::env::var_os("DMM_GAME_PATH").expect("DMM_GAME_PATH");
-    // Named like an addon so the installed check treats it as one.
     let out = std::env::temp_dir()
       .join("dmm-live-bridge-test")
       .join("pak01_dir.vpk");
@@ -341,9 +299,8 @@ mod tests {
     let names: Vec<&str> = files.iter().map(|file| file.full_path.as_str()).collect();
     assert!(names.contains(&SCRIPT_RESOURCE));
     assert!(names.contains(&TEAM_LAYOUT));
-    let addons = out.parent().unwrap();
     let game = Path::new(&game);
-    assert_eq!(status(game, addons), BridgeStatus::Current);
+    assert_eq!(status(game, Some(&out)), BridgeStatus::Current);
 
     // A bridge from an older build: same layout, different script.
     fs::remove_file(&out).unwrap();
@@ -358,11 +315,11 @@ mod tests {
       fs::write(target, bytes).unwrap();
     }
     vpkmanager::pack_directory(&stale, &out).unwrap();
-    assert_eq!(status(game, addons), BridgeStatus::Outdated);
+    assert_eq!(status(game, Some(&out)), BridgeStatus::Outdated);
 
-    let copy = addons.join("library-copy.vpk");
-    update(game, addons, Some(&copy)).unwrap();
-    assert_eq!(status(game, addons), BridgeStatus::Current);
+    let copy = out.with_file_name("library-copy.vpk");
+    update(game, &copy, &out).unwrap();
+    assert_eq!(status(game, Some(&out)), BridgeStatus::Current);
     assert_eq!(fs::read(&copy).unwrap(), fs::read(&out).unwrap());
     let _ = fs::remove_dir_all(&stale);
     let _ = fs::remove_dir_all(out.parent().unwrap());
@@ -385,32 +342,6 @@ mod tests {
   }
 
   #[test]
-  fn update_leaves_a_pack_with_other_mods_alone() {
-    let root = tempfile::tempdir().unwrap();
-    let addons = root.path().join("addons");
-    let merged = addons.join("pak01_dir.vpk");
-    pack(
-      &merged,
-      &[
-        (TEAM_LAYOUT, b"layout"),
-        (SCRIPT_RESOURCE, b"script"),
-        ("panorama/images/other_mod.png", b"someone else's file"),
-      ],
-    );
-    let before = fs::read(&merged).unwrap();
-
-    // Refused before the game is ever read, so no install is needed.
-    let error = update(&root.path().join("no-game"), &addons, None).unwrap_err();
-
-    assert!(
-      error
-        .to_string()
-        .contains("holds more than the live bridge")
-    );
-    assert_eq!(fs::read(&merged).unwrap(), before);
-  }
-
-  #[test]
   fn a_layout_the_bridge_cannot_patch_is_incompatible_not_current() {
     let game = tempfile::tempdir().unwrap();
     let citadel = game.path().join("game").join("citadel");
@@ -419,24 +350,27 @@ mod tests {
       &citadel.join("pak01_dir.vpk"),
       &[(TEAM_LAYOUT, b"a reshaped layout")],
     );
-    let addons = citadel.join("addons");
+    let installed = citadel.join("addons").join("pak01_dir.vpk");
     pack(
-      &addons.join("pak01_dir.vpk"),
+      &installed,
       &[(TEAM_LAYOUT, b"old layout"), (SCRIPT_RESOURCE, b"script")],
     );
 
-    assert_eq!(status(game.path(), &addons), BridgeStatus::Incompatible);
+    assert_eq!(
+      status(game.path(), Some(&installed)),
+      BridgeStatus::Incompatible
+    );
   }
 
   #[test]
   fn an_unreadable_game_is_not_called_incompatible() {
     let game = tempfile::tempdir().unwrap();
-    let addons = game.path().join("addons");
+    let installed = game.path().join("addons").join("pak01_dir.vpk");
     pack(
-      &addons.join("pak01_dir.vpk"),
+      &installed,
       &[(TEAM_LAYOUT, b"layout"), (SCRIPT_RESOURCE, b"script")],
     );
 
-    assert_eq!(status(game.path(), &addons), BridgeStatus::Current);
+    assert_eq!(status(game.path(), Some(&installed)), BridgeStatus::Current);
   }
 }
