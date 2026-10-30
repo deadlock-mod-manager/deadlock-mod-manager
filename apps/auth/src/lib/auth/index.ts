@@ -28,6 +28,12 @@ export const auth = betterAuth({
       enabled: true,
     },
   },
+  rateLimit: {
+    customRules: {
+      // The API introspects every bearer token here from shared server IPs.
+      "/oauth2/userinfo": false,
+    },
+  },
   trustedOrigins: env.CORS_ORIGIN,
   emailAndPassword: {
     enabled: true,
@@ -77,7 +83,6 @@ export const auth = betterAuth({
         isAdmin: user.isAdmin === true,
       }),
       rateLimit: {
-        // The API introspects every bearer token here from shared server IPs.
         userinfo: false,
       },
     }),
