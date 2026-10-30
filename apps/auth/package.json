@@ -13,7 +13,8 @@
     "dev": "concurrently \"pnpm run dev:server\" \"pnpm run dev:client\""
   },
   "dependencies": {
-    "@better-fetch/fetch": "^1.1.21",
+    "@better-auth/oauth-provider": "1.7.11",
+    "@better-fetch/fetch": "^1.3.2",
     "@deadlock-mods/common": "workspace:*",
     "@deadlock-mods/database": "workspace:*",
     "@deadlock-mods/feature-flags": "workspace:*",

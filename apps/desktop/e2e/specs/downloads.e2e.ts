@@ -1,6 +1,7 @@
 import { navigate } from "../support/ui";
+import { step } from "../support/evidence";
 import { observeUntil } from "../support/observations";
-import { collectFileInventory } from "../support/world";
+import { assertOwnedWorld, collectFileInventory } from "../support/world";
 import { startApplication } from "../support/application";
 import { closeApplication } from "../support/application-exit";
 import { $, browser, expect } from "@wdio/globals";
@@ -32,6 +33,10 @@ const retry = async (): Promise<void> => {
   await button.waitForClickable();
   await button.click();
 };
+const toast = (title: string) =>
+  $(
+    `//*[@data-sonner-toast]//*[@data-title and starts-with(normalize-space(), "${title}")]`,
+  );
 const pause = async (world: string): Promise<void> => {
   await waitStatus(world, "downloading");
   const partial = path.join(
@@ -64,6 +69,41 @@ const pause = async (world: string): Promise<void> => {
   );
   await expect(card().$("button=Resume")).toBeDisplayed();
   await assertDownloadDisk(world, "paused", "paused");
+};
+const downloadRequests = async (world: string) => {
+  const { configuration } = await assertOwnedWorld(world);
+  const origin = configuration.endpoints[0].origin;
+  return z
+    .object({ requests: z.array(z.object({ url: z.string() })) })
+    .parse(await (await fetch(`${origin}/__control/requests`)).json())
+    .requests.filter(({ url }) => url === `/downloads/${DOWNLOAD_FILE}`);
+};
+const cancelWhileConnecting = async (world: string): Promise<void> => {
+  await step("cancel while the server withholds headers", async () => {
+    await observeUntil(
+      "Download request did not reach the server",
+      () => downloadRequests(world),
+      (requests) => requests.length === 1,
+    );
+    const button = await card().$("button=Cancel");
+    await button.waitForClickable();
+    await button.click();
+    await waitStatus(world, "failedToDownload");
+    await expect(card().$("button=Retry")).toBeDisplayed();
+    await assertDownloadDisk(world, "cancelled", "failedToDownload");
+  });
+  // The downloader handles one mod at a time, so a cancelled request that is
+  // still waiting holds back the retry.
+  await step("retry reaches the server", async () => {
+    await retry();
+    await observeUntil(
+      "Retry stayed queued behind the cancelled request",
+      () => downloadRequests(world),
+      (requests) => requests.length === 2,
+      10_000,
+    );
+  });
+  await waitStatus(world, "downloaded");
 };
 
 describe("real Rust downloads", () => {
@@ -126,6 +166,8 @@ describe("real Rust downloads", () => {
           await card().$("button=Resume").click();
           await waitStatus(world, "downloaded");
         }
+      } else if (scenario === "downloads-cancel-connecting") {
+        await cancelWhileConnecting(world);
       } else if (
         [
           "downloads-auth",
@@ -134,6 +176,13 @@ describe("real Rust downloads", () => {
           "downloads-redirect",
         ].includes(scenario ?? "")
       ) {
+        if (scenario === "downloads-auth") {
+          const failure = toast(`Failed to download ${DOWNLOAD_NAME}: `);
+          await failure.waitForDisplayed();
+          await expect(failure).not.toHaveText(
+            expect.stringContaining("{{message}}"),
+          );
+        }
         // The seed is already failed. Wait for this attempt's UI result before
         // accepting the same status from the asynchronous persisted store.
         await expect(card().$("button=Retry")).toBeDisplayed();
@@ -146,6 +195,12 @@ describe("real Rust downloads", () => {
         );
         await assertDownloadDisk(world, "failed", "failedToDownload");
         await retry();
+        if (scenario === "downloads-auth") {
+          await toast(`${DOWNLOAD_NAME} downloaded!`).waitForDisplayed();
+          await browser.saveScreenshot(
+            path.join(world, "artifacts", "download-toasts.png"),
+          );
+        }
         await waitStatus(world, "downloaded");
       } else await waitStatus(world, "downloaded");
       if (scenario !== "downloads-cancel" && scenario !== "downloads-restart")

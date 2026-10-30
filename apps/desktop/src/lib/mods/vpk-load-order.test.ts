@@ -2,6 +2,7 @@ import { describe, expect, it } from "bun:test";
 import {
   insertFilesInAuthorOrder,
   reorderFiles,
+  sortFilesInAuthorOrder,
 } from "@/lib/mods/vpk-load-order";
 import type { ModFile } from "@/types/mods";
 
@@ -36,6 +37,28 @@ describe("insertFilesInAuthorOrder", () => {
         ]),
       ),
     ).toEqual(["glow.vpk", "deep_sea.vpk", "green.vpk"]);
+  });
+});
+
+describe("sortFilesInAuthorOrder", () => {
+  it("orders archives the way the author lists them, not alphabetically", () => {
+    const files = [
+      file("pak01_dir.vpk", "blue.zip"),
+      file("pak01_dir.vpk", "glow.zip"),
+      file("pak02_dir.vpk", "glow.zip"),
+      file("pak01_dir.vpk", "red.zip"),
+    ];
+
+    expect(
+      sortFilesInAuthorOrder(files, ["glow.zip", "red.zip", "blue.zip"]).map(
+        (f) => f.path,
+      ),
+    ).toEqual([
+      "glow.zip/pak01_dir.vpk",
+      "glow.zip/pak02_dir.vpk",
+      "red.zip/pak01_dir.vpk",
+      "blue.zip/pak01_dir.vpk",
+    ]);
   });
 });
 

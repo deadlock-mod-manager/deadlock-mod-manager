@@ -46,7 +46,12 @@ export const useCollectionDownload = () => {
               profileFolder,
               analyticsEntryPoint: "collection",
               onError: (error) =>
-                toast.error(`Failed to download ${mod.name}: ${error.message}`),
+                toast.error(
+                  t("downloads.downloadError", {
+                    name: mod.name,
+                    message: error.message,
+                  }),
+                ),
             });
             result.queued += 1;
           } else {

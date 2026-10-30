@@ -54,6 +54,10 @@ export const downloadRoutes = (scenario: string): FixtureRoute[] => {
     case "downloads-corrupt":
       sequence = [{ ...good, body: corrupt }, good];
       break;
+    case "downloads-cancel-connecting":
+      // Accepts the request and holds the headers past the downloader's timeouts.
+      sequence = [{ ...good, headerDelayMs: 120_000 }, good];
+      break;
     case "downloads-range":
       sequence = [
         {
@@ -168,6 +172,7 @@ export const assertDownloadNetwork = (
       "downloads-corrupt",
       "downloads-variants",
       "downloads-cancel",
+      "downloads-cancel-connecting",
       "downloads-restart",
       "downloads-redirect",
     ].includes(scenario);
@@ -180,6 +185,12 @@ export const assertDownloadNetwork = (
       assert.equal(requests[0].responseStatus, 401);
     if (scenario === "downloads-redirect")
       assert.equal(requests[0].responseStatus, 302);
+    if (scenario === "downloads-cancel-connecting")
+      assert.equal(
+        requests[0].closedBeforeHeaders,
+        true,
+        "The cancelled request must close before its headers arrive",
+      );
     assert.equal(requests.at(-1)?.responseStatus, 200);
   }
 };

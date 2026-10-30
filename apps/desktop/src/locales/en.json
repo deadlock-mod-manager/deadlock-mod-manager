@@ -3421,6 +3421,14 @@
   },
   "mods": {
     "invalidDeepLink": "This 1-click download link is invalid.",
+    "deepLinkAlreadyInstalled": "{{name}} is already installed!",
+    "deepLinkPreparing": "Preparing 1-click mod download...",
+    "deepLinkStarting": "Starting 1-click mod install...",
+    "deepLinkDownloaded": "{{name}} downloaded! Installing automatically...",
+    "deepLinkInstalled": "{{name}} installed successfully via 1-click!",
+    "deepLinkInstallError": "Failed to install {{name}}: {{message}}",
+    "deepLinkInstallStartError": "Downloaded but failed to install {{name}}. You can install it manually.",
+    "deepLinkError": "Failed to process 1-click download. The mod may not exist or be unavailable.",
     "manageOrder": "Change Mods Order",
     "searchPlaceholder": "Search mods or authors",
     "noPreviewAvailable": "No preview available",
@@ -3570,6 +3578,8 @@
     "resume": "Resume",
     "paused": "Paused",
     "retry": "Retry",
+    "downloadComplete": "{{name}} downloaded!",
+    "downloadError": "Failed to download {{name}}: {{message}}",
     "pauseError": "Could not pause download: {{message}}",
     "cancelError": "Could not cancel download: {{message}}",
     "resumeError": "Could not resume download: {{message}}",
@@ -3942,8 +3952,10 @@
     "developerModeDescription": "Enable developer mode to access advanced tools and debugging features",
     "experimental": "Experimental",
     "ingestTool": {
-      "title": "Matchdata Ingest Tool",
-      "description": "Automatically scan Steam cache directory for Deadlock matchdata files and send match data to the API"
+      "title": "Share matches from Steam's cache",
+      "description": "Watches Steam's download cache for Deadlock match data and sends it to deadlock-api.",
+      "sectionTitle": "From Steam's download cache",
+      "sectionDescription": "Shares matches Steam has already downloaded to this PC, such as matches you view in Deadlock. Never signs in to Steam and sends no account ID. On by default."
     },
     "autoUpdate": "Automatic Updates",
     "autoUpdateDescription": "Automatically check for and notify about application updates on startup.",
@@ -4446,8 +4458,21 @@
   "matchSync": {
     "title": "Match Data Sharing",
     "description": "Automatically upload your Deadlock matches to trackers like Statlocker, Tracklock and deadlock-api, so your match history and stats there are complete.",
+    "overview": {
+      "description": "Deadlock has no public match history. Trackers can only show a match after someone shares its ID and salt, the key that unlocks its replay and details. Mod Manager can share your matches in two ways, each with its own setting below.",
+      "powersTitle": "What it powers",
+      "trackers": "Match history and stats on {{count}} sites built on <api>deadlock-api</api>:",
+      "trackersSource": "List from the deadlock-api website and may change. Mod Manager is not affiliated with any of these sites.",
+      "stats": "The Stats page in Mod Manager, which reads the same deadlock-api data.",
+      "everyone": "Every shared match fills in the history of all players in it, not just yours.",
+      "sends": "Both send match IDs and salts, never your Steam login."
+    },
+    "account": {
+      "title": "From your Steam account",
+      "description": "Fetches the matches you play, including ones you never open. Off by default."
+    },
     "about": {
-      "reads": "Signs in to Steam as you in the background, using the login Steam already saved on this PC, and briefly connects to Deadlock to fetch your matches. Steam may show you as in Deadlock while it runs.",
+      "reads": "Signs in to Steam as you in the background, using the login Steam already saved on this PC, and briefly connects to Deadlock to fetch your matches. Steam may show you as in Deadlock for a few seconds during each fetch.",
       "sends": "Sends only match IDs and salts to deadlock-api, never your login or personal data.",
       "limit": "Strictly rate-limited to {{limit}} match fetches per 24 hours, shared across everything below.",
       "risk": "Uses your Steam account. Low risk, but not zero.",
@@ -4455,7 +4480,7 @@
     },
     "enable": {
       "title": "Enable match data sharing",
-      "description": "On by default. Turn this off to stop sharing your match data."
+      "description": "Off by default. Turn this on to share your match data."
     },
     "consent": {
       "title": "Enable match data sharing?",
@@ -4465,7 +4490,8 @@
     },
     "quota": {
       "remaining": "{{remaining}} of {{limit}} match fetches left in the next 24 hours.",
-      "accountRemaining": "{{name}}: {{remaining}}/{{limit}} left today",
+      "accountsTitle": "Steam accounts",
+      "left": "{{remaining}}/{{limit}} left today",
       "gcUnavailable": "Can't connect to Deadlock, retrying in 24h",
       "reachedToday": "Daily limit reached. Come back tomorrow to fetch more."
     },
@@ -4484,7 +4510,7 @@
     "fullSync": {
       "title": "Fetch all my matches",
       "description": "Walk your match history once and send everything that trackers are missing. Throttled, resumable, and safe to re-run.",
-      "button": "Fetch all my matches",
+      "button": "Start",
       "started": "Fetching your matches in the background.",
       "cancel": "Cancel",
       "accountProgress": "Syncing account {{index}} of {{total}}: {{name}}",
@@ -5783,6 +5809,12 @@
     },
     "gridline": {
       "description": "True black with a faint hairline grid, crisp white type, and a blue-to-pink accent glow."
+    },
+    "coding": {
+      "description": "An editor-style dark theme with a graph-paper grid, monospace headings, and a customizable accent.",
+      "themeBy": "Theme by",
+      "customColor": "Coding Accent Color",
+      "customColorDescription": "Choose an accent color. Button text contrast adjusts automatically."
     },
     "nightshift": {
       "description": "A teal-accented cyberpunk theme designed for clarity and long gaming sessions.",

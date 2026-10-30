@@ -1,7 +1,6 @@
 import { analytics } from "@/lib/analytics";
 import { DownloadQueue } from "./queue";
 import i18n from "@/lib/i18n";
-import { toast } from "@deadlock-mods/ui/components/sonner";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type {
@@ -83,9 +82,9 @@ class DownloadManager {
     queue: (mod) => this.queueDownload(mod),
     cancel: (modId) => invoke<void>("cancel_download", { modId }),
     duplicateMessage: () => i18n.t("downloads.alreadyQueued"),
+    // The mod's onError gets the same failure, and its caller tells the user.
     onQueueError: (error) => {
       logger.withError(error).error("Failed to queue download");
-      toast.error(`Failed to queue download: ${error.message}`);
     },
   });
   private unlistenFns: UnlistenFn[] = [];

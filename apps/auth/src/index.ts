@@ -15,6 +15,7 @@ import { requestId } from "hono/request-id";
 import { secureHeaders } from "hono/secure-headers";
 import { trimTrailingSlash } from "hono/trailing-slash";
 import { auth } from "./lib/auth";
+import { handleAuthRequest } from "./lib/auth/token-handler";
 import { SENTRY_OPTIONS } from "./lib/constants";
 import container from "./lib/container";
 import { env } from "./lib/env";
@@ -69,7 +70,7 @@ app.onError(observability.onError);
 app.use("*", registerMetrics);
 app.get("/metrics", printMetrics);
 
-app.on(["POST", "GET"], "/api/auth/**", (c) => auth.handler(c.req.raw));
+app.on(["POST", "GET"], "/api/auth/**", (c) => handleAuthRequest(c.req.raw));
 
 app.get("/login", async (c, next) => {
   const returnTo = c.req.query("returnTo") || "/";

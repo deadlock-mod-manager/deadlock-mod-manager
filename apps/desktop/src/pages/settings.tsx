@@ -35,6 +35,7 @@ import {
   PlusIcon,
   ScrollTextIcon,
   Settings,
+  Share2Icon,
   ShieldIcon,
   TrashIcon,
   WrenchIcon,
@@ -68,6 +69,7 @@ import { HeroParserSettings } from "@/components/settings/hero-parser-settings";
 import { HeroSkinsSettings } from "@/components/settings/hero-skins-settings";
 import { ForgeInstallToggle } from "@/components/settings/forge-install-toggle";
 import { IngestToolToggle } from "@/components/settings/ingest-tool-toggle";
+import { MatchDataOverview } from "@/components/settings/match-data-overview";
 import { LanguageSettings } from "@/components/settings/language-settings";
 import { LinuxGpuToggle } from "@/components/settings/linux-gpu-toggle";
 import { LoggingSettings } from "@/components/settings/logging-settings";
@@ -634,6 +636,11 @@ const CustomSettings = ({ value }: { value?: string }) => {
                   value='experimental'
                 />
                 <SettingsNavItem
+                  icon={Share2Icon}
+                  label={t("matchSync.title")}
+                  value='match-data'
+                />
+                <SettingsNavItem
                   icon={ShieldIcon}
                   label={t("settings.privacy")}
                   value='privacy'
@@ -826,7 +833,6 @@ const CustomSettings = ({ value }: { value?: string }) => {
                 <AutoUpdateToggle />
                 <UpdateChannelSelect />
                 <DeveloperModeToggle />
-                <IngestToolToggle />
                 <ForgeInstallToggle />
                 <LinuxGpuToggle />
               </div>
@@ -1031,12 +1037,27 @@ const CustomSettings = ({ value }: { value?: string }) => {
                 <PrivacySettings />
               </div>
             </Section>
+          </TabsContent>
+
+          <TabsContent className='mt-0 space-y-4' value='match-data'>
+            <Section
+              description={t("matchSync.overview.description")}
+              title={t("matchSync.title")}>
+              <MatchDataOverview />
+            </Section>
+
+            <Section
+              description={t("settings.ingestTool.sectionDescription")}
+              searchId='ingest-tool'
+              title={t("settings.ingestTool.sectionTitle")}>
+              <IngestToolToggle />
+            </Section>
 
             {isMatchSyncBuilt() && (
               <Section
-                description={t("matchSync.description")}
+                description={t("matchSync.account.description")}
                 searchId='match-sync'
-                title={t("matchSync.title")}>
+                title={t("matchSync.account.title")}>
                 <MatchSyncSettings />
               </Section>
             )}

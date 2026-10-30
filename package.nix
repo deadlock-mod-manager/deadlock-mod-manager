@@ -80,7 +80,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
     pnpm = pnpm_11;
     fetcherVersion = 4;
     sourceRoot = "source";
-    hash = "sha256-8LrZKWz85smX5zZdOtgFrCuQedMgaq44/+kYUR/3hJA=";
+    hash = "sha256-YTD2AT4F0F716ASwip+DyA4l7aSZpxkG2M2PLBofHWI=";
   };
 
   postPatch = ''

@@ -6,19 +6,18 @@
 //! writes into `gameinfo.gi` lets the server mount.
 
 use std::collections::{BTreeSet, HashMap};
-use std::io::Read;
 use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
 use std::time::UNIX_EPOCH;
 
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
 use tauri::Emitter;
 
 use crate::app_runtime::AppHandle;
 use crate::errors::Error;
 
-use super::deadworks_fetch::{Fetched, MAX_FILE_BYTES, decode_vpk, fetch_to_file};
+use super::deadworks_bootstrap::ensure_bootstrap;
+use super::deadworks_fetch::{Fetched, MAX_FILE_BYTES, decode_vpk, fetch_to_file, file_sha256_hex};
 use super::deadworks_rules::{
   Advertisement, ContentEntry, ContentKind, parse_advertisement, query_rules,
 };
@@ -49,6 +48,9 @@ struct ContentState {
   owned_maps: BTreeSet<String>,
   #[serde(default)]
   hashes: HashMap<String, HashRecord>,
+  /// The Deadworks UI bootstrap version DMM last saw installed.
+  #[serde(default)]
+  bootstrap_version: Option<u64>,
 }
 
 #[derive(Deserialize)]
@@ -114,6 +116,7 @@ pub struct ContentPreview {
 
 struct Paths {
   cache_dir: PathBuf,
+  mods_dir: PathBuf,
   maps_dir: PathBuf,
   addons_dir: PathBuf,
 }
@@ -123,6 +126,7 @@ impl Paths {
     let citadel = game_path()?.join("game").join("citadel");
     Ok(Self {
       cache_dir: citadel.join("deadworks_cache"),
+      mods_dir: citadel.join("deadworks_mods"),
       maps_dir: citadel.join("maps"),
       addons_dir: citadel.join("deadworks_addons").join("vpks"),
     })
@@ -157,7 +161,7 @@ fn load_state(cache_dir: &Path) -> ContentState {
     .unwrap_or_default();
   ContentState {
     owned_maps,
-    hashes: HashMap::new(),
+    ..ContentState::default()
   }
 }
 
@@ -170,22 +174,7 @@ fn save_state(cache_dir: &Path, state: &ContentState) -> Result<(), Error> {
 }
 
 fn hash_prefix(path: &Path) -> Result<String, Error> {
-  let mut file = std::fs::File::open(path)?;
-  let mut hasher = Sha256::new();
-  let mut buf = vec![0_u8; 1024 * 1024];
-  loop {
-    let n = file.read(&mut buf)?;
-    if n == 0 {
-      break;
-    }
-    hasher.update(&buf[..n]);
-  }
-  Ok(
-    hasher.finalize()[..8]
-      .iter()
-      .map(|b| format!("{b:02x}"))
-      .collect(),
-  )
+  Ok(file_sha256_hex(path)?[..16].to_string())
 }
 
 fn modified_ms(meta: &std::fs::Metadata) -> u64 {
@@ -349,6 +338,36 @@ pub async fn download_deadworks_content(
     "download_deadworks_content",
     guard_permit.as_deref(),
   )?;
+  let paths = Paths::new()?;
+  let cache_dir = paths.cache_dir.clone();
+  let mut state = load_state(&cache_dir);
+
+  // Every Deadworks server needs the UI bootstrap, whatever it advertises.
+  let bootstrap_progress = |status, bytes_downloaded, total_bytes| ContentProgress {
+    status,
+    name: "Deadworks UI".to_string(),
+    bytes_downloaded,
+    total_bytes,
+    item_index: 0,
+    total_items: 1,
+  };
+  let bootstrap_version = ensure_bootstrap(
+    &paths.mods_dir,
+    &cache_dir,
+    state.bootstrap_version,
+    |received, declared: Option<u64>| {
+      emit(
+        &app,
+        bootstrap_progress(ContentStatus::Downloading, received, declared.unwrap_or(0)),
+      );
+    },
+  )
+  .await?;
+  if bootstrap_version != state.bootstrap_version {
+    state.bootstrap_version = bootstrap_version;
+    save_state(&cache_dir, &state)?;
+  }
+
   let server = resolve_server(&address).await?;
   let Some(ad) = read_advertisement(server).await? else {
     return Ok(ContentResult {
@@ -363,11 +382,8 @@ pub async fn download_deadworks_content(
   // The game server's own LAN is the one place private hosts are expected.
   let allow_private = !is_public_target(&server);
 
-  let paths = Paths::new()?;
   std::fs::create_dir_all(&paths.maps_dir)?;
   std::fs::create_dir_all(&paths.addons_dir)?;
-  let cache_dir = paths.cache_dir.clone();
-  let mut state = load_state(&cache_dir);
 
   let total = ad.entries.len();
   let mut budget = MAX_JOIN_BYTES;
@@ -507,6 +523,8 @@ pub async fn download_deadworks_content(
 
 #[cfg(test)]
 mod tests {
+  use sha2::{Digest, Sha256};
+
   use super::*;
 
   fn entry(kind: ContentKind, name: &str, data: &[u8]) -> ContentEntry {

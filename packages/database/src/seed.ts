@@ -1,4 +1,4 @@
-import { db, eq, schema } from "./client";
+import { db, schema } from "./client";
 
 (async () => {
   try {
@@ -44,46 +44,47 @@ import { db, eq, schema } from "./client";
       ])
       .onConflictDoNothing();
 
-    // Seed OAuth applications (OIDC trusted clients)
-    await db
-      .insert(schema.oauthApplication)
-      .values([
-        {
-          clientId: "deadlockmods-www",
-          clientSecret: null,
-          name: "Deadlock Mod Manager - Web",
-          redirectUrls: JSON.stringify([
-            "https://deadlockmods.app/auth/callback",
-            "http://localhost:3003/auth/callback",
-          ]),
-          type: "public",
+    // Seed the first-party OAuth clients (public, PKCE, no consent screen)
+    const oauthClients = [
+      {
+        clientId: "deadlockmods-www",
+        name: "Deadlock Mod Manager - Web",
+        redirectUris: [
+          "https://deadlockmods.app/auth/callback",
+          "http://localhost:3003/auth/callback",
+        ],
+      },
+      {
+        clientId: "deadlockmods-desktop",
+        name: "Deadlock Mod Manager - Desktop",
+        redirectUris: [
+          "https://auth.deadlockmods.app/auth/desktop-callback",
+          "http://localhost:3004/auth/desktop-callback",
+        ],
+      },
+    ];
+    for (const client of oauthClients) {
+      await db
+        .insert(schema.oauthClient)
+        .values({
+          ...client,
           disabled: false,
-          metadata: JSON.stringify({ internal: true }),
-        },
-        {
-          clientId: "deadlockmods-desktop",
-          clientSecret: null,
-          name: "Deadlock Mod Manager - Desktop",
-          redirectUrls: JSON.stringify([
-            "https://auth.deadlockmods.app/auth/desktop-callback",
-            "http://localhost:3004/auth/desktop-callback",
-          ]),
-          type: "public",
-          disabled: false,
-          metadata: JSON.stringify({ internal: true }),
-        },
-      ])
-      .onConflictDoNothing();
-
-    // Ensure public clients have no clientSecret (use PKCE instead)
-    await db
-      .update(schema.oauthApplication)
-      .set({ clientSecret: null })
-      .where(eq(schema.oauthApplication.clientId, "deadlockmods-desktop"));
-    await db
-      .update(schema.oauthApplication)
-      .set({ clientSecret: null })
-      .where(eq(schema.oauthApplication.clientId, "deadlockmods-www"));
+          skipConsent: true,
+          scopes: ["openid", "profile", "email", "offline_access"],
+          tokenEndpointAuthMethod: "none",
+          applicationType: "web",
+          grantTypes: ["authorization_code", "refresh_token"],
+          responseTypes: ["code"],
+          requirePKCE: true,
+          metadata: { internal: true },
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: schema.oauthClient.clientId,
+          set: { redirectUris: client.redirectUris, updatedAt: new Date() },
+        });
+    }
 
     console.log("Database seeded successfully");
   } catch (error) {

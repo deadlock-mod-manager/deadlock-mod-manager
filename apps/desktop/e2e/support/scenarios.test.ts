@@ -13,7 +13,7 @@ const windows = process.platform === "win32";
 describe("scenario selection", () => {
   it("registers every case with explicit phases and capability requirements", () => {
     const ids = selectScenarios("all");
-    expect(ids).toHaveLength(windows ? 94 : 83);
+    expect(ids).toHaveLength(windows ? 97 : 86);
     for (const id of ids) {
       expect(parseScenarioId(id)).toBe(id);
       expect(scenarioSpec(id)).toContain("./specs/");
@@ -69,6 +69,9 @@ describe("scenario selection", () => {
     expect(scenarios["filesystem-mod-folder-repair"].nativeInput).toBe(false);
     expect(scenarios["conflicts-resolve"].nativeInput).toBe(false);
     expect(scenarios["conflicts-switch"].nativeInput).toBe(false);
+    expect(scenarioPhases("downloads-queue-error-model-tab")).toEqual([
+      "model-tab",
+    ]);
     expect(scenarios["filesystem-crash-placed"].exit("mutate")).toBe("crash");
     expect(scenarios["filesystem-manifest-repair"].exit("repair")).toBe(
       "normal",

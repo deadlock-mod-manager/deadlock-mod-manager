@@ -8,11 +8,18 @@ import {
   DEFAULT_OLED_ACCENT,
   OLED_ACCENT_PRESETS,
 } from "../pre-defined/oled/accent";
+import {
+  CODING_ACCENT_PRESETS,
+  DEFAULT_CODING_ACCENT,
+} from "../pre-defined/coding/accent";
 import { AccentColorPicker } from "./accent-color-picker";
 
 type AccentThemeConfig = {
-  colorKey: "arcaneAccentColor" | "oledAccentColor";
-  customColorsKey: "arcaneCustomColors" | "oledCustomColors";
+  colorKey: "arcaneAccentColor" | "oledAccentColor" | "codingAccentColor";
+  customColorsKey:
+    | "arcaneCustomColors"
+    | "oledCustomColors"
+    | "codingCustomColors";
   defaultColor: string;
   presets: readonly string[];
   dialogTitleKey: string;
@@ -40,6 +47,17 @@ const ACCENT_THEMES = new Map<string, AccentThemeConfig>([
       presets: OLED_ACCENT_PRESETS,
       dialogTitleKey: "plugins.oled.customColor",
       dialogDescriptionKey: "plugins.oled.customColorDescription",
+    },
+  ],
+  [
+    "coding",
+    {
+      colorKey: "codingAccentColor",
+      customColorsKey: "codingCustomColors",
+      defaultColor: DEFAULT_CODING_ACCENT,
+      presets: CODING_ACCENT_PRESETS,
+      dialogTitleKey: "plugins.coding.customColor",
+      dialogDescriptionKey: "plugins.coding.customColorDescription",
     },
   ],
 ]);

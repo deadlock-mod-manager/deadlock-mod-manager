@@ -171,6 +171,7 @@ M4 uses real Rust HTTP transfers against binary fixture responses. Run any case 
 | `downloads-pause` | UI pause freezes a valid partial prefix; UI resume completes the payload |
 | `downloads-range` | A connection cut after 65,536 bytes triggers an exact Range request and byte-correct completion |
 | `downloads-cancel` | Cancel a paused transfer through the existing Rust command, verify partial cleanup, restart, and retry through the UI |
+| `downloads-cancel-connecting` | Cancel through the UI while the server withholds response headers; the UI retry must reach the server within 10 seconds and complete |
 | `downloads-restart` | Restart while paused, verify stale status becomes failed while partial evidence remains, then retry from scratch |
 | `downloads-auth` | A 401 response fails visibly; UI retry completes after the fixture permits it |
 | `downloads-corrupt` | A same-length corrupt payload fails MD5 validation without publishing a file; UI retry succeeds |
@@ -178,6 +179,8 @@ M4 uses real Rust HTTP transfers against binary fixture responses. Run any case 
 | `downloads-variants` | Retry preserves a previously selected variant, including after a 401 and restart; the unselected URL has no registered fixture |
 
 Each world starts with a failed download record and persisted file selection, so Retry exercises the real frontend purge/queue flow without depending on the remote catalog. Variant coverage here is persisted selection and retry, not the initial catalog file chooser. Cancellation uses real IPC because the current UI does not expose a cancel control. Successful transfers are checked again in a new application process. The oracle compares SHA-256 hashes, partial prefixes and metadata, exact cache contents, the empty addon manifest, and protected game/Steam files. `download-*.json` captures disk/state evidence; `network.ndjson` includes Range headers, response status and bytes sent. UI retries deliberately purge stale data; only interrupted transfers within a running process resume with Range.
+
+`downloads-queue-error-toast` starts with an empty library and the synthetic GameBanana catalog instead. The mod page lists its single file, and GameBanana has removed it by the time Download is clicked, so `queue_download` refuses the request. Exactly one error toast must name the mod and the reason, the mod must end up failed, and its archive is never requested. `downloads-queue-error-model-tab` makes the same checks for the 3D tab's download button.
 
 The E2E-only download policy accepts exact configured fixture origins (including port and scheme) for initial requests and redirects. Ordinary builds retain the HTTPS trusted-host allowlist. The same downloader, checksum checks, staging files, pause gate, and cancellation logic run in both builds.
 
