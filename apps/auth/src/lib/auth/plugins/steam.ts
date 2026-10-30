@@ -9,6 +9,7 @@ import {
 import { setSessionCookie } from "better-auth/cookies";
 import { z } from "zod";
 import { wildcardMatch } from "../utils";
+import { checkSteamAssertion, NonceStore } from "./steam-openid";
 
 const STEAM_BASE_URL = "https://api.steampowered.com/";
 
@@ -65,6 +66,8 @@ export interface SteamAuthPluginOptions {
    */
   accountLinking?: boolean;
 }
+
+const seenNonces = new NonceStore();
 
 export const steam = (config: SteamAuthPluginOptions) =>
   ({
@@ -373,6 +376,20 @@ export const steam = (config: SteamAuthPluginOptions) =>
             throw ctx.redirect(
               `${errorURL}?error=error_callback_url_not_trusted`,
             );
+          }
+
+          const assertion = checkSteamAssertion(
+            params,
+            `/steam/callback`,
+            seenNonces,
+          );
+          if (!assertion.ok) {
+            ctx.context.logger.error("Steam OpenID assertion rejected", {
+              reason: assertion.reason,
+              return_to: params["openid.return_to"],
+              claimed_id: params["openid.claimed_id"],
+            });
+            throw ctx.redirect(`?error=`);
           }
 
           params["openid.mode"] = "check_authentication";
