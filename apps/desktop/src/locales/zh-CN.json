@@ -3623,6 +3623,9 @@
   "mods": {
     "invalidDeepLink": "此一键下载链接无效。",
     "deepLinkAlreadyInstalled": "",
+    "deepLinkAddingFile": "",
+    "deepLinkFileAdded": "",
+    "deepLinkAddFileError": "",
     "deepLinkPreparing": "",
     "deepLinkStarting": "",
     "deepLinkDownloaded": "",

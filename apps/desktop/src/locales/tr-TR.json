@@ -3623,6 +3623,9 @@
   "mods": {
     "invalidDeepLink": "Bu 1 tıklamalı indirme bağlantısı geçersiz.",
     "deepLinkAlreadyInstalled": "",
+    "deepLinkAddingFile": "",
+    "deepLinkFileAdded": "",
+    "deepLinkAddFileError": "",
     "deepLinkPreparing": "",
     "deepLinkStarting": "",
     "deepLinkDownloaded": "",
