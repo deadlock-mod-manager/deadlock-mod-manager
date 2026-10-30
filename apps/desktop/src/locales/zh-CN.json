@@ -3942,8 +3942,10 @@
     "developerModeDescription": "启用开发者模式以访问高级工具和调试功能",
     "experimental": "实验性",
     "ingestTool": {
-      "title": "比赛数据导入工具",
-      "description": "自动扫描 Steam 缓存目录以查找 Deadlock 比赛数据文件，并将比赛数据发送至 API"
+      "title": "",
+      "description": "",
+      "sectionTitle": "",
+      "sectionDescription": ""
     },
     "autoUpdate": "自动更新",
     "autoUpdateDescription": "启动时自动检查并提示应用更新。",
@@ -4446,6 +4448,19 @@
   "matchSync": {
     "title": "分享比赛数据",
     "description": "自动将你的 Deadlock 比赛上传至 Statlocker、Tracklock、deadlock-api 等追踪平台，让你的比赛记录与统计数据保持完整。",
+    "overview": {
+      "description": "",
+      "powersTitle": "",
+      "trackers": "",
+      "trackersSource": "",
+      "stats": "",
+      "everyone": "",
+      "sends": ""
+    },
+    "account": {
+      "title": "",
+      "description": ""
+    },
     "about": {
       "reads": "",
       "sends": "只会向 deadlock-api 发送比赛 ID 与 salt，绝不会发送你的登录凭据或个人数据。",
@@ -4455,7 +4470,7 @@
     },
     "enable": {
       "title": "启用比赛数据分享",
-      "description": "默认关闭。开启后将共享你的比赛数据。"
+      "description": ""
     },
     "consent": {
       "title": "是否启用比赛数据分享？",
@@ -4465,6 +4480,8 @@
     },
     "quota": {
       "remaining": "未来24小时内，剩余 {{remaining}} 次比赛数据获取，共 {{limit}} 次。",
+      "accountsTitle": "",
+      "left": "",
       "gcUnavailable": "无法连接至 Deadlock 服务器，将在24小时后重试",
       "reachedToday": "已达到每日获取上限。请明天再来吧。"
     },
@@ -4483,7 +4500,7 @@
     "fullSync": {
       "title": "获取我的所有比赛记录",
       "description": "完整扫描一次你的比赛历史，然后补发所有追踪器尚未收录的数据。该操作会限速、支持断点续传，并且可以安全地重复执行。",
-      "button": "获取我的所有比赛记录",
+      "button": "",
       "started": "在后台获取我的所有比赛记录。",
       "cancel": "取消",
       "accountProgress": "正在同步第 {{index}} 个账户，共 {{total}} 个：{{name}}",

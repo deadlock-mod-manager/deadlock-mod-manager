@@ -3943,7 +3943,9 @@
     "experimental": "",
     "ingestTool": {
       "title": "",
-      "description": ""
+      "description": "",
+      "sectionTitle": "",
+      "sectionDescription": ""
     },
     "autoUpdate": "",
     "autoUpdateDescription": "",
@@ -4446,6 +4448,19 @@
   "matchSync": {
     "title": "",
     "description": "",
+    "overview": {
+      "description": "",
+      "powersTitle": "",
+      "trackers": "",
+      "trackersSource": "",
+      "stats": "",
+      "everyone": "",
+      "sends": ""
+    },
+    "account": {
+      "title": "",
+      "description": ""
+    },
     "about": {
       "reads": "",
       "sends": "",
@@ -4465,6 +4480,8 @@
     },
     "quota": {
       "remaining": "",
+      "accountsTitle": "",
+      "left": "",
       "gcUnavailable": "",
       "reachedToday": ""
     },

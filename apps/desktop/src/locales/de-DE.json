@@ -3942,8 +3942,10 @@
     "developerModeDescription": "Entwicklermodus aktivieren für erweiterte Tools und Debugging-Funktionen",
     "experimental": "Experimentell",
     "ingestTool": {
-      "title": "Matchdata-Ingest-Tool",
-      "description": "Steam-Cache-Verzeichnis automatisch nach Deadlock-Matchdata-Dateien durchsuchen und Spieldaten an die API senden"
+      "title": "",
+      "description": "",
+      "sectionTitle": "",
+      "sectionDescription": ""
     },
     "autoUpdate": "",
     "autoUpdateDescription": "",
@@ -4446,6 +4448,19 @@
   "matchSync": {
     "title": "",
     "description": "",
+    "overview": {
+      "description": "",
+      "powersTitle": "",
+      "trackers": "",
+      "trackersSource": "",
+      "stats": "",
+      "everyone": "",
+      "sends": ""
+    },
+    "account": {
+      "title": "",
+      "description": ""
+    },
     "about": {
       "reads": "",
       "sends": "",
@@ -4465,6 +4480,8 @@
     },
     "quota": {
       "remaining": "",
+      "accountsTitle": "",
+      "left": "",
       "gcUnavailable": "",
       "reachedToday": ""
     },

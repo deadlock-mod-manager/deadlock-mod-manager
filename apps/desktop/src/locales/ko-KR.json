@@ -3942,8 +3942,10 @@
     "developerModeDescription": "고급 도구 및 디버깅 기능에 액세스하려면 개발자 모드를 활성화하세요.",
     "experimental": "실험적",
     "ingestTool": {
-      "title": "일치 데이터 수집 도구",
-      "description": "Steam 캐시 디렉터리에서 Deadlock matchdata 파일을 자동으로 검색하고 일치 데이터를 API로 보냅니다."
+      "title": "",
+      "description": "",
+      "sectionTitle": "",
+      "sectionDescription": ""
     },
     "autoUpdate": "자동 업데이트",
     "autoUpdateDescription": "시작 시 애플리케이션 업데이트를 자동으로 확인하고 알립니다.",
@@ -4446,6 +4448,19 @@
   "matchSync": {
     "title": "",
     "description": "",
+    "overview": {
+      "description": "",
+      "powersTitle": "",
+      "trackers": "",
+      "trackersSource": "",
+      "stats": "",
+      "everyone": "",
+      "sends": ""
+    },
+    "account": {
+      "title": "",
+      "description": ""
+    },
     "about": {
       "reads": "",
       "sends": "",
@@ -4465,6 +4480,8 @@
     },
     "quota": {
       "remaining": "",
+      "accountsTitle": "",
+      "left": "",
       "gcUnavailable": "",
       "reachedToday": ""
     },

@@ -3942,8 +3942,10 @@
     "developerModeDescription": "Włącz tryb dewelopera, aby uzyskać dostęp do zaawansowanych narzędzi i funkcji debugowania",
     "experimental": "Eksperymentalny",
     "ingestTool": {
-      "title": "Narzędzie Matchdata",
-      "description": "Automatycznie skanuj katalog pamięci podręcznej Steam w poszukiwaniu plików meczów Deadlock i wysyłaj dane meczów do API"
+      "title": "",
+      "description": "",
+      "sectionTitle": "",
+      "sectionDescription": ""
     },
     "autoUpdate": "Aktualizacje automatyczne",
     "autoUpdateDescription": "Automatycznie sprawdzaj i powiadamiaj o aktualizacjach aplikacji przy uruchomieniu.",
@@ -4446,6 +4448,19 @@
   "matchSync": {
     "title": "",
     "description": "",
+    "overview": {
+      "description": "",
+      "powersTitle": "",
+      "trackers": "",
+      "trackersSource": "",
+      "stats": "",
+      "everyone": "",
+      "sends": ""
+    },
+    "account": {
+      "title": "",
+      "description": ""
+    },
     "about": {
       "reads": "",
       "sends": "",
@@ -4465,6 +4480,8 @@
     },
     "quota": {
       "remaining": "",
+      "accountsTitle": "",
+      "left": "",
       "gcUnavailable": "",
       "reachedToday": ""
     },
