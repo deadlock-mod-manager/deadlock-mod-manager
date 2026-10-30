@@ -963,7 +963,8 @@
       "overview": "",
       "heroes": "",
       "items": "",
-      "squad": ""
+      "squad": "",
+      "live": ""
     },
     "items": {
       "item": "",
@@ -997,6 +998,200 @@
       "versus": "",
       "points": "",
       "tierSlot": ""
+    },
+    "live": {
+      "checking": "",
+      "condebugTitle": "",
+      "condebugDescription": "",
+      "openSettings": "",
+      "queuedTitle": "",
+      "waitingTitle": "",
+      "waitingDescription": "",
+      "noBridgeTitle": "",
+      "noBridgeDescription": "",
+      "teamPending": "",
+      "columns": {
+        "player": "",
+        "souls": ""
+      },
+      "teams": {
+        "hiddenKing": "",
+        "archmother": ""
+      },
+      "performance": {
+        "firstMinute": "",
+        "loading": "",
+        "unavailable": "",
+        "unknownHero": "",
+        "spectating": "",
+        "metrics": {
+          "kills": "",
+          "deaths": "",
+          "assists": "",
+          "soulsPerMin": "",
+          "objectiveDamagePerMin": ""
+        }
+      },
+      "bridge": {
+        "installing": "",
+        "installFailed": "",
+        "modDescription": "",
+        "disabledTitle": "",
+        "disabledDescription": "",
+        "enable": "",
+        "outdated": "",
+        "outdatedWhileRunning": "",
+        "update": "",
+        "updating": "",
+        "updated": "",
+        "updateFailed": "",
+        "incompatible": "",
+        "incompatibleTitle": "",
+        "outdatedTitle": ""
+      },
+      "notRunningTitle": "",
+      "matchOverTitle": "",
+      "matchOverDescription": "",
+      "pregame": {
+        "loadingTitle": "",
+        "loadingDescription": ""
+      },
+      "now": {
+        "liveAt": "",
+        "onHero": "",
+        "kda": "",
+        "overall": "",
+        "overallDetail": "",
+        "finalAt": "",
+        "final": "",
+        "souls": "",
+        "objective": ""
+      },
+      "topBar": {
+        "lead": "",
+        "kills": ""
+      },
+      "pace": {
+        "title": "",
+        "description": "",
+        "fewerIsBetter": "",
+        "soFarTotal": "",
+        "soFar": "",
+        "average": "",
+        "footnote": ""
+      },
+      "souls": {
+        "title": "",
+        "description": "",
+        "bracket": "",
+        "band": "",
+        "projected": "",
+        "recent": "",
+        "atEnd": ""
+      },
+      "board": {
+        "description": "",
+        "level": "",
+        "allHeroes": "",
+        "respawning": "",
+        "team": ""
+      },
+      "scouting": {
+        "badge": "",
+        "title": "",
+        "hint": "",
+        "form": "",
+        "compare": {
+          "rank": "",
+          "onHero": "",
+          "winrate": "",
+          "matches": ""
+        },
+        "beatYou": "",
+        "againstYou": "",
+        "withYou": "",
+        "oneTrick": "",
+        "winStreak": "",
+        "lossStreak": "",
+        "noneYet": "",
+        "acrossMatchups_one": "",
+        "acrossMatchups_other": "",
+        "matchupsTitle": "",
+        "matchupsDescription": "",
+        "versus": "",
+        "tooFew": "",
+        "hardest": "",
+        "kda": ""
+      },
+      "states": {
+        "install": {
+          "title": "",
+          "description": "",
+          "readsTopBar": "",
+          "builtFromGame": "",
+          "turnOff": "",
+          "action": "",
+          "howItWorks": ""
+        },
+        "closed": {
+          "description": "",
+          "launch": ""
+        },
+        "win": "",
+        "loss": "",
+        "victory": "",
+        "defeat": "",
+        "queued": {
+          "description": "",
+          "ended_one": "",
+          "ended_other": "",
+          "lastMatch": "",
+          "open": "",
+          "souls": "",
+          "gradeNote": "",
+          "historyNote": ""
+        },
+        "over": {
+          "ended": "",
+          "description": "",
+          "details": "",
+          "detailsSoon": ""
+        },
+        "preview": "",
+        "session": {
+          "description": "",
+          "empty": "",
+          "today": "",
+          "matches_one": "",
+          "matches_other": "",
+          "record": "",
+          "recordValue": ""
+        }
+      },
+      "status": {
+        "connected": "",
+        "updated_one": "",
+        "updated_other": "",
+        "match": "",
+        "copy": "",
+        "versusScreen": ""
+      },
+      "labels": {
+        "kda": "",
+        "objDmg": "",
+        "you": "",
+        "yourTeam": "",
+        "enemyTeam": "",
+        "noRecord": "",
+        "unranked": "",
+        "onHero": "",
+        "firstGame": "",
+        "best": "",
+        "rank": "",
+        "perMinute": "",
+        "games_one": "",
+        "games_other": ""
+      }
     },
     "player": {
       "onHeroShort": "",
@@ -1321,13 +1516,15 @@
         "add": "",
         "empty": "",
         "fromTemplate": "",
-        "done": ""
+        "done": "",
+        "beta": ""
       },
       "templates": {
         "overview": "",
         "heroes": "",
         "items": "",
         "squad": "",
+        "live": "",
         "performance": "",
         "habits": "",
         "ranked": "",
@@ -1589,6 +1786,10 @@
           "description": ""
         },
         "heroPool": {
+          "title": "",
+          "description": ""
+        },
+        "liveScoreboard": {
           "title": "",
           "description": ""
         }
@@ -3580,7 +3781,6 @@
     "retry": "",
     "downloadComplete": "",
     "downloadError": "",
-    "queueError": "",
     "pauseError": "Не атрымалася прыпыніць спампоўку: {{message}}",
     "cancelError": "",
     "resumeError": "Не атрымалася працягнуць спампоўку: {{message}}",
@@ -4340,6 +4540,10 @@
         "description": ""
       },
       "cloud-backup": {
+        "title": "",
+        "description": ""
+      },
+      "live-scoreboard": {
         "title": "",
         "description": ""
       }
