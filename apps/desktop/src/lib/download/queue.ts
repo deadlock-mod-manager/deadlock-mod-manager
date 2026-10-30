@@ -74,15 +74,16 @@ export class DownloadQueue {
   }
 
   fail(modId: string, error: string) {
-    const cancelled = error === "Download cancelled";
-    const silent = cancelled && this.pending.get(modId)?.silent;
-    const mod = this.settle(modId, cancelled ? "cancelled" : "failed");
-    if (!silent) mod?.onError(new Error(error));
+    this.settle(
+      modId,
+      error === "Download cancelled" ? "cancelled" : "failed",
+    )?.onError(new Error(error));
   }
 
   /**
-   * Resolves false when no queue entry tracked the mod. With `notify` off the
-   * mod's error callback doesn't run, for a mod that is being deleted.
+   * Resolves false when no queue entry tracked the mod. With `notify` off none
+   * of the mod's callbacks run until the backend answers, for a mod that is
+   * being deleted.
    */
   async cancel(modId: string, notify = true) {
     const entry = this.pending.get(modId);
@@ -95,8 +96,9 @@ export class DownloadQueue {
     }
     if (!entry) return false;
     // Completion may enqueue another request while the cancellation IPC is pending.
-    const mod = this.settle(modId, "cancelled", entry);
-    if (notify) mod?.onError(new Error("Download cancelled"));
+    this.settle(modId, "cancelled", entry)?.onError(
+      new Error("Download cancelled"),
+    );
     return true;
   }
 
@@ -108,6 +110,6 @@ export class DownloadQueue {
     if (!expected || this.pending.get(modId) !== expected) return;
     this.pending.delete(modId);
     expected.attempt.finish(outcome);
-    return expected.mod;
+    return expected.silent ? undefined : expected.mod;
   }
 }

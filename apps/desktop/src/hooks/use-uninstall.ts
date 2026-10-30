@@ -47,10 +47,10 @@ const useUninstall = () => {
         }
       }
 
-      if (remove) await downloadManager.discardDownload(mod.remoteId);
-
       const activeProfile = getActiveProfile();
       const profileFolder = activeProfile?.folderName ?? null;
+
+      if (remove) await downloadManager.discardDownload(mod.remoteId);
 
       if (mod.status === ModStatus.Installed) {
         logger

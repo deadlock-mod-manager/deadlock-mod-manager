@@ -456,8 +456,12 @@ class DownloadManager {
     try {
       await this.downloads.cancel(modId, false);
     } catch (error) {
-      logger.withError(error).error("Failed to cancel download");
-      throw error;
+      // A download that ended while the cancel was on its way has nothing left
+      // to stop.
+      if (this.isQueued(modId)) {
+        logger.withError(error).error("Failed to cancel download");
+        throw error;
+      }
     }
     // The mod outlives a delete that fails after this, so it can't stay in flight.
     usePersistedStore

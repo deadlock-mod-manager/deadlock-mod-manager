@@ -194,6 +194,22 @@ describe("download ownership", () => {
     expect(callbacks).toEqual([]);
     expect(outcomes()).toEqual(["cancelled", "cancelled"]);
   });
+  it("keeps a quiet cancellation quiet when the download completes or fails first", async () => {
+    const callbacks: string[] = [];
+    queue.add(request(callbacks, "first"));
+    const completing = queue.cancel(modData.remoteId, false);
+    completed();
+    cancellations[0]?.reject(new Error("No active download found"));
+    await expect(completing).rejects.toThrow("No active download found");
+    queue.add(request(callbacks, "second"));
+    const failing = queue.cancel(modData.remoteId, false);
+    queue.fail(modData.remoteId, "Network error");
+    cancellations[1]?.resolve();
+    await failing;
+    expect(callbacks).toEqual([]);
+    expect(outcomes()).toEqual(["completed", "failed"]);
+    expect(queue.getMod(modData.remoteId)).toBeUndefined();
+  });
   it("still reports a download whose quiet cancellation failed", async () => {
     const callbacks: string[] = [];
     queue.add(request(callbacks, "first"));
