@@ -7,13 +7,13 @@ use std::io::Read;
 use std::path::{Component, Path, PathBuf};
 
 /// How far an archive may expand. Archives come from remote sites, so a small
-/// one must not be able to fill the disk. Mod contents are mostly compressed
-/// already and barely shrink, while a zip bomb expands thousands of times.
-const MAX_EXPANSION_RATIO: u64 = 20;
+/// one must not be able to fill the disk. Popular GameBanana mods expand about
+/// 3x and at most 26x, while a zip bomb expands thousands of times.
+const MAX_EXPANSION_RATIO: u64 = 100;
 /// Small archives always get this much, so a tiny mod that compresses well
 /// never trips the ratio.
-const MIN_EXTRACTED_BYTES: u64 = 64 * 1024 * 1024;
-const MAX_EXTRACTED_BYTES: u64 = 4 * 1024 * 1024 * 1024;
+const MIN_EXTRACTED_BYTES: u64 = 256 * 1024 * 1024;
+const MAX_EXTRACTED_BYTES: u64 = 16 * 1024 * 1024 * 1024;
 
 fn extraction_budget(archive_size: u64) -> u64 {
   archive_size
