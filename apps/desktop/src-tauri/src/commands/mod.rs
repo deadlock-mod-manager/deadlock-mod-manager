@@ -6,6 +6,7 @@ pub mod auth;
 pub mod autoexec;
 pub mod backups;
 pub mod conflicts;
+pub mod deadworks_bootstrap;
 pub mod deadworks_content;
 pub mod deadworks_fetch;
 pub mod deadworks_rules;
