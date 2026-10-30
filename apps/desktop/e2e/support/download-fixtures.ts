@@ -17,6 +17,9 @@ import { buildSyntheticVpk } from "./vpk";
 export const DOWNLOAD_MOD = "local-00000000-0000-4000-8000-000000000004";
 export const DOWNLOAD_NAME = "E2E Download";
 export const DOWNLOAD_FILE = "selected.vpk";
+export const QUEUED_MOD = "local-00000000-0000-4000-8000-000000000005";
+export const QUEUED_NAME = "E2E Queued Download";
+export const QUEUED_FILE = "queued.vpk";
 export const downloadPayload = (variant = "selected") =>
   buildSyntheticVpk([
     {
@@ -94,6 +97,9 @@ export const downloadRoutes = (scenario: string): FixtureRoute[] => {
     { method: "GET", path: `/downloads/${DOWNLOAD_FILE}`, ...good, sequence },
   ];
   if (scenario === "downloads-queued-retry") routes.push(queueRoute());
+  // Served so a cancel that fails to drop the queued mod shows as a download.
+  if (scenario === "downloads-cancel-queued")
+    routes.push({ method: "GET", path: `/downloads/${QUEUED_FILE}`, ...good });
   return routes;
 };
 
@@ -149,6 +155,21 @@ export const prepareDownloadWorld = async (
       installedVpks: [],
       downloads: [file],
       selectedDownloads: [file],
+    });
+  }
+  if (scenario === "downloads-cancel-queued") {
+    const queued: ModDownloadItem = {
+      ...selected,
+      name: QUEUED_FILE,
+      url: `${origin}/downloads/${QUEUED_FILE}`,
+    };
+    mods.push({
+      ...fixtureMod(QUEUED_MOD, 1),
+      name: QUEUED_NAME,
+      status: ModStatus.FailedToDownload,
+      installedVpks: [],
+      downloads: [queued],
+      selectedDownloads: [queued],
     });
   }
   const storePath = path.join(world.configuration.roots.appData, "state.json");
