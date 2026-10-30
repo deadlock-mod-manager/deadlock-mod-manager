@@ -181,3 +181,28 @@ describe("download ownership", () => {
     expect(outcomes()).toEqual(["cancelled"]);
   });
 });
+
+describe("download start", () => {
+  it("counts a download as started only once the backend starts it", () => {
+    const callbacks: string[] = [];
+    queue.add(request(callbacks, "first"));
+    expect(queue.isStarted(modData.remoteId)).toBe(false);
+    queue.start(modData.remoteId)?.onStart();
+    expect(queue.isStarted(modData.remoteId)).toBe(true);
+    expect(callbacks).toEqual(["first:started"]);
+    completed();
+    expect(queue.isStarted(modData.remoteId)).toBe(false);
+  });
+  it("does not carry the start over to the next request for the mod", () => {
+    const callbacks: string[] = [];
+    queue.add(request(callbacks, "first"));
+    queue.start(modData.remoteId);
+    queue.fail(modData.remoteId, "Network error");
+    queue.add(request(callbacks, "retry"));
+    expect(queue.isStarted(modData.remoteId)).toBe(false);
+  });
+  it("ignores a start for a mod it does not track", () => {
+    expect(queue.start(modData.remoteId)).toBeUndefined();
+    expect(queue.isStarted(modData.remoteId)).toBe(false);
+  });
+});

@@ -17,6 +17,8 @@ export class DownloadAlreadyQueuedError extends Error {}
 interface PendingDownload {
   mod: DownloadableMod;
   attempt: AnalyticsAttempt<"mod_download">;
+  /** False while the backend still holds the download in its queue. */
+  started: boolean;
 }
 interface DownloadQueueDependencies {
   start: (
@@ -35,6 +37,15 @@ export class DownloadQueue {
 
   getMod(modId: string) {
     return this.pending.get(modId)?.mod;
+  }
+  /** Records that the backend began the download and returns its mod. */
+  start(modId: string) {
+    const entry = this.pending.get(modId);
+    if (entry) entry.started = true;
+    return entry?.mod;
+  }
+  isStarted(modId: string) {
+    return this.pending.get(modId)?.started === true;
   }
   clear() {
     this.pending.clear();
@@ -56,6 +67,7 @@ export class DownloadQueue {
         file_count: mod.downloads?.length ?? 0,
         content_type: modContentType(mod),
       }),
+      started: false,
     };
     this.pending.set(mod.remoteId, entry);
     this.dependencies.queue(mod).catch((error) => {

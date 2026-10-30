@@ -108,6 +108,8 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
   const isPaused = download.status === ModStatus.Paused;
   const isExtracting = download.status === ModStatus.Extracting;
   const isFailed = isDownloadFailed(download.status);
+  const canPause =
+    isDownloading && downloadManager.isStarted(download.remoteId);
   const percentage = isDownloadComplete(download.status)
     ? 100
     : (modProgress?.percentage ?? 0);
@@ -252,7 +254,7 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
             </Button>
           )}
 
-          {isDownloading && (
+          {canPause && (
             <Button
               className='h-8'
               onClick={handlePause}

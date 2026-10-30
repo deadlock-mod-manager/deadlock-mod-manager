@@ -651,6 +651,11 @@ export const scenarios = {
     spec: "download-queue",
     phases: ["queue"],
   },
+  "downloads-queued-pause": {
+    ...downloads,
+    spec: "download-queue-pause",
+    phases: ["queue"],
+  },
   "filesystem-backup-replace": filesystem,
   "filesystem-backup-merge": filesystem,
   "filesystem-lock": { ...filesystem, platforms: ["win32"] },

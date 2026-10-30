@@ -44,6 +44,10 @@ const queueRoute = (): FixtureRoute => ({
   chunkBytes: 20 * 1024,
   chunkDelayMs: 100,
 });
+/** Cases whose world holds a second mod that blocks the queue. */
+const hasQueueBlocker = (scenario: string) =>
+  scenario === "downloads-queued-retry" ||
+  scenario === "downloads-queued-pause";
 export const downloadRoutes = (scenario: string): FixtureRoute[] => {
   const body = downloadPayload();
   const good = {
@@ -96,7 +100,7 @@ export const downloadRoutes = (scenario: string): FixtureRoute[] => {
   const routes: FixtureRoute[] = [
     { method: "GET", path: `/downloads/${DOWNLOAD_FILE}`, ...good, sequence },
   ];
-  if (scenario === "downloads-queued-retry") routes.push(queueRoute());
+  if (hasQueueBlocker(scenario)) routes.push(queueRoute());
   // Served so a cancel that fails to drop the queued mod shows as a download.
   if (scenario === "downloads-cancel-queued")
     routes.push({ method: "GET", path: `/downloads/${QUEUED_FILE}`, ...good });
@@ -138,7 +142,7 @@ export const prepareDownloadWorld = async (
     selectedDownloads: [selected],
   };
   const mods = [mod];
-  if (scenario === "downloads-queued-retry") {
+  if (hasQueueBlocker(scenario)) {
     const blocker = queuePayload();
     const file: ModDownloadItem = {
       ...selected,
@@ -219,12 +223,17 @@ export const assertDownloadNetwork = (
     request.url.startsWith("/downloads/"),
   );
   assert.ok(requests.length > 0, "Download must reach the real HTTP fixture");
-  if (scenario === "downloads-queued-retry") {
+  if (hasQueueBlocker(scenario)) {
     const statuses = (file: string) =>
       requests
         .filter((request) => request.url === `/downloads/${file}`)
         .map((request) => request.responseStatus);
-    assert.deepEqual(statuses(DOWNLOAD_FILE), [401, 200]);
+    // Pausing holds the open transfer, so a paused download resumes without a
+    // second request.
+    assert.deepEqual(
+      statuses(DOWNLOAD_FILE),
+      scenario === "downloads-queued-retry" ? [401, 200] : [200],
+    );
     assert.deepEqual(statuses(QUEUE_FILE), [200]);
     return;
   }

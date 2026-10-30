@@ -101,7 +101,9 @@ class DownloadManager {
     const unlistenStarted = await listen<DownloadStartedEvent>(
       "download-started",
       (event) => {
-        const mod = this.downloads.getMod(event.payload.modId);
+        // Marked before the progress patch below, which re-renders the card
+        // that reads it.
+        const mod = this.downloads.start(event.payload.modId);
         if (mod) {
           logger
             .withMetadata({ mod: event.payload.modId })
@@ -383,6 +385,14 @@ class DownloadManager {
   /** Whether a download for the mod is still waiting for its outcome. */
   isQueued(modId: string) {
     return this.downloads.getMod(modId) !== undefined;
+  }
+
+  /**
+   * Whether the backend is running the download. Only then can it be paused:
+   * one still waiting in the backend's queue has nothing to pause yet.
+   */
+  isStarted(modId: string) {
+    return this.downloads.isStarted(modId);
   }
 
   addToQueue(mod: DownloadableMod) {
