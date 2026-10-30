@@ -94,7 +94,7 @@ export const useForgeInstall = () => {
             },
             ModCategory.OTHER_MISC,
             {
-              kind: "vpkPath",
+              kind: "staged",
               path: request.path,
               fileName: toFileName(request.name),
             },

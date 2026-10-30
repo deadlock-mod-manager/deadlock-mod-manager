@@ -22,6 +22,7 @@ mod game_presence;
 mod game_session;
 mod hero_detector;
 mod ingest_tool;
+mod install_sources;
 mod live_bridge;
 mod live_match;
 mod logs;
@@ -37,6 +38,7 @@ pub use mod_manager::vdata_history::encode_history_index;
 pub mod proxy;
 mod reports;
 pub mod runtime_environment;
+mod staged_files;
 mod state_file;
 mod steam_user;
 #[cfg_attr(target_os = "linux", path = "tray_linux.rs")]
@@ -409,8 +411,12 @@ pub fn run() {
       commands::ingest::initialize_ingest_tool,
       commands::forge::start_forge_bridge,
       commands::forge::stop_forge_bridge,
-      commands::forge::place_forge_payload,
       commands::forge::finish_forge_install,
+      commands::staged_files::place_staged_file,
+      commands::source_install::take_pending_source_installs,
+      commands::source_install::resolve_source_install,
+      commands::source_install::download_source_install,
+      commands::source_install::finish_source_install,
       game_presence::get_game_presence_status,
       game_presence::get_game_presence_heroes,
       game_presence::start_game_presence_watcher,

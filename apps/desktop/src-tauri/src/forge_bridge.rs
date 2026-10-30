@@ -7,6 +7,7 @@
 
 use crate::app_runtime::AppHandle;
 use crate::errors::Error;
+use crate::staged_files::{self, Stager};
 use http_body_util::{BodyExt, Full, Limited};
 use hyper::body::{Bytes, Incoming};
 use hyper::server::conn::http1;
@@ -15,7 +16,7 @@ use hyper::{Method, Request, Response, StatusCode};
 use hyper_util::rt::TokioIo;
 use serde::Serialize;
 use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 use tauri::{Emitter, Manager};
@@ -59,10 +60,6 @@ struct BridgeHandle {
 }
 
 static BRIDGE: Mutex<Option<BridgeHandle>> = Mutex::new(None);
-
-/// Payloads staged and not yet cleaned up. Only a path listed here is ever
-/// deleted, so the cleanup command cannot delete arbitrary files.
-static STAGED: Mutex<Vec<PathBuf>> = Mutex::new(Vec::new());
 
 /// One install may await an answer at a time, so a page cannot stack dialogs.
 /// An instant rather than a flag, so a dialog that never reports back cannot
@@ -276,7 +273,7 @@ async fn read_and_dispatch(
       return error_response(StatusCode::INTERNAL_SERVER_ERROR, "INTERNAL", Some(origin));
     }
   };
-  remember_staged(&path);
+  staged_files::remember(Stager::Forge, &path);
 
   let payload = ForgeInstallRequest {
     name,
@@ -290,12 +287,12 @@ async fn read_and_dispatch(
     let _ = window.unminimize();
     if let Err(error) = window.emit(EVENT_FORGE_INSTALL_REQUESTED, payload) {
       log::error!("[ForgeBridge] Failed to notify the window: {error}");
-      forget_staged(&path);
+      staged_files::forget(&path);
       let _ = tokio::fs::remove_file(&path).await;
       return error_response(StatusCode::INTERNAL_SERVER_ERROR, "INTERNAL", Some(origin));
     }
   } else {
-    forget_staged(&path);
+    staged_files::forget(&path);
     let _ = tokio::fs::remove_file(&path).await;
     return error_response(StatusCode::SERVICE_UNAVAILABLE, "NO_WINDOW", Some(origin));
   }
@@ -480,60 +477,14 @@ fn claim_install_slot() -> Option<Vec<PathBuf>> {
     Some(since) if since.elapsed() < INSTALL_ANSWER_TIMEOUT => None,
     _ => {
       *guard = Some(Instant::now());
-      Some(drain_staged())
+      Some(staged_files::drain(Stager::Forge))
     }
   }
-}
-
-fn drain_staged() -> Vec<PathBuf> {
-  STAGED
-    .lock()
-    .map(|mut guard| std::mem::take(&mut *guard))
-    .unwrap_or_default()
 }
 
 pub fn release_in_flight() {
   if let Ok(mut guard) = IN_FLIGHT_SINCE.lock() {
     *guard = None;
-  }
-}
-
-/// Resolve a reported path without consuming the entry.
-pub fn peek_staged(candidate: &str) -> Result<PathBuf, Error> {
-  let candidate = PathBuf::from(candidate);
-  let guard = STAGED
-    .lock()
-    .map_err(|_| Error::InvalidInput("Forge staging state is poisoned".to_string()))?;
-
-  if guard.contains(&candidate) {
-    Ok(candidate)
-  } else {
-    Err(Error::UnauthorizedPath(candidate.display().to_string()))
-  }
-}
-
-/// Resolve a reported path to one this bridge actually staged.
-pub fn staged_path(candidate: &str) -> Result<PathBuf, Error> {
-  let candidate = PathBuf::from(candidate);
-  let mut guard = STAGED
-    .lock()
-    .map_err(|_| Error::InvalidInput("Forge staging state is poisoned".to_string()))?;
-
-  match guard.iter().position(|staged| *staged == candidate) {
-    Some(index) => Ok(guard.remove(index)),
-    None => Err(Error::UnauthorizedPath(candidate.display().to_string())),
-  }
-}
-
-fn remember_staged(path: &Path) {
-  if let Ok(mut guard) = STAGED.lock() {
-    guard.push(path.to_path_buf());
-  }
-}
-
-fn forget_staged(path: &Path) {
-  if let Ok(mut guard) = STAGED.lock() {
-    guard.retain(|staged| staged != path);
   }
 }
 
@@ -660,7 +611,7 @@ mod tests {
   fn takes_over_a_slot_whose_answer_never_came() {
     // Without the timeout a lost dialog would refuse installs all session.
     let stale = std::env::temp_dir().join("deadlockforge-abandoned.vpk");
-    remember_staged(&stale);
+    staged_files::remember(Stager::Forge, &stale);
     *IN_FLIGHT_SINCE.lock().expect("lock") =
       Some(Instant::now() - INSTALL_ANSWER_TIMEOUT - Duration::from_secs(1));
 
@@ -671,16 +622,6 @@ mod tests {
       "the leftover payload must come back"
     );
     release_in_flight();
-  }
-
-  #[test]
-  fn only_deletes_a_path_the_bridge_staged() {
-    let path = std::env::temp_dir().join("deadlockforge-test-not-staged.vpk");
-    assert!(staged_path(&path.to_string_lossy()).is_err());
-
-    remember_staged(&path);
-    assert!(staged_path(&path.to_string_lossy()).is_ok());
-    assert!(staged_path(&path.to_string_lossy()).is_err());
   }
 
   #[test]

@@ -60,6 +60,8 @@ export interface LocalMod extends ModDto {
   // Original names of VPKs the manifest claims but the user deleted. A mod
   // with any is broken until it is reinstalled or removed.
   missingVpks?: string[];
+  // `<source>/<mod id>` for a mod installed from an allowlisted mod site.
+  installSource?: string;
 }
 
 export interface DownloadableMod extends Omit<LocalMod, "status"> {
