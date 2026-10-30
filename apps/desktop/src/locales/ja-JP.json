@@ -3942,8 +3942,10 @@
     "developerModeDescription": "開発者モードを有効にして、高度なツールとデバッグ機能にアクセスする",
     "experimental": "実験的機能",
     "ingestTool": {
-      "title": "マッチデータ取り込みツール",
-      "description": "Steamキャッシュディレクトリを自動スキャンしてDeadlockマッチデータファイルを検索し、マッチデータをAPIに送信する"
+      "title": "",
+      "description": "",
+      "sectionTitle": "",
+      "sectionDescription": ""
     },
     "autoUpdate": "自動更新",
     "autoUpdateDescription": "起動時にアプリケーションの更新を自動でチェックして通知する。",
@@ -4446,6 +4448,19 @@
   "matchSync": {
     "title": "",
     "description": "",
+    "overview": {
+      "description": "",
+      "powersTitle": "",
+      "trackers": "",
+      "trackersSource": "",
+      "stats": "",
+      "everyone": "",
+      "sends": ""
+    },
+    "account": {
+      "title": "",
+      "description": ""
+    },
     "about": {
       "reads": "",
       "sends": "",
@@ -4465,6 +4480,8 @@
     },
     "quota": {
       "remaining": "",
+      "accountsTitle": "",
+      "left": "",
       "gcUnavailable": "",
       "reachedToday": ""
     },
