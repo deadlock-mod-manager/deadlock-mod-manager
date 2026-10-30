@@ -5811,6 +5811,12 @@
     "gridline": {
       "description": "True black with a faint hairline grid, crisp white type, and a blue-to-pink accent glow."
     },
+    "coding": {
+      "description": "An editor-style dark theme with a graph-paper grid, monospace headings, and a customizable accent.",
+      "themeBy": "Theme by",
+      "customColor": "Coding Accent Color",
+      "customColorDescription": "Choose an accent color. Button text contrast adjusts automatically."
+    },
     "nightshift": {
       "description": "A teal-accented cyberpunk theme designed for clarity and long gaming sessions.",
       "visit": "Visit Nightshift:",
