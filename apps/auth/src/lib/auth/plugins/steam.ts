@@ -380,7 +380,7 @@ export const steam = (config: SteamAuthPluginOptions) =>
 
           const assertion = checkSteamAssertion(
             params,
-            `/steam/callback`,
+            `${ctx.context.baseURL}/steam/callback`,
             seenNonces,
           );
           if (!assertion.ok) {
@@ -389,7 +389,7 @@ export const steam = (config: SteamAuthPluginOptions) =>
               return_to: params["openid.return_to"],
               claimed_id: params["openid.claimed_id"],
             });
-            throw ctx.redirect(`?error=`);
+            throw ctx.redirect(`${errorURL}?error=${assertion.reason}`);
           }
 
           params["openid.mode"] = "check_authentication";
