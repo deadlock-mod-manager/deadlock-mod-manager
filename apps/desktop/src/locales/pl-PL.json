@@ -5811,6 +5811,12 @@
     "gridline": {
       "description": ""
     },
+    "coding": {
+      "description": "",
+      "themeBy": "",
+      "customColor": "",
+      "customColorDescription": ""
+    },
     "nightshift": {
       "description": "Cyberpunkowy motyw z turkusowymi akcentami zaprojektowany dla przejrzystości i długich sesji gamingowych.",
       "visit": "Odwiedź Nightshift:",

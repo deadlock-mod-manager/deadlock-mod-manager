@@ -5811,6 +5811,12 @@
     "gridline": {
       "description": ""
     },
+    "coding": {
+      "description": "",
+      "themeBy": "",
+      "customColor": "",
+      "customColorDescription": ""
+    },
     "nightshift": {
       "description": "Es cyberpunk‑Theme mit türkisfarbige Akzänte für Uebersicht und lengeri Gaming‑Sessione.",
       "visit": "Nightshift bsueche:",
