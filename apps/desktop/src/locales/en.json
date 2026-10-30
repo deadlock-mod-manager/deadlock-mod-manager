@@ -6572,6 +6572,9 @@
       "loadError": "Couldn't load the changelog from GameBanana.",
       "empty": "The author hasn't posted any updates on GameBanana."
     },
+    "files": {
+      "loadError": "Couldn't load the file list from GameBanana."
+    },
     "tabs": {
       "model": "3D",
       "overview": "Overview",

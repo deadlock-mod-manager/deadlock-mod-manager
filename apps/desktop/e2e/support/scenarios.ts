@@ -5,6 +5,7 @@ import type { FixtureRoute, FixtureRequest } from "./fixture-server";
 import {
   createCatalogRoutes,
   assertCatalogNetwork,
+  CATALOG_MOD_ID,
 } from "./gamebanana-fixtures";
 import {
   assertCollectionNetwork,
@@ -697,6 +698,50 @@ export const scenarios = {
     routes: () => createCatalogRoutes("gamebanana-multifile"),
     verifyNetwork: (_id: string, requests: readonly FixtureRequest[]) =>
       assertCatalogNetwork("gamebanana-multifile", requests),
+  },
+  "mod-files-error": {
+    ...catalog,
+    spec: "mod-files-error",
+    phases: ["files-error"],
+    // GameBanana's transport retries a 5xx three times, so the page's first
+    // load sees four failures and its Retry gets the real file list, late
+    // enough for the spec to see the retry in flight.
+    routes: async () => {
+      const routes = await createCatalogRoutes("gamebanana-single");
+      const outage = {
+        status: 500,
+        body: '{"_sErrorCode":"FIXTURE","_sErrorMessage":"Fixture outage"}',
+      };
+      return (origin: string) =>
+        routes(origin).map((route) =>
+          route.path === `/apiv11/Mod/${CATALOG_MOD_ID}/DownloadPage`
+            ? Object.assign(route, {
+                sequence: [
+                  outage,
+                  outage,
+                  outage,
+                  outage,
+                  {
+                    status: route.status,
+                    body: route.body,
+                    headerDelayMs: 3_000,
+                  },
+                ],
+              })
+            : route,
+        );
+    },
+    verifyNetwork: (_id: string, requests: readonly FixtureRequest[]) => {
+      const statuses = requests
+        .filter((request) =>
+          request.url.startsWith(`/apiv11/Mod/${CATALOG_MOD_ID}/DownloadPage`),
+        )
+        .map((request) => request.responseStatus);
+      if (statuses.join() !== "500,500,500,500,200")
+        throw new Error(
+          `Expected one failed file list load and one retry, got ${statuses.join()}`,
+        );
+    },
   },
   "gamebanana-variants": catalog,
   "gamebanana-remembered": catalogLifecycle,

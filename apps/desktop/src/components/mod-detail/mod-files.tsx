@@ -1,3 +1,4 @@
+import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Card,
   CardContent,
@@ -13,16 +14,25 @@ import { DateDisplay } from "../date-display";
 interface ModFilesProps {
   files: ModDownloadItem[];
   isDownloadable?: boolean;
+  loadFailed?: boolean;
+  isRetrying?: boolean;
+  onRetry?: () => void;
 }
 
-export const ModFiles = ({ files, isDownloadable = false }: ModFilesProps) => {
+export const ModFiles = ({
+  files,
+  isDownloadable = false,
+  loadFailed = false,
+  isRetrying = false,
+  onRetry,
+}: ModFilesProps) => {
   const { t } = useTranslation();
 
   if (!isDownloadable) {
     return null;
   }
 
-  if (!files || files.length === 0) {
+  if ((!files || files.length === 0) && !loadFailed) {
     return null;
   }
 
@@ -38,33 +48,50 @@ export const ModFiles = ({ files, isDownloadable = false }: ModFilesProps) => {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ul className='list-disc space-y-2'>
-          {files.map((file) => (
-            <li className='flex flex-col gap-0.5 text-sm' key={file.name}>
-              <div className='flex items-center justify-between'>
-                <div className='flex min-w-0 flex-1 items-center gap-2'>
-                  <span className='truncate ' title={file.name}>
-                    {file.name}{" "}
-                    <DateDisplay
-                      date={file.createdAt}
-                      prefix='added'
-                      className='text-xs text-muted-foreground'
-                    />
+        {files.length === 0 ? (
+          <div
+            className='flex items-center justify-between gap-2'
+            data-testid='mod-files-load-error'>
+            <p className='text-muted-foreground text-sm'>
+              {t("modDetail.files.loadError")}
+            </p>
+            <Button
+              isLoading={isRetrying}
+              onClick={onRetry}
+              size='sm'
+              variant='outline'>
+              {t("errors.tryAgain")}
+            </Button>
+          </div>
+        ) : (
+          <ul className='list-disc space-y-2'>
+            {files.map((file) => (
+              <li className='flex flex-col gap-0.5 text-sm' key={file.name}>
+                <div className='flex items-center justify-between'>
+                  <div className='flex min-w-0 flex-1 items-center gap-2'>
+                    <span className='truncate ' title={file.name}>
+                      {file.name}{" "}
+                      <DateDisplay
+                        date={file.createdAt}
+                        prefix='added'
+                        className='text-xs text-muted-foreground'
+                      />
+                    </span>
+                  </div>
+                  <span className='ml-2 text-muted-foreground text-xs'>
+                    {formatSize(file.size)}
+                    {file.md5Checksum ? ` (MD5: ${file.md5Checksum})` : ""}
                   </span>
                 </div>
-                <span className='ml-2 text-muted-foreground text-xs'>
-                  {formatSize(file.size)}
-                  {file.md5Checksum ? ` (MD5: ${file.md5Checksum})` : ""}
-                </span>
-              </div>
-              {file.description && (
-                <p className='text-muted-foreground text-xs line-clamp-2'>
-                  {file.description}
-                </p>
-              )}
-            </li>
-          ))}
-        </ul>
+                {file.description && (
+                  <p className='text-muted-foreground text-xs line-clamp-2'>
+                    {file.description}
+                  </p>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
       </CardContent>
     </Card>
   );
