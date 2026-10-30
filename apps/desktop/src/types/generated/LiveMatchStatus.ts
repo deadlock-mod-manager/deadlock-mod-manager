@@ -9,9 +9,10 @@ export type LiveMatchStatus = {
    */
   consoleLogAvailable: boolean;
   /**
-   * Sitting in matchmaking, waiting for a lobby.
+   * When the player started matchmaking, in Unix milliseconds. `None` when
+   * not sitting in the queue.
    */
-  queued: boolean;
+  queuedSince: number | null;
   current: LiveMatch | null;
   /**
    * Matches played this session, which deadlock-api may not have ingested yet.

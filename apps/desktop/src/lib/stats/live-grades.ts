@@ -76,13 +76,8 @@ export type Grade = (typeof GRADES)[number];
 /** Where each grade starts, as the share of the bracket the player beats. */
 export const GRADE_STARTS = [0, 0.25, 0.5, 0.75, 0.9] as const;
 
-export const gradeFor = (beats: number): Grade => {
-  let grade: Grade = "D";
-  GRADE_STARTS.forEach((start, index) => {
-    if (beats >= start) grade = GRADES[index] ?? grade;
-  });
-  return grade;
-};
+const gradeFor = (beats: number): Grade =>
+  GRADES[GRADE_STARTS.filter((start) => beats >= start).length - 1] ?? "D";
 
 export interface LiveGradeRow {
   metric: LiveMetric;

@@ -20,6 +20,16 @@ export const VerticalFade = ({
 
 export const WIN_COLOR = "var(--viz-win)";
 export const LOSS_COLOR = "var(--viz-loss)";
+export const DANGER_COLOR = "var(--viz-danger)";
+export const CAUTION_COLOR = "var(--viz-caution)";
+export const WARN_COLOR = "var(--viz-warn)";
+export const PENDING_COLOR = "var(--viz-pending)";
+export const INFO_COLOR = "var(--viz-info)";
+export const MUTED_COLOR = "var(--viz-muted)";
+
+/** A win rate's colour: even or better reads as winning. */
+export const winrateColor = (winrate: number) =>
+  winrate >= 0.5 ? WIN_COLOR : LOSS_COLOR;
 
 /** A colour at reduced strength; works with any CSS colour, unlike Tailwind's `/opacity`. */
 export const tint = (color: string, percent: number) =>

@@ -1,12 +1,9 @@
 import { Button } from "@deadlock-mods/ui/components/button";
 import { Loader2, RefreshCw, TriangleAlert } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
-import { tint } from "@/components/stats/chart-fx";
+import { DANGER_COLOR, tint, WARN_COLOR } from "@/components/stats/chart-fx";
 import { useLiveBridge } from "@/hooks/use-live-bridge";
 import { useGameRunning } from "@/hooks/use-mod-health";
-
-const WARN = "#fbbf24";
-const DANGER = "#f2766b";
 
 /**
  * Says so when the live bridge was built for an older game or bridge. It is
@@ -21,7 +18,7 @@ export const LiveBridgeNotice = () => {
   if (status !== "outdated" && status !== "incompatible") return null;
   const isIncompatible = status === "incompatible";
 
-  const color = isIncompatible ? DANGER : WARN;
+  const color = isIncompatible ? DANGER_COLOR : WARN_COLOR;
   const Icon = isIncompatible ? TriangleAlert : RefreshCw;
 
   return (

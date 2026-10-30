@@ -1589,6 +1589,22 @@
   /* Match results. Never the only cue: rows carry a W/L letter, beads a height. */
   --viz-win: #6fcf97;
   --viz-loss: #ec6a5e;
+  /*
+   * Status accents for the Live tab's banners and tags. One set for both
+   * themes: they sit on tinted fills of themselves, not on the bare surface.
+   */
+  --viz-danger: #f2766b;
+  --viz-caution: #f28a4b;
+  --viz-warn: #fbbf24;
+  --viz-pending: #f59e0b;
+  --viz-info: #60a5fa;
+  --viz-muted: #a3a3a3;
+  /* Live pace grades, worst to best. */
+  --viz-grade-d: var(--viz-danger);
+  --viz-grade-c: var(--viz-caution);
+  --viz-grade-b: #7dd3a0;
+  --viz-grade-a: #e0a84e;
+  --viz-grade-s: var(--viz-info);
   /* Deadlock's own identity colours: the two teams and the three item slots. */
   --team-0: #e0a84e;
   --team-1: #7095e8;

@@ -1,7 +1,8 @@
 import { Info, Loader2 } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
+import { tint } from "@/components/stats/chart-fx";
 import {
-  GRADE_STYLES,
+  GRADE_COLORS,
   GradePill,
   LivePanel,
 } from "@/components/stats/live-parts";
@@ -37,7 +38,8 @@ const formatAverage = (metric: LiveMetric, value: number) =>
   isPerMinute(metric) ? formatWhole(value) : formatDecimal(value, 1);
 
 const Ruler = ({ row }: { row: LiveGradeRow }) => {
-  const style = GRADE_STYLES[row.grade];
+  const color = GRADE_COLORS[row.grade];
+  const zone = tint(color, 40);
   return (
     <div aria-hidden className='relative h-6 w-[330px] shrink-0'>
       <div className='absolute inset-x-0 top-1/2 flex h-1.5 -translate-y-1/2 gap-0.5'>
@@ -45,11 +47,12 @@ const Ruler = ({ row }: { row: LiveGradeRow }) => {
           <span
             className={cn(
               "h-full rounded-full",
-              grade === row.grade ? style.zone : "bg-foreground/[0.07]",
+              grade !== row.grade && "bg-foreground/[0.07]",
             )}
             key={grade}
             style={{
               width: `${((GRADE_STARTS[index + 1] ?? 1) - GRADE_STARTS[index]) * 100}%`,
+              backgroundColor: grade === row.grade ? zone : undefined,
             }}
           />
         ))}
@@ -57,18 +60,12 @@ const Ruler = ({ row }: { row: LiveGradeRow }) => {
       {/* The bracket average is where half the bracket is beaten. */}
       <div className='absolute top-1/2 left-1/2 h-4 w-0.5 -translate-x-1/2 -translate-y-1/2 rounded-[1px] bg-primary/50' />
       <div
-        className={cn(
-          "absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-50",
-          style.zone,
-        )}
-        style={{ left: `${row.beats * 100}%` }}
+        className='absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-50'
+        style={{ left: `${row.beats * 100}%`, backgroundColor: zone }}
       />
       <div
-        className={cn(
-          "absolute top-1/2 h-[9px] w-[9px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-current shadow-[0_0_0_2px_hsl(var(--background))]",
-          style.text,
-        )}
-        style={{ left: `${row.beats * 100}%` }}
+        className='absolute top-1/2 h-[9px] w-[9px] -translate-x-1/2 -translate-y-1/2 rounded-full shadow-[0_0_0_2px_hsl(var(--background))]'
+        style={{ left: `${row.beats * 100}%`, backgroundColor: color }}
       />
     </div>
   );
@@ -100,11 +97,7 @@ export const LivePace = ({
   const legend = (
     <div className='flex shrink-0 gap-1'>
       {GRADES.map((grade) => (
-        <GradePill
-          className='h-[18px] w-[22px] text-[10.5px]'
-          grade={grade}
-          key={grade}
-        />
+        <GradePill grade={grade} key={grade} size='xs' />
       ))}
     </div>
   );

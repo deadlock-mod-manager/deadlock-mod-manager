@@ -43,6 +43,7 @@ mod steam_user;
 mod tray;
 mod updater_channel;
 mod utils;
+mod vpk_archive_cache;
 
 use tauri::Manager;
 use tauri_plugin_log::{Target, TargetKind};

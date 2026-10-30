@@ -27,6 +27,7 @@ import { AccountPrompt } from "@/components/stats/account-prompt";
 import { DashboardDataProvider } from "@/components/stats/dashboard/dashboard-context";
 import { DashboardGrid } from "@/components/stats/dashboard/dashboard-grid";
 import { DashboardTabs } from "@/components/stats/dashboard/dashboard-tabs";
+import { tabPanel } from "@/components/stats/dashboard/panels";
 import {
   EditToolbar,
   PendingConfirmDialog,
@@ -37,7 +38,6 @@ import {
   widgetNeedsAccount,
   widgetNeedsHistory,
 } from "@/components/stats/dashboard/widget-requirements";
-import { LiveToolbar } from "@/components/stats/live-toolbar";
 import { StatsFilters } from "@/components/stats/stats-filters";
 import { StatsHints } from "@/components/stats/stats-hints";
 import { StatsStatus } from "@/components/stats/stats-status";
@@ -49,7 +49,7 @@ import {
   useStatsRefresh,
 } from "@/hooks/use-player-stats";
 import { useSelectedSteamAccount } from "@/hooks/use-steam-accounts";
-import { DEFAULT_TAB_IDS, isLiveTab } from "@/lib/stats/dashboard/layout";
+import { DEFAULT_TAB_IDS } from "@/lib/stats/dashboard/layout";
 import {
   statsSinceTimestamp,
   type StatsMatchMode,
@@ -112,6 +112,7 @@ const Stats = () => {
     hasWidgets && activeTab.widgets.every(widgetNeedsAccount);
   const needsHistory =
     hasWidgets && activeTab.widgets.every(widgetNeedsHistory);
+  const TabToolbar = tabPanel(activeTab)?.tab?.toolbar;
 
   const tabBar = (
     <DashboardTabs
@@ -274,8 +275,8 @@ const Stats = () => {
         <div className='flex shrink-0 flex-col gap-3 px-4 pr-2 pt-4 pb-4'>
           <div className='flex flex-wrap items-center justify-between gap-x-4 gap-y-3'>
             {tabBar}
-            {!editing && isLiveTab(activeTab) && <LiveToolbar />}
-            {!editing && !isLiveTab(activeTab) && (
+            {!editing && TabToolbar && <TabToolbar />}
+            {!editing && !TabToolbar && (
               <div className='flex flex-wrap items-center gap-2'>
                 {/* Tabs with the profile panel keep the chip's space, so
                     switching tabs never moves the filters. */}

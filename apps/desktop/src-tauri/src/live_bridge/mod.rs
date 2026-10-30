@@ -2,15 +2,18 @@
 //!
 //! The bridge is a script loaded by the game's own top-bar team layout. It reads
 //! the scoreboard values the game puts on each top-bar player panel and prints
-//! them to the console, where [`crate::live_match`] picks them up.
+//! them to the console, where [`crate::live_match`] picks them up through
+//! [`protocol`].
 //!
 //! The layout it hooks into belongs to the game and changes with patches, so the
 //! VPK is built from the installed game on demand rather than shipped prebuilt:
 //! the game's layout plus one `SCRIPTS` include, and the script itself.
 
+pub mod protocol;
+
 use std::fs;
 use std::path::Path;
-use std::sync::Mutex;
+use std::sync::LazyLock;
 
 use serde::Serialize;
 use source2_model::vpk_extract::VpkArchive;
@@ -18,8 +21,11 @@ use ts_rs::TS;
 use vpkmanager::source2::kv3::{self, Seg, Value};
 use vpkmanager::source2::resource::Resource;
 
-use crate::commands::foundry::archive_cache::open_archive;
 use crate::errors::Error;
+use crate::vpk_archive_cache::open_archive;
+
+/// The bridge's file in its mod's `files` folder in the mods store.
+pub const LIVE_BRIDGE_FILE: &str = "dmm-live-bridge.vpk";
 
 const BRIDGE_SOURCE: &str = include_str!("dmm_live_bridge.js");
 /// A compiled Panorama script with an empty body, so no JavaScript compiler is
@@ -46,28 +52,8 @@ fn extract(archive: &VpkArchive, entry: &str) -> Result<Vec<u8>, Error> {
     .map_err(|error| invalid(format!("Could not read {entry}: {error}")))
 }
 
-fn member<'a>(value: &'a Value, key: &str) -> Option<&'a Value> {
-  match value {
-    Value::Object(members) => members.iter().find(|(k, _)| k == key).map(|(_, v)| v),
-    _ => None,
-  }
-}
-
-fn set_member(value: &mut Value, key: &str, new: Value) -> bool {
-  let Value::Object(members) = value else {
-    return false;
-  };
-  match members.iter_mut().find(|(k, _)| k == key) {
-    Some(slot) => {
-      slot.1 = new;
-      true
-    }
-    None => false,
-  }
-}
-
 fn is_node(value: &Value, kind: &str) -> bool {
-  matches!(member(value, "eType"), Some(Value::String(t)) if t == kind)
+  value.get("eType").and_then(Value::as_str) == Some(kind)
 }
 
 /// The game's layout with `<scripts><include src="...bridge..."/></scripts>`.
@@ -84,12 +70,12 @@ fn patch_layout(base: &[u8]) -> Result<Vec<u8>, Error> {
     .ok_or_else(|| bad("layout block out of range"))?;
   let tree = kv3::decode(payload).map_err(|_| bad("layout block is not KV3"))?;
 
-  let Some(Value::Array(children)) = member(&tree, "m_AST")
-    .and_then(|ast| member(ast, "m_pRoot"))
-    .and_then(|root| member(root, "vecChildren"))
-  else {
-    return Err(bad("no root"));
-  };
+  let children = tree
+    .get("m_AST")
+    .and_then(|ast| ast.get("m_pRoot"))
+    .and_then(|root| root.get("vecChildren"))
+    .and_then(Value::as_array)
+    .ok_or_else(|| bad("no root"))?;
   if children.iter().any(|node| is_node(node, "SCRIPTS")) {
     return Err(bad("it already loads scripts"));
   }
@@ -99,27 +85,25 @@ fn patch_layout(base: &[u8]) -> Result<Vec<u8>, Error> {
     .iter()
     .find(|node| is_node(node, "STYLES"))
     .ok_or_else(|| bad("no styles"))?;
-  let Some(Value::Array(includes)) = member(styles, "vecChildren") else {
-    return Err(bad("no style includes"));
-  };
-  let mut include = includes
-    .first()
+  let mut include = styles
+    .get("vecChildren")
+    .and_then(Value::as_array)
+    .and_then(<[Value]>::first)
     .cloned()
     .ok_or_else(|| bad("no style includes"))?;
-  let mut reference = member(&include, "child")
-    .cloned()
-    .ok_or_else(|| bad("include without a reference"))?;
+  *include
+    .get_mut("child")
+    .and_then(|reference| reference.get_mut("name"))
+    .ok_or_else(|| bad("include without a named reference"))? =
+    Value::String(SCRIPT_RESOURCE.into());
+
   let mut scripts = styles.clone();
-  if !(set_member(
-    &mut reference,
-    "name",
-    Value::String(SCRIPT_RESOURCE.into()),
-  ) && set_member(&mut include, "child", reference)
-    && set_member(&mut scripts, "eType", Value::String("SCRIPTS".into()))
-    && set_member(&mut scripts, "vecChildren", Value::Array(vec![include])))
-  {
-    return Err(bad("unexpected node shape"));
-  }
+  *scripts
+    .get_mut("eType")
+    .ok_or_else(|| bad("styles without a type"))? = Value::String("SCRIPTS".into());
+  *scripts
+    .get_mut("vecChildren")
+    .ok_or_else(|| bad("styles without children"))? = Value::Array(vec![include]);
 
   let path = [
     Seg::Key("m_AST".into()),
@@ -147,70 +131,82 @@ fn build_script() -> Result<Vec<u8>, Error> {
     .map_err(|error| invalid(format!("Could not build the bridge script: {error}")))
 }
 
-/// Why the bridge files for the current game could not be built.
+/// Built only from files compiled into the app, so it cannot fail at runtime
+/// once `the_script_carries_the_bridge_source` passes.
+static SCRIPT: LazyLock<Vec<u8>> =
+  LazyLock::new(|| build_script().expect("the bundled bridge script builds"));
+
+/// Why the current game's top-bar layout could not be patched.
 #[derive(Debug)]
-enum ExpectedError {
+enum LayoutError {
   /// The game's files could not be read.
-  Read(Error),
+  Unreadable(Error),
   /// The game's top-bar layout no longer has the shape the bridge patches.
   Incompatible(Error),
 }
 
-impl From<ExpectedError> for Error {
-  fn from(error: ExpectedError) -> Self {
+impl From<LayoutError> for Error {
+  fn from(error: LayoutError) -> Self {
     match error {
-      ExpectedError::Read(error) | ExpectedError::Incompatible(error) => error,
+      LayoutError::Unreadable(error) | LayoutError::Incompatible(error) => error,
     }
   }
 }
 
-/// The two files a bridge built right now would hold: the current game's
-/// layout with the include, and this build's script. Both builds are
-/// deterministic, so an installed bridge is up to date exactly when its files
-/// match these byte for byte.
-fn expected_files(game_path: &Path) -> Result<(Vec<u8>, Vec<u8>), ExpectedError> {
+/// The current game's top-bar layout with the bridge's include. Both it and
+/// [`SCRIPT`] are deterministic, so an installed bridge is up to date exactly
+/// when its files match them byte for byte.
+fn expected_layout(game_path: &Path) -> Result<Vec<u8>, LayoutError> {
   let pak_dir = game_path.join("game").join("citadel").join("pak01_dir.vpk");
   // Cached with the Foundry's: parsing pak01's directory takes about half a
   // second, and the archive is reopened once a patch changes it.
   let base = open_archive(&pak_dir, None)
     .and_then(|archive| extract(&archive, TEAM_LAYOUT))
-    .map_err(ExpectedError::Read)?;
-  let layout = patch_layout(&base).map_err(ExpectedError::Incompatible)?;
-  Ok((layout, build_script().map_err(ExpectedError::Read)?))
+    .map_err(LayoutError::Unreadable)?;
+  patch_layout(&base).map_err(LayoutError::Incompatible)
 }
 
-/// One build at a time: the renderer's automatic update and the notice's
-/// button can both start one, and they share the staging folder.
-static BUILD_LOCK: Mutex<()> = Mutex::new(());
+/// Has `write` fill a temporary file next to `destination`, then renames it
+/// over `destination`, so nothing ever reads half a file.
+fn replace_with(
+  destination: &Path,
+  write: impl FnOnce(&Path) -> Result<(), Error>,
+) -> Result<(), Error> {
+  let parent = destination
+    .parent()
+    .ok_or_else(|| invalid(format!("{} has no folder", destination.display())))?;
+  fs::create_dir_all(parent)?;
+  // Closed so `write` can replace it, and still removed if anything fails.
+  let temp = tempfile::Builder::new()
+    .prefix(".dmm-live-bridge")
+    .suffix(".vpk")
+    .tempfile_in(parent)?
+    .into_temp_path();
+  write(&temp)?;
+  temp.persist(destination).map_err(|error| error.error)?;
+  Ok(())
+}
 
 /// Writes the bridge VPK to `destination`, built from the game at `game_path`.
+/// Concurrent builds each pack their own file, and the last to finish wins.
 pub fn build(game_path: &Path, destination: &Path) -> Result<(), Error> {
-  let _guard = BUILD_LOCK
-    .lock()
-    .map_err(|_| invalid("A previous live bridge build panicked"))?;
-  let (layout, script) = expected_files(game_path)?;
-
-  let work = std::env::temp_dir().join(format!("dmm-live-bridge-{}", std::process::id()));
-  if work.exists() {
-    fs::remove_dir_all(&work)?;
-  }
-  let result = (|| {
-    for (path, bytes) in [(TEAM_LAYOUT, &layout), (SCRIPT_RESOURCE, &script)] {
-      let target = work.join(path);
-      if let Some(parent) = target.parent() {
-        fs::create_dir_all(parent)?;
-      }
-      fs::write(target, bytes)?;
-    }
-    if let Some(parent) = destination.parent() {
+  let layout = expected_layout(game_path)?;
+  let staging = tempfile::tempdir()?;
+  for (path, bytes) in [
+    (TEAM_LAYOUT, layout.as_slice()),
+    (SCRIPT_RESOURCE, SCRIPT.as_slice()),
+  ] {
+    let target = staging.path().join(path);
+    if let Some(parent) = target.parent() {
       fs::create_dir_all(parent)?;
     }
-    vpkmanager::pack_directory(&work, destination)
+    fs::write(target, bytes)?;
+  }
+  replace_with(destination, |temp| {
+    vpkmanager::pack_directory(staging.path(), temp)
       .map(|_| ())
       .map_err(|error| invalid(format!("Could not pack the bridge: {error}")))
-  })();
-  let _ = fs::remove_dir_all(&work);
-  result
+  })
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, TS)]
@@ -234,40 +230,52 @@ pub fn status(game_path: &Path, installed: Option<&Path>) -> BridgeStatus {
   let Some(installed) = installed.filter(|path| path.is_file()) else {
     return BridgeStatus::NotInstalled;
   };
-  match expected_files(game_path) {
-    Ok((layout, script)) => {
-      let installed = VpkArchive::open(&installed).ok();
-      let holds = |entry: &str, expected: &[u8]| {
-        installed
-          .as_ref()
-          .and_then(|archive| archive.extract_entry(entry).ok())
-          .is_some_and(|bytes| bytes == expected)
-      };
-      if holds(TEAM_LAYOUT, &layout) && holds(SCRIPT_RESOURCE, &script) {
-        BridgeStatus::Current
-      } else {
-        BridgeStatus::Outdated
-      }
-    }
-    Err(ExpectedError::Incompatible(error)) => {
+  let layout = match expected_layout(game_path) {
+    Ok(layout) => layout,
+    Err(LayoutError::Incompatible(error)) => {
       log::warn!("Live bridge: the game's top-bar layout cannot be patched: {error}");
-      BridgeStatus::Incompatible
+      return BridgeStatus::Incompatible;
     }
-    // A game that cannot be read is not a reason to call the bridge outdated.
-    Err(ExpectedError::Read(error)) => {
+    // Nothing to compare against, and an update would fail the same way. Not
+    // knowing is reported as current so the user is not asked for an update
+    // that cannot be built; the UI has no separate state for it.
+    Err(LayoutError::Unreadable(error)) => {
       log::warn!("Live bridge: could not read the game's files: {error}");
-      BridgeStatus::Current
+      return BridgeStatus::Current;
     }
+  };
+  let installed = VpkArchive::open(installed).ok();
+  let holds = |entry: &str, expected: &[u8]| {
+    installed
+      .as_ref()
+      .and_then(|archive| archive.extract_entry(entry).ok())
+      .is_some_and(|bytes| bytes == expected)
+  };
+  if holds(TEAM_LAYOUT, &layout) && holds(SCRIPT_RESOURCE, &SCRIPT) {
+    BridgeStatus::Current
+  } else {
+    BridgeStatus::Outdated
   }
 }
 
 /// Rebuilds the library's copy of the bridge and copies it over the enabled
 /// one, so the game loads the new build and turning the mod off and on again
-/// does not bring the old one back.
+/// does not bring the old one back. `installed` must already be a bridge: the
+/// name comes from the renderer, and any other addon is left alone.
 pub fn update(game_path: &Path, library_copy: &Path, installed: &Path) -> Result<(), Error> {
+  let is_bridge =
+    VpkArchive::open(installed).is_ok_and(|archive| archive.contains_entry(SCRIPT_RESOURCE));
+  if !is_bridge {
+    return Err(invalid(format!(
+      "{} is not the live bridge",
+      installed.display()
+    )));
+  }
   build(game_path, library_copy)?;
-  fs::copy(library_copy, installed)?;
-  Ok(())
+  replace_with(installed, |temp| {
+    fs::copy(library_copy, temp)?;
+    Ok(())
+  })
 }
 
 #[cfg(test)]
@@ -290,39 +298,32 @@ mod tests {
   #[ignore = "needs an installed game"]
   fn builds_from_the_installed_game() {
     let game = std::env::var_os("DMM_GAME_PATH").expect("DMM_GAME_PATH");
-    let out = std::env::temp_dir()
-      .join("dmm-live-bridge-test")
-      .join("pak01_dir.vpk");
-    build(Path::new(&game), &out).unwrap();
+    let game = Path::new(&game);
+    let dir = tempfile::tempdir().unwrap();
+    let out = dir.path().join("pak01_dir.vpk");
+    build(game, &out).unwrap();
 
     let files = VpkParser::parse_directory_from_file(&out).unwrap();
     let names: Vec<&str> = files.iter().map(|file| file.full_path.as_str()).collect();
     assert!(names.contains(&SCRIPT_RESOURCE));
     assert!(names.contains(&TEAM_LAYOUT));
-    let game = Path::new(&game);
     assert_eq!(status(game, Some(&out)), BridgeStatus::Current);
 
     // A bridge from an older build: same layout, different script.
-    fs::remove_file(&out).unwrap();
-    let stale = std::env::temp_dir().join("dmm-live-bridge-test-stale");
-    let (layout, _) = expected_files(game).unwrap();
-    for (path, bytes) in [
-      (TEAM_LAYOUT, layout.as_slice()),
-      (SCRIPT_RESOURCE, SCRIPT_TEMPLATE),
-    ] {
-      let target = stale.join(path);
-      fs::create_dir_all(target.parent().unwrap()).unwrap();
-      fs::write(target, bytes).unwrap();
-    }
-    vpkmanager::pack_directory(&stale, &out).unwrap();
+    let layout = expected_layout(game).unwrap();
+    pack(
+      &out,
+      &[
+        (TEAM_LAYOUT, layout.as_slice()),
+        (SCRIPT_RESOURCE, SCRIPT_TEMPLATE),
+      ],
+    );
     assert_eq!(status(game, Some(&out)), BridgeStatus::Outdated);
 
-    let copy = out.with_file_name("library-copy.vpk");
+    let copy = dir.path().join(LIVE_BRIDGE_FILE);
     update(game, &copy, &out).unwrap();
     assert_eq!(status(game, Some(&out)), BridgeStatus::Current);
     assert_eq!(fs::read(&copy).unwrap(), fs::read(&out).unwrap());
-    let _ = fs::remove_dir_all(&stale);
-    let _ = fs::remove_dir_all(out.parent().unwrap());
   }
 
   #[test]
@@ -372,5 +373,17 @@ mod tests {
     );
 
     assert_eq!(status(game.path(), Some(&installed)), BridgeStatus::Current);
+  }
+
+  #[test]
+  fn an_update_leaves_an_addon_that_is_not_the_bridge_alone() {
+    let game = tempfile::tempdir().unwrap();
+    let installed = game.path().join("addons").join("pak05_dir.vpk");
+    pack(&installed, &[(TEAM_LAYOUT, b"someone else's layout")]);
+    let before = fs::read(&installed).unwrap();
+
+    let copy = game.path().join(LIVE_BRIDGE_FILE);
+    assert!(update(game.path(), &copy, &installed).is_err());
+    assert_eq!(fs::read(&installed).unwrap(), before);
   }
 }

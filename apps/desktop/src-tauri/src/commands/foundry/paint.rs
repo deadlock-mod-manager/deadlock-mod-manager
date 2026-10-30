@@ -15,10 +15,10 @@ use std::path::{Path, PathBuf};
 
 use crate::errors::Error;
 
-use super::archive_cache::open_archive;
 use super::hero::{panorama_codenames, sound_codename_for_hero};
 use super::types::{FoundryPaintPart, FoundryPaintResult, FoundryPaintTargetInfo, PaintTarget};
 use super::workspace::{safe_entry_relative, workspace_files_dir};
+use crate::vpk_archive_cache::open_archive;
 
 /// Path tokens that mark a material as belonging to a weapon.
 const WEAPON_TOKENS: &[&str] = &[

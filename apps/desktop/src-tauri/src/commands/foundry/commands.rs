@@ -15,7 +15,6 @@ use vpkmanager::source2::sound::VsndAudio;
 use crate::errors::Error;
 
 use super::analyze::{analyze_default_hero, analyze_vpk_path, decode_foundry_cards};
-use super::archive_cache::clear_archive_cache;
 use super::export::{ExportDestination, FoundryExportResult, export_workspace};
 use super::paint::{describe_paint_targets, model_paint_parts, paint_parts, paint_target};
 use super::palette::{sample_color_map, skin_palette};
@@ -30,6 +29,7 @@ use super::workspace::{
   adjust_workspace_sound, build_workspace_vpk, entry_bytes_from_sources, hue_of, parse_hex_color,
   prepare_workspace, record_edits, record_paint, replace_workspace_file, revert_workspace_file,
 };
+use crate::vpk_archive_cache::clear_archive_cache;
 
 /// Parse a skin VPK, detect its hero, and return the entries grouped by editing
 /// category. Read-only: this never writes to the user's copy of the VPK.

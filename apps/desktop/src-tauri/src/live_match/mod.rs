@@ -11,18 +11,17 @@
 //! This needs `-condebug`, which the app already passes when launching the game.
 //!
 //! With the live bridge HUD mod installed, the same log also carries the
-//! scoreboard; [`bridge`] reads those lines.
-
-mod bridge;
+//! scoreboard; [`crate::live_bridge::protocol`] reads those lines.
 
 use std::path::{Path, PathBuf};
 use std::sync::{LazyLock, Mutex};
 
+use chrono::Local;
 use regex::Regex;
 use serde::Serialize;
 use ts_rs::TS;
 
-use bridge::{BridgeState, LiveScoreboard};
+use crate::live_bridge::protocol::{self, BridgeLine, BridgeState, LiveScoreboard};
 
 /// Where the match is. The game logs its state as it moves through them.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, TS)]
@@ -67,8 +66,10 @@ pub struct LiveMatchStatus {
   /// False when the game never ran with `-condebug`; without the log there is
   /// nothing to read and the UI says so instead of waiting forever.
   pub console_log_available: bool,
-  /// Sitting in matchmaking, waiting for a lobby.
-  pub queued: bool,
+  /// When the player started matchmaking, in Unix milliseconds. `None` when
+  /// not sitting in the queue.
+  #[ts(type = "number | null")]
+  pub queued_since: Option<i64>,
   pub current: Option<LiveMatch>,
   /// Matches played this session, which deadlock-api may not have ingested yet.
   pub recent_match_ids: Vec<String>,
@@ -109,13 +110,80 @@ const RECENT_LIMIT: usize = 20;
 /// What the log says the player is doing right now.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct LivePhase {
-  pub queued: bool,
+  /// When matchmaking started, in Unix milliseconds, while still queued.
+  pub queued_since: Option<i64>,
   pub current: Option<LiveMatch>,
   /// Every match id seen this session, newest last, capped at `RECENT_LIMIT`.
   pub recent_match_ids: Vec<String>,
   /// What the bridge reported. Kept after the lobby closes so the last match
   /// stays readable, and dropped when the next lobby is created.
   bridge: Option<BridgeState>,
+}
+
+/// A line of `console.log` the live tab cares about.
+enum LogEvent<'a> {
+  Bridge(BridgeLine),
+  /// The match's game state changed, e.g. to `GameInProgress`.
+  GameState(&'a str),
+  /// Matchmaking started, at this Unix millisecond.
+  QueueStarted(i64),
+  QueueStopped,
+  LobbyCreated {
+    lobby_id: &'a str,
+    match_id: &'a str,
+  },
+  LobbyDestroyed {
+    lobby_id: &'a str,
+  },
+}
+
+/// What `line` means, if anything. Most of a log is engine chatter, so each
+/// kind is ruled out with a substring check before anything costlier runs.
+fn classify(line: &str) -> Option<LogEvent<'_>> {
+  static RE: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(
+      r"Lobby (\d+) for Match (\d+) (created|destroyed)|k_EMsgClientToGC(Start|Stop)Matchmaking\b",
+    )
+    .expect("invalid regex")
+  });
+
+  // Checked first: a bridge line carries player names, which must never read
+  // as one of the game's own lines.
+  if let Some(bridge) = protocol::parse_line(line) {
+    return Some(LogEvent::Bridge(bridge));
+  }
+  // The hideout's local server logs `ChangeGameState: HeroSelection (3)`; in
+  // a match the client logs `OnGameStateChanged: GameInProgress (7)`. Only a
+  // lobby's states count, so the hideout's never stand in for a match's.
+  if let Some((_, rest)) = line
+    .split_once("OnGameStateChanged: ")
+    .or_else(|| line.split_once("ChangeGameState: "))
+  {
+    let (name, _) = rest.split_once(" (")?;
+    return Some(LogEvent::GameState(name.trim()));
+  }
+  if !line.contains("Lobby ") && !line.contains("Matchmaking") {
+    return None;
+  }
+  let capture = RE.captures(line)?;
+  // The matchmaking arm has no lobby id; the alternation tells them apart.
+  let Some(lobby_id) = capture.get(1) else {
+    return Some(if &capture[4] == "Start" {
+      let at = protocol::line_time_ms(line).unwrap_or_else(|| Local::now().timestamp_millis());
+      LogEvent::QueueStarted(at)
+    } else {
+      LogEvent::QueueStopped
+    });
+  };
+  let lobby_id = lobby_id.as_str();
+  Some(if &capture[3] == "created" {
+    LogEvent::LobbyCreated {
+      lobby_id,
+      match_id: capture.get(2)?.as_str(),
+    }
+  } else {
+    LogEvent::LobbyDestroyed { lobby_id }
+  })
 }
 
 /// Folds the matchmaking, lobby and live bridge lines of `log` onto an
@@ -133,67 +201,44 @@ pub struct LivePhase {
 /// 13:38:12 Lobby 102014987589037612 for Match 97003070 destroyed
 /// ```
 pub fn fold_phase(log: &str, previous: LivePhase) -> LivePhase {
-  static RE: LazyLock<Regex> = LazyLock::new(|| {
-    Regex::new(
-      r"Lobby (\d+) for Match (\d+) (created|destroyed)|k_EMsgClientToGC(Start|Stop)Matchmaking\b",
-    )
-    .expect("invalid regex")
-  });
-
   let mut phase = previous;
   // Line by line, because a lobby line resets the board and has to be seen in
   // order with the bridge lines around it.
-  for line in log.lines() {
-    if bridge::apply_line(line, &mut phase.bridge) {
-      continue;
-    }
-    // The hideout's local server logs `ChangeGameState: HeroSelection (3)`; in
-    // a match the client logs `OnGameStateChanged: GameInProgress (7)`. Only a
-    // lobby's states count, so the hideout's never stand in for a match's.
-    if let Some(rest) = line
-      .split_once("OnGameStateChanged: ")
-      .or_else(|| line.split_once("ChangeGameState: "))
-      .map(|(_, rest)| rest)
-    {
-      if let (Some(live), Some((name, _))) = (phase.current.as_mut(), rest.split_once(" (")) {
-        live.phase = GamePhase::from_state(name.trim());
+  for event in log.lines().filter_map(classify) {
+    match event {
+      LogEvent::Bridge(line) => BridgeState::apply(&mut phase.bridge, line),
+      LogEvent::GameState(name) => {
+        if let Some(live) = phase.current.as_mut() {
+          live.phase = GamePhase::from_state(name);
+        }
       }
-      continue;
-    }
-    if !line.contains("Lobby ") && !line.contains("Matchmaking") {
-      continue;
-    }
-    for capture in RE.captures_iter(line) {
-      // The matchmaking arm has no lobby id; the alternation tells them apart.
-      let Some(lobby_id) = capture.get(1) else {
-        phase.queued = capture.get(4).is_some_and(|m| m.as_str() == "Start");
-        continue;
-      };
-      let lobby_id = lobby_id.as_str().to_owned();
-      let match_id = capture[2].to_owned();
-
-      if &capture[3] == "created" {
-        if !phase.recent_match_ids.contains(&match_id) {
-          phase.recent_match_ids.push(match_id.clone());
+      LogEvent::QueueStarted(at) => phase.queued_since = Some(at),
+      LogEvent::QueueStopped => phase.queued_since = None,
+      LogEvent::LobbyCreated { lobby_id, match_id } => {
+        if !phase.recent_match_ids.iter().any(|id| id == match_id) {
+          phase.recent_match_ids.push(match_id.to_owned());
           if phase.recent_match_ids.len() > RECENT_LIMIT {
             phase.recent_match_ids.remove(0);
           }
         }
-        phase.queued = false;
+        phase.queued_since = None;
         phase.current = Some(LiveMatch {
-          match_id,
-          lobby_id,
+          match_id: match_id.to_owned(),
+          lobby_id: lobby_id.to_owned(),
           phase: GamePhase::Pregame,
         });
         phase.bridge = None;
-      } else if phase
-        .current
-        .as_ref()
-        // Only clear when the teardown belongs to the lobby we are tracking; an
-        // unrelated line must not hide a running match.
-        .is_some_and(|live| live.lobby_id == lobby_id)
-      {
-        phase.current = None;
+      }
+      // Only clear when the teardown belongs to the lobby we are tracking; an
+      // unrelated line must not hide a running match.
+      LogEvent::LobbyDestroyed { lobby_id } => {
+        if phase
+          .current
+          .as_ref()
+          .is_some_and(|live| live.lobby_id == lobby_id)
+        {
+          phase.current = None;
+        }
       }
     }
   }
@@ -227,7 +272,7 @@ pub fn status(game_path: &Path) -> LiveMatchStatus {
   let phase = phase(&path).unwrap_or_default();
   LiveMatchStatus {
     console_log_available: true,
-    queued: phase.queued,
+    queued_since: phase.queued_since,
     current: phase.current,
     recent_match_ids: phase.recent_match_ids,
     scoreboard: phase.bridge.as_ref().map(BridgeState::board),
@@ -274,8 +319,8 @@ fn phase(path: &Path) -> Option<LivePhase> {
 
 #[cfg(test)]
 mod tests {
-  use super::bridge::Team;
   use super::*;
+  use crate::live_bridge::protocol::Team;
 
   const CREATED: &str = "08/02 12:03:37 Lobby 174072581626958477 for Match 96996563 created";
   const DESTROYED: &str = "08/02 12:35:54 Lobby 174072581626958477 for Match 96996563 destroyed";
@@ -346,7 +391,8 @@ mod tests {
   fn reports_the_matchmaking_queue() {
     let phase = fold_phase(QUEUED, LivePhase::default());
 
-    assert!(phase.queued);
+    assert_eq!(phase.queued_since, protocol::line_time_ms(QUEUED));
+    assert!(phase.queued_since.is_some());
     assert!(phase.current.is_none());
   }
 
@@ -354,7 +400,7 @@ mod tests {
   fn leaves_the_queue_once_the_lobby_exists() {
     let phase = fold_phase(&format!("{QUEUED}\n{CREATED}\n"), LivePhase::default());
 
-    assert!(!phase.queued);
+    assert_eq!(phase.queued_since, None);
     assert_eq!(phase.current.unwrap().match_id, "96996563");
   }
 
@@ -366,7 +412,7 @@ mod tests {
       queued,
     );
 
-    assert!(!cancelled.queued);
+    assert_eq!(cancelled.queued_since, None);
   }
 
   const FRIENDLY: &str = r#"10/28 00:41:07 [PanoramaScript] [DMM-LIVE] {"v":2,"side":"friendly","clock":"12:34","players":[{"n":"Okaza","hid":13,"hn":"Haze","s":"12.3k","l":14,"k":5,"d":1,"a":7,"o":4210,"me":true,"dead":false}]}"#;

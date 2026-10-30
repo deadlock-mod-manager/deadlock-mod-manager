@@ -1,7 +1,7 @@
 import { CustomSettingType } from "@deadlock-mods/shared";
 import { getCustomSettings } from "@/lib/api-client";
 import { queryClient } from "@/lib/client";
-import { LIVE_BRIDGE_LINK } from "@/lib/constants";
+import { isLiveBridge } from "@/lib/constants";
 import { usePersistedStore } from "@/lib/store";
 import type { LocalSetting } from "@/types/settings";
 
@@ -51,9 +51,7 @@ export const getAdditionalArgs = async () => {
     usePersistedStore.getState();
   const additionalArgs: string[] = [];
   // The live bridge reports through the console log, which only -condebug writes.
-  const liveBridgeInstalled = localMods.some(
-    (mod) => mod.remoteUrl === LIVE_BRIDGE_LINK,
-  );
+  const liveBridgeInstalled = localMods.some(isLiveBridge);
 
   if (gamePresenceEnabled || liveBridgeInstalled) {
     additionalArgs.push("-condebug");

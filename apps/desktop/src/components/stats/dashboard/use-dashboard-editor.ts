@@ -9,10 +9,10 @@ import {
   type DashboardWidget,
   DEFAULT_LAYOUT,
   duplicateWidget,
-  moveTab,
   moveWidgetToTab,
   parseLayout,
   removeTab,
+  swapTabs,
   removeWidget,
   reorderWidget,
   resizeWidget,
@@ -20,7 +20,6 @@ import {
   updateTab,
   upsertWidget,
   withoutPanels,
-  withPanelTabsOf,
 } from "@/lib/stats/dashboard/layout";
 import { emptyTab, tabFromTemplate } from "@/lib/stats/dashboard/templates";
 import { usePersistedStore } from "@/lib/store";
@@ -44,21 +43,11 @@ export const useDashboardEditor = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const storedLayout = usePersistedStore((state) => state.statsDashboard);
   const setStoredLayout = usePersistedStore((state) => state.setStatsDashboard);
-  const hiddenPanels = useHiddenPanels();
-  // Panels behind an experimental feature that is off are hidden from the page
-  // and from a reset, and saving puts their tabs back for when it is turned on.
-  const defaultLayout = useMemo(
-    () => withoutPanels(DEFAULT_LAYOUT, hiddenPanels),
-    [hiddenPanels],
+  const { layout: savedLayout, recovered } = useMemo(
+    () => parseLayout(storedLayout),
+    [storedLayout],
   );
-  const parsed = useMemo(() => parseLayout(storedLayout), [storedLayout]);
-  const { layout: savedLayout, recovered } = useMemo(() => {
-    const visible = withoutPanels(parsed.layout, hiddenPanels);
-    return {
-      ...parsed,
-      layout: visible.tabs.length > 0 ? visible : defaultLayout,
-    };
-  }, [parsed, hiddenPanels, defaultLayout]);
+  const hiddenPanels = useHiddenPanels();
 
   const [draft, setDraft] = useState<DashboardLayout | null>(null);
   const [editorTarget, setEditorTarget] = useState<EditorTarget | null>(null);
@@ -68,7 +57,16 @@ export const useDashboardEditor = () => {
   const [health, setHealth] = useState<Record<string, WidgetHealth>>({});
 
   const editing = draft !== null;
-  const layout = draft ?? savedLayout;
+  // Panels behind an experimental feature that is off stay in the layout, so
+  // saving and resetting keep them for when it is turned on; only the page
+  // leaves them out.
+  const layout = useMemo(() => {
+    const full = draft ?? savedLayout;
+    const visible = withoutPanels(full, hiddenPanels);
+    return visible.tabs.length > 0
+      ? visible
+      : withoutPanels(DEFAULT_LAYOUT, hiddenPanels);
+  }, [draft, savedLayout, hiddenPanels]);
   const tabParam = searchParams.get("tab");
   const activeTab =
     layout.tabs.find((tab) => tab.id === tabParam) ?? layout.tabs[0];
@@ -131,8 +129,14 @@ export const useDashboardEditor = () => {
       tab.widgets.length === 0
         ? edit((current) => removeTab(current, tab.id))
         : setPendingConfirm({ kind: "deleteTab", tab }),
-    onMoveTab: (id: string, offset: -1 | 1) =>
-      edit((current) => moveTab(current, id, offset)),
+    // Steps past the tabs the page hides, which the draft still holds.
+    onMoveTab: (id: string, offset: -1 | 1) => {
+      const index = layout.tabs.findIndex((tab) => tab.id === id);
+      const neighbour = layout.tabs[index + offset];
+      if (index >= 0 && neighbour) {
+        edit((current) => swapTabs(current, id, neighbour.id));
+      }
+    },
     onRenameTab: (id: string, title: string) =>
       edit((current) =>
         updateTab(current, id, { title: title.trim() || null }),
@@ -155,11 +159,10 @@ export const useDashboardEditor = () => {
     startEditing: () => setDraft(cloneLayout(savedLayout)),
     save: () => {
       if (!draft) return;
-      const next = withPanelTabsOf(draft, parsed.layout, hiddenPanels);
       // Saving the untouched default stores nothing, so later releases can
       // still improve the default for everyone who never customised it.
       setStoredLayout(
-        JSON.stringify(next) === JSON.stringify(DEFAULT_LAYOUT) ? null : next,
+        JSON.stringify(draft) === JSON.stringify(DEFAULT_LAYOUT) ? null : draft,
       );
       setDraft(null);
     },
@@ -181,7 +184,7 @@ export const useDashboardEditor = () => {
     dismissConfirm: () => setPendingConfirm(null),
     confirm: () => {
       if (pendingConfirm?.kind === "reset") {
-        setDraft(cloneLayout(defaultLayout));
+        setDraft(cloneLayout(DEFAULT_LAYOUT));
       } else if (pendingConfirm?.kind === "discard") {
         setDraft(null);
       } else if (pendingConfirm?.kind === "deleteTab" && draft) {

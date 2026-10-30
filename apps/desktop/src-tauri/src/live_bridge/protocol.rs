@@ -1,7 +1,7 @@
-//! The live bridge HUD mod's lines in `console.log`, and the scoreboard they
-//! add up to.
+//! What the live bridge prints to `console.log`, and the scoreboard it adds up
+//! to.
 //!
-//! The mod reads the values the game puts on its top-bar player panels and
+//! The script reads the values the game puts on its top-bar player panels and
 //! prints one line per team whenever they change, plus the pre-match versus
 //! screen's roster once it is shown:
 //!
@@ -13,16 +13,20 @@
 use std::collections::HashMap;
 
 use chrono::{DateTime, Datelike, Local, NaiveDateTime, TimeZone};
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
 const BRIDGE_TAG: &str = "[DMM-LIVE] ";
 const ROSTER_TAG: &str = "[DMM-LIVE-ROSTER] ";
-/// Bumped whenever the wire format changes. Lines from any other version are
-/// skipped, and the rebuilt script makes an installed bridge read as outdated.
+/// Bumped whenever the wire format changes, here and in the script. Lines from
+/// any other version are skipped, and the rebuilt script makes an installed
+/// bridge read as outdated.
 const BRIDGE_VERSION: u32 = 2;
 /// SteamID64 of account 0 in the public universe.
 const STEAM_ID64_BASE: u64 = 76_561_197_960_265_728;
+/// Every console line starts with a `MM/DD HH:MM:SS` stamp.
+const STAMP_LEN: usize = "MM/DD HH:MM:SS".len();
 
 /// The game's two teams.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, TS)]
@@ -116,67 +120,115 @@ impl BridgeState {
   }
 }
 
-/// Folds `line` into `state` if it is a bridge line, and says whether it was.
-/// Lines from another bridge version, or that fail to parse, are skipped rather
-/// than clearing what is already on screen.
-pub fn apply_line(line: &str, state: &mut Option<BridgeState>) -> bool {
+/// A line the bridge printed.
+pub enum BridgeLine {
+  /// One top-bar team panel, and when the line was logged.
+  Scores {
+    report: BridgeReport,
+    reported_at: Option<i64>,
+  },
+  /// The versus screen's roster.
+  Roster(RosterReport),
+  /// A line from another bridge version, or one that does not parse. Skipped
+  /// rather than clearing what is already on screen.
+  Unreadable,
+}
+
+/// What `line` carries, or `None` when the bridge did not print it.
+pub fn parse_line(line: &str) -> Option<BridgeLine> {
   if let Some(json) = after_tag(line, BRIDGE_TAG) {
-    if let Ok(report) = serde_json::from_str::<BridgeReport>(json)
-      && report.v == BRIDGE_VERSION
-    {
-      apply_report(line, report, state);
-    }
-    return true;
+    return Some(match parse_report(json) {
+      Some(report) => BridgeLine::Scores {
+        report,
+        reported_at: line_time_ms(line),
+      },
+      None => BridgeLine::Unreadable,
+    });
   }
-  if let Some(json) = after_tag(line, ROSTER_TAG) {
-    if let Ok(report) = serde_json::from_str::<RosterReport>(json)
-      && report.v == BRIDGE_VERSION
-    {
-      apply_roster(report, state);
+  let json = after_tag(line, ROSTER_TAG)?;
+  Some(parse_report(json).map_or(BridgeLine::Unreadable, BridgeLine::Roster))
+}
+
+impl BridgeState {
+  /// Folds a bridge line into `state`, starting the board on the first one
+  /// that carries anything.
+  pub fn apply(state: &mut Option<Self>, line: BridgeLine) {
+    match line {
+      BridgeLine::Scores {
+        report,
+        reported_at,
+      } => {
+        let state = state.get_or_insert_with(Self::default);
+        state.slots[report.side.slot()] = report.players.into_iter().map(Into::into).collect();
+        if let Some(seconds) = report.clock.as_deref().and_then(clock_seconds) {
+          state.clock_seconds = Some(seconds);
+        }
+        if reported_at.is_some() {
+          state.reported_at = reported_at;
+        }
+      }
+      BridgeLine::Roster(report) => {
+        state.get_or_insert_with(Self::default).accounts = report
+          .teams
+          .into_iter()
+          .flat_map(|team| team.players)
+          .filter_map(|entry| Some((entry.n?, account_id(&entry.id?)?)))
+          .collect();
+      }
+      BridgeLine::Unreadable => {}
     }
-    return true;
   }
-  false
 }
 
 fn after_tag<'a>(line: &'a str, tag: &str) -> Option<&'a str> {
   line.find(tag).map(|start| &line[start + tag.len()..])
 }
 
-fn apply_report(line: &str, report: BridgeReport, state: &mut Option<BridgeState>) {
-  let slot = match report.side.as_str() {
-    "friendly" => 0,
-    "enemy" => 1,
-    _ => return,
-  };
-  let state = state.get_or_insert_with(BridgeState::default);
-  state.slots[slot] = report.players.into_iter().map(Into::into).collect();
-  if let Some(seconds) = report.clock.as_deref().and_then(clock_seconds) {
-    state.clock_seconds = Some(seconds);
-  }
-  if let Some(reported) = line
-    .get(..14)
-    .and_then(|stamp| log_time_ms(stamp, Local::now()))
-  {
-    state.reported_at = Some(reported);
-  }
+/// Every report carries the bridge version beside its own fields.
+#[derive(Deserialize)]
+struct Versioned<T> {
+  v: u32,
+  #[serde(flatten)]
+  report: T,
 }
 
-fn apply_roster(report: RosterReport, state: &mut Option<BridgeState>) {
-  state.get_or_insert_with(BridgeState::default).accounts = report
-    .teams
-    .into_iter()
-    .flat_map(|team| team.players)
-    .filter_map(|entry| Some((entry.n?, account_id(&entry.id?)?)))
-    .collect();
+/// `json` as a report of this bridge version.
+fn parse_report<T: DeserializeOwned>(json: &str) -> Option<T> {
+  let Versioned { v, report } = serde_json::from_str::<Versioned<T>>(json).ok()?;
+  (v == BRIDGE_VERSION).then_some(report)
+}
+
+/// When a console line was logged, from its stamp, in Unix milliseconds.
+pub fn line_time_ms(line: &str) -> Option<i64> {
+  line
+    .get(..STAMP_LEN)
+    .and_then(|stamp| log_time_ms(stamp, Local::now()))
+}
+
+/// The top-bar team panel a report comes from. A side the bridge does not
+/// know fails to parse, so the report is skipped.
+#[derive(Debug, Clone, Copy, Deserialize)]
+#[serde(rename_all = "lowercase")]
+enum Side {
+  Friendly,
+  Enemy,
+}
+
+impl Side {
+  /// The panel's index in [`BridgeState`]'s slots.
+  fn slot(self) -> usize {
+    match self {
+      Self::Friendly => 0,
+      Self::Enemy => 1,
+    }
+  }
 }
 
 /// The bridge's wire format. Keys are short because a line is written every
 /// time a number on the scoreboard changes.
 #[derive(Deserialize)]
-struct BridgeReport {
-  v: u32,
-  side: String,
+pub struct BridgeReport {
+  side: Side,
   clock: Option<String>,
   players: Vec<BridgePlayer>,
 }
@@ -197,8 +249,7 @@ struct BridgePlayer {
 }
 
 #[derive(Deserialize)]
-struct RosterReport {
-  v: u32,
+pub struct RosterReport {
   teams: Vec<RosterTeam>,
 }
 
@@ -305,6 +356,18 @@ fn log_time_ms(stamp: &str, now: DateTime<Local>) -> Option<i64> {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::live_bridge::BRIDGE_SOURCE;
+
+  #[test]
+  fn the_script_prints_what_this_parser_reads() {
+    for declaration in [
+      format!("var VERSION = {BRIDGE_VERSION};"),
+      format!("var TAG = \"{}\";", BRIDGE_TAG.trim_end()),
+      format!("var ROSTER_TAG = \"{}\";", ROSTER_TAG.trim_end()),
+    ] {
+      assert!(BRIDGE_SOURCE.contains(&declaration), "{declaration}");
+    }
+  }
 
   #[test]
   fn parses_souls_the_way_the_top_bar_prints_them() {

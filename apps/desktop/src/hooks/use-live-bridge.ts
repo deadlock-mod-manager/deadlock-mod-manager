@@ -6,14 +6,12 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
-import { join } from "@tauri-apps/api/path";
 import { useTranslation } from "react-i18next";
 import LIVE_BRIDGE_LOGO from "@/assets/live-bridge.svg?raw";
 import { useProgress } from "@/components/downloads/progress-indicator";
 import { useInstallAction } from "@/hooks/use-install-action";
 import { useModProcessor } from "@/hooks/use-mod-processor";
-import { LIVE_BRIDGE_LINK, ModCategory } from "@/lib/constants";
-import { getModsStorePath } from "@/lib/download-cache";
+import { isLiveBridge, LIVE_BRIDGE_LINK, ModCategory } from "@/lib/constants";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import type { BridgeStatus } from "@/types/generated/BridgeStatus";
@@ -21,7 +19,6 @@ import { type LocalMod, ModStatus } from "@/types/mods";
 
 const LIVE_BRIDGE_NAME = "Live Scoreboard Bridge";
 const LIVE_BRIDGE_AUTHOR = "Okaza";
-const LIVE_BRIDGE_FILE = "dmm-live-bridge.vpk";
 
 // Shared by every caller, so the renderer's automatic update and the notice's
 // button see one update in flight rather than starting a second.
@@ -30,8 +27,7 @@ const UPDATE_KEY = ["live-bridge-update"];
 // focus or mount.
 const STATUS_STALE_MS = 5 * 60 * 1000;
 
-const bridgeIn = (mods: LocalMod[]) =>
-  mods.find((mod) => mod.remoteUrl === LIVE_BRIDGE_LINK);
+const bridgeIn = (mods: LocalMod[]) => mods.find(isLiveBridge);
 
 const findBridge = () => bridgeIn(usePersistedStore.getState().localMods);
 
@@ -97,7 +93,7 @@ export const useLiveBridge = () => {
             }),
           },
           ModCategory.HUD,
-          { kind: "liveBridge", fileName: LIVE_BRIDGE_FILE },
+          { kind: "liveBridge" },
         );
       }
       await enableInLibrary();
@@ -119,15 +115,9 @@ export const useLiveBridge = () => {
       if (!bridge || !installedVpk) {
         throw new Error("The live bridge is not enabled");
       }
-      const libraryCopy = await join(
-        await getModsStorePath(),
-        bridge.id,
-        "files",
-        LIVE_BRIDGE_FILE,
-      );
       await invoke("update_live_bridge", {
+        modId: bridge.id,
         profileFolder,
-        libraryCopy,
         installedVpk,
       });
     },

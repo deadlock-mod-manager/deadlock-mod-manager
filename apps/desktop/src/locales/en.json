@@ -1009,10 +1009,7 @@
       "waitingDescription": "You are in the menus or the hideout. Join a match and both teams show up here while it loads.",
       "noBridgeTitle": "Waiting for the live bridge",
       "noBridgeDescription": "A match looks to be running, but the live bridge has not reported. It reports a few seconds after the top bar appears. Launch Deadlock from the mod manager (it adds the -condebug option the bridge needs), restart the game if you installed the bridge while it was open, and check that no other mod replaces the top bar team layout.",
-      "live": "Live",
-      "friendly": "Your team",
       "teamPending": "No report from this team yet.",
-      "you": "You",
       "columns": {
         "player": "Player",
         "souls": "Souls"
@@ -1036,7 +1033,6 @@
         }
       },
       "bridge": {
-        "install": "Install",
         "installing": "Installing…",
         "installFailed": "Could not install the live bridge. Check that the game path is set and try again.",
         "modDescription": "Feeds the Stats page's Live tab: prints the in-game top bar scoreboard (heroes, K/D/A, souls, level, objective damage) to the console log. Shows nothing in game.",
@@ -1057,13 +1053,10 @@
       "matchOverTitle": "Match over",
       "matchOverDescription": "The match has ended. Queue up again and the next lobby shows up here.",
       "pregame": {
-        "enemy": "Enemy team",
-        "noRecord": "No public record",
         "loadingTitle": "Match found",
         "loadingDescription": "The lineup shows up here as soon as the match loads in."
       },
       "now": {
-        "perMinute": "{{value}} / min",
         "liveAt": "LIVE {{clock}}",
         "onHero": "{{winrate}} on {{hero}}",
         "kda": "KDA {{value}}",
@@ -1090,7 +1083,6 @@
       "souls": {
         "title": "Souls over time",
         "description": "Your souls this match against the bracket's curve",
-        "you": "You",
         "bracket": "Bracket",
         "band": "Middle 68%",
         "projected": "Projected",
@@ -1100,14 +1092,8 @@
       "board": {
         "description": "Sorted by souls. Records are each player's games on the hero they're playing and on all heroes.",
         "level": "Lvl",
-        "onHero": "On this hero",
         "allHeroes": "All heroes",
-        "rank": "Rank",
         "respawning": "Respawning",
-        "games_one": "{{count}} game",
-        "games_other": "{{count}} games",
-        "firstGame": "First game",
-        "unranked": "Unranked",
         "team": "Team"
       },
       "scouting": {
@@ -1124,7 +1110,6 @@
         "beatYou": "Beat you {{lost}} of {{count}}",
         "againstYou": "Against you {{count}}×",
         "withYou": "With you {{count}}×",
-        "firstGame": "First game on hero",
         "oneTrick": "One-trick",
         "winStreak": "{{count}} win streak",
         "lossStreak": "{{count}} loss streak",
@@ -1136,8 +1121,6 @@
         "versus": "vs {{hero}}",
         "tooFew": "Too few",
         "hardest": "Hardest",
-        "best": "Best",
-        "onHero": "On hero",
         "kda": "KDA"
       },
       "states": {
@@ -1152,11 +1135,6 @@
         },
         "closed": {
           "description": "The board fills in when you load into a match.",
-          "matches_one": "{{count}} match",
-          "matches_other": "{{count}} matches",
-          "today": "Today",
-          "record": "Record",
-          "best": "Best",
           "launch": "Launch modded"
         },
         "win": "W",
@@ -1182,7 +1160,12 @@
         "preview": "Your match shows up here",
         "session": {
           "description": "Your matches since midnight",
-          "empty": "No matches yet today"
+          "empty": "No matches yet today",
+          "today": "Today",
+          "matches_one": "{{count}} match",
+          "matches_other": "{{count}} matches",
+          "record": "Record",
+          "recordValue": "{{wins}} – {{losses}}"
         }
       },
       "status": {
@@ -1195,7 +1178,19 @@
       },
       "labels": {
         "kda": "K / D / A",
-        "objDmg": "Obj dmg"
+        "objDmg": "Obj dmg",
+        "you": "You",
+        "yourTeam": "Your team",
+        "enemyTeam": "Enemy team",
+        "noRecord": "No public record",
+        "unranked": "Unranked",
+        "onHero": "On hero",
+        "firstGame": "First game on hero",
+        "best": "Best",
+        "rank": "Rank",
+        "perMinute": "{{value}} / min",
+        "games_one": "{{count}} game",
+        "games_other": "{{count}} games"
       }
     },
     "player": {

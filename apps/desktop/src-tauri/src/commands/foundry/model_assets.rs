@@ -12,10 +12,10 @@ use tempfile::{TempDir, TempPath};
 use tokio::sync::{OwnedSemaphorePermit, Semaphore};
 use tokio_util::sync::CancellationToken;
 
-use super::archive_cache::open_archive;
 use super::staging::staged_base_game_vpk;
 use super::types::FoundryModel;
 use crate::errors::Error;
+use crate::vpk_archive_cache::open_archive;
 
 pub struct ModelAssets {
   files: Mutex<HashMap<String, TempPath>>,

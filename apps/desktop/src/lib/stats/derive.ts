@@ -402,6 +402,35 @@ export const sessionCurve = (matches: MatchHistoryEntry[]): BucketStats[] => {
     .sort((a, b) => a.bucket - b.bucket);
 };
 
+export interface TodaysSession {
+  /** Oldest first, the order the day was played in. */
+  matches: MatchHistoryEntry[];
+  wins: number;
+  /** The match with the best kills plus assists minus deaths. */
+  best: MatchHistoryEntry | undefined;
+}
+
+const sessionScore = (match: MatchHistoryEntry) =>
+  match.player_kills + match.player_assists - match.player_deaths;
+
+/** The matches started since local midnight. */
+export const todaysSession = (
+  matches: MatchHistoryEntry[],
+  now = new Date(),
+): TodaysSession => {
+  const midnight = new Date(now);
+  midnight.setHours(0, 0, 0, 0);
+  const since = midnight.getTime() / 1000;
+  const today = matches
+    .filter((match) => match.start_time >= since)
+    .sort((a, b) => a.start_time - b.start_time);
+  return {
+    matches: today,
+    wins: today.filter(isWin).length,
+    best: [...today].sort((a, b) => sessionScore(b) - sessionScore(a))[0],
+  };
+};
+
 export interface BenchmarkMetric {
   metric:
     | "kills"
