@@ -13,7 +13,7 @@ const windows = process.platform === "win32";
 describe("scenario selection", () => {
   it("registers every case with explicit phases and capability requirements", () => {
     const ids = selectScenarios("all");
-    expect(ids).toHaveLength(windows ? 94 : 83);
+    expect(ids).toHaveLength(windows ? 95 : 84);
     for (const id of ids) {
       expect(parseScenarioId(id)).toBe(id);
       expect(scenarioSpec(id)).toContain("./specs/");

@@ -622,6 +622,23 @@ export const scenarios = {
   "downloads-auth": downloads,
   "downloads-corrupt": downloads,
   "downloads-variants": downloads,
+  "downloads-queue-error-toast": {
+    ...catalog,
+    family: "downloads",
+    spec: "downloads-queue-error",
+    phases: ["queue-error"],
+    verifyNetwork: (_id: string, requests: readonly FixtureRequest[]) => {
+      const pages = requests.filter((request) =>
+        request.url.startsWith("/apiv11/Mod/900001/DownloadPage"),
+      );
+      if (pages.length !== 2)
+        throw new Error(
+          `Expected the file list and the queue to fetch the download page once each, saw ${pages.length}`,
+        );
+      if (requests.some((request) => request.url.startsWith("/dl/")))
+        throw new Error("A refused download must not request its archive");
+    },
+  },
   "filesystem-backup-replace": filesystem,
   "filesystem-backup-merge": filesystem,
   "filesystem-lock": { ...filesystem, platforms: ["win32"] },

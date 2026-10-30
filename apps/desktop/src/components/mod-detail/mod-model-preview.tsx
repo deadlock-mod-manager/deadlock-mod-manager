@@ -1,5 +1,6 @@
 import type { ModDto } from "@deadlock-mods/shared";
 import { Button } from "@deadlock-mods/ui/components/button";
+import { toast } from "@deadlock-mods/ui/components/sonner";
 import {
   Tooltip,
   TooltipContent,
@@ -59,7 +60,17 @@ export const ModModelPreview = ({ mod, localMod, files }: Props) => {
     ].includes(localMod.status);
   const download = useMutation({
     mutationFn: async (selected: ModDownloadItem) =>
-      queueModDownload(mod, [selected], { allFiles: files, profileFolder }),
+      queueModDownload(mod, [selected], {
+        allFiles: files,
+        profileFolder,
+        onError: (error) =>
+          toast.error(
+            t("downloads.downloadError", {
+              name: mod.name,
+              message: error.message,
+            }),
+          ),
+      }),
     meta: { skipGlobalErrorHandler: true },
   });
   return (
