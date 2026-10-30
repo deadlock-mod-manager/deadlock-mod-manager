@@ -90,7 +90,7 @@ jobs:
           signpath-organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
           signpath-project-slug: deadlock-mod-manager
           signpath-signing-policy: test-signing
-          tauri-private-key: ${{ secrets.TAURI_PRIVATE_KEY }}
+          tauri-private-key: ${{ secrets.TAURI_NIGHTLY_PRIVATE_KEY }}
 
       - name: Split signed artifacts
         shell: bash
