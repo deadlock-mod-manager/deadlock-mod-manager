@@ -690,6 +690,14 @@ export const scenarios = {
     },
   },
   "gamebanana-multifile": catalog,
+  "deep-link-other-file": {
+    ...catalog,
+    spec: "deep-link",
+    phases: ["second-file"],
+    routes: () => createCatalogRoutes("gamebanana-multifile"),
+    verifyNetwork: (_id: string, requests: readonly FixtureRequest[]) =>
+      assertCatalogNetwork("gamebanana-multifile", requests),
+  },
   "gamebanana-variants": catalog,
   "gamebanana-remembered": catalogLifecycle,
   "gamebanana-unremembered": catalogLifecycle,

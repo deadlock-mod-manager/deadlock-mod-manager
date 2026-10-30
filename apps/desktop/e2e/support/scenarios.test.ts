@@ -13,7 +13,7 @@ const windows = process.platform === "win32";
 describe("scenario selection", () => {
   it("registers every case with explicit phases and capability requirements", () => {
     const ids = selectScenarios("all");
-    expect(ids).toHaveLength(windows ? 99 : 88);
+    expect(ids).toHaveLength(windows ? 100 : 89);
     for (const id of ids) {
       expect(parseScenarioId(id)).toBe(id);
       expect(scenarioSpec(id)).toContain("./specs/");
@@ -23,7 +23,7 @@ describe("scenario selection", () => {
       "onboarding-skip-analysis",
       "onboarding-telemetry-default",
     ]);
-    expect(selectScenarios("gamebanana")).toHaveLength(20);
+    expect(selectScenarios("gamebanana")).toHaveLength(21);
     expect(selectScenarios("library-groups")).toEqual([
       "library-groups-organize",
       "library-groups-identification",
