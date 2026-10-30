@@ -110,10 +110,9 @@ export const deselectInstallFile = (archiveName: string, filePath: string) =>
       "false",
     );
   });
-// The mod page keeps active files under its Files tab.
-export const openFilesTab = () =>
-  step("open the Files tab", async () => {
-    const tab = await $('[role="tab"][id$="-trigger-files"]');
+export const openModTab = (value: string, name: string) =>
+  step(`open the ${name} tab`, async () => {
+    const tab = await $(`[role="tab"][id$="-trigger-${value}"]`);
     await reveal(tab);
     await tab.waitForClickable();
     await tab.click();
@@ -123,6 +122,8 @@ export const openFilesTab = () =>
     }
     await expect(tab).toHaveAttribute("aria-selected", "true");
   });
+// The mod page keeps active files under its Files tab.
+export const openFilesTab = () => openModTab("files", "Files");
 export const installedFiles = () => $('[data-testid="installed-files"]');
 export const activeFiles = () => $('[data-testid="active-vpks"]');
 

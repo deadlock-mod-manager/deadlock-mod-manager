@@ -93,7 +93,7 @@ export const catalogRecipe = (scenario: string): CatalogArchive[] => {
     return catalogRecipe("gamebanana-variants");
   if (
     scenario === "gamebanana-update-skip" ||
-    scenario === "downloads-queue-error-toast"
+    scenario.startsWith("downloads-queue-error-")
   )
     return catalogRecipe("gamebanana-single");
   if (scenario === "gamebanana-single")
@@ -222,7 +222,7 @@ export const createCatalogRoutes = async (scenario: string) => {
     );
     // The author removes the file after the mod page listed it, so the backend
     // refuses to queue it.
-    if (scenario === "downloads-queue-error-toast")
+    if (scenario.startsWith("downloads-queue-error-"))
       downloadPage.sequence = [
         { status: 200, body: downloadPage.body },
         { status: 200, body: JSON.stringify({ _aFiles: [] }) },

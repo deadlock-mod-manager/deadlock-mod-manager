@@ -1,18 +1,34 @@
 import assert from "node:assert/strict";
 import path from "node:path";
 import { $, $$, browser } from "@wdio/globals";
+import { z } from "zod";
 import { startApplication } from "../support/application";
 import { closeApplication } from "../support/application-exit";
 import { step } from "../support/evidence";
 import { CATALOG_MOD_NAME } from "../support/gamebanana-fixtures";
 import { readCatalogState } from "../support/gamebanana-oracle";
 import { observeUntil } from "../support/observations";
-import { navigate, waitForDisplayed } from "../support/ui";
+import { navigate, openModTab, waitForDisplayed } from "../support/ui";
 
 const errorToasts = () => $$('[data-sonner-toast][data-type="error"]');
 
+// Each phase downloads through a different caller of the queue.
+const downloadFrom = {
+  "download-button": async () => {
+    await $('button[aria-label="Download Mod"]').click();
+  },
+  "model-tab": async () => {
+    await openModTab("3d", "3D");
+    await waitForDisplayed("button=Download for preview");
+    await $("button=Download for preview").click();
+  },
+};
+
 describe("download queue errors", () => {
   it("reports a download the backend refuses to queue once", async () => {
+    const phase = z
+      .enum(["download-button", "model-tab"])
+      .parse(process.env.DMM_E2E_PHASE);
     const runtime = await startApplication();
     const world = runtime.roots.world;
     await navigate("mods");
@@ -24,7 +40,7 @@ describe("download queue errors", () => {
     const messages = await step(
       "download a file GameBanana removed",
       async () => {
-        await $('button[aria-label="Download Mod"]').click();
+        await downloadFrom[phase]();
         // Every toast for the refusal is raised in the same callback, so they
         // render together.
         await browser.waitUntil(async () => (await errorToasts().length) > 0, {
@@ -40,13 +56,25 @@ describe("download queue errors", () => {
           },
           await $("[data-sonner-toaster]"),
         );
+        // Sonner slides and fades toasts in. WebKitGTK's element location
+        // ignores the slide, so the fade must finish too.
         let previous = "";
         await browser.waitUntil(
           async () => {
-            const current = JSON.stringify(
-              await errorToasts().map((toast) => toast.getLocation()),
+            const toasts = await browser.execute(() =>
+              [
+                ...document.querySelectorAll(
+                  '[data-sonner-toast][data-type="error"]',
+                ),
+              ].map((toast) => {
+                const { x, y } = toast.getBoundingClientRect();
+                return { x, y, opacity: getComputedStyle(toast).opacity };
+              }),
             );
-            const settled = current === previous;
+            const current = JSON.stringify(toasts);
+            const settled =
+              current === previous &&
+              toasts.every((toast) => toast.opacity === "1");
             previous = current;
             return settled;
           },
