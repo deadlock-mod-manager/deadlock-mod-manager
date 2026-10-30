@@ -27,10 +27,10 @@ use source2_model::resource::Resource;
 
 use crate::errors::Error;
 
-use super::archive_cache::open_archive;
 use super::hero::panorama_codenames;
 use super::staging::staged_base_game_vpk;
 use super::types::FoundryEntry;
+use crate::vpk_archive_cache::open_archive;
 
 /// The hero definition table, inside the base game's own pak.
 const HEROES_VDATA: &str = "scripts/heroes.vdata_c";

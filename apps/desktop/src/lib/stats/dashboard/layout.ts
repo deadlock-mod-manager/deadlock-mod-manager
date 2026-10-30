@@ -242,6 +242,12 @@ export const DEFAULT_LAYOUT: DashboardLayout = {
       icon: "users",
       widgets: [panel("squad-explorer", "squad")],
     },
+    {
+      id: "live",
+      title: null,
+      icon: "radio",
+      widgets: [panel("live-scoreboard", "liveScoreboard")],
+    },
   ],
 };
 
@@ -269,22 +275,35 @@ export const parseLayout = (stored: DashboardLayout | null) => {
 /** Panels the app no longer has. Saved layouts lose them instead of showing them broken. */
 const RETIRED_PANELS: ReadonlySet<string> = new Set(["live"]);
 
-const isRetired = (widget: DashboardWidget) =>
-  widget.source.kind === "panel" && RETIRED_PANELS.has(widget.source.panel);
+const listedIn =
+  (panels: ReadonlySet<string>) =>
+  (widget: DashboardWidget): boolean =>
+    widget.source.kind === "panel" && panels.has(widget.source.panel);
 
-/**
- * Drops retired panels, and the tabs that held nothing else. The layout is the
- * parser's fresh copy, so its tabs are edited in place.
- */
-const dropRetiredPanels = (layout: DashboardLayout): DashboardLayout => {
+/** Whether every widget on `tab` is one of `panels`. An empty tab holds none. */
+export const holdsOnly = (
+  tab: DashboardTab,
+  panels: ReadonlySet<string>,
+): boolean => tab.widgets.length > 0 && tab.widgets.every(listedIn(panels));
+
+/** Removes the given panels, and the tabs that held nothing else. */
+export const withoutPanels = (
+  layout: DashboardLayout,
+  panels: ReadonlySet<string>,
+): DashboardLayout => {
+  const isListed = listedIn(panels);
   const tabs = layout.tabs
-    .filter((tab) => tab.widgets.length === 0 || !tab.widgets.every(isRetired))
-    .map((tab) =>
-      Object.assign(tab, {
-        widgets: tab.widgets.filter((widget) => !isRetired(widget)),
-      }),
-    );
-  return tabs.length > 0 ? { ...layout, tabs } : DEFAULT_LAYOUT;
+    .filter((tab) => !holdsOnly(tab, panels))
+    .map((tab) => ({
+      ...tab,
+      widgets: tab.widgets.filter((widget) => !isListed(widget)),
+    }));
+  return { ...layout, tabs };
+};
+
+const dropRetiredPanels = (layout: DashboardLayout): DashboardLayout => {
+  const pruned = withoutPanels(layout, RETIRED_PANELS);
+  return pruned.tabs.length > 0 ? pruned : DEFAULT_LAYOUT;
 };
 
 const mapTab = (
@@ -315,18 +334,17 @@ export const updateTab = (
   patch: Partial<Pick<DashboardTab, "title" | "icon">>,
 ): DashboardLayout => mapTab(layout, tabId, (tab) => ({ ...tab, ...patch }));
 
-export const moveTab = (
+/** Swaps two tabs, so a tab can step past neighbours the page is not showing. */
+export const swapTabs = (
   layout: DashboardLayout,
   tabId: string,
-  offset: -1 | 1,
+  otherId: string,
 ): DashboardLayout => {
   const index = layout.tabs.findIndex((tab) => tab.id === tabId);
-  const target = index + offset;
-  if (index < 0 || target < 0 || target >= layout.tabs.length) {
-    return layout;
-  }
+  const other = layout.tabs.findIndex((tab) => tab.id === otherId);
+  if (index < 0 || other < 0) return layout;
   const tabs = [...layout.tabs];
-  [tabs[index], tabs[target]] = [tabs[target], tabs[index]];
+  [tabs[index], tabs[other]] = [tabs[other], tabs[index]];
   return { ...layout, tabs };
 };
 

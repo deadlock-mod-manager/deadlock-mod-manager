@@ -31,7 +31,7 @@ import {
 } from "@/lib/stats/dashboard/layout";
 import { cn } from "@/lib/utils";
 import { useDashboardData } from "./dashboard-context";
-import { PANEL_IDS, panelDef } from "./panels";
+import { PANEL_IDS, panelDef, useHiddenPanels } from "./panels";
 import { OptionRow } from "./view-options";
 
 const API_DOCS_URL = "https://api.deadlock-api.com/docs";
@@ -538,9 +538,10 @@ export const PanelPicker = ({
   onSelect: (panel: string) => void;
 }) => {
   const { t } = useTranslation();
+  const hiddenPanels = useHiddenPanels();
   return (
     <div className='flex flex-col gap-1.5'>
-      {PANEL_IDS.map((id) => {
+      {PANEL_IDS.filter((id) => !hiddenPanels.has(id)).map((id) => {
         const Icon = panelDef(id)?.icon;
         return (
           <button

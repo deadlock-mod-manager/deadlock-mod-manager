@@ -23,7 +23,6 @@ export const useProfileImport = (options?: { listenToProgress?: boolean }) => {
   const setProfileFolderName = usePersistedStore((s) => s.setProfileFolderName);
   const getProfile = usePersistedStore((s) => s.getProfile);
   const getActiveProfile = usePersistedStore((s) => s.getActiveProfile);
-  const fileserverPreference = usePersistedStore((s) => s.fileserverPreference);
 
   const { createProfileFromImport, addToCurrentProfile } = useMemo(
     () =>
@@ -36,7 +35,6 @@ export const useProfileImport = (options?: { listenToProgress?: boolean }) => {
         setProfileFolderName,
         getProfile,
         getActiveProfile,
-        fileserverPreference,
       }),
     [
       t,
@@ -46,7 +44,6 @@ export const useProfileImport = (options?: { listenToProgress?: boolean }) => {
       setProfileFolderName,
       getProfile,
       getActiveProfile,
-      fileserverPreference,
     ],
   );
 

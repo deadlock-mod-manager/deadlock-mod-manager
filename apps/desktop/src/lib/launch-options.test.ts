@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 import { CustomSettingType } from "@deadlock-mods/shared";
 import * as tauriCore from "@tauri-apps/api/core";
+import { type LocalMod, ModStatus } from "@/types/mods";
 import type { LocalSetting } from "@/types/settings";
 
 let serverSettings: Promise<{ id: string }[]>;
@@ -20,6 +21,43 @@ mock.module("@tauri-apps/api/core", () => ({
 mock.module("@/lib/plugins", () => ({ getPlugins: () => [] }));
 const { usePersistedStore } = await import("@/lib/store");
 const { getAdditionalArgs } = await import("./launch-options");
+const { LIVE_BRIDGE_LINK, ModCategory } = await import("@/lib/constants");
+
+const ADDED_AT = new Date(0);
+const liveBridge = (): LocalMod => ({
+  id: "local-bridge",
+  remoteId: "local-bridge",
+  name: "Live Scoreboard Bridge",
+  description: "",
+  remoteUrl: LIVE_BRIDGE_LINK,
+  author: "Okaza",
+  modAuthorId: null,
+  downloadable: false,
+  remoteAddedAt: ADDED_AT,
+  remoteUpdatedAt: ADDED_AT,
+  tags: [],
+  images: [],
+  hero: null,
+  isAudio: false,
+  isMap: false,
+  audioUrl: null,
+  isNSFW: false,
+  createdAt: ADDED_AT,
+  updatedAt: ADDED_AT,
+  downloadCount: 0,
+  likes: 0,
+  isBlacklisted: false,
+  blacklistReason: null,
+  blacklistedAt: null,
+  blacklistedBy: null,
+  isObsolete: false,
+  category: ModCategory.HUD,
+  filesUpdatedAt: null,
+  metadata: null,
+  overrides: null,
+  dependencies: null,
+  status: ModStatus.Downloaded,
+});
 
 const launchOption = (id: string, key: string): LocalSetting => ({
   id,
@@ -36,6 +74,7 @@ describe("getAdditionalArgs", () => {
   beforeEach(() => {
     usePersistedStore.setState({
       gamePresenceEnabled: false,
+      localMods: [],
       settings: {
         custom_setting_old: launchOption("custom_setting_old", "+old_option"),
         custom_setting_new: launchOption("custom_setting_new", "+new_option"),
@@ -61,5 +100,15 @@ describe("getAdditionalArgs", () => {
     expect(await getAdditionalArgs()).toBe(
       "+old_option true +new_option true +user_option true",
     );
+  });
+
+  it("writes the console log while the live bridge is installed", async () => {
+    serverSettings = Promise.resolve([]);
+    usePersistedStore.setState({
+      settings: {},
+      localMods: [liveBridge()],
+    });
+
+    expect(await getAdditionalArgs()).toBe("-condebug");
   });
 });

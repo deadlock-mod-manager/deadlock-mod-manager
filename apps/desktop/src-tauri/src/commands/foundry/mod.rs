@@ -4,7 +4,8 @@
 //! Split by concern:
 //! - `analyze` turns a VPK into the categorized manifest the UI renders
 //! - `staging` keeps every read off the user's original files
-//! - `archive_cache` keeps opened VPKs around; parsing pak01 is ~550 ms
+//! - opened VPKs are cached in [`crate::vpk_archive_cache`]; parsing pak01 is
+//!   ~550 ms
 //! - `workspace` owns the unpacked, editable copy and the VPK writer
 //! - `paint` recolors whole parts of the hero (body, gun, abilities), and
 //!   `palette` offers the colors the skin already wears
@@ -19,7 +20,6 @@
 mod ability_vfx;
 mod analyze;
 mod animation;
-mod archive_cache;
 mod cloth;
 mod commands;
 mod export;

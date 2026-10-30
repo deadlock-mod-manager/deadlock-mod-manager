@@ -191,28 +191,3 @@ export const assertMultipakUpdateNetwork = (
     ).sort((a, b) => a.path.localeCompare(b.path)),
   );
 };
-
-// Only Automatic routing fetches the fileserver directory, once per process.
-// A installs with Default routing and updates with Automatic; a fresh process
-// then downloads B with Automatic.
-export const assertUpdateRoutingNetwork = (
-  _id: string,
-  requests: readonly FixtureRequest[],
-) => {
-  const [a, b] = MULTIPAK_MODS;
-  assert.deepEqual(
-    requests
-      .map((request) => request.url.split("?")[0])
-      .filter(
-        (url) => url.startsWith("/dl/") || url === "/apiv11/Util/Fileservers",
-      ),
-    [
-      `/dl/${a.id}/v1`,
-      "/apiv11/Util/Fileservers",
-      `/dl/${a.id}/v2`,
-      "/apiv11/Util/Fileservers",
-      `/dl/${b.id}/v1`,
-    ],
-    "Automatic routing must reach the update and the new download, and Default routing must not",
-  );
-};

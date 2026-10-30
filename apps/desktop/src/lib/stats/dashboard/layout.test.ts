@@ -3,12 +3,13 @@ import {
   type DashboardLayout,
   type DashboardWidget,
   DEFAULT_LAYOUT,
-  moveTab,
   moveWidgetToTab,
   parseLayout,
   removeTab,
+  swapTabs,
   reorderWidget,
   upsertWidget,
+  withoutPanels,
 } from "./layout";
 
 const widget = (id: string): DashboardWidget => ({
@@ -34,6 +35,8 @@ const layout: DashboardLayout = {
 
 const ids = (value: DashboardLayout, tabId: string) =>
   value.tabs.find((tab) => tab.id === tabId)?.widgets.map((entry) => entry.id);
+
+const LIVE = new Set(["liveScoreboard"]);
 
 describe("dashboard layout", () => {
   it("falls back to the default for a layout that no longer parses", () => {
@@ -73,6 +76,21 @@ describe("dashboard layout", () => {
     expect(ids(parsed, "a")).toEqual(["1", "2", "3"]);
   });
 
+  it("hides listed panels and the tabs that only held them", () => {
+    const saved = structuredClone(layout);
+    saved.tabs.push({
+      id: "live",
+      title: null,
+      icon: "radio",
+      widgets: [
+        { ...widget("4"), source: { kind: "panel", panel: "liveScoreboard" } },
+      ],
+    });
+    const hidden = withoutPanels(saved, LIVE);
+    expect(hidden.tabs.map((tab) => tab.id)).toEqual(["a", "b"]);
+    expect(saved.tabs).toHaveLength(3);
+  });
+
   it("moves a widget onto another widget's slot", () => {
     expect(ids(reorderWidget(layout, "a", "3", "1"), "a")).toEqual([
       "3",
@@ -109,11 +127,11 @@ describe("dashboard layout", () => {
     expect(removeTab(single, "a").tabs).toHaveLength(1);
   });
 
-  it("moves tabs within bounds", () => {
-    expect(moveTab(layout, "a", 1).tabs.map((tab) => tab.id)).toEqual([
+  it("swaps tabs it has", () => {
+    expect(swapTabs(layout, "a", "b").tabs.map((tab) => tab.id)).toEqual([
       "b",
       "a",
     ]);
-    expect(moveTab(layout, "a", -1)).toBe(layout);
+    expect(swapTabs(layout, "a", "missing")).toBe(layout);
   });
 });

@@ -129,20 +129,22 @@ impl ModManager {
       .steam_manager
       .get_game_path()
       .ok_or(Error::GamePathNotSet)?;
+    ProfileBase::new(Self::profile_addons_dir(game_path, profile_folder)?)
+  }
 
+  /// The addons folder of `profile_folder`, or the root one for `None`.
+  pub(crate) fn profile_addons_dir(
+    game_path: &Path,
+    profile_folder: Option<&str>,
+  ) -> Result<PathBuf, Error> {
     let addons_path = game_path.join("game").join("citadel").join("addons");
-    let profile_path = match profile_folder {
-      Some(folder) => {
-        if !Self::is_safe_profile_folder(folder) {
-          return Err(Error::InvalidInput(format!(
-            "Invalid profile folder path: {folder}"
-          )));
-        }
-        addons_path.join(folder)
-      }
-      None => addons_path,
-    };
-    ProfileBase::new(profile_path)
+    match profile_folder {
+      Some(folder) if !Self::is_safe_profile_folder(folder) => Err(Error::InvalidInput(format!(
+        "Invalid profile folder path: {folder}"
+      ))),
+      Some(folder) => Ok(addons_path.join(folder)),
+      None => Ok(addons_path),
+    }
   }
 
   /// Profile folders may nest (`profiles/imported`), so this permits separators
@@ -158,7 +160,12 @@ impl ModManager {
   /// Mod IDs are joined onto the mods store path and the result is deleted
   /// recursively, so a traversing ID would reach outside the store.
   pub(crate) fn ensure_safe_mod_id(mod_id: &str) -> Result<(), Error> {
-    if mod_id.contains("..") || mod_id.contains('/') || mod_id.contains('\\') {
+    // A single plain name: no separators, no `..`, and nothing `join` would
+    // treat as a new root, such as an empty id or a Windows drive like `C:`.
+    let mut components = std::path::Path::new(mod_id).components();
+    let single_name = matches!(components.next(), Some(std::path::Component::Normal(_)))
+      && components.next().is_none();
+    if !single_name || mod_id.contains("..") || mod_id.contains('/') || mod_id.contains('\\') {
       return Err(Error::InvalidInput(
         "Invalid mod ID: path traversal not allowed".to_string(),
       ));
@@ -575,6 +582,21 @@ mod tests {
 
   use super::*;
   use std::fs;
+
+  #[test]
+  fn mod_ids_must_be_a_single_plain_name() {
+    assert!(ModManager::ensure_safe_mod_id("local-1234").is_ok());
+    let mut unsafe_ids = vec!["", ".", "..", "a/b", "a\\b"];
+    if cfg!(windows) {
+      unsafe_ids.push("C:");
+    }
+    for unsafe_id in unsafe_ids {
+      assert!(
+        ModManager::ensure_safe_mod_id(unsafe_id).is_err(),
+        "{unsafe_id:?} should be refused"
+      );
+    }
+  }
 
   fn write_vpk(addons_path: &std::path::Path, name: &str) {
     fs::write(addons_path.join(name), b"test vpk").unwrap();

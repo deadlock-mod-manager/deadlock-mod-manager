@@ -162,6 +162,8 @@ export const useModProcessor = () => {
         path: detectedSource.path,
         destination: await join(filesDir, detectedSource.fileName),
       });
+    } else if (detectedSource.kind === "liveBridge") {
+      await invoke("build_live_bridge", { modId });
     } else {
       try {
         if (detectedSource.kind === "vpk") {

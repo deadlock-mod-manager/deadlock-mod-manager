@@ -1,21 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
-import { useMemo } from "react";
-
-export type LiveMatchInfo = {
-  matchId: string;
-  lobbyId: string;
-};
-
-export type LiveMatchStatus = {
-  /** False without `-condebug`: no console log, nothing to read. */
-  consoleLogAvailable: boolean;
-  /** In matchmaking, waiting for a lobby. */
-  queued: boolean;
-  current: LiveMatchInfo | null;
-  /** Matches played this session, which the API may not have ingested yet. */
-  recentMatchIds: string[];
-};
+import { useEffect, useMemo } from "react";
+import { useGameRunning } from "@/hooks/use-mod-health";
+import {
+  type SoulsPoint,
+  soulsTrailOf,
+  useLiveSession,
+} from "@/lib/stats/live-session";
+import { type LiveBoard, liveBoard } from "@/lib/stats/live-view";
+import type { LiveMatchStatus } from "@/types/generated/LiveMatchStatus";
 
 /**
  * Matches the game logged that the API's history does not contain. A non-empty
@@ -44,6 +37,8 @@ export const useMissingLocalMatches = (
 const DETECT_INTERVAL_MS = 5_000;
 /** Queues resolve in well under a minute, so watch them more closely. */
 const QUEUED_INTERVAL_MS = 2_000;
+/** The bridge reports every couple of seconds while numbers change. */
+const IN_MATCH_INTERVAL_MS = 2_000;
 
 export const useLiveMatchDetection = (enabled: boolean) =>
   useQuery({
@@ -51,8 +46,44 @@ export const useLiveMatchDetection = (enabled: boolean) =>
     queryFn: () => invoke<LiveMatchStatus>("get_live_match"),
     refetchInterval: (query) => {
       if (!enabled) return false;
-      return query.state.data?.queued ? QUEUED_INTERVAL_MS : DETECT_INTERVAL_MS;
+      // A board without a lobby is a bot or practice match, which logs none.
+      if (query.state.data?.current || query.state.data?.scoreboard) {
+        return IN_MATCH_INTERVAL_MS;
+      }
+      return query.state.data?.queuedSince
+        ? QUEUED_INTERVAL_MS
+        : DETECT_INTERVAL_MS;
     },
     enabled,
     meta: { skipGlobalErrorHandler: true },
   });
+
+/**
+ * The board the bridge reports, gated like the Live tab gates it, for the parts
+ * of the Stats page outside the tab. Shares the tab's query, so no extra polls.
+ */
+export const useLiveBoard = (enabled: boolean): LiveBoard => {
+  const detection = useLiveMatchDetection(enabled);
+  const gameRunning = useGameRunning();
+  return liveBoard(detection.data, gameRunning, Date.now());
+};
+
+/**
+ * The local player's souls at every report this match. The session store keeps
+ * it while the Live tab is closed.
+ */
+export const useSoulsTrail = (
+  matchId: string | null,
+  minutes: number | null,
+  souls: number | null,
+): SoulsPoint[] => {
+  const recordSouls = useLiveSession((state) => state.recordSouls);
+  const trail = useLiveSession((state) => soulsTrailOf(state.trails, matchId));
+
+  useEffect(() => {
+    if (minutes === null || souls === null) return;
+    recordSouls(matchId, { minutes, souls });
+  }, [recordSouls, matchId, minutes, souls]);
+
+  return trail;
+};

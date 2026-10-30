@@ -344,7 +344,6 @@ pub async fn import_profile_batch(
   profile_folder: String,
   mods: Vec<super::downloads::ProfileImportMod>,
   import_type: String,
-  fileserver_preference: FileserverPreference,
   guard_permit: Option<String>,
 ) -> Result<super::downloads::ProfileImportResult, Error> {
   crate::game_guard::ensure_game_idle_locked("import_profile_batch", guard_permit.as_deref())?;
@@ -381,7 +380,7 @@ pub async fn import_profile_batch(
         &policy,
         &mod_data.mod_id,
         &mod_data.download_files,
-        fileserver_preference,
+        FileserverPreference::Default,
       )
       .await
       .map_err(|error| format!("Failed to resolve download files: {error:?}")),

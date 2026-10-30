@@ -9,21 +9,23 @@ import {
   type DashboardWidget,
   DEFAULT_LAYOUT,
   duplicateWidget,
-  moveTab,
   moveWidgetToTab,
   parseLayout,
   removeTab,
+  swapTabs,
   removeWidget,
   reorderWidget,
   resizeWidget,
   type TabIcon,
   updateTab,
   upsertWidget,
+  withoutPanels,
 } from "@/lib/stats/dashboard/layout";
 import { emptyTab, tabFromTemplate } from "@/lib/stats/dashboard/templates";
 import { usePersistedStore } from "@/lib/store";
 import type { GridActions } from "./dashboard-grid";
 import type { WidgetHealth } from "./dashboard-widget";
+import { useHiddenPanels } from "./panels";
 
 export type PendingConfirm =
   | { kind: "reset" }
@@ -45,6 +47,7 @@ export const useDashboardEditor = () => {
     () => parseLayout(storedLayout),
     [storedLayout],
   );
+  const hiddenPanels = useHiddenPanels();
 
   const [draft, setDraft] = useState<DashboardLayout | null>(null);
   const [editorTarget, setEditorTarget] = useState<EditorTarget | null>(null);
@@ -54,7 +57,16 @@ export const useDashboardEditor = () => {
   const [health, setHealth] = useState<Record<string, WidgetHealth>>({});
 
   const editing = draft !== null;
-  const layout = draft ?? savedLayout;
+  // Panels behind an experimental feature that is off stay in the layout, so
+  // saving and resetting keep them for when it is turned on; only the page
+  // leaves them out.
+  const layout = useMemo(() => {
+    const full = draft ?? savedLayout;
+    const visible = withoutPanels(full, hiddenPanels);
+    return visible.tabs.length > 0
+      ? visible
+      : withoutPanels(DEFAULT_LAYOUT, hiddenPanels);
+  }, [draft, savedLayout, hiddenPanels]);
   const tabParam = searchParams.get("tab");
   const activeTab =
     layout.tabs.find((tab) => tab.id === tabParam) ?? layout.tabs[0];
@@ -117,8 +129,14 @@ export const useDashboardEditor = () => {
       tab.widgets.length === 0
         ? edit((current) => removeTab(current, tab.id))
         : setPendingConfirm({ kind: "deleteTab", tab }),
-    onMoveTab: (id: string, offset: -1 | 1) =>
-      edit((current) => moveTab(current, id, offset)),
+    // Steps past the tabs the page hides, which the draft still holds.
+    onMoveTab: (id: string, offset: -1 | 1) => {
+      const index = layout.tabs.findIndex((tab) => tab.id === id);
+      const neighbour = layout.tabs[index + offset];
+      if (index >= 0 && neighbour) {
+        edit((current) => swapTabs(current, id, neighbour.id));
+      }
+    },
     onRenameTab: (id: string, title: string) =>
       edit((current) =>
         updateTab(current, id, { title: title.trim() || null }),

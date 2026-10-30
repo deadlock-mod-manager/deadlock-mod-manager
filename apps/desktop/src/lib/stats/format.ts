@@ -83,7 +83,26 @@ export const formatHourRange = (hour: number): string => {
 };
 
 /** Souls as the game shows them in tight spots: "4.9k", whole numbers below 1000. */
-export const formatThousands = (value: number): string =>
+export const formatThousands = (value: number, digits = 1): string =>
   Math.abs(value) >= 1000
-    ? `${formatDecimal(value / 1000, 1)}k`
+    ? `${formatDecimal(value / 1000, digits)}k`
     : String(Math.round(value));
+
+/** A souls lead: "+1.2k", "−800". */
+export const formatSignedThousands = (value: number): string =>
+  `${value >= 0 ? "+" : "−"}${formatThousands(Math.abs(value))}`;
+
+/** "7 / 2 / 11", with a dash for whatever the top bar could not read. */
+export const formatKda = (
+  kills: number | null,
+  deaths: number | null,
+  assists: number | null,
+  separator = " / ",
+): string =>
+  [kills, deaths, assists]
+    .map((value) => (value === null ? "–" : String(value)))
+    .join(separator);
+
+/** A whole number with the locale's grouping: "18,400". */
+export const formatWhole = (value: number): string =>
+  Math.round(value).toLocaleString(activeLocale());

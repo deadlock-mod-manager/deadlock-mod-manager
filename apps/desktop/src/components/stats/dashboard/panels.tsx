@@ -7,19 +7,23 @@ import {
   Lightbulb,
   ListOrdered,
   Package,
+  Radio,
   Sword,
   Swords,
   Trophy,
   UserRound,
   Users,
 } from "@deadlock-mods/ui/icons";
-import type { ComponentType, ReactNode } from "react";
+import { type ComponentType, type ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { FormChart } from "@/components/stats/form-chart";
 import { HeroPool } from "@/components/stats/hero-pool";
 import { HeroesTab } from "@/components/stats/heroes-tab";
 import { InsightList } from "@/components/stats/insight-list";
 import { ItemsTab } from "@/components/stats/items-tab";
+import { LiveBridgeNotice } from "@/components/stats/live-bridge-notice";
+import { LiveScoreboard } from "@/components/stats/live-scoreboard";
+import { LiveTabIcon, LiveToolbar } from "@/components/stats/live-toolbar";
 import { OverviewTiles } from "@/components/stats/overview-tiles";
 import { ProfilePanel } from "@/components/stats/profile-panel";
 import { RankBenchmark } from "@/components/stats/rank-benchmark";
@@ -34,7 +38,10 @@ import {
   useSquadStats,
 } from "@/hooks/use-player-stats";
 import { resolveRank } from "@/lib/stats/api";
+import type { DashboardTab } from "@/lib/stats/dashboard/layout";
 import { summarize } from "@/lib/stats/derive";
+import { usePersistedStore } from "@/lib/store";
+import type { ExperimentalFeature } from "@/lib/store/slices/ui";
 import { type DashboardData, useDashboardData } from "./dashboard-context";
 import {
   ChartSkeleton,
@@ -68,6 +75,7 @@ export const PANEL_IDS = [
   "heroes",
   "items",
   "squad",
+  "liveScoreboard",
 ] as const;
 export type PanelId = (typeof PANEL_IDS)[number];
 
@@ -77,6 +85,16 @@ type AccountData = DashboardData & { accountId: number };
 type PanelDef = {
   icon: ComponentType<{ className?: string }>;
   needsHistory: boolean;
+  /** Only offered, and only shown, while this experimental feature is on. */
+  experimental?: ExperimentalFeature;
+  /** How a tab that holds nothing but this panel stands apart in the tab row. */
+  tab?: {
+    /** Drawn in place of the tab's own icon. */
+    icon: ComponentType<{ className?: string }>;
+    activeClassName: string;
+    /** Takes the place of the page's filters, which mean nothing to the panel. */
+    toolbar: ComponentType;
+  };
   /** Shaped like the panel's cards, so the page keeps its layout while loading. */
   skeleton: () => ReactNode;
 } & (
@@ -150,6 +168,22 @@ const SquadPanel = () => {
         partyIds={squad.partyIds}
         profilesById={squad.profilesById}
         rankAssets={rankAssets}
+      />
+    </div>
+  );
+};
+
+const LiveScoreboardPanel = () => {
+  const { accountId, stats, heroesById, rankAssets, scope } =
+    useDashboardData();
+  return (
+    <div className='flex flex-col gap-4'>
+      <LiveBridgeNotice />
+      <LiveScoreboard
+        heroesById={heroesById}
+        rankAssets={rankAssets}
+        scope={scope}
+        you={{ accountId, rank: stats.rank, matches: stats.allMatches }}
       />
     </div>
   );
@@ -275,10 +309,51 @@ const PANELS = {
     needsHistory: true,
     render: () => <SquadPanel />,
   },
+  liveScoreboard: {
+    icon: Radio,
+    skeleton: () => <ListSkeleton rows={6} />,
+    // Read from the running game's console log, so no account is involved.
+    needsAccount: false,
+    needsHistory: false,
+    experimental: "live-scoreboard",
+    tab: {
+      icon: LiveTabIcon,
+      activeClassName: "data-[state=active]:border-red-400/25",
+      toolbar: LiveToolbar,
+    },
+    render: () => <LiveScoreboardPanel />,
+  },
 } satisfies Record<PanelId, PanelDef>;
 
 const isPanelId = (id: string): id is PanelId =>
   PANEL_IDS.some((panel) => panel === id);
 
+/** Panels whose experimental feature is off: hidden from the page and the pickers. */
+export const useHiddenPanels = (): ReadonlySet<string> => {
+  const features = usePersistedStore((state) => state.experimentalFeatures);
+  return useMemo(
+    () =>
+      new Set(
+        PANEL_IDS.filter((id) => {
+          const feature = panelDef(id)?.experimental;
+          return feature !== undefined && !features[feature];
+        }),
+      ),
+    [features],
+  );
+};
+
 export const panelDef = (id: string): PanelDef | undefined =>
   isPanelId(id) ? PANELS[id] : undefined;
+
+/** The panel `tab` is devoted to: every widget on it is that one panel. */
+export const tabPanel = (tab: DashboardTab): PanelDef | undefined => {
+  const [first, ...rest] = tab.widgets;
+  if (first?.source.kind !== "panel") return undefined;
+  const panel = first.source.panel;
+  return rest.every(
+    (widget) => widget.source.kind === "panel" && widget.source.panel === panel,
+  )
+    ? panelDef(panel)
+    : undefined;
+};

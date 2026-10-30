@@ -3,7 +3,8 @@
 //! Opening `pak01_dir.vpk` costs ~550 ms: the 6 MB directory is read and its
 //! ~1M entries are parsed into an index. Every Foundry command that touches the
 //! base game paid that toll again, which on the paint tab meant paying it for
-//! the coverage scan, then again for each apply.
+//! the coverage scan, then again for each apply. The live bridge reads the
+//! game's top-bar layout through it too.
 //!
 //! The archives here are immutable once opened, so they are shared behind an
 //! `Arc` rather than copied. The cache is keyed by path *and* the source file's

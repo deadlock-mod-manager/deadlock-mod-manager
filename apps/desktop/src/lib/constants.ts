@@ -133,4 +133,14 @@ export const EXPERIMENTAL_FEATURES = [
   "conflict-detection",
   "performance-configs",
   "cloud-backup",
+  "live-scoreboard",
 ] as const;
+
+/**
+ * Marks the live bridge HUD mod in the library, the way `local://manual` marks
+ * hand-added mods. The Live tab needs it, and it needs `-condebug`.
+ */
+export const LIVE_BRIDGE_LINK = "local://dmm-live-bridge";
+
+export const isLiveBridge = (mod: { remoteUrl: string }): boolean =>
+  mod.remoteUrl === LIVE_BRIDGE_LINK;

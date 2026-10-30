@@ -17,6 +17,7 @@ import {
   matchMetadataSchema,
   mateStatsSchema,
   metricSpreadSchema,
+  performanceCurvePointSchema,
   performancePointSchema,
   playerHeroStatsSchema,
   playerRankSchema,
@@ -49,6 +50,7 @@ export type {
   MatchMetadataStat,
   MateStats,
   MetricSpread,
+  PerformanceCurvePoint,
   PerformancePoint,
   PlayerHeroStats,
   PlayerRank,
@@ -214,6 +216,26 @@ export const getPerformanceCurve = (accountId: number, heroId: number) =>
     performancePointSchema,
   );
 
+/**
+ * How players on one hero inside a badge range stand at each point of a match,
+ * in steps of game time. What a running match is graded against.
+ */
+export const getBracketCurve = ({
+  heroId,
+  minBadge,
+  maxBadge,
+  scope,
+}: {
+  heroId: number;
+  minBadge: number;
+  maxBadge: number;
+  scope: StatsScope;
+}) =>
+  getList(
+    `/v1/analytics/player-performance-curve?hero_ids=${heroId}&min_average_badge=${minBadge}&max_average_badge=${maxBadge}&resolution=0&${statsScopeQuery(scope)}`,
+    performanceCurvePointSchema,
+  );
+
 /** The season definitions the game client ships, including its entry requirements. */
 export const getRankedSeasons = () =>
   getList("/v1/assets/ranked-seasons", rankedSeasonSchema);
@@ -272,6 +294,17 @@ export const resolveRank = (
     name: asset?.name,
     image: asset?.images[`large_subrank${subrank}`] ?? asset?.images.large,
   };
+};
+
+/**
+ * The badges of a badge's rank tier, or every badge for the unranked. Tiers
+ * hold subranks 1 to 6, so tier 7 spans badges 71 to 76.
+ */
+export const badgeBracket = (badge: number | undefined) => {
+  const tier = Math.floor((badge ?? 0) / 10);
+  return tier > 0
+    ? { tier, minBadge: tier * 10 + 1, maxBadge: tier * 10 + 6 }
+    : { tier: null, minBadge: 0, maxBadge: 116 };
 };
 
 /** "Name subrank" for a badge, or null when no asset names its tier. */

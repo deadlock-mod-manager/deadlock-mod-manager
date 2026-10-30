@@ -22,6 +22,7 @@ mod game_presence;
 mod game_session;
 mod hero_detector;
 mod ingest_tool;
+mod live_bridge;
 mod live_match;
 mod logs;
 #[cfg(feature = "match-sync")]
@@ -42,6 +43,7 @@ mod steam_user;
 mod tray;
 mod updater_channel;
 mod utils;
+mod vpk_archive_cache;
 
 use tauri::Manager;
 use tauri_plugin_log::{Target, TargetKind};
@@ -429,6 +431,9 @@ pub fn run() {
       commands::match_sync::resume_match_sync_monitoring,
       commands::steam_user::get_steam_accounts,
       commands::live_match::get_live_match,
+      commands::live_match::build_live_bridge,
+      commands::live_match::live_bridge_status,
+      commands::live_match::update_live_bridge,
       commands::profiles::create_profile_folder,
       commands::profiles::delete_profile_folder,
       commands::profiles::switch_profile,

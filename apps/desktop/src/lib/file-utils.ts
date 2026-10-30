@@ -36,7 +36,10 @@ export type DetectedSource =
 // A VPK already on disk, placed natively rather than read through the renderer.
 export type StagedSource = { kind: "vpkPath"; path: string; fileName: string };
 
-export type ModSource = DetectedSource | StagedSource;
+/** The live bridge HUD mod, built from the installed game by the backend. */
+type LiveBridgeSource = { kind: "liveBridge" };
+
+export type ModSource = DetectedSource | StagedSource | LiveBridgeSource;
 
 /**
  * File utility functions

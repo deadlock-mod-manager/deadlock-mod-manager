@@ -256,6 +256,25 @@ export const performancePointSchema = z.object({
   samples: count,
 });
 
+/**
+ * One step of the bracket-wide curve: how players on a hero stand at that game
+ * time, as a mean and standard deviation per stat.
+ */
+export const performanceCurvePointSchema = z.object({
+  game_time: count,
+  net_worth_avg: count,
+  net_worth_std: count,
+  kills_avg: count,
+  kills_std: count,
+  deaths_avg: count,
+  deaths_std: count,
+  assists_avg: count,
+  assists_std: count,
+  boss_damage_avg: count,
+  boss_damage_std: count,
+  samples: count,
+});
+
 export const seasonIntervalSchema = z.object({
   interval: count,
   start_timestamp: z.number(),
@@ -305,6 +324,7 @@ export type BadgeDistributionEntry = z.infer<
   typeof badgeDistributionEntrySchema
 >;
 export type PerformancePoint = z.infer<typeof performancePointSchema>;
+export type PerformanceCurvePoint = z.infer<typeof performanceCurvePointSchema>;
 export type MetricSpread = z.infer<typeof metricSpreadSchema>;
 export type SeasonInterval = z.infer<typeof seasonIntervalSchema>;
 export type RankedSeason = z.infer<typeof rankedSeasonSchema>;

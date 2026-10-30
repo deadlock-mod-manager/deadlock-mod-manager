@@ -12,6 +12,7 @@ import {
 import { isMatchSyncBuilt } from "@/lib/runtime-bootstrap";
 import {
   type AnalyticsHeroStats,
+  badgeBracket,
   getAnalyticsHeroStats,
   getBadgeDistribution,
   getBracketMetrics,
@@ -61,28 +62,44 @@ type StatsQueryOptions = {
   enabled?: boolean;
 };
 
-const useStatsQuery = <T>(
+/** Options for a cached stats request, for `useQuery` and `useQueries` alike. */
+const statsQueryOptions = <T>(
   { key, ttl, enabled = true }: StatsQueryOptions,
   fetcher: () => Promise<T>,
+) => ({
+  queryKey: ["stats", key],
+  queryFn: () => cachedFetch(key, ttl, fetcher),
+  staleTime: ttl,
+  gcTime: ttl * 2,
+  refetchOnWindowFocus: false,
+  retry: 1,
+  enabled,
+  // The page renders its own inline error/stale state instead of a toast.
+  meta: { skipGlobalErrorHandler: true },
+});
+
+export const useStatsQuery = <T>(
+  options: StatsQueryOptions,
+  fetcher: () => Promise<T>,
+) => useQuery(statsQueryOptions(options, fetcher));
+
+/** A per-account query keyed like `usePlayerScopedQuery`, so caches are shared. */
+export const playerQueryOptions = <T>(
+  accountId: number,
+  { key, ttl }: { key: string; ttl: number },
+  fetcher: (accountId: number) => Promise<T>,
 ) =>
-  useQuery({
-    queryKey: ["stats", key],
-    queryFn: () => cachedFetch(key, ttl, fetcher),
-    staleTime: ttl,
-    gcTime: ttl * 2,
-    refetchOnWindowFocus: false,
-    retry: 1,
-    enabled,
-    // The page renders its own inline error/stale state instead of a toast.
-    meta: { skipGlobalErrorHandler: true },
-  });
+  statsQueryOptions(
+    { key: `${PLAYER_CACHE_PREFIX}${key}:${accountId}`, ttl },
+    () => fetcher(accountId),
+  );
 
 /**
  * A query that only means anything for a known account. The guard is what lets
  * the fetchers take a plain `number` - every caller would otherwise assert the
  * nullable id away behind the `enabled` flag.
  */
-const usePlayerScopedQuery = <T>(
+export const usePlayerScopedQuery = <T>(
   accountId: number | null,
   { key, ttl, enabled = true }: { key: string; ttl: number; enabled?: boolean },
   fetcher: (accountId: number) => Promise<T>,
@@ -298,19 +315,13 @@ export const useBracketBenchmark = (
   stats: Pick<ReturnType<typeof usePlayerStats>, "matches" | "heroes" | "rank">,
   scope: StatsScope,
 ) => {
-  const tier = Math.floor((stats.rank?.badge ?? 0) / 10);
-  const bracket = tier > 0 ? tier : null;
+  const { tier: bracket, minBadge, maxBadge } = badgeBracket(stats.rank?.badge);
   const query = useStatsQuery(
     {
       key: `benchmark:bracket:${bracket ?? "all"}:${statsScopeQuery(scope)}`,
       ttl: STATS_TTL.benchmark,
     },
-    () =>
-      getBracketMetrics({
-        minBadge: bracket === null ? 0 : bracket * 10 + 1,
-        maxBadge: bracket === null ? 116 : bracket * 10 + 6,
-        scope,
-      }),
+    () => getBracketMetrics({ minBadge, maxBadge, scope }),
   );
 
   const rows = useMemo(
