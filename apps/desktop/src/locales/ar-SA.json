@@ -4979,7 +4979,6 @@
     "storingArchive": "تخزين أرشيف {{format}}...",
     "copyingDroppedFile": "",
     "extractingArchive": "استخراج أرشيف {{format}}...",
-    "validatingFiles": "التحقق من ملفات التعديل...",
     "savingMetadata": "حفظ بيانات التعديل...",
     "processingImage": "معالجة صورة التعديل...",
     "addingToLibrary": "إضافة التعديل إلى المكتبة...",
@@ -4989,11 +4988,7 @@
     "failedToReadDroppedFiles": "",
     "noFilesDetected": "لم يتم اكتشاف ملفات.",
     "noVpkFound": "لم يتم العثور على .vpk داخل .zip – تم تخزين الأرشيف للمثبت",
-    "archiveExtractedSuccess": "تم استخراج أرشيف {{format}} بنجاح",
-    "failedToExtractArchive": "فشل في استخراج الأرشيف",
-    "failedToProcessArchive": "فشل في معالجة الأرشيف",
     "noVpkFoundInContent": "لم يتم العثور على ملفات VPK في المحتوى المرفوع",
-    "archiveWillBeProcessed": "سيتم معالجة الأرشيف أثناء تثبيت التعديل",
     "noVpkFoundStored": "لم يتم العثور على VPK - تم تخزين الأرشيف للمعالجة اليدوية",
     "addedSuccess": "تمت الإضافة: {{name}}",
     "unsupportedImageType": "نوع صورة غير مدعوم"
@@ -6997,6 +6992,16 @@
     "openCancel": "",
     "openEnabled": "",
     "fallbackName": ""
+  },
+  "sourceInstall": {
+    "confirmTitle": "",
+    "confirmBody": "",
+    "confirmAction": "",
+    "confirmCancel": "",
+    "downloading": "",
+    "alreadyAdded": "",
+    "modDescription": "",
+    "installFailed": ""
   },
   "modCategories": {
     "maps": "",

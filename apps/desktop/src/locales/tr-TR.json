@@ -4979,7 +4979,6 @@
     "storingArchive": "{{format}} arşivi kaydediliyor...",
     "copyingDroppedFile": "{{name}} kopyalanıyor",
     "extractingArchive": "{{format}} arşivi çıkarılıyor...",
-    "validatingFiles": "Mod dosyaları doğrulanıyor...",
     "savingMetadata": "Mod metaverisi kaydediliyor...",
     "processingImage": "Mod resmi işleniyor...",
     "addingToLibrary": "Mod kütüphaneye ekleniyor...",
@@ -4989,11 +4988,7 @@
     "failedToReadDroppedFiles": "Bırakılan dosyalar okunamadı.",
     "noFilesDetected": "Dosya bulunamadı.",
     "noVpkFound": ".zip içinde .vpk bulunamadı – Arşiv yükleyici için kaydedildi",
-    "archiveExtractedSuccess": "{{format}} arşivi başarıyla çıkarıldı",
-    "failedToExtractArchive": "Arşiv çıkarılamadı",
-    "failedToProcessArchive": "Arşiv işlenemedi",
     "noVpkFoundInContent": "Yüklenen içerikte VPK dosyası bulunamadı",
-    "archiveWillBeProcessed": "Arşiv mod kurulumu sırasında işlenecek",
     "noVpkFoundStored": "VPK bulunamadı – Arşiv manuel işlem için kaydedildi",
     "addedSuccess": "Eklendi: {{name}}",
     "unsupportedImageType": "Desteklenmeyen görsel türü"
@@ -6997,6 +6992,16 @@
     "openCancel": "Etkinleştirmeden aç",
     "openEnabled": "1 tıkla yüklemeler etkin.",
     "fallbackName": "DeadlockForge modu"
+  },
+  "sourceInstall": {
+    "confirmTitle": "",
+    "confirmBody": "",
+    "confirmAction": "",
+    "confirmCancel": "",
+    "downloading": "",
+    "alreadyAdded": "",
+    "modDescription": "",
+    "installFailed": ""
   },
   "modCategories": {
     "maps": "Haritalar",

@@ -4979,7 +4979,6 @@
     "storingArchive": "กำลังจัดเก็บไฟล์บีบอัด {{format}}...",
     "copyingDroppedFile": "",
     "extractingArchive": "กำลังแตกไฟล์บีบอัด {{format}}...",
-    "validatingFiles": "กำลังตรวจสอบไฟล์ม็อด...",
     "savingMetadata": "กำลังบันทึกข้อมูลเมตาของม็อด...",
     "processingImage": "กำลังประมวลผลภาพม็อด...",
     "addingToLibrary": "กำลังเพิ่มม็อดไปยังคลัง...",
@@ -4989,11 +4988,7 @@
     "failedToReadDroppedFiles": "",
     "noFilesDetected": "ไม่พบไฟล์",
     "noVpkFound": "ไม่พบ .vpk ภายใน .zip – จัดเก็บไฟล์บีบอัดสำหรับตัวติดตั้ง",
-    "archiveExtractedSuccess": "แตกไฟล์บีบอัด {{format}} เรียบร้อยแล้ว",
-    "failedToExtractArchive": "ไม่สามารถแตกไฟล์บีบอัดได้",
-    "failedToProcessArchive": "ไม่สามารถประมวลผลไฟล์บีบอัดได้",
     "noVpkFoundInContent": "ไม่พบไฟล์ VPK ในเนื้อหาที่อัปโหลด",
-    "archiveWillBeProcessed": "ไฟล์บีบอัดจะถูกประมวลผลระหว่างการติดตั้งม็อด",
     "noVpkFoundStored": "ไม่พบ VPK - จัดเก็บไฟล์บีบอัดสำหรับการประมวลผลด้วยตนเอง",
     "addedSuccess": "เพิ่มแล้ว: {{name}}",
     "unsupportedImageType": "ประเภทภาพที่ไม่รองรับ"
@@ -6997,6 +6992,16 @@
     "openCancel": "",
     "openEnabled": "",
     "fallbackName": ""
+  },
+  "sourceInstall": {
+    "confirmTitle": "",
+    "confirmBody": "",
+    "confirmAction": "",
+    "confirmCancel": "",
+    "downloading": "",
+    "alreadyAdded": "",
+    "modDescription": "",
+    "installFailed": ""
   },
   "modCategories": {
     "maps": "",

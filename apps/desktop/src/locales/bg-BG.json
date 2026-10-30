@@ -4979,7 +4979,6 @@
     "storingArchive": "Съхраняване на {{format}} архив...",
     "copyingDroppedFile": "",
     "extractingArchive": "Извличане на {{format}} архив...",
-    "validatingFiles": "Проверка на файловете на мода...",
     "savingMetadata": "Запазване на метаданните на мода...",
     "processingImage": "Обработване на изображението на мода...",
     "addingToLibrary": "Добавяне на мод към библиотеката...",
@@ -4989,11 +4988,7 @@
     "failedToReadDroppedFiles": "",
     "noFilesDetected": "Не са открити файлове.",
     "noVpkFound": "Не е намерен .vpk файл в .zip – архивът е запазен за инсталатора",
-    "archiveExtractedSuccess": "{{format}} архивът е извлечен успешно",
-    "failedToExtractArchive": "Неуспешно извличане на архива",
-    "failedToProcessArchive": "Неуспешна обработка на архива",
     "noVpkFoundInContent": "Не са намерени VPK файлове в каченото съдържание",
-    "archiveWillBeProcessed": "Архивът ще бъде обработен по време на инсталацията на мода",
     "noVpkFoundStored": "Не е намерен VPK - архивът е запазен за ръчна обработка",
     "addedSuccess": "Добавено: {{name}}",
     "unsupportedImageType": "Неподдържан тип изображение"
@@ -6997,6 +6992,16 @@
     "openCancel": "",
     "openEnabled": "",
     "fallbackName": ""
+  },
+  "sourceInstall": {
+    "confirmTitle": "",
+    "confirmBody": "",
+    "confirmAction": "",
+    "confirmCancel": "",
+    "downloading": "",
+    "alreadyAdded": "",
+    "modDescription": "",
+    "installFailed": ""
   },
   "modCategories": {
     "maps": "",
