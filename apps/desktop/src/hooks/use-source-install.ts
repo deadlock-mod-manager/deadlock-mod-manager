@@ -163,8 +163,10 @@ export const useSourceInstall = () => {
     };
 
     const unlisten = listen<null>(SOURCE_INSTALL_EVENT, drain);
-    unlisten.then(drain).catch((error) => {
+    // Links already waiting are still installed if the listener fails.
+    unlisten.then(drain, (error) => {
       logger.withError(error).error("Failed to listen for source installs");
+      drain();
     });
 
     return () => {

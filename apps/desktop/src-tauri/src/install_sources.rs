@@ -161,14 +161,17 @@ pub fn parse_install_link(data_part: &str) -> Option<InstallLink> {
   )
 }
 
-/// Queues a link for the window. A repeat of a waiting link is dropped.
-pub fn queue_pending(link: InstallLink) {
-  if let Ok(mut pending) = PENDING.lock()
-    && !pending.contains(&link)
-    && pending.len() < MAX_PENDING
-  {
-    pending.push(link);
+/// Queues a link for the window, returning false when it was dropped as a
+/// repeat of a waiting link or because the queue is full.
+pub fn queue_pending(link: InstallLink) -> bool {
+  let Ok(mut pending) = PENDING.lock() else {
+    return false;
+  };
+  if pending.contains(&link) || pending.len() >= MAX_PENDING {
+    return false;
   }
+  pending.push(link);
+  true
 }
 
 pub fn take_pending() -> Vec<InstallLink> {
@@ -647,8 +650,8 @@ mod tests {
 
   #[test]
   fn queues_links_until_the_window_takes_them() {
-    queue_pending(link());
-    queue_pending(link());
+    assert!(queue_pending(link()));
+    assert!(!queue_pending(link()));
     assert_eq!(take_pending(), vec![link()]);
     assert!(take_pending().is_empty());
   }

@@ -198,8 +198,11 @@ pub fn handle_deep_link_url(
   if data_part.starts_with(crate::install_sources::PATH_INSTALL) {
     match crate::install_sources::parse_install_link(data_part) {
       Some(link) => {
-        crate::install_sources::queue_pending(link);
-        emit_to_main_window(app_handle, EVENT_SOURCE_INSTALL_REQUESTED, ())?;
+        if crate::install_sources::queue_pending(link) {
+          emit_to_main_window(app_handle, EVENT_SOURCE_INSTALL_REQUESTED, ())?;
+        } else {
+          log::warn!("Dropped source install link: already waiting or queue full");
+        }
       }
       None => log::error!("Invalid or unknown source install link"),
     }

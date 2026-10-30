@@ -17,6 +17,14 @@ pub async fn place_staged_file(
   let mods_root = crate::mod_manager::mods_store::dir(&app_handle)?;
   let destination = contained_destination(&mods_root, &destination)?;
 
+  // Rename and copy both replace an existing file, such as another mod's metadata.
+  if tokio::fs::try_exists(&destination).await? {
+    return Err(Error::InvalidInput(format!(
+      "{} already exists",
+      destination.display()
+    )));
+  }
+
   if let Some(parent) = destination.parent() {
     tokio::fs::create_dir_all(parent).await?;
   }
