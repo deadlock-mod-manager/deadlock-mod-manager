@@ -6572,6 +6572,9 @@
       "loadError": "无法从 GameBanana 加载更新日志。",
       "empty": "作者尚未在 GameBanana 上发布任何更新。"
     },
+    "files": {
+      "loadError": ""
+    },
     "tabs": {
       "model": "",
       "overview": "概览",
