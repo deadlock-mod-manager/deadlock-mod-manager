@@ -400,6 +400,10 @@ impl FontManager {
       }
 
       let file_name = format!("{}.{}", entry.filename, entry.ext);
+      if !is_plain_font_file_name(&file_name) {
+        log::warn!("Skipping VPK font with unsafe file name: {file_name}");
+        continue;
+      }
       let (source_path, offset) = if entry.archive_index == 0x7fff {
         (
           vpk_path.to_path_buf(),
@@ -475,6 +479,11 @@ impl FontManager {
     let mut seen = std::collections::HashSet::new();
     let mut infos = Vec::new();
     for (file_name, bytes) in fonts {
+      if !is_plain_font_file_name(file_name) {
+        return Err(Error::UnauthorizedPath(format!(
+          "VPK font has an unsafe file name: {file_name}"
+        )));
+      }
       if !seen.insert(file_name.clone()) {
         log::warn!("Skipping duplicate VPK font filename in stash: {file_name}");
         continue;
@@ -509,10 +518,54 @@ fn is_under_panorama_fonts(path: &Path, base: &Path) -> bool {
     .any(|w| w[0] == "panorama" && w[1] == "fonts")
 }
 
+/// A VPK entry name is attacker-controlled. Only accept a single plain `*.ttf` file name, so it
+/// can never resolve outside the stash directory (`..`, `C:`, `\\\\server\\share`, `a/b`).
+fn is_plain_font_file_name(name: &str) -> bool {
+  !name.is_empty()
+    && !name.contains(['/', '\\'])
+    && !name
+      .chars()
+      .any(|c| c.is_control() || r#"<>:"|?*"#.contains(c))
+    && Path::new(name).file_name().and_then(OsStr::to_str) == Some(name)
+    && name.to_ascii_lowercase().ends_with(".ttf")
+}
+
 #[cfg(test)]
 mod tests {
-  use super::FontManager;
+  use super::{FontManager, is_plain_font_file_name};
   use std::fs;
+
+  #[test]
+  fn rejects_font_names_that_escape_the_stash() {
+    for name in [
+      "../../evil.ttf",
+      "..\\..\\evil.ttf",
+      "C:\\Users\\Public\\evil.ttf",
+      "C:evil.ttf",
+      "\\\\attacker\\share\\evil.ttf",
+      "/etc/evil.ttf",
+      "sub/dir.ttf",
+      "evil.ttf:stream",
+      "evil.exe",
+      "",
+    ] {
+      assert!(!is_plain_font_file_name(name), "{name:?} should be rejected");
+    }
+    assert!(is_plain_font_file_name("Stratum2-Bold.ttf"));
+    assert!(is_plain_font_file_name("font with spaces.TTF"));
+  }
+
+  #[test]
+  fn stash_refuses_unsafe_font_names() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let stash_dir = temp_dir.path().join("fonts");
+    let fonts = vec![("../escaped.ttf".to_string(), b"font".to_vec())];
+
+    let result = FontManager::new().stash_font_bytes(&fonts, &stash_dir);
+
+    assert!(result.is_err());
+    assert!(!temp_dir.path().join("escaped.ttf").exists());
+  }
 
   #[test]
   fn lists_only_stashed_ttf_files() {

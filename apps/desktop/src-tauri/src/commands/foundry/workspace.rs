@@ -322,6 +322,13 @@ pub(crate) fn safe_entry_relative(entry_path: &str) -> Result<PathBuf, Error> {
   let mut out = PathBuf::new();
   for component in Path::new(&normalized).components() {
     match component {
+      // `C:` only parses as a prefix in leading position, and pushing it would discard
+      // everything already in the buffer, so reject a drive letter wherever it appears.
+      Component::Normal(part) if starts_with_drive_letter(&part.to_string_lossy()) => {
+        return Err(Error::InvalidInput(format!(
+          "invalid Foundry entry path: {entry_path}"
+        )));
+      }
       Component::Normal(part) => out.push(part),
       Component::CurDir => {}
       Component::ParentDir | Component::RootDir | Component::Prefix(_) => {
@@ -337,6 +344,11 @@ pub(crate) fn safe_entry_relative(entry_path: &str) -> Result<PathBuf, Error> {
     ));
   }
   Ok(out)
+}
+
+fn starts_with_drive_letter(component: &str) -> bool {
+  let bytes = component.as_bytes();
+  bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':'
 }
 
 pub(crate) fn entry_extension(path: &str) -> String {
@@ -832,6 +844,9 @@ mod tests {
   fn entry_paths_cannot_escape_the_workspace() {
     assert!(safe_entry_relative("../outside.vtex_c").is_err());
     assert!(safe_entry_relative("/etc/passwd").is_err());
+    assert!(safe_entry_relative("C:/evil.dll").is_err());
+    assert!(safe_entry_relative("x/C:/evil.dll").is_err());
+    assert!(safe_entry_relative("x\\D:\\evil.dll").is_err());
     assert!(safe_entry_relative("").is_err());
     assert_eq!(
       safe_entry_relative("panorama/images/heroes/haze_card.vtex_c").unwrap(),
