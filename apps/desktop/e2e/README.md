@@ -49,6 +49,8 @@ current. Both run in the Windows and Linux E2E matrices with no host update.
 
 `gamebanana-update-broken-profile` adds an inactive Beta profile whose manifest has two mods claiming the same `pak01_dir.vpk`, a layout found in user installs. Update All on the two multipak mods in the default profile must still back up and update, the backup must carry Beta byte for byte, and restoring that backup from Settings must bring back the v1 addons. Beta stays byte-identical throughout and after exit.
 
+`deep-link-other-file` installs `base.zip` from a GameBanana 1-click link, then sends a link for the same mod's `effects.zip`. The second link must add `effects.vpk` beside `base.vpk` in the author's order, and a repeat link for `base.zip` must only report it as already installed. Each archive downloads exactly once. E2E builds skip the OS deep-link plugin, so the case emits `deep-link-received` through Tauri's event IPC, the event the Rust handler emits after validating a link.
+
 `catalog-refresh` checks that manual refresh finds a new sound during the automatic sync cooldown, disables duplicate clicks while syncing, preserves saved entries, and fetches no unchanged details on a repeated refresh. Its network assertions require only the latest index pages and one new sound hydration.
 
 `library-author-navigation` downloads a catalog mod into the library, opens its author from grid and list layouts, and verifies Back returns to Mods Library. It also checks the nested author → mod → author path, the author link in library mod details, and that Store author navigation still returns to Mods Store.

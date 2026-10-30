@@ -1,13 +1,24 @@
+import { RuntimeError } from "@deadlock-mods/common/client-errors";
 import { toast } from "@deadlock-mods/ui/components/sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { listen } from "@tauri-apps/api/event";
 import { useCallback, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
+import { modDownloadsQueryOptions } from "@/hooks/use-mod-downloads";
+import {
+  applyArchiveSelection,
+  mergeFileTreeAfterSwap,
+  saveArchiveSelection,
+} from "@/hooks/use-mod-options";
 import type { ModEntryPoint } from "@/lib/analytics/schema";
 import { getMod } from "@/lib/api-client";
 import { downloadManager } from "@/lib/download/manager";
 import { DownloadAlreadyQueuedError } from "@/lib/download/queue";
+import { getErrorMessage } from "@/lib/errors";
 import logger from "@/lib/logger";
+import { fileIdFromDownloadUrl } from "@/lib/mod-interchange";
+import { deriveActiveArchiveNames } from "@/lib/mods/mod-variants";
 import { serializeSubmissionRef } from "@/lib/mods/submission-ref";
 import {
   finishOneClickInstall,
@@ -38,6 +49,7 @@ export type OneClickInstall = (
  */
 export const useOneClickInstall = (): OneClickInstall => {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const addMod = usePersistedStore((s) => s.addLocalMod);
   const setModStatus = usePersistedStore((s) => s.setModStatus);
   const setModProgress = usePersistedStore((s) => s.setModProgress);
@@ -80,38 +92,79 @@ export const useOneClickInstall = (): OneClickInstall => {
       // Fetch mod details from the API
       const modData = await getMod(slug);
 
+      // Record the file as the download dialog would, under the name the
+      // mod's file list and Manage files know it by.
+      const { downloads } = await queryClient.fetchQuery({
+        ...modDownloadsQueryOptions(modData.remoteId),
+        staleTime: 0,
+      });
+      const requested = downloads.find(
+        (download) => fileIdFromDownloadUrl(download.url) === Number(fileId),
+      );
+      if (!requested) {
+        throw new RuntimeError("The linked file is not offered by this mod");
+      }
+      const archiveNames = downloads.map((download) => download.name);
+
       // Check if mod is already installed BEFORE downloading
       const currentMods = usePersistedStore.getState().localMods;
       const existingMod = currentMods.find(
         (m) => m.remoteId === modData.remoteId,
       );
       if (existingMod?.status === ModStatus.Installed) {
-        logger
-          .withMetadata({ remoteId: modData.remoteId })
-          .info("Mod already installed, skipping download and installation");
-        toast.success(
-          t("mods.deepLinkAlreadyInstalled", { name: modData.name }),
-        );
-        // Remove from processing set since we're done
-        finishOneClickInstall(slug);
+        const activeArchiveNames = deriveActiveArchiveNames(existingMod);
+        if (activeArchiveNames.has(requested.name)) {
+          logger
+            .withMetadata({ remoteId: modData.remoteId })
+            .info("Mod already installed, skipping download and installation");
+          toast.success(
+            t("mods.deepLinkAlreadyInstalled", { name: modData.name }),
+          );
+          // Remove from processing set since we're done
+          finishOneClickInstall(slug);
+          return;
+        }
+
+        // Another file of an installed mod is added, as Manage files would.
+        const names = { file: requested.name, name: modData.name };
+        toast.success(t("mods.deepLinkAddingFile", names));
+        const selection = {
+          selectedArchives: [requested],
+          deselectedArchives: [],
+          allCheckedArchiveNames: [...activeArchiveNames, requested.name],
+        };
+        try {
+          const applied = await applyArchiveSelection(existingMod, selection, {
+            profileFolder: getActiveProfile()?.folderName ?? null,
+            archiveNames,
+            setProgress: () => {},
+            t,
+          });
+          saveArchiveSelection(existingMod, applied, selection, archiveNames);
+          toast.success(t("mods.deepLinkFileAdded", names));
+        } catch (error) {
+          logger
+            .withMetadata({ remoteId: modData.remoteId, fileId })
+            .withError(error)
+            .error("Failed to add linked file to installed mod");
+          toast.error(
+            t("mods.deepLinkAddFileError", {
+              ...names,
+              message: getErrorMessage(error),
+            }),
+          );
+        } finally {
+          finishOneClickInstall(slug);
+        }
         return;
       }
 
       toast.success(t("mods.deepLinkPreparing"));
 
-      const downloadFiles = [
-        {
-          url: `gamebanana-file://${slug}/${fileId}`,
-          name: `gamebanana-${fileId}.zip`,
-          size: 0,
-          md5Checksum: null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      ];
+      const downloadFiles = [requested];
 
       // Add mod to local store with download info
-      addMod(modData, { downloads: downloadFiles });
+      addMod(modData, { downloads, selectedDownloads: downloadFiles });
 
       // Start direct download and installation using the provided URL
       toast.success(t("mods.deepLinkStarting"));
@@ -161,10 +214,22 @@ export const useOneClickInstall = (): OneClickInstall => {
               },
               onComplete: (mod, result) => {
                 setModStatus(mod.remoteId, ModStatus.Installed);
+                // The install lists its files without their archives; keep
+                // the ones the download recorded, which Manage files reads.
+                const downloaded = usePersistedStore
+                  .getState()
+                  .localMods.find(
+                    (m) => m.remoteId === mod.remoteId,
+                  )?.installedFileTree;
                 setInstalledVpks(
                   mod.remoteId,
                   result.installed_vpks,
-                  result.file_tree,
+                  result.file_tree &&
+                    mergeFileTreeAfterSwap(
+                      downloaded,
+                      result.file_tree,
+                      archiveNames,
+                    ),
                 );
                 toast.success(t("mods.deepLinkInstalled", { name: mod.name }));
                 logger
