@@ -401,6 +401,13 @@ class DownloadManager {
       })
       .info("Queueing download for mod");
 
+    // Downloads run one at a time, so a retry can wait behind another one with
+    // its last attempt's slow clock still set. The clock restarts when it starts.
+    const store = usePersistedStore.getState();
+    if (store.getModProgress(mod.remoteId)?.slowSince !== undefined) {
+      store.patchModProgress(mod.remoteId, { slowSince: undefined });
+    }
+
     const profileFolder = mod.profileFolder ?? null;
 
     const files = mod.downloads.map((d) => ({
