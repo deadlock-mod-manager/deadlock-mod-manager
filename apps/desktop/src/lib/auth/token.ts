@@ -54,6 +54,10 @@ export function isTokenExpired(): boolean {
   return Date.now() >= tokenExpiresAt - 60000;
 }
 
+// Callers that find the token expired together share one refresh. The server
+// rotates refresh tokens, so parallel refreshes with the same token race.
+let inflightRefresh: Promise<string | null> | null = null;
+
 export async function ensureValidToken(): Promise<string | null> {
   if (accessToken && !isTokenExpired()) {
     return accessToken;
@@ -63,8 +67,15 @@ export async function ensureValidToken(): Promise<string | null> {
     return null;
   }
 
+  inflightRefresh ??= refreshAccessToken(refreshToken).finally(() => {
+    inflightRefresh = null;
+  });
+  return inflightRefresh;
+}
+
+async function refreshAccessToken(token: string): Promise<string | null> {
   try {
-    const tokenResponse = await refreshTokens(refreshToken);
+    const tokenResponse = await refreshTokens(token);
     await setTokens(tokenResponse);
     return accessToken;
   } catch (error) {
