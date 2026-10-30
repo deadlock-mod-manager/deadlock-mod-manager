@@ -24,6 +24,10 @@ describe("scenario selection", () => {
       "onboarding-telemetry-default",
     ]);
     expect(selectScenarios("gamebanana")).toHaveLength(22);
+    expect(scenarioSpec("mod-files-error")).toBe(
+      "./specs/mod-files-error.e2e.ts",
+    );
+    expect(scenarioPhases("mod-files-error")).toEqual(["files-error"]);
     expect(selectScenarios("library-groups")).toEqual([
       "library-groups-organize",
       "library-groups-identification",

@@ -704,8 +704,8 @@ export const scenarios = {
     spec: "mod-files-error",
     phases: ["files-error"],
     // GameBanana's transport retries a 5xx three times, so the page's first
-    // load sees four failures and its Retry gets the real file list, late
-    // enough for the spec to see the retry in flight.
+    // load and its first Retry each see four failures. The second Retry gets
+    // the real file list, late enough for the spec to see the retry in flight.
     routes: async () => {
       const routes = await createCatalogRoutes("gamebanana-single");
       const outage = {
@@ -717,10 +717,7 @@ export const scenarios = {
           route.path === `/apiv11/Mod/${CATALOG_MOD_ID}/DownloadPage`
             ? Object.assign(route, {
                 sequence: [
-                  outage,
-                  outage,
-                  outage,
-                  outage,
+                  ...Array.from({ length: 8 }, () => outage),
                   {
                     status: route.status,
                     body: route.body,
@@ -737,9 +734,9 @@ export const scenarios = {
           request.url.startsWith(`/apiv11/Mod/${CATALOG_MOD_ID}/DownloadPage`),
         )
         .map((request) => request.responseStatus);
-      if (statuses.join() !== "500,500,500,500,200")
+      if (statuses.join() !== `${"500,".repeat(8)}200`)
         throw new Error(
-          `Expected one failed file list load and one retry, got ${statuses.join()}`,
+          `Expected a failed file list load, a failed retry and a successful retry, got ${statuses.join()}`,
         );
     },
   },

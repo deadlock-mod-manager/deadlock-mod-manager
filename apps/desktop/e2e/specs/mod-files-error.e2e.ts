@@ -51,8 +51,28 @@ describe("Mod page file list failure", () => {
       );
       await screenshot("mod-files-error");
     });
+    const retry = $(FILES_PANEL).$("button=Try again");
+    await step("a failed retry keeps the error and Try again", async () => {
+      await retry.click();
+      await browser.waitUntil(async () => !(await retry.isEnabled()), {
+        timeoutMsg: "Try again never showed the retry in flight",
+      });
+      // The transport retries the failing request for a few seconds first.
+      await browser.waitUntil(() => retry.isEnabled(), {
+        timeout: 20_000,
+        timeoutMsg: "The failed retry never finished",
+      });
+      assert(
+        await $(
+          `${FILES_PANEL} [data-testid="mod-files-load-error"]`,
+        ).isDisplayed(),
+      );
+      assert.equal(
+        await $(FILES_PANEL).$('[title="base.zip"]').isExisting(),
+        false,
+      );
+    });
     await step("Retry loads the file list", async () => {
-      const retry = $(FILES_PANEL).$("button=Try again");
       await retry.click();
       // The fixture delays the retried response; the tab and its error stay.
       await browser.waitUntil(async () => !(await retry.isEnabled()), {
