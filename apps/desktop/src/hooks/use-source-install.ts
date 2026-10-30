@@ -10,38 +10,12 @@ import { getErrorMessage } from "@/lib/errors";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { formatSize } from "@/lib/utils";
+import type { InstallLink } from "@/types/generated/InstallLink";
+import type { SourceInstall } from "@/types/generated/SourceInstall";
+import type { SourceInstallProgress } from "@/types/generated/SourceInstallProgress";
 import { useModProcessor } from "./use-mod-processor";
 
 const SOURCE_INSTALL_EVENT = "source-install-requested";
-
-/** An allowlisted install link, as `install_sources::InstallLink` sends it. */
-type SourceInstallLink = {
-  source: string;
-  sourceName: string;
-  modId: string;
-  releaseId: string;
-};
-
-/** A checked manifest, as `install_sources::SourceInstall` returns it. */
-type SourceInstall = {
-  sourceName: string;
-  name: string;
-  author: string | null;
-  pageUrl: string;
-  imageUrl: string | null;
-  fileName: string;
-  size: number;
-};
-
-type StagedSourceInstall = {
-  path: string;
-  fileName: string;
-};
-
-type SourceInstallProgress = {
-  downloaded: number;
-  total: number | null;
-};
 
 const cleanUpStagedDownload = async (path: string): Promise<void> => {
   try {
@@ -78,8 +52,10 @@ export const useSourceInstall = () => {
       sourceName,
       modId,
       releaseId,
-    }: SourceInstallLink): Promise<void> => {
+    }: InstallLink): Promise<void> => {
       const ids = { source, modId, releaseId };
+      // Release-agnostic, so a newer release of an added mod is caught too.
+      const installSource = `${source}/${modId}`;
       let stagedPath: string | null = null;
 
       try {
@@ -90,7 +66,7 @@ export const useSourceInstall = () => {
 
         const alreadyAdded = usePersistedStore
           .getState()
-          .localMods.some((mod) => mod.remoteUrl === install.pageUrl);
+          .localMods.some((mod) => mod.installSource === installSource);
         if (alreadyAdded) {
           toast.info(t("sourceInstall.alreadyAdded", { name: install.name }));
           return;
@@ -132,11 +108,10 @@ export const useSourceInstall = () => {
             }),
         );
 
-        const staged = await invoke<StagedSourceInstall>(
-          "download_source_install",
-          { ...ids, onProgress },
-        );
-        stagedPath = staged.path;
+        stagedPath = await invoke<string>("download_source_install", {
+          ...ids,
+          onProgress,
+        });
 
         await processRef.current(
           {
@@ -147,13 +122,10 @@ export const useSourceInstall = () => {
               source: install.sourceName,
             }),
             imageUrl: install.imageUrl,
+            installSource,
           },
           ModCategory.OTHER_MISC,
-          {
-            kind: "sourcePath",
-            path: staged.path,
-            fileName: staged.fileName,
-          },
+          { kind: "staged", path: stagedPath, fileName: install.fileName },
         );
       } catch (error) {
         logger
@@ -176,7 +148,7 @@ export const useSourceInstall = () => {
     const drain = () => {
       queueRef.current = queueRef.current.then(async () => {
         try {
-          const links = await invoke<SourceInstallLink[]>(
+          const links = await invoke<InstallLink[]>(
             "take_pending_source_installs",
           );
           for (const link of links) {

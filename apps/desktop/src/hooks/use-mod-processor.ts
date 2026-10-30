@@ -7,7 +7,6 @@ import {
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { invoke } from "@tauri-apps/api/core";
 import { join } from "@tauri-apps/api/path";
-import { BaseDirectory, readDir } from "@tauri-apps/plugin-fs";
 import { useTranslation } from "react-i18next";
 import { useProgress } from "@/components/downloads/progress-indicator";
 import { ModCategory } from "@/lib/constants";
@@ -40,6 +39,7 @@ export interface ModMetadata {
   imageFile?: File | null;
   // A cover hosted by the mod's source, shown instead of the local preview.
   imageUrl?: string | null;
+  installSource?: string;
 }
 
 // Every source is on disk by now: picked, dropped as a path, or staged when it
@@ -59,6 +59,26 @@ const storeSourceFile = async (
   });
 };
 
+// Sources backed by a file; the live bridge is built by the backend instead.
+type FileSource = Exclude<ModSource, { kind: "liveBridge" }>;
+
+const sourceFileName = (source: FileSource): string =>
+  source.kind === "staged" ? source.fileName : getFileBaseName(source.file);
+
+// Puts the source's file in `directory` and returns where it landed.
+const placeSource = async (
+  source: FileSource,
+  directory: string,
+): Promise<string> => {
+  if (source.kind !== "staged") {
+    return storeSourceFile(source.file, directory);
+  }
+
+  const destination = await join(directory, source.fileName);
+  await invoke("place_staged_file", { path: source.path, destination });
+  return destination;
+};
+
 export const useModProcessor = () => {
   const { t } = useTranslation();
   const { setProcessing } = useProgress();
@@ -67,54 +87,22 @@ export const useModProcessor = () => {
   const setDetectedHero = usePersistedStore((state) => state.setDetectedHero);
   const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
 
-  const processArchive = async (
-    file: File,
+  // Kept beside the files folder, which receives the extracted VPKs.
+  const extractArchive = async (
+    source: FileSource,
     filesDir: string,
     modDir: string,
-  ): Promise<void> => {
-    const format = getFileBaseName(file).split(".").pop()?.toUpperCase();
+  ): Promise<string[]> => {
+    const format = sourceFileName(source).split(".").pop()?.toUpperCase();
 
     setProcessing(true, t("addMods.storingArchive", { format }));
-    const archivePath = await storeSourceFile(file, modDir);
+    const archivePath = await placeSource(source, modDir);
 
-    try {
-      setProcessing(true, t("addMods.extractingArchive", { format }));
-      await invoke("extract_archive", { archivePath, targetPath: filesDir });
-      toast.success(t("addMods.archiveExtractedSuccess", { format }));
-    } catch {
-      toast.error(t("addMods.failedToExtractArchive"));
-    }
-  };
-
-  const placeSourceDownload = async (
-    source: Extract<ModSource, { kind: "sourcePath" }>,
-    filesDir: string,
-    modDir: string,
-  ): Promise<void> => {
-    if (VPK_PATTERN.test(source.fileName)) {
-      await invoke("place_source_install", {
-        path: source.path,
-        destination: await join(filesDir, source.fileName),
-      });
-      return;
-    }
-
-    // Kept beside the files folder, as a picked archive is.
-    const archivePath = await join(modDir, source.fileName);
-    await invoke("place_source_install", {
-      path: source.path,
-      destination: archivePath,
-    });
-
-    const format = source.fileName.split(".").pop()?.toUpperCase();
     setProcessing(true, t("addMods.extractingArchive", { format }));
-    const vpks = await invoke<string[]>("extract_archive", {
+    return invoke<string[]>("extract_archive", {
       archivePath,
       targetPath: filesDir,
     });
-    if (vpks.length === 0) {
-      throw new ExtractionError(t("addMods.noVpkFoundInContent"));
-    }
   };
 
   const processPreviewImage = async (
@@ -143,36 +131,6 @@ export const useModProcessor = () => {
     return { previewName, imageDataUrl };
   };
 
-  const validateFiles = async (
-    filesDir: string,
-    detectedSource: ModSource,
-  ): Promise<boolean> => {
-    // Placing a site's download already refused one without VPKs, and its
-    // VPKs may sit in subfolders.
-    if (detectedSource.kind === "sourcePath") {
-      return true;
-    }
-
-    const filesList = await readDir(filesDir, {
-      baseDir: BaseDirectory.AppLocalData,
-    });
-    const hasVpk = filesList.some((entry) =>
-      VPK_PATTERN.test(entry.name || ""),
-    );
-
-    if (hasVpk) {
-      return true;
-    }
-
-    if (detectedSource.kind === "archive") {
-      toast.info(t("addMods.archiveWillBeProcessed"));
-      return true;
-    }
-
-    toast.error(t("addMods.noVpkFoundInContent"));
-    return false;
-  };
-
   const processMod = async (
     metadata: ModMetadata,
     category: ModCategory,
@@ -197,45 +155,27 @@ export const useModProcessor = () => {
     );
 
     setProcessing(true, t("addMods.processingFiles"));
-    if (detectedSource.kind === "vpkPath") {
-      await invoke("place_forge_payload", {
-        path: detectedSource.path,
-        destination: await join(filesDir, detectedSource.fileName),
-      });
-    } else if (detectedSource.kind === "liveBridge") {
-      await invoke("build_live_bridge", { modId });
-    } else if (detectedSource.kind === "sourcePath") {
-      try {
-        await placeSourceDownload(detectedSource, filesDir, modDir);
-      } catch (error) {
-        // Nothing reached the library, so leave no folder behind.
-        await invoke("remove_mod_folder", { modPath: modDir }).catch(
-          (cleanupError) =>
-            logger
-              .withError(cleanupError)
-              .warn("Failed to remove an incomplete mod folder"),
-        );
-        setProcessing(false);
-        throw error;
-      }
-    } else {
-      try {
-        if (detectedSource.kind === "vpk") {
-          await storeSourceFile(detectedSource.file, filesDir);
-        } else {
-          await processArchive(detectedSource.file, filesDir, modDir);
+    try {
+      if (detectedSource.kind === "liveBridge") {
+        await invoke("build_live_bridge", { modId });
+      } else {
+        const vpks = VPK_PATTERN.test(sourceFileName(detectedSource))
+          ? [await placeSource(detectedSource, filesDir)]
+          : await extractArchive(detectedSource, filesDir, modDir);
+        if (vpks.length === 0) {
+          throw new ExtractionError(t("addMods.noVpkFoundInContent"));
         }
-      } catch {
-        toast.error(t("addMods.failedToProcessArchive"));
-        await storeSourceFile(detectedSource.file, modDir);
       }
-    }
-
-    setProcessing(true, t("addMods.validatingFiles"));
-    const isValid = await validateFiles(filesDir, detectedSource);
-    if (!isValid) {
+    } catch (error) {
+      // Nothing reached the library, so leave no folder behind.
+      await invoke("remove_mod_folder", { modPath: modDir }).catch(
+        (cleanupError) =>
+          logger
+            .withError(cleanupError)
+            .warn("Failed to remove an incomplete mod folder"),
+      );
       setProcessing(false);
-      return;
+      throw error;
     }
 
     setProcessing(true, t("addMods.processingFiles"));
@@ -284,6 +224,8 @@ export const useModProcessor = () => {
       category,
       createdAt: new Date().toISOString(),
       preview: previewName,
+      imageUrl: metadata.imageUrl ?? null,
+      installSource: metadata.installSource ?? null,
       _schema: 1,
     };
 
@@ -305,7 +247,7 @@ export const useModProcessor = () => {
       remoteAddedAt: new Date(modMetadata.createdAt),
       remoteUpdatedAt: new Date(modMetadata.createdAt),
       tags: [],
-      images: [metadata.imageUrl ?? imageDataUrl],
+      images: [modMetadata.imageUrl ?? imageDataUrl],
       hero: null,
       isAudio: false,
       isMap: category === ModCategory.MAPS,
@@ -330,6 +272,7 @@ export const useModProcessor = () => {
     addMod(modDto, {
       status: ModStatus.Downloaded,
       installedFileTree: fileTree ?? undefined,
+      installSource: metadata.installSource,
     });
     setModStatus(modId, ModStatus.Downloaded);
 

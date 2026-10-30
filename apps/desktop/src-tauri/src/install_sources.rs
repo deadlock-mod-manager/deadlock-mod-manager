@@ -3,18 +3,21 @@
 //! A site links `deadlock-mod-manager://install?source=<id>&mod=<id>&release=<id>`.
 //! The link carries IDs, never URLs: the manifest address comes from the
 //! source's entry below, and the file may only come from that source's
-//! download hosts. The manifest's size and SHA-256 are checked before anything
-//! is installed, and the mod is added as a local mod.
+//! download hosts. The file downloaded is the one in the manifest the user
+//! confirmed, its size and SHA-256 are checked before anything is installed,
+//! and the mod is added as a local mod.
 
 use crate::deep_link::parse_query_params;
 use crate::download_manager::downloader::{PauseHandle, download_file_resumable};
 use crate::errors::Error;
+use crate::staged_files::{self, Stager};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::time::Duration;
 use tokio_util::sync::CancellationToken;
+use ts_rs::TS;
 
 pub const PATH_INSTALL: &str = "//install";
 
@@ -59,7 +62,8 @@ const SOURCES: &[InstallSource] = &[InstallSource {
 }];
 
 /// A link whose source is allowlisted and whose IDs are URL-safe.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
+#[ts(export, rename_all = "camelCase")]
 #[serde(rename_all = "camelCase")]
 pub struct InstallLink {
   pub source: String,
@@ -91,7 +95,8 @@ struct ManifestFile {
 }
 
 /// A manifest that passed validation. The download URL and hash stay in Rust.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export, rename_all = "camelCase")]
 #[serde(rename_all = "camelCase")]
 pub struct SourceInstall {
   pub source_name: String,
@@ -100,6 +105,7 @@ pub struct SourceInstall {
   pub page_url: String,
   pub image_url: Option<String>,
   pub file_name: String,
+  #[ts(type = "number")]
   pub size: u64,
   #[serde(skip)]
   download_url: String,
@@ -111,9 +117,9 @@ pub struct SourceInstall {
 /// window listens, so links wait here and the event only says to look.
 static PENDING: Mutex<Vec<InstallLink>> = Mutex::new(Vec::new());
 
-/// Verified downloads not yet cleaned up. Only a path listed here is ever
-/// moved or deleted, so the renderer cannot point those commands elsewhere.
-static STAGED: Mutex<Vec<PathBuf>> = Mutex::new(Vec::new());
+/// Manifests shown to the user, newest last, so the download uses the one
+/// they confirmed instead of fetching it again.
+static RESOLVED: Mutex<Vec<(InstallLink, SourceInstall)>> = Mutex::new(Vec::new());
 
 fn find_source(id: &str) -> Option<&'static InstallSource> {
   SOURCES.iter().find(|source| source.id == id)
@@ -343,7 +349,33 @@ pub async fn resolve(link: &InstallLink) -> Result<SourceInstall, Error> {
   let source = find_source(&link.source)
     .ok_or_else(|| Error::InvalidInput("Unknown install source".to_string()))?;
   let manifest = fetch_manifest(source, link).await?;
-  validate_manifest(source, link, manifest)
+  let install = validate_manifest(source, link, manifest)?;
+  remember_resolved(link, &install);
+  Ok(install)
+}
+
+/// Replaces an earlier resolve of the same link. A declined link is never
+/// taken, so the oldest give way past the cap.
+fn remember_resolved(link: &InstallLink, install: &SourceInstall) {
+  if let Ok(mut resolved) = RESOLVED.lock() {
+    resolved.retain(|(known, _)| known != link);
+    if resolved.len() >= MAX_PENDING {
+      resolved.remove(0);
+    }
+    resolved.push((link.clone(), install.clone()));
+  }
+}
+
+/// The manifest the user was shown for `link`, consumed.
+pub fn take_resolved(link: &InstallLink) -> Result<SourceInstall, Error> {
+  let mut resolved = RESOLVED
+    .lock()
+    .map_err(|_| Error::InvalidInput("Install state is poisoned".to_string()))?;
+  let index = resolved
+    .iter()
+    .position(|(known, _)| known == link)
+    .ok_or_else(|| Error::InvalidInput("This install was not confirmed".to_string()))?;
+  Ok(resolved.remove(index).1)
 }
 
 async fn verify_file(path: &Path, size: u64, sha256: &str) -> Result<(), Error> {
@@ -406,37 +438,8 @@ where
     return Err(error);
   }
 
-  if let Ok(mut staged) = STAGED.lock() {
-    staged.push(path.clone());
-  }
+  staged_files::remember(Stager::Source, &path);
   Ok(path)
-}
-
-/// Resolves a reported path without consuming the entry.
-pub fn peek_staged(candidate: &str) -> Result<PathBuf, Error> {
-  let candidate = PathBuf::from(candidate);
-  let staged = STAGED
-    .lock()
-    .map_err(|_| Error::InvalidInput("Install staging state is poisoned".to_string()))?;
-
-  if staged.contains(&candidate) {
-    Ok(candidate)
-  } else {
-    Err(Error::UnauthorizedPath(candidate.display().to_string()))
-  }
-}
-
-/// Resolves a reported path to one this module staged, and forgets it.
-pub fn take_staged(candidate: &str) -> Result<PathBuf, Error> {
-  let candidate = PathBuf::from(candidate);
-  let mut staged = STAGED
-    .lock()
-    .map_err(|_| Error::InvalidInput("Install staging state is poisoned".to_string()))?;
-
-  match staged.iter().position(|path| *path == candidate) {
-    Some(index) => Ok(staged.remove(index)),
-    None => Err(Error::UnauthorizedPath(candidate.display().to_string())),
-  }
 }
 
 #[cfg(test)]
@@ -629,22 +632,24 @@ mod tests {
   }
 
   #[test]
+  fn downloads_only_a_manifest_the_user_was_shown() {
+    let shown = install_link("divineskins", "123", "999").expect("valid link");
+    assert!(take_resolved(&shown).is_err());
+
+    let install = validate_manifest(divine(), &link(), manifest()).expect("should be valid");
+    remember_resolved(&shown, &install);
+    assert_eq!(
+      take_resolved(&shown).expect("resolved").file_name,
+      install.file_name
+    );
+    assert!(take_resolved(&shown).is_err());
+  }
+
+  #[test]
   fn queues_links_until_the_window_takes_them() {
     queue_pending(link());
     queue_pending(link());
     assert_eq!(take_pending(), vec![link()]);
     assert!(take_pending().is_empty());
-  }
-
-  #[test]
-  fn only_hands_out_paths_it_staged() {
-    let path = std::env::temp_dir().join("dmm-source-install-test/mod.zip");
-    let reported = path.to_string_lossy().into_owned();
-    assert!(peek_staged(&reported).is_err());
-
-    STAGED.lock().expect("lock").push(path.clone());
-    assert_eq!(peek_staged(&reported).expect("staged"), path);
-    assert_eq!(take_staged(&reported).expect("staged"), path);
-    assert!(take_staged(&reported).is_err());
   }
 }
