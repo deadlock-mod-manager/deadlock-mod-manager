@@ -4462,7 +4462,7 @@
       "description": "Fetches the matches you play, including ones you never open. Off by default."
     },
     "about": {
-      "reads": "Signs in to Steam as you in the background, using the login Steam already saved on this PC, and briefly connects to Deadlock to fetch your matches. Steam may show you as in Deadlock while it runs.",
+      "reads": "Signs in to Steam as you in the background, using the login Steam already saved on this PC, and briefly connects to Deadlock to fetch your matches. Steam may show you as in Deadlock for a few seconds during each fetch.",
       "sends": "Sends only match IDs and salts to deadlock-api, never your login or personal data.",
       "limit": "Strictly rate-limited to {{limit}} match fetches per 24 hours, shared across everything below.",
       "risk": "Uses your Steam account. Low risk, but not zero.",
