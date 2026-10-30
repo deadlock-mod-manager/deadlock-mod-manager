@@ -3623,6 +3623,9 @@
   "mods": {
     "invalidDeepLink": "",
     "deepLinkAlreadyInstalled": "",
+    "deepLinkAddingFile": "",
+    "deepLinkFileAdded": "",
+    "deepLinkAddFileError": "",
     "deepLinkPreparing": "",
     "deepLinkStarting": "",
     "deepLinkDownloaded": "",
