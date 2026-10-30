@@ -89,13 +89,15 @@ export const useOneClickInstall = (): OneClickInstall => {
         logger
           .withMetadata({ remoteId: modData.remoteId })
           .info("Mod already installed, skipping download and installation");
-        toast.success(`${modData.name} is already installed!`);
+        toast.success(
+          t("mods.deepLinkAlreadyInstalled", { name: modData.name }),
+        );
         // Remove from processing set since we're done
         finishOneClickInstall(slug);
         return;
       }
 
-      toast.success("Preparing 1-click mod download...");
+      toast.success(t("mods.deepLinkPreparing"));
 
       const downloadFiles = [
         {
@@ -112,7 +114,7 @@ export const useOneClickInstall = (): OneClickInstall => {
       addMod(modData, { downloads: downloadFiles });
 
       // Start direct download and installation using the provided URL
-      toast.success("Starting 1-click mod install...");
+      toast.success(t("mods.deepLinkStarting"));
 
       const activeProfile = getActiveProfile();
       const profileFolder = activeProfile?.folderName ?? null;
@@ -138,9 +140,7 @@ export const useOneClickInstall = (): OneClickInstall => {
           logger
             .withMetadata({ remoteId: modData.remoteId })
             .info("Download completed, starting auto-installation for mod");
-          toast.success(
-            `${modData.name} downloaded! Installing automatically...`,
-          );
+          toast.success(t("mods.deepLinkDownloaded", { name: modData.name }));
 
           // Create a local mod object for installation
           const localMod = {
@@ -166,9 +166,7 @@ export const useOneClickInstall = (): OneClickInstall => {
                   result.installed_vpks,
                   result.file_tree,
                 );
-                toast.success(
-                  `${mod.name} installed successfully via 1-click!`,
-                );
+                toast.success(t("mods.deepLinkInstalled", { name: mod.name }));
                 logger
                   .withMetadata({ remoteId: mod.remoteId })
                   .info("Auto-installation completed for mod");
@@ -181,7 +179,12 @@ export const useOneClickInstall = (): OneClickInstall => {
               },
               onError: (mod, error) => {
                 setModStatus(mod.remoteId, ModStatus.Downloaded);
-                toast.error(`Failed to install ${mod.name}: ${error.message}`);
+                toast.error(
+                  t("mods.deepLinkInstallError", {
+                    name: mod.name,
+                    message: error.message,
+                  }),
+                );
                 logger
                   .withMetadata({ remoteId: mod.remoteId })
                   .withError(error)
@@ -193,7 +196,7 @@ export const useOneClickInstall = (): OneClickInstall => {
           } catch (error) {
             logger.withError(error).error("Failed to start auto-installation");
             toast.error(
-              `Downloaded but failed to install ${modData.name}. You can install it manually.`,
+              t("mods.deepLinkInstallStartError", { name: modData.name }),
             );
             // Remove from processing set on error
             finishOneClickInstall(slug);
@@ -203,7 +206,12 @@ export const useOneClickInstall = (): OneClickInstall => {
           if (!(error instanceof DownloadAlreadyQueuedError)) {
             setModStatus(modData.remoteId, ModStatus.FailedToDownload);
           }
-          toast.error(`Failed to download ${modData.name}: ${error.message}`);
+          toast.error(
+            t("downloads.downloadError", {
+              name: modData.name,
+              message: error.message,
+            }),
+          );
           logger
             .withMetadata({ remoteId: modData.remoteId })
             .withError(error)
@@ -214,9 +222,7 @@ export const useOneClickInstall = (): OneClickInstall => {
       });
     } catch (error) {
       logger.withError(error).error("Failed to process deep link");
-      toast.error(
-        "Failed to process 1-click download. The mod may not exist or be unavailable.",
-      );
+      toast.error(t("mods.deepLinkError"));
       // Remove from processing set on error
       finishOneClickInstall(slug);
     }

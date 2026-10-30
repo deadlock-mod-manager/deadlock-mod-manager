@@ -85,7 +85,7 @@ class DownloadManager {
     duplicateMessage: () => i18n.t("downloads.alreadyQueued"),
     onQueueError: (error) => {
       logger.withError(error).error("Failed to queue download");
-      toast.error(`Failed to queue download: ${error.message}`);
+      toast.error(i18n.t("downloads.queueError", { message: error.message }));
     },
   });
   private unlistenFns: UnlistenFn[] = [];
