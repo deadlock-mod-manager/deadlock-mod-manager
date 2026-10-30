@@ -5811,6 +5811,12 @@
     "gridline": {
       "description": "İnce çizgili hafif bir ızgara, net beyaz yazılar ve maviden pembeye uzanan vurgu parıltısıyla gerçek siyah."
     },
+    "coding": {
+      "description": "",
+      "themeBy": "",
+      "customColor": "",
+      "customColorDescription": ""
+    },
     "nightshift": {
       "description": "Klarite ve uzun oyun oturumları için tasarlanmış turkuaz vurgulu siberpunk tema.",
       "visit": "Nightshift'i ziyaret et:",

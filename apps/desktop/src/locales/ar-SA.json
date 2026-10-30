@@ -5811,6 +5811,12 @@
     "gridline": {
       "description": ""
     },
+    "coding": {
+      "description": "",
+      "themeBy": "",
+      "customColor": "",
+      "customColorDescription": ""
+    },
     "nightshift": {
       "description": "ثيم سايبربانك بلمسات فيروزية مصمم للوضوح والجلسات الطويلة.",
       "visit": "زر Nightshift:",

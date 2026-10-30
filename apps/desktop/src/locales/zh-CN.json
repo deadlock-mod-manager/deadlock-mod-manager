@@ -5811,6 +5811,12 @@
     "gridline": {
       "description": ""
     },
+    "coding": {
+      "description": "",
+      "themeBy": "",
+      "customColor": "",
+      "customColorDescription": ""
+    },
     "nightshift": {
       "description": "一款带有青色点缀的赛博朋克主题，专为清晰度和长时间游戏而设计。",
       "visit": "访问 Nightshift：",
