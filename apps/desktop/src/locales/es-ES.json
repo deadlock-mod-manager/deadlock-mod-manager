@@ -4979,7 +4979,6 @@
     "storingArchive": "Guardando archivo {{format}}...",
     "copyingDroppedFile": "",
     "extractingArchive": "Extrayendo archivo {{format}}...",
-    "validatingFiles": "Validando archivos del mod...",
     "savingMetadata": "Guardando metadatos del mod...",
     "processingImage": "Procesando imagen del mod...",
     "addingToLibrary": "Añadiendo mod a la biblioteca...",
@@ -4989,11 +4988,7 @@
     "failedToReadDroppedFiles": "",
     "noFilesDetected": "No se detectaron archivos.",
     "noVpkFound": "No se encontró .vpk dentro del .zip – archivo almacenado para el instalador",
-    "archiveExtractedSuccess": "Archivo {{format}} extraído exitosamente",
-    "failedToExtractArchive": "Error al extraer archivo",
-    "failedToProcessArchive": "Error al procesar archivo",
     "noVpkFoundInContent": "No se encontraron archivos VPK en el contenido subido",
-    "archiveWillBeProcessed": "El archivo será procesado durante la instalación del mod",
     "noVpkFoundStored": "No se encontró VPK - archivo almacenado para procesamiento manual",
     "addedSuccess": "Añadido: {{name}}",
     "unsupportedImageType": "Tipo de imagen no soportado"
@@ -6997,6 +6992,16 @@
     "openCancel": "",
     "openEnabled": "",
     "fallbackName": ""
+  },
+  "sourceInstall": {
+    "confirmTitle": "",
+    "confirmBody": "",
+    "confirmAction": "",
+    "confirmCancel": "",
+    "downloading": "",
+    "alreadyAdded": "",
+    "modDescription": "",
+    "installFailed": ""
   },
   "modCategories": {
     "maps": "",

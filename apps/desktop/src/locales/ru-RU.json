@@ -4979,7 +4979,6 @@
     "storingArchive": "",
     "copyingDroppedFile": "",
     "extractingArchive": "",
-    "validatingFiles": "",
     "savingMetadata": "",
     "processingImage": "",
     "addingToLibrary": "",
@@ -4989,11 +4988,7 @@
     "failedToReadDroppedFiles": "",
     "noFilesDetected": "",
     "noVpkFound": "",
-    "archiveExtractedSuccess": "",
-    "failedToExtractArchive": "",
-    "failedToProcessArchive": "",
     "noVpkFoundInContent": "",
-    "archiveWillBeProcessed": "",
     "noVpkFoundStored": "",
     "addedSuccess": "",
     "unsupportedImageType": ""
@@ -6997,6 +6992,16 @@
     "openCancel": "",
     "openEnabled": "",
     "fallbackName": ""
+  },
+  "sourceInstall": {
+    "confirmTitle": "",
+    "confirmBody": "",
+    "confirmAction": "",
+    "confirmCancel": "",
+    "downloading": "",
+    "alreadyAdded": "",
+    "modDescription": "",
+    "installFailed": ""
   },
   "modCategories": {
     "maps": "",

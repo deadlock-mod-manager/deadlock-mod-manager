@@ -4979,7 +4979,6 @@
     "storingArchive": "{{format}} 아카이브 저장 중...",
     "copyingDroppedFile": "",
     "extractingArchive": "{{format}} 아카이브 추출 중...",
-    "validatingFiles": "모드 파일 검증 중...",
     "savingMetadata": "모드 메타데이터 저장 중...",
     "processingImage": "모드 이미지 처리 중...",
     "addingToLibrary": "라이브러리에 모드를 추가하는 중...",
@@ -4989,11 +4988,7 @@
     "failedToReadDroppedFiles": "",
     "noFilesDetected": "감지된 파일이 없습니다.",
     "noVpkFound": ".zip 내부에 .vpk가 없습니다 – 설치 프로그램용으로 저장된 아카이브",
-    "archiveExtractedSuccess": "{{format}} 아카이브가 성공적으로 추출되었습니다.",
-    "failedToExtractArchive": "아카이브를 추출하지 못했습니다.",
-    "failedToProcessArchive": "아카이브를 처리하지 못했습니다.",
     "noVpkFoundInContent": "업로드된 콘텐츠에서 VPK 파일을 찾을 수 없습니다.",
-    "archiveWillBeProcessed": "모드 설치 중에 아카이브가 처리됩니다.",
     "noVpkFoundStored": "VPK를 찾을 수 없음 - 수동 처리를 위해 아카이브가 저장됨",
     "addedSuccess": "추가됨: {{name}}",
     "unsupportedImageType": "지원되지 않는 이미지 유형"
@@ -6997,6 +6992,16 @@
     "openCancel": "",
     "openEnabled": "",
     "fallbackName": ""
+  },
+  "sourceInstall": {
+    "confirmTitle": "",
+    "confirmBody": "",
+    "confirmAction": "",
+    "confirmCancel": "",
+    "downloading": "",
+    "alreadyAdded": "",
+    "modDescription": "",
+    "installFailed": ""
   },
   "modCategories": {
     "maps": "",

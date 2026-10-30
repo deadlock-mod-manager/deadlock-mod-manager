@@ -4979,7 +4979,6 @@
     "storingArchive": "正在存储 {{format}} 压缩包…",
     "copyingDroppedFile": "",
     "extractingArchive": "正在解压 {{format}} 压缩包…",
-    "validatingFiles": "正在验证模组文件…",
     "savingMetadata": "正在保存模组元数据…",
     "processingImage": "正在处理模组图片…",
     "addingToLibrary": "正在将模组添加到库中…",
@@ -4989,11 +4988,7 @@
     "failedToReadDroppedFiles": "无法读取拖放的文件。",
     "noFilesDetected": "未检测到文件。",
     "noVpkFound": ".zip 中未找到 .vpk – 已存储压缩包以供安装程序使用",
-    "archiveExtractedSuccess": "{{format}} 压缩包解压成功",
-    "failedToExtractArchive": "解压压缩包失败",
-    "failedToProcessArchive": "处理压缩包失败",
     "noVpkFoundInContent": "在上传的内容中未找到 VPK 文件",
-    "archiveWillBeProcessed": "压缩包将在模组安装期间处理",
     "noVpkFoundStored": "未找到 VPK - 压缩包已存储以供手动处理",
     "addedSuccess": "已添加：{{name}}",
     "unsupportedImageType": "不支持的图像类型"
@@ -6997,6 +6992,16 @@
     "openCancel": "不开启直接打开",
     "openEnabled": "一键安装已启用。",
     "fallbackName": "DeadlockForge 模组"
+  },
+  "sourceInstall": {
+    "confirmTitle": "",
+    "confirmBody": "",
+    "confirmAction": "",
+    "confirmCancel": "",
+    "downloading": "",
+    "alreadyAdded": "",
+    "modDescription": "",
+    "installFailed": ""
   },
   "modCategories": {
     "maps": "地图",

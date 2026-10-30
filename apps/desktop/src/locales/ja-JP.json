@@ -4979,7 +4979,6 @@
     "storingArchive": "{{format}}アーカイブを保存中...",
     "copyingDroppedFile": "",
     "extractingArchive": "{{format}}アーカイブを展開中...",
-    "validatingFiles": "Modファイルを検証中...",
     "savingMetadata": "Modメタデータを保存中...",
     "processingImage": "Mod画像を処理中...",
     "addingToLibrary": "Modをライブラリに追加中...",
@@ -4989,11 +4988,7 @@
     "failedToReadDroppedFiles": "",
     "noFilesDetected": "ファイルが見つかりません",
     "noVpkFound": ".zip内に.vpkがありません – インストーラー用にアーカイブを保存しました",
-    "archiveExtractedSuccess": "{{format}}アーカイブを正常に展開しました",
-    "failedToExtractArchive": "アーカイブの展開に失敗しました",
-    "failedToProcessArchive": "アーカイブの処理に失敗しました",
     "noVpkFoundInContent": "アップロード内容にVPKファイルが見つかりません",
-    "archiveWillBeProcessed": "アーカイブはModインストール時に処理されます",
     "noVpkFoundStored": "VPKが見つかりません – 手動処理用にアーカイブを保存しました",
     "addedSuccess": "追加完了:{{name}}",
     "unsupportedImageType": "サポートされていない画像形式です"
@@ -6997,6 +6992,16 @@
     "openCancel": "",
     "openEnabled": "",
     "fallbackName": ""
+  },
+  "sourceInstall": {
+    "confirmTitle": "",
+    "confirmBody": "",
+    "confirmAction": "",
+    "confirmCancel": "",
+    "downloading": "",
+    "alreadyAdded": "",
+    "modDescription": "",
+    "installFailed": ""
   },
   "modCategories": {
     "maps": "",

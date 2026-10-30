@@ -4979,7 +4979,6 @@
     "storingArchive": "Zapisywanie archiwum {{format}}...",
     "copyingDroppedFile": "",
     "extractingArchive": "Wypakowywanie archiwum {{format}}...",
-    "validatingFiles": "Walidacja plików moda...",
     "savingMetadata": "Zapisywanie metadanych moda...",
     "processingImage": "Przetwarzanie obrazu moda...",
     "addingToLibrary": "Dodawanie moda do biblioteki...",
@@ -4989,11 +4988,7 @@
     "failedToReadDroppedFiles": "Nie udało się odczytać upuszczonych plików.",
     "noFilesDetected": "Nie wykryto plików.",
     "noVpkFound": "Nie znaleziono .vpk w .zip – archiwum zapisane dla instalatora",
-    "archiveExtractedSuccess": "Archiwum {{format}} wypakowane pomyślnie",
-    "failedToExtractArchive": "Nie udało się wypakować archiwum",
-    "failedToProcessArchive": "Nie udało się przetworzyć archiwum",
     "noVpkFoundInContent": "Nie znaleziono plików VPK w przesłanej zawartości",
-    "archiveWillBeProcessed": "Archiwum zostanie przetworzone podczas instalacji moda",
     "noVpkFoundStored": "Nie znaleziono VPK - archiwum zapisane do ręcznego przetworzenia",
     "addedSuccess": "Dodano: {{name}}",
     "unsupportedImageType": "Nieobsługiwany typ obrazu"
@@ -6997,6 +6992,16 @@
     "openCancel": "",
     "openEnabled": "",
     "fallbackName": ""
+  },
+  "sourceInstall": {
+    "confirmTitle": "",
+    "confirmBody": "",
+    "confirmAction": "",
+    "confirmCancel": "",
+    "downloading": "",
+    "alreadyAdded": "",
+    "modDescription": "",
+    "installFailed": ""
   },
   "modCategories": {
     "maps": "",
