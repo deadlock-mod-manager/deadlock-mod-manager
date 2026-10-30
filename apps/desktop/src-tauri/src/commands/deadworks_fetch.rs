@@ -175,6 +175,13 @@ enum Format {
   Bzip2,
 }
 
+/// Full SHA-256 of the file at `path`, as lowercase hex. Blocking.
+pub fn file_sha256_hex(path: &Path) -> Result<String, Error> {
+  let mut hasher = Sha256::new();
+  std::io::copy(&mut std::fs::File::open(path)?, &mut hasher)?;
+  Ok(hex::encode(hasher.finalize()))
+}
+
 /// The format comes from the first bytes, never from the URL.
 fn sniff(head: &[u8]) -> Option<Format> {
   match head {

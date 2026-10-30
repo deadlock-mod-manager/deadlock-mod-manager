@@ -3421,6 +3421,14 @@
   },
   "mods": {
     "invalidDeepLink": "",
+    "deepLinkAlreadyInstalled": "",
+    "deepLinkPreparing": "",
+    "deepLinkStarting": "",
+    "deepLinkDownloaded": "",
+    "deepLinkInstalled": "",
+    "deepLinkInstallError": "",
+    "deepLinkInstallStartError": "",
+    "deepLinkError": "",
     "manageOrder": "Zmień kolejność modyfikacji",
     "searchPlaceholder": "",
     "noPreviewAvailable": "Brak podglądu",
@@ -3570,6 +3578,9 @@
     "resume": "Wznów",
     "paused": "Wstrzymano",
     "retry": "",
+    "downloadComplete": "",
+    "downloadError": "",
+    "queueError": "",
     "pauseError": "Nie mona wstrzymać pobierania: {{message}}",
     "cancelError": "",
     "resumeError": "Nie można wznowić pobierania: {{message}}",
@@ -3942,8 +3953,10 @@
     "developerModeDescription": "Włącz tryb dewelopera, aby uzyskać dostęp do zaawansowanych narzędzi i funkcji debugowania",
     "experimental": "Eksperymentalny",
     "ingestTool": {
-      "title": "Narzędzie Matchdata",
-      "description": "Automatycznie skanuj katalog pamięci podręcznej Steam w poszukiwaniu plików meczów Deadlock i wysyłaj dane meczów do API"
+      "title": "",
+      "description": "",
+      "sectionTitle": "",
+      "sectionDescription": ""
     },
     "autoUpdate": "Aktualizacje automatyczne",
     "autoUpdateDescription": "Automatycznie sprawdzaj i powiadamiaj o aktualizacjach aplikacji przy uruchomieniu.",
@@ -4446,6 +4459,19 @@
   "matchSync": {
     "title": "",
     "description": "",
+    "overview": {
+      "description": "",
+      "powersTitle": "",
+      "trackers": "",
+      "trackersSource": "",
+      "stats": "",
+      "everyone": "",
+      "sends": ""
+    },
+    "account": {
+      "title": "",
+      "description": ""
+    },
     "about": {
       "reads": "",
       "sends": "",
@@ -4465,7 +4491,8 @@
     },
     "quota": {
       "remaining": "",
-      "accountRemaining": "",
+      "accountsTitle": "",
+      "left": "",
       "gcUnavailable": "",
       "reachedToday": ""
     },
@@ -5783,6 +5810,12 @@
     },
     "gridline": {
       "description": ""
+    },
+    "coding": {
+      "description": "",
+      "themeBy": "",
+      "customColor": "",
+      "customColorDescription": ""
     },
     "nightshift": {
       "description": "Cyberpunkowy motyw z turkusowymi akcentami zaprojektowany dla przejrzystości i długich sesji gamingowych.",

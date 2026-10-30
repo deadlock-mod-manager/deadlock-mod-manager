@@ -45,19 +45,14 @@ export function MultiFileDownloadDialog({
   const { t } = useTranslation();
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
 
-  const sortedFiles = useMemo(
-    () => [...files].sort((a, b) => b.size - a.size),
-    [files],
-  );
-
   const totalSize = useMemo(
     () =>
-      sortedFiles.reduce(
+      files.reduce(
         (sum, file) =>
           selectedFiles.has(file.name) ? sum + (file.size || 0) : sum,
         0,
       ),
-    [sortedFiles, selectedFiles],
+    [files, selectedFiles],
   );
 
   const allSelected = files.length > 0 && selectedFiles.size === files.length;
@@ -84,8 +79,10 @@ export function MultiFileDownloadDialog({
     }
   };
 
+  // Files arrive in the author's order, which is also the order their VPKs
+  // load in, so the list keeps it.
   const handleDownload = () => {
-    const selected = sortedFiles.filter((file) => selectedFiles.has(file.name));
+    const selected = files.filter((file) => selectedFiles.has(file.name));
     onDownload(selected);
   };
 
@@ -148,7 +145,7 @@ export function MultiFileDownloadDialog({
 
           <div className='min-h-0 flex-1 overflow-y-auto'>
             <ul className='divide-y divide-border/60' role='list'>
-              {sortedFiles.map((file) => {
+              {files.map((file) => {
                 const isSelected = selectedFiles.has(file.name);
                 const fileCheckboxId = `file-${file.name}`;
                 const timestamp = file.updatedAt ?? file.createdAt;

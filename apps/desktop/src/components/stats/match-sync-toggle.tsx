@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 /**
  * Match sync is what keeps this page current, so it can be flipped right here
  * instead of a trip to Settings. The consent dialog still guards turning it on,
- * and the full controls (quota, full sync) stay in the privacy tab.
+ * and the full controls (quota, full sync) stay in the Match Data Sharing settings tab.
  */
 export const MatchSyncToggle = () => {
   const { t } = useTranslation();

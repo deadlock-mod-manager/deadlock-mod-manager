@@ -1,7 +1,8 @@
+import { oauthProvider } from "@better-auth/oauth-provider";
 import { db, schema } from "@deadlock-mods/database";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { jwt, oidcProvider } from "better-auth/plugins";
+import { jwt } from "better-auth/plugins";
 import { env } from "../env";
 import { steam } from "./plugins/steam";
 
@@ -27,15 +28,15 @@ export const auth = betterAuth({
       enabled: true,
     },
   },
-  trustedOrigins: env.CORS_ORIGIN,
-  emailAndPassword: {
-    enabled: true,
-  },
   rateLimit: {
     customRules: {
       // The API introspects every bearer token here from shared server IPs.
       "/oauth2/userinfo": false,
     },
+  },
+  trustedOrigins: env.CORS_ORIGIN,
+  emailAndPassword: {
+    enabled: true,
   },
   advanced: {
     defaultCookieAttributes: {
@@ -67,43 +68,25 @@ export const auth = betterAuth({
       accountLinking: true,
     }),
     jwt(),
-    oidcProvider({
+    oauthProvider({
       loginPage: "/login",
-      allowDynamicClientRegistration: false,
-      useJWTPlugin: true,
-      getAdditionalUserInfoClaim: async (user) => ({
-        isAdmin: (user as { isAdmin?: boolean }).isAdmin ?? false,
+      // Both first-party clients skip consent, so this page is never shown.
+      consentPage: "/login",
+      cachedTrustedClients: new Set([
+        "deadlockmods-www",
+        "deadlockmods-desktop",
+      ]),
+      // Desktop builds refresh concurrently and can hold a rotated token for
+      // longer than any short window. Reuse outside the window deletes every
+      // token the user has for the client, so replay for the token's lifetime,
+      // as oidcProvider kept used refresh tokens valid until they expired.
+      refreshTokenReuseInterval: 30 * 24 * 60 * 60,
+      customUserInfoClaims: async ({ user }) => ({
+        isAdmin: user.isAdmin === true,
       }),
-      trustedClients: [
-        {
-          clientId: "deadlockmods-www",
-          name: "DeadlockMods Web",
-          type: "public",
-          redirectUrls: [
-            "https://deadlockmods.app/auth/callback",
-            env.NODE_ENV === "development"
-              ? "http://localhost:3003/auth/callback"
-              : undefined,
-          ].filter(Boolean) as string[],
-          disabled: false,
-          skipConsent: true,
-          metadata: { internal: true },
-        },
-        {
-          clientId: "deadlockmods-desktop",
-          name: "DeadlockMods Desktop",
-          type: "public",
-          redirectUrls: [
-            "https://auth.deadlockmods.app/auth/desktop-callback",
-            env.NODE_ENV === "development"
-              ? "http://localhost:3004/auth/desktop-callback"
-              : undefined,
-          ].filter(Boolean) as string[],
-          disabled: false,
-          skipConsent: true,
-          metadata: { internal: true },
-        },
-      ],
+      rateLimit: {
+        userinfo: false,
+      },
     }),
   ],
 });

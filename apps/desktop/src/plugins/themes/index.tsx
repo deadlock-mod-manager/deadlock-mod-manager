@@ -49,6 +49,7 @@ import { SeasonalSettingsCard } from "./pre-defined/seasonal/seasonal-settings";
 import TeaTheme from "./pre-defined/tea/tea.tsx";
 import DrututtTheme from "./pre-defined/drututt/drututt.tsx";
 import GridlineTheme from "./pre-defined/gridline/gridline.tsx";
+import CodingTheme from "./pre-defined/coding/coding.tsx";
 
 const arcanePreview = getPluginAssetUrl(
   "themes",
@@ -85,6 +86,10 @@ const oledPreview = getPluginAssetUrl(
 const gridlinePreview = getPluginAssetUrl(
   "themes",
   "public/pre-defined/gridline/preview.png",
+);
+const codingPreview = getPluginAssetUrl(
+  "themes",
+  "public/pre-defined/coding/preview.png",
 );
 const drututtPreview = getPluginAssetUrl(
   "themes",
@@ -185,6 +190,13 @@ const PRE_DEFINED_THEMES = [
     descriptionKey: "plugins.gridline.description",
     component: GridlineTheme,
     previewImage: gridlinePreview,
+  },
+  {
+    id: "coding",
+    name: "Coding",
+    descriptionKey: "plugins.coding.description",
+    component: CodingTheme,
+    previewImage: codingPreview,
   },
 ] as const;
 
@@ -490,6 +502,21 @@ const Settings = () => {
                           Skeptic
                         </button>
                       </div>
+                    ) : theme.id === "coding" ? (
+                      <div className='text-sm text-muted-foreground mb-2'>
+                        <span className='mr-1'>
+                          {t("plugins.coding.themeBy")}
+                        </span>
+                        <button
+                          className='text-primary hover:underline'
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void openUrl("https://github.com/Okaza03");
+                          }}
+                          type='button'>
+                          Okaza
+                        </button>
+                      </div>
                     ) : theme.id === "lovelock" ? (
                       <div className='text-sm text-muted-foreground mb-4'>
                         <span className='mr-1'>
@@ -718,6 +745,10 @@ const Render = () => {
 
   if (selectedTheme === "arcane") {
     return <ArcaneTheme accentColor={current.arcaneAccentColor} />;
+  }
+
+  if (selectedTheme === "coding") {
+    return <CodingTheme accentColor={current.codingAccentColor} />;
   }
 
   const activeTheme = PRE_DEFINED_THEMES.find(

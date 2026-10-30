@@ -324,9 +324,15 @@ describe.skipIf(!testDatabaseUrl)("pre-v2 migration compatibility", () => {
   });
 });
 
+// Reviewed drops of tables that only existed to roll back a later migration.
+const reviewedDestructiveMigrations = new Set([
+  "0063_drop_oauth_legacy_tables",
+]);
+
 it("keeps all pending migrations free of destructive legacy changes", async () => {
   for (const entry of journal.entries.filter(
-    (migration) => migration.idx > 53,
+    (migration) =>
+      migration.idx > 53 && !reviewedDestructiveMigrations.has(migration.tag),
   )) {
     const sql = await readFile(`${migrationsFolder}/${entry.tag}.sql`, "utf8");
     expect(sql).not.toMatch(

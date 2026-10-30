@@ -1,5 +1,3 @@
-import { invoke } from "@tauri-apps/api/core";
-import { join } from "@tauri-apps/api/path";
 import { useState } from "react";
 import { useModelConflictInstall } from "@/hooks/use-model-conflict-install";
 import { createLogger } from "@/lib/logger";
@@ -9,7 +7,7 @@ import {
   requiresFileSelection,
 } from "@/lib/mods/mod-variants";
 import { trackInstallOptions } from "@/lib/analytics";
-import { getModsStorePath } from "@/lib/download-cache";
+import { readModFileTree } from "@/lib/mods/read-mod-file-tree";
 import type { InstallAnalyticsOptions } from "@/lib/analytics/install";
 import { getErrorMessage } from "@/lib/errors";
 import { syncInstalledVpksFromManifest } from "@/lib/mods/sync-installed-vpks";
@@ -283,18 +281,11 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
       let fileTree: ModFileTree | null = null;
 
       try {
-        // Construct mod directory path
-        const modsRoot = await getModsStorePath();
-        const modDir = await join(modsRoot, mod.remoteId);
-
         logger
-          .withMetadata({ modId: mod.remoteId, modPath: modDir })
+          .withMetadata({ modId: mod.remoteId })
           .info("Analyzing mod file tree");
 
-        // Get file tree from backend
-        fileTree = await invoke<ModFileTree>("get_mod_file_tree", {
-          modPath: modDir,
-        });
+        fileTree = await readModFileTree(mod);
 
         logger
           .withMetadata({

@@ -1,0 +1,76 @@
+/* Editor dark palette: deep slate surfaces, accent primary (terminal green by default), cyan focus. */
+:root.coding-theme-active {
+  color-scheme: dark;
+  --background: 222 24% 7%;
+  --foreground: 210 20% 88%;
+  --card: 222 20% 10%;
+  --card-foreground: 210 20% 88%;
+  --popover: 222 20% 11%;
+  --popover-foreground: 210 20% 88%;
+  --primary: var(--coding-accent, 158 64% 52%);
+  --primary-foreground: var(--coding-accent-foreground, 222 24% 7%);
+  --secondary: 222 16% 14%;
+  --secondary-foreground: 210 20% 88%;
+  --muted: 222 16% 14%;
+  --muted-foreground: 215 14% 60%;
+  --accent: 222 16% 16%;
+  --accent-foreground: var(--coding-highlight, 158 64% 62%);
+  --destructive: 0 72% 58%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 222 14% 18%;
+  --input: 222 14% 22%;
+  --ring: 199 89% 60%;
+  --chart-1: var(--coding-accent, 158 64% 52%);
+  --chart-2: 199 89% 60%;
+  --chart-3: 38 92% 60%;
+  --chart-4: 266 70% 72%;
+  --chart-5: 330 75% 66%;
+  --radius: 0.25rem;
+  --toast-background: 222 20% 11%;
+  --sidebar-background: 222 24% 6%;
+  --sidebar-foreground: 210 20% 88%;
+  --sidebar-primary: var(--coding-accent, 158 64% 52%);
+  --sidebar-primary-foreground: var(--coding-accent-foreground, 222 24% 7%);
+  --sidebar-accent: 222 16% 14%;
+  --sidebar-accent-foreground: var(--coding-highlight, 158 64% 62%);
+  --sidebar-border: 222 14% 16%;
+  --sidebar-ring: 199 89% 60%;
+}
+
+/* Let the grid show through the sidebar, like Gridline. */
+.coding-theme-active
+  :is(
+    [data-sidebar="sidebar"],
+    [data-sidebar="content"],
+    [data-sidebar="footer"],
+    [data-sidebar="group"],
+    [data-sidebar="group-content"],
+    [data-sidebar="menu"],
+    [data-sidebar="menu-item"]
+  ) {
+  background-color: transparent;
+}
+
+.coding-theme-active .occult-geometry-container {
+  display: none;
+}
+
+/* Monospace headings and code; body text and the brand wordmark keep their fonts,
+   since the sidebar is too narrow for the app name in a monospace face. */
+.coding-theme-active :is(h1, h2, h3, kbd, code, pre) {
+  font-family: "Geist Mono Variable", monospace;
+  letter-spacing: -0.01em;
+}
+
+.coding-theme-active [data-stat-highlight] {
+  color: hsl(var(--primary));
+  text-shadow: 0 0 18px hsl(var(--primary) / 0.35);
+}
+
+.coding-theme-active :is(input, textarea) {
+  caret-color: hsl(var(--primary));
+}
+
+.coding-theme-active ::selection {
+  background: hsl(199 89% 60% / 0.3);
+}

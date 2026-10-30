@@ -55,10 +55,10 @@ For a proxy, choose its protocol, host, and port, add authentication if required
 
 **Privacy & Content** controls hiding NSFW content, likely-NSFW visibility, preview blur, and blur strength. Saved per-item choices can override visibility decisions; use the reset action to clear those choices. **Usage Analytics** controls analytics collection.
 
-Match contribution has two independent controls:
+The **Match Data Sharing** tab explains what shared matches power and holds two independent controls:
 
-- **Match Data Sharing**, under Privacy, fetches your own matches through your Steam login. It is off by default and asks for consent before turning on.
-- **Matchdata Ingest Tool**, under Application, scans locally cached Steam matchdata and contributes data to the API. This setting is on by default. It runs independently of Steam-account match fetching.
+- **Share matches from Steam's cache** scans locally cached Steam matchdata and contributes it to deadlock-api. It never signs in to Steam and is on by default.
+- **From your Steam account** fetches your own matches through your Steam login. It is off by default and asks for consent before turning on.
 
 See [Servers and Stats](/using-mod-manager/community#match-data-sharing) for what sharing does and its limits, and [Privacy and Network Activity](/using-mod-manager/privacy) for everything the app sends. Review both controls when choosing whether to contribute match data.
 

@@ -159,7 +159,9 @@ export function isTokenExpired(): boolean {
   return Date.now() >= expiresAt - 60000; // 1 minute buffer
 }
 
-let inflightRefresh: Promise<TokenResponse> | null = null;
+// Keyed by refresh token: this runs on the server, so a single shared promise
+// would hand one user's refreshed tokens to another user's request.
+const inflightRefreshes = new Map<string, Promise<TokenResponse>>();
 
 export async function refreshTokens(): Promise<TokenResponse> {
   const refreshToken = getRefreshToken();
@@ -204,21 +206,20 @@ export async function ensureValidToken(): Promise<string> {
     throw new UnauthorizedError("Authentication required");
   }
 
-  if (inflightRefresh) {
-    const tokenResponse = await inflightRefresh;
-    return tokenResponse.access_token;
+  let refresh = inflightRefreshes.get(refreshToken);
+  if (!refresh) {
+    refresh = refreshTokens().finally(() =>
+      inflightRefreshes.delete(refreshToken),
+    );
+    inflightRefreshes.set(refreshToken, refresh);
   }
 
-  inflightRefresh = refreshTokens();
-
   try {
-    const tokenResponse = await inflightRefresh;
+    const tokenResponse = await refresh;
     return tokenResponse.access_token;
   } catch {
     clearAuthCookies();
     throw new UnauthorizedError("Authentication required");
-  } finally {
-    inflightRefresh = null;
   }
 }
 

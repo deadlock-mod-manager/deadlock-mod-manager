@@ -3421,6 +3421,14 @@
   },
   "mods": {
     "invalidDeepLink": "Bu 1 tıklamalı indirme bağlantısı geçersiz.",
+    "deepLinkAlreadyInstalled": "",
+    "deepLinkPreparing": "",
+    "deepLinkStarting": "",
+    "deepLinkDownloaded": "",
+    "deepLinkInstalled": "",
+    "deepLinkInstallError": "",
+    "deepLinkInstallStartError": "",
+    "deepLinkError": "",
     "manageOrder": "Modların Sırasını Değiştir",
     "searchPlaceholder": "Mod veya yapımcı ara",
     "noPreviewAvailable": "Önizleme yok",
@@ -3570,6 +3578,9 @@
     "resume": "Sürdür",
     "paused": "Duraklatıldı",
     "retry": "Yeniden Dene",
+    "downloadComplete": "",
+    "downloadError": "",
+    "queueError": "",
     "pauseError": "İndirme duraklatılamadı: {{message}}",
     "cancelError": "İndirme iptal edilemedi: {{message}}",
     "resumeError": "İndirme sürdürülemedi: {{message}}",
@@ -3942,8 +3953,10 @@
     "developerModeDescription": "Gelişmiş araçlara ve hata ayıklama özelliklerine erişmek için geliştirici modunu etkinleştirin",
     "experimental": "Deneysel",
     "ingestTool": {
-      "title": "Maç Verisi Aktarım Aracı",
-      "description": "Steam önbellek dizinini Deadlock maç verisi dosyaları için otomatik olarak tarar ve maç verilerini API'ye gönderir"
+      "title": "",
+      "description": "",
+      "sectionTitle": "",
+      "sectionDescription": ""
     },
     "autoUpdate": "Otomatik Güncellemeler",
     "autoUpdateDescription": "Başlangıçta uygulama güncellemelerini otomatik olarak denetleyip bildirim göster.",
@@ -4446,8 +4459,21 @@
   "matchSync": {
     "title": "Maç Verisi Paylaşımı",
     "description": "Maç geçmişinizin ve istatistiklerinizin eksiksiz olması için Deadlock maçlarınızı Statlocker, Tracklock ve deadlock-api gibi takip platformlarına otomatik olarak yükleyin.",
+    "overview": {
+      "description": "",
+      "powersTitle": "",
+      "trackers": "",
+      "trackersSource": "",
+      "stats": "",
+      "everyone": "",
+      "sends": ""
+    },
+    "account": {
+      "title": "",
+      "description": ""
+    },
     "about": {
-      "reads": "Bu işlem, bu bilgisayarda Steam'e daha önce kaydedilmiş oturumu kullanarak arka planda Steam hesabınızda oturum açar ve maçlarınızı almak için Deadlock'a kısa süreliğine bağlanır. İşlem sürerken Steam'de Deadlock oynuyor olarak görünebilirsiniz.",
+      "reads": "",
       "sends": "Yalnızca maç kimlikleri ve salt değerleri deadlock-api'ye gönderilir; Steam giriş bilgileriniz veya kişisel verileriniz asla gönderilmez.",
       "limit": "Maç verisi alma işlemi 24 saatte en fazla {{limit}} istekle sınırlandırılmıştır; bu sınır aşağıdaki tüm özellikler arasında ortaktır.",
       "risk": "Steam hesabınızı kullanır. Risk düşüktür ama sıfır değildir.",
@@ -4455,7 +4481,7 @@
     },
     "enable": {
       "title": "Maç verisi paylaşımını etkinleştir",
-      "description": "Varsayılan olarak açıktır. Maç verilerinizin paylaşılmasını durdurmak için bunu kapatın."
+      "description": ""
     },
     "consent": {
       "title": "Maç verisi paylaşımı etkinleştirilsin mi?",
@@ -4465,7 +4491,8 @@
     },
     "quota": {
       "remaining": "Önümüzdeki 24 saat içinde {{limit}} maç alma hakkınızın {{remaining}} tanesi kaldı.",
-      "accountRemaining": "{{name}}: bugün {{remaining}}/{{limit}} maç alma hakkı kaldı",
+      "accountsTitle": "",
+      "left": "",
       "gcUnavailable": "Deadlock'e bağlanılamıyor, 24 saat sonra yeniden denenecek",
       "reachedToday": "Günlük sınıra ulaşıldı. Daha fazla maç almak için yarını bekleyin."
     },
@@ -4484,7 +4511,7 @@
     "fullSync": {
       "title": "Tüm maçlarımı getir",
       "description": "Maç geçmişinizi bir kez tarar ve takip sitelerinde eksik olan tüm maçları gönderir. İstekler sınırlandırılır; işlem kaldığı yerden sürdürülebilir ve güvenle yeniden başlatılabilir.",
-      "button": "Tüm maçlarımı getir",
+      "button": "",
       "started": "Maçlarınız arka planda getiriliyor.",
       "cancel": "İptal",
       "accountProgress": "Eşitlenen hesap {{index}}/{{total}}: {{name}}",
@@ -5783,6 +5810,12 @@
     },
     "gridline": {
       "description": "İnce çizgili hafif bir ızgara, net beyaz yazılar ve maviden pembeye uzanan vurgu parıltısıyla gerçek siyah."
+    },
+    "coding": {
+      "description": "",
+      "themeBy": "",
+      "customColor": "",
+      "customColorDescription": ""
     },
     "nightshift": {
       "description": "Klarite ve uzun oyun oturumları için tasarlanmış turkuaz vurgulu siberpunk tema.",

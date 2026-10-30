@@ -91,7 +91,10 @@ export const catalogRecipe = (scenario: string): CatalogArchive[] => {
     ].includes(scenario)
   )
     return catalogRecipe("gamebanana-variants");
-  if (scenario === "gamebanana-update-skip")
+  if (
+    scenario === "gamebanana-update-skip" ||
+    scenario.startsWith("downloads-queue-error-")
+  )
     return catalogRecipe("gamebanana-single");
   if (scenario === "gamebanana-single")
     return [
@@ -213,6 +216,17 @@ export const createCatalogRoutes = async (scenario: string) => {
       status: 200,
       body,
     });
+    const downloadPage = json(
+      `/apiv11/Mod/${CATALOG_MOD_ID}/DownloadPage`,
+      JSON.stringify({ _aFiles: files }),
+    );
+    // The author removes the file after the mod page listed it, so the backend
+    // refuses to queue it.
+    if (scenario.startsWith("downloads-queue-error-"))
+      downloadPage.sequence = [
+        { status: 200, body: downloadPage.body },
+        { status: 200, body: JSON.stringify({ _aFiles: [] }) },
+      ];
     return [
       json(
         "/apiv11/Mod/Index",
@@ -225,10 +239,7 @@ export const createCatalogRoutes = async (scenario: string) => {
         `/apiv11/Mod/${CATALOG_MOD_ID}/ProfilePage`,
         JSON.stringify(profile),
       ),
-      json(
-        `/apiv11/Mod/${CATALOG_MOD_ID}/DownloadPage`,
-        JSON.stringify({ _aFiles: files }),
-      ),
+      downloadPage,
       json(
         `/apiv11/Mod/${CATALOG_MOD_ID}/Updates`,
         JSON.stringify({

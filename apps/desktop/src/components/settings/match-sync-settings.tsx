@@ -1,7 +1,9 @@
+import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Button } from "@deadlock-mods/ui/components/button";
 import { Progress } from "@deadlock-mods/ui/components/progress";
 import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
 import { toast } from "@deadlock-mods/ui/components/sonner";
+import { TriangleAlert } from "@deadlock-mods/ui/icons";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -120,16 +122,20 @@ export const MatchSyncSettings = () => {
 
   return (
     <div className='flex flex-col gap-4'>
-      <div className='space-y-1 rounded-md border border-border/50 bg-muted/30 p-3 text-muted-foreground text-sm'>
-        <p>{t("matchSync.about.reads")}</p>
-        <p>{t("matchSync.about.sends")}</p>
-        <p>{t("matchSync.about.limit", { limit: aboutLimit })}</p>
-        <p className='text-amber-500/90'>{t("matchSync.about.risk")}</p>
+      <div className='space-y-2 text-muted-foreground text-sm'>
+        <ul className='list-disc space-y-1 pl-5'>
+          <li>{t("matchSync.about.reads")}</li>
+          <li>{t("matchSync.about.sends")}</li>
+          <li>{t("matchSync.about.limit", { limit: aboutLimit })}</li>
+        </ul>
+        <p className='flex items-center gap-1.5 text-amber-500/90'>
+          <TriangleAlert aria-hidden='true' className='size-4 shrink-0' />
+          {t("matchSync.about.risk")}
+        </p>
       </div>
 
       <SettingToggleRow
         checked={status.enabled}
-        description={t("matchSync.enable.description")}
         id='toggle-match-sync'
         onCheckedChange={handleEnableChange}
         title={t("matchSync.enable.title")}
@@ -137,26 +143,39 @@ export const MatchSyncSettings = () => {
 
       {status.enabled && (
         <>
-          <div className='flex flex-col gap-1 text-muted-foreground text-sm'>
+          <div className='flex flex-col gap-2 text-sm'>
+            <p className='font-medium text-foreground'>
+              {t("matchSync.quota.accountsTitle")}
+            </p>
             {status.accounts.length === 0 ? (
-              <p>{t("matchSync.noAccounts")}</p>
+              <p className='text-muted-foreground'>
+                {t("matchSync.noAccounts")}
+              </p>
             ) : (
-              status.accounts.map((account) => (
-                <p
-                  className={
-                    account.gcUnavailable ? "text-amber-500/90" : undefined
-                  }
-                  key={account.steamId64}>
-                  {t("matchSync.quota.accountRemaining", {
-                    name: account.accountName,
-                    remaining: account.quotaRemaining,
-                    limit: account.quotaLimit,
-                  })}
-                  {account.gcUnavailable
-                    ? ` (${t("matchSync.quota.gcUnavailable")})`
-                    : ""}
-                </p>
-              ))
+              <ul className='divide-y divide-border/30'>
+                {status.accounts.map((account) => (
+                  <li
+                    className='flex min-h-9 items-center gap-3 py-1.5'
+                    key={account.steamId64}>
+                    <span className='min-w-0 truncate text-foreground'>
+                      {account.accountName}
+                    </span>
+                    {account.gcUnavailable && (
+                      <Badge
+                        className='border-amber-500/30 bg-amber-500/10 text-amber-500'
+                        variant='outline'>
+                        {t("matchSync.quota.gcUnavailable")}
+                      </Badge>
+                    )}
+                    <span className='ml-auto shrink-0 text-muted-foreground tabular-nums'>
+                      {t("matchSync.quota.left", {
+                        remaining: account.quotaRemaining,
+                        limit: account.quotaLimit,
+                      })}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
 

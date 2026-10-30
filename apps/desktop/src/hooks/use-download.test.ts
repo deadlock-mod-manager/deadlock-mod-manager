@@ -37,13 +37,22 @@ mock.module("@tauri-apps/plugin-log", () => ({
   warn: noop,
 }));
 mock.module("@/lib/plugins", () => ({ getPlugins: () => [] }));
+const errorToasts: string[] = [];
 mock.module("@deadlock-mods/ui/components/sonner", () => ({
-  toast: { success: noop, error: noop },
+  toast: {
+    success: noop,
+    error: (message: string) => errorToasts.push(message),
+  },
 }));
-// The backend accepts the request and is still downloading it.
+const REFUSED_MOD = "2";
+// The backend refuses REFUSED_MOD; it accepts any other request and is still
+// downloading it.
 mock.module("@tauri-apps/api/core", () => ({
   ...tauriCore,
-  invoke: () => new Promise(() => {}),
+  invoke: (_command: string, args?: { modId?: string }) =>
+    args?.modId === REFUSED_MOD
+      ? Promise.reject(new Error("GameBanana file was not found"))
+      : new Promise(() => {}),
 }));
 mock.module("@tauri-apps/api/event", () => ({ listen: async () => noop }));
 
@@ -85,5 +94,22 @@ describe("queueModDownload", () => {
       status,
       "the duplicate's rejection marked the first download failed while it kept writing",
     ).toBe(ModStatus.Downloading);
+  });
+
+  it("leaves telling the user about a refused download to the caller", async () => {
+    const refused = { ...mod, id: "mod-2", remoteId: REFUSED_MOD };
+    const failure = await new Promise<Error>((resolve) => {
+      queueModDownload(refused, [file], {
+        allFiles: [file],
+        profileFolder: null,
+        onError: resolve,
+      });
+    });
+
+    expect(failure.message).toBe("GameBanana file was not found");
+    expect(
+      errorToasts,
+      "the download manager showed its own toast on top of the caller's",
+    ).toEqual([]);
   });
 });

@@ -447,10 +447,10 @@ export const steam = (config: SteamAuthPluginOptions) =>
 
             // Check if account is already linked
             const existingAccount =
-              await ctx.context.internalAdapter.findAccountByProviderId(
-                steamId,
-                "steam",
-              );
+              await ctx.context.internalAdapter.findAccountByKey({
+                providerId: "steam",
+                accountId: steamId,
+              });
             if (existingAccount) {
               if (existingAccount.userId !== user.id) {
                 throw ctx.redirect(
@@ -505,11 +505,10 @@ export const steam = (config: SteamAuthPluginOptions) =>
             throw ctx.redirect(`${errorURL}?error=invalid_email`);
           }
 
-          let account =
-            await ctx.context.internalAdapter.findAccountByProviderId(
-              steamId,
-              "steam",
-            );
+          let account = await ctx.context.internalAdapter.findAccountByKey({
+            providerId: "steam",
+            accountId: steamId,
+          });
           let user: User | null = null;
           let isNewUser = false;
 
@@ -525,13 +524,16 @@ export const steam = (config: SteamAuthPluginOptions) =>
               email,
             });
 
-            user = await ctx.context.internalAdapter.createUser({
-              ...userDetails,
-              name: userDetails?.name || profile.personaname || "Unknown",
-              email: userDetails?.email || email,
-              emailVerified: userDetails?.emailVerified || false,
-              image: userDetails?.image || profile.avatarfull || "",
-            });
+            user = await ctx.context.internalAdapter.createUser(
+              {
+                ...userDetails,
+                name: userDetails?.name || profile.personaname || "Unknown",
+                email: userDetails?.email || email,
+                emailVerified: userDetails?.emailVerified || false,
+                image: userDetails?.image || profile.avatarfull || "",
+              },
+              { method: "oauth", oauth: { providerId: "steam", profile } },
+            );
             if (!user) {
               ctx.context.logger.error(
                 `An error occurred while creating the user during sign in with steam:`,

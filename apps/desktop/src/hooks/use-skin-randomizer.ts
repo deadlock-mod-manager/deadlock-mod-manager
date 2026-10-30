@@ -1,10 +1,9 @@
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { invoke } from "@tauri-apps/api/core";
-import { join } from "@tauri-apps/api/path";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import useInstallWithCollection from "@/hooks/use-install-with-collection";
-import { getModsStorePath } from "@/lib/download-cache";
+import { readModFileTree } from "@/lib/mods/read-mod-file-tree";
 import { createLogger } from "@/lib/logger";
 import { groupModsByHero } from "@/lib/mods/hero-mods";
 import { applyHeroSelection } from "@/lib/mods/hero-selection";
@@ -28,10 +27,7 @@ const silentFileTree = async (mod: LocalMod): Promise<ModFileTree | null> => {
   if (mod.installedFileTree) {
     return mod.installedFileTree;
   }
-  const modDir = await join(await getModsStorePath(), mod.remoteId);
-  const tree = await invoke<ModFileTree>("get_mod_file_tree", {
-    modPath: modDir,
-  });
+  const tree = await readModFileTree(mod);
   return tree.has_multiple_files ? null : tree;
 };
 

@@ -3421,6 +3421,14 @@
   },
   "mods": {
     "invalidDeepLink": "",
+    "deepLinkAlreadyInstalled": "",
+    "deepLinkPreparing": "",
+    "deepLinkStarting": "",
+    "deepLinkDownloaded": "",
+    "deepLinkInstalled": "",
+    "deepLinkInstallError": "",
+    "deepLinkInstallStartError": "",
+    "deepLinkError": "",
     "manageOrder": "تغيير ترتيب التعديلات",
     "searchPlaceholder": "",
     "noPreviewAvailable": "لا يوجد معاينة متاحة",
@@ -3570,6 +3578,9 @@
     "resume": "",
     "paused": "",
     "retry": "",
+    "downloadComplete": "",
+    "downloadError": "",
+    "queueError": "",
     "pauseError": "",
     "cancelError": "",
     "resumeError": "",
@@ -3942,8 +3953,10 @@
     "developerModeDescription": "تمكين وضع المطور للوصول إلى الأدوات المتقدمة وميزات التصحيح",
     "experimental": "تجريبي",
     "ingestTool": {
-      "title": "أداة استيراد بيانات المباراة",
-      "description": "فحص دليل ذاكرة التخزين المؤقت لـ Steam تلقائيًا للبحث عن ملفات بيانات المباراة الخاصة بـ Deadlock وإرسال بيانات المباراة إلى API"
+      "title": "",
+      "description": "",
+      "sectionTitle": "",
+      "sectionDescription": ""
     },
     "autoUpdate": "التحديثات التلقائية",
     "autoUpdateDescription": "التحقق تلقائيًا من التحديثات وإشعارك بتحديثات التطبيق عند البدء.",
@@ -4446,6 +4459,19 @@
   "matchSync": {
     "title": "",
     "description": "",
+    "overview": {
+      "description": "",
+      "powersTitle": "",
+      "trackers": "",
+      "trackersSource": "",
+      "stats": "",
+      "everyone": "",
+      "sends": ""
+    },
+    "account": {
+      "title": "",
+      "description": ""
+    },
     "about": {
       "reads": "",
       "sends": "",
@@ -4465,7 +4491,8 @@
     },
     "quota": {
       "remaining": "",
-      "accountRemaining": "",
+      "accountsTitle": "",
+      "left": "",
       "gcUnavailable": "",
       "reachedToday": ""
     },
@@ -5783,6 +5810,12 @@
     },
     "gridline": {
       "description": ""
+    },
+    "coding": {
+      "description": "",
+      "themeBy": "",
+      "customColor": "",
+      "customColorDescription": ""
     },
     "nightshift": {
       "description": "ثيم سايبربانك بلمسات فيروزية مصمم للوضوح والجلسات الطويلة.",
