@@ -76,9 +76,11 @@ export const auth = betterAuth({
         "deadlockmods-www",
         "deadlockmods-desktop",
       ]),
-      // Released desktop builds refresh concurrently with the same token; without
-      // a grace window the second refresh revokes the whole token family.
-      refreshTokenReuseInterval: 60,
+      // Desktop builds refresh concurrently and can hold a rotated token for
+      // longer than any short window. Reuse outside the window deletes every
+      // token the user has for the client, so replay for the token's lifetime,
+      // as oidcProvider kept used refresh tokens valid until they expired.
+      refreshTokenReuseInterval: 30 * 24 * 60 * 60,
       customUserInfoClaims: async ({ user }) => ({
         isAdmin: user.isAdmin === true,
       }),
