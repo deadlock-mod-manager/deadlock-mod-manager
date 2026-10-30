@@ -23,7 +23,7 @@ describe("scenario selection", () => {
       "onboarding-skip-analysis",
       "onboarding-telemetry-default",
     ]);
-    expect(selectScenarios("gamebanana")).toHaveLength(19);
+    expect(selectScenarios("gamebanana")).toHaveLength(20);
     expect(selectScenarios("library-groups")).toEqual([
       "library-groups-organize",
       "library-groups-identification",

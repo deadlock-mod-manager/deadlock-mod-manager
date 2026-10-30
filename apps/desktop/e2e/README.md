@@ -207,6 +207,8 @@ Every case checks the mod page's Installed Files list and Active Mod files secti
 
 `gamebanana-update-skip` installs one archive and runs four processes against one world. The first update check sees a newer optional file the user never installed, and no update may appear. Then the installed file gets newer. The update shows in My Mods and on the mod page, **Skip this update** hides it, and `skippedUpdateAt` persists. The update stays hidden after a restart. A later change to the installed file brings it back. Update checks are cached for six hours, so the spec expires the catalog's `update_cache` row between processes. The bulk update route serves one snapshot per expired check, and the network assertion requires exactly three bulk update requests.
 
+`collection-retry-failed` syncs a two-mod GameBanana collection and downloads it from the collection page. The second mod's first transfer returns 503, so the page must count only one mod as in the library and offer the failed one again; downloading the collection a second time fetches it and leaves both mods downloaded.
+
 The variant scenario caught an Installed Files rendering bug: the stored file tree retains unselected options, and the page previously displayed all of them. The display now groups only selected files, including the per-archive file counts.
 
 ## Mod manager interchange scenario

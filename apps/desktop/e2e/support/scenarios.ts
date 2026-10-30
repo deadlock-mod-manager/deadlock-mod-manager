@@ -7,6 +7,10 @@ import {
   assertCatalogNetwork,
 } from "./gamebanana-fixtures";
 import {
+  assertCollectionNetwork,
+  collectionRoutes,
+} from "./collection-fixtures";
+import {
   downloadRoutes,
   prepareDownloadWorld,
   assertDownloadNetwork,
@@ -731,6 +735,13 @@ export const scenarios = {
     ...catalog,
     spec: "gamebanana-updates",
     phases: ["optional-file", "skip-update", "restart-skipped", "newer-update"],
+  },
+  "collection-retry-failed": {
+    ...catalog,
+    spec: "collection-download",
+    phases: ["collection-retry"],
+    routes: collectionRoutes,
+    verifyNetwork: assertCollectionNetwork,
   },
   "grimoire-import": interchange,
   "hero-skins-active": heroSkins,

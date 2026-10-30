@@ -41,6 +41,7 @@ import { filterHiddenNSFWItems } from "@/lib/mods/nsfw-visibility";
 import { usePersistedStore } from "@/lib/store";
 import { findLocalMod } from "@/lib/store/selectors";
 import { isModOutdated } from "@/lib/utils";
+import { ModStatus } from "@/types/mods";
 import { CollectionCover } from "./collection-cover";
 import { CollectionFreshnessIndicator } from "./collection-freshness";
 import { CollectionNotFound } from "./collection-not-found";
@@ -71,9 +72,13 @@ export const CollectionPageContent = ({ id }: { id: string }) => {
     ? collectionMods.filter((mod) => !isModOutdated(mod))
     : collectionMods;
   const localMods = usePersistedStore((state) => state.localMods);
-  const inLibrary = collectionMods.filter((mod) =>
-    findLocalMod(localMods, mod.remoteId),
-  );
+  // A failed download leaves its library entry behind; it still needs downloading.
+  const inLibrary = collectionMods.filter((mod) => {
+    const localMod = findLocalMod(localMods, mod.remoteId);
+    return (
+      localMod !== undefined && localMod.status !== ModStatus.FailedToDownload
+    );
+  });
   const pending = mods.filter(
     (mod) => mod.downloadable && !inLibrary.includes(mod),
   );

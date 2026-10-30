@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { queueModDownload } from "@/hooks/use-download";
 import { modDownloadsQueryOptions } from "@/hooks/use-mod-downloads";
+import { DownloadAlreadyQueuedError } from "@/lib/download/queue";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 
@@ -45,13 +46,16 @@ export const useCollectionDownload = () => {
               allFiles: downloads,
               profileFolder,
               analyticsEntryPoint: "collection",
-              onError: (error) =>
+              onError: (error) => {
+                // Mods that failed earlier stay pending until their turn.
+                if (error instanceof DownloadAlreadyQueuedError) return;
                 toast.error(
                   t("downloads.downloadError", {
                     name: mod.name,
                     message: error.message,
                   }),
-                ),
+                );
+              },
             });
             result.queued += 1;
           } else {
