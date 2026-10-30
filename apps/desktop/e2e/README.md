@@ -212,6 +212,8 @@ Every case checks the mod page's Installed Files list and Active Mod files secti
 
 `collection-retry-failed` syncs a two-mod GameBanana collection and downloads it from the collection page. The second mod's first transfer returns 503, so the page must count only one mod as in the library and offer the failed one again; downloading the collection a second time fetches it and leaves both mods downloaded.
 
+`mod-files-error` opens the mod page while GameBanana's file list returns 500. The Rust transport retries a 5xx three times, so the page's first load sees four failures. The Files tab must stay, say the list couldn't load, and offer **Try again**. The first retry fails the same way, and the error and **Try again** must stay. The second retry's response is held back three seconds, and the tab and its error must stay while it runs. Then the file list appears. The network assertion requires exactly eight failed file list requests followed by one successful one.
+
 The variant scenario caught an Installed Files rendering bug: the stored file tree retains unselected options, and the page previously displayed all of them. The display now groups only selected files, including the per-archive file counts.
 
 ## Mod manager interchange scenario

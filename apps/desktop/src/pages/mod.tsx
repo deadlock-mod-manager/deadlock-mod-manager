@@ -105,11 +105,19 @@ const Mod = () => {
 
   const isGameBananaMod = !!params.id && !params.id.includes("local");
   const configListingKind = useConfigListing(mod);
-  const { availableFiles } = useModDownloads({
+  const {
+    availableFiles,
+    isSuccess: filesLoaded,
+    errorUpdateCount: filesErrorCount,
+    isFetching: isFetchingFiles,
+    refetch: refetchFiles,
+  } = useModDownloads({
     remoteId: params.id,
     isDownloadable: mod?.downloadable,
     enabled: isGameBananaMod,
   });
+  // Retrying resets a failed query to pending, so keep the failure until it loads.
+  const filesLoadFailed = !filesLoaded && filesErrorCount > 0;
 
   const developerMode = usePersistedStore((state) => state.developerMode);
   const setModDownloads = usePersistedStore((state) => state.setModDownloads);
@@ -172,6 +180,7 @@ const Mod = () => {
   const installedVpks = isInstalled ? localMod?.installedVpks : undefined;
   const hasFilesTab =
     downloadableFileCount > 0 ||
+    (!!mod?.downloadable && filesLoadFailed) ||
     !!installedVpks?.length ||
     (developerMode && !!localMod);
 
@@ -564,6 +573,9 @@ const Mod = () => {
                 <ModFiles
                   files={availableFiles}
                   isDownloadable={!!mod.downloadable}
+                  loadFailed={filesLoadFailed}
+                  isRetrying={isFetchingFiles}
+                  onRetry={() => refetchFiles()}
                 />
 
                 {!!installedVpks?.length && (
