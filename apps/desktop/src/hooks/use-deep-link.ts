@@ -104,6 +104,7 @@ export const useOneClickInstall = (): OneClickInstall => {
       if (!requested) {
         throw new RuntimeError("The linked file is not offered by this mod");
       }
+      const archiveNames = downloads.map((download) => download.name);
 
       // Check if mod is already installed BEFORE downloading
       const currentMods = usePersistedStore.getState().localMods;
@@ -127,7 +128,6 @@ export const useOneClickInstall = (): OneClickInstall => {
         // Another file of an installed mod is added, as Manage files would.
         const names = { file: requested.name, name: modData.name };
         toast.success(t("mods.deepLinkAddingFile", names));
-        const archiveNames = downloads.map((download) => download.name);
         const selection = {
           selectedArchives: [requested],
           deselectedArchives: [],
@@ -228,7 +228,7 @@ export const useOneClickInstall = (): OneClickInstall => {
                     mergeFileTreeAfterSwap(
                       downloaded,
                       result.file_tree,
-                      downloads.map((download) => download.name),
+                      archiveNames,
                     ),
                 );
                 toast.success(t("mods.deepLinkInstalled", { name: mod.name }));

@@ -306,22 +306,16 @@ export const applyArchiveSelection = async (
     }
   }
 
-  if (deselectedArchives.length > 0) {
-    const originalsToRemove = new Set<string>();
-    const stagedNames = new Set(stagedOriginals.keys());
-    for (const archive of deselectedArchives) {
-      for (const name of deriveOriginalsForArchive(mod, archive.name)) {
-        if (!stagedNames.has(name)) {
-          originalsToRemove.add(name);
-        }
-      }
-    }
-    combinedSelection = combinedSelection.filter(
-      (n) => !originalsToRemove.has(n),
-    );
-  }
-
-  combinedSelection = [...new Set(combinedSelection)];
+  const originalsToRemove = new Set(
+    deselectedArchives
+      .flatMap((archive) => deriveOriginalsForArchive(mod, archive.name))
+      .filter((name) => !stagedOriginals.has(name)),
+  );
+  combinedSelection = [
+    ...new Set(
+      combinedSelection.filter((name) => !originalsToRemove.has(name)),
+    ),
+  ];
   const treeFiles = mod.installedFileTree?.files ?? [];
   const treeNames = new Set(treeFiles.map((f) => f.name));
   const stagedFiles: ModFile[] = [...stagedOriginals]
@@ -338,37 +332,21 @@ export const applyArchiveSelection = async (
     insertFilesInAuthorOrder(treeFiles, stagedFiles, archiveNames),
   );
 
-  const notOnDiskNames = new Set<string>();
-  const onDiskByName = new Map<string, boolean>();
-  for (const f of mod.installedFileTree?.files ?? []) {
-    onDiskByName.set(f.name, true);
-  }
-  for (const n of combinedSelection) {
-    if (!onDiskByName.has(n)) notOnDiskNames.add(n);
-  }
-
-  if (notOnDiskNames.size > 0) {
-    const archives = groupMissingByArchive([...notOnDiskNames], mod);
-
-    if (archives.length > 0) {
-      const fetchResult = await invoke<FetchMissingModVariantsResult>(
-        "fetch_missing_mod_variants",
-        {
-          modId: mod.remoteId,
-          profileFolder,
-          archives,
-        },
+  const archives = groupMissingByArchive(
+    combinedSelection.filter((n) => !treeNames.has(n)),
+    mod,
+  );
+  if (archives.length > 0) {
+    const fetchResult = await invoke<FetchMissingModVariantsResult>(
+      "fetch_missing_mod_variants",
+      { modId: mod.remoteId, profileFolder, archives },
+    );
+    if (fetchResult.missing_originals.length > 0) {
+      throw new RuntimeError(
+        t("modOptions.fetchMissingNotFound", {
+          names: fetchResult.missing_originals.join(", "),
+        }),
       );
-
-      if (fetchResult.missing_originals.length > 0) {
-        throw new RuntimeError(
-          t("modOptions.fetchMissingNotFound", {
-            defaultValue:
-              "Some variants were not found in their source archives: {{names}}",
-            names: fetchResult.missing_originals.join(", "),
-          }),
-        );
-      }
     }
   }
 
@@ -426,22 +404,15 @@ export const saveArchiveSelection = (
 
   setActiveVariantArchive(mod.remoteId, allCheckedArchiveNames.join(","));
 
-  if (selectedArchives.length > 0) {
-    // Existing entries keep their URL: a replaced upload's files weren't
-    // written, so reuse stays off and the update check still offers it.
-    const existingNames = new Set(
-      (mod.selectedDownloads ?? []).map((d) => d.name),
-    );
-    const newArchives = selectedArchives.filter(
-      (a) => !existingNames.has(a.name),
-    );
-    if (newArchives.length > 0) {
-      const updatedSelected = [
-        ...(mod.selectedDownloads ?? []),
-        ...newArchives,
-      ];
-      setSelectedDownloads(mod.remoteId, updatedSelected);
-    }
+  // Existing entries keep their URL: a replaced upload's files weren't
+  // written, so reuse stays off and the update check still offers it.
+  const existing = mod.selectedDownloads ?? [];
+  const existingNames = new Set(existing.map((d) => d.name));
+  const newArchives = selectedArchives.filter(
+    (a) => !existingNames.has(a.name),
+  );
+  if (newArchives.length > 0) {
+    setSelectedDownloads(mod.remoteId, [...existing, ...newArchives]);
   }
 };
 
