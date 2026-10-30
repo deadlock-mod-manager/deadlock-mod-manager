@@ -69,6 +69,9 @@ describe("scenario selection", () => {
     expect(scenarios["filesystem-mod-folder-repair"].nativeInput).toBe(false);
     expect(scenarios["conflicts-resolve"].nativeInput).toBe(false);
     expect(scenarios["conflicts-switch"].nativeInput).toBe(false);
+    expect(scenarioPhases("downloads-queue-error-model-tab")).toEqual([
+      "model-tab",
+    ]);
     expect(scenarios["filesystem-crash-placed"].exit("mutate")).toBe("crash");
     expect(scenarios["filesystem-manifest-repair"].exit("repair")).toBe(
       "normal",
