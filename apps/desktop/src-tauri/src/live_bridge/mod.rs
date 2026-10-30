@@ -260,11 +260,16 @@ pub fn status(game_path: &Path, installed: Option<&Path>) -> BridgeStatus {
 
 /// Rebuilds the library's copy of the bridge and copies it over the enabled
 /// one, so the game loads the new build and turning the mod off and on again
-/// does not bring the old one back. `installed` must already be a bridge: the
-/// name comes from the renderer, and any other addon is left alone.
+/// does not bring the old one back. `installed` must hold the bridge and
+/// nothing else: the name comes from the renderer, and a rebuild writes only
+/// the bridge's two files, so any other addon, or a pack merging the bridge
+/// with other mods, is left alone.
 pub fn update(game_path: &Path, library_copy: &Path, installed: &Path) -> Result<(), Error> {
-  let is_bridge =
-    VpkArchive::open(installed).is_ok_and(|archive| archive.contains_entry(SCRIPT_RESOURCE));
+  let is_bridge = VpkArchive::open(installed).is_ok_and(|archive| {
+    let mut entries = archive.list_entries();
+    entries.sort();
+    entries == [TEAM_LAYOUT, SCRIPT_RESOURCE]
+  });
   if !is_bridge {
     return Err(invalid(format!(
       "{} is not the live bridge",
@@ -380,6 +385,25 @@ mod tests {
     let game = tempfile::tempdir().unwrap();
     let installed = game.path().join("addons").join("pak05_dir.vpk");
     pack(&installed, &[(TEAM_LAYOUT, b"someone else's layout")]);
+    let before = fs::read(&installed).unwrap();
+
+    let copy = game.path().join(LIVE_BRIDGE_FILE);
+    assert!(update(game.path(), &copy, &installed).is_err());
+    assert_eq!(fs::read(&installed).unwrap(), before);
+  }
+
+  #[test]
+  fn an_update_leaves_a_pack_with_other_mods_alone() {
+    let game = tempfile::tempdir().unwrap();
+    let installed = game.path().join("addons").join("pak05_dir.vpk");
+    pack(
+      &installed,
+      &[
+        (TEAM_LAYOUT, b"layout"),
+        (SCRIPT_RESOURCE, b"script"),
+        ("panorama/images/other_mod.vtex_c", b"another mod"),
+      ],
+    );
     let before = fs::read(&installed).unwrap();
 
     let copy = game.path().join(LIVE_BRIDGE_FILE);
