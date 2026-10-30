@@ -442,6 +442,13 @@
       "when": 1793367988470,
       "tag": "0062_better_auth_oauth_provider",
       "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1793376267264,
+      "tag": "0063_drop_oauth_legacy_tables",
+      "breakpoints": true
     }
   ]
 }
