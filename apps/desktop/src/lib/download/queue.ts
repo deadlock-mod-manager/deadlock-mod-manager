@@ -17,6 +17,8 @@ export class DownloadAlreadyQueuedError extends Error {}
 interface PendingDownload {
   mod: DownloadableMod;
   attempt: AnalyticsAttempt<"mod_download">;
+  /** Set while a cancel that must not call back is waiting for the backend. */
+  silent?: boolean;
 }
 interface DownloadQueueDependencies {
   start: (
@@ -72,21 +74,29 @@ export class DownloadQueue {
   }
 
   fail(modId: string, error: string) {
-    this.settle(
-      modId,
-      error === "Download cancelled" ? "cancelled" : "failed",
-    )?.onError(new Error(error));
+    const cancelled = error === "Download cancelled";
+    const silent = cancelled && this.pending.get(modId)?.silent;
+    const mod = this.settle(modId, cancelled ? "cancelled" : "failed");
+    if (!silent) mod?.onError(new Error(error));
   }
 
-  /** Resolves false when no queue entry tracked the mod. */
-  async cancel(modId: string) {
+  /**
+   * Resolves false when no queue entry tracked the mod. With `notify` off the
+   * mod's error callback doesn't run, for a mod that is being deleted.
+   */
+  async cancel(modId: string, notify = true) {
     const entry = this.pending.get(modId);
-    await this.dependencies.cancel(modId);
+    if (entry && !notify) entry.silent = true;
+    try {
+      await this.dependencies.cancel(modId);
+    } catch (error) {
+      if (entry) entry.silent = false;
+      throw error;
+    }
     if (!entry) return false;
     // Completion may enqueue another request while the cancellation IPC is pending.
-    this.settle(modId, "cancelled", entry)?.onError(
-      new Error("Download cancelled"),
-    );
+    const mod = this.settle(modId, "cancelled", entry);
+    if (notify) mod?.onError(new Error("Download cancelled"));
     return true;
   }
 

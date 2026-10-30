@@ -3,6 +3,7 @@ import { TrashIcon } from "@phosphor-icons/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
+import { downloadManager } from "@/lib/download/manager";
 import { invokeGuarded } from "@/lib/game-guard";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
@@ -43,6 +44,7 @@ export const useDeleteMods = () => {
       try {
         for (const mod of targets) {
           if (usePersistedStore.getState().activeProfileId !== profileId) break;
+          await downloadManager.discardDownload(mod.remoteId);
           await invokeGuarded("purge_mod", {
             modId: mod.remoteId,
             vpks:

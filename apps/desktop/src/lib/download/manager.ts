@@ -446,6 +446,26 @@ class DownloadManager {
     }
   }
 
+  /**
+   * Stops a queued or running download before its mod is deleted, without the
+   * download's own failure feedback. Left alone, it would download the deleted
+   * mod's files once its turn came.
+   */
+  async discardDownload(modId: string) {
+    if (!this.isQueued(modId)) return;
+    try {
+      await this.downloads.cancel(modId, false);
+    } catch (error) {
+      logger.withError(error).error("Failed to cancel download");
+      throw error;
+    }
+    // The mod outlives a delete that fails after this, so it can't stay in flight.
+    usePersistedStore
+      .getState()
+      .setModStatus(modId, ModStatus.FailedToDownload);
+    logger.withMetadata({ mod: modId }).info("Download discarded");
+  }
+
   async pauseDownload(modId: string) {
     try {
       await invoke("pause_download", { modId });
