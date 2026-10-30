@@ -254,6 +254,7 @@ impl DownloadManager {
       .map_err(Error::DownloadFailed)
   }
 
+  /// A download dropped from the queue before it started reports as cancelled.
   pub async fn queue_download_and_prepare(
     &self,
     task: DownloadTask,
@@ -262,7 +263,7 @@ impl DownloadManager {
       .queue_with_completion(task, DownloadPurpose::PrepareUpdate)
       .await
       .await
-      .map_err(|_| Error::BackgroundTaskFailed("Download worker stopped unexpectedly".to_string()))?
+      .map_err(|_| Error::DownloadCancelled)?
       .map_err(Error::DownloadFailed)
   }
 
