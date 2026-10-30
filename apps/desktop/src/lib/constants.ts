@@ -141,3 +141,6 @@ export const EXPERIMENTAL_FEATURES = [
  * hand-added mods. The Live tab needs it, and it needs `-condebug`.
  */
 export const LIVE_BRIDGE_LINK = "local://dmm-live-bridge";
+
+export const isLiveBridge = (mod: { remoteUrl: string }): boolean =>
+  mod.remoteUrl === LIVE_BRIDGE_LINK;

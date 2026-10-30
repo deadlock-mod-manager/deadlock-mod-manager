@@ -1,25 +1,26 @@
 import { useTranslation } from "react-i18next";
-import { tint } from "@/components/stats/chart-fx";
-import { HeroAvatar } from "@/components/stats/hero-avatar";
+import { DANGER_COLOR, tint } from "@/components/stats/chart-fx";
+import { GradePill, PANEL_CLASS, RankTag } from "@/components/stats/live-parts";
+import { LiveHeroAvatar } from "@/components/stats/live-player";
+import type { RankAsset } from "@/lib/stats/api";
 import {
-  GRADE_STYLES,
-  PANEL_CLASS,
-  RankTag,
+  formatDecimal,
+  formatKda,
+  formatPercent,
+  formatWhole,
+} from "@/lib/stats/format";
+import type { Grade } from "@/lib/stats/live-grades";
+import { type CareerRecord, winrateOf } from "@/lib/stats/live-lobby";
+import {
+  type ResolvedPlayer,
   teamColor,
   teamName,
-} from "@/components/stats/live-parts";
-import type { DeadlockHero } from "@/lib/deadlock-api";
-import type { RankAsset } from "@/lib/stats/api";
-import { formatDecimal, formatPercent, formatWhole } from "@/lib/stats/format";
-import type { Grade } from "@/lib/stats/live-grades";
-import type { CareerRecord } from "@/lib/stats/live-lobby";
+} from "@/lib/stats/live-teams";
 import { cn } from "@/lib/utils";
-import type { LiveScoreboardPlayer } from "@/types/generated/LiveScoreboardPlayer";
 import type { Team } from "@/types/generated/Team";
 
 interface LiveNowStripProps {
-  player: LiveScoreboardPlayer;
-  hero: DeadlockHero | undefined;
+  you: ResolvedPlayer;
   clock: string | null;
   /** The match has ended and this is its last report. */
   isOver: boolean;
@@ -56,8 +57,7 @@ const Stat = ({
 
 /** You, right now: your hero, your numbers, and one grade for the match so far. */
 export const LiveNowStrip = ({
-  player,
-  hero,
+  you,
   clock,
   isOver,
   minutes,
@@ -69,11 +69,12 @@ export const LiveNowStrip = ({
   bracketName,
 }: LiveNowStripProps) => {
   const { t } = useTranslation();
+  const { player, hero } = you;
   const accent = teamColor(team);
   const perMinute = (value: number | null) =>
     value === null || !minutes
       ? null
-      : t("stats.live.now.perMinute", {
+      : t("stats.live.labels.perMinute", {
           value: formatWhole(value / minutes),
         });
   const kda =
@@ -89,16 +90,13 @@ export const LiveNowStrip = ({
         backgroundImage: `linear-gradient(90deg, ${tint(accent, 12)}, transparent 45%)`,
       }}>
       <div className='flex min-w-0 flex-1 items-center gap-4'>
-        <div className='relative h-[84px] w-[84px] shrink-0'>
-          <HeroAvatar
-            className='h-full w-full rounded-2xl'
-            hero={hero}
-            heroId={hero?.id ?? player.heroId ?? 0}
-          />
-          <span
-            className='pointer-events-none absolute inset-0 rounded-2xl border-[1.5px]'
-            style={{ borderColor: tint(accent, 40) }}
-          />
+        <LiveHeroAvatar
+          bordered={false}
+          className='h-full w-full'
+          entry={you}
+          frameClassName='relative h-[84px] w-[84px] shrink-0'
+          radius='rounded-2xl'
+          ring={tint(accent, 40)}>
           {player.level !== null && (
             <span
               className='absolute -right-1.5 -bottom-0.5 flex h-6 w-[34px] items-center justify-center rounded-[7px] border-[1.5px] bg-background font-bold font-mono text-xs tabular-nums'
@@ -106,7 +104,7 @@ export const LiveNowStrip = ({
               {player.level}
             </span>
           )}
-        </div>
+        </LiveHeroAvatar>
         <div className='flex min-w-0 flex-col gap-1.5'>
           <div className='flex items-center gap-1.5'>
             {isOver ? (
@@ -114,11 +112,16 @@ export const LiveNowStrip = ({
                 {t("stats.live.now.finalAt", { clock: clock ?? "" })}
               </span>
             ) : (
-              <span className='flex items-center gap-1.5 rounded-full bg-[#f2766b]/[0.12] px-2 py-[3px] font-bold font-mono text-[#f2766b] text-[11px] leading-[14px] tracking-[0.4px]'>
-                <span className='h-1.5 w-1.5 animate-pulse rounded-full bg-[#f2766b]' />
+              <span
+                className='flex items-center gap-1.5 rounded-full px-2 py-[3px] font-bold font-mono text-[11px] leading-[14px] tracking-[0.4px]'
+                style={{
+                  backgroundColor: tint(DANGER_COLOR, 12),
+                  color: DANGER_COLOR,
+                }}>
+                <span className='h-1.5 w-1.5 animate-pulse rounded-full bg-current' />
                 {clock
                   ? t("stats.live.now.liveAt", { clock })
-                  : t("stats.live.live")}
+                  : t("stats.tabs.live")}
               </span>
             )}
             <span
@@ -147,7 +150,7 @@ export const LiveNowStrip = ({
                 <span className='h-3 w-px shrink-0 bg-border' />
                 <span className='shrink-0'>
                   {t("stats.live.now.onHero", {
-                    winrate: formatPercent(onHero.wins / onHero.matches, 0),
+                    winrate: formatPercent(winrateOf(onHero), 0),
                     hero: heroName,
                   })}
                 </span>
@@ -170,7 +173,7 @@ export const LiveNowStrip = ({
               : t("stats.live.now.kda", { value: formatDecimal(kda, 1) })
           }
           label={t("stats.live.labels.kda")}
-          value={`${player.kills ?? "–"} / ${player.deaths ?? "–"} / ${player.assists ?? "–"}`}
+          value={formatKda(player.kills, player.deaths, player.assists)}
         />
         <Stat
           detail={perMinute(player.objectiveDamage)}
@@ -187,18 +190,7 @@ export const LiveNowStrip = ({
         <>
           <span className='h-[72px] w-px shrink-0 bg-border' />
           <div className='flex items-center gap-4'>
-            <span
-              className={cn(
-                "flex h-[72px] w-[72px] items-center justify-center rounded-2xl border font-extrabold text-[40px] tracking-[-1px]",
-                GRADE_STYLES[overall.grade].pill,
-                GRADE_STYLES[overall.grade].text,
-              )}
-              style={{
-                borderColor:
-                  "color-mix(in srgb, currentcolor 33%, transparent)",
-              }}>
-              {overall.grade}
-            </span>
+            <GradePill grade={overall.grade} size='xl' />
             <div className='flex w-[173px] flex-col gap-1'>
               <span className='font-medium text-[13px] leading-[17px]'>
                 {isOver

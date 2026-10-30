@@ -275,8 +275,6 @@ export const parseLayout = (stored: DashboardLayout | null) => {
 /** Panels the app no longer has. Saved layouts lose them instead of showing them broken. */
 const RETIRED_PANELS: ReadonlySet<string> = new Set(["live"]);
 
-const LIVE_PANELS: ReadonlySet<string> = new Set(["liveScoreboard"]);
-
 const listedIn =
   (panels: ReadonlySet<string>) =>
   (widget: DashboardWidget): boolean =>
@@ -301,22 +299,6 @@ export const withoutPanels = (
       widgets: tab.widgets.filter((widget) => !isListed(widget)),
     }));
   return { ...layout, tabs };
-};
-
-/**
- * Puts back the tabs of `source` that hold only the given panels, after the
- * ones `layout` has. Saving with a panel hidden then keeps its tab for later.
- */
-export const withPanelTabsOf = (
-  layout: DashboardLayout,
-  source: DashboardLayout,
-  panels: ReadonlySet<string>,
-): DashboardLayout => {
-  const restored = source.tabs.filter(
-    (tab) =>
-      holdsOnly(tab, panels) && !layout.tabs.some((kept) => kept.id === tab.id),
-  );
-  return { ...layout, tabs: [...layout.tabs, ...restored] };
 };
 
 const dropRetiredPanels = (layout: DashboardLayout): DashboardLayout => {
@@ -352,18 +334,17 @@ export const updateTab = (
   patch: Partial<Pick<DashboardTab, "title" | "icon">>,
 ): DashboardLayout => mapTab(layout, tabId, (tab) => ({ ...tab, ...patch }));
 
-export const moveTab = (
+/** Swaps two tabs, so a tab can step past neighbours the page is not showing. */
+export const swapTabs = (
   layout: DashboardLayout,
   tabId: string,
-  offset: -1 | 1,
+  otherId: string,
 ): DashboardLayout => {
   const index = layout.tabs.findIndex((tab) => tab.id === tabId);
-  const target = index + offset;
-  if (index < 0 || target < 0 || target >= layout.tabs.length) {
-    return layout;
-  }
+  const other = layout.tabs.findIndex((tab) => tab.id === otherId);
+  if (index < 0 || other < 0) return layout;
   const tabs = [...layout.tabs];
-  [tabs[index], tabs[target]] = [tabs[target], tabs[index]];
+  [tabs[index], tabs[other]] = [tabs[other], tabs[index]];
   return { ...layout, tabs };
 };
 
@@ -457,7 +438,3 @@ export const duplicateWidget = (
     });
     return { ...tab, widgets };
   });
-
-/** A tab that holds only the Live panel, so the page's filters mean nothing there. */
-export const isLiveTab = (tab: DashboardTab): boolean =>
-  holdsOnly(tab, LIVE_PANELS);

@@ -43,14 +43,12 @@ import {
   type DashboardTab,
   DEFAULT_LAYOUT,
   holdsOnly,
-  isLiveTab,
   TAB_ICONS,
   type TabIcon,
 } from "@/lib/stats/dashboard/layout";
-import { useLiveHeadline } from "@/hooks/use-live-match";
 import { TAB_TEMPLATE_IDS } from "@/lib/stats/dashboard/templates";
 import { cn } from "@/lib/utils";
-import { useHiddenPanels } from "./panels";
+import { tabPanel, useHiddenPanels } from "./panels";
 import { useTabTitle } from "./use-tab-title";
 
 const ICONS = {
@@ -240,8 +238,6 @@ export const DashboardTabs = ({
   });
   const activeIndex = tabs.findIndex((tab) => tab.id === activeTabId);
   const activeTab = tabs[activeIndex];
-  // The Live panel says when its board is live; the tab only mirrors it.
-  const inMatch = useLiveHeadline()?.source === "topBar";
 
   return (
     // Many tabs outgrow a narrow window before anything else in the header
@@ -250,32 +246,18 @@ export const DashboardTabs = ({
       <Tabs onValueChange={onSelect} value={activeTabId}>
         <TabsList className='h-auto w-max gap-1 bg-transparent p-0'>
           {tabs.map((tab) => {
-            const Icon = ICONS[tab.icon];
-            const isLive = isLiveTab(tab);
+            const panel = tabPanel(tab);
+            const Icon = panel?.tab?.icon ?? ICONS[tab.icon];
             return (
               <TabsTrigger
-                className={cn(
-                  TAB_TRIGGER_CLASS,
-                  isLive && "data-[state=active]:border-red-400/25",
-                )}
+                className={cn(TAB_TRIGGER_CLASS, panel?.tab?.activeClassName)}
                 data-broken={brokenTabIds.has(tab.id)}
                 data-tab-id={tab.id}
                 key={tab.id}
                 value={tab.id}>
-                {isLive ? (
-                  <span className='flex h-[15px] w-[15px] items-center justify-center'>
-                    <span
-                      className={cn(
-                        "h-[7px] w-[7px] rounded-full bg-red-400 shadow-[0_0_8px] shadow-red-400/70",
-                        inMatch && "animate-pulse",
-                      )}
-                    />
-                  </span>
-                ) : (
-                  <Icon className='h-[15px] w-[15px]' />
-                )}
+                <Icon className='h-[15px] w-[15px]' />
                 {tabTitle(tab)}
-                {isLive && (
+                {panel?.experimental && (
                   <span className='rounded bg-foreground/[0.06] px-1.5 py-px font-mono font-semibold text-[9.5px] text-muted-foreground tracking-wider'>
                     {t("stats.dashboard.tabs.beta")}
                   </span>

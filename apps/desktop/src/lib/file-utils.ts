@@ -37,7 +37,7 @@ export type DetectedSource =
 export type StagedSource = { kind: "vpkPath"; path: string; fileName: string };
 
 /** The live bridge HUD mod, built from the installed game by the backend. */
-type LiveBridgeSource = { kind: "liveBridge"; fileName: string };
+type LiveBridgeSource = { kind: "liveBridge" };
 
 export type ModSource = DetectedSource | StagedSource | LiveBridgeSource;
 

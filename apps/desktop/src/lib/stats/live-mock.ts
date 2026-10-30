@@ -1,7 +1,7 @@
-import type { SoulsPoint } from "@/hooks/use-live-match";
 import type { MatchHistoryEntry, PerformanceCurvePoint } from "@/lib/stats/api";
 import type { Grade } from "@/lib/stats/live-grades";
 import type { LiveLobby } from "@/lib/stats/live-lobby";
+import type { SoulsPoint } from "@/lib/stats/live-session";
 import type { GamePhase } from "@/types/generated/GamePhase";
 import type { LiveMatchStatus } from "@/types/generated/LiveMatchStatus";
 import type { LiveScoreboardPlayer } from "@/types/generated/LiveScoreboardPlayer";
@@ -31,7 +31,6 @@ export interface LiveMock {
   lobby: LiveLobby;
   curve: PerformanceCurvePoint[];
   trail: SoulsPoint[];
-  queuedSince: number | null;
   matches: MatchHistoryEntry[];
   yourAccountId: number;
   yourBadge: number;
@@ -274,7 +273,7 @@ export const buildLiveMock = (
   return {
     status: {
       consoleLogAvailable: true,
-      queued: scenario === "queued",
+      queuedSince: scenario === "queued" ? Date.now() - 102_000 : null,
       current: phase ? { matchId: MATCH_ID, lobbyId: "1", phase } : null,
       recentMatchIds: [],
       scoreboard: phase ? board : null,
@@ -340,7 +339,6 @@ export const buildLiveMock = (
     },
     curve,
     trail: scenario === "inMatch" || scenario === "matchOver" ? trail : [],
-    queuedSince: scenario === "queued" ? Date.now() - 102_000 : null,
     matches: [
       lastMatch,
       match(heroId("Haze"), false, 1, [5, 7, 8, 26_100]),

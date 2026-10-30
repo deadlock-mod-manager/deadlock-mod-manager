@@ -23,6 +23,7 @@ import { InsightList } from "@/components/stats/insight-list";
 import { ItemsTab } from "@/components/stats/items-tab";
 import { LiveBridgeNotice } from "@/components/stats/live-bridge-notice";
 import { LiveScoreboard } from "@/components/stats/live-scoreboard";
+import { LiveTabIcon, LiveToolbar } from "@/components/stats/live-toolbar";
 import { OverviewTiles } from "@/components/stats/overview-tiles";
 import { ProfilePanel } from "@/components/stats/profile-panel";
 import { RankBenchmark } from "@/components/stats/rank-benchmark";
@@ -37,6 +38,7 @@ import {
   useSquadStats,
 } from "@/hooks/use-player-stats";
 import { resolveRank } from "@/lib/stats/api";
+import type { DashboardTab } from "@/lib/stats/dashboard/layout";
 import { summarize } from "@/lib/stats/derive";
 import { usePersistedStore } from "@/lib/store";
 import type { ExperimentalFeature } from "@/lib/store/slices/ui";
@@ -85,6 +87,14 @@ type PanelDef = {
   needsHistory: boolean;
   /** Only offered, and only shown, while this experimental feature is on. */
   experimental?: ExperimentalFeature;
+  /** How a tab that holds nothing but this panel stands apart in the tab row. */
+  tab?: {
+    /** Drawn in place of the tab's own icon. */
+    icon: ComponentType<{ className?: string }>;
+    activeClassName: string;
+    /** Takes the place of the page's filters, which mean nothing to the panel. */
+    toolbar: ComponentType;
+  };
   /** Shaped like the panel's cards, so the page keeps its layout while loading. */
   skeleton: () => ReactNode;
 } & (
@@ -306,6 +316,11 @@ const PANELS = {
     needsAccount: false,
     needsHistory: false,
     experimental: "live-scoreboard",
+    tab: {
+      icon: LiveTabIcon,
+      activeClassName: "data-[state=active]:border-red-400/25",
+      toolbar: LiveToolbar,
+    },
     render: () => <LiveScoreboardPanel />,
   },
 } satisfies Record<PanelId, PanelDef>;
@@ -330,3 +345,15 @@ export const useHiddenPanels = (): ReadonlySet<string> => {
 
 export const panelDef = (id: string): PanelDef | undefined =>
   isPanelId(id) ? PANELS[id] : undefined;
+
+/** The panel `tab` is devoted to: every widget on it is that one panel. */
+export const tabPanel = (tab: DashboardTab): PanelDef | undefined => {
+  const [first, ...rest] = tab.widgets;
+  if (first?.source.kind !== "panel") return undefined;
+  const panel = first.source.panel;
+  return rest.every(
+    (widget) => widget.source.kind === "panel" && widget.source.panel === panel,
+  )
+    ? panelDef(panel)
+    : undefined;
+};

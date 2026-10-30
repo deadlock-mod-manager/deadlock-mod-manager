@@ -1,6 +1,6 @@
 import { RuntimeError } from "@deadlock-mods/common/client-errors";
 import { DeadlockHeroes, normalizeHero } from "@deadlock-mods/shared";
-import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -15,7 +15,6 @@ import {
   badgeBracket,
   getAnalyticsHeroStats,
   getBadgeDistribution,
-  getBracketCurve,
   getBracketMetrics,
   getEnemyStats,
   getHeroCounterStats,
@@ -47,13 +46,6 @@ import {
   mergeHeroStats,
   mergeLocalMatches,
 } from "@/lib/stats/derive";
-import {
-  type LiveLobby,
-  lobbyRecords,
-  matchupsFor,
-  recentForm,
-  type WinRecord,
-} from "@/lib/stats/live-lobby";
 import { playerFromMatch } from "@/lib/stats/match-detail";
 import {
   ALL_STATS_SCOPE,
@@ -70,28 +62,44 @@ type StatsQueryOptions = {
   enabled?: boolean;
 };
 
-const useStatsQuery = <T>(
+/** Options for a cached stats request, for `useQuery` and `useQueries` alike. */
+const statsQueryOptions = <T>(
   { key, ttl, enabled = true }: StatsQueryOptions,
   fetcher: () => Promise<T>,
+) => ({
+  queryKey: ["stats", key],
+  queryFn: () => cachedFetch(key, ttl, fetcher),
+  staleTime: ttl,
+  gcTime: ttl * 2,
+  refetchOnWindowFocus: false,
+  retry: 1,
+  enabled,
+  // The page renders its own inline error/stale state instead of a toast.
+  meta: { skipGlobalErrorHandler: true },
+});
+
+export const useStatsQuery = <T>(
+  options: StatsQueryOptions,
+  fetcher: () => Promise<T>,
+) => useQuery(statsQueryOptions(options, fetcher));
+
+/** A per-account query keyed like `usePlayerScopedQuery`, so caches are shared. */
+export const playerQueryOptions = <T>(
+  accountId: number,
+  { key, ttl }: { key: string; ttl: number },
+  fetcher: (accountId: number) => Promise<T>,
 ) =>
-  useQuery({
-    queryKey: ["stats", key],
-    queryFn: () => cachedFetch(key, ttl, fetcher),
-    staleTime: ttl,
-    gcTime: ttl * 2,
-    refetchOnWindowFocus: false,
-    retry: 1,
-    enabled,
-    // The page renders its own inline error/stale state instead of a toast.
-    meta: { skipGlobalErrorHandler: true },
-  });
+  statsQueryOptions(
+    { key: `${PLAYER_CACHE_PREFIX}${key}:${accountId}`, ttl },
+    () => fetcher(accountId),
+  );
 
 /**
  * A query that only means anything for a known account. The guard is what lets
  * the fetchers take a plain `number` - every caller would otherwise assert the
  * nullable id away behind the `enabled` flag.
  */
-const usePlayerScopedQuery = <T>(
+export const usePlayerScopedQuery = <T>(
   accountId: number | null,
   { key, ttl, enabled = true }: { key: string; ttl: number; enabled?: boolean },
   fetcher: (accountId: number) => Promise<T>,
@@ -331,154 +339,6 @@ export const useBracketBenchmark = (
     isPending: query.isPending,
     isError: query.isError,
   };
-};
-
-/** A per-account query keyed like `usePlayerScopedQuery`, so caches are shared. */
-const playerQuery = <T>(
-  accountId: number,
-  key: string,
-  ttl: number,
-  fetcher: (id: number) => Promise<T>,
-) => {
-  const cacheKey = `${PLAYER_CACHE_PREFIX}${key}:${accountId}`;
-  return {
-    queryKey: ["stats", cacheKey],
-    queryFn: () => cachedFetch(cacheKey, ttl, () => fetcher(accountId)),
-    staleTime: ttl,
-    gcTime: ttl * 2,
-    refetchOnWindowFocus: false,
-    retry: 1,
-    meta: { skipGlobalErrorHandler: true },
-  };
-};
-
-/**
- * What the Live tab knows about a lobby beyond the top bar. Records for the
- * whole lobby are one request; ranks and recent form are one per player, so
- * they are cached per account and shared with the player cards. Who you met
- * before and how your hero fares against theirs come from your own account.
- */
-export const useLiveLobby = ({
-  accountIds,
-  yourAccountId,
-  yourHeroId,
-}: {
-  accountIds: number[];
-  yourAccountId: number | null;
-  yourHeroId: number | null;
-}): LiveLobby => {
-  const ids = useMemo(() => [...new Set(accountIds)].sort(), [accountIds]);
-  const heroStats = useStatsQuery(
-    {
-      key: `lobby:careers:${ids.join(",")}`,
-      ttl: STATS_TTL.heroStats,
-      enabled: ids.length > 0,
-    },
-    () => getPlayerHeroStats(ids),
-  );
-  // A stable `combine` keeps these maps from rebuilding on every live poll.
-  const ranks = useQueries({
-    queries: ids.map((id) =>
-      playerQuery(id, "rank", STATS_TTL.rank, getPlayerRank),
-    ),
-    combine: useCallback(
-      (results: { data?: { data: PlayerRank } }[]) =>
-        new Map(
-          ids.flatMap((id, index) => {
-            const rank = results[index]?.data?.data;
-            return rank ? [[id, rank.badge] as const] : [];
-          }),
-        ),
-      [ids],
-    ),
-  });
-  const form = useQueries({
-    queries: ids.map((id) =>
-      playerQuery(id, "match-history", STATS_TTL.matchHistory, getMatchHistory),
-    ),
-    combine: useCallback(
-      (results: { data?: { data: MatchHistoryEntry[] } }[]) =>
-        new Map(
-          ids.flatMap((id, index) => {
-            const history = results[index]?.data?.data;
-            return history ? [[id, recentForm(history)] as const] : [];
-          }),
-        ),
-      [ids],
-    ),
-  });
-  const encounters = usePlayerHistory(yourAccountId, ids.length > 0);
-  const counters = usePlayerScopedQuery(
-    yourAccountId,
-    {
-      key: "counters",
-      ttl: STATS_TTL.heroStats,
-      enabled: yourHeroId !== null,
-    },
-    (id) => getHeroCounterStats(id),
-  );
-
-  const records = useMemo(
-    () => lobbyRecords(heroStats.data?.data ?? []),
-    [heroStats.data],
-  );
-  const met = useMemo(() => {
-    const toRecord = (entry: { wins: number; matches_played: number }) => ({
-      matches: entry.matches_played,
-      wins: entry.wins,
-    });
-    return {
-      mates: new Map(
-        [...encounters.mates].map(([id, mate]) => [id, toRecord(mate)]),
-      ),
-      enemies: new Map(
-        [...encounters.enemies].map(([id, enemy]) => [id, toRecord(enemy)]),
-      ),
-    };
-  }, [encounters.mates, encounters.enemies]);
-  const matchups = useMemo(
-    () =>
-      yourHeroId === null
-        ? new Map<number, WinRecord>()
-        : matchupsFor(counters.data?.data ?? [], yourHeroId),
-    [counters.data, yourHeroId],
-  );
-
-  return {
-    records,
-    ranks,
-    form,
-    mates: met.mates,
-    enemies: met.enemies,
-    matchups,
-    isPending: ids.length > 0 && heroStats.isPending,
-  };
-};
-
-/**
- * How players on one hero in the player's rank bracket stand over a match, for
- * grading a match while it runs. One request per hero and bracket.
- */
-export const useLiveHeroBenchmark = (
-  heroId: number | null,
-  badge: number | undefined,
-  scope: StatsScope,
-) => {
-  const { tier: bracket, minBadge, maxBadge } = badgeBracket(badge);
-  return useStatsQuery(
-    {
-      key: `benchmark:live-curve:${heroId}:${bracket ?? "all"}:${statsScopeQuery(scope)}`,
-      ttl: STATS_TTL.benchmark,
-      enabled: heroId !== null,
-    },
-    () =>
-      getBracketCurve({
-        heroId: heroId ?? 0,
-        minBadge,
-        maxBadge,
-        scope,
-      }),
-  );
 };
 
 /**

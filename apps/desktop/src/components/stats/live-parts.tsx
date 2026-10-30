@@ -1,74 +1,57 @@
 import type { ReactNode } from "react";
-import { LOSS_COLOR, tint, WIN_COLOR } from "@/components/stats/chart-fx";
+import { tint, winrateColor } from "@/components/stats/chart-fx";
 import type { RankAsset } from "@/lib/stats/api";
 import { rankLabel, resolveRank } from "@/lib/stats/api";
 import { formatPercent } from "@/lib/stats/format";
 import type { Grade } from "@/lib/stats/live-grades";
-import type { WinRecord } from "@/lib/stats/live-lobby";
+import { type WinRecord, winrateOf } from "@/lib/stats/live-lobby";
 import { cn } from "@/lib/utils";
-import type { Team } from "@/types/generated/Team";
 
-export const GRADE_STYLES = {
-  D: {
-    text: "text-[#f2766b]",
-    pill: "bg-[#f2766b]/[0.12]",
-    zone: "bg-[#f2766b]/40",
-  },
-  C: {
-    text: "text-[#f28a4b]",
-    pill: "bg-[#f28a4b]/[0.12]",
-    zone: "bg-[#f28a4b]/40",
-  },
-  B: {
-    text: "text-[#7dd3a0]",
-    pill: "bg-[#7dd3a0]/[0.12]",
-    zone: "bg-[#7dd3a0]/40",
-  },
-  A: {
-    text: "text-[#e0a84e]",
-    pill: "bg-[#e0a84e]/[0.12]",
-    zone: "bg-[#e0a84e]/40",
-  },
-  S: {
-    text: "text-[#60a5fa]",
-    pill: "bg-[#60a5fa]/[0.12]",
-    zone: "bg-[#60a5fa]/40",
-  },
-} satisfies Record<Grade, { text: string; pill: string; zone: string }>;
+export const GRADE_COLORS = {
+  D: "var(--viz-grade-d)",
+  C: "var(--viz-grade-c)",
+  B: "var(--viz-grade-b)",
+  A: "var(--viz-grade-a)",
+  S: "var(--viz-grade-s)",
+} satisfies Record<Grade, string>;
 
-const TEAMS = {
-  hiddenKing: { color: "var(--team-0)", name: "stats.live.teams.hiddenKing" },
-  archmother: { color: "var(--team-1)", name: "stats.live.teams.archmother" },
-} satisfies Record<Team, { color: string; name: string }>;
-
-export const teamColor = (team: Team) => TEAMS[team].color;
-
-export const teamName = (team: Team) => TEAMS[team].name;
-
-export const otherTeam = (team: Team): Team =>
-  team === "hiddenKing" ? "archmother" : "hiddenKing";
+const GRADE_SIZES = {
+  /** The pace card's legend. */
+  xs: "h-[18px] w-[22px] rounded-md font-mono text-[10.5px]",
+  sm: "h-6 w-[30px] rounded-md font-mono text-[12.5px]",
+  /** The last match card's grade. */
+  lg: "h-14 w-14 rounded-2xl border text-3xl",
+  /** Your overall grade on the now strip. */
+  xl: "h-[72px] w-[72px] rounded-2xl border text-[40px] tracking-[-1px]",
+};
 
 export const GradePill = ({
   grade,
-  className,
+  size = "sm",
 }: {
   grade: Grade;
-  className?: string;
-}) => (
-  <span
-    className={cn(
-      "inline-flex h-6 w-[30px] shrink-0 items-center justify-center rounded-md font-extrabold font-mono text-[12.5px]",
-      GRADE_STYLES[grade].pill,
-      GRADE_STYLES[grade].text,
-      className,
-    )}>
-    {grade}
-  </span>
-);
+  size?: keyof typeof GRADE_SIZES;
+}) => {
+  const color = GRADE_COLORS[grade];
+  return (
+    <span
+      className={cn(
+        "inline-flex shrink-0 items-center justify-center font-extrabold",
+        GRADE_SIZES[size],
+      )}
+      style={{
+        color,
+        backgroundColor: tint(color, 12),
+        borderColor: tint(color, 33),
+      }}>
+      {grade}
+    </span>
+  );
+};
 
 export const WinratePill = ({ record }: { record: WinRecord }) => {
-  const winrate = record.wins / Math.max(record.matches, 1);
-  const color = winrate >= 0.5 ? WIN_COLOR : LOSS_COLOR;
+  const winrate = winrateOf(record);
+  const color = winrateColor(winrate);
   return (
     <span
       className='rounded-full px-1.5 py-0.5 font-mono font-semibold text-[10.5px] tabular-nums'
@@ -172,4 +155,59 @@ export const LivePanel = ({
     </div>
     {children}
   </section>
+);
+
+/**
+ * Two teams' shares of one number, side by side. `left` and `right` are CSS
+ * backgrounds, so either side can be a gradient.
+ */
+export const SplitBar = ({
+  share,
+  left,
+  right,
+  variant,
+}: {
+  /** The left side's share, 0 to 1. */
+  share: number;
+  left: string;
+  right: string;
+  /** `race` is the top bar's souls race; `compare` the scouting report's thin one. */
+  variant: "race" | "compare";
+}) => {
+  const race = variant === "race";
+  return (
+    <span className={cn("flex", race ? "h-2 gap-[3px]" : "h-1 gap-0.5")}>
+      <span
+        className={race ? "rounded-l" : "rounded-full"}
+        style={{ width: `${share * 100}%`, background: left }}
+      />
+      <span
+        className={cn("flex-1", race ? "rounded-r" : "rounded-full")}
+        style={{ background: right }}
+      />
+    </span>
+  );
+};
+
+/** A filled share of a faint track. */
+export const Meter = ({
+  value,
+  color,
+  className,
+}: {
+  /** 0 to 1. */
+  value: number;
+  color: string;
+  className?: string;
+}) => (
+  <span
+    className={cn(
+      "overflow-hidden rounded-full bg-foreground/[0.05]",
+      className,
+    )}>
+    <span
+      className='block h-full rounded-full'
+      style={{ width: `${value * 100}%`, backgroundColor: color }}
+    />
+  </span>
 );

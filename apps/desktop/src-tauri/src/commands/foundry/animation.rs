@@ -6,9 +6,9 @@ use source2_model::vpk_extract::VpkArchive;
 use source2_model::{Resource, nm_anim, skeleton};
 use ts_rs::TS;
 
-use super::archive_cache::open_archive;
 use super::staging::{staged_base_game_vpk, staged_core_vpk};
 use crate::errors::Error;
+use crate::vpk_archive_cache::open_archive;
 
 #[derive(Clone, Serialize, TS)]
 #[ts(export, rename_all = "camelCase")]

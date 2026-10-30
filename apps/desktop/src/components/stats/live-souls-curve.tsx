@@ -16,9 +16,14 @@ import {
 } from "recharts";
 import { LivePanel } from "@/components/stats/live-parts";
 import { LOSS_COLOR, tint, WIN_COLOR } from "@/components/stats/chart-fx";
-import type { SoulsPoint } from "@/hooks/use-live-match";
+import type { SoulsPoint } from "@/lib/stats/live-session";
 import type { PerformanceCurvePoint } from "@/lib/stats/api";
-import { formatThousands, formatWhole } from "@/lib/stats/format";
+import {
+  formatClock,
+  formatSignedThousands,
+  formatThousands,
+  formatWhole,
+} from "@/lib/stats/format";
 import { curveAt } from "@/lib/stats/live-grades";
 import { cn } from "@/lib/utils";
 
@@ -63,7 +68,7 @@ const TimeTick = ({
     payload.value === 0 ? "start" : payload.value === end ? "end" : "middle";
   return (
     <text {...AXIS_TICK} dy={10} textAnchor={anchor} x={x} y={y}>
-      {`${payload.value}:00`}
+      {formatClock(payload.value * 60)}
     </text>
   );
 };
@@ -112,10 +117,6 @@ const Callout = ({
   );
 };
 
-const config = {
-  you: { label: "You", color: "var(--team-0)" },
-} satisfies ChartConfig;
-
 /**
  * Your souls this match against the bracket's curve: its average and middle
  * 68%, with your current lead carried to the end of the axis.
@@ -129,6 +130,9 @@ export const LiveSoulsCurve = ({
   color,
 }: LiveSoulsCurveProps) => {
   const { t } = useTranslation();
+  const config = {
+    you: { label: t("stats.live.labels.you"), color },
+  } satisfies ChartConfig;
 
   const { bracket, projection, end, now, yTicks } = useMemo(() => {
     const end = Math.max(MIN_AXIS_MINUTES, Math.ceil(minutes / 5) * 5 + 5);
@@ -192,7 +196,7 @@ export const LiveSoulsCurve = ({
 
   const legend = [
     {
-      label: t("stats.live.souls.you"),
+      label: t("stats.live.labels.you"),
       swatch: { height: 2.5, background: color },
     },
     {
@@ -209,10 +213,7 @@ export const LiveSoulsCurve = ({
     },
   ];
 
-  const leadText =
-    lead === null
-      ? null
-      : `${lead >= 0 ? "+" : "−"}${formatThousands(Math.abs(lead))}`;
+  const leadText = lead === null ? null : formatSignedThousands(lead);
 
   return (
     <LivePanel
@@ -245,9 +246,7 @@ export const LiveSoulsCurve = ({
               axisLine={false}
               domain={[0, yTicks.at(-1) ?? Y_STEP]}
               tick={AXIS_TICK}
-              tickFormatter={(value: number) =>
-                value === 0 ? "0" : `${value / 1000}k`
-              }
+              tickFormatter={(value: number) => formatThousands(value, 0)}
               tickLine={false}
               ticks={yTicks}
               width={32}
@@ -333,14 +332,14 @@ export const LiveSoulsCurve = ({
               }>
               {recent === null
                 ? "–"
-                : t("stats.live.now.perMinute", {
+                : t("stats.live.labels.perMinute", {
                     value: formatWhole(recent.rate),
                   })}
             </span>
           </div>
           <div className='flex flex-col gap-[3px] border-l px-3 py-[9px]'>
             <span className='text-[11px] text-muted-foreground leading-[14px]'>
-              {t("stats.live.souls.atEnd", { clock: `${end}:00` })}
+              {t("stats.live.souls.atEnd", { clock: formatClock(end * 60) })}
             </span>
             <span className='font-bold font-mono text-sm leading-[18px] tabular-nums'>
               {atEnd === null ? "–" : formatThousands(atEnd)}

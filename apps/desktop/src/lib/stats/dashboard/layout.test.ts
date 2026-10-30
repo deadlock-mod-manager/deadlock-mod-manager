@@ -3,14 +3,13 @@ import {
   type DashboardLayout,
   type DashboardWidget,
   DEFAULT_LAYOUT,
-  moveTab,
   moveWidgetToTab,
   parseLayout,
   removeTab,
+  swapTabs,
   reorderWidget,
   upsertWidget,
   withoutPanels,
-  withPanelTabsOf,
 } from "./layout";
 
 const widget = (id: string): DashboardWidget => ({
@@ -90,17 +89,6 @@ describe("dashboard layout", () => {
     const hidden = withoutPanels(saved, LIVE);
     expect(hidden.tabs.map((tab) => tab.id)).toEqual(["a", "b"]);
     expect(saved.tabs).toHaveLength(3);
-
-    const restored = withPanelTabsOf(hidden, saved, LIVE);
-    expect(restored).toEqual(saved);
-    expect(withPanelTabsOf(saved, saved, LIVE)).toEqual(saved);
-  });
-
-  it("saving the default with the live tab hidden still matches the default", () => {
-    const hidden = withoutPanels(DEFAULT_LAYOUT, LIVE);
-    expect(withPanelTabsOf(hidden, DEFAULT_LAYOUT, LIVE)).toEqual(
-      DEFAULT_LAYOUT,
-    );
   });
 
   it("moves a widget onto another widget's slot", () => {
@@ -139,11 +127,11 @@ describe("dashboard layout", () => {
     expect(removeTab(single, "a").tabs).toHaveLength(1);
   });
 
-  it("moves tabs within bounds", () => {
-    expect(moveTab(layout, "a", 1).tabs.map((tab) => tab.id)).toEqual([
+  it("swaps tabs it has", () => {
+    expect(swapTabs(layout, "a", "b").tabs.map((tab) => tab.id)).toEqual([
       "b",
       "a",
     ]);
-    expect(moveTab(layout, "a", -1)).toBe(layout);
+    expect(swapTabs(layout, "a", "missing")).toBe(layout);
   });
 });

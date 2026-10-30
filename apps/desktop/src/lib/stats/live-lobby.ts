@@ -4,6 +4,7 @@ import type {
   PlayerHeroStats,
 } from "@/lib/stats/api";
 import { isWin } from "@/lib/stats/derive";
+import type { ResolvedPlayer } from "@/lib/stats/live-teams";
 
 export interface WinRecord {
   matches: number;
@@ -42,6 +43,26 @@ const ONE_TRICK_SHARE = 0.5;
 const ONE_TRICK_MIN_MATCHES = 30;
 /** Streaks shorter than this are noise, not a tag. */
 const MIN_STREAK = 3;
+/** Fewer games than this against a hero says nothing about the matchup. */
+const MIN_MATCHUP_GAMES = 5;
+/** Below this win rate a matchup is a hard one. */
+const HARD_MATCHUP = 0.45;
+/** From this win rate a matchup reads as going your way. */
+const WINNING_MATCHUP = 0.55;
+/** From this win rate a matchup is one of your best. */
+const GOOD_MATCHUP = 0.6;
+
+export const winrateOf = (record: WinRecord): number =>
+  record.wins / Math.max(record.matches, 1);
+
+const poolRecords = (records: WinRecord[]): WinRecord =>
+  records.reduce(
+    (sum, record) => ({
+      matches: sum.matches + record.matches,
+      wins: sum.wins + record.wins,
+    }),
+    { matches: 0, wins: 0 },
+  );
 
 const career = (
   matches: number,
@@ -121,7 +142,7 @@ export const streakOf = (
   return run >= MIN_STREAK ? { won: latest, length: run } : null;
 };
 
-export const isOneTrick = (record: LobbyRecord, heroId: number): boolean => {
+const isOneTrick = (record: LobbyRecord, heroId: number): boolean => {
   const onHero = record.heroes.get(heroId);
   return (
     !!onHero &&
@@ -161,4 +182,177 @@ export const averageBadge = (badges: number[]): number | null => {
     steps.reduce((sum, value) => sum + value, 0) / steps.length,
   );
   return Math.floor(step / SUBRANKS) * 10 + (step % SUBRANKS) + 1;
+};
+
+/** What the lobby knows about one player. */
+export interface LobbyEntry {
+  record: LobbyRecord | undefined;
+  /** Their record on the hero they are playing now. */
+  onHero: CareerRecord | undefined;
+  badge: number | undefined;
+  form: boolean[] | undefined;
+}
+
+export const lobbyEntryOf = (
+  lobby: LiveLobby,
+  { player, hero }: ResolvedPlayer,
+): LobbyEntry => {
+  const id = player.accountId;
+  if (id === null) {
+    return {
+      record: undefined,
+      onHero: undefined,
+      badge: undefined,
+      form: undefined,
+    };
+  }
+  const record = lobby.records.get(id);
+  return {
+    record,
+    onHero: hero ? record?.heroes.get(hero.id) : undefined,
+    badge: lobby.ranks.get(id),
+    form: lobby.form.get(id),
+  };
+};
+
+const mean = (values: number[]) =>
+  values.length === 0
+    ? null
+    : values.reduce((sum, value) => sum + value, 0) / values.length;
+
+/** One team's numbers for the scouting report's side-by-side. */
+export interface TeamScouting {
+  rank: number | null;
+  /** Average games each player has on the hero they locked. */
+  onHero: number | null;
+  /** Pooled win rate on the heroes they locked. */
+  winrate: number | null;
+  matches: number;
+}
+
+export const teamScouting = (
+  lobby: LiveLobby,
+  team: ResolvedPlayer[],
+): TeamScouting => {
+  const entries = team.map((player) => lobbyEntryOf(lobby, player));
+  const onHero = entries.flatMap((entry) => entry.onHero ?? []);
+  const pooled = poolRecords(onHero);
+  return {
+    rank: averageBadge(entries.flatMap((entry) => entry.badge ?? [])),
+    onHero: mean(onHero.map((record) => record.matches)),
+    winrate: pooled.matches > 0 ? winrateOf(pooled) : null,
+    matches: entries.reduce(
+      (sum, entry) => sum + (entry.record?.overall.matches ?? 0),
+      0,
+    ),
+  };
+};
+
+/** A note next to a player's name in the scouting report. */
+export type ScoutingTag =
+  | { kind: "beatYou"; lost: number; count: number }
+  | { kind: "againstYou"; count: number }
+  | { kind: "withYou"; count: number }
+  | { kind: "noRecord" }
+  | { kind: "firstGame" }
+  | { kind: "oneTrick" }
+  | { kind: "streak"; won: boolean; length: number };
+
+export const scoutingTags = (
+  lobby: LiveLobby,
+  resolved: ResolvedPlayer,
+  isEnemy: boolean,
+): ScoutingTag[] => {
+  const { player, hero } = resolved;
+  const { record, onHero, form } = lobbyEntryOf(lobby, resolved);
+  const tags: ScoutingTag[] = [];
+  const met =
+    player.accountId === null || player.isLocal
+      ? undefined
+      : (isEnemy ? lobby.enemies : lobby.mates).get(player.accountId);
+  if (met && isEnemy) {
+    const lost = met.matches - met.wins;
+    tags.push(
+      lost > met.wins
+        ? { kind: "beatYou", lost, count: met.matches }
+        : { kind: "againstYou", count: met.matches },
+    );
+  } else if (met) {
+    tags.push({ kind: "withYou", count: met.matches });
+  }
+  if (!record) {
+    if (!player.isLocal) tags.push({ kind: "noRecord" });
+    return tags;
+  }
+  if (hero && !onHero) {
+    tags.push({ kind: "firstGame" });
+  } else if (hero && isOneTrick(record, hero.id)) {
+    tags.push({ kind: "oneTrick" });
+  }
+  const streak = streakOf(form ?? []);
+  if (streak) tags.push({ kind: "streak", ...streak });
+  return tags;
+};
+
+export type MatchupTone = "good" | "even" | "bad" | "unknown";
+
+export interface Matchup<Hero extends { id: number }> {
+  hero: Hero;
+  record: WinRecord;
+  /** `null` until there are enough games to say anything. */
+  winrate: number | null;
+  tone: MatchupTone;
+  note: "hardest" | "best" | null;
+}
+
+export interface MatchupReport<Hero extends { id: number }> {
+  matchups: Matchup<Hero>[];
+  /** All the matchups' games together. */
+  pooled: WinRecord;
+}
+
+/** Your record on your hero against each enemy hero, and across all of them. */
+export const matchupReport = <Hero extends { id: number }>(
+  records: Map<number, WinRecord>,
+  enemyHeroes: Hero[],
+): MatchupReport<Hero> => {
+  const rows = enemyHeroes.map((hero) => {
+    const record = records.get(hero.id) ?? { matches: 0, wins: 0 };
+    return {
+      hero,
+      record,
+      winrate: record.matches >= MIN_MATCHUP_GAMES ? winrateOf(record) : null,
+    };
+  });
+  const hardest = rows
+    .filter((row) => row.winrate !== null)
+    .sort((a, b) => (a.winrate ?? 0) - (b.winrate ?? 0))[0];
+  const toneOf = (winrate: number | null): MatchupTone =>
+    winrate === null
+      ? "unknown"
+      : winrate >= WINNING_MATCHUP
+        ? "good"
+        : winrate < HARD_MATCHUP
+          ? "bad"
+          : "even";
+  const matchups = rows.map(
+    ({ hero, record, winrate }): Matchup<Hero> => ({
+      hero,
+      record,
+      winrate,
+      tone: toneOf(winrate),
+      note:
+        winrate === null
+          ? null
+          : hero.id === hardest?.hero.id && winrate < HARD_MATCHUP
+            ? "hardest"
+            : winrate >= GOOD_MATCHUP
+              ? "best"
+              : null,
+    }),
+  );
+  return {
+    matchups,
+    pooled: poolRecords(rows.map((row) => row.record)),
+  };
 };

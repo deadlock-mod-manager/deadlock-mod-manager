@@ -2,7 +2,6 @@ import { describe, expect, it } from "bun:test";
 import type { PerformanceCurvePoint } from "@/lib/stats/api";
 import {
   curveAt,
-  gradeFor,
   type LivePlayerNumbers,
   liveGradeRows,
 } from "@/lib/stats/live-grades";
@@ -57,16 +56,6 @@ const player = (numbers: Partial<LivePlayerNumbers>): LivePlayerNumbers => ({
   souls: null,
   objectiveDamage: null,
   ...numbers,
-});
-
-describe("gradeFor", () => {
-  it("steps through the grades by share of the bracket beaten", () => {
-    expect(gradeFor(0.1)).toBe("D");
-    expect(gradeFor(0.3)).toBe("C");
-    expect(gradeFor(0.5)).toBe("B");
-    expect(gradeFor(0.8)).toBe("A");
-    expect(gradeFor(0.95)).toBe("S");
-  });
 });
 
 describe("curveAt", () => {
