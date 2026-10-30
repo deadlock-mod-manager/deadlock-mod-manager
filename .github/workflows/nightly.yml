@@ -307,8 +307,8 @@ jobs:
       sign_windows: false
       runner_linux: depot-ubuntu-24.04-8
       runner_windows: depot-windows-2025
+      environment: Nightly
     secrets:
-      TAURI_PRIVATE_KEY: ${{ secrets.TAURI_NIGHTLY_PRIVATE_KEY }}
       VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}
       SIGNPATH_API_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
       SIGNPATH_ORGANIZATION_ID: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
@@ -316,6 +316,7 @@ jobs:
   build-nightly:
     needs: [check-commits, prepare-matrix, create-nightly-release]
     if: needs.check-commits.outputs.should_build == 'true'
+    environment: Nightly
     permissions:
       contents: write
     strategy:
@@ -410,7 +411,7 @@ jobs:
         uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # v1.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_NIGHTLY_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           VITE_API_URL: https://api.deadlockmods.app
           VITE_WEB_URL: https://deadlockmods.app
           VITE_AUTH_URL: https://auth.deadlockmods.app
@@ -463,7 +464,7 @@ jobs:
         uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # v1.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_NIGHTLY_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           VITE_API_URL: https://api.deadlockmods.app
           VITE_WEB_URL: https://deadlockmods.app
           VITE_AUTH_URL: https://auth.deadlockmods.app

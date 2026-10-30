@@ -42,7 +42,7 @@ on:
         type: boolean
         default: true
       environment:
-        description: "GitHub environment that holds TAURI_PRIVATE_KEY (empty for none)"
+        description: "GitHub environment that holds TAURI_PRIVATE_KEY (Release or Nightly)"
         required: false
         type: string
         default: ""
