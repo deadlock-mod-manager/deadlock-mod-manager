@@ -40,6 +40,12 @@ describe("Mod page file list failure", () => {
         `${FILES_PANEL} [data-testid="mod-files-load-error"]`,
       );
       assert.equal(
+        await $(
+          `${FILES_PANEL} [data-testid="mod-files-load-error"] p`,
+        ).getText(),
+        "Couldn't load the file list from GameBanana.",
+      );
+      assert.equal(
         await $(FILES_PANEL).$('[title="base.zip"]').isExisting(),
         false,
       );
