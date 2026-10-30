@@ -3,7 +3,45 @@ use log;
 use std::collections::HashMap;
 use std::fs;
 use std::fs::File;
+use std::io::Read;
 use std::path::{Component, Path, PathBuf};
+
+/// How far an archive may expand. Archives come from remote sites, so a small
+/// one must not be able to fill the disk. Mod contents are mostly compressed
+/// already and barely shrink, while a zip bomb expands thousands of times.
+const MAX_EXPANSION_RATIO: u64 = 20;
+/// Small archives always get this much, so a tiny mod that compresses well
+/// never trips the ratio.
+const MIN_EXTRACTED_BYTES: u64 = 64 * 1024 * 1024;
+const MAX_EXTRACTED_BYTES: u64 = 4 * 1024 * 1024 * 1024;
+
+fn extraction_budget(archive_size: u64) -> u64 {
+  archive_size
+    .saturating_mul(MAX_EXPANSION_RATIO)
+    .clamp(MIN_EXTRACTED_BYTES, MAX_EXTRACTED_BYTES)
+}
+
+fn too_large() -> std::io::Error {
+  std::io::Error::other("Archive expands beyond the extraction size limit")
+}
+
+/// Counts bytes against the archive's budget as they are written, so the
+/// limit holds whatever sizes the archive's headers claim.
+struct Budgeted<'a, R> {
+  inner: R,
+  remaining: &'a mut u64,
+}
+
+impl<R: Read> Read for Budgeted<'_, R> {
+  fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+    let read = self.inner.read(buf)?;
+    *self.remaining = self
+      .remaining
+      .checked_sub(read as u64)
+      .ok_or_else(too_large)?;
+    Ok(read)
+  }
+}
 
 /// Handles extraction of different archive formats
 pub struct ArchiveExtractor;
@@ -21,10 +59,12 @@ impl ArchiveExtractor {
     // first entry is resolved.
     fs::create_dir_all(output_dir)?;
 
+    let budget = extraction_budget(fs::metadata(archive_path)?.len());
+
     match archive_path.extension().and_then(|e| e.to_str()) {
-      Some("zip") => self.extract_zip(archive_path, output_dir),
-      Some("rar") => self.extract_rar(archive_path, output_dir),
-      Some("7z") => self.extract_7z(archive_path, output_dir),
+      Some("zip") => self.extract_zip(archive_path, output_dir, budget),
+      Some("rar") => self.extract_rar(archive_path, output_dir, budget),
+      Some("7z") => self.extract_7z(archive_path, output_dir, budget),
       Some(ext) => Err(Error::ModExtractionFailed(format!(
         "Unsupported archive format: {ext}"
       ))),
@@ -76,7 +116,12 @@ impl ArchiveExtractor {
   }
 
   /// Extract ZIP archive
-  fn extract_zip(&self, archive_path: &Path, output_dir: &Path) -> Result<(), Error> {
+  fn extract_zip(
+    &self,
+    archive_path: &Path,
+    output_dir: &Path,
+    mut remaining: u64,
+  ) -> Result<(), Error> {
     let zip_file = File::open(archive_path)?;
     let mut archive = zip::ZipArchive::new(zip_file)?;
 
@@ -92,7 +137,11 @@ impl ArchiveExtractor {
 
       if !file.name().ends_with('/') {
         let mut outfile = fs::File::create(&outpath)?;
-        std::io::copy(&mut file, &mut outfile)?;
+        let mut budgeted = Budgeted {
+          inner: &mut file,
+          remaining: &mut remaining,
+        };
+        std::io::copy(&mut budgeted, &mut outfile)?;
       }
     }
 
@@ -101,12 +150,22 @@ impl ArchiveExtractor {
   }
 
   /// Extract RAR archive
-  fn extract_rar(&self, archive_path: &Path, output_dir: &Path) -> Result<(), Error> {
+  fn extract_rar(
+    &self,
+    archive_path: &Path,
+    output_dir: &Path,
+    mut remaining: u64,
+  ) -> Result<(), Error> {
     let mut archive =
       unrar::Archive::new(archive_path.to_string_lossy().as_ref()).open_for_processing()?;
 
     while let Some(header) = archive.read_header()? {
       archive = if header.entry().is_file() {
+        // unrar writes the file itself and stops at the unpacked size it
+        // declares, so the budget is charged from the header.
+        remaining = remaining
+          .checked_sub(header.entry().unpacked_size)
+          .ok_or_else(too_large)?;
         let destination =
           self.sanitize_path(&header.entry().filename.to_string_lossy(), output_dir)?;
 
@@ -125,7 +184,12 @@ impl ArchiveExtractor {
   }
 
   /// Extract 7Z archive
-  fn extract_7z(&self, archive_path: &Path, output_dir: &Path) -> Result<(), Error> {
+  fn extract_7z(
+    &self,
+    archive_path: &Path,
+    output_dir: &Path,
+    mut remaining: u64,
+  ) -> Result<(), Error> {
     let mut reader =
       sevenz_rust2::ArchiveReader::open(archive_path, sevenz_rust2::Password::empty())
         .map_err(|e| Error::ModExtractionFailed(e.to_string()))?;
@@ -152,7 +216,11 @@ impl ArchiveExtractor {
           sevenz_rust2::Error::Other("entry is missing from the archive header".into())
         })?;
 
-        sevenz_rust2::default_entry_extract_fn(entry, reader, destination)
+        let mut budgeted = Budgeted {
+          inner: reader,
+          remaining: &mut remaining,
+        };
+        sevenz_rust2::default_entry_extract_fn(entry, &mut budgeted, destination)
       })
       .map_err(|e| Error::ModExtractionFailed(e.to_string()))?;
 
@@ -256,7 +324,7 @@ impl Default for ArchiveExtractor {
 
 #[cfg(test)]
 mod tests {
-  use super::{ArchiveExtractor, relative_entry_path};
+  use super::{ArchiveExtractor, MIN_EXTRACTED_BYTES, relative_entry_path};
   use crate::errors::Error;
   use std::io::Write;
   use std::path::{Path, PathBuf};
@@ -365,6 +433,22 @@ mod tests {
     }
 
     writer.finish().unwrap();
+  }
+
+  /// A few hundred KB of zeros that expand past what the archive may unpack.
+  #[test]
+  fn stops_an_archive_that_expands_past_its_budget() {
+    let workspace = tempfile::tempdir().unwrap();
+    let archive_path = workspace.path().join("bomb.zip");
+    let output_dir = workspace.path().join("extracted");
+    let zeros = vec![0; MIN_EXTRACTED_BYTES as usize + 1];
+    write_zip(&archive_path, &[("bomb.vpk", &zeros)]);
+
+    let result = ArchiveExtractor::new().extract_archive(&archive_path, &output_dir);
+
+    assert!(result.is_err(), "expected the bomb to be refused");
+    let written = std::fs::metadata(output_dir.join("bomb.vpk")).map_or(0, |m| m.len());
+    assert!(written <= MIN_EXTRACTED_BYTES);
   }
 
   #[test]

@@ -16,6 +16,7 @@ pub async fn place_staged_file(
   let staged = staged_files::peek(&path)?;
   let mods_root = crate::mod_manager::mods_store::dir(&app_handle)?;
   let destination = contained_destination(&mods_root, &destination)?;
+  resolves_within(&mods_root, &destination)?;
 
   // Rename and copy both replace an existing file, such as another mod's metadata.
   if tokio::fs::try_exists(&destination).await? {
@@ -52,6 +53,24 @@ fn contained_destination(mods_root: &Path, destination: &str) -> Result<PathBuf,
   Ok(destination)
 }
 
+/// A symlink or junction inside the mods folder passes the lexical check while
+/// pointing elsewhere, so the deepest folder that exists is resolved as well.
+fn resolves_within(mods_root: &Path, destination: &Path) -> Result<(), Error> {
+  let unauthorized = || Error::UnauthorizedPath(destination.display().to_string());
+  let root = mods_root.canonicalize().map_err(|_| unauthorized())?;
+  let existing = destination
+    .ancestors()
+    .find(|ancestor| ancestor.exists())
+    .ok_or_else(unauthorized)?;
+  let resolved = existing.canonicalize().map_err(|_| unauthorized())?;
+
+  if resolved.starts_with(&root) {
+    Ok(())
+  } else {
+    Err(unauthorized())
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use super::contained_destination;
@@ -81,5 +100,23 @@ mod tests {
         "{outside} should be refused"
       );
     }
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn refuses_a_symlink_inside_the_mods_folder_that_points_out() {
+    use super::resolves_within;
+
+    let workspace = tempfile::tempdir().unwrap();
+    let mods_root = workspace.path().join("mods");
+    let outside = workspace.path().join("outside");
+    std::fs::create_dir_all(&mods_root).unwrap();
+    std::fs::create_dir_all(&outside).unwrap();
+    std::os::unix::fs::symlink(&outside, mods_root.join("local-1")).unwrap();
+
+    let through_link = mods_root.join("local-1/files/mod.vpk");
+    assert!(contained_destination(&mods_root, &through_link.to_string_lossy()).is_ok());
+    assert!(resolves_within(&mods_root, &through_link).is_err());
+    assert!(resolves_within(&mods_root, &mods_root.join("local-2/files/mod.vpk")).is_ok());
   }
 }
