@@ -15,14 +15,16 @@ const NonceSchema = z
 export type SteamAssertion = Record<string, string | undefined>;
 
 export type SteamAssertionCheck =
-  | { ok: true; steamId: string }
+  | { ok: true; steamId: string; nonce: string }
   | { ok: false; reason: string };
 
 /**
  * Checks that an OpenID positive assertion was issued by Steam, for this server, and is not
  * being replayed. Steam's `check_authentication` only proves the signature is genuine; it does
  * not prove the assertion was meant for our realm, so an attacker could obtain one for their
- * own site and relay it here. These checks run before that round trip.
+ * own site and relay it here. These checks run before that round trip. The caller records the
+ * returned nonce with `NonceStore.record` once Steam confirms the signature, so a transient
+ * Steam failure leaves the assertion retryable and unverified callbacks fill no memory.
  */
 export function checkSteamAssertion(
   params: SteamAssertion,
@@ -72,14 +74,40 @@ export function checkSteamAssertion(
   if (Number.isNaN(issuedAt) || Math.abs(now - issuedAt) > NONCE_MAX_AGE_MS) {
     return { ok: false, reason: "openid_nonce_expired" };
   }
-  if (!seenNonces.add(nonce.data, now, NONCE_MAX_AGE_MS)) {
+  if (seenNonces.has(nonce.data, now)) {
     return { ok: false, reason: "openid_nonce_replayed" };
   }
 
-  return { ok: true, steamId };
+  return { ok: true, steamId, nonce: nonce.data };
 }
 
-/** Same scheme, host, port and path. Query differs: Steam echoes ours, but we built the URL. */
+/**
+ * Steam signs `openid.return_to`, which carries our own query (`callbackURL`, `email`,
+ * `linkAccount`...). The request query is what the browser sent, which an attacker can edit.
+ * Every value we act on must be the signed one.
+ */
+export function signedQueryMatches(
+  signedReturnTo: string,
+  requestQuery: Record<string, string | undefined>,
+): boolean {
+  let signed: URLSearchParams;
+  try {
+    signed = new URL(signedReturnTo).searchParams;
+  } catch {
+    return false;
+  }
+  for (const [key, value] of Object.entries(requestQuery)) {
+    if (key.startsWith("openid.") || value === undefined) {
+      continue;
+    }
+    if (signed.get(key) !== value) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/** Same scheme, host, port and path. The query is compared separately by `signedQueryMatches`. */
 function sameEndpoint(actual: string, expected: string): boolean {
   try {
     const a = new URL(actual);
@@ -99,14 +127,13 @@ function sameEndpoint(actual: string, expected: string): boolean {
 export class NonceStore {
   private readonly expiresAt = new Map<string, number>();
 
-  /** Returns false if the nonce was already seen. */
-  add(nonce: string, now: number, ttlMs: number): boolean {
+  has(nonce: string, now: number): boolean {
     this.evict(now);
-    if (this.expiresAt.has(nonce)) {
-      return false;
-    }
-    this.expiresAt.set(nonce, now + ttlMs);
-    return true;
+    return this.expiresAt.has(nonce);
+  }
+
+  record(nonce: string, now = Date.now()): void {
+    this.expiresAt.set(nonce, now + NONCE_MAX_AGE_MS);
   }
 
   private evict(now: number): void {

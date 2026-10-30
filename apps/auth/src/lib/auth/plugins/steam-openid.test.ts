@@ -3,6 +3,7 @@ import {
   checkSteamAssertion,
   NonceStore,
   STEAM_OPENID_ENDPOINT,
+  signedQueryMatches,
 } from "./steam-openid";
 
 const RETURN_TO = "https://auth.deadlockmods.app/api/auth/steam/callback";
@@ -34,7 +35,11 @@ describe("checkSteamAssertion", () => {
       new NonceStore(),
       NOW,
     );
-    expect(result).toEqual({ ok: true, steamId: "76561198000000001" });
+    expect(result).toEqual({
+      ok: true,
+      steamId: "76561198000000001",
+      nonce: "2026-10-30T12:00:00Zabc123",
+    });
   });
 
   it("rejects an assertion issued for another site's return_to", () => {
@@ -122,14 +127,70 @@ describe("checkSteamAssertion", () => {
     expect(result).toEqual({ ok: false, reason: "openid_nonce_expired" });
   });
 
-  it("rejects a replayed nonce", () => {
+  it("rejects a nonce once it has been recorded", () => {
     const store = new NonceStore();
-    expect(checkSteamAssertion(assertion(), RETURN_TO, store, NOW).ok).toBe(
-      true,
-    );
+    const first = checkSteamAssertion(assertion(), RETURN_TO, store, NOW);
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+    store.record(first.nonce, NOW);
     expect(checkSteamAssertion(assertion(), RETURN_TO, store, NOW)).toEqual({
       ok: false,
       reason: "openid_nonce_replayed",
     });
+  });
+
+  it("leaves an unrecorded nonce retryable, so a transient Steam failure is not fatal", () => {
+    const store = new NonceStore();
+    expect(checkSteamAssertion(assertion(), RETURN_TO, store, NOW).ok).toBe(
+      true,
+    );
+    expect(checkSteamAssertion(assertion(), RETURN_TO, store, NOW).ok).toBe(
+      true,
+    );
+  });
+
+  it("accepts a return_to on our endpoint whose query differs", () => {
+    const result = checkSteamAssertion(
+      assertion({
+        "openid.return_to": `${RETURN_TO}?callbackURL=https%3A%2F%2Fdeadlockmods.app%2Fother`,
+      }),
+      RETURN_TO,
+      new NonceStore(),
+      NOW,
+    );
+    expect(result.ok).toBe(true);
+  });
+});
+
+describe("signedQueryMatches", () => {
+  const signed = `${RETURN_TO}?callbackURL=https%3A%2F%2Fdeadlockmods.app%2F&email=a%40b.c`;
+
+  it("accepts a request query equal to the signed one, ignoring openid.* fields", () => {
+    expect(
+      signedQueryMatches(signed, {
+        callbackURL: "https://deadlockmods.app/",
+        email: "a@b.c",
+        "openid.sig": "anything",
+      }),
+    ).toBe(true);
+  });
+
+  it("rejects a value the browser changed", () => {
+    expect(
+      signedQueryMatches(signed, {
+        callbackURL: "https://evil.example/",
+        email: "a@b.c",
+      }),
+    ).toBe(false);
+  });
+
+  it("rejects a parameter added after signing, such as linkAccount", () => {
+    expect(
+      signedQueryMatches(signed, {
+        callbackURL: "https://deadlockmods.app/",
+        email: "a@b.c",
+        linkAccount: "true",
+      }),
+    ).toBe(false);
   });
 });

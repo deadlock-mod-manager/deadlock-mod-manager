@@ -9,7 +9,11 @@ import {
 import { setSessionCookie } from "better-auth/cookies";
 import { z } from "zod";
 import { wildcardMatch } from "../utils";
-import { checkSteamAssertion, NonceStore } from "./steam-openid";
+import {
+  checkSteamAssertion,
+  NonceStore,
+  signedQueryMatches,
+} from "./steam-openid";
 
 const STEAM_BASE_URL = "https://api.steampowered.com/";
 
@@ -391,6 +395,15 @@ export const steam = (config: SteamAuthPluginOptions) =>
             });
             throw ctx.redirect(`${errorURL}?error=${assertion.reason}`);
           }
+          if (
+            !signedQueryMatches(params["openid.return_to"] ?? "", ctx.query)
+          ) {
+            ctx.context.logger.error(
+              "Steam callback query differs from signed return_to",
+              { return_to: params["openid.return_to"] },
+            );
+            throw ctx.redirect(`${errorURL}?error=openid_query_mismatch`);
+          }
 
           params["openid.mode"] = "check_authentication";
 
@@ -424,6 +437,7 @@ export const steam = (config: SteamAuthPluginOptions) =>
             );
           }
 
+          seenNonces.record(assertion.nonce);
           const steamId = assertion.steamId;
 
           const profileRes = await betterFetch<{
