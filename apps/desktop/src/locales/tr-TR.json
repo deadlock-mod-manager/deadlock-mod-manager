@@ -4455,7 +4455,7 @@
     },
     "enable": {
       "title": "Maç verisi paylaşımını etkinleştir",
-      "description": "Varsayılan olarak açıktır. Maç verilerinizin paylaşılmasını durdurmak için bunu kapatın."
+      "description": "Varsayılan olarak kapalıdır. Maç verilerinizi paylaşmak için bunu açın."
     },
     "consent": {
       "title": "Maç verisi paylaşımı etkinleştirilsin mi?",
@@ -4465,7 +4465,6 @@
     },
     "quota": {
       "remaining": "Önümüzdeki 24 saat içinde {{limit}} maç alma hakkınızın {{remaining}} tanesi kaldı.",
-      "accountRemaining": "{{name}}: bugün {{remaining}}/{{limit}} maç alma hakkı kaldı",
       "gcUnavailable": "Deadlock'e bağlanılamıyor, 24 saat sonra yeniden denenecek",
       "reachedToday": "Günlük sınıra ulaşıldı. Daha fazla maç almak için yarını bekleyin."
     },

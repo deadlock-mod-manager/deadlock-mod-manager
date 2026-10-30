@@ -16,6 +16,7 @@ export const SETTINGS_TAB_LABEL_KEYS = {
   backups: "settings.backups",
   logging: "settings.logging",
   experimental: "settings.experimental",
+  "match-data": "matchSync.title",
   privacy: "settings.privacy",
   about: "settings.information",
 } as const;
@@ -205,10 +206,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
         descriptionKey: "settings.updateChannelDescription",
       },
       { titleKey: "settings.developerMode" },
-      {
-        titleKey: "settings.ingestTool.title",
-        descriptionKey: "settings.ingestTool.description",
-      },
       {
         titleKey: "settings.forgeInstall",
         descriptionKey: "settings.forgeInstallDescription",
@@ -460,10 +457,27 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
     ],
   },
   {
-    id: "match-sync",
-    tab: "privacy",
+    tab: "match-data",
     titleKey: "matchSync.title",
-    descriptionKey: "matchSync.description",
+    descriptionKey: "matchSync.overview.description",
+  },
+  {
+    id: "ingest-tool",
+    tab: "match-data",
+    titleKey: "settings.ingestTool.sectionTitle",
+    descriptionKey: "settings.ingestTool.sectionDescription",
+    settings: [
+      {
+        titleKey: "settings.ingestTool.title",
+        descriptionKey: "settings.ingestTool.description",
+      },
+    ],
+  },
+  {
+    id: "match-sync",
+    tab: "match-data",
+    titleKey: "matchSync.account.title",
+    descriptionKey: "matchSync.account.description",
     settings: [
       {
         titleKey: "matchSync.enable.title",

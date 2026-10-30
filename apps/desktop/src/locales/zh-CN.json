@@ -4455,7 +4455,7 @@
     },
     "enable": {
       "title": "启用比赛数据分享",
-      "description": "默认开启。关闭后将停止共享你的比赛数据。"
+      "description": "默认关闭。开启后将共享你的比赛数据。"
     },
     "consent": {
       "title": "是否启用比赛数据分享？",
@@ -4465,7 +4465,6 @@
     },
     "quota": {
       "remaining": "未来24小时内，剩余 {{remaining}} 次比赛数据获取，共 {{limit}} 次。",
-      "accountRemaining": "{{name}}: 今天剩余 {{remaining}} 次比赛数据获取，共 {{limit}} 次",
       "gcUnavailable": "无法连接至 Deadlock 服务器，将在24小时后重试",
       "reachedToday": "已达到每日获取上限。请明天再来吧。"
     },

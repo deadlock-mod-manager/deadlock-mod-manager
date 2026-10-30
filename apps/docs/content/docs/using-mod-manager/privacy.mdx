@@ -105,13 +105,13 @@ None of this can be turned off, since browsing and installing depend on it.
 
 - **Hero, item, and rank data.** Loaded by Stats, Foundry, and hero pickers. Nothing about you is sent.
 - **Stats.** Sends the Steam account IDs of the players you look up, including your own, and follows your live matches in the background. Turn off under **Settings → Experimental → Player Stats** (on by default).
-- **Matchdata Ingest Tool.** Reads Deadlock replay links from Steam's download cache on your PC and sends each match's ID, server cluster, and salt, with a fixed name such as "Mod Manager (Cache)". No account ID is sent. Turn off under **Settings → Application → Matchdata Ingest Tool** (on by default).
+- **Steam cache sharing.** Reads Deadlock replay links from Steam's download cache on your PC and sends each match's ID, server cluster, and salt, with a fixed name such as "Mod Manager (Cache)". No account ID is sent. Turn off under **Settings → Match Data Sharing → Share matches from Steam's cache** (on by default).
 - **Match Data Sharing.** See [Steam](#steam). Sends your Steam account ID with the match IDs and salts it finds, up to 40 matches a day.
 
 ### Steam
 
 - The patch-notes widget loads Deadlock news from Steam, with images from Steam's CDN.
-- **Match Data Sharing** signs in to Steam using the login already saved on your PC and asks Valve's game coordinator for your match history. The login token stays in memory and is never sent anywhere else. Off by default; enable it under **Settings → Privacy → Match Data Sharing** after reviewing the consent prompt.
+- **Match Data Sharing** signs in to Steam using the login already saved on your PC and asks Valve's game coordinator for your match history. The login token stays in memory and is never sent anywhere else. Off by default; enable it under **Settings → Match Data Sharing → From your Steam account** after reviewing the consent prompt.
 
 The app reads your Steam account from local files and sends nothing to Steam to find it.
 
@@ -150,15 +150,15 @@ The **Servers** page sends a ping to each listed server to measure latency, so t
 
 ## Turning things off
 
-| Setting                             | Location                | Default |
-| ----------------------------------- | ----------------------- | ------- |
-| Usage Analytics                     | Settings → Privacy      | Off     |
-| Match Data Sharing                  | Settings → Privacy      | Off     |
-| Matchdata Ingest Tool               | Settings → Application  | On      |
-| Discord Game Presence               | Settings → Discord      | On      |
-| Player Stats                        | Settings → Experimental | On      |
-| 1-click installs from DeadlockForge | Settings → Application  | Off     |
-| Automatic Updates                   | Settings → Application  | On      |
+| Setting                             | Location                      | Default |
+| ----------------------------------- | ----------------------------- | ------- |
+| Usage Analytics                     | Settings → Privacy            | Off     |
+| Match Data Sharing (Steam account)  | Settings → Match Data Sharing | Off     |
+| Match Data Sharing (Steam cache)    | Settings → Match Data Sharing | On      |
+| Discord Game Presence               | Settings → Discord            | On      |
+| Player Stats                        | Settings → Experimental       | On      |
+| 1-click installs from DeadlockForge | Settings → Application        | Off     |
+| Automatic Updates                   | Settings → Application        | On      |
 
 ## Known gaps
 
