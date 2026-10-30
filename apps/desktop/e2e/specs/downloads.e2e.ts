@@ -12,6 +12,8 @@ import {
   DOWNLOAD_FILE,
   DOWNLOAD_MOD,
   DOWNLOAD_NAME,
+  QUEUED_FILE,
+  QUEUED_NAME,
 } from "../support/download-fixtures";
 import {
   assertDownloadDisk,
@@ -19,7 +21,8 @@ import {
   readDownloadState,
 } from "../support/download-oracle";
 
-const card = () => $(`[role="button"][aria-label="Open ${DOWNLOAD_NAME}"]`);
+const card = (name = DOWNLOAD_NAME) =>
+  $(`[role="button"][aria-label="Open ${name}"]`);
 const waitStatus = async (world: string, status: string): Promise<void> => {
   await observeUntil(
     `Download did not reach ${status}`,
@@ -28,8 +31,8 @@ const waitStatus = async (world: string, status: string): Promise<void> => {
     20_000,
   );
 };
-const retry = async (): Promise<void> => {
-  const button = await card().$("button=Retry");
+const retry = async (name?: string): Promise<void> => {
+  const button = await card(name).$("button=Retry");
   await button.waitForClickable();
   await button.click();
 };
@@ -70,13 +73,37 @@ const pause = async (world: string): Promise<void> => {
   await expect(card().$("button=Resume")).toBeDisplayed();
   await assertDownloadDisk(world, "paused", "paused");
 };
-const downloadRequests = async (world: string) => {
+const downloadRequests = async (world: string, file = DOWNLOAD_FILE) => {
   const { configuration } = await assertOwnedWorld(world);
   const origin = configuration.endpoints[0].origin;
   return z
     .object({ requests: z.array(z.object({ url: z.string() })) })
     .parse(await (await fetch(`${origin}/__control/requests`)).json())
-    .requests.filter(({ url }) => url === `/downloads/${DOWNLOAD_FILE}`);
+    .requests.filter(({ url }) => url === `/downloads/${file}`);
+};
+const cancelQueued = async (world: string): Promise<void> => {
+  // The downloader handles one mod at a time, so the second waits in its queue.
+  await step("queue a second download behind the first", async () => {
+    await observeUntil(
+      "Download request did not reach the server",
+      () => downloadRequests(world),
+      (requests) => requests.length === 1,
+    );
+    await retry(QUEUED_NAME);
+  });
+  await step("cancel the queued download", async () => {
+    const button = await card(QUEUED_NAME).$("button=Cancel");
+    await button.waitForClickable();
+    await button.click();
+    await expect(card(QUEUED_NAME).$("button=Retry")).toBeDisplayed();
+    await browser.saveScreenshot(
+      path.join(world, "artifacts", "cancelled-queued-download.png"),
+    );
+  });
+  await step("the first download finishes alone", async () => {
+    await waitStatus(world, "downloaded");
+    expect(await downloadRequests(world, QUEUED_FILE)).toEqual([]);
+  });
 };
 const cancelWhileConnecting = async (world: string): Promise<void> => {
   await step("cancel while the server withholds headers", async () => {
@@ -168,6 +195,8 @@ describe("real Rust downloads", () => {
         }
       } else if (scenario === "downloads-cancel-connecting") {
         await cancelWhileConnecting(world);
+      } else if (scenario === "downloads-cancel-queued") {
+        await cancelQueued(world);
       } else if (
         [
           "downloads-auth",

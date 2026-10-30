@@ -6,6 +6,7 @@ import { z } from "zod";
 import {
   DOWNLOAD_FILE,
   DOWNLOAD_MOD,
+  QUEUED_MOD,
   downloadPayload,
 } from "./download-fixtures";
 import { assertOwnedWorld, collectFileInventory } from "./world";
@@ -39,11 +40,22 @@ export const assertDownloadDisk = async (
   retainedPartial = false,
 ): Promise<void> => {
   const {
-    configuration: { roots },
+    configuration: { roots, caseId },
   } = await assertOwnedWorld(world);
   const mods = await readDownloadState(world);
-  assert.equal(mods.length, 1);
-  assert.equal(mods[0].remoteId, DOWNLOAD_MOD);
+  const queued = caseId === "downloads-cancel-queued";
+  assert.deepEqual(
+    mods.map(({ remoteId }) => remoteId),
+    queued ? [DOWNLOAD_MOD, QUEUED_MOD] : [DOWNLOAD_MOD],
+  );
+  if (queued) {
+    // Cancelled while it waited for the first download, so it never started.
+    assert.equal(mods[1].status, "failedToDownload");
+    assert.deepEqual(
+      await collectFileInventory(path.join(roots.appData, "mods", QUEUED_MOD)),
+      {},
+    );
+  }
   assert.equal(mods[0].status, status);
   assert.deepEqual(mods[0].selectedDownloads, [{ name: DOWNLOAD_FILE }]);
   assert.deepEqual(mods[0].installedVpks ?? [], []);

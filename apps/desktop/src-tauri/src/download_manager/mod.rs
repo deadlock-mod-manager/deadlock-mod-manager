@@ -1567,14 +1567,23 @@ impl DownloadManager {
   pub async fn cancel_download(&self, mod_id: &str) -> Result<(), Error> {
     log::info!("Cancelling download for mod: {mod_id}");
 
+    // The queue goes first: the worker moves a download to active while holding
+    // the queue lock, so it can't slip past both checks.
+    let dropped = Self::cancel_queued(&mut *self.queue.lock().await, mod_id);
     let mut active = self.active_downloads.lock().await;
-    if Self::cancel_active(&mut active, mod_id) {
+    if Self::cancel_active(&mut active, mod_id) || dropped {
       Ok(())
     } else {
       Err(Error::InvalidInput(format!(
         "No active download found for mod: {mod_id}"
       )))
     }
+  }
+
+  fn cancel_queued(queue: &mut VecDeque<QueuedDownload>, mod_id: &str) -> bool {
+    let before = queue.len();
+    queue.retain(|queued| queued.task.mod_id != mod_id);
+    before != queue.len()
   }
 
   fn cancel_active(active: &mut HashMap<String, ActiveDownload>, mod_id: &str) -> bool {
@@ -1730,6 +1739,42 @@ mod tests {
       DownloadManager::archive_label(&[PathBuf::from("mod.vpk")]),
       None
     );
+  }
+
+  fn queued(mod_id: &str) -> QueuedDownload {
+    QueuedDownload {
+      operation_id: 0,
+      task: DownloadTask {
+        mod_id: mod_id.to_string(),
+        files: Vec::new(),
+        target_dir: PathBuf::new(),
+        profile_folder: None,
+        is_profile_import: false,
+        file_tree: None,
+      },
+      purpose: DownloadPurpose::Install,
+      completion: None,
+    }
+  }
+
+  #[test]
+  fn cancelling_a_queued_download_drops_only_that_mod() {
+    let (completion, mut waiter) = oneshot::channel();
+    let second = QueuedDownload {
+      completion: Some(completion),
+      ..queued("second")
+    };
+    let mut queue = VecDeque::from([queued("first"), second]);
+
+    assert!(DownloadManager::cancel_queued(&mut queue, "second"));
+    let remaining: Vec<&str> = queue.iter().map(|q| q.task.mod_id.as_str()).collect();
+    assert_eq!(remaining, ["first"]);
+    // `queue_download_and_wait` reports a dropped sender as cancelled.
+    assert!(matches!(
+      waiter.try_recv(),
+      Err(oneshot::error::TryRecvError::Closed)
+    ));
+    assert!(!DownloadManager::cancel_queued(&mut queue, "second"));
   }
 
   #[test]

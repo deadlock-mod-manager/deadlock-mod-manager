@@ -172,6 +172,7 @@ M4 uses real Rust HTTP transfers against binary fixture responses. Run any case 
 | `downloads-range` | A connection cut after 65,536 bytes triggers an exact Range request and byte-correct completion |
 | `downloads-cancel` | Cancel a paused transfer through the existing Rust command, verify partial cleanup, restart, and retry through the UI |
 | `downloads-cancel-connecting` | Cancel through the UI while the server withholds response headers; the UI retry must reach the server within 10 seconds and complete |
+| `downloads-cancel-queued` | Cancel through the UI a second mod still queued behind a slow download; it settles as failed, never reaches the server, and the first download completes |
 | `downloads-restart` | Restart while paused, verify stale status becomes failed while partial evidence remains, then retry from scratch |
 | `downloads-auth` | A 401 response fails visibly; UI retry completes after the fixture permits it |
 | `downloads-corrupt` | A same-length corrupt payload fails MD5 validation without publishing a file; UI retry succeeds |
