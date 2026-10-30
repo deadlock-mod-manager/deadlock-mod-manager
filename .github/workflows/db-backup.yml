@@ -77,22 +77,24 @@ jobs:
           echo "namespace=${NAMESPACE}" >> $GITHUB_OUTPUT
           echo "Found PostgreSQL service: ${SERVICE_NAME} in namespace ${NAMESPACE}"
 
-      - name: Parse DATABASE_URL
+      - name: Read database credentials
         id: parse-db-url
         env:
-          DB_URL: ${{ secrets.DATABASE_URL }}
+          KUBECONFIG: kubeconfig.yaml
         run: |
-          if [[ -z "$DB_URL" ]]; then
-            echo "::error::DATABASE_URL secret is not set"
+          # CloudNativePG keeps the app user's current credentials in this
+          # secret, so a rotated password can't leave a stale copy behind.
+          NAMESPACE="${{ steps.discover-postgres.outputs.namespace }}"
+          read_secret() {
+            kubectl get secret deadlock-mod-manager-app -n "$NAMESPACE" -o "jsonpath={.data.$1}" | base64 -d
+          }
+
+          DB_USER=$(read_secret user)
+          DB_NAME=$(read_secret dbname)
+          if [[ -z "$DB_USER" || -z "$DB_NAME" ]]; then
+            echo "::error::Could not read deadlock-mod-manager-app credentials"
             exit 1
           fi
-
-          DB_URL_NO_PROTOCOL="${DB_URL#postgresql://}"
-          CREDENTIALS="${DB_URL_NO_PROTOCOL%%@*}"
-          HOST_PORT_DB="${DB_URL_NO_PROTOCOL#*@}"
-
-          DB_USER="${CREDENTIALS%%:*}"
-          DB_NAME="${HOST_PORT_DB##*/}"
 
           LOCAL_PORT=$((RANDOM % 10000 + 20000))
 
@@ -142,15 +144,13 @@ jobs:
         id: create-backup
         env:
           KUBECONFIG: kubeconfig.yaml
-          DB_URL: ${{ secrets.DATABASE_URL }}
         run: |
           BACKUP_FILE="${{ steps.backup-filename.outputs.filename }}"
           LOCAL_PORT="${{ steps.parse-db-url.outputs.local_port }}"
 
-          # Parse password from DATABASE_URL in this step (not stored in outputs)
-          DB_URL_NO_PROTOCOL="${DB_URL#postgresql://}"
-          CREDENTIALS="${DB_URL_NO_PROTOCOL%%@*}"
-          DB_PASS="${CREDENTIALS#*:}"
+          # Read the password in this step so it never lands in step outputs
+          DB_PASS=$(kubectl get secret deadlock-mod-manager-app -n "${{ steps.discover-postgres.outputs.namespace }}" -o "jsonpath={.data.password}" | base64 -d)
+          echo "::add-mask::${DB_PASS}"
 
           docker run --rm \
             --network host \
