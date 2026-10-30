@@ -424,10 +424,7 @@ export const steam = (config: SteamAuthPluginOptions) =>
             );
           }
 
-          const steamId = params["openid.claimed_id"]?.split("/").pop();
-          if (!steamId) {
-            throw ctx.redirect(`${errorURL}?error=steamid_missing`);
-          }
+          const steamId = assertion.steamId;
 
           const profileRes = await betterFetch<{
             response: { players: SteamProfile[] };
