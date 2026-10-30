@@ -3580,7 +3580,6 @@
     "retry": "Retry",
     "downloadComplete": "{{name}} downloaded!",
     "downloadError": "Failed to download {{name}}: {{message}}",
-    "queueError": "Failed to queue download: {{message}}",
     "pauseError": "Could not pause download: {{message}}",
     "cancelError": "Could not cancel download: {{message}}",
     "resumeError": "Could not resume download: {{message}}",
