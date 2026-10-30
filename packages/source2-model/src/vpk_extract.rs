@@ -343,6 +343,9 @@ fn sanitize_relative(entry_path: &str) -> Option<PathBuf> {
     let mut out = PathBuf::new();
     for component in Path::new(&normalized).components() {
         match component {
+            Component::Normal(part) if starts_with_drive_letter(&part.to_string_lossy()) => {
+                return None;
+            }
             Component::Normal(part) => out.push(part),
             Component::CurDir => {}
             Component::ParentDir | Component::RootDir | Component::Prefix(_) => {
@@ -357,6 +360,13 @@ fn sanitize_relative(entry_path: &str) -> Option<PathBuf> {
     }
 }
 
+/// Whether `component` starts with a Windows drive specifier such as `C:`. `C:` only parses
+/// as a prefix in leading position, and pushing it would discard everything already in the
+/// buffer, so a drive letter must be rejected wherever it appears.
+fn starts_with_drive_letter(component: &str) -> bool {
+    let bytes = component.as_bytes();
+    bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':'
+}
 /// Read the raw bytes of a single entry inside a VPK, resolving inline data and
 /// companion `_NNN.vpk` archives. Mirrors the game's VPK v2 layout.
 pub fn extract_entry(vpk_path: &Path, entry_path: &str) -> Result<Vec<u8>> {
@@ -414,6 +424,18 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("s2m-{label}-{unique}"));
         fs::create_dir_all(&dir).expect("create scratch dir");
         dir
+    }
+
+    #[test]
+    fn sanitize_relative_rejects_drive_letters_anywhere() {
+        assert_eq!(sanitize_relative("C:/evil.dll"), None);
+        assert_eq!(sanitize_relative("x/C:/evil.dll"), None);
+        assert_eq!(sanitize_relative("x\\D:\\evil.dll"), None);
+        assert_eq!(sanitize_relative("../evil.dll"), None);
+        assert_eq!(
+            sanitize_relative("models/hero.vmdl_c"),
+            Some(PathBuf::from("models").join("hero.vmdl_c"))
+        );
     }
 
     #[test]
