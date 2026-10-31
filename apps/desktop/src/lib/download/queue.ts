@@ -81,9 +81,9 @@ export class DownloadQueue {
   }
 
   /**
-   * Resolves false when no queue entry tracked the mod. With `notify` off none
-   * of the mod's callbacks run until the backend answers, for a mod that is
-   * being deleted.
+   * Resolves false when no queue entry tracked the mod. With `notify` off the
+   * mod's completion and failure callbacks don't run while the backend
+   * answers, for a mod that is being deleted.
    */
   async cancel(modId: string, notify = true) {
     const entry = this.pending.get(modId);
