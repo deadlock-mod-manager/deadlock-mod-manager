@@ -98,7 +98,6 @@ const Downloads = () => {
     (d) => d.status === ModStatus.Paused,
   ).length;
 
-  // Waiting and paused downloads are counted apart, as in the bottom bar.
   const waiting =
     waitingCount > 0 ? `, ${waitingCount} ${t("common.waiting")}` : "";
   const paused =

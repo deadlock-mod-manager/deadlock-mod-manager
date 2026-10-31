@@ -14,7 +14,7 @@ import type {
   Progress,
 } from "@/types/mods";
 import { createLogger } from "../logger";
-import { isDownloadInProgress, isDownloadWaiting } from "./status";
+import { isDownloadInProgress } from "./status";
 import { usePersistedStore } from "../store";
 import { ModStatus } from "@/types/mods";
 import type { ConfigFoundEvent } from "@/types/generated/ConfigFoundEvent";
@@ -399,7 +399,9 @@ class DownloadManager {
    * changes it also writes to the store, and that write runs the selector again.
    */
   isWaiting({ remoteId, status }: Pick<LocalMod, "remoteId" | "status">) {
-    return isDownloadWaiting(status, this.downloads.isStarted(remoteId));
+    return (
+      status === ModStatus.Downloading && !this.downloads.isStarted(remoteId)
+    );
   }
 
   addToQueue(mod: DownloadableMod) {

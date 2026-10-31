@@ -4,7 +4,6 @@ import {
   isDownloadComplete,
   isDownloadFailed,
   isDownloadInProgress,
-  isDownloadWaiting,
 } from "./status";
 
 describe("download history status", () => {
@@ -32,19 +31,6 @@ describe("download history status", () => {
     (status) => {
       expect(isDownloadInProgress(status)).toBe(true);
       expect(isDownloadComplete(status)).toBe(false);
-    },
-  );
-});
-
-describe("waiting downloads", () => {
-  it("treats a Downloading mod the backend hasn't started as waiting", () => {
-    expect(isDownloadWaiting(ModStatus.Downloading, false)).toBe(true);
-    expect(isDownloadWaiting(ModStatus.Downloading, true)).toBe(false);
-  });
-  it.each([ModStatus.Extracting, ModStatus.Paused, ModStatus.Downloaded])(
-    "never treats %s as waiting",
-    (status) => {
-      expect(isDownloadWaiting(status, false)).toBe(false);
     },
   );
 });

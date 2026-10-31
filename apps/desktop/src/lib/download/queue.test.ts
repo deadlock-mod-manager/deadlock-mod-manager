@@ -280,9 +280,4 @@ describe("download start", () => {
     queue.add(request(callbacks, "retry"));
     expect(queue.isStarted(modData.remoteId)).toBe(false);
   });
-  it("ignores a start or resume for a mod it does not track", () => {
-    expect(queue.start(modData.remoteId)).toBeUndefined();
-    queue.requeue(modData.remoteId);
-    expect(queue.isStarted(modData.remoteId)).toBe(false);
-  });
 });

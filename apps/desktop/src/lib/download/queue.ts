@@ -39,7 +39,6 @@ export class DownloadQueue {
   getMod(modId: string) {
     return this.pending.get(modId)?.mod;
   }
-  /** Records that the backend is running the download and returns its mod. */
   start(modId: string) {
     const entry = this.pending.get(modId);
     if (entry) entry.started = true;
