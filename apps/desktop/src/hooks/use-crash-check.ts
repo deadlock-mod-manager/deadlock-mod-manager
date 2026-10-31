@@ -1,3 +1,4 @@
+import { setRecentCrashReport } from "@/lib/launch-health/crash-suspect";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
@@ -26,6 +27,7 @@ import type {
   SessionStartedEvent,
 } from "@/lib/launch-health/types";
 import logger from "@/lib/logger";
+import { ADDONS_CHANGED_EVENT } from "@/lib/mods/missing-vpks";
 import { STALE_TIME_POLL } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 import { isGameRunning } from "@/lib/tauri-commands";
@@ -90,6 +92,7 @@ export const useCrashCheck = () => {
   const promptRef = useRef<CrashCheckPrompt | null>(null);
 
   const show = useCallback((next: CrashCheckPrompt) => {
+    setRecentCrashReport(next.report.crashSuspect ? next.report : null);
     promptRef.current = next;
     setPrompt(next);
     setPresented(false);
@@ -142,7 +145,10 @@ export const useCrashCheck = () => {
         state.lastNormalFingerprint,
         new Set(state.acknowledgedSessionIds),
       );
-      if (plan.newBaseline) state.setLastNormalFingerprint(plan.newBaseline);
+      if (plan.newBaseline) {
+        state.setLastNormalFingerprint(plan.newBaseline);
+        setRecentCrashReport(null);
+      }
       for (const { sessionId, outcome } of plan.acknowledgements) {
         acknowledge(sessionId, outcome);
       }
@@ -157,6 +163,7 @@ export const useCrashCheck = () => {
   );
 
   useEffect(() => {
+    if (!active) setRecentCrashReport(null);
     void setSessionTrackingEnabled(active).catch((error) => {
       logger.withError(error).warn("Failed to sync the crash check setting");
     });
@@ -175,12 +182,14 @@ export const useCrashCheck = () => {
     // Pending reports are read only once the listeners are live, so a session
     // that ends in between isn't missed until the next start.
     void Promise.all([
+      listen(ADDONS_CHANGED_EVENT, () => setRecentCrashReport(null)).then(keep),
       listen<SessionReport>(SESSION_ENDED_EVENT, (event) =>
         handleReports([event.payload]),
       ).then(keep),
-      listen<SessionStartedEvent>(SESSION_STARTED_EVENT, (event) =>
-        attachClientFingerprint(event.payload.sessionId),
-      ).then(keep),
+      listen<SessionStartedEvent>(SESSION_STARTED_EVENT, (event) => {
+        setRecentCrashReport(null);
+        attachClientFingerprint(event.payload.sessionId);
+      }).then(keep),
     ])
       .then(() => (disposed ? [] : getPendingSessionReports()))
       .then((reports) => {

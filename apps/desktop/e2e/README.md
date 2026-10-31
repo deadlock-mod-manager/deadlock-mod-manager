@@ -434,3 +434,7 @@ The surrounding `library-selection`, `conflicts-resolve`, and `bisect-conflicts`
 ## Mod requirements
 
 `gamebanana-requirements` run in the existing `gamebanana` suite. Requirements move from missing to downloaded-but-disabled to satisfied. Cancelling the warning preserves addon files; enabling prerequisites and disabling incompatible mods clears it. Load-order changes are verified against the manifest. Each case restarts in a fresh process and checks exact VPK bytes, manifest and persisted state, and the absence of leftover partial files.
+
+## Crash attribution
+
+`gamebanana-crash-cause` run in the existing `gamebanana` suite. Generic and resource-specific reports pass through the real `game-session-ended` event. Only the resource-specific report shows a cause and library badge. This covers presentation; Rust integration tests cover attribution because the harness records launches instead of starting Deadlock. Each case restarts in a fresh process and checks exact VPK bytes, manifest and persisted state, and the absence of leftover partial files.

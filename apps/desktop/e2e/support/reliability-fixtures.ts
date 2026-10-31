@@ -91,7 +91,7 @@ const crashFingerprint = (autoexecHash: string): SessionFingerprint => ({
       {
         remoteId: PRIMARY.id,
         name: PRIMARY.name,
-        downloadedAt: null,
+        downloadedAt: new Date(OLD_DATE * 1000).toISOString(),
         variant: null,
         enabledAt: null,
       },
