@@ -136,28 +136,41 @@ async fn resolve_gamebanana_file(
     ));
   };
   validate_download_file_name(&file.name)?;
-  let mut download_url = file.download_url;
+  let mut urls = Vec::new();
   if fileserver_preference == FileserverPreference::Auto {
     match backend.fileservers(false).await {
       Ok(servers) => {
-        if let Some(mirror_url) = find_fileserver_with_file(
+        urls = find_fileservers_with_file(
           &servers,
           submission.submission_type.gamebanana_path(),
           &file.name,
         )
-        .await
-        {
-          download_url = mirror_url;
-        }
+        .await;
       }
       Err(error) => {
         log::warn!("GameBanana fileserver directory unavailable; using canonical URL: {error}");
       }
     }
   }
-  crate::download_manager::downloader::validate_download_url(&download_url)?;
+  let canonical_origin = crate::runtime_environment::current()
+    .e2e()
+    .map(|configuration| configuration.endpoint(crate::runtime_environment::ServiceName::Downloads))
+    .unwrap_or("https://gamebanana.com");
+  for url in [
+    file.download_url,
+    format!("{canonical_origin}/dl/{file_id}"),
+  ] {
+    if !url.is_empty() && !urls.contains(&url) {
+      urls.push(url);
+    }
+  }
+  for url in &urls {
+    crate::download_manager::downloader::validate_download_url(url)?;
+  }
+  let download_url = urls.remove(0);
   Ok(DownloadFileDto {
     url: download_url,
+    fallback_urls: urls,
     name: file.name,
     size: file.size,
     md5_checksum: file.md5,
@@ -166,14 +179,12 @@ async fn resolve_gamebanana_file(
 
 const MAX_FILESERVER_PROBES: usize = 3;
 
-/// Picks the busiest online file cache that actually serves `file_name`.
-/// Caches do not mirror every file, so each candidate is checked with a HEAD
-/// request; `None` means the canonical GameBanana URL should be used.
-async fn find_fileserver_with_file(
+/// Orders online caches by activity and keeps those serving this file.
+async fn find_fileservers_with_file(
   servers: &[super::gamebanana_catalog::GameBananaFileserverDto],
   category: &str,
   file_name: &str,
-) -> Option<String> {
+) -> Vec<String> {
   let mut candidates: Vec<_> = servers
     .iter()
     .filter(|server| server.state == "up")
@@ -196,7 +207,7 @@ async fn find_fileserver_with_file(
     Ok(client) => client,
     Err(error) => {
       log::warn!("Could not build fileserver probe client; using canonical URL: {error}");
-      return None;
+      return Vec::new();
     }
   };
 
@@ -211,6 +222,9 @@ async fn find_fileserver_with_file(
           server.domain,
           urlencoding::encode(file_name)
         );
+        if crate::download_manager::downloader::validate_download_url(&url).is_err() {
+          return None;
+        }
         match client.head(&url).send().await {
           Ok(response) if response.status().is_success() => Some(url),
           Ok(response) => {
@@ -233,8 +247,8 @@ async fn find_fileserver_with_file(
     .await
     .into_iter()
     .flatten()
-    .next();
-  if found.is_none() {
+    .collect::<Vec<_>>();
+  if found.is_empty() {
     log::info!("No fileserver serves {file_name}; using canonical URL");
   }
   found
@@ -598,6 +612,7 @@ pub async fn debug_queue_local_zip(
     mod_id,
     files: vec![DownloadFileDto {
       url: String::new(),
+      fallback_urls: Vec::new(),
       name: file_name,
       size,
       md5_checksum: None,

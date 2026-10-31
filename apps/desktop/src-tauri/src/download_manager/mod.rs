@@ -4,6 +4,7 @@ mod progress;
 mod range;
 mod segment_staging;
 mod segmented;
+mod sources;
 #[cfg(test)]
 mod test_server;
 
@@ -32,6 +33,8 @@ use tokio_util::sync::CancellationToken;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DownloadFileDto {
   pub url: String,
+  #[serde(default)]
+  pub fallback_urls: Vec<String>,
   pub name: String,
   pub size: u64,
   #[serde(default, rename = "md5Checksum")]
@@ -476,7 +479,9 @@ impl DownloadManager {
           );
         });
       }
-      let url = file.url.clone();
+      let urls = std::iter::once(file.url.clone())
+        .chain(file.fallback_urls.iter().cloned())
+        .collect::<Vec<_>>();
       let file_size = file.size;
       let md5_checksum = file.md5_checksum.clone();
       let mod_id_clone = mod_id.clone();
@@ -487,7 +492,7 @@ impl DownloadManager {
 
       let handle = tokio::spawn(async move {
         let result = Self::download_file(
-          &url,
+          &urls,
           &target_path,
           file_size,
           {
@@ -636,7 +641,7 @@ impl DownloadManager {
   /// doesn't change how a file that already started is fetched.
   #[allow(clippy::too_many_arguments)]
   async fn download_file<F>(
-    url: &str,
+    urls: &[String],
     target_path: &std::path::Path,
     file_size: u64,
     on_progress: F,
@@ -648,50 +653,58 @@ impl DownloadManager {
   where
     F: Fn(FileProgress) + Send + Sync + 'static,
   {
-    let budget = budget::app_budget();
     let on_progress = Arc::new(on_progress);
-    // Held to the end, so a fallback keeps the caps on too.
-    let segments = if budget.segmented_enabled() {
-      let has_partial = tokio::fs::try_exists(downloader::partial_download_path(target_path))
-        .await
-        .unwrap_or(false);
-      Self::opt_in_for_segments(&budget, md5_checksum, file_size, has_partial, max_bytes)
-    } else {
-      None
-    };
-    if let Some((md5, _)) = &segments {
-      match download_file_segmented(
-        url,
-        target_path,
-        file_size,
-        md5,
-        &*on_progress,
-        &cancel_token,
-        &pause,
-        &budget,
-        true,
-      )
-      .await?
-      {
-        Segmented::Finished => return Ok(()),
-        Segmented::Unsupported(reason) => {
-          log::warn!("Downloading {target_path:?} in one stream instead of segments: {reason}");
+    sources::download_from_sources(urls, target_path, |url| {
+      let on_progress = Arc::clone(&on_progress);
+      let cancel_token = cancel_token.clone();
+      let pause = pause.clone();
+      async move {
+        let budget = budget::app_budget();
+        // Held to the end, so a fallback keeps the caps on too.
+        let segments = if budget.segmented_enabled() {
+          let has_partial = tokio::fs::try_exists(downloader::partial_download_path(target_path))
+            .await
+            .unwrap_or(false);
+          Self::opt_in_for_segments(&budget, md5_checksum, file_size, has_partial, max_bytes)
+        } else {
+          None
+        };
+        if let Some((md5, _)) = &segments {
+          match download_file_segmented(
+            &url,
+            target_path,
+            file_size,
+            md5,
+            &*on_progress,
+            &cancel_token,
+            &pause,
+            &budget,
+            true,
+          )
+          .await?
+          {
+            Segmented::Finished => return Ok(()),
+            Segmented::Unsupported(reason) => {
+              log::warn!("Downloading {target_path:?} in one stream instead of segments: {reason}");
+            }
+          }
+        } else if let Err(error) = discard_staging(target_path).await {
+          log::warn!("Failed to remove segment staging for {target_path:?}: {error}");
         }
+        download_file_resumable(
+          &url,
+          target_path,
+          file_size,
+          move |progress| on_progress(progress),
+          cancel_token,
+          pause,
+          max_bytes,
+          md5_checksum,
+          true,
+        )
+        .await
       }
-    } else if let Err(error) = discard_staging(target_path).await {
-      log::warn!("Failed to remove segment staging for {target_path:?}: {error}");
-    }
-    download_file_resumable(
-      url,
-      target_path,
-      file_size,
-      move |progress| on_progress(progress),
-      cancel_token,
-      pause,
-      max_bytes,
-      md5_checksum,
-      true,
-    )
+    })
     .await
   }
 

@@ -225,6 +225,16 @@ const conflicts: Definition = {
   routes: profileRoutes,
   prepare: async (world) => prepareConflictWorld(world),
 };
+const downloadFallback: Definition = {
+  ...defaults,
+  family: "gamebanana",
+  spec: "download-fallback",
+  phases: ["exercise", "restart"],
+  routes: reliabilityRoutes,
+  prepare: prepareReliabilityWorld,
+  verifyNetwork: assertReliabilityNetwork,
+};
+
 const downloads: Definition = {
   ...defaults,
   family: "downloads",
@@ -400,6 +410,7 @@ const modUpdates: Definition = {
 };
 
 export const scenarios = {
+  "gamebanana-mirror-fallback": downloadFallback,
   "library-groups-organize": libraryGroups,
   "library-groups-identification": {
     ...libraryGroups,
@@ -895,6 +906,10 @@ export const scenarios = {
     phases: ["broken"],
   },
   "network-diagnostics": networkDiagnostics,
+  "network-diagnostics-internet-down": {
+    ...networkDiagnostics,
+    phases: ["internet-down"],
+  },
 } satisfies Record<string, Definition>;
 export type ScenarioId = keyof typeof scenarios;
 const isScenario = (value: string): value is ScenarioId =>
