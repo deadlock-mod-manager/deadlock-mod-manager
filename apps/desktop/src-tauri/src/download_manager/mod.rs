@@ -419,9 +419,6 @@ impl DownloadManager {
           None => break,
         }
       }
-
-      let mut processing = processing_clone.lock().await;
-      *processing = false;
     });
   }
 
@@ -1803,11 +1800,17 @@ impl DownloadManager {
     None
   }
 
+  /// The worker stops while it still holds the queue, so a download queued or
+  /// resumed right after it found nothing starts a new worker.
   fn claim_next(
     queue: &mut VecDeque<QueuedDownload>,
-    _processing: &mut bool,
+    processing: &mut bool,
   ) -> Option<QueuedDownload> {
-    Self::next_runnable(queue)
+    let next = Self::next_runnable(queue);
+    if next.is_none() {
+      *processing = false;
+    }
+    next
   }
 
   /// Paused downloads keep their place but don't hold up the rest of the queue.
