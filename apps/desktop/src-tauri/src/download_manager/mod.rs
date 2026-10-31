@@ -1947,8 +1947,8 @@ impl DownloadManager {
       || !self.active_downloads.lock().await.is_empty()
   }
 
-  /// Lists queued and paused downloads as well as running ones, so a webview
-  /// reload cancels them like any download it no longer tracks.
+  /// Lists window-owned queued downloads, paused downloads, and running ones
+  /// for cancellation when a webview reload loses track of them.
   pub async fn get_all_downloads(&self) -> Result<Vec<DownloadStatus>, Error> {
     // The worker's lock order, so a download moving between the two is in one of them.
     let queue = self.queue.lock().await;
@@ -1962,10 +1962,13 @@ impl DownloadManager {
     queue: &VecDeque<QueuedDownload>,
     active: &HashMap<String, ActiveDownload>,
   ) -> Vec<DownloadStatus> {
-    let queued = queue.iter().map(|queued| DownloadStatus {
-      mod_id: queued.task.mod_id.clone(),
-      status: if queued.paused { "paused" } else { "queued" }.to_string(),
-    });
+    let queued = queue
+      .iter()
+      .filter(|queued| queued.paused || queued.completion.is_none())
+      .map(|queued| DownloadStatus {
+        mod_id: queued.task.mod_id.clone(),
+        status: if queued.paused { "paused" } else { "queued" }.to_string(),
+      });
     let running = active.iter().map(|(mod_id, download)| DownloadStatus {
       mod_id: mod_id.clone(),
       status: download.status.clone(),
@@ -2200,6 +2203,29 @@ mod tests {
       ],
       "a reload would leave a queued download to run behind a Failed card"
     );
+  }
+
+  #[test]
+  fn listing_downloads_excludes_queued_background_tasks() {
+    let (import_completion, _import_waiter) = oneshot::channel();
+    let (update_completion, _update_waiter) = oneshot::channel();
+    let queue = VecDeque::from([
+      QueuedDownload {
+        completion: Some(import_completion),
+        ..queued("import")
+      },
+      queued("window"),
+      QueuedDownload {
+        purpose: DownloadPurpose::PrepareUpdate,
+        completion: Some(update_completion),
+        ..queued("update")
+      },
+    ]);
+
+    let listed = DownloadManager::list_downloads(&queue, &HashMap::new());
+    assert_eq!(listed.len(), 1);
+    assert_eq!(listed[0].mod_id, "window");
+    assert_eq!(listed[0].status, "queued");
   }
 
   #[test]

@@ -6,7 +6,6 @@ import { startApplication } from "../support/application";
 import { closeApplication } from "../support/application-exit";
 import { $, browser, expect } from "@wdio/globals";
 import { readFile, writeFile } from "node:fs/promises";
-import { setTimeout } from "node:timers/promises";
 import path from "node:path";
 import { z } from "zod";
 import {
@@ -14,6 +13,7 @@ import {
   DOWNLOAD_MOD,
   DOWNLOAD_NAME,
   QUEUED_FILE,
+  QUEUED_MOD,
   QUEUED_NAME,
 } from "../support/download-fixtures";
 import {
@@ -28,8 +28,6 @@ import {
   setSwitch,
 } from "../support/settings-actions";
 
-/** Ample for a purge and a queue IPC; the first download runs for about 8 s. */
-const QUEUE_SETTLE_MS = 1_000;
 const card = (name = DOWNLOAD_NAME) =>
   $(`[role="button"][aria-label="Open ${name}"]`);
 const waitStatus = async (world: string, status: string): Promise<void> => {
@@ -115,12 +113,20 @@ const reloadWhileQueued = async (world: string): Promise<void> => {
   await queueBehindFirst(world);
   await step("reload while the second download is queued", async () => {
     await observeUntil(
-      "Queued download was not marked downloading",
-      () => readDownloadState(world),
-      (mods) => mods[1]?.status === "downloading",
+      "Second download did not enter the backend queue",
+      async () =>
+        z
+          .array(z.object({ modId: z.string(), status: z.string() }))
+          .parse(
+            await browser.execute(() =>
+              window["__TAURI_INTERNALS__"].invoke("get_all_downloads"),
+            ),
+          ),
+      (downloads) =>
+        downloads.some(
+          ({ modId, status }) => modId === QUEUED_MOD && status === "queued",
+        ),
     );
-    // Retry purges the mod before it queues it, and neither step shows in the UI.
-    await setTimeout(QUEUE_SETTLE_MS);
     expect(await downloadRequests(world, QUEUED_FILE)).toEqual([]);
     await browser.refresh();
     await navigate("downloads");
@@ -130,7 +136,6 @@ const reloadWhileQueued = async (world: string): Promise<void> => {
       path.join(world, "artifacts", "reloaded-queued-download.png"),
     );
   });
-  // A card that says Failed must not hide a download still running behind it.
   await step("the queued download stays stopped until retried", async () => {
     await retry();
     await waitStatus(world, "downloaded");
@@ -242,7 +247,9 @@ describe("real Rust downloads", () => {
         if (scenario === "downloads-cancel") {
           await browser.execute(
             (modId: string) =>
-              window.__TAURI_INTERNALS__.invoke("cancel_download", { modId }),
+              window["__TAURI_INTERNALS__"].invoke("cancel_download", {
+                modId,
+              }),
             DOWNLOAD_MOD,
           );
           await waitStatus(world, "failedToDownload");
