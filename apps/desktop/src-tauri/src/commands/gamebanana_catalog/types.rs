@@ -208,6 +208,8 @@ pub struct InstalledSubmissionDto {
   pub installed_at: i64,
   #[serde(default)]
   pub selected_file_ids: Vec<String>,
+  #[serde(default)]
+  pub selected_file_names: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, TS)]

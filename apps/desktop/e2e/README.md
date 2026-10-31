@@ -420,3 +420,7 @@ Run `pnpm --filter @deadlock-mods/desktop e2e:test -- --suite library-groups --k
 The drag case uses native pointer down/move/up to exercise multi-selection, Undo, hover expansion, header and dotted drop targets, folder ordering, list/grid views, cancellation, and preview distance from the pointer. Windows uses the FlaUI helper. Linux requires `xdotool` and an X11 display; use Xvfb with a private D-Bus session as above. Input is restricted to the owned test window and requires explicit opt-in. Synthetic DOM pointer events are not a substitute for this case.
 
 The surrounding `library-selection`, `conflicts-resolve`, and `bisect-conflicts` cases also create library groups through the UI. They check selection across profiles, conflict load-order changes, and bisection controls/restoration while preserving organization. Grouped addon identification replaces a placeholder ID with its catalog ID and verifies that membership, VPK bytes, load order, and enablement survive that transition and restart.
+
+## Mod updates
+
+`gamebanana-archived-files`, `gamebanana-update-choice` run in the existing `gamebanana` suite. Archived files do not trigger an update or any download. Ambiguous updates require an explicit variant choice and never download the unchosen archive. Each case restarts in a fresh process and checks exact VPK bytes, manifest and persisted state, and the absence of leftover partial files.

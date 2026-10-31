@@ -1,3 +1,4 @@
+import { selectUpdateDownloads } from "@/lib/mods/update-download-selection";
 import { analytics } from "@/lib/analytics";
 import { failureOutcome } from "@/lib/analytics/client";
 import { isTauriError } from "@/types/tauri";
@@ -73,11 +74,6 @@ const listenForUpdateProgress = async () => {
   };
 };
 
-// GameBanana tells uploads that share a file name apart with a random
-// `_xxxxx` suffix, so a re-uploaded pack keeps its name up to that suffix.
-const uploadBaseName = (name: string) =>
-  name.replace(/_[0-9a-f]{5}(\.[^.]+)$/i, "$1").toLowerCase();
-
 export const useBatchUpdate = () => {
   const [updatableMods, setUpdatableMods] = useState<UpdatableMod[]>([]);
   const [pendingSelections, setPendingSelections] = useState<
@@ -109,41 +105,10 @@ export const useBatchUpdate = () => {
           (m) => m.remoteId === update.mod.remoteId,
         );
 
-        let selectedDownloads: ModDownloadItem[];
-        if (update.downloads.length === 1) {
-          selectedDownloads = update.downloads;
-        } else {
-          const savedNames = new Set(
-            (localMod?.selectedDownloads ?? []).map((sd) => sd.name),
-          );
-          const installedArchiveNames = new Set(
-            (localMod?.installedFileTree?.files ?? [])
-              .filter((f) => f.is_selected)
-              .map((f) => f.archive_name),
-          );
-
-          // Archived files are older versions of current ones; installing
-          // both ships the same VPK names twice.
-          const current = update.downloads.filter((d) => !d.isArchived);
-          const currentNames = new Set(current.map((d) => d.name));
-          const reuploaded = new Set(
-            [...savedNames, ...installedArchiveNames]
-              .filter((name) => !currentNames.has(name))
-              .map(uploadBaseName),
-          );
-          const matched = current.filter(
-            (d) =>
-              savedNames.has(d.name) ||
-              installedArchiveNames.has(d.name) ||
-              reuploaded.has(uploadBaseName(d.name)),
-          );
-          selectedDownloads =
-            matched.length > 0
-              ? matched
-              : current.length > 0
-                ? current
-                : update.downloads;
-        }
+        const selectedDownloads = selectUpdateDownloads(
+          update.downloads,
+          localMod,
+        );
 
         const selectedFileTree = localMod?.installedFileTree;
 
