@@ -135,7 +135,6 @@ libc = { version = "0.2", optional = true }
 
 [target.'cfg(windows)'.dependencies]
 junction = "1"
-# Com and Wmi read the TCP auto-tuning level for network diagnostics.
 windows = { version = "0.58", features = [
   "Win32_Security_Cryptography",
   "Win32_Foundation",

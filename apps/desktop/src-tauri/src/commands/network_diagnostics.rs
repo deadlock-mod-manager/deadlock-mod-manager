@@ -26,6 +26,8 @@ fn autotuning_level(value: u32) -> Option<TcpAutoTuningLevel> {
   }
 }
 
+const AUTO_TUNING_READ_LIMIT: Duration = Duration::from_secs(10);
+
 /// Reads the setting and never changes it. `None` off Windows, or when it
 /// can't be read in time, which the diagnostics treat as nothing to show.
 #[tauri::command]
@@ -43,8 +45,6 @@ pub async fn get_tcp_autotuning_level() -> Result<Option<TcpAutoTuningLevel>, Er
     }
   })
 }
-
-const AUTO_TUNING_READ_LIMIT: Duration = Duration::from_secs(10);
 
 fn read_autotuning_value() -> Result<Option<u32>, String> {
   // E2E worlds never read the host's setting; a case injects the CIM value.
