@@ -1,5 +1,21 @@
 # @deadlock-mods/auth
 
+## 1.2.0
+
+### Minor Changes
+
+- 167143d: Upgrade Better Auth to 1.7 and move sign-in to the new OAuth provider
+
+### Patch Changes
+
+- Updated dependencies [d16b676]
+- Updated dependencies [167143d]
+- Updated dependencies [7fd9a1a]
+  - @deadlock-mods/database@2.6.0
+  - @deadlock-mods/feature-flags@0.2.13
+  - @deadlock-mods/instrumentation@0.1.15
+  - @deadlock-mods/shared@2.5.0
+
 ## 1.1.7
 
 ### Patch Changes

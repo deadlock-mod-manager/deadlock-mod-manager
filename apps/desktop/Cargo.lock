@@ -1564,7 +1564,7 @@ dependencies = [
 
 [[package]]
 name = "deadlock-mod-manager"
-version = "2.2.0"
+version = "2.3.0"
 dependencies = [
  "base64 0.22.1",
  "bzip2",

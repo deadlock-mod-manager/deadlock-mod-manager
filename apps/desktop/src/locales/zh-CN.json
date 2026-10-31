@@ -5406,6 +5406,36 @@
       "other": "其他"
     },
     "versions": {
+      "2.3.0": {
+        "title": "The Live tab is back, and you can paint skins in 3D",
+        "features": [
+          "📡 The Live tab is back as an experimental opt-in: both teams' records while a match loads, then your team's graded stats",
+          "🎨 Redesigned Mod Foundry: paint single sections of a hero skin on the 3D model, and set sound volume, mute, OGG and FLAC",
+          "🖱️ 1-click installs from allowlisted mod sites, starting with Divine Skins",
+          "📥 Opt-in faster downloads that fetch large files in 4 parts at once",
+          "🧩 Mods with missing requirements in the active profile now warn you before they are enabled",
+          "📦 Order the VPKs inside a mod in the load order dialog, and keep that order when the mod updates",
+          "💥 Crash reports point to a possible cause when the crash names a file from a mod",
+          "🎨 New Coding theme: an editor-style dark theme with a graph-paper grid and a customizable accent",
+          "👤 Verified authors can show their socials and a Commission button on their author page",
+          "🩺 Diagnostics name the unreachable host and show when Windows TCP auto-tuning is off",
+          "📥 Downloads switch to another server when a mirror fails or stalls",
+          "📥 Queued downloads show as Waiting, can be cancelled, and start while another download is paused",
+          "📁 Updates back up only the mods they replace, and keep working after an author re-uploads a pack",
+          "📁 The download picker keeps the author's file order",
+          "🔄 Match sync recovers your Steam friends' recent matches, no longer adds Deadlock playtime to Steam, and keeps running while another Steam game is open",
+          "⚙️ Match sharing settings have their own tab",
+          "🌐 Download and 1-click install notifications are translated",
+          "🐛 Fixed downloads stuck at Downloading 100% after the selected profile was deleted",
+          "🐛 Fixed being signed out when several requests refreshed your login at once",
+          "🐛 Fixed a mod deleted while queued downloading anyway, and its disabled variants staying behind",
+          "🐛 Fixed GameBanana mods showing as updated when the author only archived a file",
+          "🐛 Fixed 0 B sizes for variants added from the Manage files dialog",
+          "🐛 Fixed sounds favorited before the sound rename missing from the Favorites filter",
+          "🐛 Fixed the Deadworks UI bootstrap not installing when joining Deadworks servers",
+          "🔒 The app checks for updates through the Deadlock Mods API"
+        ]
+      },
       "2.2.0": {
         "title": "",
         "features": [

@@ -1,5 +1,68 @@
 # desktop
 
+## 2.3.0
+
+### Minor Changes
+
+- c2f9ff5: Add 1-click installs from allowlisted mod sites, starting with Divine Skins
+- ee6a03f: Redesign the Mod Foundry and add sound volume, mute, OGG and FLAC support
+- f295a32: Show a possible crash cause when a fatal error names a resource supplied by a mounted mod VPK.
+- d16b676: Check mod requirements against the active profile and warn before enabling a mod with missing requirements.
+- 5df195a: Add the Coding theme: an editor-style dark theme with a graph-paper grid, monospace headings and a customizable accent
+- 285a4bd: Bring back the Live tab as an experimental opt-in: both teams' records while a match loads, then your team's graded stats, via a HUD mod
+- 415b146: Add opt-in faster downloads that fetch large files in 4 parts at once
+- 80805b4: Paint single sections of a hero skin in the Mod Foundry, picked on the 3D model
+- cc4eacc: Add author socials and a Commission button for verified authors on author pages
+- 2ac7658: Show in diagnostics when Windows TCP auto-tuning is turned off
+- 1f4fbe2: Add permissioned plugin events for game, mod, download, and profile activity
+- d13eed9: Pin a mod of the week for a set number of days with the /modoftheweek bot command
+- 1f4fbe2: Enable Plugins in Experimental settings to install sandboxed plugins with access you grant per plugin.
+- 7fd9a1a: Order the VPKs inside a mod in the load order dialog, defaulting to author order
+
+### Patch Changes
+
+- 5d01b0b: Stop match sync from adding Deadlock playtime to Steam while it waits between requests
+- da6c64d: Keep match sync running after turning it off and quickly back on
+- 1f4fbe2: Bind plugin consent to the reviewed package, verify installed archive bytes, and fix update, snapshot, activity, and SDK validation errors.
+- 1e83ca6: Check for updates through the Deadlock Mods API
+- ab4d11a: Remove retained segment files when cancelling a paused download.
+- 1427110: Stop a mod deleted while its download was queued from downloading anyway
+- 1f4fbe2: Enable plugins in desktop dev builds. Release builds need the plugins feature; turning Plugins off stops workers and sessions while preserving settings.
+- da6c64d: Match sync now also recovers the matches your Steam friends most likely just played, before falling back to deadlock-api's global list of missing matches.
+- aa5c6ad: Back up only the mods an update replaces, not every installed mod
+- b095153: Add the linked file to an installed mod instead of ignoring 1-click links
+- 2b42d25: Show sounds favorited before the sound rename in the Favorites filter
+- 0fabb85: Name the unreachable host when the diagnostics internet check fails
+- 0c78d2a: Fix downloads staying at "Downloading 100%" forever when the selected profile had been deleted, by falling back to the default profile on startup
+- e9bcd02: Delete a mod's disabled variants when the mod is deleted
+- 4a2c8c4: Re-enable disabled variants from disk when their files are present and current
+- 018a945: Keep match sync from pausing for a day while another Steam game is running
+- 1a7024a: Stop showing a slow download notice on a retry still waiting in the queue
+- d1bc28b: Let the next queued download start while another one is paused
+- 6858261: Keep the author's file order in the download picker and when a mod's file list is rebuilt from its folder
+- 9571e72: Let cancel remove a download that is still waiting in the queue
+- dfbf3bd: Stop a cancelled download from holding up the queue while it is still connecting
+- 680ab68: Try another download server when a mirror fails or stalls during a transfer.
+- e04686c: Install the Deadworks UI bootstrap when joining Deadworks servers
+- 6dd15f2: Stop a queued download that a window reload marked as failed
+- 8eac39f: Translate download, 1-click install and collection download notifications
+- 33b4d32: Stop signing users out when several requests refresh their login at once
+- 2cf5f39: Move match sharing settings into their own tab and fix the onboarding default
+- 1463319: Keep multi-VPK mod updates working after an author re-uploads a pack
+- 61e36bc: Show one error notification, not two, when a download can't be queued
+- 018a945: Skip Steam accounts whose saved login expired instead of retrying them
+- ba50fd7: Offer collection mods whose download failed for download again
+- aa99dcf: Stop flagging GameBanana mods as updated when the author only archives a file
+- 1463319: Keep a mod's custom VPK order when it updates
+- a15971f: Keep the Files tab and offer Try again when a mod's file list fails to load
+- 4b461ce: Keep console logging out of game launches and server joins when it is disabled
+- acf32f2: Fix 0 B sizes for variants added from the Manage files dialog
+- 5141ae4: Show downloads waiting in the queue as "Waiting" instead of "Downloading"
+- Updated dependencies [1f4fbe2]
+- Updated dependencies [1f4fbe2]
+  - @deadlock-mods/plugin-sdk@0.2.0
+  - @deadlock-mods/shared@2.5.0
+
 ## 2.2.0
 
 ### Minor Changes
@@ -751,6 +814,7 @@
 ### Minor Changes
 
 - 45d2f75: Major desktop UI features and enhancements
+
   - Add new bottom bar component for improved navigation
   - Implement filter mode for enhanced mod browsing experience
   - Add file drag-and-drop functionality for easier mod processing
@@ -765,6 +829,7 @@
   - Improved dialog handling for multi-file downloads
 
 - 45d2f75: Comprehensive internationalization support
+
   - Add multiple new language support with locale files
   - Add confirmation messages for mod deletion and disabling across all languages
   - Support for Arabic, German, French, Polish, Russian, Turkish, and Swiss German
@@ -783,12 +848,14 @@
 ### Patch Changes
 
 - 45d2f75: Dependencies and maintenance updates
+
   - Update dependencies in Cargo.lock and Cargo.toml for Rust components
   - Update dependencies and scripts across multiple packages
   - Improve code formatting and consistency across files
   - General maintenance and dependency updates for better security and performance
 
 - 45d2f75: Desktop refactoring and performance optimizations
+
   - Optimize useDeepLink and useInstall hooks for better performance
   - Replace static fallback SVG with dynamic generation
   - Remove unused DownloadProgress component and update related UI elements
@@ -807,27 +874,32 @@
 - 7f379a5: ## 🎉 Major Features
 
   ### Multi-File Download System
+
   - **Multi-file download support**: Mods can now have multiple download files per version
   - **File selection dialogs**: Choose which files to install when mods have multiple archives or VPK files
   - **Streamlined download handling**: Improved UI and backend processing for better user experience
 
   ### Content Management & Safety
+
   - **NSFW content detection and filtering**: Automatic detection and filtering of NSFW content with user controls
   - **Gameinfo.gi management**: Advanced gameinfo.gi section replacement and management features
   - **Enhanced mod descriptions**: Rich text support using Interweave for better mod descriptions
 
   ### New Logging System
+
   - **Dedicated logging package**: New `@deadlock-mods/logging` package for better error tracking and debugging across all applications
 
   ## 🎨 UI/UX Improvements
 
   ### Visual Updates
+
   - **New logo design**: Updated logo across desktop and web applications with modern design
   - **Enhanced settings layout**: Improved settings page styling and organization
   - **Launch button animation**: Added smooth animations to launch buttons
   - **Improved button styling**: Better visual feedback and animation handling throughout the app
 
   ### Enhanced Navigation & Performance
+
   - **Scroll position management**: Maintains scroll position in mod cards and mods page for better navigation
   - **Improved search sorting**: Enhanced search results relevance and sorting capabilities
   - **Better mod card functionality**: Enhanced mod card components with improved interactions
@@ -835,14 +907,17 @@
   ## 🔧 Technical Improvements
 
   ### API Enhancements
+
   - **Version handling in health checks**: Better API version management and health check responses
   - **Enhanced backend structure**: Improved API architecture to support new multi-file features
 
   ### Web Application Updates
+
   - **Fixed image sources**: Corrected image references in web HeroSection component
   - **Updated documentation**: Improved README with better development instructions and screenshots
 
   ## 🛠️ Development & Maintenance
+
   - **Package.json updates**: Refined build scripts and development workflow
   - **Documentation updates**: Updated README with new screenshots and development instructions
   - **Code quality improvements**: Various refactoring and optimization across the codebase
