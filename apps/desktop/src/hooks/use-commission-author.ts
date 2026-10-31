@@ -20,9 +20,7 @@ const commissionsLink = (path: string) =>
 
 const findCommissionAuthor = async (remoteId: string) => {
   const response = await fetch(
-    commissionsLink(
-      `api/authors/gamebanana/${encodeURIComponent(remoteId)}`,
-    ),
+    commissionsLink(`api/authors/gamebanana/${encodeURIComponent(remoteId)}`),
     { method: "GET" },
   );
   if (response.status === 404) return null;

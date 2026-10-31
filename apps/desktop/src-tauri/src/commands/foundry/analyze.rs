@@ -521,9 +521,15 @@ mod tests {
     let names = art_names("Abrams", &["atlas", "bull"]);
     let prefixes = card_prefixes(&names);
     for (path, variant) in [
-      ("panorama/images/heroes/backgrounds/abrams_bg_psd.vtex_c", "background"),
+      (
+        "panorama/images/heroes/backgrounds/abrams_bg_psd.vtex_c",
+        "background",
+      ),
       ("panorama/images/heroes/guns/bull_gun_psd.vtex_c", "weapon"),
-      ("panorama/images/hud/abilities/bull_charge_psd.vtex_c", "ability_charge"),
+      (
+        "panorama/images/hud/abilities/bull_charge_psd.vtex_c",
+        "ability_charge",
+      ),
     ] {
       assert!(is_hero_card_path(path, &prefixes), "{path}");
       assert_eq!(card_variant(path, &names), variant);

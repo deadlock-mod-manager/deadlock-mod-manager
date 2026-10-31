@@ -549,7 +549,10 @@ mod tests {
       "evil.exe",
       "",
     ] {
-      assert!(!is_plain_font_file_name(name), "{name:?} should be rejected");
+      assert!(
+        !is_plain_font_file_name(name),
+        "{name:?} should be rejected"
+      );
     }
     assert!(is_plain_font_file_name("Stratum2-Bold.ttf"));
     assert!(is_plain_font_file_name("font with spaces.TTF"));

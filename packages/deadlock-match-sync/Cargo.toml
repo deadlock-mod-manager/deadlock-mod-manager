@@ -25,7 +25,12 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 steam-vent = { git = "https://github.com/deadlock-api/steam-vent", rev = "1d7b274f5c2f648aba5dab474b80c1156b409bca" }
 thiserror = "2.0.18"
-tokio = { version = "1.50.0", features = ["macros", "rt-multi-thread", "sync", "time"] }
+tokio = { version = "1.50.0", features = [
+  "macros",
+  "rt-multi-thread",
+  "sync",
+  "time",
+] }
 valveprotos = { git = "https://github.com/deadlock-api/deadlock-api", rev = "b14c831f324e20653e50ff60372478d427800d45", features = [
   "gc-common",
   "gc-client",
