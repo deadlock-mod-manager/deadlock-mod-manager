@@ -57,7 +57,7 @@ export function formatUserError(error: unknown): FormattedError {
   if (error instanceof Error && isGameConfigError(error)) {
     return {
       title: i18n.t("errors.genericMessage"),
-      description: "",
+      description: error.message,
       category: "game-config",
     };
   }

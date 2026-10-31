@@ -3890,7 +3890,6 @@
     "launchModdedCount_one": "{{count}} mod",
     "launchModdedCount_other": "{{count}} mods",
     "stopGame": "Stop Game",
-    "gameinfoAutoReset": "Game configuration was corrupted and has been automatically repaired.",
     "failedToFetchMods": "Failed to fetch mods. Try again later.",
     "mods": "Mods",
     "installed": "installed",
@@ -4493,12 +4492,12 @@
     "closeToTray": "Close to system tray",
     "closeToTrayDescription": "Closing the window keeps the mod manager running in the tray. Use Quit from the tray icon's menu to exit.",
     "traySyncFailed": "Could not change the tray setting. Try again.",
-    "autoResetGameinfo": "Restore vanilla game config when Deadlock closes",
-    "autoResetGameinfoDescription": "Removes the mod paths from gameinfo.gi after you quit, so launching from Steam starts the game without mods. Launching modded from here adds them back. Only works while the mod manager is open.",
+    "autoResetGameinfo": "Remove mod paths from the game config when Deadlock closes",
+    "autoResetGameinfoDescription": "Removes the mod paths from gameinfo.gi after you quit, so launching from Steam starts the game without mods. Launching modded from here adds them back. The rest of the file stays as it is. Only works while the mod manager is open.",
     "autoFixMods": "Fix mods automatically before launch",
     "autoFixModsDescription": "Before launching, apply verified fixes to enabled mods made for an older game version. Your mod files are never changed.",
-    "autoResetGameinfoSuccess": "Deadlock closed. Game config restored to vanilla.",
-    "autoResetGameinfoFailed": "Couldn't restore the vanilla game config after Deadlock closed. Use Reset to Vanilla in Settings.",
+    "autoResetGameinfoSuccess": "Deadlock closed. Mod paths removed from the game config.",
+    "autoResetGameinfoFailed": "Couldn't remove the mod paths from the game config after Deadlock closed.",
     "showModUpdateBadges": "Mod update badges",
     "showModUpdateBadgesDescription": "Show update available and recently updated badges on mod cards and details, including disabled mods. Update checks remain enabled.",
     "featureTips": "Show feature tips",
@@ -4576,7 +4575,7 @@
     "validationPassed": "gameinfo.gi validation passed",
     "openedInEditor": "Opened gameinfo.gi with system editor",
     "confirmRestore": "Are you sure you want to restore gameinfo.gi from backup? This will overwrite the current file.",
-    "confirmReset": "Are you sure you want to reset gameinfo.gi to vanilla state? This will remove all mod configurations and restore the original game settings."
+    "confirmReset": "Are you sure you want to reset gameinfo.gi to vanilla state? This replaces the whole file, including mod paths and any custom FPS or FOV edits. A copy of the current file is saved next to it, with a name starting gameinfo.gi.pre-reset."
   },
   "reinstall": {
     "action": "Reinstall",
@@ -5271,9 +5270,9 @@
     "failedToParseGameConfiguration": {
       "instruction": "Please follow these steps to resolve the issue:",
       "steps": [
-        "Go to Settings → Game and reset gameinfo.gi to Vanilla.",
-        "Verify game files on Steam.",
-        "Restart the Mod Manager and click 'Launch Modded'."
+        "Open gameinfo.gi from Settings → Game and fix the part named above.",
+        "If you can't fix it, use Reset to Vanilla on the same page. A copy of your file is saved next to it.",
+        "Click 'Launch Modded' again."
       ]
     },
     "http": {

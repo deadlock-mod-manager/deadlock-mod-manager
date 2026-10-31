@@ -26,6 +26,7 @@ export type GuardedCommand =
   | "import_profile_batch"
   | "restore_gameinfo_backup"
   | "reset_to_vanilla"
+  | "remove_mod_search_paths"
   | "create_server_addons_folder"
   | "delete_server_addons_folder"
   | "apply_server_gameinfo"
