@@ -88,7 +88,6 @@ export const useBatchUpdate = () => {
   const updateModVpksAfterReorder = usePersistedStore(
     (state) => state.updateModVpksAfterReorder,
   );
-  const localMods = usePersistedStore((state) => state.localMods);
   const backupMode = usePersistedStore((state) => state.backupMode);
   const maxBackupCount = usePersistedStore((state) => state.maxBackupCount);
   const updateProgress = usePersistedStore(
@@ -98,51 +97,49 @@ export const useBatchUpdate = () => {
     (state) => state.setBatchUpdateProgress,
   );
 
-  const prepareUpdates = useCallback(
-    (updates: ModUpdateCandidate[]) => {
-      const prepared = updates.map((update) => {
-        const localMod = localMods.find(
-          (m) => m.remoteId === update.mod.remoteId,
+  const prepareUpdates = useCallback((updates: ModUpdateCandidate[]) => {
+    const localMods = usePersistedStore.getState().localMods;
+    const prepared = updates.map((update) => {
+      const localMod = localMods.find(
+        (m) => m.remoteId === update.mod.remoteId,
+      );
+
+      const selectedDownloads = selectUpdateDownloads(
+        update.downloads,
+        localMod,
+      );
+
+      const selectedFileTree = localMod?.installedFileTree;
+
+      return {
+        mod: update.mod,
+        updatedAt: update.updatedAt,
+        downloads: update.downloads,
+        selectedDownloads,
+        selectedFileTree,
+      };
+    });
+
+    setUpdatableMods((previous) => {
+      if (prepared.length === 0 && previous.length === 0) return previous;
+      return prepared.map((update) => {
+        const existing = previous.find(
+          (m) => m.mod.remoteId === update.mod.remoteId,
         );
-
-        const selectedDownloads = selectUpdateDownloads(
-          update.downloads,
-          localMod,
+        const keptDownloads = existing?.selectedDownloads.filter((selected) =>
+          update.downloads.some((d) => d.url === selected.url),
         );
-
-        const selectedFileTree = localMod?.installedFileTree;
-
-        return {
-          mod: update.mod,
-          updatedAt: update.updatedAt,
-          downloads: update.downloads,
-          selectedDownloads,
-          selectedFileTree,
-        };
+        return existing && keptDownloads?.length
+          ? {
+              ...update,
+              selectedDownloads: keptDownloads,
+              selectedFileTree: existing.selectedFileTree,
+            }
+          : update;
       });
-
-      setUpdatableMods((previous) => {
-        if (prepared.length === 0 && previous.length === 0) return previous;
-        return prepared.map((update) => {
-          const existing = previous.find(
-            (m) => m.mod.remoteId === update.mod.remoteId,
-          );
-          const keptDownloads = existing?.selectedDownloads.filter((selected) =>
-            update.downloads.some((d) => d.url === selected.url),
-          );
-          return existing && keptDownloads?.length
-            ? {
-                ...update,
-                selectedDownloads: keptDownloads,
-                selectedFileTree: existing.selectedFileTree,
-              }
-            : update;
-        });
-      });
-      return prepared;
-    },
-    [localMods],
-  );
+    });
+    return prepared;
+  }, []);
 
   const setSelectedDownloads = (
     remoteId: string,

@@ -302,7 +302,7 @@ const brokenLayout = {
   version: 1,
   tabs: [
     builtInTab("overview", "chart", ["tiles"]),
-    builtInTab("live", "radio", ["live"]),
+    builtInTab("live", "radio", ["liveScoreboard"]),
     {
       id: "tab-health",
       title: "Health",
