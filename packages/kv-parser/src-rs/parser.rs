@@ -101,12 +101,16 @@ impl Parser {
         // Parse key
         let key = self.parse_string()?;
 
-        // Parse separator (whitespace between key and value)
-        let separator = if self.current_token().token_type == TokenType::Whitespace {
-            Some(self.parse_whitespace()?)
-        } else {
-            None
-        };
+        // Parse separator (whitespace between key and value). The game also
+        // skips comments here, so a note after a block's key must not end parsing.
+        let mut separator = None;
+        loop {
+            match self.current_token().token_type {
+                TokenType::Whitespace => separator = Some(self.parse_whitespace()?),
+                TokenType::Comment => self.advance(),
+                _ => break,
+            }
+        }
 
         // Parse value
         let value = if self.current_token().token_type == TokenType::OpenBrace {
@@ -590,6 +594,34 @@ mod tests {
 
         // Verify data extraction works despite comments
         assert!(result.data.contains_key("Root"));
+    }
+
+    #[test]
+    fn test_parse_comment_between_key_and_value() {
+        let input = r#"
+"Root" // note
+// another note
+{
+    "Key" /* why */ "Value"
+}
+"#;
+        let result = Parser::parse(input, ParseOptions::default()).unwrap();
+
+        if let Some(KeyValuesValue::Object(obj)) = result.data.get("Root") {
+            assert!(matches!(
+                obj.get("Key"),
+                Some(KeyValuesValue::String(s)) if s == "Value"
+            ));
+        } else {
+            panic!("Expected Root to be an object");
+        }
+    }
+
+    #[test]
+    fn test_key_without_a_value_is_still_an_error() {
+        let input = "\"Root\"\n{\n    \"Key\" // note\n}\n";
+
+        assert!(Parser::parse(input, ParseOptions::default()).is_err());
     }
 
     #[test]
