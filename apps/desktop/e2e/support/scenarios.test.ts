@@ -39,7 +39,10 @@ describe("scenario selection", () => {
     expect(scenarios["library-groups-drag"].nativeInput).toBe(true);
     expect(scenarios["library-groups-drag"].platforms).toContain("linux");
     expect(selectScenarios("monkey")).toEqual(["monkey"]);
-    expect(selectScenarios("diagnostics")).toEqual(["network-diagnostics"]);
+    expect(selectScenarios("diagnostics")).toEqual([
+      "network-diagnostics",
+      "network-diagnostics-internet-down",
+    ]);
     expect(selectScenarios("updater")).toEqual([
       "app-update-download",
       "app-update-check-failure",
