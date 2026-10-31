@@ -6,11 +6,10 @@ use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 use tokio::fs::{File, OpenOptions};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::sync::Notify;
+use tokio::sync::watch;
 use tokio_util::sync::CancellationToken;
 
 #[allow(dead_code)]
@@ -154,41 +153,36 @@ pub struct DownloadProgress {
   pub source: DownloadSource,
 }
 
-/// Shared pause gate for in-flight downloads (one per mod).
+/// Shared pause flag for in-flight downloads (one per mod). A paused download
+/// stops with `Error::DownloadPaused` and keeps its partial file to resume from.
 #[derive(Clone, Debug)]
 pub struct PauseHandle {
-  paused: Arc<AtomicBool>,
-  notify: Arc<Notify>,
+  paused: Arc<watch::Sender<bool>>,
 }
 
 impl PauseHandle {
   pub fn new() -> Self {
     Self {
-      paused: Arc::new(AtomicBool::new(false)),
-      notify: Arc::new(Notify::new()),
+      paused: Arc::new(watch::Sender::new(false)),
     }
   }
 
   pub fn pause(&self) {
-    self.paused.store(true, Ordering::SeqCst);
+    self.paused.send_replace(true);
   }
 
   pub fn resume(&self) {
-    self.paused.store(false, Ordering::SeqCst);
-    self.notify.notify_waiters();
+    self.paused.send_replace(false);
   }
 
   pub fn is_paused(&self) -> bool {
-    self.paused.load(Ordering::SeqCst)
+    *self.paused.borrow()
   }
 
-  pub async fn wait_until_running(&self, cancel_token: &CancellationToken) {
-    while !cancel_token.is_cancelled() && self.is_paused() {
-      tokio::select! {
-        () = self.notify.notified() => {}
-        () = cancel_token.cancelled() => {}
-      }
-    }
+  /// Resolves once the download is paused, for waits that read no data.
+  async fn paused(&self) {
+    // `self` holds the sender, so the wait can't see it closed.
+    let _ = self.paused.subscribe().wait_for(|paused| *paused).await;
   }
 }
 
@@ -255,6 +249,19 @@ async fn write_partial_meta(path: &Path, meta: &PartialMeta) -> Result<(), Error
 async fn remove_partial_pair(partial_path: &Path, meta_path: &Path) {
   let _ = tokio::fs::remove_file(partial_path).await;
   let _ = tokio::fs::remove_file(meta_path).await;
+}
+
+/// Bytes a resumable download of `target_path` already holds.
+pub async fn partial_download_len(target_path: &Path) -> u64 {
+  tokio::fs::metadata(partial_download_path(target_path))
+    .await
+    .map_or(0, |metadata| metadata.len())
+}
+
+/// Removes what a download that won't be resumed kept to resume from.
+pub async fn remove_partial_download(target_path: &Path) {
+  let partial_path = partial_download_path(target_path);
+  remove_partial_pair(&partial_path, &partial_meta_path(&partial_path)).await;
 }
 
 #[allow(dead_code)]
@@ -352,6 +359,10 @@ where
   let mut reconnects: u32 = 0;
 
   'retry: loop {
+    // Checked per attempt too, so a pause during a retry backoff or a restart stops here.
+    if pause.is_paused() {
+      return Err(Error::DownloadPaused);
+    }
     let stored_meta = read_partial_meta(&meta_path).await.unwrap_or_default();
     let resume_from = match tokio::fs::metadata(&partial_path).await {
       Ok(m) => m.len(),
@@ -377,7 +388,8 @@ where
     }
 
     // The read loop only sees the token once headers arrive; a connect or a server
-    // holding its headers back would keep a cancelled download alive until a timeout.
+    // holding its headers back would keep a cancelled download alive until a timeout,
+    // and a paused one holding the queue.
     let sent = tokio::select! {
       biased;
       () = cancel_token.cancelled() => {
@@ -385,6 +397,7 @@ where
         remove_partial_pair(&partial_path, &meta_path).await;
         return Err(Error::DownloadCancelled);
       }
+      () = pause.paused() => return Err(Error::DownloadPaused),
       sent = request.send() => sent,
     };
     let response = match sent {
@@ -529,16 +542,14 @@ where
         return Err(Error::DownloadCancelled);
       }
 
+      // Stopping rather than waiting frees the queue for the next download; resuming
+      // continues from the partial file with a Range request.
       if pause.is_paused() {
-        pause.wait_until_running(&cancel_token).await;
-        // Time spent paused is not the server going quiet.
-        last_data_at = Instant::now();
-        speed_window = SpeedWindow::new(last_data_at, session_downloaded);
-      }
-      if cancel_token.is_cancelled() {
-        drop(file);
-        remove_partial_pair(&partial_path, &meta_path).await;
-        return Err(Error::DownloadCancelled);
+        file
+          .flush()
+          .await
+          .map_err(|e| Error::FileWriteFailed(format!("Failed to flush file: {e}")))?;
+        return Err(Error::DownloadPaused);
       }
 
       let chunk = match tokio::time::timeout(STALL_TICK, stream.next()).await {
@@ -814,6 +825,160 @@ mod tests {
       "{result:?}"
     );
     assert!(!partial.exists() && !meta.exists());
+  }
+
+  #[tokio::test]
+  async fn pause_ends_a_request_whose_headers_never_arrive() {
+    use tempfile::tempdir;
+    use tokio::net::TcpListener;
+
+    let dir = tempdir().unwrap();
+    let target = dir.path().join("mod.zip");
+    // A resumable partial, which the pause must keep.
+    let partial = partial_download_path(&target);
+    let meta = partial_meta_path(&partial);
+    tokio::fs::write(&partial, b"first bytes").await.unwrap();
+    let stored = PartialMeta {
+      etag: Some("\"v1\"".to_string()),
+      last_modified: None,
+    };
+    write_partial_meta(&meta, &stored).await.unwrap();
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let url = format!("http://{}/mod.zip", listener.local_addr().unwrap());
+    let pause = PauseHandle::new();
+
+    let download = tokio::spawn({
+      let target = target.clone();
+      let pause = pause.clone();
+      async move {
+        download_file_resumable(
+          &url,
+          &target,
+          0,
+          |_| {},
+          CancellationToken::new(),
+          pause,
+          None,
+          None,
+          false,
+        )
+        .await
+      }
+    });
+    // Accepted and never answered, like a server that withholds its headers.
+    let (_connection, _) = tokio::time::timeout(Duration::from_secs(5), listener.accept())
+      .await
+      .expect("download never connected to the fixture")
+      .unwrap();
+    pause.pause();
+
+    let result = tokio::time::timeout(Duration::from_secs(5), download)
+      .await
+      .expect("a pause waited for headers that never arrived, holding the queue's only worker")
+      .unwrap();
+    assert!(matches!(result, Err(Error::DownloadPaused)), "{result:?}");
+    assert!(partial.exists() && meta.exists());
+  }
+
+  #[tokio::test]
+  async fn a_paused_download_stops_and_resumes_from_its_partial() {
+    use tempfile::tempdir;
+    use tokio::net::{TcpListener, TcpStream};
+
+    async fn read_request(connection: &mut TcpStream) -> String {
+      let mut request = Vec::new();
+      let mut buffer = [0_u8; 1024];
+      while !request.ends_with(b"\r\n\r\n") {
+        let read = connection.read(&mut buffer).await.unwrap();
+        assert!(read > 0, "the client closed the connection mid-request");
+        request.extend_from_slice(&buffer[..read]);
+      }
+      String::from_utf8(request).unwrap()
+    }
+
+    let body: Vec<u8> = (0..64 * 1024).map(|i| (i % 251) as u8).collect();
+    let half = body.len() / 2;
+    let dir = tempdir().unwrap();
+    let target = dir.path().join("mod.zip");
+    let partial = partial_download_path(&target);
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let url = format!("http://{}/mod.zip", listener.local_addr().unwrap());
+    let download = |pause: PauseHandle| {
+      let url = url.clone();
+      let target = target.clone();
+      let size = body.len() as u64;
+      tokio::spawn(async move {
+        download_file_resumable(
+          &url,
+          &target,
+          size,
+          |_| {},
+          CancellationToken::new(),
+          pause,
+          None,
+          None,
+          false,
+        )
+        .await
+      })
+    };
+
+    let pause = PauseHandle::new();
+    let first = download(pause.clone());
+    let (mut connection, _) = tokio::time::timeout(Duration::from_secs(5), listener.accept())
+      .await
+      .expect("download never connected to the fixture")
+      .unwrap();
+    read_request(&mut connection).await;
+    let headers = format!(
+      "HTTP/1.1 200 OK\r\nContent-Length: {}\r\nETag: \"v1\"\r\n\r\n",
+      body.len()
+    );
+    connection.write_all(headers.as_bytes()).await.unwrap();
+    connection.write_all(&body[..half]).await.unwrap();
+    tokio::time::timeout(Duration::from_secs(5), async {
+      while tokio::fs::metadata(&partial).await.map_or(0, |m| m.len()) < half as u64 {
+        tokio::time::sleep(Duration::from_millis(10)).await;
+      }
+    })
+    .await
+    .expect("the first half never reached the partial file");
+
+    pause.pause();
+    let result = tokio::time::timeout(Duration::from_secs(5), first)
+      .await
+      .expect("a paused download held on to the queue's only worker until Resume")
+      .unwrap();
+    assert!(matches!(result, Err(Error::DownloadPaused)), "{result:?}");
+    assert_eq!(tokio::fs::read(&partial).await.unwrap(), body[..half]);
+    assert!(partial_meta_path(&partial).exists());
+    drop(connection);
+
+    pause.resume();
+    let second = download(pause);
+    let (mut connection, _) = tokio::time::timeout(Duration::from_secs(5), listener.accept())
+      .await
+      .expect("the resumed download never connected to the fixture")
+      .unwrap();
+    let request = read_request(&mut connection).await.to_ascii_lowercase();
+    assert!(
+      request.contains(&format!("range: bytes={half}-")),
+      "the resumed download started over instead of continuing its partial file: {request}"
+    );
+    let headers = format!(
+      "HTTP/1.1 206 Partial Content\r\nContent-Length: {}\r\nContent-Range: bytes {half}-{}/{}\r\nETag: \"v1\"\r\n\r\n",
+      body.len() - half,
+      body.len() - 1,
+      body.len()
+    );
+    connection.write_all(headers.as_bytes()).await.unwrap();
+    connection.write_all(&body[half..]).await.unwrap();
+    let result = tokio::time::timeout(Duration::from_secs(5), second)
+      .await
+      .expect("the resumed download never finished")
+      .unwrap();
+    assert!(result.is_ok(), "{result:?}");
+    assert_eq!(tokio::fs::read(&target).await.unwrap(), body);
   }
 
   #[tokio::test]

@@ -283,8 +283,10 @@ class DownloadManager {
           .withMetadata({ mod: event.payload.modId })
           .info("Download resumed");
         const store = usePersistedStore.getState();
-        // The time spent paused is not the server being slow.
-        store.patchModProgress(event.payload.modId, { slowSince: Date.now() });
+        // The time spent paused is not the server being slow, and neither is the
+        // wait in the queue a resumed download may have. The clock restarts when
+        // the download does.
+        store.patchModProgress(event.payload.modId, { slowSince: undefined });
         store.setModStatus(event.payload.modId, ModStatus.Downloading);
       },
     );

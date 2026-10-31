@@ -20,6 +20,12 @@ export const DOWNLOAD_FILE = "selected.vpk";
 export const QUEUED_MOD = "local-00000000-0000-4000-8000-000000000005";
 export const QUEUED_NAME = "E2E Queued Download";
 export const QUEUED_FILE = "queued.vpk";
+/** Cases that pause the first download while a second one waits behind it. */
+const pausesQueue = (scenario: string) =>
+  scenario.startsWith("downloads-pause-queue");
+/** Cases whose world holds a second failed mod that can wait in the queue. */
+const hasQueuedMod = (scenario: string) =>
+  scenario === "downloads-cancel-queued" || pausesQueue(scenario);
 export const downloadPayload = (variant = "selected") =>
   buildSyntheticVpk([
     {
@@ -100,6 +106,17 @@ export const downloadRoutes = (scenario: string): FixtureRoute[] => {
   // Served so a cancel that fails to drop the queued mod shows as a download.
   if (scenario === "downloads-cancel-queued")
     routes.push({ method: "GET", path: `/downloads/${QUEUED_FILE}`, ...good });
+  if (pausesQueue(scenario)) {
+    // About 24 s, so it is still running when the paused one is resumed.
+    const queued = { ...good, chunkBytes: 32768, chunkDelayMs: 1500 };
+    routes.push({
+      method: "GET",
+      path: `/downloads/${QUEUED_FILE}`,
+      ...good,
+      sequence:
+        scenario === "downloads-pause-queue-cancel" ? [good] : [queued, good],
+    });
+  }
   return routes;
 };
 
@@ -157,7 +174,7 @@ export const prepareDownloadWorld = async (
       selectedDownloads: [file],
     });
   }
-  if (scenario === "downloads-cancel-queued") {
+  if (hasQueuedMod(scenario)) {
     const queued: ModDownloadItem = {
       ...selected,
       name: QUEUED_FILE,
@@ -228,6 +245,33 @@ export const assertDownloadNetwork = (
     assert.deepEqual(statuses(QUEUE_FILE), [200]);
     return;
   }
+  if (pausesQueue(scenario)) {
+    const sent = (file: string) =>
+      requests.filter((request) => request.url === `/downloads/${file}`);
+    const [first, ...again] = sent(DOWNLOAD_FILE);
+    assert.equal(first.headers.range, undefined);
+    if (scenario === "downloads-pause-queue") {
+      // Resume continues from the partial file the pause kept.
+      assert.equal(again.length, 1);
+      assert.match(String(again[0].headers.range), /^bytes=[1-9]\d*-$/);
+      assert.equal(again[0].responseStatus, 206);
+    } else {
+      // Cancelled, or failed by a restart or reload: a UI retry starts over.
+      assert.equal(
+        again.length,
+        scenario === "downloads-pause-queue-cancel" ? 0 : 1,
+      );
+      assert.ok(again.every((request) => request.headers.range === undefined));
+    }
+    const queued = sent(QUEUED_FILE);
+    const retried = [
+      "downloads-pause-queue-reload",
+      "downloads-pause-queue-restart",
+    ];
+    assert.equal(queued.length, retried.includes(scenario) ? 2 : 1);
+    assert.ok(queued.every((request) => request.headers.range === undefined));
+    return;
+  }
   assert.ok(
     requests.every((request) => request.url === `/downloads/${DOWNLOAD_FILE}`),
   );
@@ -235,6 +279,12 @@ export const assertDownloadNetwork = (
     assert.equal(requests.length, 2);
     assert.equal(requests[0].headers.range, undefined);
     assert.equal(requests[1].headers.range, "bytes=65536-");
+    assert.equal(requests[1].responseStatus, 206);
+  } else if (scenario === "downloads-pause") {
+    // A pause ends the request; Resume continues from the partial file.
+    assert.equal(requests.length, 2);
+    assert.equal(requests[0].headers.range, undefined);
+    assert.match(String(requests[1].headers.range), /^bytes=[1-9]\d*-$/);
     assert.equal(requests[1].responseStatus, 206);
   } else {
     const retry = [
