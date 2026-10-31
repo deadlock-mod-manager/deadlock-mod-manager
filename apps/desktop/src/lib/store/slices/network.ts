@@ -29,7 +29,6 @@ export const DEFAULT_PROXY_CONFIG: ProxyConfig = {
 export type NetworkState = {
   fileserverPreference: FileserverPreference;
   proxyConfig: ProxyConfig;
-  /** Download large files as four Range requests at once. */
   segmentedDownloads: boolean;
   setFileserverPreference: (pref: FileserverPreference) => void;
   setProxyConfig: (config: ProxyConfig) => void;
