@@ -66,6 +66,9 @@ pub enum Error {
   InvalidInput(String),
   #[error("Unauthorized path access attempted: {0}")]
   UnauthorizedPath(String),
+  /// A plugin call refused because the plugin is disabled, revoked or updated.
+  #[error("{0}")]
+  ExternalPluginSession(String),
   #[error("Network error: {0}")]
   Network(String),
   #[error("GameBanana rate limit reached; retry in {retry_after_secs} seconds")]
@@ -195,6 +198,7 @@ impl serde::Serialize for Error {
       Error::ModExtractionFailed(_) => "modExtractionFailed",
       Error::InvalidInput(_) => "invalidInput",
       Error::UnauthorizedPath(_) => "unauthorizedPath",
+      Error::ExternalPluginSession(_) => "externalPluginSession",
       Error::Network(_) => "networkError",
       Error::ProviderRateLimited { .. } => "providerRateLimited",
       Error::ProviderRefused => "providerRefused",

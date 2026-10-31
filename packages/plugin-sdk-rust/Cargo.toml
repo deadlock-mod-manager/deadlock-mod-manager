@@ -1,0 +1,19 @@
+[package]
+name = "dmm-plugin-sdk"
+version = "0.1.0"
+edition = "2024"
+description = "Guest SDK for Deadlock Mod Manager external WASM plugins (ABI v1, SDK 2)"
+license = "GPL-3.0"
+publish = false
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+base64 = "0.22"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Standalone so tests run with their own lockfile and target directory,
+# independent of the desktop Cargo workspace.
+[workspace]

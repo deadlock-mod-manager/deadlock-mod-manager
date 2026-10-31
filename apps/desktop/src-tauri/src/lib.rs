@@ -15,6 +15,7 @@ mod dropped_mod_file;
 #[cfg(feature = "e2e-harness")]
 mod e2e_faults;
 mod errors;
+mod external_plugins;
 mod flatpak;
 mod forge_bridge;
 mod game_guard;
@@ -154,6 +155,11 @@ pub fn run() {
     }
   }
 
+  #[cfg(not(feature = "cef"))]
+  {
+    builder = external_plugins::frames::register(builder);
+  }
+
   builder
     .manage(game_presence::DiscordState::new())
     .manage(commands::remote_install::PendingPairing::default())
@@ -241,10 +247,64 @@ pub fn run() {
       }
       game_session::init(app.handle().clone(), app_data_dir);
 
+      let plugins_root =
+        runtime_environment::app_local_data_dir(app.handle())?.join("external-plugins");
+      let plugin_host = std::sync::Arc::new(dmm_plugin_runtime::PluginHost::open(
+        plugins_root.clone(),
+        dmm_plugin_runtime::WorkerLauncher::current_exe(plugins_root)?,
+        std::sync::Arc::new(external_plugins::profiles::DesktopAdapter::default()),
+      )?);
+      #[cfg(not(feature = "cef"))]
+      {
+        use tauri::Emitter;
+        let handle = app.handle().clone();
+        plugin_host.set_retire_hook(Box::new(move |plugin_id| {
+          if let Err(error) = handle.emit(external_plugins::CHANGED_EVENT, plugin_id) {
+            log::warn!("[ExternalPlugins] Could not announce a change to {plugin_id}: {error}");
+          }
+        }));
+        let handle = app.handle().clone();
+        plugin_host.set_blocked_hook(Box::new(move |plugin_id, activity| {
+          let event = external_plugins::ExternalPluginBlockedEvent {
+            plugin_id: plugin_id.to_owned(),
+            activity: activity.clone(),
+          };
+          if let Err(error) = handle.emit(external_plugins::BLOCKED_EVENT, event) {
+            log::warn!("[ExternalPlugins] Could not announce a refusal for {plugin_id}: {error}");
+          }
+        }));
+        let handle = app.handle().clone();
+        plugin_host.set_notification_hook(Box::new(move |plugin_id, title, body| {
+          let event = external_plugins::ExternalPluginNotificationEvent {
+            plugin_id: plugin_id.to_owned(),
+            title: title.to_owned(),
+            body: body.to_owned(),
+          };
+          if let Err(error) = handle.emit(external_plugins::NOTIFICATION_EVENT, event) {
+            log::warn!("[ExternalPlugins] Could not show a notification from {plugin_id}: {error}");
+          }
+        }));
+        #[cfg(windows)]
+        plugin_host.start_scheduler();
+      }
+      app.manage(plugin_host);
+
       log::info!("[App] Setup completed, starting application...");
       Ok(())
     })
     .invoke_handler(tauri::generate_handler![
+      commands::external_plugins::external_plugins_list,
+      commands::external_plugins::external_plugins_install,
+      commands::external_plugins::external_plugins_install_url,
+      commands::external_plugins::external_plugins_apply_update,
+      commands::external_plugins::external_plugins_discard_update,
+      commands::external_plugins::external_plugins_activity,
+      commands::external_plugins::external_plugins_clear_data,
+      commands::external_plugins::external_plugins_grant,
+      commands::external_plugins::external_plugins_revoke,
+      commands::external_plugins::external_plugins_enable,
+      commands::external_plugins::external_plugins_remove,
+      commands::external_plugins::external_plugins_frame_call,
       commands::game::find_game_path,
       commands::game::get_installed_build_id,
       commands::gamebanana_catalog::synchronize_gamebanana_catalog,

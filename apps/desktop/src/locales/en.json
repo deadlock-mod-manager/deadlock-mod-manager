@@ -29,6 +29,7 @@
   },
   "navigation": {
     "dashboard": "Dashboard",
+    "plugins": "Plugins",
     "myMods": "Mods Library",
     "getMods": "Mods Store",
     "addMods": "Add Local Mod",
@@ -5899,14 +5900,10 @@
     }
   },
   "plugins": {
-    "official": "official",
-    "thirdParty": "third-party",
     "themes": {
       "title": "Themes",
       "themeDescription": "Create your own themes or use curated presets.",
       "settingsDescription": "Adjust appearance options and choose between curated presets or custom styles.",
-      "detailedDescription": "Switch the app's visual style using curated presets. While a theme is active, the Background plugin is automatically disabled to avoid visual conflicts.",
-      "usageInstructions": "Open the plugin, choose a preset under 'Pre-defined Themes', then press Activate. Press Deactivate to return to the default look.",
       "preDefinedThemes": "Pre-defined Themes",
       "customThemes": "Custom Themes",
       "preDefinedDescription": "Choose from carefully crafted themes designed to enhance your experience.",
@@ -6230,7 +6227,465 @@
     },
     "usageInstructions": "Usage Instructions",
     "renderActive": "Plugin is active and running in the background",
-    "homepage": "Homepage"
+    "homepage": "Homepage",
+    "page": {
+      "managePlugins": "Manage plugins",
+      "notInstalled": {
+        "title": "This plugin isn't installed",
+        "body": "It may have been removed. Install it again from Manage plugins."
+      },
+      "hostBar": {
+        "version": "v{{version}}",
+        "by": "by {{author}}",
+        "sandboxed": "Runs sandboxed",
+        "access": "Access",
+        "reload": "Reload",
+        "more": "More",
+        "turnOn": "Turn on",
+        "turnOff": "Turn off",
+        "remove": "Remove"
+      },
+      "notResponding": "Not responding",
+      "starting": {
+        "hint": "Starting the plugin. If it doesn't answer in 10 seconds, DMM shows what went wrong."
+      },
+      "noAnswer": {
+        "title": "{{name}} didn't answer",
+        "body": "Its page didn't start within 10 seconds. Reload it to try again.",
+        "reload": "Reload"
+      },
+      "off": {
+        "title": "{{name}} is off",
+        "body": "Its page and background work are stopped. Your builds, settings and access choices are kept for when you turn it back on.",
+        "turnOn": "Turn on"
+      },
+      "stopped": {
+        "title": "DMM stopped {{name}}",
+        "crashed": "It crashed 3 times in 10 minutes. DMM and your other plugins kept running.",
+        "lastError": "Last error, {{time}}",
+        "lastErrorUnknownTime": "Last error",
+        "noError": "It didn't report an error.",
+        "restart": "Restart",
+        "copyDetails": "Copy details",
+        "copied": "Copied the error details",
+        "copyFailed": "Couldn't copy the error details"
+      },
+      "noPage": {
+        "title": "{{name}} has no page",
+        "body": "It works in the background. Manage its access and updates from Manage plugins."
+      },
+      "blocked": {
+        "title": "DMM blocked a request",
+        "files": "{{name}} tried to use a file it wasn't given.",
+        "filesOnly": "{{name}} tried to use a file it wasn't given. It can only use {{file}}.",
+        "modsIn": "{{name}} tried to use the mods in {{target}}.",
+        "modsInOnly": "{{name}} tried to use the mods in {{target}}. It can only use {{profile}}.",
+        "mods": "{{name}} tried to use mods it has no access for.",
+        "modsOnly": "{{name}} tried to use mods it has no access for. It can only use {{profile}}.",
+        "network": "{{name}} tried to connect to {{host}}.",
+        "networkOnly": "{{name}} tried to connect to {{host}}. It can only connect to {{hosts}}.",
+        "networkAny": "{{name}} tried to connect to a site it wasn't given.",
+        "game": "{{name}} tried to check whether Deadlock is running without access.",
+        "storage": "{{name}} tried to keep data without access to its own storage.",
+        "notifications": "{{name}} tried to show a notification without access.",
+        "unknown": "{{name}} asked for something plugins can't do ({{method}}).",
+        "generic": "{{name}} made a request it has no access for.",
+        "review": "Review access",
+        "dismiss": "Dismiss"
+      },
+      "setup": {
+        "title": "Finish setting up {{name}}",
+        "subtitle": "It stays off until it has what it needs. You can change any of this later from Access.",
+        "fromFile": "Installed from a file, not the DMM catalog. Only continue if you trust where this file came from.",
+        "label": "Set up what it can access",
+        "ready": "Ready",
+        "needed": "Needed",
+        "noFile": "No file selected",
+        "noFolder": "No folder selected",
+        "browse": "Browse",
+        "chooseProfile": "Choose a profile",
+        "createProfile": "Create a test profile",
+        "createProfileHint": "A new, empty profile named {{name}}",
+        "testProfileName": "{{name}} test",
+        "recommended": "Recommended",
+        "profileMods_one": "{{count}} mod",
+        "profileMods_other": "{{count}} mods",
+        "profileModsInstall_one": "{{count}} mod. Its own mod is added next to it.",
+        "profileModsInstall_other": "{{count}} mods. Its own mod is added next to them.",
+        "defaultProfile": "Plugins never install here",
+        "createFailed": "Couldn't create the test profile",
+        "neverOffline": "It can never use the internet, read other files, touch your game folder or start programs.",
+        "neverOnline": "It can never reach other sites, read other files, touch your game folder or start programs.",
+        "stepsLeft_one": "{{count}} step left",
+        "stepsLeft_other": "{{count}} steps left",
+        "enable": "Enable plugin",
+        "enabled": "{{name}} is on.",
+        "enableFailed": "Couldn't enable the plugin"
+      },
+      "remove": {
+        "action": "Remove plugin",
+        "title": "Remove {{name}}?",
+        "body": "Uninstalls the plugin and deletes its data and access. Install it again to restore it.",
+        "done": "Removed {{name}}.",
+        "failed": "Couldn't remove the plugin"
+      },
+      "toggleFailed": "Couldn't change the plugin state",
+      "update": {
+        "banner_one": "Version {{version}} is ready. It asks for one new permission, so it waits for you.",
+        "banner_other": "Version {{version}} is ready. It asks for {{count}} new permissions, so it waits for you.",
+        "bannerNothingNew": "Version {{version}} is ready to install.",
+        "review": "Review update",
+        "title": "Update to {{version}}",
+        "intro_one": "This update asks for one thing it could not do before.",
+        "intro_other": "This update asks for {{count}} things it could not do before.",
+        "introNothingNew": "This update asks for nothing new.",
+        "changes": "What changes",
+        "new": "New",
+        "unchanged": "Unchanged",
+        "whatsNew": "What's new in {{version}}",
+        "note": "If you keep {{version}}, it keeps running with the access it has now. Updates that ask for nothing new install on their own.",
+        "keep": "Keep {{version}}",
+        "allow": "Allow and update",
+        "close": "Close",
+        "applied": "Updated {{name}} to {{version}}.",
+        "applyFailed": "Couldn't update the plugin",
+        "discardFailed": "Couldn't keep the current version",
+        "waits": {
+          "title": "{{name}} waits for its update",
+          "body": "Review version {{version}} before you set it up."
+        }
+      }
+    },
+    "state": {
+      "running": "Running",
+      "needsSetup": "Needs setup",
+      "needsAccess": "Needs access",
+      "stopped": "Stopped",
+      "stoppedAfterErrors": "Stopped after errors",
+      "off": "Off",
+      "updateReady": "Update ready",
+      "starting": "Starting"
+    },
+    "access": {
+      "blocked": {
+        "title": "Always blocked for this plugin",
+        "internet": "Internet",
+        "otherSites": "Other sites",
+        "files": "Your files",
+        "otherFiles": "Other files",
+        "profiles": "Your profiles",
+        "defaultProfile": "Default profile",
+        "otherProfiles": "Other profiles",
+        "runningPrograms": "Running programs",
+        "otherPlugins": "Other plugins"
+      },
+      "sheet": {
+        "title": "Access",
+        "description": "What {{name}} can use. DMM checks every request it makes against this list.",
+        "required": "Required to run",
+        "progress": "{{done}} of {{total}} set up",
+        "recentRequests": "Recent requests",
+        "seeAll": "See all",
+        "noRequests": "No requests yet.",
+        "applyNote": "Changes apply right away. The plugin reloads with its new access.",
+        "done": "Done",
+        "close": "Close"
+      },
+      "actions": {
+        "changeFile": "Change file",
+        "changeFolder": "Change folder",
+        "changeProfile": "Change profile",
+        "clearData": "Clear data",
+        "setUp": "Set up",
+        "noTestProfiles": "Create a profile other than the default one first.",
+        "notChosen": "Not chosen yet",
+        "unknownProfile": "Missing profile ({{folder}})",
+        "grantSaved": "Updated access for {{name}}.",
+        "grantFailed": "Couldn't update access",
+        "clearConfirmTitle": "Clear the data {{name}} saved?",
+        "clearConfirmBody": "Deletes everything in its private store ({{size}}). The plugin restarts with empty storage.",
+        "cleared": "Cleared the data {{name}} saved.",
+        "clearFailed": "Couldn't clear the plugin's data",
+        "revokeAll": "Revoke all access",
+        "revokeConfirmTitle": "Revoke all access for {{name}}?",
+        "revokeConfirmBody": "DMM turns the plugin off and forgets what you picked for it. Set it up again to turn it back on.",
+        "revokeConfirmAction": "Revoke access",
+        "revoked": "Revoked access for {{name}}.",
+        "revokeFailed": "Couldn't revoke access"
+      }
+    },
+    "permissions": {
+      "files": {
+        "title": {
+          "fileRead": "Read one file you choose",
+          "fileReadWrite": "Read and change one file you choose",
+          "folderRead": "Read one folder you choose",
+          "folderReadWrite": "Read and change one folder you choose"
+        },
+        "detail": {
+          "fileRead": "You pick it. It never sees other files.",
+          "fileReadWrite": "You pick it. It can change it, but never other files.",
+          "folderRead": "You pick it. It never sees files outside it.",
+          "folderReadWrite": "You pick it. It can change files inside it, but nothing outside."
+        },
+        "note": {
+          "file": "Only this file",
+          "folder": "Only this folder",
+          "typed": "Only {{extensions}} files"
+        },
+        "short": {
+          "fileRead": "read one file you choose",
+          "fileReadWrite": "read and change one file you choose",
+          "folderRead": "read one folder you choose",
+          "folderReadWrite": "read and change one folder you choose",
+          "fileReadTyped": "read one {{extensions}} file you choose",
+          "fileReadWriteTyped": "read and change one {{extensions}} file you choose",
+          "folderReadTyped": "read the {{extensions}} files in one folder you choose",
+          "folderReadWriteTyped": "read and change the {{extensions}} files in one folder you choose"
+        },
+        "pick": {
+          "file": "Choose the file {{name}} can use",
+          "folder": "Choose the folder {{name}} can use",
+          "filter": "{{extensions}} files"
+        }
+      },
+      "mods": {
+        "title": {
+          "read": "See the mods in one profile you choose",
+          "readAll": "See the mods in all your profiles",
+          "install": "Install its own mod into one profile you choose",
+          "readInstall": "See the mods in one profile you choose and add its own"
+        },
+        "detail": {
+          "read": "You pick the profile. It sees which mods it has, nothing else.",
+          "readAll": "It sees which mods each profile has. It can't change them.",
+          "install": "Pick a profile just for testing. Your default profile is never offered.",
+          "readInstall": "Pick a profile just for testing. Your default profile is never offered."
+        },
+        "note": {
+          "read": "Only this profile",
+          "readAll": "Read only",
+          "install": "Never your default profile",
+          "readInstall": "Never your default profile"
+        },
+        "short": {
+          "read": "see the mods in one profile you choose",
+          "readAll": "see the mods in all your profiles",
+          "install": "install its own mod into one profile you choose",
+          "readInstall": "see the mods in one profile you choose and add its own"
+        },
+        "allProfiles": "All profiles"
+      },
+      "network": {
+        "title": "Connect to {{hosts}}",
+        "detail": "Anything it can read, it can send to these sites.",
+        "note": "Only these sites",
+        "short": "connect to {{hosts}}"
+      },
+      "game": {
+        "title": "See whether Deadlock is running",
+        "detail": "Nothing about your matches or game files.",
+        "note": "Nothing else",
+        "scope": "Running or not",
+        "short": "see whether Deadlock is running"
+      },
+      "storage": {
+        "title": "Keep its own data",
+        "detail": "Private storage, removed with the plugin.",
+        "note": "Removed with the plugin",
+        "value": "{{size}} in its private store",
+        "short": "keep its own data"
+      },
+      "notifications": {
+        "title": "Show notifications",
+        "detail": "Shown with its name, at most 3 a minute.",
+        "note": "At most 3 a minute",
+        "scope": "Shown with its name",
+        "short": "show notifications"
+      },
+      "summary": {
+        "online": "Can {{list}}.",
+        "offline": "Can {{list}}. No internet access.",
+        "none": "Asks for no access."
+      }
+    },
+    "notification": {
+      "title": "{{name}}: {{title}}"
+    },
+    "activity": {
+      "deployed": "Deployed build {{hash}} to {{profile}}",
+      "deployedRequest": "Deployed a build to {{profile}}",
+      "staged_one": "Staged a new build, {{size}}, {{count}} resource",
+      "staged_other": "Staged a new build, {{size}}, {{count}} resources",
+      "stagedRequest": "Read {{file}}",
+      "stagedAny": "Staged a new build",
+      "fetched": "Connected to {{host}}",
+      "fetchedAny": "Connected to a site",
+      "wrote": "Changed {{file}}",
+      "wroteAny": "Changed a file",
+      "notified": "Showed a notification",
+      "aProfile": "a profile",
+      "blockedFile": "Tried to use {{file}}, which it was not given. Blocked.",
+      "blockedFileAny": "Tried to use a file it was not given. Blocked.",
+      "blockedMods": "Tried to use the mods in {{profile}}. Blocked.",
+      "blockedModsAny": "Tried to use mods without access. Blocked.",
+      "blockedNetwork": "Tried to connect to {{host}}. Blocked.",
+      "blockedNetworkAny": "Tried to connect to a site it was not given. Blocked.",
+      "blockedGame": "Tried to check the game without access. Blocked.",
+      "blockedStorage": "Tried to use storage without access. Blocked.",
+      "blockedNotifications": "Tried to show a notification without access. Blocked.",
+      "blockedMethod": "Called {{method}}, which DMM does not offer. Blocked.",
+      "blockedOther": "A request was blocked.",
+      "granted": "Access granted",
+      "revoked": "Access revoked",
+      "updated": "Updated to {{version}}",
+      "updatedAny": "Updated",
+      "dataCleared": "Cleared its data",
+      "stopped": "Stopped after repeated crashes",
+      "empty": "Nothing yet. Its requests and anything DMM blocks show up here.",
+      "loadFailed": "Couldn't load activity: {{message}}"
+    },
+    "time": {
+      "seconds": "{{count}} s ago",
+      "minutes": "{{count}} min ago",
+      "hours": "{{count}} h ago",
+      "days_one": "yesterday",
+      "days_other": "{{count}} days ago",
+      "weeks_one": "{{count}} week ago",
+      "weeks_other": "{{count}} weeks ago",
+      "months_one": "{{count}} month ago",
+      "months_other": "{{count}} months ago",
+      "years_one": "{{count}} year ago",
+      "years_other": "{{count}} years ago"
+    },
+    "manage": {
+      "tabs": {
+        "installed": "Installed",
+        "discover": "Discover",
+        "updates": "Updates"
+      },
+      "search": {
+        "installed": "Search installed plugins",
+        "discover": "Search plugins",
+        "updates": "Search updates"
+      },
+      "installFromFile": "Install from file",
+      "installing": "Installing…",
+      "chooseArchive": "Choose a plugin archive",
+      "archiveFilter": "Plugin archive",
+      "installed": "Installed {{name}} {{version}}.",
+      "installFailed": "Couldn't install the plugin",
+      "loadFailed": "Couldn't load plugins: {{message}}",
+      "sections": {
+        "installedByYou": "Installed by you",
+        "updates": "Ready to update"
+      },
+      "line": {
+        "needsProfile": "Choose a profile to finish setup",
+        "needsFile": "Choose a file to finish setup",
+        "needsFolder": "Choose a folder to finish setup",
+        "needsSetup": "Finish setup to turn it on",
+        "crashed": "Crashed 3 times in 10 minutes. DMM stopped it to stay stable.",
+        "noAccess": "Uses no files or profiles"
+      },
+      "update": "Update",
+      "setUp": "Set up",
+      "restart": "Restart",
+      "toggle": "Turn {{name}} on or off",
+      "toggleFailed": "Couldn't change the plugin state",
+      "findMore": {
+        "title": "Find more plugins",
+        "body": "Community plugins run sandboxed. You choose what each one can touch before it runs.",
+        "browse": "Browse plugins"
+      },
+      "noInstalled": "Plugins you install show up here.",
+      "noMatches": "No plugins match \"{{query}}\".",
+      "updatesEmpty": {
+        "title": "Every plugin is up to date",
+        "body": "When a newer version of a plugin you installed arrives, it waits here until you review it."
+      },
+      "panel": {
+        "by": "by {{author}}",
+        "open": "Open",
+        "more": "More actions",
+        "openPage": "Open page",
+        "copyId": "Copy plugin ID",
+        "copiedId": "Copied the plugin ID.",
+        "version": "v{{version}}",
+        "fromFile": "Installed from file",
+        "fromCatalog": "From the catalog",
+        "hash": "sha256 {{hash}}",
+        "pageInSidebar": "Page in sidebar",
+        "worker": "Worker",
+        "lastCheck": "Last check",
+        "restarts": "Restarts",
+        "storage": "Storage",
+        "never": "Never",
+        "restartsToday": "{{count}} today",
+        "tabs": {
+          "access": "Access",
+          "activity": "Activity",
+          "about": "About"
+        },
+        "intro": "This plugin can only do what is listed here. DMM checks every request it makes against these grants.",
+        "recentActivity": "Recent activity",
+        "seeAll": "See all",
+        "granted": "Granted {{date}}",
+        "notGranted": "Not granted",
+        "remove": "Remove",
+        "removeConfirmTitle": "Remove {{name}}?",
+        "removeConfirmBody": "Uninstalls the plugin and deletes its access and private data. Builds it already deployed stay in their profile as ordinary mods.",
+        "removed": "Removed {{name}}.",
+        "removeFailed": "Couldn't remove the plugin",
+        "emptyTitle": "No plugins installed yet",
+        "emptyBody": "Install one from a file or browse the catalog. You choose what it can touch before it runs."
+      },
+      "about": {
+        "description": "Description",
+        "noDescription": "The author didn't add a description.",
+        "changelog": "What's new in {{version}}",
+        "noChangelog": "No changelog for this version.",
+        "author": "Author",
+        "unknownAuthor": "Unknown",
+        "version": "Version",
+        "source": "Source",
+        "installedAt": "Installed",
+        "updatedAt": "Updated",
+        "hash": "Package hash"
+      }
+    },
+    "discover": {
+      "installed": "Installed",
+      "install": "Install",
+      "installing": "Installing…",
+      "notPublished": "Not published yet",
+      "categories": {
+        "all": "All",
+        "creator": "Creator tools",
+        "match": "Match and stats",
+        "library": "Library tools",
+        "audio": "Audio",
+        "hud": "Crosshairs and HUD"
+      },
+      "verifiedOnly": "Verified only",
+      "verified": "Verified author",
+      "unverified": "Unverified",
+      "sort": {
+        "label": "Sort plugins",
+        "installs": "Most installed",
+        "updated": "Recently updated",
+        "name": "Name"
+      },
+      "by": "by {{author}}",
+      "thousands": "{{value}}k",
+      "trust": "Every plugin runs in its own sandbox. DMM shows exactly what it asks for before you install, and you can take access back at any time.",
+      "empty": "No plugins match these filters."
+    },
+    "catalog": {
+      "creatorWorkspaceBridge": {
+        "description": "Point it at the VPK your tools export. Every finished build is staged, checked and ready to deploy to a test profile in one click."
+      }
+    }
   },
   "accessibility": {
     "deadlockLogoAlt": "Deadlock",
