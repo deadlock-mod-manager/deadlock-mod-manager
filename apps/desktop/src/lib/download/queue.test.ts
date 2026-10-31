@@ -220,4 +220,35 @@ describe("download ownership", () => {
     expect(callbacks).toEqual(["first:failed"]);
     expect(outcomes()).toEqual(["cancelled"]);
   });
+  it.each([true, false])(
+    "keeps callbacks quiet when an overlapping cancel rejects (notify=%s)",
+    async (notify) => {
+      const callbacks: string[] = [];
+      queue.add(request(callbacks, "first"));
+      const quiet = queue.cancel(modData.remoteId, false);
+      const overlapping = queue.cancel(modData.remoteId, notify);
+      cancellations[1]?.reject(new Error("Cancellation failed"));
+      await expect(overlapping).rejects.toThrow("Cancellation failed");
+
+      completed();
+      cancellations[0]?.resolve();
+      await quiet;
+      expect(callbacks).toEqual([]);
+      expect(outcomes()).toEqual(["completed"]);
+    },
+  );
+  it("restores callbacks after every quiet cancel rejects", async () => {
+    const callbacks: string[] = [];
+    queue.add(request(callbacks, "first"));
+    const first = queue.cancel(modData.remoteId, false);
+    const second = queue.cancel(modData.remoteId, false);
+    cancellations[0]?.reject(new Error("First cancellation failed"));
+    await expect(first).rejects.toThrow("First cancellation failed");
+    cancellations[1]?.reject(new Error("Second cancellation failed"));
+    await expect(second).rejects.toThrow("Second cancellation failed");
+
+    completed();
+    expect(callbacks).toEqual(["first:completed"]);
+    expect(outcomes()).toEqual(["completed"]);
+  });
 });

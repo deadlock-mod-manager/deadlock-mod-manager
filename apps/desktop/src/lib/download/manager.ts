@@ -459,9 +459,11 @@ class DownloadManager {
       }
     }
     // The mod outlives a delete that fails after this, so it can't stay in flight.
-    usePersistedStore
-      .getState()
-      .setModStatus(modId, ModStatus.FailedToDownload);
+    if (!this.isQueued(modId)) {
+      usePersistedStore
+        .getState()
+        .setModStatus(modId, ModStatus.FailedToDownload);
+    }
     logger.withMetadata({ mod: modId }).info("Download discarded");
   }
 

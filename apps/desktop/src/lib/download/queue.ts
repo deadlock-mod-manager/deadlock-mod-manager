@@ -17,8 +17,7 @@ export class DownloadAlreadyQueuedError extends Error {}
 interface PendingDownload {
   mod: DownloadableMod;
   attempt: AnalyticsAttempt<"mod_download">;
-  /** Set while a cancel that must not call back is waiting for the backend. */
-  silent?: boolean;
+  quietCancels: number;
 }
 interface DownloadQueueDependencies {
   start: (
@@ -51,6 +50,7 @@ export class DownloadQueue {
     }
     const entry: PendingDownload = {
       mod,
+      quietCancels: 0,
       attempt: this.dependencies.start({
         mod_id: mod.remoteId,
         entry_point: mod.analyticsEntryPoint ?? "other",
@@ -82,15 +82,15 @@ export class DownloadQueue {
 
   /**
    * Resolves false when no queue entry tracked the mod. With `notify` off the
-   * mod's callbacks are skipped while the backend answers.
+   * mod's completion and failure callbacks are skipped while the backend answers.
    */
   async cancel(modId: string, notify = true) {
     const entry = this.pending.get(modId);
-    if (entry && !notify) entry.silent = true;
+    if (entry && !notify) entry.quietCancels++;
     try {
       await this.dependencies.cancel(modId);
     } catch (error) {
-      if (entry) entry.silent = false;
+      if (entry && !notify) entry.quietCancels--;
       throw error;
     }
     if (!entry) return false;
@@ -109,6 +109,6 @@ export class DownloadQueue {
     if (!expected || this.pending.get(modId) !== expected) return;
     this.pending.delete(modId);
     expected.attempt.finish(outcome);
-    return expected.silent ? undefined : expected.mod;
+    return expected.quietCancels > 0 ? undefined : expected.mod;
   }
 }

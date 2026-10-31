@@ -209,6 +209,9 @@ export const downloadRoutes = (scenario: string): FixtureRoute[] => {
         good,
       ];
       break;
+    case "downloads-delete-queued":
+      sequence = [{ ...slow, chunkDelayMs: 1_000 }];
+      break;
     default:
       sequence = [slow];
   }

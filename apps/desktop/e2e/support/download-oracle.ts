@@ -113,14 +113,11 @@ export const assertDownloadDisk = async (
     configuration: { roots, caseId },
   } = await assertOwnedWorld(world);
   const mods = await readDownloadState(world);
-  const queued =
-    queuesBehindRunning(caseId) ||
-    (caseId === "downloads-delete-queued" && status === "paused");
+  const queued = queuesBehindRunning(caseId);
   assert.deepEqual(
     mods.map(({ remoteId }) => remoteId),
     queued ? [DOWNLOAD_MOD, QUEUED_MOD] : [DOWNLOAD_MOD],
   );
-  // Cancelled or deleted while it waited for the first download, so it never started.
   if (queued) assert.equal(mods[1].status, "failedToDownload");
   if (QUEUED_CASES.includes(caseId))
     assert.deepEqual(
