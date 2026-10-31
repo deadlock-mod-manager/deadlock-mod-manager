@@ -32,6 +32,7 @@ import {
 import ErrorBoundary from "@/components/shared/error-boundary";
 import { useConfigListing } from "@/hooks/performance/use-config-listing";
 import { useDownload } from "@/hooks/use-download";
+import { downloadManager } from "@/lib/download/manager";
 import { useHasOpened } from "@deadlock-mods/ui/hooks/use-has-opened";
 import { useInstallAction } from "@/hooks/use-install-action";
 import {
@@ -178,6 +179,10 @@ const InstallModButton = ({
       ? state.modProgress[remoteMod.remoteId]?.percentage
       : undefined;
     return percentage == null ? undefined : Math.round(percentage);
+  });
+  const isWaiting = usePersistedStore((state) => {
+    const mod = findLocalMod(state.localMods, remoteMod?.remoteId);
+    return mod !== undefined && downloadManager.isWaiting(mod);
   });
   const removeMod = usePersistedStore((state) => state.removeMod);
   const [ref, hovering] = useHover();
@@ -336,6 +341,9 @@ const InstallModButton = ({
         }
         return t("modButton.downloaded");
       case ModStatus.Downloading:
+        if (isWaiting) {
+          return t("modStatus.waiting");
+        }
         return t("downloads.downloadingPercent", {
           percent: progressPercent ?? 0,
         });
@@ -348,7 +356,7 @@ const InstallModButton = ({
       default:
         return t(`modButton.${localMod?.status}`);
     }
-  }, [localMod?.status, t, hovering, progressPercent]);
+  }, [localMod?.status, t, hovering, progressPercent, isWaiting]);
 
   const tooltip = useMemo(() => {
     switch (localMod?.status) {
@@ -371,6 +379,7 @@ const InstallModButton = ({
   const showProgressRing =
     variant === "iconOnly" &&
     localMod?.status === ModStatus.Downloading &&
+    !isWaiting &&
     progressPercent != null;
 
   const buttonVariant = useMemo(() => {

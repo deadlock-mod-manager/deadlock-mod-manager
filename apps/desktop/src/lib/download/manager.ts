@@ -9,6 +9,7 @@ import type {
   DownloadFailureReason,
   DownloadSource,
   FontInfo,
+  LocalMod,
   ModFileTree,
   Progress,
 } from "@/types/mods";
@@ -101,7 +102,9 @@ class DownloadManager {
     const unlistenStarted = await listen<DownloadStartedEvent>(
       "download-started",
       (event) => {
-        const mod = this.downloads.getMod(event.payload.modId);
+        // Marked before the progress patch below, which runs the selectors
+        // that read it.
+        const mod = this.downloads.start(event.payload.modId);
         if (mod) {
           logger
             .withMetadata({ mod: event.payload.modId })
@@ -121,7 +124,9 @@ class DownloadManager {
     const unlistenProgress = await listen<DownloadProgressEvent>(
       "download-progress",
       (event) => {
-        const mod = this.downloads.getMod(event.payload.modId);
+        // Progress means it is running: one resumed before its pause stopped it
+        // carries on without starting again.
+        const mod = this.downloads.start(event.payload.modId);
         if (mod) {
           const progress: Progress = {
             progress: event.payload.progress,
@@ -282,6 +287,7 @@ class DownloadManager {
         logger
           .withMetadata({ mod: event.payload.modId })
           .info("Download resumed");
+        this.downloads.requeue(event.payload.modId);
         const store = usePersistedStore.getState();
         // The time spent paused is not the server being slow, and neither is the
         // wait in the queue a resumed download may have. The clock restarts when
@@ -387,6 +393,17 @@ class DownloadManager {
     return this.downloads.getMod(modId) !== undefined;
   }
 
+  /**
+   * Whether the mod is Downloading but still waiting its turn. Read it inside a
+   * store selector: the flag behind it is not store state, but every event that
+   * changes it also writes to the store, and that write runs the selector again.
+   */
+  isWaiting({ remoteId, status }: Pick<LocalMod, "remoteId" | "status">) {
+    return (
+      status === ModStatus.Downloading && !this.downloads.isStarted(remoteId)
+    );
+  }
+
   addToQueue(mod: DownloadableMod) {
     this.downloads.add(mod);
   }
@@ -404,10 +421,15 @@ class DownloadManager {
       .info("Queueing download for mod");
 
     // Downloads run one at a time, so a retry can wait behind another one with
-    // its last attempt's slow clock still set. The clock restarts when it starts.
+    // its last attempt's progress and slow clock still set. The clock restarts
+    // when it starts.
     const store = usePersistedStore.getState();
-    if (store.getModProgress(mod.remoteId)?.slowSince !== undefined) {
-      store.patchModProgress(mod.remoteId, { slowSince: undefined });
+    if (store.getModProgress(mod.remoteId) !== undefined) {
+      store.patchModProgress(mod.remoteId, {
+        percentage: 0,
+        speed: 0,
+        slowSince: undefined,
+      });
     }
 
     const profileFolder = mod.profileFolder ?? null;
