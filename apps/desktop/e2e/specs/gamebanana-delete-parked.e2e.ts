@@ -16,7 +16,10 @@ import {
   CATALOG_MOD_ID,
   CATALOG_MOD_NAME,
 } from "../support/gamebanana-fixtures";
-import { readCatalogState } from "../support/gamebanana-oracle";
+import {
+  assertCatalogDisk,
+  readCatalogState,
+} from "../support/gamebanana-oracle";
 import { observeUntil } from "../support/observations";
 import { navigate, reveal } from "../support/ui";
 import { assertOwnedWorld, collectFileInventory } from "../support/world";
@@ -97,5 +100,10 @@ describe("catalog mod deletion", () => {
     await installCatalog(world, scenario, files);
     await checkCatalog(world, scenario, "reinstalled", files, downloads);
     await closeApplication(world, runtime.processId);
+    await assertCatalogDisk(world, scenario, "closed-reinstalled", {
+      files,
+      downloads,
+      dormant: [],
+    });
   });
 });
