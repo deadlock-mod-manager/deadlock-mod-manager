@@ -33,7 +33,7 @@ async function exerciseCrashCause(world: string) {
   await deliverReport(crashReport(false));
   let dialog = await $('[role="dialog"]');
   await expect(dialog).toHaveText(
-    expect.stringContaining("Did Deadlock just crash?"),
+    expect.stringContaining("Deadlock closed unexpectedly"),
   );
   await expect(dialog).not.toHaveText(
     expect.stringContaining("Possible crash cause"),
@@ -45,13 +45,19 @@ async function exerciseCrashCause(world: string) {
   );
   await deliverReport(crashReport(true));
   dialog = await $('[role="dialog"]');
-  await expect(dialog).toHaveText(
-    expect.stringContaining(`Possible crash cause: ${PRIMARY.name}`),
+  const suspect = await dialog.$(
+    '[role="region"][aria-labelledby="crash-suspect-heading"]',
   );
+  await expect(suspect).toHaveText(
+    expect.stringContaining("Possible crash cause"),
+  );
+  await expect(suspect).toHaveText(expect.stringContaining(PRIMARY.name));
   await expect(dialog).toHaveText(
     expect.stringContaining("scripts/e2e-reliability.vdata_c"),
   );
-  await expect(dialog).toHaveText(expect.stringContaining("not proof"));
+  await expect(suspect).toHaveText(
+    expect.stringContaining("It may be involved."),
+  );
   await dialog.$("button=I closed it").click();
   await waitForOverlaysClosed();
   await expect(modCard()).toHaveText(
