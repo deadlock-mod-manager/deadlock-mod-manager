@@ -270,6 +270,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
     tab: "network",
     titleKey: "settings.fileserverSectionTitle",
     descriptionKey: "settings.networkDescription",
+    settings: [
+      {
+        titleKey: "settings.segmentedDownloads",
+        descriptionKey: "settings.segmentedDownloadsDescription",
+      },
+    ],
   },
   {
     id: "gamebanana",

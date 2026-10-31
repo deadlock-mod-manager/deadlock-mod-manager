@@ -396,6 +396,7 @@ pub fn run() {
       commands::downloads::resume_download,
       commands::downloads::get_download_status,
       commands::downloads::get_all_downloads,
+      commands::downloads::set_segmented_downloads,
       commands::archive::replace_mod_vpks,
       commands::archive::copy_selected_vpks_from_archive,
       commands::archive::copy_local_mod_vpks,

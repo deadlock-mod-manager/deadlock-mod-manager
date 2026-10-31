@@ -1,6 +1,8 @@
 //! A loopback HTTP/1.1 server for downloader tests: every reply is scripted, so
-//! a test can send a wrong `Content-Range` or cut a body short.
+//! a test can send a wrong `Content-Range`, cut a body short or slow it down,
+//! and count the connections the downloader really opens.
 
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -8,6 +10,7 @@ use tokio::net::TcpListener;
 
 #[derive(Clone, Debug)]
 pub struct Request {
+  pub path: String,
   pub range: Option<String>,
   pub if_range: Option<String>,
 }
@@ -56,6 +59,12 @@ impl Reply {
     self
   }
 
+  pub fn throttled(mut self, chunk: usize, delay: Duration) -> Self {
+    self.chunk = chunk;
+    self.chunk_delay = delay;
+    self
+  }
+
   /// What a Range-capable server sends for `file`: a 206 for a satisfiable
   /// range, the whole file otherwise.
   pub fn serve(file: &[u8], request: &Request) -> Self {
@@ -77,6 +86,7 @@ type Handler = dyn Fn(&Request, usize) -> Reply + Send + Sync;
 pub struct TestServer {
   pub origin: String,
   requests: Arc<Mutex<Vec<Request>>>,
+  peak: Arc<AtomicUsize>,
 }
 
 impl TestServer {
@@ -86,16 +96,23 @@ impl TestServer {
     let origin = format!("http://{}", listener.local_addr().unwrap());
     let handler: Arc<Handler> = Arc::new(handler);
     let requests = Arc::new(Mutex::new(Vec::new()));
+    let active = Arc::new(AtomicUsize::new(0));
+    let peak = Arc::new(AtomicUsize::new(0));
     tokio::spawn({
       let requests = Arc::clone(&requests);
+      let peak = Arc::clone(&peak);
       async move {
         while let Ok((mut socket, _)) = listener.accept().await {
           let handler = Arc::clone(&handler);
           let requests = Arc::clone(&requests);
+          let active = Arc::clone(&active);
+          let peak = Arc::clone(&peak);
           tokio::spawn(async move {
             let Some(request) = read_request(&mut socket).await else {
               return;
             };
+            let now = active.fetch_add(1, Ordering::SeqCst) + 1;
+            peak.fetch_max(now, Ordering::SeqCst);
             let index = {
               let mut requests = requests.lock().unwrap();
               requests.push(request.clone());
@@ -103,11 +120,16 @@ impl TestServer {
             };
             let reply = handler(&request, index);
             let _ = write_reply(&mut socket, &reply).await;
+            active.fetch_sub(1, Ordering::SeqCst);
           });
         }
       }
     });
-    Self { origin, requests }
+    Self {
+      origin,
+      requests,
+      peak,
+    }
   }
 
   pub fn url(&self, path: &str) -> String {
@@ -116,6 +138,11 @@ impl TestServer {
 
   pub fn requests(&self) -> Vec<Request> {
     self.requests.lock().unwrap().clone()
+  }
+
+  /// Most requests the server was answering at the same moment.
+  pub fn peak_connections(&self) -> usize {
+    self.peak.load(Ordering::SeqCst)
   }
 }
 
@@ -130,8 +157,9 @@ async fn read_request(socket: &mut tokio::net::TcpStream) -> Option<Request> {
   }
   let head = String::from_utf8_lossy(&head);
   let mut lines = head.split("\r\n");
-  lines.next()?;
+  let path = lines.next()?.split(' ').nth(1)?.to_string();
   let mut request = Request {
+    path,
     range: None,
     if_range: None,
   };

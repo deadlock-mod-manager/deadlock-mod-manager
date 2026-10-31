@@ -1,7 +1,9 @@
+pub(crate) mod budget;
 pub mod downloader;
 mod progress;
 mod range;
 mod segment_staging;
+mod segmented;
 #[cfg(test)]
 mod test_server;
 
@@ -14,6 +16,8 @@ use downloader::{
   DownloadProgress as FileProgress, DownloadSource, PauseHandle, download_file_resumable,
 };
 use progress::{AcceptedProgress, ProgressAggregator};
+use segment_staging::discard_staging;
+use segmented::{MIN_SEGMENTED_SIZE, Segmented, download_file_segmented};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::PathBuf;
@@ -482,7 +486,7 @@ impl DownloadManager {
       let aggregator_shared = Arc::clone(&aggregator);
 
       let handle = tokio::spawn(async move {
-        let result = download_file_resumable(
+        let result = Self::download_file(
           &url,
           &target_path,
           file_size,
@@ -518,7 +522,6 @@ impl DownloadManager {
             file_size.min(2 * 1024 * 1024 * 1024)
           }),
           md5_checksum.as_deref(),
-          true,
         )
         .await;
 
@@ -607,6 +610,93 @@ impl DownloadManager {
         }
       }
     }
+  }
+
+  /// In segments when the setting is on and the file qualifies, in one stream
+  /// otherwise. The setting is read once, so turning it off mid-download
+  /// doesn't change how a file that already started is fetched.
+  #[allow(clippy::too_many_arguments)]
+  async fn download_file<F>(
+    url: &str,
+    target_path: &std::path::Path,
+    file_size: u64,
+    on_progress: F,
+    cancel_token: CancellationToken,
+    pause: PauseHandle,
+    max_bytes: Option<u64>,
+    md5_checksum: Option<&str>,
+  ) -> Result<(), Error>
+  where
+    F: Fn(FileProgress) + Send + Sync + 'static,
+  {
+    let budget = budget::app_budget();
+    if !budget.segmented_enabled() {
+      if let Err(error) = discard_staging(target_path).await {
+        log::warn!("Failed to remove segment staging for {target_path:?}: {error}");
+      }
+      return download_file_resumable(
+        url,
+        target_path,
+        file_size,
+        on_progress,
+        cancel_token,
+        pause,
+        max_bytes,
+        md5_checksum,
+        true,
+      )
+      .await;
+    }
+
+    let _opted_in = budget.opt_in();
+    let on_progress = Arc::new(on_progress);
+    let has_partial = tokio::fs::try_exists(downloader::partial_download_path(target_path))
+      .await
+      .unwrap_or(false);
+    match md5_checksum {
+      // An existing single-stream partial keeps its own format.
+      Some(md5)
+        if file_size >= MIN_SEGMENTED_SIZE
+          && !has_partial
+          && max_bytes.is_none_or(|limit| file_size <= limit) =>
+      {
+        match download_file_segmented(
+          url,
+          target_path,
+          file_size,
+          md5,
+          &*on_progress,
+          &cancel_token,
+          &pause,
+          &budget,
+          true,
+        )
+        .await?
+        {
+          Segmented::Finished => return Ok(()),
+          Segmented::Unsupported(reason) => {
+            log::warn!("Downloading {target_path:?} in one stream instead of segments: {reason}");
+          }
+        }
+      }
+      _ => {
+        if let Err(error) = discard_staging(target_path).await {
+          log::warn!("Failed to remove segment staging for {target_path:?}: {error}");
+        }
+      }
+    }
+    download_file_resumable(
+      url,
+      target_path,
+      file_size,
+      move |progress| on_progress(progress),
+      cancel_token,
+      pause,
+      max_bytes,
+      md5_checksum,
+      true,
+    )
+    .await
   }
 
   /// A server-side failure is surfaced as is, so the UI can tell the user it is
@@ -2825,3 +2915,4 @@ mod tests {
     );
   }
 }
+

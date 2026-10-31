@@ -1,3 +1,4 @@
+use super::budget::{app_budget, origin_of};
 use super::range::validate_range_response;
 use crate::errors::Error;
 use futures::StreamExt;
@@ -15,16 +16,16 @@ use tokio_util::sync::CancellationToken;
 
 #[allow(dead_code)]
 const BUFFER_SIZE: usize = 64 * 1024; // 64KB buffer for future use
-const PROGRESS_THROTTLE_MS: u128 = 500; // Emit progress every 500ms
+pub(super) const PROGRESS_THROTTLE_MS: u128 = 500; // Emit progress every 500ms
 const MAX_REDIRECTS: usize = 5;
-const MAX_RECONNECTS: u32 = 3;
+pub(super) const MAX_RECONNECTS: u32 = 3;
 /// How far back the reported speed looks, so a stall shows as a falling rate
 /// instead of hiding behind the average since the download started.
 const SPEED_WINDOW: Duration = Duration::from_secs(5);
 /// How often a silent connection still reports progress, letting the rate decay.
-const STALL_TICK: Duration = Duration::from_secs(1);
+pub(super) const STALL_TICK: Duration = Duration::from_secs(1);
 /// Silence after which the connection is dropped and the Range request re-issued.
-const STALL_TIMEOUT: Duration = Duration::from_secs(20);
+pub(super) const STALL_TIMEOUT: Duration = Duration::from_secs(20);
 
 /// Where the bytes of a download are coming from, so the UI can say whose end a
 /// slow or failed download is on.
@@ -40,7 +41,7 @@ fn is_gamebanana_host(host: &str) -> bool {
 }
 
 /// Read from the URL after redirects, which is the server actually sending the bytes.
-fn classify_source(url: &reqwest::Url) -> DownloadSource {
+pub(super) fn classify_source(url: &reqwest::Url) -> DownloadSource {
   if url.host_str().is_some_and(is_gamebanana_host) {
     DownloadSource::GameBanana
   } else {
@@ -50,7 +51,7 @@ fn classify_source(url: &reqwest::Url) -> DownloadSource {
 
 /// reqwest's own message is just "error sending request"; the cause (reset, TLS,
 /// DNS, timeout) lives further down the source chain.
-fn describe_request_error(error: reqwest::Error) -> String {
+pub(super) fn describe_request_error(error: reqwest::Error) -> String {
   let error = error.without_url();
   let mut message = error.to_string();
   let mut source = std::error::Error::source(&error);
@@ -62,7 +63,7 @@ fn describe_request_error(error: reqwest::Error) -> String {
   message
 }
 
-fn retry_after_secs(headers: &HeaderMap) -> Option<u64> {
+pub(super) fn retry_after_secs(headers: &HeaderMap) -> Option<u64> {
   headers
     .get(reqwest::header::RETRY_AFTER)?
     .to_str()
@@ -73,18 +74,18 @@ fn retry_after_secs(headers: &HeaderMap) -> Option<u64> {
 }
 
 /// Transfer rate over the last [`SPEED_WINDOW`].
-struct SpeedWindow {
+pub(super) struct SpeedWindow {
   samples: VecDeque<(Instant, u64)>,
 }
 
 impl SpeedWindow {
-  fn new(now: Instant, bytes: u64) -> Self {
+  pub(super) fn new(now: Instant, bytes: u64) -> Self {
     Self {
       samples: VecDeque::from([(now, bytes)]),
     }
   }
 
-  fn record(&mut self, now: Instant, bytes: u64) {
+  pub(super) fn record(&mut self, now: Instant, bytes: u64) {
     self.samples.push_back((now, bytes));
     // The front stays the newest sample at least a window old, the baseline the
     // rate is measured from.
@@ -95,7 +96,7 @@ impl SpeedWindow {
 
   /// Bytes over the window ending at `now` rather than at the last sample, so
   /// silence lowers the rate.
-  fn rate(&self, now: Instant, bytes: u64) -> f64 {
+  pub(super) fn rate(&self, now: Instant, bytes: u64) -> f64 {
     let window_start = now.checked_sub(SPEED_WINDOW);
     let Some(&(since, baseline)) = self
       .samples
@@ -141,6 +142,37 @@ fn is_allowed_download_url(url: &reqwest::Url) -> bool {
       || host.ends_with(".gamebanana.com")
       || host == "deadlockmods.app"
       || host.ends_with(".deadlockmods.app")
+  })
+}
+
+/// Redirects are followed only within the trusted hosts. A segmented file asks
+/// for `http1_only`: over HTTP/2 its requests would share one connection.
+pub(super) fn download_client(
+  trusted_hosts_only: bool,
+  follow_redirects: bool,
+  http1_only: bool,
+) -> Result<reqwest::Client, Error> {
+  crate::proxy::build_http_client(|b| {
+    let mut builder = b
+      .connect_timeout(std::time::Duration::from_secs(30))
+      .read_timeout(std::time::Duration::from_secs(60));
+    if http1_only {
+      builder = builder.http1_only();
+    }
+    if trusted_hosts_only && follow_redirects {
+      builder.redirect(reqwest::redirect::Policy::custom(|attempt| {
+        if attempt.previous().len() >= MAX_REDIRECTS {
+          return attempt.error("download redirect limit exceeded");
+        }
+        if is_allowed_download_url(attempt.url()) {
+          attempt.follow()
+        } else {
+          attempt.error("download redirect left the trusted host allowlist")
+        }
+      }))
+    } else {
+      builder.redirect(reqwest::redirect::Policy::none())
+    }
   })
 }
 
@@ -199,7 +231,7 @@ struct PartialMeta {
   last_modified: Option<String>,
 }
 
-fn partial_download_path(target: &Path) -> PathBuf {
+pub(super) fn partial_download_path(target: &Path) -> PathBuf {
   let mut name = target.file_name().unwrap_or_default().to_owned();
   name.push(".partial");
   target.with_file_name(name)
@@ -331,25 +363,11 @@ where
   if trusted_hosts_only {
     validate_download_url(url)?;
   }
-  let client = crate::proxy::build_http_client(|b| {
-    let builder = b
-      .connect_timeout(std::time::Duration::from_secs(30))
-      .read_timeout(std::time::Duration::from_secs(60));
-    if trusted_hosts_only {
-      builder.redirect(reqwest::redirect::Policy::custom(|attempt| {
-        if attempt.previous().len() >= MAX_REDIRECTS {
-          return attempt.error("download redirect limit exceeded");
-        }
-        if is_allowed_download_url(attempt.url()) {
-          attempt.follow()
-        } else {
-          attempt.error("download redirect left the trusted host allowlist")
-        }
-      }))
-    } else {
-      builder.redirect(reqwest::redirect::Policy::none())
-    }
-  })?;
+  let client = download_client(trusted_hosts_only, true, false)?;
+  let budget = app_budget();
+  // Where the next request's connection is counted; becomes the server the
+  // redirects reached once that's known.
+  let mut admit_origin = origin_of(url);
 
   let mut reconnects: u32 = 0;
   // A server that answers a Range request wrongly gets one clean restart, not a loop.
@@ -384,6 +402,14 @@ where
       request = request.header(RANGE, format!("bytes={resume_from}-"));
     }
 
+    // Held until this attempt's response is dropped; only waits while
+    // segmented downloads are on.
+    let Some(mut admission) = budget.admit(&admit_origin, &cancel_token).await else {
+      log::info!("Download cancelled while waiting for a connection");
+      remove_partial_pair(&partial_path, &meta_path).await;
+      return Err(Error::DownloadCancelled);
+    };
+
     // The read loop only sees the token once headers arrive; a connect or a server
     // holding its headers back would keep a cancelled download alive until a timeout,
     // and a paused one holding the queue.
@@ -405,6 +431,7 @@ where
         let reason = describe_request_error(e);
         // Connections refused or reset before the first byte are as transient as a
         // dropped stream, and several files of one mod start at the same moment.
+        drop(admission);
         if transient && reconnects < MAX_RECONNECTS {
           reconnects += 1;
           let delay = Duration::from_secs(1 << (reconnects - 1));
@@ -449,6 +476,17 @@ where
       return Err(Error::Network(format!(
         "Server returned error status: {status}"
       )));
+    }
+
+    // Counted against the server the redirects reached. When that one already
+    // has its share of connections, close this response and wait for room there.
+    let reached = response.url().origin().ascii_serialization();
+    if !admission.retarget(&reached) {
+      log::info!("{reached} is busy with other downloads; waiting for a connection");
+      drop(response);
+      drop(admission);
+      admit_origin = reached;
+      continue 'retry;
     }
 
     let headers = response.headers().clone();
@@ -736,7 +774,7 @@ async fn md5_file(path: &Path) -> Result<String, Error> {
   Ok(hex::encode(digest.finalize()))
 }
 
-async fn verify_download(
+pub(super) async fn verify_download(
   path: &Path,
   expected_size: u64,
   expected_md5: Option<&str>,

@@ -323,6 +323,15 @@ pub async fn resume_download(app_handle: AppHandle, mod_id: String) -> Result<()
   manager.resume_download(&mod_id).await
 }
 
+/// Mirrors the "Faster downloads" setting into the downloader. A file that
+/// already started keeps the mode it started with.
+#[tauri::command]
+pub async fn set_segmented_downloads(enabled: bool) -> Result<(), Error> {
+  log::info!("Segmented downloads {}", if enabled { "on" } else { "off" });
+  crate::download_manager::budget::app_budget().set_segmented_enabled(enabled);
+  Ok(())
+}
+
 #[tauri::command]
 pub async fn get_download_status(
   app_handle: AppHandle,
