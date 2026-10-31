@@ -269,6 +269,11 @@ const catalogLifecycle: Definition = {
   spec: "gamebanana-lifecycle",
   phases: ["catalog-change", "restart-changed"],
 };
+const catalogDeleteParked: Definition = {
+  ...catalog,
+  spec: "gamebanana-delete-parked",
+  phases: ["delete-parked", "restart-deleted"],
+};
 const queueError: Definition = {
   ...catalog,
   family: "downloads",
@@ -750,6 +755,8 @@ export const scenarios = {
   "gamebanana-reinstall": catalogLifecycle,
   "gamebanana-reinstall-disabled": catalogLifecycle,
   "gamebanana-force-update": catalogLifecycle,
+  "gamebanana-delete-parked": catalogDeleteParked,
+  "gamebanana-delete-parked-disabled": catalogDeleteParked,
   "gamebanana-multipak-update": {
     ...catalog,
     spec: "gamebanana-multipak-update",
