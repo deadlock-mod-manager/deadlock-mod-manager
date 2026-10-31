@@ -1,7 +1,8 @@
 // Mirrors deadlock-api's own list (website/src/lib/tracker-sites.ts in
 // deadlock-api/deadlock-api), minus this app. Only sponsors carry a link there,
-// so only they do here. Icons load from deadlock-api.com, never the sites.
-const ICON_BASE = "https://deadlock-api.com/tracker-sites";
+// so only they do here. Icons are copies of deadlock-api.com/tracker-sites,
+// bundled so the Match Data tab makes no requests.
+const ICON_BASE = "/tracker-sites";
 
 export type TrackerSite = {
   name: string;

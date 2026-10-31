@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <style>
+    .brass { fill: #e8c88a; }
+    .brass-stroke { stroke: #e8c88a; }
+    .cut { fill: #09090b; }
+    .cut-stroke { stroke: #09090b; }
+    @media (prefers-color-scheme: light) {
+      .brass { fill: #9a7b3c; }
+      .brass-stroke { stroke: #9a7b3c; }
+      .cut { fill: #18181b; }
+      .cut-stroke { stroke: #18181b; }
+    }
+  </style>
+  <path class="brass" d="M32 6 A16 16 0 0 1 43 33.6 L47 58 H17 L21 33.6 A16 16 0 0 1 32 6 Z" />
+  <line class="cut-stroke" x1="32" y1="22" x2="45.20" y2="22.00" stroke-width="1.6" />
+  <line class="cut-stroke" x1="32" y1="22" x2="41.33" y2="31.33" stroke-width="1.6" />
+  <line class="cut-stroke" x1="32" y1="22" x2="32.00" y2="35.20" stroke-width="1.6" />
+  <line class="cut-stroke" x1="32" y1="22" x2="22.67" y2="31.33" stroke-width="1.6" />
+  <line class="cut-stroke" x1="32" y1="22" x2="18.80" y2="22.00" stroke-width="1.6" />
+  <line class="cut-stroke" x1="32" y1="22" x2="22.67" y2="12.67" stroke-width="1.6" />
+  <line class="cut-stroke" x1="32" y1="22" x2="32.00" y2="8.80" stroke-width="1.6" />
+  <line class="cut-stroke" x1="32" y1="22" x2="41.33" y2="12.67" stroke-width="1.6" />
+  <circle class="cut-stroke" cx="32" cy="22" r="13.2" fill="none" stroke-width="1.4" />
+  <path class="cut-stroke" fill="none" stroke-width="1.4" d="M23.4 36.6 L20.4 55 H43.6 L40.6 36.6" />
+  <path class="cut" d="M19 22 Q32 10 45 22 Q32 34 19 22 Z" />
+  <circle class="brass-stroke" cx="32" cy="22" r="6.4" fill="none" stroke-width="1.3" />
+  <path class="brass" d="M30.7 23.1 A2.7 2.7 0 1 1 33.3 23.1 L34.3 27 H29.7 Z" />
+</svg>
