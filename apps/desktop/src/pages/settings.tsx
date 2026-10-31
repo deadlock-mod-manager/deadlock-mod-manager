@@ -83,6 +83,7 @@ import PrivacySettings from "@/components/settings/privacy-settings";
 import { ProxySettings } from "@/components/settings/proxy-settings";
 import { RemoteInstallSettings } from "@/components/settings/remote-install-settings";
 import { GameBananaLogo } from "@/components/shared/gamebanana-logo";
+import BackgroundSettings from "@/components/settings/background-settings";
 import Section, { SectionSkeleton } from "@/components/settings/section";
 import SettingCard, {
   SettingCardSkeleton,
@@ -690,6 +691,12 @@ const CustomSettings = ({ value }: { value?: string }) => {
                 {ThemesPlugin.Settings && <ThemesPlugin.Settings />}
               </Suspense>
             </ErrorBoundary>
+            <Section
+              description={t("settings.backgroundDescription")}
+              searchId='background'
+              title={t("settings.background")}>
+              <BackgroundSettings />
+            </Section>
           </TabsContent>
 
           <TabsContent className='mt-0 space-y-4' value='game'>

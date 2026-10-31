@@ -642,6 +642,40 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
     },
   },
   {
+    to: 39,
+    label: "background-plugin-to-setting",
+    apply: (state) => {
+      // The Background plugin became a theme setting and Flashbang was
+      // removed. Only an enabled Background plugin carries its image over.
+      const enabledPlugins = isPlainObject(state.enabledPlugins)
+        ? state.enabledPlugins
+        : {};
+      const pluginSettings = isPlainObject(state.pluginSettings)
+        ? state.pluginSettings
+        : {};
+      const background = pluginSettings.background;
+      if (enabledPlugins.background === true && isPlainObject(background)) {
+        const image =
+          background.sourceType === "local"
+            ? background.imageData
+            : background.imageUrl;
+        if (typeof image === "string" && image) {
+          state.appBackground = {
+            image,
+            opacity:
+              typeof background.opacity === "number" ? background.opacity : 25,
+            blur: typeof background.blur === "number" ? background.blur : 0,
+            includeSidebar: background.includeSidebar === true,
+          };
+        }
+      }
+      for (const id of ["background", "flashbang"]) {
+        delete enabledPlugins[id];
+        delete pluginSettings[id];
+      }
+    },
+  },
+  {
     to: 41,
     label: "plugins-opt-in",
     apply: (state) => {

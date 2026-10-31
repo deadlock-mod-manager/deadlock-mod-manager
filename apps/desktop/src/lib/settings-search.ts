@@ -273,6 +273,24 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
     titleKey: "settings.themes",
   },
   {
+    id: "background",
+    tab: "themes",
+    titleKey: "settings.background",
+    descriptionKey: "settings.backgroundDescription",
+    settings: [
+      {
+        titleKey: "settings.backgroundImage",
+        descriptionKey: "settings.backgroundImageDescription",
+      },
+      { titleKey: "settings.backgroundOpacity" },
+      { titleKey: "settings.backgroundBlur" },
+      {
+        titleKey: "settings.backgroundIncludeSidebar",
+        descriptionKey: "settings.backgroundIncludeSidebarDescription",
+      },
+    ],
+  },
+  {
     id: "fileserver",
     tab: "network",
     titleKey: "settings.fileserverSectionTitle",

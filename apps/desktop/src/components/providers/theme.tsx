@@ -18,15 +18,11 @@ type ThemeProviderProps = {
 type ThemeProviderState = {
   theme: Theme;
   setTheme: (theme: Theme) => void;
-  flashbangActive: boolean;
-  setFlashbangActive: (active: boolean) => void;
 };
 
 const initialState: ThemeProviderState = {
   theme: "dark",
   setTheme: () => null,
-  flashbangActive: false,
-  setFlashbangActive: () => null,
 };
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
@@ -44,17 +40,10 @@ export function ThemeProvider({
     return defaultTheme;
   });
 
-  const [flashbangActive, setFlashbangActive] = useState<boolean>(false);
-
   useEffect(() => {
     const root = globalThis.document.documentElement;
 
     root.classList.remove("light", "dark");
-
-    if (flashbangActive) {
-      root.classList.add("light");
-      return;
-    }
 
     if (theme === "system") {
       const systemTheme = globalThis.matchMedia("(prefers-color-scheme: dark)")
@@ -67,7 +56,7 @@ export function ThemeProvider({
     }
 
     root.classList.add(theme);
-  }, [theme, flashbangActive]);
+  }, [theme]);
 
   const handleSetTheme = useCallback(
     (theme: Theme) => {
@@ -83,10 +72,8 @@ export function ThemeProvider({
     () => ({
       theme,
       setTheme: handleSetTheme,
-      flashbangActive,
-      setFlashbangActive,
     }),
-    [theme, handleSetTheme, flashbangActive, setFlashbangActive],
+    [theme, handleSetTheme],
   );
 
   return (

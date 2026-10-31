@@ -268,10 +268,10 @@ describe("safeMigrate", () => {
   });
 
   it("v25 (themes switch): drops the leftover enabledPlugins.themes entry", () => {
-    const state = { enabledPlugins: { themes: false, background: true } };
+    const state = { enabledPlugins: { themes: false, discord: true } };
 
     expect(safeMigrate(state, 24)).toStrictEqual({
-      enabledPlugins: { background: true },
+      enabledPlugins: { discord: true },
       experimentalTourDismissed: false,
     });
   });
@@ -279,6 +279,46 @@ describe("safeMigrate", () => {
   it("v25 (themes switch): tolerates a missing enabledPlugins map", () => {
     expect(safeMigrate({}, 24)).toStrictEqual({
       experimentalTourDismissed: false,
+    });
+  });
+
+  it("v39 (background setting): keeps an enabled plugin's image and drops the plugins", () => {
+    const state = {
+      enabledPlugins: { background: true, flashbang: true },
+      pluginSettings: {
+        background: {
+          sourceType: "local",
+          imageUrl: "https://example.com/old.png",
+          imageData: "data:image/png;base64,AAAA",
+          opacity: 40,
+          blur: 3,
+          includeSidebar: true,
+        },
+        flashbang: { chance: 50 },
+      },
+    };
+
+    expect(safeMigrate(state, 38)).toStrictEqual({
+      enabledPlugins: {},
+      pluginSettings: {},
+      appBackground: {
+        image: "data:image/png;base64,AAAA",
+        opacity: 40,
+        blur: 3,
+        includeSidebar: true,
+      },
+    });
+  });
+
+  it("v39 (background setting): drops a disabled plugin's image", () => {
+    const state = {
+      enabledPlugins: { background: false },
+      pluginSettings: { background: { imageUrl: "https://example.com/a.png" } },
+    };
+
+    expect(safeMigrate(state, 38)).toStrictEqual({
+      enabledPlugins: {},
+      pluginSettings: {},
     });
   });
 

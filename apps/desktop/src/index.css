@@ -698,46 +698,46 @@
   }
 }
 
-/* Background Plugin Styles */
-.background-plugin-active [data-sidebar="sidebar"] {
+/* Set by AppBackground when the background image covers the sidebar too. */
+.app-background-sidebar [data-sidebar="sidebar"] {
   background-color: transparent;
   border-color: transparent;
 }
 
-.background-plugin-active [data-sidebar="sidebar"] * {
+.app-background-sidebar [data-sidebar="sidebar"] * {
   background-color: transparent;
 }
 
-.background-plugin-active [data-sidebar="content"] {
+.app-background-sidebar [data-sidebar="content"] {
   background-color: transparent;
 }
 
-.background-plugin-active [data-sidebar="footer"] {
+.app-background-sidebar [data-sidebar="footer"] {
   background-color: transparent;
 }
 
-.background-plugin-active [data-sidebar="group"] {
+.app-background-sidebar [data-sidebar="group"] {
   background-color: transparent;
 }
 
-.background-plugin-active [data-sidebar="group-content"] {
+.app-background-sidebar [data-sidebar="group-content"] {
   background-color: transparent;
 }
 
-.background-plugin-active [data-sidebar="menu"] {
+.app-background-sidebar [data-sidebar="menu"] {
   background-color: transparent;
 }
 
-.background-plugin-active [data-sidebar="menu-item"] {
+.app-background-sidebar [data-sidebar="menu-item"] {
   background-color: transparent;
 }
 
-.background-plugin-active [data-sidebar="menu-button"] {
+.app-background-sidebar [data-sidebar="menu-button"] {
   background-color: transparent;
 }
 
 /* Target the bottom bar by its structure */
-.background-plugin-active [data-bottom-bar="true"] {
+.app-background-sidebar [data-bottom-bar="true"] {
   background-color: transparent;
   border-color: transparent;
 }
