@@ -32,6 +32,15 @@ impl Counts {
   fn has_room(&self, origin: &str) -> bool {
     self.global < GLOBAL_LIMIT && self.per_origin.get(origin).copied().unwrap_or(0) < ORIGIN_LIMIT
   }
+
+  fn release_origin(&mut self, origin: &str) {
+    if let Some(count) = self.per_origin.get_mut(origin) {
+      *count -= 1;
+      if *count == 0 {
+        self.per_origin.remove(origin);
+      }
+    }
+  }
 }
 
 #[derive(Default)]
@@ -111,17 +120,6 @@ impl TransferBudget {
 pub struct Admission {
   budget: Arc<TransferBudget>,
   origin: String,
-}
-
-impl Counts {
-  fn release_origin(&mut self, origin: &str) {
-    if let Some(count) = self.per_origin.get_mut(origin) {
-      *count -= 1;
-      if *count == 0 {
-        self.per_origin.remove(origin);
-      }
-    }
-  }
 }
 
 impl Admission {

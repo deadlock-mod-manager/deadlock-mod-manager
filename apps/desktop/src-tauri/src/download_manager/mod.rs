@@ -649,57 +649,37 @@ impl DownloadManager {
     F: Fn(FileProgress) + Send + Sync + 'static,
   {
     let budget = budget::app_budget();
-    if !budget.segmented_enabled() {
-      if let Err(error) = discard_staging(target_path).await {
-        log::warn!("Failed to remove segment staging for {target_path:?}: {error}");
-      }
-      return download_file_resumable(
+    let on_progress = Arc::new(on_progress);
+    // Held to the end, so a fallback keeps the caps on too.
+    let segments = if budget.segmented_enabled() {
+      let has_partial = tokio::fs::try_exists(downloader::partial_download_path(target_path))
+        .await
+        .unwrap_or(false);
+      Self::opt_in_for_segments(&budget, md5_checksum, file_size, has_partial, max_bytes)
+    } else {
+      None
+    };
+    if let Some((md5, _)) = &segments {
+      match download_file_segmented(
         url,
         target_path,
         file_size,
-        on_progress,
-        cancel_token,
-        pause,
-        max_bytes,
-        md5_checksum,
+        md5,
+        &*on_progress,
+        &cancel_token,
+        &pause,
+        &budget,
         true,
       )
-      .await;
-    }
-
-    let on_progress = Arc::new(on_progress);
-    let has_partial = tokio::fs::try_exists(downloader::partial_download_path(target_path))
-      .await
-      .unwrap_or(false);
-    // Held to the end, so a fallback keeps the caps on too.
-    let segments =
-      Self::opt_in_for_segments(&budget, md5_checksum, file_size, has_partial, max_bytes);
-    match segments.as_ref().map(|(md5, _)| *md5) {
-      Some(md5) => {
-        match download_file_segmented(
-          url,
-          target_path,
-          file_size,
-          md5,
-          &*on_progress,
-          &cancel_token,
-          &pause,
-          &budget,
-          true,
-        )
-        .await?
-        {
-          Segmented::Finished => return Ok(()),
-          Segmented::Unsupported(reason) => {
-            log::warn!("Downloading {target_path:?} in one stream instead of segments: {reason}");
-          }
+      .await?
+      {
+        Segmented::Finished => return Ok(()),
+        Segmented::Unsupported(reason) => {
+          log::warn!("Downloading {target_path:?} in one stream instead of segments: {reason}");
         }
       }
-      None => {
-        if let Err(error) = discard_staging(target_path).await {
-          log::warn!("Failed to remove segment staging for {target_path:?}: {error}");
-        }
-      }
+    } else if let Err(error) = discard_staging(target_path).await {
+      log::warn!("Failed to remove segment staging for {target_path:?}: {error}");
     }
     download_file_resumable(
       url,

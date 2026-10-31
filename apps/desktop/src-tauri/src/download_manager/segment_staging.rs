@@ -136,10 +136,10 @@ impl Staging {
     }
     for index in 0..SEGMENT_COUNT {
       let segment = &staging.manifest.segments[index];
-      let length = match tokio::fs::metadata(staging.part_path(index)).await {
-        Ok(metadata) => Some(metadata.len()),
-        Err(_) => None,
-      };
+      let length = tokio::fs::metadata(staging.part_path(index))
+        .await
+        .ok()
+        .map(|metadata| metadata.len());
       let trusted = match length {
         None => !segment.complete && !interrupted_assembly,
         Some(length) if segment.complete => length == segment.byte_count(),

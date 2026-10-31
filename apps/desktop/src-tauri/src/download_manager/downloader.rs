@@ -483,8 +483,6 @@ where
     let reached = response.url().origin().ascii_serialization();
     if !admission.retarget(&reached) {
       log::info!("{reached} is busy with other downloads; waiting for a connection");
-      drop(response);
-      drop(admission);
       admit_origin = reached;
       continue 'retry;
     }
