@@ -3195,7 +3195,8 @@
       "changelogTitle_other": "Yüklemenizden bu yana yenilikler ({{count}} güncelleme)",
       "skip": "Bu güncellemeyi atla",
       "skipDescription": "Yazar daha yeni bir sürüm yayımlayana kadar bu güncellemeyi gizle",
-      "skipped": "{{name}} için güncelleme atlandı"
+      "skipped": "{{name}} için güncelleme atlandı",
+      "chooseFiles": ""
     },
     "copyModList": "Mod listesini kopyala",
     "moreActions": "Diğer işlemler",
