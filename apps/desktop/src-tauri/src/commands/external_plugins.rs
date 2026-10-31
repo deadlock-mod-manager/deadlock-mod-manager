@@ -223,12 +223,25 @@ pub async fn external_plugins_remove(
   blocking(move || host.remove(&plugin_id).map_err(Error::from)).await
 }
 
+/// Opens the plugin's current view and returns the token its frame URL and
+/// relayed calls carry.
+#[tauri::command]
+pub async fn external_plugins_open_view(
+  host: State<'_, Arc<PluginHost>>,
+  plugin_id: String,
+) -> Result<String, Error> {
+  ensure_enabled(&host)?;
+  let host = Arc::clone(&host);
+  blocking(move || Ok(host.view(&plugin_id)?.token)).await
+}
+
 /// Relays a call from an embedded plugin frame. The embedding page names the
-/// plugin from the frame element it created, never from the frame's message.
+/// view token of the frame element it created, never anything from the
+/// frame's message, so calls stop when the plugin updates.
 #[tauri::command]
 pub async fn external_plugins_frame_call(
   host: State<'_, Arc<PluginHost>>,
-  plugin_id: String,
+  token: String,
   command: String,
   payload_json: String,
 ) -> Result<String, Error> {
@@ -236,9 +249,9 @@ pub async fn external_plugins_frame_call(
 
   let host = Arc::clone(&host);
   blocking(move || {
-    let view = host.view(&plugin_id)?;
     host
-      .ui_call(&view.plugin_id, view.generation, &command, &payload_json)
+      .view_session(&token)
+      .and_then(|view| host.ui_call(&view.plugin_id, view.generation, &command, &payload_json))
       .map_err(|denied| {
         Error::ExternalPluginSession(format!("{}: {}", denied.code(), denied.message()))
       })

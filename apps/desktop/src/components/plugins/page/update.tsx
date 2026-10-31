@@ -37,10 +37,14 @@ const updateChanges = (
   update: ExternalPluginPendingUpdate,
 ) => {
   const added = sortPermissions(update.newPermissions);
-  const kept = sortPermissions(plugin.requiredPermissions).filter(
+  const kept = sortPermissions(update.requiredPermissions).filter(
     (permission) => !added.some((entry) => entry.id === permission.id),
   );
-  return { added, kept };
+  const removed = sortPermissions(plugin.requiredPermissions).filter(
+    (permission) =>
+      !update.requiredPermissions.some((entry) => entry.id === permission.id),
+  );
+  return { added, kept, removed };
 };
 
 export const UpdateBanner = ({
@@ -77,11 +81,12 @@ export const UpdateBanner = ({
 
 const ChangeRow = ({
   permission,
-  isNew,
+  change,
 }: {
   permission: ExternalPluginPermission;
-  isNew: boolean;
+  change: "new" | "unchanged" | "removed";
 }) => {
+  const isNew = change === "new";
   const { t } = useTranslation();
   const describe = usePermissionCopy();
   const copy = describe(permission);
@@ -122,7 +127,7 @@ const ChangeRow = ({
             ? "shrink-0 rounded-[6px] bg-[#60A5FA26] px-2 py-0.5 font-semibold text-[#60A5FA] text-[11px] leading-[normal]"
             : "shrink-0 rounded-[6px] bg-[#FFFFFF0A] px-2 py-0.5 font-semibold text-[11px] text-muted-foreground leading-[normal]"
         }>
-        {t(isNew ? "plugins.page.update.new" : "plugins.page.update.unchanged")}
+        {t(`plugins.page.update.${change}`)}
       </span>
     </div>
   );
@@ -143,7 +148,7 @@ export const UpdateSheet = ({
 }: UpdateSheetProps) => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const { added, kept } = updateChanges(plugin, update);
+  const { added, kept, removed } = updateChanges(plugin, update);
 
   const refresh = () =>
     queryClient.invalidateQueries({ queryKey: EXTERNAL_PLUGINS_QUERY_KEY });
@@ -227,17 +232,28 @@ export const UpdateSheet = ({
               ? t("plugins.page.update.intro", { count: added.length })
               : t("plugins.page.update.introNothingNew")}
           </p>
-          {added.length + kept.length > 0 ? (
+          {added.length + kept.length + removed.length > 0 ? (
             <h3 className='pt-1.5 font-semibold text-[11px] text-muted-foreground uppercase leading-[normal]'>
               {t("plugins.page.update.changes")}
             </h3>
           ) : null}
           {added.map((permission) => (
-            <ChangeRow isNew key={permission.id} permission={permission} />
+            <ChangeRow
+              change='new'
+              key={permission.id}
+              permission={permission}
+            />
           ))}
           {kept.map((permission) => (
             <ChangeRow
-              isNew={false}
+              change='unchanged'
+              key={permission.id}
+              permission={permission}
+            />
+          ))}
+          {removed.map((permission) => (
+            <ChangeRow
+              change='removed'
               key={permission.id}
               permission={permission}
             />

@@ -60,14 +60,13 @@ export const ProfileSelect = ({
     );
   const option = (profile: ModProfile, folder: string) => (
     <button
-      aria-selected={folder === selectedFolder}
+      aria-pressed={folder === selectedFolder}
       className={cn(
         OPTION,
         folder === selectedFolder ? "bg-foreground/5" : "hover:bg-foreground/5",
       )}
       key={profile.id}
       onClick={() => onSelect(folder)}
-      role='option'
       type='button'>
       <UserCircleIcon className='shrink-0 text-muted-foreground' size={15} />
       <span className='flex min-w-0 flex-1 flex-col gap-0.5'>
@@ -106,7 +105,6 @@ export const ProfileSelect = ({
     <div className='flex w-full flex-col gap-1.5' ref={rootRef}>
       <button
         aria-expanded={open}
-        aria-haspopup='listbox'
         className={cn(
           "flex h-[34px] w-full cursor-pointer items-center gap-2 rounded-[8px] bg-background px-2.5 text-left ring-1 ring-inset focus-visible:outline-none focus-visible:ring-primary",
           open ? "ring-primary" : "ring-border",
@@ -125,17 +123,13 @@ export const ProfileSelect = ({
         <CaretDownIcon className='shrink-0 text-muted-foreground' size={12} />
       </button>
       {open ? (
-        <div
-          className='flex w-full flex-col gap-0.5 rounded-[10px] bg-[#1E1A18] p-1.5 shadow-[0px_12px_32px_#000000AA] ring-1 ring-[#FFFFFF1A] ring-inset'
-          role='listbox'>
+        <div className='flex w-full flex-col gap-0.5 rounded-[10px] bg-[#1E1A18] p-1.5 shadow-[0px_12px_32px_#000000AA] ring-1 ring-[#FFFFFF1A] ring-inset'>
           {install ? (
             <>
               <button
-                aria-selected={false}
                 className={cn(OPTION, "bg-[#EFE0BE14] hover:bg-[#EFE0BE1F]")}
                 disabled={creating}
                 onClick={onCreate}
-                role='option'
                 type='button'>
                 <PlusCircleIcon className='shrink-0 text-primary' size={15} />
                 <span className='flex min-w-0 flex-1 flex-col gap-0.5'>

@@ -266,7 +266,7 @@ function BuildHistory({
               <HistoryRow key={build.hash} build={build} deploy={deploy} />
             ))}
           </div>
-          {older.length >= HISTORY_PREVIEW && (
+          {older.length > HISTORY_PREVIEW && (
             <div className='history__more'>
               <button
                 type='button'
@@ -413,13 +413,13 @@ export function App() {
   if (data?.watchError) {
     problems.push({ label: t("problems.watch"), error: data.watchError });
   }
-  if (data?.deployError) {
-    problems.push({ label: t("problems.deploy"), error: data.deployError });
-  } else if (deploy.error) {
+  if (deploy.error) {
     problems.push({
       label: t("problems.deploy"),
       error: toCommandError(deploy.error),
     });
+  } else if (data?.deployError) {
+    problems.push({ label: t("problems.deploy"), error: data.deployError });
   }
   if (data?.grantsError) {
     problems.push({ label: t("problems.grants"), error: data.grantsError });

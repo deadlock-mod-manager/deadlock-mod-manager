@@ -116,15 +116,17 @@ fn reconcile(state: &mut WorkflowState, listing: &Listing) {
   {
     state.builds.push(snapshot.clone());
   }
-  if let Some(pending) = state.pending_hash.take()
-    && deployed.as_ref() != Some(&pending)
-  {
-    state.deploy_error = Some(PluginError::new(
-      DEPLOY_INTERRUPTED,
-      "The previous deployment stopped before it finished. Deploy the build again.",
-    ));
+  if let Some(pending) = state.pending_hash.take() {
+    state.deploy_error = if deployed.as_ref() == Some(&pending) {
+      None
+    } else {
+      Some(PluginError::new(
+        DEPLOY_INTERRUPTED,
+        "The previous deployment stopped before it finished. Deploy the build again.",
+      ))
+    };
   }
-  state.deployed_hash = deployed.filter(|hash| state.has_build(hash));
+  state.deployed_hash = deployed;
   state.trim();
 }
 

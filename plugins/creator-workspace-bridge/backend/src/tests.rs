@@ -402,6 +402,13 @@ fn trapped_deploy(host: &mut FakeHost, trap: Trap, build: u64) {
 fn deploy_interrupted_after_the_host_committed_is_recovered() {
   let mut host = FakeHost::new();
   stage(&mut host, 1);
+  host.denied.insert("mods.install");
+  assert!(
+    !run(&mut host, "deploy", json!({ "hash": hash(1) }))["ok"]
+      .as_bool()
+      .unwrap()
+  );
+  host.denied.clear();
   trapped_deploy(&mut host, Trap::AfterDeploy, 1);
   assert_eq!(host.storage["workflow"]["pendingHash"], hash(1));
 
@@ -437,6 +444,16 @@ fn deployed_build_missing_from_history_is_restored_from_host_metadata() {
   let status = ok(&mut host, "status", json!({}));
   assert_eq!(history(&status), vec![hash(5)]);
   assert_eq!(status["builds"][0]["deployed"], true);
+}
+
+#[test]
+fn deployed_hash_survives_missing_history_and_staged_snapshot() {
+  let mut host = FakeHost::new();
+  host.deployed = Some(hash(5));
+  let status = ok(&mut host, "status", json!({}));
+  assert_eq!(status["deployedHash"], hash(5));
+  assert!(history(&status).is_empty());
+  assert_eq!(ok(&mut host, "status", json!({}))["deployedHash"], hash(5));
 }
 
 #[test]

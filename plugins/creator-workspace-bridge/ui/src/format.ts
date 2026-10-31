@@ -18,8 +18,6 @@ export function formatBytes(size: number, locale: string): string {
   }).format(value);
 }
 
-const DAY_MS = 24 * 60 * 60 * 1000;
-
 /** "Today, 10:42", "Yesterday, 22:40", or a full date further back. */
 export function formatStagedAt(t: TFunction, iso: string, locale: string) {
   const date = new Date(iso);
@@ -33,7 +31,9 @@ export function formatStagedAt(t: TFunction, iso: string, locale: string) {
   startOfToday.setHours(0, 0, 0, 0);
   const day = date.getTime();
   if (day >= startOfToday.getTime()) return t("time.today", { time });
-  if (day >= startOfToday.getTime() - DAY_MS) {
+  const startOfYesterday = new Date(startOfToday);
+  startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+  if (day >= startOfYesterday.getTime()) {
     return t("time.yesterday", { time });
   }
   return new Intl.DateTimeFormat(locale, {

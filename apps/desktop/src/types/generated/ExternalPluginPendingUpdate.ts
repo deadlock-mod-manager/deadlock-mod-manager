@@ -10,6 +10,10 @@ export type ExternalPluginPendingUpdate = {
    * Requests the update requires that the grant does not hold exactly.
    */
   newPermissions: Array<ExternalPluginPermission>;
+  /**
+   * Everything the update requires, so a review can show what it drops.
+   */
+  requiredPermissions: Array<ExternalPluginPermission>;
   changelog: Array<string>;
   source: ExternalPluginSource;
 };

@@ -63,18 +63,26 @@ export const setExternalPluginEnabled = (pluginId: string, enabled: boolean) =>
 export const removeExternalPlugin = (pluginId: string) =>
   invoke<void>("external_plugins_remove", { pluginId });
 
-/** Where the plugin protocol serves `frame/<plugin id>/` for embedded views. */
-export const externalPluginFrameUrl = (pluginId: string) =>
-  `${convertFileSrc("", "dmm-plugin")}frame/${encodeURIComponent(pluginId)}/`;
+/** Under the plugin list key, so changes to the plugin reissue its view. */
+export const externalPluginViewQueryKey = (pluginId: string) =>
+  [...EXTERNAL_PLUGINS_QUERY_KEY, pluginId, "view"] as const;
 
-/** Relays a call from the frame this page embedded for `pluginId`. */
+/** The token naming the plugin's current view; it goes stale on update. */
+export const openExternalPluginView = (pluginId: string) =>
+  invoke<string>("external_plugins_open_view", { pluginId });
+
+/** Where the plugin protocol serves `frame/<view token>/` for embedded views. */
+export const externalPluginFrameUrl = (token: string) =>
+  `${convertFileSrc("", "dmm-plugin")}frame/${token}/`;
+
+/** Relays a call from the frame this page embedded with `token`. */
 export const callExternalPluginFrame = (
-  pluginId: string,
+  token: string,
   command: string,
   payloadJson: string,
 ) =>
   invoke<string>("external_plugins_frame_call", {
-    pluginId,
+    token,
     command,
     payloadJson,
   });

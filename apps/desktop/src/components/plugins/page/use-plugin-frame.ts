@@ -6,10 +6,16 @@ import {
   mapHostColors,
   parseFrameMessage,
 } from "@deadlock-mods/plugin-sdk";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getErrorMessage } from "@/lib/errors";
-import { callExternalPluginFrame } from "@/lib/external-plugins";
+import {
+  callExternalPluginFrame,
+  externalPluginFrameUrl,
+  externalPluginViewQueryKey,
+  openExternalPluginView,
+} from "@/lib/external-plugins";
 
 /** How long a frame may take to post `ready` before the page says it didn't answer. */
 const READY_TIMEOUT_MS = 10_000;
@@ -39,12 +45,15 @@ const readHostContext = (locale: string): HostContext => {
 
 /** Bridges the sandboxed plugin frame: relays its calls, sends theme and
  * locale, and tracks whether it has started. */
-export const usePluginFrame = (
-  pluginId: string,
-  live: boolean,
-  packageHash: string | undefined,
-) => {
+export const usePluginFrame = (pluginId: string, live: boolean) => {
   const { i18n } = useTranslation();
+  const view = useQuery({
+    queryKey: externalPluginViewQueryKey(pluginId),
+    queryFn: () => openExternalPluginView(pluginId),
+    enabled: live,
+    staleTime: Number.POSITIVE_INFINITY,
+  });
+  const token = live ? view.data : undefined;
   const frameRef = useRef<HTMLIFrameElement>(null);
   // The frame element must share the plugin page's color-scheme, or the
   // browser paints an opaque backdrop behind the frame.
@@ -53,18 +62,18 @@ export const usePluginFrame = (
   const [frameKey, setFrameKey] = useState(0);
 
   useEffect(() => {
-    if (!live) return;
+    if (!token) return;
     setPhase("starting");
     const timer = window.setTimeout(
       () => setPhase((current) => (current === "ready" ? current : "noAnswer")),
       READY_TIMEOUT_MS,
     );
     return () => window.clearTimeout(timer);
-  }, [live, packageHash, frameKey]);
+  }, [token, frameKey]);
 
   useEffect(() => {
     const frame = frameRef.current;
-    if (!live || !frame) return;
+    if (!token || !frame) return;
     const send = (message: HostMessage) =>
       // Sandboxed frames have an opaque origin, so the target cannot be named.
       frame.contentWindow?.postMessage(encodeMessage(message), "*");
@@ -74,7 +83,7 @@ export const usePluginFrame = (
       send({ type: "context", context });
     };
 
-    // Calls are attributed to the plugin this page embedded, never to
+    // Calls are attributed to the view this page embedded, never to
     // anything the frame says about itself.
     const onMessage = async (event: MessageEvent<JsonValue>) => {
       if (event.source !== frame.contentWindow) return;
@@ -87,7 +96,7 @@ export const usePluginFrame = (
       }
       try {
         const value = await callExternalPluginFrame(
-          pluginId,
+          token,
           message.command,
           message.payloadJson,
         );
@@ -114,14 +123,19 @@ export const usePluginFrame = (
       window.removeEventListener("message", onMessage);
       themeObserver.disconnect();
     };
-  }, [live, packageHash, frameKey, pluginId, i18n.language]);
+  }, [token, frameKey, i18n.language]);
 
+  const shownPhase: FramePhase = view.isError ? "noAnswer" : phase;
   return {
     frameRef,
     colorScheme,
-    phase,
+    phase: shownPhase,
+    src: token ? externalPluginFrameUrl(token) : undefined,
     /** Changes whenever the frame must be remounted. */
-    frameKey: `${packageHash ?? ""}:${frameKey}`,
-    reload: () => setFrameKey((key) => key + 1),
+    frameKey: `${token ?? ""}:${frameKey}`,
+    reload: () => {
+      setFrameKey((key) => key + 1);
+      if (view.isError) void view.refetch();
+    },
   };
 };

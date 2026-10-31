@@ -1385,6 +1385,37 @@ fn view_assets_are_confined_and_retired_with_the_session() {
     Err(SessionDenied::Stale)
   ));
   assert!(fixture.host.view(ID).is_err());
+  assert!(fixture.host.view_session(&view.token).is_err());
+}
+
+#[test]
+fn view_tokens_name_one_plugin_generation() {
+  let fixture = fixture();
+  fixture.install("0.1.0");
+  fixture.enable();
+  let view = fixture.host.view(ID).unwrap();
+  assert_eq!(view.token.len(), 64);
+  assert_eq!(fixture.host.view(ID).unwrap().token, view.token);
+  let session = fixture.host.view_session(&view.token).unwrap();
+  assert_eq!(
+    (session.plugin_id.as_str(), session.generation),
+    (ID, view.generation)
+  );
+  assert_eq!(
+    fixture.host.view_session(ID).unwrap_err(),
+    SessionDenied::Stale,
+    "the plugin id is not a token"
+  );
+
+  fixture.install("0.2.0");
+  assert_eq!(
+    fixture.host.view_session(&view.token).unwrap_err(),
+    SessionDenied::Stale,
+    "an update retires frames that embedded the old package"
+  );
+  let updated = fixture.host.view(ID).unwrap();
+  assert_ne!(updated.token, view.token);
+  assert!(fixture.host.view_session(&updated.token).is_ok());
 }
 
 #[test]

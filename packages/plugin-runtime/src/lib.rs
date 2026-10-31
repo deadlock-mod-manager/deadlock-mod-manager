@@ -89,6 +89,7 @@ pub struct PluginHost {
   blocked_hook: OnceLock<BlockedHook>,
   notification_hook: OnceLock<NotificationHook>,
   events: Mutex<events::EventJournal>,
+  views: Mutex<HashMap<String, PluginView>>,
 }
 
 fn invalid(message: impl Into<String>) -> Error {
@@ -134,6 +135,7 @@ impl PluginHost {
       notification_hook: OnceLock::new(),
       notifications: Mutex::new(HashMap::new()),
       events: Mutex::new(events::EventJournal::default()),
+      views: Mutex::new(HashMap::new()),
     })
   }
 
@@ -245,6 +247,7 @@ impl PluginHost {
     self.supervisor.terminate(id);
     lock(&self.events).retire(id);
     lock(&self.observations).remove(id);
+    lock(&self.views).remove(id);
     self.notify(id);
   }
 

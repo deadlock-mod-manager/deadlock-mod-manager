@@ -1,12 +1,16 @@
-use crate::{Error, PluginHost, SessionDenied, manifest, package};
+use crate::{Error, PluginHost, SessionDenied, lock, manifest, package};
 use std::{fs, path::PathBuf};
 
 /// The information a native UI adapter needs to open an authenticated view.
+/// `token` names this generation's view in frame URLs and relayed calls, so
+/// a frame reaches only its own plugin and goes stale when the plugin updates.
+#[derive(Debug, Clone)]
 pub struct PluginView {
   pub plugin_id: String,
   pub name: String,
   pub generation: u64,
   pub entry: String,
+  pub token: String,
 }
 
 pub struct ViewAsset {
@@ -17,17 +21,41 @@ pub struct ViewAsset {
 impl PluginHost {
   pub fn view(&self, id: &str) -> Result<PluginView, Error> {
     let plugin = self.active(id)?;
+    let mut views = lock(&self.views);
+    if let Some(view) = views
+      .get(id)
+      .filter(|view| view.generation == plugin.generation)
+    {
+      return Ok(view.clone());
+    }
     let ui = plugin
       .manifest
       .ui
       .as_ref()
       .ok_or_else(|| Error::InvalidInput("This plugin has no interface".into()))?;
-    Ok(PluginView {
+    let mut random = [0u8; 32];
+    getrandom::fill(&mut random)
+      .map_err(|error| Error::InvalidInput(format!("Cannot open the plugin view: {error}")))?;
+    let view = PluginView {
       plugin_id: plugin.id,
       name: plugin.manifest.name,
       generation: plugin.generation,
       entry: ui.rsplit('/').next().unwrap_or(ui).to_owned(),
-    })
+      token: random.iter().map(|byte| format!("{byte:02x}")).collect(),
+    };
+    views.insert(id.to_owned(), view.clone());
+    Ok(view)
+  }
+
+  /// The view a frame URL or relayed call names, while its generation is current.
+  pub fn view_session(&self, token: &str) -> Result<PluginView, SessionDenied> {
+    let view = lock(&self.views)
+      .values()
+      .find(|view| view.token == token)
+      .cloned()
+      .ok_or(SessionDenied::Stale)?;
+    self.authorize(&view.plugin_id, view.generation)?;
+    Ok(view)
   }
 
   /// Session authorization, package confinement and asset limits stay together.

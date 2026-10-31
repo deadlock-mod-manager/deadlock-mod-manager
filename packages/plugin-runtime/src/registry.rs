@@ -273,6 +273,8 @@ pub struct ExternalPluginPendingUpdate {
   pub package_size: u64,
   /// Requests the update requires that the grant does not hold exactly.
   pub new_permissions: Vec<ExternalPluginPermission>,
+  /// Everything the update requires, so a review can show what it drops.
+  pub required_permissions: Vec<ExternalPluginPermission>,
   pub changelog: Vec<String>,
   pub source: ExternalPluginSource,
 }
@@ -384,6 +386,7 @@ impl ExternalPluginSummary {
           package_hash: pending.archive_hash.clone(),
           package_size: pending.package_size,
           new_permissions: plugin.uncovered(&pending.manifest),
+          required_permissions: pending.manifest.permissions.required.clone(),
           changelog: pending.manifest.changelog.clone(),
           source: pending.source,
         }),

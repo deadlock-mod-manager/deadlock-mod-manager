@@ -290,7 +290,12 @@ pub fn run() {
             }
           }));
           #[cfg(windows)]
-          plugin_host.start_scheduler();
+          {
+            plugin_host.start_scheduler();
+            if let Some(window) = app.get_webview_window("main") {
+              external_plugins::frames::guard_navigation(&window);
+            }
+          }
         }
         external_plugins::events::init(&plugin_host, app.handle().clone());
         app.manage(plugin_host);
@@ -324,6 +329,8 @@ pub fn run() {
       commands::external_plugins::external_plugins_enable,
       #[cfg(feature = "plugins")]
       commands::external_plugins::external_plugins_remove,
+      #[cfg(feature = "plugins")]
+      commands::external_plugins::external_plugins_open_view,
       #[cfg(feature = "plugins")]
       commands::external_plugins::external_plugins_frame_call,
       commands::game::find_game_path,

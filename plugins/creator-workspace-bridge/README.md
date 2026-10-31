@@ -66,7 +66,7 @@ The archive is reproducible: entries are stored uncompressed in path order with 
 
 ## Install, update and remove
 
-1. In DMM, turn on **Plugins** under **Settings → Experimental**.
+1. Use a Windows, non-CEF DMM build compiled with `--features plugins` (included by `pnpm dev` in `apps/desktop`). Default release builds omit plugins. In that build, turn on **Plugins** under **Settings → Experimental**.
 2. Open **Manage plugins**.
 3. Choose **Install from file** and pick the ZIP from `dist/`.
 4. Choose **Set up**: pick the VPK your tool exports and a testing profile (the default profile is never offered).

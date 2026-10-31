@@ -4,7 +4,7 @@
      The fallbacks are DMM's dark theme, for opening the page on its own. */
   --background: var(--dmm-background, #110f0e);
   --surface: var(--dmm-card, #171412);
-  --raised: #1e1a18;
+  --raised: var(--dmm-muted, #1e1a18);
   --foreground: var(--dmm-foreground, #fcf9f2);
   --muted: var(--dmm-muted-foreground, #a3a3a3);
   --border: var(--dmm-border, #262626);
@@ -113,6 +113,19 @@ svg {
   gap: 20px;
   width: 360px;
   flex-shrink: 0;
+}
+
+@media (max-width: 760px) {
+  .layout {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .layout__main,
+  .layout__side {
+    width: 100%;
+    min-width: 0;
+  }
 }
 
 /* Strokes sit inside the box as in the DMM designs: cards use an inset

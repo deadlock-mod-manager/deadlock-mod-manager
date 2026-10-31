@@ -9,6 +9,7 @@ publish = false
 [dependencies]
 dmm-plugin-sdk = { path = "../plugin-sdk-rust", features = ["bindings"] }
 base64 = "0.22"
+getrandom = "0.4"
 chrono = "0.4"
 log = "0.4"
 serde = { version = "1", features = ["derive"] }
@@ -20,6 +21,9 @@ zip = "6.0.0"
 vpk-parser = { path = "../vpk-parser" }
 wasmtime = { version = "50.0.1", default-features = false, features = ["cranelift", "runtime", "std"] }
 wasmparser = { version = "0.262", default-features = false, features = ["std", "validate", "features"] }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Wdk_Foundation", "Wdk_Storage_FileSystem", "Win32_Foundation", "Win32_Security", "Win32_Storage_FileSystem", "Win32_System_IO"] }
 
 [dev-dependencies]
 tempfile = "3.27.0"

@@ -359,12 +359,10 @@ export const DetailPanel = ({ plugin, tab, onTabChange }: DetailPanelProps) => {
         <Health plugin={plugin} />
       </div>
 
-      <div
-        className='flex h-[35px] w-full shrink-0 gap-[18px] border-[#FFFFFF0F] border-b px-[22px]'
-        role='tablist'>
+      <div className='flex h-[35px] w-full shrink-0 gap-[18px] border-[#FFFFFF0F] border-b px-[22px]'>
         {PANEL_TABS.map((value) => (
           <button
-            aria-selected={tab === value}
+            aria-pressed={tab === value}
             className={cn(
               "flex h-[34px] border-b-2 pt-[8px] font-semibold text-[13px] leading-[normal] transition-colors",
               tab === value
@@ -373,16 +371,13 @@ export const DetailPanel = ({ plugin, tab, onTabChange }: DetailPanelProps) => {
             )}
             key={value}
             onClick={() => onTabChange(value)}
-            role='tab'
             type='button'>
             {t(`plugins.manage.panel.tabs.${value}`)}
           </button>
         ))}
       </div>
 
-      <div
-        className='flex min-h-0 w-full flex-1 flex-col gap-[12px] overflow-y-auto px-[22px] py-[16px] [&>*]:shrink-0'
-        role='tabpanel'>
+      <div className='flex min-h-0 w-full flex-1 flex-col gap-[12px] overflow-y-auto px-[22px] py-[16px] [&>*]:shrink-0'>
         {tab === "access" && (
           <AccessTab onSeeAll={() => onTabChange("activity")} plugin={plugin} />
         )}

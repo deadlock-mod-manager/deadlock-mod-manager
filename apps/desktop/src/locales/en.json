@@ -6347,6 +6347,7 @@
         "changes": "What changes",
         "new": "New",
         "unchanged": "Unchanged",
+        "removed": "Removed",
         "whatsNew": "What's new in {{version}}",
         "note": "If you keep {{version}}, it keeps running with the access it has now. Updates that ask for nothing new install on their own.",
         "keep": "Keep {{version}}",

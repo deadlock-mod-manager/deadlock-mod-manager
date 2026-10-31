@@ -6,6 +6,7 @@ import {
   useBlockedRequest,
 } from "@/components/plugins/page/blocked-toast";
 import { FinishSetup } from "@/components/plugins/page/finish-setup";
+import { PluginLoadError } from "@/components/plugins/page/plugin-load-error";
 import { HostBar, type HostStatus } from "@/components/plugins/page/host-bar";
 import {
   NoAnswerState,
@@ -27,7 +28,6 @@ import {
   TONE_COLOR,
 } from "@/components/plugins/plugin-status";
 import { useExternalPlugins } from "@/hooks/use-external-plugins";
-import { externalPluginFrameUrl } from "@/lib/external-plugins";
 import type { ExternalPluginSummary } from "@/types/generated/ExternalPluginSummary";
 
 const hostStatus = (
@@ -53,7 +53,7 @@ const PluginPage = ({ plugin }: { plugin: ExternalPluginSummary }) => {
   const [accessOpen, setAccessOpen] = useState(false);
   const [updateOpen, setUpdateOpen] = useState(false);
   const live = plugin.status === "enabled" && plugin.hasUi;
-  const frame = usePluginFrame(plugin.id, live, plugin.packageHash);
+  const frame = usePluginFrame(plugin.id, live);
   const blocked = useBlockedRequest(plugin.id);
   const update = plugin.pendingUpdate;
   const reviewRequested = searchParams.get("review") === "update";
@@ -92,16 +92,18 @@ const PluginPage = ({ plugin }: { plugin: ExternalPluginSummary }) => {
         if (!plugin.hasUi) return <NoPageState plugin={plugin} />;
         return (
           <>
-            <iframe
-              className='min-h-0 w-full flex-1 border-0'
-              key={frame.frameKey}
-              ref={frame.frameRef}
-              referrerPolicy='no-referrer'
-              sandbox='allow-scripts'
-              src={externalPluginFrameUrl(plugin.id)}
-              style={{ colorScheme: frame.colorScheme }}
-              title={plugin.name}
-            />
+            {frame.src ? (
+              <iframe
+                className='min-h-0 w-full flex-1 border-0'
+                key={frame.frameKey}
+                ref={frame.frameRef}
+                referrerPolicy='no-referrer'
+                sandbox='allow-scripts'
+                src={frame.src}
+                style={{ colorScheme: frame.colorScheme }}
+                title={plugin.name}
+              />
+            ) : null}
             {frame.phase === "ready" ? null : (
               <div className='absolute inset-0 flex flex-col bg-background'>
                 {frame.phase === "starting" ? (
@@ -165,6 +167,14 @@ const ExternalPluginPage = () => {
   const plugin = pluginsQuery.data?.find((entry) => entry.id === pluginId);
 
   if (pluginsQuery.isPending) return null;
+  if (pluginsQuery.isError && !plugin) {
+    return (
+      <PluginLoadError
+        error={pluginsQuery.error}
+        onRetry={() => void pluginsQuery.refetch()}
+      />
+    );
+  }
   if (!plugin) {
     return (
       <div className='flex h-full min-h-0 w-full flex-1 flex-col'>

@@ -466,22 +466,228 @@ pub fn write(scope: &Scope<'_>, path: Option<&str>, bytes: &[u8]) -> Result<Reso
     return Err(invalid("Writes are limited to 4 MiB"));
   }
   let resolved = scope.resolve_file(path)?;
-  let parent = resolved
-    .path
-    .parent()
-    .ok_or_else(|| invalid("path has no parent folder"))?;
-  let temporary = parent.join(format!(
+  let temporary = format!(
     ".{}.{}-{}.dmm-part",
     resolved.name(),
     std::process::id(),
     chrono::Utc::now().timestamp_nanos_opt().unwrap_or_default()
-  ));
-  let result = fs::write(&temporary, bytes).and_then(|()| fs::rename(&temporary, &resolved.path));
-  if let Err(error) = result {
-    let _ = fs::remove_file(&temporary);
-    return Err(error.into());
+  );
+  #[cfg(windows)]
+  {
+    let name = resolved.name();
+    let (root, names) = match path {
+      Some(path) => (scope.root, components(path)?),
+      None => (
+        scope.root.parent().ok_or_else(redirected)?,
+        vec![name.as_str()],
+      ),
+    };
+    anchored::replace(root, &names, &temporary, bytes)?;
+  }
+  #[cfg(not(windows))]
+  {
+    let parent = resolved
+      .path
+      .parent()
+      .ok_or_else(|| invalid("path has no parent folder"))?;
+    let temporary = parent.join(temporary);
+    let result = fs::write(&temporary, bytes).and_then(|()| fs::rename(&temporary, &resolved.path));
+    if let Err(error) = result {
+      let _ = fs::remove_file(&temporary);
+      return Err(error.into());
+    }
   }
   Ok(resolved)
+}
+
+/// Writes through handles opened from the granted folder instead of paths,
+/// so swapping a folder that `resolve` checked for a junction cannot
+/// redirect the write: each folder opens relative to the one before it
+/// without following reparse points, and the rename targets the last handle.
+#[cfg(windows)]
+mod anchored {
+  use super::{FileError, denied, is_redirect, redirected};
+  use std::fs::{File, OpenOptions};
+  use std::io::{self, Write};
+  use std::os::windows::prelude::*;
+  use std::path::{Path, PathBuf};
+  use std::ptr;
+  use windows_sys::Wdk::Foundation::OBJECT_ATTRIBUTES;
+  use windows_sys::Wdk::Storage::FileSystem::{
+    FILE_CREATE, FILE_DIRECTORY_FILE, FILE_DISPOSITION_INFORMATION, FILE_INFORMATION_CLASS,
+    FILE_NON_DIRECTORY_FILE, FILE_OPEN, FILE_OPEN_REPARSE_POINT, FILE_RENAME_INFORMATION,
+    FILE_SYNCHRONOUS_IO_NONALERT, FileDispositionInformation, FileRenameInformation,
+    NTCREATEFILE_CREATE_DISPOSITION, NTCREATEFILE_CREATE_OPTIONS, NtCreateFile,
+    NtSetInformationFile,
+  };
+  use windows_sys::Win32::Foundation::{
+    NTSTATUS, OBJ_CASE_INSENSITIVE, RtlNtStatusToDosError, UNICODE_STRING,
+  };
+  use windows_sys::Win32::Storage::FileSystem::{
+    DELETE, FILE_ACCESS_RIGHTS, FILE_ATTRIBUTE_NORMAL, FILE_FLAG_BACKUP_SEMANTICS,
+    FILE_FLAG_OPEN_REPARSE_POINT, FILE_GENERIC_WRITE, FILE_NAME_NORMALIZED, FILE_READ_ATTRIBUTES,
+    FILE_SHARE_DELETE, FILE_SHARE_READ, FILE_SHARE_WRITE, FILE_TRAVERSE, GetFinalPathNameByHandleW,
+    SYNCHRONIZE, VOLUME_NAME_DOS,
+  };
+  use windows_sys::Win32::System::IO::IO_STATUS_BLOCK;
+
+  const FOLDER_ACCESS: FILE_ACCESS_RIGHTS = FILE_TRAVERSE | FILE_READ_ATTRIBUTES | SYNCHRONIZE;
+
+  fn check(status: NTSTATUS) -> io::Result<()> {
+    if status >= 0 {
+      return Ok(());
+    }
+    let code = unsafe { RtlNtStatusToDosError(status) };
+    Err(io::Error::from_raw_os_error(code as i32))
+  }
+
+  fn wide(name: &str) -> Vec<u16> {
+    name.encode_utf16().collect()
+  }
+
+  fn open_at(
+    folder: &File,
+    name: &str,
+    access: FILE_ACCESS_RIGHTS,
+    disposition: NTCREATEFILE_CREATE_DISPOSITION,
+    options: NTCREATEFILE_CREATE_OPTIONS,
+  ) -> io::Result<File> {
+    let name = wide(name);
+    let length = u16::try_from(name.len() * 2).map_err(|_| io::ErrorKind::InvalidInput)?;
+    let object_name = UNICODE_STRING {
+      Length: length,
+      MaximumLength: length,
+      Buffer: name.as_ptr().cast_mut(),
+    };
+    let attributes = OBJECT_ATTRIBUTES {
+      Length: size_of::<OBJECT_ATTRIBUTES>() as u32,
+      RootDirectory: folder.as_raw_handle(),
+      ObjectName: &object_name,
+      Attributes: OBJ_CASE_INSENSITIVE,
+      ..Default::default()
+    };
+    let mut handle = ptr::null_mut();
+    let mut status_block = IO_STATUS_BLOCK::default();
+    check(unsafe {
+      NtCreateFile(
+        &mut handle,
+        access,
+        &attributes,
+        &mut status_block,
+        ptr::null(),
+        FILE_ATTRIBUTE_NORMAL,
+        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+        disposition,
+        options | FILE_OPEN_REPARSE_POINT | FILE_SYNCHRONOUS_IO_NONALERT,
+        ptr::null(),
+        0,
+      )
+    })?;
+    Ok(unsafe { File::from_raw_handle(handle) })
+  }
+
+  fn set_information<T>(
+    file: &File,
+    info: &[T],
+    size: usize,
+    class: FILE_INFORMATION_CLASS,
+  ) -> io::Result<()> {
+    let mut status_block = IO_STATUS_BLOCK::default();
+    check(unsafe {
+      NtSetInformationFile(
+        file.as_raw_handle(),
+        &mut status_block,
+        info.as_ptr().cast(),
+        size as u32,
+        class,
+      )
+    })
+  }
+
+  fn final_path(file: &File) -> io::Result<PathBuf> {
+    let mut buffer = vec![0u16; 1024];
+    loop {
+      let length = unsafe {
+        GetFinalPathNameByHandleW(
+          file.as_raw_handle(),
+          buffer.as_mut_ptr(),
+          buffer.len() as u32,
+          FILE_NAME_NORMALIZED | VOLUME_NAME_DOS,
+        )
+      } as usize;
+      if length == 0 {
+        return Err(io::Error::last_os_error());
+      }
+      if length < buffer.len() {
+        return Ok(PathBuf::from(String::from_utf16_lossy(&buffer[..length])));
+      }
+      buffer.resize(length, 0);
+    }
+  }
+
+  fn rename(file: &File, folder: &File, name: &str) -> io::Result<()> {
+    let name = wide(name);
+    let size = std::mem::offset_of!(FILE_RENAME_INFORMATION, FileName) + name.len() * 2;
+    // u64 cells keep the variable-length record aligned for its handle field.
+    let mut buffer = vec![0u64; size.div_ceil(8)];
+    let info = buffer.as_mut_ptr().cast::<FILE_RENAME_INFORMATION>();
+    unsafe {
+      (*info).Anonymous.ReplaceIfExists = true;
+      (*info).RootDirectory = folder.as_raw_handle();
+      (*info).FileNameLength = (name.len() * 2) as u32;
+      ptr::copy_nonoverlapping(
+        name.as_ptr(),
+        (&raw mut (*info).FileName).cast::<u16>(),
+        name.len(),
+      );
+    }
+    set_information(file, &buffer, size, FileRenameInformation)
+  }
+
+  /// Writes `bytes` to `root` joined with `names`, by way of `temporary` in
+  /// the same folder.
+  pub(super) fn replace(
+    root: &Path,
+    names: &[&str],
+    temporary: &str,
+    bytes: &[u8],
+  ) -> Result<(), FileError> {
+    let (name, folders) = names.split_last().ok_or_else(redirected)?;
+    let mut folder = OpenOptions::new()
+      .access_mode(FOLDER_ACCESS)
+      .custom_flags(FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT)
+      .open(root)?;
+    if is_redirect(&folder.metadata()?) || final_path(&folder)? != root {
+      return Err(redirected());
+    }
+    for part in folders {
+      folder = open_at(&folder, part, FOLDER_ACCESS, FILE_OPEN, FILE_DIRECTORY_FILE)?;
+      if is_redirect(&folder.metadata()?) {
+        return Err(denied("The path redirects outside the granted folder"));
+      }
+    }
+    let mut file = open_at(
+      &folder,
+      temporary,
+      FILE_GENERIC_WRITE | DELETE,
+      FILE_CREATE,
+      FILE_NON_DIRECTORY_FILE,
+    )?;
+    let result = file
+      .write_all(bytes)
+      .and_then(|()| rename(&file, &folder, name));
+    if let Err(error) = result {
+      let delete = [FILE_DISPOSITION_INFORMATION { DeleteFile: true }];
+      let _ = set_information(
+        &file,
+        &delete,
+        size_of::<FILE_DISPOSITION_INFORMATION>(),
+        FileDispositionInformation,
+      );
+      return Err(error.into());
+    }
+    Ok(())
+  }
 }
 
 #[cfg(test)]
@@ -605,6 +811,8 @@ mod tests {
     assert_eq!(chunk.data, r#"{"a":1}"#);
     assert!(chunk.eof);
     assert!(matches!(list(&scope, None), Err(FileError::Invalid(_))));
+    write(&scope, None, b"[]").unwrap();
+    assert_eq!(fs::read(&file).unwrap(), b"[]");
   }
 
   #[test]
@@ -695,6 +903,27 @@ mod tests {
         .all(|entry| entry.name != "link")
     );
     assert_eq!(fs::read(granted.outside.join("c.json")).unwrap(), b"{}");
+  }
+
+  #[cfg(windows)]
+  #[test]
+  fn writes_refuse_a_folder_swapped_for_a_junction_after_resolving() {
+    let granted = granted();
+    let sub = granted.root.join("sub");
+    fs::remove_dir_all(&sub).unwrap();
+    let status = std::process::Command::new("cmd")
+      .args(["/C", "mklink", "/J"])
+      .arg(&sub)
+      .arg(&granted.outside)
+      .output()
+      .unwrap();
+    assert!(status.status.success(), "{status:?}");
+    assert!(matches!(
+      anchored::replace(&granted.root, &["sub", "c.json"], ".c.json.dmm-part", b"x"),
+      Err(FileError::Denied(_))
+    ));
+    assert_eq!(fs::read(granted.outside.join("c.json")).unwrap(), b"{}");
+    assert!(!granted.outside.join(".c.json.dmm-part").exists());
   }
 
   #[cfg(unix)]
