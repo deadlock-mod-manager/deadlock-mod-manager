@@ -6,9 +6,9 @@
   "schemaExplorer": {
     "repo": "ValveResourceFormat/SchemaExplorer",
     "path": "schemas/deadlock.json",
-    "commit": "219bde9318e2ba84d56f5da68c05b70d7f4c1e99",
-    "sha256": "5b41428f2c826586bcd02f01b50f844f788fd62b3a912bdf7b90e4a7ede5928c",
-    "revision": 11191965,
+    "commit": "6d578af274db19276fb9d1e57d296d428061fffe",
+    "sha256": "fa33046a85c9fb98f3b5883706c2c1fde983abce594af7a6901fd3049e1a1b79",
+    "revision": 11193527,
     "versionDate": "Oct 30 2026"
   },
   "gameTracking": {
