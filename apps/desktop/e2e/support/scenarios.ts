@@ -189,6 +189,16 @@ const profileRoutes = async () => () => [
     body: "[]",
   },
 ];
+const modRequirements: Definition = {
+  ...defaults,
+  family: "gamebanana",
+  spec: "mod-requirements",
+  phases: ["exercise", "restart"],
+  routes: reliabilityRoutes,
+  prepare: prepareReliabilityWorld,
+  verifyNetwork: assertReliabilityNetwork,
+};
+
 const profiles: Definition = {
   ...defaults,
   family: "profiles",
@@ -814,6 +824,7 @@ export const scenarios = {
   "gamebanana-force-update": catalogLifecycle,
   "gamebanana-delete-parked": catalogDeleteParked,
   "gamebanana-delete-parked-disabled": catalogDeleteParked,
+  "gamebanana-requirements": modRequirements,
   "gamebanana-multipak-update": {
     ...catalog,
     spec: "gamebanana-multipak-update",

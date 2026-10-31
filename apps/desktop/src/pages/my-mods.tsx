@@ -101,6 +101,7 @@ import { BatchUpdateButton } from "@/components/my-mods/batch-update-button";
 import { ExportDialog } from "@/components/mod-interchange/export-dialog";
 import { AddModsMenu } from "@/components/mod-interchange/add-mods-menu";
 import { ConflictsPanel } from "@/components/my-mods/conflicts/conflicts-panel";
+import { RequirementWarning } from "@/components/my-mods/requirement-warning";
 import { ModConflictBadge } from "@/components/my-mods/conflicts/mod-conflict-badge";
 import { MyModsEmptyState } from "@/components/my-mods/empty-state";
 import { LibraryModAuthor } from "@/components/my-mods/library-mod-author";
@@ -401,6 +402,7 @@ const GridModCard = memo(function GridModCard({
             )}
             <ModHealthBadge health={health} isOutdated={isModOutdated(mod)} />
             <MissingFilesWarning missingVpks={mod.missingVpks} />
+            <RequirementWarning mod={mod} />
             {conflictStatus && (
               <ModConflictBadge
                 onClick={onShowConflicts}
@@ -583,6 +585,7 @@ const ListModCard = memo(function ListModCard({
               className='text-xs'
               missingVpks={mod.missingVpks}
             />
+            <RequirementWarning mod={mod} />
             {conflictStatus && (
               <ModConflictBadge
                 className='text-xs'

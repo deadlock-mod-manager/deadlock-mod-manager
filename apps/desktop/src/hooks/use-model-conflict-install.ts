@@ -1,3 +1,6 @@
+import { useTranslation } from "react-i18next";
+import { useConfirm } from "@/components/providers/alert-dialog";
+import { requirementState, unmetRequirements } from "@/lib/mods/requirements";
 import { useMutation } from "@tanstack/react-query";
 import { useModelConflictPrompt } from "@/components/providers/model-conflict";
 import logger from "@/lib/logger";
@@ -13,6 +16,8 @@ import {
 
 export function useModelConflictInstall() {
   const askModelConflict = useModelConflictPrompt();
+  const confirm = useConfirm();
+  const { t } = useTranslation();
   return useMutation({
     meta: { skipGlobalErrorHandler: true },
     mutationFn: async ({
@@ -29,8 +34,42 @@ export function useModelConflictInstall() {
       const profileId = usePersistedStore.getState().activeProfileId;
       const isCurrentProfile = () =>
         usePersistedStore.getState().activeProfileId === profileId;
+      const state = usePersistedStore.getState();
+      const unmet = unmetRequirements(mod.dependencies ?? [], state.localMods);
+      if (!bisectOriginalEnabled && unmet.length > 0) {
+        const proceed = await confirm({
+          title: t("modDependencies.installTitle"),
+          body: t("modDependencies.installBody", {
+            requirements: unmet
+              .map(
+                (dependency) =>
+                  `${dependency.label || dependency.remoteId} (${t(`modDependencies.state.${requirementState(dependency, state.localMods)}`)})`,
+              )
+              .join(", "),
+          }),
+          actionButton: t("modDependencies.installAnyway"),
+          cancelButton: t("common.cancel"),
+        });
+        if (!proceed || !isCurrentProfile()) return null;
+      }
+      const requiredIds = new Set(
+        (mod.dependencies ?? [])
+          .filter(
+            (dependency) =>
+              dependency.level !== "recommended" && !dependency.mustBeDisabled,
+          )
+          .flatMap((dependency) =>
+            dependency.remoteId ? [dependency.remoteId] : [],
+          ),
+      );
       return resolveModelConflict(
-        async ({ replace: replaceConflictingMods, allow }) => {
+        async ({ replace, allow }) => {
+          const replaceConflictingMods = replace.filter(
+            (id) => !requiredIds.has(id),
+          );
+          const protectedRequirements = replace.filter((id) =>
+            requiredIds.has(id),
+          );
           const result = await invokeGuarded<InstallableMod>("install_mod", {
             deadlockMod: {
               id: mod.remoteId,
@@ -40,7 +79,7 @@ export function useModelConflictInstall() {
             },
             profileFolder,
             replaceConflictingMods,
-            allowConflictingMods: allow,
+            allowConflictingMods: [...allow, ...protectedRequirements],
             bisectOriginalEnabled,
           });
           if (replaceConflictingMods.length > 0) {
@@ -70,14 +109,19 @@ export function useModelConflictInstall() {
         },
         async (ids) => {
           if (bisectOriginalEnabled) return null;
-          if (ids.every((id) => keepBothWith?.includes(id))) return "keepBoth";
+          if (
+            ids.every((id) => keepBothWith?.includes(id) || requiredIds.has(id))
+          )
+            return "keepBoth";
           const { localMods } = usePersistedStore.getState();
-          const conflicts = ids.flatMap((id) => {
-            const found = localMods.find(
-              (candidate) => candidate.remoteId === id,
-            );
-            return found ? [found] : [];
-          });
+          const conflicts = ids
+            .filter((id) => !requiredIds.has(id))
+            .flatMap((id) => {
+              const found = localMods.find(
+                (candidate) => candidate.remoteId === id,
+              );
+              return found ? [found] : [];
+            });
           return askModelConflict(mod, conflicts);
         },
         isCurrentProfile,

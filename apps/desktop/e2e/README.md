@@ -424,3 +424,7 @@ The surrounding `library-selection`, `conflicts-resolve`, and `bisect-conflicts`
 ## Mod updates
 
 `gamebanana-archived-files`, `gamebanana-update-choice` run in the existing `gamebanana` suite. Archived files do not trigger an update or any download. Ambiguous updates require an explicit variant choice and never download the unchosen archive. Each case restarts in a fresh process and checks exact VPK bytes, manifest and persisted state, and the absence of leftover partial files.
+
+## Mod requirements
+
+`gamebanana-requirements` run in the existing `gamebanana` suite. Requirements move from missing to downloaded-but-disabled to satisfied. Cancelling the warning preserves addon files; enabling prerequisites and disabling incompatible mods clears it. Load-order changes are verified against the manifest. Each case restarts in a fresh process and checks exact VPK bytes, manifest and persisted state, and the absence of leftover partial files.
