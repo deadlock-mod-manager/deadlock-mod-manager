@@ -326,7 +326,7 @@ impl DownloadManager {
         // checks and profile cancellation never miss a task between the two.
         let task = {
           let mut queue = queue_clone.lock().await;
-          match Self::next_runnable(&mut queue) {
+          match Self::claim_next(&mut queue, &mut *processing_clone.lock().await) {
             Some(queued) => {
               let cancel_token = CancellationToken::new();
               let pause = PauseHandle::new();
@@ -1803,6 +1803,13 @@ impl DownloadManager {
     None
   }
 
+  fn claim_next(
+    queue: &mut VecDeque<QueuedDownload>,
+    _processing: &mut bool,
+  ) -> Option<QueuedDownload> {
+    Self::next_runnable(queue)
+  }
+
   /// Paused downloads keep their place but don't hold up the rest of the queue.
   fn next_runnable(queue: &mut VecDeque<QueuedDownload>) -> Option<QueuedDownload> {
     let index = queue.iter().position(|queued| !queued.paused)?;
@@ -1985,6 +1992,24 @@ mod tests {
     assert!(
       DownloadManager::next_runnable(&mut queue).is_none(),
       "the worker started a paused download"
+    );
+  }
+
+  #[test]
+  fn a_download_resumed_as_the_worker_stops_starts_a_new_worker() {
+    let mut queue = VecDeque::from([QueuedDownload {
+      paused: true,
+      ..queued("paused")
+    }]);
+    let mut processing = true;
+
+    assert!(DownloadManager::claim_next(&mut queue, &mut processing).is_none());
+    // Resume queues the download once the worker releases the queue, then
+    // calls `process_queue`, which starts a worker only when none is running.
+    assert!(DownloadManager::resume_queued(&mut queue, "paused"));
+    assert!(
+      !processing,
+      "the stopping worker still looked busy, so the resumed download never ran"
     );
   }
 
