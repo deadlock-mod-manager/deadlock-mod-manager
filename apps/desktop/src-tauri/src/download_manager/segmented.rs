@@ -85,33 +85,36 @@ fn strong_etag(headers: &reqwest::header::HeaderMap) -> Option<String> {
   (!etag.starts_with("W/")).then(|| etag.to_string())
 }
 
-/// Waits out a pause and a place in the budget. `None` once cancelled.
+/// Waits for a place in the budget. `None` once paused or cancelled.
 async fn admit(
   budget: &Arc<TransferBudget>,
   origin: &str,
   pause: &PauseHandle,
   cancel_token: &CancellationToken,
 ) -> Option<Admission> {
-  loop {
-    pause.wait_until_running(cancel_token).await;
-    // The pause gate also opens on cancel, while still paused.
-    if cancel_token.is_cancelled() {
-      return None;
-    }
-    let admission = budget.admit(origin, cancel_token).await?;
-    // Paused while waiting: give the place back rather than open a connection.
-    if !pause.is_paused() {
-      return Some(admission);
-    }
+  tokio::select! {
+    biased;
+    () = pause.paused() => None,
+    admission = budget.admit(origin, cancel_token) => admission,
   }
 }
 
-async fn backoff(attempt: u32, cancel_token: &CancellationToken) -> bool {
+/// `false` once paused or cancelled.
+async fn backoff(attempt: u32, pause: &PauseHandle, cancel_token: &CancellationToken) -> bool {
   let delay = Duration::from_secs(1 << (attempt - 1));
   tokio::select! {
     () = tokio::time::sleep(delay) => true,
+    () = pause.paused() => false,
     () = cancel_token.cancelled() => false,
   }
+}
+
+/// A paused download keeps its staging so Resume continues from the parts.
+async fn stopped(target_path: &Path, cancel_token: &CancellationToken) -> Result<Segmented, Error> {
+  if cancel_token.is_cancelled() {
+    return cancelled(target_path).await;
+  }
+  Err(Error::DownloadPaused)
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -166,7 +169,7 @@ where
   let mut reconnects = 0;
   let (response, mut admission) = loop {
     let Some(admission) = admit(budget, &probe_origin, pause, cancel_token).await else {
-      return cancelled(target_path).await;
+      return stopped(target_path, cancel_token).await;
     };
     let request = probe_client
       .get(url)
@@ -175,6 +178,7 @@ where
     let sent = tokio::select! {
       biased;
       () = cancel_token.cancelled() => return cancelled(target_path).await,
+      () = pause.paused() => return Err(Error::DownloadPaused),
       sent = request.send() => sent,
     };
     match sent {
@@ -186,8 +190,8 @@ where
         if transient && reconnects < MAX_RECONNECTS {
           reconnects += 1;
           log::warn!("Segment probe failed (retry {reconnects}/{MAX_RECONNECTS}): {reason}");
-          if !backoff(reconnects, cancel_token).await {
-            return cancelled(target_path).await;
+          if !backoff(reconnects, pause, cancel_token).await {
+            return stopped(target_path, cancel_token).await;
           }
           continue;
         }
@@ -477,6 +481,13 @@ async fn fetch_segment(
     (segment.start, segment.end)
   };
   let length = end - start;
+  let stopped = || {
+    if transfer.cancel_token.is_cancelled() {
+      WorkerError::Stopped
+    } else {
+      WorkerError::Failed(Error::DownloadPaused)
+    }
+  };
   let mut reconnects: u32 = 0;
   let mut file = tokio::fs::OpenOptions::new()
     .create(true)
@@ -497,7 +508,7 @@ async fn fetch_segment(
         )
         .await
         else {
-          return Err(WorkerError::Stopped);
+          return Err(stopped());
         };
         let request = transfer
           .client
@@ -508,6 +519,7 @@ async fn fetch_segment(
         let sent = tokio::select! {
           biased;
           () = transfer.cancel_token.cancelled() => return Err(WorkerError::Stopped),
+          () = transfer.pause.paused() => return Err(stopped()),
           sent = request.send() => sent,
         };
         let response = match sent {
@@ -520,8 +532,8 @@ async fn fetch_segment(
               log::warn!(
                 "Segment {index} request failed (retry {reconnects}/{MAX_RECONNECTS}): {reason}"
               );
-              if !backoff(reconnects, &transfer.cancel_token).await {
-                return Err(WorkerError::Stopped);
+              if !backoff(reconnects, &transfer.pause, &transfer.cancel_token).await {
+                return Err(stopped());
               }
               continue;
             }
@@ -560,14 +572,14 @@ async fn fetch_segment(
       if transfer.cancel_token.is_cancelled() {
         return Err(WorkerError::Stopped);
       }
+      // Stopping rather than waiting frees the queue; Resume continues from the
+      // part's length.
       if transfer.pause.is_paused() {
-        transfer
-          .pause
-          .wait_until_running(&transfer.cancel_token)
-          .await;
-        // Time spent paused is not the server going quiet.
-        last_data_at = Instant::now();
-        continue;
+        file
+          .flush()
+          .await
+          .map_err(|error| WorkerError::Failed(Error::Io(error)))?;
+        return Err(stopped());
       }
       match tokio::time::timeout(STALL_TICK, stream.next()).await {
         Ok(Some(Ok(chunk))) => {
@@ -981,6 +993,52 @@ mod tests {
       "{result:?}"
     );
     assert!(server.requests().is_empty() && !staging_dir(&target).exists());
+  }
+
+  #[tokio::test]
+  async fn pausing_stops_every_segment_and_keeps_the_staging_to_resume_from() {
+    let dir = tempfile::tempdir().unwrap();
+    let target = dir.path().join("mod.zip");
+    let body = body();
+    let server = range_server(&body).await;
+    let budget = enabled_budget();
+    let pause = PauseHandle::new();
+    let running = tokio::spawn({
+      let target = target.clone();
+      let body = body.clone();
+      let pause = pause.clone();
+      let budget = Arc::clone(&budget);
+      let url = server.url("/mod.zip");
+      async move {
+        download_file_segmented(
+          &url,
+          &target,
+          body.len() as u64,
+          &md5_of(&body),
+          &|_| {},
+          &CancellationToken::new(),
+          &pause,
+          &budget,
+          false,
+        )
+        .await
+      }
+    });
+    while server.requests().len() < SEGMENT_COUNT {
+      tokio::time::sleep(Duration::from_millis(10)).await;
+    }
+
+    pause.pause();
+    let result = tokio::time::timeout(Duration::from_secs(5), running)
+      .await
+      .expect("a paused download held on to its segments")
+      .unwrap();
+    assert!(matches!(result, Err(Error::DownloadPaused)), "{result:?}");
+    assert!(staging_dir(&target).exists() && !target.exists());
+
+    let result = download(&server, &target, &body, &budget, &CancellationToken::new()).await;
+    assert!(matches!(result, Ok(Segmented::Finished)), "{result:?}");
+    assert_eq!(tokio::fs::read(&target).await.unwrap(), body);
   }
 
   #[tokio::test]

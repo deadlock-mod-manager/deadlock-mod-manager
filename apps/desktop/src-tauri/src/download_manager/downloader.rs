@@ -213,7 +213,7 @@ impl PauseHandle {
   }
 
   /// Resolves once the download is paused, for waits that read no data.
-  async fn paused(&self) {
+  pub(super) async fn paused(&self) {
     // `self` holds the sender, so the wait can't see it closed.
     let _ = self.paused.subscribe().wait_for(|paused| *paused).await;
   }
@@ -1071,7 +1071,10 @@ mod tests {
   async fn a_server_that_keeps_running_past_its_range_fails_after_one_restart() {
     let (result, requests, published, partial_left) =
       download_with_overruns(usize::MAX, None).await;
-    assert!(matches!(result, Err(Error::DownloadFailed(_))), "{result:?}");
+    assert!(
+      matches!(result, Err(Error::DownloadFailed(_))),
+      "{result:?}"
+    );
     assert_eq!(requests, 2, "one clean restart, then give up");
     assert!(published.is_none() && !partial_left);
   }
