@@ -424,3 +424,7 @@ The surrounding `library-selection`, `conflicts-resolve`, and `bisect-conflicts`
 ## Mod updates
 
 `gamebanana-archived-files`, `gamebanana-update-choice` run in the existing `gamebanana` suite. Archived files do not trigger an update or any download. Ambiguous updates require an explicit variant choice and never download the unchosen archive. Each case restarts in a fresh process and checks exact VPK bytes, manifest and persisted state, and the absence of leftover partial files.
+
+## Download fallback
+
+`gamebanana-mirror-fallback` run in the existing `gamebanana` suite. An interrupted mirror transfer receives a failed retry before the canonical endpoint succeeds. The canonical request starts without a Range header, and the installed VPK bytes match the fixture. Each case restarts in a fresh process and checks exact VPK bytes, manifest and persisted state, and the absence of leftover partial files.
