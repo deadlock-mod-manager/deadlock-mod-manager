@@ -73,6 +73,12 @@ export interface SteamAuthPluginOptions {
 
 const seenNonces = new NonceStore();
 
+const withError = (url: string, error: string) => {
+  const target = new URL(url);
+  target.searchParams.set("error", error);
+  return target.toString();
+};
+
 export const steam = (config: SteamAuthPluginOptions) =>
   ({
     id: "steam",
@@ -299,7 +305,7 @@ export const steam = (config: SteamAuthPluginOptions) =>
           const baseOrigin = new URL(ctx.context.baseURL).origin;
 
           if (!ctx?.request?.url) {
-            throw ctx.redirect(`${baseErrorURL}?error=missing_request_url`);
+            throw ctx.redirect(withError(baseErrorURL, "missing_request_url"));
           }
 
           let {
@@ -349,7 +355,7 @@ export const steam = (config: SteamAuthPluginOptions) =>
                 trustedOrigins,
               },
             );
-            throw ctx.redirect(`${errorURL}?error=callback_url_not_trusted`);
+            throw ctx.redirect(withError(errorURL, "callback_url_not_trusted"));
           }
 
           const newUserCallbackOrigin = new URL(newUserCallbackURL).origin;
@@ -363,7 +369,7 @@ export const steam = (config: SteamAuthPluginOptions) =>
               },
             );
             throw ctx.redirect(
-              `${errorURL}?error=new_user_callback_url_not_trusted`,
+              withError(errorURL, "new_user_callback_url_not_trusted"),
             );
           }
 
@@ -378,7 +384,7 @@ export const steam = (config: SteamAuthPluginOptions) =>
               },
             );
             throw ctx.redirect(
-              `${errorURL}?error=error_callback_url_not_trusted`,
+              withError(errorURL, "error_callback_url_not_trusted"),
             );
           }
 
@@ -393,7 +399,7 @@ export const steam = (config: SteamAuthPluginOptions) =>
               return_to: params["openid.return_to"],
               claimed_id: params["openid.claimed_id"],
             });
-            throw ctx.redirect(`${errorURL}?error=${assertion.reason}`);
+            throw ctx.redirect(withError(errorURL, assertion.reason));
           }
           if (
             !signedQueryMatches(params["openid.return_to"] ?? "", ctx.query)
@@ -402,7 +408,7 @@ export const steam = (config: SteamAuthPluginOptions) =>
               "Steam callback query differs from signed return_to",
               { return_to: params["openid.return_to"] },
             );
-            throw ctx.redirect(`${errorURL}?error=openid_query_mismatch`);
+            throw ctx.redirect(withError(errorURL, "openid_query_mismatch"));
           }
 
           params["openid.mode"] = "check_authentication";
@@ -423,7 +429,7 @@ export const steam = (config: SteamAuthPluginOptions) =>
               claimed_id: params["openid.claimed_id"],
             });
             throw ctx.redirect(
-              `${errorURL}?error=steam_openid_validation_failed`,
+              withError(errorURL, "steam_openid_validation_failed"),
             );
           }
           if (!verifyRes.data.includes("is_valid:true")) {
@@ -433,7 +439,7 @@ export const steam = (config: SteamAuthPluginOptions) =>
               claimed_id: params["openid.claimed_id"],
             });
             throw ctx.redirect(
-              `${errorURL}?error=steam_openid_validation_failed`,
+              withError(errorURL, "steam_openid_validation_failed"),
             );
           }
 
@@ -454,13 +460,15 @@ export const steam = (config: SteamAuthPluginOptions) =>
               `An error occurred while fetching the Steam profile:`,
               profileRes.error,
             );
-            throw ctx.redirect(`${errorURL}?error=steam_profile_fetch_failed`);
+            throw ctx.redirect(
+              withError(errorURL, "steam_profile_fetch_failed"),
+            );
           }
 
           const profile = profileRes.data.response.players[0];
 
           if (!profile) {
-            throw ctx.redirect(`${errorURL}?error=steam_profile_not_found`);
+            throw ctx.redirect(withError(errorURL, "steam_profile_not_found"));
           }
 
           // Handle account linking flow
@@ -468,7 +476,7 @@ export const steam = (config: SteamAuthPluginOptions) =>
             const session = await getSessionFromCtx(ctx);
             if (!session) {
               throw ctx.redirect(
-                `${errorURL}?error=session_required_for_linking`,
+                withError(errorURL, "session_required_for_linking"),
               );
             }
             const user = session.user;
@@ -482,7 +490,10 @@ export const steam = (config: SteamAuthPluginOptions) =>
             if (existingAccount) {
               if (existingAccount.userId !== user.id) {
                 throw ctx.redirect(
-                  `${errorURL}?error=account_already_linked_to_different_user`,
+                  withError(
+                    errorURL,
+                    "account_already_linked_to_different_user",
+                  ),
                 );
               }
               // Account already linked to this user, redirect to success
@@ -497,7 +508,9 @@ export const steam = (config: SteamAuthPluginOptions) =>
             });
 
             if (!newAccount) {
-              throw ctx.redirect(`${errorURL}?error=account_creation_failed`);
+              throw ctx.redirect(
+                withError(errorURL, "account_creation_failed"),
+              );
             }
 
             // Update user info if configured
@@ -519,7 +532,7 @@ export const steam = (config: SteamAuthPluginOptions) =>
             ctx.context.logger.error(
               `Email is required for sign in with steam`,
             );
-            throw ctx.redirect(`${errorURL}?error=email_required`);
+            throw ctx.redirect(withError(errorURL, "email_required"));
           }
 
           const isValidEmail = z.string().email().safeParse(email);
@@ -530,7 +543,7 @@ export const steam = (config: SteamAuthPluginOptions) =>
               `Invalid email during sign in with steam:`,
               isValidEmail.error,
             );
-            throw ctx.redirect(`${errorURL}?error=invalid_email`);
+            throw ctx.redirect(withError(errorURL, "invalid_email"));
           }
 
           let account = await ctx.context.internalAdapter.findAccountByKey({
@@ -552,6 +565,16 @@ export const steam = (config: SteamAuthPluginOptions) =>
               email,
             });
 
+            // The email is typed by the user and unverified, so never link
+            // this Steam ID to the account that already owns it.
+            const existingUser =
+              await ctx.context.internalAdapter.findUserByEmail(
+                userDetails?.email || email,
+              );
+            if (existingUser) {
+              throw ctx.redirect(withError(errorURL, "email_in_use"));
+            }
+
             user = await ctx.context.internalAdapter.createUser(
               {
                 ...userDetails,
@@ -567,7 +590,7 @@ export const steam = (config: SteamAuthPluginOptions) =>
                 `An error occurred while creating the user during sign in with steam:`,
                 userDetails,
               );
-              throw ctx.redirect(`${errorURL}?error=user_creation_failed`);
+              throw ctx.redirect(withError(errorURL, "user_creation_failed"));
             }
             account = await ctx.context.internalAdapter.createAccount({
               accountId: steamId,
@@ -579,7 +602,9 @@ export const steam = (config: SteamAuthPluginOptions) =>
                 `An error occurred while creating the account during sign in with steam:`,
                 userDetails,
               );
-              throw ctx.redirect(`${errorURL}?error=account_creation_failed`);
+              throw ctx.redirect(
+                withError(errorURL, "account_creation_failed"),
+              );
             }
           } else if (account) {
             user = await ctx.context.internalAdapter.findUserById(
@@ -590,10 +615,10 @@ export const steam = (config: SteamAuthPluginOptions) =>
                 `An error occurred while finding the user during sign in with steam:`,
                 account,
               );
-              throw ctx.redirect(`${errorURL}?error=user_not_found`);
+              throw ctx.redirect(withError(errorURL, "user_not_found"));
             }
           } else {
-            throw ctx.redirect(`${errorURL}?error=account_not_found`);
+            throw ctx.redirect(withError(errorURL, "account_not_found"));
           }
 
           const session = await ctx.context.internalAdapter.createSession(
