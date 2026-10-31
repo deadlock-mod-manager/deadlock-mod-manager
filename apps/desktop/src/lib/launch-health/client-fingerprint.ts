@@ -14,7 +14,7 @@ type FingerprintProfile = Pick<ModProfile, "id" | "name"> & {
   enabledMods: Record<string, { lastModified: StoredDate }>;
 };
 
-const toIsoString = (value: StoredDate | undefined): string | null => {
+export const toIsoString = (value: StoredDate | undefined): string | null => {
   if (value === undefined) return null;
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? null : date.toISOString();

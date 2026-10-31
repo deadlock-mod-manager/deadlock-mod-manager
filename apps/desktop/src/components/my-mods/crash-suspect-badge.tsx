@@ -5,16 +5,32 @@ import {
   TooltipTrigger,
 } from "@deadlock-mods/ui/components/tooltip";
 import { useTranslation } from "react-i18next";
+import { toIsoString } from "@/lib/launch-health/client-fingerprint";
 import { useRecentCrashReport } from "@/lib/launch-health/crash-suspect";
+import { modFilesChanged } from "@/lib/launch-health/evaluate";
 import { usePersistedStore } from "@/lib/store";
 
 export function CrashSuspectBadge({ modId }: { modId: string }) {
   const { t } = useTranslation();
   const report = useRecentCrashReport((state) => state.report);
   const profileId = usePersistedStore((state) => state.activeProfileId);
+  const mod = usePersistedStore((state) =>
+    state.localMods.find((item) => item.remoteId === modId),
+  );
+  const atCrash = report?.fingerprint.client?.mods.find(
+    (item) => item.remoteId === modId,
+  );
   if (
     report?.fingerprint.client?.profileId !== profileId ||
-    report?.crashSuspect?.modId !== modId
+    report?.crashSuspect?.modId !== modId ||
+    !mod ||
+    !atCrash ||
+    // An update or reinstall since the crash replaced the files it named
+    modFilesChanged(atCrash, {
+      ...atCrash,
+      downloadedAt: toIsoString(mod.downloadedAt),
+      variant: mod.activeVariantArchive ?? null,
+    })
   )
     return null;
   return (

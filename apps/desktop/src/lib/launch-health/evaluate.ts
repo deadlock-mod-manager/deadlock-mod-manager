@@ -14,7 +14,10 @@ import type {
  */
 const CRASH_WINDOW_SECONDS = 300;
 
-const modFilesChanged = (previous: ClientModRef, current: ClientModRef) =>
+export const modFilesChanged = (
+  previous: ClientModRef,
+  current: ClientModRef,
+) =>
   previous.downloadedAt !== current.downloadedAt ||
   previous.variant !== current.variant;
 

@@ -8,11 +8,24 @@ use std::sync::LazyLock;
 use vpk_parser::VpkParser;
 
 static RESOURCE: LazyLock<Regex> = LazyLock::new(|| {
-  Regex::new(r"(?i)\b(?:panorama|scripts|models|materials|particles|soundevents|sounds)/[a-z0-9_./-]+\.(?:vxml_c|vdata_c|vdata|vmdl_c|vmat_c|vpcf_c|vsnd_c)\b").unwrap()
+  Regex::new(r"(?i)\b(?:panorama|scripts|models|materials|particles|soundevents|sounds)/[a-z0-9_./-]+\.(?:vxml_c|vcss_c|vdata_c|vdata|vmdl_c|vmat_c|vpcf_c|vsnd_c)\b").unwrap()
 });
+
+static PANORAMA_SOURCE: LazyLock<Regex> =
+  LazyLock::new(|| Regex::new(r"file://\{resources\}/([a-z0-9_./-]+)\.(xml|css)\b").unwrap());
 
 fn resource_paths(message: &str) -> Vec<String> {
   let message = message.replace('\\', "/").to_ascii_lowercase();
+  // Panorama names sources through its {resources} alias; the VPK stores them
+  // compiled under panorama/.
+  let message = PANORAMA_SOURCE.replace_all(&message, |found: &regex::Captures| {
+    let extension = if &found[2] == "xml" {
+      "vxml_c"
+    } else {
+      "vcss_c"
+    };
+    format!("panorama/{}.{extension}", &found[1])
+  });
   let mut paths = Vec::new();
   for found in RESOURCE.find_iter(&message) {
     let path = found.as_str();
@@ -21,7 +34,9 @@ fn resource_paths(message: &str) -> Vec<String> {
       .chars()
       .next()
       .is_some_and(|next| next.is_ascii_alphanumeric() || matches!(next, '_' | '.' | '-'));
-    if suffixed || path.split('/').any(|part| part == ".." || part == ".") {
+    // The regex can also start mid-path, e.g. inside `../materials/x.vmat_c`.
+    let relative = message[..found.start()].ends_with("./");
+    if suffixed || relative || path.split('/').any(|part| part == ".." || part == ".") {
       continue;
     }
     // Fatal errors can name the source vdata while the VPK stores the compiled resource.
@@ -170,6 +185,18 @@ mod tests {
     );
     assert!(resource_paths("Couldn't load scripts/../secrets.vdata_c").is_empty());
     assert!(resource_paths("Couldn't load materials/test.vmat_c.bak").is_empty());
+    assert!(resource_paths("Couldn't load ../materials/hud.vmat_c").is_empty());
+    assert_eq!(
+      resource_paths(
+        "FATAL ERROR: Unable to load layout file 'file://{resources}/layout/hud.xml'.  This may indicate a problem with your local install files"
+      ),
+      ["panorama/layout/hud.vxml_c"]
+    );
+    assert_eq!(
+      resource_paths("Failed to load file://{resources}/styles/hud.css"),
+      ["panorama/styles/hud.vcss_c"]
+    );
+    assert!(resource_paths("Failed to load file://{resources}/../hud.xml").is_empty());
   }
   fn write_vpk(dir: &Path, name: &str, resource: &str, contents: &str) {
     let source = tempfile::tempdir().unwrap();
