@@ -6,6 +6,7 @@ import { startApplication } from "../support/application";
 import { closeApplication } from "../support/application-exit";
 import { $, browser, expect } from "@wdio/globals";
 import { readFile, writeFile } from "node:fs/promises";
+import { setTimeout } from "node:timers/promises";
 import path from "node:path";
 import { z } from "zod";
 import {
@@ -27,6 +28,8 @@ import {
   setSwitch,
 } from "../support/settings-actions";
 
+/** Ample for a purge and a queue IPC; the first download runs for about 8 s. */
+const QUEUE_SETTLE_MS = 1_000;
 const card = (name = DOWNLOAD_NAME) =>
   $(`[role="button"][aria-label="Open ${name}"]`);
 const waitStatus = async (world: string, status: string): Promise<void> => {
@@ -81,7 +84,7 @@ const downloadRequests = async (world: string, file = DOWNLOAD_FILE) => {
     .parse(await (await fetch(`${origin}/__control/requests`)).json())
     .requests.filter(({ url }) => url === `/downloads/${file}`);
 };
-const cancelQueued = async (world: string): Promise<void> => {
+const queueBehindFirst = async (world: string): Promise<void> => {
   // The downloader handles one mod at a time, so the second waits in its queue.
   await step("queue a second download behind the first", async () => {
     await observeUntil(
@@ -91,6 +94,9 @@ const cancelQueued = async (world: string): Promise<void> => {
     );
     await retry(QUEUED_NAME);
   });
+};
+const cancelQueued = async (world: string): Promise<void> => {
+  await queueBehindFirst(world);
   await step("cancel the queued download", async () => {
     const button = await card(QUEUED_NAME).$("button=Cancel");
     await button.waitForClickable();
@@ -101,6 +107,32 @@ const cancelQueued = async (world: string): Promise<void> => {
     );
   });
   await step("the first download finishes alone", async () => {
+    await waitStatus(world, "downloaded");
+    expect(await downloadRequests(world, QUEUED_FILE)).toEqual([]);
+  });
+};
+const reloadWhileQueued = async (world: string): Promise<void> => {
+  await queueBehindFirst(world);
+  await step("reload while the second download is queued", async () => {
+    await observeUntil(
+      "Queued download was not marked downloading",
+      () => readDownloadState(world),
+      (mods) => mods[1]?.status === "downloading",
+    );
+    // Retry purges the mod before it queues it, and neither step shows in the UI.
+    await setTimeout(QUEUE_SETTLE_MS);
+    expect(await downloadRequests(world, QUEUED_FILE)).toEqual([]);
+    await browser.refresh();
+    await navigate("downloads");
+    await expect(card().$("button=Retry")).toBeDisplayed();
+    await expect(card(QUEUED_NAME).$("button=Retry")).toBeDisplayed();
+    await browser.saveScreenshot(
+      path.join(world, "artifacts", "reloaded-queued-download.png"),
+    );
+  });
+  // A card that says Failed must not hide a download still running behind it.
+  await step("the queued download stays stopped until retried", async () => {
+    await retry();
     await waitStatus(world, "downloaded");
     expect(await downloadRequests(world, QUEUED_FILE)).toEqual([]);
   });
@@ -223,6 +255,8 @@ describe("real Rust downloads", () => {
         await cancelWhileConnecting(world);
       } else if (scenario === "downloads-cancel-queued") {
         await cancelQueued(world);
+      } else if (scenario === "downloads-reload-queued") {
+        await reloadWhileQueued(world);
       } else if (
         [
           "downloads-auth",

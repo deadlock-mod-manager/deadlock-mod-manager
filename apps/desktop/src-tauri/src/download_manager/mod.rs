@@ -1947,8 +1947,8 @@ impl DownloadManager {
       || !self.active_downloads.lock().await.is_empty()
   }
 
-  /// Lists paused downloads waiting in the queue as well as running ones, so a
-  /// webview reload cancels them like any download it no longer tracks.
+  /// Lists queued and paused downloads as well as running ones, so a webview
+  /// reload cancels them like any download it no longer tracks.
   pub async fn get_all_downloads(&self) -> Result<Vec<DownloadStatus>, Error> {
     // The worker's lock order, so a download moving between the two is in one of them.
     let queue = self.queue.lock().await;
@@ -1956,22 +1956,21 @@ impl DownloadManager {
     Ok(Self::list_downloads(&queue, &active))
   }
 
+  /// Queued downloads come first, so cancels sent in list order usually drop
+  /// them before cancelling the running one frees the worker.
   fn list_downloads(
     queue: &VecDeque<QueuedDownload>,
     active: &HashMap<String, ActiveDownload>,
   ) -> Vec<DownloadStatus> {
-    let paused = queue
-      .iter()
-      .filter(|queued| queued.paused)
-      .map(|queued| DownloadStatus {
-        mod_id: queued.task.mod_id.clone(),
-        status: "paused".to_string(),
-      });
+    let queued = queue.iter().map(|queued| DownloadStatus {
+      mod_id: queued.task.mod_id.clone(),
+      status: if queued.paused { "paused" } else { "queued" }.to_string(),
+    });
     let running = active.iter().map(|(mod_id, download)| DownloadStatus {
       mod_id: mod_id.clone(),
       status: download.status.clone(),
     });
-    paused.chain(running).collect()
+    queued.chain(running).collect()
   }
 
   /// Debug-only: run the post-download processing pipeline on an already-copied local file.
@@ -2178,7 +2177,7 @@ mod tests {
   }
 
   #[test]
-  fn listing_downloads_includes_paused_ones_waiting_in_the_queue() {
+  fn listing_downloads_includes_queued_ones_before_the_running_one() {
     let queue = VecDeque::from([
       queued("waiting"),
       QueuedDownload {
@@ -2195,10 +2194,11 @@ mod tests {
     assert_eq!(
       listed,
       [
+        ("waiting".to_string(), "queued".to_string()),
         ("paused".to_string(), "paused".to_string()),
         ("running".to_string(), "downloading".to_string()),
       ],
-      "a reload would leave the paused download in the queue behind a Failed card"
+      "a reload would leave a queued download to run behind a Failed card"
     );
   }
 
