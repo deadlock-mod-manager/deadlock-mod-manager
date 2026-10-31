@@ -53,7 +53,7 @@ current. Both run in the Windows and Linux E2E matrices with no host update.
 
 `deep-link-other-file` installs `base.zip` from a GameBanana 1-click link, then sends a link for the same mod's `effects.zip`. The second link must add `effects.vpk` beside `base.vpk` in the author's order, and a repeat link for `base.zip` must only report it as already installed. Each archive downloads exactly once. E2E builds skip the OS deep-link plugin, so the case emits `deep-link-received` through Tauri's event IPC, the event the Rust handler emits after validating a link.
 
-`network-diagnostics` runs Settings → Tools → Diagnose connection with every service on the fixture origin, including Cloudflare's trace probes through the `connectivity` endpoint, so every check except TCP auto-tuning must pass. On Windows the world injects a `Disabled` TCP auto-tuning level instead of reading the host's, and the row must warn and show the command to turn it back on; on Linux that row must not exist.
+`network-diagnostics` runs Settings → Tools → Diagnose connection with every service on the fixture origin, including Cloudflare's trace probes through the `connectivity` endpoint, so every check except TCP auto-tuning must pass. On Windows the world injects a `Disabled` TCP auto-tuning level instead of reading the host's, and the row must warn and show the command to turn it back on; on Linux that row must not exist. `network-diagnostics-internet-down` cuts every trace probe off before it gets a response, and the internet row must name the host it couldn't reach.
 
 `catalog-refresh` checks that manual refresh finds a new sound during the automatic sync cooldown, disables duplicate clicks while syncing, preserves saved entries, and fetches no unchanged details on a repeated refresh. Its network assertions require only the latest index pages and one new sound hydration.
 
@@ -424,3 +424,7 @@ The surrounding `library-selection`, `conflicts-resolve`, and `bisect-conflicts`
 ## Mod updates
 
 `gamebanana-archived-files`, `gamebanana-update-choice` run in the existing `gamebanana` suite. Archived files do not trigger an update or any download. Ambiguous updates require an explicit variant choice and never download the unchosen archive. Each case restarts in a fresh process and checks exact VPK bytes, manifest and persisted state, and the absence of leftover partial files.
+
+## Download fallback
+
+`gamebanana-mirror-fallback` run in the existing `gamebanana` suite. An interrupted mirror transfer receives a failed retry before the canonical endpoint succeeds. The canonical request starts without a Range header, and the installed VPK bytes match the fixture. Each case restarts in a fresh process and checks exact VPK bytes, manifest and persisted state, and the absence of leftover partial files.

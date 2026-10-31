@@ -819,6 +819,7 @@ pub async fn fetch_missing_mod_variants(
       &policy,
       &mod_id,
       &[DownloadFileDto {
+        fallback_urls: Vec::new(),
         url: archive.url.clone(),
         name: safe_archive_name.clone(),
         size: 0,
@@ -1012,6 +1013,7 @@ pub async fn stage_download_archive(
     &policy,
     &mod_id,
     &[DownloadFileDto {
+      fallback_urls: Vec::new(),
       url: archive_url,
       name: safe_archive_name.clone(),
       size: 0,
