@@ -81,7 +81,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: ${{ fromJSON(inputs.suites || '["smoke","updater","library-groups","compatibility","local","local-large","profiles","conflicts","downloads","filesystem","gamebanana","settings","skins","interchange","shards"]') }}
+        suite: ${{ fromJSON(inputs.suites || '["smoke","updater","library-groups","compatibility","local","local-large","profiles","conflicts","downloads","filesystem","gamebanana","settings","skins","interchange","shards","missing-vpks","catalog","navigation","onboarding","stats","diagnostics"]') }}
         # Fixed seeds keep failures reproducible: 0 is the default, 887
         # replays #891 and 4 retries an update straight after a failure.
         include: ${{ fromJSON((!inputs.suites || contains(inputs.suites, '"monkey"')) && '[{"suite":"monkey","seed":"0"},{"suite":"monkey","seed":"887"},{"suite":"monkey","seed":"4"}]' || '[]') }}
