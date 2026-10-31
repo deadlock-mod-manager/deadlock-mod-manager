@@ -529,7 +529,13 @@ jobs:
       contents: write
     runs-on: depot-ubuntu-24.04
     needs:
-      [check-commits, prepare-matrix, create-nightly-release, build-nightly]
+      [
+        check-commits,
+        prepare-matrix,
+        create-nightly-release,
+        build-nightly,
+        build-appimage,
+      ]
     if: (failure() || cancelled()) && needs.check-commits.outputs.should_build == 'true'
 
     steps:
@@ -552,3 +558,16 @@ jobs:
                 console.error(`Cleanup failed: ${error.message}`);
               }
             }
+
+  build-appimage:
+    needs: [check-commits, prepare-matrix, create-nightly-release]
+    if: needs.check-commits.outputs.should_build == 'true' && needs.prepare-matrix.outputs.builds_linux == 'true'
+    permissions:
+      contents: write
+    uses: ./.github/workflows/_build-appimage.yml
+    with:
+      release_id: ${{ needs.create-nightly-release.outputs.release_id }}
+      nightly: true
+    secrets:
+      TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+      VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}
