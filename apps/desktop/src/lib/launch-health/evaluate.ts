@@ -161,7 +161,9 @@ export const evaluateSession = (
       changes: lastNormal
         ? diffFingerprints(lastNormal, report.fingerprint)
         : [],
-      buildChanged: report.buildChanged,
+      buildChanged:
+        report.buildChanged ||
+        (lastNormal !== null && buildDiffers(lastNormal, report.fingerprint)),
       modsLoaded: modsWereLoaded(report.fingerprint),
       presentation: report.recovered ? "toast" : "dialog",
     };

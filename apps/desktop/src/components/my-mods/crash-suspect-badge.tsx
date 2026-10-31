@@ -21,6 +21,7 @@ export function CrashSuspectBadge({ modId }: { modId: string }) {
     <Tooltip>
       <TooltipTrigger asChild>
         <Badge
+          tabIndex={0}
           variant='outline'
           className='border-amber-500/50 bg-background/95 text-amber-600 dark:text-amber-400'>
           {t("launchHealth.dialog.possibleCauseBadge")}

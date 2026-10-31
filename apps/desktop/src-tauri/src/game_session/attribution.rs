@@ -16,7 +16,12 @@ fn resource_paths(message: &str) -> Vec<String> {
   let mut paths = Vec::new();
   for found in RESOURCE.find_iter(&message) {
     let path = found.as_str();
-    if path.split('/').any(|part| part == ".." || part == ".") {
+    // A word boundary still matches before `.` or `-`, so `x.vmat_c.bak` would name the wrong file.
+    let suffixed = message[found.end()..]
+      .chars()
+      .next()
+      .is_some_and(|next| next.is_ascii_alphanumeric() || matches!(next, '_' | '.' | '-'));
+    if suffixed || path.split('/').any(|part| part == ".." || part == ".") {
       continue;
     }
     // Fatal errors can name the source vdata while the VPK stores the compiled resource.
@@ -37,27 +42,30 @@ pub(super) fn find_suspect(
   fingerprint: &SessionFingerprint,
   abort_message: &str,
 ) -> Option<CrashSuspect> {
-  let mut suspect: Option<CrashSuspect> = None;
+  let mut suspect: Option<(String, CrashSuspect)> = None;
   for resource in resource_paths(abort_message) {
-    let Some(found) = resource_owner(game_path, fingerprint, &resource) else {
+    let Some((mounted, found)) = resource_owner(game_path, fingerprint, &resource) else {
       continue;
     };
-    if let Some(previous) = &suspect {
-      if previous.mod_id != found.mod_id || previous.vpk != found.vpk {
+    if let Some((previous_mounted, previous)) = &suspect {
+      if previous.mod_id != found.mod_id
+        || previous.vpk != found.vpk
+        || *previous_mounted != mounted
+      {
         return None;
       }
     } else {
-      suspect = Some(found);
+      suspect = Some((mounted, found));
     }
   }
-  suspect
+  suspect.map(|(_, found)| found)
 }
 
 fn resource_owner(
   game_path: &Path,
   fingerprint: &SessionFingerprint,
   resource: &str,
-) -> Option<CrashSuspect> {
+) -> Option<(String, CrashSuspect)> {
   for mounted in &fingerprint.addon_paths {
     if !mounted.path.starts_with("citadel/addons")
       || Path::new(&mounted.path)
@@ -71,9 +79,12 @@ fn resource_owner(
       return None;
     }
     let directory = game_path.join("game").join(&mounted.path);
-    let mut vpks = std::fs::read_dir(&directory)
+    let entries = std::fs::read_dir(&directory)
       .ok()?
-      .filter_map(Result::ok)
+      .collect::<Result<Vec<_>, _>>()
+      .ok()?;
+    let mut vpks = entries
+      .into_iter()
       .filter_map(|entry| {
         let name = entry.file_name().to_str()?.to_string();
         Some((VpkManager::enabled_vpk_number(&name)?, name, entry.path()))
@@ -130,12 +141,15 @@ fn resource_owner(
             .find(|item| &item.remote_id == id)
         })
         .map(|item| item.name.clone());
-      return Some(CrashSuspect {
-        resource_path: resource.to_string(),
-        vpk: name,
-        mod_id,
-        mod_name,
-      });
+      return Some((
+        mounted.path.clone(),
+        CrashSuspect {
+          resource_path: resource.to_string(),
+          vpk: name,
+          mod_id,
+          mod_name,
+        },
+      ));
     }
   }
   None
@@ -155,6 +169,7 @@ mod tests {
       ["scripts/test.vdata_c"]
     );
     assert!(resource_paths("Couldn't load scripts/../secrets.vdata_c").is_empty());
+    assert!(resource_paths("Couldn't load materials/test.vmat_c.bak").is_empty());
   }
   fn write_vpk(dir: &Path, name: &str, resource: &str, contents: &str) {
     let source = tempfile::tempdir().unwrap();

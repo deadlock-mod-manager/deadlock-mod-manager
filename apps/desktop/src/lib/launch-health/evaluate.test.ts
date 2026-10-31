@@ -362,3 +362,20 @@ it("shows named resource evidence even when dump uptime is missing", () => {
     ),
   ).toMatchObject({ kind: "prompt" });
 });
+
+it("flags a game update behind a named resource crash", () => {
+  expect(
+    evaluateSession(
+      report({
+        crashSuspect: {
+          resourcePath: "scripts/test.vdata_c",
+          vpk: "pak01_dir.vpk",
+          modId: "Mod-1",
+          modName: "Test",
+        },
+        fingerprint: fingerprint({ steamBuildId: "20499999" }),
+      }),
+      baseline,
+    ),
+  ).toMatchObject({ kind: "prompt", buildChanged: true });
+});
