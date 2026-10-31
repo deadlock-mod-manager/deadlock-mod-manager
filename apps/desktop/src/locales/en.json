@@ -2188,8 +2188,6 @@
       "unrankedHint": "Finish your ranked placements to show up on the ladder."
     },
     "match": {
-      "breadcrumb": "Breadcrumb",
-      "matchId": "Match {{id}}",
       "copyId": "Copy ID",
       "copied": "Match ID copied",
       "copyFailed": "Couldn't copy the match ID",
@@ -2293,7 +2291,11 @@
       "averageRank": "Average rank",
       "mvp": "MVP #{{rank}}",
       "errorTitle": "Couldn't load this match",
-      "errorDescription": "deadlock-api didn't return it. It may not be processed yet; try again in a few minutes.",
+      "errorDescription": "The stats service has no details for this match. Try again, or come back later.",
+      "processingTitle": "Match details are still processing",
+      "processingDescription": "Full match data usually shows up a few minutes after the game ends.",
+      "checkAgain": "Check again",
+      "endedAgo": "Ended {{time}}",
       "backToStats": "Back to stats",
       "notInMatchTitle": "You're not in this match",
       "notInMatchDescription": "Switch to the Steam account that played it on the Stats page.",
