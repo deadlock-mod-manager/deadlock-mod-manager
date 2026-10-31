@@ -7,36 +7,39 @@ use crate::mod_manager::game_process_manager::is_deadlock_command;
 
 const CHECK_TIMEOUT: Duration = Duration::from_secs(5);
 
-/// The sandbox hides host processes, so this lists them with the host's `ps`
-/// and applies the same match as the native check.
+// Unlike ps's space-joined arguments, /proc preserves argv[0]'s boundaries.
+// Each record is comm\0argv[0]\0\0; a process without a command line is comm\0\0.
+const HOST_PROCESSES: &str = r#"
+for proc in "$1"/[0-9]*; do
+  IFS= read -r name 2>/dev/null < "$proc/comm" || continue
+  printf '%s\000' "$name"
+  head -z -n 1 "$proc/cmdline" 2>/dev/null
+  printf '\000'
+done
+"#;
+
+/// The sandbox hides host processes, so read their names and first arguments
+/// on the host and apply the native process match.
 pub(crate) async fn is_game_running() -> Result<bool, Error> {
   let mut command = Command::new("flatpak-spawn");
-  command.args(["--host", "ps", "-eo", "comm=,args="]);
+  command.args([
+    "--host",
+    "--watch-bus",
+    "sh",
+    "-c",
+    HOST_PROCESSES,
+    "host-processes",
+    "/proc",
+  ]);
   let output = host_output(command, CHECK_TIMEOUT).await?;
-  Ok(String::from_utf8_lossy(&output).lines().any(is_game_line))
+  Ok(host_has_game(&output))
 }
 
-fn is_game_line(line: &str) -> bool {
-  let line = line.trim_start();
-  let (name, args) = line.split_once(char::is_whitespace).unwrap_or((line, ""));
-  is_deadlock_command(name, argv0(args.trim_start()))
-}
-
-/// `ps` joins the arguments with spaces. Proton's argv[0] is a Windows path
-/// that may contain some, so a drive-letter path runs to its first `.exe`.
-fn argv0(args: &str) -> Option<&str> {
-  let bytes = args.as_bytes();
-  if bytes.len() > 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':' {
-    let lower = args.to_ascii_lowercase();
-    let end = lower
-      .match_indices(".exe")
-      .map(|(index, _)| index + ".exe".len())
-      .find(|&end| lower[end..].chars().next().is_none_or(char::is_whitespace));
-    if let Some(end) = end {
-      return Some(&args[..end]);
-    }
-  }
-  args.split_whitespace().next()
+fn host_has_game(output: &[u8]) -> bool {
+  String::from_utf8_lossy(output).split("\0\0").any(|record| {
+    let (name, argv0) = record.split_once('\0').unwrap_or((record, ""));
+    is_deadlock_command(name, Some(argv0))
+  })
 }
 
 async fn host_output(mut command: Command, timeout: Duration) -> Result<Vec<u8>, Error> {
@@ -61,21 +64,72 @@ mod tests {
 
   #[test]
   fn matches_the_game_without_matching_its_wrappers() {
-    for line in [
-      r"MainThrd        S:\steamapps\common\Deadlock\game\bin\win64\deadlock.exe -steam",
-      r"MainThrd        C:\Program Files (x86)\Steam\Deadlock\DEADLOCK.EXE",
-      "MainThrd        S:/Steam/Deadlock/deadlock.exe -steam",
-      "deadlock.exe    /steam/Deadlock/deadlock.exe -steam",
+    for path in [
+      r"S:\steamapps\common\Deadlock\game\bin\win64\deadlock.exe",
+      r"C:\Program Files (x86)\Steam\Deadlock\DEADLOCK.EXE",
+      r"C:\Games.exe files\Deadlock\deadlock.exe",
+      "/home/user/Steam Library/Deadlock/deadlock.exe",
+      "/home/user/Games.exe files/Deadlock/deadlock.exe",
+      "S:/Steam/Deadlock/deadlock.exe",
     ] {
-      assert!(is_game_line(line), "missed {line}");
+      assert!(
+        host_has_game(format!("MainThrd\0{path}\0\0").as_bytes()),
+        "missed {path}"
+      );
     }
-    for line in [
-      r"steam.exe       C:\windows\system32\steam.exe S:\Steam\Deadlock\deadlock.exe -steam",
-      r"python3         /usr/bin/python3 /steam/Proton/proton waitforexitandrun S:\Steam\Deadlock\deadlock.exe",
-      r"MainThrd        S:\Steam\Deadlock\deadlock.exe.bak",
-      "bash            bash",
+    let wrappers = concat!(
+      "steam.exe\0C:\\windows\\system32\\steam.exe\0\0",
+      "python3\0/usr/bin/python3\0\0",
+      "MainThrd\0S:\\Steam\\Deadlock\\deadlock.exe.bak\0\0",
+      "bash\0bash\0\0",
+      "kworker\0\0",
+    );
+    assert!(!host_has_game(wrappers.as_bytes()));
+    assert!(host_has_game(
+      format!("{wrappers}deadlock.exe\0\0").as_bytes()
+    ));
+  }
+
+  #[tokio::test]
+  async fn host_records_preserve_spaces_and_ignore_later_wrapper_arguments() {
+    let root = tempfile::tempdir().unwrap();
+    for (pid, name, command) in [
+      (
+        "1",
+        "python3",
+        "/usr/bin/python3\0/home/user/Steam Library/deadlock.exe\0",
+      ),
+      (
+        "2",
+        "steam.exe",
+        "C:\\windows\\steam.exe\0C:\\Games.exe files\\deadlock.exe\0",
+      ),
+      ("3", "kworker", ""),
     ] {
-      assert!(!is_game_line(line), "matched {line}");
+      let proc = root.path().join(pid);
+      std::fs::create_dir(&proc).unwrap();
+      std::fs::write(proc.join("comm"), format!("{name}\n")).unwrap();
+      std::fs::write(proc.join("cmdline"), command).unwrap();
+    }
+    let scan = || {
+      let mut command = Command::new("sh");
+      command
+        .args(["-c", HOST_PROCESSES, "host-processes"])
+        .arg(root.path());
+      command
+    };
+    assert!(!host_has_game(
+      &host_output(scan(), CHECK_TIMEOUT).await.unwrap()
+    ));
+    std::fs::write(root.path().join("2/comm"), "MainThrd\n").unwrap();
+    for path in [
+      "/home/user/Steam Library/deadlock.exe",
+      r"C:\Games.exe files\deadlock.exe",
+    ] {
+      std::fs::write(root.path().join("2/cmdline"), format!("{path}\0-steam\0")).unwrap();
+      assert!(host_has_game(
+        &host_output(scan(), CHECK_TIMEOUT).await.unwrap()
+      ));
     }
   }
 

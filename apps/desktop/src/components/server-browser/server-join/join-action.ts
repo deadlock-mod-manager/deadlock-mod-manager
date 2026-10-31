@@ -19,8 +19,6 @@ interface JoinServerArgs {
 interface WatchOptions {
   coldStart: boolean;
   consoleLog: boolean;
-  /** Open `steam://connect` once the game starts, for a password left out of the launch. */
-  connectAfterStart: boolean;
 }
 
 export type JoinOutcome =
@@ -86,9 +84,7 @@ const watchConnect = async (
  * With the game already running, `steam://connect` hands the address to the
  * client without a restart. From cold we launch with `+connect` so the user's
  * launch options survive, and let the watchdog handle a dropped connect.
- * Without `console.log` the watchdog cannot see a dropped connect, so a
- * password that can't go in the launch arguments replaces `+connect` with a
- * `steam://connect` once the game starts.
+ * Reconnect monitoring is disabled when console logging is off.
  */
 export const joinServer = async ({
   server,
@@ -112,7 +108,6 @@ export const joinServer = async ({
         await watchConnect(address, password, server, {
           coldStart: false,
           consoleLog,
-          connectAfterStart: false,
         });
         return { kind: "steam-url" };
       } catch (err) {
@@ -126,12 +121,7 @@ export const joinServer = async ({
   const connect = buildConnectArgs(server, password);
 
   if (connect) {
-    const connectAfterStart =
-      !consoleLog && connect.passwordSkipped && address !== null;
-    const launchArgs = [
-      additionalArgs.trim(),
-      connectAfterStart ? "" : connect.args,
-    ]
+    const launchArgs = [additionalArgs.trim(), connect.args]
       .filter(Boolean)
       .join(" ");
     try {
@@ -140,7 +130,6 @@ export const joinServer = async ({
         ? await watchConnect(address, password, server, {
             coldStart: true,
             consoleLog,
-            connectAfterStart,
           })
         : false;
       return {
@@ -166,7 +155,6 @@ export const joinServer = async ({
           await watchConnect(address, password, server, {
             coldStart: true,
             consoleLog,
-            connectAfterStart: false,
           });
         }
         return { kind: "steam-url" };

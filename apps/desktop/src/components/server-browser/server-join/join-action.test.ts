@@ -14,7 +14,6 @@ interface JoinCommandArgs {
   password?: string | null;
   coldStart?: boolean;
   consoleLog?: boolean;
-  connectAfterStart?: boolean;
 }
 
 const invokeCommand = async (command: string, _args?: JoinCommandArgs) =>
@@ -226,56 +225,7 @@ describe("joinServer", () => {
     writeText.mockClear();
   });
 
-  it("hands a launch-unsafe password to the watchdog when logging is off", async () => {
-    const result = await joinServer({
-      server: baseServer({ password_protected: true }),
-      password: "p ss wd",
-      additionalArgs: "-novid",
-      gameRunning: false,
-      consoleLog: false,
-    });
-
-    expect(invoke).toHaveBeenCalledWith("launch_game_direct", {
-      additionalArgs: "-novid",
-    });
-    expect(invoke).toHaveBeenCalledWith("watch_server_connect", {
-      address: "203.0.113.10:27015",
-      password: "p ss wd",
-      coldStart: true,
-      consoleLog: false,
-      connectAfterStart: true,
-    });
-    expect(openUrl).not.toHaveBeenCalled();
-    expect(result).toEqual({
-      kind: "launched",
-      passwordSkipped: true,
-      watched: false,
-    });
-  });
-
-  it("keeps +connect and the retrying watchdog when logging is on", async () => {
-    const result = await joinServer({
-      server: baseServer({ password_protected: true }),
-      password: "p ss wd",
-      additionalArgs: "-condebug",
-      gameRunning: false,
-      consoleLog: true,
-    });
-
-    expect(invoke).toHaveBeenCalledWith("launch_game_direct", {
-      additionalArgs: "-condebug +connect 203.0.113.10:27015",
-    });
-    expect(invoke).toHaveBeenCalledWith("watch_server_connect", {
-      address: "203.0.113.10:27015",
-      password: "p ss wd",
-      coldStart: true,
-      consoleLog: true,
-      connectAfterStart: false,
-    });
-    expect(result).toMatchObject({ kind: "launched", watched: true });
-  });
-
-  it("launches with the user's arguments only when logging is off", async () => {
+  it("preserves connect arguments and disables monitoring when logging is off", async () => {
     const result = await joinServer({
       server: baseServer(),
       password: "",
@@ -287,10 +237,42 @@ describe("joinServer", () => {
     expect(invoke).toHaveBeenCalledWith("launch_game_direct", {
       additionalArgs: "-novid +connect 203.0.113.10:27015",
     });
+    expect(invoke).toHaveBeenCalledWith("watch_server_connect", {
+      address: "203.0.113.10:27015",
+      password: null,
+      coldStart: true,
+      consoleLog: false,
+    });
+    expect(openUrl).not.toHaveBeenCalled();
     expect(result).toEqual({
       kind: "launched",
       passwordSkipped: false,
       watched: false,
+    });
+  });
+
+  it("keeps reconnect monitoring when logging is enabled", async () => {
+    const result = await joinServer({
+      server: baseServer(),
+      password: "",
+      additionalArgs: "-condebug",
+      gameRunning: false,
+      consoleLog: true,
+    });
+
+    expect(invoke).toHaveBeenCalledWith("launch_game_direct", {
+      additionalArgs: "-condebug +connect 203.0.113.10:27015",
+    });
+    expect(invoke).toHaveBeenCalledWith("watch_server_connect", {
+      address: "203.0.113.10:27015",
+      password: null,
+      coldStart: true,
+      consoleLog: true,
+    });
+    expect(result).toEqual({
+      kind: "launched",
+      passwordSkipped: false,
+      watched: true,
     });
   });
 });

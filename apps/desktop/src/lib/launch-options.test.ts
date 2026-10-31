@@ -141,4 +141,18 @@ describe("getAdditionalArgs", () => {
 
     expect(await getAdditionalArgs()).toBe("-condebug");
   });
+
+  it("keeps enabled launch options when another is disabled", async () => {
+    serverSettings = Promise.resolve([]);
+    usePersistedStore.setState({
+      settings: {
+        local_setting_logging: {
+          ...launchOption("local_setting_logging", "-condebug"),
+          enabled: false,
+        },
+        local_setting_abc: launchOption("local_setting_abc", "+user_option"),
+      },
+    });
+    expect(await getAdditionalArgs()).toBe("+user_option true");
+  });
 });
