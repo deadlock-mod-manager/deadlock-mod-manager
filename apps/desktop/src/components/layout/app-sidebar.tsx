@@ -29,6 +29,7 @@ import {
   MagnifyingGlassIcon,
   MapTrifoldIcon,
   PackageIcon,
+  PuzzlePieceIcon,
   QuestionIcon,
   TShirtIcon,
 } from "@phosphor-icons/react";
@@ -37,10 +38,15 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation, useNavigate } from "react-router";
 import { HintAnchor } from "@/components/feature-hints/hint-anchor";
+import { PluginTile, pluginGlyph } from "@/components/plugins/plugin-identity";
+import { TONE_COLOR } from "@/components/plugins/plugin-status";
 import { useThemeOverride } from "@/components/providers/theme-overrides";
 import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
+import { useExternalPlugins } from "@/hooks/use-external-plugins";
 import { isDownloadInProgress } from "@/lib/download/status";
 import { usePersistedStore } from "@/lib/store";
+import { cn } from "@/lib/utils";
+import type { ExternalPluginSummary } from "@/types/generated/ExternalPluginSummary";
 import { BrandingHeader } from "./branding";
 import { SidebarCollapse } from "./sidebar-collapse";
 import { SidebarSocials } from "./sidebar-socials";
@@ -62,6 +68,11 @@ type SidebarItem = {
   dialog?: React.ComponentType;
   icon?: Icon;
   iconUrl?: string;
+  /** An external plugin's own glyph tile instead of an icon. */
+  pluginTile?: Pick<ExternalPluginSummary, "icon" | "accent">;
+  /** Drawn in the muted colour while inactive, like "Manage plugins". */
+  muted?: boolean;
+  className?: string;
   group: string;
   /** Shows a "New" badge until the user opens the page. */
   isNew?: boolean;
@@ -74,6 +85,7 @@ const GROUP_ORDER = [
   "mods",
   "multiplayer",
   "customization",
+  "plugins",
   "developer",
 ] as const;
 
@@ -265,6 +277,14 @@ const getSidebarItems = (
   ];
 };
 
+/** The sidebar dot for a plugin that needs the user: stopped, unset or waiting on an update. */
+const pluginAttentionColor = (plugin: ExternalPluginSummary) => {
+  if (plugin.status === "quarantined") return TONE_COLOR.danger;
+  if (plugin.status === "needsConsent") return TONE_COLOR.warn;
+  if (plugin.pendingUpdate) return TONE_COLOR.info;
+  return null;
+};
+
 // Group labels hide when the sidebar collapses to icons, so a short rule keeps sections apart.
 const CollapsedSeparator = () => (
   <Separator className='mx-auto mb-2 hidden w-4 bg-sidebar-border group-data-[collapsible=icon]:block' />
@@ -287,7 +307,29 @@ const NewBadge = () => {
   );
 };
 
-const renderIcon = (item: SidebarItem) => {
+const renderIcon = (item: SidebarItem, isActive: boolean) => {
+  if (item.pluginTile) {
+    if (!isActive) {
+      return (
+        <PluginTile
+          accent={item.pluginTile.accent}
+          fillAlpha='2E'
+          glyphSize={12}
+          icon={item.pluginTile.icon}
+          radius={5}
+          size={18}
+        />
+      );
+    }
+    const Glyph = pluginGlyph(item.pluginTile.icon);
+    return (
+      <span
+        aria-hidden
+        className='flex size-[18px] shrink-0 items-center justify-center rounded-[5px] bg-[#00000022]'>
+        <Glyph size={12} />
+      </span>
+    );
+  }
   if (item.icon) {
     return <item.icon weight='duotone' />;
   }
@@ -324,7 +366,7 @@ const SidebarItemComponent = ({
           <SidebarMenuButton
             isActive={titleProps.isActive}
             tooltip={item.tooltipLabel}>
-            {renderIcon(item)}
+            {renderIcon(item, titleProps.isActive)}
             {item.title(titleProps)}
           </SidebarMenuButton>
         </DialogTrigger>
@@ -338,7 +380,7 @@ const SidebarItemComponent = ({
       <SidebarMenuButton
         onClick={() => openUrl(item.external as string)}
         tooltip={item.tooltipLabel}>
-        {renderIcon(item)}
+        {renderIcon(item, titleProps.isActive)}
         {item.title(titleProps)}
       </SidebarMenuButton>
     );
@@ -347,6 +389,10 @@ const SidebarItemComponent = ({
   return (
     <SidebarMenuButton
       asChild
+      className={cn(
+        item.className,
+        item.muted && !titleProps.isActive && "text-muted-foreground",
+      )}
       isActive={titleProps.isActive}
       tooltip={item.tooltipLabel}>
       <Link
@@ -356,7 +402,7 @@ const SidebarItemComponent = ({
             ? "/settings/experimental?tour=1"
             : (item.url ?? "/")
         }>
-        {renderIcon(item)}
+        {renderIcon(item, titleProps.isActive)}
         {item.title(titleProps)}
         {showNewBadge && <NewBadge />}
       </Link>
@@ -383,7 +429,47 @@ export const AppSidebar = () => {
   const isModFoundryEnabled = useExperimentalFeature("mod-foundry");
   const isPerformanceEnabled = useExperimentalFeature("performance-configs");
 
-  const allItems = getSidebarItems(t, developerMode).filter(
+  const externalPlugins = useExternalPlugins();
+  const pluginItems: SidebarItem[] = [
+    ...(externalPlugins.data ?? [])
+      .filter((plugin) => plugin.hasUi)
+      .map((plugin) => {
+        const dot = pluginAttentionColor(plugin);
+        return {
+          id: `external-plugin:${plugin.id}`,
+          title: () => (
+            <span className='flex min-w-0 flex-1 items-center gap-2.5'>
+              <span className='truncate'>{plugin.name}</span>
+              {dot ? (
+                <span
+                  className='ml-auto size-1.5 shrink-0 rounded-full'
+                  style={{ backgroundColor: dot }}
+                />
+              ) : null}
+            </span>
+          ),
+          tooltipLabel: plugin.name,
+          url: `/ext/${plugin.id}`,
+          pluginTile: plugin,
+          className: "gap-2.5",
+          group: "plugins",
+        };
+      }),
+    {
+      id: "manage-plugins",
+      title: () => <span>{t("plugins.page.managePlugins")}</span>,
+      tooltipLabel: t("plugins.page.managePlugins"),
+      url: "/plugins/manage",
+      icon: PuzzlePieceIcon,
+      muted: true,
+      group: "plugins",
+    },
+  ];
+
+  const allItems = [
+    ...getSidebarItems(t, developerMode),
+    ...pluginItems,
+  ].filter(
     (item) =>
       (item.id !== "maps" || isCustomMapsEnabled) &&
       (item.id !== "stats" || isPlayerStatsEnabled) &&
@@ -398,13 +484,14 @@ export const AppSidebar = () => {
     if (visited && !seenNavItems[visited.id]) markNavItemSeen(visited.id);
   }, [allItems, location.pathname, markNavItemSeen, seenNavItems]);
 
-  const groupLabels: Record<GroupId, string> = {
+  const groupLabels = {
     general: t("navigation.general", "General"),
     mods: t("navigation.mods", "Mods"),
     multiplayer: t("navigation.multiplayer"),
     customization: t("navigation.customization"),
+    plugins: t("navigation.plugins"),
     developer: t("navigation.developer", "Developer"),
-  };
+  } satisfies Record<GroupId, string>;
 
   return (
     <Sidebar

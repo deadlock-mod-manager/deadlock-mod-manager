@@ -184,9 +184,15 @@ jobs:
             packages/vpkmanager -> target
             packages/source2-model -> target
             packages/deadlock-match-sync -> target
+            packages/plugin-runtime -> target
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Run plugin runtime tests
+        env:
+          RUSTFLAGS: -C link-arg=-lstdc++
+        run: cargo test --manifest-path packages/plugin-runtime/Cargo.toml --locked
 
       # tauri::generate_context! embeds frontendDist, so dist must exist before cargo test.
       - name: Build frontend

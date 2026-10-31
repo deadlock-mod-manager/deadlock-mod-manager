@@ -206,6 +206,12 @@ fn gpu_compat_workaround_enabled(
 
 #[cfg_attr(feature = "cef", tauri_runtime_cef::cef_entry_point)]
 fn main() {
+  // Plugin backends run in this same executable in worker mode, before any
+  // app or webview initialisation.
+  if std::env::args_os().nth(1).as_deref() == Some(dmm_plugin_runtime::WORKER_ARG.as_ref()) {
+    std::process::exit(dmm_plugin_runtime::run_worker());
+  }
+
   let _ = fix_path_env::fix();
 
   desktop_lib::cli::get_cli_args();
