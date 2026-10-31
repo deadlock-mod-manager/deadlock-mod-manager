@@ -7841,21 +7841,24 @@
       "minutes_other": "{{count}} dakika"
     },
     "dialog": {
-      "title": "Deadlock az önce mi çöktü?",
-      "closedWithReport": "Başlatıldıktan {{duration}} sonra kapandı ve bir çökme raporu oluşturdu.",
-      "closedWithoutShutdown": "Başlatıldıktan {{duration}} sonra olağan kapanışını yapmadan kapandı.",
-      "maybeChangesUnlessYou": "Oyunu kendiniz kapatmadıysanız, son değişikliklerden biri buna neden olmuş olabilir.",
-      "maybeChanges": "Son değişikliklerden biri buna neden olmuş olabilir.",
-      "buildChanged": "Son normal oturumunuzdan sonra Deadlock da güncellendi; bu tek başına bu soruna neden olabilir.",
-      "changesHeading": "Son normal oturumunuzdan beri değişenler",
+      "title": "",
+      "closedWithReport": "",
+      "closedWithoutShutdown": "",
+      "maybeChangesUnlessYou": "",
+      "maybeChanges": "",
+      "buildChanged": "",
+      "changesHeading": "",
       "modsNotLoaded": "Bu oturumda modlar yüklenmediği için listeye alınmadılar.",
-      "tip": "Her seferinde tek bir şeyi değiştirip oyunu yeniden başlatın. Soruna neyin yol açtığını bulmanın en hızlı yolu budur.",
-      "optOut": "Çökmeleri denetleme",
+      "tip": "",
+      "optOut": "",
       "closedIt": "Kendim kapattım",
-      "turnOffAndRelaunch": "Yapılandırmayı kapat ve oyunu yeniden başlat",
+      "turnOffAndRelaunch": "",
       "launchAgain": "Yeniden başlat",
-      "findBrokenMod": "Hangi modun sorumlu olduğundan emin değil misiniz? Bulun",
-      "findBrokenModHint": "Çökmeye neden olan modu bulmak için modlarınızı yarı yarıya test edin."
+      "findBrokenMod": "",
+      "findBrokenModHint": "",
+      "possibleCause": "",
+      "possibleCauseHint": "",
+      "possibleCauseBadge": ""
     },
     "changes": {
       "perfConfig": {
