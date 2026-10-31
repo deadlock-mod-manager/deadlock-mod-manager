@@ -663,18 +663,8 @@ where
       session_downloaded += chunk.len() as u64;
       let downloaded_total = base_offset.saturating_add(session_downloaded);
 
-      if let Some(limit) = max_bytes
-        && downloaded_total > limit
-      {
-        log::warn!("Download exceeded size limit ({downloaded_total} > {limit}), aborting");
-        drop(file);
-        remove_partial_pair(&partial_path, &meta_path).await;
-        return Err(Error::Network(format!(
-          "Download exceeded size limit of {limit} bytes"
-        )));
-      }
-
-      // Possible when the 206 has no Content-Length.
+      // Possible when the 206 has no Content-Length. Checked before the size
+      // limit, which a caller may set to the file's exact size.
       if range_end.is_some_and(|end| downloaded_total > end) {
         drop(file);
         remove_partial_pair(&partial_path, &meta_path).await;
@@ -686,6 +676,17 @@ where
         log::warn!("Range response ran past its end; restarting from scratch");
         range_restarted = true;
         continue 'retry;
+      }
+
+      if let Some(limit) = max_bytes
+        && downloaded_total > limit
+      {
+        log::warn!("Download exceeded size limit ({downloaded_total} > {limit}), aborting");
+        drop(file);
+        remove_partial_pair(&partial_path, &meta_path).await;
+        return Err(Error::Network(format!(
+          "Download exceeded size limit of {limit} bytes"
+        )));
       }
 
       file
@@ -1002,27 +1003,29 @@ mod tests {
     assert_eq!(server.requests().len(), 2);
   }
 
-  #[tokio::test]
-  async fn a_range_body_that_runs_past_its_range_restarts_once() {
+  /// Downloads from a server whose first `overruns` answers are a 206 for the
+  /// whole file that keeps going past its end; later answers are the plain
+  /// file. Returns the result, the requests made, what was published, and
+  /// whether a partial file was left.
+  async fn download_with_overruns(
+    overruns: usize,
+    max_bytes: Option<u64>,
+  ) -> (Result<(), Error>, usize, Option<Vec<u8>>, bool) {
     use super::super::test_server::{Reply, TestServer};
 
     let dir = tempfile::tempdir().unwrap();
     let target = dir.path().join("mod.zip");
     let body = test_body();
-    let server = TestServer::start({
-      let body = body.clone();
-      move |_, index| {
-        if index > 0 {
-          return Reply::new(200, body.clone());
-        }
-        // Describes the whole file, then keeps going past its end.
-        let mut long = Reply::new(206, [body.as_slice(), b"extra"].concat()).header(
-          "content-range",
-          format!("bytes 0-{}/{}", body.len() - 1, body.len()),
-        );
-        long.close_delimited = true;
-        long
+    let server = TestServer::start(move |_, index| {
+      if index >= overruns {
+        return Reply::new(200, body.clone());
       }
+      let mut long = Reply::new(206, [body.as_slice(), b"extra"].concat()).header(
+        "content-range",
+        format!("bytes 0-{}/{}", body.len() - 1, body.len()),
+      );
+      long.close_delimited = true;
+      long
     })
     .await;
 
@@ -1035,17 +1038,42 @@ mod tests {
         |_| {},
         CancellationToken::new(),
         PauseHandle::new(),
-        None,
+        max_bytes,
         None,
         false,
       ),
     )
     .await
     .expect("the download never settled");
+    let published = tokio::fs::read(&target).await.ok();
+    let partial_left = partial_download_path(&target).exists();
+    (result, server.requests().len(), published, partial_left)
+  }
 
+  #[tokio::test]
+  async fn a_range_body_that_runs_past_its_range_restarts_once() {
+    let (result, requests, published, _) = download_with_overruns(1, None).await;
     assert!(result.is_ok(), "{result:?}");
-    assert_eq!(tokio::fs::read(&target).await.unwrap(), body);
-    assert_eq!(server.requests().len(), 2);
+    assert_eq!(published, Some(test_body()));
+    assert_eq!(requests, 2);
+  }
+
+  #[tokio::test]
+  async fn a_range_overrun_restarts_even_with_a_size_limit_of_the_exact_size() {
+    let size = test_body().len() as u64;
+    let (result, requests, published, _) = download_with_overruns(1, Some(size)).await;
+    assert!(result.is_ok(), "{result:?}");
+    assert_eq!(published, Some(test_body()));
+    assert_eq!(requests, 2);
+  }
+
+  #[tokio::test]
+  async fn a_server_that_keeps_running_past_its_range_fails_after_one_restart() {
+    let (result, requests, published, partial_left) =
+      download_with_overruns(usize::MAX, None).await;
+    assert!(matches!(result, Err(Error::DownloadFailed(_))), "{result:?}");
+    assert_eq!(requests, 2, "one clean restart, then give up");
+    assert!(published.is_none() && !partial_left);
   }
 
   #[tokio::test]
