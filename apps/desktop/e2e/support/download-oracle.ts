@@ -1,13 +1,17 @@
 import { readPersistedDocument, fingerprint } from "./observations";
 import assert from "node:assert/strict";
-import { readFile, writeFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
 import {
   DOWNLOAD_FILE,
   DOWNLOAD_MOD,
   QUEUED_MOD,
-  downloadPayload,
+  downloadFiles,
+  isSegmentedCase,
+  payloadFor,
+  segmentRanges,
 } from "./download-fixtures";
 import { assertOwnedWorld, collectFileInventory } from "./world";
 
@@ -33,6 +37,70 @@ export const downloadDirectory = async (world: string): Promise<string> => {
   } = await assertOwnedWorld(world);
   return path.join(roots.appData, "mods", DOWNLOAD_MOD);
 };
+/** Bytes already on disk for the download, in either staging format. */
+export const stagedBytes = async (world: string): Promise<number> => {
+  const directory = await downloadDirectory(world);
+  const sizes = await Promise.all(
+    [
+      `${DOWNLOAD_FILE}.partial`,
+      ...[0, 1, 2, 3].map((index) => `${DOWNLOAD_FILE}.segments/${index}.part`),
+    ].map(
+      async (name) =>
+        (await stat(path.join(directory, name)).catch(() => ({ size: 0 })))
+          .size,
+    ),
+  );
+  return sizes.reduce((total, size) => total + size, 0);
+};
+
+// Each part must be the start of its own span of the file: anything else is a
+// byte written at the wrong offset.
+const assertSegmentStaging = async (
+  directory: string,
+  inventory: Record<string, string>,
+  payload: Buffer,
+): Promise<void> => {
+  const staging = `${DOWNLOAD_FILE}.segments`;
+  const manifest = z
+    .object({
+      version: z.literal(1),
+      size: z.number(),
+      md5: z.string(),
+      segments: z.array(
+        z.object({ start: z.number(), end: z.number(), complete: z.boolean() }),
+      ),
+    })
+    .parse(
+      JSON.parse(
+        await readFile(path.join(directory, staging, "manifest.json"), "utf8"),
+      ),
+    );
+  assert.equal(manifest.size, payload.length);
+  assert.equal(manifest.md5, createHash("md5").update(payload).digest("hex"));
+  assert.deepEqual(
+    manifest.segments.map(({ start, end }) => `bytes=${start}-${end - 1}`),
+    segmentRanges(payload.length),
+  );
+  let stored = 0;
+  for (const [index, segment] of manifest.segments.entries()) {
+    const part = await readFile(
+      path.join(directory, staging, `${index}.part`),
+    ).catch(() => Buffer.alloc(0));
+    assert.ok(part.length <= segment.end - segment.start);
+    assert.deepEqual(
+      part,
+      payload.subarray(segment.start, segment.start + part.length),
+      `Segment ${index} holds bytes from somewhere else in the file`,
+    );
+    stored += part.length;
+  }
+  assert.ok(stored > 0 && stored < payload.length);
+  assert.ok(
+    Object.keys(inventory).every((name) => name.startsWith(`${staging}/`)),
+    "A segmented download must leave nothing outside its staging folder",
+  );
+};
+
 export const assertDownloadDisk = async (
   world: string,
   step: string,
@@ -57,15 +125,25 @@ export const assertDownloadDisk = async (
     );
   }
   assert.equal(mods[0].status, status);
-  assert.deepEqual(mods[0].selectedDownloads, [{ name: DOWNLOAD_FILE }]);
+  const files = downloadFiles(caseId);
+  assert.deepEqual(
+    mods[0].selectedDownloads,
+    files.map((name) => ({ name })),
+  );
   assert.deepEqual(mods[0].installedVpks ?? [], []);
   const directory = await downloadDirectory(world);
   const inventory = await collectFileInventory(directory);
-  const payload = downloadPayload();
+  const payload = payloadFor(caseId);
   if (status === "downloaded") {
-    assert.deepEqual(inventory, {
-      [DOWNLOAD_FILE]: fingerprint(payload),
-    });
+    assert.deepEqual(
+      inventory,
+      Object.fromEntries(files.map((name) => [name, fingerprint(payload)])),
+    );
+  } else if (
+    (status === "paused" || retainedPartial) &&
+    isSegmentedCase(caseId)
+  ) {
+    await assertSegmentStaging(directory, inventory, payload);
   } else if (status === "paused" || retainedPartial) {
     const partial = await readFile(
       path.join(directory, `${DOWNLOAD_FILE}.partial`),

@@ -16,6 +16,9 @@ export type FixtureRequest = {
   responseBytes?: number;
   closedBeforeHeaders?: boolean;
   error?: string;
+  /** The client's port, which tells connections apart. */
+  remotePort?: number;
+  endedAt?: string;
 };
 
 export type FixtureResponse = {
@@ -27,6 +30,13 @@ export type FixtureResponse = {
   chunkBytes?: number;
   chunkDelayMs?: number;
   disconnectAfterBytes?: number;
+  /** Consecutive requests this entry of a `sequence` answers. */
+  repeat?: number;
+  /**
+   * A Range request starting at `at` (any Range request when `at` is left out)
+   * gets the bytes from `serveFrom`, labelled as such.
+   */
+  rangeFrom?: { at?: number; serveFrom: number };
 };
 
 export type FixtureRoute = FixtureResponse & {
@@ -79,42 +89,75 @@ const sendFixture = async (
       : "application/json",
     ...fixture.headers,
   };
+  let end = body.length;
   if (fixture.range && request.headers.range) {
-    const match = /^bytes=(\d+)-$/.exec(request.headers.range);
+    const match = /^bytes=(\d+)-(\d*)$/.exec(request.headers.range);
     offset = match ? Number(match[1]) : body.length;
-    if (!Number.isSafeInteger(offset) || offset >= body.length) {
+    end = match?.[2]
+      ? Math.min(Number(match[2]) + 1, body.length)
+      : body.length;
+    if (!Number.isSafeInteger(offset) || offset >= end) {
       record.responseStatus = 416;
       record.responseBytes = 0;
       response.writeHead(416, { "content-range": `bytes */${body.length}` });
       response.end();
       return;
     }
+    if (
+      fixture.rangeFrom &&
+      (fixture.rangeFrom.at === undefined || fixture.rangeFrom.at === offset)
+    ) {
+      const shift = fixture.rangeFrom.serveFrom - offset;
+      offset = fixture.rangeFrom.serveFrom;
+      if (match?.[2]) end = Math.min(end + shift, body.length);
+      else end = body.length;
+    }
     status = 206;
     response.setHeader(
       "content-range",
-      `bytes ${offset}-${body.length - 1}/${body.length}`,
+      `bytes ${offset}-${end - 1}/${body.length}`,
     );
   }
   record.responseStatus = status;
   record.responseBytes = 0;
   response.writeHead(status, {
-    "content-length": String(body.length - offset),
+    "content-length": String(end - offset),
     ...headers,
   });
   const limit =
     fixture.disconnectAfterBytes === undefined
-      ? body.length
-      : Math.min(body.length, offset + fixture.disconnectAfterBytes);
+      ? end
+      : Math.min(end, offset + fixture.disconnectAfterBytes);
   const chunkBytes = fixture.chunkBytes ?? (body.length || 1);
   while (offset < limit && !response.destroyed) {
     const chunk = body.subarray(offset, Math.min(offset + chunkBytes, limit));
     response.write(chunk);
     record.responseBytes += chunk.length;
     offset += chunk.length;
-    if (fixture.chunkDelayMs) await delay(response, fixture.chunkDelayMs);
+    // No pause after the last chunk of a whole body, so `endedAt` marks its end.
+    // A cut keeps it: destroying the socket at once can drop unsent bytes.
+    if (
+      fixture.chunkDelayMs &&
+      (offset < limit || fixture.disconnectAfterBytes !== undefined)
+    )
+      await delay(response, fixture.chunkDelayMs);
   }
   if (fixture.disconnectAfterBytes !== undefined) response.destroy();
   else response.end();
+};
+
+// Each entry answers `repeat` requests in turn; the last one answers the rest.
+const pickInSequence = (
+  sequence: readonly FixtureResponse[],
+  index: number,
+): FixtureResponse => {
+  let remaining = index;
+  for (const entry of sequence) {
+    const count = entry.repeat ?? 1;
+    if (remaining < count) return entry;
+    remaining -= count;
+  }
+  return sequence[sequence.length - 1];
 };
 
 const isSensitiveHeader = (name: string): boolean =>
@@ -176,6 +219,7 @@ export const startFixtureServer = async (
       url: redactUrl(request.url ?? "/"),
       headers: headersFrom(request),
       bodyBytes: 0,
+      remotePort: request.socket.remotePort,
     };
     journal.push(record);
     try {
@@ -227,9 +271,14 @@ export const startFixtureServer = async (
     if (route) {
       const index = occurrences.get(route) ?? 0;
       occurrences.set(route, index + 1);
-      const fixture =
-        route.sequence?.[Math.min(index, route.sequence.length - 1)] ?? route;
-      await sendFixture(request, response, fixture, record);
+      const fixture = route.sequence
+        ? pickInSequence(route.sequence, index)
+        : route;
+      try {
+        await sendFixture(request, response, fixture, record);
+      } finally {
+        record.endedAt = new Date().toISOString();
+      }
       return;
     }
     unmatched.push(record);

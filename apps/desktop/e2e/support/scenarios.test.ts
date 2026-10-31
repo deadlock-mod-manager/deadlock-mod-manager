@@ -13,7 +13,7 @@ const windows = process.platform === "win32";
 describe("scenario selection", () => {
   it("registers every case with explicit phases and capability requirements", () => {
     const ids = selectScenarios("all");
-    expect(ids).toHaveLength(windows ? 108 : 97);
+    expect(ids).toHaveLength(windows ? 118 : 107);
     for (const id of ids) {
       expect(parseScenarioId(id)).toBe(id);
       expect(scenarioSpec(id)).toContain("./specs/");
@@ -82,6 +82,9 @@ describe("scenario selection", () => {
       "normal",
     );
     expect(scenarios["downloads-restart"].exit("transfer")).toBe("interrupt");
+    expect(scenarios["downloads-segmented-restart"].exit("transfer")).toBe(
+      "interrupt",
+    );
     expect(() => selectScenarios("not-a-suite")).toThrow();
   });
   it("keeps the smoke as default and rejects arbitrary spec paths", () => {
