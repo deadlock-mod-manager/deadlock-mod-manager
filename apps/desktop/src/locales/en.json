@@ -7855,7 +7855,10 @@
       "turnOffAndRelaunch": "Turn off config and relaunch",
       "launchAgain": "Launch again",
       "findBrokenMod": "Not sure which mod? Find it",
-      "findBrokenModHint": "Test your mods in halves to find the one causing the crash."
+      "findBrokenModHint": "Test your mods in halves to find the one causing the crash.",
+      "possibleCause": "Possible crash cause: {{name}}",
+      "possibleCauseHint": "The fatal error names a resource supplied by this VPK. This is a clue, not proof that the mod is broken.",
+      "possibleCauseBadge": "Possible crash cause"
     },
     "changes": {
       "perfConfig": {

@@ -251,6 +251,16 @@ const pauseQueue: Definition = {
   spec: "download-pause-queue",
   phases: ["pause"],
 };
+const crashAttribution: Definition = {
+  ...defaults,
+  family: "gamebanana",
+  spec: "crash-attribution",
+  phases: ["exercise", "restart"],
+  routes: reliabilityRoutes,
+  prepare: prepareReliabilityWorld,
+  verifyNetwork: assertReliabilityNetwork,
+};
+
 const filesystem: Definition = {
   ...defaults,
   family: "filesystem",
@@ -411,6 +421,7 @@ const modUpdates: Definition = {
 
 export const scenarios = {
   "gamebanana-mirror-fallback": downloadFallback,
+  "gamebanana-crash-cause": crashAttribution,
   "library-groups-organize": libraryGroups,
   "library-groups-identification": {
     ...libraryGroups,

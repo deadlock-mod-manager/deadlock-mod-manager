@@ -100,26 +100,43 @@ export const CrashCheckDialog = ({
           </div>
         </DialogHeader>
 
-        <section className='space-y-2'>
-          <h3 className='font-semibold text-muted-foreground text-xs uppercase tracking-wide'>
-            {t("launchHealth.dialog.changesHeading")}
-          </h3>
-          <ul className='space-y-2'>
-            {decision.changes.map((change) => (
-              <ChangeRow
-                change={change}
-                crashCheck={crashCheck}
-                key={change.kind}
-                onOpenSettings={openSettings}
-              />
-            ))}
-          </ul>
-          {!decision.modsLoaded && (
-            <p className='text-muted-foreground text-xs'>
-              {t("launchHealth.dialog.modsNotLoaded")}
+        {report.crashSuspect && (
+          <div className='space-y-1 rounded-md border border-amber-500/30 bg-amber-500/5 p-3'>
+            <p className='font-medium text-sm'>
+              {t("launchHealth.dialog.possibleCause", {
+                name: report.crashSuspect.modName ?? report.crashSuspect.vpk,
+              })}
             </p>
-          )}
-        </section>
+            <p className='break-all font-mono text-muted-foreground text-xs'>
+              {report.crashSuspect.resourcePath}
+            </p>
+            <p className='text-muted-foreground text-xs'>
+              {t("launchHealth.dialog.possibleCauseHint")}
+            </p>
+          </div>
+        )}
+        {decision.changes.length > 0 && (
+          <section className='space-y-2'>
+            <h3 className='font-semibold text-muted-foreground text-xs uppercase tracking-wide'>
+              {t("launchHealth.dialog.changesHeading")}
+            </h3>
+            <ul className='space-y-2'>
+              {decision.changes.map((change) => (
+                <ChangeRow
+                  change={change}
+                  crashCheck={crashCheck}
+                  key={change.kind}
+                  onOpenSettings={openSettings}
+                />
+              ))}
+            </ul>
+            {!decision.modsLoaded && (
+              <p className='text-muted-foreground text-xs'>
+                {t("launchHealth.dialog.modsNotLoaded")}
+              </p>
+            )}
+          </section>
+        )}
 
         {decision.modsLoaded && (
           <button

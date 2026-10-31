@@ -155,6 +155,17 @@ export const evaluateSession = (
   if (report.classification !== "crash" && ranAWhile) {
     return { kind: "normal" };
   }
+  if (report.classification === "crash" && report.crashSuspect) {
+    return {
+      kind: "prompt",
+      changes: lastNormal
+        ? diffFingerprints(lastNormal, report.fingerprint)
+        : [],
+      buildChanged: report.buildChanged,
+      modsLoaded: modsWereLoaded(report.fingerprint),
+      presentation: report.recovered ? "toast" : "dialog",
+    };
+  }
   if (report.classification === "unknown" || uptime === null) {
     return { kind: "ignore", reason: "noSignal" };
   }

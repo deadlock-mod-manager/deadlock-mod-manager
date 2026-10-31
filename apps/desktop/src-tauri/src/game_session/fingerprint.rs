@@ -89,7 +89,7 @@ pub fn addon_search_paths(gameinfo: &str) -> Vec<&str> {
   paths
 }
 
-fn addon_path_fingerprint(game_path: &Path, search_path: &str) -> AddonPathFingerprint {
+pub(super) fn addon_path_fingerprint(game_path: &Path, search_path: &str) -> AddonPathFingerprint {
   let directory = search_path
     .split('/')
     .fold(game_path.join("game"), |path, segment| path.join(segment));
