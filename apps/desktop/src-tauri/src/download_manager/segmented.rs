@@ -455,7 +455,10 @@ where
   tokio::fs::rename(&assembled, target_path)
     .await
     .map_err(|error| Error::FileWriteFailed(format!("Failed to finalize download: {error}")))?;
-  discard_staging(target_path).await?;
+  // The file is in place and verified; leftover parts only cost disk space.
+  if let Err(error) = discard_staging(target_path).await {
+    log::warn!("Failed to remove segment staging for {target_path:?}: {error}");
+  }
   log::info!("Download completed: {target_path:?}");
   Ok(Segmented::Finished)
 }

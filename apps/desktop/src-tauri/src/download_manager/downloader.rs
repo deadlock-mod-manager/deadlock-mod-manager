@@ -674,12 +674,18 @@ where
         )));
       }
 
+      // Possible when the 206 has no Content-Length.
       if range_end.is_some_and(|end| downloaded_total > end) {
         drop(file);
         remove_partial_pair(&partial_path, &meta_path).await;
-        return Err(Error::DownloadFailed(
-          "The server sent more bytes than the range it described".to_string(),
-        ));
+        if range_restarted {
+          return Err(Error::DownloadFailed(
+            "The server sent more bytes than the range it described".to_string(),
+          ));
+        }
+        log::warn!("Range response ran past its end; restarting from scratch");
+        range_restarted = true;
+        continue 'retry;
       }
 
       file
@@ -993,6 +999,52 @@ mod tests {
       body,
       "half of the file was published as the whole of it"
     );
+    assert_eq!(server.requests().len(), 2);
+  }
+
+  #[tokio::test]
+  async fn a_range_body_that_runs_past_its_range_restarts_once() {
+    use super::super::test_server::{Reply, TestServer};
+
+    let dir = tempfile::tempdir().unwrap();
+    let target = dir.path().join("mod.zip");
+    let body = test_body();
+    let server = TestServer::start({
+      let body = body.clone();
+      move |_, index| {
+        if index > 0 {
+          return Reply::new(200, body.clone());
+        }
+        // Describes the whole file, then keeps going past its end.
+        let mut long = Reply::new(206, [body.as_slice(), b"extra"].concat()).header(
+          "content-range",
+          format!("bytes 0-{}/{}", body.len() - 1, body.len()),
+        );
+        long.close_delimited = true;
+        long
+      }
+    })
+    .await;
+
+    let result = tokio::time::timeout(
+      Duration::from_secs(10),
+      download_file_resumable(
+        &server.url("/mod.zip"),
+        &target,
+        0,
+        |_| {},
+        CancellationToken::new(),
+        PauseHandle::new(),
+        None,
+        None,
+        false,
+      ),
+    )
+    .await
+    .expect("the download never settled");
+
+    assert!(result.is_ok(), "{result:?}");
+    assert_eq!(tokio::fs::read(&target).await.unwrap(), body);
     assert_eq!(server.requests().len(), 2);
   }
 

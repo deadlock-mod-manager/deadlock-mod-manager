@@ -612,6 +612,25 @@ impl DownloadManager {
     }
   }
 
+  /// The checksum a file can be split by, with its place among the segmented
+  /// downloads that keep the caps on after the setting is turned off. `None`
+  /// for a file that goes in one stream. An existing single-stream partial
+  /// keeps its own format.
+  fn opt_in_for_segments<'a>(
+    budget: &Arc<budget::TransferBudget>,
+    md5_checksum: Option<&'a str>,
+    file_size: u64,
+    has_partial: bool,
+    max_bytes: Option<u64>,
+  ) -> Option<(&'a str, budget::OptIn)> {
+    let md5 = md5_checksum.filter(|_| {
+      file_size >= MIN_SEGMENTED_SIZE
+        && !has_partial
+        && max_bytes.is_none_or(|limit| file_size <= limit)
+    })?;
+    Some((md5, budget.opt_in()))
+  }
+
   /// In segments when the setting is on and the file qualifies, in one stream
   /// otherwise. The setting is read once, so turning it off mid-download
   /// doesn't change how a file that already started is fetched.
@@ -648,18 +667,15 @@ impl DownloadManager {
       .await;
     }
 
-    let _opted_in = budget.opt_in();
     let on_progress = Arc::new(on_progress);
     let has_partial = tokio::fs::try_exists(downloader::partial_download_path(target_path))
       .await
       .unwrap_or(false);
-    match md5_checksum {
-      // An existing single-stream partial keeps its own format.
-      Some(md5)
-        if file_size >= MIN_SEGMENTED_SIZE
-          && !has_partial
-          && max_bytes.is_none_or(|limit| file_size <= limit) =>
-      {
+    // Held to the end, so a fallback keeps the caps on too.
+    let segments =
+      Self::opt_in_for_segments(&budget, md5_checksum, file_size, has_partial, max_bytes);
+    match segments.as_ref().map(|(md5, _)| *md5) {
+      Some(md5) => {
         match download_file_segmented(
           url,
           target_path,
@@ -679,7 +695,7 @@ impl DownloadManager {
           }
         }
       }
-      _ => {
+      None => {
         if let Err(error) = discard_staging(target_path).await {
           log::warn!("Failed to remove segment staging for {target_path:?}: {error}");
         }
@@ -2914,5 +2930,60 @@ mod tests {
       "a six-file mod showed the same 403 six times in one message"
     );
   }
-}
 
+  /// Whether a fifth request to one server has to wait.
+  async fn caps_on(budget: &Arc<budget::TransferBudget>) -> bool {
+    let mut held = Vec::new();
+    for _ in 0..=budget::ORIGIN_LIMIT {
+      let admission = tokio::time::timeout(
+        std::time::Duration::from_millis(50),
+        budget.admit("https://files.example", &CancellationToken::new()),
+      )
+      .await;
+      match admission {
+        Ok(Some(admission)) => held.push(admission),
+        _ => return true,
+      }
+    }
+    false
+  }
+
+  #[tokio::test]
+  async fn only_a_file_that_is_split_keeps_the_caps_on_after_the_setting_is_turned_off() {
+    const MD5: &str = "d41d8cd98f00b204e9800998ecf8427e";
+    let big = MIN_SEGMENTED_SIZE;
+    let budget = Arc::new(budget::TransferBudget::default());
+    budget.set_segmented_enabled(true);
+
+    let one_stream = [
+      (None, big, false, None),
+      (Some(MD5), big - 1, false, None),
+      (Some(MD5), big, true, None),
+      (Some(MD5), big, false, Some(big - 1)),
+    ];
+    for (md5, size, has_partial, max_bytes) in one_stream {
+      let opted_in =
+        DownloadManager::opt_in_for_segments(&budget, md5, size, has_partial, max_bytes);
+      assert!(
+        opted_in.is_none(),
+        "{md5:?} {size} {has_partial} {max_bytes:?}"
+      );
+    }
+    budget.set_segmented_enabled(false);
+    assert!(
+      !caps_on(&budget).await,
+      "a file in one stream kept the caps on"
+    );
+
+    budget.set_segmented_enabled(true);
+    let split = DownloadManager::opt_in_for_segments(&budget, Some(MD5), big, false, Some(big));
+    assert_eq!(split.as_ref().map(|(md5, _)| *md5), Some(MD5));
+    budget.set_segmented_enabled(false);
+    assert!(
+      caps_on(&budget).await,
+      "a split file let the caps go before it was done"
+    );
+    drop(split);
+    assert!(!caps_on(&budget).await);
+  }
+}
