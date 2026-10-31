@@ -1615,10 +1615,14 @@ impl DownloadManager {
       let mut queue = self.queue.lock().await;
       let dropped = Self::cancel_queued(&mut queue, mod_id);
       let cancelled = Self::cancel_active(&mut *self.active_downloads.lock().await, mod_id);
+      // Still holding the queue, so a download of the same mod queued meanwhile
+      // can't start writing partials this removes.
+      for queued in &dropped {
+        Self::remove_partials(&queued.task).await;
+      }
       (dropped, cancelled)
     };
-    for queued in &dropped {
-      Self::remove_partials(&queued.task).await;
+    for _ in &dropped {
       // Reported like a cancelled running download, so a paused one settles too.
       self
         .app_handle
@@ -1684,11 +1688,13 @@ impl DownloadManager {
       for mod_id in &cancelled {
         Self::cancel_active(&mut active, mod_id);
       }
+      drop(active);
+      // Still holding the queue, as in `cancel_download`.
+      for queued in &dropped {
+        Self::remove_partials(&queued.task).await;
+      }
       (dropped, cancelled)
     };
-    for queued in &dropped {
-      Self::remove_partials(&queued.task).await;
-    }
 
     if !dropped.is_empty() || !cancelled.is_empty() {
       log::info!(

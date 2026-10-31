@@ -418,6 +418,7 @@ where
           tokio::select! {
             () = tokio::time::sleep(delay) => continue 'retry,
             () = cancel_token.cancelled() => return Err(Error::DownloadCancelled),
+            () = pause.paused() => return Err(Error::DownloadPaused),
           }
         }
         return Err(Error::Network(format!("Failed to send request: {reason}")));
@@ -877,7 +878,55 @@ mod tests {
       .expect("a pause waited for headers that never arrived, holding the queue's only worker")
       .unwrap();
     assert!(matches!(result, Err(Error::DownloadPaused)), "{result:?}");
-    assert!(partial.exists() && meta.exists());
+    assert!(meta.exists());
+    assert_eq!(tokio::fs::read(&partial).await.unwrap(), b"first bytes");
+  }
+
+  #[tokio::test]
+  async fn pause_ends_a_retry_backoff() {
+    use tempfile::tempdir;
+    use tokio::net::TcpListener;
+
+    let dir = tempdir().unwrap();
+    let target = dir.path().join("mod.zip");
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let url = format!("http://{}/mod.zip", listener.local_addr().unwrap());
+    let pause = PauseHandle::new();
+
+    let download = tokio::spawn({
+      let target = target.clone();
+      let pause = pause.clone();
+      async move {
+        download_file_resumable(
+          &url,
+          &target,
+          0,
+          |_| {},
+          CancellationToken::new(),
+          pause,
+          None,
+          None,
+          false,
+        )
+        .await
+      }
+    });
+    // Closed before any response, so the request waits a second before retrying.
+    let (connection, _) = tokio::time::timeout(Duration::from_secs(5), listener.accept())
+      .await
+      .expect("download never connected to the fixture")
+      .unwrap();
+    drop(connection);
+    // Long enough to be in the backoff, short enough that waiting it out would
+    // still miss the deadline below.
+    tokio::time::sleep(Duration::from_millis(250)).await;
+    pause.pause();
+
+    let result = tokio::time::timeout(Duration::from_millis(500), download)
+      .await
+      .expect("a pause waited out the retry backoff, holding the queue's only worker")
+      .unwrap();
+    assert!(matches!(result, Err(Error::DownloadPaused)), "{result:?}");
   }
 
   #[tokio::test]

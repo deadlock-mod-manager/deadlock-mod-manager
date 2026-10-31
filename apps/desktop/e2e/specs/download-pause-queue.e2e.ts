@@ -235,7 +235,6 @@ const assertFiles = async (world: string, cancelled: boolean) => {
   expect(
     await collectFileInventory(await modDirectory(world, DOWNLOAD_MOD)),
   ).toEqual(cancelled ? {} : payload);
-  if (cancelled) return;
   expect(
     await collectFileInventory(await modDirectory(world, QUEUED_MOD)),
   ).toEqual({ [QUEUED_FILE]: fingerprint(downloadPayload()) });
