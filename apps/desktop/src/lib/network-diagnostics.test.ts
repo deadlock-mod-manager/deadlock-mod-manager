@@ -1,11 +1,11 @@
 import { describe, expect, it } from "bun:test";
 import en from "@/locales/en.json";
 import type { CatalogSyncStatusDto } from "@/types/generated/CatalogSyncStatusDto";
+import type { TcpAutoTuningLevel } from "@/types/generated/TcpAutoTuningLevel";
 import {
   createPendingResults,
-  DNS_PROBE_URL,
   evaluateCatalog,
-  INTERNET_PROBE_URL,
+  evaluateTcpAutoTuning,
   NETWORK_CHECK_IDS,
   NETWORK_CHECK_MESSAGES,
   NETWORK_FIXES,
@@ -16,7 +16,12 @@ import {
   summarizeNetworkDiagnostics,
 } from "./network-diagnostics";
 
+const INTERNET_PROBE_URL = "https://internet.test/cdn-cgi/trace";
+const DNS_PROBE_URL = "https://dns.test/cdn-cgi/trace";
+
 const ORIGINS = {
+  internet: "https://internet.test",
+  dns: "https://dns.test",
   dmmApi: "https://dmm.test",
   gamebanana: "https://gb.test",
   deadlockApi: "https://dlapi.test",
@@ -73,6 +78,7 @@ const deps = (
   fetch: fakeFetch().fetch,
   isOnline: () => true,
   inspectCatalog: async () => catalog(),
+  readTcpAutoTuning: async () => "normal",
   proxyEnabled: false,
   origins: ORIGINS,
   now: () => 0,
@@ -243,8 +249,8 @@ describe("runNetworkDiagnostics", () => {
       url: "https://dmm.test",
       host: "dmm.test",
     });
-    expect(byId(results, "internet").url).toBe("https://www.cloudflare.com");
-    expect(byId(results, "dns").url).toBe("https://www.cloudflare.com");
+    expect(byId(results, "internet").url).toBe(ORIGINS.dns);
+    expect(byId(results, "dns").url).toBe(ORIGINS.dns);
     // A local catalog has no address to show.
     expect(byId(results, "catalog").url).toBeUndefined();
   });
@@ -398,6 +404,53 @@ describe("summarizeNetworkDiagnostics", () => {
       { id: "internet", status: "error", fixes: [] },
     ];
     expect(summarizeNetworkDiagnostics(results)).toBe("error");
+  });
+});
+
+describe("TCP auto-tuning", () => {
+  it("warns about a restricted level and names it like PowerShell", () => {
+    const levels: TcpAutoTuningLevel[] = [
+      "disabled",
+      "highlyRestricted",
+      "restricted",
+    ];
+    expect(levels.map(evaluateTcpAutoTuning)).toEqual(
+      ["Disabled", "HighlyRestricted", "Restricted"].map((level) => ({
+        id: "tcpAutoTuning",
+        status: "warning",
+        message: "autoTuningRestricted",
+        params: { level },
+        fixes: ["enableAutoTuning"],
+      })),
+    );
+  });
+
+  it("passes the levels that don't cap a connection", () => {
+    for (const level of ["normal", "experimental"] as const) {
+      expect(evaluateTcpAutoTuning(level)).toMatchObject({
+        status: "ok",
+        message: "autoTuningOn",
+      });
+    }
+  });
+
+  it("only exists where the setting can be read", async () => {
+    const offWindows = deps({ readTcpAutoTuning: undefined });
+    expect(
+      createPendingResults(offWindows).map((result) => result.id),
+    ).not.toContain("tcpAutoTuning");
+    expect(
+      (await runNetworkDiagnostics(offWindows)).map((result) => result.id),
+    ).not.toContain("tcpAutoTuning");
+
+    for (const readTcpAutoTuning of [
+      async () => null,
+      () => Promise.reject(new Error("WMI unavailable")),
+    ]) {
+      const results = await runNetworkDiagnostics(deps({ readTcpAutoTuning }));
+      expect(results.map((result) => result.id)).not.toContain("tcpAutoTuning");
+      expect(summarizeNetworkDiagnostics(results)).toBe("ok");
+    }
   });
 });
 

@@ -1,4 +1,5 @@
 import type { CatalogSyncStatusDto } from "@/types/generated/CatalogSyncStatusDto";
+import type { TcpAutoTuningLevel } from "@/types/generated/TcpAutoTuningLevel";
 
 export type NetworkCheckId =
   | "network"
@@ -8,7 +9,8 @@ export type NetworkCheckId =
   | "gamebanana"
   | "deadlockApi"
   | "deadlockAssets"
-  | "catalog";
+  | "catalog"
+  | "tcpAutoTuning";
 
 export type NetworkCheckStatus =
   | "pending"
@@ -36,6 +38,8 @@ export const NETWORK_CHECK_MESSAGES = [
   "catalogStale",
   "catalogEmpty",
   "catalogCheckFailed",
+  "autoTuningOn",
+  "autoTuningRestricted",
 ] as const;
 
 type NetworkCheckMessage = (typeof NETWORK_CHECK_MESSAGES)[number];
@@ -57,6 +61,7 @@ export const NETWORK_FIXES = [
   "allowFirewall",
   "syncCatalog",
   "restartApp",
+  "enableAutoTuning",
 ] as const;
 
 type NetworkFix = (typeof NETWORK_FIXES)[number];
@@ -82,8 +87,13 @@ export type NetworkDiagnosticsDeps = {
   ) => Promise<ProbeResponse>;
   isOnline: () => boolean;
   inspectCatalog: () => Promise<CatalogSyncStatusDto>;
+  /** Only on Windows; resolves `null` when the setting can't be read. */
+  readTcpAutoTuning?: () => Promise<TcpAutoTuningLevel | null>;
   proxyEnabled: boolean;
   origins: {
+    /** Cloudflare's trace endpoint, by bare IP and by hostname. */
+    internet: string;
+    dns: string;
     dmmApi: string;
     gamebanana: string;
     deadlockApi: string;
@@ -103,12 +113,10 @@ export const NETWORK_CHECK_IDS: readonly NetworkCheckId[] = [
   "deadlockApi",
   "deadlockAssets",
   "catalog",
+  "tcpAutoTuning",
 ];
 
-// Cloudflare's trace endpoint is tiny and answers on both a bare IP and a
-// hostname, which lets a DNS failure be told apart from no connectivity at all.
-export const INTERNET_PROBE_URL = "https://1.1.1.1/cdn-cgi/trace";
-export const DNS_PROBE_URL = "https://www.cloudflare.com/cdn-cgi/trace";
+const TRACE_PATH = "/cdn-cgi/trace";
 
 const GAMEBANANA_GAME_ID = 20_948;
 const DEFAULT_TIMEOUT_MS = 8000;
@@ -246,19 +254,23 @@ type RunContext = {
 };
 
 const dnsProbe = async (context: RunContext): Promise<ProbeOutcome> => {
-  context.dnsProbe ??= await probe(context.deps, DNS_PROBE_URL);
+  context.dnsProbe ??= await probe(
+    context.deps,
+    `${context.deps.origins.dns}${TRACE_PATH}`,
+  );
   return context.dnsProbe;
 };
 
 const checkInternet = async (
   context: RunContext,
 ): Promise<NetworkCheckResult> => {
-  const direct = await probe(context.deps, INTERNET_PROBE_URL);
+  const { origins } = context.deps;
+  const direct = await probe(context.deps, `${origins.internet}${TRACE_PATH}`);
   // Some networks block 1.1.1.1 outright; reaching the hostname still proves
   // there is a way out.
   const viaHostname = direct.kind !== "response";
   const outcome = viaHostname ? await dnsProbe(context) : direct;
-  const url = originOf(viaHostname ? DNS_PROBE_URL : INTERNET_PROBE_URL);
+  const url = viaHostname ? origins.dns : origins.internet;
 
   if (outcome.kind === "response") {
     context.internetUp = true;
@@ -290,7 +302,7 @@ const checkInternet = async (
 
 const checkDns = async (context: RunContext): Promise<NetworkCheckResult> => {
   const outcome = await dnsProbe(context);
-  const url = originOf(DNS_PROBE_URL);
+  const url = context.deps.origins.dns;
   const host = hostOf(url);
   if (outcome.kind === "response") {
     return {
@@ -482,8 +494,46 @@ const checkCatalog = async (
   }
 };
 
-export const createPendingResults = (): NetworkCheckResult[] =>
-  NETWORK_CHECK_IDS.map((id) => ({ id, status: "pending", fixes: [] }));
+const RESTRICTED_AUTO_TUNING = new Set<TcpAutoTuningLevel>([
+  "disabled",
+  "highlyRestricted",
+  "restricted",
+]);
+
+/** Names the level the way `Get-NetTCPSetting` prints it. */
+export const evaluateTcpAutoTuning = (
+  level: TcpAutoTuningLevel,
+): NetworkCheckResult => {
+  const params = { level: level[0].toUpperCase() + level.slice(1) };
+  return RESTRICTED_AUTO_TUNING.has(level)
+    ? {
+        id: "tcpAutoTuning",
+        status: "warning",
+        message: "autoTuningRestricted",
+        params,
+        fixes: ["enableAutoTuning"],
+      }
+    : {
+        id: "tcpAutoTuning",
+        status: "ok",
+        message: "autoTuningOn",
+        params,
+        fixes: [],
+      };
+};
+
+/** The auto-tuning check only exists on Windows. */
+const checkIdsFor = (
+  deps: Pick<NetworkDiagnosticsDeps, "readTcpAutoTuning">,
+): NetworkCheckId[] =>
+  NETWORK_CHECK_IDS.filter(
+    (id) => id !== "tcpAutoTuning" || deps.readTcpAutoTuning !== undefined,
+  );
+
+export const createPendingResults = (
+  deps: Pick<NetworkDiagnosticsDeps, "readTcpAutoTuning"> = {},
+): NetworkCheckResult[] =>
+  checkIdsFor(deps).map((id) => ({ id, status: "pending", fixes: [] }));
 
 /**
  * Runs every check in order, top to bottom, reporting each state change so a
@@ -494,7 +544,7 @@ export const runNetworkDiagnostics = async (
   deps: NetworkDiagnosticsDeps,
   onUpdate?: (results: NetworkCheckResult[]) => void,
 ): Promise<NetworkCheckResult[]> => {
-  let results = createPendingResults();
+  let results = createPendingResults(deps);
   const context: RunContext = { deps, internetUp: false };
 
   const set = (result: NetworkCheckResult) => {
@@ -502,7 +552,7 @@ export const runNetworkDiagnostics = async (
     onUpdate?.(results);
   };
 
-  const runners: Record<NetworkCheckId, () => Promise<NetworkCheckResult>> = {
+  const runners = {
     network: async () => checkNetwork(deps),
     internet: () => checkInternet(context),
     dns: () => checkDns(context),
@@ -511,11 +561,22 @@ export const runNetworkDiagnostics = async (
     deadlockApi: () => checkService(context, "deadlockApi"),
     deadlockAssets: () => checkService(context, "deadlockAssets"),
     catalog: () => checkCatalog(context),
-  };
+    // A setting that can't be read is left out rather than reported.
+    tcpAutoTuning: async () => {
+      const level = await deps.readTcpAutoTuning?.().catch(() => null);
+      return level ? evaluateTcpAutoTuning(level) : null;
+    },
+  } satisfies Record<NetworkCheckId, () => Promise<NetworkCheckResult | null>>;
 
-  for (const id of NETWORK_CHECK_IDS) {
+  for (const id of checkIdsFor(deps)) {
     set({ id, status: "running", fixes: [] });
-    set(await runners[id]());
+    const result = await runners[id]();
+    if (result) {
+      set(result);
+    } else {
+      results = results.filter((entry) => entry.id !== id);
+      onUpdate?.(results);
+    }
   }
 
   return results;

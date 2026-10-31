@@ -33,6 +33,7 @@ pub mod match_sync;
 pub mod mod_folder_repair;
 pub mod mod_interchange;
 pub mod mods;
+pub mod network_diagnostics;
 pub mod performance;
 pub mod policy;
 pub mod profile_snapshot;

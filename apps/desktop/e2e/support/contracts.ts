@@ -8,7 +8,8 @@ export type ServiceName =
   | "deadlockApi"
   | "assets"
   | "steamNews"
-  | "github";
+  | "github"
+  | "connectivity";
 
 export const SERVICE_NAMES: readonly ServiceName[] = [
   "gamebanana",
@@ -19,6 +20,7 @@ export const SERVICE_NAMES: readonly ServiceName[] = [
   "assets",
   "steamNews",
   "github",
+  "connectivity",
 ];
 
 export type DriverProvider = "embedded" | "external";
@@ -97,6 +99,7 @@ const configurationSchema = z.object({
         "assets",
         "steamNews",
         "github",
+        "connectivity",
       ]),
       origin: z.string(),
     }),

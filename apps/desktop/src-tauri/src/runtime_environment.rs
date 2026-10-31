@@ -61,6 +61,8 @@ pub enum ServiceName {
   Assets,
   SteamNews,
   Github,
+  /// Cloudflare's trace endpoint, which network diagnostics probe.
+  Connectivity,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -211,6 +213,7 @@ impl E2eConfiguration {
       ServiceName::Assets,
       ServiceName::SteamNews,
       ServiceName::Github,
+      ServiceName::Connectivity,
     ];
     let mut observed = HashSet::new();
     for endpoint in &self.endpoints {
@@ -567,6 +570,7 @@ mod tests {
       "assets",
       "steamNews",
       "github",
+      "connectivity",
     ]
     .into_iter()
     .map(|service| json!({ "service": service, "origin": "http://127.0.0.1:43199" }))
