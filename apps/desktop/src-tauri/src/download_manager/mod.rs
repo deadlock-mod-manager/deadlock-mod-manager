@@ -1,6 +1,7 @@
 pub mod downloader;
 mod progress;
 mod range;
+mod segment_staging;
 #[cfg(test)]
 mod test_server;
 
