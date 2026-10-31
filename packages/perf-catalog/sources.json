@@ -6,10 +6,10 @@
   "schemaExplorer": {
     "repo": "ValveResourceFormat/SchemaExplorer",
     "path": "schemas/deadlock.json",
-    "commit": "6d578af274db19276fb9d1e57d296d428061fffe",
-    "sha256": "fa33046a85c9fb98f3b5883706c2c1fde983abce594af7a6901fd3049e1a1b79",
-    "revision": 11193527,
-    "versionDate": "Oct 30 2026"
+    "commit": "e7f4e80a0de48f786bfec92a1e7562b4cf3042e5",
+    "sha256": "08b6816b2710f0fcef7f9d0affc99de576d6c48b3410a0e6744c728d50fbcd4d",
+    "revision": 11193905,
+    "versionDate": "Oct 31 2026"
   },
   "gameTracking": {
     "repo": "SteamTracking/GameTracking-Deadlock",
@@ -724,7 +724,7 @@
       "md5": "de4b404c97ef4c6b368e5961c0c8969e",
       "name": "Optimisationlock - Competitive FPS Optimisations",
       "author": "Maidehnless",
-      "downloads": 40653,
+      "downloads": 44979,
       "updatedAt": "2026-04-08"
     },
     "658776": {
@@ -760,7 +760,7 @@
       "md5": "bc5da539fd3e16000ebc07837cee91ff",
       "name": "SideLock[mb best fps cfg]",
       "author": "hitmeupwhenyourelonely",
-      "downloads": 4148,
+      "downloads": 4594,
       "updatedAt": "2026-10-01"
     }
   }
