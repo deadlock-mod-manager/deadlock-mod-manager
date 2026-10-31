@@ -241,6 +241,20 @@ describe("persisted store integration with real production fixture", () => {
     usePersistedStore.getState().setShowModUpdateBadges(true);
   });
 
+  it("keeps segmented downloads off for existing users and persists their choice", async () => {
+    seedFromVersion(15, seededState);
+    const { usePersistedStore } = await importStoreFreshly();
+    await usePersistedStore.persist.rehydrate();
+    expect(usePersistedStore.getState().segmentedDownloads).toBe(false);
+    const { flushPendingWrites } = await import("./storage");
+    for (const enabled of [true, false]) {
+      usePersistedStore.getState().setSegmentedDownloads(enabled);
+      await flushPendingWrites();
+      await usePersistedStore.persist.rehydrate();
+      expect(usePersistedStore.getState().segmentedDownloads).toBe(enabled);
+    }
+  });
+
   it("upgrading from v15 with populated state preserves all user-set settings", async () => {
     seedFromVersion(15, seededState);
     const { usePersistedStore } = await importStoreFreshly();

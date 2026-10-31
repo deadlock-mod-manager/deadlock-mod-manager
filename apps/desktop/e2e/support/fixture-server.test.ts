@@ -121,6 +121,76 @@ describe("fixture network", () => {
     }
   });
 
+  it("serves closed ranges, misplaced ranges and repeated sequence entries", async () => {
+    const body = Buffer.from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    const good = { status: 200, body, range: true };
+    const server = await startFixtureServer([
+      {
+        method: "GET",
+        path: "/file",
+        ...good,
+        sequence: [
+          { ...good, repeat: 2 },
+          { ...good, rangeFrom: { at: 4, serveFrom: 5 } },
+        ],
+      },
+    ]);
+    const get = async (range: string) => {
+      const response = await fetch(`${server.origin}/file`, {
+        headers: { range },
+      });
+      return {
+        status: response.status,
+        contentRange: response.headers.get("content-range"),
+        body: Buffer.from(await response.arrayBuffer()),
+      };
+    };
+    try {
+      expect(await get("bytes=2-4")).toEqual({
+        status: 206,
+        contentRange: "bytes 2-4/10",
+        body: body.subarray(2, 5),
+      });
+      // The first entry answers twice, so this one is still served honestly.
+      expect((await get("bytes=4-6")).contentRange).toBe("bytes 4-6/10");
+      expect(await get("bytes=4-6")).toEqual({
+        status: 206,
+        contentRange: "bytes 5-7/10",
+        body: body.subarray(5, 8),
+      });
+      expect((await get("bytes=4-")).contentRange).toBe("bytes 5-9/10");
+      expect((await get("bytes=8-99")).contentRange).toBe("bytes 8-9/10");
+      const anyRange = await startFixtureServer([
+        {
+          method: "GET",
+          path: "/file",
+          ...good,
+          rangeFrom: { serveFrom: 0 },
+        },
+      ]);
+      try {
+        const response = await fetch(`${anyRange.origin}/file`, {
+          headers: { range: "bytes=3-" },
+        });
+        expect(response.headers.get("content-range")).toBe("bytes 0-9/10");
+        expect(Buffer.from(await response.arrayBuffer())).toEqual(body);
+      } finally {
+        await anyRange.close();
+      }
+      const requests = server.requests();
+      expect(requests.every((entry) => entry.remotePort !== undefined)).toBe(
+        true,
+      );
+      expect(
+        requests.every(
+          (entry) => entry.endedAt !== undefined && entry.endedAt >= entry.at,
+        ),
+      ).toBe(true);
+    } finally {
+      await server.close();
+    }
+  });
+
   it("serves registered responses and journals matched and unmatched requests", async () => {
     const artifacts = await mkdtemp(
       path.join(os.tmpdir(), "dmm-network-test-"),

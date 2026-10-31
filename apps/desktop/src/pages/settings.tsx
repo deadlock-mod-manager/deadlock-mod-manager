@@ -56,6 +56,7 @@ import { AutoexecSettings } from "@/components/settings/autoexec-settings";
 import { DeveloperModeToggle } from "@/components/settings/developer-mode-toggle";
 import { FeatureFlagsSettings } from "@/components/settings/feature-flags-settings";
 import { FileserverSettings } from "@/components/settings/fileserver-settings";
+import { SegmentedDownloadsToggle } from "@/components/settings/segmented-downloads-toggle";
 import { CrashCheckToggle } from "@/components/settings/crash-check-toggle";
 import { GameGuardToggle } from "@/components/settings/game-guard-toggle";
 import { DownloadCacheSettings } from "@/components/settings/download-cache-settings";
@@ -873,7 +874,10 @@ const CustomSettings = ({ value }: { value?: string }) => {
               description={t("settings.networkDescription")}
               searchId='fileserver'
               title={t("settings.fileserverSectionTitle")}>
-              <FileserverSettings />
+              <div className='flex flex-col gap-4'>
+                <FileserverSettings />
+                <SegmentedDownloadsToggle />
+              </div>
             </Section>
 
             <Section

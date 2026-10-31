@@ -1,3 +1,5 @@
+use super::budget::{app_budget, origin_of};
+use super::range::validate_range_response;
 use crate::errors::Error;
 use futures::StreamExt;
 use md5::{Digest, Md5};
@@ -14,16 +16,16 @@ use tokio_util::sync::CancellationToken;
 
 #[allow(dead_code)]
 const BUFFER_SIZE: usize = 64 * 1024; // 64KB buffer for future use
-const PROGRESS_THROTTLE_MS: u128 = 500; // Emit progress every 500ms
+pub(super) const PROGRESS_THROTTLE_MS: u128 = 500; // Emit progress every 500ms
 const MAX_REDIRECTS: usize = 5;
-const MAX_RECONNECTS: u32 = 3;
+pub(super) const MAX_RECONNECTS: u32 = 3;
 /// How far back the reported speed looks, so a stall shows as a falling rate
 /// instead of hiding behind the average since the download started.
 const SPEED_WINDOW: Duration = Duration::from_secs(5);
 /// How often a silent connection still reports progress, letting the rate decay.
-const STALL_TICK: Duration = Duration::from_secs(1);
+pub(super) const STALL_TICK: Duration = Duration::from_secs(1);
 /// Silence after which the connection is dropped and the Range request re-issued.
-const STALL_TIMEOUT: Duration = Duration::from_secs(20);
+pub(super) const STALL_TIMEOUT: Duration = Duration::from_secs(20);
 
 /// Where the bytes of a download are coming from, so the UI can say whose end a
 /// slow or failed download is on.
@@ -39,7 +41,7 @@ fn is_gamebanana_host(host: &str) -> bool {
 }
 
 /// Read from the URL after redirects, which is the server actually sending the bytes.
-fn classify_source(url: &reqwest::Url) -> DownloadSource {
+pub(super) fn classify_source(url: &reqwest::Url) -> DownloadSource {
   if url.host_str().is_some_and(is_gamebanana_host) {
     DownloadSource::GameBanana
   } else {
@@ -49,7 +51,7 @@ fn classify_source(url: &reqwest::Url) -> DownloadSource {
 
 /// reqwest's own message is just "error sending request"; the cause (reset, TLS,
 /// DNS, timeout) lives further down the source chain.
-fn describe_request_error(error: reqwest::Error) -> String {
+pub(super) fn describe_request_error(error: reqwest::Error) -> String {
   let error = error.without_url();
   let mut message = error.to_string();
   let mut source = std::error::Error::source(&error);
@@ -61,7 +63,7 @@ fn describe_request_error(error: reqwest::Error) -> String {
   message
 }
 
-fn retry_after_secs(headers: &HeaderMap) -> Option<u64> {
+pub(super) fn retry_after_secs(headers: &HeaderMap) -> Option<u64> {
   headers
     .get(reqwest::header::RETRY_AFTER)?
     .to_str()
@@ -72,18 +74,18 @@ fn retry_after_secs(headers: &HeaderMap) -> Option<u64> {
 }
 
 /// Transfer rate over the last [`SPEED_WINDOW`].
-struct SpeedWindow {
+pub(super) struct SpeedWindow {
   samples: VecDeque<(Instant, u64)>,
 }
 
 impl SpeedWindow {
-  fn new(now: Instant, bytes: u64) -> Self {
+  pub(super) fn new(now: Instant, bytes: u64) -> Self {
     Self {
       samples: VecDeque::from([(now, bytes)]),
     }
   }
 
-  fn record(&mut self, now: Instant, bytes: u64) {
+  pub(super) fn record(&mut self, now: Instant, bytes: u64) {
     self.samples.push_back((now, bytes));
     // The front stays the newest sample at least a window old, the baseline the
     // rate is measured from.
@@ -94,7 +96,7 @@ impl SpeedWindow {
 
   /// Bytes over the window ending at `now` rather than at the last sample, so
   /// silence lowers the rate.
-  fn rate(&self, now: Instant, bytes: u64) -> f64 {
+  pub(super) fn rate(&self, now: Instant, bytes: u64) -> f64 {
     let window_start = now.checked_sub(SPEED_WINDOW);
     let Some(&(since, baseline)) = self
       .samples
@@ -143,6 +145,37 @@ fn is_allowed_download_url(url: &reqwest::Url) -> bool {
   })
 }
 
+/// Redirects are followed only within the trusted hosts. A segmented file asks
+/// for `http1_only`: over HTTP/2 its requests would share one connection.
+pub(super) fn download_client(
+  trusted_hosts_only: bool,
+  follow_redirects: bool,
+  http1_only: bool,
+) -> Result<reqwest::Client, Error> {
+  crate::proxy::build_http_client(|b| {
+    let mut builder = b
+      .connect_timeout(std::time::Duration::from_secs(30))
+      .read_timeout(std::time::Duration::from_secs(60));
+    if http1_only {
+      builder = builder.http1_only();
+    }
+    if trusted_hosts_only && follow_redirects {
+      builder.redirect(reqwest::redirect::Policy::custom(|attempt| {
+        if attempt.previous().len() >= MAX_REDIRECTS {
+          return attempt.error("download redirect limit exceeded");
+        }
+        if is_allowed_download_url(attempt.url()) {
+          attempt.follow()
+        } else {
+          attempt.error("download redirect left the trusted host allowlist")
+        }
+      }))
+    } else {
+      builder.redirect(reqwest::redirect::Policy::none())
+    }
+  })
+}
+
 #[derive(Clone, Debug)]
 pub struct DownloadProgress {
   pub downloaded: u64,
@@ -180,7 +213,7 @@ impl PauseHandle {
   }
 
   /// Resolves once the download is paused, for waits that read no data.
-  async fn paused(&self) {
+  pub(super) async fn paused(&self) {
     // `self` holds the sender, so the wait can't see it closed.
     let _ = self.paused.subscribe().wait_for(|paused| *paused).await;
   }
@@ -198,7 +231,7 @@ struct PartialMeta {
   last_modified: Option<String>,
 }
 
-fn partial_download_path(target: &Path) -> PathBuf {
+pub(super) fn partial_download_path(target: &Path) -> PathBuf {
   let mut name = target.file_name().unwrap_or_default().to_owned();
   name.push(".partial");
   target.with_file_name(name)
@@ -222,12 +255,6 @@ fn header_last_modified(headers: &HeaderMap) -> Option<String> {
     .get(reqwest::header::LAST_MODIFIED)
     .and_then(|v| v.to_str().ok())
     .map(std::string::ToString::to_string)
-}
-
-fn parse_content_range_total(headers: &HeaderMap) -> Option<u64> {
-  let value = headers.get(reqwest::header::CONTENT_RANGE)?.to_str().ok()?;
-  let (_, rest) = value.split_once('/')?;
-  rest.trim().parse().ok()
 }
 
 async fn read_partial_meta(path: &Path) -> Option<PartialMeta> {
@@ -336,27 +363,15 @@ where
   if trusted_hosts_only {
     validate_download_url(url)?;
   }
-  let client = crate::proxy::build_http_client(|b| {
-    let builder = b
-      .connect_timeout(std::time::Duration::from_secs(30))
-      .read_timeout(std::time::Duration::from_secs(60));
-    if trusted_hosts_only {
-      builder.redirect(reqwest::redirect::Policy::custom(|attempt| {
-        if attempt.previous().len() >= MAX_REDIRECTS {
-          return attempt.error("download redirect limit exceeded");
-        }
-        if is_allowed_download_url(attempt.url()) {
-          attempt.follow()
-        } else {
-          attempt.error("download redirect left the trusted host allowlist")
-        }
-      }))
-    } else {
-      builder.redirect(reqwest::redirect::Policy::none())
-    }
-  })?;
+  let client = download_client(trusted_hosts_only, true, false)?;
+  let budget = app_budget();
+  // Where the next request's connection is counted; becomes the server the
+  // redirects reached once that's known.
+  let mut admit_origin = origin_of(url);
 
   let mut reconnects: u32 = 0;
+  // A server that answers a Range request wrongly gets one clean restart, not a loop.
+  let mut range_restarted = false;
 
   'retry: loop {
     // Checked per attempt too, so a pause during a retry backoff or a restart stops here.
@@ -387,6 +402,14 @@ where
       request = request.header(RANGE, format!("bytes={resume_from}-"));
     }
 
+    // Held until this attempt's response is dropped; only waits while
+    // segmented downloads are on.
+    let Some(mut admission) = budget.admit(&admit_origin, &cancel_token).await else {
+      log::info!("Download cancelled while waiting for a connection");
+      remove_partial_pair(&partial_path, &meta_path).await;
+      return Err(Error::DownloadCancelled);
+    };
+
     // The read loop only sees the token once headers arrive; a connect or a server
     // holding its headers back would keep a cancelled download alive until a timeout,
     // and a paused one holding the queue.
@@ -408,6 +431,7 @@ where
         let reason = describe_request_error(e);
         // Connections refused or reset before the first byte are as transient as a
         // dropped stream, and several files of one mod start at the same moment.
+        drop(admission);
         if transient && reconnects < MAX_RECONNECTS {
           reconnects += 1;
           let delay = Duration::from_secs(1 << (reconnects - 1));
@@ -428,6 +452,11 @@ where
     let status = response.status();
 
     if status == reqwest::StatusCode::RANGE_NOT_SATISFIABLE {
+      if resume_from == 0 {
+        return Err(Error::Network(
+          "Server refused a request for the whole file (416)".to_string(),
+        ));
+      }
       log::warn!("Server returned 416; clearing partial and retrying");
       remove_partial_pair(&partial_path, &meta_path).await;
       continue 'retry;
@@ -449,11 +478,23 @@ where
       )));
     }
 
+    // Counted against the server the redirects reached. When that one already
+    // has its share of connections, close this response and wait for room there.
+    let reached = response.url().origin().ascii_serialization();
+    if !admission.retarget(&reached) {
+      log::info!("{reached} is busy with other downloads; waiting for a connection");
+      admit_origin = reached;
+      continue 'retry;
+    }
+
     let headers = response.headers().clone();
     let resp_etag = header_etag(&headers);
     let resp_last_modified = header_last_modified(&headers);
 
-    if resume_from > 0 {
+    // Set for a 206: the body must stop at the end of the file it described.
+    let mut range_end: Option<u64> = None;
+
+    if resume_from > 0 || status == reqwest::StatusCode::PARTIAL_CONTENT {
       if status != reqwest::StatusCode::PARTIAL_CONTENT {
         log::info!("Resume not honored (status {status}); restarting from scratch");
         remove_partial_pair(&partial_path, &meta_path).await;
@@ -472,15 +513,35 @@ where
         log::info!("ETag changed but Last-Modified matches; accepting resume");
       }
 
-      if let Some(total) = parse_content_range_total(&headers) {
-        confirmed_entity_size = Some(total);
-        if let Some(limit) = max_bytes
-          && total > limit
-        {
-          return Err(Error::Network(format!(
-            "Refusing to download {total} bytes (limit {limit})"
-          )));
+      // Appending a body that starts anywhere but the end of the partial file
+      // corrupts it, and a different total means a different file.
+      let expected_total = (expected_size > 0).then_some(expected_size);
+      let range = match validate_range_response(status, &headers, resume_from, None, expected_total)
+      {
+        Ok(range) => range,
+        Err(error) => {
+          remove_partial_pair(&partial_path, &meta_path).await;
+          if range_restarted {
+            return Err(Error::DownloadFailed(format!(
+              "The server sent an invalid range response: {error}"
+            )));
+          }
+          log::warn!(
+            "Invalid range response at byte {resume_from} ({error}); restarting from scratch"
+          );
+          range_restarted = true;
+          continue 'retry;
         }
+      };
+      confirmed_entity_size = Some(range.total);
+      range_end = Some(range.total);
+      if let Some(limit) = max_bytes
+        && range.total > limit
+      {
+        return Err(Error::Network(format!(
+          "Refusing to download {} bytes (limit {limit})",
+          range.total
+        )));
       }
     } else {
       if let Some(limit) = max_bytes {
@@ -600,6 +661,21 @@ where
       session_downloaded += chunk.len() as u64;
       let downloaded_total = base_offset.saturating_add(session_downloaded);
 
+      // Possible when the 206 has no Content-Length. Checked before the size
+      // limit, which a caller may set to the file's exact size.
+      if range_end.is_some_and(|end| downloaded_total > end) {
+        drop(file);
+        remove_partial_pair(&partial_path, &meta_path).await;
+        if range_restarted {
+          return Err(Error::DownloadFailed(
+            "The server sent more bytes than the range it described".to_string(),
+          ));
+        }
+        log::warn!("Range response ran past its end; restarting from scratch");
+        range_restarted = true;
+        continue 'retry;
+      }
+
       if let Some(limit) = max_bytes
         && downloaded_total > limit
       {
@@ -640,6 +716,21 @@ where
     }
 
     let final_total = base_offset.saturating_add(session_downloaded);
+
+    // A 206 that ended cleanly before the end of its range is as wrong as one
+    // that started in the wrong place.
+    if range_end.is_some_and(|end| final_total != end) {
+      drop(file);
+      remove_partial_pair(&partial_path, &meta_path).await;
+      if range_restarted {
+        return Err(Error::DownloadFailed(
+          "The server's range response ended early".to_string(),
+        ));
+      }
+      log::warn!("Range response ended at byte {final_total}; restarting from scratch");
+      range_restarted = true;
+      continue 'retry;
+    }
 
     // Falling back to the bytes read: a declared size that overstated the file, and that no
     // response corrected, would otherwise leave the bar short of 100% for good.
@@ -688,7 +779,7 @@ async fn md5_file(path: &Path) -> Result<String, Error> {
   Ok(hex::encode(digest.finalize()))
 }
 
-async fn verify_download(
+pub(super) async fn verify_download(
   path: &Path,
   expected_size: u64,
   expected_md5: Option<&str>,
@@ -718,16 +809,6 @@ mod tests {
   use super::*;
 
   #[test]
-  fn parse_content_range_total_parses_suffix() {
-    let mut headers = HeaderMap::new();
-    headers.insert(
-      reqwest::header::CONTENT_RANGE,
-      reqwest::header::HeaderValue::from_static("bytes 0-1023/9360840"),
-    );
-    assert_eq!(parse_content_range_total(&headers), Some(9_360_840));
-  }
-
-  #[test]
   fn download_allowlist_rejects_scheme_host_and_credential_escapes() {
     assert!(validate_download_url("https://gamebanana.com/dl/1").is_ok());
     assert!(validate_download_url("https://files.gamebanana.com/file.zip").is_ok());
@@ -738,19 +819,284 @@ mod tests {
     assert!(validate_download_url("https://127.0.0.1:43199/files/mod.vpk").is_err());
   }
 
-  #[test]
-  fn a_sub_range_withholding_its_total_confirms_nothing() {
-    let mut headers = HeaderMap::new();
-    headers.insert(
-      reqwest::header::CONTENT_RANGE,
-      reqwest::header::HeaderValue::from_static("bytes 600000-1648575/*"),
-    );
+  /// A partial holding the first `kept` bytes of `body`, with the ETag the
+  /// scripted server sends.
+  async fn resumable_partial(target: &Path, body: &[u8], kept: usize) {
+    tokio::fs::write(partial_download_path(target), &body[..kept])
+      .await
+      .unwrap();
+    let stored = PartialMeta {
+      etag: Some("\"v1\"".to_string()),
+      last_modified: None,
+    };
+    write_partial_meta(&partial_meta_path(&partial_download_path(target)), &stored)
+      .await
+      .unwrap();
+  }
 
+  fn test_body() -> Vec<u8> {
+    (0..200_000_u32).map(|i| (i % 251) as u8).collect()
+  }
+
+  async fn resume(url: &str, target: &Path, body: &[u8]) -> Result<(), Error> {
+    let md5 = hex::encode(Md5::digest(body));
+    tokio::time::timeout(
+      Duration::from_secs(10),
+      download_file_resumable(
+        url,
+        target,
+        body.len() as u64,
+        |_| {},
+        CancellationToken::new(),
+        PauseHandle::new(),
+        None,
+        Some(&md5),
+        false,
+      ),
+    )
+    .await
+    .expect("the download never settled")
+  }
+
+  #[tokio::test]
+  async fn a_resume_answered_from_the_wrong_offset_restarts_instead_of_appending() {
+    use super::super::test_server::{Reply, TestServer};
+
+    let dir = tempfile::tempdir().unwrap();
+    let target = dir.path().join("mod.zip");
+    let body = test_body();
+    resumable_partial(&target, &body, 65_536).await;
+    let server = TestServer::start({
+      let body = body.clone();
+      move |request, _| {
+        let total = body.len();
+        // Honours the Range header but always sends the file from byte 0.
+        let reply = if request.range.is_some() {
+          Reply::new(206, body.clone())
+            .header("content-range", format!("bytes 0-{}/{total}", total - 1))
+        } else {
+          Reply::new(200, body.clone())
+        };
+        reply.header("etag", "\"v1\"")
+      }
+    })
+    .await;
+
+    let result = resume(&server.url("/mod.zip"), &target, &body).await;
+
+    assert!(result.is_ok(), "{result:?}");
     assert_eq!(
-      parse_content_range_total(&headers),
-      None,
-      "a slice that withheld the total was sized at its own end, confirming a fragment as the whole entity"
+      tokio::fs::read(&target).await.unwrap(),
+      body,
+      "the file from byte 0 was appended after the 65,536 bytes already on disk"
     );
+    let ranges: Vec<_> = server.requests().into_iter().map(|r| r.range).collect();
+    assert_eq!(ranges, [Some("bytes=65536-".to_string()), None]);
+  }
+
+  #[tokio::test]
+  async fn a_server_that_keeps_sending_wrong_ranges_fails_instead_of_looping() {
+    use super::super::test_server::{Reply, TestServer};
+
+    let dir = tempfile::tempdir().unwrap();
+    let target = dir.path().join("mod.zip");
+    let body = test_body();
+    resumable_partial(&target, &body, 65_536).await;
+    let server = TestServer::start({
+      let body = body.clone();
+      move |_, _| {
+        // Every answer is a 206 that doesn't start where it was asked to.
+        Reply::new(206, body[1..].to_vec())
+          .header(
+            "content-range",
+            format!("bytes 1-{}/{}", body.len() - 1, body.len()),
+          )
+          .header("etag", "\"v1\"")
+      }
+    })
+    .await;
+
+    let result = resume(&server.url("/mod.zip"), &target, &body).await;
+
+    assert!(
+      matches!(result, Err(Error::DownloadFailed(_))),
+      "{result:?}"
+    );
+    assert_eq!(
+      server.requests().len(),
+      2,
+      "one clean restart, then give up"
+    );
+    assert!(!target.exists() && !partial_download_path(&target).exists());
+  }
+
+  #[tokio::test]
+  async fn a_server_that_keeps_refusing_ranges_with_416_fails_instead_of_looping() {
+    use super::super::test_server::{Reply, TestServer};
+
+    let dir = tempfile::tempdir().unwrap();
+    let target = dir.path().join("mod.zip");
+    let body = test_body();
+    resumable_partial(&target, &body, 65_536).await;
+    let server = TestServer::start(|_, _| Reply::new(416, Vec::new())).await;
+
+    let result = resume(&server.url("/mod.zip"), &target, &body).await;
+
+    assert!(matches!(result, Err(Error::Network(_))), "{result:?}");
+    assert_eq!(
+      server.requests().len(),
+      2,
+      "a 416 to the whole file was retried as if a partial were still in the way"
+    );
+  }
+
+  #[tokio::test]
+  async fn a_range_body_that_ends_early_is_not_published() {
+    use super::super::test_server::{Reply, TestServer};
+
+    let dir = tempfile::tempdir().unwrap();
+    let target = dir.path().join("mod.zip");
+    let body = test_body();
+    let server = TestServer::start({
+      let body = body.clone();
+      move |_, index| {
+        if index > 0 {
+          return Reply::new(200, body.clone());
+        }
+        // Describes the whole file, then closes after half of it.
+        let mut short = Reply::new(206, body[..body.len() / 2].to_vec()).header(
+          "content-range",
+          format!("bytes 0-{}/{}", body.len() - 1, body.len()),
+        );
+        short.close_delimited = true;
+        short
+      }
+    })
+    .await;
+
+    // No declared size or checksum, as for custom-provider downloads.
+    let result = tokio::time::timeout(
+      Duration::from_secs(10),
+      download_file_resumable(
+        &server.url("/mod.zip"),
+        &target,
+        0,
+        |_| {},
+        CancellationToken::new(),
+        PauseHandle::new(),
+        None,
+        None,
+        false,
+      ),
+    )
+    .await
+    .expect("the download never settled");
+
+    assert!(result.is_ok(), "{result:?}");
+    assert_eq!(
+      tokio::fs::read(&target).await.unwrap(),
+      body,
+      "half of the file was published as the whole of it"
+    );
+    assert_eq!(server.requests().len(), 2);
+  }
+
+  /// Downloads from a server whose first `overruns` answers are a 206 for the
+  /// whole file that keeps going past its end; later answers are the plain
+  /// file. Returns the result, the requests made, what was published, and
+  /// whether a partial file was left.
+  async fn download_with_overruns(
+    overruns: usize,
+    max_bytes: Option<u64>,
+  ) -> (Result<(), Error>, usize, Option<Vec<u8>>, bool) {
+    use super::super::test_server::{Reply, TestServer};
+
+    let dir = tempfile::tempdir().unwrap();
+    let target = dir.path().join("mod.zip");
+    let body = test_body();
+    let server = TestServer::start(move |_, index| {
+      if index >= overruns {
+        return Reply::new(200, body.clone());
+      }
+      let mut long = Reply::new(206, [body.as_slice(), b"extra"].concat()).header(
+        "content-range",
+        format!("bytes 0-{}/{}", body.len() - 1, body.len()),
+      );
+      long.close_delimited = true;
+      long
+    })
+    .await;
+
+    let result = tokio::time::timeout(
+      Duration::from_secs(10),
+      download_file_resumable(
+        &server.url("/mod.zip"),
+        &target,
+        0,
+        |_| {},
+        CancellationToken::new(),
+        PauseHandle::new(),
+        max_bytes,
+        None,
+        false,
+      ),
+    )
+    .await
+    .expect("the download never settled");
+    let published = tokio::fs::read(&target).await.ok();
+    let partial_left = partial_download_path(&target).exists();
+    (result, server.requests().len(), published, partial_left)
+  }
+
+  #[tokio::test]
+  async fn a_range_body_that_runs_past_its_range_restarts_once() {
+    let (result, requests, published, _) = download_with_overruns(1, None).await;
+    assert!(result.is_ok(), "{result:?}");
+    assert_eq!(published, Some(test_body()));
+    assert_eq!(requests, 2);
+  }
+
+  #[tokio::test]
+  async fn a_range_overrun_restarts_even_with_a_size_limit_of_the_exact_size() {
+    let size = test_body().len() as u64;
+    let (result, requests, published, _) = download_with_overruns(1, Some(size)).await;
+    assert!(result.is_ok(), "{result:?}");
+    assert_eq!(published, Some(test_body()));
+    assert_eq!(requests, 2);
+  }
+
+  #[tokio::test]
+  async fn a_server_that_keeps_running_past_its_range_fails_after_one_restart() {
+    let (result, requests, published, partial_left) =
+      download_with_overruns(usize::MAX, None).await;
+    assert!(
+      matches!(result, Err(Error::DownloadFailed(_))),
+      "{result:?}"
+    );
+    assert_eq!(requests, 2, "one clean restart, then give up");
+    assert!(published.is_none() && !partial_left);
+  }
+
+  #[tokio::test]
+  async fn a_resume_from_the_right_offset_still_appends() {
+    use super::super::test_server::{Reply, TestServer};
+
+    let dir = tempfile::tempdir().unwrap();
+    let target = dir.path().join("mod.zip");
+    let body = test_body();
+    resumable_partial(&target, &body, 65_536).await;
+    let server = TestServer::start({
+      let body = body.clone();
+      move |request, _| Reply::serve(&body, request).header("etag", "\"v1\"")
+    })
+    .await;
+
+    let result = resume(&server.url("/mod.zip"), &target, &body).await;
+
+    assert!(result.is_ok(), "{result:?}");
+    assert_eq!(tokio::fs::read(&target).await.unwrap(), body);
+    let ranges: Vec<_> = server.requests().into_iter().map(|r| r.range).collect();
+    assert_eq!(ranges, [Some("bytes=65536-".to_string())]);
   }
 
   #[test]

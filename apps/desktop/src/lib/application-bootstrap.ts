@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { load } from "@tauri-apps/plugin-store";
 import { downloadManager } from "./download/manager";
+import { applySegmentedDownloadsSetting } from "./download/segmented-downloads";
 import logger from "./logger";
 import {
   initializeRuntimeBootstrap,
@@ -56,6 +57,15 @@ const bootstrapApplication = async (): Promise<ApplicationBootstrap> => {
     usePersistedStore.getState().blockActionsWhileGameRunning,
   ).catch((error) => {
     logger.withError(error).warn("Failed to sync the game guard setting");
+  });
+  // The backend starts with segmented downloads off, so a failed sync leaves
+  // them off.
+  await applySegmentedDownloadsSetting(
+    usePersistedStore.getState().segmentedDownloads,
+  ).catch((error) => {
+    logger
+      .withError(error)
+      .warn("Failed to sync the segmented downloads setting");
   });
   const { minimizeToTray, closeToTray } = usePersistedStore.getState();
   await applyTrayBehavior({ minimizeToTray, closeToTray }).catch((error) => {

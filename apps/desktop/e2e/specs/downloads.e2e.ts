@@ -5,7 +5,7 @@ import { assertOwnedWorld, collectFileInventory } from "../support/world";
 import { startApplication } from "../support/application";
 import { closeApplication } from "../support/application-exit";
 import { $, browser, expect } from "@wdio/globals";
-import { readFile, stat, writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
 import {
@@ -19,7 +19,13 @@ import {
   assertDownloadDisk,
   downloadDirectory,
   readDownloadState,
+  stagedBytes,
 } from "../support/download-oracle";
+import {
+  openSettings,
+  readSettings,
+  setSwitch,
+} from "../support/settings-actions";
 
 const card = (name = DOWNLOAD_NAME) =>
   $(`[role="button"][aria-label="Open ${name}"]`);
@@ -42,13 +48,7 @@ const toast = (title: string) =>
   );
 const pause = async (world: string): Promise<void> => {
   await waitStatus(world, "downloading");
-  const partial = path.join(
-    await downloadDirectory(world),
-    `${DOWNLOAD_FILE}.partial`,
-  );
-  await browser.waitUntil(
-    async () => (await stat(partial).catch(() => ({ size: 0 }))).size > 0,
-  );
+  await browser.waitUntil(async () => (await stagedBytes(world)) > 0);
   const button = await card().$("button=Pause");
   await button.waitForClickable();
   await button.click();
@@ -57,7 +57,7 @@ const pause = async (world: string): Promise<void> => {
   let stableSince = Date.now();
   await browser.waitUntil(
     async () => {
-      const size = (await stat(partial)).size;
+      const size = await stagedBytes(world);
       if (size !== previousSize) {
         previousSize = size;
         stableSince = Date.now();
@@ -133,11 +133,35 @@ const cancelWhileConnecting = async (world: string): Promise<void> => {
   await waitStatus(world, "downloaded");
 };
 
+const enableSegmentedDownloads = async (world: string): Promise<void> => {
+  await openSettings("network");
+  await setSwitch("#toggle-setting-segmented-downloads", true);
+  await observeUntil(
+    "Faster downloads was not saved",
+    () => readSettings(world),
+    (state) => state.segmentedDownloads === true,
+  );
+  // The switch's thumb animates after its state changes.
+  await browser.pause(500);
+  await browser.saveScreenshot(
+    path.join(world, "artifacts", "segmented-setting.png"),
+  );
+  await navigate("downloads");
+  await card().waitForDisplayed();
+};
+// Segmented cases replay the single-stream flow they're named after.
+const flowOf = (scenario: string | undefined) =>
+  scenario?.replace(
+    /^downloads-segmented-(pause|cancel|restart|corrupt)$/,
+    "downloads-$1",
+  );
+
 describe("real Rust downloads", () => {
   it("keeps UI, partial files and selected payload consistent across failure and restart", async () => {
     const runtime = await startApplication();
     const world = runtime.roots.world;
-    const scenario = process.env.DMM_E2E_CASE_ID;
+    const caseId = process.env.DMM_E2E_CASE_ID;
+    const scenario = flowOf(caseId);
     const checkpointPath = path.join(
       world,
       "artifacts",
@@ -174,6 +198,8 @@ describe("real Rust downloads", () => {
         await $('[role="tab"]*=All').click();
         await expect(card().$("button=Retry")).toBeDisplayed();
       }
+      if (caseId === "downloads-segmented")
+        await enableSegmentedDownloads(world);
       await retry();
       if (
         scenario === "downloads-pause" ||

@@ -33,6 +33,95 @@ export const downloadPayload = (variant = "selected") =>
       contents: `${variant}\n${"fixture-payload\n".repeat(32768)}`,
     },
   ]);
+
+/** Cases that run with "Faster downloads"; `-off` is the same transfer without it. */
+export const isSegmentedCase = (scenario: string): boolean =>
+  scenario.startsWith("downloads-segmented");
+const segmentedEnabled = (scenario: string): boolean =>
+  isSegmentedCase(scenario) && scenario !== "downloads-segmented-off";
+/** Three files of one mod, to watch the connection budget. */
+const BUDGET_FILES = [DOWNLOAD_FILE, "second.vpk", "third.vpk"];
+export const downloadFiles = (scenario: string): string[] =>
+  scenario === "downloads-segmented-budget" ? BUDGET_FILES : [DOWNLOAD_FILE];
+// Past the downloader's 8 MiB threshold, with no repeating pattern, so bytes
+// from the wrong offset never match by accident.
+let segmentedPayloadCache: Buffer | undefined;
+const segmentedPayload = (): Buffer => {
+  if (segmentedPayloadCache) return segmentedPayloadCache;
+  const noise = Buffer.alloc(16 * 1024 * 1024);
+  let state = 0x2545f491;
+  for (let index = 0; index < noise.length; index++) {
+    state ^= state << 13;
+    state ^= state >>> 17;
+    state ^= state << 5;
+    noise[index] = state & 0xff;
+  }
+  segmentedPayloadCache = buildSyntheticVpk([
+    { path: "scripts/e2e-segmented.bin", contents: noise },
+  ]);
+  return segmentedPayloadCache;
+};
+export const payloadFor = (scenario: string): Buffer =>
+  isSegmentedCase(scenario) ? segmentedPayload() : downloadPayload();
+// Every response gets 64 KiB per 40 ms (1.6 MB/s), like a server limiting each
+// connection, so one stream can't beat this floor and four can.
+const SEGMENTED_CHUNK = 64 * 1024;
+const SEGMENTED_DELAY_MS = 40;
+const singleStreamFloorMs = (size: number): number =>
+  (Math.ceil(size / SEGMENTED_CHUNK) - 1) * SEGMENTED_DELAY_MS;
+/** The downloader's four spans, as `bytes=a-b` headers. */
+export const segmentRanges = (size: number): string[] =>
+  [0, 1, 2, 3].map(
+    (index) =>
+      `bytes=${Math.floor((index * size) / 4)}-${Math.floor(((index + 1) * size) / 4) - 1}`,
+  );
+const segmentStart = (size: number, index: number): number =>
+  Math.floor((index * size) / 4);
+const segmentedRoutes = (scenario: string): FixtureRoute[] => {
+  const body = segmentedPayload();
+  const good = {
+    status: 200,
+    body,
+    range: true,
+    headers: { etag: '"e2e-segmented-v1"' },
+    chunkBytes: SEGMENTED_CHUNK,
+    chunkDelayMs: SEGMENTED_DELAY_MS,
+  };
+  const third = segmentStart(body.length, 2);
+  let sequence: FixtureResponse[];
+  switch (scenario) {
+    case "downloads-segmented-no-range":
+      sequence = [{ ...good, range: false }];
+      break;
+    case "downloads-segmented-wrong-range":
+      // The third segment comes back one byte later than it says it starts.
+      sequence = [{ ...good, rangeFrom: { at: third, serveFrom: third + 1 } }];
+      break;
+    case "downloads-segmented-corrupt": {
+      const corrupt = Buffer.from(body);
+      corrupt[third + 10] ^= 0xff;
+      sequence = [{ ...good, body: corrupt, repeat: 4 }, good];
+      break;
+    }
+    case "downloads-segmented-pause":
+    case "downloads-segmented-cancel":
+    case "downloads-segmented-restart":
+      // About 8 s for the file: time to pause, cancel or stop the app mid-transfer.
+      sequence = [{ ...good, chunkDelayMs: 120 }];
+      break;
+    default:
+      sequence = [good];
+  }
+  const routes: FixtureRoute[] = [];
+  for (const file of downloadFiles(scenario))
+    routes.push({
+      method: "GET",
+      path: `/downloads/${file}`,
+      ...good,
+      sequence,
+    });
+  return routes;
+};
 export const QUEUE_MOD = "local-00000000-0000-4000-8000-000000000005";
 export const QUEUE_NAME = "E2E Queue Blocker";
 const QUEUE_FILE = "blocker.vpk";
@@ -51,6 +140,7 @@ const queueRoute = (): FixtureRoute => ({
   chunkDelayMs: 100,
 });
 export const downloadRoutes = (scenario: string): FixtureRoute[] => {
+  if (isSegmentedCase(scenario)) return segmentedRoutes(scenario);
   const body = downloadPayload();
   const good = {
     status: 200,
@@ -84,6 +174,19 @@ export const downloadRoutes = (scenario: string): FixtureRoute[] => {
     case "downloads-cancel-connecting":
       // Accepts the request and holds the headers past the downloader's timeouts.
       sequence = [{ ...good, headerDelayMs: 120_000 }, good];
+      break;
+    case "downloads-wrong-range":
+      // The resume comes back from byte 0 while claiming to be the resume.
+      sequence = [
+        {
+          ...good,
+          disconnectAfterBytes: 65536,
+          chunkBytes: 32768,
+          chunkDelayMs: 150,
+        },
+        // Wherever the client resumes: what reached it before the cut varies.
+        { ...good, rangeFrom: { serveFrom: 0 } },
+      ];
       break;
     case "downloads-range":
       sequence = [
@@ -125,7 +228,7 @@ export const prepareDownloadWorld = async (
   origin: string,
   scenario: string,
 ): Promise<void> => {
-  const payload = downloadPayload();
+  const payload = payloadFor(scenario);
   const selected: ModDownloadItem = {
     name: DOWNLOAD_FILE,
     url: `${origin}/downloads/${DOWNLOAD_FILE}`,
@@ -135,6 +238,9 @@ export const prepareDownloadWorld = async (
     updatedAt: null,
     description: "Selected E2E variant",
   };
+  const files: ModDownloadItem[] = [];
+  for (const name of downloadFiles(scenario))
+    files.push({ ...selected, name, url: `${origin}/downloads/${name}` });
   const downloads =
     scenario === "downloads-variants"
       ? [
@@ -145,14 +251,14 @@ export const prepareDownloadWorld = async (
           },
           selected,
         ]
-      : [selected];
+      : files;
   const mod = {
     ...fixtureMod(DOWNLOAD_MOD, 0),
     name: DOWNLOAD_NAME,
     status: ModStatus.FailedToDownload,
     installedVpks: [],
     downloads,
-    selectedDownloads: [selected],
+    selectedDownloads: files,
   };
   const mods = [mod];
   if (scenario === "downloads-queued-retry") {
@@ -202,18 +308,19 @@ export const prepareDownloadWorld = async (
     mods,
     enabledMods: {},
   };
+  const state = {
+    ...persisted.state,
+    // `downloads-segmented` turns it on through Settings instead.
+    segmentedDownloads:
+      segmentedEnabled(scenario) && scenario !== "downloads-segmented",
+    activeProfileId: "default",
+    localMods: mods,
+    profiles: { default: profile },
+  };
   await writeFile(
     storePath,
     JSON.stringify({
-      "local-config": JSON.stringify({
-        ...persisted,
-        state: {
-          ...persisted.state,
-          activeProfileId: "default",
-          localMods: mods,
-          profiles: { default: profile },
-        },
-      }),
+      "local-config": JSON.stringify({ ...persisted, state }),
     }),
   );
   await writeFile(
@@ -228,6 +335,119 @@ export const prepareDownloadWorld = async (
   );
 };
 
+const millis = (stamp: string | undefined): number => {
+  assert.ok(stamp, "A download request never finished");
+  return Date.parse(stamp);
+};
+
+/** Most download responses being sent at the same moment. */
+const peakConcurrency = (requests: readonly FixtureRequest[]): number =>
+  Math.max(
+    0,
+    ...requests.map(
+      (request) =>
+        requests.filter(
+          (other) =>
+            millis(other.at) <= millis(request.at) &&
+            millis(request.at) < millis(other.endedAt),
+        ).length,
+    ),
+  );
+
+const transferMs = (requests: readonly FixtureRequest[]): number =>
+  Math.max(...requests.map((request) => millis(request.endedAt))) -
+  Math.min(...requests.map((request) => millis(request.at)));
+
+const rangesOf = (list: readonly FixtureRequest[]): string[] =>
+  list.map((request) => String(request.headers.range)).sort();
+
+const allPartial = (list: readonly FixtureRequest[]): void =>
+  assert.ok(
+    list.every((request) => request.responseStatus === 206),
+    "Every segment must be answered with 206",
+  );
+
+const assertSegmentedNetwork = (
+  scenario: string,
+  requests: readonly FixtureRequest[],
+): void => {
+  const size = segmentedPayload().length;
+  const planned = segmentRanges(size);
+  const ranged = requests.filter((request) => request.headers.range);
+  const whole = requests.filter((request) => !request.headers.range);
+  const plannedTimes = (times: number) =>
+    Array.from({ length: times }, () => planned)
+      .flat()
+      .sort();
+  switch (scenario) {
+    case "downloads-segmented-off":
+      assert.equal(ranged.length, 0);
+      assert.equal(whole.length, 1);
+      assert.equal(whole[0].responseStatus, 200);
+      assert.ok(transferMs(whole) >= singleStreamFloorMs(size));
+      return;
+    case "downloads-segmented": {
+      assert.equal(whole.length, 0, "No request may fetch the whole file");
+      assert.deepEqual(rangesOf(ranged), plannedTimes(1));
+      allPartial(ranged);
+      assert.equal(
+        peakConcurrency(ranged),
+        4,
+        "The four segments must overlap",
+      );
+      assert.equal(
+        new Set(ranged.map((request) => request.remotePort)).size,
+        4,
+        "Each segment needs its own connection",
+      );
+      const elapsed = transferMs(ranged);
+      const floor = singleStreamFloorMs(size);
+      assert.ok(
+        elapsed < floor * 0.6,
+        `Segmented transfer took ${elapsed} ms; one connection needs at least ${floor} ms`,
+      );
+      return;
+    }
+    case "downloads-segmented-no-range":
+      assert.deepEqual(
+        requests.map((request) => [
+          request.headers.range,
+          request.responseStatus,
+        ]),
+        [
+          [planned[0], 200],
+          [undefined, 200],
+        ],
+        "A server ignoring Range must get one ordinary request",
+      );
+      return;
+    case "downloads-segmented-wrong-range":
+      assert.deepEqual(rangesOf(ranged), plannedTimes(1));
+      allPartial(ranged);
+      assert.equal(whole.length, 1);
+      assert.equal(requests.at(-1)?.headers.range, undefined);
+      assert.equal(requests.at(-1)?.responseStatus, 200);
+      return;
+    case "downloads-segmented-budget":
+      assert.equal(whole.length, 0);
+      assert.equal(ranged.length, BUDGET_FILES.length * 4);
+      allPartial(ranged);
+      assert.equal(
+        peakConcurrency(ranged),
+        4,
+        "Three segmented files on one server may only use four connections",
+      );
+      return;
+    default: {
+      // Corrupt, cancel and restart download twice; pause once.
+      const attempts = scenario === "downloads-segmented-pause" ? 1 : 2;
+      assert.equal(whole.length, 0);
+      assert.deepEqual(rangesOf(ranged), plannedTimes(attempts));
+      allPartial(ranged);
+    }
+  }
+};
+
 export const assertDownloadNetwork = (
   scenario: string,
   journal: readonly FixtureRequest[],
@@ -236,6 +456,27 @@ export const assertDownloadNetwork = (
     request.url.startsWith("/downloads/"),
   );
   assert.ok(requests.length > 0, "Download must reach the real HTTP fixture");
+  if (isSegmentedCase(scenario)) {
+    assertSegmentedNetwork(scenario, requests);
+    return;
+  }
+  if (scenario === "downloads-wrong-range") {
+    const resume = String(requests[1]?.headers.range);
+    assert.match(resume, /^bytes=[1-9]\d*-$/, "The cut connection must resume");
+    assert.deepEqual(
+      requests.map((request) => [
+        request.headers.range,
+        request.responseStatus,
+      ]),
+      [
+        [undefined, 200],
+        [resume, 206],
+        [undefined, 200],
+      ],
+      "A resume answered from the wrong offset must restart from scratch",
+    );
+    return;
+  }
   if (scenario === "downloads-queued-retry") {
     const statuses = (file: string) =>
       requests

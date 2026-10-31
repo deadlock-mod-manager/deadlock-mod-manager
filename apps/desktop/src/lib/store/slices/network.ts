@@ -29,8 +29,10 @@ export const DEFAULT_PROXY_CONFIG: ProxyConfig = {
 export type NetworkState = {
   fileserverPreference: FileserverPreference;
   proxyConfig: ProxyConfig;
+  segmentedDownloads: boolean;
   setFileserverPreference: (pref: FileserverPreference) => void;
   setProxyConfig: (config: ProxyConfig) => void;
+  setSegmentedDownloads: (enabled: boolean) => void;
 };
 
 export const networkDeepMergeKeys = [
@@ -42,7 +44,10 @@ export const createNetworkSlice: StateCreator<State, [], [], NetworkState> = (
 ) => ({
   fileserverPreference: "default",
   proxyConfig: DEFAULT_PROXY_CONFIG,
+  segmentedDownloads: false,
   setFileserverPreference: (pref: FileserverPreference) =>
     set(() => ({ fileserverPreference: pref })),
   setProxyConfig: (config: ProxyConfig) => set(() => ({ proxyConfig: config })),
+  setSegmentedDownloads: (enabled: boolean) =>
+    set(() => ({ segmentedDownloads: enabled })),
 });
