@@ -190,4 +190,68 @@ mod tests {
     assert_eq!(partial_download_len(&target).await, 3);
     assert!(first.requests().is_empty() && last.requests().is_empty());
   }
+
+  /// Each server as `DownloadManager::download_file` tries it with segments on.
+  #[tokio::test]
+  async fn a_refused_range_request_retries_the_server_in_one_stream_before_the_next() {
+    use crate::download_manager::budget::TransferBudget;
+    use crate::download_manager::segment_staging::staging_dir;
+    use crate::download_manager::segmented::{Segmented, download_file_segmented};
+    use std::sync::Arc;
+
+    const MD5: &str = "5d41402abc4b2a76b9719d911017c592";
+    let dir = tempfile::tempdir().unwrap();
+    let target = dir.path().join("mod.zip");
+    let mirror = TestServer::start(|request, _| {
+      Reply::new(if request.range.is_some() { 400 } else { 500 }, Vec::new())
+    })
+    .await;
+    let fallback = TestServer::start(|_, _| Reply::new(200, b"hello".to_vec())).await;
+    let budget = Arc::new(TransferBudget::default());
+    budget.set_segmented_enabled(true);
+
+    download_from_sources(
+      &[mirror.url("/mod.zip"), fallback.url("/mod.zip")],
+      &target,
+      |url| {
+        let target = target.clone();
+        let budget = Arc::clone(&budget);
+        async move {
+          let (cancel, pause) = (CancellationToken::new(), PauseHandle::new());
+          let segmented = download_file_segmented(
+            &url,
+            &target,
+            5,
+            MD5,
+            &|_| {},
+            &cancel,
+            &pause,
+            &budget,
+            false,
+          )
+          .await?;
+          if let Segmented::Finished = segmented {
+            return Ok(());
+          }
+          download_file_resumable(&url, &target, 5, |_| {}, cancel, pause, None, Some(MD5), false)
+            .await
+        }
+      },
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(tokio::fs::read(&target).await.unwrap(), b"hello");
+    let ranged: Vec<bool> = mirror
+      .requests()
+      .iter()
+      .map(|request| request.range.is_some())
+      .collect();
+    assert_eq!(
+      ranged,
+      [true, false],
+      "the mirror wasn't asked once without Range before the fallback"
+    );
+    assert!(!staging_dir(&target).exists());
+  }
 }
