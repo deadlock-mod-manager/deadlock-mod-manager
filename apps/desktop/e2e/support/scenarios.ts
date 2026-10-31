@@ -84,6 +84,10 @@ import {
   prepareStatsDashboardWorld,
   statsDashboardRoutes,
 } from "./stats-dashboard-fixtures";
+import {
+  networkDiagnosticsRoutes,
+  prepareNetworkDiagnosticsWorld,
+} from "./network-diagnostics-fixtures";
 
 type Definition = {
   family: string;
@@ -360,6 +364,14 @@ const onboarding: Definition = {
     )
       throw new Error("Onboarding never analyzed the existing VPK");
   },
+};
+const networkDiagnostics: Definition = {
+  ...defaults,
+  family: "diagnostics",
+  spec: "network-diagnostics",
+  phases: ["autotuning"],
+  routes: networkDiagnosticsRoutes,
+  prepare: prepareNetworkDiagnosticsWorld,
 };
 export const scenarios = {
   "library-groups-organize": libraryGroups,
@@ -838,6 +850,7 @@ export const scenarios = {
     spec: "stats-broken-endpoints",
     phases: ["broken"],
   },
+  "network-diagnostics": networkDiagnostics,
 } satisfies Record<string, Definition>;
 export type ScenarioId = keyof typeof scenarios;
 const isScenario = (value: string): value is ScenarioId =>

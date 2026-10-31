@@ -53,6 +53,8 @@ current. Both run in the Windows and Linux E2E matrices with no host update.
 
 `deep-link-other-file` installs `base.zip` from a GameBanana 1-click link, then sends a link for the same mod's `effects.zip`. The second link must add `effects.vpk` beside `base.vpk` in the author's order, and a repeat link for `base.zip` must only report it as already installed. Each archive downloads exactly once. E2E builds skip the OS deep-link plugin, so the case emits `deep-link-received` through Tauri's event IPC, the event the Rust handler emits after validating a link.
 
+`network-diagnostics` runs Settings → Tools → Diagnose connection with every service on the fixture origin, including Cloudflare's trace probes through the `connectivity` endpoint, so every check except TCP auto-tuning must pass. On Windows the world injects a `Disabled` TCP auto-tuning level instead of reading the host's, and the row must warn and show the command to turn it back on; on Linux that row must not exist.
+
 `catalog-refresh` checks that manual refresh finds a new sound during the automatic sync cooldown, disables duplicate clicks while syncing, preserves saved entries, and fetches no unchanged details on a repeated refresh. Its network assertions require only the latest index pages and one new sound hydration.
 
 `library-author-navigation` downloads a catalog mod into the library, opens its author from grid and list layouts, and verifies Back returns to Mods Library. It also checks the nested author → mod → author path, the author link in library mod details, and that Store author navigation still returns to Mods Store.

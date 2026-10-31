@@ -30,6 +30,10 @@ import type {
 import { cn } from "@/lib/utils";
 
 const STATUS_PAGE_URL = "https://status.deadlockmods.app";
+const AUTO_TUNING_COMMAND =
+  "netsh interface tcp set global autotuninglevel=normal";
+const AUTO_TUNING_DOCS_URL =
+  "https://docs.deadlockmods.app/using-mod-manager/troubleshooting#windows-downloads-are-very-slow";
 
 const STATUS_ICONS: Record<NetworkCheckStatus, ReactNode> = {
   pending: <CircleDashedIcon className='size-5 text-muted-foreground/60' />,
@@ -132,6 +136,37 @@ const CheckRow = ({ result }: { result: NetworkCheckResult }) => {
                 </li>
               ))}
             </ul>
+            {result.fixes.includes("enableAutoTuning") && (
+              <>
+                <div className='mt-1.5 flex items-center gap-1.5'>
+                  <code className='min-w-0 flex-1 break-words rounded bg-muted px-2 py-1 font-mono text-[11px] text-muted-foreground'>
+                    {AUTO_TUNING_COMMAND}
+                  </code>
+                  <Button
+                    aria-label={t("networkDiagnostics.copyCommand")}
+                    className='size-7 shrink-0'
+                    onClick={() =>
+                      void copy(
+                        t,
+                        AUTO_TUNING_COMMAND,
+                        "networkDiagnostics.commandCopied",
+                      )
+                    }
+                    size='icon'
+                    title={t("networkDiagnostics.copyCommand")}
+                    variant='ghost'>
+                    <CopyIcon className='h-3.5 w-3.5' />
+                  </Button>
+                </div>
+                <Button
+                  className='h-auto px-0 text-xs'
+                  onClick={() => void openUrl(AUTO_TUNING_DOCS_URL)}
+                  size='sm'
+                  variant='link'>
+                  {t("networkDiagnostics.autoTuningDocs")}
+                </Button>
+              </>
+            )}
           </div>
         )}
       </div>

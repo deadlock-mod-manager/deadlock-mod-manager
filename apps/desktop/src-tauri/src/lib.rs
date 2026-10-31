@@ -264,6 +264,7 @@ pub fn run() {
       commands::gamebanana_catalog::resolve_gamebanana_download_candidates,
       commands::gamebanana_catalog::inspect_gamebanana_catalog_state,
       commands::gamebanana_catalog::invalidate_gamebanana_catalog_state,
+      commands::network_diagnostics::get_tcp_autotuning_level,
       commands::identity_migration::migrate_submission_identities,
       commands::policy::refresh_policy_manifest,
       commands::game::find_steam_path,

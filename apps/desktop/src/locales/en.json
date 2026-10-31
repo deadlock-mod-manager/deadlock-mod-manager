@@ -5195,6 +5195,9 @@
     "copy": "Copy results",
     "copyUrl": "Copy address",
     "urlCopied": "Address copied to clipboard",
+    "copyCommand": "Copy command",
+    "commandCopied": "Command copied to clipboard",
+    "autoTuningDocs": "Read more in the troubleshooting guide",
     "copied": "Diagnostics copied to clipboard",
     "runAgain": "Run again",
     "checks": {
@@ -5205,7 +5208,8 @@
       "gamebanana": "GameBanana",
       "deadlockApi": "Deadlock API (stats)",
       "deadlockAssets": "Deadlock API (assets)",
-      "catalog": "Local mod catalog"
+      "catalog": "Local mod catalog",
+      "tcpAutoTuning": "Windows TCP auto-tuning"
     },
     "results": {
       "online": "Your system reports a network connection",
@@ -5224,7 +5228,9 @@
       "catalogReady": "{{count}} mods cached, browsing works offline",
       "catalogStale": "{{count}} mods cached, but the catalog is out of date",
       "catalogEmpty": "No mods downloaded yet",
-      "catalogCheckFailed": "Couldn't read the local catalog"
+      "catalogCheckFailed": "Couldn't read the local catalog",
+      "autoTuningOn": "Receive window auto-tuning is {{level}}",
+      "autoTuningRestricted": "Receive window auto-tuning is {{level}}. That limits how much data each connection can have in flight, which slows downloads from distant servers"
     },
     "fixes": {
       "checkConnection": "Check that your network cable or Wi-Fi is connected and airplane mode is off.",
@@ -5241,7 +5247,8 @@
       "checkDeadlockApi": "Open deadlock-api.com in your browser. If it doesn't load there either, the service is having problems.",
       "allowFirewall": "Allow access to {{host}} in your firewall, antivirus or router. That is the address the app could not reach.",
       "syncCatalog": "Open Settings → Tools and resync the mod catalog, or restart the app.",
-      "restartApp": "Restart Deadlock Mod Manager. If it keeps happening, ask for help on our Discord and include the copied results."
+      "restartApp": "Restart Deadlock Mod Manager. If it keeps happening, ask for help on our Discord and include the copied results.",
+      "enableAutoTuning": "To turn it back on, run this command in PowerShell opened as administrator, then restart any download that is still running. If you turned it off on purpose, you can leave it."
     },
     "verdict": {
       "running": "Running checks…",
