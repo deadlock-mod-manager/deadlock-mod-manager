@@ -29,6 +29,7 @@
   },
   "navigation": {
     "dashboard": "Главная",
+    "plugins": "",
     "myMods": "Библиотека модов",
     "getMods": "Найти моды",
     "addMods": "Добавить локальный мод",
@@ -4553,6 +4554,10 @@
       "live-scoreboard": {
         "title": "",
         "description": ""
+      },
+      "plugins": {
+        "title": "",
+        "description": ""
       }
     }
   },
@@ -5899,14 +5904,10 @@
     }
   },
   "plugins": {
-    "official": "",
-    "thirdParty": "",
     "themes": {
       "title": "",
       "themeDescription": "",
       "settingsDescription": "",
-      "detailedDescription": "",
-      "usageInstructions": "",
       "preDefinedThemes": "",
       "customThemes": "",
       "preDefinedDescription": "",
@@ -6230,7 +6231,475 @@
     },
     "usageInstructions": "",
     "renderActive": "",
-    "homepage": ""
+    "homepage": "",
+    "page": {
+      "managePlugins": "",
+      "notInstalled": {
+        "title": "",
+        "body": ""
+      },
+      "hostBar": {
+        "version": "",
+        "by": "",
+        "sandboxed": "",
+        "access": "",
+        "reload": "",
+        "more": "",
+        "turnOn": "",
+        "turnOff": "",
+        "remove": ""
+      },
+      "notResponding": "",
+      "starting": {
+        "hint": ""
+      },
+      "noAnswer": {
+        "title": "",
+        "body": "",
+        "reload": ""
+      },
+      "off": {
+        "title": "",
+        "body": "",
+        "turnOn": ""
+      },
+      "stopped": {
+        "title": "",
+        "crashed": "",
+        "lastError": "",
+        "lastErrorUnknownTime": "",
+        "noError": "",
+        "restart": "",
+        "copyDetails": "",
+        "copied": "",
+        "copyFailed": ""
+      },
+      "noPage": {
+        "title": "",
+        "body": ""
+      },
+      "blocked": {
+        "title": "",
+        "files": "",
+        "filesOnly": "",
+        "modsIn": "",
+        "modsInOnly": "",
+        "mods": "",
+        "modsOnly": "",
+        "network": "",
+        "networkOnly": "",
+        "networkAny": "",
+        "game": "",
+        "events": "",
+        "storage": "",
+        "notifications": "",
+        "unknown": "",
+        "generic": "",
+        "review": "",
+        "dismiss": ""
+      },
+      "setup": {
+        "title": "",
+        "subtitle": "",
+        "fromFile": "",
+        "label": "",
+        "ready": "",
+        "needed": "",
+        "noFile": "",
+        "noFolder": "",
+        "browse": "",
+        "chooseProfile": "",
+        "createProfile": "",
+        "createProfileHint": "",
+        "testProfileName": "",
+        "recommended": "",
+        "profileMods_one": "",
+        "profileMods_other": "",
+        "profileModsInstall_one": "",
+        "profileModsInstall_other": "",
+        "defaultProfile": "",
+        "createFailed": "",
+        "neverOffline": "",
+        "neverOnline": "",
+        "stepsLeft_one": "",
+        "stepsLeft_other": "",
+        "enable": "",
+        "enabled": "",
+        "enableFailed": ""
+      },
+      "remove": {
+        "action": "",
+        "title": "",
+        "body": "",
+        "done": "",
+        "failed": ""
+      },
+      "toggleFailed": "",
+      "update": {
+        "banner_one": "",
+        "banner_other": "",
+        "bannerNothingNew": "",
+        "review": "",
+        "title": "",
+        "intro_one": "",
+        "intro_other": "",
+        "introNothingNew": "",
+        "changes": "",
+        "new": "",
+        "unchanged": "",
+        "removed": "",
+        "whatsNew": "",
+        "note": "",
+        "keep": "",
+        "allow": "",
+        "close": "",
+        "applied": "",
+        "applyFailed": "",
+        "discardFailed": "",
+        "waits": {
+          "title": "",
+          "body": ""
+        }
+      }
+    },
+    "state": {
+      "running": "",
+      "needsSetup": "",
+      "needsAccess": "",
+      "stopped": "",
+      "stoppedAfterErrors": "",
+      "off": "",
+      "updateReady": "",
+      "starting": ""
+    },
+    "access": {
+      "blocked": {
+        "title": "",
+        "internet": "",
+        "otherSites": "",
+        "files": "",
+        "otherFiles": "",
+        "profiles": "",
+        "defaultProfile": "",
+        "otherProfiles": "",
+        "runningPrograms": "",
+        "otherPlugins": ""
+      },
+      "sheet": {
+        "title": "",
+        "description": "",
+        "required": "",
+        "progress": "",
+        "recentRequests": "",
+        "seeAll": "",
+        "noRequests": "",
+        "applyNote": "",
+        "done": "",
+        "close": ""
+      },
+      "actions": {
+        "changeFile": "",
+        "changeFolder": "",
+        "changeProfile": "",
+        "clearData": "",
+        "setUp": "",
+        "noTestProfiles": "",
+        "notChosen": "",
+        "unknownProfile": "",
+        "grantSaved": "",
+        "grantFailed": "",
+        "clearConfirmTitle": "",
+        "clearConfirmBody": "",
+        "cleared": "",
+        "clearFailed": "",
+        "revokeAll": "",
+        "revokeConfirmTitle": "",
+        "revokeConfirmBody": "",
+        "revokeConfirmAction": "",
+        "revoked": "",
+        "revokeFailed": ""
+      }
+    },
+    "permissions": {
+      "files": {
+        "title": {
+          "fileRead": "",
+          "fileReadWrite": "",
+          "folderRead": "",
+          "folderReadWrite": ""
+        },
+        "detail": {
+          "fileRead": "",
+          "fileReadWrite": "",
+          "folderRead": "",
+          "folderReadWrite": ""
+        },
+        "note": {
+          "file": "",
+          "folder": "",
+          "typed": ""
+        },
+        "short": {
+          "fileRead": "",
+          "fileReadWrite": "",
+          "folderRead": "",
+          "folderReadWrite": "",
+          "fileReadTyped": "",
+          "fileReadWriteTyped": "",
+          "folderReadTyped": "",
+          "folderReadWriteTyped": ""
+        },
+        "pick": {
+          "file": "",
+          "folder": "",
+          "filter": ""
+        }
+      },
+      "mods": {
+        "title": {
+          "read": "",
+          "readAll": "",
+          "install": "",
+          "readInstall": ""
+        },
+        "detail": {
+          "read": "",
+          "readAll": "",
+          "install": "",
+          "readInstall": ""
+        },
+        "note": {
+          "read": "",
+          "readAll": "",
+          "install": "",
+          "readInstall": ""
+        },
+        "short": {
+          "read": "",
+          "readAll": "",
+          "install": "",
+          "readInstall": ""
+        },
+        "allProfiles": ""
+      },
+      "network": {
+        "title": "",
+        "detail": "",
+        "note": "",
+        "short": ""
+      },
+      "game": {
+        "title": "",
+        "detail": "",
+        "note": "",
+        "scope": "",
+        "short": ""
+      },
+      "events": {
+        "title": "",
+        "detail": "",
+        "note": "",
+        "scope": "",
+        "short": ""
+      },
+      "storage": {
+        "title": "",
+        "detail": "",
+        "note": "",
+        "value": "",
+        "short": ""
+      },
+      "notifications": {
+        "title": "",
+        "detail": "",
+        "note": "",
+        "scope": "",
+        "short": ""
+      },
+      "summary": {
+        "online": "",
+        "offline": "",
+        "none": ""
+      }
+    },
+    "notification": {
+      "title": ""
+    },
+    "activity": {
+      "deployed": "",
+      "deployedRequest": "",
+      "staged_one": "",
+      "staged_other": "",
+      "stagedRequest": "",
+      "stagedAny": "",
+      "fetched": "",
+      "fetchedAny": "",
+      "wrote": "",
+      "wroteAny": "",
+      "notified": "",
+      "aProfile": "",
+      "blockedFile": "",
+      "blockedFileAny": "",
+      "blockedMods": "",
+      "blockedModsAny": "",
+      "blockedNetwork": "",
+      "blockedNetworkAny": "",
+      "blockedGame": "",
+      "blockedEvents": "",
+      "blockedStorage": "",
+      "blockedNotifications": "",
+      "blockedMethod": "",
+      "blockedOther": "",
+      "granted": "",
+      "revoked": "",
+      "updated": "",
+      "updatedAny": "",
+      "dataCleared": "",
+      "stopped": "",
+      "empty": "",
+      "loadFailed": ""
+    },
+    "time": {
+      "seconds": "",
+      "minutes": "",
+      "hours": "",
+      "days_one": "",
+      "days_other": "",
+      "weeks_one": "",
+      "weeks_other": "",
+      "months_one": "",
+      "months_other": "",
+      "years_one": "",
+      "years_other": ""
+    },
+    "manage": {
+      "tabs": {
+        "installed": "",
+        "discover": "",
+        "updates": ""
+      },
+      "search": {
+        "installed": "",
+        "discover": "",
+        "updates": ""
+      },
+      "installFromFile": "",
+      "installing": "",
+      "chooseArchive": "",
+      "archiveFilter": "",
+      "installed": "",
+      "installFailed": "",
+      "loadFailed": "",
+      "sections": {
+        "installedByYou": "",
+        "updates": ""
+      },
+      "line": {
+        "needsProfile": "",
+        "needsFile": "",
+        "needsFolder": "",
+        "needsSetup": "",
+        "crashed": "",
+        "noAccess": ""
+      },
+      "update": "",
+      "setUp": "",
+      "restart": "",
+      "toggle": "",
+      "toggleFailed": "",
+      "findMore": {
+        "title": "",
+        "body": "",
+        "browse": ""
+      },
+      "noInstalled": "",
+      "noMatches": "",
+      "updatesEmpty": {
+        "title": "",
+        "body": ""
+      },
+      "panel": {
+        "by": "",
+        "open": "",
+        "more": "",
+        "openPage": "",
+        "copyId": "",
+        "copiedId": "",
+        "version": "",
+        "fromFile": "",
+        "fromCatalog": "",
+        "hash": "",
+        "pageInSidebar": "",
+        "worker": "",
+        "lastCheck": "",
+        "restarts": "",
+        "storage": "",
+        "never": "",
+        "restartsToday": "",
+        "tabs": {
+          "access": "",
+          "activity": "",
+          "about": ""
+        },
+        "intro": "",
+        "recentActivity": "",
+        "seeAll": "",
+        "granted": "",
+        "notGranted": "",
+        "remove": "",
+        "removeConfirmTitle": "",
+        "removeConfirmBody": "",
+        "removed": "",
+        "removeFailed": "",
+        "emptyTitle": "",
+        "emptyBody": ""
+      },
+      "about": {
+        "description": "",
+        "noDescription": "",
+        "changelog": "",
+        "noChangelog": "",
+        "author": "",
+        "unknownAuthor": "",
+        "version": "",
+        "source": "",
+        "installedAt": "",
+        "updatedAt": "",
+        "hash": ""
+      }
+    },
+    "discover": {
+      "installed": "",
+      "install": "",
+      "installing": "",
+      "notPublished": "",
+      "categories": {
+        "all": "",
+        "creator": "",
+        "match": "",
+        "library": "",
+        "audio": "",
+        "hud": ""
+      },
+      "verifiedOnly": "",
+      "verified": "",
+      "unverified": "",
+      "sort": {
+        "label": "",
+        "installs": "",
+        "updated": "",
+        "name": ""
+      },
+      "by": "",
+      "thousands": "",
+      "trust": "",
+      "empty": ""
+    },
+    "catalog": {
+      "creatorWorkspaceBridge": {
+        "description": ""
+      }
+    }
   },
   "accessibility": {
     "deadlockLogoAlt": "",
@@ -6613,7 +7082,21 @@
     "description": "",
     "openExternal": "",
     "required": "",
-    "recommended": ""
+    "recommended": "",
+    "state": {
+      "met": "",
+      "missing": "",
+      "disabled": "",
+      "unverified": "",
+      "shouldBeOff": "",
+      "off": ""
+    },
+    "unmetCount_one": "",
+    "unmetCount_other": "",
+    "installTitle": "",
+    "installBody": "",
+    "installAnyway": "",
+    "loadFirst": ""
   },
   "reports": {
     "reportSubmitted": "",
