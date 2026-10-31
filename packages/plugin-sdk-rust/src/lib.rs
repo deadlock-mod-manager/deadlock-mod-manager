@@ -1,5 +1,5 @@
 //! Guest SDK for Deadlock Mod Manager external plugins: guest ABI v1 and the
-//! SDK 2 host API (see [`api`]).
+//! SDK 1 host API (see [`api`]).
 //!
 //! A plugin backend is a `wasm32-unknown-unknown` module that exports `memory`,
 //! `alloc(len: i32) -> i32`, and `call(ptr: i32, len: i32) -> i64`, and imports

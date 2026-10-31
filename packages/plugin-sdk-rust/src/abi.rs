@@ -4,7 +4,7 @@ pub const ABI_VERSION: u32 = 1;
 
 /// Host API version these wrappers target. Matches the manifest's
 /// `sdkVersion`.
-pub const SDK_VERSION: u32 = 2;
+pub const SDK_VERSION: u32 = 1;
 
 /// Envelope bounds enforced by the host. The guest applies the same limits so
 /// it fails with a structured error instead of being cut off.
