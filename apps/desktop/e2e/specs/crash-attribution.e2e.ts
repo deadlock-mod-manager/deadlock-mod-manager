@@ -63,6 +63,35 @@ async function exerciseCrashCause(world: string) {
   await expect(modCard()).toHaveText(
     expect.stringContaining("Possible crash cause"),
   );
+  await browser.execute(() =>
+    window["__TAURI_INTERNALS__"].invoke("plugin:event|emit", {
+      event: "addons-vpks-changed",
+      payload: null,
+    }),
+  );
+  await expect(modCard()).not.toHaveText(
+    expect.stringContaining("Possible crash cause"),
+  );
+  await deliverReport({
+    ...crashReport(true),
+    sessionId: "fixture-resource-crash-before-disable",
+  });
+  dialog = await $('[role="dialog"]');
+  await dialog.$("button=I closed it").click();
+  await waitForOverlaysClosed();
+  await expect(modCard()).toHaveText(
+    expect.stringContaining("Possible crash cause"),
+  );
+  const toggle = () =>
+    $(`[role="switch"][aria-label="Enable mod ${PRIMARY.name}"]`);
+  await toggle().click();
+  await expect(toggle()).toHaveAttribute("aria-checked", "false");
+  await expect(modCard()).not.toHaveText(
+    expect.stringContaining("Possible crash cause"),
+  );
+  await toggle().waitForClickable();
+  await toggle().click();
+  await expect(toggle()).toHaveAttribute("aria-checked", "true");
   await assertReliabilityDisk(
     world,
     { [PRIMARY.id]: "original" },

@@ -27,6 +27,7 @@ import type {
   SessionStartedEvent,
 } from "@/lib/launch-health/types";
 import logger from "@/lib/logger";
+import { ADDONS_CHANGED_EVENT } from "@/lib/mods/missing-vpks";
 import { STALE_TIME_POLL } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 import { isGameRunning } from "@/lib/tauri-commands";
@@ -181,6 +182,7 @@ export const useCrashCheck = () => {
     // Pending reports are read only once the listeners are live, so a session
     // that ends in between isn't missed until the next start.
     void Promise.all([
+      listen(ADDONS_CHANGED_EVENT, () => setRecentCrashReport(null)).then(keep),
       listen<SessionReport>(SESSION_ENDED_EVENT, (event) =>
         handleReports([event.payload]),
       ).then(keep),

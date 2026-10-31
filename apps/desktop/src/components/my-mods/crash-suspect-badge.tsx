@@ -9,11 +9,15 @@ import { toIsoString } from "@/lib/launch-health/client-fingerprint";
 import { useRecentCrashReport } from "@/lib/launch-health/crash-suspect";
 import { modFilesChanged } from "@/lib/launch-health/evaluate";
 import { usePersistedStore } from "@/lib/store";
+import { ModStatus } from "@/types/mods";
 
 export function CrashSuspectBadge({ modId }: { modId: string }) {
   const { t } = useTranslation();
   const report = useRecentCrashReport((state) => state.report);
   const profileId = usePersistedStore((state) => state.activeProfileId);
+  const enabled = usePersistedStore((state) =>
+    state.isModEnabledInCurrentProfile(modId),
+  );
   const mod = usePersistedStore((state) =>
     state.localMods.find((item) => item.remoteId === modId),
   );
@@ -24,6 +28,8 @@ export function CrashSuspectBadge({ modId }: { modId: string }) {
     report?.fingerprint.client?.profileId !== profileId ||
     report?.crashSuspect?.modId !== modId ||
     !mod ||
+    mod.status !== ModStatus.Installed ||
+    !enabled ||
     !atCrash ||
     // An update or reinstall since the crash replaced the files it named
     modFilesChanged(atCrash, {

@@ -34,9 +34,14 @@ fn resource_paths(message: &str) -> Vec<String> {
       .chars()
       .next()
       .is_some_and(|next| next.is_ascii_alphanumeric() || matches!(next, '_' | '.' | '-'));
-    // The regex can also start mid-path, e.g. inside `../materials/x.vmat_c`.
-    let relative = message[..found.start()].ends_with("./");
-    if suffixed || relative || path.split('/').any(|part| part == ".." || part == ".") {
+    // A resource root inside a longer path would attribute a truncated suffix.
+    let prefixed = message[..found.start()]
+      .chars()
+      .next_back()
+      .is_some_and(|previous| {
+        previous.is_ascii_alphanumeric() || matches!(previous, '/' | '_' | '.' | '-')
+      });
+    if suffixed || prefixed || path.split('/').any(|part| part == ".." || part == ".") {
       continue;
     }
     // Fatal errors can name the source vdata while the VPK stores the compiled resource.
@@ -204,6 +209,16 @@ mod tests {
     std::fs::create_dir_all(target.parent().unwrap()).unwrap();
     std::fs::write(&target, contents).unwrap();
     vpkmanager::pack_directory(source.path(), &dir.join(name)).unwrap();
+  }
+  #[test]
+  fn rejects_resource_roots_embedded_in_other_paths() {
+    for prefix in ["foo/", "/", "c:/", "./", "../", "foo\\", "-"] {
+      assert!(resource_paths(&format!("Failed: {prefix}materials/hud.vmat_c")).is_empty());
+    }
+    assert_eq!(
+      resource_paths("Failed: 'materials/hud.vmat_c'"),
+      ["materials/hud.vmat_c"]
+    );
   }
   #[test]
   fn resolves_the_winning_mounted_vpk_and_refuses_changed_files() {
