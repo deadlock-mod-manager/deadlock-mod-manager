@@ -454,11 +454,33 @@ const assertSegmentedNetwork = (
         "Three segmented files on one server may only use four connections",
       );
       return;
-    default: {
-      // Corrupt, cancel and restart download twice; pause once.
-      const attempts = scenario === "downloads-segmented-pause" ? 1 : 2;
+    case "downloads-segmented-pause": {
       assert.equal(whole.length, 0);
-      assert.deepEqual(rangesOf(ranged), plannedTimes(attempts));
+      assert.deepEqual(rangesOf(ranged.slice(0, 4)), plannedTimes(1));
+      const resumed = new Map(
+        ranged.slice(4).map((request) => {
+          const range = String(request.headers.range);
+          assert.match(range, /^bytes=\d+-\d+$/);
+          const [start, end] = range.slice(6).split("-").map(Number);
+          return [end, start];
+        }),
+      );
+      assert.equal(ranged.length, 8);
+      assert.equal(resumed.size, 4);
+      let reusedPrefix = false;
+      for (const range of planned) {
+        const [start, end] = range.slice(6).split("-").map(Number);
+        const offset = resumed.get(end);
+        assert.ok(offset !== undefined && offset >= start && offset <= end);
+        reusedPrefix ||= offset > start;
+      }
+      assert.ok(reusedPrefix, "Resume must reuse partial segment bytes");
+      allPartial(ranged);
+      return;
+    }
+    default: {
+      assert.equal(whole.length, 0);
+      assert.deepEqual(rangesOf(ranged), plannedTimes(2));
       allPartial(ranged);
     }
   }

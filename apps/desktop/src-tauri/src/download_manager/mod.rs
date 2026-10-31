@@ -1779,7 +1779,11 @@ impl DownloadManager {
   /// A paused download keeps its partial files while it waits in the queue.
   async fn remove_partials(task: &DownloadTask) {
     for file in &task.files {
-      downloader::remove_partial_download(&task.target_dir.join(&file.name)).await;
+      let target = task.target_dir.join(&file.name);
+      downloader::remove_partial_download(&target).await;
+      if let Err(error) = discard_staging(&target).await {
+        log::warn!("Failed to remove segment staging for {target:?}: {error}");
+      }
     }
   }
 
@@ -2087,6 +2091,45 @@ mod tests {
       completion: None,
       paused: false,
     }
+  }
+
+  #[tokio::test]
+  async fn cancelling_paused_download_removes_both_partial_formats() {
+    let directory = tempfile::tempdir().unwrap();
+    let target = directory.path().join("mod.vpk");
+    let partial = downloader::partial_download_path(&target);
+    let metadata = directory.path().join("mod.vpk.partial.meta");
+    let staging = segment_staging::staging_dir(&target);
+    tokio::fs::write(&partial, b"partial").await.unwrap();
+    tokio::fs::write(&metadata, b"metadata").await.unwrap();
+    tokio::fs::create_dir_all(&staging).await.unwrap();
+    tokio::fs::write(staging.join("0.part"), b"segment")
+      .await
+      .unwrap();
+    tokio::fs::write(directory.path().join("keep.txt"), b"unrelated")
+      .await
+      .unwrap();
+    let mut download = queued("paused");
+    download.task.target_dir = directory.path().to_path_buf();
+    download.task.files.push(DownloadFileDto {
+      url: "https://example.invalid/mod.vpk".to_string(),
+      fallback_urls: Vec::new(),
+      name: "mod.vpk".to_string(),
+      size: 1024,
+      md5_checksum: None,
+    });
+
+    DownloadManager::remove_partials(&download.task).await;
+
+    assert!(!partial.exists());
+    assert!(!metadata.exists());
+    assert!(!staging.exists());
+    assert_eq!(
+      tokio::fs::read(directory.path().join("keep.txt"))
+        .await
+        .unwrap(),
+      b"unrelated"
+    );
   }
 
   fn mod_ids(queue: &VecDeque<QueuedDownload>) -> Vec<(&str, bool)> {

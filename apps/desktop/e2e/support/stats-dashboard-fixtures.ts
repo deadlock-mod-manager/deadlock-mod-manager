@@ -141,6 +141,19 @@ const baseRoutes = (): FixtureRoute[] => [
     ]),
   },
   { method: "GET", path: "/v1/assets/ranks", status: 200, body: "[]" },
+  { method: "GET", path: "/v1/assets/ranked-seasons", status: 200, body: "[]" },
+  {
+    method: "GET",
+    path: "/v1/analytics/badge-distribution",
+    status: 200,
+    body: "[]",
+  },
+  {
+    method: "GET",
+    path: "/v1/analytics/player-stats/metrics",
+    status: 200,
+    body: "{}",
+  },
   {
     method: "GET",
     path: `/v1/players/${STATS_ACCOUNT_ID}/match-history`,
@@ -340,7 +353,11 @@ export const prepareStatsDashboardWorld = async (world: CreatedWorld) => {
         ...persisted,
         state: {
           ...persisted.state,
-          experimentalFeatures: { ...features, "player-stats": true },
+          experimentalFeatures: {
+            ...features,
+            "player-stats": true,
+            "live-scoreboard": true,
+          },
           statsAccountId: STATS_ACCOUNT_ID,
           statsDashboard:
             world.configuration.caseId === "stats-broken-endpoints"

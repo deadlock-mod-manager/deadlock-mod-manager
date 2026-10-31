@@ -27,8 +27,7 @@ export const catalogRefreshRoutes = async () => {
         path: "/apiv11/Sound/Index",
         query: { _sSort: "Generic_LatestModified" },
         status: 200,
-        chunkBytes: 1024,
-        chunkDelayMs: 500,
+        headerDelayMs: 1000,
         body: JSON.stringify({
           _aMetadata: { _nRecordCount: 1, _nPerpage: 50, _bIsComplete: true },
           _aRecords: [sound],

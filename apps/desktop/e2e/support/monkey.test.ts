@@ -67,6 +67,7 @@ describe("monkey replay", () => {
       try {
         const url = `${server.origin}/dl/930001/v2`;
         expect((await fetch(url)).status).toBe(401);
+        expect((await fetch(`${server.origin}/dl/930001`)).status).toBe(401);
         expect((await fetch(url)).status).toBe(200);
         expect(server.unmatchedRequests()).toEqual([]);
       } finally {

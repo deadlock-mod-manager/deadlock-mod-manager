@@ -10,6 +10,7 @@ import {
   openFilesTab,
   reveal,
   selectDownloads,
+  waitForDisplayed,
 } from "./ui";
 import { step } from "./evidence";
 
@@ -264,9 +265,9 @@ export const applyInstalledFiles = (
     const dialog = await openCatalogOptions(modName);
     const installed = await chooseInstalledFiles(names);
     await installed.$("button=Apply").click();
-    await expect(
-      $('//*[@data-sonner-toast and contains(., "Mod files updated")]'),
-    ).toBeDisplayed();
+    await waitForDisplayed(
+      '//*[@data-sonner-toast and contains(., "Mod files updated")]',
+    );
     await expect(dialog).not.toBeDisplayed();
   });
 

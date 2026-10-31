@@ -82,15 +82,27 @@ export const describeWidgets = (
 
 export const tabTrigger = (id: string) => $(`[data-tab-id="${id}"]`);
 const tabByTitle = (title: string) =>
-  $(`//button[@role="tab" and normalize-space()="${title}"]`);
+  $(`//button[@role="tab" and normalize-space(text())="${title}"]`);
 
 export const tabIds = async () =>
   Promise.all(
     await $$("[data-tab-id]").map((tab) => tab.getAttribute("data-tab-id")),
   );
 
-export const tabTitles = async () =>
-  Promise.all(await $$("[data-tab-id]").map((tab) => tab.getText()));
+const readTabTitles = (selector: string) =>
+  browser.execute(
+    (target: string) =>
+      Array.from(document.querySelectorAll(target), (tab) =>
+        Array.from(tab.childNodes)
+          .filter((node) => node.nodeType === Node.TEXT_NODE)
+          .map((node) => node.textContent)
+          .join("")
+          .trim(),
+      ),
+    selector,
+  );
+
+export const tabTitles = () => readTabTitles("[data-tab-id]");
 
 export const selectTab = (title: string) =>
   step(`select the ${title} tab`, async () => {
@@ -121,7 +133,7 @@ export const selectTab = (title: string) =>
  * keeps evaluating a node React has replaced instead of reporting it stale.
  */
 const activeTabTitle = async () =>
-  $('[data-tab-id][data-state="active"]').getText();
+  (await readTabTitles('[data-tab-id][data-state="active"]'))[0];
 
 export const expectActiveTab = (title: string) =>
   browser.waitUntil(async () => (await activeTabTitle()) === title, {
