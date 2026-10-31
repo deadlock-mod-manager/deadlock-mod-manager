@@ -3195,7 +3195,8 @@
       "changelogTitle_other": "",
       "skip": "",
       "skipDescription": "",
-      "skipped": ""
+      "skipped": "",
+      "chooseFiles": ""
     },
     "copyModList": "",
     "moreActions": "",

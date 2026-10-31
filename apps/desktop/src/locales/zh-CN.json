@@ -3195,7 +3195,8 @@
       "changelogTitle_other": "自你安装以来的新内容（{{count}} 项更新）",
       "skip": "跳过此更新",
       "skipDescription": "在作者发布更新版本之前隐藏此更新",
-      "skipped": "已跳过 {{name}} 的更新"
+      "skipped": "已跳过 {{name}} 的更新",
+      "chooseFiles": ""
     },
     "copyModList": "",
     "moreActions": "",
