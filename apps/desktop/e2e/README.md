@@ -196,6 +196,7 @@ M4 uses real Rust HTTP transfers against binary fixture responses. Run any case 
 | `downloads-segmented` | Turn on Faster downloads in Settings; a 16 MiB file arrives as four overlapping 206 responses on four connections, under 60% of the time one throttled connection needs |
 | `downloads-segmented-off` | The same throttled file with the setting off: one ordinary request, no faster than one connection allows |
 | `downloads-segmented-no-range` | The server answers the first segment with 200; the download falls back to one ordinary request and completes |
+| `downloads-segmented-range-error` | The server fails the first segment's request with 400 but serves an ordinary request; the download falls back to it and completes |
 | `downloads-segmented-wrong-range` | The third segment comes back one byte late; every segment stops, the staging is removed, and one ordinary request completes the file |
 | `downloads-segmented-corrupt` | One segment carries a flipped byte; the whole-file MD5 fails without publishing a file or leaving staging behind; UI retry succeeds |
 | `downloads-segmented-pause` / `-cancel` / `-restart` | The pause, cancel and restart flows above with segments; paused and interrupted parts are exact prefixes of their own spans |

@@ -708,6 +708,7 @@ export const scenarios = {
   "downloads-segmented": downloads,
   "downloads-segmented-off": downloads,
   "downloads-segmented-no-range": downloads,
+  "downloads-segmented-range-error": downloads,
   "downloads-segmented-wrong-range": downloads,
   "downloads-segmented-corrupt": downloads,
   "downloads-segmented-pause": downloads,

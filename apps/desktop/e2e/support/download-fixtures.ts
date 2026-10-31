@@ -98,6 +98,10 @@ const segmentedRoutes = (scenario: string): FixtureRoute[] => {
     case "downloads-segmented-no-range":
       sequence = [{ ...good, range: false }];
       break;
+    case "downloads-segmented-range-error":
+      // Fails the first segment's request but serves an ordinary one.
+      sequence = [{ status: 400, body: "Bad Request" }, good];
+      break;
     case "downloads-segmented-wrong-range":
       // The third segment comes back one byte later than it says it starts.
       sequence = [{ ...good, rangeFrom: { at: third, serveFrom: third + 1 } }];
@@ -425,25 +429,35 @@ const assertSegmentedNetwork = (
       return;
     }
     case "downloads-segmented-no-range":
+    case "downloads-segmented-range-error":
       assert.deepEqual(
         requests.map((request) => [
           request.headers.range,
           request.responseStatus,
         ]),
         [
-          [planned[0], 200],
+          [planned[0], scenario === "downloads-segmented-no-range" ? 200 : 400],
           [undefined, 200],
         ],
-        "A server ignoring Range must get one ordinary request",
+        "A server ignoring or failing Range must get one ordinary request",
       );
       return;
-    case "downloads-segmented-wrong-range":
-      assert.deepEqual(rangesOf(ranged), plannedTimes(1));
+    case "downloads-segmented-wrong-range": {
+      // The misanswered third segment stops the others, so one that hadn't
+      // sent its request yet never does.
+      const sent = rangesOf(ranged);
+      assert.ok(
+        sent.every((range) => planned.includes(range)),
+        `${sent.join(", ")} are not the planned spans`,
+      );
+      assert.equal(new Set(sent).size, sent.length, "A span was asked twice");
+      assert.ok(sent.includes(planned[0]) && sent.includes(planned[2]));
       allPartial(ranged);
       assert.equal(whole.length, 1);
       assert.equal(requests.at(-1)?.headers.range, undefined);
       assert.equal(requests.at(-1)?.responseStatus, 200);
       return;
+    }
     case "downloads-segmented-budget":
       assert.equal(whole.length, 0);
       assert.equal(ranged.length, BUDGET_FILES.length * 4);
