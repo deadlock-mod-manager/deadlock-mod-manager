@@ -369,9 +369,11 @@ const LiveMatch = ({
       ? "firstMinute"
       : source.benchmarkPending
         ? "loading"
-        : rows.length === 0
-          ? "unavailable"
-          : null;
+        : rows.length > 0
+          ? null
+          : source.benchmarkFailed
+            ? "retrying"
+            : "unavailable";
 
   return (
     <>

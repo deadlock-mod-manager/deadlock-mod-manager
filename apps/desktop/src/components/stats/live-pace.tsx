@@ -20,6 +20,7 @@ export type LivePaceNotice =
   | "unknownHero"
   | "firstMinute"
   | "loading"
+  | "retrying"
   | "unavailable";
 
 interface LivePaceProps {

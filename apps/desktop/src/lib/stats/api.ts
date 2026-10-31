@@ -218,21 +218,20 @@ export const getPerformanceCurve = (accountId: number, heroId: number) =>
 
 /**
  * How players on one hero inside a badge range stand at each point of a match,
- * in steps of game time. What a running match is graded against.
+ * in steps of game time. What a running match is graded against. `badges` is
+ * null for everyone, which leaves the badge filter out of the request.
  */
 export const getBracketCurve = ({
   heroId,
-  minBadge,
-  maxBadge,
+  badges,
   scope,
 }: {
   heroId: number;
-  minBadge: number;
-  maxBadge: number;
+  badges: { minBadge: number; maxBadge: number } | null;
   scope: StatsScope;
 }) =>
   getList(
-    `/v1/analytics/player-performance-curve?hero_ids=${heroId}&min_average_badge=${minBadge}&max_average_badge=${maxBadge}&resolution=0&${statsScopeQuery(scope)}`,
+    `/v1/analytics/player-performance-curve?hero_ids=${heroId}${badges ? `&min_average_badge=${badges.minBadge}&max_average_badge=${badges.maxBadge}` : ""}&resolution=0&${statsScopeQuery(scope)}`,
     performanceCurvePointSchema,
   );
 

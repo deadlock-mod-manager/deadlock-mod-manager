@@ -32,6 +32,8 @@ export interface LiveSource {
   /** The bracket's curve on your hero; empty until it loads. */
   curve: PerformanceCurvePoint[];
   benchmarkPending: boolean;
+  /** The curve request failed; it is asked for again in the background. */
+  benchmarkFailed: boolean;
   trail: SoulsPoint[];
   matches: MatchHistoryEntry[];
   finalGrades: Record<string, Grade>;
@@ -111,6 +113,7 @@ export const useRealLiveSource = ({
     lobby,
     curve: benchmark.data?.data ?? NO_CURVE,
     benchmarkPending: benchmark.isPending,
+    benchmarkFailed: benchmark.isError,
     trail,
     matches: you.matches,
     finalGrades,
