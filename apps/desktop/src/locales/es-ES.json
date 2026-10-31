@@ -1,14 +1,14 @@
 {
   "modelConflict": {
-    "keptCurrent": "",
-    "replaced": ""
+    "keptCurrent": "Saltado para mantener los aspectos actuales",
+    "replaced": "Remplazado por otro aspecto ya seleccionado"
   },
   "launchRepair": {
     "title_one": "",
     "title_other": "",
-    "description": "",
-    "localImport": "",
-    "localNotice": "",
+    "description": "Reinstala los mods afectados o deshabilítalos antes de lanzar.",
+    "localImport": "Importar de manera local",
+    "localNotice": "Las importaciones locales no se pueden volver a descargar. Reinstalarlas y ejecutarlas lo desactivará.",
     "reinstallAndLaunch": "",
     "disableAndLaunch": "",
     "progress": "",
@@ -5195,6 +5195,9 @@
     "copy": "",
     "copyUrl": "",
     "urlCopied": "",
+    "copyCommand": "",
+    "commandCopied": "",
+    "autoTuningDocs": "",
     "copied": "",
     "runAgain": "",
     "checks": {
@@ -5205,7 +5208,8 @@
       "gamebanana": "",
       "deadlockApi": "",
       "deadlockAssets": "",
-      "catalog": ""
+      "catalog": "",
+      "tcpAutoTuning": ""
     },
     "results": {
       "online": "",
@@ -5224,7 +5228,9 @@
       "catalogReady": "",
       "catalogStale": "",
       "catalogEmpty": "",
-      "catalogCheckFailed": ""
+      "catalogCheckFailed": "",
+      "autoTuningOn": "",
+      "autoTuningRestricted": ""
     },
     "fixes": {
       "checkConnection": "",
@@ -5241,7 +5247,8 @@
       "checkDeadlockApi": "",
       "allowFirewall": "",
       "syncCatalog": "",
-      "restartApp": ""
+      "restartApp": "",
+      "enableAutoTuning": ""
     },
     "verdict": {
       "running": "",

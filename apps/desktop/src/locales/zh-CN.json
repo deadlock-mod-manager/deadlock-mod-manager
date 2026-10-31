@@ -5195,6 +5195,9 @@
     "copy": "复制结果",
     "copyUrl": "复制地址",
     "urlCopied": "地址已复制到剪贴板",
+    "copyCommand": "",
+    "commandCopied": "",
+    "autoTuningDocs": "",
     "copied": "诊断结果已复制到剪贴板",
     "runAgain": "重新运行",
     "checks": {
@@ -5205,7 +5208,8 @@
       "gamebanana": "",
       "deadlockApi": "Deadlock API（统计）",
       "deadlockAssets": "Deadlock API（素材）",
-      "catalog": "本地模组目录"
+      "catalog": "本地模组目录",
+      "tcpAutoTuning": ""
     },
     "results": {
       "online": "系统报告已连接网络",
@@ -5224,7 +5228,9 @@
       "catalogReady": "已缓存 {{count}} 个模组，可离线浏览",
       "catalogStale": "已缓存 {{count}} 个模组，但目录已过期",
       "catalogEmpty": "尚未下载任何模组",
-      "catalogCheckFailed": "无法读取本地目录"
+      "catalogCheckFailed": "无法读取本地目录",
+      "autoTuningOn": "",
+      "autoTuningRestricted": ""
     },
     "fixes": {
       "checkConnection": "请确认网线或 Wi-Fi 已连接，并已关闭飞行模式。",
@@ -5241,7 +5247,8 @@
       "checkDeadlockApi": "在浏览器中打开 deadlock-api.com。如果在浏览器中也打不开，说明该服务自身出了问题。",
       "allowFirewall": "",
       "syncCatalog": "打开 设置 → 工具 重新同步模组目录，或重启应用。",
-      "restartApp": "重启 Deadlock Mod Manager。如果问题持续出现，请到我们的 Discord 求助，并附上复制的结果。"
+      "restartApp": "重启 Deadlock Mod Manager。如果问题持续出现，请到我们的 Discord 求助，并附上复制的结果。",
+      "enableAutoTuning": ""
     },
     "verdict": {
       "running": "正在运行检查…",

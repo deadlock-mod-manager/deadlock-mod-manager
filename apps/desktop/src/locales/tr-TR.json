@@ -5195,6 +5195,9 @@
     "copy": "Sonuçları kopyala",
     "copyUrl": "Adresi kopyala",
     "urlCopied": "Adres panoya kopyalandı",
+    "copyCommand": "",
+    "commandCopied": "",
+    "autoTuningDocs": "",
     "copied": "Tanılama sonuçları panoya kopyalandı",
     "runAgain": "Yeniden çalıştır",
     "checks": {
@@ -5205,7 +5208,8 @@
       "gamebanana": "GameBanana",
       "deadlockApi": "Deadlock API (istatistikler)",
       "deadlockAssets": "Deadlock API (varlıklar)",
-      "catalog": "Yerel mod kataloğu"
+      "catalog": "Yerel mod kataloğu",
+      "tcpAutoTuning": ""
     },
     "results": {
       "online": "Sisteminiz ağ bağlantısı olduğunu bildiriyor",
@@ -5224,7 +5228,9 @@
       "catalogReady": "{{count}} mod önbelleğe alındı; çevrimdışıyken göz atabilirsiniz",
       "catalogStale": "{{count}} mod önbelleğe alındı, ancak katalog güncel değil",
       "catalogEmpty": "Henüz mod indirilmedi",
-      "catalogCheckFailed": "Yerel katalog okunamadı"
+      "catalogCheckFailed": "Yerel katalog okunamadı",
+      "autoTuningOn": "",
+      "autoTuningRestricted": ""
     },
     "fixes": {
       "checkConnection": "Ağ kablonuzun takılı olduğundan veya Wi-Fi bağlantınızın etkin olduğundan ve uçak modunun kapalı olduğundan emin olun.",
@@ -5241,7 +5247,8 @@
       "checkDeadlockApi": "Tarayıcınızda deadlock-api.com adresini açın. Orada da yüklenmiyorsa hizmette sorun vardır.",
       "allowFirewall": "Güvenlik duvarınızda, antivirüsünüzde veya yönlendiricinizde {{host}} adresine erişime izin verin. Uygulamanın ulaşamadığı adres budur.",
       "syncCatalog": "Ayarlar → Araçlar bölümünü açıp mod kataloğunu yeniden eşitleyin veya uygulamayı yeniden başlatın.",
-      "restartApp": "Deadlock Mod Manager'ı yeniden başlatın. Sorun sürerse Discord'umuzdan yardım isteyin ve kopyaladığınız sonuçları paylaşın."
+      "restartApp": "Deadlock Mod Manager'ı yeniden başlatın. Sorun sürerse Discord'umuzdan yardım isteyin ve kopyaladığınız sonuçları paylaşın.",
+      "enableAutoTuning": ""
     },
     "verdict": {
       "running": "Kontroller çalıştırılıyor…",

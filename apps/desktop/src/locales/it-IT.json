@@ -5195,6 +5195,9 @@
     "copy": "",
     "copyUrl": "",
     "urlCopied": "",
+    "copyCommand": "",
+    "commandCopied": "",
+    "autoTuningDocs": "",
     "copied": "",
     "runAgain": "",
     "checks": {
@@ -5205,7 +5208,8 @@
       "gamebanana": "",
       "deadlockApi": "",
       "deadlockAssets": "",
-      "catalog": ""
+      "catalog": "",
+      "tcpAutoTuning": ""
     },
     "results": {
       "online": "",
@@ -5224,7 +5228,9 @@
       "catalogReady": "",
       "catalogStale": "",
       "catalogEmpty": "",
-      "catalogCheckFailed": ""
+      "catalogCheckFailed": "",
+      "autoTuningOn": "",
+      "autoTuningRestricted": ""
     },
     "fixes": {
       "checkConnection": "",
@@ -5241,7 +5247,8 @@
       "checkDeadlockApi": "",
       "allowFirewall": "",
       "syncCatalog": "",
-      "restartApp": ""
+      "restartApp": "",
+      "enableAutoTuning": ""
     },
     "verdict": {
       "running": "",
