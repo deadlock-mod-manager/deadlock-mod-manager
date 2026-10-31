@@ -2,7 +2,7 @@
 name = "dmm-plugin-sdk"
 version = "0.1.0"
 edition = "2024"
-description = "Guest SDK for Deadlock Mod Manager external WASM plugins (ABI v1, SDK 2)"
+description = "Guest SDK for Deadlock Mod Manager external WASM plugins (ABI v1, SDK 1)"
 license = "GPL-3.0"
 publish = false
 

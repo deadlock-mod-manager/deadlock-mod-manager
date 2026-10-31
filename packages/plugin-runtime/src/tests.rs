@@ -827,36 +827,24 @@ fn catalog_installs_check_the_published_hash() {
 }
 
 #[test]
-fn schema_1_registries_are_set_aside() {
-  let dir = tempfile::tempdir().unwrap();
-  let root = dir.path().join("plugins");
-  fs::create_dir_all(root.join("packages").join(ID).join("0.1.0-abc")).unwrap();
-  let v1 = json!({
-    "schemaVersion": 1,
-    "nextGeneration": 4,
-    "plugins": { ID: { "manifest": { "permissions": { "required": ["artifact.read"] } } } }
-  });
-  fs::write(root.join("registry.json"), v1.to_string()).unwrap();
-  let fixture = open(dir);
-  assert!(fixture.host.list().is_empty());
-  assert!(!root.join("packages").exists());
-  let backup: Value =
-    serde_json::from_slice(&fs::read(root.join("registry.v1.json.bak")).unwrap()).unwrap();
-  assert_eq!(backup, v1);
+fn registry_version_1_round_trips_and_other_versions_are_preserved() {
+  let fixture = fixture();
+  let root = fixture.host.root();
   fixture.install("0.1.0");
   let saved: Value =
     serde_json::from_slice(&fs::read(root.join("registry.json")).unwrap()).unwrap();
-  assert_eq!(saved["schemaVersion"], 2);
+  assert_eq!(saved["schemaVersion"], 1);
+  assert!(registry::Registry::open(root).unwrap().get(ID).is_some());
 
-  fs::write(
-    root.join("registry.json"),
-    json!({ "schemaVersion": 3 }).to_string(),
-  )
-  .unwrap();
-  assert!(
-    registry::Registry::open(&root).is_err(),
-    "newer schemas are not discarded"
-  );
+  for version in [0, 2] {
+    let mut unsupported = saved.clone();
+    unsupported["schemaVersion"] = json!(version);
+    let bytes = serde_json::to_vec(&unsupported).unwrap();
+    fs::write(root.join("registry.json"), &bytes).unwrap();
+    assert!(registry::Registry::open(root).is_err());
+    assert_eq!(fs::read(root.join("registry.json")).unwrap(), bytes);
+    assert!(root.join("packages").join(ID).is_dir());
+  }
 }
 
 #[test]

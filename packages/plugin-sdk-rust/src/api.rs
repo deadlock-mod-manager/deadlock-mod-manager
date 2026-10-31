@@ -1,4 +1,4 @@
-//! Typed wrappers for the SDK 2 hostcalls. The host enforces every grant and
+//! Typed wrappers for the SDK 1 hostcalls. The host enforces every grant and
 //! scope; these helpers only shape requests and decode responses.
 
 use crate::envelope::{PluginError, codes};

@@ -282,7 +282,7 @@ permissions require consent again. Users can inspect, narrow, or revoke grants i
 plugin settings. Revoking a required permission suspends the plugin; revoking an
 optional permission disables only the associated capability.
 
-### Permission catalog (manifest schema 2, SDK 2)
+### Permission catalog (manifest schema 1, SDK 1)
 
 The first catalog describes DMM's own resources rather than any one plugin's
 workflow. Each ID appears at most once per manifest, across required and
@@ -299,8 +299,8 @@ optional. Unknown IDs, unknown fields, and malformed scopes fail validation.
 
 ```json
 {
-  "schemaVersion": 2,
-  "sdkVersion": 2,
+  "schemaVersion": 1,
+  "sdkVersion": 1,
   "permissions": {
     "required": [
       {

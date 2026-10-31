@@ -2,8 +2,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 use ts_rs::TS;
 
-pub const SCHEMA_VERSION: u32 = 2;
-pub const SDK_VERSION: u32 = 2;
+pub const SCHEMA_VERSION: u32 = 1;
+pub const SDK_VERSION: u32 = 1;
 
 pub const MAX_FILE_EXTENSIONS: usize = 10;
 pub const MAX_NETWORK_HOSTS: usize = 10;
@@ -447,11 +447,11 @@ mod tests {
 
   fn manifest(overrides: serde_json::Value) -> Result<PluginManifest, String> {
     let mut value = json!({
-      "schemaVersion": 2,
+      "schemaVersion": 1,
       "id": "example.creator-workspace-bridge",
       "name": "Creator Workspace Bridge",
       "version": "0.1.0",
-      "sdkVersion": 2,
+      "sdkVersion": 1,
       "ui": "ui/index.html",
       "backend": "backend.wasm",
       "permissions": {
@@ -647,10 +647,10 @@ mod tests {
     }
     assert!(manifest(json!({ "id": "NoNamespace" })).is_err());
     assert!(manifest(json!({ "version": "1.0" })).is_err());
-    let sdk = manifest(json!({ "sdkVersion": 1 })).unwrap_err();
-    assert!(sdk.contains("this host supports SDK 2"), "{sdk}");
-    let schema = manifest(json!({ "schemaVersion": 1 })).unwrap_err();
-    assert!(schema.contains("schemaVersion 1"), "{schema}");
+    let sdk = manifest(json!({ "sdkVersion": 2 })).unwrap_err();
+    assert!(sdk.contains("this host supports SDK 1"), "{sdk}");
+    let schema = manifest(json!({ "schemaVersion": 2 })).unwrap_err();
+    assert!(schema.contains("schemaVersion 2"), "{schema}");
   }
 
   #[test]

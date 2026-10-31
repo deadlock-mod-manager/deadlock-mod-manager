@@ -19,7 +19,7 @@ The watched file and the target profile are picked in DMM's trusted Access UI. T
 
 ### Permissions
 
-Manifest schema 2, SDK 2. All three are required:
+Manifest schema 1, SDK 1. All three are required:
 
 | Permission | Scope                                                  | Used for                                                        |
 | ---------- | ------------------------------------------------------ | --------------------------------------------------------------- |
@@ -71,7 +71,7 @@ The archive is reproducible: entries are stored uncompressed in path order with 
 3. Choose **Set up**: pick the VPK your tool exports and a testing profile (the default profile is never offered).
 4. Enable the plugin. It appears under **Plugins** in the sidebar.
 
-To update, bump `version` in `manifest.json` (and `package.json`), rebuild, and install the new archive the same way. DMM sets aside the old schema 1 plugin registry when moving to scoped permissions; install 0.4.0 again and pick its file and profile. To remove it, use **Remove** in the same list.
+To update, bump `version` in `manifest.json` (and `package.json`), rebuild, and install the new archive the same way. To remove it, use **Remove** in the same list.
 
 ## Test
 

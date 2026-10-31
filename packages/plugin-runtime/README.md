@@ -36,11 +36,11 @@ backend.wasm                 # optional
 
 ```json
 {
-  "schemaVersion": 2,
+  "schemaVersion": 1,
   "id": "example.creator-workspace-bridge",
   "name": "Creator Workspace Bridge",
   "version": "0.1.0",
-  "sdkVersion": 2,
+  "sdkVersion": 1,
   "description": "optional, at most 500 characters",
   "author": "optional, at most 100 characters",
   "icon": "optional Phosphor icon name, e.g. wrench",
@@ -60,7 +60,7 @@ backend.wasm                 # optional
 ```
 
 - Unknown fields, unknown permission IDs and unknown scope fields fail
-  validation. `schemaVersion` and `sdkVersion` must both be 2. `id` is
+  validation. `schemaVersion` and `sdkVersion` must both be 1. `id` is
   lowercase, namespaced (`publisher.name`), 3-64 characters. `version` is
   numeric `MAJOR.MINOR.PATCH`.
 - `icon` matches `^[a-z0-9]+(-[a-z0-9]+)*$` and is at most 40 characters; the
@@ -91,14 +91,12 @@ sorted on parse, so a request is unchanged exactly when it is equal.
 ## Lifecycle
 
 State lives in `<app local data>/external-plugins/`: `registry.json` (installs,
-grants, generations, pending updates; schema 2), `packages/<id>/<version>-<hash>/`
+grants, generations, pending updates; schema 1), `packages/<id>/<version>-<hash>/`
 (the installed package and any pending one) and `data/<id>/` (`storage.json`,
 staged snapshots, deploy state, `activity.json`).
 
-- **Registry migration.** A schema 1 registry (the first permission catalog)
-  is renamed to `registry.v1.json.bak`, `packages/` is deleted and the
-  registry starts empty, with a warning in the log. Those plugins must be
-  installed again. A schema newer than 2 is an error.
+- **Registry format.** The first release uses schema 1. Unsupported versions
+  are reported as errors; registry and package data are left untouched.
 - **Install** leaves the plugin disabled with no grant.
 - **Grant** records consent for every required request, with the resources
   the user picks in trusted host UI:
@@ -446,8 +444,8 @@ resolution (traversal, junctions, the extension filter), chunked reads and
 atomic writes, fetch policy, the notification rate limit, snapshots and quota,
 installs and reconciliation, grant validation, session revocation on
 disable/revoke/update/remove, pending updates (staging, replacing, applying,
-discarding, carrying approvals over and clearing resources), the schema 1
-registry migration, catalog hash checks, the activity log and blocked hook,
+discarding, carrying approvals over and clearing resources), registry version
+validation and persistence, catalog hash checks, the activity log and blocked hook,
 clearing data, crash containment and quarantine, and deployment recovery.
 Desktop adapter tests cover actual profile manifests, profile listing, source
 retention and the address check of the network transport. Worker tests start

@@ -175,11 +175,11 @@ pub(crate) mod tests {
 
   pub(crate) fn manifest_json(version: &str) -> String {
     serde_json::json!({
-      "schemaVersion": 2,
+      "schemaVersion": 1,
       "id": "example.creator-workspace-bridge",
       "name": "Creator Workspace Bridge",
       "version": version,
-      "sdkVersion": 2,
+      "sdkVersion": 1,
       "ui": "ui/index.html",
       "backend": "backend.wasm",
       "permissions": {

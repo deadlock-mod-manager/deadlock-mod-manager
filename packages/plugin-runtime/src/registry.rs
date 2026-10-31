@@ -11,7 +11,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use ts_rs::TS;
 
-pub const REGISTRY_SCHEMA_VERSION: u32 = 2;
+pub const REGISTRY_SCHEMA_VERSION: u32 = 1;
 
 /// A user grant, stored outside plugin storage. The file and profile are
 /// picked in trusted host UI; plugin payloads never set them.
@@ -450,10 +450,6 @@ impl Registry {
           Some(version) if version == u64::from(REGISTRY_SCHEMA_VERSION) => {
             serde_json::from_value(value).map_err(corrupt)?
           }
-          Some(1) => {
-            Self::discard_v1(&path, &packages_root)?;
-            empty
-          }
           other => {
             return Err(Error::InvalidInput(format!(
               "Plugin registry schema {} is not supported by this version of the app",
@@ -470,21 +466,6 @@ impl Registry {
       packages_root,
       file,
     })
-  }
-
-  /// Schema 1 registries hold plugins built against the first permission
-  /// catalog, which no longer parse. None shipped, so they are set aside
-  /// rather than migrated: the registry is kept as a backup and the
-  /// unpacked packages are deleted.
-  fn discard_v1(path: &Path, packages_root: &Path) -> Result<(), Error> {
-    log::warn!(
-      "[ExternalPlugins] Discarding a schema 1 plugin registry; its plugins must be installed again"
-    );
-    fs::rename(path, path.with_file_name("registry.v1.json.bak"))?;
-    if packages_root.exists() {
-      fs::remove_dir_all(packages_root)?;
-    }
-    Ok(())
   }
 
   pub fn save(&self) -> Result<(), Error> {
