@@ -28,6 +28,9 @@ pub enum PresencePhase {
 
 pub type PresenceStatusCallback = Arc<dyn Fn(PresencePhase) + Send + Sync>;
 pub type GameExitCallback = Arc<dyn Fn() + Send + Sync>;
+/// `initial` distinguishes current state recovered at watcher startup from a
+/// newly observed transition. Observers run independently of Discord updates.
+pub type GameStateCallback = Arc<dyn Fn(&GameState, bool) + Send + Sync>;
 
 pub struct GamePresenceWatcher {
     game_path: PathBuf,
@@ -40,6 +43,7 @@ pub struct GamePresenceWatcher {
     // this watcher for game-exit detection without turning on Rich Presence.
     presence_enabled: bool,
     on_game_exit: Option<GameExitCallback>,
+    on_game_state: Option<GameStateCallback>,
 }
 
 impl GamePresenceWatcher {
@@ -60,6 +64,7 @@ impl GamePresenceWatcher {
             presence_config,
             presence_enabled: true,
             on_game_exit: None,
+            on_game_state: None,
         }
     }
 
@@ -73,12 +78,25 @@ impl GamePresenceWatcher {
         self
     }
 
+    pub fn with_game_state_callback(mut self, callback: GameStateCallback) -> Self {
+        self.on_game_state = Some(callback);
+        self
+    }
+
+    fn observe_state(&self, state: &GameState, initial: &mut bool) {
+        if let Some(callback) = &self.on_game_state {
+            callback(state, *initial);
+        }
+        *initial = false;
+    }
+
     pub async fn run(&self) {
         let cache_dir = self.game_path.join("game").join("citadel");
         let mut hero_store = HeroDataStore::new(&cache_dir);
         hero_store.load().await;
 
         let mut state = GameState::new();
+        let mut initial_observation = true;
         let mut parser = LogParser::new();
         let mut last_offset: u64 = 0;
         let mut game_was_running = false;
@@ -108,6 +126,7 @@ impl GamePresenceWatcher {
                     &mut last_offset,
                 );
                 last_offset = file_size(&self.console_log_path);
+                self.observe_state(&state, &mut initial_observation);
 
                 if self.presence_enabled {
                     update_presence(
@@ -139,6 +158,7 @@ impl GamePresenceWatcher {
                     last_presence_hash = None;
                     last_offset = 0;
                 }
+                self.observe_state(&state, &mut initial_observation);
                 tokio::time::sleep(tokio::time::Duration::from_millis(IDLE_POLL_INTERVAL_MS)).await;
                 continue;
             }
@@ -153,6 +173,9 @@ impl GamePresenceWatcher {
                     &hero_store,
                     &mut last_offset,
                 );
+                if let Some(callback) = &self.on_game_state {
+                    callback(&state, true);
+                }
             }
 
             let mut changed = false;
@@ -160,7 +183,11 @@ impl GamePresenceWatcher {
                 for line in new_content.lines() {
                     let trimmed = line.trim();
                     if !trimmed.is_empty() {
-                        changed |= parser.process_line(trimmed, &mut state, &hero_store);
+                        let line_changed = parser.process_line(trimmed, &mut state, &hero_store);
+                        changed |= line_changed;
+                        if line_changed {
+                            self.observe_state(&state, &mut initial_observation);
+                        }
                     }
                 }
             }

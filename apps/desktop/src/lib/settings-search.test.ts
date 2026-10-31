@@ -92,6 +92,14 @@ describe("searchSettings", () => {
     ).toBe(true);
     expect(searchSettings("nsfw", translate)[0]?.tab).toBe("privacy");
   });
+
+  it("sends plugin results to the Manage plugins page", () => {
+    const [result] = searchSettings("install from file", translate);
+    expect(result).toMatchObject({
+      tab: "plugin",
+      route: "/plugins/manage",
+    });
+  });
 });
 
 describe("searchSettings by platform", () => {

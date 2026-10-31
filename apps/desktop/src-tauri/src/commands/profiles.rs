@@ -45,6 +45,8 @@ fn create_profile_folder_unguarded(profile_id: &str, profile_name: &str) -> Resu
 
   std::fs::create_dir_all(&profile_folder)?;
   log::info!("Created profile folder: {profile_folder:?}");
+  #[cfg(feature = "plugins")]
+  crate::external_plugins::events::profile_created(&folder_name);
 
   Ok(folder_name)
 }
@@ -122,6 +124,8 @@ pub async fn delete_profile_folder(
 
   if removed {
     log::info!("Deleted profile shard folders for: {profile_folder}");
+    #[cfg(feature = "plugins")]
+    crate::external_plugins::events::profile_removed(&profile_folder);
   } else {
     log::warn!("Profile folder does not exist in any addon shard: {profile_folder}");
   }
@@ -139,7 +143,11 @@ pub async fn switch_profile(
 
   let mut mod_manager = MANAGER.lock().unwrap();
   mod_manager.migrate_profile_to_shards(profile_folder.clone())?;
+  #[cfg(feature = "plugins")]
+  let event_profile = profile_folder.clone();
   mod_manager.apply_profile_gameinfo(profile_folder)?;
+  #[cfg(feature = "plugins")]
+  crate::external_plugins::events::profile_activated(event_profile.as_deref());
 
   log::info!("Successfully switched profile");
   Ok(())

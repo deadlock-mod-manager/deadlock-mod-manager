@@ -547,6 +547,8 @@ fn finalize(
   store::save_pending(&sessions_dir, &tracker.pending);
   let app_handle = tracker.app_handle.clone();
   drop(tracker);
+  #[cfg(feature = "plugins")]
+  crate::external_plugins::events::game::session_classified(&report);
   emit(app_handle.as_ref(), SESSION_ENDED_EVENT, report);
 }
 

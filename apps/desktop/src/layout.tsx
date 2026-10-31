@@ -17,12 +17,14 @@ import { Titlebar } from "./components/layout/titlebar";
 import { WhatsNewDialog } from "./components/layout/whats-new-dialog";
 import { GlobalAudioPlayer } from "./components/global-audio-player";
 import { ScrollBackButtonProvider } from "./contexts/scroll-back-button-context";
+import { useExternalPluginNotifications } from "./hooks/use-external-plugins";
 import { usePageTracking } from "./hooks/use-page-tracking";
 import { useWhatsNew } from "./hooks/use-whats-new";
 
 export const Layout = ({ children }: { children: React.ReactNode }) => {
   const { showWhatsNew, markVersionAsSeen } = useWhatsNew();
   usePageTracking();
+  useExternalPluginNotifications();
 
   return (
     <>

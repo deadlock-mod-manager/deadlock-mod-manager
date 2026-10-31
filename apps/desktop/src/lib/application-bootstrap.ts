@@ -3,6 +3,7 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { load } from "@tauri-apps/plugin-store";
 import { downloadManager } from "./download/manager";
 import { applySegmentedDownloadsSetting } from "./download/segmented-downloads";
+import { setPluginRuntimeEnabled } from "./external-plugins";
 import logger from "./logger";
 import {
   initializeRuntimeBootstrap,
@@ -40,6 +41,9 @@ const bootstrapApplication = async (): Promise<ApplicationBootstrap> => {
   await load(runtime.stateStorePath, { autoSave: true, defaults: {} });
   await usePersistedStore.persist.rehydrate();
   const storage = await storageReady();
+  await setPluginRuntimeEnabled(
+    storage.ok && usePersistedStore.getState().experimentalFeatures.plugins,
+  );
 
   logger
     .withMetadata({

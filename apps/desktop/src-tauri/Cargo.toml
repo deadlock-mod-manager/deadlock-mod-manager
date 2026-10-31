@@ -27,6 +27,7 @@ e2e-harness = [
 ]
 # Recovers match salts through the user's Steam account (opt-in at runtime).
 match-sync = ["dep:deadlock-match-sync"]
+plugins = ["dep:dmm-plugin-runtime", "dep:webview2-com", "dep:windows-core"]
 
 # `cef` is injected into [features] by scripts/cef-patch.ts for CEF builds only.
 [lints.rust]
@@ -114,6 +115,7 @@ base64 = "0.22"
 flate2 = "1"
 image = { version = "0.25", default-features = false, features = ["png"] }
 keyvalues-parser = "0.2"
+dmm-plugin-runtime = { path = "../../../packages/plugin-runtime", optional = true }
 
 [dev-dependencies]
 tempfile = "3.27.0"
@@ -142,6 +144,9 @@ windows = { version = "0.58", features = [
   "Win32_System_Threading",
   "Win32_System_Wmi",
 ] }
+# Keeps plugin frames on the plugin protocol; versions match wry's WebView2 bindings
+webview2-com = { version = "0.39", optional = true }
+windows-core = { version = "0.62", optional = true }
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-updater = "2.14.0"
