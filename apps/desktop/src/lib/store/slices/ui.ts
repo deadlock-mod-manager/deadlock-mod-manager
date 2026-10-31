@@ -75,6 +75,8 @@ type AppBackground = {
   /** Blur radius in px. */
   blur: number;
   includeSidebar: boolean;
+  includeTopBar: boolean;
+  includeBottomBar: boolean;
 };
 
 const DEFAULT_APP_BACKGROUND: AppBackground = {
@@ -82,6 +84,8 @@ const DEFAULT_APP_BACKGROUND: AppBackground = {
   opacity: 25,
   blur: 0,
   includeSidebar: false,
+  includeTopBar: false,
+  includeBottomBar: false,
 };
 
 export type UIState = {

@@ -4,18 +4,37 @@ import { usePersistedStore } from "@/lib/store";
 
 /** Paints the user's background image behind the app, above any theme backdrop. */
 const AppBackground = () => {
-  const { image, opacity, blur, includeSidebar } = usePersistedStore(
-    (state) => state.appBackground,
-  );
+  const {
+    image,
+    opacity,
+    blur,
+    includeSidebar,
+    includeTopBar,
+    includeBottomBar,
+  } = usePersistedStore((state) => state.appBackground);
 
   useEffect(() => {
-    if (!image || !includeSidebar) return;
     const root = document.documentElement;
-    root.classList.add("app-background-sidebar");
+    root.classList.toggle(
+      "app-background-sidebar",
+      Boolean(image) && includeSidebar,
+    );
+    root.classList.toggle(
+      "app-background-top-bar",
+      Boolean(image) && includeTopBar,
+    );
+    root.classList.toggle(
+      "app-background-bottom-bar",
+      Boolean(image) && includeBottomBar,
+    );
     return () => {
       root.classList.remove("app-background-sidebar");
+      root.classList.remove(
+        "app-background-top-bar",
+        "app-background-bottom-bar",
+      );
     };
-  }, [image, includeSidebar]);
+  }, [image, includeSidebar, includeTopBar, includeBottomBar]);
 
   if (!image) return null;
 

@@ -28,6 +28,7 @@ import {
   GamepadIcon,
   Globe,
   InfoIcon,
+  ImageIcon,
   MonitorIcon,
   PackageIcon,
   PaletteIcon,
@@ -593,6 +594,11 @@ const CustomSettings = ({ value }: { value?: string }) => {
                   value='themes'
                 />
                 <SettingsNavItem
+                  icon={ImageIcon}
+                  label={t("settings.background")}
+                  value='background'
+                />
+                <SettingsNavItem
                   icon={Globe}
                   label={t("settings.network")}
                   value='network'
@@ -691,6 +697,9 @@ const CustomSettings = ({ value }: { value?: string }) => {
                 {ThemesPlugin.Settings && <ThemesPlugin.Settings />}
               </Suspense>
             </ErrorBoundary>
+          </TabsContent>
+
+          <TabsContent className='mt-0 space-y-4' value='background'>
             <Section
               description={t("settings.backgroundDescription")}
               searchId='background'

@@ -736,8 +736,8 @@
   background-color: transparent;
 }
 
-/* Target the bottom bar by its structure */
-.app-background-sidebar [data-bottom-bar="true"] {
+.app-background-bottom-bar [data-bottom-bar="true"],
+.app-background-top-bar [data-titlebar="true"] {
   background-color: transparent;
   border-color: transparent;
 }

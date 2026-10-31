@@ -699,6 +699,16 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
       }
     },
   },
+  {
+    to: 42,
+    label: "independent-background-surfaces",
+    apply: (state) => {
+      const background = state.appBackground;
+      if (!isPlainObject(background)) return;
+      background.includeTopBar ??= background.includeSidebar === true;
+      background.includeBottomBar ??= background.includeSidebar === true;
+    },
+  },
 ];
 
 const LEGACY_GAMEBANANA_ID = /^[1-9]\d*$/;

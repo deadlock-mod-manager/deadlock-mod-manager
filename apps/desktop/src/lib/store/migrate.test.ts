@@ -28,6 +28,29 @@ const { LATEST_VERSION, MIGRATION_STEPS, safeMigrate } =
   await import("./migrate");
 
 describe("safeMigrate", () => {
+  it("preserves background coverage when splitting the switches", () => {
+    for (const includeSidebar of [true, false]) {
+      expect(safeMigrate({ appBackground: { includeSidebar } }, 41)).toEqual({
+        appBackground: {
+          includeSidebar,
+          includeTopBar: includeSidebar,
+          includeBottomBar: includeSidebar,
+        },
+      });
+    }
+  });
+
+  it("keeps independent coverage when migration runs again", () => {
+    const state = {
+      appBackground: {
+        includeSidebar: true,
+        includeTopBar: false,
+        includeBottomBar: true,
+      },
+    };
+    expect(safeMigrate(structuredClone(state), 41)).toEqual(state);
+  });
+
   it("adds empty groups to older profiles and preserves existing organization", () => {
     const existing = [
       { id: "group", name: "Silver", modIds: ["silver"], collapsed: true },
@@ -264,7 +287,7 @@ describe("safeMigrate", () => {
   it("LATEST_VERSION matches the highest step target", () => {
     const max = Math.max(...MIGRATION_STEPS.map((s) => s.to));
     expect(LATEST_VERSION).toBe(max);
-    expect(LATEST_VERSION).toBe(41);
+    expect(LATEST_VERSION).toBe(42);
   });
 
   it("v25 (themes switch): drops the leftover enabledPlugins.themes entry", () => {
@@ -306,6 +329,8 @@ describe("safeMigrate", () => {
         opacity: 40,
         blur: 3,
         includeSidebar: true,
+        includeTopBar: true,
+        includeBottomBar: true,
       },
     });
   });

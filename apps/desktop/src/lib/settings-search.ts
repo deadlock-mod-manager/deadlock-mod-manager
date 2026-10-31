@@ -8,6 +8,7 @@ export const SETTINGS_TAB_LABEL_KEYS = {
   mods: "settings.mods",
   application: "settings.application",
   themes: "settings.themes",
+  background: "settings.background",
   network: "settings.network",
   integrations: "settings.integrations",
   plugin: "settings.plugin",
@@ -274,7 +275,7 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
   },
   {
     id: "background",
-    tab: "themes",
+    tab: "background",
     titleKey: "settings.background",
     descriptionKey: "settings.backgroundDescription",
     settings: [
@@ -288,6 +289,8 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
         titleKey: "settings.backgroundIncludeSidebar",
         descriptionKey: "settings.backgroundIncludeSidebarDescription",
       },
+      { titleKey: "settings.backgroundIncludeTopBar" },
+      { titleKey: "settings.backgroundIncludeBottomBar" },
     ],
   },
   {

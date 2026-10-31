@@ -38,6 +38,16 @@ const SECTIONS: SettingsSearchSection[] = [
 const stripSettingsPrefix = (key: string) => key.replace("settings.", "");
 
 describe("searchSettings", () => {
+  it("opens background controls directly from search", () => {
+    const results = searchSettings("blur", translate);
+    expect(results).toContainEqual(
+      expect.objectContaining({
+        tab: "background",
+        sectionId: "background",
+      }),
+    );
+  });
+
   it("returns nothing for a blank query", () => {
     expect(searchSettings("   ", stripSettingsPrefix, SECTIONS)).toEqual([]);
   });
