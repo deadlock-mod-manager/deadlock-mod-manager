@@ -21,6 +21,8 @@
     "build:cef:nsis": "bun scripts/cef-patch.ts cargo tauri build --bundles nsis,updater",
     "build:cef:deb": "bun scripts/cef-patch.ts cargo tauri build --bundles deb,updater",
     "cef:setup": "bun scripts/cef-patch.ts setup",
+    "cef:prepare": "bun scripts/cef-patch.ts prepare",
+    "cef:update-lockfile": "bun scripts/cef-patch.ts update-lockfile",
     "installer:images": "bun scripts/generate-installer-images.ts",
     "cef:cleanup": "bun scripts/cef-patch.ts cleanup",
     "format:rust": "cd src-tauri && rustfmt",

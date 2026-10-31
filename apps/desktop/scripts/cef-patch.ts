@@ -2,6 +2,7 @@
 
 import { spawnSync } from "node:child_process";
 import {
+  copyFileSync,
   existsSync,
   mkdirSync,
   readFileSync,
@@ -73,6 +74,14 @@ const packageCargoTomlBackup = resolve(
   "cef-patch",
   "Cargo.toml",
 );
+const workspaceCargoLock = resolve(desktopDir, "Cargo.lock");
+const cefCargoLock = resolve(desktopDir, "Cargo.cef.lock");
+const workspaceCargoLockBackup = resolve(
+  desktopDir,
+  "target",
+  "cef-patch",
+  "Cargo.lock",
+);
 
 const patchBlock = [
   "",
@@ -95,7 +104,8 @@ function writeUtf8(path: string, content: string): void {
   writeFileSync(path, content.replace(/\r\n/g, "\n"), "utf8");
 }
 
-function syncTauriLockfile(context: "inject" | "restore"): void {
+function updateCefLockfile(): number {
+  ensureCefSetup(existsSync(cefCargoLock) ? cefCargoLock : workspaceCargoLock);
   const result = spawnSync(
     "cargo",
     [
@@ -109,13 +119,13 @@ function syncTauriLockfile(context: "inject" | "restore"): void {
   );
 
   if (result.status !== 0) {
-    const message =
-      context === "inject"
-        ? "Failed to update Cargo.lock for CEF patch"
-        : "Failed to restore Cargo.lock after removing CEF patch";
-    console.error(message);
-    process.exit(result.status ?? 1);
+    console.error("Failed to update Cargo.cef.lock");
+  } else {
+    copyFileSync(workspaceCargoLock, cefCargoLock);
+    console.log("Updated Cargo.cef.lock");
   }
+  cleanupCefSetup();
+  return result.status ?? 1;
 }
 
 function injectPatch(): void {
@@ -202,23 +212,26 @@ function isCefSetupCurrent(): boolean {
     readUtf8(workspaceCargoToml).includes(patchBlock) &&
     manifest.includes(`${CEF_FEATURE_LINES}\n`) &&
     manifest.includes(`${CEF_DEPENDENCY_LINE}\n`) &&
-    existsSync(packageCargoTomlBackup)
+    existsSync(packageCargoTomlBackup) &&
+    existsSync(workspaceCargoLockBackup)
   );
 }
 
 // Re-injects from a clean state whenever the existing setup doesn't match the
 // current pins, so a tag bump never leaves a stale or duplicated patch behind.
-// Like `cleanup`, this restores Cargo.lock from git and src-tauri/Cargo.toml
-// from its pre-CEF copy first, discarding edits made while CEF was set up.
-function ensureCefSetup(): boolean {
+function ensureCefSetup(lockfile = cefCargoLock): boolean {
   if (isCefSetupCurrent()) {
     return false;
   }
 
   cleanupCefSetup();
+  // Read before changing the manifests so a missing vendored lock fails cleanly.
+  const lock = readFileSync(lockfile);
+  mkdirSync(dirname(workspaceCargoLockBackup), { recursive: true });
+  copyFileSync(workspaceCargoLock, workspaceCargoLockBackup);
+  writeFileSync(workspaceCargoLock, lock);
   injectPatch();
   injectCefManifest();
-  syncTauriLockfile("inject");
   console.log("Run `pnpm cef:cleanup` when finished to restore Wry builds.");
   return true;
 }
@@ -227,19 +240,13 @@ function cleanupCefSetup(): boolean {
   const patchRemoved = stripPatch();
   const featureRemoved = stripCefManifest();
 
-  if (patchRemoved) {
-    const restoredFromGit =
-      spawnSync("git", ["checkout", "--", "Cargo.lock"], {
-        cwd: desktopDir,
-        stdio: "pipe",
-      }).status === 0;
-
-    if (!restoredFromGit) {
-      syncTauriLockfile("restore");
-    }
+  const lockRestored = existsSync(workspaceCargoLockBackup);
+  if (lockRestored) {
+    copyFileSync(workspaceCargoLockBackup, workspaceCargoLock);
+    rmSync(workspaceCargoLockBackup);
   }
 
-  return patchRemoved || featureRemoved;
+  return patchRemoved || featureRemoved || lockRestored;
 }
 
 // CEF builds need `--features cef` passed twice: once to the Tauri CLI (before
@@ -250,10 +257,7 @@ function cleanupCefSetup(): boolean {
 // config overlay, which declares the Linux package dependencies Chromium needs.
 // Centralizing this here keeps every call site (package.json scripts, CI
 // steps) free of the contract.
-function injectCefFlags(
-  command: string,
-  args: string[],
-): { command: string; args: string[] } {
+function injectCefFlags(command: string, args: string[]) {
   const tokens = [command, ...args];
   const tauriIdx = tokens.indexOf("tauri");
   if (tauriIdx === -1) {
@@ -314,6 +318,8 @@ if (subcommand === undefined) {
   console.error("Usage:");
   console.error("  bun scripts/cef-patch.ts setup");
   console.error("  bun scripts/cef-patch.ts cleanup");
+  console.error("  bun scripts/cef-patch.ts prepare");
+  console.error("  bun scripts/cef-patch.ts update-lockfile");
   console.error("  bun scripts/cef-patch.ts <command> [args...]");
   process.exit(1);
 }
@@ -335,6 +341,15 @@ if (subcommand === "cleanup") {
       : "No injected CEF changes found",
   );
   process.exit(0);
+}
+
+if (subcommand === "prepare") {
+  ensureCefSetup();
+  process.exit(0);
+}
+
+if (subcommand === "update-lockfile") {
+  process.exit(updateCefLockfile());
 }
 
 process.exitCode = runCommand(subcommand, rest);

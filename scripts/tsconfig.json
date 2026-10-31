@@ -8,7 +8,8 @@
     "incremental": false
   },
   "include": [
-    "tests/*.test.ts"
+    "tests/*.test.ts",
+    "../apps/desktop/scripts/cef-patch.ts"
   ],
   "exclude": [
     "node_modules"

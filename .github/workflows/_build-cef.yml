@@ -159,7 +159,7 @@ jobs:
         with:
           # tauri-cli downloads CEF into dirs::cache_dir()/tauri-cef.
           path: ${{ matrix.os == 'windows' && '~/AppData/Local/tauri-cef' || '~/.cache/tauri-cef' }}
-          key: ${{ runner.os }}-${{ runner.arch }}-cef-${{ env.TAURI_CEF_TAG }}-${{ hashFiles('apps/desktop/Cargo.lock') }}
+          key: ${{ runner.os }}-${{ runner.arch }}-cef-${{ env.TAURI_CEF_TAG }}-${{ hashFiles('apps/desktop/Cargo.cef.lock') }}
           restore-keys: |
             ${{ runner.os }}-${{ runner.arch }}-cef-${{ env.TAURI_CEF_TAG }}-
 
@@ -219,6 +219,14 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
+
+      - name: Validate vendored CEF lockfile
+        shell: bash
+        working-directory: apps/desktop
+        run: |
+          pnpm cef:prepare
+          cargo metadata --locked --format-version 1 --no-default-features --features cef,match-sync > /dev/null
+          pnpm cef:cleanup
 
       - name: Update version with commit hash (nightly only)
         # github.event_name is the caller's event here, so checking for

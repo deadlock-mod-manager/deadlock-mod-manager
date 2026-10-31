@@ -429,19 +429,34 @@ pnpm --filter desktop cef:setup
 
 ### CEF Commands
 
-| Command                                   | Description                                        |
-| ----------------------------------------- | -------------------------------------------------- |
-| `pnpm --filter desktop cef:setup`         | Install the CEF-enabled Tauri CLI                  |
-| `pnpm --filter desktop dev:cef`           | Run desktop in dev mode with CEF runtime           |
-| `pnpm --filter desktop build:cef`         | Compile with CEF (no bundle, fast iteration)       |
-| `pnpm --filter desktop build:cef:release` | Full release build with CEF (all default bundles)  |
-| `pnpm --filter desktop build:cef:nsis`    | Build NSIS installer with CEF (matches nightly CI) |
-| `pnpm --filter desktop build:cef:deb`     | Build Linux .deb with CEF                          |
-| `pnpm --filter desktop cef:cleanup`       | Remove injected CEF patches, restore Cargo.toml    |
+| Command                                     | Description                                        |
+| ------------------------------------------- | -------------------------------------------------- |
+| `pnpm --filter desktop cef:setup`           | Install the CEF-enabled Tauri CLI                  |
+| `pnpm --filter desktop cef:prepare`         | Prepare CEF manifests and select the vendored lock |
+| `pnpm --filter desktop cef:update-lockfile` | Refresh the vendored CEF dependency lock           |
+| `pnpm --filter desktop dev:cef`             | Run desktop in dev mode with CEF runtime           |
+| `pnpm --filter desktop build:cef`           | Compile with CEF (no bundle, fast iteration)       |
+| `pnpm --filter desktop build:cef:release`   | Full release build with CEF (all default bundles)  |
+| `pnpm --filter desktop build:cef:nsis`      | Build NSIS installer with CEF (matches nightly CI) |
+| `pnpm --filter desktop build:cef:deb`       | Build Linux .deb with CEF                          |
+| `pnpm --filter desktop cef:cleanup`         | Restore Wry manifests and the original Cargo.lock  |
 
 ### How It Works
 
-The `cef-patch.ts` script injects a `[patch.crates-io]` block into `Cargo.toml` pointing the core Tauri crates and the official plugins at the pinned `feat/cef` revisions. On that branch the runtime is a separate crate, so the script also adds an optional `tauri-runtime-cef` dependency and a `cef` feature that enables it. To move to a newer upstream revision, bump `TAURI_CEF_TAG` and `PLUGINS_CEF_REV` in `cef-patch.ts` together with `TAURI_CEF_TAG` in `_build-cef.yml`. The next CEF command then re-injects the patch, which first restores `Cargo.lock` from git (as `cef:cleanup` does), so commit or stash lockfile edits beforehand. The `--features cef` flag must be passed both to the Tauri CLI (before `--`) for correct bundling, and to cargo (after `--`) for compilation.
+The `cef-patch.ts` script injects a `[patch.crates-io]` block into `Cargo.toml` pointing the core Tauri crates and the official plugins at the pinned `feat/cef` revisions. On that branch the runtime is a separate crate, so the script also adds an optional `tauri-runtime-cef` dependency and a `cef` feature that enables it. The `--features cef` flag must be passed both to the Tauri CLI (before `--`) for correct bundling, and to cargo (after `--`) for compilation.
+
+CEF dependencies are checked in separately at `apps/desktop/Cargo.cef.lock`. CEF commands back up the existing `Cargo.lock` under `target/cef-patch/` and copy the vendored CEF lock into place. Setup does not run `cargo update`. Cleanup restores the original lock, including uncommitted Wry changes, without using Git. Keep the backup directory until cleanup finishes.
+
+After changing Rust dependencies or the CEF pins, run `pnpm --filter desktop cef:update-lockfile` and commit `Cargo.cef.lock` with the manifest changes. This command updates CEF dependencies explicitly, saves the resulting lock, and restores the Wry setup. CEF release CI validates the committed lock with `cargo metadata --locked` before applying nightly version changes, so dependency changes require a matching lockfile refresh. For upstream changes, bump `TAURI_CEF_TAG` and `PLUGINS_CEF_REV` in `cef-patch.ts` together with `TAURI_CEF_TAG` in `_build-cef.yml` before refreshing the lock.
+
+Downstream packagers can use `Cargo.cef.lock` as the input to Cargo dependency vendoring (for example, Nix's `cargoLock.lockFile`). Run `pnpm --filter desktop cef:prepare` to apply the CEF manifests and select that lock without installing the Tauri CLI or resolving dependencies. Then build with the CEF-enabled CLI and `--locked`, or invoke Cargo directly:
+
+```bash
+cd apps/desktop
+cargo build --locked --no-default-features --features cef,match-sync
+```
+
+Preparing manifests still requires Bun; dependency vendoring can read the committed lock before that step.
 
 On first build, the CEF binary distribution (~300MB) is downloaded automatically to your local cache directory. Subsequent builds reuse the cached binaries.
 
