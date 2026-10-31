@@ -11,6 +11,7 @@ const current = {
   "profile-sharing": true,
   "conflict-detection": true,
   "cloud-backup": false,
+  plugins: false,
   "live-scoreboard": false,
 } satisfies Record<ExperimentalFeature, boolean>;
 

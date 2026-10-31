@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "example.creator-workspace-bridge",
+  "name": "Creator Workspace Bridge",
+  "version": "0.4.0",
+  "sdkVersion": 1,
+  "description": "Stages stable VPK builds from your creator tools and deploys the one you pick to a testing profile.",
+  "author": "Deadlock Mod Manager",
+  "icon": "wrench",
+  "accent": "#E3B35A",
+  "changelog": [
+    "Stages stable VPK exports from your creator tools",
+    "Deploys the build you choose to a testing profile"
+  ],
+  "ui": "ui/index.html",
+  "backend": "backend.wasm",
+  "permissions": {
+    "required": [
+      {
+        "id": "files",
+        "kind": "file",
+        "extensions": ["vpk"],
+        "access": "read"
+      },
+      { "id": "mods", "access": ["install"], "profiles": "picked" },
+      { "id": "storage" }
+    ],
+    "optional": []
+  }
+}

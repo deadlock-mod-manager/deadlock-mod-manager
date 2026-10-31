@@ -15,6 +15,8 @@ mod dropped_mod_file;
 #[cfg(feature = "e2e-harness")]
 mod e2e_faults;
 mod errors;
+#[cfg(feature = "plugins")]
+mod external_plugins;
 mod flatpak;
 mod forge_bridge;
 mod game_guard;
@@ -154,6 +156,11 @@ pub fn run() {
     }
   }
 
+  #[cfg(all(feature = "plugins", not(feature = "cef")))]
+  {
+    builder = external_plugins::frames::register(builder);
+  }
+
   builder
     .manage(game_presence::DiscordState::new())
     .manage(commands::remote_install::PendingPairing::default())
@@ -241,10 +248,91 @@ pub fn run() {
       }
       game_session::init(app.handle().clone(), app_data_dir);
 
+      #[cfg(feature = "plugins")]
+      {
+        let plugins_root =
+          runtime_environment::app_local_data_dir(app.handle())?.join("external-plugins");
+        let plugin_host = std::sync::Arc::new(dmm_plugin_runtime::PluginHost::open(
+          plugins_root.clone(),
+          dmm_plugin_runtime::WorkerLauncher::current_exe(plugins_root)?,
+          std::sync::Arc::new(external_plugins::profiles::DesktopAdapter::default()),
+        )?);
+        #[cfg(not(feature = "cef"))]
+        {
+          use tauri::Emitter;
+          let handle = app.handle().clone();
+          plugin_host.set_retire_hook(Box::new(move |plugin_id| {
+            if let Err(error) = handle.emit(external_plugins::CHANGED_EVENT, plugin_id) {
+              log::warn!("[ExternalPlugins] Could not announce a change to {plugin_id}: {error}");
+            }
+          }));
+          let handle = app.handle().clone();
+          plugin_host.set_blocked_hook(Box::new(move |plugin_id, activity| {
+            let event = external_plugins::ExternalPluginBlockedEvent {
+              plugin_id: plugin_id.to_owned(),
+              activity: activity.clone(),
+            };
+            if let Err(error) = handle.emit(external_plugins::BLOCKED_EVENT, event) {
+              log::warn!("[ExternalPlugins] Could not announce a refusal for {plugin_id}: {error}");
+            }
+          }));
+          let handle = app.handle().clone();
+          plugin_host.set_notification_hook(Box::new(move |plugin_id, title, body| {
+            let event = external_plugins::ExternalPluginNotificationEvent {
+              plugin_id: plugin_id.to_owned(),
+              title: title.to_owned(),
+              body: body.to_owned(),
+            };
+            if let Err(error) = handle.emit(external_plugins::NOTIFICATION_EVENT, event) {
+              log::warn!(
+                "[ExternalPlugins] Could not show a notification from {plugin_id}: {error}"
+              );
+            }
+          }));
+          #[cfg(windows)]
+          {
+            plugin_host.start_scheduler();
+            if let Some(window) = app.get_webview_window("main") {
+              external_plugins::frames::guard_navigation(&window);
+            }
+          }
+        }
+        external_plugins::events::init(&plugin_host, app.handle().clone());
+        app.manage(plugin_host);
+      }
+
       log::info!("[App] Setup completed, starting application...");
       Ok(())
     })
     .invoke_handler(tauri::generate_handler![
+      #[cfg(feature = "plugins")]
+      commands::external_plugins::external_plugins_set_enabled,
+      #[cfg(feature = "plugins")]
+      commands::external_plugins::external_plugins_list,
+      #[cfg(feature = "plugins")]
+      commands::external_plugins::external_plugins_install,
+      #[cfg(feature = "plugins")]
+      commands::external_plugins::external_plugins_install_url,
+      #[cfg(feature = "plugins")]
+      commands::external_plugins::external_plugins_apply_update,
+      #[cfg(feature = "plugins")]
+      commands::external_plugins::external_plugins_discard_update,
+      #[cfg(feature = "plugins")]
+      commands::external_plugins::external_plugins_activity,
+      #[cfg(feature = "plugins")]
+      commands::external_plugins::external_plugins_clear_data,
+      #[cfg(feature = "plugins")]
+      commands::external_plugins::external_plugins_grant,
+      #[cfg(feature = "plugins")]
+      commands::external_plugins::external_plugins_revoke,
+      #[cfg(feature = "plugins")]
+      commands::external_plugins::external_plugins_enable,
+      #[cfg(feature = "plugins")]
+      commands::external_plugins::external_plugins_remove,
+      #[cfg(feature = "plugins")]
+      commands::external_plugins::external_plugins_open_view,
+      #[cfg(feature = "plugins")]
+      commands::external_plugins::external_plugins_frame_call,
       commands::game::find_game_path,
       commands::game::get_installed_build_id,
       commands::gamebanana_catalog::synchronize_gamebanana_catalog,

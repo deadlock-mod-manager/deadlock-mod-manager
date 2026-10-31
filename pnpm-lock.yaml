@@ -499,6 +499,9 @@ importers:
       '@deadlock-mods/hero-parser':
         specifier: workspace:*
         version: link:../../packages/hero-parser
+      '@deadlock-mods/plugin-sdk':
+        specifier: workspace:*
+        version: link:../../packages/plugin-sdk
       '@deadlock-mods/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -1524,6 +1527,15 @@ importers:
       '@types/node':
         specifier: 22.19.15
         version: 22.19.15
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+
+  packages/plugin-sdk:
+    devDependencies:
+      '@deadlock-mods/typescript-config':
+        specifier: workspace:*
+        version: link:../../tools/typescript
       typescript:
         specifier: ^7.0.2
         version: 7.0.2

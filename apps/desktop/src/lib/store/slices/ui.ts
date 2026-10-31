@@ -48,7 +48,7 @@ export type ModsFilters = {
 
 export type ExperimentalFeature = (typeof EXPERIMENTAL_FEATURES)[number];
 
-const DEFAULT_EXPERIMENTAL_FEATURES: Record<ExperimentalFeature, boolean> = {
+const DEFAULT_EXPERIMENTAL_FEATURES = {
   "custom-maps": false,
   "mod-foundry": true,
   "player-stats": true,
@@ -58,7 +58,8 @@ const DEFAULT_EXPERIMENTAL_FEATURES: Record<ExperimentalFeature, boolean> = {
   "performance-configs": true,
   "cloud-backup": true,
   "live-scoreboard": false,
-};
+  plugins: false,
+} satisfies Record<ExperimentalFeature, boolean>;
 
 export type CrosshairFilters = {
   selectedHeroes: string[];

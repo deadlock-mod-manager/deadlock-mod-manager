@@ -28,6 +28,7 @@ pub struct RuntimeBootstrap {
 #[serde(rename_all = "camelCase")]
 pub struct BuildFeatures {
   pub match_sync: bool,
+  pub plugins: bool,
 }
 
 #[tauri::command]
@@ -55,6 +56,7 @@ pub fn get_runtime_bootstrap() -> RuntimeBootstrap {
     state_file_recovery: crate::state_file::recovery(),
     features: BuildFeatures {
       match_sync: cfg!(feature = "match-sync"),
+      plugins: cfg!(all(feature = "plugins", windows, not(feature = "cef"))),
     },
   }
 }

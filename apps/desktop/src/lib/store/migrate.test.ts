@@ -264,7 +264,7 @@ describe("safeMigrate", () => {
   it("LATEST_VERSION matches the highest step target", () => {
     const max = Math.max(...MIGRATION_STEPS.map((s) => s.to));
     expect(LATEST_VERSION).toBe(max);
-    expect(LATEST_VERSION).toBe(38);
+    expect(LATEST_VERSION).toBe(41);
   });
 
   it("v25 (themes switch): drops the leftover enabledPlugins.themes entry", () => {
@@ -424,4 +424,15 @@ it("initializes tour dismissal without resetting an existing choice", () => {
   expect(safeMigrate({ experimentalTourDismissed: true }, 29)).toMatchObject({
     experimentalTourDismissed: true,
   });
+});
+
+it("keeps plugins opt-in without changing other experiments or an existing choice", () => {
+  expect(
+    safeMigrate({ experimentalFeatures: { "custom-maps": true } }, 40),
+  ).toMatchObject({
+    experimentalFeatures: { "custom-maps": true, plugins: false },
+  });
+  expect(
+    safeMigrate({ experimentalFeatures: { plugins: true } }, 40),
+  ).toMatchObject({ experimentalFeatures: { plugins: true } });
 });

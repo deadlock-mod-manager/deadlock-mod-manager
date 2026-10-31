@@ -227,6 +227,8 @@ impl Default for PauseHandle {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 struct PartialMeta {
+  #[serde(default)]
+  url: Option<String>,
   etag: Option<String>,
   last_modified: Option<String>,
 }
@@ -386,8 +388,10 @@ where
 
     if resume_from == 0 {
       let _ = tokio::fs::remove_file(&meta_path).await;
-    } else if stored_meta.etag.is_none() && stored_meta.last_modified.is_none() {
-      log::warn!("Partial file without resume metadata; restarting download");
+    } else if stored_meta.url.as_deref() != Some(url)
+      || (stored_meta.etag.is_none() && stored_meta.last_modified.is_none())
+    {
+      log::warn!("Partial file belongs to another source or has no validator; restarting download");
       remove_partial_pair(&partial_path, &meta_path).await;
       continue 'retry;
     }
@@ -580,6 +584,7 @@ where
         .await
         .map_err(|e| Error::FileWriteFailed(format!("Failed to create partial file: {e}")))?;
       let meta = PartialMeta {
+        url: Some(url.to_string()),
         etag: resp_etag.clone(),
         last_modified: resp_last_modified.clone(),
       };
@@ -821,11 +826,12 @@ mod tests {
 
   /// A partial holding the first `kept` bytes of `body`, with the ETag the
   /// scripted server sends.
-  async fn resumable_partial(target: &Path, body: &[u8], kept: usize) {
+  async fn resumable_partial(url: &str, target: &Path, body: &[u8], kept: usize) {
     tokio::fs::write(partial_download_path(target), &body[..kept])
       .await
       .unwrap();
     let stored = PartialMeta {
+      url: Some(url.to_string()),
       etag: Some("\"v1\"".to_string()),
       last_modified: None,
     };
@@ -865,7 +871,6 @@ mod tests {
     let dir = tempfile::tempdir().unwrap();
     let target = dir.path().join("mod.zip");
     let body = test_body();
-    resumable_partial(&target, &body, 65_536).await;
     let server = TestServer::start({
       let body = body.clone();
       move |request, _| {
@@ -882,6 +887,7 @@ mod tests {
     })
     .await;
 
+    resumable_partial(&server.url("/mod.zip"), &target, &body, 65_536).await;
     let result = resume(&server.url("/mod.zip"), &target, &body).await;
 
     assert!(result.is_ok(), "{result:?}");
@@ -901,7 +907,6 @@ mod tests {
     let dir = tempfile::tempdir().unwrap();
     let target = dir.path().join("mod.zip");
     let body = test_body();
-    resumable_partial(&target, &body, 65_536).await;
     let server = TestServer::start({
       let body = body.clone();
       move |_, _| {
@@ -916,6 +921,7 @@ mod tests {
     })
     .await;
 
+    resumable_partial(&server.url("/mod.zip"), &target, &body, 65_536).await;
     let result = resume(&server.url("/mod.zip"), &target, &body).await;
 
     assert!(
@@ -937,9 +943,9 @@ mod tests {
     let dir = tempfile::tempdir().unwrap();
     let target = dir.path().join("mod.zip");
     let body = test_body();
-    resumable_partial(&target, &body, 65_536).await;
     let server = TestServer::start(|_, _| Reply::new(416, Vec::new())).await;
 
+    resumable_partial(&server.url("/mod.zip"), &target, &body, 65_536).await;
     let result = resume(&server.url("/mod.zip"), &target, &body).await;
 
     assert!(matches!(result, Err(Error::Network(_))), "{result:?}");
@@ -1084,13 +1090,13 @@ mod tests {
     let dir = tempfile::tempdir().unwrap();
     let target = dir.path().join("mod.zip");
     let body = test_body();
-    resumable_partial(&target, &body, 65_536).await;
     let server = TestServer::start({
       let body = body.clone();
       move |request, _| Reply::serve(&body, request).header("etag", "\"v1\"")
     })
     .await;
 
+    resumable_partial(&server.url("/mod.zip"), &target, &body, 65_536).await;
     let result = resume(&server.url("/mod.zip"), &target, &body).await;
 
     assert!(result.is_ok(), "{result:?}");
@@ -1129,13 +1135,14 @@ mod tests {
     let partial = partial_download_path(&target);
     let meta = partial_meta_path(&partial);
     tokio::fs::write(&partial, b"first bytes").await.unwrap();
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let url = format!("http://{}/mod.zip", listener.local_addr().unwrap());
     let stored = PartialMeta {
+      url: Some(url.to_string()),
       etag: Some("\"v1\"".to_string()),
       last_modified: None,
     };
     write_partial_meta(&meta, &stored).await.unwrap();
-    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let url = format!("http://{}/mod.zip", listener.local_addr().unwrap());
     let cancel_token = CancellationToken::new();
 
     let download = tokio::spawn({
@@ -1185,13 +1192,14 @@ mod tests {
     let partial = partial_download_path(&target);
     let meta = partial_meta_path(&partial);
     tokio::fs::write(&partial, b"first bytes").await.unwrap();
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let url = format!("http://{}/mod.zip", listener.local_addr().unwrap());
     let stored = PartialMeta {
+      url: Some(url.to_string()),
       etag: Some("\"v1\"".to_string()),
       last_modified: None,
     };
     write_partial_meta(&meta, &stored).await.unwrap();
-    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let url = format!("http://{}/mod.zip", listener.local_addr().unwrap());
     let pause = PauseHandle::new();
 
     let download = tokio::spawn({
