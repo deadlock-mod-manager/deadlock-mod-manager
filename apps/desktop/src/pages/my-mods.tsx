@@ -102,6 +102,7 @@ import { ExportDialog } from "@/components/mod-interchange/export-dialog";
 import { AddModsMenu } from "@/components/mod-interchange/add-mods-menu";
 import { ConflictsPanel } from "@/components/my-mods/conflicts/conflicts-panel";
 import { RequirementWarning } from "@/components/my-mods/requirement-warning";
+import { CrashSuspectBadge } from "@/components/my-mods/crash-suspect-badge";
 import { ModConflictBadge } from "@/components/my-mods/conflicts/mod-conflict-badge";
 import { MyModsEmptyState } from "@/components/my-mods/empty-state";
 import { LibraryModAuthor } from "@/components/my-mods/library-mod-author";
@@ -403,6 +404,7 @@ const GridModCard = memo(function GridModCard({
             <ModHealthBadge health={health} isOutdated={isModOutdated(mod)} />
             <MissingFilesWarning missingVpks={mod.missingVpks} />
             <RequirementWarning mod={mod} />
+            <CrashSuspectBadge modId={mod.remoteId} />
             {conflictStatus && (
               <ModConflictBadge
                 onClick={onShowConflicts}
@@ -586,6 +588,7 @@ const ListModCard = memo(function ListModCard({
               missingVpks={mod.missingVpks}
             />
             <RequirementWarning mod={mod} />
+            <CrashSuspectBadge modId={mod.remoteId} />
             {conflictStatus && (
               <ModConflictBadge
                 className='text-xs'
