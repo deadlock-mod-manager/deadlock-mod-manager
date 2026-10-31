@@ -30,15 +30,11 @@ import {
 } from "@deadlock-mods/ui/components/tooltip";
 import { Copy, RotateCcw, Save } from "@deadlock-mods/ui/icons";
 import { invoke } from "@tauri-apps/api/core";
-import { useMutation } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { HeroIcon } from "@/components/heroes/hero-icon";
 import { SwitchStatus } from "@/components/settings/setting-row";
 import { usePersistedStore } from "@/lib/store";
-import { applyGamePresenceSetting } from "@/lib/game-presence-settings";
-import { isTauriError } from "@/types/tauri";
-import logger from "@/lib/logger";
 import { createDefaultGamePresenceTextTemplates } from "@/lib/store/slices/settings";
 import { Trash } from "@phosphor-icons/react";
 
@@ -350,20 +346,9 @@ export const GamePresenceSettings = () => {
   const gamePresenceEnabled = usePersistedStore(
     (state) => state.gamePresenceEnabled,
   );
-  const togglePresence = useMutation({
-    mutationFn: applyGamePresenceSetting,
-    meta: { skipGlobalErrorHandler: true },
-    onError: (error) => {
-      logger.withError(error).error("Failed to update console logging");
-      toast.error(
-        t(
-          isTauriError(error) && error.kind === "steamRunning"
-            ? "gamePresence.closeSteamToDisableLogging"
-            : "gamePresence.disableLoggingFailed",
-        ),
-      );
-    },
-  });
+  const setGamePresenceEnabled = usePersistedStore(
+    (state) => state.setGamePresenceEnabled,
+  );
   const gamePresenceTextTemplates = usePersistedStore(
     (state) => state.gamePresenceTextTemplates,
   );
@@ -599,8 +584,7 @@ export const GamePresenceSettings = () => {
             <p
               className='max-w-[72ch] text-muted-foreground text-sm text-pretty'
               id={ENABLE_DESCRIPTION_ID}>
-              {t("gamePresence.description")}{" "}
-              {t("gamePresence.steamLoggingCleanupDescription")}
+              {t("gamePresence.description")}
             </p>
           </div>
 
@@ -609,9 +593,8 @@ export const GamePresenceSettings = () => {
               aria-describedby={ENABLE_DESCRIPTION_ID}
               aria-label={t("gamePresence.title")}
               checked={gamePresenceEnabled}
-              disabled={togglePresence.isPending}
               id='toggle-game-presence'
-              onCheckedChange={(enabled) => togglePresence.mutate(enabled)}
+              onCheckedChange={setGamePresenceEnabled}
             />
             <SwitchStatus
               checked={gamePresenceEnabled}

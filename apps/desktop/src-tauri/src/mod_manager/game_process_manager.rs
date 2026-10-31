@@ -26,20 +26,23 @@ fn is_game_process(process: &Process) -> bool {
   process.thread_kind().is_none() && is_deadlock_process(process.name(), process.cmd())
 }
 
-fn executable_name(value: &OsStr) -> Option<&str> {
-  value
-    .to_str()?
+fn is_deadlock_executable(path: &str) -> bool {
+  path
     .rsplit(['/', '\\'])
     .next()
-    .filter(|name| !name.is_empty())
+    .is_some_and(|name| name.eq_ignore_ascii_case(DEADLOCK_PROCESS_NAME))
+}
+
+/// Matches on the process name or argv[0]'s file name, wherever they were read.
+pub(crate) fn is_deadlock_command(name: &str, argv0: Option<&str>) -> bool {
+  is_deadlock_executable(name) || argv0.is_some_and(is_deadlock_executable)
 }
 
 fn is_deadlock_process(name: &OsStr, command: &[std::ffi::OsString]) -> bool {
-  executable_name(name).is_some_and(|name| name.eq_ignore_ascii_case(DEADLOCK_PROCESS_NAME))
-    || command
-      .first()
-      .and_then(|argument| executable_name(argument))
-      .is_some_and(|name| name.eq_ignore_ascii_case(DEADLOCK_PROCESS_NAME))
+  is_deadlock_command(
+    name.to_str().unwrap_or_default(),
+    command.first().and_then(|argument| argument.to_str()),
+  )
 }
 
 /// A running Deadlock process as the OS reports it.

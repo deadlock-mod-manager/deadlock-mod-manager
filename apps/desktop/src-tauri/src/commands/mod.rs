@@ -45,6 +45,5 @@ pub mod server_profiles;
 pub mod shards;
 pub mod source_install;
 pub mod staged_files;
-pub mod steam_launch_options;
 pub mod steam_user;
 pub mod vpk;

@@ -13,6 +13,8 @@ interface JoinCommandArgs {
   additionalArgs?: string;
   password?: string | null;
   coldStart?: boolean;
+  consoleLog?: boolean;
+  connectAfterStart?: boolean;
 }
 
 const invokeCommand = async (command: string, _args?: JoinCommandArgs) =>
@@ -224,95 +226,24 @@ describe("joinServer", () => {
     writeText.mockClear();
   });
 
-  it.each([
-    ["p ss/wd&!", "p%20ss%2Fwd%26!"],
-    ["x;+quit", "x%3B%2Bquit"],
-    ['"hunter2"', "%22hunter2%22"],
-    ["hunter2 ", "hunter2%20"],
-  ])(
-    "delivers password %j through Steam after launching with logging disabled",
-    async (password, encodedPassword) => {
-      const result = await joinServer({
-        server: baseServer({ password_protected: true }),
-        password,
-        additionalArgs: "-novid +exec autoexec",
-        gameRunning: false,
-      });
-
-      expect(invoke).toHaveBeenCalledWith("launch_game_direct", {
-        additionalArgs: "-novid +exec autoexec",
-      });
-      expect(openUrl).toHaveBeenCalledTimes(1);
-      expect(openUrl).toHaveBeenCalledWith(
-        `steam://connect/203.0.113.10:27015/${encodedPassword}`,
-      );
-      expect(invoke.mock.calls.map(([command]) => command)).not.toContain(
-        "watch_server_connect",
-      );
-      expect(writeText).not.toHaveBeenCalled();
-      expect(result).toEqual({ kind: "steam-url" });
-    },
-  );
-
-  it("waits for startup confirmation before submitting the Steam password", async () => {
-    const started = Promise.withResolvers<void>();
-    const confirmed = Promise.withResolvers<void>();
-    invoke.mockImplementation(async (command) => {
-      if (command === "launch_game_direct") {
-        started.resolve();
-        await confirmed.promise;
-      }
-      return invokeCommand(command);
-    });
-    const joining = joinServer({
-      server: baseServer({ password_protected: true }),
-      password: "p ss wd",
-      additionalArgs: "",
-      gameRunning: false,
-    });
-    await started.promise;
-    expect(openUrl).not.toHaveBeenCalled();
-    confirmed.resolve();
-    await joining;
-    expect(openUrl).toHaveBeenCalledTimes(1);
-    expect(openUrl).toHaveBeenCalledWith(
-      "steam://connect/203.0.113.10:27015/p%20ss%20wd",
-    );
-  });
-
-  it("keeps launch-safe passwords in the launch arguments without logging", async () => {
+  it("hands a launch-unsafe password to the watchdog when logging is off", async () => {
     const result = await joinServer({
       server: baseServer({ password_protected: true }),
-      password: "hunter2",
-      additionalArgs: "-novid",
-      gameRunning: false,
-    });
-
-    expect(invoke).toHaveBeenCalledWith("launch_game_direct", {
-      additionalArgs: "-novid +connect 203.0.113.10:27015 +password hunter2",
-    });
-    expect(openUrl).not.toHaveBeenCalled();
-    expect(result).toEqual({
-      kind: "launched",
-      passwordSkipped: false,
-      watched: false,
-    });
-  });
-
-  it("keeps the password warning when a lobby has no Steam connect address", async () => {
-    const result = await joinServer({
-      server: baseServer({
-        password_protected: true,
-        connect_code: "76561198000000000",
-      }),
       password: "p ss wd",
       additionalArgs: "-novid",
       gameRunning: false,
+      consoleLog: false,
     });
 
-    expect(invoke).toHaveBeenCalledTimes(1);
     expect(invoke).toHaveBeenCalledWith("launch_game_direct", {
-      additionalArgs: "-novid +connect [76561198000000000]",
+      additionalArgs: "-novid",
+    });
+    expect(invoke).toHaveBeenCalledWith("watch_server_connect", {
+      address: "203.0.113.10:27015",
+      password: "p ss wd",
+      coldStart: true,
+      consoleLog: false,
+      connectAfterStart: true,
     });
     expect(openUrl).not.toHaveBeenCalled();
     expect(result).toEqual({
@@ -322,27 +253,13 @@ describe("joinServer", () => {
     });
   });
 
-  it("falls back to manual connection if the password handoff fails", async () => {
-    openUrl.mockRejectedValueOnce(new Error("Steam URL failed"));
-    const result = await joinServer({
-      server: baseServer({ password_protected: true }),
-      password: "p ss wd",
-      additionalArgs: "-novid",
-      gameRunning: false,
-    });
-
-    expect(openUrl).toHaveBeenCalledTimes(1);
-    expect(writeText).toHaveBeenCalledTimes(1);
-    expect(writeText).toHaveBeenCalledWith("203.0.113.10:27015 p ss wd");
-    expect(result).toEqual({ kind: "manual", code: "203.0.113.10:27015" });
-  });
-
-  it("keeps the password-bearing watchdog when logging is enabled", async () => {
+  it("keeps +connect and the retrying watchdog when logging is on", async () => {
     const result = await joinServer({
       server: baseServer({ password_protected: true }),
       password: "p ss wd",
       additionalArgs: "-condebug",
       gameRunning: false,
+      consoleLog: true,
     });
 
     expect(invoke).toHaveBeenCalledWith("launch_game_direct", {
@@ -352,53 +269,28 @@ describe("joinServer", () => {
       address: "203.0.113.10:27015",
       password: "p ss wd",
       coldStart: true,
+      consoleLog: true,
+      connectAfterStart: false,
     });
-    expect(openUrl).not.toHaveBeenCalled();
     expect(result).toMatchObject({ kind: "launched", watched: true });
   });
 
-  it.each(["", "-novid", "-condebuglog"])(
-    "does not enable logging when launching with %j",
-    async (additionalArgs) => {
-      const result = await joinServer({
-        server: baseServer(),
-        password: "",
-        additionalArgs,
-        gameRunning: false,
-      });
-
-      expect(invoke).toHaveBeenCalledWith("launch_game_direct", {
-        additionalArgs: [additionalArgs, "+connect 203.0.113.10:27015"]
-          .filter(Boolean)
-          .join(" "),
-      });
-      expect(result).toEqual({
-        kind: "launched",
-        passwordSkipped: false,
-        watched: false,
-      });
-      expect(invoke.mock.calls.map(([command]) => command)).not.toContain(
-        "watch_server_connect",
-      );
-    },
-  );
-
-  it("preserves enabled logging and starts the reconnect watchdog", async () => {
+  it("launches with the user's arguments only when logging is off", async () => {
     const result = await joinServer({
       server: baseServer(),
       password: "",
-      additionalArgs: "-condebug",
+      additionalArgs: "-novid",
       gameRunning: false,
+      consoleLog: false,
     });
 
     expect(invoke).toHaveBeenCalledWith("launch_game_direct", {
-      additionalArgs: "-condebug +connect 203.0.113.10:27015",
+      additionalArgs: "-novid +connect 203.0.113.10:27015",
     });
-    expect(invoke).toHaveBeenCalledWith("watch_server_connect", {
-      address: "203.0.113.10:27015",
-      password: null,
-      coldStart: true,
+    expect(result).toEqual({
+      kind: "launched",
+      passwordSkipped: false,
+      watched: false,
     });
-    expect(result).toMatchObject({ kind: "launched", watched: true });
   });
 });

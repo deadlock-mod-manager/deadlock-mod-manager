@@ -54,6 +54,7 @@ export const useJoinServer = (
   const queryClient = useQueryClient();
   const getActiveProfile = usePersistedStore((s) => s.getActiveProfile);
   const clearLastJoin = usePersistedStore((s) => s.clearLastJoin);
+  const consoleLog = usePersistedStore((s) => s.gamePresenceEnabled);
 
   /** gameinfo.gi is only read at startup, so our changes need a restart. */
   const ensureGameClosed = async (): Promise<boolean> => {
@@ -139,6 +140,7 @@ export const useJoinServer = (
           password,
           additionalArgs,
           gameRunning: false,
+          consoleLog,
         });
       }
 
@@ -173,6 +175,7 @@ export const useJoinServer = (
         password,
         additionalArgs,
         gameRunning,
+        consoleLog,
       });
     },
     onSuccess: (outcome) => {

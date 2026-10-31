@@ -23,7 +23,6 @@ pub mod perf_config;
 pub mod repair_backup;
 pub mod shard;
 pub mod shard_report;
-pub mod steam_launch_options;
 pub mod steam_manager;
 pub(crate) mod steam_uri_launcher;
 pub mod vdata_history;

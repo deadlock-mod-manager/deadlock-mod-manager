@@ -9,6 +9,10 @@
 //! So we do both: launch with `+connect` for the fast path, then tail
 //! `console.log` and re-issue `steam://connect` if the client reaches the
 //! main menu without having connected to the server we asked for.
+//!
+//! Without `-condebug` there is no log to tail. The watchdog then only opens
+//! `steam://connect` once after a cold start, for a password the launch
+//! arguments could not carry.
 
 use std::net::SocketAddr;
 use std::path::Path;
@@ -149,6 +153,8 @@ pub async fn watch_server_connect(
   address: String,
   password: Option<String>,
   cold_start: bool,
+  console_log: bool,
+  connect_after_start: bool,
 ) -> Result<(), Error> {
   let game_path = game_path()?;
 
@@ -169,13 +175,23 @@ pub async fn watch_server_connect(
       &game_path,
       &address,
       password.as_deref(),
-      cold_start,
+      WatchMode {
+        cold_start,
+        console_log,
+        connect_after_start,
+      },
       &cancel,
     )
     .await;
   });
 
   Ok(())
+}
+
+struct WatchMode {
+  cold_start: bool,
+  console_log: bool,
+  connect_after_start: bool,
 }
 
 /// Terminal state of a watchdog run, plus how many `steam://connect` retries
@@ -192,23 +208,33 @@ async fn run_watchdog(
   game_path: &Path,
   address: &str,
   password: Option<&str>,
-  cold_start: bool,
+  mode: WatchMode,
   cancel: &CancellationToken,
 ) {
   // On a cold start the game truncates console.log, so reading from the top
   // catches the early connect lines. When the client is already up we only
   // care about what happens from now on.
-  let mut tail = if cold_start {
+  let mut tail = if mode.cold_start {
     ConsoleLogTail::from_start(game_path)
   } else {
     ConsoleLogTail::from_end(game_path)
   };
 
-  if cold_start {
+  if mode.cold_start {
     emit(app, ConnectStatus::WaitingForGame, address, 0);
     if !await_game_start(app, address, cancel).await {
       return;
     }
+  }
+
+  if !mode.console_log {
+    if mode.connect_after_start {
+      log::info!("Opening steam://connect to {address} after the game started");
+      if let Err(error) = open_steam_connect(address, password) {
+        log::warn!("steam://connect after launch failed: {error}");
+      }
+    }
+    return;
   }
 
   emit(app, ConnectStatus::WaitingForClient, address, 0);

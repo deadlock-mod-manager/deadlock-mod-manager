@@ -1,7 +1,7 @@
 use crate::error::{KvError, Result};
 use crate::types::{CommentStyle, Token, TokenMetadata, TokenType};
 
-pub(crate) const MAX_TOKEN_LENGTH: usize = 1024;
+const MAX_TOKEN_LENGTH: usize = 1024;
 
 pub struct Tokenizer {
     input: Vec<char>,
@@ -11,7 +11,6 @@ pub struct Tokenizer {
     allow_escape_sequences: bool,
     allow_conditionals: bool,
     allow_includes: bool,
-    max_token_length: usize,
 }
 
 impl Tokenizer {
@@ -24,7 +23,6 @@ impl Tokenizer {
             allow_escape_sequences: true,
             allow_conditionals: true,
             allow_includes: true,
-            max_token_length: MAX_TOKEN_LENGTH,
         }
     }
 
@@ -42,13 +40,7 @@ impl Tokenizer {
             allow_escape_sequences,
             allow_conditionals,
             allow_includes,
-            max_token_length: MAX_TOKEN_LENGTH,
         }
-    }
-
-    pub fn with_max_token_length(mut self, max_token_length: usize) -> Self {
-        self.max_token_length = max_token_length;
-        self
     }
 
     fn current_char(&self) -> Option<char> {
@@ -230,11 +222,11 @@ impl Tokenizer {
         let mut value = String::new();
 
         while let Some(ch) = self.current_char() {
-            if value.len() >= self.max_token_length {
+            if value.len() >= MAX_TOKEN_LENGTH {
                 return Err(KvError::TokenTooLong {
                     line: start_line,
                     column: start_column,
-                    max_length: self.max_token_length,
+                    max_length: MAX_TOKEN_LENGTH,
                 });
             }
 
@@ -288,11 +280,11 @@ impl Tokenizer {
         let mut value = String::new();
 
         while let Some(ch) = self.current_char() {
-            if value.len() >= self.max_token_length {
+            if value.len() >= MAX_TOKEN_LENGTH {
                 return Err(KvError::TokenTooLong {
                     line: start_line,
                     column: start_column,
-                    max_length: self.max_token_length,
+                    max_length: MAX_TOKEN_LENGTH,
                 });
             }
 

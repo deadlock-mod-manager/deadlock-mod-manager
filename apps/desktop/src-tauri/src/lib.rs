@@ -270,7 +270,6 @@ pub fn run() {
       commands::game::set_game_path,
       commands::game::set_steam_path,
       commands::game::clear_steam_path,
-      commands::steam_launch_options::clear_steam_condebug,
       commands::mods::get_mod_file_tree,
       commands::mods::install_mod,
       commands::game::stop_game,
