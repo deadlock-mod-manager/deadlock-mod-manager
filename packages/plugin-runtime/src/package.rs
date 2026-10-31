@@ -30,25 +30,6 @@ fn invalid(message: impl Into<String>) -> Error {
   Error::InvalidInput(message.into())
 }
 
-fn sha256_file(path: &Path, limit: u64) -> Result<String, Error> {
-  let mut file = fs::File::open(path)?.take(limit + 1);
-  let mut digest = Sha256::new();
-  let mut buffer = [0u8; 65536];
-  let mut total = 0u64;
-  loop {
-    let read = file.read(&mut buffer)?;
-    if read == 0 {
-      break;
-    }
-    total += read as u64;
-    if total > limit {
-      return Err(invalid("Plugin archive exceeds the 64 MiB limit"));
-    }
-    digest.update(&buffer[..read]);
-  }
-  Ok(format!("{:x}", digest.finalize()))
-}
-
 /// Unpacks `archive` into `destination`, which must not exist yet. With
 /// `expected_hash`, an archive whose SHA-256 differs is refused before any
 /// entry is read.
@@ -64,13 +45,21 @@ pub fn extract(
   if metadata.len() > MAX_ARCHIVE_BYTES {
     return Err(invalid("Plugin archive exceeds the 64 MiB limit"));
   }
-  let archive_hash = sha256_file(archive, MAX_ARCHIVE_BYTES)?;
+  let mut bytes = Vec::new();
+  fs::File::open(archive)?
+    .take(MAX_ARCHIVE_BYTES + 1)
+    .read_to_end(&mut bytes)?;
+  let archive_size = bytes.len() as u64;
+  if archive_size > MAX_ARCHIVE_BYTES {
+    return Err(invalid("Plugin archive exceeds the 64 MiB limit"));
+  }
+  let archive_hash = format!("{:x}", Sha256::digest(&bytes));
   if expected_hash.is_some_and(|expected| expected != archive_hash) {
     return Err(invalid(
       "Plugin archive does not match its published SHA-256",
     ));
   }
-  let mut zip = zip::ZipArchive::new(fs::File::open(archive)?)
+  let mut zip = zip::ZipArchive::new(io::Cursor::new(bytes))
     .map_err(|error| invalid(format!("Plugin package is not a ZIP archive: {error}")))?;
   if zip.len() > MAX_ENTRIES {
     return Err(invalid("Plugin archive has too many entries"));
@@ -142,7 +131,7 @@ pub fn extract(
   Ok(ExtractedPackage {
     manifest,
     archive_hash,
-    archive_size: metadata.len(),
+    archive_size,
     backend_hash,
   })
 }

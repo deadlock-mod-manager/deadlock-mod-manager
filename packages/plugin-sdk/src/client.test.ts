@@ -142,4 +142,21 @@ describe("createPluginClient", () => {
     expect(() => defineCommand("tick", decode.json)).toThrow(PluginCallError);
     expect(requests).toEqual([]);
   });
+
+  it.each(["not json", "null", "[]", "1", '"text"'])(
+    "rejects invalid encoded payload %s before transport",
+    async (payloadJson) => {
+      const { requests, transport } = recordingTransport("{}");
+      const client = createPluginClient({ transport });
+      const error = await rejectionOf(
+        client.call(
+          { name: "status", encode: () => payloadJson, decode: decodeStatus },
+          {},
+        ),
+      );
+      expect(error.source).toBe("client");
+      expect(error.code).toBe("invalid_payload");
+      expect(requests).toEqual([]);
+    },
+  );
 });

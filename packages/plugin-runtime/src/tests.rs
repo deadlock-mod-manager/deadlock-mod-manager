@@ -211,6 +211,23 @@ impl Fixture {
     output
   }
 
+  fn grant(
+    &self,
+    file: Option<&str>,
+    profile: Option<&str>,
+  ) -> Result<ExternalPluginSummary, Error> {
+    let reviewed = self.host.summary(ID)?;
+    self.host.grant(ID, &reviewed.package_hash, file, profile)
+  }
+
+  fn apply_update(&self) -> Result<ExternalPluginSummary, Error> {
+    let reviewed = self.host.summary(ID)?.pending_update;
+    let hash = reviewed
+      .map(|update| update.package_hash)
+      .unwrap_or_default();
+    self.host.apply_update(ID, &hash)
+  }
+
   /// Grants what the installed manifest asks for: the output file when it
   /// requests `files`, the test profile when it requests a picked profile.
   fn enable(&self) -> u64 {
@@ -224,7 +241,7 @@ impl Fixture {
     let output = self.output();
     let file = asks("files").then(|| output.to_str().unwrap().to_owned());
     let profile = asks("mods").then_some("test-profile");
-    self.host.grant(ID, file.as_deref(), profile).unwrap();
+    self.grant(file.as_deref(), profile).unwrap();
     self.host.set_enabled(ID, true).unwrap();
     self.generation()
   }
@@ -316,7 +333,7 @@ fn grants_take_exactly_the_resources_the_manifest_asks_for() {
   fixture.install("0.1.0");
   let output = fixture.output();
   let output = output.to_str().unwrap();
-  let grant = |file: Option<&str>, profile: Option<&str>| fixture.host.grant(ID, file, profile);
+  let grant = |file: Option<&str>, profile: Option<&str>| fixture.grant(file, profile);
   assert!(
     grant(None, Some("test-profile")).is_err(),
     "files needs a file"
@@ -503,10 +520,7 @@ fn folder_grants_resolve_paths_and_refuse_escapes() {
   let folder = fixture.dir.path().join("workspace");
   fs::create_dir_all(folder.join("builds")).unwrap();
   fs::write(fixture.dir.path().join("secret.json"), b"{}").unwrap();
-  fixture
-    .host
-    .grant(ID, Some(folder.to_str().unwrap()), None)
-    .unwrap();
+  fixture.grant(Some(folder.to_str().unwrap()), None).unwrap();
   fixture.host.set_enabled(ID, true).unwrap();
   let generation = fixture.generation();
 
@@ -577,10 +591,7 @@ fn read_only_scopes_refuse_writes_and_installs() {
     json!([files_vpk(), { "id": "mods", "access": ["read"], "profiles": "all" }]),
   );
   let output = fixture.output();
-  fixture
-    .host
-    .grant(ID, Some(output.to_str().unwrap()), None)
-    .unwrap();
+  fixture.grant(Some(output.to_str().unwrap()), None).unwrap();
   fixture.host.set_enabled(ID, true).unwrap();
   let generation = fixture.generation();
   let write = fixture.hostcall(
@@ -810,6 +821,65 @@ fn record_changes(fixture: &Fixture) -> Arc<Mutex<Vec<String>>> {
 }
 
 #[test]
+fn grants_reject_a_package_replaced_after_review() {
+  let fixture = fixture();
+  let reviewed = fixture.install_with("0.1.0", json!([{ "id": "storage" }]));
+  fixture.install_with("0.2.0", json!([{ "id": "storage" }, { "id": "game" }]));
+  assert!(
+    fixture
+      .host
+      .grant(ID, &reviewed.package_hash, None, None)
+      .is_err()
+  );
+  assert!(fixture.host.summary(ID).unwrap().grant.is_none());
+  fixture.grant(None, None).unwrap();
+}
+
+#[test]
+fn update_approval_rejects_a_replaced_pending_package() {
+  let fixture = fixture();
+  fixture.install_with("0.1.0", narrow());
+  let generation = fixture.enable();
+  let reviewed = fixture.install("0.2.0").pending_update.unwrap();
+  fixture.install("0.3.0");
+  assert!(
+    fixture
+      .host
+      .apply_update(ID, &reviewed.package_hash)
+      .is_err()
+  );
+  let unchanged = fixture.host.summary(ID).unwrap();
+  assert_eq!(unchanged.version, "0.1.0");
+  assert_eq!(unchanged.pending_update.unwrap().version, "0.3.0");
+  assert_eq!(fixture.generation(), generation);
+  assert_eq!(fixture.apply_update().unwrap().version, "0.3.0");
+}
+
+#[test]
+fn pending_updates_refuse_older_and_equal_version_archives() {
+  let fixture = fixture();
+  fixture.install_with("0.1.0", narrow());
+  fixture.enable();
+  let pending = fixture.install("0.3.0").pending_update.unwrap();
+  let older = archive_with(&fixture, "0.2.0", full_permissions());
+  let same_version = archive_with(&fixture, "0.3.0", json!([{ "id": "game" }]));
+  for archive in [older, same_version] {
+    assert!(fixture.host.install(&archive).is_err());
+    assert_eq!(
+      fixture
+        .host
+        .summary(ID)
+        .unwrap()
+        .pending_update
+        .unwrap()
+        .package_hash,
+      pending.package_hash
+    );
+    assert_eq!(package_dirs(&fixture), 2);
+  }
+}
+
+#[test]
 fn update_with_new_permissions_waits_for_approval() {
   let fixture = fixture();
   fixture.install_with("0.1.0", narrow());
@@ -845,7 +915,7 @@ fn update_with_new_permissions_waits_for_approval() {
   let again = fixture.host.install(&newer).unwrap();
   assert_eq!(again.pending_update.unwrap().version, "0.3.0");
 
-  let applied = fixture.host.apply_update(ID).unwrap();
+  let applied = fixture.apply_update().unwrap();
   assert_eq!(applied.version, "0.3.0");
   assert_eq!(applied.changelog, ["Release 0.3.0"]);
   assert!(applied.enabled);
@@ -867,7 +937,7 @@ fn update_with_new_permissions_waits_for_approval() {
   let newest = &fixture.host.activity(ID, 1).unwrap()[0];
   assert_eq!(newest.kind, ExternalPluginActivityKind::Updated);
   assert_eq!(newest.reason.as_deref(), Some("0.3.0"));
-  assert!(fixture.host.apply_update(ID).is_err());
+  assert!(fixture.apply_update().is_err());
 }
 
 #[test]
@@ -890,7 +960,7 @@ fn changed_scopes_need_consent_and_clear_resources_they_no_longer_allow() {
     1,
     "only the changed request waits"
   );
-  let applied = fixture.host.apply_update(ID).unwrap();
+  let applied = fixture.apply_update().unwrap();
   assert!(applied.enabled, "the picked file still fits the new scope");
   assert!(applied.grant.unwrap().file.is_some());
 
@@ -900,7 +970,7 @@ fn changed_scopes_need_consent_and_clear_resources_they_no_longer_allow() {
     { "id": "storage" }
   ]);
   fixture.install_with("0.3.0", folder);
-  let applied = fixture.host.apply_update(ID).unwrap();
+  let applied = fixture.apply_update().unwrap();
   let grant = applied.grant.unwrap();
   assert!(
     grant.file.is_none(),

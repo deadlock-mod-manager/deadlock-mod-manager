@@ -37,7 +37,12 @@ export const usePluginActions = (plugin: ExternalPluginSummary) => {
     mutationFn: (change: {
       filePath: string | null;
       profileFolder: string | null;
-    }) => grantExternalPlugin({ pluginId: plugin.id, ...change }),
+    }) =>
+      grantExternalPlugin({
+        pluginId: plugin.id,
+        expectedHash: plugin.packageHash,
+        ...change,
+      }),
     meta: { skipGlobalErrorHandler: true },
     onSuccess: () => {
       toast.success(t("plugins.access.actions.grantSaved", { name }));

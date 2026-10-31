@@ -107,11 +107,17 @@ pub async fn external_plugins_install_url(
 pub async fn external_plugins_apply_update(
   host: State<'_, Arc<PluginHost>>,
   plugin_id: String,
+  expected_hash: String,
 ) -> Result<ExternalPluginSummary, Error> {
   ensure_enabled(&host)?;
 
   let host = Arc::clone(&host);
-  blocking(move || host.apply_update(&plugin_id).map_err(Error::from)).await
+  blocking(move || {
+    host
+      .apply_update(&plugin_id, &expected_hash)
+      .map_err(Error::from)
+  })
+  .await
 }
 
 #[tauri::command]
@@ -159,6 +165,7 @@ pub async fn external_plugins_clear_data(
 pub async fn external_plugins_grant(
   host: State<'_, Arc<PluginHost>>,
   plugin_id: String,
+  expected_hash: String,
   file_path: Option<String>,
   profile_folder: Option<String>,
 ) -> Result<(), Error> {
@@ -167,7 +174,12 @@ pub async fn external_plugins_grant(
   let host = Arc::clone(&host);
   blocking(move || {
     host
-      .grant(&plugin_id, file_path.as_deref(), profile_folder.as_deref())
+      .grant(
+        &plugin_id,
+        &expected_hash,
+        file_path.as_deref(),
+        profile_folder.as_deref(),
+      )
       .map(drop)
       .map_err(Error::from)
   })

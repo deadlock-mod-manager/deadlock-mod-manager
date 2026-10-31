@@ -153,7 +153,7 @@ export const UpdateSheet = ({
   };
 
   const apply = useMutation({
-    mutationFn: () => applyExternalPluginUpdate(plugin.id),
+    mutationFn: () => applyExternalPluginUpdate(plugin.id, update.packageHash),
     meta: { skipGlobalErrorHandler: true },
     onSuccess: (updated) => {
       toast.success(

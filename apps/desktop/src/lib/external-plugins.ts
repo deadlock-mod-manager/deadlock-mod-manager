@@ -44,6 +44,7 @@ export const DEFAULT_PROFILE_FOLDER = "default";
 
 type ExternalPluginGrantRequest = {
   pluginId: string;
+  expectedHash: string;
   /** The picked file or folder, for plugins that ask for `files`. */
   filePath: string | null;
   /** The picked profile, for plugins that ask for `mods` in one profile. */
@@ -79,8 +80,14 @@ export const callExternalPluginFrame = (
   });
 
 /** Installs the waiting update, granting the new permissions it asks for. */
-export const applyExternalPluginUpdate = (pluginId: string) =>
-  invoke<ExternalPluginSummary>("external_plugins_apply_update", { pluginId });
+export const applyExternalPluginUpdate = (
+  pluginId: string,
+  expectedHash: string,
+) =>
+  invoke<ExternalPluginSummary>("external_plugins_apply_update", {
+    pluginId,
+    expectedHash,
+  });
 
 /** Drops the waiting update; the installed version keeps running. */
 export const discardExternalPluginUpdate = (pluginId: string) =>

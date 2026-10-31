@@ -84,6 +84,7 @@ impl ExternalPluginActivity {
       && self.method == newer.method
       && self.permission == newer.permission
       && self.file_name == newer.file_name
+      && self.size == newer.size
       && self.host == newer.host
       && self.reason == newer.reason
       && elapsed.is_some_and(|seconds| seconds < REPEAT_WINDOW_SECONDS)
@@ -174,6 +175,27 @@ mod tests {
     assert_eq!(entries[MAX_ENTRIES - 1].reason.as_deref(), Some("5"));
     assert_eq!(reopened.list(3).unwrap().len(), 3);
     assert!(!dir.path().join("activity.json.part").exists());
+  }
+
+  #[test]
+  fn records_writes_with_different_sizes() {
+    let dir = tempfile::tempdir().unwrap();
+    let log = ActivityLog::new(dir.path());
+    let first = ExternalPluginActivity {
+      file_name: Some("state.json".into()),
+      size: Some(2),
+      ..ExternalPluginActivity::new(ExternalPluginActivityKind::Wrote)
+    };
+    assert!(log.record(&first).unwrap());
+    let second = ExternalPluginActivity {
+      size: Some(10),
+      ..first
+    };
+    assert!(log.record(&second).unwrap());
+    assert!(!log.record(&second).unwrap());
+    let entries = log.list(10).unwrap();
+    assert_eq!(entries.len(), 2);
+    assert_eq!(entries[0].size, Some(10));
   }
 
   #[test]

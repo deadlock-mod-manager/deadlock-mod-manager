@@ -99,6 +99,14 @@ export function createPluginClient(
     let payloadJson: string;
     try {
       payloadJson = command.encode(input);
+      const payload: JsonValue = JSON.parse(payloadJson);
+      if (
+        payload === null ||
+        Array.isArray(payload) ||
+        typeof payload !== "object"
+      ) {
+        throw new Error("The payload must be a JSON object.");
+      }
     } catch (error) {
       throw clientError(
         name,

@@ -354,6 +354,16 @@ impl SnapshotStore {
       observation.since = Some(Instant::now());
       return Ok(Inspection::Changing);
     }
+    if require_marker {
+      let mut marker = output.as_os_str().to_owned();
+      marker.push(".ready");
+      let fresh = fs::metadata(PathBuf::from(marker))
+        .and_then(|meta| meta.modified())
+        .is_ok_and(|modified| modified >= current.1);
+      if !fresh {
+        return Ok(Inspection::WaitingForMarker);
+      }
+    }
     if let Some((accepted, hash)) = &observation.accepted
       && *accepted == current
       && let Some(snapshot) = self.get(hash)?
@@ -375,16 +385,6 @@ impl SnapshotStore {
       .is_none_or(|since| since.elapsed() < STABLE_FOR)
     {
       return Ok(Inspection::Changing);
-    }
-    if require_marker {
-      let mut marker = output.as_os_str().to_owned();
-      marker.push(".ready");
-      let fresh = fs::metadata(PathBuf::from(marker))
-        .and_then(|meta| meta.modified())
-        .is_ok_and(|modified| modified >= current.1);
-      if !fresh {
-        return Ok(Inspection::WaitingForMarker);
-      }
     }
     match self.stage(output, current, pinned) {
       Ok((snapshot, staged)) => {
@@ -504,6 +504,39 @@ pub(crate) mod tests {
     assert!(matches!(
       store.stage(&fake, stamp(&fake).unwrap(), &[]),
       Err(SnapshotError::Invalid(_))
+    ));
+  }
+
+  #[test]
+  fn cached_snapshots_still_require_a_fresh_marker() {
+    let dir = tempfile::tempdir().unwrap();
+    let store = SnapshotStore::new(&dir.path().join("data"));
+    let source = output(dir.path(), &vpk("cached"));
+    let mut observation = Observation::default();
+    store
+      .inspect(&mut observation, &source, false, &[])
+      .unwrap();
+    settle(&mut observation);
+    assert!(matches!(
+      store
+        .inspect(&mut observation, &source, false, &[])
+        .unwrap(),
+      Inspection::Ready { .. }
+    ));
+    assert!(matches!(
+      store.inspect(&mut observation, &source, true, &[]).unwrap(),
+      Inspection::WaitingForMarker
+    ));
+    let marker = format!("{}.ready", source.display());
+    fs::write(&marker, b"ready").unwrap();
+    assert!(matches!(
+      store.inspect(&mut observation, &source, true, &[]).unwrap(),
+      Inspection::Ready { staged: false, .. }
+    ));
+    fs::remove_file(marker).unwrap();
+    assert!(matches!(
+      store.inspect(&mut observation, &source, true, &[]).unwrap(),
+      Inspection::WaitingForMarker
     ));
   }
 

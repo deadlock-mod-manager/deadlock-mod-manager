@@ -361,15 +361,22 @@ impl PluginHost {
           .pending_update
           .as_ref()
           .is_some_and(|pending| pending.archive_hash == extracted.archive_hash);
-      if unchanged || incoming <= installed {
+      let pending_version = previous
+        .pending_update
+        .as_ref()
+        .map(|pending| pending.manifest.parsed_version());
+      if unchanged
+        || incoming <= installed
+        || pending_version.is_some_and(|version| incoming <= version)
+      {
         let _ = fs::remove_dir_all(&unpacked);
         drop(registry);
         if unchanged {
           return self.summary(&id);
         }
         return Err(invalid(format!(
-          "{} {} is installed; updates need a newer version than {}",
-          previous.manifest.name, previous.manifest.version, extracted.manifest.version
+          "{} {} cannot replace the installed or pending version; select a newer archive",
+          previous.manifest.name, extracted.manifest.version
         )));
       }
     }
@@ -463,13 +470,20 @@ impl PluginHost {
   /// become the grant; the picked file and profile stay when the new scopes
   /// still allow them, and so does the enabled state while nothing is left
   /// to pick.
-  pub fn apply_update(&self, id: &str) -> Result<ExternalPluginSummary, Error> {
+  pub fn apply_update(
+    &self,
+    id: &str,
+    expected_hash: &str,
+  ) -> Result<ExternalPluginSummary, Error> {
     let mut registry = lock(&self.registry);
     let plugin = registry.require(id)?;
     let pending = plugin
       .pending_update
       .as_ref()
       .ok_or_else(|| invalid("No update is waiting for approval"))?;
+    if pending.archive_hash != expected_hash {
+      return Err(invalid("The update changed; review its permissions again"));
+    }
     if !registry.package_path(id, &pending.package_dir).is_dir() {
       return Err(invalid(
         "The downloaded update is missing; install it again",
@@ -538,14 +552,22 @@ impl PluginHost {
   pub fn grant(
     &self,
     id: &str,
+    expected_hash: &str,
     file: Option<&str>,
     profile: Option<&str>,
   ) -> Result<ExternalPluginSummary, Error> {
-    let manifest = lock(&self.registry).require(id)?.manifest.clone();
+    let manifest = {
+      let registry = lock(&self.registry);
+      let plugin = registry.require(id)?;
+      if plugin.archive_hash != expected_hash {
+        return Err(invalid("The plugin changed; review its permissions again"));
+      }
+      plugin.manifest.clone()
+    };
     let file = self.picked_file(&manifest, file)?;
     let profile = self.picked_profile(&manifest, profile)?;
     lock(&self.registry).update(id, |plugin| {
-      if plugin.manifest != manifest {
+      if plugin.archive_hash != expected_hash || plugin.manifest != manifest {
         return Err(invalid(
           "The plugin changed while granting; review its permissions again",
         ));

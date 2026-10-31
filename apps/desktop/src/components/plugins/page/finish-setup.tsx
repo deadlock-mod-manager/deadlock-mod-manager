@@ -174,6 +174,7 @@ export const FinishSetup = ({ plugin }: { plugin: ExternalPluginSummary }) => {
     mutationFn: async () => {
       await grantExternalPlugin({
         pluginId: plugin.id,
+        expectedHash: plugin.packageHash,
         filePath: filesRequest ? filePath : null,
         profileFolder:
           modsRequest?.profiles === "picked" ? profileFolder : null,

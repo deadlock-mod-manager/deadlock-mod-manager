@@ -6,6 +6,7 @@ import { useNavigate } from "react-router";
 import { getErrorMessage } from "@/lib/errors";
 import {
   EXTERNAL_PLUGINS_QUERY_KEY,
+  externalPluginBlockedQueryKey,
   installExternalPlugin,
   installExternalPluginFromUrl,
 } from "@/lib/external-plugins";
@@ -28,6 +29,9 @@ const useInstalled = () => {
       );
       void queryClient.invalidateQueries({
         queryKey: EXTERNAL_PLUGINS_QUERY_KEY,
+      });
+      queryClient.removeQueries({
+        queryKey: externalPluginBlockedQueryKey(plugin.id),
       });
       navigate(`/ext/${encodeURIComponent(plugin.id)}`);
     },
