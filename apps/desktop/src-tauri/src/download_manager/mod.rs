@@ -1,5 +1,8 @@
 pub mod downloader;
 mod progress;
+mod range;
+#[cfg(test)]
+mod test_server;
 
 use crate::app_runtime::AppHandle;
 use crate::errors::Error;
