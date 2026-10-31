@@ -89,6 +89,12 @@ import {
   prepareNetworkDiagnosticsWorld,
 } from "./network-diagnostics-fixtures";
 
+import {
+  reliabilityRoutes,
+  prepareReliabilityWorld,
+  assertReliabilityNetwork,
+} from "./reliability-fixtures";
+
 type Definition = {
   family: string;
   spec: string;
@@ -373,6 +379,16 @@ const networkDiagnostics: Definition = {
   routes: networkDiagnosticsRoutes,
   prepare: prepareNetworkDiagnosticsWorld,
 };
+const modUpdates: Definition = {
+  ...defaults,
+  family: "gamebanana",
+  spec: "mod-updates",
+  phases: ["exercise", "restart"],
+  routes: reliabilityRoutes,
+  prepare: prepareReliabilityWorld,
+  verifyNetwork: assertReliabilityNetwork,
+};
+
 export const scenarios = {
   "library-groups-organize": libraryGroups,
   "library-groups-identification": {
@@ -812,6 +828,8 @@ export const scenarios = {
     routes: variantNamesRoutes,
     verifyNetwork: assertVariantNamesNetwork,
   },
+  "gamebanana-archived-files": modUpdates,
+  "gamebanana-update-choice": modUpdates,
   "gamebanana-renamed-packs": {
     ...catalog,
     spec: "gamebanana-renamed-packs",

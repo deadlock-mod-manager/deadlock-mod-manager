@@ -282,19 +282,65 @@ fn detect_update(snapshot: &UpdateSnapshot, installed: &InstalledSubmissionDto) 
   }
 
   // Page edits bump remote_updated_at, so a skipped update keys off file dates.
-  let selected_removed = selected
-    .iter()
-    .any(|id| !snapshot.files.iter().any(|file| file.id == *id));
-  if selected_removed {
-    return Some(newest_file.unwrap_or(snapshot.remote_updated_at));
-  }
-  snapshot
+  let changed_at = snapshot
     .files
     .iter()
     .filter(|file| selected.contains(&file.id))
     .filter_map(|file| file.date_added)
     .filter(|added| *added > installed.installed_at)
+    .max();
+  let selected_removed = selected
+    .iter()
+    .any(|id| !snapshot.files.iter().any(|file| file.id == *id));
+  if !selected_removed {
+    return changed_at;
+  }
+  changed_at.max(replacement_added_at(snapshot, installed, &selected))
+}
+
+/// Archived files drop out of the snapshot and GameBanana doesn't link a file
+/// to its newer version, so a missing selected file only counts as replaced
+/// when a newer upload clearly takes its place.
+fn replacement_added_at(
+  snapshot: &UpdateSnapshot,
+  installed: &InstalledSubmissionDto,
+  selected: &[u64],
+) -> Option<i64> {
+  let newer = snapshot.files.iter().filter(|file| {
+    !selected.contains(&file.id)
+      && file
+        .date_added
+        .is_some_and(|added| added > installed.installed_at)
+  });
+  if installed.selected_file_names.is_empty() && selected.len() == 1 && snapshot.files.len() == 1 {
+    return newer.filter_map(|file| file.date_added).max();
+  }
+  let missing = installed
+    .selected_file_names
+    .iter()
+    .filter(|name| !snapshot.files.iter().any(|file| &file.name == *name))
+    .map(|name| upload_base_name(name))
+    .collect::<Vec<_>>();
+  newer
+    .filter(|file| missing.contains(&upload_base_name(&file.name)))
+    .filter_map(|file| file.date_added)
     .max()
+}
+
+// GameBanana tells uploads that share a file name apart with a random `_xxxxx`
+// suffix, so a re-uploaded pack keeps its name up to that suffix. Matches
+// `uploadBaseName` in update-download-selection.ts.
+fn upload_base_name(name: &str) -> String {
+  let name = name.to_lowercase();
+  if let Some((stem, extension)) = name.rsplit_once('.')
+    && !extension.is_empty()
+    && let Some((base, suffix)) = stem.rsplit_once('_')
+    && suffix.len() == 5
+    && suffix.bytes().all(|byte| byte.is_ascii_hexdigit())
+  {
+    return format!("{base}.{extension}");
+  }
+  name
 }
 
 const UPDATE_CACHE_TTL_SECS: u64 = 6 * 60 * 60;
@@ -633,7 +679,13 @@ mod tests {
       remote_id: "Mod-1".into(),
       installed_at,
       selected_file_ids: selected.iter().map(|id| (*id).to_string()).collect(),
+      selected_file_names: selected.iter().map(|id| format!("file-{id}.zip")).collect(),
     }
+  }
+
+  fn renamed(mut file: SubmissionFile, name: &str) -> SubmissionFile {
+    file.name = name.into();
+    file
   }
 
   fn snapshot(remote_updated_at: i64, files: Vec<SubmissionFile>) -> UpdateSnapshot {
@@ -656,9 +708,26 @@ mod tests {
   }
 
   #[test]
-  fn removed_selected_file_flags_update() {
+  fn an_unrelated_lone_file_is_not_a_replacement() {
     let snapshot = snapshot(250, vec![file(2, 300)]);
-    assert_eq!(detect_update(&snapshot, &installed(200, &["1"])), Some(300));
+    assert_eq!(detect_update(&snapshot, &installed(200, &["1"])), None);
+  }
+
+  #[test]
+  fn archived_selected_file_without_replacement_does_not_flag() {
+    let snapshot = snapshot(300, vec![file(2, 100), file(3, 300)]);
+    assert_eq!(detect_update(&snapshot, &installed(200, &["1"])), None);
+  }
+
+  #[test]
+  fn reupload_with_same_base_name_flags_update() {
+    let mut installed = installed(200, &["1"]);
+    installed.selected_file_names = vec!["Pack_1a2b3.zip".into()];
+    let snapshot = snapshot(
+      300,
+      vec![renamed(file(2, 300), "pack_4c5d6.zip"), file(3, 100)],
+    );
+    assert_eq!(detect_update(&snapshot, &installed), Some(300));
   }
 
   #[test]

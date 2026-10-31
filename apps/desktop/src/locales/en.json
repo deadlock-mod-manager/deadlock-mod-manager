@@ -3195,7 +3195,8 @@
       "changelogTitle_other": "What's new since your install ({{count}} updates)",
       "skip": "Skip this update",
       "skipDescription": "Hide this update until the author publishes a newer one",
-      "skipped": "Skipped the update for {{name}}"
+      "skipped": "Skipped the update for {{name}}",
+      "chooseFiles": "None of these files match the one you installed. Pick the ones to update to"
     },
     "copyModList": "Copy mod list",
     "moreActions": "More actions",

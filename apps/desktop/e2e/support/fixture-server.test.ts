@@ -273,3 +273,28 @@ describe("fixture network", () => {
     }
   });
 });
+
+it("matches ordered repeated query values for provider multicalls", async () => {
+  const server = await startFixtureServer([
+    {
+      method: "GET",
+      path: "/bulk",
+      query: { "itemid[]": ["2", "1"] },
+      status: 200,
+      body: "[2,1]",
+    },
+  ]);
+  try {
+    const correct = await fetch(`${server.origin}/bulk?itemid[]=2&itemid[]=1`);
+    expect(correct.status).toBe(200);
+    expect(await correct.json()).toEqual([2, 1]);
+    const reversed = await fetch(`${server.origin}/bulk?itemid[]=1&itemid[]=2`);
+    expect(reversed.status).toBe(501);
+    const extra = await fetch(
+      `${server.origin}/bulk?itemid[]=2&itemid[]=1&itemid[]=3`,
+    );
+    expect(extra.status).toBe(501);
+  } finally {
+    await server.close();
+  }
+});

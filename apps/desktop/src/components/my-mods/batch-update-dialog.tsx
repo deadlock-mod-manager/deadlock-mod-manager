@@ -328,7 +328,10 @@ export const BatchUpdateDialog = ({
                   disabled={
                     batchUpdateMutation.isPending ||
                     refreshingFiles ||
-                    pendingUpdates.length === 0
+                    pendingUpdates.length === 0 ||
+                    pendingUpdates.some(
+                      (update) => update.selectedDownloads.length === 0,
+                    )
                   }
                   icon={<RefreshCw className='h-4 w-4' />}>
                   {updateLabel}
@@ -509,6 +512,11 @@ const UpdateModCard = ({
             {selectedSet.size === 1 && (
               <p className='text-muted-foreground text-xs'>
                 {t("myMods.batchUpdate.oneFileRequired")}
+              </p>
+            )}
+            {selectedSet.size === 0 && (
+              <p className='text-foreground text-xs'>
+                {t("myMods.batchUpdate.chooseFiles")}
               </p>
             )}
           </div>
