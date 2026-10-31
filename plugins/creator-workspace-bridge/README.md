@@ -66,10 +66,11 @@ The archive is reproducible: entries are stored uncompressed in path order with 
 
 ## Install, update and remove
 
-1. In DMM, open **Manage plugins**.
-2. Choose **Install from file** and pick the ZIP from `dist/`.
-3. Choose **Set up**: pick the VPK your tool exports and a testing profile (the default profile is never offered).
-4. Enable the plugin. It appears under **Plugins** in the sidebar.
+1. In DMM, turn on **Plugins** under **Settings → Experimental**.
+2. Open **Manage plugins**.
+3. Choose **Install from file** and pick the ZIP from `dist/`.
+4. Choose **Set up**: pick the VPK your tool exports and a testing profile (the default profile is never offered).
+5. Enable the plugin. It appears under **Plugins** in the sidebar.
 
 To update, bump `version` in `manifest.json` (and `package.json`), rebuild, and install the new archive the same way. To remove it, use **Remove** in the same list.
 

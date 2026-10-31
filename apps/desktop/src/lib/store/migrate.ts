@@ -641,6 +641,15 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
       delete state.backupEnabled;
     },
   },
+  {
+    to: 41,
+    label: "plugins-opt-in",
+    apply: (state) => {
+      if (isPlainObject(state.experimentalFeatures)) {
+        state.experimentalFeatures.plugins ??= false;
+      }
+    },
+  },
 ];
 
 const LEGACY_GAMEBANANA_ID = /^[1-9]\d*$/;

@@ -4554,6 +4554,10 @@
       "live-scoreboard": {
         "title": "Live Scoreboard",
         "description": "Add a Live tab to the Stats page that reads the scoreboard of the match you are in. Installs a small HUD mod and launches the game with -condebug."
+      },
+      "plugins": {
+        "title": "Plugins",
+        "description": "Install plugins that add tools to DMM. You choose which files and profiles they can access."
       }
     }
   },
@@ -6438,7 +6442,7 @@
           "fileReadWrite": "read and change one file you choose",
           "folderRead": "read one folder you choose",
           "folderReadWrite": "read and change one folder you choose",
-          "fileReadTyped": "read one {{extensions}} file you choose",
+          "fileReadTyped": "read the {{extensions}} file you select",
           "fileReadWriteTyped": "read and change one {{extensions}} file you choose",
           "folderReadTyped": "read the {{extensions}} files in one folder you choose",
           "folderReadWriteTyped": "read and change the {{extensions}} files in one folder you choose"
@@ -6471,7 +6475,7 @@
         "short": {
           "read": "see the mods in one profile you choose",
           "readAll": "see the mods in all your profiles",
-          "install": "install its own mod into one profile you choose",
+          "install": "install mods in one profile you select",
           "readInstall": "see the mods in one profile you choose and add its own"
         },
         "allProfiles": "All profiles"
@@ -6494,7 +6498,7 @@
         "detail": "Private storage, removed with the plugin.",
         "note": "Removed with the plugin",
         "value": "{{size}} in its private store",
-        "short": "keep its own data"
+        "short": "save its settings and data"
       },
       "notifications": {
         "title": "Show notifications",
@@ -6683,7 +6687,7 @@
     },
     "catalog": {
       "creatorWorkspaceBridge": {
-        "description": "Point it at the VPK your tools export. Every finished build is staged, checked and ready to deploy to a test profile in one click."
+        "description": "Watches the VPK exported by your modding tools. Choose a saved build to install in a test profile."
       }
     }
   },

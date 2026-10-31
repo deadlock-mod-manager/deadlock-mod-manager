@@ -121,7 +121,7 @@ const FindMore = ({ onBrowse }: { onBrowse: () => void }) => {
 };
 
 const ListNote = ({ children }: { children: string }) => (
-  <p className='w-full shrink-0 px-[2px] py-[10px] text-[#A3A3A3] text-[12px] leading-[normal]'>
+  <p className='w-full shrink-0 px-0.5 py-2.5 text-base text-muted-foreground leading-6'>
     {children}
   </p>
 );

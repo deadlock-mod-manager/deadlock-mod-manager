@@ -11,13 +11,16 @@ import {
 } from "@/lib/external-plugins";
 import type { ExternalPluginNotificationEvent } from "@/types/generated/ExternalPluginNotificationEvent";
 import type { ExternalPluginSummary } from "@/types/generated/ExternalPluginSummary";
+import { useExperimentalFeature } from "./use-experimental-feature";
 
 /** Installed external plugins, refetched whenever the backend disables,
  * revokes, updates, removes or stops one. */
 export const useExternalPlugins = () => {
   const queryClient = useQueryClient();
+  const enabled = useExperimentalFeature("plugins");
 
   useEffect(() => {
+    if (!enabled) return;
     const unlisten = listen<string>(EXTERNAL_PLUGINS_CHANGED_EVENT, () => {
       void queryClient.invalidateQueries({
         queryKey: EXTERNAL_PLUGINS_QUERY_KEY,
@@ -26,11 +29,12 @@ export const useExternalPlugins = () => {
     return () => {
       void unlisten.then((stop) => stop());
     };
-  }, [queryClient]);
+  }, [enabled, queryClient]);
 
   return useQuery({
     queryKey: EXTERNAL_PLUGINS_QUERY_KEY,
     queryFn: listExternalPlugins,
+    enabled,
   });
 };
 
@@ -38,8 +42,10 @@ export const useExternalPlugins = () => {
 export const useExternalPluginNotifications = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
+  const enabled = useExperimentalFeature("plugins");
 
   useEffect(() => {
+    if (!enabled) return;
     const unlisten = listen<ExternalPluginNotificationEvent>(
       EXTERNAL_PLUGINS_NOTIFICATION_EVENT,
       ({ payload }) => {
@@ -56,5 +62,5 @@ export const useExternalPluginNotifications = () => {
     return () => {
       void unlisten.then((stop) => stop());
     };
-  }, [queryClient, t]);
+  }, [enabled, queryClient, t]);
 };

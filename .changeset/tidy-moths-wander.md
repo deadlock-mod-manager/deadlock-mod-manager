@@ -2,4 +2,4 @@
 "@deadlock-mods/desktop": minor
 ---
 
-Install external plugins that run sandboxed, with access you grant per plugin
+Enable Plugins in Experimental settings to install sandboxed plugins with access you grant per plugin.

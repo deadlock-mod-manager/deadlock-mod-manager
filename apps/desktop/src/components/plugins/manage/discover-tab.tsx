@@ -127,7 +127,7 @@ const CatalogCard = ({
           size={42}
         />
         <div className='flex min-w-0 flex-1 flex-col gap-[3px]'>
-          <span className='truncate font-semibold text-[14px] text-foreground leading-[normal]'>
+          <span className='truncate font-semibold text-lg text-foreground leading-6'>
             {entry.name}
           </span>
           <div className='flex items-center gap-[5px]'>
@@ -137,8 +137,7 @@ const CatalogCard = ({
             {entry.verified ? (
               <CheckCircleIcon
                 aria-label={t("plugins.discover.verified")}
-                className='shrink-0'
-                color={TONE_COLOR.info}
+                className='shrink-0 text-primary'
                 role='img'
                 size={13}
               />
@@ -150,10 +149,10 @@ const CatalogCard = ({
           </div>
         </div>
       </div>
-      <p className='w-full text-[#A3A3A3] text-[12px] leading-[17px]'>
+      <p className='w-full text-base text-muted-foreground leading-6'>
         {t(`plugins.catalog.${entry.copyKey}.description`)}
       </p>
-      <p className='w-full border-border border-t pt-[12px] text-[#A3A3A3] text-[12px] leading-[17px]'>
+      <p className='w-full border-border border-t pt-3 text-sm text-muted-foreground leading-6'>
         {describeAccess(t, i18n.language, entry.permissions)}
       </p>
       <div className='mt-auto flex w-full items-center gap-[12px] pt-[4px]'>

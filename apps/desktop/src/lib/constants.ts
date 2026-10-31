@@ -134,6 +134,7 @@ export const EXPERIMENTAL_FEATURES = [
   "performance-configs",
   "cloud-backup",
   "live-scoreboard",
+  "plugins",
 ] as const;
 
 /**

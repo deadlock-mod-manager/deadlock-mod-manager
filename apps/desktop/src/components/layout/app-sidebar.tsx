@@ -45,7 +45,6 @@ import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { useExternalPlugins } from "@/hooks/use-external-plugins";
 import { isDownloadInProgress } from "@/lib/download/status";
 import { usePersistedStore } from "@/lib/store";
-import { cn } from "@/lib/utils";
 import type { ExternalPluginSummary } from "@/types/generated/ExternalPluginSummary";
 import { BrandingHeader } from "./branding";
 import { SidebarCollapse } from "./sidebar-collapse";
@@ -70,8 +69,6 @@ type SidebarItem = {
   iconUrl?: string;
   /** An external plugin's own glyph tile instead of an icon. */
   pluginTile?: Pick<ExternalPluginSummary, "icon" | "accent">;
-  /** Drawn in the muted colour while inactive, like "Manage plugins". */
-  muted?: boolean;
   className?: string;
   group: string;
   /** Shows a "New" badge until the user opens the page. */
@@ -389,10 +386,7 @@ const SidebarItemComponent = ({
   return (
     <SidebarMenuButton
       asChild
-      className={cn(
-        item.className,
-        item.muted && !titleProps.isActive && "text-muted-foreground",
-      )}
+      className={item.className}
       isActive={titleProps.isActive}
       tooltip={item.tooltipLabel}>
       <Link
@@ -428,6 +422,7 @@ export const AppSidebar = () => {
   const isPlayerStatsEnabled = useExperimentalFeature("player-stats");
   const isModFoundryEnabled = useExperimentalFeature("mod-foundry");
   const isPerformanceEnabled = useExperimentalFeature("performance-configs");
+  const isPluginsEnabled = useExperimentalFeature("plugins");
 
   const externalPlugins = useExternalPlugins();
   const pluginItems: SidebarItem[] = [
@@ -461,14 +456,13 @@ export const AppSidebar = () => {
       tooltipLabel: t("plugins.page.managePlugins"),
       url: "/plugins/manage",
       icon: PuzzlePieceIcon,
-      muted: true,
       group: "plugins",
     },
   ];
 
   const allItems = [
     ...getSidebarItems(t, developerMode),
-    ...pluginItems,
+    ...(isPluginsEnabled ? pluginItems : []),
   ].filter(
     (item) =>
       (item.id !== "maps" || isCustomMapsEnabled) &&
