@@ -1,0 +1,82 @@
+{
+  "title": "Creator Workspace Bridge",
+  "description": "Stages each stable VPK your tools export and deploys the build you pick to your testing profile.",
+  "grants": {
+    "heading": "Workspace",
+    "output": "Watched output",
+    "profile": "Target profile",
+    "notGranted": "Not granted",
+    "unavailable": "Unavailable",
+    "configure": "Choose the watched output and a testing profile under Access at the top of this page. This plugin cannot pick files or profiles itself."
+  },
+  "watch": {
+    "missing": "No output file yet. Export a build to the watched path.",
+    "changing": "Output is changing. Staging once it stays unchanged for a few seconds.",
+    "waitingForMarker": "Waiting for a .ready marker newer than the output.",
+    "invalid": "The latest output failed validation and was not staged.",
+    "ready": "Watching for new builds.",
+    "idle": "Waiting for DMM to check the output."
+  },
+  "settings": {
+    "readyMarker": "Only stage after {{marker}} is written. Turn this on if your tool writes the VPK in several passes.",
+    "output": "the output"
+  },
+  "latest": {
+    "heading": "Latest build",
+    "empty": "No builds staged yet. DMM stages a build after the output stays unchanged and passes validation."
+  },
+  "history": {
+    "heading": "Build history",
+    "count": "{{count}} of {{limit}} kept",
+    "show": "Show older builds",
+    "hide": "Hide older builds",
+    "empty": "Older builds appear here. The deployed build is always kept."
+  },
+  "build": {
+    "deployed": "Deployed",
+    "ready": "Ready",
+    "superseded": "Superseded",
+    "missing": "No longer staged",
+    "resources_one": "{{count}} resource",
+    "resources_other": "{{count}} resources",
+    "contents": "Contents",
+    "size": "Size",
+    "staged": "Staged",
+    "hash": "SHA-256 {{hash}}"
+  },
+  "actions": {
+    "deploy": "Deploy to {{profile}}",
+    "redeploy": "Redeploy to {{profile}}",
+    "deploying": "Deploying",
+    "deployHint": "Close Deadlock before deploying. Switch to the testing profile to try the build.",
+    "deployShort": "Deploy",
+    "redeployShort": "Redeploy"
+  },
+  "status": {
+    "loading": "Loading workspace status",
+    "pending": "A deployment is being reconciled with the profile."
+  },
+  "problems": {
+    "watch": "Watching the output",
+    "deploy": "Last deployment",
+    "grants": "Reading this plugin's access",
+    "list": "Reading staged builds",
+    "request": "Request"
+  },
+  "errors": {
+    "artifact_unavailable": "DMM no longer holds this staged build. Export it again to restage it.",
+    "game_running": "Close Deadlock before deploying.",
+    "deploy_interrupted": "The previous deployment stopped before it finished. Deploy the build again.",
+    "permission_denied": "This plugin does not have that permission. Review it under Access at the top of this page.",
+    "profile_not_granted": "Choose a testing profile for this plugin in DMM before deploying.",
+    "state_reset": "Saved build history could not be read and was reset.",
+    "unknown_build": "That build is no longer in history."
+  },
+  "time": {
+    "today": "Today, {{time}}",
+    "yesterday": "Yesterday, {{time}}"
+  },
+  "access": {
+    "hint": "To watch another file or deploy to another profile, open Access at the top of this page."
+  }
+}

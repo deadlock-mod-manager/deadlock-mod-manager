@@ -14,6 +14,8 @@ pub mod deep_link;
 pub mod downloads;
 #[cfg(feature = "e2e-harness")]
 pub mod e2e;
+#[cfg(feature = "plugins")]
+pub mod external_plugins;
 pub mod folders;
 pub mod fonts;
 pub mod forge;

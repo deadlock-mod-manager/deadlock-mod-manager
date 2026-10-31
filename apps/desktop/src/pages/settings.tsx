@@ -31,7 +31,6 @@ import {
   MonitorIcon,
   PackageIcon,
   PaletteIcon,
-  PlugIcon,
   PlusIcon,
   ScrollTextIcon,
   Settings,
@@ -75,7 +74,6 @@ import { LanguageSettings } from "@/components/settings/language-settings";
 import { LinuxGpuToggle } from "@/components/settings/linux-gpu-toggle";
 import { LoggingSettings } from "@/components/settings/logging-settings";
 import OccultGeometrySettings from "@/components/settings/occult-geometry-settings";
-import { PluginList } from "@/components/settings/plugin-list";
 import { MatchSyncSettings } from "@/components/settings/match-sync-settings";
 import { FeatureTipsToggle } from "@/components/settings/feature-tips-toggle";
 import { ModUpdateBadgesToggle } from "@/components/settings/mod-update-badges-toggle";
@@ -431,7 +429,15 @@ const CustomSettings = ({ value }: { value?: string }) => {
     }
   }, [value]);
 
-  const goToSearchResult = ({ tab, sectionId }: SettingsSearchResult) => {
+  const goToSearchResult = ({
+    tab,
+    route,
+    sectionId,
+  }: SettingsSearchResult) => {
+    if (route) {
+      navigate(route);
+      return;
+    }
     setActiveTab(tab);
     // Radix mounts a newly selected tab's content one render late.
     requestAnimationFrame(() => {
@@ -604,11 +610,6 @@ const CustomSettings = ({ value }: { value?: string }) => {
                   </div>
                 </HintAnchor>
                 <SettingsNavItem
-                  icon={PlugIcon}
-                  label={t("settings.plugin")}
-                  value='plugin'
-                />
-                <SettingsNavItem
                   icon={DiscordLogoIcon}
                   label={t("settings.discord")}
                   value='discord'
@@ -676,14 +677,6 @@ const CustomSettings = ({ value }: { value?: string }) => {
                 />
               </ErrorBoundary>
             </Suspense>
-          </TabsContent>
-
-          <TabsContent className='mt-0 space-y-4' value='plugin'>
-            <Section
-              description={t("settings.pluginDescription")}
-              title={t("settings.plugin")}>
-              <PluginList />
-            </Section>
           </TabsContent>
 
           <TabsContent className='mt-0 space-y-4' value='themes'>

@@ -64,6 +64,8 @@ static CURRENT_RUNNING: LazyLock<Mutex<Option<Arc<AtomicBool>>>> =
 // Desired inputs deciding whether — and in which mode — the single watcher runs.
 static PRESENCE_DESIRED: AtomicBool = AtomicBool::new(false);
 static MONITORING_DESIRED: AtomicBool = AtomicBool::new(false);
+#[cfg(feature = "plugins")]
+static PLUGIN_MONITORING_DESIRED: AtomicBool = AtomicBool::new(false);
 // true = the running watcher has Discord Rich Presence active.
 static CURRENT_PRESENCE_MODE: AtomicBool = AtomicBool::new(false);
 // Serializes ensure_watcher so overlapping start/stop/restart requests (dev
@@ -155,8 +157,10 @@ fn spawn_watcher(app_handle: &AppHandle, presence_enabled: bool) -> Result<(), E
   });
   let done_app = app_handle.clone();
   let done_flag = Arc::clone(&running);
+  #[cfg(feature = "plugins")]
+  let observation_running = Arc::clone(&running);
 
-  tokio::spawn(async move {
+  tauri::async_runtime::spawn(async move {
     let watcher = GamePresenceWatcher::new(
       game_path,
       running,
@@ -166,6 +170,12 @@ fn spawn_watcher(app_handle: &AppHandle, presence_enabled: bool) -> Result<(), E
     )
     .with_presence_enabled(presence_enabled)
     .with_game_exit_callback(exit_callback);
+    #[cfg(feature = "plugins")]
+    let watcher = watcher.with_game_state_callback(Arc::new(move |state, initial| {
+      if observation_running.load(Ordering::Relaxed) {
+        crate::external_plugins::events::game::observe_state(state, initial);
+      }
+    }));
     watcher.run().await;
 
     // Only clear shared status if we are still the active watcher (not superseded
@@ -195,6 +205,8 @@ pub(crate) fn ensure_watcher(app_handle: &AppHandle) -> Result<(), Error> {
     .unwrap_or_else(std::sync::PoisonError::into_inner);
   let presence = PRESENCE_DESIRED.load(Ordering::Relaxed);
   let monitoring = MONITORING_DESIRED.load(Ordering::Relaxed);
+  #[cfg(feature = "plugins")]
+  let monitoring = monitoring || PLUGIN_MONITORING_DESIRED.load(Ordering::Relaxed);
 
   if !presence && !monitoring {
     stop_current(Some(app_handle));
@@ -210,6 +222,15 @@ pub(crate) fn ensure_watcher(app_handle: &AppHandle) -> Result<(), Error> {
     stop_current(Some(app_handle));
   }
   spawn_watcher(app_handle, presence)
+}
+
+#[cfg(feature = "plugins")]
+pub(crate) fn set_plugin_monitoring(app_handle: &AppHandle, desired: bool) -> Result<(), Error> {
+  let previous = PLUGIN_MONITORING_DESIRED.swap(desired, Ordering::Relaxed);
+  if previous != desired || (desired && !is_running()) {
+    ensure_watcher(app_handle)?;
+  }
+  Ok(())
 }
 
 #[cfg(feature = "match-sync")]

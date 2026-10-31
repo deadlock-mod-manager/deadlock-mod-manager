@@ -166,6 +166,16 @@ Public-facing website for project information and downloads.
 
 ## Shared Packages (`packages/`)
 
+### Plugin runtime (`packages/plugin-runtime/`)
+
+`dmm-plugin-runtime` is a standalone Rust crate for external plugin packages,
+grants, lifecycle, storage, artifacts, and supervised WASM workers. Its profile
+deployment interface is implemented by a desktop adapter. Serving plugin
+frames and the Tauri commands remain in `apps/desktop/src-tauri/src/external_plugins/`.
+
+Run runtime tests independently with
+`cargo test --manifest-path packages/plugin-runtime/Cargo.toml`.
+
 ### Database Package (`packages/database/`)
 
 Centralized database schema and client using Drizzle ORM.

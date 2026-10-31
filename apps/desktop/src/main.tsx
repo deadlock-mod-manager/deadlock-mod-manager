@@ -1,6 +1,6 @@
 // oxlint-disable import/no-unassigned-import
 import { QueryClientProvider } from "@tanstack/react-query";
-import React, { Suspense } from "react";
+import React, { type ReactNode, Suspense } from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import App from "./app";
@@ -22,7 +22,9 @@ import Mod from "./pages/mod";
 import Performance from "./pages/performance";
 import GetMods, { GetMaps } from "./pages/mods";
 import MyMods from "./pages/my-mods";
+import ExternalPluginPage from "./pages/external-plugin";
 import PluginEntry from "./pages/plugin";
+import ManagePlugins from "./pages/plugins-manage";
 import Servers from "./pages/servers";
 import CustomSettings from "./pages/settings";
 import Skins from "./pages/skins";
@@ -72,6 +74,14 @@ const FoundryRouteGate = () => {
   return <Foundry />;
 };
 
+const PluginsRouteGate = ({ children }: { children: ReactNode }) => {
+  const isEnabled = useExperimentalFeature("plugins");
+  if (!isEnabled) {
+    return <Navigate replace to='/settings/experimental' />;
+  }
+  return children;
+};
+
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
@@ -102,7 +112,30 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
               <Route element={<CustomSettings />} path='/settings' />
               <Route element={<Contributors />} path='/contributors' />
               <Route element={<Developer />} path='/developer' />
-              <Route element={<PluginEntry />} path='/plugins/:id' />
+              <Route
+                element={
+                  <PluginsRouteGate>
+                    <ManagePlugins />
+                  </PluginsRouteGate>
+                }
+                path='/plugins/manage'
+              />
+              <Route
+                element={
+                  <PluginsRouteGate>
+                    <PluginEntry />
+                  </PluginsRouteGate>
+                }
+                path='/plugins/:id'
+              />
+              <Route
+                element={
+                  <PluginsRouteGate>
+                    <ExternalPluginPage />
+                  </PluginsRouteGate>
+                }
+                path='/ext/:pluginId'
+              />
               <Route element={<Debug />} path='/debug' />
               <Route element={<Crosshairs />} path='/crosshairs' />
               <Route element={<Skins />} path='/skins' />

@@ -36,6 +36,7 @@ export type RuntimeBootstrap = {
   } | null;
   features: {
     matchSync: boolean;
+    plugins: boolean;
   };
 };
 
@@ -59,6 +60,9 @@ export const initializeRuntimeBootstrap = async (): Promise<RuntimeBootstrap> =>
 // commands, so nothing may call them.
 export const isMatchSyncBuilt = (): boolean =>
   runtimeBootstrap?.features.matchSync ?? false;
+
+export const isPluginsBuilt = (): boolean =>
+  runtimeBootstrap?.features.plugins ?? false;
 
 export const runtimeServiceOrigin = (
   service: RuntimeServiceName,
