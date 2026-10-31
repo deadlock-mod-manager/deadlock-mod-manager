@@ -18,6 +18,8 @@ interface PendingDownload {
   mod: DownloadableMod;
   attempt: AnalyticsAttempt<"mod_download">;
   quietCancels: number;
+  /** False while the download waits in the backend's queue. */
+  started: boolean;
 }
 interface DownloadQueueDependencies {
   start: (
@@ -36,6 +38,23 @@ export class DownloadQueue {
 
   getMod(modId: string) {
     return this.pending.get(modId)?.mod;
+  }
+  /** Records that the backend is running the download and returns its mod. */
+  start(modId: string) {
+    const entry = this.pending.get(modId);
+    if (entry) entry.started = true;
+    return entry?.mod;
+  }
+  /**
+   * A resumed download goes back to the backend's queue, where it may wait
+   * behind the download that started while it was paused.
+   */
+  requeue(modId: string) {
+    const entry = this.pending.get(modId);
+    if (entry) entry.started = false;
+  }
+  isStarted(modId: string) {
+    return this.pending.get(modId)?.started === true;
   }
   clear() {
     this.pending.clear();
@@ -58,6 +77,7 @@ export class DownloadQueue {
         file_count: mod.downloads?.length ?? 0,
         content_type: modContentType(mod),
       }),
+      started: false,
     };
     this.pending.set(mod.remoteId, entry);
     this.dependencies.queue(mod).catch((error) => {

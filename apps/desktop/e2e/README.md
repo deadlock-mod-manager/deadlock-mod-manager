@@ -187,6 +187,7 @@ M4 uses real Rust HTTP transfers against binary fixture responses. Run any case 
 | `downloads-redirect` | Reject a redirect to a production host without making an external request; UI retry succeeds |
 | `downloads-variants` | Retry preserves a previously selected variant, including after a 401 and restart; the unselected URL has no registered fixture |
 | `downloads-queued-retry` | After a 401, retry the download while another throttled download holds the queue; the waiting card shows no health notice, and the retry completes once the queue frees up |
+| `downloads-queued-waiting` | A download waiting behind another throttled download reads "Waiting" with no speed, percentage or shimmer, and the page header and bottom bar count it as waiting; paused, it reads "Paused" with Resume and counts as paused; resumed, it waits again; once it starts it shows its speed and counts as downloading; paused after it started and resumed behind another download, it waits again and then continues with a Range request |
 | `downloads-pause-queue` | Pausing a download lets the one queued behind it start within 5 seconds; Resume waits for it without a health notice, then continues from the exact partial offset |
 | `downloads-pause-queue-cancel` | Cancel a paused download that gave up the queue: its partial files are removed and the other download completes |
 | `downloads-pause-queue-reload` | Reload with one download paused and another running: both settle as failed, the backend keeps neither, and the paused one's partial files are removed |

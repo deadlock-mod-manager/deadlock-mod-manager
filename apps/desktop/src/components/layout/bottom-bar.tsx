@@ -43,6 +43,7 @@ import { useCatalogSyncState } from "@/hooks/use-gamebanana-catalog-sync";
 import { useDiscordGamePresenceIndicator } from "@/hooks/use-game-presence-status";
 import { useRemoteInstallSummary } from "@/hooks/use-remote-install";
 import { GameBananaIcon } from "@/components/shared/gamebanana-logo";
+import { downloadManager } from "@/lib/download/manager";
 import { useOneClickInstalls } from "@/lib/one-click-installs";
 import { useShallow } from "zustand/react/shallow";
 import { usePersistedStore } from "@/lib/store";
@@ -227,9 +228,15 @@ function RemoteInstallItem({ slug }: { slug: string }) {
   const percentage = usePersistedStore(
     (state) => state.modProgress[slug]?.percentage,
   );
+  const waiting = usePersistedStore((state) => {
+    const localMod = state.localMods.find((m) => m.remoteId === slug);
+    return localMod !== undefined && downloadManager.isWaiting(localMod);
+  });
 
   let label = t("remoteInstall.itemPreparing");
-  if (
+  if (waiting) {
+    label = t("modStatus.waiting");
+  } else if (
     mod?.status === ModStatus.Downloading ||
     mod?.status === ModStatus.Extracting
   ) {
@@ -479,9 +486,15 @@ export const BottomBar = () => {
     (state) =>
       state.localMods.filter(
         (mod) =>
-          mod.status === ModStatus.Downloading ||
-          mod.status === ModStatus.Extracting,
+          (mod.status === ModStatus.Downloading ||
+            mod.status === ModStatus.Extracting) &&
+          !downloadManager.isWaiting(mod),
       ).length,
+  );
+
+  const waitingCount = usePersistedStore(
+    (state) =>
+      state.localMods.filter((mod) => downloadManager.isWaiting(mod)).length,
   );
 
   const pausedCount = usePersistedStore(
@@ -534,6 +547,17 @@ export const BottomBar = () => {
               <DownloadSimpleIcon className='h-3 w-3 animate-pulse text-blue-500' />
               <span>
                 {downloadingCount} {t("common.downloading")}
+              </span>
+            </div>
+          </>
+        )}
+        {waitingCount > 0 && (
+          <>
+            <Separator className='mx-1 h-3' orientation='vertical' />
+            <div className='flex items-center gap-1'>
+              <DownloadSimpleIcon className='h-3 w-3' />
+              <span>
+                {waitingCount} {t("common.waiting")}
               </span>
             </div>
           </>

@@ -144,6 +144,10 @@ const queueRoute = (): FixtureRoute => ({
   chunkBytes: 20 * 1024,
   chunkDelayMs: 100,
 });
+/** Cases whose world holds a second mod that blocks the queue. */
+const hasQueueBlocker = (scenario: string) =>
+  scenario === "downloads-queued-retry" ||
+  scenario === "downloads-queued-waiting";
 export const downloadRoutes = (scenario: string): FixtureRoute[] => {
   if (isSegmentedCase(scenario)) return segmentedRoutes(scenario);
   const body = downloadPayload();
@@ -162,6 +166,10 @@ export const downloadRoutes = (scenario: string): FixtureRoute[] => {
     case "downloads-variants":
     case "downloads-queued-retry":
       sequence = [{ status: 401, body: "Authentication required" }, good];
+      break;
+    case "downloads-queued-waiting":
+      // About 24 s, so it is still running when it is paused; the resume is quick.
+      sequence = [{ ...good, chunkBytes: 32768, chunkDelayMs: 1500 }, good];
       break;
     case "downloads-redirect":
       sequence = [
@@ -213,7 +221,7 @@ export const downloadRoutes = (scenario: string): FixtureRoute[] => {
   const routes: FixtureRoute[] = [
     { method: "GET", path: `/downloads/${DOWNLOAD_FILE}`, ...good, sequence },
   ];
-  if (scenario === "downloads-queued-retry") routes.push(queueRoute());
+  if (hasQueueBlocker(scenario)) routes.push(queueRoute());
   // Served so a cancel that fails to drop the queued mod shows as a download.
   if (queuesBehindRunning(scenario))
     routes.push({ method: "GET", path: `/downloads/${QUEUED_FILE}`, ...good });
@@ -269,7 +277,7 @@ export const prepareDownloadWorld = async (
     selectedDownloads: files,
   };
   const mods = [mod];
-  if (scenario === "downloads-queued-retry") {
+  if (hasQueueBlocker(scenario)) {
     const blocker = queuePayload();
     const file: ModDownloadItem = {
       ...selected,
@@ -485,13 +493,20 @@ export const assertDownloadNetwork = (
     );
     return;
   }
-  if (scenario === "downloads-queued-retry") {
+  if (hasQueueBlocker(scenario)) {
     const statuses = (file: string) =>
       requests
         .filter((request) => request.url === `/downloads/${file}`)
         .map((request) => request.responseStatus);
-    assert.deepEqual(statuses(DOWNLOAD_FILE), [401, 200]);
-    assert.deepEqual(statuses(QUEUE_FILE), [200]);
+    if (scenario === "downloads-queued-retry") {
+      assert.deepEqual(statuses(DOWNLOAD_FILE), [401, 200]);
+      assert.deepEqual(statuses(QUEUE_FILE), [200]);
+      return;
+    }
+    // Nothing is requested while it waits, paused or not; paused after it
+    // started, it continues with a Range request. The blocker runs twice.
+    assert.deepEqual(statuses(DOWNLOAD_FILE), [200, 206]);
+    assert.deepEqual(statuses(QUEUE_FILE), [200, 200]);
     return;
   }
   if (pausesQueue(scenario)) {

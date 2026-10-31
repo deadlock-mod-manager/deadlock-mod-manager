@@ -14,7 +14,9 @@ import { useTranslation } from "react-i18next";
 import DownloadCard from "@/components/downloads/download-card";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import PageTitle from "@/components/shared/page-title";
+import { downloadManager } from "@/lib/download/manager";
 import { usePersistedStore } from "@/lib/store";
+import { ModStatus } from "@/types/mods";
 import {
   isDownloadInProgress,
   isDownloadComplete,
@@ -78,6 +80,11 @@ const Downloads = () => {
     [downloads],
   );
 
+  const waitingCount = usePersistedStore(
+    (state) =>
+      state.localMods.filter((d) => downloadManager.isWaiting(d)).length,
+  );
+
   const completedCount = useMemo(
     () => downloads.filter((d) => isDownloadComplete(d.status)).length,
     [downloads],
@@ -87,7 +94,16 @@ const Downloads = () => {
     isDownloadFailed(d.status),
   ).length;
 
-  const subtitle = `${activeCount} ${t("downloads.active").toLowerCase()}, ${completedCount} ${t("downloads.completed").toLowerCase()}, ${failedCount} ${t("downloads.failed").toLowerCase()}, ${downloads.length} ${t("downloads.total").toLowerCase()}`;
+  const pausedCount = downloads.filter(
+    (d) => d.status === ModStatus.Paused,
+  ).length;
+
+  // Waiting and paused downloads are counted apart, as in the bottom bar.
+  const waiting =
+    waitingCount > 0 ? `, ${waitingCount} ${t("common.waiting")}` : "";
+  const paused =
+    pausedCount > 0 ? `, ${pausedCount} ${t("common.paused")}` : "";
+  const subtitle = `${activeCount - waitingCount - pausedCount} ${t("downloads.active").toLowerCase()}${waiting}${paused}, ${completedCount} ${t("downloads.completed").toLowerCase()}, ${failedCount} ${t("downloads.failed").toLowerCase()}, ${downloads.length} ${t("downloads.total").toLowerCase()}`;
 
   return (
     <div className='flex h-full min-h-0 w-full flex-col'>

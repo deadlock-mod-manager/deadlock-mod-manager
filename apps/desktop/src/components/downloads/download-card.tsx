@@ -79,9 +79,21 @@ const getStatusVariant = (status: ModStatus): StatusChipVariant => {
   }
 };
 
-const StatusChip = ({ status }: { status: ModStatus }) => {
+const waitingVariant: StatusChipVariant = {
+  label: "modStatus.waiting",
+  pillClass: "bg-muted text-muted-foreground",
+  dotClass: "bg-muted-foreground/70",
+};
+
+const StatusChip = ({
+  status,
+  waiting,
+}: {
+  status: ModStatus;
+  waiting: boolean;
+}) => {
   const { t } = useTranslation();
-  const variant = getStatusVariant(status);
+  const variant = waiting ? waitingVariant : getStatusVariant(status);
   const label = t(variant.label);
   return (
     <span
@@ -108,6 +120,8 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
   const isPaused = download.status === ModStatus.Paused;
   const isExtracting = download.status === ModStatus.Extracting;
   const isFailed = isDownloadFailed(download.status);
+  const isWaiting = downloadManager.isWaiting(download);
+  const isRunning = isDownloading && !isWaiting;
   const percentage = isDownloadComplete(download.status)
     ? 100
     : (modProgress?.percentage ?? 0);
@@ -178,7 +192,7 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
       <div className='flex items-start justify-between gap-4'>
         <div className='min-w-0 flex-1'>
           <div className='mb-1.5 flex items-center gap-2'>
-            <StatusChip status={download.status} />
+            <StatusChip status={download.status} waiting={isWaiting} />
           </div>
           <h3
             className='truncate font-semibold text-foreground text-lg leading-tight'
@@ -202,15 +216,17 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
             <span
               className={cn(
                 "text-xs tabular-nums",
-                isDownloading ? "text-primary" : "text-muted-foreground",
+                isRunning ? "text-primary" : "text-muted-foreground",
               )}>
-              {isDownloading
-                ? `${formatSpeed(speed)}, ${percentage.toFixed(1)}%`
-                : isPaused
-                  ? `${t("downloads.paused")}, ${percentage.toFixed(1)}%`
-                  : isExtracting
-                    ? t("modStatus.extracting")
-                    : `${percentage.toFixed(0)}%`}
+              {isWaiting
+                ? t("modStatus.waiting")
+                : isDownloading
+                  ? `${formatSpeed(speed)}, ${percentage.toFixed(1)}%`
+                  : isPaused
+                    ? `${t("downloads.paused")}, ${percentage.toFixed(1)}%`
+                    : isExtracting
+                      ? t("modStatus.extracting")
+                      : `${percentage.toFixed(0)}%`}
             </span>
           )}
         </div>
@@ -221,7 +237,7 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
           <div
             className={cn(
               "h-full rounded-full bg-primary transition-[width] duration-500 ease-out",
-              (isDownloading || isExtracting) && "downloads-shimmer",
+              (isRunning || isExtracting) && "downloads-shimmer",
             )}
             style={{ width: `${percentage}%` }}
           />

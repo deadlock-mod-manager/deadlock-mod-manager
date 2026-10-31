@@ -714,6 +714,11 @@ export const scenarios = {
     phases: ["pause", "restart-pause"],
     exit: (phase: string) => (phase === "pause" ? "interrupt" : "normal"),
   },
+  "downloads-queued-waiting": {
+    ...downloads,
+    spec: "download-queue-waiting",
+    phases: ["queue"],
+  },
   "filesystem-backup-replace": filesystem,
   "filesystem-backup-merge": filesystem,
   "filesystem-lock": { ...filesystem, platforms: ["win32"] },
