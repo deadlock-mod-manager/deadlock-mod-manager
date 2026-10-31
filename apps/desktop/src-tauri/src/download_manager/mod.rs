@@ -1695,6 +1695,19 @@ impl DownloadManager {
       }
       (dropped, cancelled)
     };
+    // Settles the window's entry, as `cancel_download` does; a paused download
+    // waits here instead of in the cancelled active downloads. Only the window's
+    // own downloads: batch callers hear through their completion channel, and
+    // the window may be downloading the same mod for another profile.
+    for queued in dropped.iter().filter(|queued| queued.completion.is_none()) {
+      self
+        .app_handle
+        .emit(
+          "download-error",
+          DownloadErrorEvent::new(queued.task.mod_id.clone(), &Error::DownloadCancelled),
+        )
+        .ok();
+    }
 
     if !dropped.is_empty() || !cancelled.is_empty() {
       log::info!(
