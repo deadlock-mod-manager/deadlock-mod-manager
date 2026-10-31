@@ -91,6 +91,21 @@ const queueBehindFirst = async (world: string): Promise<void> => {
       (requests) => requests.length === 1,
     );
     await retry(QUEUED_NAME);
+    await observeUntil(
+      "Second download did not enter the backend queue",
+      async () =>
+        z
+          .array(z.object({ modId: z.string(), status: z.string() }))
+          .parse(
+            await browser.execute(() =>
+              window["__TAURI_INTERNALS__"].invoke("get_all_downloads"),
+            ),
+          ),
+      (downloads) =>
+        downloads.some(
+          ({ modId, status }) => modId === QUEUED_MOD && status === "queued",
+        ),
+    );
   });
 };
 const cancelQueued = async (world: string): Promise<void> => {
@@ -112,21 +127,6 @@ const cancelQueued = async (world: string): Promise<void> => {
 const reloadWhileQueued = async (world: string): Promise<void> => {
   await queueBehindFirst(world);
   await step("reload while the second download is queued", async () => {
-    await observeUntil(
-      "Second download did not enter the backend queue",
-      async () =>
-        z
-          .array(z.object({ modId: z.string(), status: z.string() }))
-          .parse(
-            await browser.execute(() =>
-              window["__TAURI_INTERNALS__"].invoke("get_all_downloads"),
-            ),
-          ),
-      (downloads) =>
-        downloads.some(
-          ({ modId, status }) => modId === QUEUED_MOD && status === "queued",
-        ),
-    );
     expect(await downloadRequests(world, QUEUED_FILE)).toEqual([]);
     await browser.refresh();
     await navigate("downloads");
@@ -140,6 +140,49 @@ const reloadWhileQueued = async (world: string): Promise<void> => {
     await retry();
     await waitStatus(world, "downloaded");
     expect(await downloadRequests(world, QUEUED_FILE)).toEqual([]);
+  });
+};
+const deleteQueued = async (world: string): Promise<void> => {
+  await queueBehindFirst(world);
+  await step("delete the queued mod from My Mods", async () => {
+    await navigate("my-mods");
+    const remove = $(
+      `//*[@title="${QUEUED_NAME}"]/ancestor::*[.//button[@aria-label="Remove mod"]][1]//button[@aria-label="Remove mod"]`,
+    );
+    await remove.waitForClickable();
+    await remove.click();
+    const confirm = $('[role="alertdialog"]').$("button=Delete");
+    await confirm.waitForClickable();
+    await confirm.click();
+    await expect(
+      $("[data-sonner-toast]*=Mod deleted successfully"),
+    ).toBeDisplayed();
+    expect(await $(`[data-sonner-toast]*=${QUEUED_NAME}`).isExisting()).toBe(
+      false,
+    );
+    const downloads = z
+      .array(z.object({ modId: z.string() }))
+      .parse(
+        await browser.execute(() =>
+          window["__TAURI_INTERNALS__"].invoke("get_all_downloads"),
+        ),
+      );
+    expect(downloads.some(({ modId }) => modId === QUEUED_MOD)).toBe(false);
+    await browser.saveScreenshot(
+      path.join(world, "artifacts", "deleted-queued-mod.png"),
+    );
+  });
+  await step("the first download finishes alone", async () => {
+    await navigate("downloads");
+    await waitStatus(world, "downloaded");
+    expect(await downloadRequests(world, QUEUED_FILE)).toEqual([]);
+    expect(await $(`[data-sonner-toast]*=${QUEUED_NAME}`).isExisting()).toBe(
+      false,
+    );
+    await expect(card(QUEUED_NAME)).not.toBeExisting();
+    await browser.saveScreenshot(
+      path.join(world, "artifacts", "first-download-finished.png"),
+    );
   });
 };
 const cancelWhileConnecting = async (world: string): Promise<void> => {
@@ -264,6 +307,8 @@ describe("real Rust downloads", () => {
         await cancelQueued(world);
       } else if (scenario === "downloads-reload-queued") {
         await reloadWhileQueued(world);
+      } else if (scenario === "downloads-delete-queued") {
+        await deleteQueued(world);
       } else if (
         [
           "downloads-auth",

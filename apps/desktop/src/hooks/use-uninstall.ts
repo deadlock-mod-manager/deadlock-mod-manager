@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { analytics } from "@/lib/analytics";
 import { failureOutcome } from "@/lib/analytics/client";
+import { downloadManager } from "@/lib/download/manager";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { type LocalMod, ModStatus } from "@/types/mods";
@@ -48,6 +49,8 @@ const useUninstall = () => {
 
       const activeProfile = getActiveProfile();
       const profileFolder = activeProfile?.folderName ?? null;
+
+      if (remove) await downloadManager.discardDownload(mod.remoteId);
 
       if (mod.status === ModStatus.Installed) {
         logger
