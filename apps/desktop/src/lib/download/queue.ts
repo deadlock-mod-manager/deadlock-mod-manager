@@ -80,10 +80,7 @@ export class DownloadQueue {
     )?.onError(new Error(error));
   }
 
-  /**
-   * Resolves false when no queue entry tracked the mod. With `notify` off the
-   * mod's completion and failure callbacks are skipped while the backend answers.
-   */
+  /** Quiet cancels skip completion/error callbacks. Returns false if untracked. */
   async cancel(modId: string, notify = true) {
     const entry = this.pending.get(modId);
     if (entry && !notify) entry.quietCancels++;

@@ -446,7 +446,7 @@ class DownloadManager {
     }
   }
 
-  /** Quietly stops a download so deleting its mod doesn't leave it running. */
+  /** Cancels without download completion or error feedback. */
   async discardDownload(modId: string) {
     if (!this.isQueued(modId)) return;
     try {

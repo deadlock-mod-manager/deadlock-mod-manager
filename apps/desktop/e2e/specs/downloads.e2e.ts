@@ -4,7 +4,7 @@ import { observeUntil } from "../support/observations";
 import { assertOwnedWorld, collectFileInventory } from "../support/world";
 import { startApplication } from "../support/application";
 import { closeApplication } from "../support/application-exit";
-import { $, $$, browser, expect } from "@wdio/globals";
+import { $, browser, expect } from "@wdio/globals";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
@@ -142,12 +142,6 @@ const reloadWhileQueued = async (world: string): Promise<void> => {
     expect(await downloadRequests(world, QUEUED_FILE)).toEqual([]);
   });
 };
-const toastsNaming = async (name: string) => {
-  const texts: string[] = [];
-  for (const toast of await $$("[data-sonner-toast]"))
-    texts.push(await toast.getText());
-  return texts.filter((text) => text.includes(name));
-};
 const deleteQueued = async (world: string): Promise<void> => {
   await queueBehindFirst(world);
   await step("delete the queued mod from My Mods", async () => {
@@ -163,7 +157,9 @@ const deleteQueued = async (world: string): Promise<void> => {
     await expect(
       $("[data-sonner-toast]*=Mod deleted successfully"),
     ).toBeDisplayed();
-    expect(await toastsNaming(QUEUED_NAME)).toEqual([]);
+    expect(await $(`[data-sonner-toast]*=${QUEUED_NAME}`).isExisting()).toBe(
+      false,
+    );
     const downloads = z
       .array(z.object({ modId: z.string() }))
       .parse(
@@ -180,7 +176,9 @@ const deleteQueued = async (world: string): Promise<void> => {
     await navigate("downloads");
     await waitStatus(world, "downloaded");
     expect(await downloadRequests(world, QUEUED_FILE)).toEqual([]);
-    expect(await toastsNaming(QUEUED_NAME)).toEqual([]);
+    expect(await $(`[data-sonner-toast]*=${QUEUED_NAME}`).isExisting()).toBe(
+      false,
+    );
     await expect(card(QUEUED_NAME)).not.toBeExisting();
     await browser.saveScreenshot(
       path.join(world, "artifacts", "first-download-finished.png"),

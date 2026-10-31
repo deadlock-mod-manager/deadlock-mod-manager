@@ -20,22 +20,17 @@ export const DOWNLOAD_FILE = "selected.vpk";
 export const QUEUED_MOD = "local-00000000-0000-4000-8000-000000000005";
 export const QUEUED_NAME = "E2E Queued Download";
 export const QUEUED_FILE = "queued.vpk";
-/** Cases whose world adds a second mod that waits behind the first. */
-export const QUEUED_CASES = [
-  "downloads-cancel-queued",
-  "downloads-reload-queued",
-  "downloads-delete-queued",
-];
 /** Cases that pause the first download while a second one waits behind it. */
 const pausesQueue = (scenario: string) =>
   scenario.startsWith("downloads-pause-queue");
 /** Cases whose second mod waits behind a running download and never starts. */
 export const queuesBehindRunning = (scenario: string) =>
   scenario === "downloads-cancel-queued" ||
-  scenario === "downloads-reload-queued";
+  scenario === "downloads-reload-queued" ||
+  scenario === "downloads-delete-queued";
 /** Cases whose world holds a second failed mod that can wait in the queue. */
 const hasQueuedMod = (scenario: string) =>
-  QUEUED_CASES.includes(scenario) || pausesQueue(scenario);
+  queuesBehindRunning(scenario) || pausesQueue(scenario);
 export const downloadPayload = (variant = "selected") =>
   buildSyntheticVpk([
     {
@@ -220,7 +215,7 @@ export const downloadRoutes = (scenario: string): FixtureRoute[] => {
   ];
   if (scenario === "downloads-queued-retry") routes.push(queueRoute());
   // Served so a cancel that fails to drop the queued mod shows as a download.
-  if (QUEUED_CASES.includes(scenario))
+  if (queuesBehindRunning(scenario))
     routes.push({ method: "GET", path: `/downloads/${QUEUED_FILE}`, ...good });
   if (pausesQueue(scenario)) {
     // About 24 s, so it is still running when the paused one is resumed.
