@@ -7855,7 +7855,10 @@
       "turnOffAndRelaunch": "",
       "launchAgain": "",
       "findBrokenMod": "",
-      "findBrokenModHint": ""
+      "findBrokenModHint": "",
+      "possibleCause": "",
+      "possibleCauseHint": "",
+      "possibleCauseBadge": ""
     },
     "changes": {
       "perfConfig": {
