@@ -6,6 +6,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import App from "./app";
 import { useExperimentalFeature } from "./hooks/use-experimental-feature";
 import { queryClient } from "./lib/client";
+import { usePersistedStore } from "./lib/store";
 import AddMods from "./pages/add-mods";
 import Author from "./pages/author";
 import Collection from "./pages/collection";
@@ -51,7 +52,7 @@ const MapsRouteGate = () => {
 };
 
 const StatsRouteGate = ({ page: Page }: { page: typeof Stats }) => {
-  const isEnabled = useExperimentalFeature("player-stats");
+  const isEnabled = usePersistedStore((state) => state.playerStatsEnabled);
   if (!isEnabled) {
     return <Navigate replace to='/' />;
   }

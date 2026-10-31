@@ -485,6 +485,10 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
       { titleKey: "privacy.savedPerItemChoices" },
       { titleKey: "privacy.clearPerItemChoices" },
       {
+        titleKey: "privacy.playerStats",
+        descriptionKey: "privacy.playerStatsDescription",
+      },
+      {
         titleKey: "privacy.analyticsEnabled",
         descriptionKey: "privacy.analyticsEnabledDescription",
       },

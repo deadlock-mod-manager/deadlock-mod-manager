@@ -419,7 +419,9 @@ export const AppSidebar = () => {
   const SidebarContentExtra = useThemeOverride("sidebarContentExtra");
   const SidebarFooterExtra = useThemeOverride("sidebarFooterExtra");
   const isCustomMapsEnabled = useExperimentalFeature("custom-maps");
-  const isPlayerStatsEnabled = useExperimentalFeature("player-stats");
+  const isPlayerStatsEnabled = usePersistedStore(
+    (state) => state.playerStatsEnabled,
+  );
   const isModFoundryEnabled = useExperimentalFeature("mod-foundry");
   const isPerformanceEnabled = useExperimentalFeature("performance-configs");
   const isPluginsEnabled = useExperimentalFeature("plugins");

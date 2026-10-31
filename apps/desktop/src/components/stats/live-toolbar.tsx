@@ -1,7 +1,6 @@
 import { Copy, PlugZap, Radio } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
 import { WIN_COLOR } from "@/components/stats/chart-fx";
-import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { useLiveBoard } from "@/hooks/use-live-match";
 import { cn } from "@/lib/utils";
 
@@ -10,9 +9,7 @@ import { cn } from "@/lib/utils";
  * match, the plain radio icon like every other tab otherwise.
  */
 export const LiveTabIcon = ({ className }: { className?: string }) => {
-  const { phase, board } = useLiveBoard(
-    useExperimentalFeature("live-scoreboard"),
-  );
+  const { phase, board } = useLiveBoard();
   if (!board || (phase !== "pregame" && phase !== "inProgress")) {
     return <Radio className={className} />;
   }
@@ -31,9 +28,7 @@ export const LiveTabIcon = ({ className }: { className?: string }) => {
  */
 export const LiveToolbar = () => {
   const { t } = useTranslation();
-  const { phase, board, matchId } = useLiveBoard(
-    useExperimentalFeature("live-scoreboard"),
-  );
+  const { phase, board, matchId } = useLiveBoard();
   if (!board || (phase !== "pregame" && phase !== "inProgress")) return null;
 
   const { reportedAt } = board;

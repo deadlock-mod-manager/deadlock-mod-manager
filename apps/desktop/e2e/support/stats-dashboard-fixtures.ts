@@ -342,10 +342,6 @@ export const prepareStatsDashboardWorld = async (world: CreatedWorld) => {
   const persisted = z
     .object({ state: z.record(z.string(), z.json()), version: z.number() })
     .parse(await readPersistedDocument(world.directory));
-  const features = z
-    .record(z.string(), z.boolean())
-    .catch({})
-    .parse(persisted.state.experimentalFeatures);
   await writeFile(
     path.join(world.configuration.roots.appData, "state.json"),
     json({
@@ -353,11 +349,6 @@ export const prepareStatsDashboardWorld = async (world: CreatedWorld) => {
         ...persisted,
         state: {
           ...persisted.state,
-          experimentalFeatures: {
-            ...features,
-            "player-stats": true,
-            "live-scoreboard": true,
-          },
           statsAccountId: STATS_ACCOUNT_ID,
           statsDashboard:
             world.configuration.caseId === "stats-broken-endpoints"

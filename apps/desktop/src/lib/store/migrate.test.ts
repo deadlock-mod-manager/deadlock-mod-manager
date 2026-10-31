@@ -322,6 +322,21 @@ describe("safeMigrate", () => {
     });
   });
 
+  it("v40 (stats setting): keeps a user who turned Player Stats off opted out", () => {
+    const state = {
+      experimentalFeatures: {
+        "custom-maps": true,
+        "player-stats": false,
+        "live-scoreboard": true,
+      },
+    };
+
+    expect(safeMigrate(state, 39)).toStrictEqual({
+      experimentalFeatures: { "custom-maps": true, plugins: false },
+      playerStatsEnabled: false,
+    });
+  });
+
   describe("specific step idempotency", () => {
     it("v3 (foldername): preserves existing folderName even if non-default profile", () => {
       const state: Record<string, unknown> = {

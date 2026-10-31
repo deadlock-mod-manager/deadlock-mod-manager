@@ -127,13 +127,11 @@ export const MOD_OUTDATED_CUTOFF_SECONDS = Math.floor(
 export const EXPERIMENTAL_FEATURES = [
   "custom-maps",
   "mod-foundry",
-  "player-stats",
   "profile-management",
   "profile-sharing",
   "conflict-detection",
   "performance-configs",
   "cloud-backup",
-  "live-scoreboard",
   "plugins",
 ] as const;
 

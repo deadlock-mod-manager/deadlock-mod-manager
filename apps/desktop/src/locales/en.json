@@ -1518,8 +1518,7 @@
         "add": "Tab",
         "empty": "Empty tab",
         "fromTemplate": "From a template",
-        "done": "Done",
-        "beta": "BETA"
+        "done": "Done"
       },
       "templates": {
         "overview": "Overview",
@@ -4541,10 +4540,6 @@
         "title": "Mod Foundry",
         "description": "Create and package your own mods."
       },
-      "player-stats": {
-        "title": "Player Stats",
-        "description": "Show the Stats page."
-      },
       "profile-management": {
         "title": "Profile Management",
         "description": "Create and switch between mod profiles."
@@ -4564,10 +4559,6 @@
       "cloud-backup": {
         "title": "Cloud Backup",
         "description": "Back up mod profiles to your account and restore them on another PC. Requires signing in."
-      },
-      "live-scoreboard": {
-        "title": "Live Scoreboard",
-        "description": "Add a Live tab to the Stats page that reads the scoreboard of the match you are in. Installs a small HUD mod and launches the game with -condebug."
       },
       "plugins": {
         "title": "Plugins",
@@ -4781,6 +4772,9 @@
     "clearPerItemChoices": "Clear Saved Choices",
     "clearPerItemChoicesConfirm_one": "Clear {{count}} saved NSFW show/hide choice? Previews will follow your current NSFW settings.",
     "clearPerItemChoicesConfirm_other": "Clear {{count}} saved NSFW show/hide choices? Previews will follow your current NSFW settings.",
+    "playerStatsTitle": "Stats",
+    "playerStats": "Player Stats",
+    "playerStatsDescription": "Show the Stats page. It sends the Steam account IDs of the players you look up, including your own, to deadlock-api",
     "telemetryTitle": "Usage Analytics",
     "analyticsEnabled": "Google Analytics",
     "analyticsEnabledDescription": "Help improve the application by sending which features you use, tied to an ID for this PC",

@@ -676,6 +676,21 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
     },
   },
   {
+    to: 40,
+    label: "player-stats-to-setting",
+    apply: (state) => {
+      // Stats and its Live tab left the experiments. Stats kept an off switch
+      // under Privacy, so a user who had turned it off stays opted out.
+      const features = state.experimentalFeatures;
+      if (!isPlainObject(features)) return;
+      if (features["player-stats"] === false) {
+        state.playerStatsEnabled ??= false;
+      }
+      delete features["player-stats"];
+      delete features["live-scoreboard"];
+    },
+  },
+  {
     to: 41,
     label: "plugins-opt-in",
     apply: (state) => {

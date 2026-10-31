@@ -281,13 +281,11 @@ const listedIn =
     widget.source.kind === "panel" && panels.has(widget.source.panel);
 
 /** Whether every widget on `tab` is one of `panels`. An empty tab holds none. */
-export const holdsOnly = (
-  tab: DashboardTab,
-  panels: ReadonlySet<string>,
-): boolean => tab.widgets.length > 0 && tab.widgets.every(listedIn(panels));
+const holdsOnly = (tab: DashboardTab, panels: ReadonlySet<string>): boolean =>
+  tab.widgets.length > 0 && tab.widgets.every(listedIn(panels));
 
 /** Removes the given panels, and the tabs that held nothing else. */
-export const withoutPanels = (
+const withoutPanels = (
   layout: DashboardLayout,
   panels: ReadonlySet<string>,
 ): DashboardLayout => {

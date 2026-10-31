@@ -51,13 +51,11 @@ export type ExperimentalFeature = (typeof EXPERIMENTAL_FEATURES)[number];
 const DEFAULT_EXPERIMENTAL_FEATURES = {
   "custom-maps": false,
   "mod-foundry": true,
-  "player-stats": true,
   "profile-management": true,
   "profile-sharing": true,
   "conflict-detection": true,
   "performance-configs": true,
   "cloud-backup": true,
-  "live-scoreboard": false,
   plugins: false,
 } satisfies Record<ExperimentalFeature, boolean>;
 
@@ -106,6 +104,8 @@ export type UIState = {
   animateOccultGeometry: boolean;
   experimentalFeatures: Record<ExperimentalFeature, boolean>;
   autoFixMods: boolean;
+  /** Shows the Stats page, which looks players up on deadlock-api. */
+  playerStatsEnabled: boolean;
   appBackground: AppBackground;
 
   // Plugins
@@ -131,6 +131,7 @@ export type UIState = {
     enabled: boolean,
   ) => void;
   setAutoFixMods: (enabled: boolean) => void;
+  setPlayerStatsEnabled: (enabled: boolean) => void;
   updateAppBackground: (background: Partial<AppBackground>) => void;
   setEnabledPlugin: (id: string, enabled: boolean) => void;
   setPluginSettings: (id: string, value: unknown) => void;
@@ -184,6 +185,7 @@ export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
   animateOccultGeometry: true,
   experimentalFeatures: DEFAULT_EXPERIMENTAL_FEATURES,
   autoFixMods: true,
+  playerStatsEnabled: true,
   appBackground: DEFAULT_APP_BACKGROUND,
   enabledPlugins: {},
   pluginSettings: {},
@@ -272,6 +274,11 @@ export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
   setAutoFixMods: (enabled: boolean) =>
     set(() => ({
       autoFixMods: enabled,
+    })),
+
+  setPlayerStatsEnabled: (enabled: boolean) =>
+    set(() => ({
+      playerStatsEnabled: enabled,
     })),
 
   updateAppBackground: (background: Partial<AppBackground>) =>

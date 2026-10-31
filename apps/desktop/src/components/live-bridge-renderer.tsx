@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { useLiveBridge } from "@/hooks/use-live-bridge";
 import { useGameRunning } from "@/hooks/use-mod-health";
 
@@ -9,7 +8,7 @@ import { useGameRunning } from "@/hooks/use-mod-health";
  * place of the new; it is rebuilt as soon as the game is closed. One attempt
  * per outdated state, so a failure does not loop.
  */
-const LiveBridgeUpdater = () => {
+export const LiveBridgeRenderer = () => {
   const { status, isUpdating, update } = useLiveBridge();
   const gameRunning = useGameRunning();
   const attempted = useRef(false);
@@ -27,7 +26,3 @@ const LiveBridgeUpdater = () => {
 
   return null;
 };
-
-/** Only with the Live Scoreboard toggle on, so nobody else pays for the checks. */
-export const LiveBridgeRenderer = () =>
-  useExperimentalFeature("live-scoreboard") ? <LiveBridgeUpdater /> : null;

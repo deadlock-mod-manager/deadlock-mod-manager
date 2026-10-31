@@ -31,6 +31,8 @@ const PrivacySettings = () => {
     updateTelemetrySettings,
     linuxCanvasNSFWBlur,
     setLinuxCanvasNSFWBlur,
+    playerStatsEnabled,
+    setPlayerStatsEnabled,
   } = usePersistedStore();
   const isLinux = platform() === "linux";
 
@@ -146,6 +148,20 @@ const PrivacySettings = () => {
           {t("privacy.clearPerItemChoices")}
         </Button>
       </SettingRow>
+
+      <div className='border-t pt-4'>
+        <h3 className='mb-4 font-semibold text-lg'>
+          {t("privacy.playerStatsTitle")}
+        </h3>
+
+        <SettingToggleRow
+          checked={playerStatsEnabled}
+          description={t("privacy.playerStatsDescription")}
+          id='toggle-privacy-player-stats'
+          onCheckedChange={setPlayerStatsEnabled}
+          title={t("privacy.playerStats")}
+        />
+      </div>
 
       {/* Telemetry Settings */}
       <div className='border-t pt-4'>

@@ -19,13 +19,11 @@ import {
   type TabIcon,
   updateTab,
   upsertWidget,
-  withoutPanels,
 } from "@/lib/stats/dashboard/layout";
 import { emptyTab, tabFromTemplate } from "@/lib/stats/dashboard/templates";
 import { usePersistedStore } from "@/lib/store";
 import type { GridActions } from "./dashboard-grid";
 import type { WidgetHealth } from "./dashboard-widget";
-import { useHiddenPanels } from "./panels";
 
 export type PendingConfirm =
   | { kind: "reset" }
@@ -47,8 +45,6 @@ export const useDashboardEditor = () => {
     () => parseLayout(storedLayout),
     [storedLayout],
   );
-  const hiddenPanels = useHiddenPanels();
-
   const [draft, setDraft] = useState<DashboardLayout | null>(null);
   const [editorTarget, setEditorTarget] = useState<EditorTarget | null>(null);
   const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(
@@ -57,16 +53,8 @@ export const useDashboardEditor = () => {
   const [health, setHealth] = useState<Record<string, WidgetHealth>>({});
 
   const editing = draft !== null;
-  // Panels behind an experimental feature that is off stay in the layout, so
-  // saving and resetting keep them for when it is turned on; only the page
-  // leaves them out.
-  const layout = useMemo(() => {
-    const full = draft ?? savedLayout;
-    const visible = withoutPanels(full, hiddenPanels);
-    return visible.tabs.length > 0
-      ? visible
-      : withoutPanels(DEFAULT_LAYOUT, hiddenPanels);
-  }, [draft, savedLayout, hiddenPanels]);
+  const full = draft ?? savedLayout;
+  const layout = full.tabs.length > 0 ? full : DEFAULT_LAYOUT;
   const tabParam = searchParams.get("tab");
   const activeTab =
     layout.tabs.find((tab) => tab.id === tabParam) ?? layout.tabs[0];
