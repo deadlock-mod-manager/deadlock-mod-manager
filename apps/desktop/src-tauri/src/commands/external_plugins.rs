@@ -23,6 +23,30 @@ fn ensure_supported() -> Result<(), Error> {
   Ok(())
 }
 
+fn ensure_enabled(host: &PluginHost) -> Result<(), Error> {
+  ensure_supported()?;
+  if !host.runtime_enabled() {
+    return Err(Error::InvalidInput("Plugins are disabled".into()));
+  }
+  Ok(())
+}
+
+#[tauri::command]
+pub async fn external_plugins_set_enabled(
+  host: State<'_, Arc<PluginHost>>,
+  enabled: bool,
+) -> Result<(), Error> {
+  if enabled {
+    ensure_supported()?;
+  }
+  let host = Arc::clone(&host);
+  blocking(move || {
+    host.set_runtime_enabled(enabled);
+    Ok(())
+  })
+  .await
+}
+
 async fn blocking<T: Send + 'static>(
   task: impl FnOnce() -> Result<T, Error> + Send + 'static,
 ) -> Result<T, Error> {
@@ -35,7 +59,8 @@ async fn blocking<T: Send + 'static>(
 pub async fn external_plugins_list(
   host: State<'_, Arc<PluginHost>>,
 ) -> Result<Vec<ExternalPluginSummary>, Error> {
-  ensure_supported()?;
+  ensure_enabled(&host)?;
+
   Ok(host.list())
 }
 
@@ -44,7 +69,8 @@ pub async fn external_plugins_install(
   host: State<'_, Arc<PluginHost>>,
   archive_path: String,
 ) -> Result<ExternalPluginSummary, Error> {
-  ensure_supported()?;
+  ensure_enabled(&host)?;
+
   let host = Arc::clone(&host);
   blocking(move || {
     host
@@ -62,7 +88,8 @@ pub async fn external_plugins_install_url(
   url: String,
   sha256: String,
 ) -> Result<ExternalPluginSummary, Error> {
-  ensure_supported()?;
+  ensure_enabled(&host)?;
+
   let url = download::https_url(&url)?;
   if !download::is_sha256(&sha256) {
     return Err(Error::InvalidInput(
@@ -81,7 +108,8 @@ pub async fn external_plugins_apply_update(
   host: State<'_, Arc<PluginHost>>,
   plugin_id: String,
 ) -> Result<ExternalPluginSummary, Error> {
-  ensure_supported()?;
+  ensure_enabled(&host)?;
+
   let host = Arc::clone(&host);
   blocking(move || host.apply_update(&plugin_id).map_err(Error::from)).await
 }
@@ -91,6 +119,7 @@ pub async fn external_plugins_discard_update(
   host: State<'_, Arc<PluginHost>>,
   plugin_id: String,
 ) -> Result<(), Error> {
+  ensure_enabled(&host)?;
   let host = Arc::clone(&host);
   blocking(move || host.discard_update(&plugin_id).map_err(Error::from)).await
 }
@@ -102,6 +131,7 @@ pub async fn external_plugins_activity(
   plugin_id: String,
   limit: Option<usize>,
 ) -> Result<Vec<ExternalPluginActivity>, Error> {
+  ensure_enabled(&host)?;
   let host = Arc::clone(&host);
   blocking(move || {
     host
@@ -116,6 +146,7 @@ pub async fn external_plugins_clear_data(
   host: State<'_, Arc<PluginHost>>,
   plugin_id: String,
 ) -> Result<(), Error> {
+  ensure_enabled(&host)?;
   let host = Arc::clone(&host);
   blocking(move || host.clear_data(&plugin_id).map_err(Error::from)).await
 }
@@ -131,7 +162,8 @@ pub async fn external_plugins_grant(
   file_path: Option<String>,
   profile_folder: Option<String>,
 ) -> Result<(), Error> {
-  ensure_supported()?;
+  ensure_enabled(&host)?;
+
   let host = Arc::clone(&host);
   blocking(move || {
     host
@@ -147,6 +179,7 @@ pub async fn external_plugins_revoke(
   host: State<'_, Arc<PluginHost>>,
   plugin_id: String,
 ) -> Result<(), Error> {
+  ensure_enabled(&host)?;
   let host = Arc::clone(&host);
   blocking(move || host.revoke(&plugin_id).map(drop).map_err(Error::from)).await
 }
@@ -157,9 +190,7 @@ pub async fn external_plugins_enable(
   plugin_id: String,
   enabled: bool,
 ) -> Result<(), Error> {
-  if enabled {
-    ensure_supported()?;
-  }
+  ensure_enabled(&host)?;
   let host = Arc::clone(&host);
   blocking(move || {
     host
@@ -175,6 +206,7 @@ pub async fn external_plugins_remove(
   host: State<'_, Arc<PluginHost>>,
   plugin_id: String,
 ) -> Result<(), Error> {
+  ensure_enabled(&host)?;
   let host = Arc::clone(&host);
   blocking(move || host.remove(&plugin_id).map_err(Error::from)).await
 }
@@ -188,7 +220,8 @@ pub async fn external_plugins_frame_call(
   command: String,
   payload_json: String,
 ) -> Result<String, Error> {
-  ensure_supported()?;
+  ensure_enabled(&host)?;
+
   let host = Arc::clone(&host);
   blocking(move || {
     let view = host.view(&plugin_id)?;

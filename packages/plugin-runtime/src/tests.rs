@@ -52,6 +52,7 @@ fn open(dir: tempfile::TempDir) -> Fixture {
     Arc::clone(&adapter) as Arc<dyn HostAdapter>,
   )
   .unwrap();
+  host.set_runtime_enabled(true);
   Fixture {
     dir,
     host: Arc::new(host),
@@ -625,6 +626,47 @@ fn disable_revoke_and_update_retire_sessions() {
     fixture.host.install(&archive).is_err(),
     "downgrades are refused"
   );
+}
+
+#[test]
+fn runtime_suspension_stops_workers_and_retires_views_without_losing_opt_ins() {
+  let fixture = fixture();
+  fixture.install("0.1.0");
+  let generation = fixture.enable();
+  assert!(fixture.call(generation, "echo", Value::Null).is_ok());
+  assert!(fixture.host.supervisor.is_running(ID));
+
+  fixture.host.set_runtime_enabled(false);
+  assert!(!fixture.host.supervisor.is_running(ID));
+  assert!(fixture.host.view(ID).is_err());
+  assert!(fixture.call(generation, "echo", Value::Null).is_err());
+  let summary = fixture.host.summary(ID).unwrap();
+  assert!(summary.enabled);
+  assert!(summary.grant.is_some());
+
+  fixture.host.set_runtime_enabled(true);
+  assert!(matches!(
+    fixture.host.read_view_asset(ID, generation, "app.js"),
+    Err(SessionDenied::Stale)
+  ));
+  assert!(
+    fixture
+      .call(fixture.generation(), "echo", Value::Null)
+      .is_ok()
+  );
+
+  fixture.host.set_runtime_enabled(false);
+  let reopened = PluginHost::open(
+    fixture.host.root().to_path_buf(),
+    launcher(fixture.dir.path()),
+    Arc::clone(&fixture.adapter) as Arc<dyn HostAdapter>,
+  )
+  .unwrap();
+  assert!(!reopened.runtime_enabled());
+  assert!(reopened.view(ID).is_err());
+  assert!(reopened.summary(ID).unwrap().enabled);
+  reopened.set_runtime_enabled(true);
+  assert!(reopened.view(ID).is_ok());
 }
 
 fn package_dirs(fixture: &Fixture) -> usize {

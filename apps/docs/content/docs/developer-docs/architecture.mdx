@@ -105,6 +105,15 @@ For detailed information, see the [Mirror Service Documentation](/developer-docs
 
 ### External plugin runtime
 
+The desktop's `plugins` Cargo feature is off by default and gates the runtime
+dependency, worker entry point, host setup, IPC commands, and frame protocol.
+The desktop dev script enables it automatically (`pnpm desktop:dev`); release
+builds require `--features plugins` explicitly.
+The frontend checks `get_runtime_bootstrap.features.plugins` before exposing
+plugin settings or routes. In supported builds, the Experimental Plugins
+setting resumes the host; turning it off stops workers and revokes sessions
+without changing saved per-plugin preferences or grants.
+
 The **plugin runtime module** (`packages/plugin-runtime`, Rust crate
 `dmm-plugin-runtime`) owns external package validation, grants, lifecycle,
 WASM worker supervision, plugin storage, and staged artifacts. Its interface

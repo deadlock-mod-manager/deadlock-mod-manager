@@ -423,12 +423,36 @@ struct RegistryFile {
 }
 
 pub struct Registry {
+  runtime_enabled: bool,
   path: PathBuf,
   packages_root: PathBuf,
   file: RegistryFile,
 }
 
 impl Registry {
+  pub fn runtime_enabled(&self) -> bool {
+    self.runtime_enabled
+  }
+
+  pub fn set_runtime_enabled(&mut self, enabled: bool) -> Vec<String> {
+    if self.runtime_enabled == enabled {
+      return Vec::new();
+    }
+    self.runtime_enabled = enabled;
+    if enabled {
+      return Vec::new();
+    }
+    // Retire sessions without changing the saved per-plugin settings.
+    let ids: Vec<String> = self.file.plugins.keys().cloned().collect();
+    for id in &ids {
+      let generation = self.next_generation();
+      if let Some(plugin) = self.file.plugins.get_mut(id) {
+        plugin.generation = generation;
+      }
+    }
+    ids
+  }
+
   pub fn open(root: &Path) -> Result<Self, Error> {
     let path = root.join("registry.json");
     let packages_root = root.join("packages");
@@ -462,6 +486,7 @@ impl Registry {
       Err(error) => return Err(error.into()),
     };
     Ok(Self {
+      runtime_enabled: false,
       path,
       packages_root,
       file,
@@ -579,7 +604,7 @@ impl Registry {
   }
 
   pub fn active(&self, plugin: &InstalledPlugin) -> Result<ActivePlugin, SessionDenied> {
-    if plugin.quarantined || !plugin.enabled {
+    if !self.runtime_enabled || plugin.quarantined || !plugin.enabled {
       return Err(SessionDenied::Disabled);
     }
     if plugin.needs_consent() {

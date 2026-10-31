@@ -1,4 +1,5 @@
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
+import { isPluginsBuilt } from "@/lib/runtime-bootstrap";
 import type { ExternalPluginActivity } from "@/types/generated/ExternalPluginActivity";
 import type { ExternalPluginSummary } from "@/types/generated/ExternalPluginSummary";
 
@@ -13,6 +14,14 @@ export const EXTERNAL_PLUGINS_CHANGED_EVENT = "external-plugins-changed";
 
 export const listExternalPlugins = () =>
   invoke<ExternalPluginSummary[]>("external_plugins_list");
+
+export const setPluginRuntimeEnabled = async (
+  enabled: boolean,
+): Promise<void> => {
+  if (isPluginsBuilt()) {
+    await invoke<void>("external_plugins_set_enabled", { enabled });
+  }
+};
 
 export const installExternalPlugin = (archivePath: string) =>
   invoke<ExternalPluginSummary>("external_plugins_install", { archivePath });

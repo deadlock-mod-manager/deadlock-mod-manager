@@ -208,6 +208,7 @@ fn gpu_compat_workaround_enabled(
 fn main() {
   // Plugin backends run in this same executable in worker mode, before any
   // app or webview initialisation.
+  #[cfg(feature = "plugins")]
   if std::env::args_os().nth(1).as_deref() == Some(dmm_plugin_runtime::WORKER_ARG.as_ref()) {
     std::process::exit(dmm_plugin_runtime::run_worker());
   }

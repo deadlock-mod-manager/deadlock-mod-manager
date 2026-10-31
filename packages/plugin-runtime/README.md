@@ -14,6 +14,18 @@ owns installation, grants, storage, staged snapshots, deployment recovery
 records, request policy and supervised worker execution. Its implementation
 modules remain private.
 
+The desktop host is compiled only with the `plugins` Cargo feature, which is
+off by default for builds. The desktop dev script enables it automatically: run
+`pnpm desktop:dev`, then enable
+Plugins in Experimental settings. Build support is reported by
+`get_runtime_bootstrap.features.plugins`; unsupported platforms and CEF report
+false. Generate IPC bindings with `pnpm --filter @deadlock-mods/desktop generate-types`.
+
+`PluginHost::open` starts suspended. After restoring the user's opt-in, the
+application calls `set_runtime_enabled(true)`. Suspending the host revokes all
+sessions and stops workers while preserving installed packages, grants and
+per-plugin enabled states. Calls and view assets remain denied until resumed.
+
 The application supplies a `HostAdapter` for profile validation and listing,
 profile mods, installed snapshot lookup, deployment and source retention, game
 detection and performing network requests. DMM's adapter lives in

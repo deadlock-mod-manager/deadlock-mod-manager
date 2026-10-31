@@ -73,6 +73,7 @@ const NOTIFICATION_WINDOW: Duration = Duration::from_secs(60);
 const MAX_OBSERVED_FILES: usize = 64;
 
 pub struct PluginHost {
+  runtime_transition: Mutex<()>,
   root: PathBuf,
   registry: Mutex<Registry>,
   supervisor: Supervisor,
@@ -116,6 +117,7 @@ impl PluginHost {
       fs::remove_dir_all(&staging)?;
     }
     Ok(Self {
+      runtime_transition: Mutex::new(()),
       registry: Mutex::new(Registry::open(&root)?),
       root,
       supervisor: Supervisor::new(launcher),
@@ -134,6 +136,24 @@ impl PluginHost {
   #[cfg(test)]
   pub fn root(&self) -> &Path {
     &self.root
+  }
+
+  pub fn runtime_enabled(&self) -> bool {
+    lock(&self.registry).runtime_enabled()
+  }
+
+  /// The host starts suspended until the application restores the user's opt-in.
+  pub fn set_runtime_enabled(&self, enabled: bool) {
+    let _transition = lock(&self.runtime_transition);
+    let ids = lock(&self.registry).set_runtime_enabled(enabled);
+    for id in ids {
+      self.retire(&id);
+      // Drain a call that passed authorization just before suspension, including
+      // one that had not spawned its worker when retire ran.
+      self
+        .supervisor
+        .exclusive(&id, || self.supervisor.terminate(&id));
+    }
   }
 
   /// Called with the plugin id whenever its sessions are retired or its
