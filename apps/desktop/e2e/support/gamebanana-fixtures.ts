@@ -88,6 +88,8 @@ export const catalogRecipe = (scenario: string): CatalogArchive[] => {
       "gamebanana-file-toggle",
       "gamebanana-reinstall",
       "gamebanana-reinstall-disabled",
+      "gamebanana-delete-parked",
+      "gamebanana-delete-parked-disabled",
     ].includes(scenario)
   )
     return catalogRecipe("gamebanana-variants");
@@ -329,6 +331,9 @@ export const assertCatalogNetwork = (
       "gamebanana-reinstall",
       "gamebanana-reinstall-disabled",
       "gamebanana-force-update",
+      // Deleting the mod purges its download, so reinstalling fetches it again.
+      "gamebanana-delete-parked",
+      "gamebanana-delete-parked-disabled",
     ].includes(scenario)
   )
     expected.push(...expected.map((request) => ({ ...request })));
