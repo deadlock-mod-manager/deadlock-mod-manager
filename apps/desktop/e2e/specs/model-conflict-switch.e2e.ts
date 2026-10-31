@@ -118,6 +118,7 @@ describe("skin conflict activation", () => {
       // Also report a skin enabled and then replaced within this same batch.
       await $("button=Disable 1").click();
       await choose("Disable selected");
+      await $("button=Enable 1").waitForDisplayed();
       await $(`[role="checkbox"][aria-label="Select ${HAT_JACKET}"]`).click();
       await $("button=Enable 2").click();
       await choose("Enable selected");

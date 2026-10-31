@@ -25,6 +25,27 @@ const waitStatus = (world: string, id: string, status: string) =>
       state.localMods.find((mod) => mod.remoteId === id)?.status === status,
   );
 
+// The store saves after the UI updates, so a toast can beat the write.
+const waitFilesRecorded = (world: string, version: "v1" | "v2") =>
+  observeUntil(
+    `${version} files recorded`,
+    () => readCatalogState(world),
+    (state) =>
+      MULTIPAK_MODS.every((mod) => {
+        const local = state.localMods.find((item) => item.remoteId === mod.id);
+        return (
+          local?.status === "installed" &&
+          isDeepStrictEqual(
+            local.installedFileTree?.files
+              .filter((file) => file.is_selected)
+              .map((file) => file.name)
+              .sort(),
+            mod.versions[version].toSorted(),
+          )
+        );
+      }),
+  );
+
 describe("updates beside a broken inactive profile", () => {
   it("backs up, updates and restores without judging the other profile", async () => {
     const runtime = await startApplication();
@@ -73,26 +94,7 @@ describe("updates beside a broken inactive profile", () => {
       await expect(
         $('[data-testid="batch-update-failure"]'),
       ).not.toBeExisting();
-      await observeUntil(
-        "v2 files recorded",
-        () => readCatalogState(world),
-        (state) =>
-          MULTIPAK_MODS.every((mod) => {
-            const local = state.localMods.find(
-              (item) => item.remoteId === mod.id,
-            );
-            return (
-              local?.status === "installed" &&
-              isDeepStrictEqual(
-                local.installedFileTree?.files
-                  .filter((file) => file.is_selected)
-                  .map((file) => file.name)
-                  .sort(),
-                mod.versions.v2.toSorted(),
-              )
-            );
-          }),
-      );
+      await waitFilesRecorded(world, "v2");
       await assertMultipakDisk(world, "updated-v2", {
         version: "v2",
         a: "enabled",
@@ -144,6 +146,7 @@ describe("updates beside a broken inactive profile", () => {
       await $(
         '//*[@data-sonner-toast]//*[@data-title and normalize-space()="Backup restored successfully"]',
       ).waitForDisplayed();
+      await waitFilesRecorded(world, "v1");
       await assertMultipakDisk(world, "restored-v1", {
         version: "v1",
         a: "enabled",
