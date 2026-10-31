@@ -16,6 +16,12 @@ pub struct DmpExceptionInfo {
     pub exception_address: String,
     pub thread_id: u32,
     pub description: String,
+    /// `module+0xoffset` for the exception address, from the full module
+    /// list even when the report truncates it.
+    pub faulting_module: Option<String>,
+    /// For access violations: whether the code read, wrote or executed, and
+    /// the address it touched.
+    pub access: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
