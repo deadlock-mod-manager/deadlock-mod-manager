@@ -103,6 +103,28 @@ For detailed information, see the [Mirror Service Documentation](/developer-docs
 
 ## Desktop Application Architecture
 
+### External plugin runtime
+
+The **plugin runtime module** (`packages/plugin-runtime`, Rust crate
+`dmm-plugin-runtime`) owns external package validation, grants, lifecycle,
+WASM worker supervision, plugin storage, and staged artifacts. Its interface
+centers on `PluginHost`; registry records and worker protocol details remain
+private to the implementation.
+
+The profile deployment seam uses `ProfileAdapter`. The desktop adapter calls
+the existing mod manager, game-file guards, and profile manifest operations;
+runtime tests use a filesystem adapter. This keeps game-visible installed
+addons under desktop Rust ownership while allowing runtime tests to run
+without Tauri.
+
+The frame adapter stays in `apps/desktop/src-tauri/src/external_plugins`. It
+serves plugin interfaces to sandboxed iframes on the app's `/ext/<id>` page,
+with their CSP, and gets a view descriptor and authorized assets from the
+runtime instead of reading registry records or package paths. Frames have no
+IPC; the app page relays their `postMessage` calls with
+`external_plugins_frame_call`. Plugin-author SDKs and the external
+Creator Workspace Bridge package remain independent of the desktop build.
+
 ### Frontend Architecture (React)
 
 ```mermaid

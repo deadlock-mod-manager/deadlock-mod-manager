@@ -22,7 +22,9 @@ import Mod from "./pages/mod";
 import Performance from "./pages/performance";
 import GetMods, { GetMaps } from "./pages/mods";
 import MyMods from "./pages/my-mods";
+import ExternalPluginPage from "./pages/external-plugin";
 import PluginEntry from "./pages/plugin";
+import ManagePlugins from "./pages/plugins-manage";
 import Servers from "./pages/servers";
 import CustomSettings from "./pages/settings";
 import Skins from "./pages/skins";
@@ -102,7 +104,9 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
               <Route element={<CustomSettings />} path='/settings' />
               <Route element={<Contributors />} path='/contributors' />
               <Route element={<Developer />} path='/developer' />
+              <Route element={<ManagePlugins />} path='/plugins/manage' />
               <Route element={<PluginEntry />} path='/plugins/:id' />
+              <Route element={<ExternalPluginPage />} path='/ext/:pluginId' />
               <Route element={<Debug />} path='/debug' />
               <Route element={<Crosshairs />} path='/crosshairs' />
               <Route element={<Skins />} path='/skins' />

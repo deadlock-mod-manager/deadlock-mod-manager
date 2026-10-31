@@ -23,6 +23,11 @@ export const SETTINGS_TAB_LABEL_KEYS = {
 
 type SettingsTab = keyof typeof SETTINGS_TAB_LABEL_KEYS;
 
+/** Former settings tabs that now have their own page; their results open it. */
+const SETTINGS_TAB_ROUTES = new Map<SettingsTab, string>([
+  ["plugin", "/plugins/manage"],
+]);
+
 type SearchableText = {
   titleKey: string;
   descriptionKey?: string;
@@ -39,6 +44,8 @@ export type SettingsSearchSection = SearchableText & {
 
 export type SettingsSearchResult = {
   tab: SettingsTab;
+  /** Set when the result lives on another page instead of a settings tab. */
+  route?: string;
   sectionId?: string;
   titleKey: string;
   title: string;
@@ -313,6 +320,13 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
     tab: "plugin",
     titleKey: "settings.plugin",
     descriptionKey: "settings.pluginDescription",
+    settings: [
+      { titleKey: "plugins.manage.installFromFile" },
+      {
+        titleKey: "plugins.manage.findMore.title",
+        descriptionKey: "plugins.manage.findMore.body",
+      },
+    ],
   },
   {
     tab: "discord",
@@ -549,6 +563,7 @@ const toCandidates = (
       return {
         result: {
           tab: section.tab,
+          route: SETTINGS_TAB_ROUTES.get(section.tab),
           sectionId: section.id,
           titleKey: item.titleKey,
           title,

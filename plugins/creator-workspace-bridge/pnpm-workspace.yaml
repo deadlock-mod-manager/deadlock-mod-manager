@@ -1,0 +1,11 @@
+# Standalone install root: the plugin is not part of the DMM workspace, so it
+# gets its own lockfile. Run `pnpm install` from this directory.
+packages: []
+
+minimumReleaseAge: 10080
+minimumReleaseAgeStrict: true
+minimumReleaseAgeExclude:
+  - "@tanstack/*"
+
+allowBuilds:
+  esbuild: true

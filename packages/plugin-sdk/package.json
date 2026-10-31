@@ -1,0 +1,17 @@
+{
+  "name": "@deadlock-mods/plugin-sdk",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "bun test",
+    "check-types": "tsc --noEmit && tsc --noEmit -p tsconfig.tests.json"
+  },
+  "devDependencies": {
+    "@deadlock-mods/typescript-config": "workspace:*",
+    "typescript": "catalog:"
+  }
+}
