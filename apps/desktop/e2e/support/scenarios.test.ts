@@ -13,7 +13,7 @@ const windows = process.platform === "win32";
 describe("scenario selection", () => {
   it("registers every case with explicit phases and capability requirements", () => {
     const ids = selectScenarios("all");
-    expect(ids).toHaveLength(windows ? 120 : 109);
+    expect(ids).toHaveLength(windows ? 121 : 110);
     for (const id of ids) {
       expect(parseScenarioId(id)).toBe(id);
       expect(scenarioSpec(id)).toContain("./specs/");
@@ -39,7 +39,10 @@ describe("scenario selection", () => {
     expect(scenarios["library-groups-drag"].nativeInput).toBe(true);
     expect(scenarios["library-groups-drag"].platforms).toContain("linux");
     expect(selectScenarios("monkey")).toEqual(["monkey"]);
-    expect(selectScenarios("diagnostics")).toEqual(["network-diagnostics"]);
+    expect(selectScenarios("diagnostics")).toEqual([
+      "network-diagnostics",
+      "network-diagnostics-internet-down",
+    ]);
     expect(selectScenarios("updater")).toEqual([
       "app-update-download",
       "app-update-check-failure",

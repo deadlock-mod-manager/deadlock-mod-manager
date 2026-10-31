@@ -866,6 +866,10 @@ export const scenarios = {
     phases: ["broken"],
   },
   "network-diagnostics": networkDiagnostics,
+  "network-diagnostics-internet-down": {
+    ...networkDiagnostics,
+    phases: ["internet-down"],
+  },
 } satisfies Record<string, Definition>;
 export type ScenarioId = keyof typeof scenarios;
 const isScenario = (value: string): value is ScenarioId =>
