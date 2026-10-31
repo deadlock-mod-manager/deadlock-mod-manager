@@ -18,7 +18,6 @@ import {
 const applicationToggles = [
   { id: "toggle-setting-auto-update", key: "autoUpdateEnabled", value: true },
   { id: "toggle-setting-developer-mode", key: "developerMode", value: true },
-  { id: "toggle-setting-ingest-tool", key: "ingestToolEnabled", value: true },
   {
     id: "toggle-setting-forge-install",
     key: "forgeInstallEnabled",
@@ -39,6 +38,9 @@ const applicationToggles = [
     key: "showOccultGeometry",
     value: false,
   },
+];
+const matchDataToggles = [
+  { id: "toggle-setting-ingest-tool", key: "ingestToolEnabled", value: true },
 ];
 const modsToggles = [
   {
@@ -124,6 +126,15 @@ describe("settings persistence", () => {
         $('[role="slider"][aria-label="Audio Volume"]'),
       ).toHaveAttribute("aria-valuenow", "37");
       await expect($('[aria-label="Update Channel"]')).toHaveText("Nightly");
+      await openSettings("match-data");
+      if (editing)
+        for (const control of matchDataToggles)
+          await setSwitch(`#${control.id}`, control.value);
+      for (const control of matchDataToggles)
+        await expect($(`#${control.id}`)).toHaveAttribute(
+          "aria-checked",
+          String(control.value),
+        );
       await openSettings("mods");
       if (editing) {
         for (const control of [
@@ -148,7 +159,7 @@ describe("settings persistence", () => {
             .record(z.string(), z.object({ enabled: z.boolean() }))
             .parse(state.settings);
           return (
-            [...applicationToggles, ...modsToggles].every(
+            [...applicationToggles, ...matchDataToggles, ...modsToggles].every(
               (control) => state[control.key] === control.value,
             ) &&
             systemToggles.every(

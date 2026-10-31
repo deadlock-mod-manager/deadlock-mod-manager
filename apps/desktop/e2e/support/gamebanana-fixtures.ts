@@ -336,7 +336,6 @@ export const assertCatalogNetwork = (
     expected.push(
       { path: "/dl/910003", status: 200 },
       { path: "/dl/910004", status: 200 },
-      { path: "/dl/910002", status: 200 },
     );
   if (scenario === "gamebanana-switch-failure")
     expected.push(
