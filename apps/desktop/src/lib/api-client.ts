@@ -105,6 +105,7 @@ export const checkModUpdates = async (
     // Persisted store dates come back from JSON as ISO strings.
     installedAt: Date | string;
     selectedFileIds: string[];
+    selectedFileNames: string[];
   }>,
 ) => {
   return checkDirectGameBananaUpdates(
@@ -112,6 +113,7 @@ export const checkModUpdates = async (
       remoteId: mod.remoteId,
       installedAt: Math.floor(new Date(mod.installedAt).getTime() / 1_000),
       selectedFileIds: mod.selectedFileIds,
+      selectedFileNames: mod.selectedFileNames,
     })),
   );
 };

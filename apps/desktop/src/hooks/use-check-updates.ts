@@ -38,6 +38,8 @@ const toModToCheck = (mod: LocalMod): ModToCheck => {
         const id = fileIdFromDownloadUrl(download.url);
         return id === null ? [] : [String(id)];
       }) ?? [],
+    selectedFileNames:
+      mod.selectedDownloads?.map((download) => download.name) ?? [],
   };
   modsToCheckCache.set(mod, entry);
   return entry;
