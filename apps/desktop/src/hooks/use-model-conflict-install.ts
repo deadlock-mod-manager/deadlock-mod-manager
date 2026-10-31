@@ -19,6 +19,8 @@ import {
   ModStatus,
 } from "@/types/mods";
 
+const REQUIREMENT_NAME_TIMEOUT_MS = 3000;
+
 export function useModelConflictInstall() {
   const askModelConflict = useModelConflictPrompt();
   const confirm = useConfirm();
@@ -33,16 +35,23 @@ export function useModelConflictInstall() {
     if (!remoteId) return dependency.label;
     const local = localMods.find((mod) => mod.remoteId === remoteId);
     if (local) return local.name;
+    const fallback = dependency.label || remoteId;
     try {
-      const details = await queryClient.fetchQuery({
-        queryKey: modDetailQueryKey(remoteId),
-        queryFn: () => getMod(remoteId),
-        staleTime: STALE_TIME_API,
-        meta: { skipGlobalErrorHandler: true },
-      });
-      return details.name;
+      // Don't hold the warning back on a slow catalog lookup
+      const details = await Promise.race([
+        queryClient.fetchQuery({
+          queryKey: modDetailQueryKey(remoteId),
+          queryFn: () => getMod(remoteId),
+          staleTime: STALE_TIME_API,
+          meta: { skipGlobalErrorHandler: true },
+        }),
+        new Promise<undefined>((resolve) =>
+          setTimeout(resolve, REQUIREMENT_NAME_TIMEOUT_MS),
+        ),
+      ]);
+      return details?.name ?? fallback;
     } catch {
-      return dependency.label || remoteId;
+      return fallback;
     }
   };
   return useMutation({
