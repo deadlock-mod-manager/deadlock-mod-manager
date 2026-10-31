@@ -219,6 +219,12 @@ const downloads: Definition = {
     prepareDownloadWorld(world, origin, world.configuration.caseId),
   verifyNetwork: assertDownloadNetwork,
 };
+// Pausing the first of two downloads lets the second one start.
+const pauseQueue: Definition = {
+  ...downloads,
+  spec: "download-pause-queue",
+  phases: ["pause"],
+};
 const filesystem: Definition = {
   ...defaults,
   family: "filesystem",
@@ -272,6 +278,11 @@ const catalogLifecycle: Definition = {
   ...catalog,
   spec: "gamebanana-lifecycle",
   phases: ["catalog-change", "restart-changed"],
+};
+const catalogDeleteParked: Definition = {
+  ...catalog,
+  spec: "gamebanana-delete-parked",
+  phases: ["delete-parked", "restart-deleted"],
 };
 const queueError: Definition = {
   ...catalog,
@@ -664,6 +675,14 @@ export const scenarios = {
     spec: "download-queue",
     phases: ["queue"],
   },
+  "downloads-pause-queue": pauseQueue,
+  "downloads-pause-queue-cancel": pauseQueue,
+  "downloads-pause-queue-reload": pauseQueue,
+  "downloads-pause-queue-restart": {
+    ...pauseQueue,
+    phases: ["pause", "restart-pause"],
+    exit: (phase: string) => (phase === "pause" ? "interrupt" : "normal"),
+  },
   "filesystem-backup-replace": filesystem,
   "filesystem-backup-merge": filesystem,
   "filesystem-lock": { ...filesystem, platforms: ["win32"] },
@@ -762,6 +781,8 @@ export const scenarios = {
   "gamebanana-reinstall": catalogLifecycle,
   "gamebanana-reinstall-disabled": catalogLifecycle,
   "gamebanana-force-update": catalogLifecycle,
+  "gamebanana-delete-parked": catalogDeleteParked,
+  "gamebanana-delete-parked-disabled": catalogDeleteParked,
   "gamebanana-multipak-update": {
     ...catalog,
     spec: "gamebanana-multipak-update",

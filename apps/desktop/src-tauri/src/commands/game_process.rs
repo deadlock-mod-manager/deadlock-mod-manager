@@ -1,11 +1,8 @@
-use std::future::{Future, ready};
+use std::future::Future;
 use std::time::Duration;
 
+use super::state::MANAGER;
 use crate::errors::Error;
-use crate::flatpak::running_in_flatpak;
-use crate::mod_manager::console_log_watcher::ConsoleLogTail;
-
-use super::state::{MANAGER, game_path};
 
 pub(super) const GAME_START_TIMEOUT: Duration = Duration::from_secs(180);
 
@@ -17,6 +14,11 @@ pub(super) enum GameStartOutcome {
 }
 
 pub(super) async fn is_game_running() -> Result<bool, Error> {
+  #[cfg(target_os = "linux")]
+  if crate::flatpak::running_in_flatpak() {
+    return crate::flatpak::game_process::is_game_running().await;
+  }
+
   tokio::task::spawn_blocking(|| {
     let mut manager = MANAGER
       .lock()
@@ -32,17 +34,6 @@ pub(super) async fn wait_for_game_start(
   poll_interval: Duration,
   cancel: impl Future<Output = ()>,
 ) -> Result<GameStartOutcome, Error> {
-  if running_in_flatpak() {
-    let mut console_log = ConsoleLogTail::from_end(&game_path()?);
-    return wait_for_game_start_with_check(
-      timeout,
-      poll_interval,
-      move || ready(Ok(console_log.read_new().is_some())),
-      cancel,
-    )
-    .await;
-  }
-
   wait_for_game_start_with_check(timeout, poll_interval, is_game_running, cancel).await
 }
 
@@ -75,7 +66,7 @@ where
 
 #[cfg(test)]
 mod tests {
-  use std::future::pending;
+  use std::future::{pending, ready};
 
   use super::*;
 

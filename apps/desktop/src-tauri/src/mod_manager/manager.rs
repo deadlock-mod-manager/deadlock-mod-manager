@@ -938,6 +938,81 @@ mod tests {
   }
 
   #[test]
+  fn purge_deletes_variants_parked_by_mod_options() {
+    for disable_first in [false, true] {
+      let game = game_dir();
+      let citadel = game.path().join("game/citadel");
+      fs::write(
+        citadel.join("gameinfo.gi"),
+        "\"GameInfo\"\n{\n\"FileSystem\"\n{\nSearchPaths\n{\nGame citadel\n}\n}\n}\n",
+      )
+      .unwrap();
+      let addons = citadel.join("addons");
+      fs::create_dir_all(&addons).unwrap();
+      fs::write(addons.join("42_blue.vpk"), b"blue").unwrap();
+      fs::write(addons.join("42_red.vpk"), b"red").unwrap();
+      fs::write(addons.join("420_red.vpk"), b"another mod").unwrap();
+      let mods_store = tempfile::tempdir().unwrap();
+      let mod_dir = downloaded_mod(mods_store.path(), "42");
+      let mut manager = test_manager(game.path());
+      manager
+        .config_manager
+        .setup_game_for_mods(game.path())
+        .unwrap();
+      let installed = manager
+        .install_mod(
+          Mod {
+            id: "42".into(),
+            name: "Variant fixture".into(),
+            is_map: false,
+            installed_vpks: Vec::new(),
+            file_tree: Some(ModFileTree::from_options(
+              &["blue.vpk".into(), "red.vpk".into()],
+              &HashSet::from(["blue.vpk".into(), "red.vpk".into()]),
+            )),
+            install_order: None,
+            original_vpk_names: Vec::new(),
+          },
+          None,
+        )
+        .unwrap();
+      let swapped = manager
+        .apply_variant_selection(
+          "42",
+          None,
+          &installed.installed_vpks,
+          &installed.original_vpk_names,
+          vec!["blue.vpk".into()],
+        )
+        .unwrap();
+      if disable_first {
+        manager
+          .uninstall_mod("42".into(), swapped.installed_vpks, None)
+          .unwrap();
+      }
+      assert!(addons.join("42_red.vpk").is_file());
+
+      manager
+        .purge_mod_from("42".into(), Vec::new(), None, mods_store.path())
+        .unwrap();
+
+      let remaining: Vec<_> = fs::read_dir(&addons)
+        .unwrap()
+        .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
+        .filter(|name| name.ends_with(".vpk"))
+        .collect();
+      assert_eq!(
+        remaining,
+        vec!["420_red.vpk"],
+        "disable_first={disable_first}"
+      );
+      assert!(!mod_dir.exists());
+      let manifest = ProfileVpkManifest::load(&ProfileBase::new(addons).unwrap()).unwrap();
+      assert!(!manifest.mods.contains_key("42"));
+    }
+  }
+
+  #[test]
   fn reenable_without_file_tree_keeps_the_disabled_file_order() {
     let game = game_dir();
     let citadel = game.path().join("game/citadel");
@@ -1538,9 +1613,8 @@ mod tests {
     assert!(outside.join("keep.txt").exists());
   }
 
-  /// `remove_mod_vpks` is public and reached directly by the batch-update path,
-  /// where it is the only guard on the mod ID. It once used the profile-folder
-  /// predicate, which permits separators.
+  /// `remove_mod_vpks` is public, so it checks the mod ID itself. It once used
+  /// the profile-folder predicate, which permits separators.
   #[test]
   fn remove_mod_vpks_rejects_mod_ids_with_separators() {
     let game = game_dir();
@@ -1695,6 +1769,41 @@ mod tests {
     let after = ProfileVpkManifest::load(&base).unwrap();
     assert!(after.mods.contains_key("other"));
     assert!(!after.mods.contains_key("target"));
+  }
+
+  #[test]
+  fn remove_mod_vpks_keeps_prefixed_files_another_entry_claims() {
+    let game = game_dir();
+    let addons_path = game.path().join("game").join("citadel").join("addons");
+    fs::create_dir_all(&addons_path).unwrap();
+    let base = crate::mod_manager::shard::ProfileBase::new(&addons_path).unwrap();
+    let mut manifest = ProfileVpkManifest::default();
+    write_owned_mod(
+      &base,
+      &mut manifest,
+      "42",
+      ShardIndex::FIRST,
+      "pak01_dir.vpk",
+      b"42",
+    );
+    fs::write(base.join("42_borrowed.vpk"), b"other").unwrap();
+    manifest.mark_disabled(
+      "other",
+      vec!["42_borrowed.vpk".into()],
+      vec!["borrowed.vpk".into()],
+    );
+    manifest.save(&base).unwrap();
+
+    let removed = test_manager(game.path())
+      .remove_mod_vpks("42", &[], None)
+      .unwrap();
+
+    assert_eq!(removed, 1);
+    assert!(!base.join("pak01_dir.vpk").exists());
+    assert_eq!(fs::read(base.join("42_borrowed.vpk")).unwrap(), b"other");
+    let after = ProfileVpkManifest::load(&base).unwrap();
+    assert!(!after.mods.contains_key("42"));
+    assert_eq!(after.mods["other"].disabled_vpks, vec!["42_borrowed.vpk"]);
   }
 
   #[test]

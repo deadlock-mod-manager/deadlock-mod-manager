@@ -35,6 +35,7 @@ export type ErrorKind = {
     | "backupNotFound"
     | "downloadFailed"
     | "downloadCancelled"
+    | "downloadPaused"
     | "launchCancelled"
     | "providerCancelled"
     | "fileWriteFailed"

@@ -43,6 +43,8 @@ current. Both run in the Windows and Linux E2E matrices with no host update.
 
 `gamebanana-file-toggle` installs two of the three VPKs in a single download, then changes the selection from the Installed Files list. Apply must stay disabled with nothing checked or after Reset. Enabling the never-installed VPK extracts it from one new download and parks the one it replaces; switching back reuses the parked file without downloading. Every step checks the manifest, exact addon bytes and parked files, before and after a restart.
 
+`gamebanana-delete-parked` installs `common.vpk` and `blue.vpk` from one archive, unticks blue in the Installed Files list so it is parked as `900001_blue.vpk`, and deletes the mod. The parked copy is not in the mod's manifest entry, yet the addons folder must end with no VPKs. `gamebanana-delete-parked-disabled` disables the mod before deleting it. A fresh process must still find nothing, and downloading the mod again must install exactly common and blue with no parked file picked back up.
+
 `gamebanana-variant-names` downloads three variant archives that each ship `pak01_dir.vpk`, and enabling installs all three under their own names (`pak01-red-skin_dir.vpk`, `pak01-blue_dir.vpk`, `pak01-green_dir.vpk`) with distinct bytes. Unticking blue in the Installed Files list parks it; Update All then replaces red and green with v2, leaves blue unselected and drops its stale parked copy, so ticking blue again fetches its v2 archive. A fresh process must see the same names, bytes and parked files.
 
 `gamebanana-renamed-packs` installs two mods whose v2 archives are re-uploaded under a new GameBanana `_xxxxx` suffix. One has two downloads, `pack-a.zip` and `pack-b_1a2b3.zip`, with one VPK unticked after install; its `pack-a.zip` v2 transfer fails once. The other installs only `blue.vpk`, which its re-upload drops. Update All must ask for the second mod's VPKs with nothing pre-ticked, and the pick must re-run both mods: the renamed pack stays in the update, keeps its pick and leaves out the VPK it gained, and the picked pack installs only `green.vpk`. The picked pack downloads twice.
@@ -172,7 +174,7 @@ M4 uses real Rust HTTP transfers against binary fixture responses. Run any case 
 
 | Case | Behavior checked |
 | --- | --- |
-| `downloads-pause` | UI pause freezes a valid partial prefix; UI resume completes the payload |
+| `downloads-pause` | UI pause freezes a valid partial prefix; UI resume continues it with a Range request and completes the payload |
 | `downloads-range` | A connection cut after 65,536 bytes triggers an exact Range request and byte-correct completion |
 | `downloads-cancel` | Cancel a paused transfer through the existing Rust command, verify partial cleanup, restart, and retry through the UI |
 | `downloads-cancel-connecting` | Cancel through the UI while the server withholds response headers; the UI retry must reach the server within 10 seconds and complete |
@@ -183,6 +185,10 @@ M4 uses real Rust HTTP transfers against binary fixture responses. Run any case 
 | `downloads-redirect` | Reject a redirect to a production host without making an external request; UI retry succeeds |
 | `downloads-variants` | Retry preserves a previously selected variant, including after a 401 and restart; the unselected URL has no registered fixture |
 | `downloads-queued-retry` | After a 401, retry the download while another throttled download holds the queue; the waiting card shows no health notice, and the retry completes once the queue frees up |
+| `downloads-pause-queue` | Pausing a download lets the one queued behind it start within 5 seconds; Resume waits for it without a health notice, then continues from the exact partial offset |
+| `downloads-pause-queue-cancel` | Cancel a paused download that gave up the queue: its partial files are removed and the other download completes |
+| `downloads-pause-queue-reload` | Reload with one download paused and another running: both settle as failed, the backend keeps neither, and the paused one's partial files are removed |
+| `downloads-pause-queue-restart` | Restart with one download paused and another running: both come back failed with Retry, the paused partial remains, and both retries complete |
 
 Each world starts with a failed download record and persisted file selection, so Retry exercises the real frontend purge/queue flow without depending on the remote catalog. Variant coverage here is persisted selection and retry, not the initial catalog file chooser. `downloads-cancel` cancels its paused transfer through the real `cancel_download` IPC command; `downloads-cancel-connecting` and `downloads-cancel-queued` press the card's Cancel button. Successful transfers are checked again in a new application process. The oracle compares SHA-256 hashes, partial prefixes and metadata, exact cache contents, the empty addon manifest, and protected game/Steam files. `download-*.json` captures disk/state evidence; `network.ndjson` includes Range headers, response status and bytes sent. UI retries deliberately purge stale data; only interrupted transfers within a running process resume with Range.
 

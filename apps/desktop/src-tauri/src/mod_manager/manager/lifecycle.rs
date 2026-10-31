@@ -442,7 +442,7 @@ impl ModManager {
     Ok(())
   }
 
-  /// Remove a mod's VPKs transactionally for updates and permanent purges.
+  /// Remove a mod's VPKs transactionally when the mod is purged.
   ///
   /// Files are first renamed to non-VPK staging names. The manifest is then
   /// committed without the mod, and only after that are the staged files
@@ -458,15 +458,25 @@ impl ModManager {
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
     let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
     let manifest_entry = manifest.mods.get(mod_id).cloned();
-    let sources = if let Some(entry) = &manifest_entry {
-      entry
-        .file_paths(&addons_path)
-        .into_iter()
-        .filter(|path| path.is_file())
-        .collect::<HashSet<_>>()
+    let claimed_by_others = Self::vpk_paths_claimed_by_others(mod_id, &manifest, &addons_path);
+    // An enabled mod's entry omits the variants Mod Options parked; only this
+    // scan finds them.
+    let mut sources = self.unclaimed_prefixed_vpks(mod_id, &addons_path, &claimed_by_others)?;
+    if let Some(entry) = &manifest_entry {
+      sources.extend(
+        entry
+          .file_paths(&addons_path)
+          .into_iter()
+          .filter(|path| path.is_file()),
+      );
     } else {
-      self.discover_unowned_mod_vpks(mod_id, fallback_vpks, &addons_path, &manifest)?
-    };
+      sources.extend(self.unclaimed_fallback_vpks(
+        mod_id,
+        fallback_vpks,
+        &addons_path,
+        &claimed_by_others,
+      ));
+    }
 
     if sources.is_empty() && manifest_entry.is_none() {
       self.mod_repository.remove_mod(mod_id);
@@ -538,44 +548,54 @@ impl ModManager {
     Ok(forgotten)
   }
 
-  /// Discover VPKs for a mod that has no manifest entry, without touching
-  /// files another entry already claims. Bare fallback names resolve to shard 1,
-  /// so this filter is what stops a stale `pak01_dir.vpk` from deleting a
-  /// different mod's file.
-  fn discover_unowned_mod_vpks(
+  fn vpk_paths_claimed_by_others(
+    mod_id: &str,
+    manifest: &ProfileVpkManifest,
+    addons_path: &ProfileBase,
+  ) -> HashSet<PathBuf> {
+    manifest
+      .mods
+      .iter()
+      .filter(|(other_id, _)| other_id.as_str() != mod_id)
+      .flat_map(|(_, entry)| entry.file_paths(addons_path))
+      .collect()
+  }
+
+  fn unclaimed_prefixed_vpks(
+    &self,
+    mod_id: &str,
+    addons_path: &ProfileBase,
+    claimed: &HashSet<PathBuf>,
+  ) -> Result<HashSet<PathBuf>, Error> {
+    Ok(
+      self
+        .vpk_manager
+        .find_prefixed_vpks(addons_path, mod_id)?
+        .into_iter()
+        .map(|prefixed_vpk| addons_path.join(prefixed_vpk))
+        .filter(|path| !claimed.contains(path))
+        .collect(),
+    )
+  }
+
+  /// Bare fallback names resolve to shard 1, so the claimed filter is what
+  /// stops a stale `pak01_dir.vpk` from deleting a different mod's file.
+  fn unclaimed_fallback_vpks(
     &self,
     mod_id: &str,
     fallback_vpks: &[String],
     addons_path: &ProfileBase,
-    manifest: &ProfileVpkManifest,
-  ) -> Result<HashSet<PathBuf>, Error> {
-    let claimed: HashSet<PathBuf> = manifest
-      .mods
-      .values()
-      .flat_map(|entry| entry.file_paths(addons_path))
-      .collect();
-    let mut sources = HashSet::new();
-
-    for prefixed_vpk in self.vpk_manager.find_prefixed_vpks(addons_path, mod_id)? {
-      let path = addons_path.join(prefixed_vpk);
-      if path.is_file() && !claimed.contains(&path) {
-        sources.insert(path);
-      }
-    }
-
+    claimed: &HashSet<PathBuf>,
+  ) -> HashSet<PathBuf> {
     let mut fallback_names = fallback_vpks.to_vec();
     if let Some(repository_mod) = self.mod_repository.get_mod(mod_id) {
       fallback_names.extend(repository_mod.installed_vpks.clone());
     }
-    for fallback in fallback_names {
-      let locator = ShardLocator::from_legacy_name(&fallback);
-      let path = addons_path.locator_path(&locator);
-      if path.is_file() && !claimed.contains(&path) {
-        sources.insert(path);
-      }
-    }
-
-    Ok(sources)
+    fallback_names
+      .iter()
+      .map(|fallback| addons_path.locator_path(&ShardLocator::from_legacy_name(fallback)))
+      .filter(|path| path.is_file() && !claimed.contains(path))
+      .collect()
   }
 
   pub fn hydrate_mods_from_manifest(
