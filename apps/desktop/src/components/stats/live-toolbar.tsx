@@ -1,23 +1,26 @@
-import { Copy, PlugZap } from "@deadlock-mods/ui/icons";
+import { Copy, PlugZap, Radio } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
 import { WIN_COLOR } from "@/components/stats/chart-fx";
 import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { useLiveBoard } from "@/hooks/use-live-match";
 import { cn } from "@/lib/utils";
 
-/** The Live tab's icon in the tab row: a dot that pulses while a match runs. */
+/**
+ * The Live tab's icon in the tab row: a pulsing dot while the player is in a
+ * match, the plain radio icon like every other tab otherwise.
+ */
 export const LiveTabIcon = ({ className }: { className?: string }) => {
   const { phase, board } = useLiveBoard(
     useExperimentalFeature("live-scoreboard"),
   );
+  if (!board || (phase !== "pregame" && phase !== "inProgress")) {
+    return <Radio className={className} />;
+  }
   return (
-    <span className={cn("flex items-center justify-center", className)}>
-      <span
-        className={cn(
-          "h-[7px] w-[7px] rounded-full bg-red-400 shadow-[0_0_8px] shadow-red-400/70",
-          board && phase === "inProgress" && "animate-pulse",
-        )}
-      />
+    <span
+      className={cn("flex items-center justify-center", className)}
+      data-live>
+      <span className='h-[7px] w-[7px] animate-pulse rounded-full bg-red-400 shadow-[0_0_8px] shadow-red-400/70' />
     </span>
   );
 };

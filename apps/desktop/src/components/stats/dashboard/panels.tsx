@@ -318,7 +318,8 @@ const PANELS = {
     experimental: "live-scoreboard",
     tab: {
       icon: LiveTabIcon,
-      activeClassName: "data-[state=active]:border-red-400/25",
+      activeClassName:
+        "data-[state=active]:has-[[data-live]]:border-red-400/25",
       toolbar: LiveToolbar,
     },
     render: () => <LiveScoreboardPanel />,
