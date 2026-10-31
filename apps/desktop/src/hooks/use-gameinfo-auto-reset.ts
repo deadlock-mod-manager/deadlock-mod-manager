@@ -2,6 +2,7 @@ import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { getErrorMessage } from "@/lib/errors";
 import {
   didGameExit,
   gameinfoAutoResetPauseCount,
@@ -14,12 +15,13 @@ import { usePersistedStore } from "@/lib/store";
 import {
   gameinfoHasModPaths,
   isGameRunning,
-  resetToVanilla,
+  removeModSearchPaths,
 } from "@/lib/tauri-commands";
 
 /**
- * Puts gameinfo.gi back to vanilla when Deadlock closes, so a later launch
- * straight from Steam starts without mods. Opt-in through settings.
+ * Takes the mod paths out of gameinfo.gi when Deadlock closes, so a later
+ * launch straight from Steam starts without mods. The rest of the file stays,
+ * including any custom config. Opt-in through settings.
  */
 export const useGameinfoAutoReset = () => {
   const { t } = useTranslation();
@@ -43,28 +45,28 @@ export const useGameinfoAutoReset = () => {
     enabled: !!gamePath && autoResetEnabled,
   });
 
-  const { mutate: resetGameinfo } = useMutation({
+  const { mutate: removeModPaths } = useMutation({
     meta: { skipGlobalErrorHandler: true },
     mutationFn: async () => {
       if (!(await gameinfoHasModPaths())) return;
-      const source = await resetToVanilla();
+      await removeModSearchPaths();
       // Same as a vanilla launch: the missing mod paths are on purpose, so the
       // "mods detached" banner stays quiet until the next modded launch.
       await refreshGameinfoState(queryClient, setLastLaunchVanilla);
-      logger.info("Reset gameinfo.gi to vanilla after the game closed");
-      toast.info(
-        t(
-          source === "backup"
-            ? "game.resetSuccessBackup"
-            : "settings.autoResetGameinfoSuccess",
-        ),
+      logger.info(
+        "Removed the mod paths from gameinfo.gi after the game closed",
       );
+      toast.info(t("settings.autoResetGameinfoSuccess"));
     },
     onError: (error) => {
       logger
         .withError(error)
-        .error("Failed to reset gameinfo.gi after the game closed");
-      toast.error(t("settings.autoResetGameinfoFailed"));
+        .error(
+          "Failed to remove mod paths from gameinfo.gi after the game closed",
+        );
+      toast.error(t("settings.autoResetGameinfoFailed"), {
+        description: getErrorMessage(error),
+      });
     },
   });
 
@@ -81,6 +83,6 @@ export const useGameinfoAutoReset = () => {
     ) {
       return;
     }
-    if (didGameExit(previous, gameRunning)) resetGameinfo();
-  }, [autoResetEnabled, gameRunning, resetGameinfo]);
+    if (didGameExit(previous, gameRunning)) removeModPaths();
+  }, [autoResetEnabled, gameRunning, removeModPaths]);
 };

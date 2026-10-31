@@ -31,4 +31,15 @@ describe("formatUserError", () => {
       }).description,
     ).toBe("Backup disk full");
   });
+
+  it("says which part of gameinfo.gi could not be parsed", () => {
+    const formatted = formatUserError(
+      new Error(
+        "Failed to parse game configuration: Expected value at line 8, column 3",
+      ),
+    );
+
+    expect(formatted.category).toBe("game-config");
+    expect(formatted.description).toContain("line 8, column 3");
+  });
 });

@@ -12,7 +12,6 @@ use tauri::Emitter;
 use tokio_util::sync::CancellationToken;
 
 use super::game_process::{GAME_START_TIMEOUT, GameStartOutcome, wait_for_game_start};
-use super::gameinfo::reset_to_vanilla_internal;
 use super::state::MANAGER;
 
 const GAME_LAUNCH_POLL_INTERVAL: Duration = Duration::from_secs(2);
@@ -153,24 +152,7 @@ pub async fn start_game(
   let cancel = CancellationToken::new();
   *LAUNCH_CANCEL.lock().unwrap() = Some(cancel.clone());
 
-  let first_result =
-    prepare_game_launch(vanilla, additional_args.clone(), profile_folder.clone()).await;
-
-  let request = match first_result {
-    Ok(request) => request,
-    Err(Error::GameConfigParse(msg)) => {
-      log::warn!("Game config parse failed: {msg}, attempting auto-reset to vanilla");
-
-      reset_to_vanilla_internal().await?;
-
-      let request = prepare_game_launch(vanilla, additional_args, profile_folder).await?;
-
-      app_handle.emit("gameinfo-auto-reset", ()).ok();
-      log::info!("Auto-recovery succeeded after gameinfo reset");
-      request
-    }
-    Err(error) => return Err(error),
-  };
+  let request = prepare_game_launch(vanilla, additional_args, profile_folder).await?;
 
   // Preparation can't be interrupted, but Steam must not be asked to start
   // the game once the player has cancelled.

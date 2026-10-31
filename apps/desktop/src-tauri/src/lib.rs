@@ -327,6 +327,7 @@ pub fn run() {
       commands::gameinfo::backup_gameinfo,
       commands::gameinfo::restore_gameinfo_backup,
       commands::gameinfo::reset_to_vanilla,
+      commands::gameinfo::remove_mod_search_paths,
       commands::gameinfo::make_file_writable,
       commands::gameinfo::validate_gameinfo_patch,
       commands::gameinfo::get_gameinfo_status,
