@@ -10,6 +10,7 @@ type ConnectProgress = {
     | "waiting-for-client"
     | "retrying"
     | "connected"
+    | "monitoring-stopped"
     | "timed-out"
     | "game-closed";
   address: string;
@@ -34,6 +35,7 @@ export const useServerConnectProgress = () => {
           // showing its own progress while the game starts.
           case "waiting-for-game":
           case "waiting-for-client":
+            toast.dismiss(TOAST_ID);
             return;
           case "retrying":
             toast.loading(
@@ -54,6 +56,7 @@ export const useServerConnectProgress = () => {
             );
             return;
           case "game-closed":
+          case "monitoring-stopped":
             toast.dismiss(TOAST_ID);
             return;
           default: {

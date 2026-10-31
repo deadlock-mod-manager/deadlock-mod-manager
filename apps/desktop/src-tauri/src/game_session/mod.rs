@@ -361,21 +361,13 @@ fn build_record(process: Option<GameProcess>) -> Option<SessionRecord> {
     .and_then(|process| process_started_at(process.start_time))
     .unwrap_or(now);
 
-  let mut arguments: Vec<String> = match &process {
+  let arguments: Vec<String> = match &process {
     Some(process) if process.command.len() > 1 => process.command[1..].to_vec(),
     _ => launch
       .as_ref()
       .map(|launch| launch.args.split_whitespace().map(str::to_string).collect())
       .unwrap_or_default(),
   };
-  // The Flatpak launch path always adds -condebug (see SteamManager).
-  if process.is_none()
-    && crate::flatpak::running_in_flatpak()
-    && !arguments.iter().any(|argument| argument == "-condebug")
-  {
-    arguments.push("-condebug".to_string());
-  }
-
   let pid = process.as_ref().map(|process| process.pid);
   Some(SessionRecord {
     session_id: format!("{}-{}", started_at.timestamp_millis(), pid.unwrap_or(0)),

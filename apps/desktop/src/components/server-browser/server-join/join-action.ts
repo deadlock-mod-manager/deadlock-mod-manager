@@ -12,6 +12,13 @@ interface JoinServerArgs {
   additionalArgs: string;
   /** Whether Deadlock is already up, in which case we can join without a restart. */
   gameRunning: boolean;
+  /** Whether the launch writes `console.log`, which the watchdog tails. */
+  consoleLog: boolean;
+}
+
+interface WatchOptions {
+  coldStart: boolean;
+  consoleLog: boolean;
 }
 
 export type JoinOutcome =
@@ -20,10 +27,6 @@ export type JoinOutcome =
   | { kind: "steam-url" }
   | { kind: "manual"; code: string }
   | { kind: "no-connect-method" };
-
-/** The client only writes `console.log`, which the watchdog tails, with `-condebug`. */
-export const withConsoleLog = (args: string): string =>
-  /(^|\s)-condebug(\s|$)/.test(args) ? args : `${args} -condebug`.trim();
 
 export const buildSteamConnectUrl = (
   server: ServerBrowserEntry,
@@ -62,13 +65,13 @@ const watchConnect = async (
   address: string,
   password: string,
   server: ServerBrowserEntry,
-  coldStart: boolean,
+  options: WatchOptions,
 ): Promise<boolean> => {
   try {
     await invoke("watch_server_connect", {
       address,
       password: server.password_protected && password ? password : null,
-      coldStart,
+      ...options,
     });
     return true;
   } catch (err) {
@@ -81,12 +84,14 @@ const watchConnect = async (
  * With the game already running, `steam://connect` hands the address to the
  * client without a restart. From cold we launch with `+connect` so the user's
  * launch options survive, and let the watchdog handle a dropped connect.
+ * Reconnect monitoring is disabled when console logging is off.
  */
 export const joinServer = async ({
   server,
   password,
   additionalArgs,
   gameRunning,
+  consoleLog,
 }: JoinServerArgs): Promise<JoinOutcome> => {
   if (server.gateway_url) {
     await openUrl(server.gateway_url);
@@ -100,7 +105,10 @@ export const joinServer = async ({
     if (steamUrl) {
       try {
         await openUrl(steamUrl);
-        await watchConnect(address, password, server, false);
+        await watchConnect(address, password, server, {
+          coldStart: false,
+          consoleLog,
+        });
         return { kind: "steam-url" };
       } catch (err) {
         logger
@@ -113,18 +121,21 @@ export const joinServer = async ({
   const connect = buildConnectArgs(server, password);
 
   if (connect) {
-    const launchArgs = withConsoleLog(
-      [additionalArgs.trim(), connect.args].filter(Boolean).join(" "),
-    );
+    const launchArgs = [additionalArgs.trim(), connect.args]
+      .filter(Boolean)
+      .join(" ");
     try {
       await invoke("launch_game_direct", { additionalArgs: launchArgs });
       const watched = address
-        ? await watchConnect(address, password, server, true)
+        ? await watchConnect(address, password, server, {
+            coldStart: true,
+            consoleLog,
+          })
         : false;
       return {
         kind: "launched",
         passwordSkipped: connect.passwordSkipped,
-        watched,
+        watched: watched && consoleLog,
       };
     } catch (err) {
       logger
@@ -141,7 +152,10 @@ export const joinServer = async ({
       try {
         await openUrl(steamUrl);
         if (address) {
-          await watchConnect(address, password, server, true);
+          await watchConnect(address, password, server, {
+            coldStart: true,
+            consoleLog,
+          });
         }
         return { kind: "steam-url" };
       } catch (err) {

@@ -63,6 +63,7 @@ pub enum ConnectStatus {
   WaitingForClient,
   Retrying,
   Connected,
+  MonitoringStopped,
   TimedOut,
   GameClosed,
 }
@@ -149,9 +150,8 @@ pub async fn watch_server_connect(
   address: String,
   password: Option<String>,
   cold_start: bool,
+  console_log: bool,
 ) -> Result<(), Error> {
-  let game_path = game_path()?;
-
   let cancel = CancellationToken::new();
   {
     let mut slot = SERVER_CONNECT_WATCHDOG
@@ -163,6 +163,12 @@ pub async fn watch_server_connect(
     }
   }
 
+  if !console_log {
+    emit(&app, ConnectStatus::MonitoringStopped, &address, 0);
+    return Ok(());
+  }
+
+  let game_path = game_path()?;
   tauri::async_runtime::spawn(async move {
     run_watchdog(
       &app,
