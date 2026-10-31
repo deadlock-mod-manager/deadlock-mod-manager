@@ -85,22 +85,23 @@ const OpeningSteps = () => {
 };
 
 /**
- * The stage a model is about to stand on: embers that build a hero, and either
- * the steps of opening the skin or a single status line. It sits where the
- * model will land, so the model can fade in over it.
+ * The stage a model is about to stand on: embers that build `hero`, and either
+ * the Foundry's steps of opening the skin or a single status line. It sits
+ * where the model will land, so the model can fade in over it.
  */
 export const ModelLoadingStage = ({
   status,
+  hero,
+  steps = false,
   className,
 }: {
   status: string;
+  /** The hero being loaded; null when unknown. */
+  hero: string | null;
+  /** Show the open Foundry skin's progress instead of `status`. */
+  steps?: boolean;
   className?: string;
 }) => {
-  const foundry = useOptionalFoundry();
-  const steps = foundry?.manifest;
-  const hero = foundry?.manifest
-    ? (foundry.manifest.heroDisplay ?? foundry.manifest.hero)
-    : null;
   // Undefined while the lookup runs, so a known hero never flashes the
   // generic figure first.
   const [silhouette, setSilhouette] = useState<Silhouette | null | undefined>(

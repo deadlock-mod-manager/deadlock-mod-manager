@@ -118,7 +118,11 @@ export const FoundryPreview = () => {
   if (rebuildingModel) {
     return (
       <div className='relative h-full w-full overflow-hidden bg-gradient-to-b from-muted/40 to-background'>
-        <ModelLoadingStage status={t("foundry.preview.loading")} />
+        <ModelLoadingStage
+          hero={manifest ? (manifest.heroDisplay ?? manifest.hero) : null}
+          status={t("foundry.preview.loading")}
+          steps
+        />
       </div>
     );
   }

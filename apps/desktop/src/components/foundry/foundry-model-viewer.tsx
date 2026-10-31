@@ -87,6 +87,8 @@ interface FoundryModelViewerProps {
   highlightTextures?: readonly string[];
   /** Color maps the user hid to reach what is behind them; not drawn or picked. */
   hiddenTextures?: readonly string[];
+  /** The hero the loading embers build while the model decodes. */
+  hero?: string;
   /** The hero whose shape the loading embers should learn from this model. */
   silhouetteHero?: string;
   /** Sections to label on the model, with a leader line to each. */
@@ -420,6 +422,7 @@ export const FoundryModelViewer = ({
   tint,
   highlightTextures,
   hiddenTextures,
+  hero,
   silhouetteHero,
   callouts,
   onPickPart,
@@ -1162,7 +1165,13 @@ export const FoundryModelViewer = ({
             !loading && "opacity-0",
           )}
           onTransitionEnd={() => !loading && setScanGone(true)}>
-          <ModelLoadingStage status={t("foundry.preview.loading")} />
+          {/* Only the Foundry teaches silhouettes, and only it has opening
+              steps to show. */}
+          <ModelLoadingStage
+            hero={hero ?? silhouetteHero ?? null}
+            status={t("foundry.preview.loading")}
+            steps={silhouetteHero !== undefined}
+          />
         </div>
       )}
       {failed && (

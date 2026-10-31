@@ -76,7 +76,7 @@ export const SkinPreviewPanel = ({ hero, mod }: SkinPreviewPanelProps) => {
       </div>
 
       <div className='relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-lg border bg-gradient-to-b from-muted/40 to-background'>
-        <PreviewSurface label={label} preview={preview} />
+        <PreviewSurface hero={hero} label={label} preview={preview} />
       </div>
     </aside>
   );
@@ -106,16 +106,23 @@ const PanelNotice = ({
 );
 
 interface PreviewSurfaceProps {
+  hero: string | null;
   preview: ReturnType<typeof useSkinModelPreview>;
   label: string;
 }
 
-export const PreviewSurface = ({ preview, label }: PreviewSurfaceProps) => {
+export const PreviewSurface = ({
+  hero,
+  preview,
+  label,
+}: PreviewSurfaceProps) => {
   const { t } = useTranslation();
 
   // The empty stage stands in for the model so the panel never sits empty.
   if (preview.isPending) {
-    return <ModelLoadingStage status={t("skins.preview.loading")} />;
+    return (
+      <ModelLoadingStage hero={hero} status={t("skins.preview.loading")} />
+    );
   }
 
   if (preview.isError || preview.data.kind === "unsupported") {
@@ -151,6 +158,7 @@ export const PreviewSurface = ({ preview, label }: PreviewSurfaceProps) => {
   return (
     <AnimatedModelPreview
       key={`${preview.data.filePath}:${preview.data.entryPath}`}
+      hero={hero ?? undefined}
       model={preview.data.model}
       label={label}
       source={preview.data}

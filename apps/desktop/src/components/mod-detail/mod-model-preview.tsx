@@ -154,7 +154,7 @@ const LocalPreview = ({ mod }: { mod: LocalMod }) => {
   const preview = useSkinModelPreview(mod.hero ?? "", mod);
   return (
     <div className='relative h-[640px] min-h-[360px] border-t'>
-      <PreviewSurface preview={preview} label={mod.name} />
+      <PreviewSurface hero={mod.hero} preview={preview} label={mod.name} />
     </div>
   );
 };

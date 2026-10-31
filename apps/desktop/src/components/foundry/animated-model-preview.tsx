@@ -56,6 +56,7 @@ interface Props {
   tint?: readonly FoundryPreviewTint[] | null;
   highlightTextures?: readonly string[];
   hiddenTextures?: readonly string[];
+  hero?: string;
   silhouetteHero?: string;
   callouts?: readonly ViewerCallout[];
   onPickPart?: (texture: string, additive: boolean) => void;
@@ -81,6 +82,7 @@ export const AnimatedModelPreview = ({
   tint,
   highlightTextures,
   hiddenTextures,
+  hero: loadingHero,
   silhouetteHero,
   callouts,
   onPickPart,
@@ -283,6 +285,7 @@ export const AnimatedModelPreview = ({
           tint={tint}
           highlightTextures={highlightTextures}
           hiddenTextures={hiddenTextures}
+          hero={loadingHero}
           silhouetteHero={silhouetteHero}
           callouts={callouts}
           onPickPart={onPickPart}
