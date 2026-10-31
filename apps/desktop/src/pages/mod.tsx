@@ -458,7 +458,10 @@ const Mod = () => {
               </div>
             </CardFooter>
           </Card>
-          <ModDependencies dependencies={resolvedDependencies} />
+          <ModDependencies
+            dependencies={resolvedDependencies}
+            modId={mod.remoteId}
+          />
 
           <Tabs
             className='scroll-mt-4'

@@ -428,3 +428,7 @@ The surrounding `library-selection`, `conflicts-resolve`, and `bisect-conflicts`
 ## Download fallback
 
 `gamebanana-mirror-fallback` run in the existing `gamebanana` suite. An interrupted mirror transfer receives a failed retry before the canonical endpoint succeeds. The canonical request starts without a Range header, and the installed VPK bytes match the fixture. Each case restarts in a fresh process and checks exact VPK bytes, manifest and persisted state, and the absence of leftover partial files.
+
+## Mod requirements
+
+`gamebanana-requirements` run in the existing `gamebanana` suite. Requirements move from missing to downloaded-but-disabled to satisfied. Cancelling the warning preserves addon files; enabling prerequisites and disabling incompatible mods clears it. Load-order changes are verified against the manifest. Each case restarts in a fresh process and checks exact VPK bytes, manifest and persisted state, and the absence of leftover partial files.

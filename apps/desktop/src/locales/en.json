@@ -7082,7 +7082,21 @@
     "description": "This mod is built to work with the following.",
     "openExternal": "Open link",
     "required": "Required",
-    "recommended": "Recommended"
+    "recommended": "Recommended",
+    "state": {
+      "met": "Enabled",
+      "missing": "Missing",
+      "disabled": "Not enabled",
+      "unverified": "Check manually",
+      "shouldBeOff": "Must be disabled",
+      "off": "Not enabled"
+    },
+    "unmetCount_one": "{{count}} unmet requirement",
+    "unmetCount_other": "{{count}} unmet requirements",
+    "installTitle": "Some requirements are not met",
+    "installBody": "Review these requirements in the current profile: {{requirements}}. The mod may not work until they are met.",
+    "installAnyway": "Install anyway",
+    "loadFirst": "Load this mod before its requirement"
   },
   "reports": {
     "reportSubmitted": "Report submitted successfully",

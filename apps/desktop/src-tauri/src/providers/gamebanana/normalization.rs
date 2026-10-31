@@ -54,6 +54,8 @@ pub struct NormalizedRequirement {
   pub url: Option<String>,
   pub remote_id: Option<String>,
   pub level: Option<String>,
+  #[serde(default)]
+  pub must_be_disabled: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -199,10 +201,6 @@ pub fn parse_requirements(rows: &[Vec<String>]) -> Vec<NormalizedRequirement> {
       )
     };
 
-    if incompatible {
-      continue;
-    }
-
     let remote_id = GAMEBANANA_MOD_URL
       .captures(url)
       .and_then(|captures| captures.get(1))
@@ -212,6 +210,7 @@ pub fn parse_requirements(rows: &[Vec<String>]) -> Vec<NormalizedRequirement> {
       url: (!url.is_empty()).then(|| url.to_string()),
       remote_id,
       level,
+      must_be_disabled: incompatible,
     });
   }
 
@@ -395,5 +394,31 @@ mod tests {
     .unwrap();
 
     assert_eq!(category(&profile), "Maps");
+  }
+  #[test]
+  fn keeps_requirements_that_explicitly_need_a_mod_disabled() {
+    let rows = vec![
+      vec![
+        "Base",
+        "https://gamebanana.com/mods/1",
+        "required",
+        "enabled",
+      ],
+      vec![
+        "Other",
+        "https://gamebanana.com/mods/2",
+        "required",
+        "disabled",
+      ],
+      vec!["Legacy", "https://gamebanana.com/mods/3", "1", "2"],
+    ]
+    .into_iter()
+    .map(|row| row.into_iter().map(str::to_string).collect())
+    .collect::<Vec<_>>();
+    let requirements = super::parse_requirements(&rows);
+    assert_eq!(requirements.len(), 3);
+    assert!(!requirements[0].must_be_disabled);
+    assert!(requirements[1].must_be_disabled);
+    assert!(requirements[2].must_be_disabled);
   }
 }
