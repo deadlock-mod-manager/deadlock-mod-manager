@@ -660,6 +660,7 @@ export const scenarios = {
   "downloads-cancel": { ...downloads, coverage: "ipc-recovery" },
   "downloads-cancel-connecting": downloads,
   "downloads-cancel-queued": downloads,
+  "downloads-reload-queued": downloads,
   "downloads-restart": {
     ...downloads,
     exit: (phase: string) => (phase === "transfer" ? "interrupt" : "normal"),

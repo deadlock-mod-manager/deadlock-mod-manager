@@ -13,6 +13,7 @@ import {
   DOWNLOAD_MOD,
   DOWNLOAD_NAME,
   QUEUED_FILE,
+  QUEUED_MOD,
   QUEUED_NAME,
 } from "../support/download-fixtures";
 import {
@@ -81,7 +82,7 @@ const downloadRequests = async (world: string, file = DOWNLOAD_FILE) => {
     .parse(await (await fetch(`${origin}/__control/requests`)).json())
     .requests.filter(({ url }) => url === `/downloads/${file}`);
 };
-const cancelQueued = async (world: string): Promise<void> => {
+const queueBehindFirst = async (world: string): Promise<void> => {
   // The downloader handles one mod at a time, so the second waits in its queue.
   await step("queue a second download behind the first", async () => {
     await observeUntil(
@@ -91,6 +92,9 @@ const cancelQueued = async (world: string): Promise<void> => {
     );
     await retry(QUEUED_NAME);
   });
+};
+const cancelQueued = async (world: string): Promise<void> => {
+  await queueBehindFirst(world);
   await step("cancel the queued download", async () => {
     const button = await card(QUEUED_NAME).$("button=Cancel");
     await button.waitForClickable();
@@ -101,6 +105,39 @@ const cancelQueued = async (world: string): Promise<void> => {
     );
   });
   await step("the first download finishes alone", async () => {
+    await waitStatus(world, "downloaded");
+    expect(await downloadRequests(world, QUEUED_FILE)).toEqual([]);
+  });
+};
+const reloadWhileQueued = async (world: string): Promise<void> => {
+  await queueBehindFirst(world);
+  await step("reload while the second download is queued", async () => {
+    await observeUntil(
+      "Second download did not enter the backend queue",
+      async () =>
+        z
+          .array(z.object({ modId: z.string(), status: z.string() }))
+          .parse(
+            await browser.execute(() =>
+              window["__TAURI_INTERNALS__"].invoke("get_all_downloads"),
+            ),
+          ),
+      (downloads) =>
+        downloads.some(
+          ({ modId, status }) => modId === QUEUED_MOD && status === "queued",
+        ),
+    );
+    expect(await downloadRequests(world, QUEUED_FILE)).toEqual([]);
+    await browser.refresh();
+    await navigate("downloads");
+    await expect(card().$("button=Retry")).toBeDisplayed();
+    await expect(card(QUEUED_NAME).$("button=Retry")).toBeDisplayed();
+    await browser.saveScreenshot(
+      path.join(world, "artifacts", "reloaded-queued-download.png"),
+    );
+  });
+  await step("the queued download stays stopped until retried", async () => {
+    await retry();
     await waitStatus(world, "downloaded");
     expect(await downloadRequests(world, QUEUED_FILE)).toEqual([]);
   });
@@ -210,7 +247,9 @@ describe("real Rust downloads", () => {
         if (scenario === "downloads-cancel") {
           await browser.execute(
             (modId: string) =>
-              window.__TAURI_INTERNALS__.invoke("cancel_download", { modId }),
+              window["__TAURI_INTERNALS__"].invoke("cancel_download", {
+                modId,
+              }),
             DOWNLOAD_MOD,
           );
           await waitStatus(world, "failedToDownload");
@@ -223,6 +262,8 @@ describe("real Rust downloads", () => {
         await cancelWhileConnecting(world);
       } else if (scenario === "downloads-cancel-queued") {
         await cancelQueued(world);
+      } else if (scenario === "downloads-reload-queued") {
+        await reloadWhileQueued(world);
       } else if (
         [
           "downloads-auth",

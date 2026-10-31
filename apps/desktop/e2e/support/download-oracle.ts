@@ -12,6 +12,7 @@ import {
   isSegmentedCase,
   payloadFor,
   segmentRanges,
+  queuesBehindRunning,
 } from "./download-fixtures";
 import { assertOwnedWorld, collectFileInventory } from "./world";
 
@@ -111,7 +112,7 @@ export const assertDownloadDisk = async (
     configuration: { roots, caseId },
   } = await assertOwnedWorld(world);
   const mods = await readDownloadState(world);
-  const queued = caseId === "downloads-cancel-queued";
+  const queued = queuesBehindRunning(caseId);
   assert.deepEqual(
     mods.map(({ remoteId }) => remoteId),
     queued ? [DOWNLOAD_MOD, QUEUED_MOD] : [DOWNLOAD_MOD],
