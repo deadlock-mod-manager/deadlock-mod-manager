@@ -10,12 +10,10 @@ import { UserRound } from "@deadlock-mods/ui/icons";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams, useSearchParams } from "react-router";
-import {
-  BuildTimeline,
-  FinalBuild,
-  SoulsSpent,
-  TimingCompare,
-} from "@/components/stats/match/match-build";
+import { BuildTimeline } from "@/components/stats/match/build-timeline";
+import { FinalBuild } from "@/components/stats/match/final-build";
+import { SoulsSpent } from "@/components/stats/match/souls-spent";
+import { TimingCompare } from "@/components/stats/match/timing-compare";
 import {
   isMatchView,
   MatchHeader,
@@ -27,11 +25,9 @@ import {
   LanePanel,
   LobbyRoster,
 } from "@/components/stats/match/match-lobby";
-import {
-  LobbyPlacements,
-  Scoreboard,
-  SoulLeadChart,
-} from "@/components/stats/match/match-overview";
+import { LobbyPlacements } from "@/components/stats/match/lobby-placements";
+import { Scoreboard } from "@/components/stats/match/scoreboard";
+import { SoulLeadChart } from "@/components/stats/match/soul-lead-chart";
 import { MatchUnavailable } from "@/components/stats/match/match-unavailable";
 import { PlayerDialog } from "@/components/stats/player-dialog";
 import {

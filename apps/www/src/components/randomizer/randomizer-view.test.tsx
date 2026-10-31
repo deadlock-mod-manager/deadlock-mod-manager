@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { heroSchema } from "@/lib/deadlock-assets";
-import { HeroWordmark } from "./randomizer-view";
+import { HeroWordmark } from "./hero-wordmark";
 
 const hero = heroSchema.parse({
   id: 1,

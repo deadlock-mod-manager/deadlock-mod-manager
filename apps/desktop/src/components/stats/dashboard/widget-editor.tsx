@@ -51,13 +51,11 @@ import {
   suggestView,
 } from "@/lib/stats/dashboard/suggest";
 import { WidgetContent } from "./dashboard-widget";
-import {
-  ApiQueryEditor,
-  MatchQueryEditor,
-  PanelPicker,
-  PresetParamsEditor,
-  PresetPicker,
-} from "./source-pickers";
+import { ApiQueryEditor } from "./api-query-editor";
+import { MatchQueryEditor } from "./match-query-editor";
+import { PanelPicker } from "./panel-picker";
+import { PresetParamsEditor } from "./preset-params-editor";
+import { PresetPicker } from "./preset-picker";
 import { useWidgetData } from "./use-widget-data";
 import { useSourceName } from "./use-widget-title";
 import { OptionRow, ViewOptions } from "./view-options";

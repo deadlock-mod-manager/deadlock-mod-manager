@@ -1,26 +1,3 @@
-import { Button } from "@deadlock-mods/ui/components/button";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@deadlock-mods/ui/components/dropdown-menu";
-import {
-  Check,
-  ChevronDown,
-  Dices,
-  Link2,
-  ScrollText,
-  SlidersHorizontal,
-  UserRound,
-  X,
-} from "@deadlock-mods/ui/icons";
-import { useEffect, useRef, useState } from "react";
-import { Trans, useTranslation } from "react-i18next";
 import {
   type DeadlockAbility,
   type DeadlockHero,
@@ -30,9 +7,16 @@ import {
   ITEM_CATEGORIES,
 } from "@/lib/deadlock-assets";
 import type { Roll } from "@/lib/randomizer/roll";
-import { SECTION_KEYS, type Sections } from "@/lib/randomizer/sections";
+import { type Sections } from "@/lib/randomizer/sections";
 import { cn } from "@/lib/utils";
+import { Button } from "@deadlock-mods/ui/components/button";
+import { Dices, ScrollText } from "@deadlock-mods/ui/icons";
+import { Trans, useTranslation } from "react-i18next";
 import { AbilityPriority, SkillTrack } from "./ability-order";
+import { CopyLinkButton } from "./copy-link-button";
+import { Fact } from "./fact";
+import { HeroPicker } from "./hero-picker";
+import { HeroWordmark } from "./hero-wordmark";
 import { ItemCard } from "./item-card";
 import {
   CATEGORY_BAR,
@@ -42,8 +26,9 @@ import {
   SectionHeading,
   useFormatSouls,
 } from "./primitives";
+import { SectionPicker } from "./section-picker";
 
-interface RandomizerViewProps {
+export interface RandomizerViewProps {
   roll: Roll;
   heroes: DeadlockHero[];
   /** Slug of the hero rolls are locked to, straight from the URL. */
@@ -55,8 +40,6 @@ interface RandomizerViewProps {
   onSectionsChange: (sections: Sections) => void;
 }
 
-const ANY_HERO = "any";
-
 /** `--hero` drives every accent on the page, so it is typed rather than cast. */
 interface HeroStyle extends React.CSSProperties {
   "--hero": string;
@@ -64,201 +47,6 @@ interface HeroStyle extends React.CSSProperties {
 
 const titleCase = (value: string): string =>
   value.charAt(0).toUpperCase() + value.slice(1);
-
-const COPY_FEEDBACK_MS = 2000;
-
-const CopyLinkButton = () => {
-  const { t } = useTranslation("tool-randomizer");
-  // The clipboard is a permission the browser can refuse, so the button says
-  // which of the two happened rather than silently claiming success.
-  const [result, setResult] = useState<"idle" | "copied" | "failed">("idle");
-  const timeout = useRef<ReturnType<typeof setTimeout>>(undefined);
-
-  useEffect(() => () => clearTimeout(timeout.current), []);
-
-  const flash = (next: "copied" | "failed") => {
-    setResult(next);
-    clearTimeout(timeout.current);
-    timeout.current = setTimeout(() => setResult("idle"), COPY_FEEDBACK_MS);
-  };
-
-  const copy = () => {
-    navigator.clipboard.writeText(window.location.href).then(
-      () => flash("copied"),
-      () => flash("failed"),
-    );
-  };
-
-  const icon = {
-    idle: <Link2 className='size-4' />,
-    copied: <Check className='size-4' />,
-    failed: <X className='size-4' />,
-  }[result];
-  const label = t(`toolbar.copyLink.${result}`);
-
-  return (
-    <Button onClick={copy} size='sm' variant='outline'>
-      {icon}
-      <span aria-live='polite'>{label}</span>
-    </Button>
-  );
-};
-
-/**
- * The hero's own wordmark, painted in the hero's colour. The SVG ships as white
- * artwork, so it is used as a mask over an accent fill; the hidden image behind
- * it is what gives the block its natural aspect ratio.
- */
-export const HeroWordmark = ({ hero }: { hero: DeadlockHero }) => {
-  const source = heroImage(hero, "name");
-  const [failedSource, setFailedSource] = useState<string | null>(null);
-
-  if (!source || failedSource === source) {
-    return (
-      <span className='font-bold font-primary text-[rgb(var(--hero))] text-5xl italic md:text-7xl'>
-        {hero.name}
-      </span>
-    );
-  }
-
-  return (
-    <span className='relative inline-block h-14 md:h-20'>
-      <img
-        alt=''
-        aria-hidden='true'
-        className='h-full w-auto opacity-0'
-        crossOrigin='anonymous'
-        onError={() => setFailedSource(source)}
-        src={source}
-      />
-      <span
-        aria-hidden='true'
-        className='absolute inset-0 bg-[rgb(var(--hero))]'
-        style={{
-          maskImage: `url(${source})`,
-          maskRepeat: "no-repeat",
-          maskSize: "contain",
-          maskPosition: "left center",
-          WebkitMaskImage: `url(${source})`,
-          WebkitMaskRepeat: "no-repeat",
-          WebkitMaskSize: "contain",
-          WebkitMaskPosition: "left center",
-        }}
-      />
-    </span>
-  );
-};
-
-const SectionPicker = ({
-  sections,
-  onChange,
-}: {
-  sections: Sections;
-  onChange: (sections: Sections) => void;
-}) => {
-  const { t } = useTranslation("tool-randomizer");
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button size='sm' variant='outline'>
-          <SlidersHorizontal className='size-4' />
-          {t("sections.trigger")}
-          <ChevronDown className='size-3.5 opacity-60' />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align='end' className='w-52'>
-        <DropdownMenuLabel>{t("sections.label")}</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {SECTION_KEYS.map((key) => (
-          <DropdownMenuCheckboxItem
-            key={key}
-            checked={sections[key]}
-            onCheckedChange={(checked) =>
-              onChange({ ...sections, [key]: checked === true })
-            }
-            onSelect={(event) => event.preventDefault()}>
-            {t(`sections.options.${key}`)}
-          </DropdownMenuCheckboxItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-};
-
-const HeroPicker = ({
-  heroes,
-  locked,
-  onChange,
-}: {
-  heroes: DeadlockHero[];
-  locked?: DeadlockHero;
-  onChange: (slug: string | undefined) => void;
-}) => {
-  const { t } = useTranslation("tool-randomizer");
-  const sorted = [...heroes].sort((a, b) => a.name.localeCompare(b.name));
-  const lockedIcon = locked ? heroImage(locked, "small") : undefined;
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button size='sm' variant='outline'>
-          {lockedIcon ? (
-            <img alt='' className='size-4 object-contain' src={lockedIcon} />
-          ) : (
-            <UserRound className='size-4' />
-          )}
-          {locked ? locked.name : t("heroPicker.anyHero")}
-          <ChevronDown className='size-3.5 opacity-60' />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        align='end'
-        className='max-h-[min(28rem,70vh)] w-56 overflow-y-auto'>
-        <DropdownMenuLabel>{t("heroPicker.label")}</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuRadioGroup
-          onValueChange={(value) =>
-            onChange(value === ANY_HERO ? undefined : value)
-          }
-          value={locked ? heroSlug(locked) : ANY_HERO}>
-          <DropdownMenuRadioItem value={ANY_HERO}>
-            {t("heroPicker.anyHero")}
-          </DropdownMenuRadioItem>
-          {sorted.map((hero) => {
-            const icon = heroImage(hero, "small");
-            return (
-              <DropdownMenuRadioItem key={hero.id} value={heroSlug(hero)}>
-                {icon ? (
-                  <img
-                    alt=''
-                    className='size-5 object-contain'
-                    loading='lazy'
-                    src={icon}
-                  />
-                ) : null}
-                {hero.name}
-              </DropdownMenuRadioItem>
-            );
-          })}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-};
-
-const Fact = ({
-  label,
-  children,
-}: {
-  label: string;
-  children: React.ReactNode;
-}) => (
-  <div>
-    <MicroLabel className='mb-2'>{label}</MicroLabel>
-    {children}
-  </div>
-);
 
 export const RandomizerView = ({
   roll,

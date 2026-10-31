@@ -22,7 +22,7 @@ import {
 } from "@/lib/stats/dashboard/layout";
 import { emptyTab, tabFromTemplate } from "@/lib/stats/dashboard/templates";
 import { usePersistedStore } from "@/lib/store";
-import type { GridActions } from "./dashboard-grid";
+import type { GridActions } from "./grid-actions";
 import type { WidgetHealth } from "./dashboard-widget";
 
 export type PendingConfirm =

@@ -40,6 +40,7 @@ Key directories:
 - Respect TypeScript strict mode — never use `any` or `unknown`, use proper types (see 031-never-use-any.mdc)
 - Use `react-i18next` for any user-facing strings (check `apps/desktop/src/locales/`)
 - Use React Query mutations for async operations, not manual useState loading (see 030-coding-style.mdc)
+- Keep React files focused on one component or responsibility. Extract substantial child components with their owning types, hooks, and helpers; avoid nested component definitions. Follow [split-react-components](.agents/skills/split-react-components/SKILL.md) when a file accumulates multiple components, preserving state ownership and behavior.
 - When debugging or verifying desktop UI, IPC, or Tauri commands, use **tauri-mcp-server** (see [056-tauri-mcp-debugging.mdc](.cursor/rules/056-tauri-mcp-debugging.mdc)); ask the user to start the dev server — do not start it yourself
 - When a plan, design doc, or PR description covers a real call-flow change that a tree would help reviewers understand, optionally include a `npx calldiff@latest diff` (see [095-calldiff.mdc](.cursor/rules/095-calldiff.mdc)). Do not add call-stack diffs to routine chat summaries.
 
@@ -117,4 +118,5 @@ Turborepo configuration, task behavior, and CLI commands can vary between instal
 Read `docs/README.md` inside that installed package first, then read the relevant pages from its `docs/` directory before changing Turborepo configuration or commands. Heed deprecation notices. These bundled docs match the installed package version and are available without network access.
 
 This block is written and re-added by `turbo` before repository-scoped commands when an AI agent is detected. In the Turborepo source repository, its template is defined in `crates/turborepo-cli/src/cli/agent_guidance.rs`. Removing the managed block while updates are enabled means a later qualifying invocation will add it again. Set `"agentGuidance": false` in the root `turbo.json` or `turbo.jsonc` to opt out; this does not remove an existing block. Keep the block committed with your work to avoid an uncommitted change on the next agent invocation.
+
 <!-- END:turborepo-agent-rules -->

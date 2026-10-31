@@ -4,24 +4,16 @@ import { ScrollArea } from "@deadlock-mods/ui/components/scroll-area";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { cn } from "@deadlock-mods/ui/lib/utils";
 import {
-  ArrowCounterClockwiseIcon,
-  ArrowRightIcon,
   ArrowsClockwiseIcon,
-  CheckIcon,
-  FileIcon,
   FloppyDiskIcon,
   HammerIcon,
-  ImageIcon,
-  MusicNotesIcon,
-  PaintBrushIcon,
   PlusCircleIcon,
   WarningIcon,
   XIcon,
 } from "@phosphor-icons/react";
 import { save as saveDialog } from "@tauri-apps/plugin-dialog";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
 import { ModCategory } from "@/lib/constants";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
@@ -30,19 +22,12 @@ import type {
   FoundryExportResult,
 } from "@/types/foundry";
 import { ModStatus } from "@/types/mods";
-import { FoundryHeroAssembling } from "./foundry-assembling";
-import { partPaintKey, useFoundry } from "./foundry-context";
+import { useFoundry } from "./foundry-context";
 import { FoundryLoadingBar } from "./foundry-loading-bar";
-import { loadSilhouette, type Silhouette } from "./foundry-silhouettes";
-
-type ChangeGroup = "paint" | "cards" | "sounds" | "files";
-
-const GROUP_ICONS = {
-  paint: PaintBrushIcon,
-  cards: ImageIcon,
-  sounds: MusicNotesIcon,
-  files: FileIcon,
-} satisfies Record<ChangeGroup, React.ElementType>;
+import { useChanges } from "./use-foundry-export-changes";
+import { ExportedView } from "./foundry-exported-view";
+import { SectionLabel } from "./foundry-export-section-label";
+import { GROUP_ICONS, ChangeRow } from "./foundry-export-change-row";
 
 const DESTINATION_ICONS = {
   newMod: PlusCircleIcon,
@@ -56,15 +41,6 @@ const DESTINATIONS: FoundryExportDestination[] = [
   "replaceSource",
 ];
 
-interface Change {
-  path: string;
-  group: ChangeGroup;
-  label: string;
-  detail: string;
-  swatch?: string;
-  thumb?: string;
-}
-
 /** Turn a hero name into a filesystem-safe VPK filename. */
 const suggestedFileName = (name: string): string => {
   const slug = name
@@ -72,222 +48,6 @@ const suggestedFileName = (name: string): string => {
     .replace(/[^a-z0-9]+/g, "_")
     .replace(/^_+|_+$/g, "");
   return `${slug || "foundry_skin"}_dir.vpk`;
-};
-
-/** Every edit in the workspace, named the way its tab names it. */
-const useChanges = (): Change[] => {
-  const { t } = useTranslation();
-  const { manifest, editedPaths, paintParts, appliedPaint, cardPreviews } =
-    useFoundry();
-  return useMemo(() => {
-    if (!manifest) return [];
-    const parts = new Map(
-      paintParts.map((part) => [part.texture.toLowerCase(), part]),
-    );
-    const cards = new Map(
-      [...cardPreviews.defaultCards, ...cardPreviews.modCards].map((card) => [
-        card.path,
-        card,
-      ]),
-    );
-    const sounds = new Set(manifest.sounds.map((entry) => entry.path));
-    const filename = (path: string) =>
-      path
-        .split("/")
-        .pop()
-        ?.replace(/\.[^.]+$/, "") ?? path;
-
-    return [...editedPaths].map((path): Change => {
-      const part = parts.get(path.toLowerCase());
-      const card = cards.get(path);
-      if (part) {
-        const paint = appliedPaint[partPaintKey(part.texture)];
-        return {
-          path,
-          group: "paint",
-          label: part.label,
-          detail: t("foundry.exportSheet.repainted"),
-          swatch: paint?.colorHex,
-        };
-      }
-      if (card) {
-        return {
-          path,
-          group: "cards",
-          label: t(`foundry.cards.variants.${card.variant}`, {
-            defaultValue: card.variant.replaceAll("_", " "),
-          }),
-          detail: t("foundry.exportSheet.replaced"),
-          thumb: card.dataUrl,
-        };
-      }
-      if (sounds.has(path)) {
-        return {
-          path,
-          group: "sounds",
-          label: filename(path),
-          detail: t("foundry.exportSheet.replaced"),
-        };
-      }
-      return {
-        path,
-        group: path.endsWith(".vtex_c") ? "paint" : "files",
-        label: filename(path),
-        detail: t("foundry.exportSheet.edited"),
-      };
-    });
-  }, [manifest, editedPaths, paintParts, appliedPaint, cardPreviews, t]);
-};
-
-const ChangeRow = ({ change }: { change: Change }) => {
-  const { t } = useTranslation();
-  const { revertEntry, busy } = useFoundry();
-  const Icon = GROUP_ICONS[change.group];
-  return (
-    <li className='flex items-center gap-2.5 rounded-md bg-background px-2 py-1.5'>
-      {change.swatch ? (
-        <span
-          className='h-[22px] w-[22px] shrink-0 rounded-[5px] border border-white/15'
-          style={{ backgroundColor: change.swatch }}
-        />
-      ) : change.thumb ? (
-        <img
-          alt=''
-          className='h-[30px] w-[22px] shrink-0 rounded-[3px] object-cover'
-          src={change.thumb}
-        />
-      ) : (
-        <span className='flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-[5px] bg-muted'>
-          <Icon className='h-3 w-3' />
-        </span>
-      )}
-      <span className='flex min-w-0 flex-1 flex-col'>
-        <span className='truncate font-medium text-xs'>{change.label}</span>
-        <span className='truncate text-[10px] text-muted-foreground'>
-          {change.detail}
-        </span>
-      </span>
-      <button
-        aria-label={t("foundry.exportSheet.undo", { name: change.label })}
-        className='flex h-6 w-6 shrink-0 items-center justify-center rounded-[5px] text-muted-foreground hover:bg-muted hover:text-foreground'
-        disabled={busy}
-        onClick={() =>
-          revertEntry(change.path).catch((err) => {
-            logger.withError(err).error("[Foundry] Revert failed");
-            toast.error(t("foundry.editor.revertFailed"));
-          })
-        }
-        title={t("foundry.exportSheet.undo", { name: change.label })}
-        type='button'>
-        <ArrowCounterClockwiseIcon className='h-[13px] w-[13px]' />
-      </button>
-    </li>
-  );
-};
-
-const SectionLabel = ({ children }: { children: React.ReactNode }) => (
-  <h3 className='font-semibold text-[10px] text-muted-foreground uppercase tracking-[0.08em]'>
-    {children}
-  </h3>
-);
-
-/** The finished hero, drawn in still embers, with the result under it. */
-const ExportedView = ({
-  result,
-  changes,
-  heroStill,
-  onClose,
-}: {
-  result: FoundryExportResult;
-  changes: Change[];
-  /** The finished hero, captured from the viewer when the sheet opened. */
-  heroStill: string | null;
-  onClose: () => void;
-}) => {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const { manifest } = useFoundry();
-  const hero = manifest?.heroDisplay ?? manifest?.hero ?? "";
-  const [silhouette, setSilhouette] = useState<Silhouette | null>(null);
-  useEffect(() => {
-    if (hero) void loadSilhouette(hero).then(setSilhouette);
-  }, [hero]);
-  const counts = (["paint", "cards", "sounds", "files"] as const)
-    .map((group) => ({
-      group,
-      count: changes.filter((change) => change.group === group).length,
-    }))
-    .filter(({ count }) => count > 0);
-  const name = result.modName ?? hero;
-
-  return (
-    <div className='flex flex-1 flex-col items-center justify-center px-7 pb-6'>
-      <div className='relative h-[300px] w-[260px]'>
-        <div className='absolute inset-x-0 bottom-8 mx-auto h-24 w-56 rounded-[50%] bg-[radial-gradient(closest-side,rgb(242_138_75/0.3),transparent)]' />
-        <FoundryHeroAssembling
-          className={cn(
-            "absolute inset-0 transition-opacity duration-700",
-            heroStill && "opacity-40",
-          )}
-          silhouette={silhouette}
-        />
-        {heroStill && (
-          <img
-            alt={name}
-            className='absolute inset-x-0 top-0 bottom-10 mx-auto h-[calc(100%-2.5rem)] w-auto animate-in fade-in-0 zoom-in-95 object-contain duration-700 [mask-image:radial-gradient(ellipse_at_center,black_55%,transparent_78%)]'
-            src={heroStill}
-          />
-        )}
-        <span className='absolute bottom-0 left-1/2 flex h-14 w-14 -translate-x-1/2 items-center justify-center rounded-full border-[5px] border-card bg-primary text-primary-foreground shadow-[0_0_24px_hsl(var(--primary)/0.45)]'>
-          <CheckIcon className='h-6 w-6' weight='bold' />
-        </span>
-      </div>
-      <div className='space-y-1.5 py-5 text-center'>
-        <h2 className='font-semibold text-lg'>
-          {result.destination === "newMod"
-            ? t("foundry.exportSheet.doneNewMod", { name })
-            : result.destination === "replaceSource"
-              ? t("foundry.export.replaced")
-              : t("foundry.exportSheet.doneFile")}
-        </h2>
-        <p className='text-muted-foreground text-xs leading-[1.5]'>
-          {result.destination === "newMod"
-            ? t("foundry.exportSheet.doneNewModHint")
-            : result.destination === "replaceSource"
-              ? t("foundry.export.replacedHint")
-              : t("foundry.export.success", { count: result.fileCount })}
-        </p>
-      </div>
-      {counts.length > 0 && (
-        <div className='flex flex-wrap justify-center gap-2 pb-5'>
-          {counts.map(({ group, count }) => {
-            const Icon = GROUP_ICONS[group];
-            return (
-              <span
-                className='flex items-center gap-[5px] rounded-[5px] border bg-background px-2 py-1 font-medium text-[11px]'
-                key={group}>
-                <Icon className='h-3 w-3 text-secondary-foreground' />
-                {t(`foundry.exportSheet.facts.${group}`, { count })}
-              </span>
-            );
-          })}
-        </div>
-      )}
-      <div className='w-full space-y-2'>
-        {result.destination === "newMod" && (
-          <Button
-            className='h-10 w-full font-semibold'
-            icon={<ArrowRightIcon className='h-4 w-4' />}
-            onClick={() => navigate("/my-mods")}>
-            {t("foundry.exportSheet.openMyMods")}
-          </Button>
-        )}
-        <Button className='h-9 w-full' onClick={onClose} variant='outline'>
-          {t("foundry.exportSheet.keepEditing")}
-        </Button>
-      </div>
-    </div>
-  );
 };
 
 /**

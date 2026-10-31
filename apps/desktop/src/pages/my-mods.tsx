@@ -1,21 +1,9 @@
-import { Checkbox } from "@deadlock-mods/ui/components/checkbox";
 import { LibrarySelectionBar } from "@/components/my-mods/library-selection-bar";
 import { ModGroupTools } from "@/components/my-mods/mod-group-tools";
 import { NukeReinstallDialog } from "@/components/my-mods/nuke-reinstall-dialog";
-import type { ModGroupActions } from "@/components/my-mods/mod-group-enablement";
-import { LibraryModGroups } from "@/components/my-mods/library-mod-groups";
-import { DraggableLibraryMod } from "@/components/my-mods/draggable-library-mod";
 import { groupLibraryMods } from "@/lib/mods/library-groups";
 import { EMPTY_MOD_GROUPS } from "@/lib/store/slices/mod-groups";
-import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Button } from "@deadlock-mods/ui/components/button";
-import {
-  Card,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@deadlock-mods/ui/components/card";
 import {
   Empty,
   EmptyDescription,
@@ -34,13 +22,6 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@deadlock-mods/ui/components/dropdown-menu";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-} from "@deadlock-mods/ui/components/pagination";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import {
   Tabs,
@@ -56,8 +37,6 @@ import {
 import {
   ArrowUpDown,
   Bug,
-  ChevronLeft,
-  ChevronRight,
   Copy,
   EllipsisVertical,
   FileOutput,
@@ -65,7 +44,6 @@ import {
   Layers,
   LayoutGrid,
   LayoutList,
-  Loader2,
   Power,
   PowerOff,
   RefreshCw,
@@ -74,22 +52,13 @@ import {
   TriangleAlert,
   Wrench,
 } from "@deadlock-mods/ui/icons";
-import { Radioactive, Trash } from "@phosphor-icons/react";
+import { Radioactive } from "@phosphor-icons/react";
 import { MagnifyingGlass } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
 import { platform } from "@tauri-apps/plugin-os";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
 import { HintAnchor } from "@/components/feature-hints/hint-anchor";
-import ModButton from "@/components/mod-browsing/mod-button";
-import NSFWBlur from "@/components/mod-browsing/nsfw-blur";
-import AudioPlayerPreview from "@/components/mod-management/audio-player-preview";
-import { ModContextMenu } from "@/components/mod-management/mod-context-menu";
-import { ModOptionsButton } from "@/components/mod-management/mod-options-button";
-import { ModOptionsDialog } from "@/components/mod-management/mod-options-dialog";
-import { MissingFilesWarning } from "@/components/mod-management/missing-files-warning";
-import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
 import SearchBar from "@/components/mod-browsing/search-bar";
 import { SortSelect } from "@/components/mod-browsing/sort-select";
 import { VpkScanAlert } from "@/components/mods/vpk-scan-alert";
@@ -101,13 +70,8 @@ import { BatchUpdateButton } from "@/components/my-mods/batch-update-button";
 import { ExportDialog } from "@/components/mod-interchange/export-dialog";
 import { AddModsMenu } from "@/components/mod-interchange/add-mods-menu";
 import { ConflictsPanel } from "@/components/my-mods/conflicts/conflicts-panel";
-import { RequirementWarning } from "@/components/my-mods/requirement-warning";
-import { CrashSuspectBadge } from "@/components/my-mods/crash-suspect-badge";
-import { ModConflictBadge } from "@/components/my-mods/conflicts/mod-conflict-badge";
 import { MyModsEmptyState } from "@/components/my-mods/empty-state";
-import { LibraryModAuthor } from "@/components/my-mods/library-mod-author";
 import { ModOrderingDialog } from "@/components/my-mods/mod-ordering-dialog";
-import { ModHealthBadge } from "@/components/mod-health/mod-health-badge";
 import { ModHealthBanner } from "@/components/mod-health/mod-health-banner";
 import {
   useCheckModHealth,
@@ -119,22 +83,15 @@ import { useAddonAnalysis } from "@/hooks/use-addon-analysis";
 import { useDeleteMods } from "@/hooks/use-delete-mods";
 import { useDisableAllMods } from "@/hooks/use-disable-all-mods";
 import { useEnableAllMods } from "@/hooks/use-enable-all-mods";
-import { ModUpdateBadge } from "@/components/mod-management/mod-update-badges";
-import { useModHasUpdate, useCheckUpdates } from "@/hooks/use-check-updates";
+import { useCheckUpdates } from "@/hooks/use-check-updates";
 import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
-import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import { useStuckAttribute } from "@/hooks/use-stuck-attribute";
 import { useProfileConflicts } from "@/hooks/use-profile-conflicts";
 import { useSearch } from "@/hooks/use-search";
-import { useModOptions } from "@/hooks/use-mod-options";
-import { useHasOpened } from "@deadlock-mods/ui/hooks/use-has-opened";
-import useUninstall from "@/hooks/use-uninstall";
 import { useVpkScan } from "@/hooks/use-vpk-scan";
 import { openFindBrokenMod } from "@/lib/bisect/dialogs";
-import { useThemeOverride } from "@/components/providers/theme-overrides";
 import { SortType } from "@/lib/constants";
 import { ModCategory } from "@/lib/constants";
-import { getErrorMessage } from "@/lib/errors";
 import { parseGameBananaReference } from "@/lib/mod-interchange";
 import {
   filterLibraryModsByStatus,
@@ -153,636 +110,31 @@ import type {
   FilterMode,
   MapQuickFilter,
 } from "@/lib/store/slices/ui";
-import type { ModConflictStatus } from "@/lib/mods/conflicts";
 import { isInstalledModWithVpks } from "@/lib/mods/installed-helpers";
-import { getModCoverImage } from "@/lib/mods/mod-images";
-import { healthByModId, showsDateOutdatedWarning } from "@/lib/mods/mod-health";
+import { healthByModId } from "@/lib/mods/mod-health";
 import { cn, isModOutdated } from "@/lib/utils";
 import { useThemeBackdropSurfaceStyle } from "@/plugins/themes/components/theme-backdrop";
-import type { ModHealth } from "@/types/generated/ModHealth";
 import { type LocalMod, ModStatus } from "@/types/mods";
+import { ModsPagination } from "@/components/my-mods/library/mods-pagination";
+import { ViewMode } from "@/components/my-mods/library/library-types";
+import { ModsList } from "@/components/my-mods/library/mods-list";
 
 const PAGE_SIZE = 20;
+
 const CONFLICTS_TAB = "conflicts";
+
 const MENU_HINT_MIN_MODS = 8;
+
 const CONTEXT_MENU_HINT_MIN_MODS = 5;
+
 // Below this, turning mods off one by one is about as quick as bisecting.
 const FIND_BROKEN_MOD_HINT_MIN_MODS = 6;
+
 const MODS_FOLDER_HINT_MIN_OPENS = 3;
+
 type LibraryTab = ModFilter | typeof CONFLICTS_TAB;
+
 const MODS_STORE_PAGINATION_SETTING_ID = "mods-store-pagination";
-
-function ModsPagination({
-  page,
-  totalPages,
-  onPageChange,
-  className,
-}: {
-  page: number;
-  totalPages: number;
-  onPageChange: (page: number) => void;
-  className?: string;
-}) {
-  const { t } = useTranslation();
-  return (
-    <Pagination className={className}>
-      <PaginationContent>
-        <PaginationItem>
-          <PaginationLink
-            aria-label={t("pagination.previous")}
-            aria-disabled={page === 0}
-            className={cn(
-              "gap-1 pl-2.5",
-              page === 0 ? "pointer-events-none opacity-50" : "",
-            )}
-            size='default'
-            onClick={(e) => {
-              e.preventDefault();
-              if (page > 0) onPageChange(page - 1);
-            }}>
-            <ChevronLeft className='h-4 w-4' />
-            <span>{t("pagination.previous")}</span>
-          </PaginationLink>
-        </PaginationItem>
-        {Array.from({ length: totalPages }, (_, i) => i)
-          .filter((i) => {
-            if (totalPages <= 7) return true;
-            if (i === 0 || i === totalPages - 1) return true;
-            return Math.abs(i - page) <= 2;
-          })
-          .reduce<(number | "ellipsis")[]>((acc, i, idx, arr) => {
-            if (idx > 0 && arr[idx - 1] < i - 1) acc.push("ellipsis");
-            acc.push(i);
-            return acc;
-          }, [])
-          .map((item, idx, items) =>
-            item === "ellipsis" ? (
-              <PaginationItem
-                key={`ellipsis-${items[idx - 1]}-${items[idx + 1]}`}>
-                <PaginationEllipsis />
-              </PaginationItem>
-            ) : (
-              <PaginationItem key={item}>
-                <PaginationLink
-                  isActive={item === page}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    onPageChange(item);
-                  }}>
-                  {item + 1}
-                </PaginationLink>
-              </PaginationItem>
-            ),
-          )}
-        <PaginationItem>
-          <PaginationLink
-            aria-label={t("pagination.next")}
-            aria-disabled={page === totalPages - 1}
-            className={cn(
-              "gap-1 pr-2.5",
-              page === totalPages - 1 ? "pointer-events-none opacity-50" : "",
-            )}
-            size='default'
-            onClick={(e) => {
-              e.preventDefault();
-              if (page < totalPages - 1) onPageChange(page + 1);
-            }}>
-            <span>{t("pagination.next")}</span>
-            <ChevronRight className='h-4 w-4' />
-          </PaginationLink>
-        </PaginationItem>
-      </PaginationContent>
-    </Pagination>
-  );
-}
-
-enum ViewMode {
-  GRID = "grid",
-  LIST = "list",
-}
-
-type ModCardProps = {
-  mod: LocalMod;
-  conflictStatus: ModConflictStatus | undefined;
-  onShowConflicts: () => void;
-  health: ModHealth | undefined;
-  contextMenuHint: boolean;
-  onSelect: (id: string) => void;
-  selected: boolean;
-};
-
-// Rendered outside ModContextMenu so events from the portalled dialog don't
-// bubble into the card's context menu trigger.
-const LazyModOptionsDialog = ({
-  modOptions,
-  modName,
-}: {
-  modOptions: ReturnType<typeof useModOptions>;
-  modName: string;
-}) => {
-  const opened = useHasOpened(modOptions.isOpen);
-  if (!modOptions.showButton || !opened) {
-    return null;
-  }
-  return (
-    <ModOptionsDialog
-      isOpen={modOptions.isOpen}
-      onOpenChange={(open) => (open ? modOptions.open() : modOptions.close())}
-      isSaving={modOptions.isSaving}
-      onCancelApply={modOptions.cancelApply}
-      progress={modOptions.progress}
-      onApply={modOptions.apply}
-      fileTree={modOptions.fileTree}
-      onApplyFiles={modOptions.applyFileSelection}
-      isSavingFiles={modOptions.isSavingFiles}
-      modName={modName}
-      downloads={modOptions.downloads}
-      onDiskArchiveNames={modOptions.onDiskArchiveNames}
-      activeArchiveNames={modOptions.activeArchiveNames}
-    />
-  );
-};
-
-const GridModCard = memo(function GridModCard({
-  mod,
-  conflictStatus,
-  onShowConflicts,
-  health,
-  contextMenuHint,
-  onSelect,
-  selected,
-}: ModCardProps) {
-  const { t } = useTranslation();
-  const isDisabled = mod.status !== ModStatus.Installed;
-  const hasUpdate = useModHasUpdate(mod);
-  const navigate = useNavigate();
-  const { uninstall } = useUninstall();
-  const [deleting, setDeleting] = useState(false);
-  const CardWrapper = useThemeOverride("cardWrapper");
-  const modOptions = useModOptions(mod);
-
-  const openModDetail = () =>
-    navigate(`/mods/${mod.remoteId}`, {
-      state: { collection: "library" },
-    });
-
-  const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
-
-  const deleteMod = async () => {
-    if (!mod) {
-      return;
-    }
-
-    try {
-      setDeleting(true);
-      await uninstall(mod, true);
-    } catch (error) {
-      toast.error(`Failed to remove mod: ${getErrorMessage(error)}`);
-    } finally {
-      setDeleting(false);
-    }
-  };
-
-  const cardContent = (
-    <ModContextMenu
-      hint={contextMenuHint}
-      mod={mod}
-      onSelect={() => onSelect(mod.remoteId)}
-      selected={selected}>
-      <Card className='flex h-full flex-col shadow'>
-        <div className='relative'>
-          <div
-            className={cn("cursor-pointer", isDisabled && "grayscale")}
-            onClick={openModDetail}>
-            {mod.isAudio ? (
-              <AudioPlayerPreview
-                audioUrl={mod.audioUrl || ""}
-                onPlayClick={(e) => e.stopPropagation()}
-                variant='default'
-              />
-            ) : mod.images && mod.images.length > 0 ? (
-              <NSFWBlur
-                blurStrength={nsfwSettings.blurStrength}
-                className='h-48 w-full overflow-hidden rounded-t-xl'
-                disableBlur={nsfwSettings.disableBlur}
-                isNSFW={shouldBlur}
-                onToggleVisibility={handleNSFWToggle}>
-                <img
-                  alt={mod.name}
-                  className='h-48 w-full object-cover'
-                  decoding='async'
-                  height='192'
-                  loading='lazy'
-                  src={getModCoverImage(mod)}
-                  width='320'
-                />
-              </NSFWBlur>
-            ) : (
-              <div className='flex h-48 w-full items-center justify-center rounded-t-xl bg-secondary'>
-                <div className='text-center text-foreground/60'>
-                  <div className='mx-auto mb-2 h-12 w-12' />
-                  <p className='text-sm'>No preview available</p>
-                </div>
-              </div>
-            )}
-          </div>
-          <div className='absolute bottom-2 left-2'>
-            <ModUpdateBadge mod={mod} hasUpdate={hasUpdate} />
-          </div>
-          <div className='absolute top-2 right-2 flex flex-col gap-1'>
-            {mod.isAudio && (
-              <Badge variant='secondary'>{t("mods.audio")}</Badge>
-            )}
-            {mod.remoteUrl?.startsWith("local://") && (
-              <Badge variant='outline' className='bg-background/95'>
-                {t("mods.customBadge")}
-              </Badge>
-            )}
-            {showsDateOutdatedWarning(isModOutdated(mod), health) && (
-              <OutdatedModWarning variant='indicator' />
-            )}
-            <ModHealthBadge health={health} isOutdated={isModOutdated(mod)} />
-            <MissingFilesWarning missingVpks={mod.missingVpks} />
-            <RequirementWarning mod={mod} />
-            <CrashSuspectBadge modId={mod.remoteId} />
-            {conflictStatus && (
-              <ModConflictBadge
-                onClick={onShowConflicts}
-                status={conflictStatus}
-              />
-            )}
-          </div>
-          {mod.status === ModStatus.Installing && (
-            <div className='absolute inset-0 flex items-center justify-center rounded-t-xl bg-black/50'>
-              <Loader2 className='h-8 w-8 animate-spin text-primary' />
-            </div>
-          )}
-        </div>
-        <CardHeader className='space-y-1 px-3 py-3 pb-0'>
-          <CardTitle
-            className='line-clamp-2 cursor-pointer leading-tight'
-            onClick={openModDetail}
-            title={mod.name}>
-            {mod.name}
-          </CardTitle>
-          <CardDescription className='truncate' title={mod.author}>
-            <LibraryModAuthor mod={mod} />
-          </CardDescription>
-        </CardHeader>
-        <CardFooter className='mt-auto justify-between gap-3 px-3 py-3 pt-2'>
-          <div className='flex min-w-0 items-center gap-1'>
-            {modOptions.showButton ? (
-              <ModOptionsButton
-                activeCount={modOptions.activeVariantCount}
-                onOpen={modOptions.open}
-                className='shrink-0'
-              />
-            ) : null}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  aria-label={t("mods.removeMod")}
-                  icon={<Trash className='h-4 w-4' />}
-                  isLoading={deleting}
-                  onClick={deleteMod}
-                  size='icon'
-                  variant='destructiveGhost'
-                />
-              </TooltipTrigger>
-              <TooltipContent>{t("mods.removeMod")}</TooltipContent>
-            </Tooltip>
-          </div>
-          <ModButton remoteMod={mod} variant='iconOnly' />
-        </CardFooter>
-      </Card>
-    </ModContextMenu>
-  );
-
-  return (
-    <>
-      {CardWrapper ? <CardWrapper>{cardContent}</CardWrapper> : cardContent}
-      <LazyModOptionsDialog modName={mod.name} modOptions={modOptions} />
-    </>
-  );
-});
-
-const ListModCard = memo(function ListModCard({
-  mod,
-  conflictStatus,
-  onShowConflicts,
-  health,
-  contextMenuHint,
-  onSelect,
-  selected,
-}: ModCardProps) {
-  const { t } = useTranslation();
-  const isDisabled = mod.status !== ModStatus.Installed;
-  const hasUpdate = useModHasUpdate(mod);
-  const isInstalling = mod.status === ModStatus.Installing;
-  const navigate = useNavigate();
-  const { uninstall } = useUninstall();
-  const [deleting, setDeleting] = useState(false);
-  const modOptions = useModOptions(mod);
-
-  const openModDetail = () =>
-    navigate(`/mods/${mod.remoteId}`, {
-      state: { collection: "library" },
-    });
-
-  const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
-
-  const deleteMod = async () => {
-    if (!mod) {
-      return;
-    }
-
-    try {
-      setDeleting(true);
-      await uninstall(mod, true);
-    } catch (error) {
-      toast.error(`Failed to remove mod: ${getErrorMessage(error)}`);
-    } finally {
-      setDeleting(false);
-    }
-  };
-
-  return (
-    <>
-      <ModContextMenu
-        hint={contextMenuHint}
-        mod={mod}
-        onSelect={() => onSelect(mod.remoteId)}
-        selected={selected}>
-        <Card className='group/row flex items-center gap-4 overflow-hidden pr-3 shadow transition-colors hover:bg-muted/40'>
-          <div
-            className={cn(
-              "relative h-16 w-28 shrink-0 transition-[filter] duration-300 ease-out",
-              isDisabled && "grayscale",
-            )}
-            onClick={openModDetail}>
-            {mod.isAudio ? (
-              <AudioPlayerPreview
-                audioUrl={mod.audioUrl || ""}
-                onPlayClick={(e) => e.stopPropagation()}
-                variant='compact'
-              />
-            ) : mod.images && mod.images.length > 0 ? (
-              <NSFWBlur
-                blurStrength={nsfwSettings.blurStrength}
-                className='h-full w-full cursor-pointer overflow-hidden'
-                disableBlur={nsfwSettings.disableBlur}
-                isNSFW={shouldBlur}
-                onToggleVisibility={handleNSFWToggle}>
-                <img
-                  alt={mod.name}
-                  className='h-full w-full object-cover transition-transform duration-300 ease-out group-hover/row:scale-105'
-                  decoding='async'
-                  height='160'
-                  loading='lazy'
-                  src={getModCoverImage(mod)}
-                  width='160'
-                />
-              </NSFWBlur>
-            ) : (
-              <div className='h-full w-full cursor-pointer bg-secondary' />
-            )}
-            {mod.status === ModStatus.Installing && (
-              <div className='absolute inset-0 flex items-center justify-center bg-black/50'>
-                <Loader2 className='h-5 w-5 animate-spin text-primary' />
-              </div>
-            )}
-          </div>
-
-          <div className='min-w-0 flex-1 py-2'>
-            <h3
-              className={cn(
-                "cursor-pointer truncate font-semibold transition-colors",
-                isDisabled && "text-muted-foreground",
-              )}
-              onClick={openModDetail}
-              title={mod.name}>
-              {mod.name}
-            </h3>
-            <p className='truncate text-muted-foreground text-sm'>
-              <LibraryModAuthor mod={mod} />{" "}
-              {mod.isAudio && `• ${t("mods.audioMod")}`}
-            </p>
-          </div>
-
-          <div className='flex min-w-0 flex-wrap items-center justify-end gap-1 empty:hidden'>
-            <ModUpdateBadge
-              mod={mod}
-              hasUpdate={hasUpdate}
-              className='text-xs'
-            />
-            <ModHealthBadge
-              className='text-xs'
-              health={health}
-              isOutdated={isModOutdated(mod)}
-            />
-            {showsDateOutdatedWarning(isModOutdated(mod), health) && (
-              <OutdatedModWarning className='text-xs' variant='indicator' />
-            )}
-            <MissingFilesWarning
-              className='text-xs'
-              missingVpks={mod.missingVpks}
-            />
-            <RequirementWarning mod={mod} />
-            <CrashSuspectBadge modId={mod.remoteId} />
-            {conflictStatus && (
-              <ModConflictBadge
-                className='text-xs'
-                onClick={onShowConflicts}
-                status={conflictStatus}
-              />
-            )}
-            {mod.remoteUrl?.startsWith("local://") && (
-              <Badge variant='outline' className='text-xs'>
-                {t("mods.customBadge")}
-              </Badge>
-            )}
-          </div>
-
-          <div className='flex shrink-0 items-center gap-1'>
-            {modOptions.showButton && (
-              <ModOptionsButton
-                activeCount={modOptions.activeVariantCount}
-                onOpen={modOptions.open}
-              />
-            )}
-            <ModButton remoteMod={mod} variant='iconOnly' />
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  aria-label={t("mods.removeMod")}
-                  disabled={isInstalling || deleting}
-                  icon={<Trash className='h-4 w-4' />}
-                  isLoading={deleting}
-                  onClick={deleteMod}
-                  size='icon'
-                  variant='destructiveGhost'
-                />
-              </TooltipTrigger>
-              <TooltipContent>{t("mods.removeMod")}</TooltipContent>
-            </Tooltip>
-          </div>
-        </Card>
-      </ModContextMenu>
-      <LazyModOptionsDialog modName={mod.name} modOptions={modOptions} />
-    </>
-  );
-});
-
-const ModsList = ({
-  mods,
-  allMods,
-  revealMatches,
-  showEmptyGroups,
-  viewMode,
-  conflictStatusByMod,
-  onShowConflicts,
-  healthById,
-  contextMenuHint,
-  selection,
-  groupActions,
-  onSelectMod,
-}: {
-  onSelectMod: (id: string) => void;
-  groupActions: ModGroupActions;
-  selection: {
-    active: boolean;
-    ids: ReadonlySet<string>;
-    busy: boolean;
-    /** `extend` selects the range from the last toggled mod. */
-    toggle: (id: string, extend: boolean) => void;
-  };
-  healthById: ReadonlyMap<string, ModHealth>;
-  mods: LocalMod[];
-  allMods: LocalMod[];
-  revealMatches: boolean;
-  showEmptyGroups: boolean;
-  viewMode: ViewMode;
-  conflictStatusByMod: ReadonlyMap<string, ModConflictStatus>;
-  onShowConflicts: () => void;
-  /** Points the right-click hint at the first card. */
-  contextMenuHint: boolean;
-}) => {
-  const { t } = useTranslation();
-  const ModCard = viewMode === ViewMode.GRID ? GridModCard : ListModCard;
-  const profileId = usePersistedStore((state) => state.activeProfileId);
-  return (
-    <LibraryModGroups
-      key={profileId}
-      mods={mods}
-      allMods={allMods}
-      revealMatches={revealMatches}
-      showEmptyGroups={showEmptyGroups}
-      selectedIds={selection.ids}
-      actions={groupActions}
-      renderMods={(members, draggable) => (
-        <div
-          className={
-            viewMode === ViewMode.GRID
-              ? "grid grid-cols-[repeat(auto-fill,minmax(min(100%,14rem),1fr))] gap-3"
-              : "flex flex-col gap-2"
-          }>
-          {members.map((mod, index) => {
-            const selected = selection.ids.has(mod.remoteId);
-            return (
-              <DraggableLibraryMod
-                id={mod.remoteId}
-                disabled={!draggable || selection.busy}
-                key={mod.remoteId}>
-                <div
-                  inert={selection.busy}
-                  key={mod.remoteId}
-                  onClickCapture={
-                    selection.active
-                      ? undefined
-                      : (event) => {
-                          if (
-                            !(event.ctrlKey || event.metaKey || event.shiftKey)
-                          )
-                            return;
-                          event.preventDefault();
-                          event.stopPropagation();
-                          selection.toggle(mod.remoteId, false);
-                        }
-                  }
-                  className={cn(
-                    "group/select relative h-full rounded-xl transition-opacity",
-                    selection.active && "select-none",
-                    selected && "outline-2 outline-primary -outline-offset-2",
-                    selection.active &&
-                      selection.ids.size > 0 &&
-                      !selected &&
-                      "opacity-60 hover:opacity-100",
-                  )}>
-                  <Checkbox
-                    aria-label={t("myMods.selection.selectMod", {
-                      name: mod.name,
-                    })}
-                    checked={selected}
-                    disabled={selection.busy}
-                    onClick={(event) => {
-                      event.preventDefault();
-                      selection.toggle(mod.remoteId, event.shiftKey);
-                    }}
-                    className={cn(
-                      "absolute top-2 left-2 z-20 size-5 rounded-full border-2 border-white/80 bg-black/50 shadow-md transition-opacity data-[state=checked]:border-primary [&_svg]:size-3.5",
-                      !selection.active &&
-                        "opacity-0 group-hover/select:opacity-100 focus-visible:opacity-100",
-                    )}
-                  />
-                  {selection.active && (
-                    <button
-                      aria-hidden
-                      data-library-selection-surface
-                      className='absolute inset-0 z-10 cursor-pointer rounded-xl'
-                      onClick={(event) =>
-                        selection.toggle(mod.remoteId, event.shiftKey)
-                      }
-                      onContextMenu={(event) => {
-                        // The surface covers the card, so hand the right-click
-                        // to the card's own context menu underneath.
-                        event.preventDefault();
-                        const surface = event.currentTarget;
-                        document
-                          .elementsFromPoint(event.clientX, event.clientY)
-                          .find((element) => element !== surface)
-                          ?.dispatchEvent(
-                            new MouseEvent("contextmenu", {
-                              bubbles: true,
-                              cancelable: true,
-                              clientX: event.clientX,
-                              clientY: event.clientY,
-                            }),
-                          );
-                      }}
-                      tabIndex={-1}
-                      type='button'
-                    />
-                  )}
-                  <ModCard
-                    conflictStatus={conflictStatusByMod.get(mod.remoteId)}
-                    contextMenuHint={
-                      !selection.active && contextMenuHint && index === 0
-                    }
-                    mod={mod}
-                    onSelect={onSelectMod}
-                    selected={selected}
-                    onShowConflicts={onShowConflicts}
-                    health={healthById.get(mod.remoteId)}
-                  />
-                </div>
-              </DraggableLibraryMod>
-            );
-          })}
-        </div>
-      )}
-    />
-  );
-};
 
 const MyMods = () => {
   const { t } = useTranslation();

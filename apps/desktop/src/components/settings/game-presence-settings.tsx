@@ -1,10 +1,13 @@
-import type {
-  PresenceTextTemplatePair,
-  PresenceTextTemplates,
-} from "@deadlock-mods/deadlock-discord-presence";
+import {
+  TEMPLATE_ROWS,
+  DEFAULT_SAMPLE_VALUES,
+  coerceTemplateKey,
+  renderPreviewText,
+  type SamplePresenceValues,
+} from "@/components/settings/game-presence/presence-templates";
+import type { PresenceTextTemplates } from "@deadlock-mods/deadlock-discord-presence";
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Button } from "@deadlock-mods/ui/components/button";
-import { Input } from "@deadlock-mods/ui/components/input";
 import { Label } from "@deadlock-mods/ui/components/label";
 import {
   Select,
@@ -22,13 +25,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@deadlock-mods/ui/components/tabs";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@deadlock-mods/ui/components/tooltip";
-import { Copy, RotateCcw, Save } from "@deadlock-mods/ui/icons";
+import { RotateCcw, Save } from "@deadlock-mods/ui/icons";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -37,17 +34,11 @@ import { SwitchStatus } from "@/components/settings/setting-row";
 import { usePersistedStore } from "@/lib/store";
 import { createDefaultGamePresenceTextTemplates } from "@/lib/store/slices/settings";
 import { Trash } from "@phosphor-icons/react";
+import type { TemplateKey } from "@/components/settings/game-presence/presence-templates";
+import type { TemplateField } from "@/components/settings/game-presence/presence-templates";
 
-type TemplateKey = Extract<keyof PresenceTextTemplates, string>;
-type TemplateField = keyof PresenceTextTemplatePair;
-
-interface TemplateRow {
-  key: TemplateKey;
-  phaseKey: string;
-  descriptionKey: string;
-  defaultDetails: string;
-  defaultState: string;
-}
+import { TemplateFieldEditor } from "@/components/settings/game-presence/template-field-editor";
+import { DiscordPreviewCard } from "@/components/settings/game-presence/discord-preview-card";
 
 interface GamePresenceHero {
   codename: string;
@@ -55,291 +46,9 @@ interface GamePresenceHero {
   hideoutText: string;
 }
 
-interface SamplePresenceValues {
-  hero: string;
-  heroPresence: string;
-  mode: string;
-  partySize: string;
-  partyMax: string;
-}
-
 const GLOBAL_SCOPE_VALUE = "__global_presence_templates__";
 
-// Bundled copy of the Discord application's large presence asset.
-const PREVIEW_LARGE_IMAGE_URL = "/brand/discord-presence.png";
 const ENABLE_DESCRIPTION_ID = "toggle-game-presence-description";
-
-const TEMPLATE_ROWS: TemplateRow[] = [
-  {
-    key: "mainMenu",
-    phaseKey: "gamePresence.phases.mainMenu",
-    descriptionKey: "gamePresence.phaseDescriptions.mainMenu",
-    defaultDetails: "Main Menu",
-    defaultState: "",
-  },
-  {
-    key: "soloHideout",
-    phaseKey: "gamePresence.phases.soloHideout",
-    descriptionKey: "gamePresence.phaseDescriptions.soloHideout",
-    defaultDetails: "{heroPresence}",
-    defaultState: "Playing Solo as {hero}",
-  },
-  {
-    key: "partyHideout",
-    phaseKey: "gamePresence.phases.partyHideout",
-    descriptionKey: "gamePresence.phaseDescriptions.partyHideout",
-    defaultDetails: "{heroPresence}",
-    defaultState: "In Party as {hero}",
-  },
-  {
-    key: "inQueue",
-    phaseKey: "gamePresence.phases.inQueue",
-    descriptionKey: "gamePresence.phaseDescriptions.inQueue",
-    defaultDetails: "Looking for Match...",
-    defaultState: "Killing Time as {hero}",
-  },
-  {
-    key: "soloMatch",
-    phaseKey: "gamePresence.phases.soloMatch",
-    descriptionKey: "gamePresence.phaseDescriptions.soloMatch",
-    defaultDetails: "{mode}",
-    defaultState: "Playing Solo as {hero}",
-  },
-  {
-    key: "partyMatch",
-    phaseKey: "gamePresence.phases.partyMatch",
-    descriptionKey: "gamePresence.phaseDescriptions.partyMatch",
-    defaultDetails: "{mode}",
-    defaultState: "In Party as {hero}",
-  },
-  {
-    key: "postMatch",
-    phaseKey: "gamePresence.phases.postMatch",
-    descriptionKey: "gamePresence.phaseDescriptions.postMatch",
-    defaultDetails: "Post-Match",
-    defaultState: "",
-  },
-  {
-    key: "spectating",
-    phaseKey: "gamePresence.phases.spectating",
-    descriptionKey: "gamePresence.phaseDescriptions.spectating",
-    defaultDetails: "Spectating a Match",
-    defaultState: "",
-  },
-];
-
-interface PlaceholderMeta {
-  token: string;
-  tooltipKey: string;
-}
-
-const PLACEHOLDERS: PlaceholderMeta[] = [
-  { token: "{hero}", tooltipKey: "hero" },
-  { token: "{heroPresence}", tooltipKey: "heroPresence" },
-  { token: "{mode}", tooltipKey: "mode" },
-  { token: "{partySize}", tooltipKey: "partySize" },
-  { token: "{partyMax}", tooltipKey: "partyMax" },
-];
-
-const DEFAULT_SAMPLE_VALUES: SamplePresenceValues = {
-  hero: "Vindicta",
-  heroPresence: "Sleep Walking in the Hideout",
-  mode: "Playing Standard (6v6)",
-  partySize: "3",
-  partyMax: "6",
-};
-
-function coerceTemplateKey(value: string): TemplateKey {
-  return TEMPLATE_ROWS.find((row) => row.key === value)?.key ?? "soloHideout";
-}
-
-interface PlaceholderButtonsProps {
-  field: TemplateField;
-  onInsert: (field: TemplateField, placeholder: string) => void;
-  t: (key: string) => string;
-}
-
-const PlaceholderButtons = ({
-  field,
-  onInsert,
-  t,
-}: PlaceholderButtonsProps) => (
-  <TooltipProvider delayDuration={300}>
-    <div className='flex flex-wrap gap-1.5'>
-      {PLACEHOLDERS.map(({ token, tooltipKey }) => (
-        <Tooltip key={`${field}-${token}`}>
-          <TooltipTrigger asChild>
-            <Button
-              className='h-7 gap-1 rounded-full px-2 font-mono text-[11px]'
-              onClick={() => onInsert(field, token)}
-              size='sm'
-              type='button'
-              variant='outline'>
-              <Copy className='size-3' />
-              {token}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent className='max-w-[220px] space-y-1 text-center'>
-            <p>
-              {t(`gamePresence.placeholderTooltips.${tooltipKey}.description`)}
-            </p>
-            <p className='font-mono text-white/60'>
-              {t(`gamePresence.placeholderTooltips.${tooltipKey}.example`)}
-            </p>
-          </TooltipContent>
-        </Tooltip>
-      ))}
-    </div>
-  </TooltipProvider>
-);
-
-interface TemplateFieldEditorProps {
-  field: TemplateField;
-  selectedHeroCodename: string | null;
-  selectedRow: TemplateRow;
-  selectedTemplate: PresenceTextTemplatePair;
-  selectedGlobalTemplate: PresenceTextTemplatePair;
-  onUpdate: (key: TemplateKey, field: TemplateField, value: string) => void;
-  onInsertPlaceholder: (field: TemplateField, placeholder: string) => void;
-  t: (key: string, options?: Record<string, string>) => string;
-}
-
-const TemplateFieldEditor = ({
-  field,
-  selectedHeroCodename,
-  selectedRow,
-  selectedTemplate,
-  selectedGlobalTemplate,
-  onUpdate,
-  onInsertPlaceholder,
-  t,
-}: TemplateFieldEditorProps) => {
-  const fallback = formatFallbackText(
-    fieldFallback(selectedGlobalTemplate, selectedRow, field),
-    t("gamePresence.emptyLine"),
-  );
-
-  return (
-    <div className='space-y-2'>
-      <div className='flex items-center justify-between gap-3'>
-        <Label
-          className='font-medium text-sm'
-          htmlFor={`${selectedHeroCodename ?? "global"}-${selectedRow.key}-${field}`}>
-          {field === "details"
-            ? t("gamePresence.detailsTemplate")
-            : t("gamePresence.stateTemplate")}
-        </Label>
-        <p className='text-muted-foreground text-xs'>
-          {selectedHeroCodename === null
-            ? t("gamePresence.defaultValue", { value: fallback })
-            : t("gamePresence.fallbackValue", { value: fallback })}
-        </p>
-      </div>
-      <Input
-        className='h-10 bg-background/70'
-        id={`${selectedHeroCodename ?? "global"}-${selectedRow.key}-${field}`}
-        name={`${selectedRow.key}-${field}`}
-        onChange={(event) =>
-          onUpdate(selectedRow.key, field, event.target.value)
-        }
-        placeholder={
-          selectedHeroCodename === null
-            ? fieldFallback(selectedGlobalTemplate, selectedRow, field)
-            : t("gamePresence.heroOverrides.inheritPlaceholder")
-        }
-        value={selectedTemplate[field]}
-      />
-      <div className='space-y-1.5'>
-        <p className='text-muted-foreground text-xs'>
-          {field === "details"
-            ? t("gamePresence.insertIntoDetails")
-            : t("gamePresence.insertIntoState")}
-        </p>
-        <PlaceholderButtons
-          field={field}
-          onInsert={onInsertPlaceholder}
-          t={t}
-        />
-      </div>
-    </div>
-  );
-};
-
-function renderPreviewText(
-  template: string,
-  fallback: string,
-  sampleValues: SamplePresenceValues,
-): string {
-  const source = template.trim() === "" ? fallback : template;
-  const rendered = source
-    .replace("{heroPresence}", sampleValues.heroPresence)
-    .replace("{hero}", sampleValues.hero)
-    .replace("{mode}", sampleValues.mode)
-    .replace("{partySize}", sampleValues.partySize)
-    .replace("{partyMax}", sampleValues.partyMax)
-    .trim();
-
-  return rendered.slice(0, 128);
-}
-
-function fieldFallback(
-  template: PresenceTextTemplatePair,
-  row: TemplateRow,
-  field: TemplateField,
-): string {
-  const globalValue = template[field].trim();
-  if (globalValue !== "") {
-    return globalValue;
-  }
-
-  return field === "details" ? row.defaultDetails : row.defaultState;
-}
-
-function formatFallbackText(value: string, emptyText: string): string {
-  return value.trim() === "" ? emptyText : value;
-}
-
-interface DiscordPreviewCardProps {
-  previewDetails: string;
-  previewState: string;
-  noDetailsText: string;
-}
-
-const DiscordPreviewCard = ({
-  previewDetails,
-  previewState,
-  noDetailsText,
-}: DiscordPreviewCardProps) => (
-  <div className='rounded-xl bg-[#1e1f24] p-4 text-white shadow-sm'>
-    <div className='mb-3 flex items-center justify-between gap-3'>
-      <p className='font-semibold text-sm'>Playing</p>
-      <div className='flex gap-1'>
-        <span className='size-1 rounded-full bg-white/35' />
-        <span className='size-1 rounded-full bg-white/35' />
-        <span className='size-1 rounded-full bg-white/35' />
-      </div>
-    </div>
-    <div className='flex gap-3'>
-      <img
-        alt='Deadlock'
-        className='size-16 shrink-0 rounded-xl object-cover'
-        src={PREVIEW_LARGE_IMAGE_URL}
-      />
-      <div className='min-w-0 py-0.5'>
-        <p className='truncate font-semibold text-sm'>Deadlock</p>
-        <p className='truncate text-sm text-white/90'>
-          {previewDetails || noDetailsText}
-        </p>
-        {previewState && (
-          <p className='truncate text-sm text-white/90'>{previewState}</p>
-        )}
-        <p className='mt-1 text-emerald-300 text-sm tabular-nums'>
-          3 of 6, 01:24
-        </p>
-      </div>
-    </div>
-  </div>
-);
 
 export const GamePresenceSettings = () => {
   const { t } = useTranslation();

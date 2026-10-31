@@ -3,19 +3,15 @@ import { useEffect, useRef, useState } from "react";
 import { LaunchOverlay, useLaunchSequence } from "./launch";
 import { OccultGeometry } from "./occult-geometry";
 import { PreviewStateProvider, usePreviewState } from "./preview-state";
-import {
-  CrosshairsScreen,
-  ImageScreen,
-  ServersScreen,
-  SkinsScreen,
-} from "./screens-customize";
-import {
-  DashboardScreen,
-  DownloadsScreen,
-  LibraryScreen,
-  StoreScreen,
-} from "./screens-mods";
-import { SettingsScreen } from "./screens-settings";
+import { CrosshairsScreen } from "./crosshairs-screen";
+import { ImageScreen } from "./image-screen";
+import { ServersScreen } from "./servers-screen";
+import { SkinsScreen } from "./skins-screen";
+import { DashboardScreen } from "./dashboard-screen";
+import { DownloadsScreen } from "./downloads-screen";
+import { LibraryScreen } from "./library-screen";
+import { StoreScreen } from "./store-screen";
+import { SettingsScreen } from "./settings-screen";
 import { BottomBar, PreviewToast, Sidebar, Titlebar } from "./shell";
 import { type ScreenId, usePreviewNavigation } from "./store";
 import { getPreviewTheme, themeStyle } from "./themes";

@@ -1,3 +1,10 @@
+import { useGuardedSections } from "@/hooks/performance/use-guarded-sections";
+import {
+  groupReviewEntries,
+  summarizeSections,
+} from "@/lib/performance/import/review";
+import type { ImportReport } from "@/types/generated/ImportReport";
+import type { ResolvedConfig } from "@/types/generated/ResolvedConfig";
 import { Switch } from "@deadlock-mods/ui/components/switch";
 import {
   CheckCircleIcon,
@@ -9,26 +16,16 @@ import {
   ShieldWarningIcon,
   WarningIcon,
 } from "@phosphor-icons/react";
-import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { useGuardedSections } from "@/hooks/performance/use-guarded-sections";
-import {
-  commonSinceBuild,
-  entryDisplayName,
-  groupReviewEntries,
-  summarizeSections,
-} from "@/lib/performance/import/review";
-import type { IgnoredKind } from "@/types/generated/IgnoredKind";
-import type { IgnoredPart } from "@/types/generated/IgnoredPart";
-import type { ImportReport } from "@/types/generated/ImportReport";
-import type { ResolvedConfig } from "@/types/generated/ResolvedConfig";
-import type { ResolvedEntry } from "@/types/generated/ResolvedEntry";
+import { IgnoredParts } from "./ignored-parts";
 import {
   EntryList,
   EntryReason,
   EntryValue,
   ReviewSection,
 } from "./review-section";
+import { Tile } from "./tile";
+import { WontApplySummary } from "./wont-apply-summary";
 
 const WILL_APPLY_PREVIEW = 6;
 
@@ -40,138 +37,6 @@ type ImportReviewProps = {
   onCameraIncludedChange: (included: boolean) => void;
   includeEngineSections: boolean;
   onIncludeEngineSectionsChange: (include: boolean) => void;
-};
-
-const Tile = ({
-  icon,
-  count,
-  label,
-}: {
-  icon: ReactNode;
-  count: number;
-  label: string;
-}) => (
-  <div className='rounded-md border bg-card/40 px-3 py-2.5'>
-    <div className='flex items-center gap-2'>
-      {icon}
-      <span className='font-semibold text-xl tabular-nums'>{count}</span>
-    </div>
-    <p className='mt-0.5 truncate text-muted-foreground text-xs' title={label}>
-      {label}
-    </p>
-  </div>
-);
-
-const firstName = (entries: ResolvedEntry[]) =>
-  entries[0] ? entryDisplayName(entries[0].path) : "";
-
-const WontApplySummary = ({
-  blocked,
-  removed,
-  refused,
-}: {
-  blocked: ResolvedEntry[];
-  removed: ResolvedEntry[];
-  refused: ResolvedEntry[];
-}) => {
-  const { t } = useTranslation();
-  const build = commonSinceBuild(blocked);
-  const sentences = [
-    blocked.length > 0 &&
-      (build === null
-        ? t("performance.import.review.wontApply.blocked", {
-            count: blocked.length,
-            example: firstName(blocked),
-          })
-        : t("performance.import.review.wontApply.blockedSince", {
-            count: blocked.length,
-            build,
-            example: firstName(blocked),
-          })),
-    removed.length > 0 &&
-      t("performance.import.review.wontApply.removed", {
-        count: removed.length,
-        example: firstName(removed),
-      }),
-    refused.length > 0 &&
-      t("performance.import.review.wontApply.refused", {
-        count: refused.length,
-      }),
-  ].filter(Boolean);
-  return <>{sentences.join(" ")}</>;
-};
-
-const IGNORED_ORDER: IgnoredKind[] = [
-  "searchPaths",
-  "modManagerMarkers",
-  "listSection",
-  "rootKey",
-  "editorSection",
-  "machineSpecific",
-  "bind",
-  "alias",
-  "exec",
-  "consoleCommand",
-  "duplicateKey",
-  "parseError",
-];
-
-const IgnoredParts = ({
-  ignored,
-  excluded,
-}: {
-  ignored: IgnoredPart[];
-  excluded: ResolvedEntry[];
-}) => {
-  const { t } = useTranslation();
-  const byKind = IGNORED_ORDER.map((kind) => ({
-    kind,
-    parts: ignored.filter((part) => part.kind === kind),
-  })).filter((group) => group.parts.length > 0);
-
-  return (
-    <ul className='divide-y divide-border/60 text-xs'>
-      {byKind.map(({ kind, parts }) => (
-        <li className='px-3 py-2' key={kind}>
-          <div className='flex items-baseline justify-between gap-4'>
-            <span className='font-medium'>
-              {t(`performance.import.review.ignored.kinds.${kind}`)}
-            </span>
-            <span className='font-mono text-muted-foreground tabular-nums'>
-              {parts.length}
-            </span>
-          </div>
-          <p className='mt-1 break-words font-mono text-muted-foreground'>
-            {parts
-              .map((part) =>
-                part.line === null
-                  ? part.detail
-                  : t("performance.import.review.ignored.atLine", {
-                      detail: part.detail,
-                      line: part.line,
-                    }),
-              )
-              .join(", ")}
-          </p>
-        </li>
-      ))}
-      {excluded.length > 0 && (
-        <li className='px-3 py-2'>
-          <div className='flex items-baseline justify-between gap-4'>
-            <span className='font-medium'>
-              {t("performance.import.review.ignored.neverWritten")}
-            </span>
-            <span className='font-mono text-muted-foreground tabular-nums'>
-              {excluded.length}
-            </span>
-          </div>
-          <p className='mt-1 break-words font-mono text-muted-foreground'>
-            {excluded.map((entry) => entryDisplayName(entry.path)).join(", ")}
-          </p>
-        </li>
-      )}
-    </ul>
-  );
 };
 
 export const ImportReview = ({

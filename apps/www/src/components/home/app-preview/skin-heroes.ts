@@ -1,0 +1,16 @@
+export const HEROES = [
+  "Yamato",
+  "Celeste",
+  "Billy",
+  "Holliday",
+  "Ivy",
+  "Lash",
+  "Shiv",
+  "Viscous",
+  "Vyper",
+  "Wraith",
+  "Abrams",
+  "Haze",
+  "Infernus",
+  "Mina",
+];
