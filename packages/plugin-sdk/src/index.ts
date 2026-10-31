@@ -34,3 +34,13 @@ export {
   parseFrameMessage,
 } from "./frame";
 export type { JsonObject, JsonPrimitive, JsonValue } from "./json";
+export {
+  HOST_EVENT_TYPES,
+  type EventBatch,
+  type EventSnapshot,
+  type HostEvent,
+  type HostEventType,
+  type EventClient,
+  type EventReadOptions,
+  type EventSubscriptionOptions,
+} from "./events";

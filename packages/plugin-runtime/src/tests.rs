@@ -13,6 +13,133 @@ const CHILD_ENV: &str = "DMM_PLUGIN_WORKER_TEST_CHILD";
 const ID: &str = "example.creator-workspace-bridge";
 
 #[test]
+fn event_broker_enforces_scopes_and_revocation_for_views_and_workers() {
+  use crate::event_contract::{GameLifecycle, HostEventData};
+  let fixture = fixture();
+  fixture.install_with(
+    "1.0.0",
+    json!([{ "id": "events", "types": ["game.started"] }]),
+  );
+  let generation = fixture.enable();
+  let snapshot = fixture
+    .call(
+      generation,
+      "host.events.snapshot",
+      json!({ "types": ["game.started"] }),
+    )
+    .unwrap();
+  let cursor = snapshot["value"]["cursor"].as_str().unwrap();
+  fixture.host.publish_event(
+    HostEventData::GameStarted(GameLifecycle { session_id: None }),
+    None,
+  );
+  let read = json!({ "types": ["game.started"], "after": cursor });
+  let batch = fixture.hostcall(generation, "events.read", read.clone());
+  assert_eq!(batch["value"]["events"][0]["type"], "game.started");
+  let view = fixture.call(generation, "host.events.read", read).unwrap();
+  assert_eq!(batch, view);
+  let denied = fixture
+    .call(
+      generation,
+      "host.events.snapshot",
+      json!({ "types": ["game.exited"] }),
+    )
+    .unwrap();
+  assert_eq!(denied["error"]["code"], "permission_denied");
+  fixture.host.revoke(ID).unwrap();
+  assert!(
+    fixture
+      .call(
+        generation,
+        "host.events.snapshot",
+        json!({ "types": ["game.started"] })
+      )
+      .is_err()
+  );
+}
+
+#[test]
+fn event_permissions_do_not_follow_from_game_permission_or_accept_unknown_types() {
+  let fixture = fixture();
+  fixture.install_with("1.0.0", json!([{ "id": "game" }]));
+  let generation = fixture.enable();
+  let denied = fixture
+    .call(
+      generation,
+      "host.events.snapshot",
+      json!({ "types": ["game.started"] }),
+    )
+    .unwrap();
+  assert_eq!(denied["error"]["code"], "permission_denied");
+  for types in [
+    json!([]),
+    json!(["game.*"]),
+    json!(["game.started", "game.started"]),
+    json!(["future.event"]),
+  ] {
+    let invalid = archive_with(
+      &fixture,
+      "2.0.0",
+      json!([{ "id": "events", "types": types }]),
+    );
+    assert!(fixture.host.install(&invalid).is_err());
+  }
+}
+
+#[test]
+fn additional_event_types_require_update_consent() {
+  let fixture = fixture();
+  fixture.install_with(
+    "1.0.0",
+    json!([{ "id": "events", "types": ["game.started"] }]),
+  );
+  fixture.enable();
+  let updated = fixture.install_with(
+    "2.0.0",
+    json!([{ "id": "events", "types": ["game.started", "downloads.completed"] }]),
+  );
+  assert!(updated.pending_update.is_some());
+}
+
+#[test]
+fn ui_only_plugins_can_read_events_without_starting_a_worker() {
+  let fixture = fixture();
+  let mut manifest: Value = serde_json::from_str(&package::tests::manifest_json("1.0.0")).unwrap();
+  manifest.as_object_mut().unwrap().remove("backend");
+  manifest["permissions"]["required"] =
+    json!([{ "id": "events", "types": ["downloads.completed"] }]);
+  let archive = fixture.dir.path().join("ui-only.zip");
+  write_archive(
+    &archive,
+    &[
+      ("manifest.json", manifest.to_string().as_bytes()),
+      ("ui/index.html", b"<!doctype html>"),
+    ],
+  );
+  fixture.host.install(&archive).unwrap();
+  let generation = fixture.enable();
+  let snapshot = fixture
+    .call(
+      generation,
+      "host.events.snapshot",
+      json!({ "types": ["downloads.completed"] }),
+    )
+    .unwrap();
+  assert_eq!(snapshot["ok"], true);
+  assert!(snapshot["value"]["cursor"].is_string());
+  assert_eq!(
+    fixture.call(generation, "status", json!({})).unwrap()["error"]["code"],
+    "no_backend"
+  );
+  assert_eq!(
+    fixture
+      .call(generation, "host.events.publish", json!({}))
+      .unwrap()["error"]["code"],
+    "unknown_method"
+  );
+}
+
+#[test]
 fn worker_child_process() {
   if std::env::var_os(CHILD_ENV).is_some() {
     std::process::exit(worker::run());
@@ -178,7 +305,7 @@ fn install_starts_disabled_and_requires_consent() {
   let summary = fixture.install("0.1.0");
   assert!(!summary.enabled);
   assert_eq!(summary.status, registry::ExternalPluginStatus::NeedsConsent);
-  assert_eq!(summary.required_permissions.len(), 6);
+  assert_eq!(summary.required_permissions.len(), 7);
   assert!(fixture.host.set_enabled(ID, true).is_err());
   assert!(fixture.host.view(ID).is_err());
 }
@@ -227,7 +354,7 @@ fn grants_take_exactly_the_resources_the_manifest_asks_for() {
   assert_eq!(file.kind, ExternalPluginFileKind::File);
   assert!(!file.path.starts_with(r"\\?\"), "{}", file.path);
   assert_eq!(granted.profile_folder.as_deref(), Some("test-profile"));
-  assert_eq!(granted.permissions.len(), 6);
+  assert_eq!(granted.permissions.len(), 7);
   assert_eq!(summary.status, registry::ExternalPluginStatus::Disabled);
 
   fixture.host.revoke(ID).unwrap();
@@ -700,6 +827,7 @@ fn update_with_new_permissions_waits_for_approval() {
     [
       permission(json!({ "id": "network", "hosts": ["api.example.com"] })),
       permission(json!({ "id": "game" })),
+      permission(json!({ "id": "events", "types": ["game.started"] })),
       permission(json!({ "id": "notifications" })),
     ]
   );
@@ -723,7 +851,7 @@ fn update_with_new_permissions_waits_for_approval() {
   assert!(applied.enabled);
   assert!(applied.pending_update.is_none());
   let grant = applied.grant.unwrap();
-  assert_eq!(grant.permissions.len(), 6);
+  assert_eq!(grant.permissions.len(), 7);
   assert_eq!(grant.profile_folder.as_deref(), Some("test-profile"));
   assert_eq!(grant.file.unwrap().name, "output.vpk");
   assert_eq!(package_dirs(&fixture), 1);
@@ -800,7 +928,7 @@ fn removed_requests_lose_approval_and_need_consent_when_reintroduced() {
     .collect();
   let narrower = fixture.install_with("0.2.0", json!(without_network));
   assert!(narrower.enabled);
-  assert_eq!(narrower.grant.unwrap().permissions.len(), 5);
+  assert_eq!(narrower.grant.unwrap().permissions.len(), 6);
   let reintroduced = fixture.install_with("0.3.0", full_permissions());
   assert_eq!(reintroduced.version, "0.2.0");
   assert_eq!(

@@ -6290,6 +6290,7 @@
         "networkOnly": "{{name}} tried to connect to {{host}}. It can only connect to {{hosts}}.",
         "networkAny": "{{name}} tried to connect to a site it wasn't given.",
         "game": "{{name}} tried to check whether Deadlock is running without access.",
+        "events": "{{name}} tried to observe app activity outside its approved event types.",
         "storage": "{{name}} tried to keep data without access to its own storage.",
         "notifications": "{{name}} tried to show a notification without access.",
         "unknown": "{{name}} asked for something plugins can't do ({{method}}).",
@@ -6493,6 +6494,13 @@
         "scope": "Running or not",
         "short": "see whether Deadlock is running"
       },
+      "events": {
+        "title": "Observe selected app activity",
+        "detail": "Receive the listed game, mod, download, and profile updates across profiles.",
+        "note": "Player names, account IDs, file paths, and download URLs are omitted",
+        "scope": "Selected app activity",
+        "short": "observe selected app activity"
+      },
       "storage": {
         "title": "Keep its own data",
         "detail": "Private storage, removed with the plugin.",
@@ -6536,6 +6544,7 @@
       "blockedNetwork": "Tried to connect to {{host}}. Blocked.",
       "blockedNetworkAny": "Tried to connect to a site it was not given. Blocked.",
       "blockedGame": "Tried to check the game without access. Blocked.",
+      "blockedEvents": "Tried to observe app activity without access. Blocked.",
       "blockedStorage": "Tried to use storage without access. Blocked.",
       "blockedNotifications": "Tried to show a notification without access. Blocked.",
       "blockedMethod": "Called {{method}}, which DMM does not offer. Blocked.",

@@ -7,6 +7,7 @@ license = "GPL-3.0"
 publish = false
 
 [dependencies]
+dmm-plugin-sdk = { path = "../plugin-sdk-rust", features = ["bindings"] }
 base64 = "0.22"
 chrono = "0.4"
 log = "0.4"

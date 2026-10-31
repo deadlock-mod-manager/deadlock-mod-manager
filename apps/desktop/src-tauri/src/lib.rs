@@ -292,6 +292,7 @@ pub fn run() {
           #[cfg(windows)]
           plugin_host.start_scheduler();
         }
+        external_plugins::events::init(&plugin_host, app.handle().clone());
         app.manage(plugin_host);
       }
 

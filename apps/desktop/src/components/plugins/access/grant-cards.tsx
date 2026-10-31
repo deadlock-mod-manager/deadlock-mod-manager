@@ -8,6 +8,7 @@ import type { Icon } from "@phosphor-icons/react";
 import {
   BellIcon,
   EraserIcon,
+  EyeIcon,
   FileIcon,
   FolderOpenIcon,
   FolderSimpleIcon,
@@ -315,6 +316,17 @@ export const PermissionGrantCards = ({
               size: formatPluginSize(plugin.storageBytes),
             })}
             scopeIcon={HardDriveIcon}
+            tokens={permissionTokens(permission)}
+          />
+        );
+      case "events":
+        return (
+          <GrantCard
+            action={null}
+            copy={copy}
+            key={permission.id}
+            scope={t("plugins.permissions.events.scope")}
+            scopeIcon={EyeIcon}
             tokens={permissionTokens(permission)}
           />
         );

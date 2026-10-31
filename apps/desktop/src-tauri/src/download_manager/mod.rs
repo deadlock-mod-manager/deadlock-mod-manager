@@ -418,6 +418,13 @@ impl DownloadManager {
               }
             }
 
+            #[cfg(feature = "plugins")]
+            crate::external_plugins::events::downloads::finished(
+              queued.operation_id,
+              &queued.task,
+              result.as_ref().map(|_| ()),
+            );
+
             if let Some(completion) = queued.completion {
               completion
                 .send(result.map_err(|error| error.to_string()))
@@ -440,6 +447,9 @@ impl DownloadManager {
     app_handle: AppHandle,
   ) -> Result<PreparedDownload, Error> {
     let mod_id = task.mod_id.clone();
+
+    #[cfg(feature = "plugins")]
+    crate::external_plugins::events::downloads::started(operation_id, task);
 
     app_handle
       .emit(
@@ -1306,6 +1316,12 @@ impl DownloadManager {
     source: Option<DownloadSource>,
     app_handle: &AppHandle,
   ) {
+    #[cfg(feature = "plugins")]
+    crate::external_plugins::events::downloads::progress(
+      mod_id,
+      accepted.total_downloaded,
+      accepted.total_size,
+    );
     app_handle
       .emit(
         "download-progress",
@@ -1709,13 +1725,19 @@ impl DownloadManager {
       }
       (dropped, cancelled)
     };
-    for _ in &dropped {
+    for queued in &dropped {
+      #[cfg(feature = "plugins")]
+      crate::external_plugins::events::downloads::finished(
+        queued.operation_id,
+        &queued.task,
+        Err(&Error::DownloadCancelled),
+      );
       // Reported like a cancelled running download, so a paused one settles too.
       self
         .app_handle
         .emit(
           "download-error",
-          DownloadErrorEvent::new(mod_id.to_string(), &Error::DownloadCancelled),
+          DownloadErrorEvent::new(queued.task.mod_id.clone(), &Error::DownloadCancelled),
         )
         .ok();
     }
@@ -1782,6 +1804,14 @@ impl DownloadManager {
       }
       (dropped, cancelled)
     };
+    #[cfg(feature = "plugins")]
+    for queued in &dropped {
+      crate::external_plugins::events::downloads::finished(
+        queued.operation_id,
+        &queued.task,
+        Err(&Error::DownloadCancelled),
+      );
+    }
     // Settles the window's entry, as `cancel_download` does; a paused download
     // waits here instead of in the cancelled active downloads. Only the window's
     // own downloads: batch callers hear through their completion channel, and
@@ -1834,6 +1864,16 @@ impl DownloadManager {
         },
       )
       .ok();
+    #[cfg(feature = "plugins")]
+    if active.contains_key(mod_id) {
+      crate::external_plugins::events::downloads::paused(mod_id);
+    } else if let Some(queued) = queue.iter().find(|queued| queued.task.mod_id == mod_id) {
+      crate::external_plugins::events::downloads::queued_status(
+        queued.operation_id,
+        &queued.task,
+        true,
+      );
+    }
     Ok(())
   }
 
@@ -1867,6 +1907,16 @@ impl DownloadManager {
           },
         )
         .ok();
+      #[cfg(feature = "plugins")]
+      if active.contains_key(mod_id) {
+        crate::external_plugins::events::downloads::resumed(mod_id);
+      } else if let Some(queued) = queue.iter().find(|queued| queued.task.mod_id == mod_id) {
+        crate::external_plugins::events::downloads::queued_status(
+          queued.operation_id,
+          &queued.task,
+          false,
+        );
+      }
     }
     self.process_queue().await;
     Ok(())

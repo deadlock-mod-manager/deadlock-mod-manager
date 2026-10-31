@@ -4,6 +4,15 @@ import { parseEnvelope } from "./envelope";
 import { PluginCallError } from "./errors";
 import { frameTransport } from "./frame";
 import type { JsonObject, JsonValue } from "./json";
+import {
+  createEventClient,
+  decodeEventBatch,
+  decodeEventSnapshot,
+  type EventClient,
+  type EventBatch,
+  type EventSnapshot,
+  type HostEventType,
+} from "./events";
 
 /** Plugin SDK contract version; matches `sdkVersion` in the plugin manifest. */
 export const SDK_VERSION = 1;
@@ -27,6 +36,7 @@ export type PluginCommand<Input extends JsonObject, Output> = {
 };
 
 export type PluginClient = {
+  events: EventClient;
   /** Calls a command defined with `defineCommand`. */
   call<Input extends JsonObject, Output>(
     command: PluginCommand<Input, Output>,
@@ -153,6 +163,24 @@ export function createPluginClient(
 
   return {
     call,
+    events: createEventClient({
+      snapshot: (types) =>
+        call(
+          defineCommand<{ types: HostEventType[] }, EventSnapshot>(
+            "host.events.snapshot",
+            decodeEventSnapshot,
+          ),
+          { types },
+        ),
+      read: ({ types, after, limit = 100 }) =>
+        call(
+          defineCommand<
+            { types: HostEventType[]; after: string; limit: number },
+            EventBatch
+          >("host.events.read", decodeEventBatch),
+          { types, after, limit },
+        ),
+    }),
     status: (decode) => call(defineCommand("status", decode), {}),
     deploy: <Input extends JsonObject, Output>(
       input: Input,

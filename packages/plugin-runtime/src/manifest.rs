@@ -1,3 +1,4 @@
+use dmm_plugin_sdk::events::HostEventType;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 use ts_rs::TS;
@@ -18,6 +19,7 @@ pub enum ExternalPluginPermissionId {
   Mods,
   Network,
   Game,
+  Events,
   Storage,
   Notifications,
 }
@@ -75,6 +77,9 @@ pub enum ExternalPluginPermission {
     hosts: Vec<String>,
   },
   Game {},
+  Events {
+    types: Vec<HostEventType>,
+  },
   Storage {},
   Notifications {},
 }
@@ -98,6 +103,9 @@ enum StrictPermission {
     hosts: Vec<String>,
   },
   Game {},
+  Events {
+    types: Vec<HostEventType>,
+  },
   Storage {},
   Notifications {},
 }
@@ -117,6 +125,7 @@ impl<'de> Deserialize<'de> for ExternalPluginPermission {
       StrictPermission::Mods { access, profiles } => Self::Mods { access, profiles },
       StrictPermission::Network { hosts } => Self::Network { hosts },
       StrictPermission::Game {} => Self::Game {},
+      StrictPermission::Events { types } => Self::Events { types },
       StrictPermission::Storage {} => Self::Storage {},
       StrictPermission::Notifications {} => Self::Notifications {},
     })
@@ -130,6 +139,7 @@ impl ExternalPluginPermission {
       Self::Mods { .. } => ExternalPluginPermissionId::Mods,
       Self::Network { .. } => ExternalPluginPermissionId::Network,
       Self::Game {} => ExternalPluginPermissionId::Game,
+      Self::Events { .. } => ExternalPluginPermissionId::Events,
       Self::Storage {} => ExternalPluginPermissionId::Storage,
       Self::Notifications {} => ExternalPluginPermissionId::Notifications,
     }
@@ -185,6 +195,12 @@ impl ExternalPluginPermission {
           ));
         }
         sort_unique(hosts, "network hosts")
+      }
+      Self::Events { types } => {
+        if types.is_empty() || types.len() > 64 {
+          return Err("events types must list 1-64 supported event names".into());
+        }
+        sort_unique(types, "events types")
       }
       Self::Game {} | Self::Storage {} | Self::Notifications {} => Ok(()),
     }

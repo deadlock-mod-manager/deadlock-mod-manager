@@ -70,6 +70,8 @@ const blockedTitle = (
         : t("plugins.activity.blockedNetworkAny");
     case "game":
       return t("plugins.activity.blockedGame");
+    case "events":
+      return t("plugins.activity.blockedEvents");
     case "storage":
       return t("plugins.activity.blockedStorage");
     case "notifications":

@@ -9,5 +9,6 @@ export type ExternalPluginPermissionId =
   | "mods"
   | "network"
   | "game"
+  | "events"
   | "storage"
   | "notifications";

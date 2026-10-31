@@ -38,6 +38,7 @@ const CATALOG_ORDER: ExternalPluginPermissionId[] = [
   "mods",
   "network",
   "game",
+  "events",
   "storage",
   "notifications",
 ];
@@ -67,6 +68,7 @@ export const permissionNeeds = (
       return permission.profiles === "picked" ? "profile" : null;
     case "network":
     case "game":
+    case "events":
     case "storage":
     case "notifications":
       return null;
@@ -101,6 +103,8 @@ const samePermission = (
       );
     case "network":
       return b.id === "network" && sameSet(a.hosts, b.hosts);
+    case "events":
+      return b.id === "events" && sameSet(a.types, b.types);
     case "game":
     case "storage":
     case "notifications":
@@ -209,6 +213,14 @@ const describePermission = (
         note: t("plugins.permissions.storage.note"),
         needs,
       };
+    case "events":
+      return {
+        icon: EyeIcon,
+        title: t("plugins.permissions.events.title"),
+        detail: t("plugins.permissions.events.detail"),
+        note: t("plugins.permissions.events.note"),
+        needs,
+      };
     case "notifications":
       return {
         icon: BellIcon,
@@ -248,6 +260,7 @@ const permissionPhrase = (
         hosts: formatList(language, permission.hosts, "conjunction"),
       });
     case "game":
+    case "events":
     case "storage":
     case "notifications":
       return t(`plugins.permissions.${permission.id}.short`);
@@ -287,6 +300,8 @@ export const permissionTokens = (permission: ExternalPluginPermission) => {
       return [permission.id, ...permission.access, permission.profiles];
     case "network":
       return [permission.id, ...permission.hosts];
+    case "events":
+      return [permission.id, ...permission.types];
     case "game":
     case "storage":
     case "notifications":

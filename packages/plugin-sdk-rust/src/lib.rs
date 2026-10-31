@@ -12,6 +12,7 @@
 pub mod abi;
 pub mod api;
 mod envelope;
+pub mod events;
 #[cfg(target_arch = "wasm32")]
 #[doc(hidden)]
 pub mod guest;

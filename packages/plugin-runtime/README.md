@@ -97,8 +97,75 @@ sorted on parse, so a request is unchanged exactly when it is equal.
 | `mods`          | `access`: non-empty, duplicate-free set of `read` and `install`; `profiles`: `picked` or `all`; `install` needs `picked`        | `mods.list` with `read`; `mods.install`, `mods.installed` with `install`           |
 | `network`       | `hosts`: 1-10 distinct lowercase DNS names with at least two labels; no scheme, port, wildcard, IP literal or `localhost`       | `http.fetch`                                                                       |
 | `game`          | none                                                                                                                           | `game.state`                                                                       |
+| `events`        | `types`: 1-64 distinct supported event names, without wildcards                                                                 | `events.snapshot`, `events.read`                                                   |
 | `storage`       | none                                                                                                                           | `storage.get`, `storage.set`                                                       |
 | `notifications` | none                                                                                                                           | `notifications.show`                                                               |
+
+## Host events
+
+An `events` grant authorizes observations across profiles for exactly its
+listed types. It does not authorize mod operations, file access, network access,
+or another event type. The existing `game` grant still returns only `{running}`.
+Adding or changing event types in an update requires consent.
+
+The catalog is defined by `event_catalog!` in
+`packages/plugin-sdk-rust/src/events.rs`. It generates the Rust data union,
+permission names, and TypeScript bindings. Regenerate the SDK with
+`cargo test --manifest-path packages/plugin-sdk-rust/Cargo.toml --features bindings`;
+regenerate desktop permissions with `pnpm --filter desktop generate-types`.
+
+| Domain | Supported types |
+| --- | --- |
+| Game | `game.started`, `game.exited`, `game.activity.changed`, `game.hero.changed`, `game.party.changed` |
+| Match | `matchmaking.started`, `matchmaking.stopped`, `match.joined`, `match.phase.changed`, `match.left`, `match.scoreboard.updated` |
+| Session | `session.classified` |
+| Mods | `mods.install.started`, `mods.install.completed`, `mods.install.failed`, `mods.disabled`, `mods.updated`, `mods.removed` |
+| Downloads | `downloads.started`, `downloads.progress`, `downloads.completed`, `downloads.failed`, `downloads.cancelled`, `downloads.paused`, `downloads.resumed` |
+| Profiles | `profiles.created`, `profiles.activated`, `profiles.removed` |
+
+Mod installation here is the existing enable/install operation. Completion is
+published after the manifest commits; failure includes rollback failures. A
+download completes after its processing/preparation succeeds, independently of
+whether a later install succeeds. Match lobby departure does not establish a
+match result. Scoreboards are HUD observations, not individual combat events.
+
+Events contain `id`, `schemaVersion: 1`, `observedAt`, nullable `operationId`,
+`type`, and typed `data`. IDs and match/lobby IDs are strings. Payloads omit
+player names, account IDs, local paths, download URLs, raw errors, and logs.
+Scoreboard slots identify positions within the reported team, not stable player
+identities. Unavailable HUD values remain `null`.
+
+- `events.snapshot({types})` captures `{latest, cursor}` atomically. `latest`
+  contains at most one retained observation per requested event type, with its
+  original timestamp. It is not a full mod inventory, download list, or current
+  state object: use the domain's query API with its own permission for those.
+- Initial log scans seed observations without replaying old transitions. Sources
+  can initialize after a snapshot; refresh snapshots to obtain those observations.
+  An empty `latest` means nothing has been observed yet for those types.
+- `events.read({types, after, limit?})` returns `{events, cursor, hasMore}`.
+  First obtain a snapshot cursor. Continue with the same type filter and the
+  returned cursor, including after empty batches. Limit defaults to 100 and
+  accepts 1-100; batches also have a 256 KiB payload budget.
+- Cursors are bound to the host run, plugin ID, and generation. Replay starts
+  at that generation's first snapshot. A plugin cannot forge access to earlier
+  history. Repeated reads can repeat IDs; commit a cursor after handling its batch.
+- Retention is in memory, bounded to 512 entries with a 32 KiB per-event cap.
+  Download progress and scoreboards coalesce per operation. Once required
+  history expires, `cursor_expired` requires a fresh snapshot. There is no
+  exactly-once delivery or durable replay across app restarts.
+- Disable, revoke, update, quarantine, and host suspension retire event sessions.
+  Every read rechecks the current generation. Plugin code cannot publish events.
+
+Views, including UI-only plugins, use the reserved `host.events.snapshot` and
+`host.events.read` bridge commands through `client.events`. Backends use
+`api::events_snapshot` and `api::events_read` from their existing two-second
+`tick`. No guest ABI change or additional IPC permission is needed.
+
+Enabled plugins with game/match event grants keep the shared game watcher and
+live-match reader active independently of Discord and the Live Stats tab.
+Detector polling adds latency beyond the plugin tick. Console-derived data
+still requires `-condebug`; scoreboards require the enabled live HUD bridge.
+`session.classified` follows the existing launch-health setting.
 
 ## Lifecycle
 

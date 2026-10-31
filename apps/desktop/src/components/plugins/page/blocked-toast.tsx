@@ -103,6 +103,8 @@ const describeBlocked = (
     }
     case "game":
       return t("plugins.page.blocked.game", { name });
+    case "events":
+      return t("plugins.page.blocked.events", { name });
     case "storage":
       return t("plugins.page.blocked.storage", { name });
     case "notifications":

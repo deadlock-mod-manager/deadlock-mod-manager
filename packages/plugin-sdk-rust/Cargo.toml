@@ -9,10 +9,14 @@ publish = false
 [lib]
 path = "src/lib.rs"
 
+[features]
+bindings = ["dep:ts-rs"]
+
 [dependencies]
 base64 = "0.22"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+ts-rs = { version = "11.1.0", features = ["serde-compat"], optional = true }
 
 # Standalone so tests run with their own lockfile and target directory,
 # independent of the desktop Cargo workspace.

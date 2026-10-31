@@ -22,6 +22,8 @@ pub mod methods {
   pub const MODS_INSTALLED: &str = "mods.installed";
   pub const HTTP_FETCH: &str = "http.fetch";
   pub const GAME_STATE: &str = "game.state";
+  pub const EVENTS_SNAPSHOT: &str = "events.snapshot";
+  pub const EVENTS_READ: &str = "events.read";
   pub const STORAGE_GET: &str = "storage.get";
   pub const STORAGE_SET: &str = "storage.set";
   pub const NOTIFICATIONS_SHOW: &str = "notifications.show";
@@ -44,6 +46,7 @@ pub mod host_codes {
   pub const RESPONSE_TOO_LARGE: &str = "response_too_large";
   pub const REQUEST_TOO_LARGE: &str = "request_too_large";
   pub const HOST_ERROR: &str = "host_error";
+  pub const CURSOR_EXPIRED: &str = "cursor_expired";
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -92,6 +95,9 @@ pub enum Permission {
     hosts: Vec<String>,
   },
   Game {},
+  Events {
+    types: Vec<crate::events::HostEventType>,
+  },
   Storage {},
   Notifications {},
 }
@@ -443,6 +449,25 @@ pub fn http_fetch(
 
 pub fn game_state(host: &mut impl Host) -> Result<GameState, PluginError> {
   request(host, methods::GAME_STATE, json!({}))
+}
+
+/// Captures the latest permitted observations and a matching replay cursor.
+pub fn events_snapshot(
+  host: &mut impl Host,
+  types: &[crate::events::HostEventType],
+) -> Result<crate::events::EventSnapshot, PluginError> {
+  request(host, methods::EVENTS_SNAPSHOT, json!({ "types": types }))
+}
+
+/// Non-blocking, bounded read for background `tick`. Store the returned cursor
+/// after processing; a repeated read may deliver the same event IDs.
+pub fn events_read(
+  host: &mut impl Host,
+  read: &crate::events::EventRead,
+) -> Result<crate::events::EventBatch, PluginError> {
+  let params = serde_json::to_value(read)
+    .map_err(|error| PluginError::new(codes::INVALID_REQUEST, error.to_string()))?;
+  request(host, methods::EVENTS_READ, params)
 }
 
 #[derive(Deserialize)]

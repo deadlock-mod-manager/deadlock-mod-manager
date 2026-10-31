@@ -168,6 +168,7 @@ pub(crate) mod tests {
       { "id": "mods", "access": ["read", "install"], "profiles": "picked" },
       { "id": "network", "hosts": ["api.example.com"] },
       { "id": "game" },
+      { "id": "events", "types": ["game.started"] },
       { "id": "storage" },
       { "id": "notifications" }
     ])

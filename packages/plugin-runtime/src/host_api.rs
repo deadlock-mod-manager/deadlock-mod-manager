@@ -17,6 +17,7 @@ use super::registry::{ActivePlugin, file_name};
 use super::snapshots::{Inspection, SnapshotError};
 use super::storage::{self, StorageError};
 use crate::Error;
+use dmm_plugin_sdk::events::{EventRead, HostEventType};
 use serde::Deserialize;
 use serde_json::{Value, json};
 use std::path::Path;
@@ -108,6 +109,30 @@ struct HostRequest {
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct NoParams {}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct EventTypes {
+  types: Vec<HostEventType>,
+}
+
+fn require_events(plugin: &ActivePlugin, types: &[HostEventType]) -> Result<(), HostError> {
+  let Permission::Events { types: granted } = require(plugin, Id::Events)? else {
+    unreachable!("events permission has its own catalog id")
+  };
+  if types.is_empty() || types.len() > 64 {
+    return Err(HostError::invalid(
+      "types must list 1-64 supported event names",
+    ));
+  }
+  if types.iter().any(|kind| !granted.contains(kind)) {
+    return Err(HostError::denied(
+      Id::Events,
+      "An event type was not granted",
+    ));
+  }
+  Ok(())
+}
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -474,6 +499,29 @@ fn dispatch(
       require(plugin, Id::Game)?;
       params::<NoParams>(raw)?;
       Ok(json!({ "running": host.adapter().game_running()? }))
+    }
+    "events.snapshot" => {
+      let EventTypes { types } = params(raw)?;
+      require_events(plugin, &types)?;
+      to_value(host.with_events(plugin, |journal| {
+        Ok(journal.snapshot(&plugin.id, plugin.generation, &types))
+      })?)
+    }
+    "events.read" => {
+      let request: EventRead = params(raw)?;
+      require_events(plugin, &request.types)?;
+      if !(1..=crate::events::MAX_READ_EVENTS).contains(&request.limit) {
+        return Err(HostError::invalid("limit must be between 1 and 100"));
+      }
+      to_value(host.with_events(plugin, |journal| {
+        journal.read(
+          &plugin.id,
+          plugin.generation,
+          &request.types,
+          &request.after,
+          request.limit,
+        )
+      })?)
     }
     "storage.get" => {
       require(plugin, Id::Storage)?;

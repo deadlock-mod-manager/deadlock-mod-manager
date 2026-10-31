@@ -1921,6 +1921,7 @@ version = "0.1.0"
 dependencies = [
  "base64 0.22.1",
  "chrono",
+ "dmm-plugin-sdk",
  "log",
  "serde",
  "serde_json",
@@ -1931,6 +1932,16 @@ dependencies = [
  "wasmparser 0.262.0",
  "wasmtime",
  "zip 6.0.0",
+]
+
+[[package]]
+name = "dmm-plugin-sdk"
+version = "0.1.0"
+dependencies = [
+ "base64 0.22.1",
+ "serde",
+ "serde_json",
+ "ts-rs",
 ]
 
 [[package]]

@@ -1,5 +1,6 @@
 //! Desktop adapters for the independently testable plugin runtime.
 pub mod download;
+pub mod events;
 #[cfg(not(feature = "cef"))]
 pub mod frames;
 pub mod network;

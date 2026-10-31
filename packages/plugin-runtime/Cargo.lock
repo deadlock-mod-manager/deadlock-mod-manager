@@ -500,6 +500,7 @@ version = "0.1.0"
 dependencies = [
  "base64",
  "chrono",
+ "dmm-plugin-sdk",
  "log",
  "serde",
  "serde_json",
@@ -513,6 +514,16 @@ dependencies = [
  "wasmtime",
  "wat",
  "zip",
+]
+
+[[package]]
+name = "dmm-plugin-sdk"
+version = "0.1.0"
+dependencies = [
+ "base64",
+ "serde",
+ "serde_json",
+ "ts-rs",
 ]
 
 [[package]]

@@ -3,6 +3,7 @@ import type { ExternalPluginFileAccess } from "./ExternalPluginFileAccess";
 import type { ExternalPluginFileKind } from "./ExternalPluginFileKind";
 import type { ExternalPluginModAccess } from "./ExternalPluginModAccess";
 import type { ExternalPluginProfileScope } from "./ExternalPluginProfileScope";
+import type { HostEventType } from "./HostEventType";
 
 /**
  * One permission request and its scope. Manifests are normalized on parse
@@ -26,5 +27,6 @@ export type ExternalPluginPermission =
     }
   | { id: "network"; hosts: Array<string> }
   | { id: "game" }
+  | { id: "events"; types: Array<HostEventType> }
   | { id: "storage" }
   | { id: "notifications" };

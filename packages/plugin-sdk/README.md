@@ -66,13 +66,77 @@ if (isEmbedded()) {
 
 Leave the page background transparent when embedded so the app's backdrop shows through. The app's own fonts are not available to the frame.
 
+## Host events
+
+Declare the exact types your plugin observes in its manifest:
+
+```json
+{
+  "id": "events",
+  "types": ["mods.install.completed", "downloads.failed", "game.started"]
+}
+```
+
+The host requests fresh consent if an update changes this list. Events observe
+activity across profiles; mod operations still require their own grant.
+
+```ts
+const client = createPluginClient();
+const unsubscribe = await client.events.subscribe(
+  {
+    types: ["mods.install.completed", "downloads.failed", "game.started"],
+    onSnapshot: ({ latest }) => renderLatestObservations(latest),
+    onError: (error) => showError(error.message),
+  },
+  (event) => {
+    if (event.type === "mods.install.completed") {
+      showInstalledMod(event.data.modId, event.data.profile);
+    }
+  },
+);
+
+// Dispose with the owning view/component.
+unsubscribe();
+```
+
+`HostEvent` is a discriminated union generated from the Rust event catalog.
+The bridge validates envelopes, event versions, types, and payloads before
+calling your handlers. `HOST_EVENT_TYPES` lists supported names.
+
+Subscriptions use bounded reads and snapshot refreshes every two seconds,
+draining additional pages without waiting. `onSnapshot` runs initially, when
+retained observations change (including asynchronous source initialization),
+and after cursor expiry. Initial observations are not delivered to `onEvent`.
+Unsubscribe suppresses in-flight callbacks and clears further polling;
+permission, lifecycle, protocol, and callback errors stop the subscription.
+
+For explicit control, use `client.events.snapshot(types)` and
+`client.events.read({types, after, limit})`. Preserve the read cursor while
+refreshing snapshots, so a newer snapshot does not skip pending events.
+Cursors expire on retention overflow, host restart, or plugin generation
+changes; recover by taking a fresh snapshot. Repeat reads can repeat IDs.
+
+Snapshots retain at most the latest observation per event type, not a complete
+inventory or guaranteed fresh game state. Check `observedAt`; missing values
+stay null. Progress is coalesced, and game/HUD detection has its own polling
+delay and prerequisites. Player names, account IDs, file paths, and download
+URLs are not included. See the runtime's Host events contract for the catalog
+and retention limits.
+
+Backend plugins can consume the same stream in `tick` through the Rust SDK's
+`api::events_snapshot` and `api::events_read`. Each WASM call uses a fresh
+instance: request `storage` too, and save the read cursor there after processing
+each batch to continue across ticks. Handle `cursor_expired`, and refresh
+snapshots for state initialized after your first read. This runs without an
+open plugin view.
+
 ## Contract
 
 - The frame posts JSON strings tagged `dmm-plugin-frame/1` to the app page: `ready`, and `call` with `{ id, command, payloadJson }`. The page answers with `context`, and with `result` carrying the command's JSON envelope as a string.
 - Envelope (guest ABI v1): `{ "ok": true, "value": <json> }` or `{ "ok": false, "error": { "code": string, "message": string } }`. The SDK validates it at runtime before decoding `value`.
 - `status` is called with payload `{}`. `deploy` takes the plugin's own payload.
 - `tick` is run by the host supervisor on a schedule. Plugin views cannot call it.
-- Calls have no cancellation, progress events or subscriptions. A call that is in flight completes or fails.
+- Command calls have no cancellation or progress subscriptions. A call that is in flight completes or fails. Host observations use the separate `client.events` API above.
 
 ## Security requirements
 

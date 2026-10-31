@@ -7,6 +7,7 @@ mod activity;
 mod adapter;
 mod deploy;
 mod error;
+mod events;
 mod files;
 mod host_api;
 mod manifest;
@@ -35,6 +36,7 @@ use supervisor::{CallOutcome, Supervisor};
 
 pub use activity::{ExternalPluginActivity, ExternalPluginActivityKind};
 pub use adapter::{Deployment, HostAdapter, HttpRequest, HttpResponse, ProfileMod};
+pub use dmm_plugin_sdk::events as event_contract;
 pub use error::Error;
 pub use manifest::{
   ExternalPluginFileAccess, ExternalPluginFileKind, ExternalPluginModAccess,
@@ -86,6 +88,7 @@ pub struct PluginHost {
   retire_hook: OnceLock<RetireHook>,
   blocked_hook: OnceLock<BlockedHook>,
   notification_hook: OnceLock<NotificationHook>,
+  events: Mutex<events::EventJournal>,
 }
 
 fn invalid(message: impl Into<String>) -> Error {
@@ -130,6 +133,7 @@ impl PluginHost {
       blocked_hook: OnceLock::new(),
       notification_hook: OnceLock::new(),
       notifications: Mutex::new(HashMap::new()),
+      events: Mutex::new(events::EventJournal::default()),
     })
   }
 
@@ -239,6 +243,7 @@ impl PluginHost {
 
   fn retire(&self, id: &str) {
     self.supervisor.terminate(id);
+    lock(&self.events).retire(id);
     lock(&self.observations).remove(id);
     self.notify(id);
   }
@@ -737,6 +742,10 @@ impl PluginHost {
         "Payload is not JSON",
       ));
     };
+    if let Some(method) = command.strip_prefix("host.events.") {
+      let request = serde_json::json!({ "method": format!("events.{method}"), "params": payload });
+      return Ok(host_api::handle(self, &plugin, &request.to_string()));
+    }
     if plugin.manifest.backend.is_none() {
       return Ok(abi::error_envelope(
         "no_backend",
