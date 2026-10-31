@@ -1,15 +1,20 @@
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { requirementState, unmetRequirements } from "@/lib/mods/requirements";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useModelConflictPrompt } from "@/components/providers/model-conflict";
+import { getMod } from "@/lib/api-client";
 import logger from "@/lib/logger";
 import { invokeGuarded } from "@/lib/game-guard";
 import { resolveModelConflict } from "@/lib/mods/model-conflict-install";
+import { modDetailQueryKey } from "@/lib/mods/mod-query-cache";
+import { STALE_TIME_API } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 import { getProfileVpkSnapshot } from "@/lib/tauri-commands";
+import type { ModDependency } from "@/types/dependencies";
 import {
   type InstallableMod,
+  type LocalMod,
   type LocalModWithFiles,
   ModStatus,
 } from "@/types/mods";
@@ -18,6 +23,28 @@ export function useModelConflictInstall() {
   const askModelConflict = useModelConflictPrompt();
   const confirm = useConfirm();
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  // The dependency label is the author's free text, so prefer the mod's real name
+  const requirementName = async (
+    dependency: ModDependency,
+    localMods: readonly LocalMod[],
+  ) => {
+    const remoteId = dependency.remoteId;
+    if (!remoteId) return dependency.label;
+    const local = localMods.find((mod) => mod.remoteId === remoteId);
+    if (local) return local.name;
+    try {
+      const details = await queryClient.fetchQuery({
+        queryKey: modDetailQueryKey(remoteId),
+        queryFn: () => getMod(remoteId),
+        staleTime: STALE_TIME_API,
+        meta: { skipGlobalErrorHandler: true },
+      });
+      return details.name;
+    } catch {
+      return dependency.label || remoteId;
+    }
+  };
   return useMutation({
     meta: { skipGlobalErrorHandler: true },
     mutationFn: async ({
@@ -40,12 +67,14 @@ export function useModelConflictInstall() {
         const proceed = await confirm({
           title: t("modDependencies.installTitle"),
           body: t("modDependencies.installBody", {
-            requirements: unmet
-              .map(
-                (dependency) =>
-                  `${dependency.label || dependency.remoteId} (${t(`modDependencies.state.${requirementState(dependency, state.localMods)}`)})`,
+            requirements: (
+              await Promise.all(
+                unmet.map(
+                  async (dependency) =>
+                    `${await requirementName(dependency, state.localMods)} (${t(`modDependencies.state.${requirementState(dependency, state.localMods)}`)})`,
+                ),
               )
-              .join(", "),
+            ).join(", "),
           }),
           actionButton: t("modDependencies.installAnyway"),
           cancelButton: t("common.cancel"),
