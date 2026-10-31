@@ -215,6 +215,12 @@ const downloads: Definition = {
     prepareDownloadWorld(world, origin, world.configuration.caseId),
   verifyNetwork: assertDownloadNetwork,
 };
+// Pausing the first of two downloads lets the second one start.
+const pauseQueue: Definition = {
+  ...downloads,
+  spec: "download-pause-queue",
+  phases: ["pause"],
+};
 const filesystem: Definition = {
   ...defaults,
   family: "filesystem",
@@ -656,6 +662,14 @@ export const scenarios = {
     ...downloads,
     spec: "download-queue",
     phases: ["queue"],
+  },
+  "downloads-pause-queue": pauseQueue,
+  "downloads-pause-queue-cancel": pauseQueue,
+  "downloads-pause-queue-reload": pauseQueue,
+  "downloads-pause-queue-restart": {
+    ...pauseQueue,
+    phases: ["pause", "restart-pause"],
+    exit: (phase: string) => (phase === "pause" ? "interrupt" : "normal"),
   },
   "filesystem-backup-replace": filesystem,
   "filesystem-backup-merge": filesystem,

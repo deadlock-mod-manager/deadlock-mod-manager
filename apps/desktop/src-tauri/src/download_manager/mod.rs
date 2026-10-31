@@ -216,6 +216,8 @@ struct QueuedDownload {
   task: DownloadTask,
   purpose: DownloadPurpose,
   completion: Option<oneshot::Sender<Result<PreparedDownload, String>>>,
+  /// Paused downloads keep their place in the queue, but the worker skips them.
+  paused: bool,
 }
 
 pub struct DownloadManager {
@@ -297,6 +299,7 @@ impl DownloadManager {
         task,
         purpose,
         completion,
+        paused: false,
       });
     }
 
@@ -323,7 +326,7 @@ impl DownloadManager {
         // checks and profile cancellation never miss a task between the two.
         let task = {
           let mut queue = queue_clone.lock().await;
-          match queue.pop_front() {
+          match Self::claim_next(&mut queue, &mut *processing_clone.lock().await) {
             Some(queued) => {
               let cancel_token = CancellationToken::new();
               let pause = PauseHandle::new();
@@ -349,16 +352,34 @@ impl DownloadManager {
             let task_path = queued.task.target_dir.to_string_lossy().to_string();
             let result = Self::download_mod(
               queued.operation_id,
-              queued.task,
+              &queued.task,
               queued.purpose,
-              cancel_token,
+              cancel_token.clone(),
               pause,
               Arc::clone(&active_clone),
               app_handle.clone(),
             )
             .await;
 
-            active_clone.lock().await.remove(&mod_id);
+            let (queued, result) = if matches!(result, Err(Error::DownloadPaused)) {
+              let cancelled = {
+                let mut queue = queue_clone.lock().await;
+                Self::park(&mut queue, &mut *active_clone.lock().await, queued)
+              };
+              let Some(queued) = cancelled else {
+                continue;
+              };
+              // Cancelled while its files were stopping, which left their partials.
+              Self::remove_partials(&queued.task).await;
+              (queued, Err(Error::DownloadCancelled))
+            } else {
+              active_clone.lock().await.remove(&mod_id);
+              // A file that stopped for a pause just before the cancel kept its partial.
+              if cancel_token.is_cancelled() {
+                Self::remove_partials(&queued.task).await;
+              }
+              (queued, result)
+            };
 
             match &result {
               Ok(_) => {
@@ -398,15 +419,12 @@ impl DownloadManager {
           None => break,
         }
       }
-
-      let mut processing = processing_clone.lock().await;
-      *processing = false;
     });
   }
 
   async fn download_mod(
     operation_id: u64,
-    task: DownloadTask,
+    task: &DownloadTask,
     purpose: DownloadPurpose,
     cancel_token: CancellationToken,
     pause: PauseHandle,
@@ -436,6 +454,20 @@ impl DownloadManager {
 
     for (file_index, file) in task.files.iter().enumerate() {
       let target_path = task.target_dir.join(&file.name);
+      // A resumed download shows the bytes it already holds before its first response.
+      let resumed = downloader::partial_download_len(&target_path).await;
+      if resumed > 0 {
+        aggregator.record(file_index, resumed, None, 0.0, |accepted| {
+          Self::publish_progress(
+            accepted,
+            &mod_id,
+            file_index,
+            total_files,
+            None,
+            &app_handle,
+          );
+        });
+      }
       let url = file.url.clone();
       let file_size = file.size;
       let md5_checksum = file.md5_checksum.clone();
@@ -540,7 +572,7 @@ impl DownloadManager {
 
     match purpose {
       DownloadPurpose::Install => {
-        Self::process_downloaded_files(&task, &downloaded_files, &app_handle).await?;
+        Self::process_downloaded_files(task, &downloaded_files, &app_handle).await?;
         Ok(PreparedDownload {
           vpk_paths: Vec::new(),
           file_tree: None,
@@ -550,7 +582,7 @@ impl DownloadManager {
       }
       DownloadPurpose::PrepareUpdate => {
         let prepared =
-          Self::prepare_downloaded_vpks(operation_id, &task, &downloaded_files, &app_handle).await;
+          Self::prepare_downloaded_vpks(operation_id, task, &downloaded_files, &app_handle).await;
         let mut scratch_paths = downloaded_files;
         scratch_paths.push(task.target_dir.join(format!("prepared-{operation_id}")));
         match prepared {
@@ -576,7 +608,13 @@ impl DownloadManager {
   /// A server-side failure is surfaced as is, so the UI can tell the user it is
   /// not the app's fault. Anything else keeps each distinct message once: every
   /// file of a mod usually fails the same way, and repeating it per file buries it.
+  /// Files that stopped for a pause only count when no other file failed: the mod
+  /// then waits in the queue with its partial files.
   fn combine_file_errors(mut errors: Vec<Error>) -> Option<Error> {
+    let paused = errors
+      .iter()
+      .any(|error| matches!(error, Error::DownloadPaused));
+    errors.retain(|error| !matches!(error, Error::DownloadPaused));
     if let Some(index) = errors.iter().position(|error| {
       matches!(
         error,
@@ -586,7 +624,7 @@ impl DownloadManager {
       return Some(errors.swap_remove(index));
     }
     if errors.is_empty() {
-      return None;
+      return paused.then_some(Error::DownloadPaused);
     }
     let mut messages: Vec<String> = Vec::new();
     for message in errors.iter().map(ToString::to_string) {
@@ -1568,11 +1606,30 @@ impl DownloadManager {
   pub async fn cancel_download(&self, mod_id: &str) -> Result<(), Error> {
     log::info!("Cancelling download for mod: {mod_id}");
 
-    // The queue goes first: the worker moves a download to active while holding
-    // the queue lock, so it can't slip past both checks.
-    let dropped = Self::cancel_queued(&mut *self.queue.lock().await, mod_id);
-    let mut active = self.active_downloads.lock().await;
-    if Self::cancel_active(&mut active, mod_id) || dropped {
+    // Both locks are held, queue first: the worker moves a download between the
+    // queue and active while holding both, so it can't slip past the two checks.
+    let (dropped, cancelled) = {
+      let mut queue = self.queue.lock().await;
+      let dropped = Self::cancel_queued(&mut queue, mod_id);
+      let cancelled = Self::cancel_active(&mut *self.active_downloads.lock().await, mod_id);
+      // Still holding the queue, so a download of the same mod queued meanwhile
+      // can't start writing partials this removes.
+      for queued in &dropped {
+        Self::remove_partials(&queued.task).await;
+      }
+      (dropped, cancelled)
+    };
+    for _ in &dropped {
+      // Reported like a cancelled running download, so a paused one settles too.
+      self
+        .app_handle
+        .emit(
+          "download-error",
+          DownloadErrorEvent::new(mod_id.to_string(), &Error::DownloadCancelled),
+        )
+        .ok();
+    }
+    if cancelled || !dropped.is_empty() {
       Ok(())
     } else {
       Err(Error::InvalidInput(format!(
@@ -1581,10 +1638,24 @@ impl DownloadManager {
     }
   }
 
-  fn cancel_queued(queue: &mut VecDeque<QueuedDownload>, mod_id: &str) -> bool {
-    let before = queue.len();
-    queue.retain(|queued| queued.task.mod_id != mod_id);
-    before != queue.len()
+  fn cancel_queued(queue: &mut VecDeque<QueuedDownload>, mod_id: &str) -> Vec<QueuedDownload> {
+    Self::take_queued(queue, |queued| queued.task.mod_id == mod_id)
+  }
+
+  fn take_queued(
+    queue: &mut VecDeque<QueuedDownload>,
+    matches: impl Fn(&QueuedDownload) -> bool,
+  ) -> Vec<QueuedDownload> {
+    let (taken, kept): (VecDeque<_>, _) = std::mem::take(queue).into_iter().partition(matches);
+    *queue = kept;
+    taken.into()
+  }
+
+  /// A paused download keeps its partial files while it waits in the queue.
+  async fn remove_partials(task: &DownloadTask) {
+    for file in &task.files {
+      downloader::remove_partial_download(&task.target_dir.join(&file.name)).await;
+    }
   }
 
   fn cancel_active(active: &mut HashMap<String, ActiveDownload>, mod_id: &str) -> bool {
@@ -1601,46 +1672,68 @@ impl DownloadManager {
   pub async fn cancel_profile_downloads(&self, profile_folder: &str) {
     let targets = |folder: &Option<String>| folder.as_deref() == Some(profile_folder);
 
-    let dropped = {
+    let (dropped, cancelled) = {
       let mut queue = self.queue.lock().await;
-      let before = queue.len();
-      queue.retain(|queued| !targets(&queued.task.profile_folder));
-      before - queue.len()
-    };
+      let dropped = Self::take_queued(&mut queue, |queued| targets(&queued.task.profile_folder));
 
-    let mut active = self.active_downloads.lock().await;
-    let cancelled: Vec<String> = active
-      .iter()
-      .filter(|(_, download)| targets(&download.profile_folder))
-      .map(|(mod_id, _)| mod_id.clone())
-      .collect();
-    for mod_id in &cancelled {
-      Self::cancel_active(&mut active, mod_id);
+      let mut active = self.active_downloads.lock().await;
+      let cancelled: Vec<String> = active
+        .iter()
+        .filter(|(_, download)| targets(&download.profile_folder))
+        .map(|(mod_id, _)| mod_id.clone())
+        .collect();
+      for mod_id in &cancelled {
+        Self::cancel_active(&mut active, mod_id);
+      }
+      drop(active);
+      // Still holding the queue, as in `cancel_download`.
+      for queued in &dropped {
+        Self::remove_partials(&queued.task).await;
+      }
+      (dropped, cancelled)
+    };
+    // Settles the window's entry, as `cancel_download` does; a paused download
+    // waits here instead of in the cancelled active downloads. Only the window's
+    // own downloads: batch callers hear through their completion channel, and
+    // the window may be downloading the same mod for another profile.
+    for queued in dropped.iter().filter(|queued| queued.completion.is_none()) {
+      self
+        .app_handle
+        .emit(
+          "download-error",
+          DownloadErrorEvent::new(queued.task.mod_id.clone(), &Error::DownloadCancelled),
+        )
+        .ok();
     }
 
-    if dropped > 0 || !cancelled.is_empty() {
+    if !dropped.is_empty() || !cancelled.is_empty() {
       log::info!(
-        "Cancelled downloads for deleted profile {profile_folder}: {dropped} queued, {} active",
+        "Cancelled downloads for deleted profile {profile_folder}: {} queued, {} active",
+        dropped.len(),
         cancelled.len()
       );
     }
   }
 
+  /// A running download stops and gives the next queued one the worker; a
+  /// queued one stays where it is but is skipped until resumed.
   pub async fn pause_download(&self, mod_id: &str) -> Result<(), Error> {
+    let mut queue = self.queue.lock().await;
     let mut active = self.active_downloads.lock().await;
-    let Some(entry) = active.get_mut(mod_id) else {
+    if let Some(entry) = active.get_mut(mod_id) {
+      if entry.status != "downloading" {
+        return Err(Error::InvalidInput(format!(
+          "Download for mod {mod_id} is not active (status: {})",
+          entry.status
+        )));
+      }
+      entry.pause.pause();
+      entry.status = "paused".to_string();
+    } else if !Self::pause_queued(&mut queue, mod_id) {
       return Err(Error::InvalidInput(format!(
         "No active download found for mod: {mod_id}"
       )));
-    };
-    if entry.status != "downloading" {
-      return Err(Error::InvalidInput(format!(
-        "Download for mod {mod_id} is not active (status: {})",
-        entry.status
-      )));
     }
-    entry.pause.pause();
-    entry.status = "paused".to_string();
     // Emit while holding the lock so the event cannot race with download completion.
     self
       .app_handle
@@ -1654,32 +1747,100 @@ impl DownloadManager {
     Ok(())
   }
 
+  /// A paused download that already gave up the worker runs next, after the
+  /// download running now.
   pub async fn resume_download(&self, mod_id: &str) -> Result<(), Error> {
-    let mut active = self.active_downloads.lock().await;
-    let Some(entry) = active.get_mut(mod_id) else {
-      return Err(Error::InvalidInput(format!(
-        "No active download found for mod: {mod_id}"
-      )));
-    };
-    if entry.status != "paused" {
-      return Err(Error::InvalidInput(format!(
-        "Download for mod {mod_id} is not paused (status: {})",
-        entry.status
-      )));
+    {
+      let mut queue = self.queue.lock().await;
+      let mut active = self.active_downloads.lock().await;
+      if let Some(entry) = active.get_mut(mod_id) {
+        if entry.status != "paused" {
+          return Err(Error::InvalidInput(format!(
+            "Download for mod {mod_id} is not paused (status: {})",
+            entry.status
+          )));
+        }
+        entry.pause.resume();
+        entry.status = "downloading".to_string();
+      } else if !Self::resume_queued(&mut queue, mod_id) {
+        return Err(Error::InvalidInput(format!(
+          "No paused download found for mod: {mod_id}"
+        )));
+      }
+      // Emit while holding the lock so the event cannot race with download completion.
+      self
+        .app_handle
+        .emit(
+          "download-resumed",
+          DownloadResumedEvent {
+            mod_id: mod_id.to_string(),
+          },
+        )
+        .ok();
     }
-    entry.pause.resume();
-    entry.status = "downloading".to_string();
-    // Emit while holding the lock so the event cannot race with download completion.
-    self
-      .app_handle
-      .emit(
-        "download-resumed",
-        DownloadResumedEvent {
-          mod_id: mod_id.to_string(),
-        },
-      )
-      .ok();
+    self.process_queue().await;
     Ok(())
+  }
+
+  /// Puts a download that stopped for a pause back in the queue, or hands it
+  /// back when it was cancelled while its files were stopping.
+  fn park(
+    queue: &mut VecDeque<QueuedDownload>,
+    active: &mut HashMap<String, ActiveDownload>,
+    queued: QueuedDownload,
+  ) -> Option<QueuedDownload> {
+    let Some(download) = active.remove(&queued.task.mod_id) else {
+      return Some(queued);
+    };
+    // One resumed while its files were stopping runs again next.
+    queue.push_front(QueuedDownload {
+      paused: download.pause.is_paused(),
+      ..queued
+    });
+    None
+  }
+
+  /// The worker stops while it still holds the queue, so a download queued or
+  /// resumed right after it found nothing starts a new worker.
+  fn claim_next(
+    queue: &mut VecDeque<QueuedDownload>,
+    processing: &mut bool,
+  ) -> Option<QueuedDownload> {
+    let next = Self::next_runnable(queue);
+    if next.is_none() {
+      *processing = false;
+    }
+    next
+  }
+
+  /// Paused downloads keep their place but don't hold up the rest of the queue.
+  fn next_runnable(queue: &mut VecDeque<QueuedDownload>) -> Option<QueuedDownload> {
+    let index = queue.iter().position(|queued| !queued.paused)?;
+    queue.remove(index)
+  }
+
+  fn pause_queued(queue: &mut VecDeque<QueuedDownload>, mod_id: &str) -> bool {
+    let Some(queued) = queue
+      .iter_mut()
+      .find(|queued| queued.task.mod_id == mod_id && !queued.paused)
+    else {
+      return false;
+    };
+    queued.paused = true;
+    true
+  }
+
+  fn resume_queued(queue: &mut VecDeque<QueuedDownload>, mod_id: &str) -> bool {
+    let Some(mut queued) = queue
+      .iter()
+      .position(|queued| queued.task.mod_id == mod_id && queued.paused)
+      .and_then(|index| queue.remove(index))
+    else {
+      return false;
+    };
+    queued.paused = false;
+    queue.push_front(queued);
+    true
   }
 
   pub async fn get_download_status(&self, mod_id: &str) -> Result<Option<DownloadStatus>, Error> {
@@ -1696,17 +1857,31 @@ impl DownloadManager {
       || !self.active_downloads.lock().await.is_empty()
   }
 
+  /// Lists paused downloads waiting in the queue as well as running ones, so a
+  /// webview reload cancels them like any download it no longer tracks.
   pub async fn get_all_downloads(&self) -> Result<Vec<DownloadStatus>, Error> {
+    // The worker's lock order, so a download moving between the two is in one of them.
+    let queue = self.queue.lock().await;
     let active = self.active_downloads.lock().await;
-    Ok(
-      active
-        .iter()
-        .map(|(mod_id, download)| DownloadStatus {
-          mod_id: mod_id.clone(),
-          status: download.status.clone(),
-        })
-        .collect(),
-    )
+    Ok(Self::list_downloads(&queue, &active))
+  }
+
+  fn list_downloads(
+    queue: &VecDeque<QueuedDownload>,
+    active: &HashMap<String, ActiveDownload>,
+  ) -> Vec<DownloadStatus> {
+    let paused = queue
+      .iter()
+      .filter(|queued| queued.paused)
+      .map(|queued| DownloadStatus {
+        mod_id: queued.task.mod_id.clone(),
+        status: "paused".to_string(),
+      });
+    let running = active.iter().map(|(mod_id, download)| DownloadStatus {
+      mod_id: mod_id.clone(),
+      status: download.status.clone(),
+    });
+    paused.chain(running).collect()
   }
 
   /// Debug-only: run the post-download processing pipeline on an already-copied local file.
@@ -1755,7 +1930,31 @@ mod tests {
       },
       purpose: DownloadPurpose::Install,
       completion: None,
+      paused: false,
     }
+  }
+
+  fn mod_ids(queue: &VecDeque<QueuedDownload>) -> Vec<(&str, bool)> {
+    queue
+      .iter()
+      .map(|queued| (queued.task.mod_id.as_str(), queued.paused))
+      .collect()
+  }
+
+  fn active(mod_id: &str, paused: bool) -> HashMap<String, ActiveDownload> {
+    let pause = PauseHandle::new();
+    if paused {
+      pause.pause();
+    }
+    HashMap::from([(
+      mod_id.to_string(),
+      ActiveDownload {
+        cancel_token: CancellationToken::new(),
+        pause,
+        status: if paused { "paused" } else { "downloading" }.to_string(),
+        profile_folder: None,
+      },
+    )])
   }
 
   #[test]
@@ -1767,15 +1966,167 @@ mod tests {
     };
     let mut queue = VecDeque::from([queued("first"), second]);
 
-    assert!(DownloadManager::cancel_queued(&mut queue, "second"));
-    let remaining: Vec<&str> = queue.iter().map(|q| q.task.mod_id.as_str()).collect();
-    assert_eq!(remaining, ["first"]);
+    let dropped = DownloadManager::cancel_queued(&mut queue, "second");
+    assert_eq!(dropped.len(), 1);
+    assert_eq!(mod_ids(&queue), [("first", false)]);
+    drop(dropped);
     // `queue_download_and_wait` reports a dropped sender as cancelled.
     assert!(matches!(
       waiter.try_recv(),
       Err(oneshot::error::TryRecvError::Closed)
     ));
-    assert!(!DownloadManager::cancel_queued(&mut queue, "second"));
+    assert!(DownloadManager::cancel_queued(&mut queue, "second").is_empty());
+  }
+
+  #[test]
+  fn a_paused_download_does_not_hold_up_the_queue() {
+    let mut queue = VecDeque::from([
+      QueuedDownload {
+        paused: true,
+        ..queued("paused")
+      },
+      queued("next"),
+    ]);
+
+    let next = DownloadManager::next_runnable(&mut queue)
+      .expect("the worker found nothing to run while a download was paused");
+    assert_eq!(next.task.mod_id, "next");
+    assert_eq!(mod_ids(&queue), [("paused", true)]);
+    assert!(
+      DownloadManager::next_runnable(&mut queue).is_none(),
+      "the worker started a paused download"
+    );
+  }
+
+  #[test]
+  fn a_download_resumed_as_the_worker_stops_starts_a_new_worker() {
+    let mut queue = VecDeque::from([QueuedDownload {
+      paused: true,
+      ..queued("paused")
+    }]);
+    let mut processing = true;
+
+    assert!(DownloadManager::claim_next(&mut queue, &mut processing).is_none());
+    // Resume queues the download once the worker releases the queue, then
+    // calls `process_queue`, which starts a worker only when none is running.
+    assert!(DownloadManager::resume_queued(&mut queue, "paused"));
+    assert!(
+      !processing,
+      "the stopping worker still looked busy, so the resumed download never ran"
+    );
+  }
+
+  #[test]
+  fn a_resumed_download_runs_next_without_losing_its_caller() {
+    let (completion, mut waiter) = oneshot::channel();
+    let mut queue = VecDeque::from([
+      queued("first"),
+      QueuedDownload {
+        operation_id: 7,
+        completion: Some(completion),
+        paused: true,
+        ..queued("paused")
+      },
+    ]);
+
+    assert!(!DownloadManager::resume_queued(&mut queue, "first"));
+    assert!(DownloadManager::resume_queued(&mut queue, "paused"));
+    assert_eq!(mod_ids(&queue), [("paused", false), ("first", false)]);
+    assert!(!DownloadManager::resume_queued(&mut queue, "paused"));
+
+    let resumed = DownloadManager::next_runnable(&mut queue).unwrap();
+    assert_eq!(resumed.operation_id, 7);
+    // Update All and profile import still hear back from the resumed download.
+    assert!(matches!(
+      waiter.try_recv(),
+      Err(oneshot::error::TryRecvError::Empty)
+    ));
+  }
+
+  #[test]
+  fn pausing_a_queued_download_keeps_its_place() {
+    let mut queue = VecDeque::from([queued("first"), queued("second")]);
+
+    assert!(DownloadManager::pause_queued(&mut queue, "first"));
+    assert!(!DownloadManager::pause_queued(&mut queue, "first"));
+    assert!(!DownloadManager::pause_queued(&mut queue, "missing"));
+    assert_eq!(mod_ids(&queue), [("first", true), ("second", false)]);
+  }
+
+  #[test]
+  fn a_download_stopped_for_a_pause_waits_in_the_queue() {
+    let mut queue = VecDeque::from([queued("next")]);
+    let mut downloads = active("paused", true);
+
+    assert!(DownloadManager::park(&mut queue, &mut downloads, queued("paused")).is_none());
+    assert!(downloads.is_empty());
+    assert_eq!(mod_ids(&queue), [("paused", true), ("next", false)]);
+  }
+
+  #[test]
+  fn a_download_resumed_while_stopping_runs_next() {
+    let mut queue = VecDeque::from([queued("next")]);
+    let mut downloads = active("resumed", false);
+
+    assert!(DownloadManager::park(&mut queue, &mut downloads, queued("resumed")).is_none());
+    assert_eq!(mod_ids(&queue), [("resumed", false), ("next", false)]);
+  }
+
+  #[test]
+  fn a_download_cancelled_while_stopping_is_not_queued_again() {
+    let mut queue = VecDeque::new();
+
+    let cancelled = DownloadManager::park(&mut queue, &mut HashMap::new(), queued("cancelled"));
+    assert_eq!(
+      cancelled.map(|queued| queued.task.mod_id).as_deref(),
+      Some("cancelled")
+    );
+    assert!(
+      queue.is_empty(),
+      "a cancelled download would start again after the next one"
+    );
+  }
+
+  #[test]
+  fn listing_downloads_includes_paused_ones_waiting_in_the_queue() {
+    let queue = VecDeque::from([
+      queued("waiting"),
+      QueuedDownload {
+        paused: true,
+        ..queued("paused")
+      },
+    ]);
+
+    let listed: Vec<(String, String)> =
+      DownloadManager::list_downloads(&queue, &active("running", false))
+        .into_iter()
+        .map(|download| (download.mod_id, download.status))
+        .collect();
+    assert_eq!(
+      listed,
+      [
+        ("paused".to_string(), "paused".to_string()),
+        ("running".to_string(), "downloading".to_string()),
+      ],
+      "a reload would leave the paused download in the queue behind a Failed card"
+    );
+  }
+
+  #[test]
+  fn a_mod_counts_as_paused_only_when_no_file_failed() {
+    assert!(matches!(
+      DownloadManager::combine_file_errors(vec![Error::DownloadPaused, Error::DownloadPaused]),
+      Some(Error::DownloadPaused)
+    ));
+    let failed = DownloadManager::combine_file_errors(vec![
+      Error::DownloadPaused,
+      Error::Network("Server returned error status: 403 Forbidden".to_string()),
+    ]);
+    assert_eq!(
+      failed.map(|error| error.to_string()).as_deref(),
+      Some("Download failed: Network error: Server returned error status: 403 Forbidden"),
+      "a file that failed was hidden behind a sibling's pause"
+    );
   }
 
   #[test]

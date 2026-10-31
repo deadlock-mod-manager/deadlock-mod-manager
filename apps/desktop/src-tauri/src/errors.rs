@@ -96,6 +96,9 @@ pub enum Error {
   DownloadFailed(String),
   #[error("Download cancelled")]
   DownloadCancelled,
+  /// The download stopped for a pause and kept its partial files to resume from.
+  #[error("Download paused")]
+  DownloadPaused,
   #[error("GameBanana could not serve the download right now (HTTP {status})")]
   DownloadSourceBusy {
     status: u16,
@@ -207,6 +210,7 @@ impl serde::Serialize for Error {
       Error::BackupNotFound => "backupNotFound",
       Error::DownloadFailed(_) => "downloadFailed",
       Error::DownloadCancelled => "downloadCancelled",
+      Error::DownloadPaused => "downloadPaused",
       Error::DownloadSourceBusy { .. } => "downloadSourceBusy",
       Error::DownloadStalled => "downloadStalled",
       Error::LaunchCancelled => "launchCancelled",

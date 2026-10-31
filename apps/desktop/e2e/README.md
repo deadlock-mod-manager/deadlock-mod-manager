@@ -172,7 +172,7 @@ M4 uses real Rust HTTP transfers against binary fixture responses. Run any case 
 
 | Case | Behavior checked |
 | --- | --- |
-| `downloads-pause` | UI pause freezes a valid partial prefix; UI resume completes the payload |
+| `downloads-pause` | UI pause freezes a valid partial prefix; UI resume continues it with a Range request and completes the payload |
 | `downloads-range` | A connection cut after 65,536 bytes triggers an exact Range request and byte-correct completion |
 | `downloads-cancel` | Cancel a paused transfer through the existing Rust command, verify partial cleanup, restart, and retry through the UI |
 | `downloads-cancel-connecting` | Cancel through the UI while the server withholds response headers; the UI retry must reach the server within 10 seconds and complete |
@@ -183,6 +183,10 @@ M4 uses real Rust HTTP transfers against binary fixture responses. Run any case 
 | `downloads-redirect` | Reject a redirect to a production host without making an external request; UI retry succeeds |
 | `downloads-variants` | Retry preserves a previously selected variant, including after a 401 and restart; the unselected URL has no registered fixture |
 | `downloads-queued-retry` | After a 401, retry the download while another throttled download holds the queue; the waiting card shows no health notice, and the retry completes once the queue frees up |
+| `downloads-pause-queue` | Pausing a download lets the one queued behind it start within 5 seconds; Resume waits for it without a health notice, then continues from the exact partial offset |
+| `downloads-pause-queue-cancel` | Cancel a paused download that gave up the queue: its partial files are removed and the other download completes |
+| `downloads-pause-queue-reload` | Reload with one download paused and another running: both settle as failed, the backend keeps neither, and the paused one's partial files are removed |
+| `downloads-pause-queue-restart` | Restart with one download paused and another running: both come back failed with Retry, the paused partial remains, and both retries complete |
 
 Each world starts with a failed download record and persisted file selection, so Retry exercises the real frontend purge/queue flow without depending on the remote catalog. Variant coverage here is persisted selection and retry, not the initial catalog file chooser. `downloads-cancel` cancels its paused transfer through the real `cancel_download` IPC command; `downloads-cancel-connecting` and `downloads-cancel-queued` press the card's Cancel button. Successful transfers are checked again in a new application process. The oracle compares SHA-256 hashes, partial prefixes and metadata, exact cache contents, the empty addon manifest, and protected game/Steam files. `download-*.json` captures disk/state evidence; `network.ndjson` includes Range headers, response status and bytes sent. UI retries deliberately purge stale data; only interrupted transfers within a running process resume with Range.
 
