@@ -25,9 +25,7 @@ pub enum Error {
   GamePathNotSet,
   #[error("App handle not initialized")]
   AppHandleNotInitialized,
-  #[error(
-    "Failed to parse game configuration. Reset gameinfo.gi to Vanilla in Settings → Game, then try again."
-  )]
+  #[error("Failed to parse game configuration: {0}")]
   GameConfigParse(String),
   #[error("Mod file not found at path")]
   ModFileNotFound,

@@ -1,12 +1,14 @@
 use crate::errors::Error;
 use crate::mod_manager::file_permissions::ensure_file_writable;
 use crate::mod_manager::filesystem_helper::FileSystemHelper;
+use crate::mod_manager::perf_config::patch::{Site, SiteKind, parse_sites};
 use crate::mod_manager::shard;
 use crate::utils;
 use log;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
+use std::ops::Range;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -74,8 +76,16 @@ pub struct GameInfoValidation {
   pub is_valid: bool,
   pub errors: Vec<String>,
   pub warnings: Vec<String>,
-  pub search_paths_found: bool,
-  pub has_required_sections: bool,
+}
+
+impl GameInfoValidation {
+  fn invalid(error: String) -> Self {
+    Self {
+      is_valid: false,
+      errors: vec![error],
+      warnings: vec![],
+    }
+  }
 }
 
 /// Manages game configuration files and mod setup
@@ -113,9 +123,92 @@ impl GameConfigManager {
       .as_secs()
   }
 
+  /// Reads gameinfo.gi for editing. Saving as ANSI or UTF-16 is an easy mistake
+  /// to make in a text editor, and the file can't be edited as text after it.
+  fn read_gameinfo(path: &Path) -> Result<String, Error> {
+    String::from_utf8(fs::read(path)?).map_err(|error| {
+      let valid = &error.as_bytes()[..error.utf8_error().valid_up_to()];
+      let line = valid.iter().filter(|byte| **byte == b'\n').count() + 1;
+      Error::GameConfigParse(format!(
+        "gameinfo.gi is not saved as UTF-8 (first problem on line {line})"
+      ))
+    })
+  }
+
+  /// `parse_sites` with the reason text alone, which names the line and column.
+  fn parse_gameinfo(content: &str) -> Result<Vec<Site>, String> {
+    parse_sites(content).map_err(|error| match error {
+      Error::PerformanceConfig(reason) => reason,
+      other => other.to_string(),
+    })
+  }
+
+  fn names_search_paths(path: &[String]) -> bool {
+    path
+      .last()
+      .is_some_and(|key| key.eq_ignore_ascii_case("SearchPaths"))
+  }
+
+  /// The `SearchPaths` block, from its key through its closing brace. Comments
+  /// can name it too, and a quoted key starts a character before the word.
+  fn search_paths_block(content: &str) -> Result<Range<usize>, String> {
+    Self::parse_gameinfo(content)?
+      .iter()
+      .find_map(|site| match &site.kind {
+        SiteKind::Object { close, .. } if Self::names_search_paths(&site.path) => {
+          Some(site.key_start..close + 1)
+        }
+        _ => None,
+      })
+      .ok_or_else(|| "SearchPaths section not found".to_string())
+  }
+
+  /// Whether a `SearchPaths` entry mounts an addons folder. A comment naming one
+  /// doesn't. A file that can't be parsed falls back to searching its text.
+  pub fn has_mod_search_paths(content: &str) -> bool {
+    let Ok(sites) = Self::parse_gameinfo(content) else {
+      return content.contains("citadel/addons");
+    };
+    sites.iter().any(|site| {
+      let in_search_paths = site
+        .path
+        .split_last()
+        .is_some_and(|(_, parent)| Self::names_search_paths(parent));
+      in_search_paths
+        && matches!(&site.kind, SiteKind::Scalar { value, .. } if value.starts_with("citadel/addons"))
+    })
+  }
+
+  /// The marker block, from the start marker through the end marker after it.
+  fn marker_block(content: &str) -> Option<Range<usize>> {
+    let start = content.find(MOD_MANAGER_MARKER_START)?;
+    let end = start + content[start..].find(MOD_MANAGER_MARKER_END)?;
+    Some(start..end + MOD_MANAGER_MARKER_END.len())
+  }
+
+  /// A marker that lost its partner to a hand edit would pair up with the next
+  /// block written and take everything between the two along.
+  fn without_stray_markers(content: String) -> String {
+    if Self::marker_block(&content).is_some() {
+      return content;
+    }
+    content
+      .replace(MOD_MANAGER_MARKER_START, "")
+      .replace(MOD_MANAGER_MARKER_END, "")
+  }
+
+  /// What a search-path rewrite replaces. Everything outside it is the user's.
+  fn managed_section(content: &str) -> Result<Range<usize>, Error> {
+    let section = match Self::marker_block(content) {
+      Some(block) => block,
+      None => Self::search_paths_block(content).map_err(Error::GameConfigParse)?,
+    };
+    Ok(Self::block_start(content, section.start)..section.end)
+  }
+
   /// Check if content contains mod manager markers
   fn has_mod_manager_markers(&self, content: &str) -> bool {
-    content.contains(MOD_MANAGER_MARKER_START) && content.contains(MOD_MANAGER_MARKER_END)
+    Self::marker_block(content).is_some()
   }
 
   /// Where the block at `pos` starts once its indentation and the line break
@@ -145,53 +238,25 @@ impl GameConfigManager {
     gameinfo_path: &Path,
   ) -> Result<GameInfoValidation, Error> {
     if !gameinfo_path.exists() {
-      return Ok(GameInfoValidation {
-        is_valid: false,
-        errors: vec!["gameinfo.gi file not found".to_string()],
-        warnings: vec![],
-        search_paths_found: false,
-        has_required_sections: false,
-      });
+      return Ok(GameInfoValidation::invalid(
+        "gameinfo.gi file not found".to_string(),
+      ));
     }
 
-    let content = fs::read_to_string(gameinfo_path)?;
+    let content = match Self::read_gameinfo(gameinfo_path) {
+      Ok(content) => content,
+      Err(Error::GameConfigParse(reason)) => return Ok(GameInfoValidation::invalid(reason)),
+      Err(error) => return Err(error),
+    };
+    if let Err(reason) = Self::search_paths_block(&content) {
+      return Ok(GameInfoValidation::invalid(reason));
+    }
+
     let mut validation = GameInfoValidation {
       is_valid: true,
       errors: vec![],
       warnings: vec![],
-      search_paths_found: false,
-      has_required_sections: false,
     };
-
-    // Check for SearchPaths section
-    if content.contains("SearchPaths") {
-      validation.search_paths_found = true;
-    } else {
-      validation.is_valid = false;
-      validation
-        .errors
-        .push("SearchPaths section not found".to_string());
-    }
-
-    // Check for proper brace matching in SearchPaths
-    if let Some(start) = content.find("SearchPaths") {
-      let remaining = &content[start..];
-      if let Some(open_brace) = remaining.find('{') {
-        if remaining[open_brace + 1..].find('}').is_some() {
-          validation.has_required_sections = true;
-        } else {
-          validation.is_valid = false;
-          validation
-            .errors
-            .push("SearchPaths section is not properly closed with '}'".to_string());
-        }
-      } else {
-        validation.is_valid = false;
-        validation
-          .errors
-          .push("SearchPaths section missing opening brace '{'".to_string());
-      }
-    }
 
     // Check for required game entries
     let required_entries = ["Game", "citadel"];
@@ -224,7 +289,7 @@ impl GameConfigManager {
     }
 
     let current_hash = self.calculate_file_hash(&gameinfo_path)?;
-    let content = fs::read_to_string(&gameinfo_path)?;
+    let content = String::from_utf8_lossy(&fs::read(&gameinfo_path)?).into_owned();
 
     // Check if backup exists
     let backup_path = gameinfo_path.with_extension("gi.bak");
@@ -242,7 +307,7 @@ impl GameConfigManager {
 
     // Check for external modifications
     let is_modified_by_mod_manager = self.has_mod_manager_markers(&content);
-    let has_mod_paths = content.contains("citadel/addons");
+    let has_mod_paths = Self::has_mod_search_paths(&content);
 
     // Check if file was modified externally
     let mut is_modified_externally = false;
@@ -308,7 +373,7 @@ impl GameConfigManager {
     // Calculate hash and store backup metadata
     let original_hash = self.calculate_file_hash(&gameinfo_path)?;
     let file_size = fs::metadata(&gameinfo_path)?.len();
-    let content = fs::read_to_string(&gameinfo_path)?;
+    let content = String::from_utf8_lossy(&fs::read(&gameinfo_path)?).into_owned();
     let is_vanilla = !content.contains("citadel/addons") && !self.has_mod_manager_markers(&content);
 
     let backup_info = GameInfoBackup {
@@ -435,11 +500,28 @@ impl GameConfigManager {
     Ok(())
   }
 
+  /// A reset replaces the whole file, a rebuild replaces search paths this
+  /// manager didn't write, and `.bak` only holds the first version it saw.
+  /// Named after the content, so a later copy can't overwrite an earlier one.
+  fn keep_pre_reset_copy(&self, gameinfo_path: &Path) -> Result<(), Error> {
+    if !gameinfo_path.exists() {
+      return Ok(());
+    }
+    let hash = self.calculate_file_hash(gameinfo_path)?;
+    let copy = gameinfo_path.with_extension(format!("gi.pre-reset-{hash}"));
+    if !copy.exists() {
+      fs::copy(gameinfo_path, &copy)?;
+      log::info!("Kept the file being reset at {copy:?}");
+    }
+    Ok(())
+  }
+
   pub fn reset_gameinfo(
     &mut self,
     game_path: &Path,
     downloaded: Result<String, Error>,
   ) -> Result<GameInfoResetSource, Error> {
+    self.keep_pre_reset_copy(&game_path.join("game").join("citadel").join("gameinfo.gi"))?;
     match downloaded.and_then(|content| self.apply_vanilla_gameinfo(game_path, content)) {
       Ok(()) => Ok(GameInfoResetSource::Api),
       Err(error) => {
@@ -450,9 +532,6 @@ impl GameConfigManager {
         log::warn!("Vanilla gameinfo download failed; restoring local backup: {error}");
         self.restore_gameinfo_backup(game_path)?;
         self.toggle_mods(game_path, true)?;
-        self
-          .backups
-          .remove(&game_path.join("game/citadel/gameinfo.gi"));
         Ok(GameInfoResetSource::Backup)
       }
     }
@@ -472,17 +551,14 @@ impl GameConfigManager {
       ));
     }
 
-    let content = fs::read_to_string(&gameinfo_path)?;
-    let has_mod_paths = content.contains("citadel/addons");
+    let content = Self::read_gameinfo(&gameinfo_path)?;
+    let has_mod_paths = Self::has_mod_search_paths(&content);
     let has_markers = self.has_mod_manager_markers(&content);
 
     // Validate syntax
     let validation = self.validate_gameinfo_syntax(&gameinfo_path)?;
     if !validation.is_valid {
-      return Err(Error::GameConfigParse(format!(
-        "gameinfo.gi validation failed: {}",
-        validation.errors.join(", ")
-      )));
+      return Err(Error::GameConfigParse(validation.errors.join(", ")));
     }
 
     // Check if the patch state matches expectations
@@ -561,13 +637,11 @@ impl GameConfigManager {
       log::info!("Keeping the existing mod search paths in gameinfo.gi");
     }
 
-    // Validate the patch was applied correctly
+    // Validate the patch was applied correctly. Any edit made above was checked
+    // before it was written, so this is about the user's file, and `.bak` is
+    // older than their edits.
     if let Err(e) = self.validate_gameinfo_patch(game_path, false) {
       log::error!("Mod setup validation failed: {e}");
-      // Try to restore backup on failure
-      if let Err(restore_err) = self.restore_gameinfo_backup(game_path) {
-        log::error!("Failed to restore backup after failed setup: {restore_err}");
-      }
       return Err(e);
     }
 
@@ -588,10 +662,7 @@ impl GameConfigManager {
     let validation = self.validate_gameinfo_syntax(&gameinfo_path)?;
     if !validation.is_valid {
       log::error!("Cannot modify invalid gameinfo.gi: {:?}", validation.errors);
-      return Err(Error::GameConfigParse(format!(
-        "gameinfo.gi validation failed: {}",
-        validation.errors.join(", ")
-      )));
+      return Err(Error::GameConfigParse(validation.errors.join(", ")));
     }
 
     self.modify_search_paths(&gameinfo_path, vanilla)?;
@@ -604,6 +675,9 @@ impl GameConfigManager {
     }
 
     if vanilla {
+      // The file no longer matches the backup because of this edit, which must
+      // not read as a change from another tool.
+      self.backups.remove(&gameinfo_path);
       log::info!("Game configured for vanilla mode");
     } else {
       log::info!("Game configured for modded mode");
@@ -624,7 +698,7 @@ impl GameConfigManager {
 
     // Read and validate current file
     ensure_file_writable(gameinfo_path)?;
-    let gameinfo_content = fs::read_to_string(gameinfo_path)?;
+    let gameinfo_content = Self::without_stray_markers(Self::read_gameinfo(gameinfo_path)?);
     let validation = self.validate_gameinfo_syntax(gameinfo_path)?;
 
     if !validation.is_valid {
@@ -634,6 +708,8 @@ impl GameConfigManager {
       );
     }
 
+    let section = Self::managed_section(&gameinfo_content)?;
+
     // Create backup if it doesn't exist
     let backup_path = gameinfo_path.with_extension("gi.bak");
     if !backup_path.exists() {
@@ -641,45 +717,10 @@ impl GameConfigManager {
       fs::copy(gameinfo_path, &backup_path)?;
     }
 
-    // Find what section to replace based on whether markers exist
-    let (section_start, section_end, _section_content) =
-      if gameinfo_content.contains(MOD_MANAGER_MARKER_START) {
-        // If markers exist, replace the entire marked section
-        let marker_start = gameinfo_content
-          .find(MOD_MANAGER_MARKER_START)
-          .ok_or_else(|| Error::GameConfigParse("Mod manager start marker not found".into()))?;
-        let marker_end_pos = gameinfo_content
-          .find(MOD_MANAGER_MARKER_END)
-          .ok_or_else(|| Error::GameConfigParse("Mod manager end marker not found".into()))?;
-        let marker_end = marker_end_pos + MOD_MANAGER_MARKER_END.len();
-        let actual_start = Self::block_start(&gameinfo_content, marker_start);
-
-        (
-          actual_start,
-          marker_end,
-          &gameinfo_content[actual_start..marker_end],
-        )
-      } else {
-        // No markers, find and replace just the SearchPaths section
-        let search_paths_start = gameinfo_content
-          .find("SearchPaths")
-          .ok_or_else(|| Error::GameConfigParse("SearchPaths section not found".into()))?;
-
-        let relative_end = gameinfo_content[search_paths_start..]
-          .find('}')
-          .ok_or_else(|| {
-            Error::GameConfigParse("Could not find end of SearchPaths section".into())
-          })?;
-
-        let search_paths_end = search_paths_start + relative_end + 1;
-        let section_start = Self::block_start(&gameinfo_content, search_paths_start);
-
-        (
-          section_start,
-          search_paths_end,
-          &gameinfo_content[section_start..search_paths_end],
-        )
-      };
+    // Without markers the block isn't ours, and it may hold custom entries.
+    if !vanilla && !self.has_mod_manager_markers(&gameinfo_content) {
+      self.keep_pre_reset_copy(gameinfo_path)?;
+    }
 
     // Use the appropriate search paths based on vanilla flag
     let base_search_paths = if vanilla {
@@ -699,7 +740,7 @@ impl GameConfigManager {
 
     // Replace the identified section with the new content
     let mut new_gameinfo_content = gameinfo_content.clone();
-    new_gameinfo_content.replace_range(section_start..section_end, &replacement_content);
+    new_gameinfo_content.replace_range(section, &replacement_content);
 
     // Validate the new content before writing
     let temp_path = gameinfo_path.with_extension("gi.tmp");
@@ -892,7 +933,7 @@ impl GameConfigManager {
       return Ok(Vec::new());
     }
 
-    let content = fs::read_to_string(&gameinfo_path)?;
+    let content = Self::read_gameinfo(&gameinfo_path)?;
 
     let Some(start) = content.find(MOD_MANAGER_MARKER_START) else {
       return Ok(Vec::new());
@@ -941,13 +982,10 @@ impl GameConfigManager {
     let validation = self.validate_gameinfo_syntax(&gameinfo_path)?;
     if !validation.is_valid {
       log::error!("Cannot modify invalid gameinfo.gi: {:?}", validation.errors);
-      return Err(Error::GameConfigParse(format!(
-        "gameinfo.gi validation failed: {}",
-        validation.errors.join(", ")
-      )));
+      return Err(Error::GameConfigParse(validation.errors.join(", ")));
     }
 
-    let mut gameinfo_content = fs::read_to_string(&gameinfo_path)?;
+    let mut gameinfo_content = Self::read_gameinfo(&gameinfo_path)?;
 
     // Deadlock updates and the Settings reset replace gameinfo.gi with a clean
     // file while this manager may still remember the old setup state.
@@ -955,7 +993,7 @@ impl GameConfigManager {
       log::info!("Mod manager markers are missing; rebuilding the modded SearchPaths section");
       self.modify_search_paths(&gameinfo_path, false)?;
       self.game_setup = true;
-      gameinfo_content = fs::read_to_string(&gameinfo_path)?;
+      gameinfo_content = Self::read_gameinfo(&gameinfo_path)?;
     }
 
     // Create backup if it doesn't exist
@@ -965,33 +1003,7 @@ impl GameConfigManager {
       fs::copy(&gameinfo_path, &backup_path)?;
     }
 
-    // Find the mod manager section to replace
-    let (section_start, section_end, _section_content) =
-      if let Some(marker_start) = gameinfo_content.find(MOD_MANAGER_MARKER_START) {
-        let start_pos = Self::block_start(&gameinfo_content, marker_start);
-        if let Some(end_pos) = gameinfo_content.find(MOD_MANAGER_MARKER_END) {
-          let end_pos = end_pos + MOD_MANAGER_MARKER_END.len();
-          (start_pos, end_pos, &gameinfo_content[start_pos..end_pos])
-        } else {
-          log::warn!(
-            "Found start marker but not end marker, replacing from marker to end of SearchPaths"
-          );
-          let search_paths_end = gameinfo_content[start_pos..]
-            .find("}")
-            .map(|pos| start_pos + pos + 1)
-            .unwrap_or(gameinfo_content.len());
-          (
-            start_pos,
-            search_paths_end,
-            &gameinfo_content[start_pos..search_paths_end],
-          )
-        }
-      } else {
-        return Err(Error::GameConfigParse(
-          "Mod manager markers not found in gameinfo.gi. Game may not be set up for mods yet."
-            .to_string(),
-        ));
-      };
+    let section = Self::managed_section(&gameinfo_content)?;
 
     let modded_search_paths =
       Self::generate_modded_search_paths(paths, Self::uses_deadworks(game_path));
@@ -1002,7 +1014,7 @@ impl GameConfigManager {
 
     // Replace the section
     let mut new_gameinfo_content = gameinfo_content.clone();
-    new_gameinfo_content.replace_range(section_start..section_end, &replacement_content);
+    new_gameinfo_content.replace_range(section, &replacement_content);
     if new_gameinfo_content == gameinfo_content {
       log::debug!("gameinfo.gi already has mod search paths: {paths:?}");
       return Ok(());
@@ -1545,5 +1557,381 @@ mod tests {
       vec!["citadel/addons".to_string()],
       "None profile must produce a single root addons line"
     );
+  }
+
+  const STOCK_GAMEINFO: &str =
+    include_str!("../../../../api/src/static/artifacts/deadlock/gameinfo.gi");
+
+  /// What a community FPS or FOV config changes outside the search paths. `key`
+  /// is how the file spells the `SearchPaths` line.
+  fn custom_config(key: &str) -> String {
+    format!(
+      r#""GameInfo"
+{{
+  // FPS config v3
+  ConVars
+  {{
+    "r_fov_max"  "120" // wider than stock
+    "fps_max"    "240"
+  }}
+  FileSystem
+  {{
+    {key}
+    {{
+      Game citadel
+      Game core
+    }}
+    "UserSettingsPathID"  "USRLOCAL"
+  }}
+}}
+"#
+    )
+  }
+
+  fn current_gameinfo(game_path: &Path) -> String {
+    fs::read_to_string(game_path.join("game/citadel/gameinfo.gi")).expect("read gameinfo")
+  }
+
+  fn test_paths() -> Vec<String> {
+    vec!["citadel/addons/profile_test".to_string()]
+  }
+
+  fn pre_reset_copies(game_path: &Path) -> Vec<String> {
+    fs::read_dir(game_path.join("game/citadel"))
+      .unwrap()
+      .map(|entry| entry.unwrap().path())
+      .filter(|path| {
+        path
+          .file_name()
+          .is_some_and(|name| name.to_string_lossy().starts_with("gameinfo.gi.pre-reset"))
+      })
+      .map(|path| fs::read_to_string(path).unwrap())
+      .collect()
+  }
+
+  #[test]
+  fn custom_edits_survive_every_search_path_rewrite() {
+    let config = custom_config("SearchPaths");
+    let section = "    SearchPaths\n    {\n      Game citadel\n      Game core\n    }";
+    let (before, after) = config.split_once(section).unwrap();
+
+    for newline in ["\n", "\r\n"] {
+      for bom in ["", "\u{feff}"] {
+        let (_dir, game_path) = setup_game_dir();
+        let before = format!("{bom}{}", before.trim_end().replace("\n", newline));
+        let after = after.replace("\n", newline);
+        write_gameinfo(
+          &game_path,
+          &format!("{bom}{}", config.replace("\n", newline)),
+        );
+        let mut manager = GameConfigManager::new();
+
+        manager.update_mod_paths(&game_path, &test_paths()).unwrap();
+        let modded = current_gameinfo(&game_path);
+        assert!(modded.starts_with(&before) && modded.ends_with(&after));
+
+        manager.toggle_mods(&game_path, true).unwrap();
+        let vanilla = current_gameinfo(&game_path);
+        assert!(vanilla.starts_with(&before) && vanilla.ends_with(&after));
+        assert!(!vanilla.contains("citadel/addons"));
+
+        manager.update_mod_paths(&game_path, &test_paths()).unwrap();
+        assert_eq!(current_gameinfo(&game_path), modded);
+      }
+    }
+  }
+
+  #[test]
+  fn the_stock_file_survives_a_modded_launch_and_a_return_to_vanilla() {
+    let (_dir, game_path) = setup_game_dir();
+    write_gameinfo(&game_path, STOCK_GAMEINFO);
+    let start = STOCK_GAMEINFO.find("SearchPaths").unwrap();
+    let end = start + STOCK_GAMEINFO[start..].find('}').unwrap() + 1;
+    let before = STOCK_GAMEINFO[..start].trim_end();
+    let after = &STOCK_GAMEINFO[end..];
+    let mut manager = GameConfigManager::new();
+
+    manager.update_mod_paths(&game_path, &test_paths()).unwrap();
+    let modded = current_gameinfo(&game_path);
+    assert!(modded.starts_with(before) && modded.ends_with(after));
+    assert!(
+      manager
+        .get_gameinfo_status(&game_path)
+        .unwrap()
+        .has_mod_paths
+    );
+
+    manager.toggle_mods(&game_path, true).unwrap();
+    let vanilla = current_gameinfo(&game_path);
+    assert!(vanilla.starts_with(before) && vanilla.ends_with(after));
+    let status = manager.get_gameinfo_status(&game_path).unwrap();
+    assert!(status.syntax_valid);
+    assert!(!status.has_mod_paths);
+  }
+
+  /// The block above used to be cut out, from the comment to its closing brace.
+  #[test]
+  fn a_comment_naming_search_paths_does_not_move_the_edit() {
+    let (_dir, game_path) = setup_game_dir();
+    write_gameinfo(
+      &game_path,
+      &custom_config("SearchPaths").replace("FPS config v3", "SearchPaths stay stock here"),
+    );
+    let mut manager = GameConfigManager::new();
+
+    manager.update_mod_paths(&game_path, &test_paths()).unwrap();
+
+    let content = current_gameinfo(&game_path);
+    assert!(content.contains("\"r_fov_max\"  \"120\" // wider than stock"));
+    assert!(content.contains("\"fps_max\"    \"240\""));
+    assert!(!content.contains("Game citadel\n      Game core"));
+    assert_eq!(
+      manager.marker_addons_paths(&game_path).unwrap(),
+      test_paths()
+    );
+  }
+
+  /// The opening quote used to stay behind and swallow the lines after it.
+  #[test]
+  fn a_quoted_search_paths_key_is_replaced_whole() {
+    let (_dir, game_path) = setup_game_dir();
+    write_gameinfo(&game_path, &custom_config("\"SearchPaths\""));
+    let mut manager = GameConfigManager::new();
+
+    manager.toggle_mods(&game_path, false).unwrap();
+
+    let content = current_gameinfo(&game_path);
+    assert!(content.contains(&format!("{{\n{MOD_MANAGER_MARKER_START}")));
+    assert!(crate::mod_manager::perf_config::patch::parse_sites(&content).is_ok());
+    assert_eq!(content.matches("\"SearchPaths\"").count(), 0);
+  }
+
+  #[test]
+  fn the_search_paths_key_is_found_in_any_case() {
+    let (_dir, game_path) = setup_game_dir();
+    write_gameinfo(&game_path, &custom_config("searchpaths"));
+    let mut manager = GameConfigManager::new();
+
+    manager.update_mod_paths(&game_path, &test_paths()).unwrap();
+
+    assert_eq!(
+      manager.marker_addons_paths(&game_path).unwrap(),
+      test_paths()
+    );
+    assert!(!current_gameinfo(&game_path).contains("searchpaths"));
+  }
+
+  #[test]
+  fn removing_the_mod_paths_is_not_reported_as_an_outside_change() {
+    let (_dir, game_path) = setup_game_dir();
+    write_gameinfo(&game_path, &custom_config("SearchPaths"));
+    let mut manager = GameConfigManager::new();
+    manager.update_mod_paths(&game_path, &test_paths()).unwrap();
+
+    manager.toggle_mods(&game_path, true).unwrap();
+
+    let status = manager.get_gameinfo_status(&game_path).unwrap();
+    assert!(!status.has_mod_paths);
+    assert!(!status.is_modified_externally);
+  }
+
+  #[test]
+  fn a_comment_between_the_key_and_its_block_is_understood() {
+    let (_dir, game_path) = setup_game_dir();
+    write_gameinfo(&game_path, &custom_config("SearchPaths // for mods"));
+    let mut manager = GameConfigManager::new();
+
+    manager.update_mod_paths(&game_path, &test_paths()).unwrap();
+
+    assert_eq!(
+      manager.marker_addons_paths(&game_path).unwrap(),
+      test_paths()
+    );
+    assert!(!current_gameinfo(&game_path).contains("Game core\n    }"));
+  }
+
+  /// Guides add this line by hand, and a config may keep it as a note. Treating
+  /// it as a mod path failed every vanilla launch.
+  #[test]
+  fn a_commented_out_addons_line_is_not_a_mod_path() {
+    let (_dir, game_path) = setup_game_dir();
+    write_gameinfo(
+      &game_path,
+      &custom_config("SearchPaths").replace("FPS config v3", "for mods add: Game citadel/addons"),
+    );
+    let mut manager = GameConfigManager::new();
+
+    manager.toggle_mods(&game_path, true).unwrap();
+
+    let status = manager.get_gameinfo_status(&game_path).unwrap();
+    assert!(!status.has_mod_paths);
+    assert!(current_gameinfo(&game_path).contains("\"fps_max\""));
+  }
+
+  /// A reversed pair used to panic with the manager lock held, poisoning it for
+  /// the rest of the session. A lone marker failed with a parse error.
+  #[test]
+  fn markers_without_a_partner_are_dropped_and_the_block_is_rewritten() {
+    let cases = [
+      (MOD_MANAGER_MARKER_END, MOD_MANAGER_MARKER_START),
+      (MOD_MANAGER_MARKER_START, ""),
+      ("", MOD_MANAGER_MARKER_END),
+    ];
+
+    for (above, below) in cases {
+      let (_dir, game_path) = setup_game_dir();
+      write_gameinfo(
+        &game_path,
+        &custom_config("SearchPaths")
+          .replace("    SearchPaths", &format!("    {above}\n    SearchPaths"))
+          .replace(
+            "    \"UserSettingsPathID\"",
+            &format!("    {below}\n    \"UserSettingsPathID\""),
+          ),
+      );
+      let mut manager = GameConfigManager::new();
+
+      for _ in 0..2 {
+        manager.update_mod_paths(&game_path, &test_paths()).unwrap();
+      }
+
+      let content = current_gameinfo(&game_path);
+      assert_eq!(content.matches(MOD_MANAGER_MARKER_START).count(), 1);
+      assert_eq!(content.matches(MOD_MANAGER_MARKER_END).count(), 1);
+      assert!(content.contains("\"fps_max\"") && content.contains("\"UserSettingsPathID\""));
+      assert_eq!(
+        manager.marker_addons_paths(&game_path).unwrap(),
+        test_paths()
+      );
+    }
+  }
+
+  #[test]
+  fn a_file_that_cannot_be_parsed_names_the_line_and_stays_as_it_is() {
+    let (_dir, game_path) = setup_game_dir();
+    let broken = custom_config("SearchPaths").replace("\"fps_max\"    \"240\"", "\"fps_max\"");
+    write_gameinfo(&game_path, &broken);
+    let mut manager = GameConfigManager::new();
+
+    let error = manager
+      .update_mod_paths(&game_path, &test_paths())
+      .unwrap_err();
+
+    assert!(matches!(error, Error::GameConfigParse(_)));
+    let message = error.to_string();
+    assert!(
+      message.starts_with("Failed to parse game configuration: "),
+      "{message}"
+    );
+    assert!(message.contains("line 8"), "{message}");
+    assert_eq!(current_gameinfo(&game_path), broken);
+  }
+
+  /// A new session sets up again, and `.bak` is older than the user's edits.
+  #[test]
+  fn setup_in_a_new_session_does_not_restore_the_backup_over_a_broken_file() {
+    let (_dir, game_path) = setup_game_dir();
+    write_gameinfo(&game_path, &custom_config("SearchPaths"));
+    GameConfigManager::new()
+      .update_mod_paths(&game_path, &test_paths())
+      .unwrap();
+    let broken = current_gameinfo(&game_path).replace("\"fps_max\"    \"240\"", "\"fps_max\"");
+    write_gameinfo(&game_path, &broken);
+
+    let error = GameConfigManager::new()
+      .update_mod_paths(&game_path, &test_paths())
+      .unwrap_err();
+
+    assert!(matches!(error, Error::GameConfigParse(_)));
+    assert_eq!(current_gameinfo(&game_path), broken);
+  }
+
+  #[test]
+  fn a_file_not_saved_as_utf8_names_the_line_and_stays_as_it_is() {
+    let (_dir, game_path) = setup_game_dir();
+    let mut original = custom_config("SearchPaths").into_bytes();
+    let comment = original.iter().position(|byte| *byte == b'F').unwrap();
+    original[comment] = 0xE9;
+    let file = game_path.join("game/citadel/gameinfo.gi");
+    fs::write(&file, &original).unwrap();
+    let mut manager = GameConfigManager::new();
+
+    let error = manager
+      .update_mod_paths(&game_path, &test_paths())
+      .unwrap_err();
+
+    assert!(matches!(error, Error::GameConfigParse(_)));
+    assert!(error.to_string().contains("line 3"), "{error}");
+    assert_eq!(fs::read(&file).unwrap(), original);
+    assert!(
+      !manager
+        .get_gameinfo_status(&game_path)
+        .unwrap()
+        .syntax_valid
+    );
+  }
+
+  /// `.bak` keeps the first file this manager ever saw, so without the copy a
+  /// config installed later is gone after a reset.
+  #[test]
+  fn a_reset_keeps_a_copy_of_every_file_it_replaces() {
+    let (_dir, game_path) = setup_game_dir();
+    let vanilla = vanilla_fixture("\n");
+    write_gameinfo(&game_path, &vanilla);
+    let mut manager = GameConfigManager::new();
+    manager.update_mod_paths(&game_path, &test_paths()).unwrap();
+    let custom = custom_config("SearchPaths");
+    write_gameinfo(&game_path, &custom);
+
+    manager
+      .reset_gameinfo(&game_path, Ok(vanilla.clone()))
+      .unwrap();
+
+    assert_eq!(current_gameinfo(&game_path), vanilla);
+    assert!(pre_reset_copies(&game_path).contains(&custom));
+
+    manager.update_mod_paths(&game_path, &test_paths()).unwrap();
+    let modded = current_gameinfo(&game_path);
+    manager.reset_gameinfo(&game_path, Ok(vanilla)).unwrap();
+
+    let copies = pre_reset_copies(&game_path);
+    assert!(copies.contains(&custom));
+    assert!(copies.contains(&modded));
+  }
+
+  #[test]
+  fn an_offline_reset_keeps_a_copy_too() {
+    let (_dir, game_path) = setup_game_dir();
+    write_gameinfo(&game_path, &vanilla_fixture("\n"));
+    let mut manager = GameConfigManager::new();
+    manager.update_mod_paths(&game_path, &test_paths()).unwrap();
+    let custom = custom_config("SearchPaths");
+    write_gameinfo(&game_path, &custom);
+
+    let source = manager
+      .reset_gameinfo(&game_path, Err(Error::Network("offline".into())))
+      .unwrap();
+
+    assert_eq!(source, GameInfoResetSource::Backup);
+    assert!(pre_reset_copies(&game_path).contains(&custom));
+  }
+
+  #[test]
+  fn rebuilding_unmarked_search_paths_keeps_a_copy() {
+    let (_dir, game_path) = setup_game_dir();
+    let custom = custom_config("SearchPaths").replace("Game core", "Game custom\n      Game core");
+    write_gameinfo(&game_path, &custom);
+    let mut manager = GameConfigManager::new();
+
+    manager.update_mod_paths(&game_path, &test_paths()).unwrap();
+
+    assert!(!current_gameinfo(&game_path).contains("Game custom"));
+    assert_eq!(pre_reset_copies(&game_path), vec![custom.clone()]);
+
+    manager
+      .update_mod_paths(&game_path, &["citadel/addons/profile_default".to_string()])
+      .unwrap();
+
+    assert_eq!(pre_reset_copies(&game_path), vec![custom]);
   }
 }

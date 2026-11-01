@@ -101,12 +101,33 @@ impl Parser {
         // Parse key
         let key = self.parse_string()?;
 
-        // Parse separator (whitespace between key and value)
-        let separator = if self.current_token().token_type == TokenType::Whitespace {
-            Some(self.parse_whitespace()?)
-        } else {
-            None
-        };
+        // Parse separator (whitespace between key and value). The game also
+        // skips comments here, so a note after a block's key must not end
+        // parsing. Its text stays in the separator so serializing keeps it.
+        let mut separator: Option<WhitespaceNode> = None;
+        while matches!(
+            self.current_token().token_type,
+            TokenType::Whitespace | TokenType::Comment
+        ) {
+            let token = self.current_token().clone();
+            match &mut separator {
+                Some(node) => {
+                    node.end = self.make_position(&token);
+                    node.raw.push_str(&token.raw);
+                    node.value.push_str(&token.raw);
+                }
+                None => {
+                    separator = Some(WhitespaceNode {
+                        node_type: NodeType::Whitespace,
+                        start: self.make_position(&token),
+                        end: self.make_position(&token),
+                        raw: token.raw.clone(),
+                        value: token.raw.clone(),
+                    });
+                }
+            }
+            self.advance();
+        }
 
         // Parse value
         let value = if self.current_token().token_type == TokenType::OpenBrace {
@@ -590,6 +611,45 @@ mod tests {
 
         // Verify data extraction works despite comments
         assert!(result.data.contains_key("Root"));
+    }
+
+    #[test]
+    fn test_parse_comment_between_key_and_value() {
+        let input = r#"
+"Root" // note
+// another note
+{
+    "Key" /* why */ "Value"
+}
+"#;
+        let result = Parser::parse(input, ParseOptions::default()).unwrap();
+
+        if let Some(KeyValuesValue::Object(obj)) = result.data.get("Root") {
+            assert!(matches!(
+                obj.get("Key"),
+                Some(KeyValuesValue::String(s)) if s == "Value"
+            ));
+        } else {
+            panic!("Expected Root to be an object");
+        }
+    }
+
+    #[test]
+    fn test_comment_between_key_and_value_survives_serialization() {
+        let input = "\"Root\" // note\n// another note\n{\n    \"Key\" /* why */ \"Value\"\n}\n";
+        let result = Parser::parse(input, ParseOptions::default()).unwrap();
+
+        assert_eq!(
+            crate::serializer::Serializer::serialize_ast(&result.ast),
+            input
+        );
+    }
+
+    #[test]
+    fn test_key_without_a_value_is_still_an_error() {
+        let input = "\"Root\"\n{\n    \"Key\" // note\n}\n";
+
+        assert!(Parser::parse(input, ParseOptions::default()).is_err());
     }
 
     #[test]
