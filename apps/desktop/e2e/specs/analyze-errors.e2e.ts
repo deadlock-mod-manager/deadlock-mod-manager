@@ -16,7 +16,12 @@ import { assertOwnedWorld } from "../support/world";
 
 const DIALOG = '[role="dialog"]';
 
-type TabView = { selected: boolean; label: string; text: string; rows: number };
+type TabView = {
+  selected: boolean;
+  label: string;
+  text: string;
+  rows: string[];
+};
 
 // My Mods can mount more than one copy of the results dialog, stacked on top
 // of each other, so every query stays inside the first one. Inside it the
@@ -46,7 +51,10 @@ const readTab = (value: string) =>
       selected: trigger?.getAttribute("aria-selected") === "true",
       label: trigger?.textContent?.trim() ?? "",
       text: (panel?.textContent ?? "").replace(/\s+/g, " ").trim(),
-      rows: panel?.querySelectorAll("[data-analysis-error]").length ?? 0,
+      rows: Array.from(
+        panel?.querySelectorAll("[data-analysis-error]") ?? [],
+        (row) => (row.textContent ?? "").replace(/\s+/g, " ").trim(),
+      ),
     };
   }, value);
 
@@ -99,12 +107,13 @@ describe("analysis errors", () => {
       const failed = LOOKUP_FILES.find((name) => name !== unknownFiles[0]);
       expect(errors.text).toContain(`${failed}`);
       expect(errors.text).toContain("503");
-      // The corrupt file's row carries the parser's reason after its name.
-      expect(errors.text).toMatch(
-        new RegExp(`Failed to parse ${CORRUPT_FILE.replace(".", "\\.")}: \\S`),
+      // The corrupt file's own row gives the parser's reason after its name.
+      const corruptRow = errors.rows.find((row) => row.includes(CORRUPT_FILE));
+      expect(corruptRow).toMatch(
+        new RegExp(`^Failed to parse ${CORRUPT_FILE.replace(".", "\\.")}: \\S`),
       );
       expect(errors.text).not.toContain(`${unknownFiles[0]}`);
-      expect(errors.rows).toBe(2);
+      expect(errors.rows).toHaveLength(2);
       expect(errors.label).toBe("Errors (2)");
       return Promise.resolve();
     });
