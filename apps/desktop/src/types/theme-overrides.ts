@@ -5,6 +5,7 @@ export type ThemeOverrides = {
   cardWrapper?: ComponentType<{ children: ReactNode }>;
   dashboardCardWrapper?: ComponentType<{ children: ReactNode }>;
   dashboardPage?: ComponentType<{ children: ReactNode }>;
+  libraryBanner?: ComponentType;
   topbarLogo?: ComponentType;
   sidebarContentExtra?: ComponentType;
   sidebarFooterExtra?: ComponentType;
