@@ -1,5 +1,5 @@
 import type { ProfileModDownload } from "@deadlock-mods/shared";
-import type { LocalMod, ModFileTree } from "@/types/mods";
+import type { LocalMod, ModDownloadItem, ModFileTree } from "@/types/mods";
 import type { ModProfile } from "@/types/profiles";
 
 export interface SerializedProfileMod {
@@ -8,6 +8,47 @@ export interface SerializedProfileMod {
   fileTree?: ModFileTree;
   selectedDownloads?: ProfileModDownload[];
 }
+
+/**
+ * The downloads a mod without a recorded pick was installed from, read from
+ * the archive each selected file came from. Only a complete, unambiguous match
+ * counts.
+ */
+const downloadsFromFileTree = (
+  localMod: LocalMod,
+): ModDownloadItem[] | undefined => {
+  const selectedFiles =
+    localMod.installedFileTree?.files.filter((file) => file.is_selected) ?? [];
+  if (
+    selectedFiles.length === 0 ||
+    selectedFiles.some((file) => !file.archive_name)
+  ) {
+    return undefined;
+  }
+
+  const picks: ModDownloadItem[] = [];
+  for (const archiveName of new Set(
+    selectedFiles.map((file) => file.archive_name),
+  )) {
+    const matches = (localMod.downloads ?? []).filter(
+      (download) => download.name === archiveName,
+    );
+    if (matches.length !== 1) {
+      return undefined;
+    }
+    picks.push(matches[0]);
+  }
+  return picks;
+};
+
+/** The recorded pick, else the one the file tree shows; failing both, the
+ *  first download stands in. */
+const sharedDownloads = (localMod: LocalMod): ModDownloadItem[] =>
+  localMod.selectedDownloads?.length
+    ? localMod.selectedDownloads
+    : (downloadsFromFileTree(localMod) ??
+      localMod.downloads?.slice(0, 1) ??
+      []);
 
 const serializeProfileMod = (
   remoteId: string,
@@ -34,10 +75,8 @@ const serializeProfileMod = (
         };
   }
 
-  if (localMod?.downloads && localMod.downloads.length > 0) {
-    const selected = localMod.selectedDownloads?.length
-      ? localMod.selectedDownloads
-      : [localMod.downloads[0]];
+  const selected = localMod ? sharedDownloads(localMod) : [];
+  if (selected.length > 0) {
     serialized.selectedDownloads = selected.map((d) => ({
       remoteId,
       file: d.name,

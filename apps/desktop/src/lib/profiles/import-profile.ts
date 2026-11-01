@@ -9,6 +9,8 @@ import { prepareProfileImportMods } from "@/lib/profiles/import-profile-prep";
 import { resolveImportContext } from "@/lib/profiles/import-profile-shared";
 import type {
   ImportProgress,
+  ImportedModDownloads,
+  PreparedProfileImportMod,
   ProfileImportOptions,
 } from "@/lib/profiles/types";
 import type { State } from "@/lib/store";
@@ -28,6 +30,16 @@ export interface ProfileImportFlowDeps {
   getActiveProfile: State["getActiveProfile"];
   fileserverPreference: State["fileserverPreference"];
 }
+
+const downloadsByRemoteId = (
+  preparedMods: PreparedProfileImportMod[],
+): Map<string, ImportedModDownloads> =>
+  new Map(
+    preparedMods.map((entry) => [
+      entry.profileImportMod.modId,
+      entry.downloads,
+    ]),
+  );
 
 export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
   const {
@@ -143,6 +155,7 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
           newProfileId,
           result.installedMods,
           modsDataByRemoteId,
+          downloadsByRemoteId(preparedMods),
         );
       }
 
@@ -273,6 +286,7 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
           activeProfile.id,
           result.installedMods,
           modsDataByRemoteId,
+          downloadsByRemoteId(preparedMods),
         );
       }
 

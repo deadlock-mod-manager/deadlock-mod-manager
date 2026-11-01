@@ -3,7 +3,7 @@ import type {
   ProfileModDownload,
   SharedProfile,
 } from "@deadlock-mods/shared";
-import type { ProfileImportMod } from "@/types/mods";
+import type { ModDownloadItem, ProfileImportMod } from "@/types/mods";
 
 export interface ImportProgress {
   currentStep: string;
@@ -21,10 +21,18 @@ export interface AvailableImportedMod {
   modData: ModDto;
 }
 
+/** The mod's files and the ones the import fetched, kept on the imported mod
+ *  so sharing the profile on passes the same picks. */
+export interface ImportedModDownloads {
+  downloads: ModDownloadItem[];
+  selectedDownloads: ModDownloadItem[];
+}
+
 export interface PreparedProfileImportMod {
   importedMod: OrderedImportedMod;
   modData: ModDto;
   profileImportMod: ProfileImportMod;
+  downloads: ImportedModDownloads;
 }
 
 export interface PreparedProfileImport {
