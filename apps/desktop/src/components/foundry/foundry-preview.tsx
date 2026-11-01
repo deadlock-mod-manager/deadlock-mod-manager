@@ -37,9 +37,9 @@ export const FoundryPreview = () => {
   const workspaceRoot = workspace?.root ?? null;
   const filePath = manifest?.filePath ?? null;
   const readTexture = useCallback(
-    async (path: string) => {
+    async (path: string, opaque: boolean) => {
       if (!filePath) throw new Error("No skin is loaded.");
-      return (await decodeFoundryTexture(filePath, path, workspaceRoot))
+      return (await decodeFoundryTexture(filePath, path, workspaceRoot, opaque))
         .dataUrl;
     },
     [filePath, workspaceRoot],

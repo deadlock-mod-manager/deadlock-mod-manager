@@ -151,11 +151,13 @@ export const decodeFoundryTexture = async (
   filePath: string,
   entryPath: string,
   workspaceRoot: string | null = null,
+  opaque = false,
 ): Promise<FoundryTexture> => {
   return await invoke<FoundryTexture>("foundry_decode_texture", {
     filePath,
     entryPath,
     workspaceRoot,
+    opaque,
   });
 };
 

@@ -110,7 +110,7 @@ interface FoundryModelViewerProps {
   /** Edited color maps to swap into the loaded model without a rebuild. */
   textureRefresh?: FoundryTextureRefresh;
   /** Reads a color map's current image as a data URL. */
-  readTexture?: (path: string) => Promise<string>;
+  readTexture?: (path: string, opaque: boolean) => Promise<string>;
   /** Told whether a model is on screen, for overlays that sit over the stage. */
   onReadyChange?: (ready: boolean) => void;
   /** Receives a still of the hero cropped to its outline, or null once gone. */
@@ -1003,22 +1003,39 @@ export const FoundryModelViewer = ({
     let cancelled = false;
     for (const path of paths) {
       const key = path.toLowerCase();
-      read(path)
-        .then(async (url) => {
-          const image = new Image();
-          image.src = url;
-          await image.decode();
-          if (cancelled) return;
-          for (const snapshot of snapshotsRef.current) {
-            const map = snapshot.material.map;
-            if (snapshot.texture !== key || !map) continue;
-            map.image = image;
-            map.needsUpdate = true;
-          }
-        })
-        .catch(() => {
-          // The next full load reads the same file; nothing to recover here.
-        });
+      const matching = snapshotsRef.current.filter(
+        (snapshot) => snapshot.texture === key && snapshot.material.map,
+      );
+      for (const opaque of new Set(
+        matching.map(
+          ({ material }) => !material.transparent && material.alphaTest === 0,
+        ),
+      )) {
+        read(path, opaque)
+          .then(async (url) => {
+            const image = new Image();
+            image.src = url;
+            await image.decode();
+            if (cancelled) return;
+            for (const snapshot of matching) {
+              const map = snapshot.material.map;
+              if (
+                !map ||
+                (!snapshot.material.transparent &&
+                  snapshot.material.alphaTest === 0) !== opaque
+              )
+                continue;
+              // GLTF preview maps may be smaller than the edited texture. Free
+              // their immutable GPU allocation before uploading the new image.
+              map.dispose();
+              map.image = image;
+              map.needsUpdate = true;
+            }
+          })
+          .catch(() => {
+            // The next full load reads the same file; nothing to recover here.
+          });
+      }
     }
     return () => {
       cancelled = true;

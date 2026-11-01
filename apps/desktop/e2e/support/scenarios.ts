@@ -705,6 +705,8 @@ export const scenarios = {
   },
   "downloads-pause": downloads,
   "downloads-range": downloads,
+  "downloads-deleted-profile": downloads,
+  "downloads-deleted-default": downloads,
   "downloads-cancel": { ...downloads, coverage: "ipc-recovery" },
   "downloads-cancel-connecting": downloads,
   "downloads-cancel-queued": downloads,

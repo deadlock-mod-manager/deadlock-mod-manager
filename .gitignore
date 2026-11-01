@@ -9,6 +9,7 @@ node_modules
 coverage
 .e2e/
 .verify/
+.tmp/
 
 # next.js
 .next/

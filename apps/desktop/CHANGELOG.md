@@ -5,7 +5,7 @@
 ### Minor Changes
 
 - 713ebd4: Move Stats and its Live tab out of experimental, with an off switch in Privacy
-- 22558d3: Move the background image to Settings > Themes and remove the Flashbang plugin
+- 22558d3: Move the background image to Settings > Background and remove the Flashbang plugin
 - c2f9ff5: Add 1-click installs from allowlisted mod sites, starting with Divine Skins
 - ee6a03f: Redesign the Mod Foundry and add sound volume, mute, OGG and FLAC support
 - f295a32: Show a possible crash cause when a fatal error names a resource supplied by a mounted mod VPK.
@@ -23,6 +23,8 @@
 
 ### Patch Changes
 
+- Keep painted skin sections visible in the Foundry's 3D preview after applying a color.
+- Simplify the Foundry export confirmation and keep its actions visible in shorter windows.
 - f9fc83b: Keep failed mod updates ready to retry without refreshing the file list again.
 - 0a6395d: Retry a server without Range when it fails the first segment's request
 - 5d01b0b: Stop match sync from adding Deadlock playtime to Steam while it waits between requests

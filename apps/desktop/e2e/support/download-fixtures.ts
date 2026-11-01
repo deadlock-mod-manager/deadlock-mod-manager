@@ -249,6 +249,9 @@ export const prepareDownloadWorld = async (
   scenario: string,
 ): Promise<void> => {
   const payload = payloadFor(scenario);
+  const missingActiveProfile =
+    scenario === "downloads-deleted-profile" ||
+    scenario === "downloads-deleted-default";
   const selected: ModDownloadItem = {
     name: DOWNLOAD_FILE,
     url: `${origin}/downloads/${DOWNLOAD_FILE}`,
@@ -275,7 +278,9 @@ export const prepareDownloadWorld = async (
   const mod = {
     ...fixtureMod(DOWNLOAD_MOD, 0),
     name: DOWNLOAD_NAME,
-    status: ModStatus.FailedToDownload,
+    status: missingActiveProfile
+      ? ModStatus.Downloading
+      : ModStatus.FailedToDownload,
     installedVpks: [],
     downloads,
     selectedDownloads: files,
@@ -328,14 +333,32 @@ export const prepareDownloadWorld = async (
     mods,
     enabledMods: {},
   };
+  const otherProfile = {
+    ...profile,
+    id: "other",
+    name: "Other Profile",
+    folderName: "other",
+    isDefault: false,
+    mods: [],
+  };
+  const profiles: Record<string, typeof profile | typeof otherProfile> = {};
+  if (scenario !== "downloads-deleted-default") {
+    profiles.default = { ...profile, mods: missingActiveProfile ? [] : mods };
+  }
+  const modProgress: Record<string, { percentage: number }> = {};
+  if (missingActiveProfile) {
+    profiles.other = otherProfile;
+    modProgress[DOWNLOAD_MOD] = { percentage: 100 };
+  }
   const state = {
     ...persisted.state,
     // `downloads-segmented` turns it on through Settings instead.
     segmentedDownloads:
       segmentedEnabled(scenario) && scenario !== "downloads-segmented",
-    activeProfileId: "default",
+    activeProfileId: missingActiveProfile ? "profile_deleted" : "default",
     localMods: mods,
-    profiles: { default: profile },
+    profiles,
+    modProgress,
   };
   await writeFile(
     storePath,

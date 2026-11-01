@@ -67,10 +67,10 @@ export const FoundryExportSheet = ({ onClose }: { onClose: () => void }) => {
     t("foundry.export.defaultModName", { hero: heroName }),
   );
   const [result, setResult] = useState<FoundryExportResult | null>(null);
-  // Taken while the hero is still on screen behind the sheet; the success view
-  // stands it in front of the embers.
+  // Capture the finished skin while the viewer is still mounted behind the sheet.
   const [heroStill, setHeroStill] = useState<string | null>(null);
   useEffect(() => {
+    if (!result) return;
     let still: string | null = null;
     let cancelled = false;
     void captureHero().then((url) => {
@@ -85,7 +85,7 @@ export const FoundryExportSheet = ({ onClose }: { onClose: () => void }) => {
       cancelled = true;
       if (still) URL.revokeObjectURL(still);
     };
-  }, [captureHero]);
+  }, [captureHero, result]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {

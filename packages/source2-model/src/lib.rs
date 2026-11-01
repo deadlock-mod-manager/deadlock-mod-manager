@@ -120,20 +120,20 @@ fn encode_png_bytes(decoded: &DecodedTexture, max_side: u32) -> Result<Vec<u8>> 
 /// Decode a `.vtex_c` entry inside a VPK to a PNG.
 pub fn decode_texture_png(vpk_path: &Path, entry_path: &str) -> Result<TexturePng> {
     let bytes = vpk_extract::extract_entry(vpk_path, entry_path)?;
-    decode_texture_png_bytes(bytes)
+    decode_texture_png_bytes(bytes, false)
 }
 
 /// Decode a `.vtex_c` file that is already available as raw bytes to a PNG.
-pub fn decode_texture_png_bytes(bytes: Vec<u8>) -> Result<TexturePng> {
+pub fn decode_texture_png_bytes(bytes: Vec<u8>, opaque: bool) -> Result<TexturePng> {
     let res = Resource::parse(bytes)?;
     let header = VtexHeader::parse(&res)?;
     let decoded = header.decode(&res.data)?;
-    encode_png(&decoded)
+    encode_png(decoded, opaque)
 }
 
 /// Decode a standalone `.vtex_c` file on disk to a PNG.
 pub fn decode_texture_file(path: &Path) -> Result<TexturePng> {
-    decode_texture_png_bytes(std::fs::read(path)?)
+    decode_texture_png_bytes(std::fs::read(path)?, false)
 }
 
 /// Decode a `.vmesh_c` entry inside a VPK to a binary GLB for the live preview.
@@ -435,11 +435,53 @@ fn try_pose_model_at_rest(
     vmesh::pose_model_glb(model, &skeleton, &pose).map(Some)
 }
 
-fn encode_png(decoded: &DecodedTexture) -> Result<TexturePng> {
-    let png = encode_png_bytes(decoded, u32::MAX)?;
+fn encode_png(mut decoded: DecodedTexture, opaque: bool) -> Result<TexturePng> {
+    if opaque {
+        for pixel in decoded.rgba.as_chunks_mut::<4>().0 {
+            pixel[3] = 255;
+        }
+    }
+    let png = encode_png_bytes(&decoded, u32::MAX)?;
     Ok(TexturePng {
         width: decoded.width,
         height: decoded.height,
         png,
     })
+}
+
+#[cfg(test)]
+mod texture_png_tests {
+    use super::*;
+
+    #[test]
+    fn opaque_color_maps_preserve_rgb_behind_shader_masks() {
+        let texture = encode_png(
+            DecodedTexture {
+                width: 2,
+                height: 1,
+                rgba: vec![0, 0, 255, 0, 200, 30, 10, 128],
+            },
+            true,
+        )
+        .unwrap();
+        let image = image::load_from_memory(&texture.png).unwrap().to_rgba8();
+        assert_eq!(image.get_pixel(0, 0).0, [0, 0, 255, 255]);
+        assert_eq!(image.get_pixel(1, 0).0, [200, 30, 10, 255]);
+    }
+
+    #[test]
+    fn transparent_previews_keep_their_alpha() {
+        let texture = encode_png(
+            DecodedTexture {
+                width: 2,
+                height: 1,
+                rgba: vec![0, 0, 255, 0, 200, 30, 10, 128],
+            },
+            false,
+        )
+        .unwrap();
+        let image = image::load_from_memory(&texture.png).unwrap().to_rgba8();
+        assert_eq!(image.get_pixel(0, 0).0, [0, 0, 255, 0]);
+        assert_eq!(image.get_pixel(1, 0).0, [200, 30, 10, 128]);
+    }
 }

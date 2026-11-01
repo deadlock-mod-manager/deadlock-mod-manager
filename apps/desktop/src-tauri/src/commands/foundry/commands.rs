@@ -420,6 +420,7 @@ pub async fn foundry_decode_texture(
   file_path: String,
   entry_path: String,
   workspace_root: Option<String>,
+  opaque: Option<bool>,
 ) -> Result<FoundryTexture, Error> {
   let vpk_path = PathBuf::from(&file_path);
   tauri::async_runtime::spawn_blocking(move || {
@@ -428,7 +429,7 @@ pub async fn foundry_decode_texture(
       &vpk_path,
       &entry_path,
     )?;
-    let decoded = source2_model::decode_texture_png_bytes(bytes)
+    let decoded = source2_model::decode_texture_png_bytes(bytes, opaque.unwrap_or(false))
       .map_err(|e| Error::InvalidInput(format!("failed to decode texture: {e}")))?;
     let b64 = base64::engine::general_purpose::STANDARD.encode(&decoded.png);
     Ok(FoundryTexture {

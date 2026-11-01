@@ -62,7 +62,7 @@ interface Props {
   onPickPart?: (texture: string, additive: boolean) => void;
   partLabel?: (texture: string) => string | undefined;
   textureRefresh?: FoundryTextureRefresh;
-  readTexture?: (path: string) => Promise<string>;
+  readTexture?: (path: string, opaque: boolean) => Promise<string>;
   onReadyChange?: (ready: boolean) => void;
   onHeroCapture?: (capture: (() => Promise<Blob | null>) | null) => void;
 }
