@@ -108,6 +108,8 @@ export interface LocalModWithFiles extends LocalMod {
 export interface LocalAddonInfo {
   filePath: string;
   fileName: string;
+  /** The file's place in the profile: `pak01_dir.vpk` or `addons2/pak01_dir.vpk`. */
+  locator: string;
   vpkParsed: VpkParsed;
   remoteId?: string; // Will be populated by API call
   matchInfo?: {

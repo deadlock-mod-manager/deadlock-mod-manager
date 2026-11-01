@@ -9,6 +9,11 @@ pub struct AnalyzedModRegistration {
 }
 
 impl ModManager {
+  /// Record `installed_vpks` as `mod_id`'s enabled files. Another mod owning
+  /// exactly the same files is replaced (an identified mod taking over its
+  /// placeholder) unless `refuse_existing_owner` is set, as it is when the
+  /// user adds a file by hand.
+  #[allow(clippy::too_many_arguments)]
   pub fn register_analyzed_mod(
     &mut self,
     original_vpk_names: Option<Vec<String>>,
@@ -17,6 +22,7 @@ impl ModManager {
     installed_vpks: Vec<String>,
     installed_paths: Option<Vec<String>>,
     profile_folder: Option<String>,
+    refuse_existing_owner: bool,
   ) -> Result<AnalyzedModRegistration, Error> {
     Self::ensure_safe_mod_id(&mod_id)?;
     if installed_vpks.is_empty() {
@@ -73,6 +79,12 @@ impl ModManager {
         .any(|file| filenames.contains(file))
       {
         continue;
+      }
+      if refuse_existing_owner {
+        return Err(Error::ModInvalid(format!(
+          "{mod_name} was not added: its file already belongs to {owner} in {}",
+          base.shard_dir(shard).display()
+        )));
       }
       let previous: HashSet<_> = entry.current_vpks.iter().cloned().collect();
       if previous != filenames {

@@ -23,6 +23,7 @@ import ModMetadataForm, {
   type ModMetadataFormHandle,
 } from "@/components/mod-creation/mod-metadata-form";
 import { useModProcessor } from "@/hooks/use-mod-processor";
+import { getErrorMessage } from "@/lib/errors";
 import {
   getModCategoryDisplayName,
   MOD_CATEGORY_ORDER,
@@ -49,6 +50,8 @@ export const AddAddonDialog = ({
     Partial<ModMetadata> | undefined
   >(undefined);
   const metaRef = useRef<ModMetadataFormHandle>(null);
+  // A second click lands before isProcessing re-renders the button disabled.
+  const submitting = useRef(false);
 
   // Reset form when addon changes
   useEffect(() => {
@@ -68,22 +71,27 @@ export const AddAddonDialog = ({
       toast.error(t("addons.noAddonSelected"));
       return;
     }
+    if (submitting.current) return;
+    submitting.current = true;
 
-    const metadata = await metaRef.current?.validateAndGet();
-    if (!metadata) {
-      return;
-    }
-
-    setIsProcessing(true);
     try {
+      const metadata = await metaRef.current?.validateAndGet();
+      if (!metadata) {
+        return;
+      }
+
+      setIsProcessing(true);
       // Use a custom processMod for already-installed local addons
-      await processLocalAddon(metadata, category, addon.filePath);
+      await processLocalAddon(metadata, category, addon);
       toast.success(t("addons.addToLibrarySuccess", { name: metadata.name }));
       onOpenChange(false);
     } catch (error) {
       console.error("Failed to add mod:", error);
-      toast.error(t("addons.failedToAddModToLibrary"));
+      toast.error(t("addons.failedToAddModToLibrary"), {
+        description: getErrorMessage(error),
+      });
     } finally {
+      submitting.current = false;
       setIsProcessing(false);
     }
   };
