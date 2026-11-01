@@ -236,12 +236,24 @@ export const startFixtureServer = async (
       remotePort: request.socket.remotePort,
     };
     journal.push(record);
+    const requestUrl = new URL(request.url ?? "/", "http://127.0.0.1");
+    const route = routes.find(
+      (candidate) =>
+        candidate.method.toUpperCase() === record.method.toUpperCase() &&
+        candidate.path === requestUrl.pathname &&
+        Object.entries(candidate.query ?? {}).every(([key, value]) =>
+          Array.isArray(value)
+            ? JSON.stringify(requestUrl.searchParams.getAll(key)) ===
+              JSON.stringify(value)
+            : requestUrl.searchParams.getAll(key).includes(value),
+        ),
+    );
     const chunks: Buffer[] = [];
     try {
       for await (const chunk of request) {
         const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
         record.bodyBytes += bytes.byteLength;
-        if (record.bodyBytes <= 1_048_576) chunks.push(bytes);
+        if (route?.captureBody) chunks.push(bytes);
       }
     } catch (error) {
       record.error = error instanceof Error ? error.message : String(error);
@@ -275,18 +287,6 @@ export const startFixtureServer = async (
       );
       return;
     }
-    const requestUrl = new URL(request.url ?? "/", "http://127.0.0.1");
-    const route = routes.find(
-      (candidate) =>
-        candidate.method.toUpperCase() === record.method.toUpperCase() &&
-        candidate.path === requestUrl.pathname &&
-        Object.entries(candidate.query ?? {}).every(([key, value]) =>
-          Array.isArray(value)
-            ? JSON.stringify(requestUrl.searchParams.getAll(key)) ===
-              JSON.stringify(value)
-            : requestUrl.searchParams.getAll(key).includes(value),
-        ),
-    );
     if (route?.captureBody)
       record.body = Buffer.concat(chunks).toString("utf8");
     if (route?.echoBodyOf) {
