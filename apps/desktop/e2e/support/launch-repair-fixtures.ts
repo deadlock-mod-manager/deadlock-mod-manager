@@ -12,7 +12,8 @@ import type { CreatedWorld } from "./world";
 
 /**
  * Two enabled GameBanana mods whose VPKs were deleted while DMM was closed.
- * The first downloads again; the second's download is gone for good.
+ * The first always downloads again; in the partial case the second's download
+ * is gone for good.
  */
 export const REPAIR_MODS = [
   { id: "950001", name: "E2E Repairable Mod", archive: "repairable.zip" },
@@ -43,7 +44,7 @@ const json = (
   body: JSON.stringify(body),
 });
 
-export const launchRepairRoutes = async () => {
+export const launchRepairRoutes = async (scenario: string) => {
   const archives = await Promise.all(
     REPAIR_MODS.map(async (mod) => ({
       ...mod,
@@ -75,7 +76,7 @@ export const launchRepairRoutes = async () => {
       json("/apiv11/Util/Fileservers", { _aRecords: [] }),
       ...archives.flatMap((mod, index): FixtureRoute[] => [
         json(`/apiv11/Mod/${mod.id}/DownloadPage`, { _aFiles: [files[index]] }),
-        mod.id === REPAIRABLE.id
+        mod.id === REPAIRABLE.id || scenario !== "missing-vpks-launch-partial"
           ? {
               method: "GET",
               path: `/dl/${fileId(mod.id)}`,

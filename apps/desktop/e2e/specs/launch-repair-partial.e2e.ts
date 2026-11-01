@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { mkdir, rmdir } from "node:fs/promises";
 import path from "node:path";
 import { $, $$, browser, expect } from "@wdio/globals";
 import { z } from "zod";
@@ -23,32 +24,34 @@ import { navigate } from "../support/ui";
 const row = (id: string) =>
   $(`[data-testid="launch-repair-mod"][data-mod-id="${id}"]`);
 
-/**
- * The reinstalled mod is enabled in the manifest, the store and the profile,
- * and its one VPK holds its own bytes; the unrepaired mod is enabled nowhere.
- */
-const repairedOnly = (observed: BrokenState) => {
-  const repaired = observed.manifest?.mods[REPAIRABLE.id];
-  const local = observed.state.localMods.find(
-    (mod) => mod.remoteId === REPAIRABLE.id,
-  );
-  const profile = observed.state.profiles[ALPHA.id];
-  return (
-    repaired?.enabled === true &&
-    repaired.currentVpks.length === 1 &&
-    observed.disk[repaired.currentVpks[0]] ===
-      fingerprint(repairPayload(REPAIRABLE.id)) &&
-    local?.status === "installed" &&
-    profile.enabledMods[REPAIRABLE.id]?.enabled === true &&
-    observed.manifest?.mods[UNREPAIRABLE.id]?.enabled !== true &&
-    profile.enabledMods[UNREPAIRABLE.id]?.enabled !== true
-  );
-};
+/** Each mod in `enabled` is installed with its own bytes; the rest nowhere. */
+const holds = (observed: BrokenState, enabled: readonly string[]) =>
+  REPAIR_MODS.every((mod) => {
+    const entry = observed.manifest?.mods[mod.id];
+    const local = observed.state.localMods.find(
+      (item) => item.remoteId === mod.id,
+    );
+    const profile = observed.state.profiles[ALPHA.id].enabledMods[mod.id];
+    if (!enabled.includes(mod.id))
+      return entry?.enabled !== true && profile?.enabled !== true;
+    return (
+      entry?.enabled === true &&
+      entry.currentVpks.length === 1 &&
+      observed.disk[entry.currentVpks[0]] ===
+        fingerprint(repairPayload(mod.id)) &&
+      local?.status === "installed" &&
+      profile?.enabled === true
+    );
+  });
 
-const assertRepairedOnly = (observed: BrokenState, label: string) => {
+const assertHolds = (
+  observed: BrokenState,
+  enabled: readonly string[],
+  label: string,
+) => {
   assert.ok(
-    repairedOnly(observed),
-    `${label}: only ${UNREPAIRABLE.id} may be disabled; observed ${JSON.stringify(
+    holds(observed, enabled),
+    `${label}: expected only ${enabled.join(", ")} enabled; observed ${JSON.stringify(
       {
         manifest: observed.manifest,
         disk: observed.disk,
@@ -59,10 +62,10 @@ const assertRepairedOnly = (observed: BrokenState, label: string) => {
   );
 };
 
-describe("launch repair after a partial reinstall", () => {
-  it("disables only the mod that could not be reinstalled", async () => {
+describe("launch repair after a reinstall", () => {
+  it("disables only the mods the reinstall left broken", async () => {
     const phase = z
-      .enum(["repair-partial", "restart-repair-partial"])
+      .enum(["repair-partial", "restart-repair-partial", "relaunch-error"])
       .parse(process.env.DMM_E2E_PHASE);
     const runtime = await startApplication();
     const world = runtime.roots.world;
@@ -71,7 +74,7 @@ describe("launch repair after a partial reinstall", () => {
     if (phase === "restart-repair-partial") {
       await step("Restart keeps the repaired mod enabled", async () => {
         const restarted = await captureBrokenState(world, "restarted");
-        assertRepairedOnly(restarted, "restarted");
+        assertHolds(restarted, [REPAIRABLE.id], "restarted");
         assert.equal(restarted.launches.length, 1);
         assert.equal(
           await $('[data-testid="launch-repair-dialog"]').isExisting(),
@@ -93,48 +96,85 @@ describe("launch repair after a partial reinstall", () => {
         ),
     );
     const dialog = await $('[data-testid="launch-repair-dialog"]');
+    const relaunchError = phase === "relaunch-error";
+    const enabledAfter = relaunchError
+      ? REPAIR_MODS.map((mod) => mod.id)
+      : [REPAIRABLE.id];
 
-    await step("Reinstall restores one mod and fails the other", async () => {
-      await $("button*=Launch modded").click();
-      await dialog.waitForDisplayed();
-      assert.equal(
-        await $$('[data-testid="launch-repair-mod"]').length,
-        REPAIR_MODS.length,
+    if (relaunchError)
+      await step(
+        "Reinstall restores both mods, then the launch fails",
+        async () => {
+          // The E2E build records each launch in this journal; a directory in
+          // its place makes the launch itself fail after the repair.
+          const journal = path.join(world, "artifacts", "game-launches.ndjson");
+          await mkdir(journal);
+          await $("button*=Launch modded").click();
+          await dialog.waitForDisplayed();
+          await $('[data-testid="launch-repair-reinstall"]').click();
+          await $(
+            '[data-testid="launch-repair-dialog"] [role="alert"]',
+          ).waitForDisplayed({
+            timeout: 60_000,
+          });
+          await browser.saveScreenshot(
+            path.join(world, "artifacts", "relaunch-error.png"),
+          );
+          await expect(dialog).not.toHaveText(
+            expect.stringContaining("Some mods could not be repaired"),
+          );
+          await rmdir(journal);
+          // The store persists shortly after the dialog updates.
+          await observeUntil(
+            "Both mods reinstalled and enabled",
+            () => readBrokenState(world),
+            (value) => holds(value, enabledAfter),
+          );
+          const repaired = await captureBrokenState(world, "after-reinstall");
+          assert.equal(repaired.launches.length, 0);
+        },
       );
-      await $('[data-testid="launch-repair-reinstall"]').click();
-      await expect(dialog).toHaveText(
-        expect.stringContaining("Some mods could not be repaired"),
-        { wait: 60_000 },
-      );
-      // A failed row adds its error under the name; a repaired one shows none.
-      assert.notEqual(
-        (await (await row(UNREPAIRABLE.id)).getText()).trim(),
-        UNREPAIRABLE.name,
-      );
-      assert.equal(
-        (await (await row(REPAIRABLE.id)).getText()).trim(),
-        REPAIRABLE.name,
-      );
-      await browser.saveScreenshot(
-        path.join(world, "artifacts", "repair-partial.png"),
-      );
-      const partial = await captureBrokenState(world, "after-reinstall");
-      assert.equal(partial.launches.length, 0);
-      const restored = partial.manifest?.mods[REPAIRABLE.id];
-      assert.equal(restored?.enabled, true);
-      assert.equal(restored?.currentVpks.length, 1);
-    });
+    else
+      await step("Reinstall restores one mod and fails the other", async () => {
+        await $("button*=Launch modded").click();
+        await dialog.waitForDisplayed();
+        assert.equal(
+          await $$('[data-testid="launch-repair-mod"]').length,
+          REPAIR_MODS.length,
+        );
+        await $('[data-testid="launch-repair-reinstall"]').click();
+        await expect(dialog).toHaveText(
+          expect.stringContaining("Some mods could not be repaired"),
+          { wait: 60_000 },
+        );
+        // A failed row adds its error under the name; a repaired one shows none.
+        assert.notEqual(
+          (await (await row(UNREPAIRABLE.id)).getText()).trim(),
+          UNREPAIRABLE.name,
+        );
+        assert.equal(
+          (await (await row(REPAIRABLE.id)).getText()).trim(),
+          REPAIRABLE.name,
+        );
+        await browser.saveScreenshot(
+          path.join(world, "artifacts", "repair-partial.png"),
+        );
+        const partial = await captureBrokenState(world, "after-reinstall");
+        assert.equal(partial.launches.length, 0);
+        const restored = partial.manifest?.mods[REPAIRABLE.id];
+        assert.equal(restored?.enabled, true);
+        assert.equal(restored?.currentVpks.length, 1);
+      });
 
-    await step("Disable and launch keeps the reinstalled mod", async () => {
+    await step("Disable and launch keeps the reinstalled mods", async () => {
       await $('[data-testid="launch-repair-disable"]').click();
       await dialog.waitForDisplayed({ reverse: true });
-      const launched = await observeUntil(
-        "One launch after disabling",
+      await observeUntil(
+        `One launch with only ${enabledAfter.join(", ")} enabled`,
         () => readBrokenState(world),
-        (value) => value.launches.length === 1,
+        (value) => value.launches.length === 1 && holds(value, enabledAfter),
       );
       await captureBrokenState(world, "after-disable");
-      assertRepairedOnly(launched, "after disable");
     });
 
     const final = await captureBrokenState(world, "final");
@@ -142,6 +182,6 @@ describe("launch repair after a partial reinstall", () => {
     const closed = await captureBrokenState(world, "closed");
     assert.deepEqual(closed.manifest, final.manifest);
     assert.deepEqual(closed.disk, final.disk);
-    assertRepairedOnly(closed, "closed");
+    assertHolds(closed, enabledAfter, "closed");
   });
 });
