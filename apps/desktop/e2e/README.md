@@ -69,6 +69,8 @@ current. Both run in the Windows and Linux E2E matrices with no host update.
 
 `shards-conflicts` gives the first mod in `addons` and the first in `addons2` the same model. Both are `pak01_dir.vpk`, so only the shard decides that the base mod wins. Load first on the overflow mod must move it into shard 1, push the 99th mod across the boundary, and survive a restart in both the conflicts list and the ordering dialog.
 
+`compatibility-fix-disabled` installs two text mods whose copy of a game localization file drops a game token, so the health check marks both "Can be fixed", then disables one. Fix all in the health dialog must say "Fixed 2 mods" and save both fixes; the disabled mod shows Fixed with "The fix applies when you enable this mod." in the dialog and on its page, while the repair package holds only the enabled mod's repair. Enabling it must add its repair to the package; disabling it again keeps the fix, Use original files on its page records the opt-out, and enabling it afterwards leaves it out of the package.
+
 The `stats` family pins a Stats account and serves deadlock-api from fixtures with exact values (`support/stats-dashboard-fixtures.ts`), so the cases assert what widgets compute, not only that they render:
 
 - `stats-default-layout`: the five built-in tabs and overview sections appear in their original order with values computed from the history; Cancel without changes asks nothing, Cancel after a removal asks and restores it; nothing is persisted.

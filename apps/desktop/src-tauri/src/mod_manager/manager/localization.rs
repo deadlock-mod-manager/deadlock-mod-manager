@@ -2059,6 +2059,70 @@ Game core
   }
 
   #[test]
+  fn a_disabled_mod_keeps_its_saved_fix_until_it_is_enabled_again() {
+    let (temp, mut manager) = manager_with_applied_repair();
+    let base = manager.get_addons_path(None).unwrap();
+    let app_data = temp.path().join("app-data");
+    let key = HealthKey::stamp(
+      &[base.join("pak01_dir.vpk")],
+      None,
+      receipt::REPAIR_REVISION,
+    )
+    .unwrap();
+    mod_health::record(
+      &app_data,
+      &base.to_string_lossy(),
+      None,
+      [(
+        "fixed".into(),
+        CachedModHealth::new(key, ModFindings::with_repairs(1), ModHealthSource::Launch),
+      )],
+    )
+    .unwrap();
+    let context = manager.mod_health_context_in(None, app_data).unwrap();
+    let status = || context.report().unwrap().mods[0].status;
+    let overlay = manager.localization_overlay_vpk_path(None).unwrap();
+    let repaired = fs::read(&overlay).unwrap();
+    let enable = |manager: &mut ModManager| {
+      manager
+        .install_mod(
+          Mod {
+            id: "fixed".into(),
+            name: "Fixed mod".into(),
+            is_map: false,
+            installed_vpks: vec![],
+            original_vpk_names: vec![],
+            file_tree: None,
+            install_order: None,
+          },
+          None,
+        )
+        .unwrap();
+      refresh_repairs(manager, None).unwrap();
+    };
+
+    manager.uninstall_mod("fixed".into(), vec![], None).unwrap();
+    assert!(!overlay.exists());
+    assert_eq!(
+      status(),
+      ModHealthStatus::Fixed,
+      "a disabled mod reports the fix saved for it"
+    );
+    enable(&mut manager);
+    assert_applied_repair(&manager, &repaired);
+    assert_eq!(status(), ModHealthStatus::Fixed);
+
+    manager.uninstall_mod("fixed".into(), vec![], None).unwrap();
+    manager
+      .set_mod_compatibility_for_mod("fixed".into(), false, None)
+      .unwrap();
+    assert_eq!(status(), ModHealthStatus::OriginalFiles);
+    enable(&mut manager);
+    assert!(!overlay.exists());
+    assert_eq!(status(), ModHealthStatus::OriginalFiles);
+  }
+
+  #[test]
   fn missing_overlay_is_not_reported_as_fixed() {
     let (temp, mut manager) = manager_with_applied_repair();
     let base = manager.get_addons_path(None).unwrap();
