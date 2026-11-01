@@ -1,11 +1,14 @@
 import { createHash } from "node:crypto";
 import { appendFile, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
 import { $, $$, browser } from "@wdio/globals";
 import { z } from "zod";
 import { observeUntil } from "./observations";
-import { navigate } from "./ui";
+import { readLifecycleState } from "./lifecycle-oracle";
+import { findMod, searchLibrary } from "./shard-actions";
+import { navigate, openAddLocalMod, waitForClickable } from "./ui";
 import { assertOwnedWorld } from "./world";
 
 // Probes for fixed-status cases. A fixed mod should keep "Fixed for this
@@ -41,7 +44,7 @@ const receiptSchema = z.object({
   data_repairs: z.array(z.object({ modId: z.string() })),
 });
 
-export type RepairState = {
+type RepairState = {
   folder: string;
   packageExists: boolean;
   receiptExists: boolean;
@@ -107,7 +110,9 @@ export const readRepairState = async (
 };
 
 /** The install-wide observed-history file the receipt key digests. */
-const readHistoryDigest = async (world: string): Promise<string | null> => {
+export const readHistoryDigest = async (
+  world: string,
+): Promise<string | null> => {
   const {
     configuration: { roots },
   } = await assertOwnedWorld(world);
@@ -160,7 +165,7 @@ export const checkpoint = async (
     );
 };
 
-export type Sample = { atMs: number; status: string | undefined };
+type Sample = { atMs: number; status: string | undefined };
 
 /**
  * Reads a mod's status every 250 ms for `durationMs` and records each change,
@@ -189,6 +194,18 @@ export const sampleStatus = async (
     `${JSON.stringify({ label, modId, samples })}\n`,
   );
   return samples;
+};
+
+const card = (modId: string) =>
+  `//*[@title="${modId}"]/ancestor::*[.//button[@role="switch"]][1]`;
+
+/** Clicks a mod's enable switch in the library. */
+export const toggleMod = async (modId: string) => {
+  await navigate("my-mods");
+  await findMod(modId);
+  const toggle = await $(`${card(modId)}//button[@role="switch"]`);
+  await toggle.waitForClickable();
+  await toggle.click();
 };
 
 const row = (modId: string) =>
@@ -235,6 +252,132 @@ export const waitForStatus = (
     (health) => health[modId] === status,
     timeoutMs,
   );
+
+/** Rewrites files with their own bytes, as a Steam verify or patch might. */
+export const rewriteGameFiles = async (world: string, files: string[]) => {
+  const citadel = await citadelOf(world);
+  for (const file of files) {
+    const target = path.join(citadel, file);
+    const bytes = await readFile(target);
+    // The receipt stamps mtimes; make sure the new one differs.
+    await delay(1100);
+    await writeFile(target, bytes);
+  }
+};
+
+/** A game update: a new build number in steam.inf. */
+export const bumpGameBuild = async (world: string, build: number) => {
+  const citadel = await citadelOf(world);
+  await writeFile(
+    path.join(citadel, "steam.inf"),
+    `ClientVersion=${build}\nServerVersion=${build}\n`,
+  );
+};
+
+const revisionSchema = z.looseObject({ revision: z.number() });
+const healthCacheSchema = z.looseObject({
+  profiles: z.record(
+    z.string(),
+    z.looseObject({
+      mods: z.record(
+        z.string(),
+        z.looseObject({ key: z.looseObject({ revision: z.number() }) }),
+      ),
+    }),
+  ),
+});
+
+/**
+ * What an app update that bumps `REPAIR_REVISION` leaves behind: a receipt and
+ * health cache written by the previous revision.
+ */
+export const ageRepairRevision = async (
+  world: string,
+  profileFolder: string | null,
+) => {
+  const {
+    configuration: { roots },
+  } = await assertOwnedWorld(world);
+  const citadel = path.join(roots.game, "game", "citadel");
+  const receiptPath = path.join(
+    citadel,
+    overlayFolder(profileFolder),
+    "compatibility.json",
+  );
+  const receipt = revisionSchema.parse(
+    JSON.parse(await readFile(receiptPath, "utf8")),
+  );
+  const revision = receipt.revision;
+  await writeFile(
+    receiptPath,
+    JSON.stringify({ ...receipt, revision: revision - 1 }),
+  );
+  const cachePath = path.join(roots.appData, "mod-health.json");
+  const cache = healthCacheSchema.parse(
+    JSON.parse(await readFile(cachePath, "utf8")),
+  );
+  for (const profile of Object.values(cache.profiles))
+    for (const entry of Object.values(profile.mods))
+      if (entry.key.revision === revision) entry.key.revision = revision - 1;
+  await writeFile(cachePath, JSON.stringify(cache));
+  return { from: revision, to: revision - 1 };
+};
+
+const DROP_AREA =
+  '[role="button"][aria-label="Drop files/folders here, or click to select"]';
+
+/** Imports a VPK from the world's fixtures as a new mod, enabled or not. */
+export const importMod = async (
+  world: string,
+  file: string,
+  enable: boolean,
+) => {
+  const before = (await readLifecycleState(world)).localMods.length;
+  await openAddLocalMod();
+  await $(DROP_AREA).waitForClickable();
+  const uri = pathToFileURL(path.join(world, "fixtures", file)).href;
+  await browser.execute(
+    (selector: string, dropped: string) => {
+      const transfer = new DataTransfer();
+      transfer.setData("text/uri-list", dropped);
+      document.querySelector(selector)?.dispatchEvent(
+        new DragEvent("drop", {
+          bubbles: true,
+          cancelable: true,
+          dataTransfer: transfer,
+        }),
+      );
+    },
+    DROP_AREA,
+    uri,
+  );
+  const dialog = await $('[role="dialog"]');
+  await dialog.waitForDisplayed();
+  const add = await dialog.$("button=Add");
+  await add.waitForClickable();
+  await add.click();
+  const state = await observeUntil(
+    "new mod added to the library",
+    () => readLifecycleState(world),
+    (value) => value.localMods.length > before,
+  );
+  const added = state.localMods.at(-1);
+  if (!added) throw new Error("Imported mod is missing from the library");
+  if (!enable) return added;
+  await navigate("my-mods");
+  await searchLibrary(added.name);
+  const toggle = `//*[@title="${added.name}"]/ancestor::*[.//button[@role="switch"]][1]//button[@role="switch"]`;
+  await waitForClickable(toggle);
+  await $(toggle).click();
+  await observeUntil(
+    "new mod enabled",
+    () => readLifecycleState(world),
+    (value) =>
+      value.localMods.find((mod) => mod.remoteId === added.remoteId)?.status ===
+      "installed",
+  );
+  return added;
+};
 
 /** Fixes `modId` from the health dialog and waits for its repair on disk. */
 export const fixAndConfirm = async (
@@ -287,4 +430,22 @@ export const expectStillFixed = async (
       `${name}: ${modId}'s repair must be packaged and mounted: ${JSON.stringify(repairs)}`,
     );
   return { samples, repairs };
+};
+
+const manifestSchema = z.object({
+  mods: z.record(z.string(), z.object({ enabled: z.boolean() })),
+});
+
+/** The profile manifest's enabled flag, read straight from disk. */
+export const readManifestEnabled = async (
+  world: string,
+  profileFolder: string,
+  modId: string,
+) => {
+  const citadel = await citadelOf(world);
+  const raw = await readFile(
+    path.join(citadel, "addons", profileFolder, ".dmm.json"),
+    "utf8",
+  );
+  return manifestSchema.parse(JSON.parse(raw)).mods[modId]?.enabled ?? null;
 };
