@@ -1022,6 +1022,7 @@
       "performance": {
         "firstMinute": "",
         "loading": "",
+        "retrying": "",
         "unavailable": "",
         "unknownHero": "",
         "spectating": "",
@@ -1517,8 +1518,7 @@
         "add": "",
         "empty": "",
         "fromTemplate": "",
-        "done": "",
-        "beta": ""
+        "done": ""
       },
       "templates": {
         "overview": "",
@@ -2187,8 +2187,6 @@
       "unrankedHint": ""
     },
     "match": {
-      "breadcrumb": "",
-      "matchId": "",
       "copyId": "",
       "copied": "",
       "copyFailed": "",
@@ -2293,6 +2291,10 @@
       "mvp": "",
       "errorTitle": "",
       "errorDescription": "",
+      "processingTitle": "",
+      "processingDescription": "",
+      "checkAgain": "",
+      "endedAgo": "",
       "backToStats": "",
       "notInMatchTitle": "",
       "notInMatchDescription": "",
@@ -2592,6 +2594,8 @@
       "preview": "",
       "previewHint": "",
       "previewUnavailable": "",
+      "previewNoTextures": "",
+      "previewAlreadyApplied": "",
       "patternLabel": "",
       "patternOverridesColor": "",
       "patternOverridesColorExceptEffects": "",
@@ -3944,8 +3948,6 @@
     "occultGeometryDescription": "",
     "animateOccultGeometry": "",
     "animateOccultGeometryDescription": "",
-    "flashbang": "",
-    "flashbangDescription": "",
     "audioVolume": "Volume audio",
     "audioVolumeDescription": "Ajustez le volume pour les aperçus audio et la lecture",
     "launchOptions": "Options de lancement",
@@ -4004,6 +4006,23 @@
     "pluginDescription": "",
     "quickAccess": "",
     "themes": "",
+    "background": "",
+    "backgroundDescription": "",
+    "backgroundImage": "",
+    "backgroundImageUrl": "",
+    "backgroundImageDescription": "",
+    "backgroundImagePlaceholder": "",
+    "backgroundLocalImage": "",
+    "backgroundChooseImage": "",
+    "backgroundRemove": "",
+    "backgroundOpacity": "",
+    "backgroundBlur": "",
+    "backgroundIncludeSidebar": "",
+    "backgroundIncludeSidebarDescription": "",
+    "backgroundIncludeTopBar": "",
+    "backgroundIncludeBottomBar": "",
+    "backgroundCoverage": "",
+    "backgroundAdjustments": "",
     "discord": "",
     "privacy": "Confidentialité",
     "about": "À propos",
@@ -4528,10 +4547,6 @@
         "title": "",
         "description": ""
       },
-      "player-stats": {
-        "title": "",
-        "description": ""
-      },
       "profile-management": {
         "title": "",
         "description": ""
@@ -4549,10 +4564,6 @@
         "description": ""
       },
       "cloud-backup": {
-        "title": "",
-        "description": ""
-      },
-      "live-scoreboard": {
         "title": "",
         "description": ""
       },
@@ -4768,6 +4779,9 @@
     "clearPerItemChoices": "",
     "clearPerItemChoicesConfirm_one": "",
     "clearPerItemChoicesConfirm_other": "",
+    "playerStatsTitle": "",
+    "playerStats": "",
+    "playerStatsDescription": "",
     "telemetryTitle": "Analytique d'utilisation",
     "analyticsEnabled": "",
     "analyticsEnabledDescription": "",
@@ -5424,6 +5438,10 @@
           }
         ],
         "features": [
+          "",
+          "",
+          "",
+          "",
           "",
           "",
           "",
@@ -6258,26 +6276,6 @@
         "pig": ""
       }
     },
-    "flashbang": {
-      "title": "Mode Flashbang",
-      "description": "",
-      "detailedDescription": "",
-      "usageInstructions": "",
-      "chance": ""
-    },
-    "background": {
-      "title": "Arrière-plan",
-      "description": "Personnaliser les arrière-plans de l'application.",
-      "detailedDescription": "Ce plugin vous permet de définir des images d'arrière-plan personnalisées pour toute l'application. Vous pouvez utiliser soit une URL vers une image en ligne, soit télécharger un fichier image local. Le plugin prend en charge les effets d'opacité et de flou pour personnaliser l'apparence. Vous pouvez également choisir d'inclure ou non la barre latérale dans l'effet d'arrière-plan.",
-      "usageInstructions": "Pour utiliser ce plugin : 1) Activez le plugin à l'aide du commutateur, 2) Entrez une URL d'image ou cliquez sur 'Choisir une image' pour télécharger un fichier local, 3) Ajustez les paramètres d'opacité et de flou selon vos préférences, 4) Activez optionnellement 'Inclure la barre latérale' pour appliquer l'arrière-plan à la barre latérale également.",
-      "imageUrl": "URL de l'image",
-      "imageUrlPlaceholder": "",
-      "opacity": "Opacité",
-      "blur": "Flou",
-      "includeSidebar": "Inclure la barre latérale",
-      "chooseImage": "Choisir une image"
-    },
-    "usageInstructions": "Instructions d'utilisation",
     "renderActive": "Le plugin est actif et fonctionne en arrière-plan",
     "homepage": "",
     "page": {

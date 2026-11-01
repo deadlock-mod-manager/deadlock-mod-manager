@@ -1022,6 +1022,7 @@
       "performance": {
         "firstMinute": "",
         "loading": "",
+        "retrying": "",
         "unavailable": "",
         "unknownHero": "",
         "spectating": "",
@@ -1517,8 +1518,7 @@
         "add": "",
         "empty": "",
         "fromTemplate": "",
-        "done": "",
-        "beta": ""
+        "done": ""
       },
       "templates": {
         "overview": "",
@@ -2187,8 +2187,6 @@
       "unrankedHint": ""
     },
     "match": {
-      "breadcrumb": "",
-      "matchId": "",
       "copyId": "",
       "copied": "",
       "copyFailed": "",
@@ -2293,6 +2291,10 @@
       "mvp": "",
       "errorTitle": "",
       "errorDescription": "",
+      "processingTitle": "",
+      "processingDescription": "",
+      "checkAgain": "",
+      "endedAgo": "",
       "backToStats": "",
       "notInMatchTitle": "",
       "notInMatchDescription": "",
@@ -2592,6 +2594,8 @@
       "preview": "",
       "previewHint": "",
       "previewUnavailable": "",
+      "previewNoTextures": "",
+      "previewAlreadyApplied": "",
       "patternLabel": "",
       "patternOverridesColor": "",
       "patternOverridesColorExceptEffects": "",
@@ -3944,8 +3948,6 @@
     "occultGeometryDescription": "",
     "animateOccultGeometry": "",
     "animateOccultGeometryDescription": "",
-    "flashbang": "플래시뱅",
-    "flashbangDescription": "",
     "audioVolume": "오디오 볼륨",
     "audioVolumeDescription": "오디오 미리보기 및 재생 볼륨 조정",
     "launchOptions": "실행 옵션",
@@ -4004,6 +4006,23 @@
     "pluginDescription": "데스크톱 앱용 플러그인 및 통합을 관리합니다.",
     "quickAccess": "",
     "themes": "",
+    "background": "",
+    "backgroundDescription": "",
+    "backgroundImage": "",
+    "backgroundImageUrl": "",
+    "backgroundImageDescription": "",
+    "backgroundImagePlaceholder": "",
+    "backgroundLocalImage": "",
+    "backgroundChooseImage": "",
+    "backgroundRemove": "",
+    "backgroundOpacity": "",
+    "backgroundBlur": "",
+    "backgroundIncludeSidebar": "",
+    "backgroundIncludeSidebarDescription": "",
+    "backgroundIncludeTopBar": "",
+    "backgroundIncludeBottomBar": "",
+    "backgroundCoverage": "",
+    "backgroundAdjustments": "",
     "discord": "",
     "privacy": "은둔",
     "about": "에 대한",
@@ -4528,10 +4547,6 @@
         "title": "",
         "description": ""
       },
-      "player-stats": {
-        "title": "",
-        "description": ""
-      },
       "profile-management": {
         "title": "",
         "description": ""
@@ -4549,10 +4564,6 @@
         "description": ""
       },
       "cloud-backup": {
-        "title": "",
-        "description": ""
-      },
-      "live-scoreboard": {
         "title": "",
         "description": ""
       },
@@ -4768,6 +4779,9 @@
     "clearPerItemChoices": "",
     "clearPerItemChoicesConfirm_one": "",
     "clearPerItemChoicesConfirm_other": "",
+    "playerStatsTitle": "",
+    "playerStats": "",
+    "playerStatsDescription": "",
     "telemetryTitle": "사용량 분석",
     "analyticsEnabled": "구글애널리틱스",
     "analyticsEnabledDescription": "",
@@ -5424,6 +5438,10 @@
           }
         ],
         "features": [
+          "",
+          "",
+          "",
+          "",
           "",
           "",
           "",
@@ -6258,26 +6276,6 @@
         "pig": ""
       }
     },
-    "flashbang": {
-      "title": "섬광탄 모드",
-      "description": "",
-      "detailedDescription": "",
-      "usageInstructions": "",
-      "chance": ""
-    },
-    "background": {
-      "title": "배경",
-      "description": "애플리케이션 배경을 사용자 정의하세요.",
-      "detailedDescription": "이 플러그인을 사용하면 전체 애플리케이션에 대한 사용자 정의 배경 이미지를 설정할 수 있습니다. 온라인 이미지의 URL을 사용하거나 로컬 이미지 파일을 업로드할 수 있습니다. 플러그인은 모양을 사용자 정의하기 위해 불투명도 및 흐림 효과를 지원합니다. 배경 효과에 사이드바를 포함할지 여부도 선택할 수 있습니다.",
-      "usageInstructions": "이 플러그인을 사용하려면: 1) 토글을 사용하여 플러그인을 활성화하고, 2) 이미지 URL을 입력하거나 '이미지 선택'을 클릭하여 로컬 파일을 업로드하고, 3) 불투명도 및 흐림 설정을 원하는 대로 조정하고, 4) 선택적으로 '사이드바 포함'을 활성화하여 사이드바에도 배경을 적용합니다.",
-      "imageUrl": "이미지 URL",
-      "imageUrlPlaceholder": "https://example.com/Background.jpg",
-      "opacity": "불투명",
-      "blur": "흐림",
-      "includeSidebar": "사이드바 포함",
-      "chooseImage": "이미지 선택"
-    },
-    "usageInstructions": "사용 지침",
     "renderActive": "플러그인이 활성화되어 백그라운드에서 실행 중입니다.",
     "homepage": "홈페이지",
     "page": {

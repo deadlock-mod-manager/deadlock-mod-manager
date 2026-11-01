@@ -1022,6 +1022,7 @@
       "performance": {
         "firstMinute": "",
         "loading": "",
+        "retrying": "",
         "unavailable": "",
         "unknownHero": "",
         "spectating": "",
@@ -1517,8 +1518,7 @@
         "add": "",
         "empty": "",
         "fromTemplate": "",
-        "done": "",
-        "beta": ""
+        "done": ""
       },
       "templates": {
         "overview": "",
@@ -2187,8 +2187,6 @@
       "unrankedHint": ""
     },
     "match": {
-      "breadcrumb": "",
-      "matchId": "",
       "copyId": "",
       "copied": "",
       "copyFailed": "",
@@ -2293,6 +2291,10 @@
       "mvp": "",
       "errorTitle": "",
       "errorDescription": "",
+      "processingTitle": "",
+      "processingDescription": "",
+      "checkAgain": "",
+      "endedAgo": "",
       "backToStats": "",
       "notInMatchTitle": "",
       "notInMatchDescription": "",
@@ -2592,6 +2594,8 @@
       "preview": "",
       "previewHint": "",
       "previewUnavailable": "",
+      "previewNoTextures": "",
+      "previewAlreadyApplied": "",
       "patternLabel": "",
       "patternOverridesColor": "",
       "patternOverridesColorExceptEffects": "",
@@ -3944,8 +3948,6 @@
     "occultGeometryDescription": "Pokaż dekoracyjne znaki i mandale w tle.",
     "animateOccultGeometry": "Animuj ukrytą geometrię",
     "animateOccultGeometryDescription": "Powoli obracaj i pulsuj podpisy tła. Animacje automatycznie wstrzymują się, gdy okno znajduje się w tle.",
-    "flashbang": "Granat błyskowy",
-    "flashbangDescription": "",
     "audioVolume": "Głośność audio",
     "audioVolumeDescription": "Dostosuj głośność dla podglądów audio i odtwarzania",
     "launchOptions": "Opcje Startu",
@@ -4004,6 +4006,23 @@
     "pluginDescription": "Zarządzaj wtyczkami i integracjami dla aplikacji komputerowej.",
     "quickAccess": "",
     "themes": "Motywy",
+    "background": "",
+    "backgroundDescription": "",
+    "backgroundImage": "",
+    "backgroundImageUrl": "",
+    "backgroundImageDescription": "",
+    "backgroundImagePlaceholder": "",
+    "backgroundLocalImage": "",
+    "backgroundChooseImage": "",
+    "backgroundRemove": "",
+    "backgroundOpacity": "",
+    "backgroundBlur": "",
+    "backgroundIncludeSidebar": "",
+    "backgroundIncludeSidebarDescription": "",
+    "backgroundIncludeTopBar": "",
+    "backgroundIncludeBottomBar": "",
+    "backgroundCoverage": "",
+    "backgroundAdjustments": "",
     "discord": "Discord",
     "privacy": "Prywatność",
     "about": "O Aplikacji",
@@ -4528,10 +4547,6 @@
         "title": "",
         "description": ""
       },
-      "player-stats": {
-        "title": "",
-        "description": ""
-      },
       "profile-management": {
         "title": "",
         "description": ""
@@ -4549,10 +4564,6 @@
         "description": ""
       },
       "cloud-backup": {
-        "title": "",
-        "description": ""
-      },
-      "live-scoreboard": {
         "title": "",
         "description": ""
       },
@@ -4768,6 +4779,9 @@
     "clearPerItemChoices": "",
     "clearPerItemChoicesConfirm_one": "",
     "clearPerItemChoicesConfirm_other": "",
+    "playerStatsTitle": "",
+    "playerStats": "",
+    "playerStatsDescription": "",
     "telemetryTitle": "Analityka użycia",
     "analyticsEnabled": "Analityka Google",
     "analyticsEnabledDescription": "",
@@ -5424,6 +5438,10 @@
           }
         ],
         "features": [
+          "",
+          "",
+          "",
+          "",
           "",
           "",
           "",
@@ -6258,26 +6276,6 @@
         "pig": ""
       }
     },
-    "flashbang": {
-      "title": "Tryb Flashbang",
-      "description": "",
-      "detailedDescription": "",
-      "usageInstructions": "",
-      "chance": ""
-    },
-    "background": {
-      "title": "Tło",
-      "description": "Dostosuj tła aplikacji.",
-      "detailedDescription": "Ten plugin pozwala ustawić niestandardowe obrazy tła dla całej aplikacji. Możesz użyć URL do obrazu online lub przesłać lokalny plik obrazu. Plugin obsługuje efekty przezroczystości i rozmycia, aby dostosować wygląd. Możesz również wybrać, czy uwzględnić pasek boczny w efekcie tła.",
-      "usageInstructions": "Aby użyć tego pluginu: 1) Włącz plugin za pomocą przełącznika, 2) Wprowadź URL obrazu lub kliknij 'Wybierz obraz', aby przesłać lokalny plik, 3) Dostosuj ustawienia przezroczystości i rozmycia według potrzeb, 4) Opcjonalnie włącz 'Uwzględnij pasek boczny', aby zastosować tło również do paska bocznego.",
-      "imageUrl": "URL obrazu",
-      "imageUrlPlaceholder": "https://przyklad.com/background.jpg",
-      "opacity": "Przezroczystość",
-      "blur": "Rozmycie",
-      "includeSidebar": "Uwzględnij pasek boczny",
-      "chooseImage": "Wybierz obraz"
-    },
-    "usageInstructions": "Instrukcje użytkowania",
     "renderActive": "Plugin jest aktywny i działa w tle",
     "homepage": "Strona główna",
     "page": {

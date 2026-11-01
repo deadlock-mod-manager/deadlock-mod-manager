@@ -1022,6 +1022,7 @@
       "performance": {
         "firstMinute": "",
         "loading": "",
+        "retrying": "",
         "unavailable": "",
         "unknownHero": "",
         "spectating": "",
@@ -1517,8 +1518,7 @@
         "add": "",
         "empty": "",
         "fromTemplate": "",
-        "done": "",
-        "beta": ""
+        "done": ""
       },
       "templates": {
         "overview": "",
@@ -2187,8 +2187,6 @@
       "unrankedHint": ""
     },
     "match": {
-      "breadcrumb": "",
-      "matchId": "",
       "copyId": "",
       "copied": "",
       "copyFailed": "",
@@ -2293,6 +2291,10 @@
       "mvp": "",
       "errorTitle": "",
       "errorDescription": "",
+      "processingTitle": "",
+      "processingDescription": "",
+      "checkAgain": "",
+      "endedAgo": "",
       "backToStats": "",
       "notInMatchTitle": "",
       "notInMatchDescription": "",
@@ -2592,6 +2594,8 @@
       "preview": "",
       "previewHint": "",
       "previewUnavailable": "",
+      "previewNoTextures": "",
+      "previewAlreadyApplied": "",
       "patternLabel": "",
       "patternOverridesColor": "",
       "patternOverridesColorExceptEffects": "",
@@ -3944,8 +3948,6 @@
     "occultGeometryDescription": "",
     "animateOccultGeometry": "",
     "animateOccultGeometryDescription": "",
-    "flashbang": "フラッシュバン",
-    "flashbangDescription": "",
     "audioVolume": "音量設定",
     "audioVolumeDescription": "音声プレビューや再生の音量を調整する",
     "launchOptions": "ローンチオプション",
@@ -4004,6 +4006,23 @@
     "pluginDescription": "デスクトップアプリのプラグインと統合機能を管理する。",
     "quickAccess": "",
     "themes": "",
+    "background": "",
+    "backgroundDescription": "",
+    "backgroundImage": "",
+    "backgroundImageUrl": "",
+    "backgroundImageDescription": "",
+    "backgroundImagePlaceholder": "",
+    "backgroundLocalImage": "",
+    "backgroundChooseImage": "",
+    "backgroundRemove": "",
+    "backgroundOpacity": "",
+    "backgroundBlur": "",
+    "backgroundIncludeSidebar": "",
+    "backgroundIncludeSidebarDescription": "",
+    "backgroundIncludeTopBar": "",
+    "backgroundIncludeBottomBar": "",
+    "backgroundCoverage": "",
+    "backgroundAdjustments": "",
     "discord": "",
     "privacy": "プライバシー",
     "about": "アプリ情報",
@@ -4528,10 +4547,6 @@
         "title": "",
         "description": ""
       },
-      "player-stats": {
-        "title": "",
-        "description": ""
-      },
       "profile-management": {
         "title": "",
         "description": ""
@@ -4549,10 +4564,6 @@
         "description": ""
       },
       "cloud-backup": {
-        "title": "",
-        "description": ""
-      },
-      "live-scoreboard": {
         "title": "",
         "description": ""
       },
@@ -4768,6 +4779,9 @@
     "clearPerItemChoices": "",
     "clearPerItemChoicesConfirm_one": "",
     "clearPerItemChoicesConfirm_other": "",
+    "playerStatsTitle": "",
+    "playerStats": "",
+    "playerStatsDescription": "",
     "telemetryTitle": "利用状況解析",
     "analyticsEnabled": "Googleアナリティクス",
     "analyticsEnabledDescription": "",
@@ -5424,6 +5438,10 @@
           }
         ],
         "features": [
+          "",
+          "",
+          "",
+          "",
           "",
           "",
           "",
@@ -6258,26 +6276,6 @@
         "pig": ""
       }
     },
-    "flashbang": {
-      "title": "フラッシュバンモード",
-      "description": "",
-      "detailedDescription": "",
-      "usageInstructions": "",
-      "chance": ""
-    },
-    "background": {
-      "title": "背景",
-      "description": "アプリケーションの背景をカスタマイズする。",
-      "detailedDescription": "このプラグインでは、アプリケーション全体のカスタム背景画像を設定できます。オンライン画像のURLを使用するか、ローカル画像ファイルをアップロードできます。プラグインは不透明度とぼかし効果をサポートして、外観をカスタマイズできます。サイドバーを背景効果に含めるかどうかも選択できます。",
-      "usageInstructions": "このプラグインを使用するには：1）トグルを使用してプラグインを有効にする、2）画像URLを入力するか、「画像を選択」をクリックしてローカルファイルをアップロードする、3）必要に応じて不透明度とぼかし設定を調整する、4）オプションで「サイドバーを含める」を有効にしてサイドバーにも背景を適用する。",
-      "imageUrl": "画像URL",
-      "imageUrlPlaceholder": "",
-      "opacity": "不透明度",
-      "blur": "ぼかし",
-      "includeSidebar": "サイドバーを含める",
-      "chooseImage": "画像を選択"
-    },
-    "usageInstructions": "使用手順",
     "renderActive": "プラグインがアクティブでバックグラウンドで実行中です",
     "homepage": "",
     "page": {
