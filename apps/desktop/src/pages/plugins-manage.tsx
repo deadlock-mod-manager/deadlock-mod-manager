@@ -1,247 +1,28 @@
-import type { Icon } from "@phosphor-icons/react";
-import {
-  ArrowCircleUpIcon,
-  CompassIcon,
-  FileZipIcon,
-  MagnifyingGlassIcon,
-  SquaresFourIcon,
-} from "@phosphor-icons/react";
+import { FileZipIcon, MagnifyingGlassIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router";
 import {
-  DetailPanel,
-  EmptyDetailPanel,
   PANEL_TABS,
   type PanelTab,
 } from "@/components/plugins/manage/detail-panel";
 import { DiscoverTab } from "@/components/plugins/manage/discover-tab";
-import { ExternalPluginRow } from "@/components/plugins/manage/external-plugin-row";
-import {
-  INSET_OUTLINE,
-  RowButton,
-  SectionHeader,
-} from "@/components/plugins/manage/plugin-row";
+import { InstalledTab } from "@/components/plugins/manage/installed-tab";
+import { TABS } from "@/components/plugins/manage/manage-tabs";
+import type { Tab } from "@/components/plugins/manage/manage-tabs";
+import { PageTab } from "@/components/plugins/manage/page-tab";
+import { INSET_OUTLINE } from "@/components/plugins/manage/plugin-styles";
+import { UpdatesTab } from "@/components/plugins/manage/updates-tab";
 import { useInstallFromFile } from "@/components/plugins/manage/use-install-plugin";
-import { TONE_COLOR } from "@/components/plugins/plugin-status";
 import { useExternalPlugins } from "@/hooks/use-external-plugins";
 import { getErrorMessage } from "@/lib/errors";
 import { cn } from "@/lib/utils";
-import type { ExternalPluginSummary } from "@/types/generated/ExternalPluginSummary";
-
-const TABS = ["installed", "discover", "updates"] as const;
-type Tab = (typeof TABS)[number];
-
-const TAB_ICONS = {
-  installed: SquaresFourIcon,
-  discover: CompassIcon,
-  updates: ArrowCircleUpIcon,
-} satisfies Record<Tab, Icon>;
 
 const parseTab = (value: string | null): Tab =>
   TABS.find((tab) => tab === value) ?? "installed";
 
 const parsePanelTab = (value: string | null): PanelTab =>
   PANEL_TABS.find((tab) => tab === value) ?? "access";
-
-const matches = (needle: string, ...texts: (string | null)[]) =>
-  !needle || texts.some((text) => text?.toLowerCase().includes(needle));
-
-type PageTabProps = {
-  tab: Tab;
-  active: boolean;
-  count?: number;
-  countTone?: "neutral" | "info";
-  onSelect: () => void;
-};
-
-const PageTab = ({ tab, active, count, countTone, onSelect }: PageTabProps) => {
-  const { t } = useTranslation();
-  const TabIcon = TAB_ICONS[tab];
-  const info = countTone === "info";
-  return (
-    <button
-      aria-selected={active}
-      className={cn(
-        "flex items-center gap-[8px] rounded-[8px] px-[14px] py-[8px] transition-colors",
-        INSET_OUTLINE,
-        active
-          ? "bg-[#1E1A18] outline-[#EFE0BE26]"
-          : "outline-transparent hover:bg-[#1E1A18]",
-      )}
-      onClick={onSelect}
-      role='tab'
-      type='button'>
-      <TabIcon color={active ? "#EFE0BE" : "#A3A3A3"} size={15} />
-      <span
-        className={cn(
-          "font-semibold text-[13px] leading-[normal]",
-          active ? "text-foreground" : "text-[#A3A3A3]",
-        )}>
-        {t(`plugins.manage.tabs.${tab}`)}
-      </span>
-      {count !== undefined && (
-        <span
-          className='rounded-[99px] px-[7px] py-[1px] font-mono font-semibold text-[11px] leading-[normal]'
-          style={{
-            backgroundColor: info ? "#60A5FA26" : "#FFFFFF0F",
-            color: info ? TONE_COLOR.info : "#A3A3A3",
-          }}>
-          {count}
-        </span>
-      )}
-    </button>
-  );
-};
-
-const FindMore = ({ onBrowse }: { onBrowse: () => void }) => {
-  const { t } = useTranslation();
-  return (
-    <div
-      className={cn(
-        "flex w-full shrink-0 items-center gap-[14px] rounded-[12px] p-[16px] outline-[#FFFFFF1A]",
-        INSET_OUTLINE,
-      )}>
-      <span className='flex size-[40px] shrink-0 items-center justify-center rounded-[10px] bg-[#FFFFFF0A]'>
-        <CompassIcon color='#EFE0BE' size={20} />
-      </span>
-      <div className='flex min-w-0 flex-1 flex-col gap-[3px]'>
-        <span className='font-semibold text-[14px] text-foreground leading-[normal]'>
-          {t("plugins.manage.findMore.title")}
-        </span>
-        <span className='w-full text-[#A3A3A3] text-[12px] leading-[17px]'>
-          {t("plugins.manage.findMore.body")}
-        </span>
-      </div>
-      <RowButton icon={CompassIcon} onClick={onBrowse}>
-        {t("plugins.manage.findMore.browse")}
-      </RowButton>
-    </div>
-  );
-};
-
-const ListNote = ({ children }: { children: string }) => (
-  <p className='w-full shrink-0 px-0.5 py-2.5 text-base text-muted-foreground leading-6'>
-    {children}
-  </p>
-);
-
-type InstalledTabProps = {
-  plugins: ExternalPluginSummary[];
-  needle: string;
-  query: string;
-  selected: ExternalPluginSummary | undefined;
-  panelTab: PanelTab;
-  onSelect: (pluginId: string) => void;
-  onPanelTabChange: (tab: PanelTab) => void;
-  onBrowse: () => void;
-};
-
-const InstalledTab = ({
-  plugins,
-  needle,
-  query,
-  selected,
-  panelTab,
-  onSelect,
-  onPanelTabChange,
-  onBrowse,
-}: InstalledTabProps) => {
-  const { t } = useTranslation();
-  const visiblePlugins = plugins.filter((plugin) =>
-    matches(needle, plugin.name, plugin.description, plugin.author),
-  );
-
-  return (
-    <div className='flex min-h-0 w-full flex-1 gap-[16px]'>
-      <div className='flex min-h-0 min-w-0 flex-1 flex-col gap-[10px] overflow-y-auto [&>*]:shrink-0'>
-        <SectionHeader
-          count={visiblePlugins.length}
-          label={t("plugins.manage.sections.installedByYou")}
-        />
-        {visiblePlugins.length === 0 && (
-          <ListNote>
-            {needle
-              ? t("plugins.manage.noMatches", { query })
-              : t("plugins.manage.noInstalled")}
-          </ListNote>
-        )}
-        {visiblePlugins.map((plugin) => (
-          <ExternalPluginRow
-            key={plugin.id}
-            onSelect={() => onSelect(plugin.id)}
-            plugin={plugin}
-            selected={plugin.id === selected?.id}
-          />
-        ))}
-        <FindMore onBrowse={onBrowse} />
-      </div>
-      {selected ? (
-        <DetailPanel
-          key={selected.id}
-          onTabChange={onPanelTabChange}
-          plugin={selected}
-          tab={panelTab}
-        />
-      ) : (
-        <EmptyDetailPanel onBrowse={onBrowse} />
-      )}
-    </div>
-  );
-};
-
-const UpdatesTab = ({
-  plugins,
-  needle,
-  query,
-  onSelect,
-}: {
-  plugins: ExternalPluginSummary[];
-  needle: string;
-  query: string;
-  onSelect: (pluginId: string) => void;
-}) => {
-  const { t } = useTranslation();
-  const visible = plugins.filter((plugin) =>
-    matches(needle, plugin.name, plugin.description, plugin.author),
-  );
-
-  if (plugins.length === 0) {
-    return (
-      <div className='flex w-full flex-col items-center gap-[6px] py-[64px] text-center'>
-        <span className='flex size-[52px] items-center justify-center rounded-[12px] bg-[#FFFFFF0A]'>
-          <ArrowCircleUpIcon color='#EFE0BE' size={26} />
-        </span>
-        <span className='pt-[8px] font-semibold text-[14px] text-foreground leading-[normal]'>
-          {t("plugins.manage.updatesEmpty.title")}
-        </span>
-        <span className='max-w-[360px] text-[#A3A3A3] text-[12px] leading-[17px]'>
-          {t("plugins.manage.updatesEmpty.body")}
-        </span>
-      </div>
-    );
-  }
-
-  return (
-    <div className='flex w-full flex-col gap-[10px]'>
-      <SectionHeader
-        count={visible.length}
-        label={t("plugins.manage.sections.updates")}
-      />
-      {visible.length === 0 && (
-        <ListNote>{t("plugins.manage.noMatches", { query })}</ListNote>
-      )}
-      {visible.map((plugin) => (
-        <ExternalPluginRow
-          key={plugin.id}
-          onSelect={() => onSelect(plugin.id)}
-          plugin={plugin}
-          updateFirst
-        />
-      ))}
-    </div>
-  );
-};
 
 const ManagePlugins = () => {
   const { t } = useTranslation();

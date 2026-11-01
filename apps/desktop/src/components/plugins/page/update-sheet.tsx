@@ -7,18 +7,14 @@ import { toast } from "@deadlock-mods/ui/components/sonner";
 import {
   ArrowCircleUpIcon,
   ArrowRightIcon,
-  EyeIcon,
   InfoIcon,
   XIcon,
 } from "@phosphor-icons/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { ChangeRow } from "@/components/plugins/page/change-row";
+import { updateChanges } from "@/components/plugins/page/update-changes";
 import { PluginTile } from "@/components/plugins/plugin-identity";
-import {
-  sortPermissions,
-  usePermissionCopy,
-} from "@/components/plugins/plugin-permissions";
-import { TONE_COLOR } from "@/components/plugins/plugin-status";
 import { getErrorMessage } from "@/lib/errors";
 import {
   applyExternalPluginUpdate,
@@ -27,111 +23,8 @@ import {
 } from "@/lib/external-plugins";
 import logger from "@/lib/logger";
 import type { ExternalPluginPendingUpdate } from "@/types/generated/ExternalPluginPendingUpdate";
-import type { ExternalPluginPermission } from "@/types/generated/ExternalPluginPermission";
 import type { ExternalPluginSummary } from "@/types/generated/ExternalPluginSummary";
 import { PageButton } from "./page-button";
-
-/** Requests the update adds or widens, and the ones it keeps as they are. */
-const updateChanges = (
-  plugin: ExternalPluginSummary,
-  update: ExternalPluginPendingUpdate,
-) => {
-  const added = sortPermissions(update.newPermissions);
-  const kept = sortPermissions(update.requiredPermissions).filter(
-    (permission) => !added.some((entry) => entry.id === permission.id),
-  );
-  const removed = sortPermissions(plugin.requiredPermissions).filter(
-    (permission) =>
-      !update.requiredPermissions.some((entry) => entry.id === permission.id),
-  );
-  return { added, kept, removed };
-};
-
-export const UpdateBanner = ({
-  plugin,
-  update,
-  onReview,
-}: {
-  plugin: ExternalPluginSummary;
-  update: ExternalPluginPendingUpdate;
-  onReview: () => void;
-}) => {
-  const { t } = useTranslation();
-  const { added } = updateChanges(plugin, update);
-  return (
-    <div className='flex shrink-0 items-center gap-3 border-[#6FA8F533] border-b bg-[#6FA8F514] px-6 pt-2.5 pb-[9px]'>
-      <ArrowCircleUpIcon color={TONE_COLOR.info} size={16} />
-      <p className='flex-1 text-[13px] text-foreground leading-[normal]'>
-        {added.length > 0
-          ? t("plugins.page.update.banner", {
-              count: added.length,
-              version: update.version,
-            })
-          : t("plugins.page.update.bannerNothingNew", {
-              version: update.version,
-            })}
-      </p>
-      <PageButton onClick={onReview} variant='outline'>
-        <EyeIcon />
-        {t("plugins.page.update.review")}
-      </PageButton>
-    </div>
-  );
-};
-
-const ChangeRow = ({
-  permission,
-  change,
-}: {
-  permission: ExternalPluginPermission;
-  change: "new" | "unchanged" | "removed";
-}) => {
-  const isNew = change === "new";
-  const { t } = useTranslation();
-  const describe = usePermissionCopy();
-  const copy = describe(permission);
-  const PermissionIcon = copy.icon;
-  return (
-    <div
-      className={
-        isNew
-          ? "flex w-full items-center gap-3 rounded-[10px] bg-[#60A5FA0F] px-[14px] py-3 ring-1 ring-[#60A5FA4D] ring-inset"
-          : "flex w-full items-center gap-3 rounded-[10px] bg-card px-[14px] py-3 ring-1 ring-[#FFFFFF0F] ring-inset"
-      }>
-      <span
-        className={
-          isNew
-            ? "flex size-7 shrink-0 items-center justify-center rounded-[7px] bg-[#60A5FA1F] text-[#60A5FA]"
-            : "flex size-7 shrink-0 items-center justify-center rounded-[7px] bg-[#FFFFFF0A] text-muted-foreground"
-        }>
-        <PermissionIcon size={15} />
-      </span>
-      <div className='flex min-w-0 flex-1 flex-col gap-0.5'>
-        <span
-          className={
-            isNew
-              ? "font-semibold text-[13px] text-foreground leading-[normal]"
-              : "font-semibold text-[13px] text-muted-foreground leading-[normal]"
-          }>
-          {copy.title}
-        </span>
-        {isNew ? (
-          <span className='text-[12px] text-muted-foreground leading-[17px]'>
-            {copy.detail}
-          </span>
-        ) : null}
-      </div>
-      <span
-        className={
-          isNew
-            ? "shrink-0 rounded-[6px] bg-[#60A5FA26] px-2 py-0.5 font-semibold text-[#60A5FA] text-[11px] leading-[normal]"
-            : "shrink-0 rounded-[6px] bg-[#FFFFFF0A] px-2 py-0.5 font-semibold text-[11px] text-muted-foreground leading-[normal]"
-        }>
-        {t(`plugins.page.update.${change}`)}
-      </span>
-    </div>
-  );
-};
 
 type UpdateSheetProps = {
   plugin: ExternalPluginSummary;

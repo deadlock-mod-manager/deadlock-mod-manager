@@ -1,7 +1,5 @@
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import {
-  CheckCircleIcon,
-  CircleDashedIcon,
   FileIcon,
   FileZipIcon,
   FolderOpenIcon,
@@ -11,14 +9,14 @@ import {
   TrashIcon,
 } from "@phosphor-icons/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { type ReactNode, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { AskCard } from "@/components/plugins/page/ask-card";
 import {
   allowsDefaultProfile,
   chooseGrantedPath,
   type FilesRequest,
   findPermission,
-  type PermissionCopy,
   permissionNeeds,
   sortPermissions,
   usePermissionCopy,
@@ -39,57 +37,6 @@ import type { ExternalPluginSummary } from "@/types/generated/ExternalPluginSumm
 import { PageButton } from "./page-button";
 import { ProfileSelect } from "./profile-select";
 import { usePluginActions } from "./use-plugin-actions";
-
-const AskState = ({ ready }: { ready: boolean }) => {
-  const { t } = useTranslation();
-  const color = ready ? TONE_COLOR.ok : TONE_COLOR.warn;
-  const StateIcon = ready ? CheckCircleIcon : CircleDashedIcon;
-  return (
-    <span className='flex shrink-0 items-center gap-[5px]'>
-      <StateIcon color={color} size={15} />
-      <span
-        className='font-semibold text-[12px] leading-[normal]'
-        style={{ color }}>
-        {t(ready ? "plugins.page.setup.ready" : "plugins.page.setup.needed")}
-      </span>
-    </span>
-  );
-};
-
-type AskCardProps = {
-  copy: PermissionCopy;
-  ready: boolean;
-  active: boolean;
-  /** The card tightens while the profile menu is open below its field. */
-  tight?: boolean;
-  children?: ReactNode;
-};
-
-const AskCard = ({ copy, ready, active, tight, children }: AskCardProps) => {
-  const PermissionIcon = copy.icon;
-  return (
-    <section
-      className={cn(
-        "flex w-full flex-col rounded-[12px] bg-card px-4 py-[14px] ring-1 ring-inset",
-        tight ? "gap-1.5" : "gap-3",
-        active ? "ring-[#EFE0BE40]" : "ring-[#FFFFFF0F]",
-      )}>
-      <div className='flex w-full items-center gap-3'>
-        <span className='flex size-[30px] shrink-0 items-center justify-center rounded-[8px] bg-[#FFFFFF0A] text-primary'>
-          <PermissionIcon size={16} />
-        </span>
-        <div className='flex min-w-0 flex-1 flex-col gap-0.5 leading-[normal]'>
-          <h3 className='font-semibold text-[14px] text-foreground'>
-            {copy.title}
-          </h3>
-          <p className='text-[12px] text-muted-foreground'>{copy.detail}</p>
-        </div>
-        <AskState ready={ready} />
-      </div>
-      {children}
-    </section>
-  );
-};
 
 /** Before a plugin first runs: pick what it asked for, then turn it on. */
 export const FinishSetup = ({ plugin }: { plugin: ExternalPluginSummary }) => {

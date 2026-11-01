@@ -11,7 +11,7 @@ import {
 } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import { usePluginProfiles } from "@/components/plugins/access/use-plugin-profiles";
-import { AccessScope } from "@/components/plugins/manage/plugin-row";
+import { AccessScope } from "@/components/plugins/manage/access-scope";
 import { findPermission } from "@/components/plugins/plugin-permissions";
 import type { ExternalPluginSummary } from "@/types/generated/ExternalPluginSummary";
 
