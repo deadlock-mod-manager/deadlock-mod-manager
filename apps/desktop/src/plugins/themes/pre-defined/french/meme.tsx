@@ -22,7 +22,7 @@ export function FrenchMeme() {
     <Popover>
       <PopoverTrigger asChild>
         <Button
-          className='h-auto min-h-10 max-w-full shrink-0 self-start whitespace-normal border-current/40 bg-transparent px-4 py-2.5 text-left text-xs text-inherit shadow-none hover:border-current/70 hover:bg-background/10 focus-visible:ring-current sm:self-center sm:text-sm'
+          className='h-auto min-h-10 max-w-full shrink-0 self-start whitespace-normal border-foreground/40 bg-transparent px-4 py-2.5 text-left text-xs text-inherit shadow-none hover:border-foreground/70 hover:bg-background/10 focus-visible:ring-current sm:self-center sm:text-sm'
           icon={<FileTextIcon aria-hidden />}
           type='button'
           variant='outline'>
