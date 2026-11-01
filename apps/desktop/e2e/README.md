@@ -71,6 +71,8 @@ current. Both run in the Windows and Linux E2E matrices with no host update.
 
 `profiles-file-order` starts with a two-file mod in `pak01`/`pak02` and a one-file mod in `pak03`. In the ordering dialog it moves the first file below the second with the keyboard and the one-file mod to the top, then saves. Every VPK must hold the bytes of the file the manifest names, the engine must load the solo mod, then the second file, then the first, and the library's VPKs and file tree must match. Disabling and re-enabling the mod, a fresh process and the reopened dialog must all keep that order.
 
+`profiles-reshare` imports a fake share code that picks one of a mod's three archives, then shares the imported profile on and imports the re-share as a friend would. E2E builds have no hardware ID, so the Share button stays disabled; the case builds the payload with the share dialog's serializer and posts it to the fixture share API, which serves it back as a new code (`support/profile-share-fixtures.ts`). The friend's import must fetch only the original picks, in load order, and install every mod from them, with nothing else in the profile's manifest.
+
 `shards-conflicts` gives the first mod in `addons` and the first in `addons2` the same model. Both are `pak01_dir.vpk`, so only the shard decides that the base mod wins. Load first on the overflow mod must move it into shard 1, push the 99th mod across the boundary, and survive a restart in both the conflicts list and the ordering dialog.
 
 The `stats` family pins a Stats account and serves deadlock-api from fixtures with exact values (`support/stats-dashboard-fixtures.ts`), so the cases assert what widgets compute, not only that they render:
