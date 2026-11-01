@@ -5,6 +5,9 @@ import { usePersistedStore } from "@/lib/store";
 
 const LAST_SEEN_VERSION_KEY = "lastSeenVersion";
 
+export const getLastSeenVersion = () =>
+  localStorage.getItem(LAST_SEEN_VERSION_KEY);
+
 export const useWhatsNew = () => {
   const { data } = useAbout();
 

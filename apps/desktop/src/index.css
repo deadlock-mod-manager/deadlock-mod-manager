@@ -1569,6 +1569,56 @@
   animation: wn-feature-enter 0.3s ease both;
 }
 
+/* The badge strikes out the version you upgraded from, then shows the new one */
+@keyframes wn-version-strike {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes wn-version-dim {
+  to {
+    opacity: 0.45;
+  }
+}
+
+.wn-version-from {
+  position: relative;
+  animation: wn-version-dim 0.3s ease-out 0.45s both;
+}
+
+.wn-version-from::after {
+  content: "";
+  position: absolute;
+  inset-inline: -1px;
+  top: 50%;
+  height: 1px;
+  background: currentColor;
+  transform-origin: left;
+  animation: wn-version-strike 0.3s cubic-bezier(0.16, 1, 0.3, 1) 0.45s both;
+}
+
+.wn-version-arrow,
+.wn-version-to {
+  animation: wn-title-enter 0.35s cubic-bezier(0.16, 1, 0.3, 1) 0.7s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wn-version-from,
+  .wn-version-from::after,
+  .wn-version-arrow,
+  .wn-version-to {
+    animation: none;
+  }
+
+  .wn-version-from {
+    opacity: 0.45;
+  }
+}
+
 /*
  * Chart palette for the Stats page. Its own --viz-* namespace so the app's
  * themes keep their --chart-* vars: these steps are picked per surface (not

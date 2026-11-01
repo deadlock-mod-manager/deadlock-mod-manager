@@ -19,6 +19,7 @@ import {
   DESKTOP_RELEASES,
   NEXT_VERSION,
   PREVIEW_VERSION,
+  releaseImages,
 } from "@/lib/desktop-changelog";
 import { seo } from "@/utils/seo";
 
@@ -100,6 +101,7 @@ const ReleaseEntry = ({
 }) => {
   const label = releaseLabel(release.version);
   const live = label !== null;
+  const images = releaseImages(release.version);
   const groups = KINDS.map(({ kind }) => ({
     kind,
     changes: changes.filter((change) => change.kind === kind),
@@ -165,6 +167,16 @@ const ReleaseEntry = ({
             <CtaArrow />
           </Link>
         )}
+        {!query &&
+          images.map((src) => (
+            <img
+              key={src}
+              src={src}
+              alt={`Screenshot of a ${release.version} release highlight`}
+              loading='lazy'
+              className='w-full rounded-xl border border-border'
+            />
+          ))}
         {groups.map((group) => (
           <ChangeGroup key={group.kind} {...group} query={query} />
         ))}
