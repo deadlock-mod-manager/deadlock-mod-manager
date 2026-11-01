@@ -615,8 +615,8 @@ impl AddonAnalyzer {
       &app_handle,
       "complete",
       "Analysis complete!",
-      Some(identified_addons.len()),
-      Some(identified_addons.len()),
+      Some(parsed_count),
+      Some(parsed_count),
       None,
       100,
     );
