@@ -83,7 +83,7 @@ const assertRestored = ({ localMods, alpha }: Library) => {
 const checkpointPath = (world: string) =>
   path.join(world, "artifacts", "rescan-after-reset-inventory.json");
 
-describe("re-scanning after Reset Mods State", () => {
+describe("re-scanning after Clear Mods State", () => {
   it("restores the mods DMM installed without asking about their files", async () => {
     const runtime = await startApplication();
     const world = runtime.roots.world;
