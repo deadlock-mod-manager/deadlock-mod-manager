@@ -85,7 +85,8 @@ const addRow = (world: string, index: number, row: Row) =>
   step(`add ${row.locator} to the library`, async () => {
     const before = (await libraryState(world)).length;
     const button = await (await rowAt(index)).$("button=Add to Library");
-    await button.waitForDisplayed();
+    // The button stays disabled until the library ownership snapshot loads.
+    await button.waitForEnabled();
     await button.click();
     const name = await $('input[placeholder="Awesome Mod"]');
     await name.waitForDisplayed();

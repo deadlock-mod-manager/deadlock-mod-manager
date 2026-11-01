@@ -13,11 +13,13 @@ export const AddonSummaryCard = ({
   addon: LocalAddonInfo;
   onAddToLibrary?: (addon: LocalAddonInfo) => void;
 }) => {
-  const { isLibraryVpk } = useVpkScan();
+  const { isLibraryVpk, isLoading: isLoadingSnapshot } = useVpkScan();
   const isIdentified = !!addon.remoteId;
   const hasError = !addon.vpkParsed?.fingerprint;
 
-  const isAlreadyInLibrary = isLibraryVpk(addon.locator);
+  const owned = isLibraryVpk(addon.locator);
+  // Wait for the snapshot; if it can't be read, Add reports the error itself.
+  const isCheckingLibrary = owned === undefined && isLoadingSnapshot;
 
   const handleExternalLinkClick = async () => {
     if (addon.remoteId) {
@@ -62,7 +64,8 @@ export const AddonSummaryCard = ({
         <AddonActions
           addon={addon}
           isIdentified={isIdentified}
-          isAlreadyInLibrary={isAlreadyInLibrary}
+          isAlreadyInLibrary={owned === true}
+          isCheckingLibrary={isCheckingLibrary}
           onAddToLibrary={onAddToLibrary}
           onExternalLinkClick={handleExternalLinkClick}
         />
