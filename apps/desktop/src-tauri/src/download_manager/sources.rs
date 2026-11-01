@@ -233,8 +233,18 @@ mod tests {
           if let Segmented::Finished = segmented {
             return Ok(());
           }
-          download_file_resumable(&url, &target, 5, |_| {}, cancel, pause, None, Some(MD5), false)
-            .await
+          download_file_resumable(
+            &url,
+            &target,
+            5,
+            |_| {},
+            cancel,
+            pause,
+            None,
+            Some(MD5),
+            false,
+          )
+          .await
         }
       },
     )

@@ -19,11 +19,26 @@ thiserror = "2"
 ts-rs = { version = "11.1.0", features = ["serde-compat"] }
 zip = "6.0.0"
 vpk-parser = { path = "../vpk-parser" }
-wasmtime = { version = "50.0.1", default-features = false, features = ["cranelift", "runtime", "std"] }
-wasmparser = { version = "0.262", default-features = false, features = ["std", "validate", "features"] }
+wasmtime = { version = "50.0.1", default-features = false, features = [
+  "cranelift",
+  "runtime",
+  "std",
+] }
+wasmparser = { version = "0.262", default-features = false, features = [
+  "std",
+  "validate",
+  "features",
+] }
 
 [target.'cfg(windows)'.dependencies]
-windows-sys = { version = "0.61", features = ["Wdk_Foundation", "Wdk_Storage_FileSystem", "Win32_Foundation", "Win32_Security", "Win32_Storage_FileSystem", "Win32_System_IO"] }
+windows-sys = { version = "0.61", features = [
+  "Wdk_Foundation",
+  "Wdk_Storage_FileSystem",
+  "Win32_Foundation",
+  "Win32_Security",
+  "Win32_Storage_FileSystem",
+  "Win32_System_IO",
+] }
 
 [dev-dependencies]
 tempfile = "3.27.0"
