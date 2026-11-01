@@ -477,7 +477,7 @@ fn wait_for_pidless_end(record: &SessionRecord) -> bool {
       return false;
     }
     if dumps::find_session_dump(&dumps_dir, &search).is_some()
-      || console::ended_cleanly(&console_log) == Some(true)
+      || console::run_ended_cleanly(&console_log, record.started_at)
     {
       return true;
     }
