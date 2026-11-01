@@ -11,13 +11,15 @@ export const FIXES = {
 };
 
 export const FIXED_MOD = "local-fix-hero-names";
+export const SECOND_FIXED_MOD = "local-fix-item-names";
 export const UNRELATED_MOD = "local-fix-unrelated-skin";
 export const OTHER_MOD = "local-fix-other-skin";
 export const NEW_MOD_FILE = "local-fix-new-skin.vpk";
-const FIX_MODS = [FIXED_MOD, UNRELATED_MOD, OTHER_MOD];
+const FIX_MODS = [FIXED_MOD, SECOND_FIXED_MOD, UNRELATED_MOD, OTHER_MOD];
 
 // Fixing a mod that changes localization tokens always produces a repair
 // package, so this mod stands in for any mod whose fix writes the overlay.
+// The second one edits its own text file, so both can be fixed together.
 // The other two share no files with it, only a material with each other, so
 // the Conflicts tab can reorder them.
 const RECIPES = new Map<string, readonly VpkRecipeEntry[]>([
@@ -28,6 +30,16 @@ const RECIPES = new Map<string, readonly VpkRecipeEntry[]>([
         path: "resource/localization/citadel_heroes/citadel_heroes_english.txt",
         contents:
           '"lang"\n{\n\t"Language"\t\t"English"\n\t"Tokens"\n\t{\n\t\t"hero_e2e"\t\t"Fixed hero name"\n\t}\n}\n',
+      },
+    ],
+  ],
+  [
+    SECOND_FIXED_MOD,
+    [
+      {
+        path: "resource/localization/citadel_mods/citadel_mods_english.txt",
+        contents:
+          '"lang"\n{\n\t"Language"\t\t"English"\n\t"Tokens"\n\t{\n\t\t"item_e2e"\t\t"Fixed item name"\n\t}\n}\n',
       },
     ],
   ],
