@@ -1022,6 +1022,7 @@
       "performance": {
         "firstMinute": "",
         "loading": "",
+        "retrying": "",
         "unavailable": "",
         "unknownHero": "",
         "spectating": "",
@@ -1517,8 +1518,7 @@
         "add": "Sekme",
         "empty": "Boş sekme",
         "fromTemplate": "Şablondan",
-        "done": "Bitti",
-        "beta": ""
+        "done": "Bitti"
       },
       "templates": {
         "overview": "Genel Bakış",
@@ -2187,8 +2187,6 @@
       "unrankedHint": "Liderlik tablosunda yer almak için dereceli yerleştirme maçlarınızı tamamlayın."
     },
     "match": {
-      "breadcrumb": "Gezinti yolu",
-      "matchId": "{{id}} numaralı maç",
       "copyId": "Maç kimliğini kopyala",
       "copied": "Maç kimliği kopyalandı",
       "copyFailed": "Maç kimliği kopyalanamadı",
@@ -2292,7 +2290,11 @@
       "averageRank": "Ortalama derece",
       "mvp": "MVP #{{rank}}",
       "errorTitle": "Bu maç yüklenemedi",
-      "errorDescription": "deadlock-api bu maçı döndürmedi. Henüz işlenmemiş olabilir; birkaç dakika sonra tekrar deneyin.",
+      "errorDescription": "",
+      "processingTitle": "",
+      "processingDescription": "",
+      "checkAgain": "",
+      "endedAgo": "",
       "backToStats": "İstatistiklere dön",
       "notInMatchTitle": "Bu maçta yer almıyorsunuz",
       "notInMatchDescription": "İstatistikler sayfasında bu maçı oynayan Steam hesabına geçin.",
@@ -2592,6 +2594,8 @@
       "preview": "Önizleme",
       "previewHint": "Bu rengi uygulamadan model üzerinde gösterin. Siz uygulayana kadar hiçbir şey yazılmaz.",
       "previewUnavailable": "Desenler canlı önizlenemez. Sonucu görmek için uygulayın.",
+      "previewNoTextures": "",
+      "previewAlreadyApplied": "",
       "patternLabel": "Desen",
       "patternOverridesColor": "Desen kendi renkleriyle gelir ve yukarıda ayarlanan rengin yerini alır.",
       "patternOverridesColorExceptEffects": "Desen, dokuların üzerindeki rengin yerini alır. Yukarıdaki renk, desen uygulanamayan efekt parçacıklarını renklendirmeye devam eder.",
@@ -3944,8 +3948,6 @@
     "occultGeometryDescription": "Arka planda süs amaçlı okült simgeleri ve mandalaları göster.",
     "animateOccultGeometry": "Okült geometrik şekilleri canlandır",
     "animateOccultGeometryDescription": "Arka plandaki simgeleri yavaşça döndürür ve nabız gibi titreştirir. Pencere arka plandayken animasyonlar otomatik olarak duraklatılır.",
-    "flashbang": "Flaş bombası",
-    "flashbangDescription": "Uygulama her açıldığında, seçili temadan bağımsız olarak rastgele Açık Mod'u etkinleştirir",
     "audioVolume": "Ses Seviyesi",
     "audioVolumeDescription": "Ses ön izleme ve oynatma için ses seviyesini ayarlayın",
     "launchOptions": "Başlatma seşenekleri",
@@ -4004,6 +4006,23 @@
     "pluginDescription": "Masaüstü uygulaması için eklentileri ve entegrasyonları yönetin.",
     "quickAccess": "Hızlı Erişim",
     "themes": "Temalar",
+    "background": "",
+    "backgroundDescription": "",
+    "backgroundImage": "",
+    "backgroundImageUrl": "",
+    "backgroundImageDescription": "",
+    "backgroundImagePlaceholder": "",
+    "backgroundLocalImage": "",
+    "backgroundChooseImage": "",
+    "backgroundRemove": "",
+    "backgroundOpacity": "",
+    "backgroundBlur": "",
+    "backgroundIncludeSidebar": "",
+    "backgroundIncludeSidebarDescription": "",
+    "backgroundIncludeTopBar": "",
+    "backgroundIncludeBottomBar": "",
+    "backgroundCoverage": "",
+    "backgroundAdjustments": "",
     "discord": "Discord",
     "privacy": "Gizlilik",
     "about": "Hakkında",
@@ -4528,10 +4547,6 @@
         "title": "Mod Atölyesi",
         "description": "Kendi modlarınızı oluşturun ve paketleyin."
       },
-      "player-stats": {
-        "title": "Oyuncu İstatistikleri",
-        "description": "İstatistikler sayfasını göster."
-      },
       "profile-management": {
         "title": "Profil Yönetimi",
         "description": "Mod profilleri oluşturun ve aralarında geçiş yapın."
@@ -4551,10 +4566,6 @@
       "cloud-backup": {
         "title": "Bulut Yedeklemesi",
         "description": "Mod profillerinizi hesabınıza yedekleyin ve başka bir bilgisayarda geri yükleyin. Oturum açmanız gerekir."
-      },
-      "live-scoreboard": {
-        "title": "",
-        "description": ""
       },
       "plugins": {
         "title": "",
@@ -4768,6 +4779,9 @@
     "clearPerItemChoices": "Kaydedilmiş tercihleri temizle",
     "clearPerItemChoicesConfirm_one": "Kaydedilmiş {{count}} NSFW gösterme/gizleme tercihi temizlensin mi? Önizlemeler mevcut NSFW ayarlarınızı kullanacak.",
     "clearPerItemChoicesConfirm_other": "Kaydedilmiş {{count}} NSFW gösterme/gizleme tercihi temizlensin mi? Önizlemeler mevcut NSFW ayarlarınızı kullanacak.",
+    "playerStatsTitle": "",
+    "playerStats": "",
+    "playerStatsDescription": "",
     "telemetryTitle": "Kullanım Analitiği",
     "analyticsEnabled": "Google Analytics",
     "analyticsEnabledDescription": "Bu bilgisayara özgü bir kimlikle ilişkilendirilmiş şekilde kullandığınız özellikleri göndererek uygulamanın geliştirilmesine yardımcı olun",
@@ -5424,6 +5438,10 @@
           }
         ],
         "features": [
+          "",
+          "",
+          "",
+          "",
           "",
           "",
           "",
@@ -6258,26 +6276,6 @@
         "pig": "Domuz"
       }
     },
-    "flashbang": {
-      "title": "Flashbang Modu",
-      "description": "Uygulama açılırken Açık temayı rastgele zorla.",
-      "detailedDescription": "Uygulama her açıldığında Flashbang modu, tema ayarınızdan bağımsız olarak o oturum için Açık temaya geçiş yapabilir. Bu özellik dakikada yalnızca bir kez tetiklenebilir.",
-      "usageInstructions": "Eklentiyi etkinleştirin ve her açılışta tetiklenme olasılığını seçin.",
-      "chance": "Tetiklenme olasılığı (%)"
-    },
-    "background": {
-      "title": "Arka Plan",
-      "description": "Uygulama arka planlarını özelleştirin.",
-      "detailedDescription": "Bu eklenti, tüm uygulama için özel arka plan görüntüleri ayarlamanıza olanak tanır. Çevrimiçi bir görüntünün URL'sini kullanabilir veya yerel bir görüntü dosyası yükleyebilirsiniz. Eklenti, görünümü özelleştirmek için şeffaflık ve bulanıklık efektlerini destekler. Ayrıca yan çubuğu arka plan efektine dahil edip etmeyeceğinizi seçebilirsiniz.",
-      "usageInstructions": "Bu eklentiyi kullanmak için: 1) Eklentiyi anahtar kullanarak etkinleştirin, 2) Bir görüntü URL'si girin veya yerel bir dosya yüklemek için 'Görüntü Seç' seçeneğine tıklayın, 3) Şeffaflık ve bulanıklık ayarlarını istediğiniz gibi ayarlayın, 4) İsteğe bağlı olarak arka planı yan çubuğa da uygulamak için 'Yan çubuğu dahil et' seçeneğini etkinleştirin.",
-      "imageUrl": "Görüntü URL'si",
-      "imageUrlPlaceholder": "https://example.com/background.jpg",
-      "opacity": "Şeffaflık",
-      "blur": "Bulanıklık",
-      "includeSidebar": "Yan çubuğu dahil et",
-      "chooseImage": "Görüntü seç"
-    },
-    "usageInstructions": "Kullanım Talimatları",
     "renderActive": "Eklenti etkin ve arka planda çalışıyor",
     "homepage": "Ana sayfa",
     "page": {
