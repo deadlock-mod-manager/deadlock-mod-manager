@@ -102,14 +102,31 @@ impl Parser {
         let key = self.parse_string()?;
 
         // Parse separator (whitespace between key and value). The game also
-        // skips comments here, so a note after a block's key must not end parsing.
-        let mut separator = None;
-        loop {
-            match self.current_token().token_type {
-                TokenType::Whitespace => separator = Some(self.parse_whitespace()?),
-                TokenType::Comment => self.advance(),
-                _ => break,
+        // skips comments here, so a note after a block's key must not end
+        // parsing. Its text stays in the separator so serializing keeps it.
+        let mut separator: Option<WhitespaceNode> = None;
+        while matches!(
+            self.current_token().token_type,
+            TokenType::Whitespace | TokenType::Comment
+        ) {
+            let token = self.current_token().clone();
+            match &mut separator {
+                Some(node) => {
+                    node.end = self.make_position(&token);
+                    node.raw.push_str(&token.raw);
+                    node.value.push_str(&token.raw);
+                }
+                None => {
+                    separator = Some(WhitespaceNode {
+                        node_type: NodeType::Whitespace,
+                        start: self.make_position(&token),
+                        end: self.make_position(&token),
+                        raw: token.raw.clone(),
+                        value: token.raw.clone(),
+                    });
+                }
             }
+            self.advance();
         }
 
         // Parse value
@@ -615,6 +632,17 @@ mod tests {
         } else {
             panic!("Expected Root to be an object");
         }
+    }
+
+    #[test]
+    fn test_comment_between_key_and_value_survives_serialization() {
+        let input = "\"Root\" // note\n// another note\n{\n    \"Key\" /* why */ \"Value\"\n}\n";
+        let result = Parser::parse(input, ParseOptions::default()).unwrap();
+
+        assert_eq!(
+            crate::serializer::Serializer::serialize_ast(&result.ast),
+            input
+        );
     }
 
     #[test]
