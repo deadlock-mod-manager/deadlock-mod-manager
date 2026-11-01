@@ -78,6 +78,23 @@ fn decode_material_previews(
                 let occlusion = load(properties.occlusion_texture.as_deref());
                 let emissive = load(properties.emissive_texture.as_deref());
                 let metalness = load(properties.metalness_texture.as_deref());
+                let effect_mask = load(
+                    properties
+                        .source2_effect
+                        .textures
+                        .iter()
+                        .find(|(name, _)| {
+                            matches!(
+                                name.to_ascii_lowercase().as_str(),
+                                "g_tjittermask"
+                                    | "g_ttranslucencymask"
+                                    | "g_ttranslucency"
+                                    | "g_ttranslucency1"
+                                    | "g_tmask"
+                            )
+                        })
+                        .map(|(_, path)| path.as_str()),
+                );
                 handles.push(scope.spawn(move || {
                     let albedo = emissive.is_some().then(|| decode_rgba(&resource)).flatten();
                     let mut texture = decode_texture_preview_resource(
@@ -129,6 +146,14 @@ fn decode_material_previews(
                         1.0
                     };
                     texture.outline = properties.outline;
+                    texture.effect_mask_png = effect_mask
+                        .and_then(|resource| {
+                            decode_texture_preview_resource(String::new(), None, &resource, true)
+                        })
+                        .map(|texture| texture.png);
+                    let mut effect = properties.source2_effect;
+                    effect.material = texture.material.clone().unwrap_or_default();
+                    texture.source2_effect = Some(effect);
                     Some(texture)
                 }));
             }

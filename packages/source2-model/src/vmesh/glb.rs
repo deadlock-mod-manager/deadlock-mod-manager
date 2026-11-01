@@ -452,7 +452,17 @@ pub(crate) fn build_glb(
                     &format!("{} emissive", texture.name),
                 )
             });
-            (base, normal, orm, emissive)
+            let effect_mask = texture.effect_mask_png.as_deref().map(|png| {
+                append_png_texture(
+                    &mut bin,
+                    &mut buffer_views,
+                    &mut images,
+                    &mut texture_defs,
+                    png,
+                    &format!("{} effect mask", texture.name),
+                )
+            });
+            (base, normal, orm, emissive, effect_mask)
         })
         .collect::<Vec<_>>();
 
@@ -465,7 +475,9 @@ pub(crate) fn build_glb(
         "doubleSided": false
     })];
     let mut uses_emissive_strength = false;
-    for (texture, (base, normal, orm, emissive)) in textures.iter().zip(&texture_indices) {
+    for (texture, (base, normal, orm, emissive, effect_mask)) in
+        textures.iter().zip(&texture_indices)
+    {
         let alpha_mode = match texture.alpha_mode {
             MaterialAlphaMode::Opaque => "OPAQUE",
             MaterialAlphaMode::Mask => "MASK",
@@ -516,6 +528,12 @@ pub(crate) fn build_glb(
         }
         if let Some(outline) = texture.outline {
             material["extras"]["outline"] = json!({ "tint": outline.tint });
+        }
+        if let Some(effect) = &texture.source2_effect {
+            material["extras"]["source2Effect"] = json!(effect);
+            if let Some(index) = effect_mask {
+                material["extras"]["source2Effect"]["maskTexture"] = json!(index);
+            }
         }
         materials.push(material);
     }

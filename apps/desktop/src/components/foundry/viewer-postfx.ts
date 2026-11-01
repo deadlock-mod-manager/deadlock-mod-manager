@@ -41,6 +41,9 @@ export const createViewerPostFx = (
     setBloom(enabled: boolean) {
       bloom.enabled = enabled;
     },
+    setBloomStrength(strength: number) {
+      bloom.strength = strength;
+    },
     render() {
       composer.render();
     },

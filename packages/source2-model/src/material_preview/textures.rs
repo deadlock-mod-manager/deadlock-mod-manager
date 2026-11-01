@@ -51,6 +51,8 @@ pub(super) fn decode_texture_preview_resource(
         emissive_factor: None,
         emissive_strength: 1.0,
         outline: None,
+        source2_effect: None,
+        effect_mask_png: None,
     })
 }
 
