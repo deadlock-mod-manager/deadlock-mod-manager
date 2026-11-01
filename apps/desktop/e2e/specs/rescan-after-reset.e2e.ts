@@ -61,6 +61,10 @@ const assertRestored = ({ localMods, alpha }: Library) => {
     localMods.map((mod) => mod.remoteId).sort(),
     [...RESTORED].sort(),
   );
+  assert.deepEqual(
+    alpha.mods.map((mod) => mod.remoteId).sort(),
+    [...RESTORED].sort(),
+  );
   const byId = new Map(localMods.map((mod) => [mod.remoteId, mod]));
   const catalog = byId.get(CATALOG_MOD_ID);
   assert.equal(catalog?.name, CATALOG_MOD_NAME);
