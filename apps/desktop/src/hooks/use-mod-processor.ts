@@ -307,15 +307,14 @@ export const useModProcessor = () => {
     // The analysis list can be stale, so check the files on disk again. Two
     // library mods must never own one file: disabling either moves it away
     // from the other.
-    const profileFolder = getActiveProfile()?.folderName ?? null;
+    // Everything below targets the profile that was active at submit time.
+    const profile = getActiveProfile();
+    const profileFolder = profile?.folderName ?? null;
     const snapshot = await getProfileVpkSnapshot(profileFolder);
-    if (
-      isVpkOwned(
-        addon.locator,
-        snapshot.manifest,
-        usePersistedStore.getState().localMods,
-      )
-    ) {
+    const state = usePersistedStore.getState();
+    const libraryMods =
+      (profile && state.profiles[profile.id]?.mods) ?? state.localMods;
+    if (isVpkOwned(addon.locator, snapshot.manifest, libraryMods)) {
       throw new ValidationError(
         t("addons.alreadyInLibrary", { fileName: addon.fileName }),
       );
@@ -414,24 +413,28 @@ export const useModProcessor = () => {
       dependencies: null,
     };
 
-    addMod(modDto, {
-      status: ModStatus.Installed,
-      installedVpks: [addon.fileName],
-      installedFileTree: {
-        files: [
-          {
-            name: addon.fileName,
-            path: addon.fileName,
-            size: 0,
-            is_selected: true,
-            archive_name: "",
-          },
-        ],
-        total_files: 1,
-        has_multiple_files: false,
+    addMod(
+      modDto,
+      {
+        status: ModStatus.Installed,
+        installedVpks: [addon.fileName],
+        installedFileTree: {
+          files: [
+            {
+              name: addon.fileName,
+              path: addon.fileName,
+              size: 0,
+              is_selected: true,
+              archive_name: "",
+            },
+          ],
+          total_files: 1,
+          has_multiple_files: false,
+        },
       },
-    });
-    setModStatus(modId, ModStatus.Installed);
+      profile?.id,
+    );
+    setModStatus(modId, ModStatus.Installed, profile?.id);
     queryClient.invalidateQueries({ queryKey: PROFILE_VPKS_QUERY_KEY });
 
     invoke<HeroDetectionResult>("detect_mod_hero", { modId })
