@@ -20,6 +20,7 @@ export type ErrorKind = {
     | "duplicateVpkOwnership"
     | "unknown"
     | "gameRunning"
+    | "modOperationBusy"
     | "gameNotRunning"
     | "gameLaunchFailed"
     | "modDataReviewRequired"

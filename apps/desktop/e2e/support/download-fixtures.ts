@@ -27,7 +27,8 @@ const pausesQueue = (scenario: string) =>
 export const queuesBehindRunning = (scenario: string) =>
   scenario === "downloads-cancel-queued" ||
   scenario === "downloads-reload-queued" ||
-  scenario === "downloads-delete-queued";
+  scenario === "downloads-delete-queued" ||
+  scenario === "clear-all-mods-downloading";
 /** Cases whose world holds a second failed mod that can wait in the queue. */
 const hasQueuedMod = (scenario: string) =>
   queuesBehindRunning(scenario) || pausesQueue(scenario);
@@ -217,6 +218,7 @@ export const downloadRoutes = (scenario: string): FixtureRoute[] => {
       ];
       break;
     case "downloads-delete-queued":
+    case "clear-all-mods-downloading":
       sequence = [{ ...slow, chunkDelayMs: 1_000 }];
       break;
     default:

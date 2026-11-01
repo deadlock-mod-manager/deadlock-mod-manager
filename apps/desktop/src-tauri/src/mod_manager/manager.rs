@@ -47,6 +47,14 @@ pub struct ModManager {
   localization_overlay_plan_cache: Mutex<Option<localization::CachedLocalizationOverlayPlan>>,
 }
 
+#[derive(Debug, Default)]
+pub struct ClearedProfile {
+  /// The mods the manifest listed before the clear.
+  pub manifest_mod_ids: Vec<String>,
+  /// The staging folder the clear couldn't delete, still holding removed VPKs.
+  pub leftover_staging: Option<PathBuf>,
+}
+
 pub struct VariantChangeResult {
   pub installed_vpks: Vec<String>,
   pub original_vpk_names: Vec<String>,
@@ -325,15 +333,44 @@ impl ModManager {
     self.file_tree_analyzer.get_mod_file_tree(mod_path)
   }
 
-  pub fn clear_mods(&mut self, profile_folder: Option<String>) -> Result<(), Error> {
-    let addons_path = self.get_addons_path(profile_folder.as_deref())?;
+  /// Removes every VPK in the profile's shards, whoever put it there, and
+  /// leaves the manifest without mods. Either all of that happens or nothing
+  /// does. A profile whose addons folder is gone has nothing to clear.
+  pub fn clear_mods(&mut self, profile_folder: Option<&str>) -> Result<ClearedProfile, Error> {
+    let addons_path = match self.get_addons_path(profile_folder) {
+      Ok(addons_path) if addons_path.exists() => addons_path,
+      Ok(_) | Err(Error::GamePathNotSet) => return Ok(ClearedProfile::default()),
+      Err(error) => return Err(error),
+    };
 
-    let pending = self.vpk_manager.stage_clear_all_vpks(&addons_path)?;
-    if let Err(error) = ProfileVpkManifest::default().save(&addons_path) {
-      return Err(pending.rollback(error));
+    // An interrupted operation must finish or roll back before the inventory.
+    ProfileVpkManifest::recover_profile(&addons_path)?;
+    let manifest_mod_ids = ProfileVpkManifest::load(&addons_path)?
+      .mods
+      .into_keys()
+      .collect();
+    self
+      .vpk_manager
+      .stage_clear_all_vpks(&addons_path)?
+      .commit_manifest(&ProfileVpkManifest::default(), &addons_path)?;
+    self.invalidate_localization_overlay(profile_folder);
+
+    // Committing deletes the staged copies; a failure there is only logged.
+    let staging = addons_path.join(shard::CLEAR_STAGING_DIR);
+    Ok(ClearedProfile {
+      manifest_mod_ids,
+      leftover_staging: staging.exists().then_some(staging),
+    })
+  }
+
+  /// Deletes a mod's downloaded files and forgets it.
+  pub fn remove_mod_store(&mut self, mod_id: &str, mods_path: &Path) -> Result<(), Error> {
+    Self::ensure_safe_mod_id(mod_id)?;
+    self.mod_repository.remove_mod(mod_id);
+    let mod_dir = mods_path.join(mod_id);
+    if mod_dir.exists() {
+      self.filesystem.remove_directory_recursive(&mod_dir)?;
     }
-    pending.commit();
-    self.invalidate_localization_overlay(profile_folder.as_deref());
     Ok(())
   }
 
@@ -600,6 +637,146 @@ mod tests {
 
   fn write_vpk(addons_path: &std::path::Path, name: &str) {
     fs::write(addons_path.join(name), b"test vpk").unwrap();
+  }
+
+  fn vpks_under(dir: &std::path::Path) -> Vec<String> {
+    let mut found = Vec::new();
+    for entry in fs::read_dir(dir).unwrap() {
+      let path = entry.unwrap().path();
+      if path.is_dir() {
+        found.extend(vpks_under(&path));
+      } else if path.extension().is_some_and(|extension| extension == "vpk") {
+        found.push(path.display().to_string());
+      }
+    }
+    found
+  }
+
+  /// A profile as Clear All Mods finds it: a tracked mod in each shard, a
+  /// disabled one, a file the manifest never heard of and an entry whose
+  /// files are already gone.
+  fn cluttered_profile(manager: &ModManager) -> ProfileBase {
+    let base = manager.get_addons_path(None).unwrap();
+    fs::create_dir_all(&*base).unwrap();
+    let overflow = base.shard_dir(ShardIndex::new(2).unwrap());
+    fs::create_dir_all(&overflow).unwrap();
+    write_vpk(&base, "pak01_dir.vpk");
+    write_vpk(&base, "7_blue.vpk");
+    write_vpk(&base, "pak05_dir.vpk");
+    write_vpk(&overflow, "pak01_dir.vpk");
+    fs::write(base.join("readme.txt"), b"not a mod").unwrap();
+    let mut manifest = ProfileVpkManifest::default();
+    for (mod_id, entry) in [
+      (
+        "1",
+        ProfileVpkManifestEntry {
+          enabled: true,
+          current_vpks: vec!["pak01_dir.vpk".into()],
+          ..Default::default()
+        },
+      ),
+      (
+        "2",
+        ProfileVpkManifestEntry {
+          enabled: true,
+          shard: ShardIndex::new(2).unwrap(),
+          current_vpks: vec!["pak01_dir.vpk".into()],
+          ..Default::default()
+        },
+      ),
+      (
+        "7",
+        ProfileVpkManifestEntry {
+          disabled_vpks: vec!["7_blue.vpk".into()],
+          ..Default::default()
+        },
+      ),
+      (
+        "gone",
+        ProfileVpkManifestEntry {
+          enabled: true,
+          current_vpks: vec!["pak09_dir.vpk".into()],
+          ..Default::default()
+        },
+      ),
+    ] {
+      manifest.mods.insert(mod_id.into(), entry);
+    }
+    manifest.save(&base).unwrap();
+    base
+  }
+
+  #[test]
+  fn clearing_a_profile_removes_every_vpk_and_manifest_entry() {
+    let game = game_dir();
+    let mut manager = test_manager(game.path());
+    let base = cluttered_profile(&manager);
+
+    let cleared = manager.clear_mods(None).unwrap();
+
+    assert_eq!(cleared.manifest_mod_ids, ["1", "2", "7", "gone"]);
+    assert_eq!(cleared.leftover_staging, None);
+    assert_eq!(vpks_under(&game.path().join("game")), Vec::<String>::new());
+    assert!(ProfileVpkManifest::load(&base).unwrap().mods.is_empty());
+    assert_eq!(fs::read(base.join("readme.txt")).unwrap(), b"not a mod");
+  }
+
+  /// One file that can't be removed stops the whole clear before anything
+  /// moves, and the error names it.
+  #[cfg(unix)]
+  #[test]
+  fn clearing_a_profile_changes_nothing_when_a_vpk_is_read_only() {
+    use std::os::unix::fs::PermissionsExt;
+    let game = game_dir();
+    let mut manager = test_manager(game.path());
+    let base = cluttered_profile(&manager);
+    let locked = base.join("pak05_dir.vpk");
+    fs::set_permissions(&locked, fs::Permissions::from_mode(0o444)).unwrap();
+    let before = vpks_under(&game.path().join("game"));
+
+    let error = manager.clear_mods(None).unwrap_err();
+
+    assert!(matches!(&error, Error::ReadOnlyFile(path) if *path == locked));
+    assert_eq!(vpks_under(&game.path().join("game")), before);
+    assert_eq!(ProfileVpkManifest::load(&base).unwrap().mods.len(), 4);
+  }
+
+  #[test]
+  fn clearing_a_profile_without_an_addons_folder_has_nothing_to_do() {
+    let game = game_dir();
+    let mut manager = test_manager(game.path());
+
+    let cleared = manager.clear_mods(Some("profile_1_gone")).unwrap();
+
+    assert!(cleared.manifest_mod_ids.is_empty());
+    assert!(
+      !game
+        .path()
+        .join("game/citadel/addons/profile_1_gone")
+        .exists()
+    );
+  }
+
+  #[test]
+  fn clearing_a_mod_store_deletes_its_downloads_and_forgets_it() {
+    let game = game_dir();
+    let mods_store = tempfile::tempdir().unwrap();
+    let mut manager = test_manager(game.path());
+    let mod_dir = downloaded_mod(mods_store.path(), "42");
+    downloaded_mod(mods_store.path(), "43");
+
+    manager.remove_mod_store("42", mods_store.path()).unwrap();
+    manager
+      .remove_mod_store("never-downloaded", mods_store.path())
+      .unwrap();
+
+    assert!(!mod_dir.exists());
+    assert!(mods_store.path().join("43").exists());
+    assert!(
+      manager
+        .remove_mod_store("../43", mods_store.path())
+        .is_err()
+    );
   }
 
   /// Builds a manager pointing at a throwaway game install, bypassing the

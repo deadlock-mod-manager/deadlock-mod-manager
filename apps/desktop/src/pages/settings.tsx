@@ -107,6 +107,7 @@ import { usePersistedStore } from "@/lib/store";
 import type { SettingsSearchResult } from "@/lib/settings-search";
 import { cn } from "@/lib/utils";
 import { HintAnchor } from "@/components/feature-hints/hint-anchor";
+import { useClearAllMods } from "@/hooks/use-clear-all-mods";
 import { useRemoteInstallStatus } from "@/hooks/use-remote-install";
 import ThemesPlugin from "@/plugins/themes/index";
 import type { LocalSetting } from "@/types/settings";
@@ -397,7 +398,8 @@ const CustomSettings = ({ value }: { value?: string }) => {
   const { t } = useTranslation();
   const catalogSync = useCatalogSyncMutation();
   const wipeCatalog = useWipeLocalCatalog();
-  const { clearMods, localMods: mods, getActiveProfile } = usePersistedStore();
+  const { clearMods, getActiveProfile } = usePersistedStore();
+  const { clearAllMods, isPending: clearingAllMods } = useClearAllMods();
 
   const clearModsState = async () => {
     if (
@@ -514,37 +516,6 @@ const CustomSettings = ({ value }: { value?: string }) => {
     } catch (error) {
       logger.errorOnly(error);
       toast.error(t("common.error"));
-    }
-  };
-
-  const clearAllMods = async () => {
-    if (
-      !(await confirm({
-        title: t("settings.confirmClearAllMods"),
-        actionButton: t("settings.confirmClearAllModsAction"),
-        cancelButton: t("common.cancel"),
-      }))
-    ) {
-      return;
-    }
-    try {
-      const activeProfile = getActiveProfile();
-      const profileFolder = activeProfile?.folderName ?? null;
-
-      await Promise.all(
-        mods.map((mod) =>
-          invokeGuarded("purge_mod", {
-            modId: mod.remoteId,
-            vpks: mod.installedVpks ?? [],
-            profileFolder,
-          }),
-        ),
-      );
-      clearMods();
-      toast.success(t("settings.allModsCleared"));
-    } catch (error) {
-      logger.errorOnly(error);
-      toast.error(t("settings.failedToClearMods"));
     }
   };
 
@@ -1008,6 +979,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
                       <DangerAction
                         description={t("settings.clearAllModsDescription")}
                         label={t("settings.clearAllMods")}
+                        disabled={clearingAllMods}
                         onClick={clearAllMods}
                       />
                     </div>

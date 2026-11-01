@@ -15,6 +15,8 @@ import {
   downloadRoutes,
   prepareDownloadWorld,
   assertDownloadNetwork,
+  DOWNLOAD_FILE,
+  QUEUED_FILE,
 } from "./download-fixtures";
 import {
   prepareLibraryGroupsWorld,
@@ -22,6 +24,7 @@ import {
   prepareGroupedIdentificationWorld,
 } from "./library-groups-fixtures";
 import { prepareProfileWorld } from "./profile-fixtures";
+import { prepareClearAllModsWorld } from "./clear-all-mods-fixtures";
 import { prepareFileOrderWorld } from "./file-order-fixtures";
 import { prepareBrokenProfileWorld } from "./broken-profile-fixtures";
 import { prepareCompatibilityFixWorld } from "./compatibility-fix-fixtures";
@@ -499,6 +502,39 @@ export const scenarios = {
     spec: "mod-folder-repair",
     phases: ["repair-folder", "restart-folder", "restart-restored-folder"],
     prepare: prepareModFolderRepairWorld,
+  },
+  "clear-all-mods-after-reset": {
+    ...defaults,
+    family: "settings",
+    spec: "clear-all-mods",
+    phases: ["clear", "restart-clear"],
+    routes: profileRoutes,
+    prepare: async (world) => prepareClearAllModsWorld(world),
+  },
+  // A download folder Linux won't let the app delete.
+  "clear-all-mods-leftover": {
+    ...defaults,
+    family: "settings",
+    spec: "clear-all-mods",
+    phases: ["clear-leftover"],
+    platforms: ["linux"],
+    routes: profileRoutes,
+    prepare: async (world) =>
+      prepareClearAllModsWorld(world, { lockedStore: true }),
+  },
+  // Clear All Mods while one download runs and another waits behind it.
+  "clear-all-mods-downloading": {
+    ...downloads,
+    spec: "clear-all-mods",
+    phases: ["clear-downloading", "restart-clear-downloading"],
+    verifyNetwork: (_id: string, requests: readonly FixtureRequest[]) => {
+      const sent = (file: string) =>
+        requests.filter((request) => request.url === `/downloads/${file}`);
+      if (sent(DOWNLOAD_FILE).length !== 1)
+        throw new Error("The running download must be requested exactly once");
+      if (sent(QUEUED_FILE).length !== 0)
+        throw new Error("A queued download started after Clear All Mods");
+    },
   },
   "addons-folder-wiped": {
     ...defaults,

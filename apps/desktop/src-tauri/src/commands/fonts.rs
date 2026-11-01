@@ -94,25 +94,30 @@ pub(crate) fn prepare_font_cleanup(
 }
 
 pub(crate) fn apply_font_cleanup(cleanup: PreparedFontCleanup) -> Result<(), Error> {
-  let font_manager = crate::mod_manager::FontManager::new();
-
-  if let Err(error) = font_manager.remove_font_patterns(&cleanup.conf_path, &cleanup.mod_id) {
+  for (path, error) in font_cleanup_failures(&cleanup) {
     log::warn!(
-      "Failed to remove font patterns for mod {}: {error}",
-      cleanup.mod_id
+      "Failed to clean up fonts of mod {} at {}: {error}",
+      cleanup.mod_id,
+      path.display()
     );
   }
+  Ok(())
+}
 
+/// Removes the mod's font patterns and installed fonts. Returns what was left,
+/// each with the reason.
+pub(crate) fn font_cleanup_failures(cleanup: &PreparedFontCleanup) -> Vec<(PathBuf, Error)> {
+  let font_manager = crate::mod_manager::FontManager::new();
+  let mut failures = Vec::new();
+  if let Err(error) = font_manager.remove_font_patterns(&cleanup.conf_path, &cleanup.mod_id) {
+    failures.push((cleanup.conf_path.clone(), error));
+  }
   if let Err(error) =
     font_manager.remove_installed_fonts(&cleanup.game_fonts_dir, &cleanup.removable_font_files)
   {
-    log::warn!(
-      "Failed to remove installed fonts for mod {}: {error}",
-      cleanup.mod_id
-    );
+    failures.push((cleanup.game_fonts_dir.clone(), error));
   }
-
-  Ok(())
+  failures
 }
 
 #[tauri::command]

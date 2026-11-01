@@ -49,6 +49,8 @@ pub enum Error {
   },
   #[error("Game is running")]
   GameRunning,
+  #[error("A mod update or profile import is still running")]
+  ModOperationBusy,
   #[error("Game is not running")]
   GameNotRunning,
   #[error("Failed to launch game: {0}")]
@@ -191,6 +193,7 @@ impl serde::Serialize for Error {
       Error::ModelConflict(_) => "modelConflict",
       Error::DuplicateVpkOwnership { .. } => "duplicateVpkOwnership",
       Error::GameRunning => "gameRunning",
+      Error::ModOperationBusy => "modOperationBusy",
       Error::GameNotRunning => "gameNotRunning",
       Error::GameLaunchFailed(_) => "gameLaunchFailed",
       Error::ModDataReviewRequired => "modDataReviewRequired",

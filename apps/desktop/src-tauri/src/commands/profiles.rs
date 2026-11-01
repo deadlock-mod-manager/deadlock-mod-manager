@@ -105,7 +105,7 @@ pub async fn delete_profile_folder(
 
   get_download_manager(app_handle)
     .await
-    .cancel_profile_downloads(&profile_folder)
+    .cancel_profile_downloads(Some(&profile_folder))
     .await;
 
   let mod_manager = MANAGER.lock().unwrap();
@@ -356,6 +356,7 @@ pub async fn import_profile_batch(
   guard_permit: Option<String>,
 ) -> Result<super::downloads::ProfileImportResult, Error> {
   crate::game_guard::ensure_game_idle_locked("import_profile_batch", guard_permit.as_deref())?;
+  let _bulk = super::state::MOD_BULK_OPERATION.lock().await;
   log::info!(
     "Starting batch profile import: {} mods, type: {}, folder: {}",
     mods.len(),

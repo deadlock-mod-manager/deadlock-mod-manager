@@ -27,7 +27,7 @@ use std::sync::{
   atomic::{AtomicU64, Ordering},
 };
 use tauri::Emitter;
-use tokio::sync::{Mutex, oneshot};
+use tokio::sync::{Mutex, OwnedMutexGuard, oneshot};
 use tokio_util::sync::CancellationToken;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -177,6 +177,40 @@ pub struct DownloadStatus {
   pub status: String,
 }
 
+/// Mod folders that archive extractions are writing into. A timed-out
+/// extraction keeps its blocking thread, so it can outlive its download.
+static RUNNING_EXTRACTIONS: std::sync::Mutex<Vec<PathBuf>> = std::sync::Mutex::new(Vec::new());
+
+/// Registers an extraction until the blocking thread that owns it drops it.
+struct ExtractionRecord(PathBuf);
+
+impl ExtractionRecord {
+  fn start(mod_dir: PathBuf) -> Self {
+    running_extractions().push(mod_dir.clone());
+    Self(mod_dir)
+  }
+}
+
+impl Drop for ExtractionRecord {
+  fn drop(&mut self) {
+    let mut running = running_extractions();
+    if let Some(index) = running.iter().position(|dir| *dir == self.0) {
+      running.swap_remove(index);
+    }
+  }
+}
+
+fn running_extractions() -> std::sync::MutexGuard<'static, Vec<PathBuf>> {
+  RUNNING_EXTRACTIONS
+    .lock()
+    .unwrap_or_else(std::sync::PoisonError::into_inner)
+}
+
+/// Mod folders an extraction is still writing into.
+pub fn extractions_in_progress() -> Vec<PathBuf> {
+  running_extractions().clone()
+}
+
 struct ActiveDownload {
   cancel_token: CancellationToken,
   pause: PauseHandle,
@@ -236,6 +270,9 @@ pub struct DownloadManager {
   active_downloads: Arc<Mutex<HashMap<String, ActiveDownload>>>,
   app_handle: AppHandle,
   processing: Arc<Mutex<bool>>,
+  /// Held by the worker from claiming an operation until its result is out, so
+  /// whoever holds it knows no download is writing.
+  operation: Arc<Mutex<()>>,
   next_operation_id: AtomicU64,
 }
 
@@ -246,6 +283,7 @@ impl DownloadManager {
       active_downloads: Arc::new(Mutex::new(HashMap::new())),
       app_handle,
       processing: Arc::new(Mutex::new(false)),
+      operation: Arc::new(Mutex::new(())),
       next_operation_id: AtomicU64::new(1),
     }
   }
@@ -330,9 +368,11 @@ impl DownloadManager {
     let active_clone = Arc::clone(&self.active_downloads);
     let app_handle = self.app_handle.clone();
     let processing_clone = Arc::clone(&self.processing);
+    let operation_clone = Arc::clone(&self.operation);
 
     tokio::spawn(async move {
       loop {
+        let _operation = Arc::clone(&operation_clone).lock_owned().await;
         // Register the download as active before releasing the queue, so status
         // checks and profile cancellation never miss a task between the two.
         let task = {
@@ -816,9 +856,11 @@ impl DownloadManager {
         let extract_target = task.target_dir.clone();
         let extract_prefix = format!("prepared-extracted-{operation_id}-{archive_index}-");
         const EXTRACTION_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(600);
+        let record = ExtractionRecord::start(task.target_dir.clone());
         let extraction_result = tokio::time::timeout(
           EXTRACTION_TIMEOUT,
           tokio::task::spawn_blocking(move || {
+            let _record = record;
             Self::extract_prepared_archive(&archive_path, &extract_target, &extract_prefix)
           }),
         )
@@ -1452,10 +1494,12 @@ impl DownloadManager {
       let archive_path = file_path.clone();
       let extract_target = extracted_dir.clone();
       const EXTRACTION_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(600);
+      let record = ExtractionRecord::start(task.target_dir.clone());
 
       let extraction_result = tokio::time::timeout(
         EXTRACTION_TIMEOUT,
         tokio::task::spawn_blocking(move || {
+          let _record = record;
           ArchiveExtractor::new().extract_archive(&archive_path, &extract_target)
         }),
       )
@@ -1797,9 +1841,10 @@ impl DownloadManager {
   }
 
   /// Drops queued downloads for a profile folder and cancels the running one,
-  /// so a deleted profile's folder isn't recreated when they finish.
-  pub async fn cancel_profile_downloads(&self, profile_folder: &str) {
-    let targets = |folder: &Option<String>| folder.as_deref() == Some(profile_folder);
+  /// so a deleted profile's folder isn't recreated when they finish. `None` is
+  /// the default profile.
+  pub async fn cancel_profile_downloads(&self, profile_folder: Option<&str>) {
+    let targets = |folder: &Option<String>| folder.as_deref() == profile_folder;
 
     let (dropped, cancelled) = {
       let mut queue = self.queue.lock().await;
@@ -1845,11 +1890,19 @@ impl DownloadManager {
 
     if !dropped.is_empty() || !cancelled.is_empty() {
       log::info!(
-        "Cancelled downloads for deleted profile {profile_folder}: {} queued, {} active",
+        "Cancelled downloads for profile {profile_folder:?}: {} queued, {} active",
         dropped.len(),
         cancelled.len()
       );
     }
+  }
+
+  /// Cancels a profile's downloads and waits for the operation the worker is
+  /// running to end. A download past its transfer can't be cancelled and still
+  /// writes its files first. Until the guard drops, no download starts.
+  pub async fn quiesce_profile(&self, profile_folder: Option<&str>) -> OwnedMutexGuard<()> {
+    self.cancel_profile_downloads(profile_folder).await;
+    Arc::clone(&self.operation).lock_owned().await
   }
 
   /// A running download stops and gives the next queued one the worker; a
@@ -2091,6 +2144,24 @@ mod tests {
       completion: None,
       paused: false,
     }
+  }
+
+  /// A timed-out extraction keeps writing on its blocking thread after the
+  /// download gave up on it; Clear All Mods must still see it.
+  #[test]
+  fn an_extraction_stays_listed_until_its_thread_ends() {
+    let mod_dir = PathBuf::from("extraction-record-test").join("mods").join("42");
+    let record = ExtractionRecord::start(mod_dir.clone());
+    let (finish, finished) = std::sync::mpsc::channel::<()>();
+    let extraction = std::thread::spawn(move || {
+      let _record = record;
+      finished.recv().unwrap();
+    });
+
+    assert!(extractions_in_progress().contains(&mod_dir));
+    finish.send(()).unwrap();
+    extraction.join().unwrap();
+    assert!(!extractions_in_progress().contains(&mod_dir));
   }
 
   #[tokio::test]

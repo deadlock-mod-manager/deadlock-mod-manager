@@ -16,6 +16,10 @@ pub(crate) static MANAGER: LazyLock<Mutex<ModManager>> =
 pub(crate) static API_URL: LazyLock<Mutex<String>> =
   LazyLock::new(|| Mutex::new("http://localhost:9000".to_string()));
 pub(crate) static DOWNLOAD_MANAGER: OnceCell<DownloadManager> = OnceCell::const_new();
+/// Held for the whole of a batch update, a profile import or Clear All Mods.
+/// The first two download and install mod after mod, so a clear running
+/// between their steps would be undone by the next one.
+pub(crate) static MOD_BULK_OPERATION: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
 pub(crate) static INGEST_WATCHER_RUNNING: LazyLock<Arc<AtomicBool>> =
   LazyLock::new(|| Arc::new(AtomicBool::new(false)));

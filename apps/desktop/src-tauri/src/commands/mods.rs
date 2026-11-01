@@ -203,14 +203,147 @@ pub async fn get_enabled_mod_vpk_files(
   )
 }
 
+/// Why a path is left: deleting it failed (`reason` says why), or a timed-out
+/// archive extraction is still writing there.
+#[derive(Debug, Clone, Copy, Serialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub enum ClearModsLeftoverKind {
+  RemoveFailed,
+  StillExtracting,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct ClearModsLeftover {
+  pub path: String,
+  pub kind: ClearModsLeftoverKind,
+  pub reason: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct ClearModsReport {
+  /// Mods whose downloaded files stay because another profile uses them.
+  pub preserved: Vec<String>,
+  /// What the clear couldn't remove. Empty when it removed everything.
+  pub leftovers: Vec<ClearModsLeftover>,
+}
+
+impl ClearModsLeftover {
+  fn failed(path: &std::path::Path, error: &Error) -> Self {
+    Self {
+      path: path.display().to_string(),
+      kind: ClearModsLeftoverKind::RemoveFailed,
+      reason: Some(error.to_string()),
+    }
+  }
+}
+
+/// Clear All Mods: stops the profile's downloads, removes every VPK in its
+/// shards and every manifest entry, then the downloaded files of those mods
+/// and of `mod_ids` (the library), except the ones in `preserve_ids`.
 #[tauri::command]
 pub async fn clear_mods(
+  app_handle: AppHandle,
   profile_folder: Option<String>,
+  mod_ids: Vec<String>,
+  preserve_ids: Vec<String>,
   guard_permit: Option<String>,
-) -> Result<(), Error> {
+) -> Result<ClearModsReport, Error> {
   crate::game_guard::ensure_game_idle_locked("clear_mods", guard_permit.as_deref())?;
-  let mut mod_manager = MANAGER.lock().unwrap();
-  mod_manager.clear_mods(profile_folder)
+  let _bulk = super::state::MOD_BULK_OPERATION
+    .try_lock()
+    .map_err(|_| Error::ModOperationBusy)?;
+  // Held to the end: a download that finished writing is swept below, and
+  // none can start writing until the clear is done.
+  let _downloads = get_download_manager(app_handle)
+    .await
+    .quiesce_profile(profile_folder.as_deref())
+    .await;
+
+  let (cleared, game_path, mods_path) = {
+    let mut mod_manager = MANAGER.lock().unwrap();
+    let mods_path = mod_manager.get_mods_store_path()?;
+    let cleared = mod_manager.clear_mods(profile_folder.as_deref())?;
+    (
+      cleared,
+      mod_manager.get_steam_manager().get_game_path().cloned(),
+      mods_path,
+    )
+  };
+
+  let mut leftovers = Vec::new();
+  if let Some(staging) = &cleared.leftover_staging {
+    leftovers.push(ClearModsLeftover {
+      path: staging.display().to_string(),
+      kind: ClearModsLeftoverKind::RemoveFailed,
+      reason: None,
+    });
+  }
+
+  let preserve: std::collections::HashSet<&str> = preserve_ids.iter().map(String::as_str).collect();
+  let mut targets: Vec<String> = mod_ids
+    .into_iter()
+    .chain(cleared.manifest_mod_ids)
+    .collect();
+  targets.sort();
+  targets.dedup();
+  let (preserved, targets): (Vec<String>, Vec<String>) = targets
+    .into_iter()
+    .partition(|mod_id| preserve.contains(mod_id.as_str()));
+
+  for mod_id in &targets {
+    let mod_dir = mods_path.join(mod_id);
+    // Needs the mod's font stash, so before the folder goes; fonts other
+    // mods still stash are kept.
+    let fonts = match &game_path {
+      Some(game_path) => prepare_font_cleanup(game_path, mod_id),
+      None => Ok(None),
+    };
+    let removed = MANAGER.lock().unwrap().remove_mod_store(mod_id, &mods_path);
+    if let Err(error) = removed {
+      leftovers.push(ClearModsLeftover::failed(&mod_dir, &error));
+      continue;
+    }
+    match fonts {
+      Ok(Some(cleanup)) => leftovers.extend(
+        super::fonts::font_cleanup_failures(&cleanup)
+          .iter()
+          .map(|(path, error)| ClearModsLeftover::failed(path, error)),
+      ),
+      Ok(None) => {}
+      Err(error) => leftovers.push(ClearModsLeftover::failed(&mod_dir, &error)),
+    }
+    #[cfg(feature = "plugins")]
+    crate::external_plugins::events::mod_removed(mod_id, profile_folder.as_deref());
+  }
+
+  let mut extracting = crate::download_manager::extractions_in_progress();
+  extracting.sort();
+  extracting.dedup();
+  for dir in extracting {
+    if targets.iter().any(|mod_id| dir == mods_path.join(mod_id)) {
+      leftovers.push(ClearModsLeftover {
+        path: dir.display().to_string(),
+        kind: ClearModsLeftoverKind::StillExtracting,
+        reason: None,
+      });
+    }
+  }
+
+  log::info!(
+    "Cleared {} mods (profile: {profile_folder:?}), kept the files of {} other profiles use, {} left over",
+    targets.len(),
+    preserved.len(),
+    leftovers.len()
+  );
+  Ok(ClearModsReport {
+    preserved,
+    leftovers,
+  })
 }
 
 #[tauri::command]
@@ -309,6 +442,7 @@ pub async fn batch_update_mods(
   guard_permit: Option<String>,
 ) -> Result<BatchUpdateResult, Error> {
   crate::game_guard::ensure_game_idle_locked("batch_update_mods", guard_permit.as_deref())?;
+  let _bulk = super::state::MOD_BULK_OPERATION.lock().await;
   use crate::mod_manager::manager::update_backup::{UPDATE_BACKUP_PREFIX, UpdateBackupTarget};
 
   log::info!(
