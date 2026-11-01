@@ -19,6 +19,8 @@ export type FixtureRequest = {
   /** The client's port, which tells connections apart. */
   remotePort?: number;
   endedAt?: string;
+  /** The request body, kept only for routes with `captureBody`. */
+  body?: string;
 };
 
 export type FixtureResponse = {
@@ -44,6 +46,18 @@ export type FixtureRoute = FixtureResponse & {
   path: string;
   query?: Record<string, string | string[]>;
   sequence?: readonly FixtureResponse[];
+  /** Keep the request body in the journal. */
+  captureBody?: boolean;
+  /**
+   * Answer with the body of the latest captured request to another route,
+   * such as a profile just shared, or 404 before there is one. `select`
+   * picks the part to answer with.
+   */
+  echoBodyOf?: {
+    method: string;
+    path: string;
+    select?: (body: string) => string;
+  };
 };
 
 export type FixtureServer = {
@@ -222,11 +236,13 @@ export const startFixtureServer = async (
       remotePort: request.socket.remotePort,
     };
     journal.push(record);
+    const chunks: Buffer[] = [];
     try {
-      for await (const chunk of request)
-        record.bodyBytes += Buffer.isBuffer(chunk)
-          ? chunk.byteLength
-          : Buffer.byteLength(chunk);
+      for await (const chunk of request) {
+        const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+        record.bodyBytes += bytes.byteLength;
+        if (record.bodyBytes <= 1_048_576) chunks.push(bytes);
+      }
     } catch (error) {
       record.error = error instanceof Error ? error.message : String(error);
       unmatched.push(record);
@@ -271,6 +287,28 @@ export const startFixtureServer = async (
             : requestUrl.searchParams.getAll(key).includes(value),
         ),
     );
+    if (route?.captureBody)
+      record.body = Buffer.concat(chunks).toString("utf8");
+    if (route?.echoBodyOf) {
+      const { method, path: echoedPath, select } = route.echoBodyOf;
+      const source = journal.findLast(
+        (entry) =>
+          entry.method.toUpperCase() === method.toUpperCase() &&
+          new URL(entry.url, "http://127.0.0.1").pathname === echoedPath &&
+          entry.body !== undefined,
+      );
+      try {
+        if (source?.body === undefined)
+          respond(response, 404, JSON.stringify({ error: "Nothing captured" }));
+        else {
+          const body = select ? select(source.body) : source.body;
+          await sendFixture(request, response, { ...route, body }, record);
+        }
+      } finally {
+        record.endedAt = new Date().toISOString();
+      }
+      return;
+    }
     if (route) {
       const index = occurrences.get(route) ?? 0;
       occurrences.set(route, index + 1);

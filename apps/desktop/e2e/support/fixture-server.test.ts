@@ -246,6 +246,45 @@ describe("fixture network", () => {
     await rm(artifacts, { recursive: true, force: true });
   });
 
+  it("keeps captured bodies and echoes the latest one from another route", async () => {
+    const server = await startFixtureServer([
+      {
+        method: "POST",
+        path: "/share",
+        status: 200,
+        body: '{"id":"code"}',
+        captureBody: true,
+      },
+      {
+        method: "GET",
+        path: "/shared",
+        status: 200,
+        body: "",
+        echoBodyOf: {
+          method: "POST",
+          path: "/share",
+          select: (body) => body.toUpperCase(),
+        },
+      },
+    ]);
+    try {
+      expect((await fetch(`${server.origin}/shared`)).status).toBe(404);
+      for (const body of ["first", "second"])
+        await fetch(`${server.origin}/share`, { method: "POST", body });
+      expect(await (await fetch(`${server.origin}/shared`)).text()).toBe(
+        "SECOND",
+      );
+      expect(server.requests().map((entry) => entry.body)).toEqual([
+        undefined,
+        "first",
+        "second",
+        undefined,
+      ]);
+    } finally {
+      await server.close();
+    }
+  });
+
   it("blocks and records HTTP and HTTPS proxy attempts", async () => {
     const artifacts = await mkdtemp(path.join(os.tmpdir(), "dmm-proxy-test-"));
     const server = await startFixtureServer([

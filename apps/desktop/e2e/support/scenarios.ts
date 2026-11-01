@@ -734,6 +734,11 @@ export const scenarios = {
   "local-mod-large-drop-path-vpk": localLargeOnDisk,
   "local-mod-large-drop-path-zip": localLargeOnDisk,
   "profiles-import-overlap": profileShare,
+  "profiles-reshare": {
+    ...profileShare,
+    spec: "profiles-reshare",
+    phases: ["reshare"],
+  },
   "profiles-pointer": profiles,
   "profiles-keyboard": profiles,
   "profiles-file-order": {
