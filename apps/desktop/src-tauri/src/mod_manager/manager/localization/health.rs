@@ -227,11 +227,16 @@ impl ModHealthContext {
   /// Analyses each selected mod on its own against the installed game. Without
   /// `force`, mods with a current cache entry are skipped. A mod that cannot be
   /// analysed is logged and left unchecked rather than labelled.
+  ///
+  /// `history_saved` runs once the check has saved newly observed game data.
+  /// Every repair receipt on this install digests that data, so the caller
+  /// must have the active profile's repairs rebuilt.
   pub fn check(
     &self,
     mod_ids: Option<&[String]>,
     force: bool,
     progress: impl Fn(ModHealthProgress),
+    history_saved: impl FnOnce(),
   ) -> Result<ModHealthReport, Error> {
     let _running = CHECK_LOCK.lock().unwrap_or_else(|error| error.into_inner());
     let profile = self.profile_key();
@@ -277,8 +282,11 @@ impl ModHealthContext {
     if !entries.is_empty() {
       mod_health::record(&self.app_data, &profile, game_build, entries)?;
     }
-    if learned && let Err(error) = history::save(&self.citadel, &observed) {
-      log::warn!("Could not persist observed compatibility history: {error}");
+    if learned {
+      match history::save(&self.citadel, &observed) {
+        Ok(()) => history_saved(),
+        Err(error) => log::warn!("Could not persist observed compatibility history: {error}"),
+      }
     }
     self.report()
   }
@@ -372,7 +380,7 @@ mod tests {
 
     let progress = Mutex::new(Vec::new());
     let record = |update: ModHealthProgress| progress.lock().unwrap().push(update);
-    let report = context.check(None, false, record).unwrap();
+    let report = context.check(None, false, record, || {}).unwrap();
     assert_eq!(report.game_build, Some(100));
     assert_eq!(status(&report, "sounds"), Some(ModHealthStatus::NotCovered));
     assert_eq!(status(&report, "text"), Some(ModHealthStatus::Works));
@@ -387,7 +395,7 @@ mod tests {
     assert_eq!(context.report().unwrap(), report);
 
     progress.lock().unwrap().clear();
-    context.check(None, false, record).unwrap();
+    context.check(None, false, record, || {}).unwrap();
     assert_eq!(
       *progress.lock().unwrap(),
       [ModHealthProgress {
@@ -403,23 +411,98 @@ mod tests {
     assert_eq!(status(&context.report().unwrap(), "sounds"), None);
     progress.lock().unwrap().clear();
     context
-      .check(Some(&["sounds".into(), "text".into()]), false, record)
+      .check(
+        Some(&["sounds".into(), "text".into()]),
+        false,
+        record,
+        || {},
+      )
       .unwrap();
     assert_eq!(progress.lock().unwrap()[0].total, 1);
 
     progress.lock().unwrap().clear();
-    context.check(Some(&["text".into()]), true, record).unwrap();
+    context
+      .check(Some(&["text".into()]), true, record, || {})
+      .unwrap();
     assert_eq!(progress.lock().unwrap()[0].total, 1);
 
     fs::write(context.citadel.join("steam.inf"), b"ClientVersion=101\n").unwrap();
     let report = context.report().unwrap();
     assert!(report.mods.is_empty());
     assert_eq!(report.previous_game_build, Some(100));
-    let report = context.check(None, false, |_| {}).unwrap();
+    let report = context.check(None, false, |_| {}, || {}).unwrap();
     assert_eq!(report.mods.len(), 2);
     assert_eq!(report.game_build, Some(101));
     assert_eq!(report.previous_game_build, Some(100));
   }
+  // A compiled KV3 table (four rows of `{ value: i }`), encoded by
+  // `compiled_resource` in the localization_overlay tests.
+  const DATA_TABLE_HEX: &str = "eb0000000c0000000800000001000000444154410c000000cb000000000000000433564b000000000000000000000000000000000000000000000000000000000e0000000200000037000000000000008300000083000000000000000000000000000000000000000500000004000000000000000100000001000000020000000100000001000000030000000100000001000000040000000100000001000000020000000000000003000000000000006532655f726f775f300076616c7565006532655f726f775f31006532655f726f775f32006532655f726f775f330009090f09100903090300ddeeff";
+
+  /// Removes this install's observed history from the real cache folder.
+  struct RemoveHistory(PathBuf);
+
+  impl Drop for RemoveHistory {
+    fn drop(&mut self) {
+      if let Some(installation) = self.0.parent() {
+        fs::remove_dir_all(installation).ok();
+      }
+    }
+  }
+
+  #[test]
+  fn signals_only_when_it_saves_newly_observed_game_data() {
+    let temp = tempfile::tempdir().unwrap();
+    let citadel = temp.path().join("game/citadel");
+    fs::create_dir_all(&citadel).unwrap();
+    fs::write(citadel.join("steam.inf"), b"ClientVersion=100\n").unwrap();
+    let table = hex::decode(DATA_TABLE_HEX).unwrap();
+    let table_path = "scripts/e2e_status.vdata_c";
+    write_vpk(&citadel.join("pak01_dir.vpk"), &[(table_path, &table)]);
+    let base = ProfileBase::new(citadel.join("addons")).unwrap();
+    write_vpk(&base.join("pak01_dir.vpk"), &[(table_path, &table)]);
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mark_enabled(
+      "data",
+      vec!["pak01_dir.vpk".into()],
+      vec![],
+      None,
+      ShardIndex::FIRST,
+    );
+    manifest.save(&base).unwrap();
+    let history = history::path(&citadel).unwrap();
+    let _cleanup = RemoveHistory(history.clone());
+    let context = ModHealthContext {
+      citadel,
+      base,
+      app_data: temp.path().join("app-data"),
+      overlay_path: temp
+        .path()
+        .join("game/citadel/dmm_localization_default")
+        .join(OVERLAY_VPK_NAME),
+    };
+    let saved = std::cell::Cell::new(0);
+    let check = || {
+      context
+        .check(None, true, |_| {}, || saved.set(saved.get() + 1))
+        .unwrap()
+    };
+
+    check();
+    assert_eq!(saved.get(), 1, "learning the game's table saves history");
+    assert!(history.is_file());
+
+    check();
+    assert_eq!(saved.get(), 1, "the same table is already known");
+
+    // History can't be saved over a directory, so nothing was saved and the
+    // check must not report a change.
+    fs::remove_file(&history).unwrap();
+    fs::create_dir(&history).unwrap();
+    check();
+    assert_eq!(saved.get(), 1, "a failed save is not a history change");
+  }
+
   #[test]
   fn a_failed_mod_does_not_discard_successful_batch_results() {
     let temp = tempfile::tempdir().unwrap();
@@ -450,7 +533,12 @@ mod tests {
     };
     let progress = Mutex::new(Vec::new());
     let report = context
-      .check(None, false, |event| progress.lock().unwrap().push(event))
+      .check(
+        None,
+        false,
+        |event| progress.lock().unwrap().push(event),
+        || {},
+      )
       .unwrap();
     assert_eq!(status(&report, "good"), Some(ModHealthStatus::NotCovered));
     assert_eq!(status(&report, "bad"), None);
