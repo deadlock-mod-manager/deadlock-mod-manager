@@ -91,8 +91,9 @@ export const useReinstallAction = (mod: LocalMod) => {
           break;
       }
     } catch (error) {
-      // Thrown when the reinstall was stopped before it could touch anything,
-      // a guard block being the usual reason. The mod is left as it was.
+      // Thrown when the old files could not be removed, a guard block or a
+      // file kept read-only being the usual reasons. The mod's state is left
+      // alone and nothing is downloaded.
       logger.withError(error).warn("Reinstall aborted");
       toast.error(
         t("reinstall.failedWithReason", {

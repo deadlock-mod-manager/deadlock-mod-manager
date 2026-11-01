@@ -852,6 +852,11 @@ export const scenarios = {
   "gamebanana-file-toggle": catalogLifecycle,
   "gamebanana-reinstall": catalogLifecycle,
   "gamebanana-reinstall-disabled": catalogLifecycle,
+  "gamebanana-reinstall-readonly": {
+    ...catalog,
+    spec: "gamebanana-reinstall-readonly",
+    phases: ["reinstall-readonly"],
+  },
   "gamebanana-force-update": catalogLifecycle,
   "gamebanana-delete-parked": catalogDeleteParked,
   "gamebanana-delete-parked-disabled": catalogDeleteParked,

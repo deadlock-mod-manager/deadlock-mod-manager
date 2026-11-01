@@ -95,6 +95,7 @@ export const catalogRecipe = (scenario: string): CatalogArchive[] => {
     return catalogRecipe("gamebanana-variants");
   if (
     scenario === "gamebanana-update-skip" ||
+    scenario === "gamebanana-reinstall-readonly" ||
     scenario.startsWith("downloads-queue-error-")
   )
     return catalogRecipe("gamebanana-single");
