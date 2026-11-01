@@ -152,6 +152,14 @@ const renderOptions = async () => {
   return captured[0];
 };
 
+const deferred = () => {
+  let resolve!: () => void;
+  const promise = new Promise<void>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+};
+
 const mutationContext = () => ({
   client: new reactQuery.QueryClient(),
   meta: undefined,
@@ -203,14 +211,11 @@ describe("re-scanning mods the profile manifest records", () => {
 describe("restoring recorded mods before the scan", () => {
   it("finishes reconciling the manifest before analyzing local addons", async () => {
     resetProfile(false);
-    let finishRestore = () => {};
-    const restored = new Promise<void>((resolve) => {
-      finishRestore = resolve;
-    });
+    const restore = deferred();
     usePersistedStore.setState({
       restoreModsFromManifest: async () => {
         calls.push("restore");
-        await restored;
+        await restore.promise;
         calls.push("restored");
         return [];
       },
@@ -224,7 +229,7 @@ describe("restoring recorded mods before the scan", () => {
     );
     await Promise.resolve();
     expect(calls).toEqual(["restore"]);
-    finishRestore();
+    restore.resolve();
     expect(await result).toEqual({ addons: [], totalCount: 0, errors: [] });
     expect(calls).toEqual(["restore", "restored", "scan"]);
   });
@@ -232,10 +237,7 @@ describe("restoring recorded mods before the scan", () => {
   it("drops the scan when the active profile changes while restoring", async () => {
     resetProfile(false);
     const other = createProfileId("profile_2_other");
-    let finishRestore = () => {};
-    const restored = new Promise<void>((resolve) => {
-      finishRestore = resolve;
-    });
+    const restore = deferred();
     usePersistedStore.setState((state) => ({
       profiles: {
         ...state.profiles,
@@ -248,7 +250,7 @@ describe("restoring recorded mods before the scan", () => {
       },
       restoreModsFromManifest: async () => {
         calls.push("restore");
-        await restored;
+        await restore.promise;
         calls.push("restored");
         return [];
       },
@@ -262,7 +264,7 @@ describe("restoring recorded mods before the scan", () => {
     );
     await Promise.resolve();
     usePersistedStore.setState({ activeProfileId: other });
-    finishRestore();
+    restore.resolve();
     expect(await result).toBeNull();
     expect(calls).toEqual(["restore", "restored"]);
   });
