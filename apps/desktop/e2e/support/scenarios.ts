@@ -22,6 +22,11 @@ import {
   prepareGroupedIdentificationWorld,
 } from "./library-groups-fixtures";
 import { prepareProfileWorld } from "./profile-fixtures";
+import {
+  hashRequests,
+  prepareRescanAfterResetWorld,
+  rescanAfterResetRoutes,
+} from "./rescan-after-reset-fixtures";
 import { prepareFileOrderWorld } from "./file-order-fixtures";
 import { prepareBrokenProfileWorld } from "./broken-profile-fixtures";
 import { prepareCompatibilityFixWorld } from "./compatibility-fix-fixtures";
@@ -430,6 +435,23 @@ export const scenarios = {
     phases: ["identify", "restart-identify"],
     routes: detectedModRoutes,
     prepare: prepareGroupedIdentificationWorld,
+  },
+  "addons-rescan-after-reset": {
+    ...defaults,
+    family: "addons-analysis",
+    spec: "rescan-after-reset",
+    phases: ["reset-rescan", "restart-rescan"],
+    routes: rescanAfterResetRoutes,
+    prepare: prepareRescanAfterResetWorld,
+    verifyNetwork: (_id: string, requests: readonly FixtureRequest[]) => {
+      // Only the hand-placed pak04 and the local import's pak03 may be looked
+      // up: the catalog mods' files are already accounted for by the manifest.
+      const lookups = hashRequests(requests).length;
+      if (lookups !== 2)
+        throw new Error(
+          `Analyze looked up ${lookups} files by hash; expected exactly 2`,
+        );
+    },
   },
   "library-groups-pagination": {
     ...libraryGroups,

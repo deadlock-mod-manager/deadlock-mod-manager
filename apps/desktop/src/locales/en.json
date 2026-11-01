@@ -5088,6 +5088,7 @@
     "analysisError": "Failed to analyze local addons",
     "registrationError": "Could not register {{modName}}",
     "registrationErrorDetail": "Could not register {{modName}}: {{error}}",
+    "restoreFromRecordsInterrupted": "DMM's records list this mod, but restoring it was interrupted. Run Analyze Local Addons again.",
     "foundAddons": "Found Addons",
     "noAddonsFound": "No addons found in your game directory",
     "errors": "Errors",

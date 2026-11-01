@@ -8,8 +8,10 @@ import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { getMod, getModDownloads } from "@/lib/api-client";
 import {
   buildAnalyzedFileTree,
+  isRecordedInManifest,
   needsAnalysisReview,
 } from "@/lib/mods/analyzed-files";
+import { notifyRemovedMods } from "@/lib/mods/missing-vpks";
 import { invalidateModHealth } from "@/lib/mods/mod-health-queries";
 import { analyzeLocalAddons } from "@/lib/tauri-commands";
 import logger from "@/lib/logger";
@@ -77,13 +79,34 @@ export const useAddonAnalysis = () => {
   }, []);
 
   const { mutate: analyzeAddons, isPending } = useMutation({
-    mutationFn: ({
+    mutationFn: async ({
       profileFolder,
     }: {
       profileFolder: string | null;
       profileId: ProfileId | undefined;
-    }) => analyzeLocalAddons(profileFolder),
+    }) => {
+      // Bring back the mods the profile's manifest still records, as startup
+      // does. After Clear Mods State the library is empty, but every file DMM
+      // installed is still assigned to its mod there.
+      notifyRemovedMods(
+        await usePersistedStore.getState().restoreModsFromManifest(),
+      );
+      // Reconciliation restores the profile active when it ran. If that is no
+      // longer the one being analyzed, its files were never restored.
+      if ((getActiveProfile()?.folderName ?? null) !== profileFolder) {
+        logger
+          .withMetadata({ profileFolder })
+          .info("Skipped addon analysis: the active profile changed");
+        return null;
+      }
+      return analyzeLocalAddons(profileFolder);
+    },
     onSuccess: async (data, { profileFolder, profileId }) => {
+      if (!data) {
+        setShowProgressToast(false);
+        setProgress(null);
+        return;
+      }
       setAnalysisResult(data);
 
       const shouldShowDialog = needsAnalysisReview(data);
@@ -102,7 +125,32 @@ export const useAddonAnalysis = () => {
         }
       }
 
+      const inLibrary = (remoteId: string) =>
+        (profileId
+          ? usePersistedStore.getState().profiles[profileId]?.mods
+          : undefined
+        )?.some((mod) => mod.remoteId === remoteId) ?? false;
+
       for (const [remoteId, groupAddons] of modGroups) {
+        if (isRecordedInManifest(remoteId, groupAddons)) {
+          if (inLibrary(remoteId)) {
+            processedIdentifiedCount++;
+            continue;
+          }
+          // Reconciliation drops its restore when the library changed meanwhile
+          // (switching profiles and back, a download finishing).
+          const description = t("addons.restoreFromRecordsInterrupted");
+          registrationErrors.push(
+            t("addons.registrationErrorDetail", {
+              modName: remoteId,
+              error: description,
+            }),
+          );
+          toast.error(t("addons.registrationError", { modName: remoteId }), {
+            description,
+          });
+          continue;
+        }
         try {
           const modDetails = await getMod(remoteId);
           const hasMatchInfo = groupAddons.some((a) => a.matchInfo);
