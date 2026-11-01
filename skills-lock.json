@@ -1,11 +1,6 @@
 {
   "version": 1,
   "skills": {
-    "agents-md": {
-      "source": "getsentry/skills",
-      "sourceType": "github",
-      "computedHash": "3396f2a758bca4adab4fcfff070105da71732b7da38fdc1402d5e3994f3b0a02"
-    },
     "better-auth-best-practices": {
       "source": "better-auth/skills",
       "sourceType": "github",
@@ -21,21 +16,17 @@
       "sourceType": "github",
       "computedHash": "31c027d02dbf1faa37f58191f574b9443143042fb2b684fe32df53ab0270487c"
     },
-    "find-bugs": {
-      "source": "getsentry/skills",
+    "handoff": {
+      "source": "mattpocock/skills",
       "sourceType": "github",
-      "computedHash": "7bf00be700d1d205b747126aa96d3587bbc2855cd09897614676e179eebe35ed"
+      "skillPath": "skills/productivity/handoff/SKILL.md",
+      "computedHash": "8ebcf017c0a59681f3c2f1ebf90e32f481954a068181a75151c44aa2c55de4b4"
     },
     "impeccable": {
       "source": "pbakaus/impeccable",
       "sourceType": "github",
       "skillPath": "skill/SKILL.md",
       "computedHash": "c8f645c3e9aace8baf528021165168bac77d4f761f0ab7baf45e06e01691500f"
-    },
-    "iterate-pr": {
-      "source": "getsentry/skills",
-      "sourceType": "github",
-      "computedHash": "8df552b852faf36d258aa23d228306950df04568f0955f19a6e0c34993a0a91f"
     },
     "logging-best-practices": {
       "source": "boristane/agent-skills",
@@ -85,17 +76,11 @@
       "sourceType": "github",
       "computedHash": "43ca6c197f8ec13055079da7053232d477068b03ca443f9ac1bc819b95cdd432"
     },
-    "handoff": {
-      "source": "mattpocock/skills",
-      "sourceType": "github",
-      "skillPath": "skills/productivity/handoff/SKILL.md",
-      "computedHash": "20e5f4afdef502637510bc5c64d27645d3c85c88df9cb006824bbb0980166319"
-    },
     "writing-for-agents": {
       "source": "mattpocock/skills",
       "sourceType": "github",
       "skillPath": "skills/productivity/writing-for-agents/SKILL.md",
-      "computedHash": "ccfa1e94d8f6ab5c6a1edd55293ca477faf93c39207771331efdb1e798ed21d6"
+      "computedHash": "95da47fc97af998e85b7d7e6d57b3ac76727c1e290cfe9ea09005aacb826959f"
     }
   }
 }

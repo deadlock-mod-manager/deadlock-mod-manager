@@ -5,103 +5,17 @@ import {
   SheetDescription,
   SheetTitle,
 } from "@deadlock-mods/ui/components/sheet";
-import {
-  CheckCircleIcon,
-  CheckIcon,
-  InfoIcon,
-  LockKeyIcon,
-  ProhibitIcon,
-  XIcon,
-} from "@phosphor-icons/react";
+import { CheckIcon, InfoIcon, LockKeyIcon, XIcon } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
-import {
-  describeActivity,
-  REQUEST_KINDS,
-} from "@/components/plugins/access/activity-copy";
 import { AlwaysBlocked } from "@/components/plugins/access/always-blocked";
-import {
-  grantProgress,
-  PermissionGrantCards,
-} from "@/components/plugins/access/grant-cards";
+import { PermissionGrantCards } from "@/components/plugins/access/grant-cards";
+import { grantProgress } from "@/components/plugins/access/grant-progress";
+import { RecentRequests } from "@/components/plugins/access/recent-requests";
 import { usePluginActions } from "@/components/plugins/access/use-plugin-actions";
-import { usePluginProfiles } from "@/components/plugins/access/use-plugin-profiles";
-import { useRelativeTime } from "@/components/plugins/plugin-format";
 import { PluginTile } from "@/components/plugins/plugin-identity";
 import { TONE_COLOR } from "@/components/plugins/plugin-status";
-import { useExternalPluginActivity } from "@/hooks/use-external-plugin-activity";
-import { cn } from "@/lib/utils";
 import type { ExternalPluginSummary } from "@/types/generated/ExternalPluginSummary";
-
-const RECENT_REQUESTS = 3;
-
-const RecentRequests = ({
-  plugin,
-  onSeeAll,
-}: {
-  plugin: ExternalPluginSummary;
-  onSeeAll: () => void;
-}) => {
-  const { t } = useTranslation();
-  const lookup = usePluginProfiles();
-  const relativeTime = useRelativeTime();
-  const { data: activity = [] } = useExternalPluginActivity(plugin.id);
-  const requests = activity
-    .filter((entry) => REQUEST_KINDS.includes(entry.kind))
-    .slice(0, RECENT_REQUESTS);
-
-  return (
-    <div className='flex w-full flex-col gap-[2px]'>
-      <div className='flex w-full items-center pb-[6px]'>
-        <span className='font-semibold text-[#A3A3A3] text-[11px] uppercase leading-[normal]'>
-          {t("plugins.access.sheet.recentRequests")}
-        </span>
-        <span className='h-px flex-1' />
-        <button
-          className='text-[12px] text-primary leading-[normal] hover:underline'
-          onClick={onSeeAll}
-          type='button'>
-          {t("plugins.access.sheet.seeAll")}
-        </button>
-      </div>
-      {requests.length === 0 && (
-        <p className='px-[10px] py-[8px] text-[#A3A3A3] text-[12px] leading-[normal]'>
-          {t("plugins.access.sheet.noRequests")}
-        </p>
-      )}
-      {requests.map((request) => {
-        const blocked = request.kind === "blocked";
-        const StateIcon = blocked ? ProhibitIcon : CheckCircleIcon;
-        return (
-          <div
-            className={cn(
-              "flex w-full items-center gap-[10px] rounded-[8px] px-[10px] py-[8px]",
-              blocked &&
-                "bg-[#F8717112] outline outline-1 -outline-offset-1 outline-[#F8717133]",
-            )}
-            key={`${request.at}-${request.kind}`}>
-            <StateIcon
-              className='shrink-0'
-              color={blocked ? TONE_COLOR.danger : TONE_COLOR.ok}
-              size={15}
-            />
-            <div className='flex min-w-0 flex-1 flex-col gap-[2px]'>
-              <span className='truncate text-[13px] text-foreground leading-[normal]'>
-                {describeActivity(t, request, lookup, "request")}
-              </span>
-              <span className='truncate font-mono text-[#A3A3A3] text-[11px] leading-[normal]'>
-                {request.method ?? request.permission}
-              </span>
-            </div>
-            <span className='shrink-0 text-[#A3A3A3] text-[11px] leading-[normal]'>
-              {relativeTime(request.at)}
-            </span>
-          </div>
-        );
-      })}
-    </div>
-  );
-};
 
 type PluginAccessSheetProps = {
   plugin: ExternalPluginSummary;
@@ -126,15 +40,15 @@ export const PluginAccessSheet = ({
       <SheetContent
         className='flex w-[480px] flex-col gap-0 border-0 bg-card p-0 shadow-[inset_1px_0_0_0_hsl(var(--border))] sm:max-w-[480px]'
         hideClose
-        overlayClassName='bg-[#0B0A09CC]'
+        overlayClassName='bg-background/80'
         side='right'>
         <div className='flex w-full shrink-0 gap-[14px] border-border border-b px-[24px] pt-[22px] pb-[17px]'>
           <PluginTile
             accent={plugin.accent}
-            fillAlpha='26'
+            fillAlpha={15}
             glyphSize={20}
             icon={plugin.icon}
-            outlineAlpha='33'
+            outlineAlpha={20}
             radius={10}
             size={40}
           />
@@ -142,14 +56,14 @@ export const PluginAccessSheet = ({
             <SheetTitle className='font-semibold text-[18px] text-foreground leading-[normal]'>
               {t("plugins.access.sheet.title")}
             </SheetTitle>
-            <SheetDescription className='w-full text-[#A3A3A3] text-[13px] leading-[18px]'>
+            <SheetDescription className='w-full text-muted-foreground text-[13px] leading-[18px]'>
               {t("plugins.access.sheet.description", { name: plugin.name })}
             </SheetDescription>
           </div>
           <SheetClose
             aria-label={t("plugins.access.sheet.close")}
-            className='flex size-[32px] shrink-0 items-center justify-center rounded-[8px] hover:bg-[#FFFFFF0A]'>
-            <XIcon color='#A3A3A3' size={16} />
+            className='flex size-[32px] shrink-0 items-center justify-center rounded-[8px] hover:bg-foreground/[0.04]'>
+            <XIcon className='text-muted-foreground' size={16} />
           </SheetClose>
         </div>
 
@@ -157,7 +71,7 @@ export const PluginAccessSheet = ({
           {total > 0 && (
             <>
               <div className='flex w-full items-center'>
-                <span className='font-semibold text-[#A3A3A3] text-[11px] uppercase leading-[normal]'>
+                <span className='font-semibold text-muted-foreground text-[11px] uppercase leading-[normal]'>
                   {t("plugins.access.sheet.required")}
                 </span>
                 <span className='h-px flex-1' />
@@ -186,8 +100,8 @@ export const PluginAccessSheet = ({
           />
           <div className='w-full flex-1' />
           <div className='flex w-full gap-[8px]'>
-            <InfoIcon className='shrink-0' color='#A3A3A3' size={14} />
-            <span className='flex-1 text-[#A3A3A3] text-[12px] leading-[normal]'>
+            <InfoIcon className='shrink-0 text-muted-foreground' size={14} />
+            <span className='flex-1 text-muted-foreground text-[12px] leading-[normal]'>
               {t("plugins.access.sheet.applyNote")}
             </span>
           </div>

@@ -1,7 +1,7 @@
 ---
 name: vpk-manifest-hygiene
-description: Enforce VPK manifest updates whenever VPK files are created, moved, renamed, enabled, disabled, or deleted. Use when modifying VPK-related Rust code, touching vpk_manager, manager.rs, mods.rs, profiles.rs, or any code that mutates the addons directory. Prevents state drift between on-disk VPKs and the .dmm.json manifest.
-disable-model-invocation: true
+description: "Keep the `.dmm.json` VPK manifest in sync with VPK files on disk. Use when writing or changing Rust code that creates, moves, renames, enables, disables, or deletes VPKs in a profile's addons directory, such as vpk_manager, mods.rs, or profiles.rs."
+paths: "apps/desktop/src-tauri/src/**"
 ---
 
 # VPK Manifest Hygiene

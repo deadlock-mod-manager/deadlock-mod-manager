@@ -14,17 +14,17 @@ import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { deleteProfileVpk, showProfileVpkInFolder } from "@/lib/tauri-commands";
 import logger from "@/lib/logger";
+import {
+  getVpkScanFingerprint,
+  useVpkScanDismissal,
+} from "@/lib/vpk-scan-dismissal";
 import { AnalyzeAddonsButton } from "../my-mods/analyze-addons-button";
-
-const DISMISS_STORAGE_KEY = "vpk-scan-alert.dismissed-fingerprint";
-
-const fingerprint = (files: string[]) => [...files].sort().join("|");
 
 interface VpkScanAlertProps {
   unmatchedVpkCount: number;
   unmatchedVpks: string[];
   isRefetching?: boolean;
-  refetch: () => Promise<unknown>;
+  refetch: () => Promise<object | void>;
   activeProfileFolder?: string | null;
 }
 
@@ -37,9 +37,7 @@ export const VpkScanAlert = ({
 }: VpkScanAlertProps) => {
   const { t } = useTranslation();
   const confirm = useConfirm();
-  const [dismissedFingerprint, setDismissedFingerprint] = useState<
-    string | null
-  >(() => window.localStorage.getItem(DISMISS_STORAGE_KEY));
+  const { dismissedFingerprint, dismiss, restore } = useVpkScanDismissal();
   const [isListVisible, setIsListVisible] = useState(false);
   const [pendingFile, setPendingFile] = useState<string | null>(null);
   const fileListId = useId();
@@ -70,16 +68,15 @@ export const VpkScanAlert = ({
   });
 
   const currentFingerprint = useMemo(
-    () => fingerprint(unmatchedVpks),
+    () => getVpkScanFingerprint(unmatchedVpks),
     [unmatchedVpks],
   );
 
   useEffect(() => {
     if (dismissedFingerprint && dismissedFingerprint !== currentFingerprint) {
-      window.localStorage.removeItem(DISMISS_STORAGE_KEY);
-      setDismissedFingerprint(null);
+      restore();
     }
-  }, [currentFingerprint, dismissedFingerprint]);
+  }, [currentFingerprint, dismissedFingerprint, restore]);
 
   const isDismissed =
     dismissedFingerprint !== null &&
@@ -90,8 +87,7 @@ export const VpkScanAlert = ({
   }
 
   const handleDismiss = () => {
-    window.localStorage.setItem(DISMISS_STORAGE_KEY, currentFingerprint);
-    setDismissedFingerprint(currentFingerprint);
+    dismiss(currentFingerprint);
   };
 
   const handleRefetch = async () => {

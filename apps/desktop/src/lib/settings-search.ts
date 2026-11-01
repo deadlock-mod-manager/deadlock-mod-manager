@@ -382,6 +382,10 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
         descriptionKey: "settings.troubleshootingDescription",
       },
       {
+        titleKey: "settings.restoreVpkScanAlert",
+        descriptionKey: "settings.restoreVpkScanAlertDescription",
+      },
+      {
         titleKey: "settings.clearCatalog",
         descriptionKey: "settings.clearCatalogDescription",
       },

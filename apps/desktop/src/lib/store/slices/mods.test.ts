@@ -26,6 +26,7 @@ import type { ModProfile, ProfileId } from "@/types/profiles";
 import { createProfileId } from "@/types/profiles";
 import { createModsSlice, type ModsState } from "./mods";
 import { placeholderModFromManifest } from "../utils/manifest-install-state";
+import { clearProfileMods } from "@/lib/mods/recovery";
 
 type TestState = ModsState & {
   profiles: Record<string, ModProfile>;
@@ -343,6 +344,113 @@ describe("clearMods", () => {
 
     expect(store.getState().localMods).toEqual([]);
     expect(store.getState().profiles).toEqual({});
+  });
+});
+
+describe("mod recovery", () => {
+  const clear = (
+    purgeMod: Parameters<typeof clearProfileMods>[0]["purgeMod"],
+  ) => {
+    const state = store.getState();
+    return clearProfileMods({
+      profile: state.profiles.default,
+      mods: state.localMods,
+      discardDownload: async () => {},
+      purgeMod,
+      removeMod: (remoteId, profileId) =>
+        store.getState().removeMod(remoteId, profileId),
+      bumpProfileSyncRevision: (profileId) =>
+        store.getState().bumpProfileSyncRevision(profileId),
+    });
+  };
+
+  it("reconciles each successful purge and retains failures for retry", async () => {
+    const before = store.getState();
+    const report = await clear(async ({ modId, profileFolder, vpks }) => {
+      expect(profileFolder).toBeNull();
+      expect(vpks).toEqual([`pak0${modId}_dir.vpk`]);
+      if (modId === "2") {
+        expect(store.getState().localMods.map((mod) => mod.remoteId)).toEqual([
+          "2",
+        ]);
+        throw { kind: "io", message: "Access denied: C:/mods/2/archive.zip" };
+      }
+    });
+    expect(report).toEqual({
+      removed: 1,
+      failures: [
+        {
+          remoteId: "2",
+          name: "Mod 2",
+          message: "Access denied: C:/mods/2/archive.zip",
+        },
+      ],
+    });
+    expect(store.getState().profiles.default.mods).toEqual([
+      before.profiles.default.mods[1],
+    ]);
+    expect(Object.keys(store.getState().profiles.default.enabledMods)).toEqual([
+      "2",
+    ]);
+    expect(store.getState().profiles.secondary).toBe(before.profiles.secondary);
+    expect(
+      store.getState().profileSyncRevisions[createProfileId("default")],
+    ).toBeGreaterThan(0);
+    const retry = await clear(async () => {});
+    expect(retry).toEqual({ removed: 1, failures: [] });
+    expect(store.getState().profiles.default.mods).toEqual([]);
+  });
+
+  it("does not offer repeated game overrides after the user keeps the block", async () => {
+    let calls = 0;
+    const report = await clear(async () => {
+      calls += 1;
+      throw {
+        kind: "gameRunning",
+        message: "Close Deadlock before removing files",
+      };
+    });
+    expect(calls).toBe(1);
+    expect(report.removed).toBe(0);
+    expect(report.failures.map((failure) => failure.remoteId)).toEqual([
+      "1",
+      "2",
+    ]);
+    expect(store.getState().localMods).toHaveLength(2);
+  });
+
+  it("continues targeting the original profile if the active profile changes", async () => {
+    const original = store.getState().profiles.secondary;
+    await clear(async ({ profileFolder }) => {
+      expect(profileFolder).toBeNull();
+      store.setState({
+        activeProfileId: createProfileId("secondary"),
+        localMods: original.mods,
+      });
+    });
+    expect(store.getState().profiles.default.mods).toEqual([]);
+    expect(store.getState().profiles.secondary).toBe(original);
+    expect(store.getState().localMods).toBe(original.mods);
+  });
+
+  it("keeps a mod when its download cannot be stopped", async () => {
+    const state = store.getState();
+    let purges = 0;
+    const report = await clearProfileMods({
+      profile: state.profiles.default,
+      mods: state.localMods,
+      discardDownload: async () => {
+        throw new Error("Download is still writing archive.zip");
+      },
+      purgeMod: async () => {
+        purges += 1;
+      },
+      removeMod: state.removeMod,
+      bumpProfileSyncRevision: state.bumpProfileSyncRevision,
+    });
+    expect(purges).toBe(0);
+    expect(report.failures).toHaveLength(2);
+    expect(store.getState().localMods).toBe(state.localMods);
   });
 });
 

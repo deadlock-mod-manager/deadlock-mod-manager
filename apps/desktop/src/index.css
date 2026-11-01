@@ -5,6 +5,7 @@
 @import "./plugins/themes/pre-defined/gridline/gridline.css";
 @import "./plugins/themes/pre-defined/coding/coding.css";
 @import "./plugins/themes/pre-defined/seasonal/seasonal.css";
+@import "./plugins/themes/pre-defined/french/french.css";
 
 @tailwind base;
 @tailwind components;

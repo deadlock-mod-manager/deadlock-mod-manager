@@ -64,7 +64,7 @@ When creating a worktree with `wtx add <name>`:
 
 ### Naming Conventions
 
-Follow the project's branch naming from `.cursor/skills/git-conventions/SKILL.md`:
+Follow the project's branch naming from [git-conventions](../git-conventions/SKILL.md):
 
 - Use descriptive kebab-case names: `wtx add fix-mod-conflict`
 - Include ticket numbers when applicable: `wtx add KR-123-add-collections`

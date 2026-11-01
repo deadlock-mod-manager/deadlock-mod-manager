@@ -17,6 +17,26 @@ permissions:
   contents: read
 
 jobs:
+  recent-reversions:
+    name: Recent reversion warnings
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+    continue-on-error: true
+    runs-on: depot-ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Warn about reversed recent patches
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+          HEAD_SHA: ${{ github.sha }}
+        run: node scripts/check-recent-reversions.mjs
+
   check-types:
     name: Type Check
     runs-on: depot-ubuntu-24.04

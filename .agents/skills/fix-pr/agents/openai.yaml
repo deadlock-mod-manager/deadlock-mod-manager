@@ -1,0 +1,4 @@
+interface:
+  display_name: "Fix PR"
+policy:
+  allow_implicit_invocation: false

@@ -32,10 +32,10 @@ export const AlwaysBlocked = ({
         <div className='flex w-full gap-[6px]' key={row[0]}>
           {row.map((scope) => (
             <span
-              className='flex items-center gap-[5px] rounded-[6px] px-[8px] py-[3px] outline outline-1 -outline-offset-1 outline-[#FFFFFF14]'
+              className='flex items-center gap-[5px] rounded-[6px] px-[8px] py-[3px] outline outline-1 -outline-offset-1 outline-foreground/[0.08]'
               key={scope}>
-              <ProhibitIcon color='#A3A3A3' size={11} />
-              <span className='text-[#A3A3A3] text-[11px] leading-[normal]'>
+              <ProhibitIcon className='text-muted-foreground' size={11} />
+              <span className='text-muted-foreground text-[11px] leading-[normal]'>
                 {t(`plugins.access.blocked.${scope}`)}
               </span>
             </span>

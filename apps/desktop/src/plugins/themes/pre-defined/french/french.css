@@ -1,0 +1,84 @@
+:root.french-theme-active {
+  color-scheme: dark;
+  --french-red: 359 54% 47%;
+  --french-cream: 42 52% 90%;
+  --background: 218 46% 12%;
+  --foreground: var(--french-cream);
+  --card: 217 42% 16%;
+  --card-foreground: var(--french-cream);
+  --popover: 217 42% 16%;
+  --popover-foreground: var(--french-cream);
+  --toast-background: 217 42% 16%;
+  --primary: 227 70% 55%;
+  --primary-foreground: var(--french-cream);
+  --secondary: 218 41% 24%;
+  --secondary-foreground: var(--french-cream);
+  --muted: 217 36% 21%;
+  --muted-foreground: 216 21% 72%;
+  --accent: 218 41% 24%;
+  --accent-foreground: var(--french-cream);
+  --destructive: 0 63% 31%;
+  --destructive-foreground: 0 91% 71%;
+  --border: 216 30% 25%;
+  --input: 216 30% 25%;
+  --ring: 227 78% 70%;
+  --sidebar-background: 217 49% 8%;
+  --sidebar-foreground: var(--french-cream);
+  --sidebar-primary: var(--french-red);
+  --sidebar-primary-foreground: var(--french-cream);
+  --sidebar-accent: var(--french-red);
+  --sidebar-accent-foreground: var(--french-cream);
+  --sidebar-border: 216 30% 25%;
+  --sidebar-ring: 227 78% 70%;
+}
+
+.french-theme-active .occult-geometry-container {
+  display: none;
+}
+
+.french-theme-active [data-titlebar="true"] {
+  border-top: 3px solid transparent;
+  background-image: linear-gradient(
+    to right,
+    hsl(var(--primary)) 0% 33.333%,
+    hsl(var(--french-cream)) 33.333% 66.667%,
+    hsl(var(--french-red)) 66.667% 100%
+  );
+  background-origin: border-box;
+  background-position: top;
+  background-repeat: no-repeat;
+  background-size: 100% 3px;
+  background-color: hsl(var(--sidebar-background));
+}
+
+.french-theme-active [data-titlebar="true"] .bg-primary {
+  --primary: var(--french-red);
+}
+
+.french-theme-active .bg-primary:hover {
+  background-color: hsl(var(--primary) / 0.9);
+}
+
+.french-theme-active [data-sidebar="menu-button"][data-active="true"] {
+  background-color: hsl(var(--french-red));
+  color: hsl(var(--french-cream));
+}
+
+.french-banner {
+  background-color: hsl(var(--french-red));
+  color: hsl(var(--french-cream));
+}
+
+.french-tax-receipt {
+  background-color: hsl(var(--french-cream));
+  color: hsl(var(--background));
+  color-scheme: light;
+}
+
+.french-tax-blue {
+  background-color: hsl(var(--primary));
+}
+
+.french-tax-red {
+  background-color: hsl(var(--french-red));
+}

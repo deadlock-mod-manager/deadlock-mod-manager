@@ -123,11 +123,14 @@ export const ProfileSelect = ({
         <CaretDownIcon className='shrink-0 text-muted-foreground' size={12} />
       </button>
       {open ? (
-        <div className='flex w-full flex-col gap-0.5 rounded-[10px] bg-[#1E1A18] p-1.5 shadow-[0px_12px_32px_#000000AA] ring-1 ring-[#FFFFFF1A] ring-inset'>
+        <div className='flex w-full flex-col gap-0.5 rounded-[10px] bg-card p-1.5 shadow-[0px_12px_32px_#000000AA] ring-1 ring-foreground/10 ring-inset'>
           {install ? (
             <>
               <button
-                className={cn(OPTION, "bg-[#EFE0BE14] hover:bg-[#EFE0BE1F]")}
+                className={cn(
+                  OPTION,
+                  "bg-primary/[0.08] hover:bg-primary/[0.12]",
+                )}
                 disabled={creating}
                 onClick={onCreate}
                 type='button'>
@@ -142,11 +145,11 @@ export const ProfileSelect = ({
                     })}
                   </span>
                 </span>
-                <span className='shrink-0 rounded-[6px] bg-[#EFE0BE1F] px-[7px] py-0.5 font-semibold text-[11px] text-primary'>
+                <span className='shrink-0 rounded-[6px] bg-primary/[0.12] px-[7px] py-0.5 font-semibold text-[11px] text-primary'>
                   {t("plugins.page.setup.recommended")}
                 </span>
               </button>
-              <span className='h-px w-full bg-[#FFFFFF0F]' />
+              <span className='h-px w-full bg-foreground/[0.06]' />
             </>
           ) : null}
           {!install && defaultProfile

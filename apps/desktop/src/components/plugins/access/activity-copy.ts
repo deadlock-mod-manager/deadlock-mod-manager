@@ -28,8 +28,8 @@ export const REQUEST_KINDS: ExternalPluginActivityKind[] = [
   "blocked",
 ];
 
-const PRIMARY = "#EFE0BE";
-const MUTED = "#A3A3A3";
+const PRIMARY = "hsl(var(--primary))";
+const MUTED = TONE_COLOR.neutral;
 
 export const ACTIVITY_ICON = {
   deployed: { icon: RocketLaunchIcon, color: PRIMARY },

@@ -21,7 +21,7 @@ pub mod fingerprint;
 pub mod steam_log;
 pub mod store;
 pub mod types;
-mod waiter;
+pub(crate) mod waiter;
 
 use std::io::{Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};

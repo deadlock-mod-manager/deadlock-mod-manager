@@ -2,7 +2,7 @@
 
 language: en-US
 tone_instructions: >-
-  Chill and relaxed. Don't lecture contributors. Use .cursor/rules/ as soft guidelines, not a critique checklist.
+  Chill and relaxed. Don't lecture contributors. Use AGENTS.md and .agents/context/ as soft guidelines, not a critique checklist.
 early_access: false
 enable_free_tier: true
 reviews:
@@ -83,7 +83,7 @@ reviews:
     - path: "**"
       instructions: >-
         This is a Tauri v2 desktop app monorepo (React + Rust) for managing
-        Deadlock game mods. The .cursor/rules/ files describe project conventions
+        Deadlock game mods. AGENTS.md and .agents/context/ describe project conventions
         — treat them as soft guidelines to inform reviews, not as a checklist to
         nitpick contributors. When a convention is relevant, link to the project
         docs rather than explaining inline. Documentation lives at
@@ -419,7 +419,9 @@ knowledge_base:
       - "AGENTS.md"
       - "AI_POLICY.md"
       - "SECURITY.md"
-      - ".cursor/rules/**"
+      - ".agents/context/**"
+      - ".agents/skills/**/SKILL.md"
+      - ".agents/skills/**/references/**"
   learnings:
     scope: auto
   issues:

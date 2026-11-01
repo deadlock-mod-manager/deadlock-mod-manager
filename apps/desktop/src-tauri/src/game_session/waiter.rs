@@ -18,7 +18,9 @@ const POLL_INTERVAL: Duration = Duration::from_secs(2);
 /// code when the platform can tell.
 pub fn wait_for_exit(pid: u32, start_time: Option<u64>) -> Option<u32> {
   #[cfg(windows)]
-  if let Some(handle) = windows_process::ProcessHandle::open(pid) {
+  if let Ok(handle) = windows_process::ProcessHandle::open(pid)
+    .inspect_err(|error| log::warn!("Could not open Deadlock process {pid}: {error}"))
+  {
     match (start_time, handle.start_time()) {
       // The PID belongs to a newer process, so ours is gone.
       (Some(expected), Some(actual)) if !same_process_start(expected, actual) => return None,
@@ -48,8 +50,10 @@ fn is_alive(system: &mut System, pid: u32, start_time: Option<u64>) -> bool {
 }
 
 #[cfg(windows)]
-mod windows_process {
-  use windows::Win32::Foundation::{BOOL, CloseHandle, FILETIME, HANDLE, WAIT_OBJECT_0};
+pub(crate) mod windows_process {
+  use windows::Win32::Foundation::{
+    BOOL, CloseHandle, FILETIME, HANDLE, STILL_ACTIVE, WAIT_OBJECT_0,
+  };
   use windows::Win32::System::Threading::{
     GetExitCodeProcess, GetProcessTimes, INFINITE, OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION,
     PROCESS_SYNCHRONIZE, WaitForSingleObject,
@@ -62,7 +66,7 @@ mod windows_process {
   pub struct ProcessHandle(HANDLE);
 
   impl ProcessHandle {
-    pub fn open(pid: u32) -> Option<Self> {
+    pub fn open(pid: u32) -> windows::core::Result<Self> {
       // SAFETY: OpenProcess has no preconditions; failure is returned as an error.
       let handle = unsafe {
         OpenProcess(
@@ -71,10 +75,17 @@ mod windows_process {
           pid,
         )
       };
-      handle
-        .inspect_err(|error| log::warn!("Could not open Deadlock process {pid}: {error}"))
-        .ok()
-        .map(Self)
+      handle.map(Self)
+    }
+
+    /// Windows records the exit code as soon as termination starts, so this
+    /// also holds for a process stuck in teardown that is still listed.
+    pub fn is_exiting(&self) -> bool {
+      let mut exit_code = 0u32;
+      // SAFETY: the handle is valid until Drop and was opened with
+      // PROCESS_QUERY_LIMITED_INFORMATION; the out pointer is a live local.
+      unsafe { GetExitCodeProcess(self.0, &mut exit_code) }
+        .is_ok_and(|()| exit_code != STILL_ACTIVE.0 as u32)
     }
 
     /// When the process was created, in seconds since the Unix epoch: the
@@ -144,12 +155,28 @@ mod tests {
       .unwrap();
     let pid = child.id();
     // `child` keeps the process object alive after it exits.
-    let start_time =
-      windows_process::ProcessHandle::open(pid).and_then(|handle| handle.start_time());
+    let start_time = windows_process::ProcessHandle::open(pid)
+      .ok()
+      .and_then(|handle| handle.start_time());
     child.wait().unwrap();
 
     assert!(start_time.is_some());
     assert_eq!(wait_for_exit(pid, start_time), Some(3));
+  }
+
+  #[cfg(windows)]
+  #[test]
+  fn a_finished_process_still_held_open_is_exiting() {
+    let mut child = std::process::Command::new("cmd")
+      .args(["/C", "exit 0"])
+      .spawn()
+      .unwrap();
+    child.wait().unwrap();
+    let handle = windows_process::ProcessHandle::open(child.id()).unwrap();
+    let this_process = windows_process::ProcessHandle::open(std::process::id()).unwrap();
+
+    assert!(handle.is_exiting());
+    assert!(!this_process.is_exiting());
   }
 
   #[cfg(windows)]
@@ -160,7 +187,9 @@ mod tests {
     system.refresh_processes(ProcessesToUpdate::Some(&[Pid::from_u32(pid)]), true);
     let expected = system.process(Pid::from_u32(pid)).unwrap().start_time();
 
-    let actual = windows_process::ProcessHandle::open(pid).and_then(|handle| handle.start_time());
+    let actual = windows_process::ProcessHandle::open(pid)
+      .ok()
+      .and_then(|handle| handle.start_time());
 
     assert!(actual.is_some_and(|actual| same_process_start(actual, expected)));
   }

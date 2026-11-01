@@ -1,6 +1,6 @@
 ---
 name: recomposing-commits
-description: Use when commits on a feature branch are messy, out of logical order, mix unrelated changes, or need restructuring before a PR - also triggered by "clean up history", "reorganize commits", "recompose branch", "make commits logical", or similar
+description: "Restructure a feature branch's commits into logical, ordered, single-purpose commits before a PR. Use when commits are messy, out of order, or mix unrelated changes, or when asked to clean up history, reorganize commits, or recompose a branch."
 ---
 
 # Recomposing Commits

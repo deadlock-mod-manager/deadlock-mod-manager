@@ -51,6 +51,8 @@ pub enum Error {
   GameRunning,
   #[error("Game is not running")]
   GameNotRunning,
+  #[error("Could not stop the game")]
+  GameStopFailed,
   #[error("Failed to launch game: {0}")]
   GameLaunchFailed(String),
   #[error("Merged mod data must be reviewed before launching")]
@@ -192,6 +194,7 @@ impl serde::Serialize for Error {
       Error::DuplicateVpkOwnership { .. } => "duplicateVpkOwnership",
       Error::GameRunning => "gameRunning",
       Error::GameNotRunning => "gameNotRunning",
+      Error::GameStopFailed => "gameStopFailed",
       Error::GameLaunchFailed(_) => "gameLaunchFailed",
       Error::ModDataReviewRequired => "modDataReviewRequired",
       Error::MissingEnabledModFiles(_) => "missingEnabledModFiles",

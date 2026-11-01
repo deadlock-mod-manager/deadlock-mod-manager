@@ -11,7 +11,7 @@ import {
 } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import { usePluginProfiles } from "@/components/plugins/access/use-plugin-profiles";
-import { AccessScope } from "@/components/plugins/manage/plugin-row";
+import { AccessScope } from "@/components/plugins/manage/access-scope";
 import { findPermission } from "@/components/plugins/plugin-permissions";
 import type { ExternalPluginSummary } from "@/types/generated/ExternalPluginSummary";
 
@@ -74,7 +74,10 @@ export const AccessLine = ({ plugin }: { plugin: ExternalPluginSummary }) => {
           </AccessScope>
         ) : null}
         {file && profile ? (
-          <ArrowRightIcon className='shrink-0' color='#7C756E' size={11} />
+          <ArrowRightIcon
+            className='shrink-0 text-muted-foreground/75'
+            size={11}
+          />
         ) : null}
         {profile ? (
           <AccessScope icon={UserCircleIcon}>{profile}</AccessScope>

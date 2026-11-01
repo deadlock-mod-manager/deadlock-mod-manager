@@ -542,11 +542,7 @@ const Mod = () => {
 
             {canPreviewModel && (
               <TabsContent className='mt-4' value='3d'>
-                <ModModelPreview
-                  mod={mod}
-                  localMod={localMod}
-                  files={availableFiles}
-                />
+                <ModModelPreview mod={mod} localMod={localMod} />
               </TabsContent>
             )}
 

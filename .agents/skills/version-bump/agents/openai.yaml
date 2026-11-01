@@ -1,0 +1,4 @@
+interface:
+  display_name: "Version Bump"
+policy:
+  allow_implicit_invocation: false

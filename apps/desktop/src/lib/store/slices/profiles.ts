@@ -371,8 +371,7 @@ const planManifestReconciliation = async (
         installedVpks.length > 0 ? ModStatus.Installed : ModStatus.Downloaded,
       installedVpks,
       missingVpks,
-      // Only an order the manifest itself states. Reordering does not bump the
-      // sync revision, so a value read before the snapshot could undo one.
+      // An absent manifest order must not replace the saved library order.
       ...(entry.order === null || entry.order === undefined
         ? {}
         : { installOrder: entry.order }),
@@ -1349,6 +1348,9 @@ export const createProfilesSlice: StateCreator<
           });
         }
       }
+
+      // A completed removal must not be seeded back from an older snapshot.
+      if (get().profileSyncRevisions[profileId] !== revision) return;
 
       if (seedEntries.length > 0) {
         try {
