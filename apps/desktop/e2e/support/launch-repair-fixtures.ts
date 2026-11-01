@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -31,8 +32,13 @@ const fileId = (modId: string) => Number(modId) + 10_000;
 const downloadUrl = (origin: string, modId: string) =>
   `${origin}/dl/${fileId(modId)}`;
 
-const archiveFor = (modId: string) =>
-  createArchive({ [`${modId}.vpk`]: repairPayload(modId) });
+const repairArchives = () =>
+  Promise.all(
+    REPAIR_MODS.map(async (mod) => ({
+      ...mod,
+      body: await createArchive({ [`${mod.id}.vpk`]: repairPayload(mod.id) }),
+    })),
+  );
 
 const json = (
   route: string,
@@ -45,12 +51,7 @@ const json = (
 });
 
 export const launchRepairRoutes = async (scenario: string) => {
-  const archives = await Promise.all(
-    REPAIR_MODS.map(async (mod) => ({
-      ...mod,
-      body: await archiveFor(mod.id),
-    })),
-  );
+  const archives = await repairArchives();
   return (origin: string): FixtureRoute[] => {
     const files = archives.map((mod) => ({
       _idRow: fileId(mod.id),
@@ -76,19 +77,14 @@ export const launchRepairRoutes = async (scenario: string) => {
       json("/apiv11/Util/Fileservers", { _aRecords: [] }),
       ...archives.flatMap((mod, index): FixtureRoute[] => [
         json(`/apiv11/Mod/${mod.id}/DownloadPage`, { _aFiles: [files[index]] }),
-        mod.id === REPAIRABLE.id || scenario !== "missing-vpks-launch-partial"
-          ? {
-              method: "GET",
-              path: `/dl/${fileId(mod.id)}`,
-              status: 200,
-              body: mod.body,
-            }
-          : {
-              method: "GET",
-              path: `/dl/${fileId(mod.id)}`,
-              status: 404,
-              body: "File removed by the author",
-            },
+        {
+          method: "GET",
+          path: `/dl/${fileId(mod.id)}`,
+          ...(mod.id === UNREPAIRABLE.id &&
+          scenario === "missing-vpks-launch-partial"
+            ? { status: 404, body: "File removed by the author" }
+            : { status: 200, body: mod.body }),
+        },
       ]),
     ];
   };
@@ -129,15 +125,10 @@ export const prepareLaunchRepairWorld = async (
     ],
     ALPHA.id,
   );
-  const archives = await Promise.all(
-    REPAIR_MODS.map(async (mod) => ({
-      ...mod,
-      body: await archiveFor(mod.id),
-    })),
-  );
+  const archives = await repairArchives();
   const remote = (mod: { remoteId: string }) => {
     const source = archives.find((item) => item.id === mod.remoteId);
-    if (!source) return mod;
+    assert(source);
     const download = {
       name: source.archive,
       url: downloadUrl(origin, source.id),

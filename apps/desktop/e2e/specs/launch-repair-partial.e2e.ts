@@ -27,11 +27,7 @@ const ids = REPAIR_MODS.map((mod) => mod.id);
 const row = (id: string) =>
   $(`[data-testid="launch-repair-mod"][data-mod-id="${id}"]`);
 
-/**
- * Each mod in `enabled` is installed with its own bytes; the rest are enabled
- * nowhere but stay in the library, unless listed in `gone`: a mod whose only
- * VPK was deleted with nothing left to restore it leaves the library.
- */
+/** Only `enabled` mods are installed; mods in `gone` may leave the library. */
 const holds = (
   observed: BrokenState,
   enabled: readonly string[],

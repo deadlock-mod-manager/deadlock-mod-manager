@@ -36,12 +36,7 @@ export function resolveLaunchRepairMods(
   });
 }
 
-/**
- * The mods the next repair action works on. `failures` is the previous pass's
- * result: `null` before any pass, so every affected mod; otherwise only the
- * mods that pass left unresolved, so a disable after a partial reinstall keeps
- * the mods that came back, and one after a full repair only retries the launch.
- */
+/** Before any repair pass (`failures` is `null`) every mod is a target. */
 export function launchRepairTargets(
   mods: LaunchRepairMod[],
   failures: LaunchRepairFailure[] | null,

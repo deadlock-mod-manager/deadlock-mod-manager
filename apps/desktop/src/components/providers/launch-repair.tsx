@@ -59,7 +59,6 @@ export function LaunchRepairProvider({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
   const { reinstallMod } = useReinstallMod();
   const [request, setRequest] = useState<RepairRequest | null>(null);
-  // `null` until a repair pass completes; see `launchRepairTargets`.
   const [failures, setFailures] = useState<LaunchRepairFailure[] | null>(null);
   const [progress, setProgress] = useState<LaunchRepairProgress | null>(null);
   const activeRequest = useRef(false);
@@ -120,16 +119,12 @@ export function LaunchRepairProvider({ children }: { children: ReactNode }) {
           },
           launch: async () => {
             checkProfile();
-            // Every target is resolved now, so a launch error must not send
-            // them through the next action again.
             setFailures([]);
             try {
               await withWritableRecovery(() =>
                 invoke("start_game", request.args),
               );
             } catch (error) {
-              // Files went missing again since the repair, so those mods
-              // are what the next action has to deal with.
               if (
                 isTauriError(error) &&
                 error.kind === "missingEnabledModFiles" &&
