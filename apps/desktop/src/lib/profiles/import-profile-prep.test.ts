@@ -48,7 +48,39 @@ const pick = (item: Pick<ModDownloadItem, "name" | "url">) =>
     size: 100,
   }) satisfies ProfileModDownload;
 
-const modData = { remoteId: "42", name: "Charlie", isMap: false } as ModDto;
+const modData: ModDto = {
+  id: "42",
+  remoteId: "42",
+  name: "Charlie",
+  description: null,
+  remoteUrl: "https://gamebanana.com/mods/42",
+  category: "Skins",
+  likes: 0,
+  author: "Fixture",
+  modAuthorId: null,
+  downloadable: true,
+  remoteAddedAt: new Date(0),
+  remoteUpdatedAt: new Date(0),
+  tags: [],
+  images: [],
+  hero: null,
+  isAudio: false,
+  isMap: false,
+  audioUrl: null,
+  downloadCount: 0,
+  isNSFW: false,
+  isObsolete: false,
+  isBlacklisted: false,
+  blacklistReason: null,
+  blacklistedAt: null,
+  blacklistedBy: null,
+  filesUpdatedAt: null,
+  metadata: null,
+  dependencies: null,
+  overrides: null,
+  createdAt: null,
+  updatedAt: null,
+};
 
 const prepare = async (importedMod: Partial<OrderedImportedMod>) => {
   const { preparedMods, failed } = await prepareProfileImportMods([
