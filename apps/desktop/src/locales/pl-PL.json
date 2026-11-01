@@ -5437,6 +5437,7 @@
           "📦 Match sharing settings have their own tab",
           "🌐 Download and 1-click install notifications are translated",
           "🔧 Fixed downloads stuck at Downloading 100% after the selected profile was deleted",
+          "🔧 Fixed failed mod updates needing a file list refresh before they could be retried",
           "🔧 Fixed being signed out when several requests refreshed your login at once",
           "🔧 Fixed a mod deleted while queued downloading anyway, and its disabled variants staying behind",
           "🔧 Fixed GameBanana mods showing as updated when the author only archived a file",

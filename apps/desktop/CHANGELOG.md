@@ -21,6 +21,8 @@
 
 ### Patch Changes
 
+- f9fc83b: Keep failed mod updates ready to retry without refreshing the file list again.
+- 0a6395d: Retry a server without Range when it fails the first segment's request
 - 5d01b0b: Stop match sync from adding Deadlock playtime to Steam while it waits between requests
 - da6c64d: Keep match sync running after turning it off and quickly back on
 - 1f4fbe2: Bind plugin consent to the reviewed package, verify installed archive bytes, and fix update, snapshot, activity, and SDK validation errors.
