@@ -363,6 +363,47 @@ impl ModManager {
     })
   }
 
+  /// Mods another profile's manifest lists, whether or not its library still
+  /// does; clearing one profile keeps the downloads they use. Fails if a
+  /// manifest can't be read, since its mods' downloads can't be told apart.
+  pub fn mods_in_other_profiles(
+    &self,
+    profile_folder: Option<&str>,
+  ) -> Result<HashSet<String>, Error> {
+    let Some(game_path) = self.steam_manager.get_game_path() else {
+      return Ok(HashSet::new());
+    };
+    let mut profiles = vec![None];
+    match std::fs::read_dir(game_path.join("game").join("citadel").join("addons")) {
+      Ok(entries) => {
+        for entry in entries {
+          let entry = entry?;
+          let Ok(name) = entry.file_name().into_string() else {
+            continue;
+          };
+          if entry.path().is_dir() && name.starts_with("profile_") {
+            profiles.push(Some(name));
+          }
+        }
+      }
+      Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+      Err(error) => return Err(error.into()),
+    }
+    let mut mods = HashSet::new();
+    for folder in profiles {
+      if folder.as_deref() == profile_folder {
+        continue;
+      }
+      let addons_path = self.get_addons_path(folder.as_deref())?;
+      // `load` takes a folder it can't look into for one without a manifest.
+      addons_path
+        .join(crate::mod_manager::vpk_manifest::MANIFEST_FILENAME)
+        .try_exists()?;
+      mods.extend(ProfileVpkManifest::load(&addons_path)?.mods.into_keys());
+    }
+    Ok(mods)
+  }
+
   /// Deletes a mod's downloaded files and forgets it.
   pub fn remove_mod_store(&mut self, mod_id: &str, mods_path: &Path) -> Result<(), Error> {
     Self::ensure_safe_mod_id(mod_id)?;
@@ -645,7 +686,10 @@ mod tests {
       let path = entry.unwrap().path();
       if path.is_dir() {
         found.extend(vpks_under(&path));
-      } else if path.extension().is_some_and(|extension| extension == "vpk") {
+      } else if path
+        .extension()
+        .is_some_and(|extension| extension.eq_ignore_ascii_case("vpk"))
+      {
         found.push(path.display().to_string());
       }
     }
@@ -663,6 +707,7 @@ mod tests {
     write_vpk(&base, "pak01_dir.vpk");
     write_vpk(&base, "7_blue.vpk");
     write_vpk(&base, "pak05_dir.vpk");
+    write_vpk(&base, "HAND_ADDED.VPK");
     write_vpk(&overflow, "pak01_dir.vpk");
     fs::write(base.join("readme.txt"), b"not a mod").unwrap();
     let mut manifest = ProfileVpkManifest::default();
@@ -739,6 +784,82 @@ mod tests {
     assert!(matches!(&error, Error::ReadOnlyFile(path) if *path == locked));
     assert_eq!(vpks_under(&game.path().join("game")), before);
     assert_eq!(ProfileVpkManifest::load(&base).unwrap().mods.len(), 4);
+  }
+
+  /// The default profile's folder holds the other profiles' folders; clearing
+  /// it leaves them alone.
+  #[test]
+  fn clearing_the_default_profile_keeps_other_profiles() {
+    let game = game_dir();
+    let mut manager = test_manager(game.path());
+    cluttered_profile(&manager);
+    let other = manager.get_addons_path(Some("profile_1_other")).unwrap();
+    fs::create_dir_all(&*other).unwrap();
+    write_vpk(&other, "pak01_dir.vpk");
+
+    manager.clear_mods(None).unwrap();
+
+    assert_eq!(
+      vpks_under(&game.path().join("game")),
+      [other.join("pak01_dir.vpk").display().to_string()]
+    );
+  }
+
+  #[test]
+  fn clearing_a_profile_keeps_mods_other_manifests_list() {
+    let game = game_dir();
+    let manager = test_manager(game.path());
+    cluttered_profile(&manager);
+    let other = manager.get_addons_path(Some("profile_1_other")).unwrap();
+    fs::create_dir_all(&*other).unwrap();
+    let mut manifest = ProfileVpkManifest::default();
+    manifest
+      .mods
+      .insert("shared".into(), ProfileVpkManifestEntry::default());
+    manifest.save(&other).unwrap();
+
+    assert_eq!(
+      manager
+        .mods_in_other_profiles(Some("profile_1_other"))
+        .unwrap(),
+      HashSet::from(["1", "2", "7", "gone"].map(String::from))
+    );
+    assert_eq!(
+      manager.mods_in_other_profiles(None).unwrap(),
+      HashSet::from(["shared".to_string()])
+    );
+  }
+
+  /// Without another profile's manifest, its downloads can't be told apart.
+  #[test]
+  fn clearing_a_profile_needs_every_other_manifest() {
+    let game = game_dir();
+    let manager = test_manager(game.path());
+    cluttered_profile(&manager);
+    let broken = manager.get_addons_path(Some("profile_2_broken")).unwrap();
+    fs::create_dir_all(&*broken).unwrap();
+    fs::write(broken.join(".dmm.json"), b"not json").unwrap();
+
+    let error = manager.mods_in_other_profiles(None).unwrap_err();
+
+    assert!(error.to_string().contains("profile_2_broken"), "{error}");
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn clearing_a_profile_needs_to_see_into_every_other_profile() {
+    use std::os::unix::fs::PermissionsExt;
+    let game = game_dir();
+    let manager = test_manager(game.path());
+    cluttered_profile(&manager);
+    let hidden = manager.get_addons_path(Some("profile_2_hidden")).unwrap();
+    fs::create_dir_all(&*hidden).unwrap();
+    fs::set_permissions(&*hidden, fs::Permissions::from_mode(0o644)).unwrap();
+
+    let result = manager.mods_in_other_profiles(None);
+
+    fs::set_permissions(&*hidden, fs::Permissions::from_mode(0o755)).unwrap();
+    assert!(result.is_err(), "{result:?}");
   }
 
   #[test]

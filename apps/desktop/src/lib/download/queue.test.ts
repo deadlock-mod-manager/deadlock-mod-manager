@@ -280,4 +280,62 @@ describe("download start", () => {
     queue.add(request(callbacks, "retry"));
     expect(queue.isStarted(modData.remoteId)).toBe(false);
   });
+  it("keeps a cancellation the backend makes quiet while one is expected", () => {
+    const callbacks: string[] = [];
+    queue.add(request(callbacks, "first"));
+    const settle = queue.expectCancellations([modData.remoteId], null);
+    queue.fail(modData.remoteId, "Download cancelled");
+    settle(true);
+    expect(callbacks).toEqual([]);
+    expect(outcomes()).toEqual(["cancelled"]);
+    expect(queue.getMod(modData.remoteId)).toBeUndefined();
+  });
+  it("still reports a failure while a cancellation is expected", () => {
+    const callbacks: string[] = [];
+    queue.add(request(callbacks, "first"));
+    const settle = queue.expectCancellations([modData.remoteId], null);
+    queue.fail(modData.remoteId, "Network error");
+    expect(callbacks).toEqual(["first:failed"]);
+    settle(false);
+    expect(callbacks).toEqual(["first:failed"]);
+  });
+  it("drops a completion that came in while the operation went through", () => {
+    const callbacks: string[] = [];
+    queue.add(request(callbacks, "first"));
+    const settle = queue.expectCancellations([modData.remoteId], null);
+    completed();
+    settle(true);
+    expect(callbacks).toEqual([]);
+  });
+  it("reports a held completion once the operation didn't go through", () => {
+    const callbacks: string[] = [];
+    queue.add(request(callbacks, "first"));
+    const settle = queue.expectCancellations([modData.remoteId], null);
+    completed();
+    expect(callbacks).toEqual([]);
+    settle(false);
+    expect(callbacks).toEqual(["first:completed"]);
+  });
+  it("ignores a download's late events once the operation went through", () => {
+    const callbacks: string[] = [];
+    queue.add(request(callbacks, "first"));
+    queue.expectCancellations([modData.remoteId], null)(true);
+    completed();
+    expect(callbacks).toEqual([]);
+    expect(queue.getMod(modData.remoteId)).toBeUndefined();
+  });
+  it("leaves another profile's download of the mod alone", () => {
+    const callbacks: string[] = [];
+    queue.add({ ...request(callbacks, "first"), profileFolder: "profile_b" });
+    queue.expectCancellations([modData.remoteId], null)(true);
+    completed();
+    expect(callbacks).toEqual(["first:completed"]);
+  });
+  it("reports a cancellation again once the expectation is settled", () => {
+    const callbacks: string[] = [];
+    queue.add(request(callbacks, "first"));
+    queue.expectCancellations([modData.remoteId], null)(false);
+    queue.fail(modData.remoteId, "Download cancelled");
+    expect(callbacks).toEqual(["first:failed"]);
+  });
 });

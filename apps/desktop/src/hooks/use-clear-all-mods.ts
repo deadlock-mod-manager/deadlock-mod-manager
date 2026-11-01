@@ -18,6 +18,8 @@ const describeLeftover = (
 ): string => {
   if (kind === "stillExtracting")
     return `${path}: ${t("settings.clearAllModsStillExtracting")}`;
+  if (kind === "fontsNotRemoved")
+    return `${path}: ${t("settings.clearAllModsFontsLeft")}`;
   return reason ? `${path}: ${reason}` : path;
 };
 
@@ -57,14 +59,23 @@ export const useClearAllMods = () => {
 
       // A reconciliation already running must not restore what this removes.
       state.bumpProfileSyncRevision(profileId);
-      // The backend cancels them too; this keeps their callbacks quiet.
-      for (const modId of modIds) await downloadManager.discardDownload(modId);
-
-      const report = await invokeGuarded<ClearModsReport>("clear_mods", {
-        profileFolder: profile?.folderName ?? null,
+      // The backend stops the profile's downloads once the clear is under way;
+      // one finishing meanwhile must not install its mod again.
+      const profileFolder = profile?.folderName ?? null;
+      const settleDownloads = downloadManager.expectCancellations(
         modIds,
-        preserveIds,
-      });
+        profileFolder,
+      );
+      let report: ClearModsReport | undefined;
+      try {
+        report = await invokeGuarded<ClearModsReport>("clear_mods", {
+          profileFolder,
+          modIds,
+          preserveIds,
+        });
+      } finally {
+        settleDownloads(report !== undefined);
+      }
 
       // A mod added while the clear ran is new work and stays.
       const cleared = new Set(modIds);

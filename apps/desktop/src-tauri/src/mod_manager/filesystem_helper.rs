@@ -92,7 +92,8 @@ impl FileSystemHelper {
     }
   }
 
-  /// Get all files in a directory with a specific extension
+  /// Get all files in a directory with a specific extension, in any case: a
+  /// hand-added `MOD.VPK` is a mod too, as the addons watcher sees it.
   pub fn get_files_with_extension(
     &self,
     dir: &Path,
@@ -108,7 +109,11 @@ impl FileSystemHelper {
       let entry = entry?;
       let path = entry.path();
 
-      if path.is_file() && path.extension().is_some_and(|ext| ext == extension) {
+      if path.is_file()
+        && path
+          .extension()
+          .is_some_and(|ext| ext.eq_ignore_ascii_case(extension))
+      {
         files.push(path);
       }
     }

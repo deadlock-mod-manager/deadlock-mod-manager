@@ -94,30 +94,51 @@ pub(crate) fn prepare_font_cleanup(
 }
 
 pub(crate) fn apply_font_cleanup(cleanup: PreparedFontCleanup) -> Result<(), Error> {
-  for (path, error) in font_cleanup_failures(&cleanup) {
+  let font_manager = crate::mod_manager::FontManager::new();
+
+  if let Err(error) = font_manager.remove_font_patterns(&cleanup.conf_path, &cleanup.mod_id) {
     log::warn!(
-      "Failed to clean up fonts of mod {} at {}: {error}",
-      cleanup.mod_id,
-      path.display()
+      "Failed to remove font patterns for mod {}: {error}",
+      cleanup.mod_id
     );
   }
-  Ok(())
-}
 
-/// Removes the mod's font patterns and installed fonts. Returns what was left,
-/// each with the reason.
-pub(crate) fn font_cleanup_failures(cleanup: &PreparedFontCleanup) -> Vec<(PathBuf, Error)> {
-  let font_manager = crate::mod_manager::FontManager::new();
-  let mut failures = Vec::new();
-  if let Err(error) = font_manager.remove_font_patterns(&cleanup.conf_path, &cleanup.mod_id) {
-    failures.push((cleanup.conf_path.clone(), error));
-  }
   if let Err(error) =
     font_manager.remove_installed_fonts(&cleanup.game_fonts_dir, &cleanup.removable_font_files)
   {
-    failures.push((cleanup.game_fonts_dir.clone(), error));
+    log::warn!(
+      "Failed to remove installed fonts for mod {}: {error}",
+      cleanup.mod_id
+    );
   }
-  failures
+
+  Ok(())
+}
+
+/// What Clear All Mods couldn't undo of a mod's fonts.
+pub(crate) enum FontLeftover {
+  /// A font file that is still installed.
+  Font(PathBuf, Error),
+  /// The config still lists the mod's fonts.
+  Config(PathBuf, Error),
+}
+
+/// Like [`apply_font_cleanup`], but tries every font and returns what's left.
+pub(crate) fn font_cleanup_leftovers(cleanup: &PreparedFontCleanup) -> Vec<FontLeftover> {
+  let font_manager = crate::mod_manager::FontManager::new();
+  let mut leftovers = Vec::new();
+  if let Err(error) = font_manager.remove_font_patterns(&cleanup.conf_path, &cleanup.mod_id) {
+    leftovers.push(FontLeftover::Config(cleanup.conf_path.clone(), error));
+  }
+  for file_name in &cleanup.removable_font_files {
+    let font_path = cleanup.game_fonts_dir.join(file_name);
+    if let Err(error) =
+      font_manager.remove_installed_fonts(&cleanup.game_fonts_dir, std::slice::from_ref(file_name))
+    {
+      leftovers.push(FontLeftover::Font(font_path, error));
+    }
+  }
+  leftovers
 }
 
 #[tauri::command]
@@ -274,4 +295,39 @@ pub async fn debug_trigger_font_install(
 
   log::info!("debug_trigger_font_install: emitted download-fonts-found for mod {mod_id}");
   Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  /// Each font that stays is named, not the game's whole fonts folder.
+  #[cfg(unix)]
+  #[test]
+  fn clearing_a_mods_fonts_names_each_font_left() {
+    use std::os::unix::fs::PermissionsExt;
+    let game = tempfile::tempdir().unwrap();
+    let fonts = game.path().join("fonts");
+    std::fs::create_dir_all(&fonts).unwrap();
+    for name in ["a.ttf", "b.ttf"] {
+      std::fs::write(fonts.join(name), b"font").unwrap();
+    }
+    std::fs::set_permissions(&fonts, std::fs::Permissions::from_mode(0o555)).unwrap();
+    let cleanup = PreparedFontCleanup {
+      conf_path: fonts.join("fonts.conf"),
+      game_fonts_dir: fonts.clone(),
+      mod_id: "42".into(),
+      removable_font_files: vec!["a.ttf".into(), "b.ttf".into()],
+    };
+
+    let left: Vec<PathBuf> = font_cleanup_leftovers(&cleanup)
+      .into_iter()
+      .map(|leftover| match leftover {
+        FontLeftover::Font(path, _) | FontLeftover::Config(path, _) => path,
+      })
+      .collect();
+
+    std::fs::set_permissions(&fonts, std::fs::Permissions::from_mode(0o755)).unwrap();
+    assert_eq!(left, [fonts.join("a.ttf"), fonts.join("b.ttf")]);
+  }
 }

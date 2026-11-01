@@ -18,7 +18,7 @@ use ts_rs::TS;
 use super::downloads::{
   FileserverPreference, ensure_download_allowed, get_download_manager, resolve_download_files,
 };
-use super::fonts::{apply_font_cleanup, prepare_font_cleanup};
+use super::fonts::{FontLeftover, apply_font_cleanup, prepare_font_cleanup};
 use super::state::MANAGER;
 use crate::download_manager::{DownloadFileDto, DownloadTask};
 
@@ -203,14 +203,16 @@ pub async fn get_enabled_mod_vpk_files(
   )
 }
 
-/// Why a path is left: deleting it failed (`reason` says why), or a timed-out
-/// archive extraction is still writing there.
+/// Why a path is left: deleting it failed (`reason` says why), a timed-out
+/// archive extraction is still writing there, or the game's font config may
+/// still list a cleared mod's fonts (a file to keep, not delete).
 #[derive(Debug, Clone, Copy, Serialize, TS)]
 #[ts(export, rename_all = "camelCase")]
 #[serde(rename_all = "camelCase")]
 pub enum ClearModsLeftoverKind {
   RemoveFailed,
   StillExtracting,
+  FontsNotRemoved,
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
@@ -233,12 +235,16 @@ pub struct ClearModsReport {
 }
 
 impl ClearModsLeftover {
-  fn failed(path: &std::path::Path, error: &Error) -> Self {
+  fn new(kind: ClearModsLeftoverKind, path: &std::path::Path, error: &Error) -> Self {
     Self {
       path: path.display().to_string(),
-      kind: ClearModsLeftoverKind::RemoveFailed,
+      kind,
       reason: Some(error.to_string()),
     }
+  }
+
+  fn failed(path: &std::path::Path, error: &Error) -> Self {
+    Self::new(ClearModsLeftoverKind::RemoveFailed, path, error)
   }
 }
 
@@ -264,14 +270,17 @@ pub async fn clear_mods(
     .quiesce_profile(profile_folder.as_deref())
     .await;
 
-  let (cleared, game_path, mods_path) = {
+  let (cleared, game_path, mods_path, used_elsewhere) = {
     let mut mod_manager = MANAGER.lock().unwrap();
     let mods_path = mod_manager.get_mods_store_path()?;
+    // Read first: a manifest that can't be read stops the clear unchanged.
+    let used_elsewhere = mod_manager.mods_in_other_profiles(profile_folder.as_deref())?;
     let cleared = mod_manager.clear_mods(profile_folder.as_deref())?;
     (
       cleared,
       mod_manager.get_steam_manager().get_game_path().cloned(),
       mods_path,
+      used_elsewhere,
     )
   };
 
@@ -284,7 +293,11 @@ pub async fn clear_mods(
     });
   }
 
-  let preserve: std::collections::HashSet<&str> = preserve_ids.iter().map(String::as_str).collect();
+  let preserve: std::collections::HashSet<&str> = preserve_ids
+    .iter()
+    .chain(&used_elsewhere)
+    .map(String::as_str)
+    .collect();
   let mut targets: Vec<String> = mod_ids
     .into_iter()
     .chain(cleared.manifest_mod_ids)
@@ -298,24 +311,34 @@ pub async fn clear_mods(
   for mod_id in &targets {
     let mod_dir = mods_path.join(mod_id);
     // Needs the mod's font stash, so before the folder goes; fonts other
-    // mods still stash are kept.
+    // mods still stash are kept. Without the stash there's no telling which
+    // fonts the mod installed, so the folder stays.
     let fonts = match &game_path {
-      Some(game_path) => prepare_font_cleanup(game_path, mod_id),
-      None => Ok(None),
+      Some(game_path) => match prepare_font_cleanup(game_path, mod_id) {
+        Ok(fonts) => fonts,
+        Err(error) => {
+          leftovers.push(ClearModsLeftover::failed(&mod_dir, &error));
+          continue;
+        }
+      },
+      None => None,
     };
     let removed = MANAGER.lock().unwrap().remove_mod_store(mod_id, &mods_path);
     if let Err(error) = removed {
       leftovers.push(ClearModsLeftover::failed(&mod_dir, &error));
       continue;
     }
-    match fonts {
-      Ok(Some(cleanup)) => leftovers.extend(
-        super::fonts::font_cleanup_failures(&cleanup)
+    if let Some(cleanup) = fonts {
+      leftovers.extend(
+        super::fonts::font_cleanup_leftovers(&cleanup)
           .iter()
-          .map(|(path, error)| ClearModsLeftover::failed(path, error)),
-      ),
-      Ok(None) => {}
-      Err(error) => leftovers.push(ClearModsLeftover::failed(&mod_dir, &error)),
+          .map(|leftover| match leftover {
+            FontLeftover::Font(path, error) => ClearModsLeftover::failed(path, error),
+            FontLeftover::Config(path, error) => {
+              ClearModsLeftover::new(ClearModsLeftoverKind::FontsNotRemoved, path, error)
+            }
+          }),
+      );
     }
     #[cfg(feature = "plugins")]
     crate::external_plugins::events::mod_removed(mod_id, profile_folder.as_deref());

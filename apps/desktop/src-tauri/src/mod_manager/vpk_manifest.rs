@@ -13,7 +13,7 @@ use std::{
 
 mod legacy_reorder;
 
-const MANIFEST_FILENAME: &str = ".dmm.json";
+pub(crate) const MANIFEST_FILENAME: &str = ".dmm.json";
 const CURRENT_MANIFEST_VERSION: u32 = 3;
 
 const fn current_manifest_version() -> u32 {

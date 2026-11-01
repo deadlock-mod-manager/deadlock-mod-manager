@@ -18,6 +18,10 @@ interface PendingDownload {
   mod: DownloadableMod;
   attempt: AnalyticsAttempt<"mod_download">;
   quietCancels: number;
+  /** Cancellations the backend makes on its own that report nothing. */
+  expectedCancels: number;
+  /** A completion held back while a cancellation is expected. */
+  heldCompletion?: string;
   /** False while the download waits in the backend's queue. */
   started: boolean;
 }
@@ -69,6 +73,7 @@ export class DownloadQueue {
     const entry: PendingDownload = {
       mod,
       quietCancels: 0,
+      expectedCancels: 0,
       attempt: this.dependencies.start({
         mod_id: mod.remoteId,
         entry_point: mod.analyticsEntryPoint ?? "other",
@@ -89,14 +94,52 @@ export class DownloadQueue {
   }
 
   complete(modId: string, path: string) {
-    this.settle(modId, "completed")?.onComplete(path);
+    const entry = this.pending.get(modId);
+    const mod = this.settle(modId, "completed");
+    if (mod && entry && entry.expectedCancels > 0) {
+      entry.heldCompletion = path;
+      return;
+    }
+    mod?.onComplete(path);
   }
 
   fail(modId: string, error: string) {
-    this.settle(
-      modId,
-      error === "Download cancelled" ? "cancelled" : "failed",
-    )?.onError(new Error(error));
+    const cancelled = error === "Download cancelled";
+    const entry = this.pending.get(modId);
+    const mod = this.settle(modId, cancelled ? "cancelled" : "failed");
+    if (cancelled && entry && entry.expectedCancels > 0) return;
+    mod?.onError(new Error(error));
+  }
+
+  /**
+   * The backend may cancel these downloads itself: a cancellation it reports
+   * stays quiet, a failure still notifies, and a completion waits. Call the
+   * returned function once the backend is done. If its operation went
+   * through, these downloads are over and report nothing more; otherwise a
+   * completion that waited reports now. Only downloads for `profileFolder`
+   * count; another profile's download of the same mod carries on.
+   */
+  expectCancellations(modIds: readonly string[], profileFolder: string | null) {
+    const entries = modIds.flatMap((modId) => {
+      const entry = this.pending.get(modId);
+      return entry && (entry.mod.profileFolder ?? null) === profileFolder
+        ? [entry]
+        : [];
+    });
+    for (const entry of entries) entry.expectedCancels++;
+    return (applied: boolean) => {
+      for (const entry of entries) {
+        entry.expectedCancels--;
+        const path = entry.heldCompletion;
+        if (applied) {
+          entry.heldCompletion = undefined;
+          this.settle(entry.mod.remoteId, "cancelled", entry);
+        } else if (entry.expectedCancels === 0 && path !== undefined) {
+          entry.heldCompletion = undefined;
+          entry.mod.onComplete(path);
+        }
+      }
+    };
   }
 
   /** Quiet cancels skip completion/error callbacks. Returns false if untracked. */

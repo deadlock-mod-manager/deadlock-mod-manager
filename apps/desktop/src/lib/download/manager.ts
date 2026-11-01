@@ -468,6 +468,30 @@ class DownloadManager {
     }
   }
 
+  /**
+   * For an operation that has the backend cancel these downloads: the
+   * cancellations stay quiet and completions wait (see the queue's
+   * `expectCancellations`). Call the returned function once it's done; the
+   * mods whose download it stopped are then marked failed.
+   */
+  expectCancellations(modIds: readonly string[], profileFolder: string | null) {
+    const release = this.downloads.expectCancellations(modIds, profileFolder);
+    return (applied: boolean) => {
+      release(applied);
+      const store = usePersistedStore.getState();
+      const mods =
+        store.profiles[store.activeProfileId]?.mods ?? store.localMods;
+      for (const mod of mods) {
+        if (
+          modIds.includes(mod.remoteId) &&
+          isDownloadInProgress(mod.status) &&
+          !this.isQueued(mod.remoteId)
+        )
+          store.setModStatus(mod.remoteId, ModStatus.FailedToDownload);
+      }
+    };
+  }
+
   /** Cancels without download completion or error feedback. */
   async discardDownload(modId: string) {
     if (!this.isQueued(modId)) return;
