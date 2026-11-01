@@ -51,6 +51,7 @@ describe("scenario selection", () => {
     expect(scenarios.monkey.nativeInput).toBe(false);
     expect(selectScenarios("filesystem")).toHaveLength(windows ? 12 : 10);
     expect(selectScenarios("interchange")).toEqual(["grimoire-import"]);
+    expect(selectScenarios("analyze")).toEqual(["analyze-errors"]);
     expect(selectScenarios("skins")).toEqual(["hero-skins-active"]);
     expect(selectScenarios("stats")).toEqual([
       "stats-default-layout",
