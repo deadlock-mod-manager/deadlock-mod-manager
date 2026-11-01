@@ -93,6 +93,7 @@ pnpm-debug.log*
 apps/desktop
 apps/docs
 
-# ...except the release notes the www /changelog page reads at build time
+# ...except the release notes and highlight images the www /changelog page reads at build time
 !apps/desktop/CHANGELOG.md
+!apps/desktop/public/whats-new
 !.changeset
