@@ -13,7 +13,7 @@ const windows = process.platform === "win32";
 describe("scenario selection", () => {
   it("registers every case with explicit phases and capability requirements", () => {
     const ids = selectScenarios("all");
-    expect(ids).toHaveLength(windows ? 131 : 120);
+    expect(ids).toHaveLength(windows ? 132 : 121);
     expect(ids).toContain("downloads-segmented-range-error");
     for (const id of ids) {
       expect(parseScenarioId(id)).toBe(id);
@@ -51,6 +51,7 @@ describe("scenario selection", () => {
     expect(scenarios.monkey.nativeInput).toBe(false);
     expect(selectScenarios("filesystem")).toHaveLength(windows ? 12 : 10);
     expect(selectScenarios("interchange")).toEqual(["grimoire-import"]);
+    expect(selectScenarios("analyze")).toEqual(["analyze-errors"]);
     expect(selectScenarios("skins")).toEqual(["hero-skins-active"]);
     expect(selectScenarios("stats")).toEqual([
       "stats-default-layout",

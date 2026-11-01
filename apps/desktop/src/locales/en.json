@@ -5090,6 +5090,8 @@
     "registrationErrorDetail": "Could not register {{modName}}: {{error}}",
     "foundAddons": "Found Addons",
     "noAddonsFound": "No addons found in your game directory",
+    "noIdentifiedAddons": "No mods were identified",
+    "noUnmatchedAddons": "No unmatched addons",
     "errors": "Errors",
     "errorsCount": "{{count}} error(s)",
     "fileCount": "Files",
