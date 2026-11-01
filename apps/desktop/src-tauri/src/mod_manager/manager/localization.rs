@@ -330,8 +330,10 @@ impl ModManager {
     }
     self.report_plan_stage(RepairPlanStage::WritingPackage);
     // Save the review first: a package without it couldn't be rebuilt after the
-    // next library change. Choices saved for a package that then fails to write
-    // still answer this exact review, and are revalidated before any reuse.
+    // next library change. Invalid choices must not replace a saved review, and
+    // valid ones saved for a package that then fails to write still answer this
+    // exact review; rebuilds revalidate them before any reuse.
+    plan.analyze(resolutions)?;
     let reviewed = review::ReviewedInputs::new(&plan.analysis, &key)?;
     review::save(&key.output_path, reviewed, resolutions)?;
     receipt::write(&plan, key, resolutions)
@@ -2714,6 +2716,30 @@ Game core
     );
     assert!(!overlay.exists());
     assert!(receipt::load(&overlay).unwrap().is_none());
+  }
+
+  #[test]
+  fn invalid_choices_keep_the_saved_review() {
+    let (_temp, mut manager) = manager_with_conflict();
+    let expected = apply_review(&mut manager, "second");
+    let analysis = manager.analyze_localization_overlay(None, &[]).unwrap();
+    let invalid = [LocalizationResolution {
+      conflict_key: "removed-conflict".into(),
+      winner_mod_id: None,
+      winner_value: None,
+      winner_source_vpk: None,
+      use_vanilla: true,
+    }];
+    assert!(
+      manager
+        .write_reviewed_localization_overlay(None, &invalid, &analysis.review_fingerprint)
+        .is_err()
+    );
+    manager.invalidate_localization_overlay(None);
+    manager
+      .prepare_localization_overlay_with_progress(None, true, || {})
+      .unwrap();
+    assert_reviewed_package(&manager, &expected);
   }
 
   #[test]
