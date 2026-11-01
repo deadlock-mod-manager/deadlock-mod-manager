@@ -35,7 +35,8 @@ deadlock-modmanager/
 │   └── vpk-parser/         # VPK file parsing (Rust)
 ├── tools/                  # Development tools
 │   └── typescript/         # Shared TypeScript configs
-└── .cursor/                # Development rules & docs
+├── .agents/                # Shared agent reference material and skills
+└── .cursor/                # Cursor MCP and editor settings
 ```
 
 ## Applications (`apps/`)
@@ -292,25 +293,22 @@ tools/typescript/
 
 - **`pnpm-workspace.yaml`**: Workspace configuration for pnpm
 - **`turbo.json`**: Turborepo configuration for build optimization
-- **`biome.jsonc`**: Biome linting and formatting configuration
+- **`.oxlintrc.json` / `.oxfmtrc.json`**: oxlint and oxfmt configuration
 - **`lefthook.yml`**: Git hooks for pre-commit checks
 - **`compose.yml`**: Docker Compose for local development
 - **`.gitignore`**: Version control ignore patterns
 
-### Development Rules (`.cursor/`)
+### Agent Instructions and Skills
 
-Project-specific development guidelines and rules:
+`AGENTS.md` is the shared entry point for project conventions and task-specific guidance. `CLAUDE.md` imports it for Claude Code. Detailed references and workflows live in `.agents/`:
 
 ```
-.cursor/
-├── rules/
-│   ├── 010-workflow.mdc            # Workflow guidelines
-│   ├── 020-codebase-structure.mdc  # Structure documentation
-│   ├── 030-coding-style.mdc        # Coding standards
-│   ├── 040-logging.mdc             # Logging guidelines
-│   ├── 050-tauri-version.mdc       # Tauri v2 enforcement
-│   └── 060-tailwind-v4.mdc         # Tailwind CSS v4 guidelines
+.agents/
+├── context/                # Coding, error handling, Tauri, product, and design
+└── skills/                 # Verification, changesets, reviews, and other workflows
 ```
+
+`pnpm install` links the canonical skills into `.claude/skills/`; run `pnpm skills:link` after changing the skill set. `.cursor/` contains editor and MCP configuration, not project conventions.
 
 ## Key Technologies & Patterns
 
@@ -334,7 +332,7 @@ Project-specific development guidelines and rules:
 
 - **pnpm**: Fast, disk space efficient package manager
 - **Turborepo**: Monorepo build system with caching
-- **Biome**: Fast linter and formatter
+- **oxlint / oxfmt**: Linting and formatting
 - **Lefthook**: Git hooks for quality assurance
 - **Docker**: Containerized development environment
 

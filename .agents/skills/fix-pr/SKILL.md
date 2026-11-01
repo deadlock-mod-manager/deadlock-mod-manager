@@ -64,7 +64,7 @@ For each confirmed comment (all P1s + user-confirmed P2/P3s):
 - Read the relevant file(s)
 - Understand the context from the diff hunk
 - Apply the minimal, focused fix that addresses the comment
-- Follow all project coding conventions from [030-coding-style](mdc:.cursor/rules/030-coding-style.mdc)
+- Follow [AGENTS.md](../../../AGENTS.md) and [coding conventions](../../context/CODING.md)
 - Do not make unrelated changes
 
 After all fixes are applied:
@@ -95,8 +95,8 @@ Then suggest staging and committing with the `/commit` command.
 - Use `gh` CLI for all GitHub interactions
 - Never modify files not related to a specific comment being addressed
 - If a comment is unclear, err on the side of asking rather than guessing
-- Respect all rules in `.cursor/rules/` when applying fixes
-- Do not create a changeset unless a fix qualifies per [090-changesets](mdc:.cursor/rules/090-changesets.mdc)
+- Follow the task-specific guidance linked from [AGENTS.md](../../../AGENTS.md) when applying fixes
+- Do not create a changeset unless a fix qualifies per [changeset](../changeset/SKILL.md)
 
 ## Example Usage
 

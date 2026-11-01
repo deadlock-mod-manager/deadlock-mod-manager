@@ -4,7 +4,7 @@
 
 ## Our Stance
 
-Deadlock Mod Manager is built with AI assistance, and we're not shy about it. Our [Cursor configuration](https://github.com/deadlock-mod-manager/deadlock-mod-manager/tree/main/.cursor) is included in the repo because we believe AI tools are a legitimate and powerful part of the modern developer toolkit.
+Deadlock Mod Manager is built with AI assistance, and we're not shy about it. Our [shared agent instructions](./AGENTS.md) and [skills](https://github.com/deadlock-mod-manager/deadlock-mod-manager/tree/main/.agents/skills) are included in the repo because we believe AI tools are a legitimate and powerful part of the modern developer toolkit.
 
 That said, AI tools amplify the skill of the person using them. A good developer with AI becomes faster. A developer who doesn't understand what they're contributing becomes a burden on maintainers, regardless of how the code was produced.
 

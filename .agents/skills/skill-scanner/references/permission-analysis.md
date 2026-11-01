@@ -43,7 +43,7 @@ Expected tool sets by skill type:
 
 - **Expected**: `Read, Grep, Glob` or `Read, Grep, Glob, Bash`
 - **Bash justification**: Running linters, type checkers, or bundled scripts
-- **Examples**: code-review, security-review, find-bugs
+- **Examples**: code-review, security-review
 
 ### Workflow Automation Skills
 

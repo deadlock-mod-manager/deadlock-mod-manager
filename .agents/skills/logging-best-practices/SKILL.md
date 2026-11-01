@@ -15,6 +15,8 @@ Version: 1.0.0
 
 This skill provides guidelines for implementing effective logging in applications. It focuses on **wide events** (also called canonical log lines) - a pattern where you emit a single, context-rich event per request per service, enabling powerful debugging and analytics.
 
+For this repository, read [project logging](references/project-logging.md) before changing logging code. It defines the `@deadlock-mods/logging` API, request context, Sentry behavior, and test helpers. Apply the repository's type restrictions from [AGENTS.md](../../../AGENTS.md) when adapting the generic examples below.
+
 ## When to Apply
 
 Apply these guidelines when:

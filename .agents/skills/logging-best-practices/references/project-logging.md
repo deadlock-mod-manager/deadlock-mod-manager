@@ -1,9 +1,3 @@
----
-description: Logging: Guidelines for implementing structured logging using @deadlock-mods/logging package
-globs: **/*.ts
-alwaysApply: false
----
-
 # Logging Guidelines
 
 The following rules describe how logging should be implemented in the Deadlock Mod Manager codebase. In general, avoid `console.log` statements and make sure to use the structured logger initialized in every app. For detailed guidelines, please refer to the specific sections below.

@@ -21,11 +21,6 @@
       "sourceType": "github",
       "computedHash": "31c027d02dbf1faa37f58191f574b9443143042fb2b684fe32df53ab0270487c"
     },
-    "find-bugs": {
-      "source": "getsentry/skills",
-      "sourceType": "github",
-      "computedHash": "7bf00be700d1d205b747126aa96d3587bbc2855cd09897614676e179eebe35ed"
-    },
     "impeccable": {
       "source": "pbakaus/impeccable",
       "sourceType": "github",

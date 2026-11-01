@@ -201,7 +201,7 @@ This provides:
 
 ### Changesets Integration
 
-This project uses changesets for version management. See [090-changesets.mdc](mdc:.cursor/rules/090-changesets.mdc) for details on when and how to create changesets alongside commits.
+This project uses changesets for version management. See [changeset](../changeset/SKILL.md) for details on when and how to create changesets alongside commits.
 
 ### Current branch (agents)
 
@@ -255,4 +255,4 @@ gate parallel work or integration. It does not prove that all behavior survived.
 - [Conventional Commits Specification](https://www.conventionalcommits.org/)
 - [Semantic Versioning](https://semver.org/)
 - [Keep a Changelog](https://keepachangelog.com/)
-- [Project Changeset Guidelines](mdc:.cursor/rules/090-changesets.mdc)
+- [Project Changeset Guidelines](../changeset/SKILL.md)

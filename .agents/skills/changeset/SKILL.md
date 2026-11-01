@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Create a Changeset
 
-Generate a properly formatted changeset file in `.changeset/` describing the work on the current branch / PR. Follow the project's changeset conventions in `.cursor/rules/090-changesets.mdc`.
+Generate a properly formatted changeset file in `.changeset/` describing the work on the current branch / PR. This skill owns the project's changeset conventions. Create files directly rather than running the interactive `pnpm changeset` command.
 
 ## Instructions
 
@@ -23,6 +23,8 @@ If `origin/main` is not available, fall back to staged + unstaged changes (`git 
 ### 2. Decide If A Changeset Is Needed
 
 Create one for: new features, bug fixes, breaking changes, performance improvements, security fixes.
+
+For several distinct user-visible changes, create a separate changeset for each feature or fix. Commit qualifying changesets alongside the corresponding code when the user requests a commit.
 
 Skip for: refactors with no user impact, formatting, docs-only, tests-only, internal tooling, dev dependency bumps.
 

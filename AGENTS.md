@@ -4,10 +4,10 @@ This file provides guidance for AI coding agents (Claude Code, Cursor Agent, Cop
 
 ## Before You Begin
 
-1. Check the `.cursor/rules` directory for relevant guidance before starting any task.
+1. Follow this file and read the task-specific guidance linked below before changing the affected code. Project guidance lives in `.agents/context/` and `.agents/skills/`.
 2. Read [CONTRIBUTING.md](./CONTRIBUTING.md) and understand the project's conventions.
 3. Read the [AI Policy](./AI_POLICY.md) — contributions must comply with it.
-4. Familiarize yourself with the [project structure](https://docs.deadlockmods.app/developer-docs/project-structure) and [architecture](https://docs.deadlockmods.app/developer-docs/architecture).
+4. Familiarize yourself with the local [project structure](apps/docs/content/docs/developer-docs/project-structure.mdx) and [architecture](apps/docs/content/docs/developer-docs/architecture.mdx). Setup instructions live in `CONTRIBUTING.md`; root and package scripts are authoritative for commands.
 
 ## Project Context
 
@@ -37,12 +37,18 @@ Key directories:
 - Use oxfmt for formatting and oxlint for linting (not ESLint/Prettier/Biome)
 - Follow the existing commit convention: `type(scope): description` (see [.agents/skills/git-conventions/SKILL.md](.agents/skills/git-conventions/SKILL.md)); commit on the current branch unless the user asks to use a feature branch
 - When creating a requested branch, use a descriptive prefix such as `feature/`, `bugfix/`, or `chore/`; never use `codex/`.
-- Respect TypeScript strict mode — never use `any` or `unknown`, use proper types (see 031-never-use-any.mdc)
+- Respect TypeScript strict mode — never use `any`, `unknown`, or type assertions (`as` or angle-bracket casts). Use explicit types, generics, type guards, and narrowing.
+- Use static imports at the top of files. Import across workspaces through package names and public exports; use existing relative imports or aliases within a package. Packages must not depend on app internals or bypass generated binding boundaries.
+- Throw `BaseError` subclasses from `@deadlock-mods/common` in TypeScript application and library code. Tests and generated UI context invariants may keep raw `Error`; see [error handling](.agents/context/ERROR-HANDLING.md) when adding or changing errors.
+- Use Rust edition 2024 across Rust crates; verify Rust changes with appropriate `cargo check`, tests, and `cargo clippy`.
+- Use the initialized structured logger instead of `console.*`; follow [logging-best-practices](.agents/skills/logging-best-practices/SKILL.md) when adding or changing logging.
+- Write comments for non-obvious decisions, business rules, algorithms, and public API contracts. Validate external data, user input, and destructive operations; trust typed internal contracts and let programming errors surface. Catch errors when recovery or useful context is possible.
 - Use `react-i18next` for any user-facing strings (check `apps/desktop/src/locales/`)
-- Use React Query mutations for async operations, not manual useState loading (see 030-coding-style.mdc)
+- Use React Query mutations for async operations, not manual useState loading
 - Keep React files focused on one component or responsibility. Extract substantial child components with their owning types, hooks, and helpers; avoid nested component definitions. Follow [split-react-components](.agents/skills/split-react-components/SKILL.md) when a file accumulates multiple components, preserving state ownership and behavior.
-- When debugging or verifying desktop UI, IPC, or Tauri commands, use **tauri-mcp-server** (see [056-tauri-mcp-debugging.mdc](.cursor/rules/056-tauri-mcp-debugging.mdc)); ask the user to start the dev server — do not start it yourself
-- When a plan, design doc, or PR description covers a real call-flow change that a tree would help reviewers understand, optionally include a `npx calldiff@latest diff` (see [095-calldiff.mdc](.cursor/rules/095-calldiff.mdc)). Do not add call-stack diffs to routine chat summaries.
+- When debugging or verifying desktop UI, IPC, or Tauri commands, use **tauri-mcp-server** through [verify-desktop](.agents/skills/verify-desktop/SKILL.md); ask the user to start the dev server — do not start it yourself
+- When a plan, design doc, or PR description covers a real call-flow change that a tree would help reviewers understand, optionally use [calldiff](.agents/skills/calldiff/SKILL.md). Do not add call-stack diffs to routine chat summaries.
+- Create a changeset for user-visible features, fixes, breaking changes, security fixes, and notable performance improvements; follow [changeset](.agents/skills/changeset/SKILL.md). Skip documentation, formatting, internal tooling, and changes without user impact.
 
 ### DON'T
 
@@ -52,6 +58,9 @@ Key directories:
 - Add new dependencies without justification
 - Introduce patterns that don't already exist in the codebase without discussion
 - Submit code that the human operator cannot explain or modify
+- Proactively create documentation or markdown wrap-up files after completing unrelated tasks
+
+Keep replies concise and professional, without emojis, unnecessary affirmations, or explanations of obvious points.
 
 ### Code Quality Checklist
 
@@ -62,6 +71,8 @@ Before the human submits your work, ensure:
 - [ ] Changes are tested (manually at minimum, automated tests preferred)
 - [ ] PR description explains _what_ and _why_, not just _how_
 - [ ] AI usage is disclosed per the [AI Policy](./AI_POLICY.md)
+
+Test observable behavior and failure cases for functional changes; follow each package's existing test layout and naming. Documentation-only changes do not need new tests. Suggest updates to shared guidance when the task reveals a missing convention.
 
 ## Tech Stack Quick Reference
 
@@ -92,6 +103,8 @@ Run from the repo root. Script names are in the root and per-package `package.js
 
 Read the [domain model](apps/docs/content/docs/developer-docs/domain-model.mdx) before touching discovery, downloads, installation, or profiles.
 
+Tauri dependencies and APIs must stay on v2. Before changing desktop dependencies, configuration, or capabilities, read [Tauri conventions](.agents/context/TAURI.md).
+
 - **Rust owns local game files.** Commands live in `apps/desktop/src-tauri/src/commands/` and are registered in `invoke_handler` in `src-tauri/src/lib.rs`. Install and VPK logic lives in `src-tauri/src/mod_manager/`.
 - **Generated IPC types.** Rust structs derive `ts-rs` and export to `apps/desktop/src/types/generated/`. After changing an exported Rust type, run `pnpm --filter desktop generate-types` instead of editing the generated files.
 - **Frontend state.** UI state is a persisted Zustand store built from slices in `apps/desktop/src/lib/store/`. Changing the persisted shape needs a migration in `migrate.ts`, and `merge.ts` lists the deep-merge keys.
@@ -103,13 +116,14 @@ Read the [domain model](apps/docs/content/docs/developer-docs/domain-model.mdx) 
 - Parallel tasks may use separate worktrees or share a checkout, following the user's preference. In a shared checkout, assign file or hunk ownership and coordinate overlapping edits; unrelated work continues in parallel.
 - For commits, integration, conflict resolution, or recovery, follow the [shared-work and recovery safeguards](.agents/skills/git-conventions/SKILL.md#parallel-work-and-recovery). Preserve other tasks' edits and verify the resulting code before declaring work already merged.
 - Skills live in `.agents/skills`. `pnpm install` links them into `.claude/skills`; rerun `pnpm skills:link` after changing the skill set. Existing directories are preserved.
+- For TypeScript, JavaScript, React, or backend code changes, read [coding conventions](.agents/context/CODING.md). When editing errors, also read [error handling](.agents/context/ERROR-HANDLING.md).
 - For discovery, installation, VPK, or profile changes, read [domain vocabulary](apps/docs/content/docs/developer-docs/domain-model.mdx) and the relevant local architecture docs. For UI work, read `.agents/context/PRODUCT.md` and `.agents/context/DESIGN.md`.
 - For Linear or GitHub ticket implementation, use [implement-ticket](.agents/skills/implement-ticket/SKILL.md). For Linear reads and requested updates, use [linear](.agents/skills/linear/SKILL.md).
 - For previous decisions or debugging history, use [transcript-search](.agents/skills/transcript-search/SKILL.md), scope results to this checkout, and verify them against current code. Cursor and Claude repository MCP configs register transcripts; use an existing connection when available.
 - On request, use [simplify](.agents/skills/simplify/SKILL.md) for scoped review and cleanup or [handoff](.agents/skills/handoff/SKILL.md) to resume elsewhere. For instruction edits, read [writing-for-agents](.agents/skills/writing-for-agents/SKILL.md).
 - Run `pnpm check:toolchain` for tooling changes. `pnpm knip` reports unused code/dependencies; review findings before deleting anything, especially generated IPC bindings and external package exports.
 - Anti-slop rules initially report warnings so existing code can be inventoried without a bulk refactor. Resolve findings in new or modified code; promote rules only after reviewing their existing violations.
-- Testing and import guidance: `057-testing.mdc` and `032-import-rules.mdc`. Preserve each package's existing Bun test conventions.
+- Maintain shared instructions here, detailed reference material in `.agents/context/`, and workflows in `.agents/skills/`. Keep each requirement in one authoritative home and update its callers when moving it. `CLAUDE.md` imports this file.
 
 <!-- BEGIN:turborepo-agent-rules -->
 
