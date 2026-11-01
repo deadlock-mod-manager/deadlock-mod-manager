@@ -228,4 +228,42 @@ describe("restoring recorded mods before the scan", () => {
     expect(await result).toEqual({ addons: [], totalCount: 0, errors: [] });
     expect(calls).toEqual(["restore", "restored", "scan"]);
   });
+
+  it("drops the scan when the active profile changes while restoring", async () => {
+    resetProfile(false);
+    const other = createProfileId("profile_2_other");
+    let finishRestore = () => {};
+    const restored = new Promise<void>((resolve) => {
+      finishRestore = resolve;
+    });
+    usePersistedStore.setState((state) => ({
+      profiles: {
+        ...state.profiles,
+        [other]: {
+          ...state.profiles[PROFILE],
+          id: other,
+          name: "Other",
+          folderName: "other",
+        },
+      },
+      restoreModsFromManifest: async () => {
+        calls.push("restore");
+        await restored;
+        calls.push("restored");
+        return [];
+      },
+    }));
+    const mutationFn = (await renderOptions())?.mutationFn;
+    if (!mutationFn) throw new Error("useAddonAnalysis registered no mutation");
+
+    const result = mutationFn(
+      { profileFolder: "reset", profileId: PROFILE },
+      mutationContext(),
+    );
+    await Promise.resolve();
+    usePersistedStore.setState({ activeProfileId: other });
+    finishRestore();
+    expect(await result).toBeNull();
+    expect(calls).toEqual(["restore", "restored"]);
+  });
 });
