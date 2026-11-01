@@ -61,13 +61,13 @@ const plainMod = (modId: string) =>
 const dataMod = () =>
   buildSyntheticVpk([{ path: DATA_TABLE, contents: dataTableBytes() }]);
 
-const PAYLOADS: Record<string, () => Buffer> = {
-  [FIXED_MOD]: () => textMod("Fixed name"),
-  [PLAIN_MOD]: () => plainMod(PLAIN_MOD),
-};
+const PAYLOADS = new Map<string, () => Buffer>([
+  [FIXED_MOD, () => textMod("Fixed name")],
+  [PLAIN_MOD, () => plainMod(PLAIN_MOD)],
+]);
 
 const payload = (modId: string): Buffer => {
-  const build = PAYLOADS[modId];
+  const build = PAYLOADS.get(modId);
   if (!build) throw new Error(`No fixed-status payload for ${modId}`);
   return build();
 };
