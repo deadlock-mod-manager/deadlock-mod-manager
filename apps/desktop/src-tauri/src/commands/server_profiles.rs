@@ -119,7 +119,7 @@ pub async fn delete_server_addons_folder(
     .join("addons")
     .join(&folder_name);
   let removed = crate::mod_manager::shard::remove_profile_shards(&base)?;
-  mod_manager.delete_localization_overlay(Some(&folder_name))?;
+  mod_manager.delete_profile_localization_overlay(&folder_name)?;
   if removed {
     log::info!("Deleted server shard folders for: {folder_name}");
   } else {

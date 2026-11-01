@@ -120,7 +120,7 @@ pub async fn delete_profile_folder(
     .join("addons")
     .join(&profile_folder);
   let removed = crate::mod_manager::shard::remove_profile_shards(&base)?;
-  mod_manager.delete_localization_overlay(Some(&profile_folder))?;
+  mod_manager.delete_profile_localization_overlay(&profile_folder)?;
 
   if removed {
     log::info!("Deleted profile shard folders for: {profile_folder}");
