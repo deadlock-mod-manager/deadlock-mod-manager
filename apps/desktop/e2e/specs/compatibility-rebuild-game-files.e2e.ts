@@ -22,28 +22,35 @@ import { navigate } from "../support/ui";
 // Changes made while DMM is closed that make a saved repair stale, one case
 // each, plus a control that changes nothing. The player chose Fix and changed
 // no mods, so after the restart DMM should rebuild the repair by itself.
-const CHANGES: Record<
+const CHANGES = new Map<
   string,
   (world: string) => Promise<CheckpointData | void>
-> = {
-  "compatibility-rebuild-restart": async () => {},
+>([
+  ["compatibility-rebuild-restart", async () => {}],
   // A Steam verify or patch rewrites game files with their own bytes.
-  "compatibility-rebuild-steam-rewrite": (world) =>
-    rewriteGameFiles(world, ["steam.inf", "pak01_dir.vpk", TEXT_FILE]),
+  [
+    "compatibility-rebuild-steam-rewrite",
+    (world) =>
+      rewriteGameFiles(world, ["steam.inf", "pak01_dir.vpk", TEXT_FILE]),
+  ],
   // A game update: a new build number.
-  "compatibility-rebuild-game-update": (world) =>
-    bumpGameBuild(world, GAME_BUILD + 1),
+  [
+    "compatibility-rebuild-game-update",
+    (world) => bumpGameBuild(world, GAME_BUILD + 1),
+  ],
   // An app update that bumps REPAIR_REVISION.
-  "compatibility-rebuild-app-update": (world) =>
-    ageRepairRevision(world, STATUS.folder),
-};
+  [
+    "compatibility-rebuild-app-update",
+    (world) => ageRepairRevision(world, STATUS.folder),
+  ],
+]);
 
 describe("repair rebuild after game or app files change", () => {
   it("restores Fixed for this patch after the restart", async () => {
     const runtime = await startApplication();
     const world = runtime.roots.world;
     const caseId = runtime.caseId;
-    const change = CHANGES[caseId];
+    const change = CHANGES.get(caseId);
     if (!change) throw new Error(`No file change for ${caseId}`);
     await navigate("my-mods");
 
