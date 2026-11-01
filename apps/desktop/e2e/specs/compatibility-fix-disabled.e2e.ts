@@ -21,6 +21,7 @@ type HealthReport = { mods: { modId: string; status: string }[] };
 const readHealth = async (): Promise<Record<string, string>> => {
   const report = await browser.execute(
     (folder) =>
+      // oxlint-disable-next-line no-underscore-dangle -- Tauri's injected IPC global.
       window.__TAURI_INTERNALS__.invoke<HealthReport>("get_mod_health", {
         profileFolder: folder,
       }),
