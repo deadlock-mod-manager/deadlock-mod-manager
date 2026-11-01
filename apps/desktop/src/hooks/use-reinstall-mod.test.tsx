@@ -103,12 +103,24 @@ const storedMod = () =>
     .getState()
     .localMods.find((entry) => entry.remoteId === mod.remoteId);
 
+// Status and VPK updates go through the active profile's mods, so the mod has
+// to be there as well as in the library view.
+const seedMods = (mods: LocalMod[]) => {
+  const { activeProfileId, profiles } = usePersistedStore.getState();
+  const profile = profiles[activeProfileId];
+  if (!profile) throw new Error("No active profile");
+  usePersistedStore.setState({
+    localMods: mods,
+    profiles: { ...profiles, [activeProfileId]: { ...profile, mods } },
+  });
+};
+
 beforeEach(() => {
   purge.mockReset();
   getModDownload.mockClear();
   addToQueue.mockClear();
   install.mockClear();
-  usePersistedStore.setState({ localMods: [mod] });
+  seedMods([mod]);
   usePersistedStore
     .getState()
     .setModEnabledInCurrentProfile(mod.remoteId, true);
@@ -118,7 +130,7 @@ afterEach(() => {
   usePersistedStore
     .getState()
     .setModEnabledInCurrentProfile(mod.remoteId, false);
-  usePersistedStore.setState({ localMods: [] });
+  seedMods([]);
 });
 
 describe("reinstalling a mod whose files could not be removed", () => {
