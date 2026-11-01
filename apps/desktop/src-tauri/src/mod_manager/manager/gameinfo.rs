@@ -48,7 +48,10 @@ impl ModManager {
     // one must fail loudly rather than silently emit truncated search paths.
     let manifest = ProfileVpkManifest::load(&base)?;
     let mut paths = search_paths_for(&base, &manifest, profile_folder.as_deref());
-    if self.has_localization_overlay(profile_folder.as_deref())? {
+    // Mounted while any enabled mod is fixed, even when the package is missing:
+    // library and fix changes delete it and rebuild it in the background, and
+    // a rewrite in between would otherwise leave the rebuilt package unmounted.
+    if self.mod_compatibility_enabled(profile_folder.as_deref())? {
       paths.insert(
         0,
         Self::localization_overlay_search_path(profile_folder.as_deref()),
