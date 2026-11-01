@@ -7,6 +7,7 @@ interface AddonActionsProps {
   addon: LocalAddonInfo;
   isIdentified: boolean;
   isAlreadyInLibrary: boolean;
+  isCheckingLibrary: boolean;
   onAddToLibrary?: (addon: LocalAddonInfo) => void;
   onExternalLinkClick: () => void;
 }
@@ -15,6 +16,7 @@ export const AddonActions = ({
   addon,
   isIdentified,
   isAlreadyInLibrary,
+  isCheckingLibrary,
   onAddToLibrary,
   onExternalLinkClick,
 }: AddonActionsProps) => {
@@ -44,6 +46,7 @@ export const AddonActions = ({
     <Button
       size='sm'
       variant='outline'
+      disabled={isCheckingLibrary}
       onClick={() => onAddToLibrary?.(addon)}
       className='h-7 text-xs'>
       <Plus className='w-3 h-3 mr-1' />
