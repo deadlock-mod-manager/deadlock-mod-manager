@@ -1,4 +1,4 @@
-import { $, $$, browser, expect } from "@wdio/globals";
+import { $, browser, expect } from "@wdio/globals";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
@@ -15,32 +15,47 @@ import { navigate, waitForDisplayed } from "../support/ui";
 import { assertOwnedWorld } from "../support/world";
 
 const DIALOG = '[role="dialog"]';
-const ACTIVE_PANEL = `${DIALOG} [role="tabpanel"][data-state="active"]`;
 
-// Radix gives each trigger an id ending in its tab value.
-const tab = (name: string) =>
-  $(`${DIALOG} [role="tab"][id$="-trigger-${name.toLowerCase()}"]`);
+type TabView = { selected: boolean; label: string; text: string; rows: number };
 
-const openTab = async (name: string) => {
-  const trigger = await tab(name);
-  await trigger.waitForDisplayed();
-  // Inside this dialog the WebKitGTK driver never reports the triggers as
-  // clickable, and neither its click nor focus selects them. Radix selects a
-  // tab on a primary-button mousedown, so send exactly that.
-  await browser.execute(
-    (element: HTMLElement) =>
-      element.dispatchEvent(
+// My Mods can mount more than one copy of the results dialog, stacked on top
+// of each other, so every query stays inside the first one. Inside it the
+// WebKitGTK driver never reports the tab triggers as clickable, and neither
+// its click nor focus selects them; Radix selects a tab on a primary-button
+// mousedown, so the page sends exactly that.
+const selectTab = (value: string) =>
+  browser.execute((tabValue: string) => {
+    document
+      .querySelector('[role="dialog"]')
+      ?.querySelector(`[role="tab"][id$="-trigger-${tabValue}"]`)
+      ?.dispatchEvent(
         new MouseEvent("mousedown", { bubbles: true, button: 0 }),
-      ),
-    trigger,
-  );
-  await expect(trigger).toHaveAttribute("aria-selected", "true");
-  await waitForDisplayed(ACTIVE_PANEL);
-  return {
-    label: await tab(name).getText(),
-    text: (await $(ACTIVE_PANEL).getText()).replace(/\s+/g, " ").trim(),
-    rows: (await $$(`${ACTIVE_PANEL} [data-analysis-error]`)).length,
-  };
+      );
+  }, value);
+
+const readTab = (value: string) =>
+  browser.execute((tabValue: string): TabView => {
+    const dialog = document.querySelector('[role="dialog"]');
+    const trigger = dialog?.querySelector(
+      `[role="tab"][id$="-trigger-${tabValue}"]`,
+    );
+    const panel = dialog?.querySelector(
+      '[role="tabpanel"][data-state="active"]',
+    );
+    return {
+      selected: trigger?.getAttribute("aria-selected") === "true",
+      label: trigger?.textContent?.trim() ?? "",
+      text: (panel?.textContent ?? "").replace(/\s+/g, " ").trim(),
+      rows: panel?.querySelectorAll("[data-analysis-error]").length ?? 0,
+    };
+  }, value);
+
+const openTab = async (value: string) => {
+  await selectTab(value);
+  await browser.waitUntil(async () => (await readTab(value)).selected, {
+    timeoutMsg: `The ${value} tab did not open`,
+  });
+  return readTab(value);
 };
 
 describe("analysis errors", () => {
@@ -52,14 +67,18 @@ describe("analysis errors", () => {
     await waitForDisplayed("button=Analyze");
     await $("button=Analyze").click();
     await waitForDisplayed(`${DIALOG} [role="tab"]`);
+    const summary = await $(`${DIALOG} p`).getText();
+    const dialogs = await browser.execute(
+      () => document.querySelectorAll('[role="dialog"]').length,
+    );
 
-    const unknown = await openTab("Unknown");
+    const unknown = await openTab("unknown");
     await browser.saveScreenshot(path.join(artifacts, "analysis-unknown.png"));
-    const errors = await openTab("Errors");
+    const errors = await openTab("errors");
     await browser.saveScreenshot(path.join(artifacts, "analysis-errors.png"));
     await writeFile(
       path.join(artifacts, "analysis-observed.json"),
-      JSON.stringify({ unknown, errors }, null, 2),
+      JSON.stringify({ dialogs, summary, unknown, errors }, null, 2),
     );
 
     const unknownFiles = LOOKUP_FILES.filter((name) =>
@@ -68,6 +87,11 @@ describe("analysis errors", () => {
     await step("only the file the service didn't match is unknown", () => {
       expect(unknown.label).toBe("Unknown (1)");
       expect(unknownFiles).toHaveLength(1);
+      return Promise.resolve();
+    });
+
+    await step("both files that parsed are still counted as found", () => {
+      expect(summary).toContain("Found 2 addon(s)");
       return Promise.resolve();
     });
 
