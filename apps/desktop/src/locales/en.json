@@ -5436,7 +5436,8 @@
           }
         ],
         "features": [
-          "✨ The Live Match tab is back as an experimental opt-in: both teams' records while a match loads, then your team's graded stats",
+          "✨ The Live Match tab is back: both teams' records while a match loads, then your team's graded stats",
+          "📊 Stats and its Live tab are out of experimental, with an off switch in Privacy settings",
           "✨ Redesigned Mod Foundry: paint single sections of a hero skin on the 3D model, and set sound volume, mute, OGG and FLAC",
           "✨ 1-click installs from allowlisted mod sites, starting with Divine Skins",
           "📥 Opt-in faster downloads that fetch large files in 4 parts at once",
@@ -5444,6 +5445,7 @@
           "📦 Order the VPKs inside a mod in the load order dialog, and keep that order when the mod updates",
           "✨ Crash reports point to a possible cause when the crash names a file from a mod",
           "🎨 New Coding theme: an editor-style dark theme with a graph-paper grid and a customizable accent",
+          "🎨 Background images moved to Settings > Themes, and you choose whether they cover the sidebar, top bar and bottom bar",
           "✨ Verified authors can show their socials and a Commission button on their author page",
           "📦 Diagnostics name the unreachable host and show when Windows TCP auto-tuning is off",
           "📥 Downloads switch to another server when a mirror fails or stalls",

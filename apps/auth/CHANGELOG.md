@@ -8,6 +8,7 @@
 
 ### Patch Changes
 
+- b765db4: Reject Steam signup with an email already in use and show clearer sign-in errors.
 - Updated dependencies [d16b676]
 - Updated dependencies [167143d]
 - Updated dependencies [7fd9a1a]

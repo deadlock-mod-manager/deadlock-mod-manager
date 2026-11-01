@@ -4,12 +4,14 @@
 
 ### Minor Changes
 
+- 713ebd4: Move Stats and its Live tab out of experimental, with an off switch in Privacy
+- 22558d3: Move the background image to Settings > Themes and remove the Flashbang plugin
 - c2f9ff5: Add 1-click installs from allowlisted mod sites, starting with Divine Skins
 - ee6a03f: Redesign the Mod Foundry and add sound volume, mute, OGG and FLAC support
 - f295a32: Show a possible crash cause when a fatal error names a resource supplied by a mounted mod VPK.
 - d16b676: Check mod requirements against the active profile and warn before enabling a mod with missing requirements.
 - 5df195a: Add the Coding theme: an editor-style dark theme with a graph-paper grid, monospace headings and a customizable accent
-- 285a4bd: Bring back the Live tab as an experimental opt-in: both teams' records while a match loads, then your team's graded stats, via a HUD mod
+- 285a4bd: Bring back the Live tab: both teams' records while a match loads, then your team's graded stats, via a HUD mod
 - 415b146: Add opt-in faster downloads that fetch large files in 4 parts at once
 - 80805b4: Paint single sections of a hero skin in the Mod Foundry, picked on the 3D model
 - cc4eacc: Add author socials and a Commission button for verified authors on author pages
