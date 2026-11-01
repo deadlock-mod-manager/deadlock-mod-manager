@@ -25,6 +25,11 @@ import { prepareProfileWorld } from "./profile-fixtures";
 import { prepareFileOrderWorld } from "./file-order-fixtures";
 import { prepareBrokenProfileWorld } from "./broken-profile-fixtures";
 import { prepareCompatibilityFixWorld } from "./compatibility-fix-fixtures";
+import {
+  FIXED_MOD as STATUS_FIXED_MOD,
+  PLAIN_MOD as STATUS_PLAIN_MOD,
+  prepareFixedStatusWorld,
+} from "./fixed-status-fixtures";
 import { prepareConflictWorld } from "./conflict-fixtures";
 import { prepareFilesystemWorld } from "./filesystem-fixtures";
 import { prepareManifestRepairWorld } from "./manifest-repair-fixtures";
@@ -695,6 +700,17 @@ export const scenarios = {
     phases: ["library-changes"],
     routes: profileRoutes,
     prepare: async (world) => prepareCompatibilityFixWorld(world),
+  },
+  // The stand-in game is a Linux `sleep` (e2e/support/fake-game.ts).
+  "fixed-status-game-exit": {
+    ...defaults,
+    family: "fixed-status",
+    spec: "fixed-status-game-exit",
+    phases: ["play"],
+    platforms: ["linux"],
+    routes: profileRoutes,
+    prepare: async (world) =>
+      prepareFixedStatusWorld(world, [STATUS_FIXED_MOD, STATUS_PLAIN_MOD]),
   },
   "library-selection": {
     ...defaults,

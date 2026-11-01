@@ -314,6 +314,19 @@ pub fn records_game_launches() -> bool {
     .is_some()
 }
 
+/// Not `deadlock.exe`, so builds without the E2E rule below ignore the stand-in.
+const E2E_GAME_FILE_NAME: &str = "dmm-e2e-game";
+
+/// The argv[0] of the stand-in game an E2E case may start. E2E builds count
+/// only this process as Deadlock, so neither a real game on the machine nor
+/// another world's stand-in reaches a run.
+pub fn e2e_game_argv0() -> Option<PathBuf> {
+  RUNTIME_ENVIRONMENT
+    .get()
+    .and_then(RuntimeEnvironment::e2e)
+    .map(|configuration| configuration.roots.game.join(E2E_GAME_FILE_NAME))
+}
+
 pub fn ensure_e2e_managed_path(path: &Path) -> Result<(), String> {
   let Some(configuration) = RUNTIME_ENVIRONMENT.get().and_then(RuntimeEnvironment::e2e) else {
     return Ok(());
