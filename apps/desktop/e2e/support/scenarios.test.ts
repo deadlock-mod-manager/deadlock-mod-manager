@@ -65,6 +65,7 @@ describe("scenario selection", () => {
     ]);
     expect(selectScenarios("missing-vpks")).toEqual([
       "missing-vpks-launch",
+      "missing-vpks-launch-partial",
       "missing-vpks-offline",
       "missing-vpks-live",
     ]);

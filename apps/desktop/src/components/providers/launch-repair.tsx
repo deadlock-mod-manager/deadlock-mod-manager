@@ -29,6 +29,7 @@ import {
   type LaunchRepairFailure,
   type LaunchRepairMod,
   type LaunchRepairProgress,
+  launchRepairTargets,
   repairLaunchFiles,
   resolveLaunchRepairMods,
 } from "@/lib/launch-repair";
@@ -58,7 +59,8 @@ export function LaunchRepairProvider({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
   const { reinstallMod } = useReinstallMod();
   const [request, setRequest] = useState<RepairRequest | null>(null);
-  const [failures, setFailures] = useState<LaunchRepairFailure[]>([]);
+  // `null` until a repair pass completes; see `launchRepairTargets`.
+  const [failures, setFailures] = useState<LaunchRepairFailure[] | null>(null);
   const [progress, setProgress] = useState<LaunchRepairProgress | null>(null);
   const activeRequest = useRef(false);
   const working = useRef(false);
@@ -89,7 +91,8 @@ export function LaunchRepairProvider({ children }: { children: ReactNode }) {
       let reviewRequired: ErrorKind | undefined;
       try {
         checkProfile();
-        const failed = await repairLaunchFiles(request.mods, action, {
+        const targets = launchRepairTargets(request.mods, failures);
+        const failed = await repairLaunchFiles(targets, action, {
           reinstall: async (mod) => {
             checkProfile();
             return reinstallMod(mod);
@@ -117,6 +120,9 @@ export function LaunchRepairProvider({ children }: { children: ReactNode }) {
           },
           launch: async () => {
             checkProfile();
+            // Every target is resolved now, so a launch error must not send
+            // them through the next action again.
+            setFailures([]);
             try {
               await withWritableRecovery(() =>
                 invoke("start_game", request.args),
@@ -170,7 +176,7 @@ export function LaunchRepairProvider({ children }: { children: ReactNode }) {
             snapshot.localMods,
           );
           resetRepair();
-          setFailures([]);
+          setFailures(null);
           setProgress(null);
           return new Promise<boolean>((resolve, reject) => {
             setRequest({
@@ -213,7 +219,7 @@ export function LaunchRepairProvider({ children }: { children: ReactNode }) {
           </AlertDialogHeader>
           <LaunchRepairDetails
             mods={request?.mods ?? []}
-            failures={failures}
+            failures={failures ?? []}
             progress={progress}
           />
           {repair.isError && (
@@ -240,7 +246,7 @@ export function LaunchRepairProvider({ children }: { children: ReactNode }) {
             <Button
               data-testid='launch-repair-reinstall'
               disabled={
-                repair.isPending || failures.length > 0 || repair.isError
+                repair.isPending || !!failures?.length || repair.isError
               }
               icon={<ArrowsClockwiseIcon className='h-4 w-4' />}
               onClick={() => repair.mutate("reinstall")}>

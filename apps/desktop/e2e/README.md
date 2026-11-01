@@ -296,6 +296,14 @@ must have Alpha's addons search path restored. Both launch cases check a fresh
 process again. These cases need no native input and retain `broken-state-*.json`
 observations with disk, manifest, store, gameinfo, launches and UI text.
 
+`missing-vpks-launch-partial` seeds two enabled GameBanana mods whose VPKs were
+deleted while DMM was closed; their downloaded copies remain. Launch modded →
+Reinstall and launch downloads the first again and gets a 404 for the second,
+so the dialog stays open with only the second marked as failed and nothing
+launched. Disable and launch must then disable only the second: the first stays
+enabled in the manifest, store and profile with its own bytes, and exactly one
+launch is recorded. A fresh process must see the same.
+
 A user can delete VPKs from the addons folder behind DMM's back. A mod whose every file is gone has nothing left to enable, so it has to leave the library and its manifest entry, or startup would restore it again. A mod that lost only some files, or that DMM can restore, stays in the library flagged as broken: its `missingVpks` lists the original names of the lost files, and My Mods shows a `missing-files-warning` for it. Both cases seed the same mixed Alpha library next to Beta, which is not the active profile:
 
 | Mod | Seeded as | Deleted | Expected |
