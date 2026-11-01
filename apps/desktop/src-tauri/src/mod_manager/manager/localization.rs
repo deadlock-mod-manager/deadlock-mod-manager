@@ -332,7 +332,13 @@ impl ModManager {
     let reviewed = review::ReviewedInputs::new(&plan.analysis, &key)?;
     let output = key.output_path.clone();
     let result = receipt::write(&plan, key, resolutions)?;
-    review::save(&output, reviewed, resolutions)?;
+    if let Err(error) = review::save(&output, reviewed, resolutions) {
+      // Without its review, the next rebuild couldn't reproduce this package.
+      if let Err(cleanup) = receipt::remove(&output) {
+        log::warn!("Could not remove the unreviewed repair package: {cleanup}");
+      }
+      return Err(error);
+    }
     Ok(result)
   }
 
@@ -2693,6 +2699,22 @@ Game core
       }
       assert_review_required(&manager, change);
     }
+  }
+
+  #[test]
+  fn apply_that_cannot_save_its_review_leaves_no_package() {
+    let (_temp, mut manager) = manager_with_conflict();
+    let overlay = manager.localization_overlay_vpk_path(None).unwrap();
+    // A directory where the review file goes makes saving it fail.
+    fs::create_dir_all(review::path(&overlay)).unwrap();
+    let analysis = manager.analyze_localization_overlay(None, &[]).unwrap();
+    assert!(
+      manager
+        .write_reviewed_localization_overlay(None, &[], &analysis.review_fingerprint)
+        .is_err()
+    );
+    assert!(!overlay.exists());
+    assert!(receipt::load(&overlay).unwrap().is_none());
   }
 
   #[test]
