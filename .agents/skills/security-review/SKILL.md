@@ -6,7 +6,7 @@ description: >-
   "audit security", or review code for injection, XSS, IPC abuse, path traversal,
   or authentication issues. Provides confidence-based reporting tuned to the
   Deadlock Mod Manager stack.
-allowed-tools: Read, Glob, Grep, Bash(read-only commands like cargo, git, npm)
+allowed-tools: Read Glob Grep Bash(git diff:*) Bash(git log:*) Bash(git show:*)
 ---
 
 <!--

@@ -1,6 +1,6 @@
 ---
 name: fix-pr
-description: Fix PR Comments
+description: "Rank the open comments on the current branch's PR, confirm the ambiguous ones, and apply fixes."
 disable-model-invocation: true
 ---
 

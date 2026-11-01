@@ -1,7 +1,6 @@
 ---
 name: implement-ticket
-description: Implement a Linear or GitHub issue through verified local changes under DMM conventions.
-disable-model-invocation: true
+description: "Implement a Linear or GitHub issue end to end under DMM conventions: read the ticket and acceptance criteria, implement with tests, verify, and prepare the PR title and body. Use when asked to implement, pick up, or work on a Linear ticket or GitHub issue."
 ---
 
 # Implement a ticket

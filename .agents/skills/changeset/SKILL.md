@@ -1,7 +1,6 @@
 ---
 name: changeset
-description: Generate a changeset file describing the current PR's changes. Use when asked to "create a changeset", "add a changeset", "/changeset", or after implementing a feature/fix that needs a changelog entry. Produces a randomly named `.changeset/*.md` file with affected packages, bump type, and an 80-character-max user-facing summary.
-disable-model-invocation: true
+description: "Write a `.changeset/*.md` file for the current branch's user-visible changes, with the affected packages, bump type, and an 80-character summary. Use after implementing a feature, fix, or other user-facing change, or when asked to add a changeset."
 ---
 
 # Create a Changeset
