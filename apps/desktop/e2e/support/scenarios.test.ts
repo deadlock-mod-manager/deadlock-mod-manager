@@ -13,7 +13,7 @@ const windows = process.platform === "win32";
 describe("scenario selection", () => {
   it("registers every case with explicit phases and capability requirements", () => {
     const ids = selectScenarios("all");
-    expect(ids).toHaveLength(windows ? 131 : 120);
+    expect(ids).toHaveLength(windows ? 134 : 123);
     expect(ids).toContain("downloads-segmented-range-error");
     for (const id of ids) {
       expect(parseScenarioId(id)).toBe(id);
@@ -65,6 +65,9 @@ describe("scenario selection", () => {
     ]);
     expect(selectScenarios("missing-vpks")).toEqual([
       "missing-vpks-launch",
+      "missing-vpks-launch-partial",
+      "missing-vpks-launch-relaunch-error",
+      "missing-vpks-launch-relaunch-missing",
       "missing-vpks-offline",
       "missing-vpks-live",
     ]);
