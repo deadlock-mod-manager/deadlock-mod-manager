@@ -86,7 +86,7 @@ export const useAddonAnalysis = () => {
       profileId: ProfileId | undefined;
     }) => {
       // Bring back the mods the profile's manifest still records, as startup
-      // does. After Reset Mods State the library is empty, but every file DMM
+      // does. After Clear Mods State the library is empty, but every file DMM
       // installed is still assigned to its mod there.
       notifyRemovedMods(
         await usePersistedStore.getState().restoreModsFromManifest(),

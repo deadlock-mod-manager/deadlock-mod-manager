@@ -19,7 +19,7 @@ pub struct LocalAddonInfo {
   pub remote_id: Option<String>, // Will be populated by API call
   pub match_info: Option<MatchInfo>,
   /// The mod the profile's `.dmm.json` assigns this exact file to, if exactly
-  /// one entry does. The library may have lost it (Reset Mods State), so the
+  /// one entry does. The library may have lost it (Clear Mods State), so the
   /// frontend restores it from the manifest instead of re-identifying it.
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub manifest_mod_id: Option<String>,
