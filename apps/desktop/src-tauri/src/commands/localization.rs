@@ -35,9 +35,18 @@ pub async fn check_mod_health(
       .lock()
       .map_err(|_| Error::BackgroundTaskFailed("Mod manager is unavailable".into()))?
       .mod_health_context(profile_folder.as_deref())?;
-    context.check(mod_ids.as_deref(), force, |progress| {
-      app_handle.emit("mod-health-progress", progress).ok();
-    })
+    context.check(
+      mod_ids.as_deref(),
+      force,
+      |progress| {
+        app_handle.emit("mod-health-progress", progress).ok();
+      },
+      // The window rebuilds the active profile's repairs, whose receipt
+      // digests the observed data this check just saved.
+      || {
+        app_handle.emit("compatibility-history-changed", ()).ok();
+      },
+    )
   })
   .await
   .map_err(|error| Error::BackgroundTaskFailed(format!("Could not check mods: {error}")))?

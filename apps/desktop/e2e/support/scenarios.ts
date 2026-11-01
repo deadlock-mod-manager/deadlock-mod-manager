@@ -26,6 +26,11 @@ import { prepareFileOrderWorld } from "./file-order-fixtures";
 import { prepareBrokenProfileWorld } from "./broken-profile-fixtures";
 import { prepareCompatibilityFixWorld } from "./compatibility-fix-fixtures";
 import { prepareConflictWorld } from "./conflict-fixtures";
+import {
+  FIXED_MOD as STATUS_FIXED_MOD,
+  PLAIN_MOD as STATUS_PLAIN_MOD,
+  prepareFixedStatusWorld,
+} from "./fixed-status-fixtures";
 import { prepareFilesystemWorld } from "./filesystem-fixtures";
 import { prepareManifestRepairWorld } from "./manifest-repair-fixtures";
 import { prepareModFolderRepairWorld } from "./mod-folder-repair-fixtures";
@@ -420,6 +425,19 @@ const modUpdates: Definition = {
   verifyNetwork: assertReliabilityNetwork,
 };
 
+// A fixed mod and a plain skin, for cases where a saved repair goes stale.
+const repairRebuild = (
+  spec: string,
+  phases: readonly string[],
+): Definition => ({
+  ...defaults,
+  family: "compatibility",
+  spec,
+  phases,
+  routes: profileRoutes,
+  prepare: async (world) =>
+    prepareFixedStatusWorld(world, [STATUS_FIXED_MOD, STATUS_PLAIN_MOD]),
+});
 export const scenarios = {
   "gamebanana-mirror-fallback": downloadFallback,
   "gamebanana-crash-cause": crashAttribution,
@@ -696,6 +714,30 @@ export const scenarios = {
     routes: profileRoutes,
     prepare: async (world) => prepareCompatibilityFixWorld(world),
   },
+  "compatibility-rebuild-after-close": repairRebuild(
+    "compatibility-rebuild-after-close",
+    ["toggle-close", "restart-after-close"],
+  ),
+  "compatibility-rebuild-restart": repairRebuild(
+    "compatibility-rebuild-game-files",
+    ["fix", "restart-changed"],
+  ),
+  "compatibility-rebuild-steam-rewrite": repairRebuild(
+    "compatibility-rebuild-game-files",
+    ["fix", "restart-changed"],
+  ),
+  "compatibility-rebuild-game-update": repairRebuild(
+    "compatibility-rebuild-game-files",
+    ["fix", "restart-changed"],
+  ),
+  "compatibility-rebuild-app-update": repairRebuild(
+    "compatibility-rebuild-game-files",
+    ["fix", "restart-changed"],
+  ),
+  "compatibility-rebuild-new-data": repairRebuild(
+    "compatibility-rebuild-new-data",
+    ["install", "restart-installed"],
+  ),
   "library-selection": {
     ...defaults,
     family: "profiles",

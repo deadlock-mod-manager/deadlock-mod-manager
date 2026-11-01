@@ -7,7 +7,10 @@ import {
   jest,
   mock,
 } from "bun:test";
-import { createModHealthRefreshQueue } from "./mod-health-refresh";
+import {
+  createActivationTracker,
+  createModHealthRefreshQueue,
+} from "./mod-health-refresh";
 
 describe("mod health refresh queue", () => {
   beforeEach(() => jest.useFakeTimers());
@@ -91,5 +94,24 @@ describe("mod health refresh queue", () => {
     queue.schedule(null, ["new-mod"]);
     jest.advanceTimersByTime(1500);
     expect(refresh.mock.calls).toEqual([[null, ["new-mod"]]]);
+  });
+});
+
+describe("activation tracker", () => {
+  it("refreshes once per activation, not on every report", () => {
+    const shouldRefresh = createActivationTracker();
+    const game = "/games/deadlock";
+
+    expect(shouldRefresh({ gamePath: game, profileFolder: null })).toBe(true);
+    expect(shouldRefresh({ gamePath: game, profileFolder: null })).toBe(false);
+    expect(shouldRefresh({ gamePath: game, profileFolder: "other" })).toBe(
+      true,
+    );
+    // Returning to a profile refreshes it again: another profile's check may
+    // have changed the observed game data its receipt digests.
+    expect(shouldRefresh({ gamePath: game, profileFolder: null })).toBe(true);
+    expect(
+      shouldRefresh({ gamePath: "/games/moved", profileFolder: null }),
+    ).toBe(true);
   });
 });

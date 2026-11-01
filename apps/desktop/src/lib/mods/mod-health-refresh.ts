@@ -32,3 +32,25 @@ export const createModHealthRefreshQueue = (
     },
   };
 };
+
+type ProfileActivation = { gamePath: string; profileFolder: string | null };
+
+/**
+ * Decides when to refresh saved repairs because a profile became active: on
+ * start, after a profile switch, or once a game path is set. Its receipt may
+ * have gone stale while DMM was closed or the profile was inactive. Later
+ * reports for the same activation return false, so they never re-trigger it.
+ */
+export const createActivationTracker = () => {
+  let last: ProfileActivation | null = null;
+  return (activation: ProfileActivation) => {
+    if (
+      last?.gamePath === activation.gamePath &&
+      last.profileFolder === activation.profileFolder
+    ) {
+      return false;
+    }
+    last = activation;
+    return true;
+  };
+};
