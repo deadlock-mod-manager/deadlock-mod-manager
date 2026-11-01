@@ -134,7 +134,7 @@ const ActiveFilterChips = ({
           removeLabel={removeLabel}
           value={
             <span className='inline-flex items-center gap-1.5'>
-              <FlagGlyph className='size-3' region={value.region} />
+              <FlagGlyph className='!size-3' region={value.region} />
               <span className='text-xs font-medium'>
                 {value.region.toUpperCase()}
               </span>
