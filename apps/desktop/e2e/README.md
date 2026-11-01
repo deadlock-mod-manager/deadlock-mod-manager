@@ -308,6 +308,12 @@ launch restores both mods, but a directory in place of the E2E launch journal
 makes the launch itself fail. With the error showing, Disable and launch must
 leave both mods enabled and only retry the launch, which records once the
 journal is back.
+`missing-vpks-launch-relaunch-missing` starts the same way, but once the
+failed launch is showing it deletes the second mod's VPK again, so the retried
+launch reports that mod's files missing. The dialog must stay open with nothing
+launched and the first mod still enabled; the next Disable and launch disables
+only the second mod and records one launch. With nothing left to restore it
+from, the second mod then leaves the library.
 
 A user can delete VPKs from the addons folder behind DMM's back. A mod whose every file is gone has nothing left to enable, so it has to leave the library and its manifest entry, or startup would restore it again. A mod that lost only some files, or that DMM can restore, stays in the library flagged as broken: its `missingVpks` lists the original names of the lost files, and My Mods shows a `missing-files-warning` for it. Both cases seed the same mixed Alpha library next to Beta, which is not the active profile:
 

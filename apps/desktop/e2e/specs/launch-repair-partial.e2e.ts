@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdir, rmdir } from "node:fs/promises";
+import { mkdir, rm, rmdir } from "node:fs/promises";
 import path from "node:path";
 import { $, $$, browser, expect } from "@wdio/globals";
 import { z } from "zod";
@@ -20,12 +20,23 @@ import {
 import { fingerprint, observeUntil } from "../support/observations";
 import { ALPHA } from "../support/profile-fixtures";
 import { navigate } from "../support/ui";
+import { assertOwnedWorld } from "../support/world";
+
+const ids = REPAIR_MODS.map((mod) => mod.id);
 
 const row = (id: string) =>
   $(`[data-testid="launch-repair-mod"][data-mod-id="${id}"]`);
 
-/** Each mod in `enabled` is installed with its own bytes; the rest nowhere. */
-const holds = (observed: BrokenState, enabled: readonly string[]) =>
+/**
+ * Each mod in `enabled` is installed with its own bytes; the rest are enabled
+ * nowhere but stay in the library, unless listed in `gone`: a mod whose only
+ * VPK was deleted with nothing left to restore it leaves the library.
+ */
+const holds = (
+  observed: BrokenState,
+  enabled: readonly string[],
+  gone: readonly string[] = [],
+) =>
   REPAIR_MODS.every((mod) => {
     const entry = observed.manifest?.mods[mod.id];
     const local = observed.state.localMods.find(
@@ -33,7 +44,11 @@ const holds = (observed: BrokenState, enabled: readonly string[]) =>
     );
     const profile = observed.state.profiles[ALPHA.id].enabledMods[mod.id];
     if (!enabled.includes(mod.id))
-      return entry?.enabled !== true && profile?.enabled !== true;
+      return (
+        (local !== undefined || gone.includes(mod.id)) &&
+        entry?.enabled !== true &&
+        profile?.enabled !== true
+      );
     return (
       entry?.enabled === true &&
       entry.currentVpks.length === 1 &&
@@ -48,9 +63,10 @@ const assertHolds = (
   observed: BrokenState,
   enabled: readonly string[],
   label: string,
+  gone: readonly string[] = [],
 ) => {
   assert.ok(
-    holds(observed, enabled),
+    holds(observed, enabled, gone),
     `${label}: expected only ${enabled.join(", ")} enabled; observed ${JSON.stringify(
       {
         manifest: observed.manifest,
@@ -65,7 +81,12 @@ const assertHolds = (
 describe("launch repair after a reinstall", () => {
   it("disables only the mods the reinstall left broken", async () => {
     const phase = z
-      .enum(["repair-partial", "restart-repair-partial", "relaunch-error"])
+      .enum([
+        "repair-partial",
+        "restart-repair-partial",
+        "relaunch-error",
+        "relaunch-missing",
+      ])
       .parse(process.env.DMM_E2E_PHASE);
     const runtime = await startApplication();
     const world = runtime.roots.world;
@@ -96,10 +117,10 @@ describe("launch repair after a reinstall", () => {
         ),
     );
     const dialog = await $('[data-testid="launch-repair-dialog"]');
-    const relaunchError = phase === "relaunch-error";
-    const enabledAfter = relaunchError
-      ? REPAIR_MODS.map((mod) => mod.id)
-      : [REPAIRABLE.id];
+    const relaunchMissing = phase === "relaunch-missing";
+    const relaunchError = phase === "relaunch-error" || relaunchMissing;
+    const enabledAfter = phase === "relaunch-error" ? ids : [REPAIRABLE.id];
+    const gone = relaunchMissing ? [UNREPAIRABLE.id] : [];
 
     if (relaunchError)
       await step(
@@ -128,7 +149,7 @@ describe("launch repair after a reinstall", () => {
           await observeUntil(
             "Both mods reinstalled and enabled",
             () => readBrokenState(world),
-            (value) => holds(value, enabledAfter),
+            (value) => holds(value, ids),
           );
           const repaired = await captureBrokenState(world, "after-reinstall");
           assert.equal(repaired.launches.length, 0);
@@ -166,13 +187,54 @@ describe("launch repair after a reinstall", () => {
         assert.equal(restored?.currentVpks.length, 1);
       });
 
+    if (relaunchMissing)
+      await step(
+        "A VPK goes missing again, so the retried launch fails",
+        async () => {
+          const before = await readBrokenState(world);
+          const vpk = before.manifest?.mods[UNREPAIRABLE.id]?.currentVpks[0];
+          assert(vpk);
+          const {
+            configuration: { roots },
+          } = await assertOwnedWorld(world);
+          await rm(
+            path.join(
+              roots.game,
+              "game",
+              "citadel",
+              "addons",
+              ALPHA.folder,
+              vpk,
+            ),
+          );
+          await $('[data-testid="launch-repair-disable"]').click();
+          await expect(dialog).toHaveText(
+            expect.stringContaining(
+              `files are missing for ${UNREPAIRABLE.name}`,
+            ),
+            { wait: 30_000 },
+          );
+          await browser.saveScreenshot(
+            path.join(world, "artifacts", "relaunch-missing.png"),
+          );
+          const missing = await captureBrokenState(world, "relaunch-missing");
+          assert.equal(missing.launches.length, 0);
+          assert.equal(
+            missing.manifest?.mods[REPAIRABLE.id]?.enabled,
+            true,
+            "The retried launch must not disable the repaired mod",
+          );
+        },
+      );
+
     await step("Disable and launch keeps the reinstalled mods", async () => {
       await $('[data-testid="launch-repair-disable"]').click();
       await dialog.waitForDisplayed({ reverse: true });
       await observeUntil(
         `One launch with only ${enabledAfter.join(", ")} enabled`,
         () => readBrokenState(world),
-        (value) => value.launches.length === 1 && holds(value, enabledAfter),
+        (value) =>
+          value.launches.length === 1 && holds(value, enabledAfter, gone),
       );
       await captureBrokenState(world, "after-disable");
     });
@@ -182,6 +244,6 @@ describe("launch repair after a reinstall", () => {
     const closed = await captureBrokenState(world, "closed");
     assert.deepEqual(closed.manifest, final.manifest);
     assert.deepEqual(closed.disk, final.disk);
-    assertHolds(closed, enabledAfter, "closed");
+    assertHolds(closed, enabledAfter, "closed", gone);
   });
 });

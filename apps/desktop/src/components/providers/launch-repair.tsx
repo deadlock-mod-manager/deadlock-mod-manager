@@ -128,6 +128,15 @@ export function LaunchRepairProvider({ children }: { children: ReactNode }) {
                 invoke("start_game", request.args),
               );
             } catch (error) {
+              // Files went missing again since the repair, so those mods
+              // are what the next action has to deal with.
+              if (
+                isTauriError(error) &&
+                error.kind === "missingEnabledModFiles" &&
+                error.affectedMods?.length
+              ) {
+                setFailures(error.affectedMods.map(({ id }) => ({ id })));
+              }
               if (
                 !isTauriError(error) ||
                 error.kind !== "modDataReviewRequired"

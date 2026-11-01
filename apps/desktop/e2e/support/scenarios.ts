@@ -535,6 +535,14 @@ export const scenarios = {
     routes: launchRepairRoutes,
     prepare: prepareLaunchRepairWorld,
   },
+  "missing-vpks-launch-relaunch-missing": {
+    ...defaults,
+    family: "missing-vpks",
+    spec: "launch-repair-partial",
+    phases: ["relaunch-missing"],
+    routes: launchRepairRoutes,
+    prepare: prepareLaunchRepairWorld,
+  },
   "gameinfo-reverted-launch": {
     ...defaults,
     family: "settings",
