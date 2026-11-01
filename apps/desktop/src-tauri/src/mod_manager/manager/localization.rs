@@ -329,17 +329,12 @@ impl ModManager {
       ));
     }
     self.report_plan_stage(RepairPlanStage::WritingPackage);
+    // Save the review first: a package without it couldn't be rebuilt after the
+    // next library change. Choices saved for a package that then fails to write
+    // still answer this exact review, and are revalidated before any reuse.
     let reviewed = review::ReviewedInputs::new(&plan.analysis, &key)?;
-    let output = key.output_path.clone();
-    let result = receipt::write(&plan, key, resolutions)?;
-    if let Err(error) = review::save(&output, reviewed, resolutions) {
-      // Without its review, the next rebuild couldn't reproduce this package.
-      if let Err(cleanup) = receipt::remove(&output) {
-        log::warn!("Could not remove the unreviewed repair package: {cleanup}");
-      }
-      return Err(error);
-    }
-    Ok(result)
+    review::save(&key.output_path, reviewed, resolutions)?;
+    receipt::write(&plan, key, resolutions)
   }
 
   pub(super) fn prepare_localization_overlay_with_progress(
