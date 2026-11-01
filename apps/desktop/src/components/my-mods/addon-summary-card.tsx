@@ -1,7 +1,7 @@
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { XCircle } from "@deadlock-mods/ui/icons";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { usePersistedStore } from "@/lib/store";
+import { useVpkScan } from "@/hooks/use-vpk-scan";
 import type { LocalAddonInfo } from "@/types/mods";
 import { AddonInfo } from "./addon-info";
 import { AddonActions } from "./addon-actions";
@@ -13,14 +13,11 @@ export const AddonSummaryCard = ({
   addon: LocalAddonInfo;
   onAddToLibrary?: (addon: LocalAddonInfo) => void;
 }) => {
-  const localMods = usePersistedStore((state) => state.localMods);
+  const { isLibraryVpk } = useVpkScan();
   const isIdentified = !!addon.remoteId;
   const hasError = !addon.vpkParsed?.fingerprint;
 
-  // Check if this addon has already been added to the library
-  const isAlreadyInLibrary = localMods.some((mod) =>
-    mod.installedVpks?.includes(addon.filePath),
-  );
+  const isAlreadyInLibrary = isLibraryVpk(addon.locator);
 
   const handleExternalLinkClick = async () => {
     if (addon.remoteId) {

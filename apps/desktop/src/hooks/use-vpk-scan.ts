@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { getProfileVpkSnapshot } from "@/lib/tauri-commands";
-import { findUnmatchedVpks } from "@/lib/vpk-scan";
+import { findUnmatchedVpks, isVpkOwned } from "@/lib/vpk-scan";
 import { usePersistedStore } from "@/lib/store";
 
 export const PROFILE_VPKS_QUERY_KEY = ["profile-vpks"] as const;
@@ -35,7 +35,15 @@ export const useVpkScan = () => {
     [snapshot, localMods],
   );
 
+  // False until the snapshot loads: only the manifest knows each mod's shard.
+  const isLibraryVpk = useCallback(
+    (locator: string) =>
+      !!snapshot && isVpkOwned(locator, snapshot.manifest, localMods),
+    [snapshot, localMods],
+  );
+
   return {
+    isLibraryVpk,
     unmatchedVpkCount: unmatchedVpks.length,
     unmatchedVpks,
     isLoading,

@@ -1162,6 +1162,7 @@ mod tests {
         vec!["pak01_dir.vpk".into()],
         Some(vec![file.display().to_string()]),
         None,
+        false,
       )
       .unwrap();
     let manifest = ProfileVpkManifest::load(&base).unwrap();
@@ -1206,7 +1207,8 @@ mod tests {
           "Ambiguous".into(),
           vec!["pak01_dir.vpk".into()],
           None,
-          None
+          None,
+          false
         )
         .is_err()
     );
@@ -1219,6 +1221,7 @@ mod tests {
         vec!["pak01_dir.vpk".into()],
         Some(vec![file.display().to_string()]),
         None,
+        false,
       )
       .unwrap();
     assert_eq!(
@@ -1252,7 +1255,15 @@ mod tests {
     ] {
       assert!(
         manager
-          .register_analyzed_mod(None, "invalid".into(), "Invalid".into(), files, None, None)
+          .register_analyzed_mod(
+            None,
+            "invalid".into(),
+            "Invalid".into(),
+            files,
+            None,
+            None,
+            false
+          )
           .is_err()
       );
       assert!(manager.mod_repository.get_mod("invalid").is_none());
@@ -1340,6 +1351,7 @@ mod tests {
         vec!["pak01_dir.vpk".into()],
         None,
         None,
+        false,
       )
       .unwrap();
     let manifest = ProfileVpkManifest::load(&base).unwrap();
@@ -1355,7 +1367,8 @@ mod tests {
           "Skin".into(),
           vec!["pak01_dir.vpk".into()],
           None,
-          None
+          None,
+          false
         )
         .is_err()
     );
@@ -1363,6 +1376,42 @@ mod tests {
       ProfileVpkManifest::load(&base).unwrap().mods["skin"].original_vpk_names,
       ["authored_skin.vpk"]
     );
+  }
+
+  #[test]
+  fn adding_a_file_by_hand_refuses_one_another_mod_already_owns() {
+    let temp = tempfile::tempdir().unwrap();
+    let mut manager = test_manager(temp.path());
+    let base = manager.get_addons_path(None).unwrap();
+    write_test_vpk(&base.join("pak01_dir.vpk"));
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mark_enabled(
+      "owner",
+      vec!["pak01_dir.vpk".into()],
+      Vec::new(),
+      Some(0),
+      ShardIndex::FIRST,
+    );
+    manifest.save(&base).unwrap();
+    let register = |manager: &mut ModManager, refuse| {
+      manager.register_analyzed_mod(
+        None,
+        "local-new".into(),
+        "New".into(),
+        vec!["pak01_dir.vpk".into()],
+        None,
+        None,
+        refuse,
+      )
+    };
+
+    assert!(register(&mut manager, true).is_err());
+    let unchanged = ProfileVpkManifest::load(&base).unwrap();
+    assert_eq!(unchanged.mods.keys().collect::<Vec<_>>(), ["owner"]);
+
+    // Without the switch, an identical file set still passes to the new mod.
+    let registration = register(&mut manager, false).unwrap();
+    assert_eq!(registration.replaced_mod_ids, ["owner"]);
   }
 
   #[test]
@@ -1388,6 +1437,7 @@ mod tests {
         vec!["pak01_dir.vpk".into()],
         None,
         None,
+        false,
       )
       .unwrap();
     let entry = ProfileVpkManifest::load(&base)

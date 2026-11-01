@@ -10,8 +10,10 @@ const BASE_SHARD = 1;
 const basename = (value: string) => value.split(/[\\/]/).pop() || value;
 const locatorKey = (shard: number, filename: string) => `${shard}:${filename}`;
 
+type LibraryMod = { remoteId: string; installedVpks?: string[] | null };
+
 /**
- * Locators of VPK files in a profile that no installed mod accounts for.
+ * The (shard, filename) keys of every VPK a mod in the library owns.
  *
  * Every shard folder numbers its files from `pak01_dir.vpk`, so the same name
  * can belong to one mod in `addons` and another in `addons2`. Ownership is
@@ -19,20 +21,12 @@ const locatorKey = (shard: number, filename: string) => `${shard}:${filename}`;
  * always sit in the base folder, and a mod the manifest does not know yet falls
  * back to the bare names it recorded there.
  */
-export const findUnmatchedVpks = (
-  files: readonly ProfileVpkFile[],
+const ownedVpkKeys = (
   manifest: VpkManifest,
-  localMods: { remoteId: string; installedVpks?: string[] | null }[],
-): string[] => {
+  localMods: readonly LibraryMod[],
+): Set<string> => {
   const owned = new Set<string>();
-  const installedSubmissionSlugs = new Set<string>();
-
   for (const mod of localMods) {
-    const submission = parseSubmissionSlug(mod.remoteId);
-    const slug = submission && serializeSubmissionRef(submission);
-    if (slug) {
-      installedSubmissionSlugs.add(slug);
-    }
     const entry = manifest.mods[mod.remoteId];
     if (entry) {
       for (const vpk of entry.currentVpks) {
@@ -45,6 +39,45 @@ export const findUnmatchedVpks = (
     }
     for (const installedVpk of mod.installedVpks ?? []) {
       owned.add(locatorKey(BASE_SHARD, basename(installedVpk)));
+    }
+  }
+  return owned;
+};
+
+/**
+ * Whether a mod in the library owns the VPK at `locator`, a profile file in
+ * the `file.vpk` (base folder) or `addonsN/file.vpk` wire format.
+ */
+export const isVpkOwned = (
+  locator: string,
+  manifest: VpkManifest,
+  localMods: readonly LibraryMod[],
+): boolean => {
+  const [root, filename] = locator.includes("/")
+    ? locator.split("/")
+    : ["addons", locator];
+  const shard = root === "addons" ? BASE_SHARD : Number(root.slice(6));
+  return ownedVpkKeys(manifest, localMods).has(locatorKey(shard, filename));
+};
+
+/**
+ * Locators of VPK files in a profile that no installed mod accounts for.
+ * Besides the files a mod owns, a parked file named after an installed
+ * submission counts as accounted for.
+ */
+export const findUnmatchedVpks = (
+  files: readonly ProfileVpkFile[],
+  manifest: VpkManifest,
+  localMods: readonly LibraryMod[],
+): string[] => {
+  const owned = ownedVpkKeys(manifest, localMods);
+  const installedSubmissionSlugs = new Set<string>();
+
+  for (const mod of localMods) {
+    const submission = parseSubmissionSlug(mod.remoteId);
+    const slug = submission && serializeSubmissionRef(submission);
+    if (slug) {
+      installedSubmissionSlugs.add(slug);
     }
   }
 
