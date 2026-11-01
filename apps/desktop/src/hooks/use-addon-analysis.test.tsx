@@ -93,12 +93,14 @@ const recordedAddon = (): LocalAddonInfo => ({
   },
 });
 
-/** A reset profile whose library restores only on the given reconciliation pass. */
-const resetProfile = (restoresOnPass: number) => {
+/** A reset profile; `restored` puts the recorded mod back in its library. */
+const resetProfile = (restored: boolean) => {
   let passes = 0;
+  const mods = restored ? [restoredMod] : [];
   usePersistedStore.setState({
     activeProfileId: PROFILE,
-    localMods: [],
+    localMods: mods,
+    analysisResult: null,
     profiles: {
       [PROFILE]: {
         id: PROFILE,
@@ -108,20 +110,12 @@ const resetProfile = (restoresOnPass: number) => {
         isDefault: false,
         createdAt: new Date(0),
         lastUsed: new Date(0),
-        mods: [],
+        mods,
         enabledMods: {},
       },
     },
     restoreModsFromManifest: async () => {
       passes++;
-      if (passes === restoresOnPass)
-        usePersistedStore.setState((state) => ({
-          localMods: [restoredMod],
-          profiles: {
-            ...state.profiles,
-            [PROFILE]: { ...state.profiles[PROFILE], mods: [restoredMod] },
-          },
-        }));
       return [];
     },
   });
@@ -135,7 +129,11 @@ const analyze = async () => {
     return null;
   };
   const i18n = createInstance();
-  await i18n.init({ lng: "en", resources: { en: { translation: en } } });
+  await i18n.init({
+    lng: "en",
+    resources: { en: { translation: en } },
+    interpolation: { escapeValue: false },
+  });
   renderToStaticMarkup(
     <I18nextProvider i18n={i18n}>
       <Probe />
@@ -152,6 +150,7 @@ const analyze = async () => {
     data,
     { profileFolder: "reset", profileId: PROFILE },
     undefined,
+    { client: new reactQuery.QueryClient(), meta: undefined },
   );
 };
 
@@ -162,35 +161,21 @@ afterEach(() => {
 
 describe("re-scanning mods the profile manifest records", () => {
   it("skips registering a recorded mod the reconciliation restored", async () => {
-    const passes = resetProfile(0);
-    usePersistedStore.setState((state) => ({
-      localMods: [restoredMod],
-      profiles: {
-        ...state.profiles,
-        [PROFILE]: { ...state.profiles[PROFILE], mods: [restoredMod] },
-      },
-    }));
+    const passes = resetProfile(true);
     await analyze();
     expect(passes()).toBe(0);
     expect(catalogLookups).toEqual([]);
+    expect(usePersistedStore.getState().analysisResult?.errors).toEqual([]);
   });
 
-  it("restores again when the first reconciliation's restore was discarded", async () => {
-    const passes = resetProfile(1);
+  it("reports a recorded mod whose restore was discarded instead of skipping it", async () => {
+    const passes = resetProfile(false);
     await analyze();
-    expect(passes()).toBe(1);
+    expect(passes()).toBe(0);
     expect(catalogLookups).toEqual([]);
-    expect(
-      usePersistedStore
-        .getState()
-        .profiles[PROFILE]?.mods.map((mod) => mod.remoteId),
-    ).toEqual(["42"]);
-  });
-
-  it("falls back to regular registration instead of a silent skip", async () => {
-    const passes = resetProfile(-1);
-    await analyze();
-    expect(passes()).toBe(1);
-    expect(catalogLookups).toEqual(["42"]);
+    expect(usePersistedStore.getState().analysisResult?.errors).toEqual([
+      "Could not register 42: DMM's records list this mod, but restoring it was interrupted. Run Analyze Local Addons again.",
+    ]);
+    expect(usePersistedStore.getState().analysisDialogOpen).toBe(true);
   });
 });
