@@ -243,15 +243,15 @@ We're actively working to make Deadlock Mod Manager accessible to users worldwid
 | 🇺🇸 **English** (Default) | English | ✅ Complete | - |
 | 🇧🇬 **Bulgarian** | Български | 🚧 3% | [macchiako](https://discordapp.com/users/macchiako./) |
 | 🇧🇾 **Belarusian** | Беларуская | 🚧 In Progress | [drodn](https://discordapp.com/users/drodn/) |
-| 🇩🇪 **German** | Deutsch | 🚧 27% | [skeptic](https://github.com/Skeptic-systems) |
-| 🇫🇷 **French** | Français | 🚧 25% | [stormix](https://github.com/stormix) |
+| 🇩🇪 **German** | Deutsch | 🚧 26% | [skeptic](https://github.com/Skeptic-systems) |
+| 🇫🇷 **French** | Français | 🚧 24% | [stormix](https://github.com/stormix) |
 | 🇷🇺 **Russian** | Русский | 🚧 20% | [awkward_akio](https://discordapp.com/users/awkward_akio/), [Thyron](https://github.com/baka-thyron) |
 | 🇸🇦 **Arabic** | العربية | 🚧 8% | [archeroflegend](https://discordapp.com/users/archeroflegend/) |
-| 🇵🇱 **Polish** | Polski | 🚧 36% | [_manio](https://discordapp.com/users/_manio/) |
+| 🇵🇱 **Polish** | Polski | 🚧 35% | [_manio](https://discordapp.com/users/_manio/) |
 | 🇨🇭 **Swiss German** | Schwiizerdütsch | 🚧 3% | [degoods_deedos](https://discordapp.com/users/degoods_deedos/) |
-| 🇹🇭 **Thai** | ไทย | 🚧 6% | [altqx](https://discordapp.com/users/altq/) |
-| 🇹🇷 **Turkish** | Türkçe | 🚧 91% | [hollmmes](https://discordapp.com/users/hollmmes/), [kenanala](https://discordapp.com/users/kenanala/) |
-| 🇨🇳 **Chinese (Simplified)** | 简体中文 | 🚧 31% | [待到春深方挽柳](mailto:sfk_04@qq.com) |
+| 🇹🇭 **Thai** | ไทย | 🚧 5% | [altqx](https://discordapp.com/users/altq/) |
+| 🇹🇷 **Turkish** | Türkçe | 🚧 90% | [hollmmes](https://discordapp.com/users/hollmmes/), [kenanala](https://discordapp.com/users/kenanala/) |
+| 🇨🇳 **Chinese (Simplified)** | 简体中文 | 🚧 30% | [待到春深方挽柳](mailto:sfk_04@qq.com) |
 | 🇹🇼 **Chinese (Traditional)** | 繁體中文 | ✅ Complete | [白雲](https://github.com/phillychi3) |
 | 🇪🇸 **Spanish** | Español | ✅ Complete | [chikencio](https://discordapp.com/users/chikencio/) |
 | 🇧🇷 **Portuguese (Brazil)** | Português (Brasil) | 🚧 25% | [meneee](https://discordapp.com/users/meneee/) |
