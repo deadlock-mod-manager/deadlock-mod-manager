@@ -147,7 +147,7 @@ export function CompatibilityReviewDialog({
       <DialogContent className='flex max-h-[82vh] max-w-2xl flex-col overflow-hidden'>
         <DialogHeader className='shrink-0 pr-8'>
           <DialogTitle className='flex items-center gap-2'>
-            <ShieldCheck aria-hidden className='size-5 text-primary' />
+            <ShieldCheck aria-hidden className='size-5 text-muted-foreground' />
             {t("myMods.compatibility.review")}
           </DialogTitle>
           <DialogDescription>

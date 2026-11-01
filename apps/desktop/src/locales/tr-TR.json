@@ -3137,7 +3137,6 @@
       "apply": "Düzeltmeleri uygula",
       "applied": "Düzeltmeler uygulandı.",
       "appliedLaunching": "Düzeltmeler uygulandı. Deadlock başlatılıyor.",
-      "excluded": "Özgün dosyalar korundu: {{names}}",
       "sharedTitle": "Paylaşılan kaynaklar korundu",
       "sharedDescription": "Etkin bir VPK izlenmediği, etkin bir mod özgün dosyalarını kullandığı veya düzeltilmemiş bir mod oyun metinlerini ve verilerini paylaştığı için bu dosyalar değiştirilmedi. İzlenmeyen dosyaları inceleyin, etkin görünümü düzeltin ya da çakışan görünümleri ve çeşitlerini devre dışı bırakın."
     },
@@ -3573,7 +3572,6 @@
       "automaticSummary_other": "{{count}} ortak değişiklik birleştirildi",
       "choiceSummary_one": "{{count}} çakışma için seçim yapmanız gerekiyor",
       "choiceSummary_other": "{{count}} çakışma için seçim yapmanız gerekiyor",
-      "noChoicesSummary": "Çakışma olmadığından tespit edilen tüm değişiklikler korunabilir",
       "conflictsTitle": "Her çakışmada hangi modun değişikliğinin geçerli olacağını seçin",
       "conflictsDescription": "DMM, yükleme sıranızda daha üstte olan modu önerir. Yalnızca başka bir sürümü kullanmak istiyorsanız seçimi değiştirin.",
       "readyMessage": "Hiçbir çakışma yok. DMM tespit edilen tüm değişiklikleri koruyabilir.",

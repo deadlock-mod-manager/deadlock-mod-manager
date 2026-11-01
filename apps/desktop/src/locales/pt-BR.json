@@ -3137,7 +3137,6 @@
       "apply": "",
       "applied": "",
       "appliedLaunching": "",
-      "excluded": "",
       "sharedTitle": "",
       "sharedDescription": ""
     },
@@ -3573,7 +3572,6 @@
       "automaticSummary_other": "",
       "choiceSummary_one": "",
       "choiceSummary_other": "",
-      "noChoicesSummary": "",
       "conflictsTitle": "",
       "conflictsDescription": "",
       "readyMessage": "",
