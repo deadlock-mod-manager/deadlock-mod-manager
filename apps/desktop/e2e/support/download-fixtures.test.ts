@@ -66,3 +66,39 @@ it("accepts the running transfer but rejects any request for the deleted queued 
     ]),
   ).toThrow();
 });
+
+const segment = (range: string, responseStatus = 206): FixtureRequest => ({
+  ...transfer(DOWNLOAD_FILE),
+  headers: { range },
+  responseStatus,
+});
+const planned = segmentRanges(
+  payloadFor("downloads-segmented-wrong-range").length,
+);
+
+it("lets the misanswered segment stop a sibling before it asks, but not ask twice", () => {
+  const fallback = transfer(DOWNLOAD_FILE);
+  const check = (ranges: string[]) => () =>
+    assertDownloadNetwork("downloads-segmented-wrong-range", [
+      ...ranges.map((range) => segment(range)),
+      fallback,
+    ]);
+  expect(check([planned[0], planned[1], planned[2]])).not.toThrow();
+  expect(check([planned[0], planned[2], planned[2]])).toThrow();
+  expect(
+    check([planned[0], planned[2], planned[3].replace(/=\d+/, "=1")]),
+  ).toThrow();
+});
+
+it("needs one ordinary request after a failed Range request", () => {
+  const failed = segment(planned[0], 400);
+  expect(() =>
+    assertDownloadNetwork("downloads-segmented-range-error", [
+      failed,
+      transfer(DOWNLOAD_FILE),
+    ]),
+  ).not.toThrow();
+  expect(() =>
+    assertDownloadNetwork("downloads-segmented-range-error", [failed]),
+  ).toThrow();
+});
