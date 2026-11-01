@@ -22,8 +22,8 @@ import { ModStatus } from "@/types/mods";
 
 /**
  * Keeps the mod health report current: checks once per profile after start,
- * rechecks every mod after a game update, and checks newly installed files.
- * After any library change it also rebuilds the fixed mods' repair package.
+ * rechecks every mod after a game update, and after any library change checks
+ * the mods whose files changed and rebuilds the fixed mods' repair package.
  * Mounted once in app.tsx.
  */
 export const ModHealthRenderer = () => {
@@ -38,9 +38,9 @@ export const ModHealthRenderer = () => {
   const previousInstalled = useRef<ReadonlyMap<string, string> | null>(null);
   const refreshQueue = useMemo(
     () =>
-      createModHealthRefreshQueue((folder, modIds) => {
-        refreshFixes(folder);
-        if (modIds.length > 0) check({ profileFolder: folder, modIds });
+      createModHealthRefreshQueue({
+        refreshFixes,
+        checkHealth: (folder) => check({ profileFolder: folder }),
       }),
     [refreshFixes, check],
   );
@@ -106,14 +106,11 @@ export const ModHealthRenderer = () => {
     const before = previousInstalled.current;
     previousInstalled.current = installed;
     if (!before) return;
-    const modIds = [...installed]
-      .filter(([modId, vpks]) => before.get(modId) !== vpks)
-      .map(([modId]) => modId);
     if (
-      modIds.length > 0 ||
-      [...before.keys()].some((modId) => !installed.has(modId))
+      installed.size !== before.size ||
+      [...installed].some(([modId, vpks]) => before.get(modId) !== vpks)
     ) {
-      refreshQueue.schedule(profileFolder, modIds);
+      refreshQueue.schedule(profileFolder);
     }
   }, [installed, profileFolder, refreshQueue]);
 

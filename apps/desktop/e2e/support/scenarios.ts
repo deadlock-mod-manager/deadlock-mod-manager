@@ -25,6 +25,11 @@ import { prepareProfileWorld } from "./profile-fixtures";
 import { prepareFileOrderWorld } from "./file-order-fixtures";
 import { prepareBrokenProfileWorld } from "./broken-profile-fixtures";
 import { prepareCompatibilityFixWorld } from "./compatibility-fix-fixtures";
+import {
+  assertHealthUpdateNetwork,
+  healthUpdateRoutes,
+  prepareHealthUpdateWorld,
+} from "./health-update-fixtures";
 import { prepareConflictWorld } from "./conflict-fixtures";
 import { prepareFilesystemWorld } from "./filesystem-fixtures";
 import { prepareManifestRepairWorld } from "./manifest-repair-fixtures";
@@ -695,6 +700,15 @@ export const scenarios = {
     phases: ["library-changes"],
     routes: profileRoutes,
     prepare: async (world) => prepareCompatibilityFixWorld(world),
+  },
+  "compatibility-health-update": {
+    ...defaults,
+    family: "compatibility",
+    spec: "compatibility-health-update",
+    phases: ["update"],
+    routes: healthUpdateRoutes,
+    prepare: prepareHealthUpdateWorld,
+    verifyNetwork: assertHealthUpdateNetwork,
   },
   "library-selection": {
     ...defaults,
