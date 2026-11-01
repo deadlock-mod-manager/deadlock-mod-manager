@@ -125,30 +125,30 @@ export const useAddonAnalysis = () => {
         }
       }
 
-      // Reconciliation drops its restore when the library changes meanwhile
-      // (switching profiles and back, a download finishing). Recorded mods it
-      // missed get one more pass; any still missing take the regular path.
       const inLibrary = (remoteId: string) =>
         (profileId
           ? usePersistedStore.getState().profiles[profileId]?.mods
           : undefined
         )?.some((mod) => mod.remoteId === remoteId) ?? false;
-      const recorded = new Set(
-        [...modGroups]
-          .filter(([remoteId, addons]) =>
-            isRecordedInManifest(remoteId, addons),
-          )
-          .map(([remoteId]) => remoteId),
-      );
-      if ([...recorded].some((remoteId) => !inLibrary(remoteId))) {
-        notifyRemovedMods(
-          await usePersistedStore.getState().restoreModsFromManifest(),
-        );
-      }
 
       for (const [remoteId, groupAddons] of modGroups) {
-        if (recorded.has(remoteId) && inLibrary(remoteId)) {
-          processedIdentifiedCount++;
+        if (isRecordedInManifest(remoteId, groupAddons)) {
+          if (inLibrary(remoteId)) {
+            processedIdentifiedCount++;
+            continue;
+          }
+          // Reconciliation drops its restore when the library changed meanwhile
+          // (switching profiles and back, a download finishing).
+          const description = t("addons.restoreFromRecordsInterrupted");
+          registrationErrors.push(
+            t("addons.registrationErrorDetail", {
+              modName: remoteId,
+              error: description,
+            }),
+          );
+          toast.error(t("addons.registrationError", { modName: remoteId }), {
+            description,
+          });
           continue;
         }
         try {
