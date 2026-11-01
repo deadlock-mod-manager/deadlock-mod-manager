@@ -500,15 +500,15 @@ impl GameConfigManager {
     Ok(())
   }
 
-  /// A reset replaces the whole file, and `.bak` only holds the first version
-  /// this manager saw. Named after the content, so resetting again can't
-  /// overwrite an earlier copy.
+  /// A reset replaces the whole file, a rebuild replaces search paths this
+  /// manager didn't write, and `.bak` only holds the first version it saw.
+  /// Named after the content, so a later copy can't overwrite an earlier one.
   fn keep_pre_reset_copy(&self, gameinfo_path: &Path) -> Result<(), Error> {
     if !gameinfo_path.exists() {
       return Ok(());
     }
     let hash = self.calculate_file_hash(gameinfo_path)?;
-    let copy = gameinfo_path.with_extension(format!("gi.pre-reset-{}", &hash[..8]));
+    let copy = gameinfo_path.with_extension(format!("gi.pre-reset-{hash}"));
     if !copy.exists() {
       fs::copy(gameinfo_path, &copy)?;
       log::info!("Kept the file being reset at {copy:?}");
@@ -715,6 +715,11 @@ impl GameConfigManager {
     if !backup_path.exists() {
       log::info!("Creating backup: {backup_path:?}");
       fs::copy(gameinfo_path, &backup_path)?;
+    }
+
+    // Without markers the block isn't ours, and it may hold custom entries.
+    if !vanilla && !self.has_mod_manager_markers(&gameinfo_content) {
+      self.keep_pre_reset_copy(gameinfo_path)?;
     }
 
     // Use the appropriate search paths based on vanilla flag
@@ -1883,14 +1888,15 @@ mod tests {
       .unwrap();
 
     assert_eq!(current_gameinfo(&game_path), vanilla);
-    assert_eq!(pre_reset_copies(&game_path), vec![custom.clone()]);
+    assert!(pre_reset_copies(&game_path).contains(&custom));
 
     manager.update_mod_paths(&game_path, &test_paths()).unwrap();
+    let modded = current_gameinfo(&game_path);
     manager.reset_gameinfo(&game_path, Ok(vanilla)).unwrap();
 
     let copies = pre_reset_copies(&game_path);
-    assert_eq!(copies.len(), 2);
     assert!(copies.contains(&custom));
+    assert!(copies.contains(&modded));
   }
 
   #[test]
@@ -1907,6 +1913,25 @@ mod tests {
       .unwrap();
 
     assert_eq!(source, GameInfoResetSource::Backup);
+    assert!(pre_reset_copies(&game_path).contains(&custom));
+  }
+
+  #[test]
+  fn rebuilding_unmarked_search_paths_keeps_a_copy() {
+    let (_dir, game_path) = setup_game_dir();
+    let custom = custom_config("SearchPaths").replace("Game core", "Game custom\n      Game core");
+    write_gameinfo(&game_path, &custom);
+    let mut manager = GameConfigManager::new();
+
+    manager.update_mod_paths(&game_path, &test_paths()).unwrap();
+
+    assert!(!current_gameinfo(&game_path).contains("Game custom"));
+    assert_eq!(pre_reset_copies(&game_path), vec![custom.clone()]);
+
+    manager
+      .update_mod_paths(&game_path, &["citadel/addons/profile_default".to_string()])
+      .unwrap();
+
     assert_eq!(pre_reset_copies(&game_path), vec![custom]);
   }
 }
