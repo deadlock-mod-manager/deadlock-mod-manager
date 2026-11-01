@@ -53,6 +53,15 @@ export const healthAction = (
   }
 };
 
+/**
+ * A disabled mod's saved fix isn't in the repair package yet; the package
+ * picks it up when the mod is enabled.
+ */
+export const fixAppliesWhenEnabled = (
+  kind: ModHealthBadgeKind,
+  isEnabled: boolean,
+): boolean => !isEnabled && (kind === "fixed" || kind === "partlyFixed");
+
 export const isFixableStatus = (status: ModHealthStatus): boolean =>
   status === "fixable" || status === "partlyFixable";
 

@@ -1,5 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import type { FixtureRoute } from "./fixture-server";
 import { prepareInstalledProfiles } from "./profile-fixtures";
 import { buildSyntheticVpk, type VpkRecipeEntry } from "./vpk";
 import type { CreatedWorld } from "./world";
@@ -71,3 +72,60 @@ export const prepareCompatibilityFixWorld = async (
     ]),
   );
 };
+
+export const ENABLED_FIX_MOD = "local-fix-enabled-text";
+export const DISABLED_FIX_MOD = "local-fix-disabled-text";
+const DISABLED_FIX_MODS = [ENABLED_FIX_MOD, DISABLED_FIX_MOD];
+
+const localization = (tokens: Record<string, string>) =>
+  `"lang"\n{\n\t"Language"\t\t"English"\n\t"Tokens"\n\t{\n${Object.entries(
+    tokens,
+  )
+    .map(([token, text]) => `\t\t"${token}"\t\t"${text}"\n`)
+    .join("")}\t}\n}\n`;
+const textFile = (modId: string) =>
+  `resource/localization/${modId}/${modId}_english.txt`;
+
+// A mod's copy of a game text file that lacks a game token gets the token
+// restored, so the health check reports each of these mods as fixable.
+export const prepareDisabledFixWorld = async (
+  world: CreatedWorld,
+): Promise<void> => {
+  const citadel = path.join(world.configuration.roots.game, "game", "citadel");
+  for (const modId of DISABLED_FIX_MODS) {
+    const file = path.join(citadel, textFile(modId));
+    await mkdir(path.dirname(file), { recursive: true });
+    await writeFile(
+      file,
+      localization({ e2e_kept: "Kept", e2e_new: "New game text" }),
+    );
+  }
+  await prepareInstalledProfiles(
+    world,
+    [
+      {
+        profile: FIXES,
+        modIds: DISABLED_FIX_MODS,
+        payload: (modId) =>
+          buildSyntheticVpk([
+            {
+              path: textFile(modId),
+              contents: localization({ e2e_kept: "Kept" }),
+            },
+          ]),
+      },
+    ],
+    FIXES.id,
+  );
+};
+
+// The spec opens the disabled mod's page, which asks for its report counts.
+export const disabledFixRoutes = (): FixtureRoute[] => [
+  { method: "GET", path: "/api/v2/feature-flags", status: 200, body: "[]" },
+  {
+    method: "GET",
+    path: `/api/v2/reports/mod/${DISABLED_FIX_MOD}/counts`,
+    status: 200,
+    body: JSON.stringify({ total: 0, open: 0, resolved: 0, dismissed: 0 }),
+  },
+];
