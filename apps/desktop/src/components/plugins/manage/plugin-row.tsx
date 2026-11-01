@@ -29,8 +29,8 @@ export const PluginRow = ({
       "relative flex w-full shrink-0 items-center gap-[14px] rounded-[12px] p-[14px] transition-colors",
       INSET_OUTLINE,
       selected
-        ? "bg-[#1E1A18] outline-[#EFE0BE40]"
-        : "bg-card outline-[#FFFFFF0F] hover:bg-[#1E1A18]",
+        ? "bg-foreground/[0.06] outline-primary/25"
+        : "bg-card outline-foreground/[0.06] hover:bg-foreground/[0.06]",
     )}>
     {onSelect && (
       <button
@@ -47,7 +47,7 @@ export const PluginRow = ({
         <span className='truncate font-semibold text-[14px] text-foreground leading-[normal]'>
           {name}
         </span>
-        <span className='shrink-0 font-mono text-[#A3A3A3] text-[11px] leading-[normal]'>
+        <span className='shrink-0 font-mono text-muted-foreground text-[11px] leading-[normal]'>
           {version}
         </span>
         {status}

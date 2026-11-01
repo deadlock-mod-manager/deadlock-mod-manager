@@ -20,7 +20,7 @@ export const RowButton = forwardRef<HTMLButtonElement, RowButtonProps>(
         variant === "primary"
           ? "bg-primary text-primary-foreground hover:bg-primary/90"
           : cn(
-              "bg-background text-foreground outline-[#262626] hover:bg-[#1E1A18]",
+              "bg-background text-foreground outline-border hover:bg-foreground/[0.06]",
               INSET_OUTLINE,
             ),
         className,

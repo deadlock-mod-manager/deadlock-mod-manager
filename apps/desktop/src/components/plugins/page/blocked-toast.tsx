@@ -133,7 +133,7 @@ export const BlockedToast = ({
   const profileName = (folder: string) => findProfileName(folder) ?? folder;
   return (
     <div
-      className='absolute right-6 bottom-6 z-20 flex w-[400px] max-w-[calc(100%-48px)] flex-col gap-2.5 rounded-[12px] bg-[#1E1A18] p-4 shadow-[0px_8px_24px_#00000080] ring-1 ring-[#F8717140] ring-inset'
+      className='absolute right-6 bottom-6 z-20 flex w-[400px] max-w-[calc(100%-48px)] flex-col gap-2.5 rounded-[12px] bg-card p-4 shadow-[0px_8px_24px_#00000080] ring-1 ring-[#F8717140] ring-inset'
       role='alert'>
       <div className='flex items-center gap-2.5'>
         <ShieldWarningIcon color={TONE_COLOR.danger} size={16} />

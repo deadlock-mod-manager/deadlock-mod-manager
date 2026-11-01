@@ -20,11 +20,7 @@ import {
   usePluginFrame,
 } from "@/components/plugins/page/use-plugin-frame";
 import { WaitsForUpdateState } from "@/components/plugins/page/waits-for-update-state";
-import {
-  HOST_NEUTRAL,
-  pageState,
-  TONE_COLOR,
-} from "@/components/plugins/plugin-status";
+import { pageState, TONE_COLOR } from "@/components/plugins/plugin-status";
 import type { ExternalPluginSummary } from "@/types/generated/ExternalPluginSummary";
 
 const hostStatus = (
@@ -33,14 +29,14 @@ const hostStatus = (
   phase: FramePhase,
 ): HostStatus => {
   if (live && phase === "starting") {
-    return { color: HOST_NEUTRAL, labelKey: "plugins.state.starting" };
+    return { color: TONE_COLOR.neutral, labelKey: "plugins.state.starting" };
   }
   if (live && phase === "noAnswer") {
     return { color: TONE_COLOR.danger, labelKey: "plugins.page.notResponding" };
   }
   const state = pageState(plugin);
   return {
-    color: state.tone === "neutral" ? HOST_NEUTRAL : TONE_COLOR[state.tone],
+    color: TONE_COLOR[state.tone],
     labelKey: state.labelKey,
   };
 };

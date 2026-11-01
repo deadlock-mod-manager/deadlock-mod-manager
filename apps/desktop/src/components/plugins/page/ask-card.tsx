@@ -25,10 +25,10 @@ export const AskCard = ({
       className={cn(
         "flex w-full flex-col rounded-[12px] bg-card px-4 py-[14px] ring-1 ring-inset",
         tight ? "gap-1.5" : "gap-3",
-        active ? "ring-[#EFE0BE40]" : "ring-[#FFFFFF0F]",
+        active ? "ring-primary/25" : "ring-foreground/[0.06]",
       )}>
       <div className='flex w-full items-center gap-3'>
-        <span className='flex size-[30px] shrink-0 items-center justify-center rounded-[8px] bg-[#FFFFFF0A] text-primary'>
+        <span className='flex size-[30px] shrink-0 items-center justify-center rounded-[8px] bg-foreground/[0.04] text-primary'>
           <PermissionIcon size={16} />
         </span>
         <div className='flex min-w-0 flex-1 flex-col gap-0.5 leading-[normal]'>

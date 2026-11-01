@@ -1,3 +1,4 @@
+import { tint } from "@/components/plugins/plugin-identity";
 import {
   type PluginTone,
   TONE_COLOR,
@@ -15,7 +16,10 @@ export const StatusPill = ({
     <span
       className='flex shrink-0 items-center gap-[5px] rounded-[6px] px-[7px] py-[2px]'
       style={{
-        backgroundColor: tone === "neutral" ? "#FFFFFF0F" : `${color}1F`,
+        backgroundColor:
+          tone === "neutral"
+            ? "hsl(var(--foreground) / 0.06)"
+            : tint(color, 12),
       }}>
       <span
         className='size-[6px] rounded-full'

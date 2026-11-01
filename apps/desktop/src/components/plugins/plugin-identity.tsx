@@ -76,7 +76,7 @@ const GLYPHS = {
 } satisfies Record<string, Icon>;
 
 /** Plugins without an `accent` use the app's primary colour. */
-const DEFAULT_ACCENT = "#EFE0BE";
+const DEFAULT_ACCENT = "hsl(var(--primary))";
 
 const isGlyphName = (name: string): name is keyof typeof GLYPHS =>
   Object.prototype.hasOwnProperty.call(GLYPHS, name);
@@ -84,8 +84,9 @@ const isGlyphName = (name: string): name is keyof typeof GLYPHS =>
 export const pluginGlyph = (icon: string | null): Icon =>
   icon && isGlyphName(icon) ? GLYPHS[icon] : PuzzlePieceIcon;
 
-/** `#RRGGBB` plus a two-digit hex alpha, as the designs specify tints. */
-export const tint = (accent: string, alpha: string) => `${accent}${alpha}`;
+/** A colour at reduced strength; works with theme variables as well as hex accents. */
+export const tint = (color: string, percent: number) =>
+  `color-mix(in srgb, ${color} ${percent}%, transparent)`;
 
 type PluginTileProps = {
   icon: string | null;
@@ -95,10 +96,10 @@ type PluginTileProps = {
   /** Glyph edge in px. */
   glyphSize: number;
   radius: number;
-  /** Background alpha, e.g. "1A". */
-  fillAlpha: string;
-  /** Outline alpha; omit for no outline. */
-  outlineAlpha?: string;
+  /** Background strength in percent. */
+  fillAlpha: number;
+  /** Outline strength in percent; omit for no outline. */
+  outlineAlpha?: number;
   className?: string;
 };
 

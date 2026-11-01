@@ -31,7 +31,7 @@ export const RecentRequests = ({
   return (
     <div className='flex w-full flex-col gap-[2px]'>
       <div className='flex w-full items-center pb-[6px]'>
-        <span className='font-semibold text-[#A3A3A3] text-[11px] uppercase leading-[normal]'>
+        <span className='font-semibold text-muted-foreground text-[11px] uppercase leading-[normal]'>
           {t("plugins.access.sheet.recentRequests")}
         </span>
         <span className='h-px flex-1' />
@@ -43,7 +43,7 @@ export const RecentRequests = ({
         </button>
       </div>
       {requests.length === 0 && (
-        <p className='px-[10px] py-[8px] text-[#A3A3A3] text-[12px] leading-[normal]'>
+        <p className='px-[10px] py-[8px] text-muted-foreground text-[12px] leading-[normal]'>
           {t("plugins.access.sheet.noRequests")}
         </p>
       )}
@@ -67,11 +67,11 @@ export const RecentRequests = ({
               <span className='truncate text-[13px] text-foreground leading-[normal]'>
                 {describeActivity(t, request, lookup, "request")}
               </span>
-              <span className='truncate font-mono text-[#A3A3A3] text-[11px] leading-[normal]'>
+              <span className='truncate font-mono text-muted-foreground text-[11px] leading-[normal]'>
                 {request.method ?? request.permission}
               </span>
             </div>
-            <span className='shrink-0 text-[#A3A3A3] text-[11px] leading-[normal]'>
+            <span className='shrink-0 text-muted-foreground text-[11px] leading-[normal]'>
               {relativeTime(request.at)}
             </span>
           </div>

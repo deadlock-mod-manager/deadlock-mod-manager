@@ -84,15 +84,15 @@ export const UpdateSheet = ({
         aria-describedby={undefined}
         className='flex w-[480px] max-w-full flex-col gap-0 border-0 bg-card p-0 shadow-[inset_1px_0_0_0_hsl(var(--border))] sm:max-w-[480px]'
         hideClose
-        overlayClassName='bg-[#0B0A09CC]'
+        overlayClassName='bg-background/80'
         side='right'>
         <div className='flex shrink-0 gap-[14px] border-border border-b px-6 pt-[22px] pb-[17px]'>
           <PluginTile
             accent={plugin.accent}
-            fillAlpha='26'
+            fillAlpha={15}
             glyphSize={20}
             icon={plugin.icon}
-            outlineAlpha='33'
+            outlineAlpha={20}
             radius={10}
             size={40}
           />
@@ -152,7 +152,7 @@ export const UpdateSheet = ({
             />
           ))}
           {update.changelog.length > 0 ? (
-            <div className='flex flex-col gap-2 rounded-[10px] bg-[#1E1A18] p-4'>
+            <div className='flex flex-col gap-2 rounded-[10px] bg-foreground/[0.06] p-4'>
               <h3 className='font-semibold text-[11px] text-muted-foreground uppercase leading-[normal]'>
                 {t("plugins.page.update.whatsNew", { version: update.version })}
               </h3>

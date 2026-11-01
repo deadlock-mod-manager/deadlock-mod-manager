@@ -310,7 +310,7 @@ const renderIcon = (item: SidebarItem, isActive: boolean) => {
       return (
         <PluginTile
           accent={item.pluginTile.accent}
-          fillAlpha='2E'
+          fillAlpha={18}
           glyphSize={12}
           icon={item.pluginTile.icon}
           radius={5}

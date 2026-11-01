@@ -91,7 +91,7 @@ export const ExternalPluginRow = ({
       tile={
         <PluginTile
           accent={plugin.accent}
-          fillAlpha='1A'
+          fillAlpha={10}
           glyphSize={20}
           icon={plugin.icon}
           radius={10}

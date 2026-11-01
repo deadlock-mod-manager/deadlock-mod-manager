@@ -19,7 +19,7 @@ export const ActivityTab = ({ plugin }: { plugin: ExternalPluginSummary }) => {
   const entries = activityQuery.data ?? [];
   if (entries.length === 0) {
     return (
-      <p className='text-[#A3A3A3] text-[12px] leading-[17px]'>
+      <p className='text-muted-foreground text-[12px] leading-[17px]'>
         {activityQuery.isPending
           ? t("common.loading")
           : t("plugins.activity.empty")}

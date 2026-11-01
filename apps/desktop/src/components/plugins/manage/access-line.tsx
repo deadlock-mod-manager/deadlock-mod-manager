@@ -74,7 +74,10 @@ export const AccessLine = ({ plugin }: { plugin: ExternalPluginSummary }) => {
           </AccessScope>
         ) : null}
         {file && profile ? (
-          <ArrowRightIcon className='shrink-0' color='#7C756E' size={11} />
+          <ArrowRightIcon
+            className='shrink-0 text-muted-foreground/75'
+            size={11}
+          />
         ) : null}
         {profile ? (
           <AccessScope icon={UserCircleIcon}>{profile}</AccessScope>

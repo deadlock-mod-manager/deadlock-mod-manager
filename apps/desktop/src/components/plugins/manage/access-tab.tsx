@@ -19,7 +19,7 @@ export const AccessTab = ({
   const { data: activity = [] } = useExternalPluginActivity(plugin.id);
   return (
     <>
-      <p className='w-full text-[#A3A3A3] text-[12px] leading-[17px]'>
+      <p className='w-full text-muted-foreground text-[12px] leading-[17px]'>
         {t("plugins.manage.panel.intro")}
       </p>
       <PermissionGrantCards plugin={plugin} />
