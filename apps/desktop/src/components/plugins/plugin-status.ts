@@ -7,11 +7,8 @@ export const TONE_COLOR = {
   warn: "#FBBF24",
   danger: "#F87171",
   info: "#60A5FA",
-  neutral: "#A3A3A3",
+  neutral: "hsl(var(--muted-foreground))",
 } satisfies Record<PluginTone, string>;
-
-/** The plugin page's host bar and states draw neutral a shade cooler. */
-export const HOST_NEUTRAL = "#A1A1AA";
 
 type PluginState = { tone: PluginTone; labelKey: string };
 

@@ -208,6 +208,7 @@ export const createAssemblingFigure = ({
 
 const AssemblingCanvas = ({
   className,
+  loop = true,
   sampler,
   distance,
   spin,
@@ -216,6 +217,7 @@ const AssemblingCanvas = ({
   size,
 }: {
   className?: string;
+  loop?: boolean;
   sampler: (out: THREE.Vector3) => void;
   distance: number;
   spin: number;
@@ -240,7 +242,7 @@ const AssemblingCanvas = ({
     container.appendChild(renderer.domElement);
 
     const figure = createAssemblingFigure({
-      loop: true,
+      loop,
       sampler,
       spin,
       count,
@@ -282,7 +284,7 @@ const AssemblingCanvas = ({
       renderer.forceContextLoss();
       renderer.domElement.remove();
     };
-  }, [sampler, distance, spin, count, color, size]);
+  }, [loop, sampler, distance, spin, count, color, size]);
 
   return (
     <div
@@ -326,13 +328,16 @@ const silhouetteSampler =
 
 /**
  * A hero built from embers, shown while a model decodes: the hero's own shape
- * when a silhouette is known, a generic figure otherwise.
+ * when a silhouette is known, a generic figure otherwise. Without `loop` it
+ * builds once and holds, for a stage that is waiting rather than loading.
  */
 export const FoundryHeroAssembling = ({
   className,
+  loop,
   silhouette,
 }: {
   className?: string;
+  loop?: boolean;
   silhouette: Float32Array | null;
 }) => {
   const sampler = useMemo(
@@ -346,6 +351,7 @@ export const FoundryHeroAssembling = ({
         className,
       )}
       color={0xf28a4b}
+      loop={loop}
       count={silhouette ? 7000 : 3200}
       distance={silhouette ? 3.9 : 4.6}
       sampler={sampler}

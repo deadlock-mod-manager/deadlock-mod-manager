@@ -161,7 +161,7 @@ If the relay sim is not available, at minimum write a Vitest case that parses a 
 
 ## Step 7: Changeset
 
-Per `.cursor/rules/090-changesets.mdc`, create a changeset for any user-visible change. Use a `minor` bump if the public DMM API client surface changes; `patch` otherwise.
+Follow [changeset](../changeset/SKILL.md) for any user-visible change. Use a `minor` bump if the public DMM API client surface changes; `patch` otherwise.
 
 Example body:
 

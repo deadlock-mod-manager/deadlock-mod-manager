@@ -1,12 +1,11 @@
 ---
 name: changeset
-description: Generate a changeset file describing the current PR's changes. Use when asked to "create a changeset", "add a changeset", "/changeset", or after implementing a feature/fix that needs a changelog entry. Produces a randomly named `.changeset/*.md` file with affected packages, bump type, and an 80-character-max user-facing summary.
-disable-model-invocation: true
+description: "Write a `.changeset/*.md` file for the current branch's user-visible changes, with the affected packages, bump type, and an 80-character summary. Use after implementing a feature, fix, or other user-facing change, or when asked to add a changeset."
 ---
 
 # Create a Changeset
 
-Generate a properly formatted changeset file in `.changeset/` describing the work on the current branch / PR. Follow the project's changeset conventions in `.cursor/rules/090-changesets.mdc`.
+Generate a properly formatted changeset file in `.changeset/` describing the work on the current branch / PR. This skill owns the project's changeset conventions. Create files directly rather than running the interactive `pnpm changeset` command.
 
 ## Instructions
 
@@ -23,6 +22,8 @@ If `origin/main` is not available, fall back to staged + unstaged changes (`git 
 ### 2. Decide If A Changeset Is Needed
 
 Create one for: new features, bug fixes, breaking changes, performance improvements, security fixes.
+
+For several distinct user-visible changes, create a separate changeset for each feature or fix. Commit qualifying changesets alongside the corresponding code when the user requests a commit.
 
 Skip for: refactors with no user impact, formatting, docs-only, tests-only, internal tooling, dev dependency bumps.
 
