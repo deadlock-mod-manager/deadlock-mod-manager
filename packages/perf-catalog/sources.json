@@ -655,10 +655,10 @@
     "optilock-fps": {
       "repo": "dacooderr/OptiLock",
       "path": "OptiLock FPS Config (Recommended)/gameinfo.gi",
-      "commit": "8b78c0f9e09b767b60f7c90be473a9d3320b398e",
-      "date": "2026-10-26",
+      "commit": "77489664c3e2367c486a81ffd62b0f3f28d3454d",
+      "date": "2026-11-01",
       "sha256": "2c2ea84fa48bbdaaaea1d9b516b41eb6487371fb530cdd7edf1c6bebb94990b1",
-      "tag": "v6.1c",
+      "tag": "v6.1d",
       "videos": [
         {
           "path": "OptiLock FPS Config (Recommended)/video.txt",
@@ -669,32 +669,32 @@
     "optilock-potato": {
       "repo": "dacooderr/OptiLock",
       "path": "OptiLock Potato Config/gameinfo.gi",
-      "commit": "8b78c0f9e09b767b60f7c90be473a9d3320b398e",
-      "date": "2026-10-26",
+      "commit": "77489664c3e2367c486a81ffd62b0f3f28d3454d",
+      "date": "2026-11-01",
       "sha256": "3a7b171b10d85ae18adafcec90926e2967092496db4bd8b3973e04c1a70feda2",
-      "tag": "v6.1c",
+      "tag": "v6.1d",
       "videos": [
         {
           "path": "OptiLock Potato Config/video.txt",
-          "sha256": "95282034467d5231e53327ee40da4f1bb97688faed4021ec2c3ad3a31810445c"
+          "sha256": "bc61a54bb9de14c57d3b84a10983b0f7f1b0ac9946f44e57a18bac1326d99b60"
         }
       ]
     },
     "optilock-ultra-potato": {
       "repo": "dacooderr/OptiLock",
       "path": "OptiLock Ultra Potato Config/gameinfo.gi",
-      "commit": "8b78c0f9e09b767b60f7c90be473a9d3320b398e",
-      "date": "2026-10-26",
+      "commit": "77489664c3e2367c486a81ffd62b0f3f28d3454d",
+      "date": "2026-11-01",
       "sha256": "ac46951a8d1ba878dd4ecd3f78588125094aa937342ecfdb00a03cab136baf02",
-      "tag": "v6.1c",
+      "tag": "v6.1d",
       "videos": [
         {
           "path": "OptiLock Ultra Potato Config/video.txt",
-          "sha256": "20f36827aba5c241a30c9093d4ba88a053f89d3373c55db24b78c61b41e9c3f6"
+          "sha256": "241679d9a503791c56df43719314fccbd5c4b830db6110df219d5913872dba35"
         },
         {
           "path": "OptiLock Ultra Potato Config/video(No Shadows).txt",
-          "sha256": "338ac80c6d2422640e7599d41fbe502511aacb124661aff14fc4a85fdd5ef0b5"
+          "sha256": "e7952b87befac30b3fd1d0268d6b2113017acb10e7844a0ad116dc0a4dbd73ca"
         }
       ]
     }
