@@ -4,11 +4,13 @@ import { useEffect, useMemo, useRef } from "react";
 import {
   useActiveProfileFolder,
   useCheckModHealth,
+  useGameRunning,
   useModHealthProgress,
   useModHealthReport,
   useRefreshModFixes,
   useRepairPlanProgress,
 } from "@/hooks/use-mod-health";
+import { didGameExit } from "@/lib/gameinfo-auto-reset";
 import { gameUpdatedSinceLastCheck } from "@/lib/mods/mod-health";
 import {
   forcedBuildStorageKey,
@@ -23,8 +25,8 @@ import { ModStatus } from "@/types/mods";
 /**
  * Keeps the mod health report current: checks once per profile after start,
  * rechecks every mod after a game update, and checks newly installed files.
- * After any library change it also rebuilds the fixed mods' repair package.
- * Mounted once in app.tsx.
+ * After any library change, and whenever the game exits, it also rebuilds the
+ * fixed mods' repair package. Mounted once in app.tsx.
  */
 export const ModHealthRenderer = () => {
   const queryClient = useQueryClient();
@@ -34,6 +36,8 @@ export const ModHealthRenderer = () => {
   const { mutate: refreshFixes } = useRefreshModFixes();
   const setProgress = useModHealthProgress((state) => state.setProgress);
   const localMods = usePersistedStore((state) => state.localMods);
+  const gameRunning = useGameRunning();
+  const previousGameRunning = useRef(gameRunning);
   const checkedProfiles = useRef(new Set<string | null>());
   const previousInstalled = useRef<ReadonlyMap<string, string> | null>(null);
   const refreshQueue = useMemo(
@@ -81,6 +85,16 @@ export const ModHealthRenderer = () => {
       void unlisten.then((stop) => stop());
     };
   }, [queryClient, refreshQueue]);
+
+  // The backend skips the rebuild while the game runs, and drops one the game
+  // started during, so a change made while playing is applied on exit. When
+  // nothing changed, the backend finds the package current and returns.
+  useEffect(() => {
+    const previous = previousGameRunning.current;
+    previousGameRunning.current = gameRunning;
+    if (didGameExit(previous, gameRunning))
+      refreshQueue.schedule(profileFolder);
+  }, [gameRunning, profileFolder, refreshQueue]);
 
   useEffect(() => {
     if (!report.data || checkedProfiles.current.has(profileFolder)) return;
