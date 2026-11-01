@@ -16,7 +16,7 @@ import {
   type ModFileTree,
   ModStatus,
 } from "@/types/mods";
-import { invokeGuarded, isGameRunningError } from "@/lib/game-guard";
+import { invokeGuarded } from "@/lib/game-guard";
 
 const logger = createLogger("reinstall-mod");
 
@@ -34,7 +34,10 @@ export type ReinstallOutcome =
 export type ReinstallResult = {
   outcome: ReinstallOutcome;
   error?: string;
-  /** Nothing was there to delete - the state was ahead of the file system. */
+  /**
+   * Nothing was there to delete - the state was ahead of the file system.
+   * Reinstall cannot tell that apart from a normal purge, so it reports false.
+   */
   missingOnDisk: boolean;
 };
 
@@ -50,7 +53,8 @@ export type ReinstallOptions = {
  * with fresh URLs and puts it back into the state it was in before.
  *
  * A purge that finds nothing is not a failure - that is precisely the drift
- * this is meant to repair.
+ * this is meant to repair. A purge that fails stops the reinstall before the
+ * state is touched.
  */
 export const useReinstallMod = () => {
   const { install } = useInstallWithCollection();
@@ -67,7 +71,7 @@ export const useReinstallMod = () => {
       const wasInstalled =
         target.status === ModStatus.Installed ||
         (target.missingVpks?.length ?? 0) > 0;
-      let missingOnDisk = false;
+      const missingOnDisk = false;
 
       logger
         .withMetadata({ mod: target.remoteId, wasInstalled, profileFolder })
@@ -75,24 +79,16 @@ export const useReinstallMod = () => {
 
       if (!options.skipPurge) {
         options.onStep?.("purging");
-        try {
-          // Removes both the installed VPKs and the cached download, so the
-          // mod really is fetched again instead of restored from cache.
-          await invokeGuarded("purge_mod", {
-            modId: target.remoteId,
-            vpks: target.installedVpks ?? [],
-            profileFolder,
-          });
-        } catch (error) {
-          // A guard block means the files are still there and still in use;
-          // wiping the state and downloading again would only lose track.
-          if (isGameRunningError(error)) throw error;
-          missingOnDisk = true;
-          logger
-            .withMetadata({ mod: target.remoteId })
-            .withError(error)
-            .warn("Purge failed during reinstall (files likely already gone)");
-        }
+        // Removes both the installed VPKs and the cached download, so the mod
+        // really is fetched again instead of restored from cache. Missing files
+        // are not an error here, so a rejection means the cleanup did not
+        // finish: wiping the state and downloading again would only lose track
+        // of whatever is still on disk.
+        await invokeGuarded("purge_mod", {
+          modId: target.remoteId,
+          vpks: target.installedVpks ?? [],
+          profileFolder,
+        });
 
         const store = usePersistedStore.getState();
         store.setInstalledVpks(target.remoteId, []);
