@@ -14,7 +14,10 @@ import { type JsonObject } from "./json";
 const scratch: [number, number, number] = [0, 0, 0];
 const vecA = new THREE.Vector3();
 
-export const compileEmitter = (operator: JsonObject): Emitter | null => {
+export const compileEmitter = (
+  operator: JsonObject,
+  endCap = false,
+): Emitter | null => {
   if (
     booleanOf(operator.m_bInitFromKilledParentParticles) ||
     z.string().safeParse(operator.m_nEventType).success
@@ -26,13 +29,13 @@ export const compileEmitter = (operator: JsonObject): Emitter | null => {
       const rate = parseFloatInput(operator.m_flEmitRate, 100);
       const duration = parseFloatInput(operator.m_flEmissionDuration, 0);
       return (system, delta) => {
+        const age = endCap ? system.endingAge : system.age;
         const context = system.focusCollection();
         const limit = duration.evaluate(context);
-        const endTime = limit > 0 ? startTime + limit : system.age;
+        const endTime = limit > 0 ? startTime + limit : age;
         const activeDelta = Math.max(
           0,
-          Math.min(system.age, endTime) -
-            Math.max(system.age - delta, startTime),
+          Math.min(age, endTime) - Math.max(age - delta, startTime),
         );
         return Math.max(rate.evaluate(context), 0) * activeDelta;
       };
@@ -40,9 +43,12 @@ export const compileEmitter = (operator: JsonObject): Emitter | null => {
     case "C_OP_InstantaneousEmitter": {
       const count = parseFloatInput(operator.m_nParticlesToEmit, 1);
       return (system, _delta, before) => {
+        const age = endCap ? system.endingAge : system.age;
+        if (endCap) before = Math.max(0, age - _delta);
         if (
-          system.age < startTime ||
-          (before >= startTime && !(before === 0 && startTime === 0))
+          age < startTime ||
+          (before >= startTime && !(before === 0 && startTime === 0)) ||
+          !system.emitOnce(operator)
         )
           return 0;
         return Math.max(
@@ -106,9 +112,9 @@ export const compilePreEmission = (
   const target = numberOf(operator.m_nCP1, 1);
   const source = transformControlPoint(operator.m_transformInput);
   const offset = parseVectorInput(operator.m_vecCP1Pos, [0, 0, 0]);
-  return (controlPoints) => {
+  return (controlPoints, system) => {
     const from = controlPoints[source] ?? controlPoints[0];
-    offset.evaluate(STATIC_CONTEXT, scratch);
+    offset.evaluate(system?.focusCollection() ?? STATIC_CONTEXT, scratch);
     const position = vecA
       .set(scratch[0], scratch[1], scratch[2])
       .applyQuaternion(from.rotation)

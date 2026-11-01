@@ -36,6 +36,7 @@ import {
 } from "./viewer-tool-types";
 import { MenuSection } from "./viewer-menu-section";
 import { SwitchRow } from "./viewer-switch-row";
+import { ViewerLightingControls } from "./viewer-lighting-controls";
 
 export interface ViewerBodyGroups {
   table: MeshGroupTable;
@@ -111,6 +112,10 @@ export const ViewerViewMenu = ({
               }
             />
           </div>
+        </MenuSection>
+        <Separator />
+        <MenuSection title={t("modelPreview.lighting")}>
+          <ViewerLightingControls look={look} onChange={onChange} />
         </MenuSection>
         {bodyGroups && (
           <>

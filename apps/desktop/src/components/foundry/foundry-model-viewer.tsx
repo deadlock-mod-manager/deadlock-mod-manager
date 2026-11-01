@@ -21,6 +21,11 @@ import {
   type PreviewPlayback,
 } from "@/lib/preview-animation";
 import { PreviewClock } from "@/lib/preview-clock";
+import {
+  installAnimatedMaterials,
+  type AnimatedMaterials,
+} from "@/lib/animated-materials";
+import { createSceneColorCapture } from "@/lib/particles/scene-color";
 import { type ViewerCallout, ViewerCallouts } from "./viewer-callouts";
 import { colorTextureOf } from "./viewer-color-texture";
 import {
@@ -61,6 +66,8 @@ import {
   readMeshGroups,
 } from "./viewer-mesh-groups";
 import { createViewerScene } from "./viewer-scene";
+import { createViewerPerformance } from "./viewer-performance";
+import { ViewerMaterialStatus } from "./viewer-material-status";
 
 /** A live paint preview: the color maps it covers and the exact paint. */
 /** Color maps whose files changed; a new `revision` asks for another swap. */
@@ -458,6 +465,7 @@ export const FoundryModelViewer = ({
   const [loading, setLoading] = useState(true);
   const [scanGone, setScanGone] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [materialDiagnostics, setMaterialDiagnostics] = useState<string[]>([]);
   const [autoRotate, setAutoRotate] = useState(false);
   const [background, setBackground] = useState<ViewerBackground | null>(null);
   const [look, setLook] = useState<ViewerLook>(DEFAULT_LOOK);
@@ -569,8 +577,12 @@ export const FoundryModelViewer = ({
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 0.95;
     container.appendChild(renderer.domElement);
-    stageRef.current = { scene, camera, renderer };
+    const sceneColor = createSceneColorCapture(renderer, scene, camera);
+    stageRef.current = { scene, camera, renderer, sceneColor };
     const recorder = createViewerRecorder(renderer.domElement);
+    const performanceStats = import.meta.env.DEV
+      ? createViewerPerformance(renderer)
+      : null;
     recorderRef.current = recorder;
 
     const environment = new RoomEnvironment();
@@ -605,6 +617,11 @@ export const FoundryModelViewer = ({
     const applyLook = () => {
       stage.setBackground(lookRef.current.background?.image ?? null);
       postFx.setBloom(lookRef.current.bloom);
+      postFx.setBloomStrength(lookRef.current.bloomStrength);
+      stage.setLighting(
+        lookRef.current.lighting,
+        lookRef.current.lightIntensity,
+      );
       outlines?.setVisible(lookRef.current.outlines);
       postFx.setAntialias(lookRef.current.antialias);
       renderer.toneMappingExposure = lookRef.current.exposure;
@@ -614,6 +631,7 @@ export const FoundryModelViewer = ({
     applyLookRef.current = applyLook;
     applyLook();
     captureRef.current = () => {
+      sceneColor.capture();
       postFx.render();
       return new Promise((resolve) =>
         renderer.domElement.toBlob(resolve, "image/png"),
@@ -678,6 +696,7 @@ export const FoundryModelViewer = ({
 
     let disposed = false;
     let loadedRoot: THREE.Object3D | null = null;
+    let animatedMaterials: AnimatedMaterials | null = null;
     let picks: PickTarget[] = [];
     let frame = 0;
 
@@ -786,6 +805,7 @@ export const FoundryModelViewer = ({
       renderer.setSize(width, height, false);
       stage.resize(width, height);
       postFx.setSize(width, height);
+      sceneColor.setSize(width, height, renderer.getPixelRatio());
       outlines?.setViewportHeight(height);
     };
 
@@ -808,18 +828,29 @@ export const FoundryModelViewer = ({
     const loadController = new AbortController();
     const releaseAsset = retainFoundryModel(model);
     void loadPreviewModel(model, loadController.signal)
-      .then((gltf) => {
+      .then(async (gltf) => {
         if (disposed) {
           disposeObject(gltf.scene);
           return;
         }
+        cloneSceneMaterials(gltf.scene);
+        const snapshots = installPaintShaders(gltf.scene);
+        const installed = await installAnimatedMaterials(gltf.scene, (index) =>
+          gltf.parser.getDependency("texture", index),
+        );
+        if (disposed) {
+          installed.dispose();
+          disposeObject(gltf.scene);
+          return;
+        }
+        animatedMaterials = installed;
+        setMaterialDiagnostics(installed.diagnostics);
         loadedRoot = gltf.scene;
         modelRef.current = gltf.scene;
+        snapshotsRef.current = snapshots;
         const table = readMeshGroups(gltf.scene);
         setMeshGroups(table);
         setBodyChoice(table?.defaults ?? {});
-        cloneSceneMaterials(gltf.scene);
-        snapshotsRef.current = installPaintShaders(gltf.scene);
         picks = buildPickTargets(gltf.scene);
         outlines = attachNprOutlines(gltf.scene);
         outlines.setViewportHeight(Math.max(container.clientHeight, 1));
@@ -881,15 +912,20 @@ export const FoundryModelViewer = ({
     const render = () => {
       frame = window.requestAnimationFrame(render);
       const now = performance.now();
-      const delta = Math.min((now - previousTime) / 1000, 0.1);
+      const frameElapsed = (now - previousTime) / 1000;
+      const delta = Math.min(frameElapsed, 0.1);
       previousTime = now;
       if (document.hidden || !visible) return;
       const playback = playbackRef.current;
+      const simulationStart = performance.now();
       clock.tick(delta, playback?.playing ?? true, playback?.speed ?? 1);
+      const simulationEnd = performance.now();
       if (timeRef) timeRef.current = clock.time;
       renderer.domElement.dataset.seeking = String(clock.seeking);
-      for (const effect of activeEffectsRef.current) effect.update(0);
       controls.update();
+      animatedMaterials?.update(clock.time);
+      for (const effect of activeEffectsRef.current) effect.prepare?.();
+      const preparationEnd = performance.now();
       // Re-pick when the pointer moved, and now and then while the camera or
       // the pose moves under a still pointer.
       const moving =
@@ -906,7 +942,16 @@ export const FoundryModelViewer = ({
       } else if (!pickableRef.current && lastHovered !== null) {
         setHover(null);
       }
+      const submissionStart = performance.now();
+      performanceStats?.begin();
+      sceneColor.capture();
       postFx.render();
+      performanceStats?.end(
+        simulationEnd - simulationStart,
+        preparationEnd - simulationEnd,
+        performance.now() - submissionStart,
+        frameElapsed * 1000,
+      );
 
       // Mirror the main camera's orientation so the gizmo turns with the model.
       gizmoRoot.quaternion.copy(camera.quaternion).invert();
@@ -939,8 +984,11 @@ export const FoundryModelViewer = ({
       applyLookRef.current = null;
       captureRef.current = null;
       recorder.dispose();
+      performanceStats?.dispose();
       recorderRef.current = null;
       outlines?.dispose();
+      animatedMaterials?.dispose();
+      sceneColor.dispose();
       postFx.dispose();
       stage.dispose();
       if (loadedRoot) {
@@ -1134,8 +1182,9 @@ export const FoundryModelViewer = ({
         />
         <ViewerActivePasses look={look} />
       </div>
-      <div className='absolute bottom-3 left-3'>
+      <div className='absolute bottom-3 left-3 flex items-end gap-2'>
         <ViewerWipBadge />
+        {!loading && <ViewerMaterialStatus diagnostics={materialDiagnostics} />}
       </div>
       <ViewerToolRail
         belowGizmo={showGizmo}

@@ -56,6 +56,24 @@ export const compileInitializer = (
   operator: JsonObject,
 ): InitOperator | null => {
   switch (classOf(operator)) {
+    case "C_INIT_RandomTrailLength": {
+      const minimum = parseFloatInput(operator.m_flMinLength, 0.1);
+      const maximum = parseFloatInput(operator.m_flMaxLength, 0.1);
+      const exponent = Math.max(
+        numberOf(operator.m_flLengthRandExponent, 1),
+        0.001,
+      );
+      return (system, index) => {
+        const context = system.focus(index);
+        const low = minimum.evaluate(context);
+        const high = maximum.evaluate(context);
+        const amount = hash01(system.seeds[index], 71) ** exponent;
+        system.scalar(FIELD.trailLength)[index] = Math.max(
+          low + (high - low) * amount,
+          0,
+        );
+      };
+    }
     case "C_INIT_CreateSequentialPath":
     case "C_INIT_CreateSequentialPathV2": {
       // Each new particle takes the next of `m_flNumToAssign` evenly spaced

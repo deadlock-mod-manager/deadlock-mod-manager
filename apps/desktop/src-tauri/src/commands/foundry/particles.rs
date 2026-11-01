@@ -10,8 +10,9 @@ use super::ability_vfx::caster_particles;
 use super::animation::{archives, invalid};
 use crate::errors::Error;
 
-/// Particle textures are small on screen; this keeps the IPC payload modest.
-const TEXTURE_SIDE: u32 = 256;
+const TEXTURE_SIDE: u32 = 4096;
+const TEXTURE_PIXELS: u32 = 8 * 1024 * 1024;
+const TEXTURE_PNG_BYTES: usize = 16 * 1024 * 1024;
 const MAX_TEXTURES: usize = 64;
 const MAX_EFFECT_MODEL_BYTES: usize = 32 * 1024 * 1024;
 
@@ -103,6 +104,8 @@ pub struct PreviewSpriteSequence {
 pub struct PreviewParticleTexture {
   pub path: String,
   pub data_url: String,
+  pub width: u32,
+  pub height: u32,
   pub sequences: Vec<PreviewSpriteSequence>,
 }
 
@@ -200,7 +203,7 @@ pub async fn foundry_decode_ability_particles(
 }
 
 /// Loads `paths` with their textures and the model's attachment points.
-fn preview_particles(
+pub(super) fn preview_particles(
   archive: &VpkArchive,
   resource: &Resource,
   paths: &[String],
@@ -236,8 +239,11 @@ fn preview_particles(
     .flat_map(particles::particle_texture_paths)
     .collect::<std::collections::BTreeSet<_>>();
   let mut textures = Vec::new();
+  let mut remaining_pixels = TEXTURE_PIXELS;
+  let mut remaining_png = TEXTURE_PNG_BYTES;
+  let mut remaining_frames = 16_384usize;
   for (index, path) in texture_paths.into_iter().enumerate() {
-    if index >= MAX_TEXTURES {
+    if index >= MAX_TEXTURES || remaining_pixels < 256 * 256 || remaining_png == 0 {
       diagnostics.push(PreviewParticleDiagnostic {
         path,
         code: PreviewParticleIssue::TextureLimit,
@@ -245,30 +251,59 @@ fn preview_particles(
       });
       continue;
     }
-    match particles::particle_texture(archive, &path, TEXTURE_SIDE) {
-      Ok(texture) => textures.push(PreviewParticleTexture {
-        data_url: format!(
-          "data:image/png;base64,{}",
-          base64::engine::general_purpose::STANDARD.encode(&texture.png)
-        ),
-        sequences: texture
+    match particles::particle_texture_adaptive(
+      archive,
+      &path,
+      TEXTURE_SIDE,
+      remaining_pixels.min(4 * 1024 * 1024),
+    ) {
+      Ok(texture) => {
+        let frame_count = texture
           .sequences
-          .into_iter()
-          .map(|sequence| PreviewSpriteSequence {
-            frames_per_second: sequence.frames_per_second,
-            frames: sequence
-              .frames
-              .into_iter()
-              .map(|frame| PreviewSpriteFrame {
-                duration: frame.display_time,
-                min: frame.cropped_min,
-                max: frame.cropped_max,
-              })
-              .collect(),
-          })
-          .collect(),
-        path,
-      }),
+          .iter()
+          .map(|sequence| sequence.frames.len())
+          .sum::<usize>();
+        if texture.png.len() > remaining_png
+          || frame_count > remaining_frames
+          || texture.width.saturating_mul(texture.height) > remaining_pixels.min(4 * 1024 * 1024)
+        {
+          diagnostics.push(PreviewParticleDiagnostic {
+            path,
+            code: PreviewParticleIssue::TextureLimit,
+            detail: "texture or sprite frame preview budget".to_string(),
+          });
+          continue;
+        }
+        remaining_pixels =
+          remaining_pixels.saturating_sub(texture.width.saturating_mul(texture.height));
+        remaining_png -= texture.png.len();
+        remaining_frames -= frame_count;
+        textures.push(PreviewParticleTexture {
+          width: texture.width,
+          height: texture.height,
+          data_url: format!(
+            "data:image/png;base64,{}",
+            base64::engine::general_purpose::STANDARD.encode(&texture.png)
+          ),
+          sequences: texture
+            .sequences
+            .into_iter()
+            .map(|sequence| PreviewSpriteSequence {
+              frames_per_second: sequence.frames_per_second,
+              frames: sequence
+                .frames
+                .into_iter()
+                .map(|frame| PreviewSpriteFrame {
+                  duration: frame.display_time,
+                  min: frame.cropped_min,
+                  max: frame.cropped_max,
+                })
+                .collect(),
+            })
+            .collect(),
+          path,
+        })
+      }
       Err(error) => diagnostics.push(PreviewParticleDiagnostic {
         path,
         code: PreviewParticleIssue::MissingTexture,

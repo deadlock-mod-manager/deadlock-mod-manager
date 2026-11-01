@@ -176,6 +176,10 @@ impl VtexHeader {
         let d = &res.data;
         let base = block.offset;
 
+        if block.size < 40 || res.block_bytes("DATA").is_none() {
+            return Err(Source2Error::Resource("vtex header out of bounds".into()));
+        }
+
         let version = rd_u16(d, base)?;
         let flags = rd_u16(d, base + 2)?;
         // reflectivity: 4 x f32 at base+4 .. base+20
@@ -189,10 +193,15 @@ impl VtexHeader {
         let extra_data_count = rd_u32(d, base + 36)? as usize;
         // position now conceptually at base+40 (after both u32 fields)
 
-        let mut extra = Vec::with_capacity(extra_data_count);
         // The extra-data table starts relative to the extra_data_offset field
         // (base+32): table_start = (base+32) + extra_data_offset.
         let table_start = base + 32 + extra_data_offset;
+        if table_start > d.len() || extra_data_count > d.len().saturating_sub(table_start) / 12 {
+            return Err(Source2Error::Resource(
+                "vtex extra-data table out of bounds".into(),
+            ));
+        }
+        let mut extra = Vec::with_capacity(extra_data_count);
         let mut entry_pos = table_start;
         for _ in 0..extra_data_count {
             let kind = rd_u32(d, entry_pos)?;
@@ -245,24 +254,44 @@ impl VtexHeader {
             ));
         }
         let sequence_count = rd_u32(bytes, 4)? as usize;
+        if sequence_count > 256 || sequence_count > bytes.len().saturating_sub(8) / 32 {
+            return Err(Source2Error::Resource("vtex sheet sequence limit".into()));
+        }
         let mut header_pos = 8usize;
         let mut sequences = Vec::with_capacity(sequence_count);
+        let mut remaining_frames = 16_384usize;
         for _ in 0..sequence_count {
             let frames_offset_field = header_pos + 8;
             let frames_offset = frames_offset_field + rd_u32(bytes, frames_offset_field)? as usize;
             let frame_count = rd_u32(bytes, header_pos + 12)? as usize;
+            if frame_count > remaining_frames
+                || frame_count > bytes.len().saturating_sub(frames_offset) / 12
+            {
+                return Err(Source2Error::Resource("vtex sheet frame limit".into()));
+            }
+            remaining_frames -= frame_count;
             let frames_per_second = rd_f32(bytes, header_pos + 16)?;
+            if !frames_per_second.is_finite() {
+                return Err(Source2Error::Resource(
+                    "vtex sheet timing is not finite".into(),
+                ));
+            }
             header_pos += 32;
 
             let mut frame_pos = frames_offset;
             let mut frames = Vec::with_capacity(frame_count);
             for _ in 0..frame_count {
                 let display_time = rd_f32(bytes, frame_pos)?;
+                if !display_time.is_finite() {
+                    return Err(Source2Error::Resource(
+                        "vtex sheet timing is not finite".into(),
+                    ));
+                }
                 let image_offset_field = frame_pos + 4;
                 let image_offset = image_offset_field + rd_u32(bytes, image_offset_field)? as usize;
                 let image_count = rd_u32(bytes, frame_pos + 8)? as usize;
                 if image_count > 0 {
-                    frames.push(SpriteSheetFrame {
+                    let frame = SpriteSheetFrame {
                         display_time,
                         cropped_min: [
                             rd_f32(bytes, image_offset)?,
@@ -280,7 +309,18 @@ impl VtexHeader {
                             rd_f32(bytes, image_offset + 24)?,
                             rd_f32(bytes, image_offset + 28)?,
                         ],
-                    });
+                    };
+                    if frame
+                        .cropped_min
+                        .iter()
+                        .chain(&frame.cropped_max)
+                        .chain(&frame.uncropped_min)
+                        .chain(&frame.uncropped_max)
+                        .any(|value| !value.is_finite())
+                    {
+                        return Err(Source2Error::Resource("vtex sheet UV is not finite".into()));
+                    }
+                    frames.push(frame);
                 }
                 frame_pos += 12;
             }
@@ -307,6 +347,11 @@ impl VtexHeader {
         }
         let sizes_at = e.offset + 4 + rd_u32(data, e.offset + 4).ok()? as usize;
         let count = rd_u32(data, e.offset + 8).ok()? as usize;
+        if count > usize::from(self.num_mip_levels.max(1))
+            || count > data.len().saturating_sub(sizes_at) / 4
+        {
+            return None;
+        }
         let mut sizes = Vec::with_capacity(count);
         for i in 0..count {
             sizes.push(rd_u32(data, sizes_at + i * 4).ok()? as usize);
@@ -488,5 +533,112 @@ impl VtexHeader {
             height: h as u32,
             rgba,
         })
+    }
+}
+
+#[cfg(test)]
+mod sheet_budget_tests {
+    use super::*;
+
+    #[test]
+    fn rejects_nonfinite_sprite_timing_and_uvs() {
+        let mut bytes = vec![0; 84];
+        bytes[0..4].copy_from_slice(&8u32.to_le_bytes());
+        bytes[4..8].copy_from_slice(&1u32.to_le_bytes());
+        bytes[16..20].copy_from_slice(&24u32.to_le_bytes());
+        bytes[20..24].copy_from_slice(&1u32.to_le_bytes());
+        bytes[24..28].copy_from_slice(&f32::NAN.to_le_bytes());
+        let texture = header(bytes.len());
+        assert!(
+            texture
+                .sprite_sheet_sequences(&bytes)
+                .unwrap_err()
+                .to_string()
+                .contains("timing")
+        );
+        bytes[24..28].copy_from_slice(&30f32.to_le_bytes());
+        bytes[44..48].copy_from_slice(&8u32.to_le_bytes());
+        bytes[48..52].copy_from_slice(&1u32.to_le_bytes());
+        bytes[52..56].copy_from_slice(&f32::INFINITY.to_le_bytes());
+        assert!(
+            texture
+                .sprite_sheet_sequences(&bytes)
+                .unwrap_err()
+                .to_string()
+                .contains("UV")
+        );
+    }
+
+    #[test]
+    fn rejects_compressed_mip_count_before_reserving() {
+        let mut bytes = vec![0; 12];
+        bytes[0..4].copy_from_slice(&1u32.to_le_bytes());
+        bytes[8..12].copy_from_slice(&u32::MAX.to_le_bytes());
+        let mut texture = header(bytes.len());
+        texture.extra[0].kind = EXTRA_COMPRESSED_MIP_SIZE;
+        assert!(texture.compressed_mip_sizes(&bytes).is_none());
+    }
+
+    #[test]
+    fn rejects_extra_table_count_before_allocation_and_short_headers() {
+        let mut resource = Resource {
+            data: vec![0; 40],
+            blocks: vec![crate::resource::ResourceBlock {
+                name: "DATA".into(),
+                offset: 0,
+                size: 40,
+            }],
+        };
+        resource.data[36..40].copy_from_slice(&u32::MAX.to_le_bytes());
+        assert!(
+            VtexHeader::parse(&resource)
+                .unwrap_err()
+                .to_string()
+                .contains("extra-data table")
+        );
+        resource.blocks[0].size = 20;
+        assert!(VtexHeader::parse(&resource).is_err());
+    }
+
+    fn header(length: usize) -> VtexHeader {
+        VtexHeader {
+            version: 1,
+            flags: 0,
+            width: 1,
+            height: 1,
+            depth: 1,
+            format: VtexFormat::Rgba8888,
+            num_mip_levels: 1,
+            extra: vec![ExtraData {
+                kind: EXTRA_SHEET,
+                offset: 0,
+                size: length,
+            }],
+            data_offset: 0,
+            block_offset: 0,
+        }
+    }
+
+    #[test]
+    fn rejects_unbounded_sheet_counts_before_reserving() {
+        let mut bytes = vec![0; 40];
+        bytes[0..4].copy_from_slice(&8u32.to_le_bytes());
+        bytes[4..8].copy_from_slice(&u32::MAX.to_le_bytes());
+        assert!(
+            header(bytes.len())
+                .sprite_sheet_sequences(&bytes)
+                .unwrap_err()
+                .to_string()
+                .contains("sequence limit")
+        );
+        bytes[4..8].copy_from_slice(&1u32.to_le_bytes());
+        bytes[20..24].copy_from_slice(&u32::MAX.to_le_bytes());
+        assert!(
+            header(bytes.len())
+                .sprite_sheet_sequences(&bytes)
+                .unwrap_err()
+                .to_string()
+                .contains("frame limit")
+        );
     }
 }
