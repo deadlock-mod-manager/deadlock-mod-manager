@@ -3,7 +3,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as tauriCore from "@tauri-apps/api/core";
 import { renderToStaticMarkup } from "react-dom/server";
 
-type CheckArgs = { profileFolder: string | null };
+type CheckArgs = {
+  profileFolder: string | null;
+  modIds: string[] | null;
+  force: boolean;
+};
 const checks: { args: CheckArgs; finish: () => void }[] = [];
 
 mock.module("@tauri-apps/api/core", () => ({
@@ -50,17 +54,20 @@ describe("useCheckModHealth", () => {
 
     check({ profileFolder: "running" });
     await settle();
-    check({ profileFolder: "active" });
+    check({ profileFolder: "active", modIds: ["a"], force: true });
     check({ profileFolder: "inactive" });
+    check({ profileFolder: "active", modIds: ["b"] });
+    await settle();
+    expect(checks.map(({ args }) => args.profileFolder)).toEqual(["running"]);
     for (let index = 0; index < 3; index++) {
       checks[index]?.finish();
       await settle();
     }
 
-    expect(checks.map(({ args }) => args.profileFolder).sort()).toEqual([
-      "active",
-      "inactive",
-      "running",
+    expect(checks.map(({ args }) => args)).toEqual([
+      { profileFolder: "running", modIds: null, force: false },
+      { profileFolder: "active", modIds: ["a", "b"], force: true },
+      { profileFolder: "inactive", modIds: null, force: false },
     ]);
   });
 });
