@@ -1,3 +1,4 @@
+import { extractSubmissionSlugFromFilename } from "@/lib/mods/submission-ref";
 import type { LocalAddonInfo } from "@/types/mods";
 import { VpkEntriesDisplay } from "./vpk-entries-display";
 
@@ -8,16 +9,21 @@ interface AddonInfoProps {
 
 export const AddonInfo = ({ addon, isIdentified }: AddonInfoProps) => {
   if (isIdentified) {
-    // Check if this is a prefixed VPK (has remoteId but no matchInfo)
+    // Identified by a prefixed name or by the profile's manifest, not a hash
     if (addon.remoteId && !addon.matchInfo) {
+      // Only a prefixed name means the file is parked; manifest-recorded
+      // `pakNN_dir.vpk` files are loaded by the game.
+      const parked = extractSubmissionSlugFromFilename(addon.fileName) !== null;
       return (
         <div className='space-y-1'>
           <p className='text-xs text-foreground font-medium'>
             Downloaded Mod (ID: {addon.remoteId})
           </p>
-          <p className='text-xs text-muted-foreground'>
-            Currently disabled - ready to enable
-          </p>
+          {parked && (
+            <p className='text-xs text-muted-foreground'>
+              Currently disabled - ready to enable
+            </p>
+          )}
         </div>
       );
     }
