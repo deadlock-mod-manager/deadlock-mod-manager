@@ -138,6 +138,18 @@ impl ReviewedInputs {
         .map(|warning| warning.mod_id.as_str()),
     );
     involved.extend(model_warnings.iter().map(|warning| warning.mod_id.as_str()));
+    // An overlap names its other providers ("mod:archive") and the mods that
+    // supply mixed dependencies ("mod id:") only in its detail. Matching every
+    // listed mod there can only add stamps, so it never reuses a review wrongly.
+    for warning in &model_warnings {
+      involved.extend(
+        key
+          .mods
+          .iter()
+          .map(|(mod_id, _)| mod_id.as_str())
+          .filter(|mod_id| warning.detail.contains(&format!("{mod_id}:"))),
+      );
+    }
     involved.extend(data_warnings.iter().map(|warning| warning.mod_id.as_str()));
     involved.extend(
       analysis
@@ -443,6 +455,36 @@ mod tests {
       inputs(&text_review(&[("first", 0), ("second", 1)]), &game_changed),
       reviewed
     );
+  }
+
+  #[test]
+  fn overlap_reviews_cover_every_mod_the_warning_names() {
+    use crate::mod_manager::localization_overlay::asset_compatibility::AssetWarning;
+    let overlap = LocalizationOverlayAnalysis {
+      asset_warnings: vec![AssetWarning {
+        mod_id: "first".into(),
+        source_vpk: "first.vpk".into(),
+        file_path: "models/hero.vmdl_c".into(),
+        kind: WarningKind::OverlappingModel,
+        detail: "Load order uses first.vpk. Enabled archives providing this model: \
+                 first:first.vpk, second:second.vpk. Original files mix this model with \
+                 changed animation dependencies from another mod: mod plain: 1 dependency \
+                 (animations/hero.vanim_c)."
+          .into(),
+      }],
+      ..Default::default()
+    };
+    let reviewed = inputs(&overlap, &key("h"));
+    for (index, id) in [(1, "second"), (2, "plain")] {
+      let mut changed = key("h");
+      changed.mods[index].1 = vec![stamp(id, 2)];
+      assert_ne!(inputs(&overlap, &changed), reviewed, "{id} changed");
+    }
+    let mut unrelated = key("h");
+    unrelated
+      .mods
+      .push(("other".into(), vec![stamp("other", 1)]));
+    assert_eq!(inputs(&overlap, &unrelated), reviewed);
   }
 
   #[test]

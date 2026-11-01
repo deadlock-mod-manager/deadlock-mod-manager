@@ -2889,7 +2889,11 @@ Game core
             None,
             ShardIndex::FIRST,
           );
-          manifest.mods.get_mut("third").unwrap().compatibility_enabled = true;
+          manifest
+            .mods
+            .get_mut("third")
+            .unwrap()
+            .compatibility_enabled = true;
           manifest.save(&base).unwrap();
         }
         "reordered contenders" => {
