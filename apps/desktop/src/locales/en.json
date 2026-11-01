@@ -2594,6 +2594,8 @@
       "preview": "Preview",
       "previewHint": "Show this color on the model without applying it. Nothing is written until you apply.",
       "previewUnavailable": "Patterns cannot be previewed live. Apply to see the result.",
+      "previewNoTextures": "This selection has no color maps the preview can tint. Apply to see the result.",
+      "previewAlreadyApplied": "This color is already painted on. Pick a different one to preview it.",
       "patternLabel": "Pattern",
       "patternOverridesColor": "The pattern brings its own colors and replaces the color set above.",
       "patternOverridesColorExceptEffects": "The pattern replaces the color on the textures. The color above still tints the effect particles, which cannot carry a pattern.",

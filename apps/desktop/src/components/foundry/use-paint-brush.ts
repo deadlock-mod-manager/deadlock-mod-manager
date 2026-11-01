@@ -76,10 +76,18 @@ export const usePaintBrush = () => {
 
   const isDirty = isPendingColor(paint, applied);
 
-  // The hero is tinted only when the user asked for it, the paint is still
-  // pending (an applied paint is already in the textures, tinting would double
-  // it) and no pattern is chosen (the shader cannot generate one).
-  const canPreview = isDirty && !patterned && tintTextures.length > 0;
+  // The hero is tinted only when the user asked for it, no pattern is chosen
+  // (the shader cannot generate one), the selection has textures to tint, and
+  // the paint is still pending (an applied paint is already in the textures,
+  // tinting would double it).
+  const previewBlocker = patterned
+    ? ("pattern" as const)
+    : tintTextures.length === 0
+      ? ("noTextures" as const)
+      : !isDirty
+        ? ("applied" as const)
+        : undefined;
+  const canPreview = previewBlocker === undefined;
   const showTint = previewEnabled && canPreview;
 
   // The other selections' pending colors, under the one being edited.
@@ -244,6 +252,7 @@ export const usePaintBrush = () => {
     hasDraft: key in drafts,
     tintTextures,
     canPreview,
+    previewBlocker,
     previewEnabled,
     setPreviewEnabled,
     showTint,
