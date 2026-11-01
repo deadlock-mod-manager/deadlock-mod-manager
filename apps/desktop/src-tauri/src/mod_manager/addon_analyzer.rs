@@ -169,10 +169,15 @@ impl AddonAnalyzer {
   /// Client for identification lookups. Each request gets a finite timeout so
   /// an unreachable service fails the lookup instead of stalling the analysis.
   fn lookup_client() -> Result<reqwest::Client, Error> {
+    Self::build_lookup_client(LOOKUP_CONNECT_TIMEOUT, LOOKUP_TIMEOUT)
+  }
+
+  fn build_lookup_client(
+    connect_timeout: std::time::Duration,
+    timeout: std::time::Duration,
+  ) -> Result<reqwest::Client, Error> {
     crate::proxy::build_http_client(|builder| {
-      builder
-        .connect_timeout(LOOKUP_CONNECT_TIMEOUT)
-        .timeout(LOOKUP_TIMEOUT)
+      builder.connect_timeout(connect_timeout).timeout(timeout)
     })
   }
 
@@ -859,12 +864,13 @@ mod tests {
   }
 
   #[tokio::test]
-  async fn lookup_gives_up_on_a_service_that_never_answers() {
+  async fn lookup_gives_up_on_a_service_that_answers_too_slowly() {
     let endpoint = serve_once(200, "[]", std::time::Duration::from_secs(5)).await;
-    let client = reqwest::Client::builder()
-      .timeout(std::time::Duration::from_millis(200))
-      .build()
-      .unwrap();
+    let client = AddonAnalyzer::build_lookup_client(
+      LOOKUP_CONNECT_TIMEOUT,
+      std::time::Duration::from_millis(200),
+    )
+    .unwrap();
     let result = AddonAnalyzer::lookup_hashes(&client, &endpoint, &parsed_vpk()).await;
     assert!(result.is_err());
   }

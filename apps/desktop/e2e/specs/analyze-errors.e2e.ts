@@ -99,7 +99,10 @@ describe("analysis errors", () => {
       const failed = LOOKUP_FILES.find((name) => name !== unknownFiles[0]);
       expect(errors.text).toContain(`${failed}`);
       expect(errors.text).toContain("503");
-      expect(errors.text).toContain(CORRUPT_FILE);
+      // The corrupt file's row carries the parser's reason after its name.
+      expect(errors.text).toMatch(
+        new RegExp(`Failed to parse ${CORRUPT_FILE.replace(".", "\\.")}: \\S`),
+      );
       expect(errors.text).not.toContain(`${unknownFiles[0]}`);
       expect(errors.rows).toBe(2);
       expect(errors.label).toBe("Errors (2)");
