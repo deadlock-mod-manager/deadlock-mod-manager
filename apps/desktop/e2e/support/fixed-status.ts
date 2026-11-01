@@ -289,12 +289,20 @@ const openHealthDialog = async () => {
   return dialog;
 };
 
-const closeDialogs = async () => {
+export const closeDialogs = async () => {
   for (let attempt = 0; attempt < 5; attempt++) {
     if ((await $$('[role="dialog"]').length) === 0) return;
     await browser.keys("Escape");
     await delay(300);
   }
+};
+
+/** Clicks Fix all in the health dialog. */
+export const fixAllInDialog = async () => {
+  const dialog = await openHealthDialog();
+  const fixAll = await dialog.$("button=Fix all");
+  await fixAll.waitForClickable();
+  await fixAll.click();
 };
 
 /** Clicks the row's Fix in the health dialog, as the player would. */

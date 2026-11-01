@@ -22,7 +22,7 @@ const OTHER_STATUS = {
 /** Fixable: its copy of a game text file lacks a game token. */
 export const FIXED_MOD = "local-status-text";
 /** Edits the same token as FIXED_MOD differently, so fixing both needs review. */
-const RIVAL_MOD = "local-status-rival";
+export const RIVAL_MOD = "local-status-rival";
 /** A second fixable mod with its own text file. */
 const SECOND_MOD = "local-status-second";
 /** A plain skin to toggle, standing in for any library change. */

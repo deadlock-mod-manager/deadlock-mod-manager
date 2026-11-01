@@ -35,6 +35,7 @@ import { prepareIdentifiedFixWorld } from "./compatibility-fix-identification-fi
 import {
   FIXED_MOD as STATUS_FIXED_MOD,
   PLAIN_MOD as STATUS_PLAIN_MOD,
+  RIVAL_MOD as STATUS_RIVAL_MOD,
   prepareFixedStatusWorld,
 } from "./fixed-status-fixtures";
 import {
@@ -838,6 +839,19 @@ export const scenarios = {
     family: "compatibility",
     routes: profileRoutes,
   }),
+  "fixed-status-reviewed": {
+    ...defaults,
+    family: "fixed-status",
+    spec: "fixed-status-reviewed",
+    phases: ["review", "restart-reviewed"],
+    routes: profileRoutes,
+    prepare: async (world) =>
+      prepareFixedStatusWorld(world, [
+        STATUS_FIXED_MOD,
+        STATUS_RIVAL_MOD,
+        STATUS_PLAIN_MOD,
+      ]),
+  },
   // The stand-in game is a Linux `sleep` (e2e/support/fake-game.ts).
   "fixed-status-game-exit": {
     ...defaults,
