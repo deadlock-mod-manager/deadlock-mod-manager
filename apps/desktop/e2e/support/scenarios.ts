@@ -53,6 +53,11 @@ import {
 import { prepareLegacyCatalog } from "./catalog-upgrade-fixtures";
 import { prepareOnboardingWorld } from "./onboarding-fixtures";
 import {
+  analyzeErrorsRoutes,
+  assertAnalyzeErrorsNetwork,
+  prepareAnalyzeErrorsWorld,
+} from "./analyze-errors-fixtures";
+import {
   libraryAuthorRoutes,
   legacyLibraryAuthorRoutes,
   prepareLegacyLibraryAuthorWorld,
@@ -590,6 +595,15 @@ export const scenarios = {
     },
   },
   "onboarding-skip-analysis": onboarding,
+  "analyze-errors": {
+    ...defaults,
+    family: "analyze",
+    spec: "analyze-errors",
+    phases: ["analyze-errors"],
+    routes: analyzeErrorsRoutes,
+    prepare: prepareAnalyzeErrorsWorld,
+    verifyNetwork: assertAnalyzeErrorsNetwork,
+  },
   "onboarding-telemetry-default": {
     ...onboarding,
     prepare: (world: CreatedWorld) => prepareOnboardingWorld(world, false),

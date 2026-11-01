@@ -53,9 +53,6 @@ export const AnalysisResultsDialog = ({
   const unknownAddons = result.addons.filter(
     (addon) => !addon.remoteId && addon.vpkParsed?.fingerprint,
   );
-  const errorAddons = result.addons.filter(
-    (addon) => !addon.vpkParsed?.fingerprint,
-  );
 
   return (
     <>
@@ -93,7 +90,7 @@ export const AnalysisResultsDialog = ({
                 Unknown ({unknownAddons.length})
               </TabsTrigger>
               <TabsTrigger value='errors'>
-                Errors ({errorAddons.length})
+                Errors ({result.errors.length})
               </TabsTrigger>
             </TabsList>
 
@@ -145,21 +142,7 @@ export const AnalysisResultsDialog = ({
               value='errors'
               className='flex-1 mt-4 min-h-0 overflow-hidden'>
               <ScrollArea className='h-[300px] pr-4'>
-                <div className='space-y-3'>
-                  {errorAddons.map((addon) => (
-                    <AddonSummaryCard
-                      key={addon.filePath}
-                      addon={addon}
-                      onAddToLibrary={handleAddToLibrary}
-                    />
-                  ))}
-                  {result.errors.length > 0 && (
-                    <>
-                      <Separator className='my-4' />
-                      <ErrorsList errors={result.errors} />
-                    </>
-                  )}
-                </div>
+                <ErrorsList errors={result.errors} />
               </ScrollArea>
             </TabsContent>
           </Tabs>
