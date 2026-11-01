@@ -210,6 +210,46 @@ branch** as-is. Do not create, switch to, or require a feature branch only
 because the current branch is `main` or `master`, unless the user explicitly
 asks for a different branch.
 
+## Parallel work and recovery
+
+Separate worktrees are preferred when tasks need independent branches or Git
+operations. Shared-checkout parallel work is also supported; follow the user's
+preference rather than requiring isolation.
+
+- Assign each writer files or hunks. Coordinate overlapping edits while other
+  tasks continue. Read-only reviews can share either checkout arrangement.
+- In a shared checkout, coordinate operations that change HEAD, the index, or
+  working files: staging, commits, branch switches, merges, rebases, resets,
+  restores, cleans, and stash application. Recheck status and HEAD immediately
+  before acting; a status snapshot is not a lock.
+- Stage only the task's files or hunks, inspect the staged diff, and commit only
+  that scope. Preserve other tasks' staged and unstaged changes. Avoid blanket
+  staging or whole-file commits when ownership is split within a file.
+- Before a branch switch, history rewrite, cleanup, or recovery, preserve all
+  affected work in scoped commits or a verified backup. Include untracked files
+  and record the source HEAD and backup identifier. A dirty checkout is not
+  permission to discard changes or stash another task's work.
+- Stashes are shared across worktrees. Identify a stash by its exact commit SHA,
+  check its contents, and apply that SHA rather than whichever stash is newest.
+  Verify the restored work before dropping a stash; resolve its current selector
+  to the recorded SHA immediately before dropping it.
+- Resolve conflicts against the current target branch, preserving each change's
+  intent. Before restoring an older whole file, inspect every newer change it
+  would remove and carry forward the ones outside the intended recovery.
+- Treat commit ancestry and patch equivalence as leads. Before skipping work as
+  already merged, verify its implementation and intended behavior in the target
+  tree, including changes that remained uncommitted beside that commit.
+- Before integration, review the final diff against the current target, explain
+  unrelated deletions or reversals, and run the relevant checks. Use the existing
+  merge queue for PRs; coordinate direct integration into the same branch. A
+  rejected push calls for inspecting new remote work, not force-pushing over it.
+
+CI's **Recent reversion warnings** job flags exact reversals of patch hunks from
+the previous seven days of base-branch history, capped at 300 commits. Review
+warnings for accidental losses; deliberate removals and extractions can also
+match. Consumed changeset files are excluded. The job is advisory and does not
+gate parallel work or integration. It does not prove that all behavior survived.
+
 ## References
 
 - [Conventional Commits Specification](https://www.conventionalcommits.org/)

@@ -100,6 +100,8 @@ Read the [domain model](apps/docs/content/docs/developer-docs/domain-model.mdx) 
 
 ## Agent workflows
 
+- Parallel tasks may use separate worktrees or share a checkout, following the user's preference. In a shared checkout, assign file or hunk ownership and coordinate overlapping edits; unrelated work continues in parallel.
+- For commits, integration, conflict resolution, or recovery, follow the [shared-work and recovery safeguards](.agents/skills/git-conventions/SKILL.md#parallel-work-and-recovery). Preserve other tasks' edits and verify the resulting code before declaring work already merged.
 - Skills live in `.agents/skills`. `pnpm install` links them into `.claude/skills`; rerun `pnpm skills:link` after changing the skill set. Existing directories are preserved.
 - For discovery, installation, VPK, or profile changes, read [domain vocabulary](apps/docs/content/docs/developer-docs/domain-model.mdx) and the relevant local architecture docs. For UI work, read `.agents/context/PRODUCT.md` and `.agents/context/DESIGN.md`.
 - For Linear or GitHub ticket implementation, use [implement-ticket](.agents/skills/implement-ticket/SKILL.md). For Linear reads and requested updates, use [linear](.agents/skills/linear/SKILL.md).
