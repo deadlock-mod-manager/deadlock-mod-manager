@@ -24,7 +24,11 @@ import {
 import { prepareProfileWorld } from "./profile-fixtures";
 import { prepareFileOrderWorld } from "./file-order-fixtures";
 import { prepareBrokenProfileWorld } from "./broken-profile-fixtures";
-import { prepareCompatibilityFixWorld } from "./compatibility-fix-fixtures";
+import {
+  disabledFixRoutes,
+  prepareCompatibilityFixWorld,
+  prepareDisabledFixWorld,
+} from "./compatibility-fix-fixtures";
 import { prepareConflictWorld } from "./conflict-fixtures";
 import { prepareFilesystemWorld } from "./filesystem-fixtures";
 import { prepareManifestRepairWorld } from "./manifest-repair-fixtures";
@@ -695,6 +699,14 @@ export const scenarios = {
     phases: ["library-changes"],
     routes: profileRoutes,
     prepare: async (world) => prepareCompatibilityFixWorld(world),
+  },
+  "compatibility-fix-disabled": {
+    ...defaults,
+    family: "compatibility",
+    spec: "compatibility-fix-disabled",
+    phases: ["disabled-mod"],
+    routes: async () => disabledFixRoutes,
+    prepare: async (world) => prepareDisabledFixWorld(world),
   },
   "library-selection": {
     ...defaults,

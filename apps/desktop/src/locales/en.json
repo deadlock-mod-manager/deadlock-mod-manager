@@ -3276,6 +3276,7 @@
       "crashRisk": "Model data issues"
     },
     "lastUpdatedBefore": "Last updated before the Paint the Town update.",
+    "appliesWhenEnabled": "The fix applies when you enable this mod.",
     "stillNeedsUpdate": "Some parts still need an update for this patch: {{remainingSymptoms}}.",
     "fixForPatch": "Fix for this patch",
     "checkForRepairs": "Check mods for repairs",

@@ -25,6 +25,7 @@ struct InstalledMod {
   vpks: Vec<PathBuf>,
   key: HealthKey,
   choice: CompatibilityChoice,
+  enabled: bool,
 }
 
 impl InstalledMod {
@@ -173,6 +174,7 @@ impl ModHealthContext {
           } else {
             CompatibilityChoice::Unset
           },
+          enabled: entry.enabled,
         }),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
         Err(error) => return Err(error.into()),
@@ -189,8 +191,11 @@ impl ModHealthContext {
     health.report(
       history::version(&self.citadel),
       installed.iter().map(|installed| {
+        // The game only loads enabled mods, so only their repairs must be in
+        // the package. A disabled mod keeps its saved choice; enabling it
+        // rebuilds the package with its repairs.
         let choice = match installed.choice {
-          CompatibilityChoice::Enabled if !applied.contains(&installed.id) => {
+          CompatibilityChoice::Enabled if installed.enabled && !applied.contains(&installed.id) => {
             CompatibilityChoice::Unset
           }
           choice => choice,
