@@ -250,9 +250,7 @@ pub async fn stop_game() -> Result<(), Error> {
 
 #[tauri::command]
 pub async fn is_game_running() -> Result<bool, Error> {
-  if crate::runtime_environment::records_game_launches() {
-    return Ok(false);
-  }
+  // In E2E builds the scan sees only the world's stand-in game.
   let processes = MANAGER.lock().unwrap().game_processes()?;
   crate::game_session::observe(&processes);
   Ok(!processes.is_empty())
