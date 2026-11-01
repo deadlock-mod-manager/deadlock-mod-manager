@@ -222,6 +222,7 @@ export const useBatchUpdate = () => {
             ),
           ),
         maxBackups: maxBackupCount,
+        fileserverPreference: usePersistedStore.getState().fileserverPreference,
       });
 
       const result = BatchUpdateResultSchema.parse(rawResult);

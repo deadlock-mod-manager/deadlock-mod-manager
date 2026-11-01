@@ -305,6 +305,7 @@ pub async fn batch_update_mods(
   profile_folder: String,
   skip_backup: bool,
   max_backups: u32,
+  fileserver_preference: FileserverPreference,
   guard_permit: Option<String>,
 ) -> Result<BatchUpdateResult, Error> {
   crate::game_guard::ensure_game_idle_locked("batch_update_mods", guard_permit.as_deref())?;
@@ -333,7 +334,7 @@ pub async fn batch_update_mods(
         &policy,
         &mod_data.mod_id,
         &mod_data.download_files,
-        FileserverPreference::Default,
+        fileserver_preference,
       )
       .await
       .map_err(|error| format!("Failed to resolve download files: {error:?}")),
@@ -752,6 +753,7 @@ pub async fn fetch_missing_mod_variants(
   mod_id: String,
   profile_folder: Option<String>,
   archives: Vec<MissingVariantArchive>,
+  fileserver_preference: FileserverPreference,
 ) -> Result<FetchMissingModVariantsResult, Error> {
   use std::collections::HashSet;
 
@@ -825,7 +827,7 @@ pub async fn fetch_missing_mod_variants(
         size: 0,
         md5_checksum: None,
       }],
-      FileserverPreference::Default,
+      fileserver_preference,
     )
     .await?
     .into_iter()
@@ -966,6 +968,7 @@ pub async fn stage_download_archive(
   claimed_originals: Vec<String>,
   // This archive's tree names; empty when its upload was replaced.
   reusable_originals: Vec<String>,
+  fileserver_preference: FileserverPreference,
   on_progress: tauri::ipc::Channel<StageArchiveProgress>,
 ) -> Result<StageDownloadArchiveResult, Error> {
   log::info!("Staging download archive for {mod_id} (profile: {profile_folder:?}): {archive_name}");
@@ -1019,7 +1022,7 @@ pub async fn stage_download_archive(
       size: 0,
       md5_checksum: None,
     }],
-    FileserverPreference::Default,
+    fileserver_preference,
   )
   .await?
   .into_iter()

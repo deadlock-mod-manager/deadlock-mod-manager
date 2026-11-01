@@ -4,10 +4,11 @@ import path from "node:path";
 import JSZip from "jszip";
 import { z } from "zod";
 import type { VpkManifest } from "../../src/types/profiles";
-import { startFixtureServer } from "./fixture-server";
+import { type FixtureRequest, startFixtureServer } from "./fixture-server";
 import {
   MULTIPAK_MODS,
   assertMultipakUpdateNetwork,
+  assertUpdateRoutingNetwork,
   multipakUpdateRoutes,
   multipakVpk,
 } from "./multipak-update-fixtures";
@@ -75,6 +76,44 @@ it("serves distinct v1/v2 archives and requires both real update transfers", asy
   } finally {
     await server.close();
   }
+});
+
+const replayRequests = async (urls: string[]) => {
+  const server = await startFixtureServer(await multipakUpdateRoutes());
+  try {
+    for (const url of urls)
+      await (await fetch(`${server.origin}${url}`)).arrayBuffer();
+    expect(server.unmatchedRequests()).toHaveLength(0);
+    return server.requests();
+  } finally {
+    await server.close();
+  }
+};
+const verifyRouting = (requests: readonly FixtureRequest[]) =>
+  assertUpdateRoutingNetwork("gamebanana-update-routing", requests);
+
+it("requires the fileserver directory for the Automatic update and download only", async () => {
+  const [a, b] = MULTIPAK_MODS;
+  const fileservers = "/apiv11/Util/Fileservers?_nPage=1";
+  verifyRouting(
+    await replayRequests([
+      `/dl/${a.id}/v1`,
+      fileservers,
+      `/dl/${a.id}/v2`,
+      fileservers,
+      `/dl/${b.id}/v1`,
+    ]),
+  );
+  // An update that ignores the preference leaves only the new download's lookup.
+  const ignored = await replayRequests([
+    `/dl/${a.id}/v1`,
+    `/dl/${a.id}/v2`,
+    fileservers,
+    `/dl/${b.id}/v1`,
+  ]);
+  expect(() => verifyRouting(ignored)).toThrow(
+    "Automatic routing must reach the update",
+  );
 });
 
 const prepareOracle = async () => {

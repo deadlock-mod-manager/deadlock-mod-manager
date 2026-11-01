@@ -265,10 +265,9 @@ jobs:
       # Linux build - upload directly to release
       - name: Build the app (Linux)
         if: matrix.platform == 'ubuntu-24.04'
-        uses: tauri-apps/tauri-action@v1
+        uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # v1.0.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           VITE_API_URL: https://api.deadlockmods.app
           VITE_WEB_URL: https://deadlockmods.app
           VITE_AUTH_URL: https://auth.deadlockmods.app
@@ -276,6 +275,7 @@ jobs:
         with:
           projectPath: ./apps/desktop
           releaseId: ${{ needs.create-test-release.outputs.release_id }}
+          args: --config {"bundle":{"createUpdaterArtifacts":false}}
 
       - name: Build Flatpak bundle (Linux)
         if: matrix.platform == 'ubuntu-24.04'
@@ -316,12 +316,11 @@ jobs:
       - name: Build the app (Windows)
         if: matrix.platform == 'windows-latest'
         env:
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           VITE_API_URL: https://api.deadlockmods.app
           VITE_WEB_URL: https://deadlockmods.app
           VITE_AUTH_URL: https://auth.deadlockmods.app
           VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}
-        run: pnpm --filter @deadlock-mods/desktop tauri build --no-bundle
+        run: pnpm --filter @deadlock-mods/desktop tauri build --no-bundle --config {"bundle":{"createUpdaterArtifacts":false}}
 
       - name: Sign application executable
         if: matrix.platform == 'windows-latest'
@@ -338,13 +337,11 @@ jobs:
       - name: Bundle installer from the signed executable (Windows)
         if: matrix.platform == 'windows-latest'
         shell: pwsh
-        env:
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
         run: |
           $version = (Get-Content -LiteralPath apps/desktop/package.json -Raw | ConvertFrom-Json).version
           Copy-Item -LiteralPath ./signed-application/deadlock-mod-manager.exe -Destination apps/desktop/target/release/deadlock-mod-manager.exe -Force
 
-          pnpm --filter @deadlock-mods/desktop tauri bundle --bundles nsis,updater --no-binary-patching
+          pnpm --filter @deadlock-mods/desktop tauri bundle --bundles nsis --no-binary-patching --config {"bundle":{"createUpdaterArtifacts":false}}
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
           New-Item -ItemType Directory -Force -Path ./artifact-output | Out-Null
@@ -362,7 +359,6 @@ jobs:
           signpath-organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
           signpath-project-slug: deadlock-mod-manager
           signpath-signing-policy: test-signing
-          tauri-private-key: ${{ secrets.TAURI_PRIVATE_KEY }}
 
       - name: Upload signed Windows artifact
         if: matrix.platform == 'windows-latest'

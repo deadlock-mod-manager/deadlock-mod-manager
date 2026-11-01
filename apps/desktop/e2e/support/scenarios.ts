@@ -64,6 +64,7 @@ import {
 import {
   multipakUpdateRoutes,
   assertMultipakUpdateNetwork,
+  assertUpdateRoutingNetwork,
 } from "./multipak-update-fixtures";
 import {
   variantNamesRoutes,
@@ -861,6 +862,13 @@ export const scenarios = {
     phases: ["update-toggle", "restart-uninstall"],
     routes: multipakUpdateRoutes,
     verifyNetwork: assertMultipakUpdateNetwork,
+  },
+  "gamebanana-update-routing": {
+    ...catalog,
+    spec: "gamebanana-update-routing",
+    phases: ["update-auto", "restart-download-auto"],
+    routes: multipakUpdateRoutes,
+    verifyNetwork: assertUpdateRoutingNetwork,
   },
   "gamebanana-variant-names": {
     ...catalog,
