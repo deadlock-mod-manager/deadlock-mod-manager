@@ -1,4 +1,5 @@
 use std::ffi::OsStr;
+use std::path::Path;
 use std::thread;
 use std::time::Duration;
 
@@ -22,10 +23,22 @@ fn refresh_processes(system: &mut System) {
   );
 }
 
-fn is_game_process(process: &Process) -> bool {
+/// `e2e_game` is the E2E stand-in's argv[0] (`runtime_environment::e2e_game_argv0`).
+fn is_game_process(process: &Process, e2e_game: Option<&Path>) -> bool {
   process.thread_kind().is_none()
-    && is_deadlock_process(process.name(), process.cmd())
+    && matches_game(process.name(), process.cmd(), e2e_game)
     && !is_exiting(process.pid().as_u32())
+}
+
+/// In E2E builds only the world's own stand-in counts, by its exact argv[0];
+/// everywhere else, Deadlock by name.
+fn matches_game(name: &OsStr, command: &[std::ffi::OsString], e2e_game: Option<&Path>) -> bool {
+  match e2e_game {
+    Some(expected) => command
+      .first()
+      .is_some_and(|argv0| Path::new(argv0) == expected),
+    None => is_deadlock_process(name, command),
+  }
 }
 
 /// A process stuck in teardown (a driver holding it across sleep, say) stays
@@ -95,11 +108,12 @@ impl GameProcessManager {
   pub fn game_processes(&mut self) -> Result<Vec<GameProcess>, Error> {
     refresh_processes(&mut self.system);
 
+    let e2e_game = crate::runtime_environment::e2e_game_argv0();
     let processes: Vec<GameProcess> = self
       .system
       .processes()
       .values()
-      .filter(|process| is_game_process(process))
+      .filter(|process| is_game_process(process, e2e_game.as_deref()))
       .map(|process| GameProcess {
         pid: process.pid().as_u32(),
         start_time: process.start_time(),
@@ -134,11 +148,12 @@ impl GameProcessManager {
     }
 
     log::info!("Stopping game...");
+    let e2e_game = crate::runtime_environment::e2e_game_argv0();
     let processes: Vec<_> = self
       .system
       .processes()
       .values()
-      .filter(|process| is_game_process(process))
+      .filter(|process| is_game_process(process, e2e_game.as_deref()))
       .collect();
 
     if processes.is_empty() {
@@ -175,7 +190,7 @@ mod tests {
 
   use sysinfo::{Pid, System, ThreadKind};
 
-  use super::{is_deadlock_process, refresh_processes};
+  use super::{is_deadlock_process, matches_game, refresh_processes};
 
   #[cfg(target_os = "linux")]
   #[test]
@@ -264,5 +279,26 @@ mod tests {
     ];
 
     assert!(!is_deadlock_process(OsStr::new("python3"), &command));
+  }
+
+  #[test]
+  fn e2e_counts_only_its_own_stand_in() {
+    let own = std::path::Path::new("/worlds/a/game/dmm-e2e-game");
+    let matches =
+      |name: &str, argv0: &str| matches_game(OsStr::new(name), &[OsString::from(argv0)], Some(own));
+
+    assert!(matches("sleep", "/worlds/a/game/dmm-e2e-game"));
+    assert!(!matches("sleep", "/worlds/b/game/dmm-e2e-game"));
+    assert!(!matches("sleep", "deadlock.exe"));
+    assert!(!matches("deadlock.exe", "/usr/bin/deadlock.exe"));
+    assert!(!matches("sleep", "sleep"));
+    assert!(!matches_game(OsStr::new("sleep"), &[], Some(own)));
+  }
+
+  #[test]
+  fn production_ignores_the_e2e_stand_in() {
+    let command = [OsString::from("/worlds/a/game/dmm-e2e-game")];
+
+    assert!(!matches_game(OsStr::new("sleep"), &command, None));
   }
 }
