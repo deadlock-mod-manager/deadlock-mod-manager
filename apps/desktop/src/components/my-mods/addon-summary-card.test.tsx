@@ -5,10 +5,14 @@ import type { LocalAddonInfo } from "@/types/mods";
 
 type LibraryCheck = { owned: boolean | undefined; isLoading: boolean };
 let libraryCheck: LibraryCheck = { owned: undefined, isLoading: false };
+let lookedUp: string | undefined;
 
 mock.module("@/hooks/use-vpk-scan", () => ({
   useVpkScan: () => ({
-    isLibraryVpk: () => libraryCheck.owned,
+    isLibraryVpk: (locator: string) => {
+      lookedUp = locator;
+      return libraryCheck.owned;
+    },
     isLoading: libraryCheck.isLoading,
   }),
 }));
@@ -35,9 +39,10 @@ mock.module("@deadlock-mods/ui/icons", () => ({
 const { AddonSummaryCard } = await import("./addon-summary-card");
 
 const addon: LocalAddonInfo = {
-  filePath: "/game/citadel/addons/pak01_dir.vpk",
+  filePath: "/game/citadel/addons2/pak01_dir.vpk",
   fileName: "pak01_dir.vpk",
-  locator: "pak01_dir.vpk",
+  // An overflow shard, so the locator differs from the file name.
+  locator: "addons2/pak01_dir.vpk",
   vpkParsed: {
     version: 2,
     treeLength: 0,
@@ -49,7 +54,7 @@ const addon: LocalAddonInfo = {
     manifestSha256: "manifest",
     dirSha256: null,
     fingerprint: {
-      filePath: "/game/citadel/addons/pak01_dir.vpk",
+      filePath: "/game/citadel/addons2/pak01_dir.vpk",
       fileSize: 1,
       lastModified: null,
       fastHash: "fast",
@@ -67,6 +72,7 @@ const addon: LocalAddonInfo = {
 
 const render = (check: LibraryCheck) => {
   libraryCheck = check;
+  lookedUp = undefined;
   return renderToStaticMarkup(<AddonSummaryCard addon={addon} />);
 };
 
@@ -85,6 +91,7 @@ describe("AddonSummaryCard library check", () => {
 
   it("shows a file a library mod owns as added", () => {
     const html = render({ owned: true, isLoading: false });
+    expect(lookedUp).toBe("addons2/pak01_dir.vpk");
     expect(html).toContain("Added to Library");
     expect(html).not.toContain("<button");
   });
