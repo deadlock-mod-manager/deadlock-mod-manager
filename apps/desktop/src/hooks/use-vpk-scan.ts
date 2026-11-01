@@ -35,10 +35,10 @@ export const useVpkScan = () => {
     [snapshot, localMods],
   );
 
-  // False until the snapshot loads: only the manifest knows each mod's shard.
+  // Unknown until the snapshot loads: only the manifest knows each mod's shard.
   const isLibraryVpk = useCallback(
-    (locator: string) =>
-      !!snapshot && isVpkOwned(locator, snapshot.manifest, localMods),
+    (locator: string): boolean | undefined =>
+      snapshot ? isVpkOwned(locator, snapshot.manifest, localMods) : undefined,
     [snapshot, localMods],
   );
 
