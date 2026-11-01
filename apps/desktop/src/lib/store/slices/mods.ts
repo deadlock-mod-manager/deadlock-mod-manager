@@ -166,10 +166,15 @@ export type ModsState = {
 export const modsDeepMergeKeys =
   [] as const satisfies readonly (keyof ModsState)[];
 
-export const createModsSlice: StateCreator<State, [], [], ModsState> = (
-  set,
-  get,
-) => ({
+type ModsSliceStore = ModsState &
+  Pick<State, "profiles" | "activeProfileId" | "bumpProfileSyncRevision">;
+
+export const createModsSlice: StateCreator<
+  ModsSliceStore,
+  [],
+  [],
+  ModsState
+> = (set, get) => ({
   localMods: [],
   modProgress: {},
   batchUpdateProgress: null,
@@ -478,7 +483,8 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
 
   setMods: (mods) => set({ localMods: mods }),
 
-  clearMods: () =>
+  clearMods: () => {
+    get().bumpProfileSyncRevision(get().activeProfileId);
     set((state) => {
       const currentProfile = state.profiles[state.activeProfileId];
 
@@ -507,12 +513,9 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
             }
           : state.profiles,
       };
-    }),
+    });
+  },
 
-  // clearMods only empties localMods, which leaves the active profile still
-  // holding its own copy of every mod - exactly the drift a nuke is supposed to
-  // remove. This wipes both, keeping only the mods the caller wants to survive
-  // (local mods, which cannot be re-downloaded).
   nukeModsState: (keepRemoteIds, requestedProfileId) => {
     get().bumpProfileSyncRevision(requestedProfileId ?? get().activeProfileId);
     return set((state) => {
@@ -678,7 +681,8 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
   clearAnalysisDialog: () =>
     set({ analysisResult: null, analysisDialogOpen: false }),
 
-  setModOrder: (remoteId, order, requestedProfileId) =>
+  setModOrder: (remoteId, order, requestedProfileId) => {
+    get().bumpProfileSyncRevision(requestedProfileId ?? get().activeProfileId);
     set((state) => {
       const profileId = requestedProfileId ?? state.activeProfileId;
       return applyToModsInProfile(state, profileId, (mods) =>
@@ -686,9 +690,11 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
           mod.remoteId === remoteId ? { ...mod, installOrder: order } : mod,
         ),
       );
-    }),
+    });
+  },
 
-  reorderMods: (orderedRemoteIds, requestedProfileId) =>
+  reorderMods: (orderedRemoteIds, requestedProfileId) => {
+    get().bumpProfileSyncRevision(requestedProfileId ?? get().activeProfileId);
     set((state) => {
       const profileId = requestedProfileId ?? state.activeProfileId;
       return applyToModsInProfile(state, profileId, (mods) =>
@@ -700,9 +706,11 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
           };
         }),
       );
-    }),
+    });
+  },
 
-  updateModVpksAfterReorder: (vpkMappings, requestedProfileId) =>
+  updateModVpksAfterReorder: (vpkMappings, requestedProfileId) => {
+    get().bumpProfileSyncRevision(requestedProfileId ?? get().activeProfileId);
     set((state) => {
       const profileId = requestedProfileId ?? state.activeProfileId;
       logger
@@ -736,9 +744,11 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
         });
 
       return applyToModsInProfile(state, profileId, updateMods);
-    }),
+    });
+  },
 
-  setModFileOrder: (remoteId, orderedNames) =>
+  setModFileOrder: (remoteId, orderedNames) => {
+    get().bumpProfileSyncRevision(get().activeProfileId);
     set((state) =>
       applyToModsInProfile(state, state.activeProfileId, (mods) =>
         mods.map((mod) =>
@@ -756,7 +766,8 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
             : mod,
         ),
       ),
-    ),
+    );
+  },
 
   getOrderedMods: () => {
     const { localMods } = get();

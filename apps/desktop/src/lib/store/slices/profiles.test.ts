@@ -53,6 +53,7 @@ beforeEach(() => {
   profileTestBackend.forgetOrphans = async (_folder, modIds) => modIds;
   profileTestBackend.listProfileFolders = async () => [];
   profileTestBackend.switchProfile = async () => {};
+  profileTestBackend.seedManifest = async () => {};
 });
 
 describe("profiles deleted outside the app", () => {
@@ -405,6 +406,22 @@ describe("mods whose VPKs were deleted", () => {
 });
 
 describe("profile snapshot reconciliation", () => {
+  it("does not recreate purged ownership from a stale legacy sync", async () => {
+    const store = createTestStore();
+    trackInstalled(store);
+    const first = deferred<ProfileVpkSnapshot>();
+    profileTestBackend.readSnapshot = () => first.promise;
+    let seedCalls = 0;
+    profileTestBackend.seedManifest = async () => {
+      seedCalls += 1;
+    };
+    const pending = store.getState().syncProfileEnabledMods(defaultProfileId);
+    store.getState().bumpProfileSyncRevision(defaultProfileId);
+    first.resolve({ ...snapshotFor(), manifest: { version: 3, mods: {} } });
+    await pending;
+    expect(seedCalls).toBe(0);
+  });
+
   it("recovers a local placeholder from disk without querying GameBanana", async () => {
     const store = createTestStore();
     const id = "local-aa83cfac-def9-4a7a-820b-1e004e30ca29";
