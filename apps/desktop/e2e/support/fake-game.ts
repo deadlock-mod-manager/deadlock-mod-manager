@@ -15,6 +15,13 @@ const appSeesGame = () =>
     window.__TAURI_INTERNALS__.invoke<boolean>("is_game_running"),
   );
 
+const endProcess = async (game: ChildProcess) => {
+  if (game.exitCode !== null || game.signalCode !== null) return;
+  const exited = once(game, "exit");
+  game.kill("SIGKILL");
+  await exited;
+};
+
 /** Starts a process the app counts as a running Deadlock until it is stopped. */
 export const startFakeGame = async (world: string): Promise<ChildProcess> => {
   const {
@@ -25,17 +32,18 @@ export const startFakeGame = async (world: string): Promise<ChildProcess> => {
     stdio: "ignore",
   });
   await once(game, "spawn");
-  await observeUntil("the app sees the game running", appSeesGame, Boolean);
+  try {
+    await observeUntil("the app sees the game running", appSeesGame, Boolean);
+  } catch (error) {
+    await endProcess(game);
+    throw error;
+  }
   return game;
 };
 
 /** Ends the stand-in and waits until the app no longer sees it. */
 export const stopFakeGame = async (game: ChildProcess) => {
-  if (game.exitCode === null && game.signalCode === null) {
-    const exited = once(game, "exit");
-    game.kill("SIGKILL");
-    await exited;
-  }
+  await endProcess(game);
   await observeUntil(
     "the app sees the game closed",
     appSeesGame,
