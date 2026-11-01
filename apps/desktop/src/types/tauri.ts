@@ -21,6 +21,7 @@ export type ErrorKind = {
     | "unknown"
     | "gameRunning"
     | "gameNotRunning"
+    | "gameStopFailed"
     | "gameLaunchFailed"
     | "modDataReviewRequired"
     | "missingEnabledModFiles"

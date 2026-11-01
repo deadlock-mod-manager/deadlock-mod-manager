@@ -23,7 +23,28 @@ fn refresh_processes(system: &mut System) {
 }
 
 fn is_game_process(process: &Process) -> bool {
-  process.thread_kind().is_none() && is_deadlock_process(process.name(), process.cmd())
+  process.thread_kind().is_none()
+    && is_deadlock_process(process.name(), process.cmd())
+    && !is_exiting(process.pid().as_u32())
+}
+
+/// A process stuck in teardown (a driver holding it across sleep, say) stays
+/// listed with almost no memory and can't be killed, even from an elevated
+/// prompt. It isn't the game anymore, so it must not block installs.
+#[cfg(windows)]
+fn is_exiting(pid: u32) -> bool {
+  use crate::game_session::waiter::windows_process::ProcessHandle;
+
+  let exiting = ProcessHandle::open(pid).is_ok_and(|handle| handle.is_exiting());
+  if exiting {
+    log::debug!("Ignoring Deadlock process {pid}: it is exiting");
+  }
+  exiting
+}
+
+#[cfg(not(windows))]
+fn is_exiting(_pid: u32) -> bool {
+  false
 }
 
 fn is_deadlock_executable(path: &str) -> bool {
@@ -124,23 +145,21 @@ impl GameProcessManager {
       return Err(Error::GameNotRunning);
     }
 
-    let mut stopped_count = 0;
     for process in processes {
       log::info!("Killing process: {:?}", process.pid());
-      process.kill();
-      stopped_count += 1;
+      if !process.kill() {
+        log::warn!("Could not kill process {:?}", process.pid());
+      }
     }
 
-    if stopped_count > 0 {
-      log::info!("Stopped {stopped_count} game process(es)");
-      // Wait for the OS to fully reap the killed processes before returning,
-      // so the next is_game_running() call won't see stale entries.
-      thread::sleep(Duration::from_millis(500));
-      refresh_processes(&mut self.system);
-      Ok(())
-    } else {
-      Err(Error::GameNotRunning)
+    // Wait for the OS to fully reap the killed processes before returning,
+    // so the next is_game_running() call won't see stale entries.
+    thread::sleep(Duration::from_millis(500));
+    if self.is_game_running()? {
+      return Err(Error::GameStopFailed);
     }
+    log::info!("Stopped the game");
+    Ok(())
   }
 }
 

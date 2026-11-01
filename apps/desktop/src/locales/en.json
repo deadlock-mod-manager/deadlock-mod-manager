@@ -3896,6 +3896,7 @@
     "launchModdedCount_one": "{{count}} mod",
     "launchModdedCount_other": "{{count}} mods",
     "stopGame": "Stop Game",
+    "stopGameFailed": "Deadlock couldn't be stopped. If it keeps showing as running, restart your PC.",
     "gameinfoAutoReset": "Game configuration was corrupted and has been automatically repaired.",
     "failedToFetchMods": "Failed to fetch mods. Try again later.",
     "mods": "Mods",
