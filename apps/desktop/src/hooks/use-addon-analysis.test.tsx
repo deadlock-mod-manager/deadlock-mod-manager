@@ -6,13 +6,14 @@ import { I18nextProvider } from "react-i18next";
 import en from "@/locales/en.json";
 import { placeholderModFromManifest } from "@/lib/store/utils/manifest-install-state";
 import type { AnalyzeAddonsResult, LocalAddonInfo } from "@/types/mods";
-import type { ProfileId } from "@/types/profiles";
+import { createProfileId, type ProfileId } from "@/types/profiles";
 
 type Variables = { profileFolder: string | null; profileId?: ProfileId };
 type Options = UseMutationOptions<AnalyzeAddonsResult | null, Error, Variables>;
 
 const captured: Options[] = [];
 const catalogLookups: string[] = [];
+const calls: string[] = [];
 const reactQuery = await import("@tanstack/react-query");
 mock.module("@tanstack/react-query", () => ({
   ...reactQuery,
@@ -48,10 +49,19 @@ mock.module("@deadlock-mods/ui/components/sonner", () => ({
   },
 }));
 
+const tauriCommands = await import("@/lib/tauri-commands");
+mock.module("@/lib/tauri-commands", () => ({
+  ...tauriCommands,
+  analyzeLocalAddons: async (): Promise<AnalyzeAddonsResult> => {
+    calls.push("scan");
+    return { addons: [], totalCount: 0, errors: [] };
+  },
+}));
+
 const { useAddonAnalysis } = await import("./use-addon-analysis");
 const { usePersistedStore } = await import("@/lib/store");
 
-const PROFILE = "profile_1_reset" as ProfileId;
+const PROFILE = createProfileId("profile_1_reset");
 const entry = {
   enabled: true,
   shard: 1,
@@ -122,7 +132,7 @@ const resetProfile = (restored: boolean) => {
   return () => passes;
 };
 
-const analyze = async () => {
+const renderOptions = async () => {
   captured.length = 0;
   const Probe = () => {
     useAddonAnalysis();
@@ -139,7 +149,16 @@ const analyze = async () => {
       <Probe />
     </I18nextProvider>,
   );
-  const onSuccess = captured[0]?.onSuccess;
+  return captured[0];
+};
+
+const mutationContext = () => ({
+  client: new reactQuery.QueryClient(),
+  meta: undefined,
+});
+
+const analyze = async () => {
+  const onSuccess = (await renderOptions())?.onSuccess;
   expect(onSuccess).toBeDefined();
   const data: AnalyzeAddonsResult = {
     addons: [recordedAddon()],
@@ -150,12 +169,13 @@ const analyze = async () => {
     data,
     { profileFolder: "reset", profileId: PROFILE },
     undefined,
-    { client: new reactQuery.QueryClient(), meta: undefined },
+    mutationContext(),
   );
 };
 
 afterEach(() => {
   catalogLookups.length = 0;
+  calls.length = 0;
   usePersistedStore.setState({ localMods: [], profiles: {} });
 });
 
@@ -177,5 +197,35 @@ describe("re-scanning mods the profile manifest records", () => {
       "Could not register 42: DMM's records list this mod, but restoring it was interrupted. Run Analyze Local Addons again.",
     ]);
     expect(usePersistedStore.getState().analysisDialogOpen).toBe(true);
+  });
+});
+
+describe("restoring recorded mods before the scan", () => {
+  it("finishes reconciling the manifest before analyzing local addons", async () => {
+    resetProfile(false);
+    let finishRestore = () => {};
+    const restored = new Promise<void>((resolve) => {
+      finishRestore = resolve;
+    });
+    usePersistedStore.setState({
+      restoreModsFromManifest: async () => {
+        calls.push("restore");
+        await restored;
+        calls.push("restored");
+        return [];
+      },
+    });
+    const mutationFn = (await renderOptions())?.mutationFn;
+    if (!mutationFn) throw new Error("useAddonAnalysis registered no mutation");
+
+    const result = mutationFn(
+      { profileFolder: "reset", profileId: PROFILE },
+      mutationContext(),
+    );
+    await Promise.resolve();
+    expect(calls).toEqual(["restore"]);
+    finishRestore();
+    expect(await result).toEqual({ addons: [], totalCount: 0, errors: [] });
+    expect(calls).toEqual(["restore", "restored", "scan"]);
   });
 });
