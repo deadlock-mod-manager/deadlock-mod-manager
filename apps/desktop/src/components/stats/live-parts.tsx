@@ -73,13 +73,12 @@ export const RankTag = ({
   const label = badge === undefined ? null : rankLabel(badge, rankAssets);
   if (!label) return null;
   const { image } = resolveRank(badge, rankAssets);
-  const color = rankAssets.find(
-    (asset) => asset.tier === Math.floor((badge ?? 0) / 10),
-  )?.color;
   return (
     <span
-      className={cn("flex min-w-0 items-center gap-1.5 text-xs", className)}
-      style={color ? { color } : undefined}>
+      className={cn(
+        "flex min-w-0 items-center gap-1.5 text-foreground text-xs",
+        className,
+      )}>
       {image && (
         <img alt='' className='h-4 w-4 shrink-0 object-contain' src={image} />
       )}
