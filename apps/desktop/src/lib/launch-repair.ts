@@ -36,6 +36,17 @@ export function resolveLaunchRepairMods(
   });
 }
 
+/** Before any repair pass (`failures` is `null`) every mod is a target. */
+export function launchRepairTargets(
+  mods: LaunchRepairMod[],
+  failures: LaunchRepairFailure[] | null,
+): LaunchRepairMod[] {
+  if (failures === null) return mods;
+  return mods.filter((mod) =>
+    failures.some((failure) => failure.id === mod.id),
+  );
+}
+
 export async function repairLaunchFiles(
   targets: LaunchRepairMod[],
   action: "reinstall" | "disable",
