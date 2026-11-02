@@ -40,15 +40,15 @@ export const PluginAccessSheet = ({
       <SheetContent
         className='flex w-[480px] flex-col gap-0 border-0 bg-card p-0 shadow-[inset_1px_0_0_0_hsl(var(--border))] sm:max-w-[480px]'
         hideClose
-        overlayClassName='bg-[#0B0A09CC]'
+        overlayClassName='bg-background/80'
         side='right'>
         <div className='flex w-full shrink-0 gap-[14px] border-border border-b px-[24px] pt-[22px] pb-[17px]'>
           <PluginTile
             accent={plugin.accent}
-            fillAlpha='26'
+            fillAlpha={15}
             glyphSize={20}
             icon={plugin.icon}
-            outlineAlpha='33'
+            outlineAlpha={20}
             radius={10}
             size={40}
           />
@@ -56,14 +56,14 @@ export const PluginAccessSheet = ({
             <SheetTitle className='font-semibold text-[18px] text-foreground leading-[normal]'>
               {t("plugins.access.sheet.title")}
             </SheetTitle>
-            <SheetDescription className='w-full text-[#A3A3A3] text-[13px] leading-[18px]'>
+            <SheetDescription className='w-full text-muted-foreground text-[13px] leading-[18px]'>
               {t("plugins.access.sheet.description", { name: plugin.name })}
             </SheetDescription>
           </div>
           <SheetClose
             aria-label={t("plugins.access.sheet.close")}
-            className='flex size-[32px] shrink-0 items-center justify-center rounded-[8px] hover:bg-[#FFFFFF0A]'>
-            <XIcon color='#A3A3A3' size={16} />
+            className='flex size-[32px] shrink-0 items-center justify-center rounded-[8px] hover:bg-foreground/[0.04]'>
+            <XIcon className='text-muted-foreground' size={16} />
           </SheetClose>
         </div>
 
@@ -71,7 +71,7 @@ export const PluginAccessSheet = ({
           {total > 0 && (
             <>
               <div className='flex w-full items-center'>
-                <span className='font-semibold text-[#A3A3A3] text-[11px] uppercase leading-[normal]'>
+                <span className='font-semibold text-muted-foreground text-[11px] uppercase leading-[normal]'>
                   {t("plugins.access.sheet.required")}
                 </span>
                 <span className='h-px flex-1' />
@@ -100,8 +100,8 @@ export const PluginAccessSheet = ({
           />
           <div className='w-full flex-1' />
           <div className='flex w-full gap-[8px]'>
-            <InfoIcon className='shrink-0' color='#A3A3A3' size={14} />
-            <span className='flex-1 text-[#A3A3A3] text-[12px] leading-[normal]'>
+            <InfoIcon className='shrink-0 text-muted-foreground' size={14} />
+            <span className='flex-1 text-muted-foreground text-[12px] leading-[normal]'>
               {t("plugins.access.sheet.applyNote")}
             </span>
           </div>

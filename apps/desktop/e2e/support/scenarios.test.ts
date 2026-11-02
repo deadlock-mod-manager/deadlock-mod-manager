@@ -13,7 +13,7 @@ const windows = process.platform === "win32";
 describe("scenario selection", () => {
   it("registers every case with explicit phases and capability requirements", () => {
     const ids = selectScenarios("all");
-    expect(ids).toHaveLength(windows ? 132 : 121);
+    expect(ids).toHaveLength(windows ? 136 : 125);
     expect(ids).toContain("downloads-segmented-range-error");
     for (const id of ids) {
       expect(parseScenarioId(id)).toBe(id);
@@ -24,7 +24,10 @@ describe("scenario selection", () => {
       "onboarding-skip-analysis",
       "onboarding-telemetry-default",
     ]);
-    expect(selectScenarios("gamebanana")).toHaveLength(30);
+    expect(selectScenarios("gamebanana")).toHaveLength(31);
+    expect(selectScenarios("gamebanana")).toContain(
+      "gamebanana-switch-reinstall",
+    );
     expect(scenarioSpec("mod-files-error")).toBe(
       "./specs/mod-files-error.e2e.ts",
     );
@@ -65,6 +68,9 @@ describe("scenario selection", () => {
     ]);
     expect(selectScenarios("missing-vpks")).toEqual([
       "missing-vpks-launch",
+      "missing-vpks-launch-partial",
+      "missing-vpks-launch-relaunch-error",
+      "missing-vpks-launch-relaunch-missing",
       "missing-vpks-offline",
       "missing-vpks-live",
     ]);

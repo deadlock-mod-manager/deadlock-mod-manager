@@ -214,7 +214,7 @@ export const FinishSetup = ({ plugin }: { plugin: ExternalPluginSummary }) => {
             </p>
           </div>
         ) : null}
-        <h3 className='font-bold text-[#7C756E] text-[10px] uppercase leading-[normal] tracking-[1.1px]'>
+        <h3 className='font-bold text-muted-foreground/75 text-[10px] uppercase leading-[normal] tracking-[1.1px]'>
           {t("plugins.page.setup.label")}
         </h3>
         {requests.map((request) => (

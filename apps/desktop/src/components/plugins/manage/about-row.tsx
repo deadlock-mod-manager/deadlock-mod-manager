@@ -11,7 +11,7 @@ export const AboutRow = ({
   mono?: boolean;
 }) => (
   <div className='flex w-full items-start gap-[12px] py-[6px]'>
-    <span className='w-[96px] shrink-0 text-[#A3A3A3] text-[12px] leading-[normal]'>
+    <span className='w-[96px] shrink-0 text-muted-foreground text-[12px] leading-[normal]'>
       {label}
     </span>
     <span

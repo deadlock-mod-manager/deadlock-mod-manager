@@ -54,10 +54,10 @@ export const HostBar = ({
     <div className='flex shrink-0 items-center gap-[14px] border-border border-b px-6 pt-4 pb-[15px]'>
       <PluginTile
         accent={plugin.accent}
-        fillAlpha='26'
+        fillAlpha={15}
         glyphSize={20}
         icon={plugin.icon}
-        outlineAlpha='33'
+        outlineAlpha={20}
         radius={10}
         size={40}
       />

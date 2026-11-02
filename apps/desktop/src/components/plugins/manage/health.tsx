@@ -21,7 +21,7 @@ export const Health = ({ plugin }: { plugin: ExternalPluginSummary }) => {
   return (
     <div
       className={cn(
-        "flex w-full items-center justify-between rounded-[10px] bg-background px-[14px] py-[10px] outline-[#FFFFFF0A]",
+        "flex w-full items-center justify-between rounded-[10px] bg-background px-[14px] py-[10px] outline-foreground/[0.04]",
         INSET_OUTLINE,
       )}>
       <Stat label={t("plugins.manage.panel.worker")}>

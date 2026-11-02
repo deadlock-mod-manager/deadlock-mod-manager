@@ -23,7 +23,7 @@ export const StateArea = ({
   <div className='flex min-h-0 flex-1 flex-col items-center justify-center gap-3 overflow-y-auto p-6'>
     <span
       className='flex size-12 shrink-0 items-center justify-center rounded-full'
-      style={{ backgroundColor: tint(color, "1A") }}>
+      style={{ backgroundColor: tint(color, 10) }}>
       <StateIcon color={color} size={22} />
     </span>
     <div className='flex w-[420px] max-w-full flex-col items-center gap-1.5 text-center'>

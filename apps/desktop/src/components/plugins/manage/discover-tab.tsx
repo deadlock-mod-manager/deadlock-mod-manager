@@ -70,7 +70,7 @@ export const DiscoverTab = ({ query, installedIds }: DiscoverTabProps) => {
         INSET_OUTLINE,
         category === value
           ? "bg-primary text-primary-foreground outline-primary"
-          : "text-[#A3A3A3] outline-[#262626] hover:text-foreground",
+          : "text-muted-foreground outline-border hover:text-foreground",
       )}
       key={value}
       onClick={() => setCategory(value)}
@@ -88,7 +88,7 @@ export const DiscoverTab = ({ query, installedIds }: DiscoverTabProps) => {
         )}
         <span className='h-px flex-1' />
         <label className='flex items-center gap-[8px] pr-[8px]'>
-          <span className='text-[#A3A3A3] text-[12px] leading-[normal]'>
+          <span className='text-muted-foreground text-[12px] leading-[normal]'>
             {t("plugins.discover.verifiedOnly")}
           </span>
           <PluginSwitch
@@ -101,14 +101,14 @@ export const DiscoverTab = ({ query, installedIds }: DiscoverTabProps) => {
             <button
               aria-label={t("plugins.discover.sort.label")}
               className={cn(
-                "flex h-[32px] w-[160px] items-center justify-between rounded-[6px] bg-background px-[10px] outline-[#262626]",
+                "flex h-[32px] w-[160px] items-center justify-between rounded-[6px] bg-background px-[10px] outline-border",
                 INSET_OUTLINE,
               )}
               type='button'>
               <span className='text-[13px] text-foreground leading-[normal]'>
                 {t(`plugins.discover.sort.${sort}`)}
               </span>
-              <CaretUpDownIcon color='#A3A3A3' size={12} />
+              <CaretUpDownIcon className='text-muted-foreground' size={12} />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align='end' className='w-[160px]'>
@@ -128,7 +128,7 @@ export const DiscoverTab = ({ query, installedIds }: DiscoverTabProps) => {
         </DropdownMenu>
       </div>
       {entries.length === 0 ? (
-        <p className='w-full py-[24px] text-center text-[#A3A3A3] text-[13px] leading-[normal]'>
+        <p className='w-full py-[24px] text-center text-muted-foreground text-[13px] leading-[normal]'>
           {t("plugins.discover.empty")}
         </p>
       ) : (
@@ -152,7 +152,7 @@ export const DiscoverTab = ({ query, installedIds }: DiscoverTabProps) => {
       )}
       <div className='mt-auto flex w-full shrink-0 items-center gap-[10px] border-border border-t pt-[14px]'>
         <ShieldCheckIcon className='shrink-0' color={TONE_COLOR.ok} size={15} />
-        <span className='text-[#A3A3A3] text-[12px] leading-[normal]'>
+        <span className='text-muted-foreground text-[12px] leading-[normal]'>
           {t("plugins.discover.trust")}
         </span>
       </div>

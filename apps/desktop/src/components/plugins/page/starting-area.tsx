@@ -2,7 +2,7 @@ import { CircleNotchIcon } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 
 const SkeletonBar = ({ className }: { className: string }) => (
-  <span className={`block rounded-[6px] bg-[#1E1A18] ${className}`} />
+  <span className={`block rounded-[6px] bg-foreground/[0.06] ${className}`} />
 );
 
 const SKELETON_CARD =

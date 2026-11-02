@@ -59,10 +59,10 @@ export const DetailPanel = ({ plugin, tab, onTabChange }: DetailPanelProps) => {
         <div className='flex w-full items-center gap-[14px]'>
           <PluginTile
             accent={plugin.accent}
-            fillAlpha='1A'
+            fillAlpha={10}
             glyphSize={26}
             icon={plugin.icon}
-            outlineAlpha='26'
+            outlineAlpha={15}
             radius={12}
             size={52}
           />
@@ -71,7 +71,7 @@ export const DetailPanel = ({ plugin, tab, onTabChange }: DetailPanelProps) => {
               {plugin.name}
             </span>
             {plugin.author && (
-              <span className='truncate text-[#A3A3A3] text-[12px] leading-[normal]'>
+              <span className='truncate text-muted-foreground text-[12px] leading-[normal]'>
                 {t("plugins.manage.panel.by", { author: plugin.author })}
               </span>
             )}
@@ -88,11 +88,11 @@ export const DetailPanel = ({ plugin, tab, onTabChange }: DetailPanelProps) => {
               <button
                 aria-label={t("plugins.manage.panel.more")}
                 className={cn(
-                  "flex size-[34px] shrink-0 items-center justify-center rounded-[8px] outline-[#262626] hover:bg-[#1E1A18]",
+                  "flex size-[34px] shrink-0 items-center justify-center rounded-[8px] outline-border hover:bg-foreground/[0.06]",
                   INSET_OUTLINE,
                 )}
                 type='button'>
-                <DotsThreeIcon color='#A3A3A3' size={16} />
+                <DotsThreeIcon className='text-muted-foreground' size={16} />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end' className='min-w-[180px]'>
@@ -136,7 +136,7 @@ export const DetailPanel = ({ plugin, tab, onTabChange }: DetailPanelProps) => {
       </div>
 
       <div
-        className='flex h-[35px] w-full shrink-0 gap-[18px] border-[#FFFFFF0F] border-b px-[22px]'
+        className='flex h-[35px] w-full shrink-0 gap-[18px] border-foreground/[0.06] border-b px-[22px]'
         role='tablist'>
         {PANEL_TABS.map((value) => (
           <button
@@ -145,7 +145,7 @@ export const DetailPanel = ({ plugin, tab, onTabChange }: DetailPanelProps) => {
               "flex h-[34px] border-b-2 pt-[8px] font-semibold text-[13px] leading-[normal] transition-colors",
               tab === value
                 ? "border-primary text-foreground"
-                : "border-transparent text-[#A3A3A3] hover:text-foreground",
+                : "border-transparent text-muted-foreground hover:text-foreground",
             )}
             key={value}
             onClick={() => onTabChange(value)}
@@ -166,8 +166,8 @@ export const DetailPanel = ({ plugin, tab, onTabChange }: DetailPanelProps) => {
         {tab === "about" && <AboutTab plugin={plugin} />}
       </div>
 
-      <div className='flex w-full shrink-0 items-center gap-[8px] border-[#FFFFFF0F] border-t bg-[#0B0A09] px-[22px] pt-[11px] pb-[12px]'>
-        <span className='text-[#A3A3A3] text-[12px] leading-[normal]'>
+      <div className='flex w-full shrink-0 items-center gap-[8px] border-foreground/[0.06] border-t bg-background px-[22px] pt-[11px] pb-[12px]'>
+        <span className='text-muted-foreground text-[12px] leading-[normal]'>
           {plugin.grant
             ? t("plugins.manage.panel.granted", {
                 date: formatShortDate(i18n.language, plugin.grant.grantedAt),

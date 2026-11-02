@@ -8,7 +8,7 @@ export const HostStatusPill = ({ status }: { status: HostStatus }) => {
   return (
     <span
       className='flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5'
-      style={{ backgroundColor: tint(status.color, "1A") }}>
+      style={{ backgroundColor: tint(status.color, 10) }}>
       <span
         className='size-1.5 rounded-full'
         style={{ backgroundColor: status.color }}

@@ -9,17 +9,17 @@ export const FindMore = ({ onBrowse }: { onBrowse: () => void }) => {
   return (
     <div
       className={cn(
-        "flex w-full shrink-0 items-center gap-[14px] rounded-[12px] p-[16px] outline-[#FFFFFF1A]",
+        "flex w-full shrink-0 items-center gap-[14px] rounded-[12px] p-[16px] outline-foreground/10",
         INSET_OUTLINE,
       )}>
-      <span className='flex size-[40px] shrink-0 items-center justify-center rounded-[10px] bg-[#FFFFFF0A]'>
-        <CompassIcon color='#EFE0BE' size={20} />
+      <span className='flex size-[40px] shrink-0 items-center justify-center rounded-[10px] bg-foreground/[0.04]'>
+        <CompassIcon className='text-primary' size={20} />
       </span>
       <div className='flex min-w-0 flex-1 flex-col gap-[3px]'>
         <span className='font-semibold text-[14px] text-foreground leading-[normal]'>
           {t("plugins.manage.findMore.title")}
         </span>
-        <span className='w-full text-[#A3A3A3] text-[12px] leading-[17px]'>
+        <span className='w-full text-muted-foreground text-[12px] leading-[17px]'>
           {t("plugins.manage.findMore.body")}
         </span>
       </div>

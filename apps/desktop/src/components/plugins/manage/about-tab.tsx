@@ -25,7 +25,7 @@ export const AboutTab = ({ plugin }: { plugin: ExternalPluginSummary }) => {
             ))}
           </ul>
         ) : (
-          <p className='text-[#A3A3A3] text-[12px] leading-[17px]'>
+          <p className='text-muted-foreground text-[12px] leading-[17px]'>
             {t("plugins.manage.about.noChangelog")}
           </p>
         )}

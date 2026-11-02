@@ -34,13 +34,13 @@ export const CatalogCard = ({
   return (
     <article
       className={cn(
-        "flex min-w-0 flex-1 flex-col gap-[12px] rounded-[12px] bg-card p-[16px] outline-[#FFFFFF0F]",
+        "flex min-w-0 flex-1 flex-col gap-[12px] rounded-[12px] bg-card p-[16px] outline-foreground/[0.06]",
         INSET_OUTLINE,
       )}>
       <div className='flex w-full items-center gap-[12px]'>
         <PluginTile
           accent={entry.accent}
-          fillAlpha='1A'
+          fillAlpha={10}
           glyphSize={21}
           icon={entry.icon}
           radius={10}
@@ -51,7 +51,7 @@ export const CatalogCard = ({
             {entry.name}
           </span>
           <div className='flex items-center gap-[5px]'>
-            <span className='truncate text-[#A3A3A3] text-[12px] leading-[normal]'>
+            <span className='truncate text-muted-foreground text-[12px] leading-[normal]'>
               {t("plugins.discover.by", { author: entry.author })}
             </span>
             {entry.verified ? (
@@ -78,15 +78,15 @@ export const CatalogCard = ({
       <div className='mt-auto flex w-full items-center gap-[12px] pt-[4px]'>
         {entry.installs === undefined ? null : (
           <span className='flex items-center gap-[5px]'>
-            <DownloadSimpleIcon color='#A3A3A3' size={13} />
-            <span className='font-mono text-[#A3A3A3] text-[12px] leading-[normal]'>
+            <DownloadSimpleIcon className='text-muted-foreground' size={13} />
+            <span className='font-mono text-muted-foreground text-[12px] leading-[normal]'>
               {formatInstalls(t, entry.installs)}
             </span>
           </span>
         )}
         <span className='flex items-center gap-[5px]'>
-          <ClockIcon color='#A3A3A3' size={13} />
-          <span className='text-[#A3A3A3] text-[12px] leading-[normal]'>
+          <ClockIcon className='text-muted-foreground' size={13} />
+          <span className='text-muted-foreground text-[12px] leading-[normal]'>
             {formatRelativeTime(t, entry.updatedAt, now)}
           </span>
         </span>

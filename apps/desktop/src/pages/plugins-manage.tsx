@@ -89,17 +89,16 @@ const ManagePlugins = () => {
         <div className='flex items-center gap-[10px]'>
           <label
             className={cn(
-              "flex h-[34px] w-[240px] items-center gap-[8px] rounded-[8px] bg-background px-[10px] outline-[#262626] focus-within:outline-[#EFE0BE40]",
+              "flex h-[34px] w-[240px] items-center gap-[8px] rounded-[8px] bg-background px-[10px] outline-border focus-within:outline-primary/25",
               INSET_OUTLINE,
             )}>
             <MagnifyingGlassIcon
-              className='shrink-0'
-              color='#A3A3A3'
+              className='shrink-0 text-muted-foreground'
               size={16}
             />
             <input
               aria-label={t(`plugins.manage.search.${tab}`)}
-              className='min-w-0 flex-1 bg-transparent text-[13px] text-foreground leading-[normal] outline-none placeholder:text-[#A3A3A3]'
+              className='min-w-0 flex-1 bg-transparent text-[13px] text-foreground leading-[normal] outline-none placeholder:text-muted-foreground'
               onChange={(event) => setQuery(event.target.value)}
               placeholder={t(`plugins.manage.search.${tab}`)}
               type='search'
@@ -108,7 +107,7 @@ const ManagePlugins = () => {
           </label>
           <button
             className={cn(
-              "flex items-center gap-[8px] rounded-[8px] bg-background px-[14px] py-[8px] font-semibold text-[14px] text-foreground leading-[normal] outline-[#262626] transition-colors hover:bg-[#1E1A18] disabled:pointer-events-none disabled:opacity-50",
+              "flex items-center gap-[8px] rounded-[8px] bg-background px-[14px] py-[8px] font-semibold text-[14px] text-foreground leading-[normal] outline-border transition-colors hover:bg-foreground/[0.06] disabled:pointer-events-none disabled:opacity-50",
               INSET_OUTLINE,
             )}
             disabled={installFromFile.isPending}

@@ -19,13 +19,13 @@ export const ChangeRow = ({
       className={
         isNew
           ? "flex w-full items-center gap-3 rounded-[10px] bg-[#60A5FA0F] px-[14px] py-3 ring-1 ring-[#60A5FA4D] ring-inset"
-          : "flex w-full items-center gap-3 rounded-[10px] bg-card px-[14px] py-3 ring-1 ring-[#FFFFFF0F] ring-inset"
+          : "flex w-full items-center gap-3 rounded-[10px] bg-card px-[14px] py-3 ring-1 ring-foreground/[0.06] ring-inset"
       }>
       <span
         className={
           isNew
             ? "flex size-7 shrink-0 items-center justify-center rounded-[7px] bg-[#60A5FA1F] text-[#60A5FA]"
-            : "flex size-7 shrink-0 items-center justify-center rounded-[7px] bg-[#FFFFFF0A] text-muted-foreground"
+            : "flex size-7 shrink-0 items-center justify-center rounded-[7px] bg-foreground/[0.04] text-muted-foreground"
         }>
         <PermissionIcon size={15} />
       </span>
@@ -48,7 +48,7 @@ export const ChangeRow = ({
         className={
           isNew
             ? "shrink-0 rounded-[6px] bg-[#60A5FA26] px-2 py-0.5 font-semibold text-[#60A5FA] text-[11px] leading-[normal]"
-            : "shrink-0 rounded-[6px] bg-[#FFFFFF0A] px-2 py-0.5 font-semibold text-[11px] text-muted-foreground leading-[normal]"
+            : "shrink-0 rounded-[6px] bg-foreground/[0.04] px-2 py-0.5 font-semibold text-[11px] text-muted-foreground leading-[normal]"
         }>
         {t(`plugins.page.update.${change}`)}
       </span>

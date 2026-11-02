@@ -25,13 +25,13 @@ export const UpdatesTab = ({
   if (plugins.length === 0) {
     return (
       <div className='flex w-full flex-col items-center gap-[6px] py-[64px] text-center'>
-        <span className='flex size-[52px] items-center justify-center rounded-[12px] bg-[#FFFFFF0A]'>
-          <ArrowCircleUpIcon color='#EFE0BE' size={26} />
+        <span className='flex size-[52px] items-center justify-center rounded-[12px] bg-foreground/[0.04]'>
+          <ArrowCircleUpIcon className='text-primary' size={26} />
         </span>
         <span className='pt-[8px] font-semibold text-[14px] text-foreground leading-[normal]'>
           {t("plugins.manage.updatesEmpty.title")}
         </span>
-        <span className='max-w-[360px] text-[#A3A3A3] text-[12px] leading-[17px]'>
+        <span className='max-w-[360px] text-muted-foreground text-[12px] leading-[17px]'>
           {t("plugins.manage.updatesEmpty.body")}
         </span>
       </div>

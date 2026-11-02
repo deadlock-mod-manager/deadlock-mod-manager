@@ -61,7 +61,7 @@ export const StoppedState = ({ plugin }: { plugin: ExternalPluginSummary }) => {
       body={t("plugins.page.stopped.crashed")}
       color={TONE_COLOR.danger}
       details={
-        <div className='flex w-[420px] max-w-full flex-col gap-1 rounded-[8px] bg-[#1E1A18] px-3 py-2.5 leading-[normal]'>
+        <div className='flex w-[420px] max-w-full flex-col gap-1 rounded-[8px] bg-foreground/[0.06] px-3 py-2.5 leading-[normal]'>
           <span className='text-[11px] text-muted-foreground'>
             {errorLabel}
           </span>

@@ -12,10 +12,10 @@ export const AccessScope = ({
   mono?: boolean;
 }) => (
   <span className='flex min-w-0 items-center gap-[5px]'>
-    <ScopeIcon className='shrink-0' color='#A3A3A3' size={13} />
+    <ScopeIcon className='shrink-0 text-muted-foreground' size={13} />
     <span
       className={cn(
-        "truncate text-[#A3A3A3] text-[12px] leading-[normal]",
+        "truncate text-muted-foreground text-[12px] leading-[normal]",
         mono && "font-mono",
       )}>
       {children}
