@@ -9,7 +9,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@deadlock-mods/ui/components/collapsible";
-import { ChevronDown, TriangleAlert } from "@deadlock-mods/ui/icons";
+import { ChevronDown } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
 import { groupFindingsByMod } from "@/lib/mods/compatibility";
 import type { AssetRepair, AssetWarning } from "./asset-compatibility-report";
@@ -119,29 +119,23 @@ export function CompatibilityWarnings({
           key={mod.modId}
           value={mod.modId}>
           <AccordionTrigger className='gap-3 py-2.5 hover:no-underline'>
-            <span className='flex min-w-0 flex-1 items-start gap-2.5'>
-              <TriangleAlert
-                aria-hidden
-                className='mt-0.5 size-4 shrink-0 text-amber-400'
-              />
-              <span className='min-w-0 flex-1'>
-                <span className='flex items-baseline gap-2'>
-                  <span className='truncate'>
-                    {modNames.get(mod.modId) ?? mod.modId}
-                  </span>
-                  <span className='shrink-0 font-normal text-muted-foreground text-xs tabular-nums'>
-                    {t("modOrdering.compatibility.warningSummary", {
-                      count: mod.count,
-                    })}
-                  </span>
+            <span className='min-w-0 flex-1 space-y-1'>
+              <span className='flex items-baseline justify-between gap-3'>
+                <span className='truncate'>
+                  {modNames.get(mod.modId) ?? mod.modId}
                 </span>
-                <span className='block truncate font-normal text-muted-foreground text-xs'>
-                  {mod.groups.map((group) => group.label).join(", ")}
+                <span className='shrink-0 font-normal text-muted-foreground text-xs tabular-nums'>
+                  {t("modOrdering.compatibility.warningSummary", {
+                    count: mod.count,
+                  })}
                 </span>
+              </span>
+              <span className='line-clamp-2 font-normal text-muted-foreground text-xs leading-relaxed'>
+                {mod.groups.map((group) => group.label).join(", ")}
               </span>
             </span>
           </AccordionTrigger>
-          <AccordionContent className='space-y-3 pl-6.5'>
+          <AccordionContent className='space-y-3'>
             {mod.groups.map((group) => (
               <div key={group.label}>
                 <p className='font-medium text-xs'>

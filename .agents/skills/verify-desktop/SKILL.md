@@ -43,6 +43,8 @@ It checks Vite on 1420, a bounded WebSocket handshake on the bridge (must answer
 
 ## Drive
 
+Read [MCP tools](references/mcp-tools.md) before the first connection. Use this server for the desktop app; other apps such as `apps/www` and `apps/api` need their own verification tools. Static checks alone do not prove live UI behavior.
+
 1. `driver_session` with `action: "start"` (default port 9223). Confirm with `ipc_get_backend_state`; the identifier is `dev.stormix.deadlock-mod-manager`.
 2. Look before acting: `webview_screenshot` and `webview_dom_snapshot` (`type: "accessibility"` for `ref=eN` handles, `"structure"` for CSS).
 3. Navigate with the sidebar links: `webview_interact` `action: "click"`, `selector: 'a[href="/my-mods"]'` (also `/mods`, `/downloads`, `/settings`, `/skins`, `/crosshairs`, `/servers`).
@@ -78,4 +80,4 @@ Report a recipe you could not complete as unverified, with the step and the unme
 - CEF builds (`dev:cef`), E2E builds and release builds have no bridge. After a CEF build the user runs `pnpm --filter desktop cef:cleanup`.
 - `webview_screenshot` captures the viewport only. Scroll the target into view first.
 - The first launch on fresh data shows the onboarding wizard, which asks for the game path; finish it as the user would or ask them to.
-- The rule `.cursor/rules/056-tauri-mcp-debugging.mdc` names `capabilities/default.json` for the bridge permission; it actually lives in `src-tauri/capabilities/wry/mcp-bridge.json`.
+- The bridge permission lives in `apps/desktop/src-tauri/capabilities/wry/mcp-bridge.json`.

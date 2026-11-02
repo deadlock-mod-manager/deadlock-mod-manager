@@ -24,7 +24,10 @@ describe("scenario selection", () => {
       "onboarding-skip-analysis",
       "onboarding-telemetry-default",
     ]);
-    expect(selectScenarios("gamebanana")).toHaveLength(30);
+    expect(selectScenarios("gamebanana")).toHaveLength(31);
+    expect(selectScenarios("gamebanana")).toContain(
+      "gamebanana-switch-reinstall",
+    );
     expect(scenarioSpec("mod-files-error")).toBe(
       "./specs/mod-files-error.e2e.ts",
     );

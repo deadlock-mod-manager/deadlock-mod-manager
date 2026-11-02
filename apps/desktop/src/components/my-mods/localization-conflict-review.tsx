@@ -168,17 +168,25 @@ export function LocalizationConflictReview({
     automaticChanges > 0 ||
     analysis.ignoredHistoricalTokens > 0 ||
     baselines.length > 0;
+  const animationChecks = analysis.animationChecks.filter(
+    (check) => !unloadedModels.has(check.filePath),
+  );
+  const hasDetails =
+    hasAutomaticDetails ||
+    warningFiles > 0 ||
+    animationChecks.length > 0 ||
+    analysis.excludedModIds.length > 0;
 
   return (
     <div className='min-h-0 min-w-0 flex-1 space-y-6 overflow-x-hidden overflow-y-auto pr-2'>
-      <div className='flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm'>
-        <ReviewStat warn={conflictCount > 0}>
-          {conflictCount > 0
-            ? t("modOrdering.localization.choiceSummary", {
-                count: conflictCount,
-              })
-            : t("modOrdering.localization.noChoicesSummary")}
-        </ReviewStat>
+      <div className='flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm'>
+        {conflictCount > 0 ? (
+          <ReviewStat warn>
+            {t("modOrdering.localization.choiceSummary", {
+              count: conflictCount,
+            })}
+          </ReviewStat>
+        ) : null}
         {warningCount > 0 ? (
           <ReviewStat warn>
             {t("modOrdering.compatibility.warningSummary", {
@@ -203,8 +211,11 @@ export function LocalizationConflictReview({
       </div>
 
       {conflictCount === 0 && warningCount === 0 ? (
-        <div className='flex items-center gap-2 rounded-md border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-sm'>
-          <CheckCircle2 className='h-4 w-4 shrink-0 text-emerald-500' />
+        <div className='flex items-center gap-2.5 rounded-md border border-status-ok/20 bg-status-ok/5 px-4 py-3 text-sm'>
+          <CheckCircle2
+            aria-hidden
+            className='size-4 shrink-0 text-status-ok motion-safe:animate-in motion-safe:zoom-in-50 motion-safe:duration-300 motion-safe:ease-[var(--ease-dmm-smooth)]'
+          />
           {t("modOrdering.localization.readyMessage")}
         </div>
       ) : null}
@@ -432,34 +443,14 @@ export function LocalizationConflictReview({
         </ReviewSection>
       ) : null}
 
-      <AnimationDependencyReport
-        checks={analysis.animationChecks.filter(
-          (check) => !unloadedModels.has(check.filePath),
-        )}
-        modNames={modNames}
-      />
-
-      {analysis.excludedModIds.length > 0 ? (
-        <p className='text-muted-foreground text-xs'>
-          {t("myMods.compatibility.excluded", {
-            names: analysis.excludedModIds
-              .map((id) => modNames.get(id) ?? id)
-              .join(", "),
-          })}
-        </p>
-      ) : null}
-
-      {hasAutomaticDetails || warningFiles > 0 ? (
+      {hasDetails ? (
         <Accordion className='rounded-md border' type='multiple'>
           {hasAutomaticDetails ? (
             <AccordionItem className='px-3 last:border-b-0' value='automatic'>
               <AccordionTrigger className='py-2.5 hover:no-underline'>
-                <span className='flex items-center gap-2.5 text-left'>
-                  <CheckCircle2 className='size-4 shrink-0 text-emerald-500' />
-                  {t("modOrdering.compatibility.automaticTitle")}
-                </span>
+                {t("modOrdering.compatibility.automaticTitle")}
               </AccordionTrigger>
-              <AccordionContent className='space-y-5 pl-6.5'>
+              <AccordionContent className='space-y-5'>
                 <p className='max-w-[68ch] text-muted-foreground text-xs leading-relaxed'>
                   {t("modOrdering.localization.reviewDescription")}
                 </p>
@@ -527,14 +518,11 @@ export function LocalizationConflictReview({
               className='px-3 last:border-b-0'
               value='technical-details'>
               <AccordionTrigger className='py-2.5 hover:no-underline'>
-                <span className='flex items-center gap-2.5 text-left'>
-                  <TriangleAlert className='size-4 shrink-0 text-amber-400' />
-                  {t("modOrdering.localization.advancedDetails", {
-                    count: warningFiles,
-                  })}
-                </span>
+                {t("modOrdering.localization.advancedDetails", {
+                  count: warningFiles,
+                })}
               </AccordionTrigger>
-              <AccordionContent className='space-y-4 pl-6.5 text-xs'>
+              <AccordionContent className='space-y-4 text-xs'>
                 {analysis.snapshotWarnings.length > 0 ? (
                   <div>
                     <p className='font-medium text-sm'>
@@ -602,6 +590,26 @@ export function LocalizationConflictReview({
               </AccordionContent>
             </AccordionItem>
           ) : null}
+          <AnimationDependencyReport
+            checks={animationChecks}
+            modNames={modNames}
+          />
+          {analysis.excludedModIds.length > 0 ? (
+            <AccordionItem className='px-3 last:border-b-0' value='excluded'>
+              <AccordionTrigger className='py-2.5 hover:no-underline'>
+                {t("myMods.compatibility.excludedTitle", {
+                  count: analysis.excludedModIds.length,
+                })}
+              </AccordionTrigger>
+              <AccordionContent className='text-xs'>
+                <ul className='space-y-1'>
+                  {analysis.excludedModIds.map((id) => (
+                    <li key={id}>{modNames.get(id) ?? id}</li>
+                  ))}
+                </ul>
+              </AccordionContent>
+            </AccordionItem>
+          ) : null}
         </Accordion>
       ) : null}
     </div>
@@ -615,13 +623,11 @@ function ReviewStat({
   warn?: boolean;
   children: ReactNode;
 }) {
-  const Icon = warn ? TriangleAlert : CheckCircle2;
+  // Only stats that need attention get color, so the summary reads as one alert.
+  if (!warn) return <span className='text-muted-foreground'>{children}</span>;
   return (
-    <span className='flex items-center gap-1.5'>
-      <Icon
-        aria-hidden
-        className={warn ? "size-4 text-amber-400" : "size-4 text-emerald-500"}
-      />
+    <span className='flex items-center gap-1.5 font-medium'>
+      <TriangleAlert aria-hidden className='size-4 text-amber-400' />
       {children}
     </span>
   );
@@ -659,7 +665,7 @@ function ReviewNotice({
   children: ReactNode;
 }) {
   return (
-    <div className='space-y-1.5 rounded-md border border-amber-500/30 px-3 py-2.5 text-xs'>
+    <div className='space-y-1.5 rounded-md border px-3 py-2.5 text-xs'>
       <p className='flex items-center gap-2 font-medium text-sm'>
         <TriangleAlert aria-hidden className='size-4 shrink-0 text-amber-400' />
         {title}

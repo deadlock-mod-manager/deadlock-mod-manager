@@ -403,7 +403,7 @@ impl VpkStaging {
       current: staged.clone(),
       parked: staged.clone(),
     });
-    fs::rename(source, &staged)?;
+    fs::rename(source, &staged).map_err(|error| Error::io_context("move VPK", source, error))?;
     Ok(staged)
   }
 
@@ -820,6 +820,39 @@ mod tests {
     let path = temp.path().join("citadel").join("addons");
     fs::create_dir_all(&path).unwrap();
     ProfileBase::new(path).unwrap()
+  }
+
+  #[cfg(windows)]
+  #[test]
+  fn staging_locked_vpk_reports_source_path_without_losing_files() {
+    use std::os::windows::fs::OpenOptionsExt;
+
+    let temp = tempfile::tempdir().unwrap();
+    let base = base(&temp);
+    let original = base.join("pak01_dir.vpk");
+    fs::write(&original, b"locked VPK").unwrap();
+    let lock = OpenOptions::new()
+      .read(true)
+      .share_mode(1)
+      .open(&original)
+      .unwrap();
+    let mut staging = VpkStaging::claim(&base, ".dmm-update-test").unwrap();
+
+    let error = staging.stage(&base, &original).unwrap_err();
+    let serialized = serde_json::to_value(&error).unwrap();
+    assert_eq!(serialized["kind"], "io");
+    assert!(
+      serialized["message"]
+        .as_str()
+        .unwrap()
+        .contains(original.to_str().unwrap())
+    );
+    drop(lock);
+
+    let error = staging.rollback(error);
+    assert!(matches!(error, Error::Io(_)));
+    assert_eq!(fs::read(&original).unwrap(), b"locked VPK");
+    assert!(!base.join(".dmm-update-test").exists());
   }
 
   #[test]

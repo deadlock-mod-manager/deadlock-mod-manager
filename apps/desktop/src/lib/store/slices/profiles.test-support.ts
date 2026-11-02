@@ -3,6 +3,7 @@ import { mock } from "bun:test";
 import type { ModDto } from "@deadlock-mods/shared";
 import { ModStatus, type LocalMod } from "@/types/mods";
 import { type ProfileVpkSnapshot } from "@/types/profiles";
+import type { SeedManifestEntry } from "@/types/profiles";
 
 export const profileTestLogger = {
   withMetadata() {
@@ -85,7 +86,7 @@ export const snapshotMissing = (
   missing: [{ modId: "42", missingVpks, orphaned }],
 });
 
-export const profileTestBackend: {
+type ProfileTestBackend = {
   readSnapshot: (folder: string | null) => Promise<ProfileVpkSnapshot>;
   readMetadata: (id: string) => Promise<ModDto>;
   readLocalMetadata: (
@@ -99,18 +100,26 @@ export const profileTestBackend: {
   forgetOrphans: (folder: string | null, modIds: string[]) => Promise<string[]>;
   listProfileFolders: () => Promise<string[]>;
   switchProfile: (folder: string | null) => Promise<void>;
-} = {
+  seedManifest: (entries: SeedManifestEntry[]) => Promise<void>;
+};
+
+export const profileTestBackend: ProfileTestBackend = {
   readSnapshot: async () => snapshotFor(),
   readMetadata: async (id) => modFor(id),
   readLocalMetadata: async (id) => modFor(id),
   forgetOrphans: async (_folder, modIds) => modIds,
   listProfileFolders: async () => [],
   switchProfile: async () => {},
+  seedManifest: async () => {},
 };
 mock.module("@tauri-apps/api/core", () => ({
   invoke: async (
     command: string,
-    args?: { profileFolder?: string | null; modIds?: string[] },
+    args?: {
+      profileFolder?: string | null;
+      modIds?: string[];
+      entries?: SeedManifestEntry[];
+    },
   ) => {
     if (command === "get_profile_vpk_snapshot")
       return profileTestBackend.readSnapshot(args?.profileFolder ?? null);
@@ -123,6 +132,8 @@ mock.module("@tauri-apps/api/core", () => ({
       return profileTestBackend.listProfileFolders();
     if (command === "switch_profile")
       return profileTestBackend.switchProfile(args?.profileFolder ?? null);
+    if (command === "seed_profile_vpk_manifest_entries")
+      return profileTestBackend.seedManifest(args?.entries ?? []);
     return undefined;
   },
 }));
