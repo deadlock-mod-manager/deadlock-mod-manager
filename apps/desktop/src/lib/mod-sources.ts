@@ -1,5 +1,6 @@
 import { ProviderError } from "@deadlock-mods/common/client-errors";
 import type { ModDto } from "@deadlock-mods/shared";
+import { CONTENT_TYPES } from "@deadlock-mods/shared";
 import { useQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import type { NativeSourceListing } from "@/types/generated/NativeSourceListing";
@@ -25,12 +26,31 @@ export const nativeListingVisible = (
   hideAdult: boolean,
 ) => !hideAdult || listing.isNsfw === false;
 
+// Published categories share the desktop's broader browsing tabs.
+const CONTENT_TYPE_TABS = {
+  skins: "mod",
+  gameplay: "mod",
+  hud: "mod",
+  models: "mod",
+  music: "sound",
+  maps: "map",
+  "ability-sounds": "sound",
+  "weapon-sounds": "sound",
+  "voice-lines": "sound",
+  "kill-sounds": "sound",
+  "killstreak-music": "sound",
+  other: "mod",
+} satisfies Record<(typeof CONTENT_TYPES)[number]["id"], ContentType>;
+
+const nativeContentType = (contentType: string | null) => {
+  const category = CONTENT_TYPES.find(({ id }) => id === contentType);
+  return category ? CONTENT_TYPE_TABS[category.id] : (contentType ?? "mod");
+};
+
 export const nativeListingMatchesContentType = (
   listing: NativeSourceListing,
   contentType: ContentType,
-) =>
-  listing.contentType === contentType ||
-  (listing.contentType === null && contentType === "mod");
+) => nativeContentType(listing.contentType) === contentType;
 
 const invokeNative = async <T>(
   command: string,
@@ -137,8 +157,8 @@ export const toNativeModDto = (
     tags: listing.tags,
     images: listing.images.filter(isNativeSourceImage),
     hero: listing.hero ?? null,
-    isAudio: listing.contentType === "sound",
-    isMap: listing.contentType === "map",
+    isAudio: nativeContentType(listing.contentType) === "sound",
+    isMap: nativeContentType(listing.contentType) === "map",
     audioUrl: null,
     downloadCount: 0,
     isNSFW: listing.isNsfw === true,
