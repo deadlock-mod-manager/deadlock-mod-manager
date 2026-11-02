@@ -47,8 +47,9 @@ on:
         type: string
         default: ""
     secrets:
+      # Callers must pass this name even when its value comes from the job's environment.
       TAURI_PRIVATE_KEY:
-        required: false
+        required: true
       VITE_GA_MEASUREMENT_ID:
         required: true
       SIGNPATH_API_TOKEN:
@@ -95,6 +96,18 @@ jobs:
     timeout-minutes: ${{ matrix.timeout_minutes }}
 
     steps:
+      - name: Check updater signing key
+        uses: actions/github-script@v9
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+        with:
+          script: |
+            if (!process.env.TAURI_SIGNING_PRIVATE_KEY?.trim()) {
+              core.setFailed(
+                'TAURI_PRIVATE_KEY is empty or unavailable. Configure it in the selected GitHub environment and pass it from the calling workflow.'
+              );
+            }
+
       - name: Checkout repository
         uses: actions/checkout@v7.0.1
 

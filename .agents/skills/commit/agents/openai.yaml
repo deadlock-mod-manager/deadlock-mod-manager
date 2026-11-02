@@ -1,0 +1,4 @@
+interface:
+  display_name: "Commit"
+policy:
+  allow_implicit_invocation: false

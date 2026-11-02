@@ -1,6 +1,6 @@
 ---
 name: commit
-description: Commit Staged Changes
+description: Commit staged changes with a conventional commit message that passes commitlint.
 disable-model-invocation: true
 ---
 
