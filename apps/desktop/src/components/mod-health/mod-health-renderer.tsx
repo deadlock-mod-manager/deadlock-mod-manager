@@ -11,6 +11,7 @@ import {
   useRepairPlanProgress,
 } from "@/hooks/use-mod-health";
 import { didGameExit } from "@/lib/gameinfo-auto-reset";
+import logger from "@/lib/logger";
 import { gameUpdatedSinceLastCheck } from "@/lib/mods/mod-health";
 import {
   forcedBuildStorageKey,
@@ -113,9 +114,17 @@ export const ModHealthRenderer = () => {
       const { profiles, activeProfileId } = usePersistedStore.getState();
       refreshQueue.schedule(profiles[activeProfileId]?.folderName ?? null);
     });
-    void unlisten.then(() => {
-      if (active) setHistoryReady(true);
-    });
+    // Without the listener a learned-data rebuild waits for the next start or
+    // library change, but the startup check and refresh must still run.
+    void unlisten
+      .catch((error) => {
+        logger
+          .withError(error)
+          .warn("Could not listen for compatibility history changes");
+      })
+      .finally(() => {
+        if (active) setHistoryReady(true);
+      });
     return () => {
       active = false;
       void unlisten.then((stop) => stop());

@@ -40,15 +40,17 @@ describe("repair rebuild after closing DMM early", () => {
       const atClose = await readRepairState(world, STATUS.folder);
       const msFromToggleToClose = Date.now() - started;
       await closeApplication(world, runtime.processId);
+      const afterClose = await readRepairState(world, STATUS.folder);
       await checkpoint(
         "at-close",
-        {
-          msFromToggleToClose,
-          atClose,
-          afterClose: await readRepairState(world, STATUS.folder),
-        },
+        { msFromToggleToClose, atClose, afterClose },
         { screenshot: false },
       );
+      // Otherwise the restart has nothing to recover and the case proves nothing.
+      if (atClose.packageExists || afterClose.packageExists)
+        throw new Error(
+          `the repair was rebuilt before DMM closed (${msFromToggleToClose} ms after the change)`,
+        );
       return;
     }
 

@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { appendFile, readFile, writeFile } from "node:fs/promises";
+import { appendFile, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
@@ -109,18 +109,39 @@ export const readRepairState = async (
   };
 };
 
-/** The install-wide observed-history file the receipt key digests. */
-export const readHistoryDigest = async (
+/** When the profile's repair receipt was last written, or null without one. */
+export const readReceiptModifiedMs = async (
   world: string,
-): Promise<string | null> => {
+  profileFolder: string | null,
+): Promise<number | null> => {
+  const citadel = await citadelOf(world);
+  const receipt = path.join(
+    citadel,
+    overlayFolder(profileFolder),
+    "compatibility.json",
+  );
+  return stat(receipt).then(
+    (info) => info.mtimeMs,
+    () => null,
+  );
+};
+
+/** The install-wide observed-history file the receipt key digests. */
+const readHistoryDigest = async (world: string): Promise<string | null> => {
   const {
     configuration: { roots },
   } = await assertOwnedWorld(world);
   const citadel = path.join(roots.game, "game", "citadel");
   const installation = createHash("sha256").update(citadel).digest("hex");
+  // The backend uses `dirs::cache_dir()`: the world's XDG cache on Linux, and
+  // Local AppData on Windows, which the harness doesn't redirect.
+  const cache =
+    process.platform === "win32"
+      ? process.env.LOCALAPPDATA
+      : path.join(roots.webviewData, "cache");
+  if (!cache) return null;
   const file = path.join(
-    roots.webviewData,
-    "cache",
+    cache,
     "dev.stormix.deadlock-mod-manager",
     "compatibility",
     installation,

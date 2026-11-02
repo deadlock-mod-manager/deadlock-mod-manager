@@ -43,6 +43,7 @@ import {
   prepareHealthUpdateWorld,
 } from "./health-update-fixtures";
 import { prepareConflictWorld } from "./conflict-fixtures";
+import { repairRebuildScenarios } from "./repair-rebuild-scenarios";
 import { prepareFilesystemWorld } from "./filesystem-fixtures";
 import { prepareManifestRepairWorld } from "./manifest-repair-fixtures";
 import { prepareModFolderRepairWorld } from "./mod-folder-repair-fixtures";
@@ -463,20 +464,6 @@ const modUpdates: Definition = {
   verifyNetwork: assertReliabilityNetwork,
 };
 
-// A fixed mod and a plain skin, for cases where a saved repair goes stale.
-const repairRebuild = (
-  spec: string,
-  phases: readonly string[],
-): Definition => ({
-  ...defaults,
-  family: "compatibility",
-  spec,
-  phases,
-  routes: profileRoutes,
-  prepare: async (world) =>
-    prepareFixedStatusWorld(world, [STATUS_FIXED_MOD, STATUS_PLAIN_MOD]),
-});
-
 export const scenarios = {
   "gamebanana-mirror-fallback": downloadFallback,
   "gamebanana-crash-cause": crashAttribution,
@@ -846,30 +833,11 @@ export const scenarios = {
     prepare: prepareHealthUpdateWorld,
     verifyNetwork: assertHealthUpdateNetwork,
   },
-  "compatibility-rebuild-after-close": repairRebuild(
-    "compatibility-rebuild-after-close",
-    ["toggle-close", "restart-after-close"],
-  ),
-  "compatibility-rebuild-restart": repairRebuild(
-    "compatibility-rebuild-game-files",
-    ["fix", "restart-changed"],
-  ),
-  "compatibility-rebuild-steam-rewrite": repairRebuild(
-    "compatibility-rebuild-game-files",
-    ["fix", "restart-changed"],
-  ),
-  "compatibility-rebuild-game-update": repairRebuild(
-    "compatibility-rebuild-game-files",
-    ["fix", "restart-changed"],
-  ),
-  "compatibility-rebuild-app-update": repairRebuild(
-    "compatibility-rebuild-game-files",
-    ["fix", "restart-changed"],
-  ),
-  "compatibility-rebuild-new-data": repairRebuild(
-    "compatibility-rebuild-new-data",
-    ["install", "restart-installed"],
-  ),
+  ...repairRebuildScenarios({
+    ...defaults,
+    family: "compatibility",
+    routes: profileRoutes,
+  }),
   // The stand-in game is a Linux `sleep` (e2e/support/fake-game.ts).
   "fixed-status-game-exit": {
     ...defaults,

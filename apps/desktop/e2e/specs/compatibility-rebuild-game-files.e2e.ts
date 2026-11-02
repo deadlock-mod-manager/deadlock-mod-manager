@@ -8,6 +8,7 @@ import {
   checkpoint,
   expectStillFixed,
   fixAndConfirm,
+  readReceiptModifiedMs,
   readRepairState,
   rewriteGameFiles,
 } from "../support/fixed-status";
@@ -47,6 +48,7 @@ const CHANGES = new Map<
 
 describe("repair rebuild after game or app files change", () => {
   it("restores Fixed for this patch after the restart", async () => {
+    const launchedAt = Date.now();
     const runtime = await startApplication();
     const world = runtime.roots.world;
     const caseId = runtime.caseId;
@@ -83,6 +85,15 @@ describe("repair rebuild after game or app files change", () => {
         60_000,
       ),
     );
+    if (caseId === "compatibility-rebuild-restart") {
+      await step("a current repair is reused, not rebuilt", async () => {
+        const modified = await readReceiptModifiedMs(world, STATUS.folder);
+        if (modified === null || modified >= launchedAt)
+          throw new Error(
+            `the receipt was rewritten after the restart (${modified} >= ${launchedAt})`,
+          );
+      });
+    }
     await closeApplication(world, runtime.processId);
   });
 });

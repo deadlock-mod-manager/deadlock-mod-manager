@@ -5,7 +5,7 @@ import {
   expectStillFixed,
   fixAndConfirm,
   importMod,
-  readHistoryDigest,
+  readRepairState,
 } from "../support/fixed-status";
 import {
   DATA_MOD_FILE,
@@ -27,20 +27,28 @@ describe("repair rebuild after a health check learns game data", () => {
       await step("fix the mod", () =>
         fixAndConfirm(world, STATUS.folder, FIXED_MOD),
       );
-      const before = await readHistoryDigest(world);
+      const before = await readRepairState(world, STATUS.folder);
       await step("install a mod that ships a game data table", () =>
         importMod(world, DATA_MOD_FILE, true),
       );
-      await step("the fix survives the install", () =>
-        expectStillFixed(
+      await step("the fix survives the install", async () => {
+        const { repairs } = await expectStillFixed(
           world,
           STATUS.folder,
           FIXED_MOD,
           "after-install",
           30_000,
-          async () => ({ historyBefore: before }),
-        ),
-      );
+          async () => ({ receiptHistoryBefore: before.historyDigest }),
+        );
+        // The repair must be rebuilt against the game data the check learned.
+        if (
+          repairs.historyDigest === null ||
+          repairs.historyDigest === before.historyDigest
+        )
+          throw new Error(
+            `the receipt doesn't reflect newly learned game data: ${before.historyDigest} -> ${repairs.historyDigest}`,
+          );
+      });
     } else {
       await step("the fix survives a restart after the install", () =>
         expectStillFixed(
