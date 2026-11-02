@@ -1,6 +1,6 @@
 use crate::app_runtime::AppHandle;
 use crate::errors::Error;
-use crate::mod_manager::shard::ProfileBase;
+use crate::mod_manager::shard::{ProfileBase, ShardIndex, ShardLocator};
 use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
 use crate::providers::{SubmissionProvider, SubmissionRef};
 use serde::{Deserialize, Serialize};
@@ -15,6 +15,9 @@ use vpk_parser::{VpkParseOptions, VpkParsed, VpkParser};
 pub struct LocalAddonInfo {
   pub file_path: String,
   pub file_name: String,
+  /// Where the file sits in the profile, in the `ShardLocator` wire format
+  /// (`pak01_dir.vpk`, or `addons2/pak01_dir.vpk` in an overflow shard).
+  pub locator: String,
   pub vpk_parsed: VpkParsed,
   pub remote_id: Option<String>, // Will be populated by API call
   pub match_info: Option<MatchInfo>,
@@ -319,25 +322,27 @@ impl AddonAnalyzer {
     for (shard_index, shard_path) in profile_base.existing_shards() {
       // The game only loads VPKs at the top of each search path; subfolders
       // hold internal staging from interrupted operations.
-      if let Err(e) = Self::find_vpk_file_paths_shallow(&shard_path, &mut vpk_file_paths) {
+      let mut shard_paths = Vec::new();
+      if let Err(e) = Self::find_vpk_file_paths_shallow(&shard_path, &mut shard_paths) {
         return Ok(AnalyzeAddonsResult {
           addons: Vec::new(),
           total_count: 0,
           errors: vec![format!("Failed to scan addon shard {shard_index}: {e}")],
         });
       }
+      vpk_file_paths.extend(shard_paths.into_iter().map(|path| (shard_index, path)));
     }
 
     // Separate prefixed VPKs from non-prefixed ones
     let mut prefixed_vpk_paths = Vec::new();
     let mut non_prefixed_vpk_paths = Vec::new();
 
-    for vpk_path in vpk_file_paths {
+    for (shard, vpk_path) in vpk_file_paths {
       if let Some(file_name) = vpk_path.file_name().and_then(|n| n.to_str()) {
         if Self::extract_mod_id_from_filename(file_name).is_some() {
-          prefixed_vpk_paths.push(vpk_path);
+          prefixed_vpk_paths.push((shard, vpk_path));
         } else {
-          non_prefixed_vpk_paths.push(vpk_path);
+          non_prefixed_vpk_paths.push((shard, vpk_path));
         }
       }
     }
@@ -377,9 +382,9 @@ impl AddonAnalyzer {
     for batch in prefixed_vpk_paths.chunks(batch_size) {
       let mut handles = Vec::new();
 
-      for file_path in batch {
-        let file_path = file_path.clone();
-        let handle = task::spawn_blocking(move || Self::parse_vpk_file_fast(&file_path));
+      for (shard, file_path) in batch {
+        let (shard, file_path) = (*shard, file_path.clone());
+        let handle = task::spawn_blocking(move || Self::parse_vpk_file_fast(&file_path, shard));
         handles.push(handle);
       }
 
@@ -440,9 +445,9 @@ impl AddonAnalyzer {
     for batch in non_prefixed_vpk_paths.chunks(batch_size) {
       let mut handles = Vec::new();
 
-      for file_path in batch {
-        let file_path = file_path.clone();
-        let handle = task::spawn_blocking(move || Self::parse_vpk_file_fast(&file_path));
+      for (shard, file_path) in batch {
+        let (shard, file_path) = (*shard, file_path.clone());
+        let handle = task::spawn_blocking(move || Self::parse_vpk_file_fast(&file_path, shard));
         handles.push(handle);
       }
 
@@ -677,7 +682,8 @@ impl AddonAnalyzer {
     path: &std::path::Path,
   ) -> Result<Option<(String, MatchInfo)>, Error> {
     let owned = path.to_path_buf();
-    let info = task::spawn_blocking(move || Self::parse_vpk_file_fast(&owned))
+    // Only the fingerprint is used here, so the file's shard doesn't matter.
+    let info = task::spawn_blocking(move || Self::parse_vpk_file_fast(&owned, ShardIndex::FIRST))
       .await
       .map_err(|e| Error::BackgroundTaskFailed(e.to_string()))?
       .map_err(Error::InvalidInput)?;
@@ -685,7 +691,7 @@ impl AddonAnalyzer {
   }
 
   /// Fast VPK parsing with minimal data extraction for identification
-  fn parse_vpk_file_fast(file_path: &PathBuf) -> Result<LocalAddonInfo, String> {
+  fn parse_vpk_file_fast(file_path: &PathBuf, shard: ShardIndex) -> Result<LocalAddonInfo, String> {
     let file_name = file_path
       .file_name()
       .unwrap_or_default()
@@ -733,6 +739,7 @@ impl AddonAnalyzer {
 
     Ok(LocalAddonInfo {
       file_path: file_path_str,
+      locator: ShardLocator::new(shard, file_name.clone()).to_wire(),
       file_name,
       vpk_parsed: parsed,
       remote_id: None,
@@ -795,6 +802,34 @@ mod tests {
     assert!(result.errors.is_empty(), "{:?}", result.errors);
   }
 
+  #[tokio::test]
+  async fn reports_which_shard_each_file_sits_in() {
+    let game = tempfile::tempdir().unwrap();
+    let citadel = game.path().join("game/citadel");
+    // Prefixed names skip the hash lookup, so the test stays offline.
+    for root in ["addons", "addons2"] {
+      let source = tempfile::tempdir().unwrap();
+      std::fs::write(source.path().join("readme.txt"), root).unwrap();
+      let profile = citadel.join(root).join("1_profile");
+      std::fs::create_dir_all(&profile).unwrap();
+      vpkmanager::pack_directory(source.path(), &profile.join("123_same.vpk")).unwrap();
+    }
+
+    let result = AddonAnalyzer::new()
+      .analyze_local_addons(game.path().to_path_buf(), Some("1_profile".into()), None)
+      .await
+      .unwrap();
+
+    assert!(result.errors.is_empty(), "{:?}", result.errors);
+    let mut locators: Vec<_> = result
+      .addons
+      .iter()
+      .map(|addon| addon.locator.as_str())
+      .collect();
+    locators.sort_unstable();
+    assert_eq!(locators, ["123_same.vpk", "addons2/123_same.vpk"]);
+  }
+
   fn write_vpk(dir: &std::path::Path, name: &str, contents: &str) {
     let source = tempfile::tempdir().unwrap();
     std::fs::write(source.path().join("fixture.txt"), contents).unwrap();
@@ -842,7 +877,13 @@ mod tests {
       .iter()
       .map(|addon| {
         let path = PathBuf::from(&addon.file_path);
-        let shard = path.parent().unwrap().parent().unwrap().file_name().unwrap();
+        let shard = path
+          .parent()
+          .unwrap()
+          .parent()
+          .unwrap()
+          .file_name()
+          .unwrap();
         (
           format!("{}/{}", shard.to_string_lossy(), addon.file_name),
           addon.remote_id.clone(),
@@ -882,11 +923,9 @@ mod tests {
         "900002":{"enabled":true,"shard":1,"currentVpks":["pak02_dir.vpk"]}}}"#,
     )
     .unwrap();
-    let owners =
-      AddonAnalyzer::manifest_owners(&manifest, &ProfileBase::new(&base_path).unwrap());
-    let owner = |name: &str| {
-      AddonAnalyzer::owner_of(&owners, &base_path.join(name).to_string_lossy())
-    };
+    let owners = AddonAnalyzer::manifest_owners(&manifest, &ProfileBase::new(&base_path).unwrap());
+    let owner =
+      |name: &str| AddonAnalyzer::owner_of(&owners, &base_path.join(name).to_string_lossy());
     assert_eq!(owner("pak01_dir.vpk").as_deref(), Some("900001"));
     assert_eq!(owner("pak02_dir.vpk"), None);
     assert_eq!(owner("pak03_dir.vpk"), None);
