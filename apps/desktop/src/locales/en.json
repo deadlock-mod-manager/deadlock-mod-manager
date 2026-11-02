@@ -1,20 +1,20 @@
 {
   "hudCompatibility": {
-    "logModified": "Console file modified: {{date}}",
-    "noEvidence": "No matching evidence in the bounded console sample.",
-    "nextStep": "Update the mod or use the existing mod isolation workflow to test it. Confirm the behavior in a fresh game session before attributing a failure.",
-    "logUnavailable": "Console evidence unavailable:",
-    "title": "HUD layout diagnostics",
-    "logTruncated": "Only the final 256 KiB and up to 40 matching lines were examined.",
+    "logModified": "Game log last updated: {{date}}",
+    "noEvidence": "No matching errors found in the part of the game log checked.",
+    "nextStep": "Check for a mod update, or use “$t(bisect.entry)” to test which mod causes the problem. Launch the game again to check whether the problem still happens.",
+    "logUnavailable": "Couldn’t read the game log:",
+    "title": "HUD layout checks",
+    "logTruncated": "Checked the last 256 KiB of the game log and kept up to 40 matching lines.",
     "status": {
-      "compared": "Compared (heuristic only)",
-      "unreadable": "Incomplete: unreadable resource",
-      "unsupported": "Incomplete: unsupported layout",
-      "noBaseline": "Incomplete: no vanilla baseline"
+      "compared": "Compared with the current game",
+      "unreadable": "Couldn’t read the layout",
+      "unsupported": "Couldn’t check this layout format",
+      "noBaseline": "No original game layout to compare"
     },
-    "logCaution": "Console matches are supporting evidence only, not proof of a culprit. The file and its lines may be stale or from another profile/session; modification time does not date individual lines.",
-    "advisory": "Read-only heuristic: removed panels can be intentional. These findings do not block launch or apply repairs. Scripts, styles, includes and runtime behavior are not verified.",
-    "missing": "{{count}} missing vanilla panel(s)"
+    "logCaution": "These errors may be from an earlier game session or a different profile. A matching error doesn’t prove this mod caused it. The date shows when the log was last updated, not when each error happened.",
+    "advisory": "Some HUD mods leave out panels on purpose. These checks compare layout files; they don’t check scripts, styles, included layouts, or what happens in game. They won’t change your files or stop you from launching.",
+    "missing": "{{count}} original game panel(s) missing from this mod"
   },
   "modelConflict": {
     "keptCurrent": "Skipped to keep current skins",

@@ -31,10 +31,11 @@ test("incomplete HUD coverage remains visible without missing panels or log evid
       />
     </I18nextProvider>,
   );
-  expect(html).toContain("Incomplete: unsupported layout");
-  expect(html).toContain("Console evidence unavailable");
-  expect(html).toContain("not proof of a culprit");
-  expect(html).toContain("do not block launch");
+  expect(html).toContain("Couldn’t check this layout format");
+  expect(html).toContain("Couldn’t read the game log");
+  expect(html).toContain("doesn’t prove this mod caused it");
+  expect(html).toContain("stop you from launching");
   expect(html).toContain("Test HUD");
+  expect(html).toContain(en.bisect.entry);
   expect(html).not.toContain("<button");
 });
