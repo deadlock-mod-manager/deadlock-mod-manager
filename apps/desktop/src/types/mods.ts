@@ -110,6 +110,8 @@ export interface LocalAddonInfo {
   fileName: string;
   vpkParsed: VpkParsed;
   remoteId?: string; // Will be populated by API call
+  /** The mod the profile's manifest assigns this exact file to. */
+  manifestModId?: string;
   matchInfo?: {
     fileId?: string;
     sourcePath?: string;

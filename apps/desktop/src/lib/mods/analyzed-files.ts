@@ -59,3 +59,18 @@ export const needsAnalysisReview = ({
 }: Pick<AnalyzeAddonsResult, "addons" | "errors">): boolean =>
   errors.length > 0 ||
   addons.some((addon) => !addon.remoteId || !addon.vpkParsed?.fingerprint);
+
+/**
+ * True when the profile's manifest already assigns every file in this group to
+ * the mod they were identified as. Manifest reconciliation restores such mods
+ * with their recorded files, order and enabled state, so registering them again
+ * would only cost catalog requests and could overwrite what DMM recorded.
+ */
+export const isRecordedInManifest = (
+  remoteId: string,
+  addons: readonly Pick<LocalAddonInfo, "manifestModId">[],
+): boolean =>
+  addons.length > 0 &&
+  addons.every(
+    (addon) => addon.manifestModId != null && addon.manifestModId === remoteId,
+  );
