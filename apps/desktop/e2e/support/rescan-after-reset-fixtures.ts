@@ -115,7 +115,7 @@ export const prepareRescanAfterResetWorld = async (world: CreatedWorld) => {
   manifest.mods[CATALOG_MOD_ID] = {
     ...manifest.mods[CATALOG_MOD_ID],
     currentVpks: ["pak01_dir.vpk", "pak02_dir.vpk"],
-    originalVpkNames: ["blue.vpk", "common.vpk"],
+    originalVpkNames: ["common.vpk", "blue.vpk"],
   };
   manifest.mods[RESET_DISABLED_MOD] = {
     enabled: false,
