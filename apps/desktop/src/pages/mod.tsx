@@ -589,7 +589,7 @@ const Mod = () => {
                 <ModModelPreview
                   mod={mod}
                   localMod={localMod}
-                  files={availableFiles}
+                  files={isGameBananaMod ? availableFiles : []}
                 />
               </TabsContent>
             )}
