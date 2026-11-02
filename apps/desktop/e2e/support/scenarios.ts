@@ -22,6 +22,11 @@ import {
   prepareGroupedIdentificationWorld,
 } from "./library-groups-fixtures";
 import { prepareProfileWorld } from "./profile-fixtures";
+import {
+  hashRequests,
+  prepareRescanAfterResetWorld,
+  rescanAfterResetRoutes,
+} from "./rescan-after-reset-fixtures";
 import { shareRoutes } from "./profile-share-fixtures";
 import { prepareFileOrderWorld } from "./file-order-fixtures";
 import { prepareBrokenProfileWorld } from "./broken-profile-fixtures";
@@ -49,6 +54,11 @@ import { prepareShardWorld } from "./shard-fixtures";
 import { assertCrashEvidence } from "./filesystem-oracle";
 import { assertNormalExit, assertInterruptedExit } from "./phase-evidence";
 import { buildSyntheticVpk, writeSyntheticVpk } from "./vpk";
+import {
+  assertUnknownAddonNetwork,
+  prepareUnknownAddonWorld,
+  unknownAddonRoutes,
+} from "./analyze-known-files-fixtures";
 import { createArchive } from "./archive-fixtures";
 import { randomBytes } from "node:crypto";
 import { contentRoutes, prepareContentWorld } from "./content-fixtures";
@@ -448,6 +458,23 @@ export const scenarios = {
     routes: detectedModRoutes,
     prepare: prepareGroupedIdentificationWorld,
   },
+  "addons-rescan-after-reset": {
+    ...defaults,
+    family: "addons-analysis",
+    spec: "rescan-after-reset",
+    phases: ["reset-rescan", "restart-rescan"],
+    routes: rescanAfterResetRoutes,
+    prepare: prepareRescanAfterResetWorld,
+    verifyNetwork: (_id: string, requests: readonly FixtureRequest[]) => {
+      // Only the hand-placed pak04 and the local import's pak03 may be looked
+      // up: the catalog mods' files are already accounted for by the manifest.
+      const lookups = hashRequests(requests).length;
+      if (lookups !== 2)
+        throw new Error(
+          `Analyze looked up ${lookups} files by hash; expected exactly 2`,
+        );
+    },
+  },
   "library-groups-pagination": {
     ...libraryGroups,
     spec: "library-groups-pagination",
@@ -629,6 +656,15 @@ export const scenarios = {
           "File management must download only the newly added optional archive once",
         );
     },
+  },
+  "analyze-known-files": {
+    ...defaults,
+    family: "analysis",
+    spec: "analyze-known-files",
+    phases: ["add-files", "restart-known"],
+    routes: unknownAddonRoutes,
+    prepare: prepareUnknownAddonWorld,
+    verifyNetwork: assertUnknownAddonNetwork,
   },
   "onboarding-skip-analysis": onboarding,
   "onboarding-telemetry-default": {
