@@ -23,6 +23,7 @@ import { useTranslation } from "react-i18next";
 import { GrInstallOption } from "react-icons/gr";
 import { RiErrorWarningLine } from "react-icons/ri";
 import { FileSelectorDialog } from "@/components/downloads/file-selector-dialog";
+import { NativeSourceSelectionDialog } from "@/components/downloads/native-source-selection-dialog";
 import { OpenInPerformanceButton } from "@/components/mod-browsing/config-listing";
 import { MultiFileDownloadDialog } from "@/components/downloads/multi-file-download-dialog";
 import {
@@ -161,6 +162,9 @@ const InstallModButton = ({
     closeDialog,
     localMod,
     isDialogOpen,
+    nativeSelection,
+    confirmNativeSelection,
+    cancelNativeSelection,
   } = useDownload(remoteMod, availableFiles, analyticsEntryPoint);
   const {
     performInstall,
@@ -447,7 +451,11 @@ const InstallModButton = ({
           <TooltipTrigger asChild>
             <Button
               aria-label={tooltip}
-              disabled={isActionInProgress || isAnalyzing}
+              disabled={
+                isActionInProgress ||
+                isAnalyzing ||
+                (!localMod && remoteMod?.downloadable === false)
+              }
               icon={
                 showProgressRing ? (
                   <DownloadProgressRing percentage={progressPercent} />
@@ -472,6 +480,15 @@ const InstallModButton = ({
       )}
 
       <div className='contents' onClick={(e) => e.stopPropagation()}>
+        {nativeSelection?.listing.release && (
+          <NativeSourceSelectionDialog
+            installation={nativeSelection.listing.release.installation}
+            modName={nativeSelection.listing.title}
+            selectedComponentIds={localMod?.source?.componentIds}
+            onConfirm={confirmNativeSelection}
+            onCancel={cancelNativeSelection}
+          />
+        )}
         {fileSelectorOpened && (
           <FileSelectorDialog
             fileTree={currentFileTree}

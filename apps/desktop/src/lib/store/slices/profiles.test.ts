@@ -457,6 +457,34 @@ describe("profile snapshot reconciliation", () => {
     expect(remoteReads).toBe(0);
   });
 
+  it("recovers source identity without claiming cached latest is installed", async () => {
+    const store = createTestStore();
+    const id = `source-${"a".repeat(64)}`;
+    profileTestBackend.readSnapshot = async () => snapshotFor(id);
+    profileTestBackend.readMetadata = async () => ({
+      ...modFor(id),
+      source: {
+        sourceKey: "accepted",
+        sourceId: "example",
+        sourceName: "Example",
+        acceptedOrigin: "https://example.org",
+        descriptorUrl: "https://example.org/source.json",
+        listingId: "42",
+        releaseId: "latest",
+        contentRevision: "latest",
+        artifactIds: ["pack"],
+        componentIds: ["blue"],
+        iconUrl: null,
+      },
+    });
+    await store.getState().restoreModsFromManifest();
+    const recovered = store.getState().localMods[0];
+    expect(recovered.source?.sourceKey).toBe("accepted");
+    expect(recovered.source?.releaseId).toBe("");
+    expect(recovered.source?.artifactIds).toEqual([]);
+    expect(recovered.installedVpks).toEqual(["pak01_dir.vpk"]);
+  });
+
   it("allows overlapping syncs for different profiles", async () => {
     const store = createTestStore();
     store.setState({

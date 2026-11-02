@@ -1,4 +1,3 @@
-import type { ModDto } from "@deadlock-mods/shared";
 import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Dialog,
@@ -22,6 +21,7 @@ import { usePersistedStore } from "@/lib/store";
 import { backsUpUpdate, useBatchUpdate } from "@/hooks/use-batch-update";
 import { BatchUpdateFailureDetails } from "@/components/my-mods/batch-update-failure-details";
 import { FileSelectorDialog } from "@/components/downloads/file-selector-dialog";
+import { NativeSourceSelectionDialog } from "@/components/downloads/native-source-selection-dialog";
 import {
   getBatchUpdateFailure,
   remainingUpdateTargets,
@@ -51,8 +51,12 @@ export const BatchUpdateDialog = ({
     updateProgress,
     pendingSelections,
     dismissSelection,
+    confirmNativeChoices,
   } = useBatchUpdate();
   const pendingSelection = pendingSelections[0];
+  const pendingNative = open
+    ? updatableMods.find((update) => update.nativeSelectionRequired)
+    : undefined;
   const skipModUpdate = usePersistedStore((state) => state.skipModUpdate);
   const queryClient = useQueryClient();
   const [refreshingFiles, setRefreshingFiles] = useState(false);
@@ -174,8 +178,15 @@ export const BatchUpdateDialog = ({
     };
   }, [open, updateIds, prepareUpdates, queryClient, resetBatchUpdate]);
 
-  const handleSkip = (mod: ModDto, updatedAt: number) => {
-    skipModUpdate(mod.remoteId, updatedAt);
+  const handleSkip = (mod: ModUpdateCandidate["mod"], updatedAt: number) => {
+    skipModUpdate(
+      mod.remoteId,
+      updatedAt,
+      undefined,
+      mod.source
+        ? JSON.stringify([mod.source.releaseId, mod.source.contentRevision])
+        : undefined,
+    );
     toast.success(t("myMods.batchUpdate.skipped", { name: mod.name }));
     if (updatableMods.length <= 1) {
       onOpenChange(false);
@@ -194,6 +205,23 @@ export const BatchUpdateDialog = ({
 
   return (
     <>
+      {pendingNative?.nativeInstallation && (
+        <NativeSourceSelectionDialog
+          key={pendingNative.mod.remoteId}
+          installation={pendingNative.nativeInstallation}
+          modName={pendingNative.mod.name}
+          selectedComponentIds={pendingNative.mod.source?.componentIds.filter(
+            (id) =>
+              pendingNative.nativeInstallation?.components.some(
+                (component) => component.id === id,
+              ),
+          )}
+          onConfirm={async (ids) => {
+            confirmNativeChoices(pendingNative.mod.remoteId, ids);
+          }}
+          onCancel={() => onOpenChange(false)}
+        />
+      )}
       {/* Not tied to `open`: the update finishes even if the dialog was closed. */}
       <FileSelectorDialog
         isOpen={!!pendingSelection && !batchUpdateMutation.isPending}
@@ -216,7 +244,9 @@ export const BatchUpdateDialog = ({
         }}
         onCancel={handleDismissSelection}
       />
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog
+        open={open && !pendingNative && !pendingSelection}
+        onOpenChange={onOpenChange}>
         <DialogContent className='max-w-3xl max-h-[80vh] overflow-y-auto'>
           <DialogHeader>
             <DialogTitle>

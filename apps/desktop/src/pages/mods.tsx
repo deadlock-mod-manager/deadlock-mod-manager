@@ -1,6 +1,8 @@
 import { Alert, AlertDescription } from "@deadlock-mods/ui/components/alert";
 import { Warning } from "@phosphor-icons/react";
-import { Suspense, useCallback } from "react";
+import { Suspense, useCallback, useState } from "react";
+import { SourceSelector } from "@/components/mod-browsing/source-selector";
+import { NativeSourceCatalog } from "@/components/mod-browsing/catalog/native-source-catalog";
 import { useTranslation } from "react-i18next";
 import ContentTypeTabs from "@/components/mod-browsing/content-type-tabs";
 import {
@@ -25,6 +27,7 @@ const resolveContentType = (
 
 const GetMods = () => {
   const { t } = useTranslation();
+  const [sourceKey, setSourceKey] = useState("gamebanana");
   const isCustomMapsEnabled = useExperimentalFeature("custom-maps");
   const storedContentType = usePersistedStore(
     (state) => state.modsFilters.contentType,
@@ -58,7 +61,13 @@ const GetMods = () => {
           value={contentType}
         />
       </div>
-      {contentType === "collection" ? (
+      {sourceKey !== "gamebanana" ? (
+        <NativeSourceCatalog
+          sourceKey={sourceKey}
+          onSourceChange={setSourceKey}
+          contentType={contentType}
+        />
+      ) : contentType === "collection" ? (
         <Suspense fallback={<CollectionGridSkeleton />}>
           <ErrorBoundary>
             <CollectionGrid />
@@ -67,7 +76,12 @@ const GetMods = () => {
       ) : (
         <Suspense fallback={<ModsPageSkeleton />}>
           <ErrorBoundary>
-            <GetModsData contentType={contentType} />
+            <GetModsData
+              contentType={contentType}
+              sourceActions={
+                <SourceSelector value={sourceKey} onChange={setSourceKey} />
+              }
+            />
           </ErrorBoundary>
         </Suspense>
       )}
