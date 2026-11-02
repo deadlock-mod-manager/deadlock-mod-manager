@@ -428,9 +428,39 @@ export const fixAndConfirm = async (
   );
 };
 
+type Badge = { status: string | null; text: string } | null;
+
+/** The health badge on `modId`'s library card, looked up again on each call. */
+const readBadge = async (modId: string): Promise<Badge> => {
+  const badge = await $(`${card(modId)}//*[@data-testid="mod-health-badge"]`);
+  if (!(await badge.isExisting())) return null;
+  return {
+    status: await badge.getAttribute("data-status"),
+    text: await badge.getText(),
+  };
+};
+
+/**
+ * The library reads its own cached health report, so its badge can trail
+ * `get_mod_health` until a finished rebuild invalidates that report. Kept
+ * short: the slowest case already samples for 60 s of a 90 s test timeout.
+ */
+const waitForFixedBadge = async (modId: string, timeoutMs: number) => {
+  await navigate("my-mods");
+  await findMod(modId);
+  const started = Date.now();
+  let badge = await readBadge(modId);
+  while (badge?.status !== "fixed" && Date.now() - started < timeoutMs) {
+    await delay(250);
+    badge = await readBadge(modId);
+  }
+  return badge;
+};
+
 /**
  * Samples `modId` for `durationMs`, saves a checkpoint, and asserts it ends
- * fixed with its repair packaged and mounted.
+ * fixed with its repair packaged and mounted, and that its library card reads
+ * "Fixed for this patch".
  */
 export const expectStillFixed = async (
   world: string,
@@ -442,10 +472,12 @@ export const expectStillFixed = async (
 ) => {
   const samples = await sampleStatus(name, folder, modId, durationMs);
   const repairs = await readRepairState(world, folder);
+  const badge = await waitForFixedBadge(modId, 10_000);
   await checkpoint(name, {
     health: await readHealth(folder),
     repairs,
     samples,
+    badge,
     historyDigest: await readHistoryDigest(world),
     ...(await extra()),
   });
@@ -460,6 +492,10 @@ export const expectStillFixed = async (
   )
     throw new Error(
       `${name}: ${modId}'s repair must be packaged and mounted: ${JSON.stringify(repairs)}`,
+    );
+  if (badge?.status !== "fixed" || badge.text !== "Fixed for this patch")
+    throw new Error(
+      `${name}: ${modId}'s library card must read "Fixed for this patch", but shows ${JSON.stringify(badge)}`,
     );
   return { samples, repairs };
 };
