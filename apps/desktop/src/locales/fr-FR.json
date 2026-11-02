@@ -5101,6 +5101,7 @@
     "noEntriesFound": "Aucune entrée trouvée dans le fichier VPK",
     "noAddonSelected": "Aucun addon sélectionné",
     "failedToAddModToLibrary": "Échec de l'ajout du mod à la bibliothèque",
+    "alreadyInLibrary": "",
     "addToLibraryTitle": "Ajouter à la bibliothèque",
     "addToLibraryDescription": "Ajouter \"{{fileName}}\" à votre bibliothèque de mods",
     "addToLibrarySuccess": "\"{{name}}\" ajouté à la bibliothèque",

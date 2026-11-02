@@ -5101,6 +5101,7 @@
     "noEntriesFound": "Kei Iitreeg i de VPK-Datei gfunde",
     "noAddonSelected": "Kei Addon usgwählt",
     "failedToAddModToLibrary": "Fehler bim Hinzuefüege vo de Mod zur Bibliothek",
+    "alreadyInLibrary": "",
     "addToLibraryTitle": "Zur Bibliothek hinzuefüege",
     "addToLibraryDescription": "Füeg \"{{fileName}}\" zu dinere Mod-Bibliothek hinzue",
     "addToLibrarySuccess": "\"{{name}}\" zur Bibliothek hinzuegfüegt",

@@ -5101,6 +5101,7 @@
     "noEntriesFound": "لم يتم العثور على إدخالات في ملف VPK",
     "noAddonSelected": "لم يتم اختيار إضافة",
     "failedToAddModToLibrary": "فشل في إضافة التعديل إلى المكتبة",
+    "alreadyInLibrary": "",
     "addToLibraryTitle": "إضافة إلى المكتبة",
     "addToLibraryDescription": "أضف \"{{fileName}}\" إلى مكتبة التعديلات الخاصة بك",
     "addToLibrarySuccess": "تمت إضافة \"{{name}}\" إلى المكتبة",
