@@ -108,26 +108,25 @@ export const ModHealthRenderer = () => {
   // startup work waits until this listener is registered and can't miss it.
   useEffect(() => {
     let active = true;
+    // Without the listener a learned-data rebuild waits for the next start or
+    // library change, but the startup check and refresh must still run.
     const unlisten = listen("compatibility-history-changed", () => {
       if (!active) return;
       void invalidateModHealth(queryClient);
       const { profiles, activeProfileId } = usePersistedStore.getState();
       refreshQueue.schedule(profiles[activeProfileId]?.folderName ?? null);
+    }).catch((error) => {
+      logger
+        .withError(error)
+        .warn("Could not listen for compatibility history changes");
+      return null;
     });
-    // Without the listener a learned-data rebuild waits for the next start or
-    // library change, but the startup check and refresh must still run.
-    void unlisten
-      .catch((error) => {
-        logger
-          .withError(error)
-          .warn("Could not listen for compatibility history changes");
-      })
-      .finally(() => {
-        if (active) setHistoryReady(true);
-      });
+    void unlisten.then(() => {
+      if (active) setHistoryReady(true);
+    });
     return () => {
       active = false;
-      void unlisten.then((stop) => stop());
+      void unlisten.then((stop) => stop?.());
     };
   }, [queryClient, refreshQueue]);
 
