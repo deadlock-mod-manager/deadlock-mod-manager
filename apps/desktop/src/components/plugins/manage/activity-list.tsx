@@ -27,7 +27,7 @@ export const ActivityEvents = ({
           {describeActivity(t, entry, lookup, "event")}
         </span>
         <span className='h-px flex-1' />
-        <span className='shrink-0 text-[#A3A3A3] text-[11px] leading-[normal]'>
+        <span className='shrink-0 text-muted-foreground text-[11px] leading-[normal]'>
           {relativeTime(entry.at)}
         </span>
       </div>

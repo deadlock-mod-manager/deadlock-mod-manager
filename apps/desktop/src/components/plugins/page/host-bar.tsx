@@ -17,33 +17,13 @@ import {
 } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
+import type { HostStatus } from "@/components/plugins/page/host-status";
+import { HostStatusPill } from "@/components/plugins/page/host-status-pill";
 import { formatPluginSize } from "@/components/plugins/plugin-format";
-import { PluginTile, tint } from "@/components/plugins/plugin-identity";
+import { PluginTile } from "@/components/plugins/plugin-identity";
 import type { ExternalPluginSummary } from "@/types/generated/ExternalPluginSummary";
 import { PageButton } from "./page-button";
 import { usePluginActions } from "./use-plugin-actions";
-
-export type HostStatus = { color: string; labelKey: string };
-
-/** The rounded status pill the plugin page's host bar draws next to the name. */
-const HostStatusPill = ({ status }: { status: HostStatus }) => {
-  const { t } = useTranslation();
-  return (
-    <span
-      className='flex shrink-0 items-center gap-1.5 rounded-full px-2 py-0.5'
-      style={{ backgroundColor: tint(status.color, "1A") }}>
-      <span
-        className='size-1.5 rounded-full'
-        style={{ backgroundColor: status.color }}
-      />
-      <span
-        className='font-medium text-[11px] leading-[normal]'
-        style={{ color: status.color }}>
-        {t(status.labelKey)}
-      </span>
-    </span>
-  );
-};
 
 type HostBarProps = {
   plugin: ExternalPluginSummary;
@@ -74,10 +54,10 @@ export const HostBar = ({
     <div className='flex shrink-0 items-center gap-[14px] border-border border-b px-6 pt-4 pb-[15px]'>
       <PluginTile
         accent={plugin.accent}
-        fillAlpha='26'
+        fillAlpha={15}
         glyphSize={20}
         icon={plugin.icon}
-        outlineAlpha='33'
+        outlineAlpha={20}
         radius={10}
         size={40}
       />

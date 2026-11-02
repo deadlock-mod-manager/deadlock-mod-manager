@@ -119,7 +119,7 @@ const nextSuccessToast = async (
   action: () => Promise<void>,
 ) => {
   await browser.waitUntil(
-    async () => (await $$("[data-sonner-toast]")).length === 0,
+    async () => (await $$("[data-sonner-toast]").length) === 0,
     { timeoutMsg: "earlier toasts never closed" },
   );
   await action();

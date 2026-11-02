@@ -38,7 +38,7 @@ Add, at any size: a callstack when call flow changed, a before/after table when 
 
 **Number sections when there are several**, and reference them from the test plan (`§3`) so each test defends a claim.
 
-**Callstack** when who-calls-whom changed. Paste `npx calldiff@latest diff` output (see [095-calldiff.mdc](../../../.cursor/rules/095-calldiff.mdc)) and narrate the `+` / `-` lines. Skip for copy, translations, CSS, config, and schema-only changes. A heading that only reports the tool found nothing is worse than no heading.
+**Callstack** when who-calls-whom changed. Paste `npx calldiff@latest diff` output (see the [calldiff](../calldiff/SKILL.md) skill) and narrate the `+` / `-` lines. Skip for copy, translations, CSS, config, and schema-only changes. A heading that only reports the tool found nothing is worse than no heading.
 
 **The test plan proves the change.** Name each new test, map it to the section it defends, and say it failed without the change. List updated assertions as from/to. Name the suites that ran, and pre-existing failures that also fail on the base.
 
@@ -52,5 +52,5 @@ The title becomes the squash commit. Follow [git-conventions](../git-conventions
 
 ## Related
 
-- [095-calldiff.mdc](../../../.cursor/rules/095-calldiff.mdc) — callstack diffs for the Callstack section.
+- [calldiff](../calldiff/SKILL.md) — callstack diffs for the Callstack section.
 - [git-conventions](../git-conventions/SKILL.md) — title and squash-commit format.

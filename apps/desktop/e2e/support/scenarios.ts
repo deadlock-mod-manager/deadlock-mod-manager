@@ -39,6 +39,10 @@ import {
 } from "./gameinfo-recovery-fixtures";
 import { prepareMissingVpkWorld } from "./missing-vpk-fixtures";
 import { prepareBrokenStateWorld } from "./broken-state-fixtures";
+import {
+  launchRepairRoutes,
+  prepareLaunchRepairWorld,
+} from "./launch-repair-fixtures";
 import { prepareShardWorld } from "./shard-fixtures";
 import { assertCrashEvidence } from "./filesystem-oracle";
 import { assertNormalExit, assertInterruptedExit } from "./phase-evidence";
@@ -519,6 +523,30 @@ export const scenarios = {
     phases: ["seed-launch", "launch-damaged", "restart-launch-damaged"],
     prepare: prepareBrokenStateWorld,
   },
+  "missing-vpks-launch-partial": {
+    ...defaults,
+    family: "missing-vpks",
+    spec: "launch-repair-partial",
+    phases: ["repair-partial", "restart-repair-partial"],
+    routes: launchRepairRoutes,
+    prepare: prepareLaunchRepairWorld,
+  },
+  "missing-vpks-launch-relaunch-error": {
+    ...defaults,
+    family: "missing-vpks",
+    spec: "launch-repair-partial",
+    phases: ["relaunch-error"],
+    routes: launchRepairRoutes,
+    prepare: prepareLaunchRepairWorld,
+  },
+  "missing-vpks-launch-relaunch-missing": {
+    ...defaults,
+    family: "missing-vpks",
+    spec: "launch-repair-partial",
+    phases: ["relaunch-missing"],
+    routes: launchRepairRoutes,
+    prepare: prepareLaunchRepairWorld,
+  },
   "gameinfo-reverted-launch": {
     ...defaults,
     family: "settings",
@@ -860,6 +888,7 @@ export const scenarios = {
   "gamebanana-unremembered": catalogLifecycle,
   "gamebanana-switch": catalogLifecycle,
   "gamebanana-switch-failure": catalogLifecycle,
+  "gamebanana-switch-reinstall": catalogLifecycle,
   "gamebanana-reselect": catalogLifecycle,
   "gamebanana-file-toggle": catalogLifecycle,
   "gamebanana-reinstall": catalogLifecycle,
