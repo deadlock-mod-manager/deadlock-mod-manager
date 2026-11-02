@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { useCallback, useEffect, useRef } from "react";
 
@@ -53,6 +54,8 @@ const useGlobalAudioStore = create<GlobalAudioState & GlobalAudioActions>(
 
 export { useGlobalAudioStore };
 
+let playbackRequestId = 0;
+
 /**
  * Hook for the single global <audio> element to wire DOM events to the store.
  * Should only be used by GlobalAudioPlayer.
@@ -105,10 +108,11 @@ export const useGlobalAudio = (modId: string, audioUrl: string) => {
   );
   const audioVolume = usePersistedStore((state) => state.audioVolume);
 
-  const play = useCallback(() => {
+  const play = useCallback(async () => {
     const audio = useGlobalAudioStore.getState().audioElement;
     if (!audio) return;
 
+    const requestId = ++playbackRequestId;
     const state = useGlobalAudioStore.getState();
     const isSameTrack =
       state.currentModId === modId && state.currentUrl === audioUrl;
@@ -120,14 +124,21 @@ export const useGlobalAudio = (modId: string, audioUrl: string) => {
     }
 
     audio.volume = audioVolume / 100;
-    audio.play();
     useGlobalAudioStore.getState().setPlaying(true);
+    try {
+      await audio.play();
+    } catch (error) {
+      if (requestId !== playbackRequestId) return;
+      logger.withError(error).warn("Audio preview failed to play");
+      useGlobalAudioStore.getState().setPlaying(false);
+    }
   }, [modId, audioUrl, audioVolume]);
 
   const pause = useCallback(() => {
     const audio = useGlobalAudioStore.getState().audioElement;
     if (!audio) return;
 
+    playbackRequestId++;
     audio.pause();
     useGlobalAudioStore.getState().setPlaying(false);
   }, []);
@@ -136,7 +147,7 @@ export const useGlobalAudio = (modId: string, audioUrl: string) => {
     if (isPlaying) {
       pause();
     } else {
-      play();
+      void play();
     }
   }, [isPlaying, play, pause]);
 
