@@ -1,4 +1,21 @@
 {
+  "hudCompatibility": {
+    "logModified": "Console file modified: {{date}}",
+    "noEvidence": "No matching evidence in the bounded console sample.",
+    "nextStep": "Update the mod or use the existing mod isolation workflow to test it. Confirm the behavior in a fresh game session before attributing a failure.",
+    "logUnavailable": "Console evidence unavailable:",
+    "title": "HUD layout diagnostics",
+    "logTruncated": "Only the final 256 KiB and up to 40 matching lines were examined.",
+    "status": {
+      "compared": "Compared (heuristic only)",
+      "unreadable": "Incomplete: unreadable resource",
+      "unsupported": "Incomplete: unsupported layout",
+      "noBaseline": "Incomplete: no vanilla baseline"
+    },
+    "logCaution": "Console matches are supporting evidence only, not proof of a culprit. The file and its lines may be stale or from another profile/session; modification time does not date individual lines.",
+    "advisory": "Read-only heuristic: removed panels can be intentional. These findings do not block launch or apply repairs. Scripts, styles, includes and runtime behavior are not verified.",
+    "missing": "{{count}} missing vanilla panel(s)"
+  },
   "modelConflict": {
     "keptCurrent": "Skipped to keep current skins",
     "replaced": "Replaced by another selected skin"

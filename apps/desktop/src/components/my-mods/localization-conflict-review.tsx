@@ -16,6 +16,8 @@ import { CheckCircle2, TriangleAlert } from "@deadlock-mods/ui/icons";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { AnimationDependencyCheck } from "@/types/generated/AnimationDependencyCheck";
+import type { HudCheck } from "@/types/generated/HudCheck";
+import { HudCompatibilityReport } from "./hud-compatibility-report";
 import { AnimationDependencyReport } from "./animation-dependency-report";
 import {
   BaselineCompatibilityReport,
@@ -81,6 +83,7 @@ interface HeroIdReassignment {
 }
 
 export interface LocalizationOverlayAnalysis {
+  hudChecks: HudCheck[];
   baselines: CompiledDataBaseline[];
   reviewFingerprint: string;
   inputWarnings: { modId: string; filePaths: string[] }[];
@@ -176,9 +179,17 @@ export function LocalizationConflictReview({
     warningFiles > 0 ||
     animationChecks.length > 0 ||
     analysis.excludedModIds.length > 0;
+  const hasHudConcerns = analysis.hudChecks.some(
+    (check) =>
+      check.status !== "compared" ||
+      check.missingPanels.length > 0 ||
+      check.console.error !== null ||
+      check.console.lines.length > 0,
+  );
 
   return (
     <div className='min-h-0 min-w-0 flex-1 space-y-6 overflow-x-hidden overflow-y-auto pr-2'>
+      <HudCompatibilityReport checks={analysis.hudChecks} modNames={modNames} />
       <div className='flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm'>
         {conflictCount > 0 ? (
           <ReviewStat warn>
@@ -210,7 +221,7 @@ export function LocalizationConflictReview({
         ) : null}
       </div>
 
-      {conflictCount === 0 && warningCount === 0 ? (
+      {conflictCount === 0 && warningCount === 0 && !hasHudConcerns ? (
         <div className='flex items-center gap-2.5 rounded-md border border-status-ok/20 bg-status-ok/5 px-4 py-3 text-sm'>
           <CheckCircle2
             aria-hidden

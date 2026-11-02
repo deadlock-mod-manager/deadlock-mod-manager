@@ -137,6 +137,9 @@ pub(super) struct ResourceSnapshot {
 }
 
 impl ResourceSnapshot {
+  pub(super) fn console_log(&self) -> PathBuf {
+    self.game.directories[0].join("console.log")
+  }
   pub(super) fn open(citadel: &Path, mods: &[LocalizationModInput]) -> Result<Self, Error> {
     let (archives, providers) = open_mod_archives(mods)?;
     let game = if mods.is_empty() {

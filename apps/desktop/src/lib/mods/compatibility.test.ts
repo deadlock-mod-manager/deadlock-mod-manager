@@ -3,6 +3,7 @@ import type { LocalizationOverlayAnalysis } from "@/components/my-mods/localizat
 import { compatibilityResolutions, groupFindingsByMod } from "./compatibility";
 
 const analysis: LocalizationOverlayAnalysis = {
+  hudChecks: [],
   baselines: [],
   reviewFingerprint: "test",
   inputWarnings: [],

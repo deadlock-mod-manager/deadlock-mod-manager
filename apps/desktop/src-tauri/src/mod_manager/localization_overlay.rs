@@ -31,6 +31,7 @@ mod compiled_resource;
 mod enum_compatibility;
 mod enum_maps;
 mod hero_rebase;
+mod hud_compatibility;
 mod material_compatibility;
 mod model_animation;
 mod model_camera;
@@ -99,6 +100,7 @@ pub(crate) fn has_checkable_resources(input: &LocalizationModInput) -> Result<bo
         || animation_skeleton::is_path(path)
         || asset_compatibility::is_mesh_path(path)
         || normalize_path(path).ends_with(".vmat_c")
+        || normalize_path(path).ends_with(".vxml_c")
     }) {
       return Ok(true);
     }
@@ -115,6 +117,7 @@ pub(crate) fn reads_compiled_baseline(path: &str) -> bool {
     ".vnmgraph_c",
     ".vmat_c",
     ".vtex_c",
+    ".vxml_c",
   ]
   .iter()
   .any(|suffix| path.ends_with(suffix))
@@ -213,6 +216,7 @@ pub struct CompiledDataBaseline {
 #[derive(Debug, Clone, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LocalizationOverlayAnalysis {
+  pub hud_checks: Vec<hud_compatibility::HudCheck>,
   pub review_fingerprint: String,
   pub input_warnings: Vec<LocalizationInputWarning>,
   pub unmanaged_vpks: Vec<UnmanagedVpk>,
@@ -248,6 +252,12 @@ pub struct LocalizationOverlayAnalysis {
   pub data_repairs: Vec<vdata_compatibility::DataRepair>,
   pub data_warnings: Vec<vdata_compatibility::DataWarning>,
   pub baselines: Vec<CompiledDataBaseline>,
+}
+
+impl LocalizationOverlayAnalysis {
+  pub(crate) fn refresh_hud_console(&mut self, citadel: &Path) {
+    hud_compatibility::refresh_console(&mut self.hud_checks, &citadel.join("console.log"));
+  }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -1083,6 +1093,7 @@ impl LocalizationOverlayPlan {
       .collect();
     Ok(Self {
       analysis: LocalizationOverlayAnalysis {
+        hud_checks: hud_compatibility::analyze(resources),
         review_fingerprint: String::new(),
         input_warnings: Vec::new(),
         unmanaged_vpks: Vec::new(),
