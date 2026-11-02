@@ -259,7 +259,10 @@ impl ModManager {
       Some(plan) => plan,
       None => build_overlay_plan(&citadel_dir, &inputs, &mut key, &self.plan_progress())?,
     };
-    let analysis = plan.analyze(resolutions);
+    let analysis = plan.analyze(resolutions).map(|mut analysis| {
+      analysis.refresh_hud_console(&citadel_dir);
+      analysis
+    });
     self
       .localization_overlay_plan_cache
       .lock()
@@ -718,6 +721,7 @@ fn loose_resource_stamps(
   let mut visited = HashSet::new();
   let mut pending: Vec<_> = [
     "resource/localization",
+    "panorama/layout",
     "scripts",
     "models",
     "materials",
@@ -916,6 +920,21 @@ mod tests {
         .unwrap()
         .len(),
       1
+    );
+  }
+
+  #[test]
+  fn loose_hud_layout_changes_invalidate_review_inputs() {
+    let temp = tempfile::tempdir().unwrap();
+    let path = temp.path().join("panorama/layout/hud.vxml_c");
+    fs::create_dir_all(path.parent().unwrap()).unwrap();
+    fs::write(&path, b"before").unwrap();
+    let before = loose_resource_stamps(temp.path(), &Default::default()).unwrap();
+    assert_eq!(before.len(), 1);
+    fs::write(&path, b"after").unwrap();
+    assert_ne!(
+      before,
+      loose_resource_stamps(temp.path(), &Default::default()).unwrap()
     );
   }
 
