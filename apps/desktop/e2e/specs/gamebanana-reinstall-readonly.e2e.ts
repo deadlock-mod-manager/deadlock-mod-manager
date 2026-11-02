@@ -132,7 +132,11 @@ describe("reinstall with a file that stays read-only", () => {
       await expect($('button[aria-label="Reinstall"]')).toBeEnabled();
       await waitCatalogStatus(world, "installed");
     } finally {
-      await chmod(vpk, mode);
+      // A missing VPK is itself a failure the assertions above report; it must
+      // not be replaced by the restore's ENOENT.
+      await chmod(vpk, mode).catch((error: NodeJS.ErrnoException) => {
+        if (error.code !== "ENOENT") throw error;
+      });
     }
 
     await writeFile(

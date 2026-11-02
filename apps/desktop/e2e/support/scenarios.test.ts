@@ -28,6 +28,9 @@ describe("scenario selection", () => {
     expect(selectScenarios("gamebanana")).toContain(
       "gamebanana-switch-reinstall",
     );
+    expect(selectScenarios("gamebanana")).toContain(
+      "gamebanana-reinstall-readonly",
+    );
     expect(scenarioSpec("mod-files-error")).toBe(
       "./specs/mod-files-error.e2e.ts",
     );

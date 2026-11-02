@@ -3,12 +3,28 @@ import { renderToStaticMarkup } from "react-dom/server";
 import type { ErrorKind } from "@/types/tauri";
 import { type LocalMod, ModStatus } from "@/types/mods";
 
-const purge = mock(async (): Promise<void> => {});
+type PurgeArgs = {
+  modId: string;
+  vpks: string[];
+  profileFolder: string | null;
+};
+const purge = mock(async (_args?: PurgeArgs): Promise<void> => {});
 const getModDownload = mock(async () => []);
 const addToQueue = mock((item: { onComplete: () => void }) => {
   item.onComplete();
 });
-const install = mock(async () => {});
+type InstallCallbacks = {
+  onComplete: (
+    mod: LocalMod,
+    installed: { installed_vpks: string[]; file_tree: undefined },
+  ) => void;
+};
+const install = mock(async (target: LocalMod, callbacks: InstallCallbacks) => {
+  callbacks.onComplete(target, {
+    installed_vpks: ["pak01_dir.vpk"],
+    file_tree: undefined,
+  });
+});
 
 mock.module("@/lib/analytics", () => ({ analytics: {} }));
 mock.module("@/lib/plugins", () => ({ getPlugins: () => [] }));
@@ -17,11 +33,11 @@ const actualGuard = await import("@/lib/game-guard");
 const actualDownloads = await import("@/lib/download/manager");
 mock.module("@/lib/game-guard", () => ({
   ...actualGuard,
-  invokeGuarded: (command: string) => {
+  invokeGuarded: (command: string, args?: PurgeArgs) => {
     if (command !== "purge_mod") {
       throw new Error(`Unexpected command ${command}`);
     }
-    return purge();
+    return purge(args);
   },
 }));
 mock.module("@/lib/api-client", () => ({ ...actualApi, getModDownload }));
@@ -182,9 +198,18 @@ describe("reinstalling a mod whose files could not be removed", () => {
       onStep: (step) => steps.push(step),
     });
 
+    expect(purge).toHaveBeenCalledWith({
+      modId: mod.remoteId,
+      vpks: ["pak01_dir.vpk"],
+      profileFolder: null,
+    });
     expect(steps).toEqual(["purging", "downloading", "installing"]);
     expect(addToQueue).toHaveBeenCalledTimes(1);
     expect(install).toHaveBeenCalledTimes(1);
-    expect(result.missingOnDisk).toBe(false);
+    expect(result).toEqual({ outcome: "restored", missingOnDisk: false });
+    expect(storedMod()?.status).toBe(ModStatus.Installed);
+    expect(
+      usePersistedStore.getState().isModEnabledInCurrentProfile(mod.remoteId),
+    ).toBe(true);
   });
 });

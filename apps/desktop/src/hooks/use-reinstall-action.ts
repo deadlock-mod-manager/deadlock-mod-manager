@@ -59,17 +59,21 @@ export const useReinstallAction = (mod: LocalMod) => {
       return;
     }
 
-    if (hasDownloadStatus) {
-      // Nothing is downloading it, so the status is stale, and it would reject
-      // the move back to Downloading.
-      usePersistedStore
-        .getState()
-        .setModStatus(mod.remoteId, ModStatus.FailedToDownload);
-    }
-
     setStep("purging");
     try {
-      const result = await reinstallMod(mod, { onStep: setStep });
+      const result = await reinstallMod(mod, {
+        onStep: (next) => {
+          if (next === "downloading" && hasDownloadStatus) {
+            // Nothing is downloading it, so the status is stale, and it would
+            // reject the move back to Downloading. Cleared only once the old
+            // files are gone, so a failed purge leaves the mod as it was.
+            usePersistedStore
+              .getState()
+              .setModStatus(mod.remoteId, ModStatus.FailedToDownload);
+          }
+          setStep(next);
+        },
+      });
 
       switch (result.outcome) {
         case "restored":
