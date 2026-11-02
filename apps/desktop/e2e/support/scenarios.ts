@@ -22,6 +22,7 @@ import {
   prepareGroupedIdentificationWorld,
 } from "./library-groups-fixtures";
 import { prepareProfileWorld } from "./profile-fixtures";
+import { shareRoutes } from "./profile-share-fixtures";
 import { prepareFileOrderWorld } from "./file-order-fixtures";
 import { prepareBrokenProfileWorld } from "./broken-profile-fixtures";
 import {
@@ -217,6 +218,13 @@ const profiles: Definition = {
   platforms: ["win32"],
   routes: profileRoutes,
   prepare: async (world) => prepareProfileWorld(world),
+};
+const profileShare: Definition = {
+  ...defaults,
+  family: "profile-share",
+  spec: "profiles-import-overlap",
+  phases: ["import-overlap"],
+  routes: shareRoutes,
 };
 const libraryGroups: Definition = {
   ...defaults,
@@ -693,6 +701,7 @@ export const scenarios = {
   "local-mod-large-drop-zip": localLargeInPage,
   "local-mod-large-drop-path-vpk": localLargeOnDisk,
   "local-mod-large-drop-path-zip": localLargeOnDisk,
+  "profiles-import-overlap": profileShare,
   "profiles-pointer": profiles,
   "profiles-keyboard": profiles,
   "profiles-file-order": {
