@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { useCallback, useEffect, useRef } from "react";
 
@@ -105,7 +106,7 @@ export const useGlobalAudio = (modId: string, audioUrl: string) => {
   );
   const audioVolume = usePersistedStore((state) => state.audioVolume);
 
-  const play = useCallback(() => {
+  const play = useCallback(async () => {
     const audio = useGlobalAudioStore.getState().audioElement;
     if (!audio) return;
 
@@ -120,8 +121,13 @@ export const useGlobalAudio = (modId: string, audioUrl: string) => {
     }
 
     audio.volume = audioVolume / 100;
-    audio.play();
     useGlobalAudioStore.getState().setPlaying(true);
+    try {
+      await audio.play();
+    } catch (error) {
+      logger.withError(error).warn("Audio preview failed to play");
+      useGlobalAudioStore.getState().setPlaying(false);
+    }
   }, [modId, audioUrl, audioVolume]);
 
   const pause = useCallback(() => {
@@ -136,7 +142,7 @@ export const useGlobalAudio = (modId: string, audioUrl: string) => {
     if (isPlaying) {
       pause();
     } else {
-      play();
+      void play();
     }
   }, [isPlaying, play, pause]);
 
