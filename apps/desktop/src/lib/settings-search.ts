@@ -59,6 +59,16 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
     tab: "mods",
     titleKey: "modSources.title",
     descriptionKey: "modSources.description",
+    settings: [
+      {
+        titleKey: "modSources.add",
+        descriptionKey: "modSources.addDescription",
+      },
+      {
+        titleKey: "modSources.remove",
+        descriptionKey: "modSources.removeDescription",
+      },
+    ],
   },
   {
     tab: "launch-options",

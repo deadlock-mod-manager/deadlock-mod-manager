@@ -1,4 +1,6 @@
 import { describe, expect, test } from "bun:test";
+import { buildTaxonomyDocument } from "@deadlock-mods/shared";
+import type { ContentType } from "@/lib/store/slices/ui";
 import type { NativeSourceListing } from "@/types/generated/NativeSourceListing";
 import type { NativeSourceSummary } from "@/types/generated/NativeSourceSummary";
 import {
@@ -82,6 +84,51 @@ const listing: NativeSourceListing = {
 };
 
 describe("native source catalog and download boundary", () => {
+  test("every published content type appears in exactly one browsing tab", () => {
+    const tabs: ContentType[] = ["mod", "sound", "map", "wip", "collection"];
+    for (const { id } of buildTaxonomyDocument().contentTypes) {
+      const nativeListing = { ...listing, contentType: id };
+      expect(
+        tabs.filter((tab) =>
+          nativeListingMatchesContentType(nativeListing, tab),
+        ),
+      ).toHaveLength(1);
+    }
+  });
+
+  test.each([
+    { contentType: "skins", tab: "mod" },
+    { contentType: "gameplay", tab: "mod" },
+    { contentType: "hud", tab: "mod" },
+    { contentType: "models", tab: "mod" },
+    { contentType: "other", tab: "mod" },
+    { contentType: "music", tab: "sound" },
+    { contentType: "ability-sounds", tab: "sound" },
+    { contentType: "weapon-sounds", tab: "sound" },
+    { contentType: "voice-lines", tab: "sound" },
+    { contentType: "kill-sounds", tab: "sound" },
+    { contentType: "killstreak-music", tab: "sound" },
+    { contentType: "maps", tab: "map" },
+  ] satisfies { contentType: string; tab: ContentType }[])(
+    "$contentType listings use the $tab tab and matching mod flags",
+    ({ contentType, tab }) => {
+      const nativeListing = { ...listing, contentType };
+      expect(nativeListingMatchesContentType(nativeListing, tab)).toBe(true);
+      const mod = toNativeModDto(source, nativeListing);
+      expect(mod.isAudio).toBe(tab === "sound");
+      expect(mod.isMap).toBe(tab === "map");
+    },
+  );
+
+  test("unrecognized content types are not assigned to a browsing tab", () => {
+    const nativeListing = { ...listing, contentType: "unrecognized" };
+    expect(nativeListingMatchesContentType(nativeListing, "mod")).toBe(false);
+    expect(nativeListingMatchesContentType(nativeListing, "sound")).toBe(false);
+    expect(nativeListingMatchesContentType(nativeListing, "map")).toBe(false);
+    expect(toNativeModDto(source, nativeListing).isAudio).toBe(false);
+    expect(toNativeModDto(source, nativeListing).isMap).toBe(false);
+  });
+
   test("minimal sources without optional content type appear in Mods", () => {
     const minimalListing = { ...listing, contentType: null };
     expect(nativeListingMatchesContentType(minimalListing, "mod")).toBe(true);
