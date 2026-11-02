@@ -1600,7 +1600,9 @@ impl DownloadManager {
     };
 
     for file_path in downloaded_files {
-      if Self::is_vpk_path(file_path) {
+      if Self::is_vpk_path(file_path)
+        && crate::providers::native_sources::validate_source_listing_slug(&task.mod_id)
+      {
         collected_files.push(Self::stage_downloaded_vpk(file_path, &extraction_root)?);
         continue;
       }
