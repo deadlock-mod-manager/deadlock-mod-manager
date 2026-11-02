@@ -59,6 +59,7 @@ import { platform } from "@tauri-apps/plugin-os";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { HintAnchor } from "@/components/feature-hints/hint-anchor";
+import { useThemeOverride } from "@/components/providers/theme-overrides";
 import SearchBar from "@/components/mod-browsing/search-bar";
 import { SortSelect } from "@/components/mod-browsing/sort-select";
 import { VpkScanAlert } from "@/components/mods/vpk-scan-alert";
@@ -138,6 +139,7 @@ const MODS_STORE_PAGINATION_SETTING_ID = "mods-store-pagination";
 
 const MyMods = () => {
   const { t } = useTranslation();
+  const LibraryBanner = useThemeOverride("libraryBanner");
   const isCustomMapsEnabled = useExperimentalFeature("custom-maps");
   const isConflictDetectionEnabled =
     useExperimentalFeature("conflict-detection");
@@ -791,6 +793,7 @@ const MyMods = () => {
           selecting ? "pb-24" : "pb-4",
         )}
         ref={scrollContainerRef}>
+        {LibraryBanner ? <LibraryBanner /> : null}
         <ErrorBoundary>
           <Tabs
             className='flex w-full flex-col gap-4'

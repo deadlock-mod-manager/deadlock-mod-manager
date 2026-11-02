@@ -1,6 +1,6 @@
 ---
 name: linear
-description: Read Linear tickets and resolve their comments, dependencies, and acceptance criteria; update tickets when the user requests it.
+description: Read Linear tickets with their comments, relations, and acceptance criteria, and make the ticket updates the user asks for. Use when given a Linear ticket identifier or URL, or asked to create, comment on, or change a Linear issue.
 ---
 
 # Linear
