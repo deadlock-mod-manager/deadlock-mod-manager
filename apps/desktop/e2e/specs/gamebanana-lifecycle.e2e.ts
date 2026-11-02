@@ -142,6 +142,8 @@ describe("catalog installation lifecycle", () => {
             downloads,
             dormant,
           );
+        } else if (scenario === "gamebanana-switch-reinstall") {
+          await reinstallCatalog(world, true);
         }
       } else if (scenario === "gamebanana-file-toggle") {
         await openCatalogOptions();

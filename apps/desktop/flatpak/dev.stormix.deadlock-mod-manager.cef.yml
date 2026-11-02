@@ -16,6 +16,8 @@ finish-args:
   - --socket=wayland
   - --socket=x11
   - --device=dri
+  # Audio mod previews
+  - --socket=pulseaudio
   - --filesystem=~/.steam
   - --filesystem=~/.local/share/Steam
   - --filesystem=xdg-data/Steam
@@ -35,9 +37,8 @@ finish-args:
   - --talk-name=org.freedesktop.Notifications
   - --talk-name=org.kde.StatusNotifierWatcher
   - --talk-name=org.freedesktop.Flatpak
-  # CEF-only permissions (audio and portals)
+  # CEF-only permissions (portals)
   - --socket=session-bus
-  - --socket=pulseaudio
   - --talk-name=org.freedesktop.portal.Desktop
   - --talk-name=org.freedesktop.portal.OpenURI
 
