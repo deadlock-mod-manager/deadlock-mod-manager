@@ -1,0 +1,4 @@
+interface:
+  display_name: "Maintain Verification Skill"
+policy:
+  allow_implicit_invocation: false

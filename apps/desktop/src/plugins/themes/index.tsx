@@ -48,6 +48,7 @@ import { SeasonalTheme } from "./pre-defined/seasonal/seasonal";
 import { SeasonalSettingsCard } from "./pre-defined/seasonal/seasonal-settings";
 import TeaTheme from "./pre-defined/tea/tea.tsx";
 import DrututtTheme from "./pre-defined/drututt/drututt.tsx";
+import FrenchTheme from "./pre-defined/french/french";
 import GridlineTheme from "./pre-defined/gridline/gridline.tsx";
 import CodingTheme from "./pre-defined/coding/coding.tsx";
 
@@ -94,6 +95,10 @@ const codingPreview = getPluginAssetUrl(
 const drututtPreview = getPluginAssetUrl(
   "themes",
   "public/pre-defined/drututt/preview.png",
+);
+const frenchPreview = getPluginAssetUrl(
+  "themes",
+  "public/pre-defined/french/preview.png",
 );
 
 export const manifest = {
@@ -151,6 +156,13 @@ const PRE_DEFINED_THEMES = [
     descriptionKey: "plugins.drututt.description",
     component: DrututtTheme,
     previewImage: drututtPreview,
+  },
+  {
+    id: "french",
+    name: "Le Deadlock",
+    descriptionKey: "plugins.french.description",
+    component: FrenchTheme,
+    previewImage: frenchPreview,
   },
   {
     id: "arcane",
@@ -340,6 +352,9 @@ const Settings = () => {
                     </CardTitle>
                     <div className='flex items-center gap-2'>
                       <Switch
+                        aria-label={t("plugins.themes.toggleTheme", {
+                          name: theme.name,
+                        })}
                         checked={activeTheme === theme.id}
                         onCheckedChange={(checked) =>
                           selectTheme(checked ? theme.id : undefined)

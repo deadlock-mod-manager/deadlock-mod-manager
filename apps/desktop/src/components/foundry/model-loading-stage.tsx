@@ -87,12 +87,14 @@ const OpeningSteps = () => {
 /**
  * The stage a model is about to stand on: embers that build `hero`, and either
  * the Foundry's steps of opening the skin or a single status line. It sits
- * where the model will land, so the model can fade in over it.
+ * where the model will land, so the model can fade in over it. With `idle`,
+ * nothing is loading yet: the hero builds once and `status` says what to do.
  */
 export const ModelLoadingStage = ({
   status,
   hero,
   steps = false,
+  idle = false,
   className,
 }: {
   status: string;
@@ -100,6 +102,7 @@ export const ModelLoadingStage = ({
   hero: string | null;
   /** Show the open Foundry skin's progress instead of `status`. */
   steps?: boolean;
+  idle?: boolean;
   className?: string;
 }) => {
   // Undefined while the lookup runs, so a known hero never flashes the
@@ -130,6 +133,7 @@ export const ModelLoadingStage = ({
       {silhouette !== undefined && (
         <FoundryHeroAssembling
           className='absolute inset-x-0 top-[3%] bottom-[27%]'
+          loop={!idle}
           silhouette={silhouette}
         />
       )}
@@ -138,10 +142,15 @@ export const ModelLoadingStage = ({
           <OpeningSteps />
         ) : (
           <>
-            <p className='text-muted-foreground text-xs' role='status'>
+            <p
+              className={cn(
+                "text-muted-foreground",
+                idle ? "text-sm" : "text-xs",
+              )}
+              role='status'>
               {status}
             </p>
-            <FoundryLoadingBar className='max-w-xs' />
+            {!idle && <FoundryLoadingBar className='max-w-xs' />}
           </>
         )}
       </div>

@@ -1,6 +1,6 @@
 ---
 name: show-me
-description: Help the user understand the current topic visually with concise diagrams, code-shape sketches, and focused HTML artifacts.
+description: Explain the current topic visually with diagrams, code-shape sketches, or a focused HTML artifact. Use when asked to show, draw, diagram, or visualize something.
 ---
 
 Help the user understand the current topic of conversation visually. Skip the preamble and keep prose brief. Pick the smallest view that makes the key point clear.
@@ -15,20 +15,19 @@ on(save)
   return fresh result
 ```
 
-- Show runtime control flow as a call tree:
+- Show a static call tree. Run `npx calldiff@latest tree --entry <Entrypoint>` (see the [calldiff](../calldiff/SKILL.md) skill) and paste the ASCII output. Hand-write the tree only for hypothetical or unresolvable flow. When callbacks, dynamic dispatch, or other unresolved constructs affect behavior, add a brief prose note.
 
 ```text
-submitForm
-  createSession
-    persistPrompt
-    launchAgent
-  navigateToSession
+ModManager.install_mod(self, deadlock_mod, profile_folder)
+└─ ModManager.install_mod_resolving_conflicts(self, deadlock_mod, profile_folder, confirmed_conflicts)
+   ├─ ModManager.install_mod_with_conflict_policy(self, deadlock_mod, profile_folder, conflict_policy)
+   └─ ConflictPolicy.Replace()
 ```
 
 - Show UI structure as a component tree, including state and module boundaries that matter:
 
 ```tsx
-<SessionPage> (apps/example/src/routes/session.tsx)
+<SessionPage>
   useSessionEvents()
   <SessionToolbar>
     <RunSkillButton> (packages/ui)
@@ -81,17 +80,16 @@ For a file-layout change:
 +    └── stream.ts
 ```
 
-For a call-tree or call-stack change that is worth showing (not a routine chat wrap-up), generate the diff with `npx calldiff@latest diff` when the code is committed or working-tree resolvable. Hand-write the tree only for hypothetical or unresolvable flow (see [095-calldiff.mdc](../../../.cursor/rules/095-calldiff.mdc)):
+For a call-tree or call-stack change that is worth showing (not a routine chat wrap-up), run `npx calldiff@latest diff` (or `diff <base> HEAD`; see the [calldiff](../calldiff/SKILL.md) skill) with `--entry` / `--file` on the relevant symbols. Paste the ASCII output. Hand-draw the callstack only for hypothetical or unresolvable flow. When callbacks, dynamic dispatch, or other unresolved constructs affect behavior, add a brief prose note.
 
 ```diff
- submitForm
-   createSession
-     persistPrompt
-+    expandSkillMention
-     launchAgent
--  navigateToSession
-+  navigateToSession
-+    subscribeToEvents
+  ModManager.install_mod_with_conflict_policy(self, deadlock_mod, profile_folder, conflict_policy)
+- ├─ ModManager.get_addons_path(self, profile_folder)
+- ├─ prepare_profile_for_write(addons_path)
++ ├─ ModManager.prepare_install_target(self, profile_folder)
++ │  ├─ ModManager.get_addons_path(self, profile_folder)
++ │  └─ prepare_profile_for_write(addons_path)
+  ├─ ModManager.find_prefixed_vpks()
 ```
 
 For a state or control-flow change:
@@ -109,8 +107,8 @@ For a state or control-flow change:
 
 ```ts
 function expandSkill(command: string): string {
-  const skillName = command.slice(1)
-  return `use the ${skillName} skill`
+  const skillName = command.slice(1);
+  return `use the ${skillName} skill`;
 }
 ```
 
@@ -120,8 +118,6 @@ function expandSkill(command: string): string {
 Bash(open path/to/show-me-{description}.html)
 ```
 
-### guidance
-
-Place each visual next to the short text it supports. Keep only the calls, files, props, states, and boundaries needed to answer the user's current question or the options to resolve the current discussion point.
+- Place each visual next to the short text it supports. Keep only the calls, files, props, states, and boundaries needed to answer the user's current question.
 
 You may use one of these, you may use several, it is unlikely you will use all of them. Use your judgement and don't overwhelm the user.

@@ -121,6 +121,32 @@ impl SandboxedSteam {
   }
 }
 
+/// Where the mod manager runs, as far as launching Steam is concerned.
+#[cfg(target_os = "linux")]
+#[derive(Clone, Copy)]
+enum LinuxHost {
+  Native,
+  /// The mod manager is a Flatpak and can only reach Steam through the portal.
+  Flatpak,
+  /// The `steam.sh` that Steam unpacks into its install directory expects an
+  /// FHS distro and exits 71 here. Only the nixpkgs `steam` wrapper on `PATH`
+  /// can start Steam.
+  NixOs,
+}
+
+#[cfg(target_os = "linux")]
+impl LinuxHost {
+  fn detect() -> Self {
+    if crate::flatpak::running_in_flatpak() {
+      Self::Flatpak
+    } else if Path::new("/etc/NIXOS").exists() {
+      Self::NixOs
+    } else {
+      Self::Native
+    }
+  }
+}
+
 #[cfg(target_os = "linux")]
 fn linux_fallback_steam_dirs(home_dir: &Path, snap_dir: &Path) -> Vec<steamlocate::SteamDir> {
   let mut steam_dirs = Vec::new();
@@ -299,14 +325,17 @@ impl SteamManager {
   }
 
   #[cfg(target_os = "linux")]
-  fn linux_uri_launch_request(
-    &self,
-    steam_uri: &str,
-    running_in_flatpak: bool,
-  ) -> SteamUriLaunchRequest {
-    if running_in_flatpak {
-      log::info!("Launching Steam URI through the Flatpak portal");
-      return SteamUriLaunchRequest::portal(PathBuf::from("xdg-open"), steam_uri.to_string());
+  fn linux_uri_launch_request(&self, steam_uri: &str, host: LinuxHost) -> SteamUriLaunchRequest {
+    match host {
+      LinuxHost::Flatpak => {
+        log::info!("Launching Steam URI through the Flatpak portal");
+        return SteamUriLaunchRequest::portal(PathBuf::from("xdg-open"), steam_uri.to_string());
+      }
+      LinuxHost::NixOs => {
+        log::info!("Launching Steam URI through the steam wrapper on PATH");
+        return SteamUriLaunchRequest::direct(PathBuf::from("steam"), steam_uri.to_string());
+      }
+      LinuxHost::Native => {}
     }
 
     match self.get_steam_executable() {
@@ -359,7 +388,7 @@ impl SteamManager {
 
     #[cfg(target_os = "linux")]
     {
-      Ok(self.linux_uri_launch_request(steam_uri, crate::flatpak::running_in_flatpak()))
+      Ok(self.linux_uri_launch_request(steam_uri, LinuxHost::detect()))
     }
 
     #[cfg(target_os = "macos")]
@@ -698,7 +727,7 @@ mod tests {
       .set_steam_dir(temp_dir.path().join("Steam"))
       .unwrap();
 
-    let request = manager.linux_uri_launch_request("steam://run/1422450//", false);
+    let request = manager.linux_uri_launch_request("steam://run/1422450//", LinuxHost::Native);
     assert_eq!(request.program(), steam_sh);
     assert!(!request.uses_portal_timeout());
   }
@@ -713,7 +742,7 @@ mod tests {
       .set_steam_dir(temp_dir.path().join(relative_path))
       .unwrap();
 
-    let request = manager.linux_uri_launch_request("steam://run/1422450//", false);
+    let request = manager.linux_uri_launch_request("steam://run/1422450//", LinuxHost::Native);
     assert_eq!(request.program(), Path::new("flatpak"));
     assert_eq!(request.launcher_args(), ["run", "com.valvesoftware.Steam"]);
     assert!(!request.uses_portal_timeout());
@@ -723,7 +752,7 @@ mod tests {
   fn resolve_uri_launcher_falls_back_to_xdg_open_without_a_steam_executable() {
     let manager = SteamManager::new();
 
-    let request = manager.linux_uri_launch_request("steam://run/1422450//", false);
+    let request = manager.linux_uri_launch_request("steam://run/1422450//", LinuxHost::Native);
     assert_eq!(request.program(), Path::new("xdg-open"));
     assert!(request.uses_portal_timeout());
   }
@@ -737,9 +766,23 @@ mod tests {
       .set_steam_dir(temp_dir.path().join("Steam"))
       .unwrap();
 
-    let request = manager.linux_uri_launch_request("steam://run/1422450//", true);
+    let request = manager.linux_uri_launch_request("steam://run/1422450//", LinuxHost::Flatpak);
     assert_eq!(request.program(), Path::new("xdg-open"));
     assert!(request.uses_portal_timeout());
+  }
+
+  #[test]
+  fn resolve_uri_launcher_skips_the_unpacked_steam_sh_on_nixos() {
+    let (temp_dir, steam_dir) = temp_steam_dir("Steam", false);
+    fs::write(steam_dir.path().join("steam.sh"), "").unwrap();
+    let mut manager = SteamManager::new();
+    manager
+      .set_steam_dir(temp_dir.path().join("Steam"))
+      .unwrap();
+
+    let request = manager.linux_uri_launch_request("steam://run/1422450//", LinuxHost::NixOs);
+    assert_eq!(request.program(), Path::new("steam"));
+    assert!(!request.uses_portal_timeout());
   }
 
   #[test]

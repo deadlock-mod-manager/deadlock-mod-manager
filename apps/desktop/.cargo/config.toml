@@ -4,3 +4,7 @@
 # cargo runs from here or from src-tauri.
 [target.'cfg(all(windows, target_env = "msvc"))']
 rustflags = ["-C", "target-feature=+crt-static"]
+
+[target.x86_64-pc-windows-msvc]
+# Use the LLVM linker bundled with Rust; no separate LLVM install is needed.
+linker = "rust-lld"

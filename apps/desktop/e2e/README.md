@@ -220,7 +220,7 @@ It verifies migration without replacing the database, catalog availability,
 syncing and displaying cached/new records, and migration history after a fresh
 app process. Run it with `pnpm --filter @deadlock-mods/desktop e2e:test -- --case gamebanana-legacy-catalog --keep`.
 
-The lifecycle cases also exercise installed archive changes, cancelled and failed changes, disable/re-enable, force update, and reinstall. `gamebanana-remembered` chooses two multi-file archives at download, and enabling installs every VPK in them without asking again. `gamebanana-unremembered` downloads a single multi-file archive, so enabling opens the per-VPK chooser, which rejects an empty selection before a subset is installed. `gamebanana-switch` adds, replaces, revisits, and removes archives while retaining exact inactive-file hashes. `gamebanana-switch-failure` requires a 503 to leave the existing installation unchanged before retry succeeds. `gamebanana-reselect` deletes and reinstalls a single archive with a different VPK selection: the current UI does not offer an installed per-VPK editor for a single download. `gamebanana-reinstall` restores an enabled selection, while `gamebanana-reinstall-disabled` remains downloaded and inactive. `gamebanana-force-update` checks that the update dialog retains the chosen downloads. Every case restarts the app and verifies its final state.
+The lifecycle cases also exercise installed archive changes, cancelled and failed changes, disable/re-enable, force update, and reinstall. `gamebanana-remembered` chooses two multi-file archives at download, and enabling installs every VPK in them without asking again. `gamebanana-unremembered` downloads a single multi-file archive, so enabling opens the per-VPK chooser, which rejects an empty selection before a subset is installed. `gamebanana-switch` adds, replaces, revisits, and removes archives while retaining exact inactive-file hashes. `gamebanana-switch-failure` requires a 503 to leave the existing installation unchanged before retry succeeds. `gamebanana-switch-reinstall` replaces blue with red in Manage Files, then reinstalls: the reinstall must install common and red only, not bring blue back. `gamebanana-reselect` deletes and reinstalls a single archive with a different VPK selection: the current UI does not offer an installed per-VPK editor for a single download. `gamebanana-reinstall` restores an enabled selection, while `gamebanana-reinstall-disabled` remains downloaded and inactive. `gamebanana-force-update` checks that the update dialog retains the chosen downloads. Every case restarts the app and verifies its final state.
 
 These cases start with an empty library and use the real catalog UI, GameBanana provider, downloader, archive extraction, and installation commands. Only HTTP responses are mocked. Run each with `pnpm --filter @deadlock-mods/desktop e2e:test -- --case <case> --keep` after `e2e:build`.
 
@@ -297,6 +297,25 @@ gameinfo to vanilla while preserving those enabled VPKs; a recorded modded launc
 must have Alpha's addons search path restored. Both launch cases check a fresh
 process again. These cases need no native input and retain `broken-state-*.json`
 observations with disk, manifest, store, gameinfo, launches and UI text.
+
+`missing-vpks-launch-partial` seeds two enabled GameBanana mods whose VPKs were
+deleted while DMM was closed; their downloaded copies remain. Launch modded →
+Reinstall and launch downloads the first again and gets a 404 for the second,
+so the dialog stays open with only the second marked as failed and nothing
+launched. Disable and launch must then disable only the second: the first stays
+enabled in the manifest, store and profile with its own bytes, and exactly one
+launch is recorded. A fresh process must see the same.
+`missing-vpks-launch-relaunch-error` serves both downloads, so Reinstall and
+launch restores both mods, but a directory in place of the E2E launch journal
+makes the launch itself fail. With the error showing, Disable and launch must
+leave both mods enabled and only retry the launch, which records once the
+journal is back.
+`missing-vpks-launch-relaunch-missing` starts the same way, but once the
+failed launch is showing it deletes the second mod's VPK again, so the retried
+launch reports that mod's files missing. The dialog must stay open with nothing
+launched and the first mod still enabled; the next Disable and launch disables
+only the second mod and records one launch. With nothing left to restore it
+from, the second mod then leaves the library.
 
 A user can delete VPKs from the addons folder behind DMM's back. A mod whose every file is gone has nothing left to enable, so it has to leave the library and its manifest entry, or startup would restore it again. A mod that lost only some files, or that DMM can restore, stays in the library flagged as broken: its `missingVpks` lists the original names of the lost files, and My Mods shows a `missing-files-warning` for it. Both cases seed the same mixed Alpha library next to Beta, which is not the active profile:
 
