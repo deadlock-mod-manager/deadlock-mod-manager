@@ -342,6 +342,14 @@ export const assertCatalogNetwork = (
       { path: "/dl/910003", status: 200 },
       { path: "/dl/910004", status: 200 },
     );
+  // Reinstall re-fetches every download in selectedDownloads, blue.zip included.
+  if (scenario === "gamebanana-switch-reinstall")
+    expected.push(
+      { path: "/dl/910003", status: 200 },
+      { path: "/dl/910001", status: 200 },
+      { path: "/dl/910002", status: 200 },
+      { path: "/dl/910003", status: 200 },
+    );
   if (scenario === "gamebanana-switch-failure")
     expected.push(
       { path: "/dl/910003", status: 503 },

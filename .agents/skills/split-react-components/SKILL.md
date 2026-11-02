@@ -1,7 +1,6 @@
 ---
 name: split-react-components
-description: Split React/TSX files containing multiple inlined components into separate single-responsibility files. Use when asked to "split components", "extract components", "single responsibility", "clean up component file", "too many components in one file", "component slop", or when running deslop/cleanup on React code.
-disable-model-invocation: true
+description: "Split React/TSX files that define several components into one file per component, moving each component's types and hooks with it. Use when a React file grows a second component, when extracting components, or during deslop cleanup of React code."
 ---
 
 # Split React Components

@@ -80,6 +80,7 @@ import { FeatureTipsToggle } from "@/components/settings/feature-tips-toggle";
 import { ModUpdateBadgesToggle } from "@/components/settings/mod-update-badges-toggle";
 import { ModelPreviewToggle } from "@/components/settings/model-preview-toggle";
 import { RepairModFolder } from "@/components/settings/repair-mod-folder";
+import { ModRecoveryReportView } from "@/components/settings/mod-recovery-report";
 import PrivacySettings from "@/components/settings/privacy-settings";
 import { ProxySettings } from "@/components/settings/proxy-settings";
 import { RemoteInstallSettings } from "@/components/settings/remote-install-settings";
@@ -116,6 +117,8 @@ import {
 } from "@/hooks/use-gamebanana-catalog-sync";
 import { invokeGuarded } from "@/lib/game-guard";
 import { isMatchSyncBuilt } from "@/lib/runtime-bootstrap";
+import { useModRecovery } from "@/hooks/use-mod-recovery";
+import { useVpkScanDismissal } from "@/lib/vpk-scan-dismissal";
 
 type DangerActionProps = {
   disabled?: boolean;
@@ -397,22 +400,9 @@ const CustomSettings = ({ value }: { value?: string }) => {
   const { t } = useTranslation();
   const catalogSync = useCatalogSyncMutation();
   const wipeCatalog = useWipeLocalCatalog();
-  const { clearMods, localMods: mods, getActiveProfile } = usePersistedStore();
-
-  const clearModsState = async () => {
-    if (
-      !(await confirm({
-        title: t("settings.confirmClearModsState"),
-        body: t("settings.confirmClearModsStateBody"),
-        actionButton: t("settings.confirmClearModsStateAction"),
-        cancelButton: t("common.cancel"),
-      }))
-    ) {
-      return;
-    }
-    clearMods();
-    toast.success(t("settings.modsStateCleared"));
-  };
+  const recovery = useModRecovery();
+  const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
+  const { dismissedFingerprint, restore } = useVpkScanDismissal();
   const confirm = useConfirm();
   const { analytics } = useAnalyticsContext();
   const location = useLocation();
@@ -514,37 +504,6 @@ const CustomSettings = ({ value }: { value?: string }) => {
     } catch (error) {
       logger.errorOnly(error);
       toast.error(t("common.error"));
-    }
-  };
-
-  const clearAllMods = async () => {
-    if (
-      !(await confirm({
-        title: t("settings.confirmClearAllMods"),
-        actionButton: t("settings.confirmClearAllModsAction"),
-        cancelButton: t("common.cancel"),
-      }))
-    ) {
-      return;
-    }
-    try {
-      const activeProfile = getActiveProfile();
-      const profileFolder = activeProfile?.folderName ?? null;
-
-      await Promise.all(
-        mods.map((mod) =>
-          invokeGuarded("purge_mod", {
-            modId: mod.remoteId,
-            vpks: mod.installedVpks ?? [],
-            profileFolder,
-          }),
-        ),
-      );
-      clearMods();
-      toast.success(t("settings.allModsCleared"));
-    } catch (error) {
-      logger.errorOnly(error);
-      toast.error(t("settings.failedToClearMods"));
     }
   };
 
@@ -958,6 +917,19 @@ const CustomSettings = ({ value }: { value?: string }) => {
                   </p>
                   <NetworkDiagnosticsButton className='w-fit' />
                   <RepairModFolder />
+                  <SettingRow
+                    title={t("settings.restoreVpkScanAlert")}
+                    description={t("settings.restoreVpkScanAlertDescription")}>
+                    <Button
+                      variant='outline'
+                      disabled={!dismissedFingerprint}
+                      onClick={restore}>
+                      {t("settings.restoreVpkScanAlert")}
+                    </Button>
+                  </SettingRow>
+                  {recovery.clear.data && (
+                    <ModRecoveryReportView report={recovery.clear.data} />
+                  )}
                 </div>
 
                 <div className='relative overflow-hidden rounded-lg border border-destructive/30 bg-gradient-to-b from-destructive/8 to-destructive/3'>
@@ -993,22 +965,26 @@ const CustomSettings = ({ value }: { value?: string }) => {
                           "settings.clearDownloadCacheDescription",
                         )}
                         label={t("settings.clearDownloadCache")}
+                        disabled={recovery.isPending}
                         onClick={clearDownloadCache}
                       />
                       <DangerAction
                         description={t("settings.clearAllModsDataDescription")}
                         label={t("settings.clearAllModsData")}
+                        disabled={recovery.isPending}
                         onClick={clearAllModsData}
                       />
                       <DangerAction
                         description={t("debug.clearModsStateDescription")}
                         label={t("debug.clearModsState")}
-                        onClick={clearModsState}
+                        disabled={recovery.isPending}
+                        onClick={() => recovery.reset.mutate()}
                       />
                       <DangerAction
                         description={t("settings.clearAllModsDescription")}
                         label={t("settings.clearAllMods")}
-                        onClick={clearAllMods}
+                        disabled={recovery.isPending}
+                        onClick={() => recovery.clear.mutate()}
                       />
                     </div>
                   </div>

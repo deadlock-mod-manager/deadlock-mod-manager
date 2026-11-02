@@ -6,13 +6,11 @@ import {
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { usePluginActions } from "@/components/plugins/access/use-plugin-actions";
-import {
-  PluginRow,
-  PluginSwitch,
-  RowButton,
-  StatusPill,
-} from "@/components/plugins/manage/plugin-row";
 import { AccessLine } from "@/components/plugins/manage/access-line";
+import { PluginRow } from "@/components/plugins/manage/plugin-row";
+import { PluginSwitch } from "@/components/plugins/manage/plugin-switch";
+import { RowButton } from "@/components/plugins/manage/row-button";
+import { StatusPill } from "@/components/plugins/manage/status-pill";
 import { PluginTile } from "@/components/plugins/plugin-identity";
 import { listState } from "@/components/plugins/plugin-status";
 import type { ExternalPluginSummary } from "@/types/generated/ExternalPluginSummary";
@@ -93,7 +91,7 @@ export const ExternalPluginRow = ({
       tile={
         <PluginTile
           accent={plugin.accent}
-          fillAlpha='1A'
+          fillAlpha={10}
           glyphSize={20}
           icon={plugin.icon}
           radius={10}
