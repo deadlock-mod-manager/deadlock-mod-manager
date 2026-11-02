@@ -1,5 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getMod } from "@/lib/api-client";
+import { isNativeSourceMod } from "@/lib/mod-sources";
 import {
   findModInModsListCache,
   modDetailQueryKey,
@@ -30,7 +31,10 @@ export const useMod = (
       if (!modId) {
         throw new Error("Mod ID is required");
       }
-      return getMod(modId);
+      return getMod(modId).catch((error: Error) => {
+        if (localMod?.source && isNativeSourceMod(modId)) return localMod;
+        throw error;
+      });
     },
     enabled: !!modId && !isLocal && enabled,
     retry,

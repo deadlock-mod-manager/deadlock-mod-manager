@@ -55,6 +55,12 @@ export type SettingsSearchResult = {
 
 export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
   {
+    id: "mod-sources",
+    tab: "mods",
+    titleKey: "modSources.title",
+    descriptionKey: "modSources.description",
+  },
+  {
     tab: "launch-options",
     titleKey: "settings.launchOptions",
     descriptionKey: "settings.launchOptionsDescription",

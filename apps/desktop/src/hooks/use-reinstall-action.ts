@@ -8,6 +8,7 @@ import { isDownloadInProgress } from "@/lib/download/status";
 import { getErrorMessage } from "@/lib/errors";
 import { createLogger } from "@/lib/logger";
 import { isLocalMod } from "@/lib/mods/installed-helpers";
+import { isNativeSourceMod } from "@/lib/mod-sources";
 import { usePersistedStore } from "@/lib/store";
 import { type LocalMod, ModStatus } from "@/types/mods";
 
@@ -36,7 +37,7 @@ export const useReinstallAction = (mod: LocalMod) => {
   const isBusy = isReinstalling || BUSY_STATUSES.has(mod.status);
   // A local mod has no source to download from, so a reinstall would only
   // delete it.
-  const canReinstall = !isLocalMod(mod);
+  const canReinstall = !isLocalMod(mod) && !isNativeSourceMod(mod.remoteId);
 
   const reinstall = useCallback(async () => {
     if (isBusy || !canReinstall) {

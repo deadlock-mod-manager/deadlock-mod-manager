@@ -35,6 +35,7 @@ pub mod match_sync;
 pub mod mod_folder_repair;
 pub mod mod_interchange;
 pub mod mods;
+pub mod native_sources;
 pub mod network_diagnostics;
 pub mod performance;
 pub mod policy;

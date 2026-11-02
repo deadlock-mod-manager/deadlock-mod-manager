@@ -1,0 +1,12 @@
+{
+  "snapshotId": "example-1",
+  "items": [
+    {
+      "id": "example",
+      "title": "Harmless source example",
+      "availability": "available",
+      "isNsfw": false,
+      "detailUrl": "./mods/example.json"
+    }
+  ]
+}

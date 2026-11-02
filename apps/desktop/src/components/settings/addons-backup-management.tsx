@@ -41,6 +41,7 @@ import {
   type RestoreStrategy,
 } from "@/types/backup";
 import { invokeGuarded } from "@/lib/game-guard";
+import { unresolvedNativeProvenance } from "@/lib/mods/native-provenance";
 
 const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return "0 B";
@@ -195,11 +196,23 @@ export const AddonsBackupManagement = () => {
         await syncProfileEnabledMods(activeProfile.id);
       }
       // Mod Options reads the file tree, which the manifest doesn't record.
-      const { profiles, setInstalledVpks } = usePersistedStore.getState();
+      const { profiles, setInstalledVpks, setModSource } =
+        usePersistedStore.getState();
       const restoredProfile = Object.values(profiles).find(
         (profile) => profile.folderName === restored.profileFolder,
       );
       for (const mod of restored.mods) {
+        const remembered = restoredProfile?.mods.find(
+          (entry) => entry.remoteId === mod.modId,
+        )?.source;
+        const saved = restored.sourceProvenance.find(
+          (entry) => entry.modId === mod.modId,
+        )?.source;
+        if (restoredProfile && (saved || remembered)) {
+          const source =
+            saved ?? (remembered && unresolvedNativeProvenance(remembered));
+          if (source) setModSource(mod.modId, source, restoredProfile.id);
+        }
         if (restoredProfile && mod.fileTree) {
           setInstalledVpks(
             mod.modId,
@@ -207,6 +220,19 @@ export const AddonsBackupManagement = () => {
             mod.fileTree,
             restoredProfile.id,
           );
+        }
+      }
+      if (restored.mods.length === 0) {
+        // Older/full backups carry files but no exact native release evidence.
+        for (const profile of Object.values(profiles)) {
+          for (const mod of profile.mods) {
+            if (mod.source)
+              setModSource(
+                mod.remoteId,
+                unresolvedNativeProvenance(mod.source),
+                profile.id,
+              );
+          }
         }
       }
       toast.dismiss();
