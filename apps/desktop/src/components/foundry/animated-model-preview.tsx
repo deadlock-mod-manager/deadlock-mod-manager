@@ -1,17 +1,10 @@
 import { Button } from "@deadlock-mods/ui/components/button";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@deadlock-mods/ui/components/tooltip";
-import { cn } from "@deadlock-mods/ui/lib/utils";
-import {
   ArrowUUpLeftIcon,
   PauseIcon,
   PlayIcon,
   SkipBackIcon,
   SquaresFourIcon,
-  WarningIcon,
   WindIcon,
 } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
@@ -27,6 +20,8 @@ import {
   type PreviewSource,
 } from "@/lib/preview-animation";
 import { cachedFetch, STATS_TTL } from "@/lib/stats/cache";
+import { useStockPreview } from "./use-stock-preview";
+import { PreviewDiagnostics } from "./preview-diagnostics";
 import type { FoundryModel } from "@/types/foundry";
 import {
   FoundryModelViewer,
@@ -38,7 +33,6 @@ import { ViewerParticlePicker } from "./viewer-particle-picker";
 import { useViewerParticles } from "./use-viewer-particles";
 import type { ViewerEffectFactory } from "./viewer-effects";
 import type { ViewerCallout } from "./viewer-callouts";
-import { overlaySurface } from "./viewer-tools";
 import {
   AbilityBar,
   EffectToggle,
@@ -50,6 +44,9 @@ interface Props {
   model: FoundryModel;
   label: string;
   source: PreviewSource;
+  comparisonSource?: PreviewSource;
+  comparisonRevision?: string;
+  comparisonAvailable?: boolean;
   tint?: readonly FoundryPreviewTint[] | null;
   highlightTextures?: readonly string[];
   hiddenTextures?: readonly string[];
@@ -72,6 +69,9 @@ export const AnimatedModelPreview = ({
   model,
   label,
   source,
+  comparisonSource,
+  comparisonRevision,
+  comparisonAvailable,
   tint,
   highlightTextures,
   hiddenTextures,
@@ -94,6 +94,10 @@ export const AnimatedModelPreview = ({
   const [abilitiesHidden, setAbilitiesHidden] = useState(false);
   const timeRef = useRef(0);
   const [clothOn, setClothOn] = useState(true);
+  const [comparisonRequested, setComparisonRequested] = useState(false);
+  const [showStock, setShowStock] = useState(false);
+  const [comparisonReady, setComparisonReady] = useState(false);
+  const [comparisonLoadFailed, setComparisonLoadFailed] = useState(false);
   const modelAssetQuery = {
     enabled: source.entryPath.endsWith(".vmdl_c"),
     staleTime: 60_000,
@@ -159,6 +163,24 @@ export const AnimatedModelPreview = ({
     meta: { skipGlobalErrorHandler: true },
   });
   const current = action ? (animation.data ?? null) : null;
+  const stock = useStockPreview(
+    comparisonSource,
+    comparisonRevision,
+    comparisonRequested,
+    action?.clips ?? [],
+    clothOn,
+  );
+  const comparisonBusy =
+    stock.model.isFetching ||
+    (!!action && stock.animation.isFetching) ||
+    (!!stock.model.data && !comparisonReady);
+  const comparisonFailed =
+    stock.model.isError || stock.animation.isError || comparisonLoadFailed;
+  const stockVisible =
+    showStock &&
+    comparisonReady &&
+    !comparisonFailed &&
+    (!action || !!stock.animation.data);
   const seekTo = (time: number) =>
     setSeek((previous) => ({ time, revision: previous.revision + 1 }));
   const restart = () => seekTo(0);
@@ -208,6 +230,18 @@ export const AnimatedModelPreview = ({
         <FoundryModelViewer
           fullscreenTarget={fullscreenRef}
           model={model}
+          comparison={
+            stock.model.data
+              ? {
+                  model: stock.model.data,
+                  animation: action ? (stock.animation.data ?? null) : null,
+                  effects: stock.effects,
+                  visible: stockVisible,
+                }
+              : undefined
+          }
+          onComparisonReady={setComparisonReady}
+          onComparisonFailure={setComparisonLoadFailed}
           label={label}
           tint={tint}
           highlightTextures={highlightTextures}
@@ -243,27 +277,17 @@ export const AnimatedModelPreview = ({
                 ]
               : []
           }>
-          {effectsNote && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <p
-                  role='status'
-                  className={cn(
-                    overlaySurface,
-                    "absolute top-14 left-3 flex h-7 max-w-[calc(100%-7rem)] items-center gap-1.5 rounded-full px-2.5 text-[11px] text-muted-foreground",
-                  )}>
-                  <WarningIcon
-                    className='size-3.5 shrink-0 text-amber-400'
-                    weight='fill'
-                  />
-                  <span className='truncate'>{effectsNote}</span>
-                </p>
-              </TooltipTrigger>
-              <TooltipContent side='bottom' className='max-w-64'>
-                {effectsNote}
-              </TooltipContent>
-            </Tooltip>
-          )}
+          <PreviewDiagnostics
+            model={stockVisible && stock.model.data ? stock.model.data : model}
+            animationFailed={animation.isError || choices.isError}
+            effectsLimited={
+              !!effectsNote ||
+              cloth.isError ||
+              (stockVisible &&
+                (stock.cloth.isError || particleEffects.length > 0))
+            }
+            effectDiagnostics={pickerProps.diagnostics}
+          />
           {hasAbilityBar && (
             <AbilityBar
               slots={slots}
@@ -279,6 +303,31 @@ export const AnimatedModelPreview = ({
       </div>
       <div className='@container/transport shrink-0 space-y-2 border-t bg-muted/30 px-3 py-2'>
         <div className='flex flex-wrap items-center gap-2'>
+          {comparisonAvailable !== undefined && (
+            <Button
+              size='sm'
+              variant={stockVisible ? "secondary" : "outline"}
+              className='h-8 shrink-0 text-xs'
+              aria-pressed={stockVisible}
+              disabled={!comparisonAvailable}
+              title={t(
+                comparisonAvailable
+                  ? "modPreview.compareHint"
+                  : "modPreview.noStock",
+              )}
+              onClick={() => {
+                setComparisonRequested(true);
+                setShowStock(!showStock);
+              }}>
+              {t(
+                comparisonBusy && showStock
+                  ? "modPreview.loadingStock"
+                  : stockVisible
+                    ? "modPreview.showMod"
+                    : "modPreview.showStock",
+              )}
+            </Button>
+          )}
           <Button
             size='icon'
             variant={playing ? "default" : "secondary"}
@@ -336,6 +385,20 @@ export const AnimatedModelPreview = ({
             <SpeedPicker speed={speed} onChange={setSpeed} />
           </div>
         </div>
+        {comparisonFailed && (
+          <p role='status' className='text-muted-foreground text-xs'>
+            {t("modPreview.comparisonFailed")}{" "}
+            <button
+              type='button'
+              className='underline'
+              onClick={() => {
+                void stock.model.refetch();
+                if (action) void stock.animation.refetch();
+              }}>
+              {t("skins.preview.retry")}
+            </button>
+          </p>
+        )}
         {status && (
           <p className='text-muted-foreground text-xs' role='status'>
             {status}

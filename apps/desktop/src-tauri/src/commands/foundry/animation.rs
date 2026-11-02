@@ -131,13 +131,20 @@ fn animation_slot() -> &'static Arc<tokio::sync::Semaphore> {
 /// The VPK at `file_path`, falling back to the base game and then the engine's
 /// core pak, plus the base game on its own for clip listings.
 pub(super) fn archives(file_path: &str) -> Result<(VpkArchive, Option<Arc<VpkArchive>>), Error> {
+  archives_with_overlay(file_path, None)
+}
+
+pub(super) fn archives_with_overlay(
+  file_path: &str,
+  overlay: Option<&Path>,
+) -> Result<(VpkArchive, Option<Arc<VpkArchive>>), Error> {
   let base = staged_base_game_vpk()?
     .map(|path| open_archive(&path, None))
     .transpose()?;
   let core = staged_core_vpk()?
     .map(|path| open_archive(&path, None))
     .transpose()?;
-  let archive = VpkArchive::open(Path::new(file_path))
+  let archive = VpkArchive::open_with_overlay(Path::new(file_path), overlay)
     .map_err(invalid)?
     .with_fallbacks(base.iter().chain(core.iter()).cloned().collect());
   Ok((archive, base))

@@ -633,6 +633,6 @@ mod material_semantics_tests {
         assert!(decode_rgba(&resource).is_none());
         let mut bytes = vec![0u8; 16];
         bytes[12..16].copy_from_slice(&u32::MAX.to_le_bytes());
-        assert!(preview_resource(bytes).is_none());
+        assert!(textures::preview_resource(bytes).is_none());
     }
 }

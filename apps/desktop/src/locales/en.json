@@ -8334,5 +8334,37 @@
       "outlines": "Outlines",
       "wireframe": "Wireframe"
     }
+  },
+  "modPreview": {
+    "generatedThumbnail": "Rendered preview of {{name}}",
+    "generatingThumbnail": "Preparing preview…",
+    "noThumbnail": "No rendered preview",
+    "partial": "Partial preview",
+    "copySupportDetails": "Copy details for support",
+    "detailsCopied": "Details copied",
+    "copyFailed": "Could not copy the details. Try again.",
+    "issues": {
+      "missingDependency": "A required asset was not found. Check the local game installation.",
+      "corruptOverride": "A mod override could not be read. Reimport the original mod file.",
+      "invalidGameAsset": "A game asset could not be read. Verify the game files in Steam.",
+      "unsupported": "This asset uses a format or material the preview cannot fully display.",
+      "changesNotShown": "The changes in this VPK are not visible in the character preview.",
+      "animation": "Animation could not be previewed; the available character remains visible.",
+      "effects": "Some cloth or effects could not be previewed."
+    },
+    "failures": {
+      "previewMissingAssets": "Required game assets are missing or unreadable. Check the game path and verify files in Steam.",
+      "previewCorruptArchive": "The VPK could not be read. Reimport the archive or verify the local game files.",
+      "previewCorruptOverride": "A required mod override could not be decoded. Reimport the original mod file.",
+      "previewUnsupported": "This model uses geometry or encoding the preview cannot display. This does not prove the mod is broken.",
+      "unavailable": "Preview is unavailable. Retry or check the local game path."
+    },
+    "unsupportedHint": "No unambiguous character model was found. Audio, mixed-hero and other content may have no character preview.",
+    "showStock": "Show stock",
+    "showMod": "Show mod",
+    "loadingStock": "Loading stock…",
+    "compareHint": "Compare the original game assets and this source mod with the same camera and playback. This does not change enabled mods.",
+    "noStock": "No matching stock model exists in the local game archives.",
+    "comparisonFailed": "Stock comparison is unavailable. The mod preview is still shown."
   }
 }

@@ -1,5 +1,6 @@
 use super::normalize_compiled_path;
-use super::textures::preview_resource;
+use super::textures::load_preview_resource;
+use crate::preview_report::PreviewIssueKind;
 use crate::vpk_extract::VpkArchive;
 use crate::{kv3, vmesh};
 
@@ -129,12 +130,30 @@ pub(super) fn material_preview_properties(
     material_path: &str,
 ) -> Option<MaterialPreviewProperties> {
     let material_path = normalize_compiled_path(material_path, ".vmat");
-    let bytes = archive.extract_entry(&material_path).ok()?;
-    let res = preview_resource(bytes)?;
-    let data = res
-        .block_bytes("DATA")
-        .and_then(|bytes| kv3::parse(bytes).ok())?;
-    material_preview_properties_from_data(&data)
+    let res = load_preview_resource(archive, &material_path)?;
+    let Some(bytes) = res.block_bytes("DATA") else {
+        archive.record_preview_error(
+            &material_path,
+            &crate::Source2Error::Resource("Material has no DATA block".into()),
+        );
+        return None;
+    };
+    let data = match kv3::parse(bytes) {
+        Ok(data) => data,
+        Err(error) => {
+            archive.record_preview_error(&material_path, &error);
+            return None;
+        }
+    };
+    let properties = material_preview_properties_from_data(&data);
+    if properties.is_none() {
+        archive.record_preview_issue(
+            &material_path,
+            PreviewIssueKind::Unsupported,
+            "Material has no supported surface color mapping",
+        );
+    }
+    properties
 }
 
 pub(super) fn material_preview_properties_from_data(
