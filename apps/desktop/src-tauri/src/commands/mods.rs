@@ -606,6 +606,7 @@ pub async fn register_analyzed_mod(
   installed_paths: Option<Vec<String>>,
   original_vpk_names: Option<Vec<String>>,
   profile_folder: Option<String>,
+  refuse_existing_owner: Option<bool>,
 ) -> Result<crate::mod_manager::manager::AnalyzedModRegistration, Error> {
   let mut manager = MANAGER.lock().map_err(|_| {
     Error::BackgroundTaskFailed(
@@ -619,6 +620,7 @@ pub async fn register_analyzed_mod(
     installed_vpks,
     installed_paths,
     profile_folder,
+    refuse_existing_owner.unwrap_or(false),
   )
 }
 

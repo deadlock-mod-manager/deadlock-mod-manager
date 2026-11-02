@@ -1,6 +1,10 @@
 import { describe, expect, it } from "bun:test";
 import type { ModDownloadItem, ModFileTree } from "@/types/mods";
-import { buildAnalyzedFileTree, needsAnalysisReview } from "./analyzed-files";
+import {
+  buildAnalyzedFileTree,
+  isRecordedInManifest,
+  needsAnalysisReview,
+} from "./analyzed-files";
 
 const download = (fileId: string, name: string): ModDownloadItem => ({
   url: `gamebanana-file://42/${fileId}`,
@@ -121,5 +125,33 @@ describe("analysis review", () => {
         errors: ["Failed to parse pak03_dir.vpk: invalid header"],
       }),
     ).toBe(true);
+  });
+});
+
+describe("addons the profile manifest already records", () => {
+  it("skips registration only when the manifest assigns every file to that mod", () => {
+    expect(
+      isRecordedInManifest("42", [
+        { manifestModId: "42" },
+        { manifestModId: "42" },
+      ]),
+    ).toBe(true);
+  });
+
+  it("registers the whole group when a file the manifest doesn't know hashes to the same mod", () => {
+    expect(isRecordedInManifest("42", [{ manifestModId: "42" }, {}])).toBe(
+      false,
+    );
+  });
+
+  it("registers a hash match that replaces the manifest's local placeholder", () => {
+    expect(
+      isRecordedInManifest("42", [{ manifestModId: "local-unidentified" }]),
+    ).toBe(false);
+  });
+
+  it("never treats two missing owners as a match", () => {
+    expect(isRecordedInManifest("42", [{}])).toBe(false);
+    expect(isRecordedInManifest("42", [])).toBe(false);
   });
 });
