@@ -1426,14 +1426,19 @@ impl DownloadManager {
         continue;
       }
 
-      app_handle
-        .emit(
-          "download-extracting",
-          DownloadExtractingEvent {
-            mod_id: task.mod_id.clone(),
-          },
-        )
-        .ok();
+      // A profile import reports its own progress and stores what it installed
+      // when it ends. This event would mark the mod with the same ID in the
+      // active profile as extracting, and nothing would set it back.
+      if !task.is_profile_import {
+        app_handle
+          .emit(
+            "download-extracting",
+            DownloadExtractingEvent {
+              mod_id: task.mod_id.clone(),
+            },
+          )
+          .ok();
+      }
 
       log::info!("Extracting archive: {file_path:?}");
 
