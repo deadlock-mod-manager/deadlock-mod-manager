@@ -4,7 +4,7 @@ import type {
   VpkManifest,
   VpkManifestEntry,
 } from "@/types/profiles";
-import { findUnmatchedVpks } from "./vpk-scan";
+import { findUnmatchedVpks, isVpkOwned } from "./vpk-scan";
 
 const file = (locator: string): ProfileVpkFile => {
   const [root, filename] = locator.includes("/")
@@ -166,5 +166,50 @@ describe("findUnmatchedVpks", () => {
     );
 
     expect(unmatched).toEqual(["01_original.vpk", "local-_original.vpk"]);
+  });
+});
+
+describe("isVpkOwned", () => {
+  const LOCAL = "local-550e8400-e29b-41d4-a716-446655440000";
+
+  it("recognizes a file Analyze added before the manifest records it", () => {
+    const library = [{ remoteId: LOCAL, installedVpks: ["pak01_dir.vpk"] }];
+
+    expect(isVpkOwned("pak01_dir.vpk", manifest(), library)).toBe(true);
+    expect(isVpkOwned("pak02_dir.vpk", manifest(), library)).toBe(false);
+  });
+
+  it("reads a bare name without a manifest entry as the base folder's file", () => {
+    const library = [{ remoteId: LOCAL, installedVpks: ["pak01_dir.vpk"] }];
+
+    expect(isVpkOwned("addons2/pak01_dir.vpk", manifest(), library)).toBe(
+      false,
+    );
+  });
+
+  it("reads ownership of the same name per shard from the manifest", () => {
+    const owned = manifest({ "123": enabled(2, "pak01_dir.vpk") });
+    const library = [{ remoteId: "123", installedVpks: ["pak01_dir.vpk"] }];
+
+    expect(isVpkOwned("addons2/pak01_dir.vpk", owned, library)).toBe(true);
+    expect(isVpkOwned("pak01_dir.vpk", owned, library)).toBe(false);
+  });
+
+  it("covers every file of a multi-file mod and its parked copies", () => {
+    const owned = manifest({
+      "123": enabled(1, "pak01_dir.vpk", "pak02_dir.vpk"),
+      "456": disabled("456_skin.vpk"),
+    });
+    const library = [{ remoteId: "123" }, { remoteId: "456" }];
+
+    for (const locator of ["pak01_dir.vpk", "pak02_dir.vpk", "456_skin.vpk"]) {
+      expect(isVpkOwned(locator, owned, library)).toBe(true);
+    }
+  });
+
+  it("ignores manifest entries for mods that are not in the library", () => {
+    const owned = manifest({ "123": enabled(1, "pak01_dir.vpk") });
+
+    expect(isVpkOwned("pak01_dir.vpk", owned, [])).toBe(false);
   });
 });

@@ -74,6 +74,7 @@ const restoredMod = placeholderModFromManifest("42", entry, ["pak01_dir.vpk"]);
 const recordedAddon = (): LocalAddonInfo => ({
   filePath: "/game/citadel/addons/reset/pak01_dir.vpk",
   fileName: "pak01_dir.vpk",
+  locator: "pak01_dir.vpk",
   remoteId: "42",
   manifestModId: "42",
   vpkParsed: {

@@ -49,6 +49,11 @@ import { prepareShardWorld } from "./shard-fixtures";
 import { assertCrashEvidence } from "./filesystem-oracle";
 import { assertNormalExit, assertInterruptedExit } from "./phase-evidence";
 import { buildSyntheticVpk, writeSyntheticVpk } from "./vpk";
+import {
+  assertUnknownAddonNetwork,
+  prepareUnknownAddonWorld,
+  unknownAddonRoutes,
+} from "./analyze-known-files-fixtures";
 import { createArchive } from "./archive-fixtures";
 import { randomBytes } from "node:crypto";
 import { contentRoutes, prepareContentWorld } from "./content-fixtures";
@@ -651,6 +656,15 @@ export const scenarios = {
           "File management must download only the newly added optional archive once",
         );
     },
+  },
+  "analyze-known-files": {
+    ...defaults,
+    family: "analysis",
+    spec: "analyze-known-files",
+    phases: ["add-files", "restart-known"],
+    routes: unknownAddonRoutes,
+    prepare: prepareUnknownAddonWorld,
+    verifyNetwork: assertUnknownAddonNetwork,
   },
   "onboarding-skip-analysis": onboarding,
   "analyze-errors": {
