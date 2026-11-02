@@ -968,6 +968,7 @@ export const createProfilesSlice: StateCreator<
       const now = new Date();
       set((state) => ({
         activeProfileId: profileId,
+        localMods: [...targetProfile.mods],
         profiles: {
           ...state.profiles,
           [profileId]: {
@@ -976,8 +977,6 @@ export const createProfilesSlice: StateCreator<
           },
         },
       }));
-
-      get().loadModsFromProfile(profileId);
 
       await get().syncProfileEnabledMods(profileId);
     } catch (error) {
