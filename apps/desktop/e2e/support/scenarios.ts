@@ -848,6 +848,7 @@ export const scenarios = {
   "gamebanana-unremembered": catalogLifecycle,
   "gamebanana-switch": catalogLifecycle,
   "gamebanana-switch-failure": catalogLifecycle,
+  "gamebanana-switch-reinstall": catalogLifecycle,
   "gamebanana-reselect": catalogLifecycle,
   "gamebanana-file-toggle": catalogLifecycle,
   "gamebanana-reinstall": catalogLifecycle,
