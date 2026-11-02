@@ -14,6 +14,7 @@ interface ModHeroProps {
   shouldBlur?: boolean;
   actions?: ReactNode;
   cornerAction?: ReactNode;
+  imageFit?: "cover" | "contain";
 }
 
 export const ModHero = ({
@@ -21,6 +22,7 @@ export const ModHero = ({
   shouldBlur = false,
   actions,
   cornerAction,
+  imageFit = "cover",
 }: ModHeroProps) => {
   const hasImages = mod.images && mod.images.length > 0;
   const localMod = usePersistedStore((state) =>
@@ -64,7 +66,8 @@ export const ModHero = ({
         <img
           alt={`${mod.name} hero`}
           className={cn(
-            "h-full w-full object-cover opacity-70",
+            "h-full w-full opacity-70",
+            imageFit === "contain" ? "object-contain" : "object-cover",
             shouldBlur && "blur-lg will-change-[filter] [contain:strict]",
           )}
           decoding='async'

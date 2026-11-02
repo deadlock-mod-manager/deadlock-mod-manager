@@ -66,6 +66,8 @@ pub enum Error {
   ModExtractionFailed(String),
   #[error("Invalid input: {0}")]
   InvalidInput(String),
+  #[error("{message}")]
+  Preview { kind: &'static str, message: String },
   #[error("Unauthorized path access attempted: {0}")]
   UnauthorizedPath(String),
   /// A plugin call refused because the plugin is disabled, revoked or updated.
@@ -200,6 +202,7 @@ impl serde::Serialize for Error {
       Error::MissingEnabledModFiles(_) => "missingEnabledModFiles",
       Error::ModExtractionFailed(_) => "modExtractionFailed",
       Error::InvalidInput(_) => "invalidInput",
+      Error::Preview { kind, .. } => kind,
       Error::UnauthorizedPath(_) => "unauthorizedPath",
       Error::ExternalPluginSession(_) => "externalPluginSession",
       Error::Network(_) => "networkError",

@@ -12,10 +12,8 @@ use tempfile::{TempDir, TempPath};
 use tokio::sync::{OwnedSemaphorePermit, Semaphore};
 use tokio_util::sync::CancellationToken;
 
-use super::staging::staged_base_game_vpk;
-use super::types::FoundryModel;
+use super::types::{FoundryModel, ModelPreviewIssue, ModelPreviewReport};
 use crate::errors::Error;
-use crate::vpk_archive_cache::open_archive;
 
 pub struct ModelAssets {
   files: Mutex<HashMap<String, TempPath>>,
@@ -73,6 +71,7 @@ impl ModelAssets {
       byte_length: glb.len(),
       vertex_count,
       index_count,
+      report: None,
     };
     self
       .files
@@ -193,6 +192,24 @@ fn model_decode_slot() -> Arc<Semaphore> {
   SLOT.get_or_init(|| Arc::new(Semaphore::new(1))).clone()
 }
 
+fn report_source_usage(report: &mut ModelPreviewReport, file_path: &str, primary_is_game: bool) {
+  let source_visuals_used = report.dependencies.iter().any(|dependency| {
+    dependency.overlay
+      || (dependency.archive == file_path
+        && [".vmdl_c", ".vmesh_c", ".vmat_c", ".vtex_c"]
+          .iter()
+          .any(|extension| dependency.path.ends_with(extension)))
+  });
+  if !primary_is_game && !source_visuals_used && !report.truncated && report.issues.is_empty() {
+    report.issues.push(ModelPreviewIssue {
+      path: file_path.into(),
+      kind: "changesNotShown".into(),
+      detail: "No model, material or texture from the source VPK was used by this character view"
+        .into(),
+    });
+  }
+}
+
 #[tauri::command]
 pub async fn foundry_decode_model(
   assets: State<'_, Arc<ModelAssets>>,
@@ -208,18 +225,46 @@ pub async fn foundry_decode_model(
     job.check()?;
     let started = Instant::now();
     let overlay = workspace_root.map(|root| PathBuf::from(root).join("files"));
-    let base = staged_base_game_vpk()?
-      .map(|path| open_archive(&path, None))
-      .transpose()?;
-    job.check()?;
-    let archive = source2_model::vpk_extract::VpkArchive::open_with_overlay(
-      Path::new(&file_path),
-      overlay.as_deref(),
-    )
-    .map_err(|e| Error::InvalidInput(e.to_string()))?
-    .with_fallbacks(base.iter().cloned().collect());
-    let decoded = source2_model::decode_model_glb_from_archive(&archive, &entry_path)
-      .map_err(|e| Error::InvalidInput(format!("failed to decode model: {e}")))?;
+    let (archive, base) = super::animation::archives_with_overlay(&file_path, overlay.as_deref())
+      .map_err(|error| Error::Preview {
+      kind: "previewCorruptArchive",
+      message: error.to_string(),
+    })?;
+    let archive = archive.with_preview_report();
+    let primary_is_game = base.as_ref().is_some_and(|base| {
+      base
+        .entry_source(&entry_path)
+        .is_some_and(|source| source.archive == file_path)
+    });
+    let decoded =
+      source2_model::decode_model_glb_from_archive(&archive, &entry_path).map_err(|error| {
+        archive.record_preview_error(&entry_path, &error);
+        let corrupt_override = !primary_is_game
+          && archive.preview_report().issues.iter().any(|issue| {
+            issue.kind == source2_model::preview_report::PreviewIssueKind::CorruptOverride
+          });
+        let kind = if corrupt_override {
+          "previewCorruptOverride"
+        } else {
+          match error {
+            source2_model::Source2Error::EntryNotFound(_) => "previewMissingAssets",
+            source2_model::Source2Error::UnsupportedFormat(_)
+            | source2_model::Source2Error::Decode(_) => "previewUnsupported",
+            _ if !primary_is_game
+              && archive
+                .entry_source(&entry_path)
+                .is_some_and(|source| source.archive == file_path) =>
+            {
+              "previewCorruptOverride"
+            }
+            _ => "previewMissingAssets",
+          }
+        };
+        Error::Preview {
+          kind,
+          message: format!("{entry_path}: {error}"),
+        }
+      })?;
     job.check()?;
     let decoded = match base {
       Some(base) => source2_model::pose_model_at_rest(decoded, &base, &archive, &entry_path),
@@ -227,9 +272,20 @@ pub async fn foundry_decode_model(
     };
     job.check()?;
     let decoded_ms = started.elapsed().as_millis();
-    let model = job
+    let mut model = job
       .assets
       .publish(&decoded.glb, decoded.vertex_count, decoded.index_count)?;
+    let mut report = archive.preview_report();
+    if primary_is_game {
+      for issue in &mut report.issues {
+        if issue.kind == source2_model::preview_report::PreviewIssueKind::CorruptOverride {
+          issue.kind = source2_model::preview_report::PreviewIssueKind::InvalidGameAsset;
+        }
+      }
+    }
+    let mut report = ModelPreviewReport::from(report);
+    report_source_usage(&mut report, &file_path, primary_is_game);
+    model.report = Some(report);
     if let Err(error) = job.check() {
       job.assets.release(&model.asset_id)?;
       return Err(error);
@@ -266,6 +322,35 @@ pub async fn foundry_release_model(
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  #[test]
+  fn stock_fallback_is_not_a_successful_preview_of_unrepresented_mod_changes() {
+    use super::super::types::ModelPreviewDependency;
+    let mut report = ModelPreviewReport {
+      dependencies: vec![ModelPreviewDependency {
+        path: "models/hero/body.vmdl_c".into(),
+        archive: "game.vpk".into(),
+        overlay: false,
+      }],
+      issues: vec![],
+      truncated: false,
+    };
+    report_source_usage(&mut report, "game.vpk", true);
+    assert!(report.issues.is_empty());
+    report_source_usage(&mut report, "effects-only.vpk", false);
+    assert_eq!(report.issues[0].kind, "changesNotShown");
+    report.issues.clear();
+    report.dependencies.push(ModelPreviewDependency {
+      path: "materials/body.vtex_c".into(),
+      archive: "texture-only.vpk".into(),
+      overlay: false,
+    });
+    report_source_usage(&mut report, "texture-only.vpk", false);
+    assert!(report.issues.is_empty());
+    report.dependencies[1].overlay = true;
+    report_source_usage(&mut report, "workspace.vpk", false);
+    assert!(report.issues.is_empty());
+  }
 
   #[test]
   fn artifacts_are_immutable_and_only_registered_ids_can_be_released() {

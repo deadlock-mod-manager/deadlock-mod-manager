@@ -489,7 +489,7 @@ fn workspace_entry_bytes(
 }
 
 /// Read an entry's current bytes, preferring the user's edited copy, then the
-/// skin VPK, then the base game.
+/// skin VPK, then the base game and core. A corrupt override never falls through.
 pub(crate) fn entry_bytes_from_sources(
   workspace_root: Option<&Path>,
   vpk_path: &Path,
@@ -498,19 +498,17 @@ pub(crate) fn entry_bytes_from_sources(
   if let Some(bytes) = workspace_entry_bytes(workspace_root, entry_path)? {
     return Ok(bytes);
   }
-  if vpk_path.exists()
-    && let Ok(bytes) = source2_model::vpk_extract::extract_entry(vpk_path, entry_path)
-  {
-    return Ok(bytes);
-  }
-  if let Some(base_vpk) = staged_base_game_vpk()?
-    && let Ok(bytes) = source2_model::vpk_extract::extract_entry(&base_vpk, entry_path)
-  {
-    return Ok(bytes);
-  }
-  Err(Error::InvalidInput(format!(
-    "entry not found: {entry_path}"
-  )))
+  let (archive, _) = super::animation::archives(&vpk_path.to_string_lossy())?;
+  archive
+    .extract_entry(entry_path)
+    .map_err(|error| Error::Preview {
+      kind: if matches!(error, source2_model::Source2Error::EntryNotFound(_)) {
+        "previewMissingAssets"
+      } else {
+        "previewCorruptOverride"
+      },
+      message: format!("{entry_path}: {error}"),
+    })
 }
 
 pub(crate) fn workspace_files_dir(workspace_root: &Path) -> Result<PathBuf, Error> {

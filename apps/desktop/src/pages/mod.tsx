@@ -53,6 +53,7 @@ import ErrorBoundary from "@/components/shared/error-boundary";
 import { useConfigListing } from "@/hooks/performance/use-config-listing";
 import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { useMod } from "@/hooks/use-mod";
+import { useLocalModThumbnail } from "@/hooks/use-local-mod-thumbnail";
 import { useModDetailNavigation } from "@/hooks/use-mod-detail-navigation";
 import { useResolvedDependencies } from "@/hooks/use-mod-dependencies";
 import {
@@ -124,6 +125,8 @@ const Mod = () => {
   const localMod = usePersistedStore((state) =>
     findLocalMod(state.localMods, mod?.remoteId),
   );
+  const thumbnail = useLocalModThumbnail(localMod);
+  const images = thumbnail.data ? [thumbnail.data] : (mod?.images ?? []);
   const resolvedDependencies = useResolvedDependencies(
     mod?.dependencies ?? undefined,
   );
@@ -160,7 +163,7 @@ const Mod = () => {
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
 
   const isInstalled = localMod?.status === ModStatus.Installed;
-  const hasImages = mod?.images && mod.images.length > 0;
+  const hasImages = images.length > 0;
   const hasHero = !!mod?.hero || hasImages || !!mod?.isAudio;
   const canPreviewModel = !mod?.isAudio && !mod?.isMap && !shouldBlur;
   const activeTab =
@@ -352,7 +355,8 @@ const Mod = () => {
 
           <Card className='overflow-hidden space-y-4 shadow-none [contain:layout_style_paint]'>
             <ModHero
-              mod={mod}
+              mod={{ ...mod, images }}
+              imageFit={thumbnail.data ? "contain" : "cover"}
               shouldBlur={shouldBlur}
               actions={
                 <BrokenModButton
@@ -530,9 +534,9 @@ const Mod = () => {
                 />
               )}
 
-              {!mod.isAudio && hasImages && mod.images && (
+              {!mod.isAudio && hasImages && (
                 <ModGallery
-                  images={mod.images}
+                  images={images}
                   nsfwSettings={nsfwSettings}
                   onNSFWToggle={(visible) => handleNSFWToggle(visible)}
                   shouldBlur={shouldBlur}

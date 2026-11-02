@@ -82,7 +82,7 @@ impl VtexFormat {
     }
 
     /// Bytes occupied by a single mip level of the given dimensions.
-    fn mip_byte_size(self, width: u32, height: u32) -> Result<usize> {
+    pub(crate) fn mip_byte_size(self, width: u32, height: u32) -> Result<usize> {
         use VtexFormat::*;
         let blocks = |w: u32, h: u32| (w as usize).div_ceil(4) * (h as usize).div_ceil(4);
         let bytes = match self {
