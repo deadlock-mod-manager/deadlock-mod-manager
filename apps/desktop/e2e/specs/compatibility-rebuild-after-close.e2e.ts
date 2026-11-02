@@ -1,8 +1,12 @@
 import { startApplication } from "../support/application";
-import { closeApplication } from "../support/application-exit";
+import {
+  closeApplication,
+  completeApplicationExit,
+} from "../support/application-exit";
 import { step } from "../support/evidence";
 import {
   checkpoint,
+  closeOnceDisabled,
   expectStillFixed,
   fixAndConfirm,
   readManifestEnabled,
@@ -10,7 +14,6 @@ import {
   toggleMod,
 } from "../support/fixed-status";
 import { FIXED_MOD, PLAIN_MOD, STATUS } from "../support/fixed-status-fixtures";
-import { observeUntil } from "../support/observations";
 import { navigate } from "../support/ui";
 
 // A library change deletes the repair package at once, and the rebuild waits
@@ -28,28 +31,28 @@ describe("repair rebuild after closing DMM early", () => {
         fixAndConfirm(world, STATUS.folder, FIXED_MOD),
       );
       const started = Date.now();
-      await step("disable another mod", async () => {
+      await step("disable another mod and close at once", async () => {
+        await closeOnceDisabled(PLAIN_MOD);
         await toggleMod(PLAIN_MOD);
-        await observeUntil(
-          "disable written to the manifest",
-          () => readManifestEnabled(world, STATUS.folder, PLAIN_MOD),
-          (enabled) => enabled === false,
-          5_000,
-        );
+        await completeApplicationExit(world, runtime.processId);
       });
-      const atClose = await readRepairState(world, STATUS.folder);
-      const msFromToggleToClose = Date.now() - started;
-      await closeApplication(world, runtime.processId);
+      const msFromToggleToExit = Date.now() - started;
       const afterClose = await readRepairState(world, STATUS.folder);
+      const disabled =
+        (await readManifestEnabled(world, STATUS.folder, PLAIN_MOD)) === false;
       await checkpoint(
         "at-close",
-        { msFromToggleToClose, atClose, afterClose },
+        { msFromToggleToExit, disabled, afterClose },
         { screenshot: false },
       );
-      // Otherwise the restart has nothing to recover and the case proves nothing.
-      if (atClose.packageExists || afterClose.packageExists)
+      if (!disabled)
         throw new Error(
-          `the repair was rebuilt before DMM closed (${msFromToggleToClose} ms after the change)`,
+          "the disable didn't reach the manifest before DMM closed",
+        );
+      // Otherwise the restart has nothing to recover and the case proves nothing.
+      if (afterClose.packageExists)
+        throw new Error(
+          `the repair was rebuilt before DMM closed (${msFromToggleToExit} ms after the change)`,
         );
       return;
     }

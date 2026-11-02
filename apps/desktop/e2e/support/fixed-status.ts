@@ -240,6 +240,47 @@ export const toggleMod = async (modId: string) => {
   await toggle.click();
 };
 
+/**
+ * Makes the page close DMM as soon as a disable of `modId` lands: the backend
+ * has sent mod-compatibility-changed and the switch reads off. The page closes
+ * itself so no WebDriver round trip sits between the change and the close,
+ * which keeps the close well inside the window's 1.5 s rebuild debounce.
+ */
+export const closeOnceDisabled = (modId: string) =>
+  browser.execute(
+    async (xpath: string) => {
+      const internals = window["__TAURI_INTERNALS__"];
+      let changed = false;
+      await internals.invoke("plugin:event|listen", {
+        event: "mod-compatibility-changed",
+        target: { kind: "Any" },
+        handler: internals.transformCallback(() => {
+          changed = true;
+        }),
+      });
+      const poll = () => {
+        const toggle = document.evaluate(
+          xpath,
+          document,
+          null,
+          XPathResult.FIRST_ORDERED_NODE_TYPE,
+          null,
+        ).singleNodeValue;
+        if (
+          changed &&
+          toggle instanceof Element &&
+          toggle.getAttribute("aria-checked") === "false"
+        ) {
+          void internals.invoke("plugin:window|close", { label: "main" });
+          return;
+        }
+        window.setTimeout(poll, 10);
+      };
+      poll();
+    },
+    `${card(modId)}//button[@role="switch"]`,
+  );
+
 const row = (modId: string) =>
   `//*[@data-testid="mod-health-row"][.//button[@title="${modId}"]]`;
 
