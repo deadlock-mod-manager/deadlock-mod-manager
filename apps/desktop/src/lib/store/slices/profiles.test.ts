@@ -56,6 +56,39 @@ beforeEach(() => {
   profileTestBackend.seedManifest = async () => {};
 });
 
+it("switches the active profile and its mods in the same observable snapshot", async () => {
+  const store = createTestStore();
+  const firstMod = modFor("7");
+  const secondMod = modFor("42");
+  store.setState({
+    profiles: {
+      [defaultProfileId]: profileFor("default", [firstMod]),
+      [secondaryProfileId]: profileFor("secondary", [secondMod]),
+    },
+    activeProfileId: defaultProfileId,
+    localMods: [firstMod],
+    syncProfileEnabledMods: async () => {},
+  });
+  const observed: { profileId: string; modIds: string[] }[] = [];
+  const unsubscribe = store.subscribe((state) => {
+    observed.push({
+      profileId: state.activeProfileId,
+      modIds: state.localMods.map((mod) => mod.remoteId),
+    });
+  });
+  try {
+    const result = await store.getState().switchToProfile(secondaryProfileId);
+    expect(result.errors).toEqual([]);
+    const switched = observed.filter(
+      ({ profileId }) => profileId === secondaryProfileId,
+    );
+    expect(switched.length).toBeGreaterThan(0);
+    for (const snapshot of switched) expect(snapshot.modIds).toEqual(["42"]);
+  } finally {
+    unsubscribe();
+  }
+});
+
 describe("profiles deleted outside the app", () => {
   it("leaves the user in Default when the fallback switch fails", async () => {
     const store = createTestStore();
