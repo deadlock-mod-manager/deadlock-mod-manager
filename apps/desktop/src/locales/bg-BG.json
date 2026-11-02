@@ -5101,6 +5101,7 @@
     "noEntriesFound": "Не са намерени записи във VPK файла",
     "noAddonSelected": "Не е избрана добавка",
     "failedToAddModToLibrary": "Неуспешно добавяне на мод към библиотеката",
+    "alreadyInLibrary": "",
     "addToLibraryTitle": "Добавяне към библиотеката",
     "addToLibraryDescription": "Добавяне на \"{{fileName}}\" към вашата библиотека от модове",
     "addToLibrarySuccess": "\"{{name}}\" е добавен към библиотеката",

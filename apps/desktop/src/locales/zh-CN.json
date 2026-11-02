@@ -5101,6 +5101,7 @@
     "noEntriesFound": "在 VPK 文件中未找到任何条目",
     "noAddonSelected": "未选择插件",
     "failedToAddModToLibrary": "添加模组到库失败",
+    "alreadyInLibrary": "",
     "addToLibraryTitle": "添加到库",
     "addToLibraryDescription": "将 \"{{fileName}}\" 添加到你的模组库",
     "addToLibrarySuccess": "已将 \"{{name}}\" 添加到库",

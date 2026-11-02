@@ -5101,6 +5101,7 @@
     "noEntriesFound": "ไม่พบรายการในไฟล์ VPK",
     "noAddonSelected": "ไม่ได้เลือก addon",
     "failedToAddModToLibrary": "ไม่สามารถเพิ่มม็อดไปยังคลังได้",
+    "alreadyInLibrary": "",
     "addToLibraryTitle": "เพิ่มไปยังคลัง",
     "addToLibraryDescription": "เพิ่ม \"{{fileName}}\" ไปยังคลังม็อดของคุณ",
     "addToLibrarySuccess": "เพิ่ม \"{{name}}\" ไปยังคลังแล้ว",

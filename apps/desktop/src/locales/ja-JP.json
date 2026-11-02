@@ -5101,6 +5101,7 @@
     "noEntriesFound": "VPKファイルにエントリが見つかりません",
     "noAddonSelected": "アドオンが選択されていません",
     "failedToAddModToLibrary": "Modをライブラリに追加できませんでした",
+    "alreadyInLibrary": "",
     "addToLibraryTitle": "ライブラリに追加",
     "addToLibraryDescription": "「{{fileName}}」をModライブラリに追加",
     "addToLibrarySuccess": "「{{name}}」をライブラリに追加しました",

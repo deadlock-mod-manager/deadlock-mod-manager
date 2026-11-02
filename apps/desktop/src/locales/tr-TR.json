@@ -5101,6 +5101,7 @@
     "noEntriesFound": "VPK dosyasında giriş bulunamadı",
     "noAddonSelected": "Hiçbir eklenti seçilmedi",
     "failedToAddModToLibrary": "Mod kütüphaneye eklenemedi",
+    "alreadyInLibrary": "",
     "addToLibraryTitle": "Kütüphaneye Ekle",
     "addToLibraryDescription": "\"{{fileName}}\" mod kütüphanenize ekleyin",
     "addToLibrarySuccess": "\"{{name}}\" kütüphaneye eklendi",
