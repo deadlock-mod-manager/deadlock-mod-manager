@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { startApplication } from "../support/application";
 import { closeApplication } from "../support/application-exit";
 import { step } from "../support/evidence";
@@ -8,6 +9,7 @@ import {
   checkpoint,
   expectStillFixed,
   fixAndConfirm,
+  readCheckpoint,
   readReceiptModifiedMs,
   readRepairState,
   rewriteGameFiles,
@@ -48,7 +50,6 @@ const CHANGES = new Map<
 
 describe("repair rebuild after game or app files change", () => {
   it("restores Fixed for this patch after the restart", async () => {
-    const launchedAt = Date.now();
     const runtime = await startApplication();
     const world = runtime.roots.world;
     const caseId = runtime.caseId;
@@ -69,6 +70,10 @@ describe("repair rebuild after game or app files change", () => {
             caseId,
             applied: applied ?? null,
             repairs: await readRepairState(world, STATUS.folder),
+            receiptModifiedMs: await readReceiptModifiedMs(
+              world,
+              STATUS.folder,
+            ),
           },
           { screenshot: false },
         );
@@ -87,10 +92,14 @@ describe("repair rebuild after game or app files change", () => {
     );
     if (caseId === "compatibility-rebuild-restart") {
       await step("a current repair is reused, not rebuilt", async () => {
-        const modified = await readReceiptModifiedMs(world, STATUS.folder);
-        if (modified === null || modified >= launchedAt)
+        const { receiptModifiedMs: before } = await readCheckpoint(
+          "changed",
+          z.object({ receiptModifiedMs: z.number() }),
+        );
+        const after = await readReceiptModifiedMs(world, STATUS.folder);
+        if (after !== before)
           throw new Error(
-            `the receipt was rewritten after the restart (${modified} >= ${launchedAt})`,
+            `the receipt was rewritten after the restart (${before} -> ${after})`,
           );
       });
     }

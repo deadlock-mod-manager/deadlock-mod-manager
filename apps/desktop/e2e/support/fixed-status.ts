@@ -186,6 +186,17 @@ export const checkpoint = async (
     );
 };
 
+/** A checkpoint an earlier phase of the same case saved. */
+export const readCheckpoint = async <T>(name: string, schema: z.ZodType<T>) =>
+  schema.parse(
+    JSON.parse(
+      await readFile(
+        path.join(artifacts(), `fixed-status-${name}.json`),
+        "utf8",
+      ),
+    ),
+  );
+
 type Sample = { atMs: number; status: string | undefined };
 
 /**
