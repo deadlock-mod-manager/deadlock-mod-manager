@@ -1,5 +1,3 @@
-// A profile import that can't install every mod says which ones failed, in
-// the import dialog itself.
 import { $, browser } from "@wdio/globals";
 import assert from "node:assert/strict";
 import path from "node:path";

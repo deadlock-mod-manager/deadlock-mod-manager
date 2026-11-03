@@ -26,12 +26,13 @@ export const importFailureRoutes = async () => {
     const routes = base(origin);
     // Reuse the base routes' archive sizes so the picks match the catalog.
     const download = (mod: string, name: string, id: number) => {
-      const body = routes.find((route) => route.path === `/dl/${id}`)?.body;
+      const route = routes.find((item) => item.path === `/dl/${id}`);
+      if (!route) throw new Error(`No fixture download /dl/${id}`);
       return {
         remoteId: mod,
         file: name,
         url: `${origin}/dl/${id}`,
-        size: body?.length ?? 0,
+        size: route.body.length,
       };
     };
     const [alphaArchive] = alpha.archives;
