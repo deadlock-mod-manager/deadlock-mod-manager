@@ -550,9 +550,14 @@ impl ModManager {
     self.notify_compatibility_changed(profile_folder);
   }
 
-  /// Removes a deleted profile's repair package and its saved review.
+  /// Removes a deleted profile's repair package and its saved review. Its
+  /// shards are already gone, so removing the review is best effort; a review
+  /// left behind is reused only while the inputs it covered still match.
   pub fn delete_profile_localization_overlay(&self, profile_folder: &str) -> Result<(), Error> {
-    review::remove(&self.localization_overlay_vpk_path(Some(profile_folder))?)?;
+    let overlay = self.localization_overlay_vpk_path(Some(profile_folder))?;
+    if let Err(error) = review::remove(&overlay) {
+      log::warn!("Could not remove the deleted profile's compatibility review: {error}");
+    }
     self.delete_localization_overlay(Some(profile_folder))
   }
 
@@ -2923,5 +2928,18 @@ Game core
       .delete_profile_localization_overlay("other")
       .unwrap();
     assert!(!other.parent().unwrap().exists());
+
+    // A review that can't be removed doesn't fail the deletion after its
+    // shards are gone; the package is still removed.
+    fs::create_dir_all(other.parent().unwrap()).unwrap();
+    fs::write(&other, b"package").unwrap();
+    fs::write(receipt::path(&other), b"{}").unwrap();
+    fs::create_dir_all(review::path(&other).join("stuck")).unwrap();
+    manager
+      .delete_profile_localization_overlay("other")
+      .unwrap();
+    assert!(!other.exists());
+    assert!(!receipt::path(&other).exists());
+    assert!(review::path(&other).is_dir());
   }
 }
