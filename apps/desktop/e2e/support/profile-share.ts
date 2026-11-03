@@ -80,20 +80,16 @@ export const previewShareCode = async (code: string) => {
   return create;
 };
 
-/** Waits for the import to finish: the import dialog closes when it does. */
-export const waitForImportEnd = () =>
-  browser.waitUntil(async () => !(await $(importDialog).isExisting()), {
-    timeout: 60_000,
-    timeoutMsg: "The import dialog never closed",
-  });
-
 /** Imports a share code into a new profile and returns that profile. */
 export const importShareCode = (world: string, code: string) =>
   step(`import share code ${code}`, async () => {
     const before = new Set(Object.keys((await readShareState(world)).profiles));
     await (await previewShareCode(code)).click();
     const profile = await importedProfile(world, before);
-    await waitForImportEnd();
+    await browser.waitUntil(async () => !(await $(importDialog).isExisting()), {
+      timeout: 60_000,
+      timeoutMsg: "The import dialog never closed",
+    });
     await closeDialogs();
     return profile;
   });

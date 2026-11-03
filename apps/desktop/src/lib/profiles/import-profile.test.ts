@@ -12,7 +12,6 @@ import { createProfileId, type ModProfile } from "@/types/profiles";
 interface ToastCall {
   kind: "success" | "warning" | "error";
   title: string;
-  description?: string;
 }
 
 const toasts: ToastCall[] = [];
@@ -45,12 +44,7 @@ mock.module("@deadlock-mods/ui/components/sonner", () => ({
   toast: {
     success: (title: string) => toasts.push({ kind: "success", title }),
     error: (title: string) => toasts.push({ kind: "error", title }),
-    warning: (title: string, options?: { description?: string }) =>
-      toasts.push({
-        kind: "warning",
-        title,
-        description: options?.description,
-      }),
+    warning: (title: string) => toasts.push({ kind: "warning", title }),
   },
 }));
 const apiClient = await import("@/lib/api-client");
@@ -192,9 +186,8 @@ const mixed = () => {
 };
 
 const destinations = {
-  "a new profile": async (profile: SharedProfile, modsData: ModDto[]) => {
-    await flow().createProfileFromImport(profile, modsData);
-  },
+  "a new profile": (profile: SharedProfile, modsData: ModDto[]) =>
+    flow().createProfileFromImport(profile, modsData),
   "the current profile": (profile: SharedProfile, modsData: ModDto[]) =>
     flow().addToCurrentProfile(profile, modsData),
 };
@@ -208,21 +201,30 @@ beforeEach(() => {
 
 describe("profile import completion", () => {
   for (const [destination, run] of Object.entries(destinations)) {
-    it(`names each mod that failed to import into ${destination}`, async () => {
+    it(`returns each mod that failed to import into ${destination}`, async () => {
       const { profile, modsData } = mixed();
 
-      await run(profile, modsData);
+      const outcome = await run(profile, modsData);
 
       expect(applied).toEqual([["1"]]);
-      expect(toasts).toHaveLength(1);
-      const [toast] = toasts;
-      expect(toast?.kind).toBe("warning");
-      expect(toast?.title).toContain("1/4 mods imported");
-      expect(toast?.description?.split("\n")).toEqual([
-        "Mod 2: Could not get the mod's details",
-        "Charlie: Could not get its downloads",
-        "Delta: Download or install failed",
+      expect(outcome).toMatchObject({ importedCount: 1, totalCount: 4 });
+      expect(outcome.failures).toEqual([
+        { remoteId: "2", name: null, step: "lookup", error: null },
+        {
+          remoteId: "3",
+          name: "Charlie",
+          step: "downloads",
+          error: "catalog timeout",
+        },
+        {
+          remoteId: "4",
+          name: "Delta",
+          step: "install",
+          error: "ModFileNotFound",
+        },
       ]);
+      // The dialog that started the import shows the result instead.
+      expect(toasts).toEqual([]);
       expect(warnings).toHaveLength(1);
       expect(warnings[0]).toEndWith(
         ": 2 (lookup), 3 (downloads: catalog timeout), 4 (install: ModFileNotFound)",
@@ -230,61 +232,72 @@ describe("profile import completion", () => {
     });
   }
 
-  it("lists five failures and counts the rest", async () => {
+  it("names the profile the mods went into", async () => {
+    const { profile, modsData } = mixed();
+
+    const current = await flow().addToCurrentProfile(profile, modsData);
+    const created = await flow().createProfileFromImport(profile, modsData, {
+      profileName: "Friends",
+    });
+
+    expect(current).toMatchObject({
+      profileId: activeProfile.id,
+      profileName: "Active",
+    });
+    expect(created.profileName).toBe("Friends");
+    expect(created.profileId).not.toBe(activeProfile.id);
+  });
+
+  it("returns every failure, however many", async () => {
     const ids = ["1", "2", "3", "4", "5", "6", "7"];
     batch = batchResult(["1"], ids.slice(1));
 
-    await flow().createProfileFromImport(
+    const outcome = await flow().createProfileFromImport(
       sharedProfile(ids),
       ids.map((id) => modDto(id, `Mod ${id} name`)),
     );
 
-    const lines = toasts[0]?.description?.split("\n");
-    expect(lines).toEqual([
-      "Mod 2 name: Download or install failed",
-      "Mod 3 name: Download or install failed",
-      "Mod 4 name: Download or install failed",
-      "Mod 5 name: Download or install failed",
-      "Mod 6 name: Download or install failed",
-      "and 1 more",
-    ]);
+    expect(outcome.failures.map((failure) => failure.remoteId)).toEqual(
+      ids.slice(1),
+    );
   });
 
   it("reports an import where nothing installed", async () => {
     unpreparable = new Set(["1", "2"]);
 
-    await flow().createProfileFromImport(sharedProfile(["1", "2"]), [
-      modDto("1", "Alpha"),
-      modDto("2", "Bravo"),
-    ]);
+    const outcome = await flow().createProfileFromImport(
+      sharedProfile(["1", "2"]),
+      [modDto("1", "Alpha"), modDto("2", "Bravo")],
+    );
 
     expect(applied).toEqual([]);
-    expect(toasts[0]?.kind).toBe("warning");
-    expect(toasts[0]?.title).toContain("0/2 mods imported");
-    expect(toasts[0]?.description?.split("\n")).toEqual([
-      "Alpha: Could not get its downloads",
-      "Bravo: Could not get its downloads",
+    expect(toasts).toEqual([]);
+    expect(outcome).toMatchObject({ importedCount: 0, totalCount: 2 });
+    expect(outcome.failures.map(({ name, step }) => [name, step])).toEqual([
+      ["Alpha", "downloads"],
+      ["Bravo", "downloads"],
     ]);
   });
 
-  it("falls back to the ID for a mod with a blank name", async () => {
+  it("leaves a blank catalog name out", async () => {
     batch = batchResult([], ["1"]);
 
-    await flow().createProfileFromImport(sharedProfile(["1"]), [
+    const outcome = await flow().createProfileFromImport(sharedProfile(["1"]), [
       modDto("1", "  "),
     ]);
 
-    expect(toasts[0]?.description).toBe("Mod 1: Download or install failed");
+    expect(outcome.failures[0]?.name).toBeNull();
   });
 
   it("keeps the plain success toast when every mod installs", async () => {
     batch = batchResult(["1", "2"], []);
 
-    await flow().createProfileFromImport(sharedProfile(["1", "2"]), [
-      modDto("1", "Alpha"),
-      modDto("2", "Bravo"),
-    ]);
+    const outcome = await flow().createProfileFromImport(
+      sharedProfile(["1", "2"]),
+      [modDto("1", "Alpha"), modDto("2", "Bravo")],
+    );
 
+    expect(outcome.failures).toEqual([]);
     expect(toasts).toEqual([
       { kind: "success", title: expect.stringContaining("created") },
     ]);

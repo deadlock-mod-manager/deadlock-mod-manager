@@ -1,4 +1,5 @@
-// A profile import that can't install every mod says which ones failed.
+// A profile import that can't install every mod says which ones failed, in
+// the import dialog itself.
 import { $, browser } from "@wdio/globals";
 import assert from "node:assert/strict";
 import path from "node:path";
@@ -15,9 +16,15 @@ import {
   previewShareCode,
   readShareState,
   toastTexts,
-  waitForImportEnd,
 } from "../support/profile-share";
 import { navigate } from "../support/ui";
+
+const resultDialog =
+  '//*[@role="dialog"][.//*[normalize-space()="Import finished"]]';
+const importingDialog =
+  '//*[@role="dialog"][.//*[normalize-space()="Import Profile Preview"]]';
+const manageProfiles =
+  '//*[@role="dialog"][.//*[normalize-space()="Manage Profiles"]]';
 
 describe("profile import with failed mods", () => {
   it("names the mods that weren't imported", async () => {
@@ -34,27 +41,40 @@ describe("profile import with failed mods", () => {
         '//*[@role="dialog"]//*[normalize-space()="Mod not found or unavailable"]',
       ).waitForDisplayed({ timeout: 30_000 });
       await create.click();
-      await waitForImportEnd();
     });
 
-    const completion = await step("the import reports its result", async () => {
-      let found: string | undefined;
-      await browser.waitUntil(
-        async () => {
-          found = (await toastTexts()).find(
-            (text) =>
-              text.startsWith("warning:") && text.includes("mods imported"),
-          );
-          return found !== undefined;
-        },
-        { timeout: 10_000, timeoutMsg: "No partial-import warning" },
+    await step("Escape doesn't close the dialog while it imports", async () => {
+      await browser.pause(500);
+      await browser.keys("Escape");
+      await browser.pause(500);
+      assert.ok(
+        (await $(importingDialog).isExisting()) ||
+          (await $(resultDialog).isExisting()),
+        "the import dialog closed mid-import",
       );
-      // Let the toast finish sliding in before the screenshot.
-      await browser.pause(1_000);
+    });
+
+    const result = await step("the dialog shows the result", async () => {
+      const dialog = $(resultDialog);
+      await dialog.waitForDisplayed({ timeout: 60_000 });
       await browser.saveScreenshot(
-        path.join(world, "artifacts", "import-failures-toast.png"),
+        path.join(world, "artifacts", "import-failures-result.png"),
       );
-      return found ?? "";
+      return dialog.getText();
+    });
+
+    await step("it names each failed mod and why", async () => {
+      assert.match(result, /1 of 3 mods imported into/);
+      assert.ok(result.includes(UNINSTALLABLE_MOD.name), result);
+      assert.ok(result.includes("Download or install failed"), result);
+      assert.ok(result.includes(`Mod ${MISSING_MOD_ID}`), result);
+      assert.ok(result.includes("Could not get the mod's details"), result);
+      assert.ok(!result.includes(IMPORTED_MOD.name), result);
+      const toasts = await toastTexts();
+      assert.ok(
+        !toasts.some((text) => text.startsWith("warning:")),
+        JSON.stringify(toasts),
+      );
     });
 
     await step("only the importable mod was installed", async () => {
@@ -68,11 +88,15 @@ describe("profile import with failed mods", () => {
       );
     });
 
-    await step("the warning names each failed mod", async () => {
-      assert.ok(completion.includes("1/3 mods imported"), completion);
-      assert.ok(completion.includes(UNINSTALLABLE_MOD.name), completion);
-      assert.ok(completion.includes(MISSING_MOD_ID), completion);
-      assert.ok(!completion.includes(IMPORTED_MOD.name), completion);
+    await step("Done goes back to Manage Profiles", async () => {
+      await $(`${resultDialog}//button[normalize-space()="Done"]`).click();
+      await browser.waitUntil(
+        async () => !(await $(resultDialog).isExisting()),
+        {
+          timeoutMsg: "The result stayed open",
+        },
+      );
+      await $(manageProfiles).waitForDisplayed();
     });
 
     await closeApplication(world, runtime.processId);

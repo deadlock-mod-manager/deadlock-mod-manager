@@ -75,7 +75,13 @@ export const importFailureRoutes = async () => {
       },
     };
     return [
-      ...routes,
+      // Alpha's download answers slowly, so the test can try closing the
+      // dialog while the import runs.
+      ...routes.map((route) =>
+        route.path === `/dl/${alphaArchive.id}`
+          ? { ...route, headerDelayMs: 3_000 }
+          : route,
+      ),
       {
         method: "GET",
         path: `/apiv11/Mod/${MISSING_MOD_ID}/ProfilePage`,
