@@ -74,14 +74,14 @@ export const importFailureRoutes = async () => {
         loadOrder: [alpha.id, charlie.id, MISSING_MOD_ID],
       },
     };
+    const alphaPath = `/dl/${alphaArchive.id}`;
+    const alphaRoute = routes.find((route) => route.path === alphaPath);
+    if (!alphaRoute) throw new Error("The share fixtures lost Alpha's archive");
     return [
+      ...routes.filter((route) => route !== alphaRoute),
       // Alpha's download answers slowly, so the test can try closing the
       // dialog while the import runs.
-      ...routes.map((route) =>
-        route.path === `/dl/${alphaArchive.id}`
-          ? { ...route, headerDelayMs: 3_000 }
-          : route,
-      ),
+      { ...alphaRoute, headerDelayMs: 3_000 },
       {
         method: "GET",
         path: `/apiv11/Mod/${MISSING_MOD_ID}/ProfilePage`,
