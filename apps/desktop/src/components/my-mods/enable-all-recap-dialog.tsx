@@ -79,7 +79,7 @@ const RecapRowAction = ({
   );
 };
 
-const RecapSection = ({
+export const RecapSection = ({
   icon,
   title,
   hint,
@@ -116,7 +116,7 @@ const RecapSection = ({
   );
 };
 
-const asItems = (mods: LocalMod[]) => mods.map((mod) => ({ mod }));
+export const asItems = (mods: LocalMod[]) => mods.map((mod) => ({ mod }));
 
 type EnableAllRecapDialogProps = {
   recap: EnableAllRecap | null;

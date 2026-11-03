@@ -1,8 +1,10 @@
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useMutation } from "@tanstack/react-query";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import logger from "@/lib/logger";
+import { type BulkActionRecap, runBulkModAction } from "@/lib/mods/bulk-action";
 import { isInstalledModWithVpks } from "@/lib/mods/installed-helpers";
 import { usePersistedStore } from "@/lib/store";
 import { ModStatus } from "@/types/mods";
@@ -17,17 +19,21 @@ export const useDisableAllMods = () => {
   const setModEnabledInCurrentProfile = usePersistedStore(
     (state) => state.setModEnabledInCurrentProfile,
   );
+  const [recap, setRecap] = useState<BulkActionRecap | null>(null);
 
   const mutation = useMutation({
     mutationKey: ["library-bulk"],
-    mutationFn: async (selectedIds?: ReadonlySet<string>) => {
+    onMutate: () => setRecap(null),
+    mutationFn: async (
+      selectedIds?: ReadonlySet<string>,
+    ): Promise<BulkActionRecap | null> => {
       const profileId = usePersistedStore.getState().activeProfileId;
       const enabledMods = mods.filter(
         (mod) =>
           isInstalledModWithVpks(mod) &&
           (!selectedIds || selectedIds.has(mod.remoteId)),
       );
-      if (enabledMods.length === 0) return false;
+      if (enabledMods.length === 0) return null;
       const shouldDisable = await confirm({
         title: t(
           selectedIds
@@ -52,36 +58,48 @@ export const useDisableAllMods = () => {
         tone: "destructive",
       });
 
-      if (
-        !shouldDisable ||
-        usePersistedStore.getState().activeProfileId !== profileId
-      )
-        return false;
+      if (!shouldDisable) return null;
 
       const activeProfile = getActiveProfile();
       const profileFolder = activeProfile?.folderName ?? null;
 
-      for (const mod of enabledMods) {
-        if (usePersistedStore.getState().activeProfileId !== profileId)
-          return false;
-        await invokeGuarded("uninstall_mod", {
-          modId: mod.remoteId,
-          vpks: mod.installedVpks ?? [],
-          profileFolder,
-        });
-        setModStatus(mod.remoteId, ModStatus.Downloaded);
-        setModEnabledInCurrentProfile(mod.remoteId, false);
-      }
-      return enabledMods.length;
+      return runBulkModAction({
+        action: "disable",
+        targets: enabledMods,
+        isCurrent: () =>
+          usePersistedStore.getState().activeProfileId === profileId,
+        apply: async (mod) => {
+          await invokeGuarded("uninstall_mod", {
+            modId: mod.remoteId,
+            vpks: mod.installedVpks ?? [],
+            profileFolder,
+          });
+          setModStatus(mod.remoteId, ModStatus.Downloaded);
+          setModEnabledInCurrentProfile(mod.remoteId, false);
+        },
+      });
     },
-    onSuccess: (disabled, selectedIds) => {
-      if (!disabled) return;
+    onSuccess: (result, selectedIds) => {
+      if (!result) return;
+      if (result.stoppedBy) {
+        logger
+          .withMetadata({
+            stoppedBy: result.stoppedBy,
+            failed: result.failed?.mod.remoteId,
+            error: result.failed?.message,
+            completed: result.completed.length,
+            notAttempted: result.notAttempted.length,
+          })
+          .warn("Bulk disable stopped early");
+        setRecap(result);
+        return;
+      }
       toast.success(
         t(
           selectedIds
             ? "myMods.selection.disabled"
             : "myMods.disableAllSuccess",
-          { count: disabled },
+          { count: result.completed.length },
         ),
       );
     },
@@ -94,5 +112,7 @@ export const useDisableAllMods = () => {
   return {
     disableAll: mutation.mutate,
     isPending: mutation.isPending,
+    recap,
+    closeRecap: () => setRecap(null),
   };
 };
