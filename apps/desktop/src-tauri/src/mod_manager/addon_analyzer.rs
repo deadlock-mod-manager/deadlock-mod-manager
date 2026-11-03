@@ -6,6 +6,7 @@ use crate::providers::{SubmissionProvider, SubmissionRef};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 use tauri::Emitter;
 use tokio::task;
 use vpk_parser::{VpkParseOptions, VpkParsed, VpkParser};
@@ -142,8 +143,8 @@ pub struct AddonAnalysisProgress {
 
 pub struct AddonAnalyzer;
 
-const LOOKUP_CONNECT_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
-const LOOKUP_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(30);
+const LOOKUP_CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
+const LOOKUP_TIMEOUT: Duration = Duration::from_secs(30);
 
 impl AddonAnalyzer {
   pub fn new() -> Self {
@@ -185,8 +186,8 @@ impl AddonAnalyzer {
   }
 
   fn build_lookup_client(
-    connect_timeout: std::time::Duration,
-    timeout: std::time::Duration,
+    connect_timeout: Duration,
+    timeout: Duration,
   ) -> Result<reqwest::Client, Error> {
     crate::proxy::build_http_client(|builder| {
       builder.connect_timeout(connect_timeout).timeout(timeout)
@@ -556,7 +557,6 @@ impl AddonAnalyzer {
       }
     }
 
-    // Files that parsed, whether or not the lookup below can identify them.
     let parsed_count = prefixed_addons.len() + non_prefixed_addons.len();
 
     log::info!(
@@ -863,7 +863,7 @@ mod tests {
 
   /// Answers one request with `status` and `body` after `delay`, having read
   /// the whole request so the client never sees a reset.
-  async fn serve_once(status: u16, body: &'static str, delay: std::time::Duration) -> String {
+  async fn serve_once(status: u16, body: &'static str, delay: Duration) -> String {
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let endpoint = format!(
@@ -913,14 +913,14 @@ mod tests {
 
   #[tokio::test]
   async fn lookup_reports_a_service_error_instead_of_no_match() {
-    let endpoint = serve_once(503, "Service Unavailable", std::time::Duration::ZERO).await;
+    let endpoint = serve_once(503, "Service Unavailable", Duration::ZERO).await;
     let error = lookup(&endpoint).await.unwrap_err().to_string();
     assert!(error.contains("503"), "{error}");
   }
 
   #[tokio::test]
   async fn lookup_reports_an_unreadable_response_instead_of_no_match() {
-    let endpoint = serve_once(200, "<html>maintenance</html>", std::time::Duration::ZERO).await;
+    let endpoint = serve_once(200, "<html>maintenance</html>", Duration::ZERO).await;
     assert!(lookup(&endpoint).await.is_err());
   }
 
@@ -937,19 +937,17 @@ mod tests {
 
   #[tokio::test]
   async fn lookup_gives_up_on_a_service_that_answers_too_slowly() {
-    let endpoint = serve_once(200, "[]", std::time::Duration::from_secs(5)).await;
-    let client = AddonAnalyzer::build_lookup_client(
-      LOOKUP_CONNECT_TIMEOUT,
-      std::time::Duration::from_millis(200),
-    )
-    .unwrap();
+    let endpoint = serve_once(200, "[]", Duration::from_secs(5)).await;
+    let client =
+      AddonAnalyzer::build_lookup_client(LOOKUP_CONNECT_TIMEOUT, Duration::from_millis(200))
+        .unwrap();
     let result = AddonAnalyzer::lookup_hashes(&client, &endpoint, &parsed_vpk()).await;
     assert!(result.is_err());
   }
 
   #[tokio::test]
   async fn lookup_returns_no_match_only_when_the_service_found_none() {
-    let endpoint = serve_once(200, "[]", std::time::Duration::ZERO).await;
+    let endpoint = serve_once(200, "[]", Duration::ZERO).await;
     assert!(lookup(&endpoint).await.unwrap().is_none());
   }
 
@@ -959,7 +957,7 @@ mod tests {
       200,
       r#"[{"matchedVpk":{"id":"vpk_1","submissionType":"mod","submissionId":"42","fileId":"100"},
           "match":{"certainty":100,"matchType":"sha256"}}]"#,
-      std::time::Duration::ZERO,
+      Duration::ZERO,
     )
     .await;
     let (remote_id, info) = lookup(&endpoint).await.unwrap().unwrap();

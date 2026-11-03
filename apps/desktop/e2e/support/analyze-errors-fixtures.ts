@@ -6,7 +6,6 @@ import type { CreatedWorld } from "./world";
 
 const ANALYSE_PATH = "/api/v2/vpk-analyse-hashes";
 
-/** Two VPKs the identification service is asked about, one it can't parse. */
 export const LOOKUP_FILES = ["pak01_dir.vpk", "pak02_dir.vpk"] as const;
 export const CORRUPT_FILE = "pak03_dir.vpk";
 

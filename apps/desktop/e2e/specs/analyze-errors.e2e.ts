@@ -92,22 +92,25 @@ describe("analysis errors", () => {
     const unknownFiles = LOOKUP_FILES.filter((name) =>
       unknown.text.includes(name),
     );
-    await step("only the file the service didn't match is unknown", () => {
-      expect(unknown.label).toBe("Unknown (1)");
-      expect(unknownFiles).toHaveLength(1);
-      return Promise.resolve();
-    });
+    await step(
+      "only the file the service didn't match is unknown",
+      async () => {
+        expect(unknown.label).toBe("Unknown (1)");
+        expect(unknownFiles).toHaveLength(1);
+      },
+    );
 
-    await step("both files that parsed are still counted as found", () => {
-      expect(summary).toContain("Found 2 addon(s)");
-      return Promise.resolve();
-    });
+    await step(
+      "both files that parsed are still counted as found",
+      async () => {
+        expect(summary).toContain("Found 2 addon(s)");
+      },
+    );
 
-    await step("the Errors tab names each failure and counts it", () => {
+    await step("the Errors tab names each failure and counts it", async () => {
       const failed = LOOKUP_FILES.find((name) => name !== unknownFiles[0]);
       expect(errors.text).toContain(`${failed}`);
       expect(errors.text).toContain("503");
-      // The corrupt file's own row gives the parser's reason after its name.
       const corruptRow = errors.rows.find((row) => row.includes(CORRUPT_FILE));
       expect(corruptRow).toMatch(
         new RegExp(`^Failed to parse ${CORRUPT_FILE.replace(".", "\\.")}: \\S`),
@@ -115,7 +118,6 @@ describe("analysis errors", () => {
       expect(errors.text).not.toContain(`${unknownFiles[0]}`);
       expect(errors.rows).toHaveLength(2);
       expect(errors.label).toBe("Errors (2)");
-      return Promise.resolve();
     });
 
     await step("nothing was registered or changed", async () => {
