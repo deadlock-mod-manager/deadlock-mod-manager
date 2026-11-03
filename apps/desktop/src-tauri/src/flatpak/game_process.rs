@@ -1,4 +1,5 @@
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Mutex, MutexGuard};
 use std::time::Duration;
 
 use tokio::process::Command;
@@ -38,19 +39,47 @@ async fn host_game_pids() -> Result<Vec<u32>, Error> {
   Ok(game_pids(&output))
 }
 
+#[derive(Default)]
+struct LastScan {
+  seq: u64,
+  running: bool,
+}
+
+impl LastScan {
+  /// Several pollers scan at once and can finish out of order, so only a scan
+  /// that started after the stored one may replace it.
+  fn record(&mut self, seq: u64, running: bool) {
+    if seq > self.seq {
+      *self = Self { seq, running };
+    }
+  }
+}
+
+static SCAN_SEQ: AtomicU64 = AtomicU64::new(0);
+
 /// The host's last answer. A failed check reports it again, so a transient
 /// failure doesn't read as the game closing (which would reset gameinfo.gi
 /// while the game still runs).
-static LAST_KNOWN_RUNNING: AtomicBool = AtomicBool::new(false);
+static LAST_SCAN: Mutex<LastScan> = Mutex::new(LastScan {
+  seq: 0,
+  running: false,
+});
+
+fn last_scan() -> MutexGuard<'static, LastScan> {
+  LAST_SCAN
+    .lock()
+    .unwrap_or_else(|poisoned| poisoned.into_inner())
+}
 
 pub(crate) async fn is_game_running() -> Result<bool, Error> {
+  let seq = SCAN_SEQ.fetch_add(1, Ordering::Relaxed) + 1;
   let running = !host_game_pids().await?.is_empty();
-  LAST_KNOWN_RUNNING.store(running, Ordering::Relaxed);
+  last_scan().record(seq, running);
   Ok(running)
 }
 
 pub(crate) fn last_known_running() -> bool {
-  LAST_KNOWN_RUNNING.load(Ordering::Relaxed)
+  last_scan().running
 }
 
 /// Kills the game on the host, as the native stop does. The sandbox can't
@@ -143,6 +172,16 @@ mod tests {
       game_pids(format!("{wrappers}42\0deadlock.exe\0\0").as_bytes()),
       [42]
     );
+  }
+
+  #[test]
+  fn an_older_scan_finishing_last_does_not_replace_a_newer_one() {
+    let mut last = LastScan::default();
+    last.record(2, true);
+    last.record(1, false);
+    assert!(last.running);
+    last.record(3, false);
+    assert!(!last.running);
   }
 
   #[tokio::test]

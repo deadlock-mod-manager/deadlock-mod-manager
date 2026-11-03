@@ -103,9 +103,10 @@ struct Tracker {
   launch_request: Option<LaunchRequest>,
   /// The app's last Stop, whether or not a session was tracked then.
   dmm_stop_at: Option<DateTime<Utc>>,
-  /// When the app's last Stop was confirmed. A PID-less session can't see
-  /// the exit itself, and a forced kill leaves no dump or shutdown lines.
-  dmm_stop_completed_at: Option<DateTime<Utc>>,
+  /// The session the app's last confirmed Stop ended. A PID-less session
+  /// can't see the exit itself, and a forced kill leaves no dump or shutdown
+  /// lines.
+  dmm_stopped_session: Option<String>,
   state: TrackerState,
 }
 
@@ -120,7 +121,7 @@ static TRACKER: LazyLock<Mutex<Tracker>> = LazyLock::new(|| {
     pending: Vec::new(),
     launch_request: None,
     dmm_stop_at: None,
-    dmm_stop_completed_at: None,
+    dmm_stopped_session: None,
     state: TrackerState::default(),
   })
 });
@@ -215,22 +216,25 @@ pub fn observe(processes: &[GameProcess]) {
 }
 
 /// Marks the running session as stopped by the app, so the forced kill
-/// (exit code 1) isn't taken for a crash. Called before the kill.
-pub fn note_dmm_stop() {
+/// (exit code 1) isn't taken for a crash. Called before the kill. Returns the
+/// session being stopped, for `note_dmm_stop_completed`.
+pub fn note_dmm_stop() -> Option<String> {
   let mut tracker = tracker();
-  let Some(sessions_dir) = tracker.sessions_dir.clone() else {
-    return;
-  };
+  let sessions_dir = tracker.sessions_dir.clone()?;
   tracker.dmm_stop_at = Some(Utc::now());
-  if let Some(current) = tracker.current.as_mut() {
-    current.dmm_stop_requested = true;
-    store::save_current(&sessions_dir, Some(&*current));
-  }
+  let current = tracker.current.as_mut()?;
+  current.dmm_stop_requested = true;
+  store::save_current(&sessions_dir, Some(&*current));
+  Some(current.session_id.clone())
 }
 
-/// Called once the app's Stop confirmed the game is gone.
-pub fn note_dmm_stop_completed() {
-  tracker().dmm_stop_completed_at = Some(Utc::now());
+/// Called once the app's Stop confirmed the game is gone, with the session
+/// `note_dmm_stop` returned. A session that started while the Stop was running
+/// isn't the one it ended.
+pub fn note_dmm_stop_completed(session_id: Option<String>) {
+  if let Some(session_id) = session_id {
+    tracker().dmm_stopped_session = Some(session_id);
+  }
 }
 
 pub fn pending_reports() -> Vec<SessionReport> {
@@ -487,7 +491,7 @@ fn wait_for_pidless_end(record: &SessionRecord) -> bool {
     }
     if dumps::find_session_dump(&dumps_dir, &search).is_some()
       || console::run_ended_cleanly(&console_log, record.started_at)
-      || stopped_by_dmm_since(record.started_at)
+      || stopped_by_dmm(&record.session_id)
     {
       return true;
     }
@@ -495,10 +499,8 @@ fn wait_for_pidless_end(record: &SessionRecord) -> bool {
   }
 }
 
-fn stopped_by_dmm_since(started_at: DateTime<Utc>) -> bool {
-  tracker()
-    .dmm_stop_completed_at
-    .is_some_and(|stopped_at| stopped_at >= started_at)
+fn stopped_by_dmm(session_id: &str) -> bool {
+  tracker().dmm_stopped_session.as_deref() == Some(session_id)
 }
 
 fn finalize(

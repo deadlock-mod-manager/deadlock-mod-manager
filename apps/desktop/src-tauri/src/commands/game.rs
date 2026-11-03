@@ -243,12 +243,13 @@ pub async fn stop_game() -> Result<(), Error> {
     return Ok(());
   }
   // Before the kill, so the session's forced exit reads as ours.
-  crate::game_session::note_dmm_stop();
+  #[cfg_attr(not(target_os = "linux"), allow(unused_variables))]
+  let stopped_session = crate::game_session::note_dmm_stop();
   #[cfg(target_os = "linux")]
   if crate::flatpak::running_in_flatpak() {
     crate::flatpak::game_process::stop_game().await?;
     // Without a PID, the session can't see the game exit on its own.
-    crate::game_session::note_dmm_stop_completed();
+    crate::game_session::note_dmm_stop_completed(stopped_session);
     return Ok(());
   }
   let mut mod_manager = MANAGER.lock().unwrap();
