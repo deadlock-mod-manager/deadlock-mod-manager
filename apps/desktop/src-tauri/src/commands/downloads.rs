@@ -179,7 +179,9 @@ async fn resolve_gamebanana_file(
 
 /// Where a GameBanana file is downloaded from, in the order the download
 /// manager tries them. `standard` is the file's own link and `/dl/<id>`,
-/// usually the same URL; `discover` finds caches that serve the file.
+/// usually the same URL; `discover` finds caches that serve the file. Auto
+/// tries those caches first; Default keeps its standard link first and falls
+/// back to them, since `/dl/` can send every attempt to the same dead cache.
 async fn download_sources<Discover, Found>(
   preference: FileserverPreference,
   standard: [String; 2],
@@ -189,11 +191,13 @@ where
   Discover: FnOnce() -> Found,
   Found: Future<Output = Vec<String>>,
 {
+  let caches = discover().await;
+  let ordered: Vec<String> = match preference {
+    FileserverPreference::Auto => caches.into_iter().chain(standard).collect(),
+    FileserverPreference::Default => standard.into_iter().chain(caches).collect(),
+  };
   let mut urls = Vec::new();
-  if preference == FileserverPreference::Auto {
-    urls = discover().await;
-  }
-  for url in standard {
+  for url in ordered {
     if !url.is_empty() && !urls.contains(&url) {
       urls.push(url);
     }
@@ -241,11 +245,7 @@ async fn find_fileservers_with_file(
     .map(|server| {
       let client = &client;
       async move {
-        let url = format!(
-          "https://{}/{category}/{}",
-          server.domain,
-          urlencoding::encode(file_name)
-        );
+        let url = fileserver_url(&server.domain, category, file_name);
         if crate::download_manager::downloader::validate_download_url(&url).is_err() {
           return None;
         }
@@ -276,6 +276,19 @@ async fn find_fileservers_with_file(
     log::info!("No fileserver serves {file_name}; using canonical URL");
   }
   found
+}
+
+/// E2E worlds serve every cache from the fixture origin, under
+/// `/fileservers/<domain>/`.
+fn fileserver_url(domain: &str, category: &str, file_name: &str) -> String {
+  let origin = crate::runtime_environment::current()
+    .e2e()
+    .map(|configuration| {
+      let downloads = configuration.endpoint(crate::runtime_environment::ServiceName::Downloads);
+      format!("{downloads}/fileservers/{domain}")
+    })
+    .unwrap_or_else(|| format!("https://{domain}"));
+  format!("{origin}/{category}/{}", urlencoding::encode(file_name))
 }
 
 fn parse_gamebanana_file_token(
