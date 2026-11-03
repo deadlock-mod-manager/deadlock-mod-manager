@@ -1179,6 +1179,99 @@ mod tests {
   }
 
   #[test]
+  fn analyzed_registration_keeps_the_replaced_owner_fix_choice() {
+    for (fixed, opted_out) in [(true, false), (false, true)] {
+      let temp = tempfile::tempdir().unwrap();
+      let mut manager = test_manager(temp.path());
+      let base = manager.get_addons_path(None).unwrap();
+      let file = base.join("pak01_dir.vpk");
+      write_test_vpk(&file);
+      let mut manifest = ProfileVpkManifest::default();
+      manifest.mark_enabled(
+        "old-local-id",
+        vec!["pak01_dir.vpk".into()],
+        vec![],
+        Some(0),
+        ShardIndex::FIRST,
+      );
+      let placeholder = manifest.mods.get_mut("old-local-id").unwrap();
+      placeholder.compatibility_enabled = fixed;
+      placeholder.compatibility_opted_out = opted_out;
+      manifest.save(&base).unwrap();
+      manager
+        .register_analyzed_mod(
+          None,
+          "remote-id".into(),
+          "Identified mod".into(),
+          vec!["pak01_dir.vpk".into()],
+          Some(vec![file.display().to_string()]),
+          None,
+          false,
+        )
+        .unwrap();
+      let manifest = ProfileVpkManifest::load(&base).unwrap();
+      let identified = &manifest.mods["remote-id"];
+      assert_eq!(identified.compatibility_enabled, fixed);
+      assert_eq!(identified.compatibility_opted_out, opted_out);
+    }
+  }
+
+  #[test]
+  fn analyzed_registration_prefers_the_identity_own_fix_choice() {
+    // (identity's choice, placeholder's choice, expected), each as
+    // (compatibility_enabled, compatibility_opted_out).
+    for (identity, placeholder, expected) in [
+      ((true, false), (false, true), (true, false)),
+      ((false, true), (false, false), (false, true)),
+      ((false, false), (true, false), (true, false)),
+    ] {
+      let temp = tempfile::tempdir().unwrap();
+      let mut manager = test_manager(temp.path());
+      let base = manager.get_addons_path(None).unwrap();
+      let file = base.join("pak01_dir.vpk");
+      write_test_vpk(&file);
+      let mut manifest = ProfileVpkManifest::default();
+      // The catalog mod is already installed but disabled; a hand-added copy
+      // of its file is enabled under a placeholder id.
+      manifest.mark_disabled("remote-id", vec!["remote-id_pak01_dir.vpk".into()], vec![]);
+      manifest.mark_enabled(
+        "old-local-id",
+        vec!["pak01_dir.vpk".into()],
+        vec![],
+        Some(0),
+        ShardIndex::FIRST,
+      );
+      for (id, (fixed, opted_out)) in [("remote-id", identity), ("old-local-id", placeholder)] {
+        let entry = manifest.mods.get_mut(id).unwrap();
+        entry.compatibility_enabled = fixed;
+        entry.compatibility_opted_out = opted_out;
+      }
+      manifest.save(&base).unwrap();
+      manager
+        .register_analyzed_mod(
+          None,
+          "remote-id".into(),
+          "Identified mod".into(),
+          vec!["pak01_dir.vpk".into()],
+          Some(vec![file.display().to_string()]),
+          None,
+          false,
+        )
+        .unwrap();
+      let manifest = ProfileVpkManifest::load(&base).unwrap();
+      let identified = &manifest.mods["remote-id"];
+      assert_eq!(
+        (
+          identified.compatibility_enabled,
+          identified.compatibility_opted_out
+        ),
+        expected,
+        "identity {identity:?}, placeholder {placeholder:?}"
+      );
+    }
+  }
+
+  #[test]
   fn analyzed_registration_uses_full_paths_and_rejects_ambiguous_names() {
     let temp = tempfile::tempdir().unwrap();
     let mut manager = test_manager(temp.path());
