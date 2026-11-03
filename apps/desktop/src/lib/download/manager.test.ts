@@ -41,14 +41,22 @@ type Payload = Record<string, string | number | null | undefined>;
 const handlers = new Map<string, (event: { payload: Payload }) => void>();
 /** The attempt each `queue_download` call named, in order. */
 const queued: (string | undefined)[] = [];
+/** What `get_all_downloads` reports to the startup reconciliation. */
+const running: { modId: string }[] = [];
+/** The mod each `cancel_download` call named, in order. */
+const cancelled: (string | undefined)[] = [];
 
 // The backend accepts every request at once; events arrive only when a test
 // delivers them, so their order relative to commands is the test's to choose.
 mock.module("@tauri-apps/api/core", () => ({
   ...tauriCore,
-  invoke: async (command: string, args?: { attemptId?: string }) => {
+  invoke: async (
+    command: string,
+    args?: { attemptId?: string; modId?: string },
+  ) => {
     if (command === "queue_download") queued.push(args?.attemptId);
-    if (command === "get_all_downloads") return [];
+    if (command === "cancel_download") cancelled.push(args?.modId);
+    if (command === "get_all_downloads") return running;
     return undefined;
   },
 }));
@@ -132,6 +140,8 @@ const request = (callbacks: string[], label: string): DownloadableMod => ({
 
 beforeEach(async () => {
   queued.length = 0;
+  running.length = 0;
+  cancelled.length = 0;
   await downloadManager.init();
 });
 afterEach(async () => {
@@ -151,6 +161,7 @@ describe("download events from an earlier attempt", () => {
     // The cancelled worker noticed its token only after Retry was clicked.
     deliver("download-error", first, cancelledError);
     deliver("download-started", retry);
+    deliver("download-error", first, cancelledError);
     deliver("download-completed", retry, { path: "/mods/fixture" });
 
     expect(callbacks).toEqual([
@@ -168,7 +179,9 @@ describe("download events from an earlier attempt", () => {
     deliver("download-started", orphan);
     // A reload drops the queue entries and starts listening again.
     await downloadManager.cleanup();
+    running.push({ modId: MOD_ID });
     await downloadManager.init();
+    expect(cancelled).toEqual([MOD_ID]);
 
     downloadManager.addToQueue(request(callbacks, "retry"));
     const retry = queued[1];
