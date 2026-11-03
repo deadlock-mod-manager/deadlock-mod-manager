@@ -81,9 +81,7 @@ export const useReinstallMod = () => {
         options.onStep?.("purging");
         // Removes both the installed VPKs and the cached download, so the mod
         // really is fetched again instead of restored from cache. Missing files
-        // are not an error here, so a rejection means the cleanup did not
-        // finish: wiping the state and downloading again would only lose track
-        // of whatever is still on disk.
+        // are not an error here, so a rejection means cleanup did not finish.
         await invokeGuarded("purge_mod", {
           modId: target.remoteId,
           vpks: target.installedVpks ?? [],
