@@ -187,8 +187,7 @@ describe("compatibility fix identification", () => {
     });
 
     await step("the identified mod stays fixed", async () => {
-      // Wait for the health check and repair rebuild Analyze triggers, then
-      // report everything at once so a failure shows what the player sees.
+      // Analyze clears the repair package; the refresh rebuilds it.
       const settled = await observeUntil(
         "identified mod fixed and its repair rebuilt",
         async () => ({
@@ -222,7 +221,6 @@ describe("compatibility fix identification", () => {
         },
         `identification must keep the Fix choice; then saw ${JSON.stringify(observed)}`,
       );
-      assert.ok(settled, `never settled as fixed: ${JSON.stringify(observed)}`);
       assert.deepEqual(observed, {
         choice: identified,
         health: "fixed",
