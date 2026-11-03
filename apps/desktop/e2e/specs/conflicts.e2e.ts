@@ -219,7 +219,11 @@ describe("mod conflicts", () => {
         });
         await section.click();
         const row = $('[data-testid="ignored-conflict"]');
-        await expect(row).toHaveText("1 file", { containing: true });
+        // Fixture mods are named after their ids.
+        await expect(row).toHaveText(
+          `1 file shared by ${HAT_PANTS} and ${PANTS_TEXTURE}`,
+          { containing: true },
+        );
         await row.$("button=Restore").click();
         await expectSharedFiles(
           [HAT_PANTS, PANTS_TEXTURE],
