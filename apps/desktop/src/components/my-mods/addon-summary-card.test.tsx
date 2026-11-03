@@ -16,7 +16,13 @@ mock.module("@/hooks/use-vpk-scan", () => ({
     isLoading: libraryCheck.isLoading,
   }),
 }));
-mock.module("@tauri-apps/plugin-opener", () => ({ openUrl: async () => {} }));
+let openedUrls: string[] = [];
+let clickLink: (() => void) | undefined;
+mock.module("@tauri-apps/plugin-opener", () => ({
+  openUrl: async (url: string) => {
+    openedUrls.push(url);
+  },
+}));
 mock.module("./addon-info", () => ({ AddonInfo: () => null }));
 mock.module("@deadlock-mods/ui/components/button", () => ({
   Button: ({
@@ -31,7 +37,10 @@ mock.module("@deadlock-mods/ui/components/badge", () => ({
   Badge: ({ children }: { children: ReactNode }) => <span>{children}</span>,
 }));
 mock.module("@deadlock-mods/ui/icons", () => ({
-  ExternalLink: () => <svg data-icon='external-link' />,
+  ExternalLink: ({ onClick }: { onClick?: () => void }) => {
+    clickLink = onClick;
+    return <svg data-icon='external-link' />;
+  },
   Plus: () => <svg />,
   XCircle: () => <svg />,
 }));
@@ -106,6 +115,8 @@ describe("AddonSummaryCard library check", () => {
 describe("AddonSummaryCard GameBanana link", () => {
   const renderIdentified = (identity: Partial<LocalAddonInfo>) => {
     libraryCheck = { owned: true, isLoading: false };
+    clickLink = undefined;
+    openedUrls = [];
     return renderToStaticMarkup(
       <AddonSummaryCard addon={{ ...addon, ...identity }} />,
     );
@@ -119,7 +130,13 @@ describe("AddonSummaryCard GameBanana link", () => {
     ).not.toContain("external-link");
   });
 
-  it("links a GameBanana mod", () => {
-    expect(renderIdentified({ remoteId: "123456" })).toContain("external-link");
+  it.each([
+    ["123456", "https://gamebanana.com/mods/123456"],
+    ["snd-123456", "https://gamebanana.com/sounds/123456"],
+    ["wip-103122", "https://gamebanana.com/wips/103122"],
+  ])("links %s to its GameBanana page", (remoteId, url) => {
+    expect(renderIdentified({ remoteId })).toContain("external-link");
+    clickLink?.();
+    expect(openedUrls).toEqual([url]);
   });
 });
