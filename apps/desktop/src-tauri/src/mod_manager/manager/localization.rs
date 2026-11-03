@@ -332,10 +332,9 @@ impl ModManager {
       ));
     }
     self.report_plan_stage(RepairPlanStage::WritingPackage);
-    // Save the review first: a package without it couldn't be rebuilt after the
-    // next library change. Invalid choices must not replace a saved review, and
-    // valid ones saved for a package that then fails to write still answer this
-    // exact review; rebuilds revalidate them before any reuse.
+    // Save the review before the package: a package without it couldn't be
+    // rebuilt after the next library change. Validate first so invalid choices
+    // never replace a saved review.
     plan.analyze(resolutions)?;
     let reviewed = review::ReviewedInputs::new(&plan.analysis, &key)?;
     review::save(&key.output_path, reviewed, resolutions)?;
@@ -459,18 +458,16 @@ impl ModManager {
       log::warn!("Could not record mod health from the launch analysis: {error}");
     }
     let resolutions = if requires_review(&plan.analysis) {
-      match self.reviewed_resolutions(&plan, &key)? {
-        Some(resolutions) => resolutions,
-        None => {
-          // The review dialog analyzes the same inputs next; hand it this plan.
-          self
-            .localization_overlay_plan_cache
-            .lock()
-            .map_err(|_| Error::BackgroundTaskFailed("Localization plan cache poisoned".into()))?
-            .replace(CachedLocalizationOverlayPlan { key, plan });
-          return Err(Error::ModDataReviewRequired);
-        }
-      }
+      let Some(resolutions) = self.reviewed_resolutions(&plan, &key)? else {
+        // The review dialog analyzes the same inputs next; hand it this plan.
+        self
+          .localization_overlay_plan_cache
+          .lock()
+          .map_err(|_| Error::BackgroundTaskFailed("Localization plan cache poisoned".into()))?
+          .replace(CachedLocalizationOverlayPlan { key, plan });
+        return Err(Error::ModDataReviewRequired);
+      };
+      resolutions
     } else {
       Vec::new()
     };
