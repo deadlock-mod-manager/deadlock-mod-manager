@@ -11,7 +11,11 @@ import {
 } from "../support/analyze-known-files-fixtures";
 import { step } from "../support/evidence";
 import { observeUntil, readPersistedDocument } from "../support/observations";
-import { navigate, waitForOverlaysClosed } from "../support/ui";
+import {
+  navigate,
+  waitForDisplayed,
+  waitForOverlaysClosed,
+} from "../support/ui";
 
 type Row = (typeof UNKNOWN_ADDONS)[number];
 
@@ -78,9 +82,9 @@ const analyze = () =>
 const analyzeFindsBothKnown = (title: string) =>
   step(title, async () => {
     await startAnalysis();
-    await $(
+    await waitForDisplayed(
       '//*[@data-sonner-toast and contains(., "All 2 addon(s) were automatically identified")]',
-    ).waitForDisplayed();
+    );
     assert.equal(await $(RESULTS_DIALOG).isExisting(), false);
   });
 
