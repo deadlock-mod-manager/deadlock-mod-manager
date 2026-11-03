@@ -247,8 +247,9 @@ pub(super) fn path(overlay: &Path) -> PathBuf {
   overlay.with_file_name(REVIEW_NAME)
 }
 
-/// Loads the saved review. A missing or unreadable file means the player has
-/// not reviewed these mods, so review is asked again.
+/// Loads the saved review. A missing or malformed file means the player has
+/// not reviewed these mods, so review is asked again. Other read errors fail,
+/// as they do for the receipt.
 pub(super) fn load(overlay: &Path) -> Result<Option<SavedReview>, Error> {
   match fs::read(path(overlay)) {
     Ok(bytes) => Ok(

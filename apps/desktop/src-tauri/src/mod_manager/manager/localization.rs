@@ -331,9 +331,12 @@ impl ModManager {
     self.report_plan_stage(RepairPlanStage::WritingPackage);
     // Save the review before the package: a package without it couldn't be
     // rebuilt after the next library change. Validate first so invalid choices
-    // never replace a saved review.
+    // never replace a saved review. An earlier package can still be current for
+    // these inputs (a retry after gameinfo failed, or a refresh that finished
+    // first); remove it so a failed write leaves the next build to the review.
     plan.analyze(resolutions)?;
     let reviewed = review::ReviewedInputs::new(&plan.analysis, &key)?;
+    receipt::remove(&key.output_path)?;
     review::save(&key.output_path, reviewed, resolutions)?;
     receipt::write(&plan, key, resolutions)
   }
@@ -2835,6 +2838,36 @@ Game core
     assert!(
       manager
         .write_reviewed_localization_overlay(None, &[], &analysis.review_fingerprint)
+        .is_err()
+    );
+    assert!(!overlay.exists());
+    assert!(receipt::load(&overlay).unwrap().is_none());
+  }
+
+  #[test]
+  fn a_failed_apply_leaves_no_package_from_earlier_choices() {
+    let (_temp, mut manager) = manager_with_conflict();
+    apply_review(&mut manager, "first");
+    let overlay = manager.localization_overlay_vpk_path(None).unwrap();
+    // The earlier package stays current; make saving the new review fail.
+    fs::remove_file(review::path(&overlay)).unwrap();
+    fs::create_dir_all(review::path(&overlay)).unwrap();
+    let analysis = manager.analyze_localization_overlay(None, &[]).unwrap();
+    let second = analysis.conflicts[0]
+      .candidates
+      .iter()
+      .find(|candidate| candidate.mod_id == "second")
+      .unwrap();
+    let resolutions = [LocalizationResolution {
+      conflict_key: analysis.conflicts[0].key.clone(),
+      winner_mod_id: Some(second.mod_id.clone()),
+      winner_value: Some(second.value.clone()),
+      winner_source_vpk: Some(second.source_vpk.clone()),
+      use_vanilla: false,
+    }];
+    assert!(
+      manager
+        .write_reviewed_localization_overlay(None, &resolutions, &analysis.review_fingerprint)
         .is_err()
     );
     assert!(!overlay.exists());
