@@ -85,8 +85,6 @@ export const useGameRunning = () => {
 export const useIsCheckingModHealth = () =>
   useIsMutating({ mutationKey: MOD_HEALTH_CHECK_KEY }) > 0;
 
-// One queued check per profile, so a change in another profile does not drop
-// the check waiting for this one.
 const queuedChecks = new Map<string | null, ModHealthCheckRequest>();
 
 export const useCheckModHealth = () => {
