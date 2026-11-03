@@ -9,7 +9,6 @@ interface AddonActionsProps {
   isAlreadyInLibrary: boolean;
   isCheckingLibrary: boolean;
   onAddToLibrary?: (addon: LocalAddonInfo) => void;
-  /** Absent when the mod has no GameBanana page, which hides the link. */
   onExternalLinkClick?: () => void;
 }
 

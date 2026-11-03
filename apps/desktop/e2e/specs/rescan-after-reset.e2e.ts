@@ -91,8 +91,6 @@ declare global {
   }
 }
 
-const OPEN_URL_COMMAND = "plugin:opener|open_url";
-
 const openedCount = () =>
   browser.execute(() => window.e2eOpenedUrls?.length ?? 0);
 
@@ -124,7 +122,7 @@ const openedLinks = async (fileNames: readonly string[]) => {
       });
     };
     window.fetch = Object.assign(recordingFetch, realFetch);
-  }, OPEN_URL_COMMAND);
+  }, "plugin:opener|open_url");
   const links: Record<string, string | null> = {};
   try {
     for (const fileName of fileNames) {
