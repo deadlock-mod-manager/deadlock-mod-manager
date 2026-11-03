@@ -3,16 +3,22 @@ import { placeholderModFromManifest } from "@/lib/store/utils/manifest-install-s
 import type { LocalMod } from "@/types/mods";
 import type { ErrorKind } from "@/types/tauri";
 
-const failures: string[] = [];
+const logged: { error: ErrorKind | Error; mod: string; message: string }[] = [];
+let pending: { error?: ErrorKind | Error; mod?: string } = {};
 const testLogger = {
-  withError() {
+  withError(error: ErrorKind | Error) {
+    pending = { ...pending, error };
     return this;
   },
-  withMetadata(metadata: { mod?: string }) {
-    if (metadata.mod) failures.push(metadata.mod);
+  withMetadata(metadata: { mod: string }) {
+    pending = { ...pending, mod: metadata.mod };
     return this;
   },
-  error() {},
+  error(message: string) {
+    const { error, mod } = pending;
+    if (error && mod) logged.push({ error, mod, message });
+    pending = {};
+  },
 };
 mock.module("@/lib/logger", () => ({
   createLogger: () => testLogger,
@@ -66,17 +72,21 @@ describe("runBulkModAction", () => {
 
   it("stops at the first failure even when it is the first mod", async () => {
     const applied: string[] = [];
+    const diskFull = new Error("disk full");
+    logged.length = 0;
     const recap = await runBulkModAction({
       action: "delete",
       targets,
       isCurrent: () => true,
-      apply: failingOn("a", new Error("disk full"), applied),
+      apply: failingOn("a", diskFull, applied),
     });
     expect(applied).toEqual(["a"]);
     expect(recap.stoppedBy).toBe("error");
     expect(recap.completed).toEqual([]);
     expect(recap.failed).toEqual({ mod: a, message: "disk full" });
-    expect(failures).toContain("a");
+    expect(logged).toEqual([
+      { error: diskFull, mod: "a", message: "Bulk mod action failed" },
+    ]);
     expect(ids(recap.notAttempted)).toEqual(["b", "c"]);
   });
 
@@ -107,6 +117,7 @@ describe("runBulkModAction", () => {
 
   it("leaves the blocked mod and the rest unattempted when the game keeps running", async () => {
     const applied: string[] = [];
+    logged.length = 0;
     const recap = await runBulkModAction({
       action: "disable",
       targets,
@@ -119,6 +130,7 @@ describe("runBulkModAction", () => {
     });
     expect(applied).toEqual(["a", "b"]);
     expect(recap.stoppedBy).toBe("gameRunning");
+    expect(logged).toEqual([]);
     expect(ids(recap.completed)).toEqual(["a"]);
     expect(recap.failed).toBeNull();
     expect(ids(recap.notAttempted)).toEqual(["b", "c"]);
