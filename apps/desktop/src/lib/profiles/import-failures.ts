@@ -15,11 +15,11 @@ interface ImportFailure {
 
 const LISTED_FAILURES = 5;
 
-const REASON_KEYS: Record<ImportFailureStep, string> = {
+const REASON_KEYS = {
   lookup: "profiles.importFailures.lookup",
   downloads: "profiles.importFailures.downloads",
   install: "profiles.importFailures.install",
-};
+} satisfies Record<ImportFailureStep, string>;
 
 /** The mods of an import that weren't installed, in the profile's order. */
 export const collectImportFailures = (
