@@ -63,10 +63,15 @@ export const useReinstallAction = (mod: LocalMod) => {
     try {
       const result = await reinstallMod(mod, {
         onStep: (next) => {
-          if (next === "downloading" && hasDownloadStatus) {
+          if (
+            next === "downloading" &&
+            hasDownloadStatus &&
+            !downloadManager.isQueued(mod.remoteId)
+          ) {
             // Nothing is downloading it, so the status is stale, and it would
             // reject the move back to Downloading. Cleared only once the old
-            // files are gone, so a failed purge leaves the mod as it was.
+            // files are gone, so a failed purge leaves the mod as it was; the
+            // purge can wait on a prompt, so a download may have started since.
             usePersistedStore
               .getState()
               .setModStatus(mod.remoteId, ModStatus.FailedToDownload);

@@ -26,6 +26,12 @@ mock.module("@/components/providers/alert-dialog", () => ({
 mock.module("@/hooks/use-reinstall-mod", () => ({
   useReinstallMod: () => ({ reinstallMod }),
 }));
+const isQueued = mock((_modId: string) => false);
+const actualDownloads = await import("@/lib/download/manager");
+mock.module("@/lib/download/manager", () => ({
+  ...actualDownloads,
+  downloadManager: { isQueued },
+}));
 
 const { useReinstallAction } = await import("./use-reinstall-action");
 const { usePersistedStore } = await import("@/lib/store");
@@ -81,6 +87,8 @@ const storedStatus = () =>
 
 afterEach(() => {
   reinstallMod.mockReset();
+  isQueued.mockReset();
+  isQueued.mockImplementation(() => false);
   seedMods([]);
 });
 
@@ -112,5 +120,21 @@ describe("reinstalling a mod with a stale download status", () => {
     await reinstall();
 
     expect(seen).toEqual([ModStatus.Downloading, ModStatus.FailedToDownload]);
+  });
+
+  it("leaves a download queued during the purge alone", async () => {
+    seedMods([stale]);
+    reinstallMod.mockImplementation(async (_mod, options) => {
+      options.onStep?.("purging");
+      // Started elsewhere while the purge waited on a prompt.
+      isQueued.mockImplementation(() => true);
+      options.onStep?.("downloading");
+      return { outcome: "failed", missingOnDisk: false };
+    });
+
+    const reinstall = await renderReinstall();
+    await reinstall();
+
+    expect(storedStatus()).toBe(ModStatus.Downloading);
   });
 });
