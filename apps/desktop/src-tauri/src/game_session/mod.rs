@@ -103,6 +103,9 @@ struct Tracker {
   launch_request: Option<LaunchRequest>,
   /// The app's last Stop, whether or not a session was tracked then.
   dmm_stop_at: Option<DateTime<Utc>>,
+  /// When the app's last Stop was confirmed. A PID-less session can't see
+  /// the exit itself, and a forced kill leaves no dump or shutdown lines.
+  dmm_stop_completed_at: Option<DateTime<Utc>>,
   state: TrackerState,
 }
 
@@ -117,6 +120,7 @@ static TRACKER: LazyLock<Mutex<Tracker>> = LazyLock::new(|| {
     pending: Vec::new(),
     launch_request: None,
     dmm_stop_at: None,
+    dmm_stop_completed_at: None,
     state: TrackerState::default(),
   })
 });
@@ -222,6 +226,11 @@ pub fn note_dmm_stop() {
     current.dmm_stop_requested = true;
     store::save_current(&sessions_dir, Some(&*current));
   }
+}
+
+/// Called once the app's Stop confirmed the game is gone.
+pub fn note_dmm_stop_completed() {
+  tracker().dmm_stop_completed_at = Some(Utc::now());
 }
 
 pub fn pending_reports() -> Vec<SessionReport> {
@@ -478,11 +487,18 @@ fn wait_for_pidless_end(record: &SessionRecord) -> bool {
     }
     if dumps::find_session_dump(&dumps_dir, &search).is_some()
       || console::run_ended_cleanly(&console_log, record.started_at)
+      || stopped_by_dmm_since(record.started_at)
     {
       return true;
     }
     std::thread::sleep(PIDLESS_POLL_INTERVAL);
   }
+}
+
+fn stopped_by_dmm_since(started_at: DateTime<Utc>) -> bool {
+  tracker()
+    .dmm_stop_completed_at
+    .is_some_and(|stopped_at| stopped_at >= started_at)
 }
 
 fn finalize(

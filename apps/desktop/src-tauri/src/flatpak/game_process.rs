@@ -1,3 +1,4 @@
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 use tokio::process::Command;
@@ -37,8 +38,19 @@ async fn host_game_pids() -> Result<Vec<u32>, Error> {
   Ok(game_pids(&output))
 }
 
+/// The host's last answer. A failed check reports it again, so a transient
+/// failure doesn't read as the game closing (which would reset gameinfo.gi
+/// while the game still runs).
+static LAST_KNOWN_RUNNING: AtomicBool = AtomicBool::new(false);
+
 pub(crate) async fn is_game_running() -> Result<bool, Error> {
-  Ok(!host_game_pids().await?.is_empty())
+  let running = !host_game_pids().await?.is_empty();
+  LAST_KNOWN_RUNNING.store(running, Ordering::Relaxed);
+  Ok(running)
+}
+
+pub(crate) fn last_known_running() -> bool {
+  LAST_KNOWN_RUNNING.load(Ordering::Relaxed)
 }
 
 /// Kills the game on the host, as the native stop does. The sandbox can't
@@ -54,9 +66,10 @@ pub(crate) async fn stop_game() -> Result<(), Error> {
   command
     .args(["sh", "-c", r#"exec kill -KILL "$@""#, "kill"])
     .args(pids.iter().map(u32::to_string));
+  // kill exits nonzero when one PID exited after the scan, though it signaled
+  // the rest; the recheck below decides whether the stop worked.
   if let Err(error) = host_output(command, CHECK_TIMEOUT).await {
-    log::warn!("Could not kill the game on the host: {error}");
-    return Err(Error::GameStopFailed);
+    log::warn!("Host kill reported an error; checking for remaining game processes: {error}");
   }
 
   tokio::time::sleep(STOP_SETTLE).await;
@@ -71,7 +84,9 @@ fn game_pids(output: &[u8]) -> Vec<u32> {
   String::from_utf8_lossy(output)
     .split("\0\0")
     .filter_map(|record| {
-      let mut fields = record.splitn(3, '\0');
+      // An empty argv[0] adds a NUL, which lands at the start of the next
+      // record.
+      let mut fields = record.trim_start_matches('\0').splitn(3, '\0');
       let pid = fields.next()?.parse().ok()?;
       let name = fields.next()?;
       let argv0 = fields.next().unwrap_or_default();
@@ -145,6 +160,9 @@ mod tests {
         "C:\\windows\\steam.exe\0C:\\Games.exe files\\deadlock.exe\0",
       ),
       ("3", "kworker", ""),
+      // An empty argv[0] must not hide the record after it.
+      ("10", "empty-argv0", "\0--flag\0"),
+      ("11", "MainThrd", "S:\\Steam\\Deadlock\\deadlock.exe\0"),
     ] {
       let proc = root.path().join(pid);
       std::fs::create_dir(&proc).unwrap();
@@ -158,6 +176,11 @@ mod tests {
         .arg(root.path());
       command
     };
+    assert_eq!(
+      game_pids(&host_output(scan(), CHECK_TIMEOUT).await.unwrap()),
+      [11]
+    );
+    std::fs::remove_dir_all(root.path().join("11")).unwrap();
     assert!(game_pids(&host_output(scan(), CHECK_TIMEOUT).await.unwrap()).is_empty());
     std::fs::write(root.path().join("2/comm"), "MainThrd\n").unwrap();
     for path in [

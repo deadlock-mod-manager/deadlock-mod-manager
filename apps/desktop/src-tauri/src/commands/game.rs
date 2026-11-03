@@ -246,7 +246,10 @@ pub async fn stop_game() -> Result<(), Error> {
   crate::game_session::note_dmm_stop();
   #[cfg(target_os = "linux")]
   if crate::flatpak::running_in_flatpak() {
-    return crate::flatpak::game_process::stop_game().await;
+    crate::flatpak::game_process::stop_game().await?;
+    // Without a PID, the session can't see the game exit on its own.
+    crate::game_session::note_dmm_stop_completed();
+    return Ok(());
   }
   let mut mod_manager = MANAGER.lock().unwrap();
   mod_manager.stop_game()
@@ -258,7 +261,8 @@ pub async fn is_game_running() -> Result<bool, Error> {
     return Ok(false);
   }
   // The sandbox hides the game. This is polled every few seconds, so a failed
-  // host check is logged instead of raising an error toast on every poll.
+  // host check is logged instead of raising an error toast on every poll, and
+  // reports the last known state so it isn't taken for the game closing.
   #[cfg(target_os = "linux")]
   if crate::flatpak::running_in_flatpak() {
     return Ok(
@@ -266,7 +270,7 @@ pub async fn is_game_running() -> Result<bool, Error> {
         .await
         .unwrap_or_else(|error| {
           log::warn!("Could not check for the game on the host: {error}");
-          false
+          crate::flatpak::game_process::last_known_running()
         }),
     );
   }
