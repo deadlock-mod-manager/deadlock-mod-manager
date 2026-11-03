@@ -220,6 +220,11 @@ pub struct LocalizationOverlayAnalysis {
   pub compatibility_mod_ids: Vec<String>,
   pub excluded_mod_ids: Vec<String>,
   pub protected_resources: Vec<repair_scope::ProtectedResource>,
+  /// Selected mods with a file this analysis skipped because an unselected
+  /// mod also provides it. Their findings are incomplete, so finding nothing
+  /// doesn't mean they work.
+  #[serde(skip)]
+  pub incomplete_mod_ids: Vec<String>,
   pub scanned_vpks: usize,
   pub localization_files: usize,
   pub ignored_vanilla_tokens: usize,
@@ -667,6 +672,7 @@ impl LocalizationOverlayPlan {
     let mut mesh_sources: BTreeMap<String, Vec<CompiledDataSource>> = BTreeMap::new();
     let mut camera_sources: BTreeMap<String, Vec<CompiledDataSource>> = BTreeMap::new();
     let mut animation_inputs = animation_model_evidence::AnimationInputs::default();
+    let mut incomplete_mod_ids = BTreeSet::new();
 
     for (priority, mod_input) in mods.iter().enumerate() {
       report(RepairPlanStage::CheckingMods, priority as u32);
@@ -691,19 +697,26 @@ impl LocalizationOverlayPlan {
           if effective {
             animation_inputs.record(&entry_path, &mod_input.mod_id);
           }
-          if !repair_scope.includes_mod(&mod_input.mod_id) || repair_scope.protects(&entry_path) {
+          if !repair_scope.includes_mod(&mod_input.mod_id) {
             continue;
           }
-          if is_localization_path(&entry_path) {
-            localization_paths.push(entry_path);
+          let paths = if is_localization_path(&entry_path) {
+            &mut localization_paths
           } else if is_mergeable_compiled_data_path(&entry_path) {
-            compiled_paths.push(entry_path);
+            &mut compiled_paths
           } else if effective && animation_skeleton::is_path(&entry_path) {
-            skeleton_paths.push(entry_path);
+            &mut skeleton_paths
           } else if effective && model_camera::is_path(&entry_path) {
-            model_paths.push(entry_path);
+            &mut model_paths
           } else if effective && asset_compatibility::is_mesh_path(&entry_path) {
-            mesh_paths.push(entry_path);
+            &mut mesh_paths
+          } else {
+            continue;
+          };
+          if repair_scope.protects(&entry_path) {
+            incomplete_mod_ids.insert(mod_input.mod_id.clone());
+          } else {
+            paths.push(entry_path);
           }
         }
         localization_paths.sort();
@@ -1098,6 +1111,7 @@ impl LocalizationOverlayPlan {
           .map(|id| (*id).clone())
           .collect(),
         protected_resources: repair_scope.shared_resources(mods, resources),
+        incomplete_mod_ids: incomplete_mod_ids.into_iter().collect(),
         scanned_vpks,
         localization_files,
         ignored_vanilla_tokens,
@@ -3365,6 +3379,41 @@ mod tests {
     let (_, data, _) =
       decode_compiled_data(&archive.extract_entry(HEROES_VDATA_PATH).unwrap(), "merged").unwrap();
     assert!(data.get("hero_new").is_some());
+  }
+
+  #[test]
+  fn a_fixed_mod_whose_data_table_is_protected_is_not_reported_as_working() {
+    use crate::mod_manager::mod_health::{CompatibilityChoice, ModFindings, ModHealthStatus};
+    let temp = tempfile::tempdir().unwrap();
+    let citadel = temp.path().join("citadel");
+    fs::create_dir_all(&citadel).unwrap();
+    pack_vdata(
+      &citadel,
+      "pak01",
+      vec![
+        ("hero_a".to_string(), hero(1)),
+        ("hero_new".to_string(), hero(2)),
+      ],
+    );
+    // Both copies omit the game's `hero_new`, so either one alone needs a repair.
+    let data = |name: &str| LocalizationModInput {
+      mod_id: name.into(),
+      vpks: vec![pack_vdata(
+        temp.path(),
+        name,
+        vec![("hero_a".to_string(), hero(1))],
+      )],
+    };
+    let (fixed, rival) = (data("fixed"), data("rival"));
+    let selected = BTreeSet::from(["fixed".to_string()]);
+    let status = |inputs: &[LocalizationModInput]| {
+      let plan = LocalizationOverlayPlan::build_selected(&citadel, inputs, &selected).unwrap();
+      ModFindings::from_analysis(&plan.analysis, "fixed", true).status(CompatibilityChoice::Enabled)
+    };
+    assert_eq!(status(std::slice::from_ref(&fixed)), ModHealthStatus::Fixed);
+    for inputs in [vec![fixed.clone(), rival.clone()], vec![rival, fixed]] {
+      assert_eq!(status(&inputs), ModHealthStatus::NotCovered);
+    }
   }
 
   #[test]

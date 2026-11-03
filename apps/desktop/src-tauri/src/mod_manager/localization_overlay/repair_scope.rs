@@ -91,7 +91,9 @@ impl RepairScope {
 
 #[cfg(test)]
 mod tests {
-  use super::super::{LocalizationOverlayPlan, resources::tests::pack};
+  use super::super::{
+    LocalizationOverlayAnalysis, LocalizationOverlayPlan, resources::tests::pack,
+  };
   use super::*;
   use source2_model::vpk_extract::VpkArchive;
 
@@ -173,6 +175,61 @@ mod tests {
           .unwrap()
           .has_overlay
       );
+    }
+  }
+
+  #[test]
+  fn a_fixed_mod_whose_shared_file_is_protected_is_not_reported_as_working() {
+    use crate::mod_manager::mod_health::{CompatibilityChoice, ModFindings, ModHealthStatus};
+    const OWN: &str = "resource/localization/own/own_english.txt";
+    let temp = tempfile::tempdir().unwrap();
+    let citadel = temp.path().join("citadel");
+    std::fs::create_dir_all(&citadel).unwrap();
+    let game =
+      b"\"lang\" { \"Language\" \"English\" \"Tokens\" { \"X\" \"Vanilla\" \"Y\" \"Game\" } }";
+    pack(&citadel, "pak01", &[(PATH, game), (OWN, game)]);
+    // Every copy omits the game's `Y`, so each one alone needs a repair.
+    let input = |id: &str, files: &[(&str, &[u8])]| LocalizationModInput {
+      mod_id: id.into(),
+      vpks: vec![pack(temp.path(), id, files)],
+    };
+    let fixed = input("fixed", &[(PATH, MOD)]);
+    let mixed = input("mixed", &[(PATH, MOD), (OWN, MOD)]);
+    let broken = input("broken", &[(PATH, MOD), (OWN, b"not parseable")]);
+    let unrelated = input("unrelated", &[("sounds/own.vsnd_c", b"sound")]);
+    let rival = input("rival", &[(PATH, MOD)]);
+    let selected: BTreeSet<String> = ["fixed", "mixed", "broken", "unrelated"]
+      .into_iter()
+      .map(String::from)
+      .collect();
+    let status = |analysis: &LocalizationOverlayAnalysis, id: &str| {
+      ModFindings::from_analysis(analysis, id, true).status(CompatibilityChoice::Enabled)
+    };
+    let alone =
+      LocalizationOverlayPlan::build_selected(&citadel, std::slice::from_ref(&fixed), &selected)
+        .unwrap();
+    assert_eq!(status(&alone.analysis, "fixed"), ModHealthStatus::Fixed);
+    assert!(alone.analysis.incomplete_mod_ids.is_empty());
+
+    let selected_inputs = [fixed, mixed, broken, unrelated];
+    for rival_first in [false, true] {
+      let mut inputs = selected_inputs.to_vec();
+      if rival_first {
+        inputs.insert(0, rival.clone());
+      } else {
+        inputs.push(rival.clone());
+      }
+      let analysis = LocalizationOverlayPlan::build_selected(&citadel, &inputs, &selected)
+        .unwrap()
+        .analysis;
+      // The unfixed rival keeps the shared file as shipped, so the repair is
+      // skipped. That says nothing about whether the fixed mod works.
+      assert_eq!(analysis.incomplete_mod_ids, ["broken", "fixed", "mixed"]);
+      assert_eq!(status(&analysis, "fixed"), ModHealthStatus::NotCovered);
+      // Repairs and defects the analysis did find still count.
+      assert_eq!(status(&analysis, "mixed"), ModHealthStatus::Fixed);
+      assert_eq!(status(&analysis, "broken"), ModHealthStatus::NeedsUpdate);
+      assert_eq!(status(&analysis, "unrelated"), ModHealthStatus::Works);
     }
   }
 

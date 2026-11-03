@@ -33,6 +33,11 @@ import { prepareBrokenProfileWorld } from "./broken-profile-fixtures";
 import { prepareCompatibilityFixWorld } from "./compatibility-fix-fixtures";
 import { prepareConflictWorld } from "./conflict-fixtures";
 import { prepareFilesystemWorld } from "./filesystem-fixtures";
+import {
+  FIXED_MOD as STATUS_FIXED_MOD,
+  RIVAL_MOD as STATUS_RIVAL_MOD,
+  prepareFixedStatusWorld,
+} from "./fixed-status-fixtures";
 import { prepareManifestRepairWorld } from "./manifest-repair-fixtures";
 import { prepareModFolderRepairWorld } from "./mod-folder-repair-fixtures";
 import {
@@ -768,6 +773,32 @@ export const scenarios = {
     phases: ["library-changes"],
     routes: profileRoutes,
     prepare: async (world) => prepareCompatibilityFixWorld(world),
+  },
+  "fixed-status-shared-file": {
+    ...defaults,
+    family: "fixed-status",
+    spec: "fixed-status-shared-file",
+    phases: ["share"],
+    // The case opens the fixed mod's page, which asks for its report counts.
+    routes: async () => {
+      const routes = await profileRoutes();
+      return () => [
+        ...routes(),
+        {
+          method: "GET",
+          path: `/api/v2/reports/mod/${STATUS_FIXED_MOD}/counts`,
+          status: 200,
+          body: JSON.stringify({
+            total: 0,
+            open: 0,
+            resolved: 0,
+            dismissed: 0,
+          }),
+        },
+      ];
+    },
+    prepare: async (world) =>
+      prepareFixedStatusWorld(world, [STATUS_FIXED_MOD, STATUS_RIVAL_MOD]),
   },
   "library-selection": {
     ...defaults,

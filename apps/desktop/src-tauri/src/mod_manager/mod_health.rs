@@ -241,6 +241,12 @@ pub(crate) struct ModFindings {
   remaining_symptoms: BTreeSet<ModHealthSymptom>,
   /// Whether the mod has any resource the analysis can check.
   covered: bool,
+  /// The combined analysis skipped some of the mod's files because an unfixed
+  /// mod also provides them. Not a `HEALTH_RULES_REVISION` change: a
+  /// standalone recheck can't see the other mod, so older entries wait for
+  /// the next combined analysis.
+  #[serde(default)]
+  scope_incomplete: bool,
 }
 
 impl ModFindings {
@@ -317,6 +323,7 @@ impl ModFindings {
       fix_symptoms: repairs.into_iter().map(symptom).collect(),
       remaining_symptoms,
       covered,
+      scope_incomplete: analysis.incomplete_mod_ids.iter().any(|id| id == mod_id),
     }
   }
 
@@ -330,7 +337,7 @@ impl ModFindings {
       }
     } else if self.needs_update {
       ModHealthStatus::NeedsUpdate
-    } else if !self.covered {
+    } else if !self.covered || self.scope_incomplete {
       ModHealthStatus::NotCovered
     } else {
       ModHealthStatus::Works
@@ -548,6 +555,7 @@ mod tests {
       fix_symptoms: BTreeSet::new(),
       remaining_symptoms: BTreeSet::new(),
       covered,
+      scope_incomplete: false,
     }
   }
 
@@ -970,6 +978,18 @@ mod tests {
     assert_eq!(report.previous_game_build, Some(100));
     health.record(Some(101), "other".into(), entry(101));
     assert_eq!(health.report(Some(101), []).previous_game_build, Some(100));
+  }
+
+  #[test]
+  fn findings_saved_before_scope_tracking_keep_their_status() {
+    let saved: ModFindings = serde_json::from_str(
+      r#"{"repairs":0,"warnings":0,"needsUpdate":false,"fixSymptoms":[],"remainingSymptoms":[],"covered":true}"#,
+    )
+    .unwrap();
+    assert_eq!(
+      saved.status(CompatibilityChoice::Enabled),
+      ModHealthStatus::Works
+    );
   }
 
   #[test]
