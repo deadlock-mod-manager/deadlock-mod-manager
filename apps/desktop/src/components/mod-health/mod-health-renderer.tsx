@@ -106,10 +106,10 @@ export const ModHealthRenderer = () => {
 
   // A check that learns game data stales every receipt on this install, so
   // startup work waits until this listener is registered and can't miss it.
+  // If registering fails, learned-data rebuilds wait for the next start or
+  // library change, but the startup check and refresh still run.
   useEffect(() => {
     let active = true;
-    // Without the listener a learned-data rebuild waits for the next start or
-    // library change, but the startup check and refresh must still run.
     const unlisten = listen("compatibility-history-changed", () => {
       if (!active) return;
       void invalidateModHealth(queryClient);

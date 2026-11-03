@@ -483,8 +483,7 @@ const readBadge = async (modId: string): Promise<Badge> => {
 
 /**
  * The library reads its own cached health report, so its badge can trail
- * `get_mod_health` until a finished rebuild invalidates that report. Kept
- * short: the slowest case already samples for 60 s of a 90 s test timeout.
+ * `get_mod_health` until a finished rebuild invalidates that report.
  */
 const waitForFixedBadge = async (modId: string, timeoutMs: number) => {
   await navigate("my-mods");
@@ -513,6 +512,7 @@ export const expectStillFixed = async (
 ) => {
   const samples = await sampleStatus(name, folder, modId, durationMs);
   const repairs = await readRepairState(world, folder);
+  // The slowest case already samples for 60 s of a 90 s test timeout.
   const badge = await waitForFixedBadge(modId, 10_000);
   await checkpoint(name, {
     health: await readHealth(folder),
