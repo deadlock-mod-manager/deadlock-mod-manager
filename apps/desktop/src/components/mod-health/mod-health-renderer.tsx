@@ -86,9 +86,8 @@ export const ModHealthRenderer = () => {
     };
   }, [queryClient, refreshQueue]);
 
-  // The backend skips the rebuild while the game runs, and drops one the game
-  // started during, so a change made while playing is applied on exit. When
-  // nothing changed, the backend finds the package current and returns.
+  // Rebuilds skipped while the game ran are applied once it exits; the backend
+  // returns early when the package is already current.
   useEffect(() => {
     const previous = previousGameRunning.current;
     previousGameRunning.current = gameRunning;

@@ -1,4 +1,4 @@
-use std::ffi::OsStr;
+use std::ffi::{OsStr, OsString};
 use std::path::Path;
 use std::thread;
 use std::time::Duration;
@@ -23,7 +23,6 @@ fn refresh_processes(system: &mut System) {
   );
 }
 
-/// `e2e_game` is the E2E stand-in's argv[0] (`runtime_environment::e2e_game_argv0`).
 fn is_game_process(process: &Process, e2e_game: Option<&Path>) -> bool {
   process.thread_kind().is_none()
     && matches_game(process.name(), process.cmd(), e2e_game)
@@ -32,7 +31,7 @@ fn is_game_process(process: &Process, e2e_game: Option<&Path>) -> bool {
 
 /// In E2E builds only the world's own stand-in counts, by its exact argv[0];
 /// everywhere else, Deadlock by name.
-fn matches_game(name: &OsStr, command: &[std::ffi::OsString], e2e_game: Option<&Path>) -> bool {
+fn matches_game(name: &OsStr, command: &[OsString], e2e_game: Option<&Path>) -> bool {
   match e2e_game {
     Some(expected) => command
       .first()
@@ -190,7 +189,7 @@ mod tests {
 
   use sysinfo::{Pid, System, ThreadKind};
 
-  use super::{is_deadlock_process, matches_game, refresh_processes};
+  use super::{Path, is_deadlock_process, matches_game, refresh_processes};
 
   #[cfg(target_os = "linux")]
   #[test]
@@ -283,7 +282,7 @@ mod tests {
 
   #[test]
   fn e2e_counts_only_its_own_stand_in() {
-    let own = std::path::Path::new("/worlds/a/game/dmm-e2e-game");
+    let own = Path::new("/worlds/a/game/dmm-e2e-game");
     let matches =
       |name: &str, argv0: &str| matches_game(OsStr::new(name), &[OsString::from(argv0)], Some(own));
 
