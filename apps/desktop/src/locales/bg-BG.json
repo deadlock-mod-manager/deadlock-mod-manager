@@ -5080,7 +5080,6 @@
     "analyzing": "Анализиране...",
     "analysisResults": "Анализ на локалните добавки",
     "analysisResultsDescription": "Намерени {{count}} добавка/и във вашата игрова директория",
-    "identifiedAndAdded": "",
     "analysisSuccess": "Анализът е завършен! Намерени {{count}} добавка/и",
     "analysisSuccessWithIdentified": "Анализът е завършен! Намерени {{count}} добавка/и, идентифицирани {{identified}} и добавени към текущия профил",
     "analysisSuccessAllIdentified": "Анализът е завършен! Всички {{identified}} добавка/и бяха автоматично идентифицирани и добавени към текущия профил",
@@ -5189,7 +5188,6 @@
       "noMods": "",
       "noModsDescription": "",
       "modsFound": "",
-      "modsFoundDescription": "",
       "analyze": "",
       "analyzing": "",
       "skipAnalysis": ""

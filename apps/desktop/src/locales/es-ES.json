@@ -5080,7 +5080,6 @@
     "analyzing": "Analizando...",
     "analysisResults": "Análisis de Addons Locales",
     "analysisResultsDescription": "Encontrados {{count}} addon(s) en tu directorio del juego",
-    "identifiedAndAdded": "",
     "analysisSuccess": "¡Análisis completo! Encontrados {{count}} addon(s)",
     "analysisSuccessWithIdentified": "¡Análisis completo! Encontrados {{count}} addon(s), identificados {{identified}} y añadidos al perfil actual",
     "analysisSuccessAllIdentified": "¡Análisis completo! Todos los {{identified}} addon(s) fueron automáticamente identificados y añadidos al perfil actual",
@@ -5189,7 +5188,6 @@
       "noMods": "No se encontraron mods existentes",
       "noModsDescription": "Puedes empezar desde cero y explorar mods del catálogo.",
       "modsFound": "¡Mods existentes detectados!",
-      "modsFoundDescription": "¿Te gustaría analizarlos e importarlos?",
       "analyze": "Analizar Mods",
       "analyzing": "Analizando...",
       "skipAnalysis": "Omitir por Ahora"

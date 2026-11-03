@@ -5080,7 +5080,6 @@
     "analyzing": "Analizowanie...",
     "analysisResults": "Analiza lokalnych dodatków",
     "analysisResultsDescription": "Znaleziono {{count}} dodatek(-ów) w katalogu gry",
-    "identifiedAndAdded": "{{count}} zidentyfikowany i automatycznie dodany do twojej biblioteki",
     "analysisSuccess": "Analiza zakończona! Znaleziono {{count}} dodatek(-ów)",
     "analysisSuccessWithIdentified": "Analiza zakończona! Znaleziono {{count}} dodatek(-ów), zidentyfikowano {{identified}} i dodano do bieżącego profilu",
     "analysisSuccessAllIdentified": "Analiza zakończona! Wszystkie {{identified}} dodatek(-ów) zostały automatycznie zidentyfikowane i dodane do bieżącego profilu",
@@ -5189,7 +5188,6 @@
       "noMods": "Nie znaleziono istniejących modyfikacji",
       "noModsDescription": "Możesz uruchamiać nowe modyfikacje i przeglądać je z katalogu.",
       "modsFound": "Wykryto istniejące modyfikacje!",
-      "modsFoundDescription": "Czy chcesz je analizować i zaimportować?",
       "analyze": "Analizuj modyfikacje",
       "analyzing": "Analizowanie...",
       "skipAnalysis": "Na razie pomiń"

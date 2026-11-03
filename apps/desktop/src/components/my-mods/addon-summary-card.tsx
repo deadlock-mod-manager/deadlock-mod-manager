@@ -2,6 +2,7 @@ import { Badge } from "@deadlock-mods/ui/components/badge";
 import { XCircle } from "@deadlock-mods/ui/icons";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useVpkScan } from "@/hooks/use-vpk-scan";
+import { usePersistedStore } from "@/lib/store";
 import type { LocalAddonInfo } from "@/types/mods";
 import { AddonInfo } from "./addon-info";
 import { AddonActions } from "./addon-actions";
@@ -15,6 +16,11 @@ export const AddonSummaryCard = ({
 }) => {
   const { isLibraryVpk, isLoading: isLoadingSnapshot } = useVpkScan();
   const isIdentified = !!addon.remoteId;
+  // An identified file counts as added once its mod is in the library, even
+  // when the file isn't one of the mod's installed files (a parked VPK).
+  const isModInLibrary = usePersistedStore((state) =>
+    state.localMods.some((mod) => mod.remoteId === addon.remoteId),
+  );
   const hasError = !addon.vpkParsed?.fingerprint;
 
   const owned = isLibraryVpk(addon.locator);
@@ -64,7 +70,7 @@ export const AddonSummaryCard = ({
         <AddonActions
           addon={addon}
           isIdentified={isIdentified}
-          isAlreadyInLibrary={owned === true}
+          isAlreadyInLibrary={isIdentified ? isModInLibrary : owned === true}
           isCheckingLibrary={isCheckingLibrary}
           onAddToLibrary={onAddToLibrary}
           onExternalLinkClick={handleExternalLinkClick}

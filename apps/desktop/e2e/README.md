@@ -39,7 +39,13 @@ current. Both run in the Windows and Linux E2E matrices with no host update.
 
 `onboarding-skip-analysis` starts setup with a synthetic existing VPK. It verifies Skip for Now advances before analysis, after closing analysis results, and after navigating back; Next still advances and the VPK bytes remain intact. Saved telemetry consent starts enabled and must persist as disabled after opting out. `onboarding-telemetry-default` repeats the flow with an unseen prompt and stored consent disabled, verifying that first-run consent initially defaults to enabled.
 
+`onboarding-identified-addon` starts setup with an existing VPK the identification service matches to the catalog mod. Analyze Mods must list it as Not in Library, the step's text must not promise an import, and after finishing setup the saved library must not contain the mod and the VPK keeps its bytes.
+
 `analyze-known-files` starts with two hand-installed VPKs the identification service doesn't know, both named `pak01_dir.vpk`: one in `addons` and one in the `addons2` overflow shard. Analyze offers to add both; once one is added from the results list, its row shows Added to Library while the other stays addable, and a new analysis offers neither. Each file must have exactly one library mod and one manifest owner in its own shard, both right away and after a restart, Analyze must still recognize both after the restart, and both files keep their bytes.
+
+`analyze-registration-failure` starts with one hand-installed VPK the identification service matches to the catalog mod, which isn't in the catalog index, while its GameBanana page answers 503. Analyze must list the registration error, and the file's card must say Not in Library (never Added to Library) while the mod stays out of the saved library.
+
+`analyze-interrupted-restore` starts with the catalog mod installed in profile Alpha and an empty profile Beta, with the mod's GameBanana page delayed. After Settings → Clear Mods State, it starts Analyze and switches to Beta and back to Alpha while the restore from DMM's records waits on that page, so the restore is dropped. The results must report the interrupted restore, the card must say Not in Library while the mod is missing from the library, and a second Analyze must restore it.
 
 `gamebanana-detected-files` starts with a manually installed VPK and an empty DMM library. It identifies the mod through the analysis API, checks that Manage Files marks its matched archive enabled, adds an optional archive, and removes that optional archive after restart. The original VPK bytes and manifest ownership must survive, and only the optional archive may be downloaded.
 

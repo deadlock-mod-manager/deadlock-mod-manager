@@ -5080,7 +5080,6 @@
     "analyzing": "分析中…",
     "analysisResults": "本地插件分析",
     "analysisResultsDescription": "在你的游戏目录中找到 {{count}} 个插件",
-    "identifiedAndAdded": "{{count}} 已识别并自动添加到你的库",
     "analysisSuccess": "分析完成！找到 {{count}} 个插件",
     "analysisSuccessWithIdentified": "分析完成！找到 {{count}} 个插件，识别出 {{identified}} 个并已添加到当前配置",
     "analysisSuccessAllIdentified": "分析完成！所有 {{identified}} 个插件均已自动识别并添加到当前配置",
@@ -5189,7 +5188,6 @@
       "noMods": "未找到现有模组",
       "noModsDescription": "可以从头开始浏览目录中的模组。",
       "modsFound": "检测到现有模组！",
-      "modsFoundDescription": "你要分析并导入它们吗？",
       "analyze": "分析模组",
       "analyzing": "分析中…",
       "skipAnalysis": "暂时跳过"
