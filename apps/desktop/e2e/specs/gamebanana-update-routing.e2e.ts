@@ -28,8 +28,8 @@ const download = async (world: string, mod: (typeof MULTIPAK_MODS)[number]) => {
   await waitStatus(world, mod.id, "downloaded");
 };
 
-// The network assertion checks which of these steps asked GameBanana for its
-// fileservers, which only Automatic routing does.
+// The network assertion checks where each step downloaded from: Default from
+// `/dl/`, Automatic from the GameBanana cache the fixture lists.
 describe("download routing", () => {
   it("applies Automatic routing to updates as well as new downloads", async () => {
     const phase = z
