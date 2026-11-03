@@ -342,6 +342,11 @@ pub async fn show_profile_vpk_in_folder(
   crate::utils::show_in_folder(resolved.path.to_string_lossy().as_ref())
 }
 
+/// The Default profile arrives as an empty folder and lives in the root addons folder.
+fn import_install_folder(final_profile_folder: &str) -> Option<String> {
+  (!final_profile_folder.is_empty()).then(|| final_profile_folder.to_string())
+}
+
 #[tauri::command]
 pub async fn import_profile_batch(
   app_handle: AppHandle,
@@ -461,7 +466,7 @@ pub async fn import_profile_batch(
       mod_id: mod_data.mod_id.clone(),
       files: download_files,
       target_dir,
-      profile_folder: Some(final_profile_folder.clone()),
+      profile_folder: import_install_folder(&final_profile_folder),
       is_profile_import: true,
       file_tree: mod_data.file_tree.clone(),
     };
@@ -549,7 +554,7 @@ pub async fn import_profile_batch(
         original_vpk_names: Vec::new(),
       };
 
-      mod_manager.install_mod(deadlock_mod, Some(final_profile_folder.clone()))
+      mod_manager.install_mod(deadlock_mod, import_install_folder(&final_profile_folder))
     };
 
     match install_result {
@@ -700,6 +705,21 @@ pub async fn seed_profile_vpk_manifest_entries(
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  /// The frontend sends an empty folder for the Default profile, which lives in
+  /// the root addons folder.
+  #[test]
+  fn importing_into_the_default_profile_targets_the_root_addons_folder() {
+    let game = std::path::Path::new("game");
+    let root =
+      crate::mod_manager::ModManager::profile_addons_dir(game, None).expect("root addons folder");
+    let folder = import_install_folder("");
+    let resolved = crate::mod_manager::ModManager::profile_addons_dir(game, folder.as_deref());
+    assert!(
+      matches!(&resolved, Ok(path) if *path == root),
+      "empty folder resolved to {folder:?}, which gives {resolved:?} instead of {root:?}"
+    );
+  }
 
   /// Switching writes the folder into gameinfo.gi, which only accepts ASCII
   /// names. A folder that fails that check can never be switched to.
