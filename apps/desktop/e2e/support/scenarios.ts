@@ -78,6 +78,7 @@ import {
 } from "./detected-mod-fixtures";
 import {
   multipakUpdateRoutes,
+  updateRoutingRoutes,
   assertMultipakUpdateNetwork,
   assertUpdateRoutingNetwork,
 } from "./multipak-update-fixtures";
@@ -942,7 +943,7 @@ export const scenarios = {
     ...catalog,
     spec: "gamebanana-update-routing",
     phases: ["update-auto", "restart-download-auto"],
-    routes: multipakUpdateRoutes,
+    routes: updateRoutingRoutes,
     verifyNetwork: assertUpdateRoutingNetwork,
   },
   "gamebanana-variant-names": {
