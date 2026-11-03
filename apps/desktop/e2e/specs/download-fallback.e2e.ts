@@ -50,7 +50,9 @@ async function exerciseMirrorFallback(world: string) {
 
 describe("download-fallback regressions", () => {
   it("preserves the intended files through the UI and a fresh process", async () => {
-    z.enum(["gamebanana-mirror-fallback"]).parse(process.env.DMM_E2E_CASE_ID);
+    z.enum(["gamebanana-mirror-fallback", "gamebanana-default-fallback"]).parse(
+      process.env.DMM_E2E_CASE_ID,
+    );
     const phase = z
       .enum(["exercise", "restart"])
       .parse(process.env.DMM_E2E_PHASE);

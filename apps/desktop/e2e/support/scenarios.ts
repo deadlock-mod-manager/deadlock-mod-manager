@@ -444,6 +444,7 @@ const modUpdates: Definition = {
 
 export const scenarios = {
   "gamebanana-mirror-fallback": downloadFallback,
+  "gamebanana-default-fallback": downloadFallback,
   "gamebanana-crash-cause": crashAttribution,
   "library-groups-organize": libraryGroups,
   "library-groups-identification": {
