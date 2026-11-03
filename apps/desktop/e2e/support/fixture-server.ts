@@ -46,7 +46,6 @@ export type FixtureRoute = FixtureResponse & {
   path: string;
   query?: Record<string, string | string[]>;
   sequence?: readonly FixtureResponse[];
-  /** Keep the request body in the journal. */
   captureBody?: boolean;
   /**
    * Answer with the body of the latest captured request to another route,

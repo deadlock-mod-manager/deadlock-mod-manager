@@ -81,7 +81,6 @@ const downloadsSince = async (world: string, from: number) =>
     .slice(from)
     .flatMap((request) => archiveNames.get(request.url) ?? []);
 
-/** The archives the friend picked, per mod. */
 const sharedSelection = Object.fromEntries(
   SHARE_MODS.map((mod) => [
     mod.id,
@@ -90,9 +89,7 @@ const sharedSelection = Object.fromEntries(
       .map((archive) => archive.name),
   ]),
 );
-const expectedArchives = SHARED_LOAD_ORDER.flatMap(
-  (id) => sharedSelection[id] ?? [],
-);
+const expectedArchives = SHARED_LOAD_ORDER.flatMap((id) => sharedSelection[id]);
 const expectedVpks = Object.fromEntries(
   SHARE_MODS.map((mod) => [
     mod.id,
