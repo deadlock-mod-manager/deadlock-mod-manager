@@ -36,7 +36,6 @@ const CHANGES = new Map<
     (world) =>
       rewriteGameFiles(world, ["steam.inf", "pak01_dir.vpk", TEXT_FILE]),
   ],
-  // A game update: a new build number.
   [
     "compatibility-rebuild-game-update",
     (world) => bumpGameBuild(world, GAME_BUILD + 1),
