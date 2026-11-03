@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { isDeepStrictEqual } from "node:util";
 import { $, $$, browser, expect } from "@wdio/globals";
 import { z } from "zod";
 import { startApplication } from "../support/application";
@@ -85,14 +86,7 @@ const expectLibrary = async (world: string, expected: Record<string, string>) =>
   observeUntil(
     "library state persisted",
     () => libraryStatuses(world),
-    (actual) => {
-      try {
-        assert.deepEqual(actual, expected);
-        return true;
-      } catch {
-        return false;
-      }
-    },
+    (actual) => isDeepStrictEqual(actual, expected),
   );
 
 const expectFiles = async (
@@ -230,15 +224,15 @@ const confirmWhileOpen = async (
   await expect(dialog).not.toBeDisplayed();
 };
 
+const texts = async (selector: string) => {
+  const found: string[] = [];
+  for (const element of await $$(selector)) found.push(await element.getText());
+  return found;
+};
+
 /** Saves what the user sees right after the run, for base and fixed runs alike. */
 const recordOutcome = async (world: string) => {
   await browser.pause(1_000);
-  const texts = async (selector: string) => {
-    const found: string[] = [];
-    for (const element of await $$(selector))
-      found.push(await element.getText());
-    return found;
-  };
   const toasts = await texts("[data-sonner-toast]");
   const dialogs = await texts('[role="dialog"]');
   await writeFile(
