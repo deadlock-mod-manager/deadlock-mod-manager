@@ -2,4 +2,4 @@
 "@deadlock-mods/desktop": patch
 ---
 
-A profile import that can't install some mods now names them and says at which step they failed
+A profile import or backup restore that can't install some mods now lists them, and the step each failed at, in its dialog

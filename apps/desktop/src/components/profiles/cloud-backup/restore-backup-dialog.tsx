@@ -38,6 +38,7 @@ import {
 } from "@/lib/profiles/import-profile-shared";
 import { disabledModCountOf } from "@/lib/profiles/profile-backup";
 import { usePersistedStore } from "@/lib/store";
+import { ImportResultView } from "@/components/profiles/import-result-view";
 import { RestoreProgress, type RestoreProgressMod } from "./restore-progress";
 
 interface RestoreBackupDialogProps {
@@ -111,6 +112,8 @@ export const RestoreBackupDialog = ({
     full?.payload.modNames?.[remoteId] ?? remoteId;
 
   const isRestoring = restore.isPending;
+  const outcome = restore.data;
+  const result = outcome?.failures.length ? outcome : null;
   const canRestore =
     !!profile && !modsLoading && availableCount > 0 && !isRestoring;
 
@@ -123,7 +126,12 @@ export const RestoreBackupDialog = ({
         modsData,
         destination,
       },
-      { onSuccess: () => onOpenChange(false) },
+      {
+        // A partial restore keeps the dialog open to show what failed.
+        onSuccess: ({ failures }) => {
+          if (failures.length === 0) onOpenChange(false);
+        },
+      },
     );
   };
 
@@ -132,157 +140,179 @@ export const RestoreBackupDialog = ({
       open={!!backup}
       onOpenChange={(open) => !isRestoring && onOpenChange(open)}>
       <DialogContent className='sm:max-w-[520px]'>
-        <DialogHeader>
-          <DialogTitle className='flex items-center gap-2'>
-            <DownloadSimpleIcon className='size-5 text-primary' />
-            {t("cloudBackup.restoreTitle", { name: backup?.name })}
-          </DialogTitle>
-          <DialogDescription className='space-y-1'>
-            {backup && (
-              <span className='flex items-center gap-1.5 text-xs'>
-                <DesktopTowerIcon aria-hidden className='size-3.5' />
-                {t("cloudBackup.restoreSource", {
-                  device: backup.deviceName || t("cloudBackup.unknownDevice"),
-                  date: format(new Date(backup.updatedAt), "PP"),
-                })}
-              </span>
-            )}
-            <span className='block'>{t("cloudBackup.restoreDescription")}</span>
-          </DialogDescription>
-        </DialogHeader>
-
-        {isRestoring ? (
-          <RestoreProgress progress={importProgress} mods={progressMods} />
-        ) : modsLoading ? (
-          <div className='space-y-3'>
-            <Skeleton className='h-16 w-full' />
-            <Skeleton className='h-24 w-full' />
-          </div>
+        {result ? (
+          <ImportResultView
+            outcome={result}
+            onDone={() => onOpenChange(false)}
+          />
         ) : (
-          <div className='space-y-4'>
-            <dl className='grid grid-cols-2 divide-x rounded-lg border bg-card'>
-              <div className='px-4 py-3'>
-                <dd className='font-mono text-xl font-semibold'>
-                  {availableCount}
-                </dd>
-                <dt className='text-xs text-muted-foreground'>
-                  {t("cloudBackup.modsToDownload", { count: availableCount })}
-                </dt>
+          <>
+            <DialogHeader>
+              <DialogTitle className='flex items-center gap-2'>
+                <DownloadSimpleIcon className='size-5 text-primary' />
+                {t("cloudBackup.restoreTitle", { name: backup?.name })}
+              </DialogTitle>
+              <DialogDescription className='space-y-1'>
+                {backup && (
+                  <span className='flex items-center gap-1.5 text-xs'>
+                    <DesktopTowerIcon aria-hidden className='size-3.5' />
+                    {t("cloudBackup.restoreSource", {
+                      device:
+                        backup.deviceName || t("cloudBackup.unknownDevice"),
+                      date: format(new Date(backup.updatedAt), "PP"),
+                    })}
+                  </span>
+                )}
+                <span className='block'>
+                  {t("cloudBackup.restoreDescription")}
+                </span>
+              </DialogDescription>
+            </DialogHeader>
+
+            {isRestoring ? (
+              <RestoreProgress progress={importProgress} mods={progressMods} />
+            ) : modsLoading ? (
+              <div className='space-y-3'>
+                <Skeleton className='h-16 w-full' />
+                <Skeleton className='h-24 w-full' />
               </div>
-              <div className='px-4 py-3'>
-                <dd className='font-mono text-xl font-semibold'>
-                  {formatByteSize(downloadBytes)}
-                </dd>
-                <dt className='text-xs text-muted-foreground'>
-                  {t("cloudBackup.estimatedDownload")}
-                </dt>
-              </div>
-            </dl>
+            ) : (
+              <div className='space-y-4'>
+                <dl className='grid grid-cols-2 divide-x rounded-lg border bg-card'>
+                  <div className='px-4 py-3'>
+                    <dd className='font-mono text-xl font-semibold'>
+                      {availableCount}
+                    </dd>
+                    <dt className='text-xs text-muted-foreground'>
+                      {t("cloudBackup.modsToDownload", {
+                        count: availableCount,
+                      })}
+                    </dt>
+                  </div>
+                  <div className='px-4 py-3'>
+                    <dd className='font-mono text-xl font-semibold'>
+                      {formatByteSize(downloadBytes)}
+                    </dd>
+                    <dt className='text-xs text-muted-foreground'>
+                      {t("cloudBackup.estimatedDownload")}
+                    </dt>
+                  </div>
+                </dl>
 
-            {unavailable.length > 0 && (
-              <details
-                open
-                className='rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2.5 text-sm'>
-                <summary className='flex cursor-pointer items-center gap-2 font-medium text-amber-500'>
-                  <WarningIcon aria-hidden className='size-4 shrink-0' />
-                  {t("cloudBackup.unavailableMods", {
-                    count: unavailable.length,
-                  })}
-                </summary>
-                <ul className='mt-2 space-y-1 pl-6'>
-                  {unavailable.map((mod) => (
-                    <li key={mod.remoteId}>{modName(mod.remoteId)}</li>
-                  ))}
-                </ul>
-              </details>
-            )}
+                {unavailable.length > 0 && (
+                  <details
+                    open
+                    className='rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2.5 text-sm'>
+                    <summary className='flex cursor-pointer items-center gap-2 font-medium text-amber-500'>
+                      <WarningIcon aria-hidden className='size-4 shrink-0' />
+                      {t("cloudBackup.unavailableMods", {
+                        count: unavailable.length,
+                      })}
+                    </summary>
+                    <ul className='mt-2 space-y-1 pl-6'>
+                      {unavailable.map((mod) => (
+                        <li key={mod.remoteId}>{modName(mod.remoteId)}</li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
 
-            {disabledCount > 0 && (
-              <p className='text-xs text-muted-foreground'>
-                {t("cloudBackup.disabledNotRestored", { count: disabledCount })}
-              </p>
-            )}
+                {disabledCount > 0 && (
+                  <p className='text-xs text-muted-foreground'>
+                    {t("cloudBackup.disabledNotRestored", {
+                      count: disabledCount,
+                    })}
+                  </p>
+                )}
 
-            <div className='space-y-2'>
-              <p className='text-xs font-semibold text-muted-foreground'>
-                {t("cloudBackup.restoreTo")}
-              </p>
-              <RadioGroup
-                value={destination}
-                onValueChange={(value) =>
-                  setDestination(value as RestoreDestination)
-                }>
-                {(
-                  [
-                    {
-                      value: "new",
-                      title: t("cloudBackup.restoreAsNew"),
-                      description: t("cloudBackup.restoreAsNewDescription", {
-                        name: backup?.name,
-                      }),
-                    },
-                    {
-                      value: "replace",
-                      title: t("cloudBackup.restoreReplace", {
-                        name: activeProfile?.name,
-                      }),
-                      description: t("cloudBackup.restoreReplaceDescription", {
-                        name: activeProfile?.name,
-                      }),
-                    },
-                  ] as const
-                ).map((option) => (
-                  <Label
-                    key={option.value}
-                    htmlFor={`restore-${option.value}`}
-                    className={cn(
-                      "flex cursor-pointer items-start gap-3 rounded-lg border p-3 font-normal",
-                      destination === option.value &&
-                        "border-primary/40 bg-muted/40",
-                    )}>
-                    <RadioGroupItem
-                      id={`restore-${option.value}`}
-                      value={option.value}
-                      className='mt-0.5'
-                    />
-                    <span className='space-y-0.5'>
-                      <span className='block text-sm font-medium'>
-                        {option.title}
-                      </span>
-                      <span
+                <div className='space-y-2'>
+                  <p className='text-xs font-semibold text-muted-foreground'>
+                    {t("cloudBackup.restoreTo")}
+                  </p>
+                  <RadioGroup
+                    value={destination}
+                    onValueChange={(value) =>
+                      setDestination(value as RestoreDestination)
+                    }>
+                    {(
+                      [
+                        {
+                          value: "new",
+                          title: t("cloudBackup.restoreAsNew"),
+                          description: t(
+                            "cloudBackup.restoreAsNewDescription",
+                            {
+                              name: backup?.name,
+                            },
+                          ),
+                        },
+                        {
+                          value: "replace",
+                          title: t("cloudBackup.restoreReplace", {
+                            name: activeProfile?.name,
+                          }),
+                          description: t(
+                            "cloudBackup.restoreReplaceDescription",
+                            {
+                              name: activeProfile?.name,
+                            },
+                          ),
+                        },
+                      ] as const
+                    ).map((option) => (
+                      <Label
+                        key={option.value}
+                        htmlFor={`restore-${option.value}`}
                         className={cn(
-                          "block text-xs",
-                          option.value === "replace"
-                            ? "text-destructive"
-                            : "text-muted-foreground",
+                          "flex cursor-pointer items-start gap-3 rounded-lg border p-3 font-normal",
+                          destination === option.value &&
+                            "border-primary/40 bg-muted/40",
                         )}>
-                        {option.description}
-                      </span>
-                    </span>
-                  </Label>
-                ))}
-              </RadioGroup>
-            </div>
-          </div>
-        )}
+                        <RadioGroupItem
+                          id={`restore-${option.value}`}
+                          value={option.value}
+                          className='mt-0.5'
+                        />
+                        <span className='space-y-0.5'>
+                          <span className='block text-sm font-medium'>
+                            {option.title}
+                          </span>
+                          <span
+                            className={cn(
+                              "block text-xs",
+                              option.value === "replace"
+                                ? "text-destructive"
+                                : "text-muted-foreground",
+                            )}>
+                            {option.description}
+                          </span>
+                        </span>
+                      </Label>
+                    ))}
+                  </RadioGroup>
+                </div>
+              </div>
+            )}
 
-        <DialogFooter>
-          <Button
-            variant='ghost'
-            disabled={isRestoring}
-            onClick={() => onOpenChange(false)}>
-            {t("common.cancel")}
-          </Button>
-          <Button
-            disabled={!canRestore}
-            isLoading={isRestoring}
-            icon={<DownloadSimpleIcon className='size-4' />}
-            onClick={handleRestore}>
-            {isRestoring
-              ? t("cloudBackup.restoring")
-              : t("cloudBackup.restoreAction", { count: availableCount })}
-          </Button>
-        </DialogFooter>
+            <DialogFooter>
+              <Button
+                variant='ghost'
+                disabled={isRestoring}
+                onClick={() => onOpenChange(false)}>
+                {t("common.cancel")}
+              </Button>
+              <Button
+                disabled={!canRestore}
+                isLoading={isRestoring}
+                icon={<DownloadSimpleIcon className='size-4' />}
+                onClick={handleRestore}>
+                {isRestoring
+                  ? t("cloudBackup.restoring")
+                  : t("cloudBackup.restoreAction", { count: availableCount })}
+              </Button>
+            </DialogFooter>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );

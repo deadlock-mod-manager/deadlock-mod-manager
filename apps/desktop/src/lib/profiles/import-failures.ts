@@ -1,21 +1,7 @@
 import type { ModDto, SharedProfile } from "@deadlock-mods/shared";
-import type { TFunction } from "i18next";
+import type { ImportFailure, ImportFailureStep } from "@/lib/profiles/types";
 
-/** Where an imported mod dropped out: its catalog lookup, fetching its
- *  download list, or the batch download and install. The batch reports all of
- *  its errors as one string, so it stays a single step. */
-type ImportFailureStep = "lookup" | "downloads" | "install";
-
-interface ImportFailure {
-  remoteId: string;
-  name: string | null;
-  step: ImportFailureStep;
-  error: string | null;
-}
-
-const LISTED_FAILURES = 5;
-
-const REASON_KEYS = {
+export const IMPORT_FAILURE_REASON_KEYS = {
   lookup: "profiles.importFailures.lookup",
   downloads: "profiles.importFailures.downloads",
   install: "profiles.importFailures.install",
@@ -52,22 +38,3 @@ export const summarizeImportFailures = (failures: ImportFailure[]): string =>
       error ? `${remoteId} (${step}: ${error})` : `${remoteId} (${step})`,
     )
     .join(", ");
-
-/** One line per failed mod for the import's completion toast. */
-export const describeImportFailures = (
-  t: TFunction,
-  failures: ImportFailure[],
-): string => {
-  const lines = failures
-    .slice(0, LISTED_FAILURES)
-    .map(({ remoteId, name, step }) =>
-      t("profiles.importFailures.line", {
-        name: name ?? t("profiles.importFailures.unnamed", { remoteId }),
-        reason: t(REASON_KEYS[step]),
-      }),
-    );
-  const unlisted = failures.length - LISTED_FAILURES;
-  if (unlisted > 0)
-    lines.push(t("profiles.importFailures.more", { count: unlisted }));
-  return lines.join("\n");
-};

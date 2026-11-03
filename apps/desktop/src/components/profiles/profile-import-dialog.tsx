@@ -26,6 +26,7 @@ import {
   getProfileModCandidateIds,
   rewriteProfileIdentities,
 } from "@/lib/profiles/import-profile-shared";
+import { ImportResultView } from "./import-result-view";
 import {
   ProfileImportForm,
   type ProfileImportFormData,
@@ -73,10 +74,13 @@ export const ProfileImportDialog = ({
       createProfileFromImport(profile, availableMods, {
         sourceProfileId,
       }),
-    onSuccess: () => {
-      handleCancel();
+    onSuccess: (outcome) => {
+      // A partial import keeps the dialog open to show what failed.
+      if (outcome.failures.length === 0) handleCancel();
     },
   });
+  const outcome = createProfileMutation.data;
+  const result = outcome?.failures.length ? outcome : null;
 
   const orderedImportedMods = importedProfile
     ? importedProfile.payload.mods
@@ -147,7 +151,16 @@ export const ProfileImportDialog = ({
   const handleCancel = () => {
     setImportedProfile(null);
     setLegacySelections({});
+    createProfileMutation.reset();
     setOpen(false);
+  };
+
+  const handleOpenChange = (next: boolean) => {
+    if (next) setOpen(true);
+    // Closing mid-import would lose the result while the install carries on.
+    else if (createProfileMutation.isPending) return;
+    else if (result) handleCancel();
+    else setOpen(false);
   };
 
   const handleCreateNewProfile = () => {
@@ -175,90 +188,99 @@ export const ProfileImportDialog = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button disabled={disabled} variant='outline' icon={<ImportIcon />}>
           {t("profiles.import")}
         </Button>
       </DialogTrigger>
       <DialogContent className='sm:max-w-[600px]'>
-        <DialogHeader>
-          <DialogTitle>
-            {importedProfile
-              ? t("profiles.importPreview")
-              : t("profiles.import")}
-          </DialogTitle>
-          <DialogDescription>
-            {importedProfile
-              ? t("profiles.importPreviewDescription")
-              : t("profiles.importDescription")}
-          </DialogDescription>
-        </DialogHeader>
-
-        {importedProfile ? (
-          <>
-            {ambiguousMods.length > 0 && (
-              <div className='space-y-3 rounded-md border border-amber-500/30 bg-amber-500/5 p-3'>
-                <p className='text-sm font-medium'>
-                  {t("profiles.legacyIdentityTitle", {
-                    defaultValue: "Choose the matching GameBanana item",
-                  })}
-                </p>
-                <p className='text-xs text-muted-foreground'>
-                  {t("profiles.legacyIdentityDescription", {
-                    defaultValue:
-                      "This older profile ID exists as both a mod and a sound.",
-                  })}
-                </p>
-                {ambiguousMods.map(({ candidates, modIndex }) => (
-                  <Select
-                    key={candidates
-                      .map((candidate) => candidate.remoteId)
-                      .join("-")}
-                    value={legacySelections[modIndex]}
-                    onValueChange={(remoteId) =>
-                      setLegacySelections((current) => ({
-                        ...current,
-                        [modIndex]: remoteId,
-                      }))
-                    }>
-                    <SelectTrigger>
-                      <SelectValue
-                        placeholder={t("profiles.legacyIdentityPlaceholder", {
-                          defaultValue: "Select mod or sound",
-                        })}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {candidates.map(({ mod, remoteId }) => (
-                        <SelectItem key={remoteId} value={remoteId}>
-                          {remoteId.startsWith("snd-")
-                            ? t("profiles.submissionTypeSound")
-                            : t("profiles.submissionTypeMod")}
-                          : {mod.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                ))}
-              </div>
-            )}
-            <ProfilePreview
-              importedProfile={resolvedProfile ?? importedProfile}
-              modsLoading={modsLoading}
-              modsData={modsData}
-              onCreateNew={handleCreateNewProfile}
-              onCancel={handleCancel}
-              isImporting={createProfileMutation.isPending}
-              importProgress={importProgress}
-            />
-          </>
+        {result ? (
+          <ImportResultView outcome={result} onDone={handleCancel} />
         ) : (
-          <ProfileImportForm
-            onSubmit={onSubmit}
-            onCancel={handleCancel}
-            isLoading={fetchProfileMutation.isPending}
-          />
+          <>
+            <DialogHeader>
+              <DialogTitle>
+                {importedProfile
+                  ? t("profiles.importPreview")
+                  : t("profiles.import")}
+              </DialogTitle>
+              <DialogDescription>
+                {importedProfile
+                  ? t("profiles.importPreviewDescription")
+                  : t("profiles.importDescription")}
+              </DialogDescription>
+            </DialogHeader>
+
+            {importedProfile ? (
+              <>
+                {ambiguousMods.length > 0 && (
+                  <div className='space-y-3 rounded-md border border-amber-500/30 bg-amber-500/5 p-3'>
+                    <p className='text-sm font-medium'>
+                      {t("profiles.legacyIdentityTitle", {
+                        defaultValue: "Choose the matching GameBanana item",
+                      })}
+                    </p>
+                    <p className='text-xs text-muted-foreground'>
+                      {t("profiles.legacyIdentityDescription", {
+                        defaultValue:
+                          "This older profile ID exists as both a mod and a sound.",
+                      })}
+                    </p>
+                    {ambiguousMods.map(({ candidates, modIndex }) => (
+                      <Select
+                        key={candidates
+                          .map((candidate) => candidate.remoteId)
+                          .join("-")}
+                        value={legacySelections[modIndex]}
+                        onValueChange={(remoteId) =>
+                          setLegacySelections((current) => ({
+                            ...current,
+                            [modIndex]: remoteId,
+                          }))
+                        }>
+                        <SelectTrigger>
+                          <SelectValue
+                            placeholder={t(
+                              "profiles.legacyIdentityPlaceholder",
+                              {
+                                defaultValue: "Select mod or sound",
+                              },
+                            )}
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {candidates.map(({ mod, remoteId }) => (
+                            <SelectItem key={remoteId} value={remoteId}>
+                              {remoteId.startsWith("snd-")
+                                ? t("profiles.submissionTypeSound")
+                                : t("profiles.submissionTypeMod")}
+                              : {mod.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ))}
+                  </div>
+                )}
+                <ProfilePreview
+                  importedProfile={resolvedProfile ?? importedProfile}
+                  modsLoading={modsLoading}
+                  modsData={modsData}
+                  onCreateNew={handleCreateNewProfile}
+                  onCancel={handleCancel}
+                  isImporting={createProfileMutation.isPending}
+                  importProgress={importProgress}
+                />
+              </>
+            ) : (
+              <ProfileImportForm
+                onSubmit={onSubmit}
+                onCancel={handleCancel}
+                isLoading={fetchProfileMutation.isPending}
+              />
+            )}
+          </>
         )}
       </DialogContent>
     </Dialog>
