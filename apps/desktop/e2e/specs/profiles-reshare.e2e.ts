@@ -2,7 +2,7 @@
 // friend importing the re-share gets every mod with the same files.
 import { browser } from "@wdio/globals";
 import assert from "node:assert/strict";
-import { readFile, writeFile } from "node:fs/promises";
+import { readdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
 import { serializeEnabledProfileMods } from "../../src/lib/profiles/serialize-profile-mods";
@@ -108,7 +108,7 @@ const picksOf = (mods: LocalMod[]) =>
   );
 
 /** Every shared mod is installed in the profile, from only the shared picks,
- *  and nothing else sits in its folder. */
+ *  and no other VPK sits in its folder. */
 const assertProfileMatchesShare = (
   world: string,
   profileId: string,
@@ -122,6 +122,13 @@ const assertProfileMatchesShare = (
       configuration: { roots },
     } = await assertOwnedWorld(world);
     assert.ok(profile.folderName);
+    const folder = path.join(
+      roots.game,
+      "game",
+      "citadel",
+      "addons",
+      profile.folderName,
+    );
     const manifest = z
       .object({
         mods: z.record(
@@ -133,19 +140,7 @@ const assertProfileMatchesShare = (
         ),
       })
       .parse(
-        JSON.parse(
-          await readFile(
-            path.join(
-              roots.game,
-              "game",
-              "citadel",
-              "addons",
-              profile.folderName,
-              ".dmm.json",
-            ),
-            "utf8",
-          ),
-        ),
+        JSON.parse(await readFile(path.join(folder, ".dmm.json"), "utf8")),
       );
     await writeFile(
       path.join(world, "artifacts", `reshare-${label}.json`),
@@ -164,7 +159,14 @@ const assertProfileMatchesShare = (
         ]),
       ),
       expectedVpks,
-      `${label}: the folder holds only the picked files`,
+      `${label}: the manifest lists only the picked files`,
+    );
+    assert.deepEqual(
+      (await readdir(folder)).filter((name) => name.endsWith(".vpk")).sort(),
+      Object.values(manifest.mods)
+        .flatMap((entry) => entry.currentVpks)
+        .sort(),
+      `${label}: the folder holds no other VPK`,
     );
   });
 
