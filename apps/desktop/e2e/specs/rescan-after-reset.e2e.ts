@@ -84,6 +84,78 @@ const assertRestored = ({ localMods, alpha }: Library) => {
   assert.notEqual(alpha.enabledMods[RESET_DISABLED_MOD]?.enabled, true);
 };
 
+declare global {
+  interface Window {
+    e2eOpenedUrls?: string[];
+    e2eRestoreFetch?: () => void;
+  }
+}
+
+const OPEN_URL_COMMAND = "plugin:opener|open_url";
+
+const openedCount = () =>
+  browser.execute(() => window.e2eOpenedUrls?.length ?? 0);
+
+/**
+ * Clicks each result card's external-link icon and returns the URL it opened,
+ * or null when the card offers no link. Tauri sends IPC through `fetch`, so the
+ * opener's request is recorded and answered there instead of opening a browser;
+ * every other request passes through unchanged.
+ */
+const openedLinks = async (fileNames: readonly string[]) => {
+  await browser.execute((command: string) => {
+    const realFetch = window.fetch;
+    const opened: string[] = [];
+    // Tauri posts each command to `<ipc origin>/<encoded command name>`.
+    const ipcPath = `/${encodeURIComponent(command)}`;
+    window.e2eOpenedUrls = opened;
+    window.e2eRestoreFetch = () => {
+      window.fetch = realFetch;
+    };
+    const recordingFetch = async (
+      input: RequestInfo | URL,
+      init?: RequestInit,
+    ): Promise<Response> => {
+      if (!String(input).endsWith(ipcPath)) return realFetch(input, init);
+      const body: { url?: string } = JSON.parse(String(init?.body ?? "{}"));
+      opened.push(body.url ?? "");
+      return new Response("null", {
+        headers: { "Content-Type": "application/json", "Tauri-Response": "ok" },
+      });
+    };
+    window.fetch = Object.assign(recordingFetch, realFetch);
+  }, OPEN_URL_COMMAND);
+  const links: Record<string, string | null> = {};
+  try {
+    for (const fileName of fileNames) {
+      const card = await $(
+        `//div[@role="dialog"]//p[normalize-space()="${fileName}"]/ancestor::div[contains(@class,"rounded-lg")][1]`,
+      );
+      await card.waitForDisplayed();
+      const icon = await card.$("svg.lucide-external-link");
+      if (!(await icon.isExisting())) {
+        links[fileName] = null;
+        continue;
+      }
+      const before = await openedCount();
+      // An SVG has no click(), which the WebDriver click relies on here.
+      await browser.execute((element: Element) => {
+        element.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      }, icon);
+      await browser.waitUntil(async () => (await openedCount()) > before, {
+        timeoutMsg: `${fileName}'s link opened nothing`,
+      });
+      links[fileName] = await browser.execute(
+        (index: number) => window.e2eOpenedUrls?.[index] ?? null,
+        before,
+      );
+    }
+  } finally {
+    await browser.execute(() => window.e2eRestoreFetch?.());
+  }
+  return links;
+};
+
 const checkpointPath = (world: string) =>
   path.join(world, "artifacts", "rescan-after-reset-inventory.json");
 
@@ -135,6 +207,16 @@ describe("re-scanning after Clear Mods State", () => {
         await expect($('[role="tab"]*=Unknown (')).toHaveText("Unknown (1)");
         await browser.saveScreenshot(
           path.join(world, "artifacts", "rescan-results.png"),
+        );
+      });
+
+      await step("only catalog mods link to GameBanana", async () => {
+        assert.deepEqual(
+          await openedLinks(["pak01_dir.vpk", "pak03_dir.vpk"]),
+          {
+            "pak01_dir.vpk": `https://gamebanana.com/mods/${CATALOG_MOD_ID}`,
+            "pak03_dir.vpk": null,
+          },
         );
       });
 

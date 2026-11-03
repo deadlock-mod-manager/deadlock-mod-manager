@@ -31,7 +31,7 @@ mock.module("@deadlock-mods/ui/components/badge", () => ({
   Badge: ({ children }: { children: ReactNode }) => <span>{children}</span>,
 }));
 mock.module("@deadlock-mods/ui/icons", () => ({
-  ExternalLink: () => <svg />,
+  ExternalLink: () => <svg data-icon='external-link' />,
   Plus: () => <svg />,
   XCircle: () => <svg />,
 }));
@@ -100,5 +100,26 @@ describe("AddonSummaryCard library check", () => {
     const html = render({ owned: undefined, isLoading: false });
     expect(html).toContain("Add to Library");
     expect(html).not.toContain("disabled");
+  });
+});
+
+describe("AddonSummaryCard GameBanana link", () => {
+  const renderIdentified = (identity: Partial<LocalAddonInfo>) => {
+    libraryCheck = { owned: true, isLoading: false };
+    return renderToStaticMarkup(
+      <AddonSummaryCard addon={{ ...addon, ...identity }} />,
+    );
+  };
+  const LOCAL_ID = "local-550e8400-e29b-41d4-a716-446655440000";
+
+  // Analyze names a local mod from the profile's records when no hash matches.
+  it("offers no GameBanana link for a local mod", () => {
+    expect(
+      renderIdentified({ remoteId: LOCAL_ID, manifestModId: LOCAL_ID }),
+    ).not.toContain("external-link");
+  });
+
+  it("links a GameBanana mod", () => {
+    expect(renderIdentified({ remoteId: "123456" })).toContain("external-link");
   });
 });

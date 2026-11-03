@@ -19,7 +19,7 @@ import { buildSyntheticVpk } from "./vpk";
 import type { CreatedWorld } from "./world";
 
 /** Local import whose name only its metadata file still knows after a reset. */
-export const RESET_LOCAL_MOD = "local-reset-skin";
+export const RESET_LOCAL_MOD = "local-6f1d2c3b-8a4e-4f5d-9c7b-2e1a0d9f8c6b";
 export const RESET_LOCAL_NAME = "E2E Reset Skin";
 /** A disabled mod parked in the base folder under its prefixed name. */
 export const RESET_DISABLED_MOD = "900077";
