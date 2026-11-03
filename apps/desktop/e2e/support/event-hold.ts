@@ -21,7 +21,7 @@ declare global {
       string,
       Record<string, { handlerId: number }>
     >;
-    __e2eEventHold?: EventHold;
+    e2eEventHold?: EventHold;
   }
 }
 
@@ -33,8 +33,8 @@ declare global {
  */
 export const holdEventsFromCancellation = (modId: string) =>
   browser.execute((target: string) => {
-    const listeners = window.__internal_unstable_listeners_object_id__ ?? {};
-    const { callbacks } = window.__TAURI_INTERNALS__;
+    const listeners = window["__internal_unstable_listeners_object_id__"] ?? {};
+    const { callbacks } = window["__TAURI_INTERNALS__"];
     const hold: EventHold = {
       wrappedCallbacks: 0,
       captured: false,
@@ -65,18 +65,18 @@ export const holdEventsFromCancellation = (modId: string) =>
         });
       }
     }
-    window.__e2eEventHold = hold;
+    window.e2eEventHold = hold;
     return hold.wrappedCallbacks;
   }, modId);
 
 /** Whether the hold has caught the cancellation error yet. */
 export const cancellationHeld = () =>
-  browser.execute(() => window.__e2eEventHold?.captured === true);
+  browser.execute(() => window.e2eEventHold?.captured === true);
 
 /** Delivers the held events in their original order; returns how many. */
 export const releaseHeldEvents = () =>
   browser.execute(() => {
-    const hold = window.__e2eEventHold;
+    const hold = window.e2eEventHold;
     if (!hold) return 0;
     hold.released = true;
     const held = hold.held.splice(0);
