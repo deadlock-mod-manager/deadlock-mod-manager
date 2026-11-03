@@ -5,6 +5,10 @@ import type { ModDto, SharedProfile } from "@deadlock-mods/shared";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import type { TFunction } from "i18next";
 import logger from "@/lib/logger";
+import {
+  collectImportFailures,
+  describeImportFailures,
+} from "@/lib/profiles/import-failures";
 import { prepareProfileImportMods } from "@/lib/profiles/import-profile-prep";
 import { resolveImportContext } from "@/lib/profiles/import-profile-shared";
 import type {
@@ -28,6 +32,9 @@ export interface ProfileImportFlowDeps {
   getActiveProfile: State["getActiveProfile"];
   fileserverPreference: State["fileserverPreference"];
 }
+
+// Long enough to read a few mod names.
+const FAILURE_TOAST_DURATION_MS = 15_000;
 
 export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
   const {
@@ -167,23 +174,31 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
         captureMilestone("first_install_completed");
       setImportProgress(null);
 
-      if (
-        result.failed.length > 0 ||
-        preparationFailed.length > 0 ||
-        unavailableModsCount > 0
-      ) {
+      const failures = collectImportFailures(
+        importedMods,
+        modsDataByRemoteId,
+        preparationFailed,
+        result.failed,
+      );
+      if (failures.length > 0) {
         logger
           .withMetadata({
             failed: result.failed.length,
             succeeded: result.succeeded.length,
             unavailable: unavailableModsCount,
             preparationFailed: preparationFailed.length,
+            failures,
           })
           .warn("Some mods failed to import");
         const imported = result.installedMods.length;
         toast.warning(
           t("profiles.createSuccess", { profileName }) +
             ` (${t("profiles.modsImportedCount", { imported, total: totalImportedMods })})`,
+          {
+            description: describeImportFailures(t, failures),
+            duration: FAILURE_TOAST_DURATION_MS,
+            classNames: { description: "whitespace-pre-line" },
+          },
         );
       } else {
         toast.success(t("profiles.createSuccess", { profileName }));
@@ -292,23 +307,31 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
         captureMilestone("first_install_completed");
       setImportProgress(null);
 
-      if (
-        result.failed.length > 0 ||
-        preparationFailed.length > 0 ||
-        unavailableModsCount > 0
-      ) {
+      const failures = collectImportFailures(
+        importedMods,
+        modsDataByRemoteId,
+        preparationFailed,
+        result.failed,
+      );
+      if (failures.length > 0) {
         logger
           .withMetadata({
             failed: result.failed.length,
             succeeded: result.succeeded.length,
             unavailable: unavailableModsCount,
             preparationFailed: preparationFailed.length,
+            failures,
           })
           .warn("Some mods failed to import to current profile");
         const imported = result.installedMods.length;
         toast.warning(
           t("profiles.overrideSuccess") +
             ` (${t("profiles.modsImportedCount", { imported, total: totalImportedMods })})`,
+          {
+            description: describeImportFailures(t, failures),
+            duration: FAILURE_TOAST_DURATION_MS,
+            classNames: { description: "whitespace-pre-line" },
+          },
         );
       } else {
         toast.success(t("profiles.overrideSuccess"));

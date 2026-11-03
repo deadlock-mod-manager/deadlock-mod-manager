@@ -7040,6 +7040,14 @@
     "importedProfileDescription": "Profile imported from shared profile ID",
     "importedProfileName": "Imported Profile - {{date}}",
     "modsImportedCount": "{{imported}}/{{total}} mods imported",
+    "importFailures": {
+      "line": "{{name}}: {{reason}}",
+      "unnamed": "Mod {{remoteId}}",
+      "lookup": "Could not get the mod's details",
+      "downloads": "Could not get its downloads",
+      "install": "Download or install failed",
+      "more": "and {{count}} more"
+    },
     "activateProfileLabel": "Activate {{profileName}} profile",
     "statusActive": "Active",
     "statusInactive": "Inactive",
