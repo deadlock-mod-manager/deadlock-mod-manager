@@ -11,6 +11,7 @@ import {
   assertUpdateRoutingNetwork,
   multipakUpdateRoutes,
   multipakVpk,
+  updateRoutingRoutes,
 } from "./multipak-update-fixtures";
 import { assertMultipakDisk } from "./multipak-update-oracle";
 import { createWorld, removeOwnedWorld } from "./world";
@@ -79,7 +80,7 @@ it("serves distinct v1/v2 archives and requires both real update transfers", asy
 });
 
 const replayRequests = async (urls: string[]) => {
-  const server = await startFixtureServer(await multipakUpdateRoutes());
+  const server = await startFixtureServer(await updateRoutingRoutes());
   try {
     for (const url of urls)
       await (await fetch(`${server.origin}${url}`)).arrayBuffer();
@@ -92,27 +93,30 @@ const replayRequests = async (urls: string[]) => {
 const verifyRouting = (requests: readonly FixtureRequest[]) =>
   assertUpdateRoutingNetwork("gamebanana-update-routing", requests);
 
-it("requires the fileserver directory for the Automatic update and download only", async () => {
+it("requires the Automatic update and download to come from the cache", async () => {
   const [a, b] = MULTIPAK_MODS;
+  const cache = (archive: string) =>
+    `/fileservers/filecache45.gamebanana.com/mods/${archive}`;
   const fileservers = "/apiv11/Util/Fileservers?_nPage=1";
   verifyRouting(
     await replayRequests([
+      fileservers,
       `/dl/${a.id}/v1`,
+      cache(a.archive),
       fileservers,
-      `/dl/${a.id}/v2`,
-      fileservers,
-      `/dl/${b.id}/v1`,
+      cache(b.archive),
     ]),
   );
-  // An update that ignores the preference leaves only the new download's lookup.
+  // An update that ignores the preference downloads from /dl/ like Default.
   const ignored = await replayRequests([
+    fileservers,
     `/dl/${a.id}/v1`,
     `/dl/${a.id}/v2`,
     fileservers,
-    `/dl/${b.id}/v1`,
+    cache(b.archive),
   ]);
   expect(() => verifyRouting(ignored)).toThrow(
-    "Automatic routing must reach the update",
+    "Automatic routing must download the update",
   );
 });
 
