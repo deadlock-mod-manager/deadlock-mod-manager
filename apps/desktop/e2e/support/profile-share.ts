@@ -65,8 +65,8 @@ const openProfileManager = () =>
 const importDialog =
   '//*[@role="dialog"][.//*[normalize-space()="Import Profile Preview"]]';
 
-/** Enters a share code and starts importing it into a new profile. */
-export const startShareImport = async (code: string) => {
+/** Enters a share code and returns the preview's Create New Profile button. */
+export const previewShareCode = async (code: string) => {
   await openProfileManager();
   await $("button=Import Profile").click();
   const input = await $('input[placeholder^="Enter Profile ID"]');
@@ -77,7 +77,7 @@ export const startShareImport = async (code: string) => {
     `${importDialog}//button[normalize-space()="Create New Profile"]`,
   );
   await create.waitForClickable({ timeout: 20_000 });
-  await create.click();
+  return create;
 };
 
 /** Waits for the import to finish: the import dialog closes when it does. */
@@ -91,7 +91,7 @@ export const waitForImportEnd = () =>
 export const importShareCode = (world: string, code: string) =>
   step(`import share code ${code}`, async () => {
     const before = new Set(Object.keys((await readShareState(world)).profiles));
-    await startShareImport(code);
+    await (await previewShareCode(code)).click();
     const profile = await importedProfile(world, before);
     await waitForImportEnd();
     await closeDialogs();

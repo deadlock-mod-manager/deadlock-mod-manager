@@ -1,5 +1,5 @@
 // A profile import that can't install every mod says which ones failed.
-import { browser } from "@wdio/globals";
+import { $, browser } from "@wdio/globals";
 import assert from "node:assert/strict";
 import path from "node:path";
 import { startApplication } from "../support/application";
@@ -12,8 +12,8 @@ import {
   UNINSTALLABLE_MOD,
 } from "../support/profile-import-failure-fixtures";
 import {
+  previewShareCode,
   readShareState,
-  startShareImport,
   toastTexts,
   waitForImportEnd,
 } from "../support/profile-share";
@@ -27,7 +27,13 @@ describe("profile import with failed mods", () => {
     const before = new Set(Object.keys((await readShareState(world)).profiles));
 
     await step(`import share code ${FAILING_SHARE_CODE}`, async () => {
-      await startShareImport(FAILING_SHARE_CODE);
+      const create = await previewShareCode(FAILING_SHARE_CODE);
+      // Wait, like a user, for the preview to finish its lookups; the missing
+      // mod's failed lookup has its own error toast.
+      await $(
+        '//*[@role="dialog"]//*[normalize-space()="Mod not found or unavailable"]',
+      ).waitForDisplayed({ timeout: 30_000 });
+      await create.click();
       await waitForImportEnd();
     });
 
