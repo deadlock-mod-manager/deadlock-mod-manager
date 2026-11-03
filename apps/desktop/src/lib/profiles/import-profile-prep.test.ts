@@ -1,6 +1,8 @@
 import { describe, expect, it, mock } from "bun:test";
 import type { ModDto, ProfileModDownload } from "@deadlock-mods/shared";
 import { ModStatus, type ModDownloadItem } from "@/types/mods";
+import { resolveProfileImportDownloadFiles } from "./import-downloads";
+import { serializeEnabledProfileMods } from "./serialize-profile-mods";
 import type { OrderedImportedMod } from "./types";
 
 const logger = {
@@ -19,12 +21,8 @@ mock.module("@/lib/api-client", () => ({
   getModDownloads: async () => ({ downloads: catalog, count: catalog.length }),
 }));
 
-// Bun evaluates static imports before module mocks; load these after them.
+// Bun evaluates static imports before module mocks; load this after them.
 const { prepareProfileImportMods } = await import("./import-profile-prep");
-const { resolveProfileImportDownloadFiles } =
-  await import("./import-downloads");
-const { serializeEnabledProfileMods } =
-  await import("./serialize-profile-mods");
 
 const download = (name: string): ModDownloadItem => ({
   url: `https://files.example/${name}`,

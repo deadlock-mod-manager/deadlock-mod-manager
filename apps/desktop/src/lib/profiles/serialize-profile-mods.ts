@@ -41,8 +41,6 @@ const downloadsFromFileTree = (
   return picks;
 };
 
-/** The recorded pick, else the one the file tree shows; failing both, the
- *  first download stands in. */
 const sharedDownloads = (localMod: LocalMod): ModDownloadItem[] =>
   localMod.selectedDownloads?.length
     ? localMod.selectedDownloads
