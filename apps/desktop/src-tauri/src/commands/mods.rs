@@ -459,6 +459,7 @@ pub async fn batch_update_mods(
       profile_folder: profile_folder_option.clone(),
       is_profile_import: false,
       file_tree: mod_data.file_tree.clone(),
+      attempt_id: None,
     };
 
     let manager = get_download_manager(app_handle.clone()).await;

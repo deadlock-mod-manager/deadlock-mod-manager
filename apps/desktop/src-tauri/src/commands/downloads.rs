@@ -30,6 +30,7 @@ pub async fn queue_download(
   catalog_state: State<'_, super::gamebanana_catalog::GameBananaCatalogState>,
   policy: State<'_, super::policy::PolicyState>,
   mod_id: String,
+  attempt_id: String,
   files: Vec<DownloadFileDto>,
   profile_folder: Option<String>,
   fileserver_preference: FileserverPreference,
@@ -58,6 +59,7 @@ pub async fn queue_download(
     profile_folder,
     is_profile_import: false,
     file_tree: None,
+    attempt_id: Some(attempt_id),
   };
 
   let manager = get_download_manager(app_handle).await;
@@ -621,6 +623,7 @@ pub async fn debug_queue_local_zip(
     profile_folder: None,
     is_profile_import: false,
     file_tree: None,
+    attempt_id: None,
   };
 
   DownloadManager::process_local_file(task, dest, app_handle).await

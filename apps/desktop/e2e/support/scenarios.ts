@@ -783,6 +783,7 @@ export const scenarios = {
   "downloads-deleted-default": downloads,
   "downloads-cancel": { ...downloads, coverage: "ipc-recovery" },
   "downloads-cancel-connecting": downloads,
+  "downloads-cancel-late-error": downloads,
   "downloads-cancel-queued": downloads,
   "downloads-reload-queued": downloads,
   "downloads-delete-queued": downloads,

@@ -464,6 +464,7 @@ pub async fn import_profile_batch(
       profile_folder: Some(final_profile_folder.clone()),
       is_profile_import: true,
       file_tree: mod_data.file_tree.clone(),
+      attempt_id: None,
     };
 
     let manager = get_download_manager(app_handle.clone()).await;
