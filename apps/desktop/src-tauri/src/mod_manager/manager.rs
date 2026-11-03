@@ -104,6 +104,17 @@ impl ModManager {
     Ok(path)
   }
 
+  /// Skips the running-game check, so tests don't depend on whether Deadlock is open.
+  #[cfg(test)]
+  pub(crate) fn for_test_game(game_path: &Path) -> Self {
+    let mut manager = tests::test_manager(game_path);
+    manager
+      .config_manager
+      .setup_game_for_mods(game_path)
+      .unwrap();
+    manager
+  }
+
   pub fn set_steam_path(&mut self, path: PathBuf) -> Result<PathBuf, Error> {
     self.steam_manager.set_steam_dir(path)?;
     self
