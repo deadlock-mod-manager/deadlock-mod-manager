@@ -16,6 +16,7 @@ interface ToastCall {
 }
 
 const toasts: ToastCall[] = [];
+const warnings: string[] = [];
 const applied: string[][] = [];
 // Mods whose download list can't be fetched, and the batch's answer.
 let unpreparable = new Set<string>();
@@ -31,6 +32,15 @@ mock.module("@/lib/analytics", () => ({
   captureMilestone: () => {},
 }));
 mock.module("@/lib/plugins", () => ({ getPlugins: () => [] }));
+// The saved log file keeps a line's message but not its metadata.
+const log = {
+  withMetadata: () => log,
+  withError: () => log,
+  info: () => {},
+  warn: (message: string) => warnings.push(message),
+  error: () => {},
+};
+mock.module("@/lib/logger", () => ({ default: log, createLogger: () => log }));
 mock.module("@deadlock-mods/ui/components/sonner", () => ({
   toast: {
     success: (title: string) => toasts.push({ kind: "success", title }),
@@ -191,6 +201,7 @@ const destinations = {
 
 beforeEach(() => {
   toasts.length = 0;
+  warnings.length = 0;
   applied.length = 0;
   unpreparable = new Set();
 });
@@ -212,6 +223,10 @@ describe("profile import completion", () => {
         "Charlie: Could not get its downloads",
         "Delta: Download or install failed",
       ]);
+      expect(warnings).toHaveLength(1);
+      expect(warnings[0]).toEndWith(
+        ": 2 (lookup), 3 (downloads: catalog timeout), 4 (install: ModFileNotFound)",
+      );
     });
   }
 

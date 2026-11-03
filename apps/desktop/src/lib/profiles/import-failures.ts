@@ -44,6 +44,15 @@ export const collectImportFailures = (
   });
 };
 
+/** The failures as one line for the log: the saved log file keeps a line's
+ *  message but drops its metadata. */
+export const summarizeImportFailures = (failures: ImportFailure[]): string =>
+  failures
+    .map(({ remoteId, step, error }) =>
+      error ? `${remoteId} (${step}: ${error})` : `${remoteId} (${step})`,
+    )
+    .join(", ");
+
 /** One line per failed mod for the import's completion toast. */
 export const describeImportFailures = (
   t: TFunction,

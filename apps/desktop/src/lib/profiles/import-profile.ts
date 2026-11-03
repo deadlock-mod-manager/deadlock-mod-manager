@@ -8,6 +8,7 @@ import logger from "@/lib/logger";
 import {
   collectImportFailures,
   describeImportFailures,
+  summarizeImportFailures,
 } from "@/lib/profiles/import-failures";
 import { prepareProfileImportMods } from "@/lib/profiles/import-profile-prep";
 import { resolveImportContext } from "@/lib/profiles/import-profile-shared";
@@ -187,9 +188,10 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
             succeeded: result.succeeded.length,
             unavailable: unavailableModsCount,
             preparationFailed: preparationFailed.length,
-            failures,
           })
-          .warn("Some mods failed to import");
+          .warn(
+            `Some mods failed to import: ${summarizeImportFailures(failures)}`,
+          );
         const imported = result.installedMods.length;
         toast.warning(
           t("profiles.createSuccess", { profileName }) +
@@ -320,9 +322,10 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
             succeeded: result.succeeded.length,
             unavailable: unavailableModsCount,
             preparationFailed: preparationFailed.length,
-            failures,
           })
-          .warn("Some mods failed to import to current profile");
+          .warn(
+            `Some mods failed to import to current profile: ${summarizeImportFailures(failures)}`,
+          );
         const imported = result.installedMods.length;
         toast.warning(
           t("profiles.overrideSuccess") +
