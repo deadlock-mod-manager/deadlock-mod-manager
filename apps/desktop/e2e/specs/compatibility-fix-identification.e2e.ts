@@ -55,7 +55,6 @@ const readManifest = async (world: string) =>
     ),
   );
 
-/** Each mod's health status, as the backend reports it to the window. */
 const readHealth = async (): Promise<Record<string, string>> => {
   const report = await browser.execute(
     (profileFolder) =>
@@ -114,7 +113,6 @@ const readRepairs = async (world: string) => {
 const card = (name: string) =>
   `//*[@title="${name}"]/ancestor::*[.//button[@role="switch"]][1]`;
 
-/** The library card's health badge, as the player sees it. */
 const badgeStatus = async (name: string) => {
   await navigate("my-mods");
   await searchLibrary(name);
