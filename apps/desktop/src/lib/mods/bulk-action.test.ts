@@ -1,8 +1,25 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, mock } from "bun:test";
 import { placeholderModFromManifest } from "@/lib/store/utils/manifest-install-state";
 import type { LocalMod } from "@/types/mods";
 import type { ErrorKind } from "@/types/tauri";
-import { runBulkModAction } from "./bulk-action";
+
+const failures: string[] = [];
+const testLogger = {
+  withError() {
+    return this;
+  },
+  withMetadata(metadata: { mod?: string }) {
+    if (metadata.mod) failures.push(metadata.mod);
+    return this;
+  },
+  error() {},
+};
+mock.module("@/lib/logger", () => ({
+  createLogger: () => testLogger,
+  default: testLogger,
+}));
+
+const { runBulkModAction } = await import("./bulk-action");
 
 const mod = (remoteId: string): LocalMod =>
   placeholderModFromManifest(
@@ -59,6 +76,7 @@ describe("runBulkModAction", () => {
     expect(recap.stoppedBy).toBe("error");
     expect(recap.completed).toEqual([]);
     expect(recap.failed).toEqual({ mod: a, message: "disk full" });
+    expect(failures).toContain("a");
     expect(ids(recap.notAttempted)).toEqual(["b", "c"]);
   });
 

@@ -61,8 +61,8 @@ export const useDeleteMods = () => {
         hintFor: (error) =>
           error.kind === "vpkInUse" ? t("mods.deleteErrorVpkInUse") : undefined,
       });
-      if (result.completed.length > 0)
-        queryClient.invalidateQueries({ queryKey: PROFILE_VPKS_QUERY_KEY });
+      // A failed purge may already have removed some of the mod's files.
+      queryClient.invalidateQueries({ queryKey: PROFILE_VPKS_QUERY_KEY });
       return result;
     },
     onSuccess: (result) => {
@@ -72,7 +72,6 @@ export const useDeleteMods = () => {
           .withMetadata({
             stoppedBy: result.stoppedBy,
             failed: result.failed?.mod.remoteId,
-            error: result.failed?.message,
             completed: result.completed.length,
             notAttempted: result.notAttempted.length,
           })

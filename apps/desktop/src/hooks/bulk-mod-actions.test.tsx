@@ -260,6 +260,28 @@ describe("bulk disable and delete stopped by a failure", () => {
   });
 });
 
+describe("bulk delete that fails on its first mod", () => {
+  it("still refreshes the profile's VPK scan, since the purge may have removed files", async () => {
+    failingModId = "mod-a";
+    const client = new QueryClient();
+    let invalidations = 0;
+    client.invalidateQueries = async () => {
+      invalidations += 1;
+    };
+    const deleteMods = (await captureCallback(client, () => useDeleteMods()))
+      .deleteMods;
+
+    deleteMods(new Set(IDS));
+    const mutation = await settledMutation(client);
+
+    expect(mutation.state.data).toMatchObject({
+      completed: [],
+      failed: { mod: { remoteId: "mod-a" } },
+    });
+    expect(invalidations).toBe(1);
+  });
+});
+
 describe("bulk disable and delete that finish", () => {
   it("disable reports every mod as done and nothing stopped", async () => {
     failingModId = null;

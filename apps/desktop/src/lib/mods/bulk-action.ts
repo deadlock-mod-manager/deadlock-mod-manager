@@ -1,4 +1,5 @@
 import { getErrorMessage } from "@/lib/errors";
+import logger from "@/lib/logger";
 import type { LocalMod } from "@/types/mods";
 import { type ErrorKind, isTauriError } from "@/types/tauri";
 
@@ -58,6 +59,10 @@ export const runBulkModAction = async ({
         recap.notAttempted = targets.slice(index);
         recap.stoppedBy = "gameRunning";
       } else {
+        logger
+          .withError(error)
+          .withMetadata({ action, mod: mod.remoteId })
+          .error("Bulk mod action failed");
         const hint = isTauriError(error) ? hintFor?.(error) : undefined;
         const message = getErrorMessage(error);
         recap.failed = { mod, message: hint ? `${message} ${hint}` : message };

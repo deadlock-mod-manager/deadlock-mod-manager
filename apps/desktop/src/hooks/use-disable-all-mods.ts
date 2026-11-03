@@ -86,7 +86,6 @@ export const useDisableAllMods = () => {
           .withMetadata({
             stoppedBy: result.stoppedBy,
             failed: result.failed?.mod.remoteId,
-            error: result.failed?.message,
             completed: result.completed.length,
             notAttempted: result.notAttempted.length,
           })
