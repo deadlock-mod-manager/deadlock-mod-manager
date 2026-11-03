@@ -102,10 +102,18 @@ const IgnoredSection = ({
             <IgnoredRow
               disabled={ignore.isPending}
               key={`${conflict.winner}::${conflict.loser}`}
-              label={t("conflicts.ignoredPair", {
-                first: modDisplayName(modsById, conflict.winner),
-                second: modDisplayName(modsById, conflict.loser),
-              })}
+              label={
+                conflict.ignoreReason === "files"
+                  ? t("conflicts.ignoredFilesRow", {
+                      first: modDisplayName(modsById, conflict.winner),
+                      second: modDisplayName(modsById, conflict.loser),
+                      count: conflict.files.length,
+                    })
+                  : t("conflicts.ignoredPair", {
+                      first: modDisplayName(modsById, conflict.winner),
+                      second: modDisplayName(modsById, conflict.loser),
+                    })
+              }
               onRestore={
                 conflict.ignoreReason === "mod"
                   ? undefined

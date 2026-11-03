@@ -83,6 +83,31 @@ const sharedFiles = async (...providers: string[]) => {
 };
 
 const RESOLVED = [HAT_PANTS, HAT_JACKET, PANTS_TEXTURE];
+const PANTS_MATERIAL = "materials/outfit/pants.vmat_c";
+const PANTS_COLOR = "materials/outfit/pants_color.vtex_c";
+
+const expectSharedFiles = (providers: string[], expected: string[]) =>
+  browser.waitUntil(
+    async () =>
+      JSON.stringify(await sharedFiles(...providers)) ===
+      JSON.stringify(expected),
+    {
+      timeoutMsg: `${providers.join(",")} never shared ${JSON.stringify(expected)}`,
+    },
+  );
+
+/** The per-file ignore button only shows while its row is hovered. */
+const ignoreFile = async (providers: string[], filePath: string) => {
+  const row = await group(...providers);
+  const toggle = await row.$('[data-testid="conflict-files-toggle"]');
+  await toggle.click();
+  const file = await row.$(
+    `[data-testid="conflict-file"][data-path="${filePath}"]`,
+  );
+  await file.moveTo();
+  await file.$('button[aria-label="Ignore this file for these mods"]').click();
+  await toggle.click();
+};
 
 describe("mod conflicts", () => {
   it("detects, resolves, and ignores conflicts across process restart", async () => {
@@ -156,7 +181,8 @@ describe("mod conflicts", () => {
           "models/outfit/hat.vmdl_c",
         ]);
         expect(await sharedFiles(HAT_PANTS, PANTS_TEXTURE)).toEqual([
-          "materials/outfit/pants.vmat_c",
+          PANTS_COLOR,
+          PANTS_MATERIAL,
         ]);
       });
 
@@ -173,6 +199,35 @@ describe("mod conflicts", () => {
         ]);
       });
       await assertConflictDisk(world, "reordered", RESOLVED, null);
+
+      await step("ignore one file of the material overlap", async () => {
+        await ignoreFile([HAT_PANTS, PANTS_TEXTURE], PANTS_COLOR);
+        await expectSharedFiles([HAT_PANTS, PANTS_TEXTURE], [PANTS_MATERIAL]);
+        await expectGroups([
+          shown("critical", HAT_PANTS, HAT_JACKET),
+          shown("normal", HAT_PANTS, PANTS_TEXTURE),
+        ]);
+      });
+      await assertConflictDisk(world, "file-ignored", RESOLVED, [], {
+        [pairKey(HAT_PANTS, PANTS_TEXTURE)]: [PANTS_COLOR],
+      });
+
+      await step("restore the ignored file from Marked as fine", async () => {
+        const section = $("button*=Marked as fine (1)");
+        await section.waitForDisplayed({
+          timeoutMsg: "The ignored file never reached Marked as fine",
+        });
+        await section.click();
+        const row = $('[data-testid="ignored-conflict"]');
+        await expect(row).toHaveText("1 file", { containing: true });
+        await row.$("button=Restore").click();
+        await expectSharedFiles(
+          [HAT_PANTS, PANTS_TEXTURE],
+          [PANTS_COLOR, PANTS_MATERIAL],
+        );
+        await expect($("button*=Marked as fine")).not.toBeDisplayed();
+      });
+      await assertConflictDisk(world, "file-restored", RESOLVED, []);
 
       await step("mark the material overlap as fine", async () => {
         await (

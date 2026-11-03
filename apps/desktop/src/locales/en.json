@@ -3426,6 +3426,8 @@
     "ignoreFailed": "Couldn't save the ignore",
     "markedFineSection": "Marked as fine ({{count}})",
     "ignoredPair": "{{first}} and {{second}}",
+    "ignoredFilesRow_one": "{{first}} and {{second}}, {{count}} file",
+    "ignoredFilesRow_other": "{{first}} and {{second}}, {{count}} files",
     "ignoredModRow": "{{mod}}, every overlap",
     "restore": "Restore",
     "clearIgnores": "Restore all",
