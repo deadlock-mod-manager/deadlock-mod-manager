@@ -28,6 +28,24 @@ const { LATEST_VERSION, MIGRATION_STEPS, safeMigrate } =
   await import("./migrate");
 
 describe("safeMigrate", () => {
+  it("preserves legacy files and source provenance in every profile", () => {
+    const source = {
+      sourceKey: "accepted-origin-and-id",
+      listingId: "42",
+      releaseId: "r1",
+      contentRevision: "1",
+    };
+    const mods = [
+      { remoteId: "42", installedVpks: ["pak01_dir.vpk"] },
+      { remoteId: "snd-42", installedVpks: ["snd-42_audio.vpk"] },
+      { remoteId: "source-custom", source, installedVpks: ["pak02_dir.vpk"] },
+    ];
+    const state = {
+      localMods: mods,
+      profiles: { default: { mods }, second: { mods } },
+    };
+    expect(safeMigrate(structuredClone(state), 42)).toEqual(state);
+  });
   it("preserves background coverage when splitting the switches", () => {
     for (const includeSidebar of [true, false]) {
       expect(safeMigrate({ appBackground: { includeSidebar } }, 41)).toEqual({
@@ -287,7 +305,7 @@ describe("safeMigrate", () => {
   it("LATEST_VERSION matches the highest step target", () => {
     const max = Math.max(...MIGRATION_STEPS.map((s) => s.to));
     expect(LATEST_VERSION).toBe(max);
-    expect(LATEST_VERSION).toBe(42);
+    expect(LATEST_VERSION).toBe(43);
   });
 
   it("v25 (themes switch): drops the leftover enabledPlugins.themes entry", () => {

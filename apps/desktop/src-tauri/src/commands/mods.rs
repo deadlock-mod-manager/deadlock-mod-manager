@@ -236,6 +236,10 @@ pub async fn get_mod_file_tree(mod_path: String) -> Result<ModFileTree, Error> {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BatchUpdateMod {
+  #[serde(default)]
+  pub installed_source: Option<crate::providers::native_sources::NativeSourceProvenance>,
+  #[serde(default)]
+  pub source_component_ids: Vec<String>,
   pub enabled: Option<bool>,
   pub mod_id: String,
   pub mod_name: String,
@@ -300,6 +304,7 @@ pub struct InstalledModInfo {
 pub async fn batch_update_mods(
   app_handle: AppHandle,
   catalog_state: State<'_, super::gamebanana_catalog::GameBananaCatalogState>,
+  native_sources: State<'_, crate::providers::native_sources::NativeSourceManager>,
   policy: State<'_, super::policy::PolicyState>,
   mods: Vec<BatchUpdateMod>,
   profile_folder: String,
@@ -328,17 +333,28 @@ pub async fn batch_update_mods(
 
   let mut resolved_downloads = Vec::with_capacity(total_mods);
   for mod_data in &mods {
-    resolved_downloads.push(
-      resolve_download_files(
+    let resolved = async {
+      let files = resolve_download_files(
+        &native_sources,
         &catalog_state,
         &policy,
         &mod_data.mod_id,
         &mod_data.download_files,
         fileserver_preference,
       )
-      .await
-      .map_err(|error| format!("Failed to resolve download files: {error:?}")),
-    );
+      .await?;
+      let plan = super::downloads::native_download_selection(
+        &native_sources,
+        &mod_data.mod_id,
+        &mod_data.download_files,
+        &mod_data.source_component_ids,
+      )
+      .await?;
+      Ok::<_, Error>((files, plan))
+    }
+    .await;
+    resolved_downloads
+      .push(resolved.map_err(|error| format!("Failed to resolve download files: {error:?}")));
   }
   let has_updatable_mods = resolved_downloads.iter().any(Result::is_ok);
 
@@ -370,6 +386,7 @@ pub async fn batch_update_mods(
       .zip(&resolved_downloads)
       .filter(|(_, downloads)| downloads.is_ok())
       .map(|(mod_data, _)| UpdateBackupTarget {
+        source: mod_data.installed_source.clone(),
         mod_id: mod_data.mod_id.clone(),
         mod_name: mod_data.mod_name.clone(),
         file_tree: mod_data.installed_file_tree.clone(),
@@ -418,7 +435,7 @@ pub async fn batch_update_mods(
   let mut selection_required = Vec::new();
 
   for (index, (mod_data, download_files)) in mods.iter().zip(resolved_downloads).enumerate() {
-    let download_files = match download_files {
+    let (download_files, component_plan) = match download_files {
       Ok(files) => files,
       Err(reason) => {
         log::error!(
@@ -458,7 +475,8 @@ pub async fn batch_update_mods(
       target_dir,
       profile_folder: profile_folder_option.clone(),
       is_profile_import: false,
-      file_tree: mod_data.file_tree.clone(),
+      native_component_plan: component_plan.is_some(),
+      file_tree: component_plan.or_else(|| mod_data.file_tree.clone()),
       attempt_id: None,
     };
 
@@ -752,6 +770,7 @@ pub struct FetchMissingModVariantsResult {
 #[tauri::command]
 pub async fn fetch_missing_mod_variants(
   catalog_state: State<'_, super::gamebanana_catalog::GameBananaCatalogState>,
+  native_sources: State<'_, crate::providers::native_sources::NativeSourceManager>,
   policy: State<'_, super::policy::PolicyState>,
   mod_id: String,
   profile_folder: Option<String>,
@@ -820,6 +839,7 @@ pub async fn fetch_missing_mod_variants(
 
     let safe_archive_name = sanitize_archive_name(&archive.archive_name)?;
     let file = resolve_download_files(
+      &native_sources,
       &catalog_state,
       &policy,
       &mod_id,
@@ -829,6 +849,7 @@ pub async fn fetch_missing_mod_variants(
         name: safe_archive_name.clone(),
         size: 0,
         md5_checksum: None,
+        native_artifact: None,
       }],
       fileserver_preference,
     )
@@ -838,34 +859,43 @@ pub async fn fetch_missing_mod_variants(
     .ok_or(Error::ModFileNotFound)?;
 
     log::info!(
-      "Downloading archive {} from {} for {} missing originals",
+      "Downloading archive {} for {} missing originals",
       safe_archive_name,
-      file.url,
       to_fetch.len()
     );
-
-    let response = client
-      .get(&file.url)
-      .send()
-      .await
-      .map_err(|e| Error::Network(format!("Failed to fetch {}: {e}", file.url)))?;
-
-    if !response.status().is_success() {
-      return Err(Error::DownloadFailed(format!(
-        "{} returned status {}",
-        file.url,
-        response.status()
-      )));
-    }
-
-    let bytes = response
-      .bytes()
-      .await
-      .map_err(|e| Error::DownloadFailed(format!("Failed reading body for {}: {e}", file.url)))?;
-
     let temp_dir = tempfile::tempdir()?;
     let archive_path = temp_dir.path().join(&safe_archive_name);
-    std::fs::write(&archive_path, &bytes)?;
+    if let Some(artifact) = &file.native_artifact {
+      crate::download_manager::downloader::download_native_artifact(
+        artifact,
+        &archive_path,
+        |_| {},
+        tokio_util::sync::CancellationToken::new(),
+        crate::download_manager::downloader::PauseHandle::new(),
+      )
+      .await?;
+    } else {
+      let response = client
+        .get(&file.url)
+        .send()
+        .await
+        .map_err(|e| Error::Network(format!("Failed to fetch {}: {e}", file.url)))?;
+
+      if !response.status().is_success() {
+        return Err(Error::DownloadFailed(format!(
+          "{} returned status {}",
+          file.url,
+          response.status()
+        )));
+      }
+
+      let bytes = response
+        .bytes()
+        .await
+        .map_err(|e| Error::DownloadFailed(format!("Failed reading body for {}: {e}", file.url)))?;
+
+      std::fs::write(&archive_path, &bytes)?;
+    }
 
     let extract_dir = temp_dir.path().join("extracted");
 
@@ -959,6 +989,7 @@ pub fn cancel_stage_download_archive(mod_id: String) {
 #[tauri::command]
 pub async fn stage_download_archive(
   catalog_state: State<'_, super::gamebanana_catalog::GameBananaCatalogState>,
+  native_sources: State<'_, crate::providers::native_sources::NativeSourceManager>,
   policy: State<'_, super::policy::PolicyState>,
   mod_id: String,
   profile_folder: Option<String>,
@@ -1015,6 +1046,7 @@ pub async fn stage_download_archive(
     total: None,
   });
   let file = resolve_download_files(
+    &native_sources,
     &catalog_state,
     &policy,
     &mod_id,
@@ -1024,6 +1056,7 @@ pub async fn stage_download_archive(
       name: safe_archive_name.clone(),
       size: 0,
       md5_checksum: None,
+      native_artifact: None,
     }],
     fileserver_preference,
   )
@@ -1041,33 +1074,45 @@ pub async fn stage_download_archive(
     .lock()
     .unwrap()
     .insert(mod_id.clone(), (run, cancel.clone()));
-  let download = crate::download_manager::downloader::download_file_resumable(
-    &file.url,
-    &archive_path,
-    file.size,
-    move |progress| {
-      use std::sync::atomic::Ordering;
-      let last = last_reported.load(Ordering::Relaxed);
-      let finished = progress.total == Some(progress.downloaded);
-      if progress.downloaded >= last + STAGE_PROGRESS_STEP || finished {
-        last_reported.store(progress.downloaded, Ordering::Relaxed);
-        let _ = download_channel.send(StageArchiveProgress::Downloading {
-          downloaded: progress.downloaded,
-          total: progress.total,
-        });
-      }
-    },
-    cancel,
-    crate::download_manager::downloader::PauseHandle::new(),
-    Some(if file.size == 0 {
-      2 * 1024 * 1024 * 1024
-    } else {
-      file.size.min(2 * 1024 * 1024 * 1024)
-    }),
-    file.md5_checksum.as_deref(),
-    true,
-  )
-  .await;
+  let report = move |progress: crate::download_manager::downloader::DownloadProgress| {
+    use std::sync::atomic::Ordering;
+    let last = last_reported.load(Ordering::Relaxed);
+    let finished = progress.total == Some(progress.downloaded);
+    if progress.downloaded >= last + STAGE_PROGRESS_STEP || finished {
+      last_reported.store(progress.downloaded, Ordering::Relaxed);
+      let _ = download_channel.send(StageArchiveProgress::Downloading {
+        downloaded: progress.downloaded,
+        total: progress.total,
+      });
+    }
+  };
+  let download = if let Some(artifact) = &file.native_artifact {
+    crate::download_manager::downloader::download_native_artifact(
+      artifact,
+      &archive_path,
+      report,
+      cancel,
+      crate::download_manager::downloader::PauseHandle::new(),
+    )
+    .await
+  } else {
+    crate::download_manager::downloader::download_file_resumable(
+      &file.url,
+      &archive_path,
+      file.size,
+      report,
+      cancel,
+      crate::download_manager::downloader::PauseHandle::new(),
+      Some(if file.size == 0 {
+        2 * 1024 * 1024 * 1024
+      } else {
+        file.size.min(2 * 1024 * 1024 * 1024)
+      }),
+      file.md5_checksum.as_deref(),
+      true,
+    )
+    .await
+  };
   {
     let mut tokens = STAGE_CANCEL.lock().unwrap();
     if tokens.get(&mod_id).is_some_and(|(owner, _)| *owner == run) {

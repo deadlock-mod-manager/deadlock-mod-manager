@@ -297,5 +297,17 @@ export const reinstallCatalog = async (world: string, enabled: boolean) => {
   await expect(
     $('//*[@data-sonner-toast and contains(., "reinstalled")]'),
   ).toBeDisplayed();
-  await waitCatalogStatus(world, enabled ? "installed" : "downloaded");
+  // Status and profile enablement reach disk in separate queued snapshots.
+  await observeUntil(
+    "Persisted catalog reinstall",
+    () => readCatalogState(world),
+    (state) => {
+      const mod = state.localMods[0];
+      return (
+        mod?.status === (enabled ? "installed" : "downloaded") &&
+        state.profiles[state.activeProfileId].enabledMods[mod.remoteId]
+          ?.enabled === enabled
+      );
+    },
+  );
 };

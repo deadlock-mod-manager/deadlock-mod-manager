@@ -229,6 +229,9 @@ pub fn run() {
         commands::gamebanana_catalog::GameBananaCatalogState::open(catalog_path),
       );
       app.manage(catalog_state);
+      app.manage(providers::native_sources::NativeSourceManager::open(
+        runtime_environment::app_local_data_dir(app.handle())?.join("native-sources-v1.json"),
+      )?);
       let app_data_dir = runtime_environment::app_local_data_dir(app.handle())?;
       mod_manager::perf_config::catalog::load_cached(&app_data_dir);
       mod_manager::perf_config::staging::cleanup_stale(&app_data_dir);
@@ -336,6 +339,15 @@ pub fn run() {
       commands::game::find_game_path,
       commands::game::get_installed_build_id,
       commands::gamebanana_catalog::synchronize_gamebanana_catalog,
+      commands::native_sources::preview_native_source,
+      commands::native_sources::add_native_source,
+      commands::native_sources::list_native_sources,
+      commands::native_sources::set_native_source_enabled,
+      commands::native_sources::remove_native_source,
+      commands::native_sources::refresh_native_source,
+      commands::native_sources::query_native_source,
+      commands::native_sources::get_native_source_detail,
+      commands::native_sources::get_native_source_mod,
       commands::gamebanana_catalog::clear_gamebanana_catalog,
       commands::gamebanana_catalog::resolve_legacy_sound_ids,
       commands::gamebanana_catalog::query_gamebanana_catalog,
@@ -456,12 +468,17 @@ pub fn run() {
       commands::foundry::foundry_decode_texture,
       commands::foundry::foundry_decode_cards,
       commands::foundry::foundry_decode_model,
+      commands::foundry::foundry_mod_preview_info,
+      commands::foundry::foundry_read_thumbnail,
+      commands::foundry::foundry_save_thumbnail,
       commands::foundry::foundry_cancel_model_decode,
       commands::foundry::foundry_release_model,
       commands::foundry::foundry_list_animations,
       commands::foundry::foundry_decode_animation,
       commands::foundry::foundry_decode_cloth,
       commands::foundry::foundry_decode_particles,
+      commands::foundry::foundry_list_effects,
+      commands::foundry::foundry_decode_effect,
       commands::foundry::foundry_decode_ability_particles,
       commands::foundry::foundry_decode_sound,
       commands::reports::create_report,

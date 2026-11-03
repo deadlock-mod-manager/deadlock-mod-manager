@@ -346,6 +346,7 @@ pub async fn show_profile_vpk_in_folder(
 pub async fn import_profile_batch(
   app_handle: AppHandle,
   catalog_state: State<'_, super::gamebanana_catalog::GameBananaCatalogState>,
+  native_sources: State<'_, crate::providers::native_sources::NativeSourceManager>,
   policy: State<'_, super::policy::PolicyState>,
   profile_name: String,
   _profile_description: String,
@@ -385,6 +386,7 @@ pub async fn import_profile_batch(
   for mod_data in &mods {
     resolved_downloads.push(
       resolve_download_files(
+        &native_sources,
         &catalog_state,
         &policy,
         &mod_data.mod_id,
@@ -464,6 +466,7 @@ pub async fn import_profile_batch(
       profile_folder: Some(final_profile_folder.clone()),
       is_profile_import: true,
       file_tree: mod_data.file_tree.clone(),
+      native_component_plan: false,
       attempt_id: None,
     };
 

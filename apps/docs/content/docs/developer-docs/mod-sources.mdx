@@ -1,0 +1,118 @@
+---
+title: Custom mod sources
+description: Publish a small static mod catalog and add it to Deadlock Mod Manager
+---
+
+# Custom mod sources
+
+A native static source is a directory of JSON documents and downloadable mod
+files on public HTTPS hosting. You do not need to run a registry service or
+register it with DMM infrastructure.
+
+Copy the repository's
+[complete static example](https://github.com/deadlock-mod-manager/deadlock-mod-manager/tree/main/examples/mod-source).
+Its README walks through setting your origin, replacing the harmless example
+VPK, calculating its digest, checking your files offline, and publishing them.
+The example's `check.mjs` uses Node.js standard libraries; it needs no packages.
+
+## Add and browse a source
+
+Open **Settings > Mods > Mod sources**, choose **Add source**, and paste the
+descriptor's full URL. DMM validates the document and shows the source name and
+accepted origin for review before enrollment. Choose the source in the existing
+Mods Store toolbar. Downloads, archive/VPK selection, installation and local
+enable/disable/remove use the existing mod-management flow.
+
+A source's network access is limited to its accepted declared origins. Public
+sources use HTTPS. Local-network HTTP access is a separate explicit opt-in for
+development/testing, not a production hosting requirement. A descriptor ID does
+not transfer trust to another origin.
+
+## Documents and stable identity
+
+The example contains:
+
+| File                                                | Purpose                                                                                      |
+| --------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `dmm-source.json`                                   | Format/version, permanent source ID, display name, static catalog location, accepted origins |
+| `catalog.json`                                      | Complete snapshot ID and listing summaries with relative detail URLs                         |
+| `mods/example.json`                                 | Listing metadata and embedded current release/artifact                                       |
+| `files/example.vpk`                                 | Valid harmless VPK containing one text entry                                                 |
+| `files/example.zip`                                 | The same VPK in an archive for selection fixtures                                            |
+| `mods/choices.json` and `files/example-choices.zip` | Optional required-base and color-choice example                                              |
+| `check.mjs`                                         | Offline static example preflight, including supplied artifact digests                        |
+
+Relative URLs resolve against their containing document. IDs are opaque,
+case-sensitive strings. DMM scopes source identity by accepted origin plus
+declared source ID, and listing/release/artifact identity within that source.
+Never reuse a stable ID for unrelated content.
+
+`isNsfw` is optional: `true` means adult, `false` means explicitly classified
+non-adult, and omitted/null means unknown. When the user hides adult content,
+DMM also excludes unknown classifications. The harmless examples declare
+`isNsfw: false` so they remain visible under that filter.
+
+Keep `contentRevision` stable for metadata-only changes. Change it for
+installable-byte or selection changes and update the artifact digest and size.
+DMM retains artifact identity rather than treating an expiring or changed URL
+as a new mod version. A supplied supported SHA-256 or MD5 must verify before
+installation; an omitted digest does not imply verified publisher content.
+
+## Refresh, removal and updates
+
+All pages of a static snapshot use the same `snapshotId`. Publish the new
+artifact/detail files before atomically publishing the new index. A failed
+request, later-page failure or invalid snapshot must leave the previous complete
+catalog available. A network error is not proof that a listing was removed.
+
+Disabling or removing a source stops remote updates while retaining downloaded
+and installed files and their provenance. Local enable/disable/remove operations
+remain available. Re-add the same accepted origin and source ID to reconnect it.
+An update that no longer fits saved file choices asks for a new selection and
+retains the current installation until replacement succeeds.
+
+Update backups retain the installed source revision and component choices.
+Older/full backups and files recovered without saved provenance retain their
+source identity, with the installed revision unresolved until an explicit
+update. Cached latest metadata is never treated as proof of installed bytes.
+
+## Explicit installation choices
+
+The optional `mods/choices.json` example describes one required component plus a
+choice between blue and red. Its README shows the index item needed to publish
+it. Components reference exact artifact IDs and archive-relative VPK paths;
+required sets and bounded choice groups determine valid selections. Defaults are
+first-install suggestions. Removing a saved component in an update requires a
+new user decision, even if the author publishes a different default.
+
+The ordinary example uses manual selection instead. When saved archive/VPK file
+choices stop fitting a new manual release, DMM uses its file-selection flow and
+retains the existing installation until replacement succeeds. Both modes use
+the existing Rust archive handling and profile manifest operations.
+
+## Scope of this implementation
+
+This documents the native static-source slice, not completion of RFC 002.
+The examples use embedded current releases, direct artifact URLs, manual
+selection and explicit component choice groups with the existing supported
+archive/VPK installation mechanisms. Native API catalog ingestion also accepts
+cursor-paginated snapshot data, with explicit `nextCursor: null` completion;
+server-side unified search is outside this static example.
+Native artifacts currently support lowercase `.vpk`, `.zip`, `.rar`, and `.7z`
+extensions. `.dmodpkg` source downloads are rejected until their package-specific
+choice flow is integrated.
+GameBanana keeps its existing provider behavior; custom sources do not implicitly
+receive GameBanana mirrors, comments, statistics, moderation or enrichment.
+
+Mapped adapters, equivalence links, dependencies, authentication, release-history
+browsing, origin migration and one-click
+source enrollment remain later RFC stages. The RFC itself remains a design
+reference rather than a claim that every proposed protocol capability exists.
+
+Local profiles retain installed source provenance. Portable source-aware profile
+sharing/import, version holds, progressive all-source search, canonical protocol
+schemas and a full conformance validator remain unimplemented. The example's
+offline checker validates its static subset. Conditional HTTP cache validators
+and automatic retry/backoff are also later work; refresh failures preserve cached
+results. The Settings dialog currently enrolls public HTTPS sources; loopback
+HTTP opt-in is exposed only to native commands and automated fixtures.

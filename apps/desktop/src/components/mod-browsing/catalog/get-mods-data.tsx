@@ -18,6 +18,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type ReactNode,
 } from "react";
 import { platform } from "@tauri-apps/plugin-os";
 import { useTranslation } from "react-i18next";
@@ -101,9 +102,11 @@ const catalogSort = (sort: SortType): CatalogQuery["sort"] => {
 export const GetModsData = ({
   contentType,
   mapsOnly,
+  sourceActions,
 }: {
   contentType: CatalogContentType;
   mapsOnly?: boolean;
+  sourceActions?: ReactNode;
 }) => {
   const { t } = useTranslation();
   const isCustomMapsEnabled = useExperimentalFeature("custom-maps");
@@ -508,7 +511,12 @@ export const GetModsData = ({
   return (
     <div className='flex min-h-0 flex-1 flex-col gap-4'>
       <SearchBar
-        trailingActions={<CatalogRefreshButton />}
+        trailingActions={
+          <>
+            {sourceActions}
+            <CatalogRefreshButton />
+          </>
+        }
         filterMode={filterMode}
         mods={filterOptions}
         onCategoriesChange={handleCategoriesChange}

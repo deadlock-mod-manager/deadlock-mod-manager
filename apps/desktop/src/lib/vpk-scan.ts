@@ -74,6 +74,8 @@ export const findUnmatchedVpks = (
   const installedSubmissionSlugs = new Set<string>();
 
   for (const mod of localMods) {
+    if (/^source-[a-f0-9]{64}$/.test(mod.remoteId))
+      installedSubmissionSlugs.add(mod.remoteId);
     const submission = parseSubmissionSlug(mod.remoteId);
     const slug = submission && serializeSubmissionRef(submission);
     if (slug) {

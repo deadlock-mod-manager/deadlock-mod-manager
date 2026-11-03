@@ -1,0 +1,72 @@
+{
+  "id": "choices",
+  "title": "Harmless component choices",
+  "availability": "available",
+  "isNsfw": false,
+  "description": "Optional second listing with required base and one of two harmless text choices.",
+  "author": "Your community",
+  "release": {
+    "id": "choices-release-1",
+    "contentRevision": "choices-revision-1",
+    "artifacts": [
+      {
+        "id": "choices-archive",
+        "filename": "example-choices.zip",
+        "format": "zip",
+        "download": {
+          "url": "../files/example-choices.zip"
+        },
+        "size": 582,
+        "hashes": {
+          "sha256": "502a21f9d8bed27a7c7654285199d436058472eadf5fd45244c0a6d2df329f69"
+        }
+      }
+    ],
+    "installation": {
+      "mode": "components",
+      "components": [
+        {
+          "id": "base",
+          "label": "Required notice",
+          "files": [
+            {
+              "artifactId": "choices-archive",
+              "path": "base/notice.vpk"
+            }
+          ]
+        },
+        {
+          "id": "blue",
+          "label": "Blue notice",
+          "files": [
+            {
+              "artifactId": "choices-archive",
+              "path": "blue/choice.vpk"
+            }
+          ]
+        },
+        {
+          "id": "red",
+          "label": "Red notice",
+          "files": [
+            {
+              "artifactId": "choices-archive",
+              "path": "red/choice.vpk"
+            }
+          ]
+        }
+      ],
+      "requiredComponents": ["base"],
+      "choiceGroups": [
+        {
+          "id": "color",
+          "label": "Notice color",
+          "minSelections": 1,
+          "maxSelections": 1,
+          "componentIds": ["blue", "red"],
+          "defaultComponentIds": ["blue"]
+        }
+      ]
+    }
+  }
+}
