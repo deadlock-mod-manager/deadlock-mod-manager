@@ -1,6 +1,10 @@
 import { describe, expect, it } from "bun:test";
 import type { SubmissionRef } from "@/types/generated/SubmissionRef";
-import { parseSubmissionSlug, serializeSubmissionRef } from "./submission-ref";
+import {
+  gameBananaPageUrl,
+  parseSubmissionSlug,
+  serializeSubmissionRef,
+} from "./submission-ref";
 
 describe("submission slugs", () => {
   const roundTrips: readonly (readonly [string, SubmissionRef])[] = [
@@ -63,5 +67,25 @@ describe("submission slugs", () => {
     "gamebanana:mod:1",
   ])("rejects malformed slug %s", (slug) => {
     expect(parseSubmissionSlug(slug)).toBeNull();
+  });
+});
+
+describe("GameBanana page URLs", () => {
+  it.each([
+    ["123456", "https://gamebanana.com/mods/123456"],
+    ["snd-123456", "https://gamebanana.com/sounds/123456"],
+    ["wip-103122", "https://gamebanana.com/wips/103122"],
+  ])("links %s to its page", (slug, url) => {
+    expect(gameBananaPageUrl(slug)).toBe(url);
+  });
+
+  it.each([
+    "local-550e8400-e29b-41d4-a716-446655440000",
+    "local-reset-skin",
+    "",
+    "snd-",
+    "abc",
+  ])("has no page for %s", (slug) => {
+    expect(gameBananaPageUrl(slug)).toBeNull();
   });
 });
