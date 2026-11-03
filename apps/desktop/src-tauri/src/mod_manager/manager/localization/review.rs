@@ -5,9 +5,12 @@
 use super::receipt::REPAIR_REVISION;
 use super::{LocalizationInputStamp, LocalizationOverlayPlanKey, LocalizationResolution};
 use crate::errors::Error;
-use crate::mod_manager::localization_overlay::LocalizationOverlayAnalysis;
-use crate::mod_manager::localization_overlay::asset_compatibility::WarningKind;
-use crate::mod_manager::localization_overlay::vdata_compatibility::WarningReason;
+use crate::mod_manager::localization_overlay::asset_compatibility::{AssetWarning, WarningKind};
+use crate::mod_manager::localization_overlay::vdata_compatibility::{DataWarning, WarningReason};
+use crate::mod_manager::localization_overlay::{
+  CompiledDataBaseline, LocalizationInputWarning, LocalizationOverlayAnalysis,
+  LocalizationParseWarning, LocalizationSnapshotWarning,
+};
 use crate::mod_manager::vdata_history::BaselineStatus;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -52,14 +55,12 @@ pub(super) struct SavedReview {
 struct Subject<'a> {
   conflicts: Vec<TextConflict<'a>>,
   compiled_conflicts: Vec<CompiledConflict<'a>>,
-  input_warnings: &'a [crate::mod_manager::localization_overlay::LocalizationInputWarning],
-  snapshot_warnings: &'a [crate::mod_manager::localization_overlay::LocalizationSnapshotWarning],
-  parse_warnings: &'a [crate::mod_manager::localization_overlay::LocalizationParseWarning],
-  model_warnings:
-    Vec<&'a crate::mod_manager::localization_overlay::asset_compatibility::AssetWarning>,
-  data_warnings:
-    Vec<&'a crate::mod_manager::localization_overlay::vdata_compatibility::DataWarning>,
-  baselines: Vec<&'a crate::mod_manager::localization_overlay::CompiledDataBaseline>,
+  input_warnings: &'a [LocalizationInputWarning],
+  snapshot_warnings: &'a [LocalizationSnapshotWarning],
+  parse_warnings: &'a [LocalizationParseWarning],
+  model_warnings: Vec<&'a AssetWarning>,
+  data_warnings: Vec<&'a DataWarning>,
+  baselines: Vec<&'a CompiledDataBaseline>,
 }
 
 #[derive(Serialize)]
@@ -313,8 +314,7 @@ pub(super) fn remove(overlay: &Path) -> Result<(), Error> {
 mod tests {
   use super::*;
   use crate::mod_manager::localization_overlay::{
-    CompiledDataBaseline, CompiledDataCandidate, CompiledDataConflict, LocalizationCandidate,
-    LocalizationConflict,
+    CompiledDataCandidate, CompiledDataConflict, LocalizationCandidate, LocalizationConflict,
   };
   use crate::mod_manager::vdata_history::BaselineEvidence;
 
@@ -459,7 +459,6 @@ mod tests {
 
   #[test]
   fn overlap_reviews_cover_every_mod_the_warning_names() {
-    use crate::mod_manager::localization_overlay::asset_compatibility::AssetWarning;
     let overlap = LocalizationOverlayAnalysis {
       asset_warnings: vec![AssetWarning {
         mod_id: "first".into(),
