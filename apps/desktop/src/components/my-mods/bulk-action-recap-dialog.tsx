@@ -9,10 +9,7 @@ import {
 } from "@deadlock-mods/ui/components/dialog";
 import { CheckCircle, CircleSlash, XCircle } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
-import {
-  asItems,
-  RecapSection,
-} from "@/components/my-mods/enable-all-recap-dialog";
+import { asItems, RecapSection } from "@/components/my-mods/recap-section";
 import type { BulkActionRecap } from "@/lib/mods/bulk-action";
 
 const COPY = {

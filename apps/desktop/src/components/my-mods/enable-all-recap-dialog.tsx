@@ -8,115 +8,20 @@ import {
   DialogTitle,
 } from "@deadlock-mods/ui/components/dialog";
 import {
-  Check,
   CheckCircle,
   CircleSlash,
   FileStack,
-  Loader2,
   ShieldAlert,
   XCircle,
 } from "@deadlock-mods/ui/icons";
-import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { FileSelectorDialog } from "@/components/downloads/file-selector-dialog";
+import type { RecapAction } from "@/components/my-mods/recap-row-action";
+import { asItems, RecapSection } from "@/components/my-mods/recap-section";
 import type { EnableAllRecap } from "@/hooks/use-enable-all-mods";
 import { useInstallAction } from "@/hooks/use-install-action";
 import { usePersistedStore } from "@/lib/store";
-import { type LocalMod, ModStatus } from "@/types/mods";
-
-type RecapAction = {
-  label: string;
-  /** False while another row is installing; the file selector is shared. */
-  available: boolean;
-  enable: (mod: LocalMod) => void;
-};
-
-type RecapSectionProps = {
-  icon: ReactNode;
-  title: string;
-  hint?: string;
-  mods: { mod: LocalMod; detail?: string }[];
-  action?: RecapAction;
-};
-
-const RecapRowAction = ({
-  mod,
-  action,
-}: {
-  mod: LocalMod;
-  action: RecapAction;
-}) => {
-  const { t } = useTranslation();
-  // The recap is a snapshot; the store says whether the mod got enabled since.
-  const liveMod = usePersistedStore((state) =>
-    state.localMods.find((m) => m.remoteId === mod.remoteId),
-  );
-
-  if (liveMod?.status === ModStatus.Installed) {
-    return (
-      <span className='flex shrink-0 items-center gap-1 text-xs text-green-500'>
-        <Check className='h-3.5 w-3.5' />
-        {t("myMods.enableAllRecap.enabled")}
-      </span>
-    );
-  }
-  if (liveMod?.status === ModStatus.Installing) {
-    return (
-      <Loader2 className='h-4 w-4 shrink-0 animate-spin text-muted-foreground' />
-    );
-  }
-  if (liveMod?.status !== ModStatus.Downloaded) return null;
-
-  return (
-    <Button
-      size='sm'
-      variant='outline'
-      className='shrink-0'
-      disabled={!action.available}
-      onClick={() => action.enable(liveMod)}>
-      {action.label}
-    </Button>
-  );
-};
-
-export const RecapSection = ({
-  icon,
-  title,
-  hint,
-  mods,
-  action,
-}: RecapSectionProps) => {
-  if (mods.length === 0) return null;
-
-  return (
-    <section className='space-y-2'>
-      <div className='flex items-center gap-2'>
-        {icon}
-        <h3 className='text-sm font-medium'>
-          {title} ({mods.length})
-        </h3>
-      </div>
-      {hint && <p className='text-xs text-muted-foreground'>{hint}</p>}
-      <ul className='divide-y rounded-md border'>
-        {mods.map(({ mod, detail }) => (
-          <li
-            key={mod.remoteId}
-            className='flex items-center justify-between gap-3 px-3 py-2'>
-            <div className='min-w-0'>
-              <p className='truncate text-sm'>{mod.name}</p>
-              {detail && (
-                <p className='text-xs break-words text-destructive'>{detail}</p>
-              )}
-            </div>
-            {action && <RecapRowAction mod={mod} action={action} />}
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-};
-
-export const asItems = (mods: LocalMod[]) => mods.map((mod) => ({ mod }));
+import { ModStatus } from "@/types/mods";
 
 type EnableAllRecapDialogProps = {
   recap: EnableAllRecap | null;
