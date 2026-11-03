@@ -134,8 +134,6 @@ describe("AddonSummaryCard identified addon", () => {
   };
 
   it("doesn't claim a mod the library lacks was added", () => {
-    // Onboarding, an interrupted restore and a failed registration all leave
-    // an identified file whose mod never reached the library.
     const html = renderIdentified([]);
     expect(html).not.toContain("Added to Library");
     expect(html).toContain("Not in Library");

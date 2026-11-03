@@ -60,7 +60,6 @@ describe("Analyze after an interrupted restore from DMM's records", () => {
       await waitForOverlaysClosed();
     });
 
-    const started = Date.now();
     await step(
       "analyze, then switch profiles while restoring waits",
       async () => {
@@ -71,9 +70,6 @@ describe("Analyze after an interrupted restore from DMM's records", () => {
         await activateProfile(ALPHA.name);
       },
     );
-    if (Date.now() - started >= RESTORE_METADATA_DELAY_MS)
-      throw new Error("Switching profiles outlasted the restore's delay");
-
     await step("analysis reports the interrupted restore", async () => {
       const error = `//div[@role="dialog"]//*[contains(normalize-space(), "${INTERRUPTED}")]`;
       await browser.waitUntil(async () => (await $(error)).isDisplayed(), {

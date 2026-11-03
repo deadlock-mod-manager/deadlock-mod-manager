@@ -34,12 +34,13 @@ const matchedHashRoute: FixtureRoute = {
   ]),
 };
 
-const withProfilePage = (
+const withRoute = (
   routes: readonly FixtureRoute[],
+  path: string,
   change: Partial<FixtureRoute>,
 ): FixtureRoute[] =>
   routes.map((route) =>
-    route.path === PROFILE_PAGE ? { ...route, ...change } : route,
+    route.path === path ? { ...route, ...change } : route,
   );
 
 /** Onboarding's Analyze identifies the existing VPK as a catalog mod. */
@@ -59,21 +60,18 @@ export const onboardingIdentifiedRoutes = async () => {
 export const registrationFailureRoutes = async () => {
   const catalogRoutes = await createCatalogRoutes("gamebanana-switch-register");
   return (origin: string): FixtureRoute[] => [
-    ...withProfilePage(catalogRoutes(origin), { status: 503, body: "{}" }).map(
-      (route) =>
-        route.path === "/apiv11/Mod/Index"
-          ? {
-              ...route,
-              body: JSON.stringify({
-                _aMetadata: {
-                  _nRecordCount: 0,
-                  _nPerpage: 50,
-                  _bIsComplete: true,
-                },
-                _aRecords: [],
-              }),
-            }
-          : route,
+    ...withRoute(
+      withRoute(catalogRoutes(origin), PROFILE_PAGE, {
+        status: 503,
+        body: "{}",
+      }),
+      "/apiv11/Mod/Index",
+      {
+        body: JSON.stringify({
+          _aMetadata: { _nRecordCount: 0, _nPerpage: 50, _bIsComplete: true },
+          _aRecords: [],
+        }),
+      },
     ),
     matchedHashRoute,
   ];
@@ -86,7 +84,7 @@ export const registrationFailureRoutes = async () => {
 export const interruptedRestoreRoutes = async () => {
   const catalogRoutes = await createCatalogRoutes("gamebanana-switch-restore");
   return (origin: string): FixtureRoute[] => [
-    ...withProfilePage(catalogRoutes(origin), {
+    ...withRoute(catalogRoutes(origin), PROFILE_PAGE, {
       headerDelayMs: RESTORE_METADATA_DELAY_MS,
     }),
     { method: "POST", path: HASH_PATH, status: 200, body: "[]" },
