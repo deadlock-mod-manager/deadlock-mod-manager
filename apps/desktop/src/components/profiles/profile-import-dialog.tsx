@@ -75,7 +75,6 @@ export const ProfileImportDialog = ({
         sourceProfileId,
       }),
     onSuccess: (outcome) => {
-      // A partial import keeps the dialog open to show what failed.
       if (outcome.failures.length === 0) handleCancel();
     },
   });
