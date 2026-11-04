@@ -1,4 +1,3 @@
-import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Select,
   SelectContent,
@@ -7,43 +6,51 @@ import {
   SelectValue,
 } from "@deadlock-mods/ui/components/select";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
 import { useNativeSources } from "@/lib/mod-sources";
+import { cn } from "@/lib/utils";
 
 interface SourceSelectorProps {
   value: string;
   onChange: (sourceKey: string) => void;
+  className?: string;
 }
 
-export const SourceSelector = ({ value, onChange }: SourceSelectorProps) => {
+export const SourceSelector = ({
+  value,
+  onChange,
+  className,
+}: SourceSelectorProps) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const sources = useNativeSources();
+  // The current source stays listed after it is disabled so the trigger keeps
+  // its label while the catalog explains why it is unavailable.
+  const choices =
+    sources.data?.filter(
+      (source) => !source.removed && (source.enabled || source.key === value),
+    ) ?? [];
+  if (choices.length === 0 && value === "gamebanana") return null;
+
   return (
-    <div className='flex shrink-0 items-center gap-2'>
+    <>
+      <span aria-hidden className='h-5 w-px bg-border/60' />
       <Select value={value} onValueChange={onChange}>
         <SelectTrigger
-          className='h-9 w-40'
-          aria-label={t("modSources.selectSource")}>
+          aria-label={t("modSources.selectSource")}
+          className={cn(
+            "h-9 w-auto gap-2 border-transparent bg-transparent px-3 text-sm font-medium text-muted-foreground shadow-none hover:bg-accent/40 hover:text-foreground data-[state=open]:text-foreground",
+            className,
+          )}>
           <SelectValue />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent align='end'>
           <SelectItem value='gamebanana'>GameBanana</SelectItem>
-          {sources.data
-            ?.filter((source) => !source.removed && source.enabled)
-            .map((source) => (
-              <SelectItem key={source.key} value={source.key}>
-                {source.descriptor.name}
-              </SelectItem>
-            ))}
+          {choices.map((source) => (
+            <SelectItem key={source.key} value={source.key}>
+              {source.descriptor.name}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
-      <Button
-        size='sm'
-        variant='link'
-        onClick={() => navigate("/settings", { state: { activeTab: "mods" } })}>
-        {t("modSources.manage")}
-      </Button>
-    </div>
+    </>
   );
 };

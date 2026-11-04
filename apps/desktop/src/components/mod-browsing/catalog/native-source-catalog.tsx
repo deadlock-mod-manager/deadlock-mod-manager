@@ -6,7 +6,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import ModCard from "@/components/mod-browsing/mod-card";
-import { SourceSelector } from "@/components/mod-browsing/source-selector";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
   NATIVE_SOURCES_QUERY_KEY,
@@ -23,13 +22,11 @@ import { ModsPageSkeleton } from "./mods-page-skeleton";
 
 interface NativeSourceCatalogProps {
   sourceKey: string;
-  onSourceChange: (sourceKey: string) => void;
   contentType: ContentType;
 }
 
 export const NativeSourceCatalog = ({
   sourceKey,
-  onSourceChange,
   contentType,
 }: NativeSourceCatalogProps) => {
   const { t } = useTranslation();
@@ -77,7 +74,6 @@ export const NativeSourceCatalog = ({
             aria-label={t("modSources.search")}
           />
         </div>
-        <SourceSelector value={sourceKey} onChange={onSourceChange} />
         <Button
           variant='outline'
           size='icon'

@@ -54,19 +54,17 @@ const GetMods = () => {
           subtitle={t("mods.subtitle")}
           title={t("navigation.getMods")}
         />
-        <ContentTypeTabs
-          className='-mb-px'
-          onChange={handleContentTypeChange}
-          showMaps={isCustomMapsEnabled}
-          value={contentType}
-        />
+        <div className='-mb-px flex items-center gap-3'>
+          <ContentTypeTabs
+            onChange={handleContentTypeChange}
+            showMaps={isCustomMapsEnabled}
+            value={contentType}
+          />
+          <SourceSelector onChange={setSourceKey} value={sourceKey} />
+        </div>
       </div>
       {sourceKey !== "gamebanana" ? (
-        <NativeSourceCatalog
-          sourceKey={sourceKey}
-          onSourceChange={setSourceKey}
-          contentType={contentType}
-        />
+        <NativeSourceCatalog sourceKey={sourceKey} contentType={contentType} />
       ) : contentType === "collection" ? (
         <Suspense fallback={<CollectionGridSkeleton />}>
           <ErrorBoundary>
@@ -76,12 +74,7 @@ const GetMods = () => {
       ) : (
         <Suspense fallback={<ModsPageSkeleton />}>
           <ErrorBoundary>
-            <GetModsData
-              contentType={contentType}
-              sourceActions={
-                <SourceSelector value={sourceKey} onChange={setSourceKey} />
-              }
-            />
+            <GetModsData contentType={contentType} />
           </ErrorBoundary>
         </Suspense>
       )}
