@@ -6,6 +6,8 @@ import {
   SelectValue,
 } from "@deadlock-mods/ui/components/select";
 import { useTranslation } from "react-i18next";
+import { GameBananaLogo } from "@/components/shared/gamebanana-logo";
+import { ModSourceGlyph } from "@/components/shared/mod-source-glyph";
 import { useNativeSources } from "@/lib/mod-sources";
 import { cn } from "@/lib/utils";
 
@@ -43,10 +45,18 @@ export const SourceSelector = ({
           <SelectValue />
         </SelectTrigger>
         <SelectContent align='end'>
-          <SelectItem value='gamebanana'>GameBanana</SelectItem>
+          <SelectItem value='gamebanana'>
+            <span className='flex items-center gap-2'>
+              <GameBananaLogo />
+              GameBanana
+            </span>
+          </SelectItem>
           {choices.map((source) => (
             <SelectItem key={source.key} value={source.key}>
-              {source.descriptor.name}
+              <span className='flex items-center gap-2'>
+                <ModSourceGlyph iconUrl={source.descriptor.iconUrl} />
+                {source.descriptor.name}
+              </span>
             </SelectItem>
           ))}
         </SelectContent>
