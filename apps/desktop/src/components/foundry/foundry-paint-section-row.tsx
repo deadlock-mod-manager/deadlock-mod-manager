@@ -4,6 +4,7 @@ import {
   CheckIcon,
   EyeIcon,
   EyeSlashIcon,
+  ProhibitIcon,
 } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import type { FoundryPaintPart } from "@/types/foundry";
@@ -13,15 +14,19 @@ export const SectionRow = ({
   part,
   selected,
   hidden,
+  removed,
   appliedColor,
   pendingColor,
   onReset,
   onToggle,
   onToggleHidden,
+  onToggleRemoved,
 }: {
   part: FoundryPaintPart;
   selected: boolean;
   hidden: boolean;
+  /** Removed from the game, not just hidden in the preview. */
+  removed: boolean;
   appliedColor: string | undefined;
   /** A color picked for this section but not painted yet. */
   pendingColor: string | undefined;
@@ -29,6 +34,8 @@ export const SectionRow = ({
   onReset: (() => void) | undefined;
   onToggle: () => void;
   onToggleHidden: () => void;
+  /** Removes the section from the game or puts it back; absent when unavailable. */
+  onToggleRemoved: (() => void) | undefined;
 }) => {
   const { t } = useTranslation();
   return (
@@ -61,13 +68,18 @@ export const SectionRow = ({
             className={cn(
               "truncate text-[13px]",
               selected && "font-semibold",
-              hidden && "text-muted-foreground",
+              (hidden || removed) && "text-muted-foreground",
+              removed && "line-through",
             )}>
             {part.label}
           </span>
-          {hidden && (
+          {(removed || hidden) && (
             <span className='text-[10px] text-muted-foreground/70'>
-              {t("foundry.paint.hiddenMeta")}
+              {t(
+                removed
+                  ? "foundry.paint.removedMeta"
+                  : "foundry.paint.hiddenMeta",
+              )}
             </span>
           )}
         </span>
@@ -98,6 +110,25 @@ export const SectionRow = ({
         ) : (
           <EyeIcon className='h-[15px] w-[15px]' />
         )}
+      </button>
+      <button
+        aria-label={t(
+          removed ? "foundry.paint.restorePart" : "foundry.paint.removePart",
+        )}
+        aria-pressed={removed}
+        className={cn(
+          "shrink-0 transition-opacity disabled:cursor-not-allowed disabled:opacity-40",
+          removed
+            ? "text-destructive opacity-100 hover:text-destructive/80"
+            : "text-muted-foreground opacity-0 hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100",
+        )}
+        disabled={!onToggleRemoved}
+        onClick={onToggleRemoved}
+        title={t(
+          removed ? "foundry.paint.restorePart" : "foundry.paint.removePart",
+        )}
+        type='button'>
+        <ProhibitIcon className='h-[15px] w-[15px]' />
       </button>
       {pendingColor ? (
         <span title={t("foundry.paint.pendingPart")}>

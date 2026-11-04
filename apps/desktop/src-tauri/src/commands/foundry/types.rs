@@ -196,6 +196,21 @@ pub struct FoundryWorkspace {
   pub sound_settings: Vec<FoundrySoundSettings>,
   /// The paint each painted color map wears.
   pub applied_paint: Vec<FoundryAppliedPaint>,
+  /// The sections removed from each model's in-game look.
+  pub removed_parts: Vec<FoundryRemovedParts>,
+}
+
+/// The sections of one model removed from the game, and the model and mesh
+/// files rewritten to remove them.
+#[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct FoundryRemovedParts {
+  pub model_path: String,
+  /// The removed sections' color maps, the id paint parts are keyed by.
+  pub textures: Vec<String>,
+  /// The workspace entries whose draw calls were emptied.
+  pub resources: Vec<String>,
 }
 
 /// The paint one color map wears, as the paint tab applied it.

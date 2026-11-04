@@ -2689,6 +2689,10 @@
       "hidePart": "Hide in preview",
       "showPart": "Show in preview",
       "hiddenMeta": "Hidden in preview",
+      "removePart": "Remove from the game",
+      "restorePart": "Put back in the game",
+      "removedMeta": "Removed in game",
+      "removeFailed": "Couldn't update the removed sections",
       "resetPart": "Restore {{part}}'s original colors",
       "pendingPart": "Not painted yet",
       "effectsNote": "Ability effects are painted as one part.",
@@ -2788,6 +2792,7 @@
         "files": "Files"
       },
       "repainted": "Repainted",
+      "removedParts": "Removed sections",
       "replaced": "Replaced",
       "edited": "Edited",
       "undo": "Undo {{name}}",
