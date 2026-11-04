@@ -21,7 +21,7 @@ import { usePersistedStore } from "@/lib/store";
 import { backsUpUpdate, useBatchUpdate } from "@/hooks/use-batch-update";
 import { BatchUpdateFailureDetails } from "@/components/my-mods/batch-update-failure-details";
 import { FileSelectorDialog } from "@/components/downloads/file-selector-dialog";
-import { NativeSourceSelectionDialog } from "@/components/downloads/native-source-selection-dialog";
+import { MultiFileDownloadDialog } from "@/components/downloads/multi-file-download-dialog";
 import {
   getBatchUpdateFailure,
   remainingUpdateTargets,
@@ -206,20 +206,24 @@ export const BatchUpdateDialog = ({
   return (
     <>
       {pendingNative?.nativeInstallation && (
-        <NativeSourceSelectionDialog
+        <MultiFileDownloadDialog
           key={pendingNative.mod.remoteId}
-          installation={pendingNative.nativeInstallation}
-          modName={pendingNative.mod.name}
-          selectedComponentIds={pendingNative.mod.source?.componentIds.filter(
-            (id) =>
-              pendingNative.nativeInstallation?.components.some(
-                (component) => component.id === id,
-              ),
-          )}
-          onConfirm={async (ids) => {
-            confirmNativeChoices(pendingNative.mod.remoteId, ids);
+          components={{
+            installation: pendingNative.nativeInstallation,
+            selectedComponentIds: pendingNative.mod.source?.componentIds.filter(
+              (id) =>
+                pendingNative.nativeInstallation?.components.some(
+                  (component) => component.id === id,
+                ),
+            ),
+            onConfirm: async (ids) => {
+              confirmNativeChoices(pendingNative.mod.remoteId, ids);
+            },
           }}
-          onCancel={() => onOpenChange(false)}
+          files={pendingNative.downloads}
+          isOpen
+          modName={pendingNative.mod.name}
+          onClose={() => onOpenChange(false)}
         />
       )}
       {/* Not tied to `open`: the update finishes even if the dialog was closed. */}

@@ -210,13 +210,16 @@ export const nativeModDownloads = (
     listing.availability !== "available"
   )
     return [];
+  // Artifacts carry no dates of their own, so they take their release's. Not
+  // the listing's `updatedAt`: metadata edits must leave download items equal.
+  const releasedAt = release.publishedAt;
   return release.artifacts.map((artifact) => ({
     url: `dmm-source-file://${source.key}/${[listing.id, release.id, release.contentRevision, artifact.id].map(encodeURIComponent).join("/")}`,
     size: artifact.size ?? 0,
     name: artifact.filename,
     description: null,
     createdAt: null,
-    updatedAt: null,
+    updatedAt: releasedAt ? new Date(releasedAt) : null,
     md5Checksum: artifact.hashes?.md5 ?? null,
   }));
 };
