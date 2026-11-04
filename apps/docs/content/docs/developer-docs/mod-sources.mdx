@@ -90,6 +90,22 @@ choices stop fitting a new manual release, DMM uses its file-selection flow and
 retains the existing installation until replacement succeeds. Both modes use
 the existing Rust archive handling and profile manifest operations.
 
+## Release history
+
+Sources that declare `"releaseHistory": true` in `capabilities` get a
+read-only Changelog tab on each mod page. DMM finds the history at the
+listing's `releaseHistoryUrl`, or else at the catalog's
+`releaseHistoryUrlTemplate` with `{listingId}` filled in. It fetches the
+history when the tab opens, not during refresh. Each page is
+`{ items, nextCursor }`, where `items` are release documents and
+`nextCursor: null` ends the history. Releases may add an RFC 3339
+`publishedAt` and a plain-text `changelog`. Installs and updates still use the
+listing's current release.
+
+Capabilities DMM has not implemented, such as `comments` and `dependencies`,
+are ignored, so a source can advertise them to newer clients without breaking
+enrollment.
+
 ## Scope of this implementation
 
 This documents the native static-source slice, not completion of RFC 002.
@@ -104,8 +120,8 @@ choice flow is integrated.
 GameBanana keeps its existing provider behavior; custom sources do not implicitly
 receive GameBanana mirrors, comments, statistics, moderation or enrichment.
 
-Mapped adapters, equivalence links, dependencies, authentication, release-history
-browsing, origin migration and one-click
+Mapped adapters, equivalence links, dependencies, authentication, installing
+older releases, origin migration and one-click
 source enrollment remain later RFC stages. The RFC itself remains a design
 reference rather than a claim that every proposed protocol capability exists.
 

@@ -290,6 +290,55 @@ async fn api_catalog_continues_after_an_empty_page_and_requires_explicit_complet
 }
 
 #[tokio::test]
+async fn release_history_follows_declared_template_and_pagination_on_demand() {
+  let server = SourceServer::start();
+  let detail: Value = serde_json::from_str(EXAMPLE_DETAIL).unwrap();
+  let current = detail["release"].clone();
+  let mut previous = current.clone();
+  previous["id"] = json!("release-0");
+  previous["publishedAt"] = json!("2026-01-01T00:00:00Z");
+  previous["changelog"] = json!("Initial release");
+  server.edit_json("/dmm-source.json", |descriptor| {
+    descriptor["catalog"] = json!({
+      "kind":"api",
+      "listUrl":"./api",
+      "releaseHistoryUrlTemplate":"./history/{listingId}"
+    });
+    // Comments and dependencies are not implemented and must be ignored.
+    descriptor["capabilities"] = json!({"comments":true, "dependencies":true});
+  });
+  server.set_json("/api", json!({"items":[detail], "nextCursor":null}));
+  server.set_json(
+    "/history/example",
+    json!({"items":[current], "nextCursor":"older"}),
+  );
+  server.set_json(
+    "/history/example?cursor=older&limit=100",
+    json!({"items":[previous], "nextCursor":null}),
+  );
+  let temp = tempfile::tempdir().unwrap();
+  let manager = NativeSourceManager::open(temp.path().join("sources.json")).unwrap();
+  let source = manager.add(&server.descriptor_url(), true).await.unwrap();
+  let remote_id = listing_slug(&source.key, "example");
+  assert!(manager.release_history(&remote_id).await.is_err());
+
+  server.edit_json("/dmm-source.json", |descriptor| {
+    descriptor["capabilities"] = json!({"releaseHistory":true});
+  });
+  manager.refresh(&source.key).await.unwrap();
+  let history = manager.release_history(&remote_id).await.unwrap();
+  let ids: Vec<_> = history.iter().map(|release| release.id.as_str()).collect();
+  assert_eq!(ids, ["release-1", "release-0"]);
+  assert_eq!(history[1].changelog.as_deref(), Some("Initial release"));
+
+  server.set_json(
+    "/history/example?cursor=older&limit=100",
+    json!({"items":[]}),
+  );
+  assert!(manager.release_history(&remote_id).await.is_err());
+}
+
+#[tokio::test]
 async fn copied_source_can_enroll_browse_persist_and_resolve_stable_artifact_identity() {
   let server = SourceServer::start();
   let temp = tempfile::tempdir().unwrap();

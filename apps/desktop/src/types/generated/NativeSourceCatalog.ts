@@ -7,4 +7,5 @@ export type NativeSourceCatalog =
       listUrl: string;
       detailUrlTemplate: string | null;
       releaseUrlTemplate: string | null;
+      releaseHistoryUrlTemplate: string | null;
     };

@@ -6,6 +6,11 @@ export type NativeSourceRelease = {
   id: string;
   contentRevision: string;
   version: string | null;
+  publishedAt: string | null;
+  /**
+   * Plain-text release notes; rendered without markup like descriptions.
+   */
+  changelog: string | null;
   artifacts: Array<NativeSourceArtifact>;
   installation: NativeSourceInstallation;
 };

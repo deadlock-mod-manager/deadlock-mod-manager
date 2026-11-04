@@ -73,12 +73,17 @@ pub(super) fn validate_descriptor(
       list_url,
       detail_url_template,
       release_url_template,
+      release_history_url_template,
     } => {
       *list_url =
         resolve_url(url, list_url, &descriptor.network_origins.api, allow_local)?.to_string();
-      for template in [detail_url_template, release_url_template]
-        .into_iter()
-        .flatten()
+      for template in [
+        detail_url_template,
+        release_url_template,
+        release_history_url_template,
+      ]
+      .into_iter()
+      .flatten()
       {
         let expanded = template
           .replace("{listingId}", "example")
@@ -91,16 +96,9 @@ pub(super) fn validate_descriptor(
       }
     }
   }
+  // Optional capabilities DMM has not implemented are ignored rather than
+  // rejected, so sources can advertise newer operations to newer clients.
   if let Some(capabilities) = &descriptor.capabilities {
-    if capabilities.dependencies
-      || capabilities.release_history
-      || capabilities.comments
-      || capabilities.changelog
-    {
-      return Err(invalid(
-        "Dependencies, history, comments and changelog operations are not supported by this native-source slice",
-      ));
-    }
     if capabilities
       .search
       .as_deref()
@@ -164,9 +162,13 @@ pub(super) fn normalize_listing(
   }
   listing.remote_id = super::listing_slug(&source.key, &listing.id);
   let origins = &source.descriptor.network_origins;
-  for field in [&mut listing.detail_url, &mut listing.release_url]
-    .into_iter()
-    .flatten()
+  for field in [
+    &mut listing.detail_url,
+    &mut listing.release_url,
+    &mut listing.release_history_url,
+  ]
+  .into_iter()
+  .flatten()
   {
     *field = resolve_url(base, field, &origins.api, source.allow_local_network)?.to_string();
   }
@@ -201,6 +203,20 @@ pub(super) fn validate_release(
   }
   validate_id(&release.id)?;
   validate_id(&release.content_revision)?;
+  if release
+    .changelog
+    .as_ref()
+    .is_some_and(|value| value.len() > 64 * 1024)
+  {
+    return Err(invalid("Release changelog exceeds its 64 KiB safety limit"));
+  }
+  if release
+    .published_at
+    .as_ref()
+    .is_some_and(|value| chrono::DateTime::parse_from_rfc3339(value).is_err())
+  {
+    return Err(invalid("Release publishedAt must be an RFC 3339 timestamp"));
+  }
   if release.artifacts.is_empty() || release.artifacts.len() > 100 {
     return Err(invalid(
       "A release must contain between 1 and 100 artifacts",

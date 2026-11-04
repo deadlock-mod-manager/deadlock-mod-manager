@@ -1,6 +1,7 @@
 use crate::errors::Error;
 use crate::providers::native_sources::{
-  NativeSourceListing, NativeSourceManager, NativeSourceMod, NativeSourceSummary,
+  NativeSourceListing, NativeSourceManager, NativeSourceMod, NativeSourceRelease,
+  NativeSourceSummary,
 };
 use tauri::State;
 
@@ -92,4 +93,12 @@ pub async fn get_native_source_mod(
   remote_id: String,
 ) -> Result<NativeSourceMod, Error> {
   state.mod_by_remote_id(&remote_id).await
+}
+
+#[tauri::command]
+pub async fn get_native_source_release_history(
+  state: State<'_, NativeSourceManager>,
+  remote_id: String,
+) -> Result<Vec<NativeSourceRelease>, Error> {
+  state.release_history(&remote_id).await
 }

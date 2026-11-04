@@ -19,4 +19,5 @@ export type NativeSourceListing = {
   updatedAt: string | null;
   release: NativeSourceRelease | null;
   releaseUrl: string | null;
+  releaseHistoryUrl: string | null;
 };

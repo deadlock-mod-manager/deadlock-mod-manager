@@ -122,7 +122,11 @@
     "selectComponentsDescription": "Choose the components to download. Required components are included automatically.",
     "componentGroup": "Choose {{min}} to {{max}}",
     "required": "Required",
-    "confirmSelection": "Download selection"
+    "confirmSelection": "Download selection",
+    "releaseHistoryDescription": "Versions published on {{name}}.",
+    "releaseHistoryLoadError": "Couldn't load the release history from {{name}}.",
+    "releaseHistoryEmpty": "{{name}} has no published versions for this mod.",
+    "currentRelease": "Current"
   },
   "hudCompatibility": {
     "logModified": "Game log last updated: {{date}}",

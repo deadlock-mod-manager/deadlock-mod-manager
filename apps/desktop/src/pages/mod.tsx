@@ -26,6 +26,7 @@ import ModButton from "@/components/mod-browsing/mod-button";
 import { InstalledVpksSection } from "@/components/mod-detail/installed-vpks-section";
 import { ModAudioPreview } from "@/components/mod-detail/mod-audio-preview";
 import { ModChangelog } from "@/components/mod-detail/mod-changelog";
+import { NativeSourceChangelog } from "@/components/mod-detail/native-source-changelog";
 import { ModCommissionButton } from "@/components/mod-detail/mod-commission-button";
 import { ModComments } from "@/components/mod-detail/mod-comments";
 import { ModDependencies } from "@/components/mod-detail/mod-dependencies";
@@ -115,6 +116,12 @@ const Mod = () => {
     (!!nativeContext.data?.source.enabled &&
       !nativeContext.data.source.removed &&
       nativeContext.data.listing.availability === "available");
+  const nativeSource = nativeContext.data?.source;
+  const hasNativeChangelog =
+    isNativeMod &&
+    !!nativeSource?.enabled &&
+    !nativeSource.removed &&
+    !!nativeSource.descriptor.capabilities?.releaseHistory;
   const configListingKind = useConfigListing(mod);
   const {
     availableFiles,
@@ -539,6 +546,12 @@ const Mod = () => {
                   </TabsTrigger>
                 </>
               )}
+              {hasNativeChangelog && (
+                <TabsTrigger className='gap-1.5' value='changelog'>
+                  <ClockCounterClockwiseIcon className='size-4' />
+                  {t("modDetail.tabs.changelog")}
+                </TabsTrigger>
+              )}
               {hasFilesTab && (
                 <TabsTrigger className='gap-1.5' value='files'>
                   <FilesIcon className='size-4' />
@@ -613,6 +626,16 @@ const Mod = () => {
                   />
                 </TabsContent>
               </>
+            )}
+
+            {hasNativeChangelog && (
+              <TabsContent className='mt-4' value='changelog'>
+                <NativeSourceChangelog
+                  currentReleaseId={nativeContext.data?.listing.release?.id}
+                  remoteId={mod.remoteId}
+                  sourceName={nativeSource.descriptor.name}
+                />
+              </TabsContent>
             )}
 
             {hasFilesTab && (

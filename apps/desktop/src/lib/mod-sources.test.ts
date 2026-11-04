@@ -57,10 +57,13 @@ const listing: NativeSourceListing = {
   homepageUrl: "https://mods.example/example",
   updatedAt: null,
   releaseUrl: null,
+  releaseHistoryUrl: null,
   release: {
     id: "release #1",
     contentRevision: "revision?2",
     version: null,
+    publishedAt: null,
+    changelog: null,
     artifacts: [
       {
         id: "asset/雪",

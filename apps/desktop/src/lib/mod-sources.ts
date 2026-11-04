@@ -6,6 +6,7 @@ import { invoke } from "@tauri-apps/api/core";
 import type { NativeSourceListing } from "@/types/generated/NativeSourceListing";
 import type { NativeSourceMod } from "@/types/generated/NativeSourceMod";
 import type { NativeSourceProvenance } from "@/types/generated/NativeSourceProvenance";
+import type { NativeSourceRelease } from "@/types/generated/NativeSourceRelease";
 import type { NativeSourceSummary } from "@/types/generated/NativeSourceSummary";
 import type { ModDownloadItem } from "@/types/mods";
 import { getErrorMessage } from "@/lib/errors";
@@ -109,6 +110,18 @@ export const useNativeSourceContext = (remoteId: string) =>
     queryFn: () => getNativeSourceRecord(remoteId),
     enabled: isNativeSourceMod(remoteId),
     staleTime: 30_000,
+    meta: { skipGlobalErrorHandler: true },
+  });
+
+export const useNativeSourceReleaseHistory = (remoteId: string) =>
+  useQuery({
+    queryKey: [...NATIVE_SOURCES_QUERY_KEY, "release-history", remoteId],
+    queryFn: () =>
+      invokeNative<NativeSourceRelease[]>("get_native_source_release_history", {
+        remoteId,
+      }),
+    enabled: isNativeSourceMod(remoteId),
+    staleTime: 5 * 60_000,
     meta: { skipGlobalErrorHandler: true },
   });
 

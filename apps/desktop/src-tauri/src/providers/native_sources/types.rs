@@ -32,6 +32,7 @@ pub enum NativeSourceCatalog {
     list_url: String,
     detail_url_template: Option<String>,
     release_url_template: Option<String>,
+    release_history_url_template: Option<String>,
   },
 }
 
@@ -101,6 +102,7 @@ pub struct NativeSourceListing {
   pub updated_at: Option<String>,
   pub release: Option<NativeSourceRelease>,
   pub release_url: Option<String>,
+  pub release_history_url: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, TS)]
@@ -119,6 +121,8 @@ pub struct NativeSourceRelease {
   pub id: String,
   pub content_revision: String,
   pub version: Option<String>,
+  pub published_at: Option<String>,
+  pub changelog: Option<String>,
   pub artifacts: Vec<NativeSourceArtifact>,
   pub installation: NativeSourceInstallation,
   #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -256,6 +260,14 @@ pub(super) struct CatalogPage {
   pub snapshot_id: Option<String>,
   pub items: Vec<NativeSourceListing>,
   pub next_url: Option<String>,
+  #[serde(default)]
+  pub next_cursor: CatalogCursor,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(super) struct ReleaseHistoryPage {
+  pub items: Vec<NativeSourceRelease>,
   #[serde(default)]
   pub next_cursor: CatalogCursor,
 }
