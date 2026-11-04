@@ -510,7 +510,11 @@ impl GameConfigManager {
     let hash = self.calculate_file_hash(gameinfo_path)?;
     let copy = gameinfo_path.with_extension(format!("gi.pre-reset-{hash}"));
     if !copy.exists() {
-      fs::copy(gameinfo_path, &copy)?;
+      // A copy cut short must not take the final name: the next attempt would
+      // treat it as done and replace gameinfo.gi with only the partial left.
+      let partial = gameinfo_path.with_extension(format!("gi.pre-reset-{hash}.tmp"));
+      fs::copy(gameinfo_path, &partial)?;
+      fs::rename(&partial, &copy)?;
       log::info!("Kept the file being reset at {copy:?}");
     }
     Ok(())
@@ -717,8 +721,11 @@ impl GameConfigManager {
       fs::copy(gameinfo_path, &backup_path)?;
     }
 
-    // Without markers the block isn't ours, and it may hold custom entries.
-    if !vanilla && !self.has_mod_manager_markers(&gameinfo_content) {
+    // Without markers the block may hold custom entries, unless it is the
+    // vanilla block a previous launch without mods wrote.
+    let ours = gameinfo_content[section.clone()]
+      == Self::match_line_endings(VANILLA_SEARCH_PATHS, &gameinfo_content);
+    if !ours && !self.has_mod_manager_markers(&gameinfo_content) {
       self.keep_pre_reset_copy(gameinfo_path)?;
     }
 
@@ -1933,5 +1940,46 @@ mod tests {
       .unwrap();
 
     assert_eq!(pre_reset_copies(&game_path), vec![custom]);
+  }
+
+  #[test]
+  fn a_launch_without_mods_keeps_a_copy_of_custom_search_paths() {
+    let (_dir, game_path) = setup_game_dir();
+    let custom = custom_config("SearchPaths").replace("Game core", "Game custom\n      Game core");
+    write_gameinfo(&game_path, &custom);
+    let mut manager = GameConfigManager::new();
+
+    manager.toggle_mods(&game_path, true).unwrap();
+
+    assert!(!current_gameinfo(&game_path).contains("Game custom"));
+    assert_eq!(pre_reset_copies(&game_path), vec![custom.clone()]);
+
+    // The vanilla block just written, and the modded one after it, are ours.
+    manager.toggle_mods(&game_path, true).unwrap();
+    manager.toggle_mods(&game_path, false).unwrap();
+    manager.toggle_mods(&game_path, true).unwrap();
+
+    assert_eq!(pre_reset_copies(&game_path), vec![custom]);
+  }
+
+  #[test]
+  fn an_interrupted_copy_does_not_count_as_kept() {
+    let (_dir, game_path) = setup_game_dir();
+    let vanilla = vanilla_fixture("\n");
+    write_gameinfo(&game_path, &vanilla);
+    let mut manager = GameConfigManager::new();
+    manager.update_mod_paths(&game_path, &test_paths()).unwrap();
+    let custom = custom_config("SearchPaths");
+    write_gameinfo(&game_path, &custom);
+    let gameinfo_path = game_path.join("game/citadel/gameinfo.gi");
+    let hash = manager.calculate_file_hash(&gameinfo_path).unwrap();
+    let partial = gameinfo_path.with_extension(format!("gi.pre-reset-{hash}.tmp"));
+    fs::write(&partial, &custom[..10]).unwrap();
+
+    manager.reset_gameinfo(&game_path, Ok(vanilla)).unwrap();
+
+    let copy = gameinfo_path.with_extension(format!("gi.pre-reset-{hash}"));
+    assert_eq!(fs::read_to_string(copy).unwrap(), custom);
+    assert!(!partial.exists());
   }
 }
