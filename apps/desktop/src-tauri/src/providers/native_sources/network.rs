@@ -1,12 +1,13 @@
 use crate::errors::Error;
 use reqwest::{Client, Url};
 use serde::de::DeserializeOwned;
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
 use std::time::Duration;
 
 use super::ResolvedNativeArtifact;
 
 pub const MAX_JSON_BYTES: usize = 10 * 1024 * 1024;
+const MAX_ARTIFACT_REDIRECTS: usize = 5;
 static SOURCE_REQUESTS: tokio::sync::Semaphore = tokio::sync::Semaphore::const_new(4);
 
 pub(super) async fn request_permit() -> Result<tokio::sync::SemaphorePermit<'static>, Error> {
@@ -119,6 +120,26 @@ async fn request_client(
   allow_local_network: bool,
   timeout: Duration,
 ) -> Result<Client, Error> {
+  let (host, addresses) = pinned_addresses(url, allow_local_network).await?;
+  transport_builder(timeout)
+    .redirect(reqwest::redirect::Policy::none())
+    .resolve_to_addrs(&host, &addresses)
+    .build()
+    .map_err(|_| Error::Network("Could not initialize mod source transport".into()))
+}
+
+fn transport_builder(timeout: Duration) -> reqwest::ClientBuilder {
+  Client::builder()
+    .no_proxy()
+    .connect_timeout(Duration::from_secs(10))
+    .timeout(timeout)
+    .user_agent("DeadlockModManager/native-source-v1")
+}
+
+async fn pinned_addresses(
+  url: &Url,
+  allow_local_network: bool,
+) -> Result<(String, Vec<SocketAddr>), Error> {
   validate_source_url(url.as_str(), allow_local_network)?;
   let host = url.host_str().ok_or_else(|| invalid("URL has no host"))?;
   let lookup_host = host.trim_start_matches('[').trim_end_matches(']');
@@ -140,31 +161,56 @@ async fn request_client(
       "Source resolved to a private or reserved network address",
     ));
   }
-  Client::builder()
-    .no_proxy()
-    .redirect(reqwest::redirect::Policy::none())
-    .connect_timeout(Duration::from_secs(10))
-    .timeout(timeout)
-    .user_agent("DeadlockModManager/native-source-v1")
-    .resolve_to_addrs(host, &addresses)
-    .build()
-    .map_err(|_| Error::Network("Could not initialize mod source transport".into()))
+  Ok((host.to_string(), addresses))
 }
 
+/// Artifact URLs often redirect to storage (a presigned bucket URL), so
+/// redirects are followed, but only to the source's declared download origins.
+/// Every one of those hosts is resolved and pinned up front, so a redirect gets
+/// the same public-address check as the first request.
 pub async fn artifact_download_client(artifact: &ResolvedNativeArtifact) -> Result<Client, Error> {
-  let url = validate_source_url(&artifact.url, artifact.allow_local_network)?;
+  let allow_local_network = artifact.allow_local_network;
+  let url = validate_source_url(&artifact.url, allow_local_network)?;
   if !artifact
     .allowed_origins
     .contains(&url.origin().ascii_serialization())
   {
     return Err(invalid("Artifact destination origin was not accepted"));
   }
-  request_client(
-    &url,
-    artifact.allow_local_network,
-    Duration::from_secs(60 * 60),
-  )
-  .await
+  let mut builder = transport_builder(Duration::from_secs(60 * 60));
+  let (host, addresses) = pinned_addresses(&url, allow_local_network).await?;
+  builder = builder.resolve_to_addrs(&host, &addresses);
+  let mut pinned_hosts = vec![host];
+  for origin in &artifact.allowed_origins {
+    let Ok(origin_url) = Url::parse(origin) else {
+      continue;
+    };
+    if origin_url
+      .host_str()
+      .is_none_or(|host| pinned_hosts.iter().any(|pinned| pinned == host))
+    {
+      continue;
+    }
+    let (host, addresses) = pinned_addresses(&origin_url, allow_local_network).await?;
+    builder = builder.resolve_to_addrs(&host, &addresses);
+    pinned_hosts.push(host);
+  }
+  let allowed_origins = artifact.allowed_origins.clone();
+  builder
+    .redirect(reqwest::redirect::Policy::custom(move |attempt| {
+      if attempt.previous().len() >= MAX_ARTIFACT_REDIRECTS {
+        return attempt.error("Mod source download redirected too many times");
+      }
+      let accepted = validate_source_url(attempt.url().as_str(), allow_local_network)
+        .is_ok_and(|next| allowed_origins.contains(&next.origin().ascii_serialization()));
+      if accepted {
+        attempt.follow()
+      } else {
+        attempt.error("Mod source download redirected outside its declared download origins")
+      }
+    }))
+    .build()
+    .map_err(|_| Error::Network("Could not initialize mod source transport".into()))
 }
 
 pub(super) async fn fetch_json<T: DeserializeOwned>(

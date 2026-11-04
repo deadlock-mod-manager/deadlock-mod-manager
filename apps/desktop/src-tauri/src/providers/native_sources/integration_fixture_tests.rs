@@ -52,6 +52,7 @@ const CHOICES_ZIP: &[u8] = include_bytes!(concat!(
 struct Response {
   status: u16,
   bytes: Vec<u8>,
+  location: Option<String>,
 }
 
 /// A real HTTP boundary with mutable snapshots and failures; it serves the same
@@ -100,10 +101,15 @@ impl SourceServer {
           .unwrap_or(Response {
             status: 404,
             bytes: b"missing fixture".to_vec(),
+            location: None,
           });
         drop(routes);
+        let location = response
+          .location
+          .map(|location| format!("Location: {location}\r\n"))
+          .unwrap_or_default();
         let header = format!(
-          "HTTP/1.1 {} Fixture\r\nContent-Length: {}\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n",
+          "HTTP/1.1 {} Fixture\r\nContent-Length: {}\r\nContent-Type: application/json\r\n{location}Connection: close\r\n\r\n",
           response.status,
           response.bytes.len()
         );
@@ -144,7 +150,22 @@ impl SourceServer {
       .routes
       .lock()
       .unwrap()
-      .insert(path.into(), Response { status: 200, bytes });
+      .insert(path.into(), Response {
+        status: 200,
+        bytes,
+        location: None,
+      });
+  }
+
+  fn redirect(&self, path: &str, location: String) {
+    self.routes.lock().unwrap().insert(
+      path.into(),
+      Response {
+        status: 302,
+        bytes: Vec::new(),
+        location: Some(location),
+      },
+    );
   }
 
   fn set_json(&self, path: &str, value: Value) {
@@ -163,6 +184,7 @@ impl SourceServer {
       Response {
         status: 503,
         bytes: b"source offline".to_vec(),
+        location: None,
       },
     );
   }
@@ -385,6 +407,52 @@ async fn copied_source_can_enroll_browse_persist_and_resolve_stable_artifact_ide
   drop(manager);
   let reopened = NativeSourceManager::open(path).unwrap();
   assert_eq!(reopened.query(&added.key, "").await.unwrap().len(), 1);
+}
+
+#[tokio::test]
+async fn artifact_redirects_are_followed_only_to_declared_download_origins() {
+  let source = SourceServer::start();
+  let storage = SourceServer::start();
+  let temp = tempfile::tempdir().unwrap();
+  source.redirect(
+    "/files/example.vpk",
+    format!("{}/bucket/example.vpk", storage.origin),
+  );
+  storage.set_bytes("/bucket/example.vpk", EXAMPLE_VPK.to_vec());
+  let artifact = |allowed_origins: Vec<String>| super::ResolvedNativeArtifact {
+    url: format!("{}/files/example.vpk", source.origin),
+    filename: "example.vpk".into(),
+    size: Some(EXAMPLE_VPK.len() as u64),
+    hashes: None,
+    allowed_origins,
+    allow_local_network: true,
+  };
+
+  let downloaded = temp.path().join("declared/example.vpk");
+  download_native_artifact(
+    &artifact(vec![source.origin.clone(), storage.origin.clone()]),
+    &downloaded,
+    |_| {},
+    CancellationToken::new(),
+    PauseHandle::new(),
+  )
+  .await
+  .unwrap();
+  assert_eq!(std::fs::read(&downloaded).unwrap(), EXAMPLE_VPK);
+
+  let refused = temp.path().join("undeclared/example.vpk");
+  assert!(
+    download_native_artifact(
+      &artifact(vec![source.origin.clone()]),
+      &refused,
+      |_| {},
+      CancellationToken::new(),
+      PauseHandle::new(),
+    )
+    .await
+    .is_err()
+  );
+  assert!(!refused.exists());
 }
 
 #[tokio::test]
