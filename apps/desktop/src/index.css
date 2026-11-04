@@ -139,6 +139,10 @@
     --primary-foreground: 20 9% 6%;
     /* Healthy status icons keep the stock accent; themes must not override this. */
     --status-ok: 42 60% 84%;
+    /* Relay ping scale, also used for blocked/open relay state. */
+    --signal-good: 152 55% 58%;
+    --signal-fair: 40 85% 60%;
+    --signal-poor: 355 75% 66%;
     --secondary: 15 10% 16%;
     --secondary-foreground: 41.6 60% 63%;
     --muted: 0 0% 14.9%;
@@ -169,6 +173,9 @@
 
   .light {
     --background: 0 0% 100%;
+    --signal-good: 152 60% 32%;
+    --signal-fair: 35 90% 38%;
+    --signal-poor: 355 65% 45%;
     --foreground: 15 10% 16%;
     --card: 0 0% 100%;
     --card-foreground: 15 10% 16%;

@@ -91,6 +91,11 @@ pub enum Error {
   Catalog(String),
   #[error("Performance config error: {0}")]
   PerformanceConfig(String),
+  #[error("Server picker: {message}")]
+  ServerPicker {
+    subcode: &'static str,
+    message: String,
+  },
   #[error("Tauri error: {0}")]
   Tauri(#[from] tauri::Error),
   #[error("Failed to create backup: {0}")]
@@ -169,6 +174,7 @@ impl serde::Serialize for Error {
         | Error::MissingEnabledModFiles(_)
         | Error::ReadOnlyFile(_)
         | Error::MakeWritableFailed { .. }
+        | Error::ServerPicker { .. }
     ) {
       4
     } else {
@@ -214,6 +220,7 @@ impl serde::Serialize for Error {
       Error::ProviderCancelled => "providerCancelled",
       Error::Catalog(_) => "catalogError",
       Error::PerformanceConfig(_) => "performanceConfig",
+      Error::ServerPicker { .. } => "serverPicker",
       Error::Tauri(_) => "tauri",
       Error::BackupCreationFailed(_) => "backupCreationFailed",
       Error::BackupRestoreFailed(_) => "backupRestoreFailed",
@@ -241,6 +248,9 @@ impl serde::Serialize for Error {
     state.serialize_field("kind", kind)?;
     state.serialize_field("message", &self.to_string())?;
     state.serialize_field("matchSyncKind", &match_sync_kind)?;
+    if let Error::ServerPicker { subcode, .. } = self {
+      state.serialize_field("serverPickerKind", subcode)?;
+    }
     if let Error::DuplicateVpkOwnership {
       mod_ids,
       path,
