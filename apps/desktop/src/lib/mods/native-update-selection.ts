@@ -64,3 +64,25 @@ export const nativeChoicesFit = (
     })
   );
 };
+
+/**
+ * The components a website link installs without asking: the required ones,
+ * plus those holding the linked file. Null when that leaves a choice to the
+ * user, such as a variant the link did not name or a file several components
+ * share.
+ */
+export const linkedComponentIds = (
+  installation: NativeSourceInstallation,
+  artifactId: string | null,
+): string[] | null => {
+  const linked = artifactId
+    ? installation.components
+        .filter((component) =>
+          component.files.some((file) => file.artifactId === artifactId),
+        )
+        .map((component) => component.id)
+    : [];
+  if (artifactId && linked.length === 0) return null;
+  const ids = [...new Set([...installation.requiredComponents, ...linked])];
+  return ids.length > 0 && nativeChoicesFit(installation, ids) ? ids : null;
+};

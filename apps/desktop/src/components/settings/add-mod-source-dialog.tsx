@@ -10,43 +10,77 @@ import {
 import { Input } from "@deadlock-mods/ui/components/input";
 import { Label } from "@deadlock-mods/ui/components/label";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   addNativeSource,
   NATIVE_SOURCES_QUERY_KEY,
   previewNativeSource,
+  setNativeSourceEnabled,
+  useNativeSources,
 } from "@/lib/mod-sources";
+import type { NativeSourceSummary } from "@/types/generated/NativeSourceSummary";
 
 interface AddModSourceDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Filled in and previewed on open, as when a website's link opens this. */
+  initialUrl?: string;
+  /** The source ID a link expects, so a descriptor for another source is refused. */
+  expectedSourceId?: string;
+  /** Explains why a link opened the dialog. */
+  reason?: string;
+  onAdded?: (source: NativeSourceSummary) => void;
 }
 
 export const AddModSourceDialog = ({
   open,
   onOpenChange,
+  initialUrl,
+  expectedSourceId,
+  reason,
+  onAdded,
 }: AddModSourceDialogProps) => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const [url, setUrl] = useState("");
+  const [url, setUrl] = useState(initialUrl ?? "");
+  const { data: sources } = useNativeSources();
   const preview = useMutation({
     mutationFn: previewNativeSource,
     meta: { skipGlobalErrorHandler: true },
   });
+  const finish = async (source: NativeSourceSummary) => {
+    await queryClient.invalidateQueries({
+      queryKey: NATIVE_SOURCES_QUERY_KEY,
+    });
+    onAdded?.(source);
+    onOpenChange(false);
+  };
   const add = useMutation({
     mutationFn: addNativeSource,
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: NATIVE_SOURCES_QUERY_KEY,
-      });
-      onOpenChange(false);
-    },
+    onSuccess: finish,
     meta: { skipGlobalErrorHandler: true },
   });
+  const enable = useMutation({
+    mutationFn: (sourceKey: string) => setNativeSourceEnabled(sourceKey, true),
+    onSuccess: finish,
+    meta: { skipGlobalErrorHandler: true },
+  });
+  // Runs once: a link's URL is previewed without the user pressing Preview,
+  // but adding still waits for them.
+  const previewInitial = preview.mutate;
+  useEffect(() => {
+    if (initialUrl) previewInitial(initialUrl);
+  }, [initialUrl, previewInitial]);
+
   const validated = preview.variables === url.trim() ? preview.data : undefined;
-  const busy = preview.isPending || add.isPending;
-  const error = add.error ?? preview.error;
+  const existing = sources?.find((source) => source.key === validated?.key);
+  const mismatched =
+    !!validated &&
+    expectedSourceId !== undefined &&
+    validated.descriptor.sourceId !== expectedSourceId;
+  const busy = preview.isPending || add.isPending || enable.isPending;
+  const error = enable.error ?? add.error ?? preview.error;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -54,14 +88,17 @@ export const AddModSourceDialog = ({
         <DialogHeader>
           <DialogTitle>{t("modSources.addTitle")}</DialogTitle>
           <DialogDescription>
-            {t("modSources.addDescription")}
+            {reason ?? t("modSources.addDescription")}
           </DialogDescription>
         </DialogHeader>
         <form
           className='space-y-4'
           onSubmit={(event) => {
             event.preventDefault();
-            if (validated)
+            if (existing) {
+              if (existing.enabled) void finish(existing);
+              else enable.mutate(existing.key);
+            } else if (validated)
               add.mutate({
                 descriptorUrl: validated.descriptorUrl,
                 previewToken: validated.previewToken,
@@ -112,6 +149,22 @@ export const AddModSourceDialog = ({
               </ul>
             </div>
           )}
+          {existing && (
+            <p className='text-sm text-muted-foreground'>
+              {existing.enabled
+                ? t("modSources.alreadyAdded", {
+                    name: existing.descriptor.name,
+                  })
+                : t("modSources.alreadyAddedDisabled", {
+                    name: existing.descriptor.name,
+                  })}
+            </p>
+          )}
+          {mismatched && (
+            <p role='alert' className='text-sm text-destructive'>
+              {t("modSources.linkSourceMismatch")}
+            </p>
+          )}
           {error && (
             <p role='alert' className='text-sm text-destructive'>
               {error.message}
@@ -127,9 +180,15 @@ export const AddModSourceDialog = ({
             </Button>
             <Button
               type='submit'
-              disabled={busy || !url.trim()}
+              disabled={busy || !url.trim() || mismatched}
               isLoading={busy}>
-              {validated ? t("modSources.add") : t("modSources.preview")}
+              {existing
+                ? existing.enabled
+                  ? t("common.close")
+                  : t("modSources.enableAction")
+                : validated
+                  ? t("modSources.add")
+                  : t("modSources.preview")}
             </Button>
           </DialogFooter>
         </form>

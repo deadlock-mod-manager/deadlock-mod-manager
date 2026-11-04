@@ -128,7 +128,15 @@
     "releaseHistoryDescription": "Versions published on {{name}}.",
     "releaseHistoryLoadError": "Couldn't load the release history from {{name}}.",
     "releaseHistoryEmpty": "{{name}} has no published versions for this mod.",
-    "currentRelease": "Current"
+    "currentRelease": "Current",
+    "alreadyAdded": "{{name}} is already one of your sources.",
+    "alreadyAddedDisabled": "{{name}} is already one of your sources but is disabled. Enable it to browse and install its mods.",
+    "enableAction": "Enable source",
+    "linkSourceMismatch": "This descriptor belongs to a different source than the link named. Check the link with the website.",
+    "linkAddReason": "A website wants to install a mod from this source. Add the source to continue. Review its name and network origins first.",
+    "linkEnableTitle": "Enable {{name}}?",
+    "linkEnableBody": "A website wants to install a mod from {{name}}, which you disabled. Enable it to continue.",
+    "linkFailed": "Couldn't open the mod source link"
   },
   "hudCompatibility": {
     "logModified": "Game log last updated: {{date}}",

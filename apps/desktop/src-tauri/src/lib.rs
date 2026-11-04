@@ -349,6 +349,8 @@ pub fn run() {
       commands::native_sources::get_native_source_detail,
       commands::native_sources::get_native_source_mod,
       commands::native_sources::get_native_source_release_history,
+      commands::native_sources::take_pending_native_source_links,
+      commands::native_sources::resolve_native_source_link,
       commands::gamebanana_catalog::clear_gamebanana_catalog,
       commands::gamebanana_catalog::resolve_legacy_sound_ids,
       commands::gamebanana_catalog::query_gamebanana_catalog,

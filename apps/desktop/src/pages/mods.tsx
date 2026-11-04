@@ -1,6 +1,7 @@
 import { Alert, AlertDescription } from "@deadlock-mods/ui/components/alert";
 import { Warning } from "@phosphor-icons/react";
-import { Suspense, useCallback, useState } from "react";
+import { Suspense, useCallback } from "react";
+import { useSearchParams } from "react-router";
 import { SourceSelector } from "@/components/mod-browsing/source-selector";
 import { NativeSourceCatalog } from "@/components/mod-browsing/catalog/native-source-catalog";
 import { useTranslation } from "react-i18next";
@@ -27,7 +28,16 @@ const resolveContentType = (
 
 const GetMods = () => {
   const { t } = useTranslation();
-  const [sourceKey, setSourceKey] = useState("gamebanana");
+  // In the URL so a source link can open the Store on the source it added.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const sourceKey = searchParams.get("source") ?? "gamebanana";
+  const setSourceKey = useCallback(
+    (key: string) =>
+      setSearchParams(key === "gamebanana" ? {} : { source: key }, {
+        replace: true,
+      }),
+    [setSearchParams],
+  );
   const isCustomMapsEnabled = useExperimentalFeature("custom-maps");
   const storedContentType = usePersistedStore(
     (state) => state.modsFilters.contentType,

@@ -41,6 +41,10 @@ a work in progress; this example does not promise every RFC capability.
    complete public URL of `dmm-source.json`. Check the displayed name and origin
    before adding it. Select your source in the Mods Store, open the example,
    and download/install through the usual selection flow.
+7. Optionally add **Add to DMM** and **Install with DMM** buttons to your site.
+   They use `deadlock-mod-manager://sources/add` and
+   `deadlock-mod-manager://sources/install` links; see
+   [Links for your website](https://docs.deadlockmods.app/developer-docs/mod-sources#links-for-your-website).
 
 ## Publishing another mod or update
 

@@ -3,6 +3,7 @@ import type { NativeSourceInstallation } from "@/types/generated/NativeSourceIns
 import type { NativeSourceProvenance } from "@/types/generated/NativeSourceProvenance";
 import type { ModDownloadItem } from "@/types/mods";
 import {
+  linkedComponentIds,
   nativeChoicesFit,
   nativeComponentDownloads,
 } from "./native-update-selection";
@@ -122,5 +123,35 @@ describe("native update decisions", () => {
         source: { ...source, artifactIds: ["pack", "audio"] },
       }),
     ).toEqual([]);
+  });
+});
+
+describe("website install links", () => {
+  // One archive per component, as sources that publish each variant as its
+  // own file do.
+  const perFile: NativeSourceInstallation = {
+    ...installation,
+    components: ["base", "red", "blue"].map((id) => ({
+      id,
+      label: id,
+      files: [{ artifactId: id, path: `${id}.vpk` }],
+    })),
+  };
+
+  test("a linked variant installs with the required files", () => {
+    expect(linkedComponentIds(perFile, "red")).toEqual(["base", "red"]);
+  });
+
+  test("an unnamed or ambiguous variant is left to the user", () => {
+    expect(linkedComponentIds(perFile, null)).toBeNull();
+    expect(linkedComponentIds(perFile, "missing")).toBeNull();
+    // Every component lives in the same archive, so the file names no variant.
+    expect(linkedComponentIds(installation, "pack")).toBeNull();
+  });
+
+  test("a release without choices installs its required files", () => {
+    expect(linkedComponentIds({ ...perFile, choiceGroups: [] }, null)).toEqual([
+      "base",
+    ]);
   });
 });

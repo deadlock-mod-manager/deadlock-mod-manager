@@ -30,6 +30,72 @@ not transfer trust to another origin. An artifact URL may redirect, for
 example to a presigned storage URL, but only to an origin listed in
 `networkOrigins.downloads`.
 
+## Links for your website
+
+Two `deadlock-mod-manager://` links let visitors use your source without
+copying URLs. Percent-encode every value with `encodeURIComponent`; DMM stops
+reading a value at the next unencoded `=` or `&`.
+
+**Add to DMM** opens the add-source dialog with your descriptor filled in and
+previewed. The user still reviews the name and origins and chooses **Add**.
+
+```text
+deadlock-mod-manager://sources/add?url=<descriptor URL>
+```
+
+**Install with DMM** installs one of your listings:
+
+```text
+deadlock-mod-manager://sources/install?url=<descriptor URL>&source=<sourceId>&listing=<listing ID>[&release=<release ID>][&artifact=<artifact ID>]
+```
+
+| Parameter  | Required | Meaning                                                              |
+| ---------- | -------- | -------------------------------------------------------------------- |
+| `url`      | Yes      | Full URL of your `dmm-source.json`, not just your site's origin      |
+| `source`   | Yes      | The descriptor's `sourceId`                                          |
+| `listing`  | Yes      | The listing `id` from your catalog                                   |
+| `release`  | No       | Pins the current release; any other release is refused, not upgraded |
+| `artifact` | No       | Installs that file of the current release instead of asking the user |
+
+```js
+const descriptor = "https://mods.example.org/.well-known/dmm-source.json";
+const addLink = `deadlock-mod-manager://sources/add?url=${encodeURIComponent(descriptor)}`;
+const installLink = (listingId, artifactId) => {
+  const params = new URLSearchParams({
+    url: descriptor,
+    source: "my-community",
+    listing: listingId,
+  });
+  if (artifactId) params.set("artifact", artifactId);
+  // URLSearchParams encodes spaces as "+"; DMM expects percent-encoding.
+  return `deadlock-mod-manager://sources/install?${params.toString().replaceAll("+", "%20")}`;
+};
+```
+
+DMM identifies the source by the descriptor URL's origin plus `source`, so a
+link cannot borrow another site's added source. What the install link does
+depends on the user's sources:
+
+- **Added and enabled:** DMM opens the mod and starts the download and
+  install. A manual release with several files opens the file picker unless
+  `artifact` names one. A components release installs its required components
+  plus the component holding `artifact`, and opens the picker only when a
+  choice group is still undecided, for example a variant the link did not
+  name. A listing missing from the cached catalog triggers one refresh, so
+  links to just-published mods work.
+- **Not added:** DMM shows the add-source dialog first and refuses a descriptor
+  whose `sourceId` differs from `source`. The install continues once the user
+  adds the source.
+- **Disabled:** DMM asks before enabling the source again.
+- **Already in the library:** DMM opens the mod page instead of installing it
+  again.
+
+Links never carry download URLs. Files still come from your catalog and the
+download origins the user accepted. Release builds only follow links to public
+HTTPS descriptors; development builds also accept local HTTP sources. Browsers
+do nothing when DMM is not installed, so keep the descriptor URL and a download
+link for DMM next to your buttons.
+
 ## Documents and stable identity
 
 The example contains:
@@ -128,8 +194,7 @@ GameBanana keeps its existing provider behavior; custom sources do not implicitl
 receive GameBanana mirrors, comments, statistics, moderation or enrichment.
 
 Mapped adapters, equivalence links, dependencies, authentication, installing
-older releases, origin migration and one-click
-source enrollment remain later RFC stages. The RFC itself remains a design
+older releases and origin migration remain later RFC stages. The RFC itself remains a design
 reference rather than a claim that every proposed protocol capability exists.
 
 Local profiles retain installed source provenance. Portable source-aware profile

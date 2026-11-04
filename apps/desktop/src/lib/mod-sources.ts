@@ -3,6 +3,7 @@ import type { ModDto } from "@deadlock-mods/shared";
 import { CONTENT_TYPES } from "@deadlock-mods/shared";
 import { useQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
+import type { NativeSourceLinkTarget } from "@/types/generated/NativeSourceLinkTarget";
 import type { NativeSourceListing } from "@/types/generated/NativeSourceListing";
 import type { NativeSourceMod } from "@/types/generated/NativeSourceMod";
 import type { NativeSourceProvenance } from "@/types/generated/NativeSourceProvenance";
@@ -55,7 +56,7 @@ export const nativeListingMatchesContentType = (
 
 const invokeNative = async <T>(
   command: string,
-  args?: Record<string, string | boolean>,
+  args?: Record<string, string | boolean | null>,
 ): Promise<T> => {
   try {
     return await invoke<T>(command, args);
@@ -101,6 +102,14 @@ export const queryNativeSource = (sourceKey: string, query = "") =>
     sourceKey,
     query,
   });
+
+export const resolveNativeSourceLink = (link: {
+  descriptorUrl: string;
+  sourceId: string;
+  listingId: string;
+  releaseId: string | null;
+  artifactId: string | null;
+}) => invokeNative<NativeSourceLinkTarget>("resolve_native_source_link", link);
 
 export const useNativeSources = () =>
   useQuery({

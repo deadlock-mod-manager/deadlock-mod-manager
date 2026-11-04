@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use tokio::sync::Mutex;
 
+use super::links::{NativeSourceLink, NativeSourceLinkTarget};
 use super::network::{fetch_json, invalid, resolve_url, validate_source_url};
 use super::types::*;
 use super::validation::{normalize_listing, validate_descriptor, validate_release};
@@ -359,6 +360,60 @@ impl NativeSourceManager {
     Err(invalid("Source listing was not found in the local catalog"))
   }
 
+  /// Finds an install link's listing among added sources. The source is the
+  /// one at the link's origin with its declared ID, so a link cannot point an
+  /// added source's name at another site. A listing the cached catalog lacks
+  /// gets one refresh, since a site links to mods it has just published.
+  pub async fn resolve_link(
+    &self,
+    link: &NativeSourceLink,
+  ) -> Result<NativeSourceLinkTarget, Error> {
+    self.ensure_available()?;
+    let NativeSourceLink::Install {
+      descriptor_url,
+      source_id,
+      listing_id,
+      release_id,
+      artifact_id,
+    } = link
+    else {
+      return Err(invalid("Not an install link"));
+    };
+    let url = validate_source_url(descriptor_url, true)?;
+    let key = super::source_key(&url.origin().ascii_serialization(), source_id);
+
+    let find = |registry: &Registry| -> Option<Result<NativeSourceLinkTarget, Error>> {
+      let source = registry.sources.get(&key).filter(|s| !s.summary.removed)?;
+      if !source.summary.enabled {
+        return Some(Ok(NativeSourceLinkTarget::Disabled {
+          source_key: key.clone(),
+        }));
+      }
+      let listing = source
+        .listings
+        .iter()
+        .find(|listing| &listing.id == listing_id)?;
+      Some(link_target(source, listing, release_id, artifact_id))
+    };
+
+    if let Some(target) = find(&*self.registry.lock().await) {
+      return target;
+    }
+    if !self
+      .registry
+      .lock()
+      .await
+      .sources
+      .get(&key)
+      .is_some_and(|source| !source.summary.removed)
+    {
+      return Ok(NativeSourceLinkTarget::NotAdded);
+    }
+    self.refresh(&key).await?;
+    find(&*self.registry.lock().await)
+      .unwrap_or_else(|| Err(invalid("This mod is not in the source's catalog")))
+  }
+
   /// Fetched on demand rather than during refresh, so history never counts
   /// against the snapshot budget or blocks installing the current release.
   pub async fn release_history(&self, remote_id: &str) -> Result<Vec<NativeSourceRelease>, Error> {
@@ -499,6 +554,44 @@ impl NativeSourceManager {
       .map_err(|error| Error::Io(error.error))?;
     Ok(())
   }
+}
+
+/// A link may pin the current release and name one of its files; older
+/// releases cannot be installed, so a stale pin is an error rather than a
+/// silent upgrade.
+fn link_target(
+  source: &StoredSource,
+  listing: &NativeSourceListing,
+  release_id: &Option<String>,
+  artifact_id: &Option<String>,
+) -> Result<NativeSourceLinkTarget, Error> {
+  if listing.availability != NativeSourceAvailability::Available {
+    return Err(invalid("This mod is not available from its source"));
+  }
+  let release = listing
+    .release
+    .as_ref()
+    .ok_or_else(|| invalid("This mod has no installable release"))?;
+  if release_id.as_ref().is_some_and(|id| id != &release.id) {
+    return Err(invalid(
+      "The linked release is not the mod's current release",
+    ));
+  }
+  if artifact_id
+    .as_ref()
+    .is_some_and(|id| !release.artifacts.iter().any(|artifact| &artifact.id == id))
+  {
+    return Err(invalid(
+      "The linked file is not part of the current release",
+    ));
+  }
+  Ok(NativeSourceLinkTarget::Ready {
+    record: Box::new(NativeSourceMod {
+      remote_id: listing.remote_id.clone(),
+      source: source.summary.clone(),
+      listing: listing.clone(),
+    }),
+  })
 }
 
 fn active_source<'a>(registry: &'a Registry, key: &str) -> Result<&'a StoredSource, Error> {
