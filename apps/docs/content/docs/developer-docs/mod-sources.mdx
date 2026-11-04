@@ -130,5 +130,6 @@ sharing/import, version holds, progressive all-source search, canonical protocol
 schemas and a full conformance validator remain unimplemented. The example's
 offline checker validates its static subset. Conditional HTTP cache validators
 and automatic retry/backoff are also later work; refresh failures preserve cached
-results. The Settings dialog currently enrolls public HTTPS sources; loopback
-HTTP opt-in is exposed only to native commands and automated fixtures.
+results. In release builds the Settings dialog enrolls only public HTTPS
+sources; development builds also accept local HTTP sources such as
+`http://localhost`.

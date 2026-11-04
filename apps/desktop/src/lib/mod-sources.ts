@@ -66,8 +66,15 @@ const invokeNative = async <T>(
 
 export const listNativeSources = () =>
   invokeNative<NativeSourceSummary[]>("list_native_sources");
+// Dev builds can enroll sources served over local HTTP; release builds keep
+// the HTTPS and public-host requirement.
+const allowLocalNetwork = import.meta.env.DEV;
+
 export const previewNativeSource = (descriptorUrl: string) =>
-  invokeNative<NativeSourceSummary>("preview_native_source", { descriptorUrl });
+  invokeNative<NativeSourceSummary>("preview_native_source", {
+    descriptorUrl,
+    allowLocalNetwork,
+  });
 export const addNativeSource = ({
   descriptorUrl,
   previewToken,
@@ -77,6 +84,7 @@ export const addNativeSource = ({
 }) =>
   invokeNative<NativeSourceSummary>("add_native_source", {
     descriptorUrl,
+    allowLocalNetwork,
     previewToken,
   });
 export const setNativeSourceEnabled = (sourceKey: string, enabled: boolean) =>
