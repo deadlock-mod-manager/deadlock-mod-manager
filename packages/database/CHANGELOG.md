@@ -1,5 +1,16 @@
 # @deadlock-mods/database
 
+## 2.6.0
+
+### Minor Changes
+
+- 167143d: Upgrade Better Auth to 1.7 and move sign-in to the new OAuth provider
+
+### Patch Changes
+
+- d16b676: Check mod requirements against the active profile and warn before enabling a mod with missing requirements.
+- 7fd9a1a: Order the VPKs inside a mod in the load order dialog, defaulting to author order
+
 ## 2.5.0
 
 ### Minor Changes

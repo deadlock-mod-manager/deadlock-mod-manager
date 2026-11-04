@@ -27,6 +27,7 @@ export const FoundryPreview = () => {
     paintParts,
     highlightTextures,
     hiddenParts,
+    removedParts,
     paintSelection,
     togglePaintPart,
     workspace,
@@ -37,9 +38,9 @@ export const FoundryPreview = () => {
   const workspaceRoot = workspace?.root ?? null;
   const filePath = manifest?.filePath ?? null;
   const readTexture = useCallback(
-    async (path: string) => {
+    async (path: string, opaque: boolean) => {
       if (!filePath) throw new Error("No skin is loaded.");
-      return (await decodeFoundryTexture(filePath, path, workspaceRoot))
+      return (await decodeFoundryTexture(filePath, path, workspaceRoot, opaque))
         .dataUrl;
     },
     [filePath, workspaceRoot],
@@ -66,6 +67,20 @@ export const FoundryPreview = () => {
     (texture: string) => labels.get(texture.toLowerCase()),
     [labels],
   );
+  // Sections removed from the game stay hidden on every tab; the paint tab
+  // also hides the ones put aside to paint what is behind them.
+  const hiddenTextures = useMemo(() => {
+    const previewed =
+      activeTab === "paint" ? primaryModelPath : selectedEntryPath;
+    const removed = (previewed && removedParts[previewed]?.textures) || [];
+    return activeTab === "paint" ? [...hiddenParts, ...removed] : removed;
+  }, [
+    activeTab,
+    hiddenParts,
+    primaryModelPath,
+    removedParts,
+    selectedEntryPath,
+  ]);
 
   // Only the asset browser and the paint tab have a 3D surface; cards render
   // their texture, and sounds have nothing to show.
@@ -90,7 +105,7 @@ export const FoundryPreview = () => {
           label={selectedEntryPath ?? t("foundry.preview.alt")}
           tint={previewTint}
           highlightTextures={highlightTextures}
-          hiddenTextures={activeTab === "paint" ? hiddenParts : undefined}
+          hiddenTextures={hiddenTextures}
           silhouetteHero={manifest.heroDisplay ?? manifest.hero ?? undefined}
           callouts={callouts}
           // Sections are only picked where they can be painted.
@@ -118,7 +133,11 @@ export const FoundryPreview = () => {
   if (rebuildingModel) {
     return (
       <div className='relative h-full w-full overflow-hidden bg-gradient-to-b from-muted/40 to-background'>
-        <ModelLoadingStage status={t("foundry.preview.loading")} />
+        <ModelLoadingStage
+          hero={manifest ? (manifest.heroDisplay ?? manifest.hero) : null}
+          status={t("foundry.preview.loading")}
+          steps
+        />
       </div>
     );
   }

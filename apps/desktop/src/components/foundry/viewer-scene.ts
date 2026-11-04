@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import type { ViewerLook } from "./viewer-tool-types";
 
 const LOOK = {
   /** Top and bottom of the backdrop gradient. */
@@ -110,5 +111,14 @@ export const createViewerScene = (scene: THREE.Scene) => {
     customBackdrop?.dispose();
   };
 
-  return { placeFloor, setBackground, resize, dispose };
+  const setLighting = (preset: ViewerLook["lighting"], intensity: number) => {
+    hemisphere.intensity =
+      LOOK.ambient * intensity * (preset === "dramatic" ? 0.35 : 1);
+    key.intensity = LOOK.key.intensity * intensity;
+    rim.intensity =
+      LOOK.rim.intensity * intensity * (preset === "dramatic" ? 2 : 1);
+    key.color.set(preset === "neutral" ? 0xffffff : LOOK.key.color);
+    rim.color.set(preset === "neutral" ? 0xc7dcff : LOOK.rim.color);
+  };
+  return { placeFloor, setBackground, setLighting, resize, dispose };
 };

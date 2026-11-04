@@ -8,8 +8,14 @@ import type { CreatedWorld } from "./world";
 export const monkeyRoutes = async () => {
   const plan = monkeyEnvironment();
   const routes = await multipakUpdateRoutes();
-  return (origin: string) =>
-    routes(origin).map((route) => {
+  return (origin: string) => [
+    ...plan.downloadFaults.map((id) => ({
+      method: "GET",
+      path: `/dl/${id}`,
+      status: 401,
+      body: "Seeded monkey fallback failure",
+    })),
+    ...routes(origin).map((route) => {
       const id = /^\/dl\/(\d+)\/v2$/.exec(route.path)?.[1];
       return id && plan.downloadFaults.includes(id)
         ? Object.assign(route, {
@@ -19,7 +25,8 @@ export const monkeyRoutes = async () => {
             ],
           })
         : route;
-    });
+    }),
+  ];
 };
 
 export const prepareMonkeyWorld = async (world: CreatedWorld) => {

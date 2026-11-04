@@ -4,7 +4,7 @@ import type { FixtureRoute } from "./fixture-server";
 import { createCatalogRoutes } from "./gamebanana-fixtures";
 import type { CreatedWorld } from "./world";
 
-export const networkDiagnosticsRoutes = async () => {
+export const networkDiagnosticsRoutes = async (id: string) => {
   const catalog = await createCatalogRoutes("gamebanana-single");
   return (origin: string): FixtureRoute[] => [
     {
@@ -12,6 +12,9 @@ export const networkDiagnosticsRoutes = async () => {
       path: "/cdn-cgi/trace",
       status: 200,
       body: "ip=127.0.0.1\n",
+      // Closes the connection before any response, as a blocked host would.
+      disconnectAfterBytes:
+        id === "network-diagnostics-internet-down" ? 0 : undefined,
     },
     {
       method: "GET",

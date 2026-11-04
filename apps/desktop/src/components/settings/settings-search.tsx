@@ -10,6 +10,7 @@ import {
   searchSettings,
 } from "@/lib/settings-search";
 import { usePersistedStore } from "@/lib/store";
+import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 
 const SEARCH_HINT_MIN_VISITS = 3;
 
@@ -20,6 +21,7 @@ type SettingsSearchProps = {
 };
 
 export const SettingsSearch = ({ children, onSelect }: SettingsSearchProps) => {
+  const pluginsEnabled = useExperimentalFeature("plugins");
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
@@ -35,10 +37,12 @@ export const SettingsSearch = ({ children, onSelect }: SettingsSearchProps) => {
   const results = useMemo(() => {
     // Builds without match sync have no match sync settings to find.
     const sections = SETTINGS_SEARCH_INDEX.filter(
-      (section) => section.id !== "match-sync" || isMatchSyncBuilt(),
+      (section) =>
+        (section.id !== "match-sync" || isMatchSyncBuilt()) &&
+        (section.tab !== "plugin" || pluginsEnabled),
     );
     return searchSettings(query, (key) => t(key), sections, platform());
-  }, [query, t]);
+  }, [query, t, pluginsEnabled]);
 
   useEffect(() => {
     const focusOnFind = (event: KeyboardEvent) => {

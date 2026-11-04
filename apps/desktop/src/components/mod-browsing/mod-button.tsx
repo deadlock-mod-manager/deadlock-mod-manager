@@ -23,6 +23,7 @@ import { useTranslation } from "react-i18next";
 import { GrInstallOption } from "react-icons/gr";
 import { RiErrorWarningLine } from "react-icons/ri";
 import { FileSelectorDialog } from "@/components/downloads/file-selector-dialog";
+import { NativeSourceSelectionDialog } from "@/components/downloads/native-source-selection-dialog";
 import { OpenInPerformanceButton } from "@/components/mod-browsing/config-listing";
 import { MultiFileDownloadDialog } from "@/components/downloads/multi-file-download-dialog";
 import {
@@ -32,6 +33,7 @@ import {
 import ErrorBoundary from "@/components/shared/error-boundary";
 import { useConfigListing } from "@/hooks/performance/use-config-listing";
 import { useDownload } from "@/hooks/use-download";
+import { downloadManager } from "@/lib/download/manager";
 import { useHasOpened } from "@deadlock-mods/ui/hooks/use-has-opened";
 import { useInstallAction } from "@/hooks/use-install-action";
 import {
@@ -160,6 +162,9 @@ const InstallModButton = ({
     closeDialog,
     localMod,
     isDialogOpen,
+    nativeSelection,
+    confirmNativeSelection,
+    cancelNativeSelection,
   } = useDownload(remoteMod, availableFiles, analyticsEntryPoint);
   const {
     performInstall,
@@ -178,6 +183,10 @@ const InstallModButton = ({
       ? state.modProgress[remoteMod.remoteId]?.percentage
       : undefined;
     return percentage == null ? undefined : Math.round(percentage);
+  });
+  const isWaiting = usePersistedStore((state) => {
+    const mod = findLocalMod(state.localMods, remoteMod?.remoteId);
+    return mod !== undefined && downloadManager.isWaiting(mod);
   });
   const removeMod = usePersistedStore((state) => state.removeMod);
   const [ref, hovering] = useHover();
@@ -336,6 +345,9 @@ const InstallModButton = ({
         }
         return t("modButton.downloaded");
       case ModStatus.Downloading:
+        if (isWaiting) {
+          return t("modStatus.waiting");
+        }
         return t("downloads.downloadingPercent", {
           percent: progressPercent ?? 0,
         });
@@ -348,7 +360,7 @@ const InstallModButton = ({
       default:
         return t(`modButton.${localMod?.status}`);
     }
-  }, [localMod?.status, t, hovering, progressPercent]);
+  }, [localMod?.status, t, hovering, progressPercent, isWaiting]);
 
   const tooltip = useMemo(() => {
     switch (localMod?.status) {
@@ -371,6 +383,7 @@ const InstallModButton = ({
   const showProgressRing =
     variant === "iconOnly" &&
     localMod?.status === ModStatus.Downloading &&
+    !isWaiting &&
     progressPercent != null;
 
   const buttonVariant = useMemo(() => {
@@ -438,7 +451,11 @@ const InstallModButton = ({
           <TooltipTrigger asChild>
             <Button
               aria-label={tooltip}
-              disabled={isActionInProgress || isAnalyzing}
+              disabled={
+                isActionInProgress ||
+                isAnalyzing ||
+                (!localMod && remoteMod?.downloadable === false)
+              }
               icon={
                 showProgressRing ? (
                   <DownloadProgressRing percentage={progressPercent} />
@@ -463,6 +480,15 @@ const InstallModButton = ({
       )}
 
       <div className='contents' onClick={(e) => e.stopPropagation()}>
+        {nativeSelection?.listing.release && (
+          <NativeSourceSelectionDialog
+            installation={nativeSelection.listing.release.installation}
+            modName={nativeSelection.listing.title}
+            selectedComponentIds={localMod?.source?.componentIds}
+            onConfirm={confirmNativeSelection}
+            onCancel={cancelNativeSelection}
+          />
+        )}
         {fileSelectorOpened && (
           <FileSelectorDialog
             fileTree={currentFileTree}

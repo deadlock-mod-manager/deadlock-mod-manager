@@ -21,8 +21,11 @@ import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { AnimatedModelPreview } from "@/components/foundry/animated-model-preview";
 import { ModelLoadingStage } from "@/components/foundry/model-loading-stage";
+import { CopyPreviewDetails } from "@/components/foundry/copy-preview-details";
 import { useSkinModelPreview } from "@/hooks/use-skin-model-preview";
 import { usePersistedStore } from "@/lib/store";
+import { getErrorMessage } from "@/lib/errors";
+import { previewFailureLabel } from "@/lib/preview-failures";
 import type { LocalMod } from "@/types/mods";
 
 interface SkinPreviewPanelProps {
@@ -76,7 +79,7 @@ export const SkinPreviewPanel = ({ hero, mod }: SkinPreviewPanelProps) => {
       </div>
 
       <div className='relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-lg border bg-gradient-to-b from-muted/40 to-background'>
-        <PreviewSurface label={label} preview={preview} />
+        <PreviewSurface hero={hero} label={label} preview={preview} />
       </div>
     </aside>
   );
@@ -106,33 +109,49 @@ const PanelNotice = ({
 );
 
 interface PreviewSurfaceProps {
+  hero: string | null;
   preview: ReturnType<typeof useSkinModelPreview>;
   label: string;
 }
 
-export const PreviewSurface = ({ preview, label }: PreviewSurfaceProps) => {
+export const PreviewSurface = ({
+  hero,
+  preview,
+  label,
+}: PreviewSurfaceProps) => {
   const { t } = useTranslation();
 
   // The empty stage stands in for the model so the panel never sits empty.
   if (preview.isPending) {
-    return <ModelLoadingStage status={t("skins.preview.loading")} />;
+    return (
+      <ModelLoadingStage hero={hero} status={t("skins.preview.loading")} />
+    );
   }
 
-  if (preview.isError || preview.data.kind === "unsupported") {
+  if (preview.isError || (preview.data && preview.data.kind !== "model")) {
     return (
       <PanelNotice
         action={
           preview.isError ? (
-            <Button
-              icon={<ArrowClockwiseIcon className='h-4 w-4' />}
-              onClick={() => void preview.refetch()}
-              size='sm'
-              variant='outline'>
-              {t("skins.preview.retry")}
-            </Button>
+            <div className='space-y-3'>
+              <Button
+                icon={<ArrowClockwiseIcon className='h-4 w-4' />}
+                onClick={() => void preview.refetch()}
+                size='sm'
+                variant='outline'>
+                {t("skins.preview.retry")}
+              </Button>
+              <CopyPreviewDetails details={getErrorMessage(preview.error)} />
+            </div>
           ) : undefined
         }
-        description={t("skins.preview.failedHint")}
+        description={t(
+          preview.isError
+            ? previewFailureLabel(preview.error)
+            : preview.data?.kind === "missingAssets"
+              ? "modPreview.failures.previewMissingAssets"
+              : "modPreview.unsupportedHint",
+        )}
         icon={
           <WarningIcon
             className='h-12 w-12 text-amber-500 opacity-70'
@@ -148,12 +167,24 @@ export const PreviewSurface = ({ preview, label }: PreviewSurfaceProps) => {
     );
   }
 
+  if (!preview.data || preview.data.kind !== "model") return null;
   return (
     <AnimatedModelPreview
       key={`${preview.data.filePath}:${preview.data.entryPath}`}
+      hero={hero ?? undefined}
       model={preview.data.model}
       label={label}
       source={preview.data}
+      comparisonSource={
+        preview.data.stockFilePath
+          ? {
+              filePath: preview.data.stockFilePath,
+              entryPath: preview.data.entryPath,
+            }
+          : undefined
+      }
+      comparisonRevision={preview.data.revision}
+      comparisonAvailable={!!preview.data.stockFilePath}
     />
   );
 };

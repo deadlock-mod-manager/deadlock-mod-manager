@@ -1,23 +1,19 @@
-import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Empty,
-  EmptyContent,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
   EmptyTitle,
 } from "@deadlock-mods/ui/components/empty";
 import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
-import { RefreshCw, TriangleAlert, UserRound } from "@deadlock-mods/ui/icons";
+import { UserRound } from "@deadlock-mods/ui/icons";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useParams, useSearchParams } from "react-router";
-import {
-  BuildTimeline,
-  FinalBuild,
-  SoulsSpent,
-  TimingCompare,
-} from "@/components/stats/match/match-build";
+import { useParams, useSearchParams } from "react-router";
+import { BuildTimeline } from "@/components/stats/match/build-timeline";
+import { FinalBuild } from "@/components/stats/match/final-build";
+import { SoulsSpent } from "@/components/stats/match/souls-spent";
+import { TimingCompare } from "@/components/stats/match/timing-compare";
 import {
   isMatchView,
   MatchHeader,
@@ -29,11 +25,10 @@ import {
   LanePanel,
   LobbyRoster,
 } from "@/components/stats/match/match-lobby";
-import {
-  LobbyPlacements,
-  Scoreboard,
-  SoulLeadChart,
-} from "@/components/stats/match/match-overview";
+import { LobbyPlacements } from "@/components/stats/match/lobby-placements";
+import { Scoreboard } from "@/components/stats/match/scoreboard";
+import { SoulLeadChart } from "@/components/stats/match/soul-lead-chart";
+import { MatchUnavailable } from "@/components/stats/match/match-unavailable";
 import { PlayerDialog } from "@/components/stats/player-dialog";
 import {
   useHeroBaseline,
@@ -272,30 +267,14 @@ const StatsMatch = () => {
       return <MatchSkeleton />;
     }
     if (details.isError || !details.match) {
+      const entry = stats.matches.find((match) => match.match_id === matchId);
       return (
-        <Empty className='py-16'>
-          <EmptyHeader>
-            <EmptyMedia variant='default'>
-              <TriangleAlert className='h-14 w-14' />
-            </EmptyMedia>
-            <EmptyTitle>{t("stats.match.errorTitle")}</EmptyTitle>
-            <EmptyDescription>
-              {t("stats.match.errorDescription")}
-            </EmptyDescription>
-          </EmptyHeader>
-          <EmptyContent className='flex-row justify-center'>
-            <Button
-              className='gap-1.5'
-              onClick={() => void details.refetch()}
-              variant='outline'>
-              <RefreshCw className='h-4 w-4' />
-              {t("stats.dashboard.broken.retry")}
-            </Button>
-            <Button asChild variant='ghost'>
-              <Link to='/stats'>{t("stats.match.backToStats")}</Link>
-            </Button>
-          </EmptyContent>
-        </Empty>
+        <MatchUnavailable
+          entry={entry}
+          hero={entry ? heroesById.get(entry.hero_id) : undefined}
+          isRetrying={details.isFetching}
+          onRetry={() => void details.refetch()}
+        />
       );
     }
     const me = details.player;
@@ -303,8 +282,8 @@ const StatsMatch = () => {
       return (
         <Empty className='py-16'>
           <EmptyHeader>
-            <EmptyMedia variant='default'>
-              <UserRound className='h-14 w-14' />
+            <EmptyMedia variant='icon'>
+              <UserRound />
             </EmptyMedia>
             <EmptyTitle>{t("stats.match.notInMatchTitle")}</EmptyTitle>
             <EmptyDescription>

@@ -4,11 +4,13 @@ mod progress;
 mod range;
 mod segment_staging;
 mod segmented;
+mod sources;
 #[cfg(test)]
 mod test_server;
 
 use crate::app_runtime::AppHandle;
 use crate::errors::Error;
+use crate::mod_manager::ModFileTree;
 use crate::mod_manager::filesystem_helper::FileSystemHelper;
 use crate::mod_manager::perf_config::staging as perf_staging;
 use crate::mod_manager::perf_config::types::{ConfigFoundEvent, ImportVariant};
@@ -32,10 +34,15 @@ use tokio_util::sync::CancellationToken;
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DownloadFileDto {
   pub url: String,
+  #[serde(default)]
+  pub fallback_urls: Vec<String>,
   pub name: String,
   pub size: u64,
   #[serde(default, rename = "md5Checksum")]
   pub md5_checksum: Option<String>,
+  /// Set only by Rust source resolution; IPC callers cannot grant network access.
+  #[serde(skip)]
+  pub native_artifact: Option<crate::providers::native_sources::ResolvedNativeArtifact>,
 }
 
 #[derive(Clone, Debug)]
@@ -46,6 +53,7 @@ pub struct DownloadTask {
   pub profile_folder: Option<String>,
   pub is_profile_import: bool,
   pub file_tree: Option<crate::mod_manager::file_tree::ModFileTree>,
+  pub native_component_plan: bool,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -418,6 +426,13 @@ impl DownloadManager {
               }
             }
 
+            #[cfg(feature = "plugins")]
+            crate::external_plugins::events::downloads::finished(
+              queued.operation_id,
+              &queued.task,
+              result.as_ref().map(|_| ()),
+            );
+
             if let Some(completion) = queued.completion {
               completion
                 .send(result.map_err(|error| error.to_string()))
@@ -440,6 +455,9 @@ impl DownloadManager {
     app_handle: AppHandle,
   ) -> Result<PreparedDownload, Error> {
     let mod_id = task.mod_id.clone();
+
+    #[cfg(feature = "plugins")]
+    crate::external_plugins::events::downloads::started(operation_id, task);
 
     app_handle
       .emit(
@@ -476,9 +494,12 @@ impl DownloadManager {
           );
         });
       }
-      let url = file.url.clone();
+      let urls = std::iter::once(file.url.clone())
+        .chain(file.fallback_urls.iter().cloned())
+        .collect::<Vec<_>>();
       let file_size = file.size;
       let md5_checksum = file.md5_checksum.clone();
+      let native_artifact = file.native_artifact.clone();
       let mod_id_clone = mod_id.clone();
       let app_handle_clone = app_handle.clone();
       let cancel_token_clone = cancel_token.clone();
@@ -487,7 +508,7 @@ impl DownloadManager {
 
       let handle = tokio::spawn(async move {
         let result = Self::download_file(
-          &url,
+          &urls,
           &target_path,
           file_size,
           {
@@ -522,6 +543,7 @@ impl DownloadManager {
             file_size.min(2 * 1024 * 1024 * 1024)
           }),
           md5_checksum.as_deref(),
+          native_artifact.as_ref(),
         )
         .await;
 
@@ -579,6 +601,45 @@ impl DownloadManager {
 
     match purpose {
       DownloadPurpose::Install => {
+        if task.native_component_plan {
+          let prepared =
+            Self::prepare_downloaded_vpks(operation_id, task, &downloaded_files, &app_handle)
+              .await?;
+          let result = {
+            let mut manager = crate::commands::state::MANAGER.lock().unwrap();
+            manager.update_mod_from_prepared(
+              &task.mod_id,
+              &task.mod_id,
+              &prepared.vpk_paths,
+              prepared.file_tree.clone(),
+              task.profile_folder.clone(),
+              false,
+            )
+          };
+          let cleanup = PreparedDownload {
+            scratch_paths: vec![task.target_dir.join(format!("prepared-{operation_id}"))],
+            ..prepared
+          };
+          cleanup.remove_scratch_files();
+          result?;
+          if let Some(tree) = cleanup.file_tree {
+            app_handle
+              .emit(
+                "download-file-tree",
+                DownloadFileTreeEvent {
+                  mod_id: task.mod_id.clone(),
+                  file_tree: tree,
+                },
+              )
+              .ok();
+          }
+          return Ok(PreparedDownload {
+            vpk_paths: Vec::new(),
+            file_tree: None,
+            selection_required: false,
+            scratch_paths: Vec::new(),
+          });
+        }
         Self::process_downloaded_files(task, &downloaded_files, &app_handle).await?;
         Ok(PreparedDownload {
           vpk_paths: Vec::new(),
@@ -636,7 +697,7 @@ impl DownloadManager {
   /// doesn't change how a file that already started is fetched.
   #[allow(clippy::too_many_arguments)]
   async fn download_file<F>(
-    url: &str,
+    urls: &[String],
     target_path: &std::path::Path,
     file_size: u64,
     on_progress: F,
@@ -644,54 +705,73 @@ impl DownloadManager {
     pause: PauseHandle,
     max_bytes: Option<u64>,
     md5_checksum: Option<&str>,
+    native_artifact: Option<&crate::providers::native_sources::ResolvedNativeArtifact>,
   ) -> Result<(), Error>
   where
     F: Fn(FileProgress) + Send + Sync + 'static,
   {
-    let budget = budget::app_budget();
-    let on_progress = Arc::new(on_progress);
-    // Held to the end, so a fallback keeps the caps on too.
-    let segments = if budget.segmented_enabled() {
-      let has_partial = tokio::fs::try_exists(downloader::partial_download_path(target_path))
-        .await
-        .unwrap_or(false);
-      Self::opt_in_for_segments(&budget, md5_checksum, file_size, has_partial, max_bytes)
-    } else {
-      None
-    };
-    if let Some((md5, _)) = &segments {
-      match download_file_segmented(
-        url,
+    if let Some(artifact) = native_artifact {
+      return downloader::download_native_artifact(
+        artifact,
         target_path,
-        file_size,
-        md5,
-        &*on_progress,
-        &cancel_token,
-        &pause,
-        &budget,
-        true,
+        on_progress,
+        cancel_token,
+        pause,
       )
-      .await?
-      {
-        Segmented::Finished => return Ok(()),
-        Segmented::Unsupported(reason) => {
-          log::warn!("Downloading {target_path:?} in one stream instead of segments: {reason}");
-        }
-      }
-    } else if let Err(error) = discard_staging(target_path).await {
-      log::warn!("Failed to remove segment staging for {target_path:?}: {error}");
+      .await;
     }
-    download_file_resumable(
-      url,
-      target_path,
-      file_size,
-      move |progress| on_progress(progress),
-      cancel_token,
-      pause,
-      max_bytes,
-      md5_checksum,
-      true,
-    )
+    let on_progress = Arc::new(on_progress);
+    sources::download_from_sources(urls, target_path, |url| {
+      let on_progress = Arc::clone(&on_progress);
+      let cancel_token = cancel_token.clone();
+      let pause = pause.clone();
+      async move {
+        let budget = budget::app_budget();
+        // Held to the end, so a fallback keeps the caps on too.
+        let segments = if budget.segmented_enabled() {
+          let has_partial = tokio::fs::try_exists(downloader::partial_download_path(target_path))
+            .await
+            .unwrap_or(false);
+          Self::opt_in_for_segments(&budget, md5_checksum, file_size, has_partial, max_bytes)
+        } else {
+          None
+        };
+        if let Some((md5, _)) = &segments {
+          match download_file_segmented(
+            &url,
+            target_path,
+            file_size,
+            md5,
+            &*on_progress,
+            &cancel_token,
+            &pause,
+            &budget,
+            true,
+          )
+          .await?
+          {
+            Segmented::Finished => return Ok(()),
+            Segmented::Unsupported(reason) => {
+              log::warn!("Downloading {target_path:?} in one stream instead of segments: {reason}");
+            }
+          }
+        } else if let Err(error) = discard_staging(target_path).await {
+          log::warn!("Failed to remove segment staging for {target_path:?}: {error}");
+        }
+        download_file_resumable(
+          &url,
+          target_path,
+          file_size,
+          move |progress| on_progress(progress),
+          cancel_token,
+          pause,
+          max_bytes,
+          md5_checksum,
+          true,
+        )
+        .await
+      }
+    })
     .await
   }
 
@@ -822,8 +902,11 @@ impl DownloadManager {
           .file_name()
           .and_then(|name| name.to_str())
           .unwrap_or_default();
-        let extracted_tree =
+        let mut extracted_tree =
           analyzer.get_file_tree_from_extracted(extracted_dir.path(), archive_name)?;
+        if task.native_component_plan {
+          Self::apply_component_plan(&mut extracted_tree, task.file_tree.as_ref())?;
+        }
         let carried = (extracted_tree.has_multiple_files
           && !Self::selection_covers_archive(task.file_tree.as_ref(), archive_name))
         .then(|| {
@@ -833,20 +916,40 @@ impl DownloadManager {
             &downloaded_names,
           )
         });
-        let selected_paths = match &carried {
-          Some(None) => {
-            selection_required = true;
-            Vec::new()
+        let missing_native_choice =
+          crate::providers::native_sources::validate_source_listing_slug(&task.mod_id)
+            && !task.native_component_plan
+            && Self::native_manual_choice_missing(
+              &extracted_tree,
+              task.file_tree.as_ref(),
+              archive_name,
+            );
+        let selected_paths = if missing_native_choice {
+          selection_required = true;
+          Vec::new()
+        } else if task.native_component_plan {
+          extracted_tree
+            .files
+            .iter()
+            .filter(|file| file.is_selected)
+            .map(|file| extracted_dir.path().join(&file.path))
+            .collect()
+        } else {
+          match &carried {
+            Some(None) => {
+              selection_required = true;
+              Vec::new()
+            }
+            Some(Some((carried, replaced))) => {
+              replaced_archives.insert(archive_name.to_string(), replaced);
+              Self::selected_extracted_vpks(extracted_dir.path(), &extracted_tree, Some(carried))
+            }
+            None => Self::selected_extracted_vpks(
+              extracted_dir.path(),
+              &extracted_tree,
+              task.file_tree.as_ref(),
+            ),
           }
-          Some(Some((carried, replaced))) => {
-            replaced_archives.insert(archive_name.to_string(), replaced);
-            Self::selected_extracted_vpks(extracted_dir.path(), &extracted_tree, Some(carried))
-          }
-          None => Self::selected_extracted_vpks(
-            extracted_dir.path(),
-            &extracted_tree,
-            task.file_tree.as_ref(),
-          ),
         };
 
         // Each archive's temp dir is gone before the names are known, so
@@ -866,6 +969,9 @@ impl DownloadManager {
       }
 
       let mut tree = ModFileTree::from_extracted(prepared_files);
+      if task.native_component_plan {
+        Self::validate_component_plan_complete(&tree, task.file_tree.as_ref())?;
+      }
       if selection_required {
         Self::keep_saved_order(
           &mut tree,
@@ -942,6 +1048,26 @@ impl DownloadManager {
       .is_some_and(|extension| extension.eq_ignore_ascii_case("vpk"))
   }
 
+  fn stage_downloaded_vpk(
+    downloaded_file: &std::path::Path,
+    extraction_root: &std::path::Path,
+  ) -> Result<crate::mod_manager::file_tree::ModFile, Error> {
+    let filename = downloaded_file
+      .file_name()
+      .and_then(|name| name.to_str())
+      .ok_or_else(|| Error::InvalidInput("VPK filename is invalid".into()))?;
+    let directory = extraction_root.join(filename);
+    std::fs::create_dir_all(&directory)?;
+    std::fs::copy(downloaded_file, directory.join(filename))?;
+    Ok(crate::mod_manager::file_tree::ModFile {
+      name: filename.to_string(),
+      path: format!("{filename}/{filename}"),
+      size: downloaded_file.metadata()?.len(),
+      is_selected: true,
+      archive_name: filename.to_string(),
+    })
+  }
+
   // The blocking worker owns cleanup until extraction finishes, including when
   // its async caller times out and drops the receiver.
   fn extract_prepared_archive(
@@ -953,6 +1079,81 @@ impl DownloadManager {
     crate::mod_manager::archive_extractor::ArchiveExtractor::new()
       .extract_archive(archive, directory.path())?;
     Ok(directory)
+  }
+
+  fn apply_component_plan(
+    tree: &mut ModFileTree,
+    selection: Option<&ModFileTree>,
+  ) -> Result<(), Error> {
+    let selection =
+      selection.ok_or_else(|| Error::InvalidInput("Missing native component selection".into()))?;
+    for requested in selection.files.iter().filter(|file| file.is_selected) {
+      if tree
+        .files
+        .first()
+        .is_some_and(|file| file.archive_name == requested.archive_name)
+        && !tree
+          .files
+          .iter()
+          .any(|file| Self::lists_by_path(requested, file))
+      {
+        return Err(Error::InvalidInput(
+          "A selected source component is missing from its artifact".into(),
+        ));
+      }
+    }
+    for file in &mut tree.files {
+      file.is_selected = selection
+        .files
+        .iter()
+        .any(|requested| requested.is_selected && Self::lists_by_path(requested, file));
+    }
+    Ok(())
+  }
+
+  fn validate_component_plan_complete(
+    tree: &ModFileTree,
+    selection: Option<&ModFileTree>,
+  ) -> Result<(), Error> {
+    let selection =
+      selection.ok_or_else(|| Error::InvalidInput("Missing native component selection".into()))?;
+    if selection
+      .files
+      .iter()
+      .filter(|file| file.is_selected)
+      .any(|requested| {
+        !tree
+          .files
+          .iter()
+          .any(|file| file.is_selected && Self::lists_by_path(requested, file))
+      })
+    {
+      return Err(Error::InvalidInput(
+        "A selected source component is missing from its artifact".into(),
+      ));
+    }
+    Ok(())
+  }
+
+  fn native_manual_choice_missing(
+    tree: &ModFileTree,
+    selection: Option<&ModFileTree>,
+    archive: &str,
+  ) -> bool {
+    selection.is_some_and(|selection| {
+      let selected: Vec<_> = selection
+        .files
+        .iter()
+        .filter(|file| file.is_selected && file.archive_name == archive)
+        .collect();
+      selected.is_empty()
+        || selected.iter().any(|requested| {
+          !tree
+            .files
+            .iter()
+            .any(|file| Self::lists_by_path(requested, file))
+        })
+    })
   }
 
   fn selected_extracted_vpks(
@@ -1306,6 +1507,12 @@ impl DownloadManager {
     source: Option<DownloadSource>,
     app_handle: &AppHandle,
   ) {
+    #[cfg(feature = "plugins")]
+    crate::external_plugins::events::downloads::progress(
+      mod_id,
+      accepted.total_downloaded,
+      accepted.total_size,
+    );
     app_handle
       .emit(
         "download-progress",
@@ -1393,18 +1600,29 @@ impl DownloadManager {
     };
 
     for file_path in downloaded_files {
+      if Self::is_vpk_path(file_path)
+        && crate::providers::native_sources::validate_source_listing_slug(&task.mod_id)
+      {
+        collected_files.push(Self::stage_downloaded_vpk(file_path, &extraction_root)?);
+        continue;
+      }
       if !ArchiveExtractor::new().is_supported_archive(file_path) {
         continue;
       }
 
-      app_handle
-        .emit(
-          "download-extracting",
-          DownloadExtractingEvent {
-            mod_id: task.mod_id.clone(),
-          },
-        )
-        .ok();
+      // A profile import reports its own progress and stores what it installed
+      // when it ends. This event would mark the mod with the same ID in the
+      // active profile as extracting, and nothing would set it back.
+      if !task.is_profile_import {
+        app_handle
+          .emit(
+            "download-extracting",
+            DownloadExtractingEvent {
+              mod_id: task.mod_id.clone(),
+            },
+          )
+          .ok();
+      }
 
       log::info!("Extracting archive: {file_path:?}");
 
@@ -1709,13 +1927,19 @@ impl DownloadManager {
       }
       (dropped, cancelled)
     };
-    for _ in &dropped {
+    for queued in &dropped {
+      #[cfg(feature = "plugins")]
+      crate::external_plugins::events::downloads::finished(
+        queued.operation_id,
+        &queued.task,
+        Err(&Error::DownloadCancelled),
+      );
       // Reported like a cancelled running download, so a paused one settles too.
       self
         .app_handle
         .emit(
           "download-error",
-          DownloadErrorEvent::new(mod_id.to_string(), &Error::DownloadCancelled),
+          DownloadErrorEvent::new(queued.task.mod_id.clone(), &Error::DownloadCancelled),
         )
         .ok();
     }
@@ -1744,7 +1968,11 @@ impl DownloadManager {
   /// A paused download keeps its partial files while it waits in the queue.
   async fn remove_partials(task: &DownloadTask) {
     for file in &task.files {
-      downloader::remove_partial_download(&task.target_dir.join(&file.name)).await;
+      let target = task.target_dir.join(&file.name);
+      downloader::remove_partial_download(&target).await;
+      if let Err(error) = discard_staging(&target).await {
+        log::warn!("Failed to remove segment staging for {target:?}: {error}");
+      }
     }
   }
 
@@ -1782,6 +2010,14 @@ impl DownloadManager {
       }
       (dropped, cancelled)
     };
+    #[cfg(feature = "plugins")]
+    for queued in &dropped {
+      crate::external_plugins::events::downloads::finished(
+        queued.operation_id,
+        &queued.task,
+        Err(&Error::DownloadCancelled),
+      );
+    }
     // Settles the window's entry, as `cancel_download` does; a paused download
     // waits here instead of in the cancelled active downloads. Only the window's
     // own downloads: batch callers hear through their completion channel, and
@@ -1834,6 +2070,16 @@ impl DownloadManager {
         },
       )
       .ok();
+    #[cfg(feature = "plugins")]
+    if active.contains_key(mod_id) {
+      crate::external_plugins::events::downloads::paused(mod_id);
+    } else if let Some(queued) = queue.iter().find(|queued| queued.task.mod_id == mod_id) {
+      crate::external_plugins::events::downloads::queued_status(
+        queued.operation_id,
+        &queued.task,
+        true,
+      );
+    }
     Ok(())
   }
 
@@ -1867,6 +2113,16 @@ impl DownloadManager {
           },
         )
         .ok();
+      #[cfg(feature = "plugins")]
+      if active.contains_key(mod_id) {
+        crate::external_plugins::events::downloads::resumed(mod_id);
+      } else if let Some(queued) = queue.iter().find(|queued| queued.task.mod_id == mod_id) {
+        crate::external_plugins::events::downloads::queued_status(
+          queued.operation_id,
+          &queued.task,
+          false,
+        );
+      }
     }
     self.process_queue().await;
     Ok(())
@@ -1993,6 +2249,32 @@ mod tests {
   use crate::mod_manager::file_tree::{ModFile, ModFileTree};
 
   #[test]
+  fn loose_download_is_staged_for_installation_with_manifest() {
+    let directory = tempfile::tempdir().unwrap();
+    let downloaded = directory.path().join("example.vpk");
+    let staging = directory.path().join("extracted");
+    let addons = directory.path().join("addons");
+    let bytes = include_bytes!("../../../../../examples/mod-source/files/example.vpk");
+    std::fs::write(&downloaded, bytes).unwrap();
+    let file = DownloadManager::stage_downloaded_vpk(&downloaded, &staging).unwrap();
+    let tree = ModFileTree::from_extracted(vec![file]);
+    let mod_id = format!("source-{}", "a".repeat(64));
+    let placed = crate::mod_manager::vpk_manager::VpkManager::new()
+      .place_selected_vpks_with_prefix(&staging, &addons, &mod_id, &tree)
+      .unwrap();
+    crate::commands::archive::persist_prefixed_import(&addons, &mod_id, placed).unwrap();
+
+    let filename = format!("{mod_id}_example.vpk");
+    assert_eq!(std::fs::read(addons.join(&filename)).unwrap(), bytes);
+    let manifest = crate::mod_manager::vpk_manifest::ProfileVpkManifest::load(&addons).unwrap();
+    let entry = manifest.mods.get(&mod_id).unwrap();
+    assert!(!entry.enabled);
+    assert_eq!(entry.disabled_vpks, vec![filename]);
+    assert_eq!(entry.original_vpk_names, vec!["example.vpk"]);
+    assert_eq!(std::fs::read(downloaded).unwrap(), bytes);
+  }
+
+  #[test]
   fn config_label_names_the_first_archive() {
     let files = vec![
       PathBuf::from("downloads/pak01_dir.vpk"),
@@ -2019,11 +2301,52 @@ mod tests {
         profile_folder: None,
         is_profile_import: false,
         file_tree: None,
+        native_component_plan: false,
       },
       purpose: DownloadPurpose::Install,
       completion: None,
       paused: false,
     }
+  }
+
+  #[tokio::test]
+  async fn cancelling_paused_download_removes_both_partial_formats() {
+    let directory = tempfile::tempdir().unwrap();
+    let target = directory.path().join("mod.vpk");
+    let partial = downloader::partial_download_path(&target);
+    let metadata = directory.path().join("mod.vpk.partial.meta");
+    let staging = segment_staging::staging_dir(&target);
+    tokio::fs::write(&partial, b"partial").await.unwrap();
+    tokio::fs::write(&metadata, b"metadata").await.unwrap();
+    tokio::fs::create_dir_all(&staging).await.unwrap();
+    tokio::fs::write(staging.join("0.part"), b"segment")
+      .await
+      .unwrap();
+    tokio::fs::write(directory.path().join("keep.txt"), b"unrelated")
+      .await
+      .unwrap();
+    let mut download = queued("paused");
+    download.task.target_dir = directory.path().to_path_buf();
+    download.task.files.push(DownloadFileDto {
+      url: "https://example.invalid/mod.vpk".to_string(),
+      fallback_urls: Vec::new(),
+      name: "mod.vpk".to_string(),
+      size: 1024,
+      md5_checksum: None,
+      native_artifact: None,
+    });
+
+    DownloadManager::remove_partials(&download.task).await;
+
+    assert!(!partial.exists());
+    assert!(!metadata.exists());
+    assert!(!staging.exists());
+    assert_eq!(
+      tokio::fs::read(directory.path().join("keep.txt"))
+        .await
+        .unwrap(),
+      b"unrelated"
+    );
   }
 
   fn mod_ids(queue: &VecDeque<QueuedDownload>) -> Vec<(&str, bool)> {
@@ -2293,6 +2616,59 @@ mod tests {
     drop(directory);
     assert!(!path.exists());
   }
+  #[test]
+  fn native_manual_update_requires_choice_when_the_selected_file_disappears() {
+    let saved = tree(vec![file("pack.zip", "pack.zip/red.vpk", true)]);
+    let changed = tree(vec![file("pack.zip", "blue.vpk", true)]);
+    assert!(DownloadManager::native_manual_choice_missing(
+      &changed,
+      Some(&saved),
+      "pack.zip"
+    ));
+    let same = tree(vec![file("pack.zip", "red.vpk", true)]);
+    assert!(!DownloadManager::native_manual_choice_missing(
+      &same,
+      Some(&saved),
+      "pack.zip"
+    ));
+  }
+
+  #[test]
+  fn native_component_plan_never_installs_undeclared_files_or_ignores_missing_required_files() {
+    let plan = tree(vec![
+      file("pack.zip", "pack.zip/base.vpk", true),
+      file("pack.zip", "pack.zip/red.vpk", false),
+    ]);
+    let mut extracted = tree(vec![
+      file("pack.zip", "base.vpk", true),
+      file("pack.zip", "red.vpk", true),
+      file("pack.zip", "extra.vpk", true),
+    ]);
+    DownloadManager::apply_component_plan(&mut extracted, Some(&plan)).unwrap();
+    assert_eq!(
+      extracted
+        .files
+        .iter()
+        .filter(|file| file.is_selected)
+        .map(|file| file.path.as_str())
+        .collect::<Vec<_>>(),
+      ["base.vpk"]
+    );
+    DownloadManager::validate_component_plan_complete(&extracted, Some(&plan)).unwrap();
+    assert!(
+      DownloadManager::validate_component_plan_complete(&tree(Vec::new()), Some(&plan)).is_err()
+    );
+    let incomplete = tree(vec![file("pack.zip", "base.vpk", true)]);
+    let missing_companion = tree(vec![
+      file("pack.zip", "pack.zip/base.vpk", true),
+      file("other.zip", "other.zip/required.vpk", true),
+    ]);
+    assert!(
+      DownloadManager::validate_component_plan_complete(&incomplete, Some(&missing_companion))
+        .is_err()
+    );
+  }
+
   fn tree(files: Vec<ModFile>) -> ModFileTree {
     let total_files = files.len();
     ModFileTree {

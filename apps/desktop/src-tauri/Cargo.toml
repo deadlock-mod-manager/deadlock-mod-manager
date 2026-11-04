@@ -1,6 +1,6 @@
 [package]
 name = "deadlock-mod-manager"
-version = "2.2.0"
+version = "2.3.0"
 description = "A mod manager for the Valve game Deadlock, built with Tauri, React, and TypeScript."
 authors = ["stormix <hello@stormix.co>"]
 license = "GPL-3.0"
@@ -11,7 +11,8 @@ edition = "2024"
 
 [lib]
 name = "desktop_lib"
-crate-type = ["staticlib", "cdylib", "rlib"]
+# The desktop executable links this Rust library; no mobile library is shipped.
+crate-type = ["rlib"]
 
 [features]
 default = ["tauri-wry", "match-sync"]
@@ -27,6 +28,7 @@ e2e-harness = [
 ]
 # Recovers match salts through the user's Steam account (opt-in at runtime).
 match-sync = ["dep:deadlock-match-sync"]
+plugins = ["dep:dmm-plugin-runtime", "dep:webview2-com", "dep:windows-core"]
 
 # `cef` is injected into [features] by scripts/cef-patch.ts for CEF builds only.
 [lints.rust]
@@ -83,6 +85,7 @@ dmp-parser = { path = "../../../packages/dmp-parser" }
 kv-parser = { path = "../../../packages/kv-parser" }
 deadlock-discord-presence = { path = "../../../packages/deadlock-discord-presence" }
 deadlock-match-sync = { path = "../../../packages/deadlock-match-sync", optional = true }
+deadlock-server-picker = { path = "../../../packages/deadlock-server-picker" }
 tokio = { version = "1.50.0", features = ["full"] }
 tokio-util = "0.7"
 # Already in the tree via reqwest; the loopback forge bridge only needs the
@@ -114,6 +117,7 @@ base64 = "0.22"
 flate2 = "1"
 image = { version = "0.25", default-features = false, features = ["png"] }
 keyvalues-parser = "0.2"
+dmm-plugin-runtime = { path = "../../../packages/plugin-runtime", optional = true }
 
 [dev-dependencies]
 tempfile = "3.27.0"
@@ -142,6 +146,9 @@ windows = { version = "0.58", features = [
   "Win32_System_Threading",
   "Win32_System_Wmi",
 ] }
+# Keeps plugin frames on the plugin protocol; versions match wry's WebView2 bindings
+webview2-com = { version = "0.39", optional = true }
+windows-core = { version = "0.62", optional = true }
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-updater = "2.14.0"

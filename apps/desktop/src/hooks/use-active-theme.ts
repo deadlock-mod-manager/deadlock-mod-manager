@@ -52,7 +52,7 @@ export function useSeason() {
 export function useActiveTheme() {
   const settings = usePersistedStore(selectThemeSettings);
   const backgroundEnabled = usePersistedStore(
-    (state) => state.enabledPlugins.background ?? false,
+    (state) => state.appBackground.image !== "",
   );
   const remlockEnabled = useRemlockReleaseEnabled();
   const season = useSeason();

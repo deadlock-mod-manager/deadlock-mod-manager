@@ -4,7 +4,7 @@ Thank you for your interest in contributing to Deadlock Mod Manager! This guide 
 
 ## AI-Assisted Contributions
 
-We encourage the use of AI tools to help you contribute — we use them ourselves (our Cursor config is in the repo!). Please review our [AI Policy](./AI_POLICY.md) for the full details, but the essentials are:
+We encourage the use of AI tools to help you contribute — we use them ourselves. Shared agent instructions live in [AGENTS.md](./AGENTS.md), with reference material and skills in `.agents/`. Please review our [AI Policy](./AI_POLICY.md) for the full details, but the essentials are:
 
 1. **You own your code.** Understand and be able to explain everything you submit.
 2. **Disclose significant AI usage** in your PR description.
@@ -345,7 +345,8 @@ deadlock-mod-manager/
 │   ├── shared/       # Shared utilities and types
 │   ├── logging/      # Structured logging package
 │   └── config-*/     # Shared configurations
-└── .cursor/          # Development rules and guidelines
+├── .agents/          # Shared agent reference material and skills
+└── .cursor/          # Cursor MCP and editor settings
 ```
 
 ### Key Technologies

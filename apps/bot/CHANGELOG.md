@@ -1,5 +1,21 @@
 # @deadlock-mods/bot
 
+## 1.7.0
+
+### Minor Changes
+
+- d13eed9: Pin a mod of the week for a set number of days with the /modoftheweek bot command
+
+### Patch Changes
+
+- Updated dependencies [d16b676]
+- Updated dependencies [167143d]
+- Updated dependencies [7fd9a1a]
+  - @deadlock-mods/database@2.6.0
+  - @deadlock-mods/feature-flags@0.2.13
+  - @deadlock-mods/instrumentation@0.1.15
+  - @deadlock-mods/shared@2.5.0
+
 ## 1.6.1
 
 ### Patch Changes

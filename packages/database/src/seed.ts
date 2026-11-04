@@ -24,20 +24,8 @@ import { db, schema } from "./client";
           exposed: true,
         },
         {
-          name: "plugin-background",
-          description: "Enable Background plugin",
-          value: true,
-          exposed: true,
-        },
-        {
           name: "plugin-discord",
           description: "Enable Discord RPC plugin",
-          value: true,
-          exposed: true,
-        },
-        {
-          name: "plugin-flashbang",
-          description: "Enable Flashbang plugin",
           value: true,
           exposed: true,
         },

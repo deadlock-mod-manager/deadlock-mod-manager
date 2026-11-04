@@ -21,6 +21,7 @@ export type ErrorKind = {
     | "unknown"
     | "gameRunning"
     | "gameNotRunning"
+    | "gameStopFailed"
     | "gameLaunchFailed"
     | "modDataReviewRequired"
     | "missingEnabledModFiles"
@@ -44,8 +45,10 @@ export type ErrorKind = {
     | "crosshairConfigResetFailed"
     | "rollbackFailed"
     | "backgroundTaskFailed"
+    | "serverPicker"
     | "vpkInUse";
   message: string;
+  serverPickerKind?: string;
   affectedMods?: { id: string; name: string }[];
   conflictingMods?: string[];
   path?: string;

@@ -9,8 +9,7 @@ import { step } from "../support/evidence";
 import { waitForDisplayed } from "../support/ui";
 
 const next = () => $("button=Next");
-const expectTelemetry = () =>
-  waitForDisplayed("label=Share anonymous usage data");
+const expectTelemetry = () => waitForDisplayed("#telemetry-consent-switch");
 
 describe("onboarding existing addons", () => {
   it("can skip after closing analysis and after returning to the addons step", async () => {

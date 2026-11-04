@@ -1,6 +1,7 @@
 import { RuntimeError } from "@deadlock-mods/common/client-errors";
 import { useQueries } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
   playerQueryOptions,
   usePlayerHistory,
@@ -138,27 +139,49 @@ export const useLiveLobby = ({
   };
 };
 
+const DAY_S = 24 * 60 * 60;
+const LIVE_CURVE_DAYS = 7;
+/** The local hero can flicker while the bridge resolves it; each flicker is a heavy request. */
+const HERO_SETTLE_MS = 2000;
+const LIVE_CURVE_RETRY_MS = 30_000;
+
 /**
  * How players on one hero in the player's rank bracket stand over a match, for
  * grading a match while it runs. One request per hero and bracket.
+ *
+ * A hero filter keeps deadlock-api off its pre-aggregated rollup, so the curve
+ * scans every match of that hero in the window: 30 days ran into its 20 s
+ * timeout. The window is the last week from a UTC midnight, which keeps the URL,
+ * and so the API's cache, the same for every player on that hero all day.
  */
 export const useLiveHeroBenchmark = (
   heroId: number | null,
   badge: number | undefined,
   scope: StatsScope,
 ) => {
+  const settledHeroId = useDebouncedValue(heroId, HERO_SETTLE_MS);
   const { tier: bracket, minBadge, maxBadge } = badgeBracket(badge);
+  const today = Math.floor(Date.now() / 1000 / DAY_S) * DAY_S;
+  const windowScope = {
+    ...scope,
+    since: Math.max(scope.since, today - LIVE_CURVE_DAYS * DAY_S),
+  };
   return useStatsQuery(
     {
-      key: `benchmark:live-curve:${heroId}:${bracket ?? "all"}:${statsScopeQuery(scope)}`,
+      key: `benchmark:live-curve:${settledHeroId}:${bracket ?? "all"}:${statsScopeQuery(windowScope)}`,
       ttl: STATS_TTL.benchmark,
-      enabled: heroId !== null,
+      enabled: settledHeroId !== null && settledHeroId === heroId,
+      retryEvery: LIVE_CURVE_RETRY_MS,
     },
     () => {
-      if (heroId === null) {
+      if (settledHeroId === null) {
         throw new RuntimeError("live benchmark query ran without a hero");
       }
-      return getBracketCurve({ heroId, minBadge, maxBadge, scope });
+      return getBracketCurve({
+        heroId: settledHeroId,
+        badges: bracket === null ? null : { minBadge, maxBadge },
+        scope: windowScope,
+      });
     },
   );
 };

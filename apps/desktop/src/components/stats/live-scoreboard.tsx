@@ -369,9 +369,11 @@ const LiveMatch = ({
       ? "firstMinute"
       : source.benchmarkPending
         ? "loading"
-        : rows.length === 0
-          ? "unavailable"
-          : null;
+        : rows.length > 0
+          ? null
+          : source.benchmarkFailed
+            ? "retrying"
+            : "unavailable";
 
   return (
     <>
@@ -421,8 +423,8 @@ const LiveMatch = ({
             localPlayer.souls !== null &&
             curve.length > 0 && (
               // Side by side, the pace card sets the row's height and the
-              // chart fills what it leaves.
-              <div className='relative min-h-[26rem] xl:min-h-0'>
+              // chart fills what it leaves, but never below its own content.
+              <div className='relative min-h-[26rem] xl:min-h-96'>
                 <LiveSoulsCurve
                   className='xl:absolute xl:inset-0'
                   color={teamColor(board.team)}

@@ -5,12 +5,18 @@ import {
   CardTitle,
 } from "@deadlock-mods/ui/components/card";
 import { GameBananaMarkup } from "@/components/mod-detail/gamebanana-markup";
+import { useTranslation } from "react-i18next";
 
 interface ModDescriptionProps {
   description: string;
+  plainText?: boolean;
 }
 
-export const ModDescription = ({ description }: ModDescriptionProps) => {
+export const ModDescription = ({
+  description,
+  plainText = false,
+}: ModDescriptionProps) => {
+  const { t } = useTranslation();
   if (!description) {
     return null;
   }
@@ -18,13 +24,19 @@ export const ModDescription = ({ description }: ModDescriptionProps) => {
   return (
     <Card className='shadow-none [contain:layout_style_paint]'>
       <CardHeader>
-        <CardTitle>Description</CardTitle>
+        <CardTitle>{t("modSources.modDescription")}</CardTitle>
       </CardHeader>
       <CardContent>
-        <GameBananaMarkup
-          className='whitespace-pre-line'
-          content={description}
-        />
+        {plainText ? (
+          <p className='whitespace-pre-wrap break-words text-sm leading-relaxed'>
+            {description}
+          </p>
+        ) : (
+          <GameBananaMarkup
+            className='whitespace-pre-line'
+            content={description}
+          />
+        )}
       </CardContent>
     </Card>
   );

@@ -1,5 +1,5 @@
 //! Tells the frontend when a VPK under the game's addons roots appears,
-//! disappears, or is renamed, so files the user deletes outside DMM are
+//! changes, disappears, or is renamed, so edits made outside DMM are
 //! noticed while DMM is open. The frontend then reconciles every profile
 //! against its manifest; this module only reports that something changed.
 
@@ -69,7 +69,9 @@ fn report_bursts(rx: &Receiver<()>, app_handle: &AppHandle) {
 fn is_addon_vpk_change(citadel: &Path, event: &Event) -> bool {
   let relevant_kind = matches!(
     event.kind,
-    EventKind::Create(_) | EventKind::Remove(_) | EventKind::Modify(ModifyKind::Name(_))
+    EventKind::Create(_)
+      | EventKind::Remove(_)
+      | EventKind::Modify(ModifyKind::Name(_) | ModifyKind::Data(_) | ModifyKind::Any)
   );
   relevant_kind && event.paths.iter().any(|path| is_addon_vpk(citadel, path))
 }
@@ -96,6 +98,26 @@ fn is_addon_vpk(citadel: &Path, path: &Path) -> bool {
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  #[test]
+  fn reports_content_changes_but_not_access_metadata() {
+    use notify::event::{DataChange, MetadataKind};
+    let root = Path::new("/game/citadel");
+    let path = root.join("addons/pak01_dir.vpk");
+    for kind in [ModifyKind::Data(DataChange::Any), ModifyKind::Any] {
+      assert!(is_addon_vpk_change(
+        root,
+        &Event::new(EventKind::Modify(kind)).add_path(path.clone())
+      ));
+    }
+    assert!(!is_addon_vpk_change(
+      root,
+      &Event::new(EventKind::Modify(ModifyKind::Metadata(
+        MetadataKind::AccessTime
+      )))
+      .add_path(path)
+    ));
+  }
 
   #[test]
   fn only_vpks_below_addons_roots_count() {

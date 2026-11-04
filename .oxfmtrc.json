@@ -37,6 +37,7 @@
     "packages/deadlock-discord-presence/src/generated/**",
     "packages/vpk-parser/src/generated/**",
     "packages/perf-catalog/data/catalog.json",
+    "packages/database/drizzle/meta/**",
     "packages/kv-parser/src-rs/generated/**",
     "apps/docs/.source/**",
     "infrastructure/templates/**"

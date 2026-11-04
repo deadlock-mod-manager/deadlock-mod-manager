@@ -28,6 +28,7 @@ const toModToCheck = (mod: LocalMod): ModToCheck => {
   if (cached) return cached;
   const entry = {
     remoteId: mod.remoteId,
+    source: mod.source,
     installedAt:
       mod.downloadedAt ??
       mod.selectedDownloads?.[0]?.createdAt ??
@@ -38,6 +39,8 @@ const toModToCheck = (mod: LocalMod): ModToCheck => {
         const id = fileIdFromDownloadUrl(download.url);
         return id === null ? [] : [String(id)];
       }) ?? [],
+    selectedFileNames:
+      mod.selectedDownloads?.map((download) => download.name) ?? [],
   };
   modsToCheckCache.set(mod, entry);
   return entry;

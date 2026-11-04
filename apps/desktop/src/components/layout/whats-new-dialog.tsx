@@ -9,6 +9,7 @@ import {
 } from "@deadlock-mods/ui/components/dialog";
 import { Separator } from "@deadlock-mods/ui/components/separator";
 import {
+  ArrowRightIcon,
   ArrowSquareOutIcon,
   FloppyDiskIcon,
   GlobeIcon,
@@ -22,9 +23,12 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { type ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import useAbout from "@/hooks/use-about";
+import { getLastSeenVersion } from "@/hooks/use-whats-new";
 import { getReleaseNotesUrl } from "@/lib/app-version-display";
 import { APP_NAME } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 import {
+  getSkippedWhatsNewVersions,
   getWhatsNewContent,
   getWhatsNewVideoId,
 } from "@/lib/whats-new-versions";
@@ -218,6 +222,87 @@ const YouTubeEmbed = ({ videoId }: { videoId: string }) => {
   );
 };
 
+const MAX_SKIPPED_LINKS = 4;
+
+const Highlights = ({
+  highlights,
+}: {
+  highlights: { image: string; caption: string }[];
+}) => {
+  const { t } = useTranslation();
+
+  return (
+    <div className='wn-title-enter space-y-3 px-6 pt-5'>
+      {highlights.map(({ image, caption }) => (
+        <figure
+          className='overflow-hidden rounded-lg border border-primary/15'
+          key={image}>
+          <img
+            alt={t("whatsNew.highlightAlt", { caption })}
+            className='block w-full'
+            src={image}
+          />
+          <figcaption className='border-primary/15 border-t bg-primary/[0.04] px-3 py-2 font-semibold text-foreground text-xs'>
+            {caption}
+          </figcaption>
+        </figure>
+      ))}
+    </div>
+  );
+};
+
+const VersionBadge = ({ from, to }: { from: string | null; to: string }) => (
+  <Badge
+    className='ml-auto gap-1.5 rounded-md border-primary/20 bg-primary/[0.07] font-mono text-primary/80 text-[10px] tabular-nums'
+    variant='outline'>
+    {from && (
+      <>
+        <span className='wn-version-from'>v{from}</span>
+        <ArrowRightIcon
+          aria-hidden='true'
+          className='wn-version-arrow size-2.5'
+        />
+      </>
+    )}
+    <span className={from ? "wn-version-to" : undefined}>v{to}</span>
+  </Badge>
+);
+
+const SkippedReleases = ({
+  from,
+  versions,
+}: {
+  from: string;
+  versions: string[];
+}) => {
+  const { t } = useTranslation();
+  const hidden = versions.length - MAX_SKIPPED_LINKS;
+
+  return (
+    <div className='relative mt-3 flex flex-wrap items-center gap-1.5'>
+      <span className='text-muted-foreground text-xs'>
+        {t("whatsNew.skippedSince", { version: from })}
+      </span>
+      {versions.slice(0, MAX_SKIPPED_LINKS).map((skipped) => (
+        <button
+          aria-label={t("whatsNew.skippedReleaseNotes", { version: skipped })}
+          className='inline-flex items-center gap-1 rounded-md border border-primary/20 px-1.5 py-0.5 font-mono text-[11px] text-primary/80 tabular-nums transition-colors hover:border-primary/50 hover:text-primary focus-visible:outline-2 focus-visible:outline-primary'
+          key={skipped}
+          onClick={() => openUrl(getReleaseNotesUrl(skipped))}
+          type='button'>
+          {skipped}
+          <ArrowSquareOutIcon aria-hidden='true' className='size-3' />
+        </button>
+      ))}
+      {hidden > 0 && (
+        <span className='text-muted-foreground text-xs'>
+          {t("whatsNew.skippedMore", { count: hidden })}
+        </span>
+      )}
+    </div>
+  );
+};
+
 export const WhatsNewDialog = ({ onClose }: WhatsNewDialogProps) => {
   const { t, i18n } = useTranslation();
   const { data } = useAbout();
@@ -225,8 +310,12 @@ export const WhatsNewDialog = ({ onClose }: WhatsNewDialogProps) => {
   const version = data?.version || "0.10.0";
 
   const videoId = getWhatsNewVideoId(version);
+  // Read once: closing the dialog marks this version as seen.
+  const [lastSeen] = useState(getLastSeenVersion);
+  const from = lastSeen && lastSeen !== version ? lastSeen : null;
+  const skipped = from ? getSkippedWhatsNewVersions(from, version) : [];
 
-  const { title, categories } = useMemo(() => {
+  const { title, categories, highlights } = useMemo(() => {
     const content = getWhatsNewContent(
       { t, exists: i18n.exists.bind(i18n) },
       version,
@@ -234,27 +323,28 @@ export const WhatsNewDialog = ({ onClose }: WhatsNewDialogProps) => {
     return {
       title: content.title,
       categories: categorizeFeatures(content.features),
+      highlights: content.highlights,
     };
   }, [t, i18n, version]);
 
   return (
-    <DialogContent className='wn-dialog-enter max-h-[85dvh] max-w-lg flex flex-col gap-0 overflow-hidden border-primary/15 p-0'>
+    <DialogContent
+      className={cn(
+        "wn-dialog-enter max-h-[85dvh] flex flex-col gap-0 overflow-hidden border-primary/15 p-0",
+        highlights.length > 0 ? "max-w-3xl" : "max-w-lg",
+      )}>
       <DialogHeader className='relative shrink-0 overflow-hidden px-6 pt-7 pb-5'>
         <div
           aria-hidden='true'
           className='pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,hsl(var(--primary)/0.08),transparent)]'
         />
 
-        <div className='relative flex items-center gap-2'>
-          <SparkleIcon className='size-3.5 text-primary/70' weight='duotone' />
-          <span className='font-primary font-bold text-[10px] text-primary/70 uppercase tracking-[0.35em]'>
+        <div className='relative flex items-center gap-1.5'>
+          <SparkleIcon className='size-4 shrink-0 text-primary' weight='fill' />
+          <span className='font-primary font-semibold text-primary text-xs uppercase leading-none tracking-[0.15em]'>
             {t("whatsNew.title")}
           </span>
-          <Badge
-            className='ml-auto rounded-md border-primary/20 bg-primary/[0.07] font-mono text-primary/80 text-[10px] tabular-nums'
-            variant='outline'>
-            v{version}
-          </Badge>
+          <VersionBadge from={from} to={version} />
         </div>
 
         <DialogTitle className='relative mt-2 font-primary font-bold text-[1.65rem] leading-[1.15] tracking-tight text-foreground'>
@@ -264,13 +354,18 @@ export const WhatsNewDialog = ({ onClose }: WhatsNewDialogProps) => {
         <DialogDescription className='mt-1.5 text-muted-foreground text-xs leading-relaxed'>
           {t("whatsNew.welcome", { appName: APP_NAME })}
         </DialogDescription>
+
+        {from && skipped.length > 0 && (
+          <SkippedReleases from={from} versions={skipped} />
+        )}
       </DialogHeader>
 
       <Separator className='bg-primary/10' />
 
-      {(videoId || categories.length > 0) && (
+      {(videoId || highlights.length > 0 || categories.length > 0) && (
         <div className='min-h-0 flex-1 overflow-y-auto pr-1'>
           {videoId && <YouTubeEmbed videoId={videoId} />}
+          {highlights.length > 0 && <Highlights highlights={highlights} />}
           {categories.length > 0 && (
             <div className='space-y-5 px-6 py-5'>
               {categories.map((category, idx) => (

@@ -263,13 +263,15 @@ const restore = async (
     }
   }
 
-  // One VPK per selected download is not a choice: install takes them all.
-  if (fileTree && requiresFileSelection(fileTree)) {
+  if (fileTree) {
+    // Manage files keeps deselected archives in selectedDownloads, so the
+    // saved selection applies even when each download holds one VPK.
     const selection = restoreSelection(fileTree, snapshot);
-    if (!selection) {
+    if (selection) {
+      fileTree = selection;
+    } else if (requiresFileSelection(fileTree)) {
       return { outcome: "manual" };
     }
-    fileTree = selection;
   }
 
   // Defaults to "manual": if install decides it needs a file selection it just

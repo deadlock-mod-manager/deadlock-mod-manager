@@ -18,6 +18,7 @@ import {
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ModelLoadingStage } from "@/components/foundry/model-loading-stage";
 import { PreviewSurface } from "@/components/skins/skin-preview-panel";
 import { queueModDownload } from "@/hooks/use-download";
 import { useActiveProfileFolder } from "@/hooks/use-mod-health";
@@ -50,14 +51,6 @@ export const ModModelPreview = ({ mod, localMod, files }: Props) => {
       ModStatus.Installed,
       ModStatus.FailedToInstall,
     ].includes(localMod.status);
-  const busy =
-    localMod &&
-    [
-      ModStatus.Downloading,
-      ModStatus.Extracting,
-      ModStatus.Paused,
-      ModStatus.Installing,
-    ].includes(localMod.status);
   const download = useMutation({
     mutationFn: async (selected: ModDownloadItem) =>
       queueModDownload(mod, [selected], {
@@ -73,6 +66,14 @@ export const ModModelPreview = ({ mod, localMod, files }: Props) => {
       }),
     meta: { skipGlobalErrorHandler: true },
   });
+  const busy =
+    localMod &&
+    [
+      ModStatus.Downloading,
+      ModStatus.Extracting,
+      ModStatus.Paused,
+      ModStatus.Installing,
+    ].includes(localMod.status);
   return (
     <section className='overflow-hidden rounded-lg border bg-card'>
       <div className='flex items-center gap-3 px-5 py-3.5'>
@@ -111,14 +112,22 @@ export const ModModelPreview = ({ mod, localMod, files }: Props) => {
           mod={localMod}
         />
       ) : (
-        <div className='flex min-h-[400px] flex-col items-center justify-center gap-4 border-t bg-muted/20 p-6 text-center'>
-          <p className='max-w-xl text-muted-foreground text-sm'>
-            {t(
-              busy ? "modelPreview.downloadBusy" : "modelPreview.downloadHint",
-            )}
-          </p>
+        // The stage the model will load on, already holding the hero, so
+        // installing carries straight on into the preview.
+        <div className='flex h-[640px] min-h-[360px] flex-col border-t'>
+          <div className='relative min-h-0 flex-1'>
+            <ModelLoadingStage
+              hero={localMod?.hero ?? mod.hero}
+              idle={!busy}
+              status={t(
+                busy
+                  ? "modelPreview.downloadBusy"
+                  : "modelPreview.downloadFirstHint",
+              )}
+            />
+          </div>
           {!busy && file && (
-            <div className='flex flex-wrap items-center gap-3'>
+            <div className='flex flex-wrap items-center justify-center gap-3 px-6 pb-6'>
               <select
                 aria-label={t("modelPreview.chooseFile")}
                 value={file.name}
@@ -140,7 +149,9 @@ export const ModModelPreview = ({ mod, localMod, files }: Props) => {
             </div>
           )}
           {download.isError && (
-            <p role='alert' className='text-destructive text-sm'>
+            <p
+              role='alert'
+              className='px-6 pb-6 text-center text-destructive text-sm'>
               {t("modelPreview.downloadFailed")}
             </p>
           )}
@@ -154,7 +165,7 @@ const LocalPreview = ({ mod }: { mod: LocalMod }) => {
   const preview = useSkinModelPreview(mod.hero ?? "", mod);
   return (
     <div className='relative h-[640px] min-h-[360px] border-t'>
-      <PreviewSurface preview={preview} label={mod.name} />
+      <PreviewSurface hero={mod.hero} preview={preview} label={mod.name} />
     </div>
   );
 };

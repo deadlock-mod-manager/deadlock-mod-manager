@@ -42,6 +42,20 @@ const withPending = (releases: Release[]): Release[] => {
   ];
 };
 
+// Highlight screenshots the desktop What's New dialog shows, named
+// "<version>-<order>-<slug>.webp". The Dockerfile copies them in too.
+const images = import.meta.glob<string>(
+  "../../../desktop/public/whats-new/*.webp",
+  { query: "?url", import: "default", eager: true },
+);
+
+const IMAGE_PATHS = Object.keys(images).sort();
+
+export const releaseImages = (version: string): string[] =>
+  IMAGE_PATHS.filter((path) =>
+    path.split("/").at(-1)?.startsWith(`${version}-`),
+  ).map((path) => images[path] ?? "");
+
 /** Lists each summary once per release; the page keys entries by summary. */
 const dedupe = (release: Release): Release => ({
   ...release,

@@ -17,6 +17,26 @@ permissions:
   contents: read
 
 jobs:
+  recent-reversions:
+    name: Recent reversion warnings
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+    continue-on-error: true
+    runs-on: depot-ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Warn about reversed recent patches
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+          HEAD_SHA: ${{ github.sha }}
+        run: node scripts/check-recent-reversions.mjs
+
   check-types:
     name: Type Check
     runs-on: depot-ubuntu-24.04
@@ -184,9 +204,16 @@ jobs:
             packages/vpkmanager -> target
             packages/source2-model -> target
             packages/deadlock-match-sync -> target
+            packages/deadlock-server-picker -> target
+            packages/plugin-runtime -> target
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Run plugin runtime tests
+        env:
+          RUSTFLAGS: -C link-arg=-lstdc++
+        run: cargo test --manifest-path packages/plugin-runtime/Cargo.toml --locked
 
       # tauri::generate_context! embeds frontendDist, so dist must exist before cargo test.
       - name: Build frontend
@@ -200,6 +227,14 @@ jobs:
 
       - name: Run match sync tests
         run: cargo test --manifest-path packages/deadlock-match-sync/Cargo.toml --locked
+
+      - name: Check server picker
+        run: |
+          cargo test --manifest-path packages/deadlock-server-picker/Cargo.toml --locked
+          cargo clippy --manifest-path packages/deadlock-server-picker/Cargo.toml --locked --all-targets -- -D warnings
+
+      - name: Check build with plugins
+        run: cargo check --manifest-path apps/desktop/src-tauri/Cargo.toml --locked --all-targets --features plugins
 
       # Builds without match sync must keep compiling.
       - name: Check build without match sync

@@ -122,18 +122,6 @@ export const featureFlagDefinitions: FeatureFlagDefinition[] = [
     defaultValue: true,
   },
   {
-    name: "plugin-flashbang",
-    description: "Enable flashbang plugin functionality",
-    type: "boolean",
-    defaultValue: true,
-  },
-  {
-    name: "plugin-background",
-    description: "Enable background plugin functionality",
-    type: "boolean",
-    defaultValue: true,
-  },
-  {
     name: "plugin-discord",
     description: "Enable discord plugin functionality",
     type: "boolean",

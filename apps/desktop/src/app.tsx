@@ -15,6 +15,7 @@ import { FoundryProvider } from "./components/foundry/foundry-context";
 import { GamePresenceRenderer } from "./components/game-presence-renderer";
 import { MatchSyncNoticeDialog } from "./components/match-sync/match-sync-notice-dialog";
 import { MatchSyncRenderer } from "./components/match-sync-renderer";
+import AppBackground from "./components/app-background";
 import GlobalPluginRenderer from "./components/global-plugin-renderer";
 import { UpdateDialog } from "./components/layout/update-dialog";
 import { TauriAppWindowProvider } from "./components/layout/window-controls/window-context";
@@ -203,6 +204,7 @@ const App = ({ runtime, storage }: AppProps) => {
                             </FoundryProvider>
                           </ThemeOverridesProvider>
                           <LibraryMaintenanceRenderer />
+                          <AppBackground />
                           <GlobalPluginRenderer />
                           {integrations?.presence !== "disabled" && (
                             <GamePresenceRenderer />

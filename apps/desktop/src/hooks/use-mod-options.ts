@@ -284,6 +284,8 @@ export const applyArchiveSelection = async (
             ...stagedThisApply,
           ],
           reusableOriginals: reusableFiles.map((f) => f.name),
+          fileserverPreference:
+            usePersistedStore.getState().fileserverPreference,
           onProgress,
         },
       );
@@ -339,7 +341,12 @@ export const applyArchiveSelection = async (
   if (archives.length > 0) {
     const fetchResult = await invoke<FetchMissingModVariantsResult>(
       "fetch_missing_mod_variants",
-      { modId: mod.remoteId, profileFolder, archives },
+      {
+        modId: mod.remoteId,
+        profileFolder,
+        archives,
+        fileserverPreference: usePersistedStore.getState().fileserverPreference,
+      },
     );
     if (fetchResult.missing_originals.length > 0) {
       throw new RuntimeError(
@@ -535,7 +542,13 @@ export const useModOptions = (mod: LocalMod | null) => {
       if (archives.length > 0) {
         const fetchResult = await invoke<FetchMissingModVariantsResult>(
           "fetch_missing_mod_variants",
-          { modId: mod.remoteId, profileFolder, archives },
+          {
+            modId: mod.remoteId,
+            profileFolder,
+            archives,
+            fileserverPreference:
+              usePersistedStore.getState().fileserverPreference,
+          },
         );
         if (fetchResult.missing_originals.length > 0) {
           throw new RuntimeError(

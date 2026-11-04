@@ -271,6 +271,7 @@ const checkInternet = async (
   const viaHostname = direct.kind !== "response";
   const outcome = viaHostname ? await dnsProbe(context) : direct;
   const url = viaHostname ? origins.dns : origins.internet;
+  const host = hostOf(url);
 
   if (outcome.kind === "response") {
     context.internetUp = true;
@@ -280,7 +281,7 @@ const checkInternet = async (
       message: "reachable",
       latencyMs: outcome.latencyMs,
       url,
-      host: hostOf(url),
+      host,
       fixes: [],
     };
   }
@@ -289,9 +290,10 @@ const checkInternet = async (
     id: "internet",
     status: "error",
     message: outcome.kind === "timeout" ? "timeout" : "unreachable",
+    params: { host },
     latencyMs: outcome.latencyMs,
     url,
-    host: hostOf(url),
+    host,
     fixes: withProxyFix(context.deps, [
       "checkConnection",
       "restartRouter",

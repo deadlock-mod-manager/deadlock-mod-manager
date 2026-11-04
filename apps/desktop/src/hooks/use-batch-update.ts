@@ -1,3 +1,9 @@
+import { selectUpdateDownloads } from "@/lib/mods/update-download-selection";
+import {
+  nativeChoicesFit,
+  nativeManualFileTree,
+  nativeComponentDownloads,
+} from "@/lib/mods/native-update-selection";
 import { analytics } from "@/lib/analytics";
 import { failureOutcome } from "@/lib/analytics/client";
 import { isTauriError } from "@/types/tauri";
@@ -73,11 +79,6 @@ const listenForUpdateProgress = async () => {
   };
 };
 
-// GameBanana tells uploads that share a file name apart with a random
-// `_xxxxx` suffix, so a re-uploaded pack keeps its name up to that suffix.
-const uploadBaseName = (name: string) =>
-  name.replace(/_[0-9a-f]{5}(\.[^.]+)$/i, "$1").toLowerCase();
-
 export const useBatchUpdate = () => {
   const [updatableMods, setUpdatableMods] = useState<UpdatableMod[]>([]);
   const [pendingSelections, setPendingSelections] = useState<
@@ -92,7 +93,6 @@ export const useBatchUpdate = () => {
   const updateModVpksAfterReorder = usePersistedStore(
     (state) => state.updateModVpksAfterReorder,
   );
-  const localMods = usePersistedStore((state) => state.localMods);
   const backupMode = usePersistedStore((state) => state.backupMode);
   const maxBackupCount = usePersistedStore((state) => state.maxBackupCount);
   const updateProgress = usePersistedStore(
@@ -102,82 +102,102 @@ export const useBatchUpdate = () => {
     (state) => state.setBatchUpdateProgress,
   );
 
-  const prepareUpdates = useCallback(
-    (updates: ModUpdateCandidate[]) => {
-      const prepared = updates.map((update) => {
-        const localMod = localMods.find(
-          (m) => m.remoteId === update.mod.remoteId,
+  const prepareUpdates = useCallback((updates: ModUpdateCandidate[]) => {
+    const localMods = usePersistedStore.getState().localMods;
+    const prepared = updates.map((update) => {
+      const localMod = localMods.find(
+        (m) => m.remoteId === update.mod.remoteId,
+      );
+
+      const selectedDownloads =
+        update.nativeInstallation?.mode === "components"
+          ? nativeComponentDownloads(
+              update.nativeInstallation,
+              localMod?.source?.componentIds ?? [],
+              update.downloads,
+            )
+          : selectUpdateDownloads(update.downloads, localMod);
+
+      const selectedFileTree = nativeManualFileTree(localMod, update.downloads);
+
+      return {
+        updatedAt: update.updatedAt,
+        downloads: update.downloads,
+        selectedDownloads,
+        selectedFileTree,
+        nativeInstallation: update.nativeInstallation,
+        nativeSelectionRequired:
+          !!update.nativeInstallation &&
+          !nativeChoicesFit(
+            update.nativeInstallation,
+            localMod?.source?.componentIds ?? [],
+          ),
+        mod: update.mod.source
+          ? {
+              ...update.mod,
+              source: {
+                ...update.mod.source,
+                componentIds: localMod?.source?.componentIds ?? [],
+              },
+            }
+          : update.mod,
+      };
+    });
+
+    setUpdatableMods((previous) => {
+      if (prepared.length === 0 && previous.length === 0) return previous;
+      return prepared.map((update) => {
+        const existing = previous.find(
+          (m) => m.mod.remoteId === update.mod.remoteId,
         );
+        const keptDownloads = existing?.selectedDownloads.filter((selected) =>
+          update.downloads.some((d) => d.url === selected.url),
+        );
+        return existing && keptDownloads?.length
+          ? {
+              ...update,
+              selectedDownloads: keptDownloads,
+              selectedFileTree: existing.selectedFileTree,
+            }
+          : update;
+      });
+    });
+    return prepared;
+  }, []);
 
-        let selectedDownloads: ModDownloadItem[];
-        if (update.downloads.length === 1) {
-          selectedDownloads = update.downloads;
-        } else {
-          const savedNames = new Set(
-            (localMod?.selectedDownloads ?? []).map((sd) => sd.name),
-          );
-          const installedArchiveNames = new Set(
-            (localMod?.installedFileTree?.files ?? [])
-              .filter((f) => f.is_selected)
-              .map((f) => f.archive_name),
-          );
-
-          // Archived files are older versions of current ones; installing
-          // both ships the same VPK names twice.
-          const current = update.downloads.filter((d) => !d.isArchived);
-          const currentNames = new Set(current.map((d) => d.name));
-          const reuploaded = new Set(
-            [...savedNames, ...installedArchiveNames]
-              .filter((name) => !currentNames.has(name))
-              .map(uploadBaseName),
-          );
-          const matched = current.filter(
-            (d) =>
-              savedNames.has(d.name) ||
-              installedArchiveNames.has(d.name) ||
-              reuploaded.has(uploadBaseName(d.name)),
-          );
-          selectedDownloads =
-            matched.length > 0
-              ? matched
-              : current.length > 0
-                ? current
-                : update.downloads;
-        }
-
-        const selectedFileTree = localMod?.installedFileTree;
-
+  const confirmNativeChoices = (remoteId: string, componentIds: string[]) => {
+    setUpdatableMods((previous) =>
+      previous.map((update) => {
+        if (
+          update.mod.remoteId !== remoteId ||
+          !update.mod.source ||
+          !update.nativeInstallation
+        )
+          return update;
+        const selectedDownloads = nativeComponentDownloads(
+          update.nativeInstallation,
+          componentIds,
+          update.downloads,
+        );
         return {
-          mod: update.mod,
-          updatedAt: update.updatedAt,
-          downloads: update.downloads,
+          ...update,
+          mod: {
+            ...update.mod,
+            source: {
+              ...update.mod.source,
+              componentIds,
+              artifactIds: selectedDownloads.flatMap((file) => {
+                const id = file.url.split("/").pop();
+                return id ? [decodeURIComponent(id)] : [];
+              }),
+            },
+          },
           selectedDownloads,
-          selectedFileTree,
+          nativeSelectionRequired: false,
         };
-      });
-
-      setUpdatableMods((previous) => {
-        if (prepared.length === 0 && previous.length === 0) return previous;
-        return prepared.map((update) => {
-          const existing = previous.find(
-            (m) => m.mod.remoteId === update.mod.remoteId,
-          );
-          const keptDownloads = existing?.selectedDownloads.filter((selected) =>
-            update.downloads.some((d) => d.url === selected.url),
-          );
-          return existing && keptDownloads?.length
-            ? {
-                ...update,
-                selectedDownloads: keptDownloads,
-                selectedFileTree: existing.selectedFileTree,
-              }
-            : update;
-        });
-      });
-      return prepared;
-    },
-    [localMods],
-  );
+      }),
+    );
+  };
 
   const setSelectedDownloads = (
     remoteId: string,
@@ -234,6 +254,8 @@ export const useBatchUpdate = () => {
         return {
           enabled: localMod?.status === ModStatus.Installed,
           modId: um.mod.remoteId,
+          sourceComponentIds: um.mod.source?.componentIds,
+          installedSource: localMod?.source,
           modName: um.mod.name,
           downloadFiles: um.selectedDownloads.map((d) => ({
             url: d.url,
@@ -260,6 +282,7 @@ export const useBatchUpdate = () => {
             ),
           ),
         maxBackups: maxBackupCount,
+        fileserverPreference: usePersistedStore.getState().fileserverPreference,
       });
 
       const result = BatchUpdateResultSchema.parse(rawResult);
@@ -297,6 +320,19 @@ export const useBatchUpdate = () => {
                 : ModStatus.Installed,
               updatableMod.mod.filesUpdatedAt,
             );
+          if (updatableMod.mod.source) {
+            usePersistedStore.getState().setModSource(
+              installedModInfo.modId,
+              {
+                ...updatableMod.mod.source,
+                artifactIds: updatableMod.selectedDownloads.flatMap((file) => {
+                  const id = file.url.split("/").pop();
+                  return id ? [decodeURIComponent(id)] : [];
+                }),
+              },
+              activeProfileId,
+            );
+          }
         }
       }
 
@@ -379,5 +415,6 @@ export const useBatchUpdate = () => {
     updateProgress,
     pendingSelections,
     dismissSelection,
+    confirmNativeChoices,
   };
 };

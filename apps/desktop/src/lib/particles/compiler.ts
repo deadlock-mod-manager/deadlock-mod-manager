@@ -32,8 +32,17 @@ const BLOCKING = new Set([
   "C_INIT_CreateFromParentParticles",
 ]);
 
-const endCapOnly = (operator: JsonObject) =>
-  stringOf(operator.m_nOpEndCapState, "") === "PARTICLE_ENDCAP_ENDCAP_ON";
+const phaseMatcher = (operator: JsonObject) => {
+  const phase = stringOf(operator.m_nOpEndCapState, "");
+  return (ending: boolean) => {
+    if (phase === "PARTICLE_ENDCAP_ENDCAP_ON") return ending;
+    if (phase === "PARTICLE_ENDCAP_ENDCAP_OFF") return !ending;
+    return true;
+  };
+};
+
+const normalizePath = (path: string) =>
+  path.replaceAll("\\", "/").replace(/_c$/, "").toLowerCase();
 
 export interface DefinitionFile {
   path: string;
@@ -75,8 +84,7 @@ export const compileSystem = (file: DefinitionFile): CompiledSystem => {
         detail: "operator-budget",
       });
     return list(value, allowance).filter((operator) => {
-      if (booleanOf(operator.m_bDisableOperator) || endCapOnly(operator))
-        return false;
+      if (booleanOf(operator.m_bDisableOperator)) return false;
       const unsupported = unsupportedInputTypes(operator);
       for (const type of unsupported)
         report(stage, operator, "unsupported-input", type);
@@ -91,10 +99,17 @@ export const compileSystem = (file: DefinitionFile): CompiledSystem => {
   let continuous = false;
   let lastEmissionTime = 0;
   for (const operator of active(definition.m_Emitters, "emitter")) {
-    const emitter = compileEmitter(operator);
+    const matches = phaseMatcher(operator);
+    const endCap =
+      stringOf(operator.m_nOpEndCapState, "") === "PARTICLE_ENDCAP_ENDCAP_ON";
+    const emitter = compileEmitter(operator, endCap);
     if (!emitter) block("emitter", operator);
     else {
-      emitters.push(emitter);
+      emitters.push((system, delta, previousAge) => {
+        if (!matches(system.ending)) return 0;
+        if (system.released && !endCap) return 0;
+        return emitter(system, delta, previousAge);
+      });
       lastEmissionTime = Math.max(
         lastEmissionTime,
         numberOf(operator.m_flStartTime, 0),
@@ -106,25 +121,37 @@ export const compileSystem = (file: DefinitionFile): CompiledSystem => {
   }
   const initializers: InitOperator[] = [];
   for (const operator of active(definition.m_Initializers, "initializer")) {
+    const matches = phaseMatcher(operator);
     if (BLOCKING.has(classOf(operator))) block("initializer", operator);
     const compiled = compileInitializer(operator);
-    if (compiled) initializers.push(compiled);
+    if (compiled)
+      initializers.push((system, index) => {
+        if (matches(system.ending)) compiled(system, index);
+      });
     else if (!BLOCKING.has(classOf(operator)))
       report("initializer", operator, "unsupported");
   }
   const operators: FrameOperator[] = [];
   for (const operator of active(definition.m_Operators, "operator")) {
+    const matches = phaseMatcher(operator);
     if (BLOCKING.has(classOf(operator))) block("operator", operator);
     const compiled = compileOperator(operator);
-    if (compiled) operators.push(compiled);
+    if (compiled)
+      operators.push((system, delta) => {
+        if (matches(system.ending)) compiled(system, delta);
+      });
     else if (!BLOCKING.has(classOf(operator)))
       report("operator", operator, "unsupported");
   }
   const forces: CompiledSystem["forces"] = [];
   for (const operator of active(definition.m_ForceGenerators, "force")) {
+    const matches = phaseMatcher(operator);
     const compiled = compileForce(operator);
     if (compiled) {
-      forces.push(compiled);
+      forces.push((system, index, out) => {
+        if (matches(system.ending)) compiled(system, index, out);
+        else out.set(0, 0, 0);
+      });
       if (classOf(operator) === "C_OP_CurlNoiseForce")
         report("force", operator, "approximation");
     } else report("force", operator, "unsupported");
@@ -136,10 +163,7 @@ export const compileSystem = (file: DefinitionFile): CompiledSystem => {
     const compiled = compileRenderer(operator);
     if (compiled) {
       renderers.push(compiled);
-      if (
-        classOf(operator) === "C_OP_RenderTrails" ||
-        list(operator.m_vecTexturesInput).length > 1
-      )
+      if (list(operator.m_vecTexturesInput).length > 1)
         report("renderer", operator, "approximation");
     } else report("renderer", operator, "unsupported");
   }
@@ -148,22 +172,35 @@ export const compileSystem = (file: DefinitionFile): CompiledSystem => {
     definition.m_PreEmissionOperators,
     "pre-emission",
   )) {
+    const matches = phaseMatcher(operator);
     const compiled = compilePreEmission(operator);
-    if (compiled) preEmission.push(compiled);
+    if (compiled)
+      preEmission.push((points, system) => {
+        if (matches(system?.ending ?? false)) compiled(points, system);
+      });
     else report("pre-emission", operator, "unsupported");
   }
-  for (const child of list(definition.m_Children)) {
-    if (booleanOf(child.m_bDisableChild)) continue;
-    if (booleanOf(child.m_bEndCap) || numberOf(child.m_flDelay, 0) > 0) {
-      diagnostics.push({
-        path: file.path,
-        stage: "definition",
-        className: "m_Children",
-        code: "approximation",
-        detail: stringOf(child.m_ChildRef, ""),
-      });
-    }
-  }
+  const references = list(definition.m_Children);
+  const usedReferences = new Set<JsonObject>();
+  const children = file.children.flatMap((child) => {
+    const matching = references.filter(
+      (entry) =>
+        normalizePath(stringOf(entry.m_ChildRef, "")) ===
+        normalizePath(child.path),
+    );
+    const reference = matching.find(
+      (entry) =>
+        !usedReferences.has(entry) && !booleanOf(entry.m_bDisableChild),
+    );
+    if (!reference && matching.length > 0) return [];
+    if (reference) usedReferences.add(reference);
+    const compiled = compileSystem(child);
+    compiled.lifecycle = {
+      delay: Math.max(numberOf(reference?.m_flDelay, 0), 0),
+      endCap: booleanOf(reference?.m_bEndCap),
+    };
+    return [compiled];
+  });
   const constantColor = numbersOf(
     definition.m_ConstantColor,
     [255, 255, 255, 255],
@@ -172,23 +209,29 @@ export const compileSystem = (file: DefinitionFile): CompiledSystem => {
     list(definition.m_controlPointConfigurations).find(
       (config) => stringOf(config.m_name, "") === "preview",
     ) ?? list(definition.m_controlPointConfigurations)[0];
-  const drivers = list(preview?.m_drivers).map((driver) => {
+  const drivers: CompiledSystem["drivers"] = list(
+    preview?.m_drivers ?? definition.m_drivers,
+  ).map((driver) => {
     const attachType = stringOf(driver.m_iAttachType, "");
     const [x = 0, y = 0, z = 0] = numbersOf(driver.m_vecOffset, [0, 0, 0]);
     return {
-      controlPoint: numberOf(driver.m_iControlPoint, 0),
+      controlPoint: Math.min(
+        Math.max(Math.floor(numberOf(driver.m_iControlPoint, 0)), 0),
+        63,
+      ),
       attachment: attachType.startsWith("PATTACH_POINT")
         ? stringOf(driver.m_attachmentName, "") || null
         : null,
-      offset: [x, y, z] as [number, number, number],
+      offset: [x, y, z],
     };
   });
   return {
+    lifecycle: { delay: 0, endCap: false },
     path: file.path,
     diagnostics,
     maxParticles: Math.max(
       Math.floor(numberOf(definition.m_nMaxParticles, 1000)),
-      1,
+      0,
     ),
     constantLifetime: numberOf(definition.m_flConstantLifespan, 1),
     constantRadius: numberOf(definition.m_flConstantRadius, 5),
@@ -199,6 +242,10 @@ export const compileSystem = (file: DefinitionFile): CompiledSystem => {
       (constantColor[3] ?? 255) / 255,
     ],
     constantSequence: numberOf(definition.m_nConstantSequenceNumber, 0),
+    constantTrailLength: Math.max(
+      numberOf(definition.m_flConstantTrailLength, 0.1),
+      0,
+    ),
     emitters,
     continuous,
     lastEmissionTime,
@@ -208,7 +255,7 @@ export const compileSystem = (file: DefinitionFile): CompiledSystem => {
     preEmission,
     renderers,
     blockedBy,
-    children: file.children.map(compileSystem),
+    children,
     drivers,
   };
 };

@@ -48,7 +48,7 @@ describe("stats dashboard default layout", () => {
         ["Heroes", "heroes"],
         ["Items", "items"],
         ["Squad", "squad"],
-        ["Live", "live"],
+        ["Live", "liveScoreboard"],
       ] as const) {
         await selectTab(title);
         await expectWidgetSources([panel]);

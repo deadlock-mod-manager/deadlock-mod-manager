@@ -1,6 +1,6 @@
 import { navigate } from "../support/ui";
 import { step } from "../support/evidence";
-import { observeUntil } from "../support/observations";
+import { observeUntil, readPersistedDocument } from "../support/observations";
 import { assertOwnedWorld, collectFileInventory } from "../support/world";
 import { startApplication } from "../support/application";
 import { closeApplication } from "../support/application-exit";
@@ -249,6 +249,36 @@ describe("real Rust downloads", () => {
     );
     await navigate("downloads");
     await card().waitForDisplayed();
+    if (
+      caseId === "downloads-deleted-profile" ||
+      caseId === "downloads-deleted-default"
+    ) {
+      await step(
+        "recover the deleted profile without losing its downloads",
+        async () => {
+          if (process.env.DMM_E2E_PHASE === "transfer") {
+            await expect(card().$("button=Retry")).toBeDisplayed();
+          }
+          const recovered = z
+            .object({
+              state: z.object({
+                activeProfileId: z.literal("default"),
+                profiles: z.object({
+                  default: z.object({
+                    isDefault: z.literal(true),
+                    mods: z.array(z.object({ remoteId: z.string() })),
+                  }),
+                  other: z.object({ mods: z.array(z.json()).length(0) }),
+                }),
+              }),
+            })
+            .parse(await readPersistedDocument(world));
+          expect(
+            recovered.state.profiles.default.mods.map((mod) => mod.remoteId),
+          ).toEqual([DOWNLOAD_MOD]);
+        },
+      );
+    }
     if (process.env.DMM_E2E_PHASE === "transfer") {
       if (scenario === "downloads-auth") {
         await expect(card()).not.toHaveText(expect.stringContaining("100%"));

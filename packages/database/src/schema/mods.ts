@@ -37,6 +37,8 @@ export interface ModDependency {
   remoteId: string | null;
   /** Required or recommended, if GameBanana says which */
   level: "required" | "recommended" | null;
+  /** The provider explicitly requires this mod to be disabled or absent. */
+  mustBeDisabled?: boolean;
 }
 
 export type ModAuthorContactType =

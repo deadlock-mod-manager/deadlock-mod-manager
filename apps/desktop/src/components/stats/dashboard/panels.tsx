@@ -14,7 +14,7 @@ import {
   UserRound,
   Users,
 } from "@deadlock-mods/ui/icons";
-import { type ComponentType, type ReactNode, useMemo } from "react";
+import type { ComponentType, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { FormChart } from "@/components/stats/form-chart";
 import { HeroPool } from "@/components/stats/hero-pool";
@@ -40,8 +40,6 @@ import {
 import { resolveRank } from "@/lib/stats/api";
 import type { DashboardTab } from "@/lib/stats/dashboard/layout";
 import { summarize } from "@/lib/stats/derive";
-import { usePersistedStore } from "@/lib/store";
-import type { ExperimentalFeature } from "@/lib/store/slices/ui";
 import { type DashboardData, useDashboardData } from "./dashboard-context";
 import {
   ChartSkeleton,
@@ -85,8 +83,6 @@ type AccountData = DashboardData & { accountId: number };
 type PanelDef = {
   icon: ComponentType<{ className?: string }>;
   needsHistory: boolean;
-  /** Only offered, and only shown, while this experimental feature is on. */
-  experimental?: ExperimentalFeature;
   /** How a tab that holds nothing but this panel stands apart in the tab row. */
   tab?: {
     /** Drawn in place of the tab's own icon. */
@@ -315,10 +311,10 @@ const PANELS = {
     // Read from the running game's console log, so no account is involved.
     needsAccount: false,
     needsHistory: false,
-    experimental: "live-scoreboard",
     tab: {
       icon: LiveTabIcon,
-      activeClassName: "data-[state=active]:border-red-400/25",
+      activeClassName:
+        "data-[state=active]:has-[[data-live]]:border-red-400/25",
       toolbar: LiveToolbar,
     },
     render: () => <LiveScoreboardPanel />,
@@ -327,21 +323,6 @@ const PANELS = {
 
 const isPanelId = (id: string): id is PanelId =>
   PANEL_IDS.some((panel) => panel === id);
-
-/** Panels whose experimental feature is off: hidden from the page and the pickers. */
-export const useHiddenPanels = (): ReadonlySet<string> => {
-  const features = usePersistedStore((state) => state.experimentalFeatures);
-  return useMemo(
-    () =>
-      new Set(
-        PANEL_IDS.filter((id) => {
-          const feature = panelDef(id)?.experimental;
-          return feature !== undefined && !features[feature];
-        }),
-      ),
-    [features],
-  );
-};
 
 export const panelDef = (id: string): PanelDef | undefined =>
   isPanelId(id) ? PANELS[id] : undefined;

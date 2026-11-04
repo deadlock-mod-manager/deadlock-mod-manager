@@ -22,11 +22,19 @@ import { isTrustedExternalUrl } from "@/lib/trusted-external-url";
 import type { ModDependency, ResolvedDependency } from "@/types/dependencies";
 import { getModCoverImage } from "@/lib/mods/mod-images";
 
+import { useRequirementState } from "@/hooks/use-requirement-state";
+import { RequirementLoadOrder } from "./requirement-load-order";
+import { RequirementStatus } from "./requirement-status";
+
 interface ModDependenciesProps {
   dependencies: ResolvedDependency[];
+  modId: string;
 }
 
-export const ModDependencies = ({ dependencies }: ModDependenciesProps) => {
+export const ModDependencies = ({
+  dependencies,
+  modId,
+}: ModDependenciesProps) => {
   const { t } = useTranslation();
 
   if (!dependencies || dependencies.length === 0) {
@@ -48,6 +56,7 @@ export const ModDependencies = ({ dependencies }: ModDependenciesProps) => {
             dependency.kind === "internal" ? (
               <InternalDependencyRow
                 dependency={dependency}
+                modId={modId}
                 key={dependency.mod.remoteId}
               />
             ) : (
@@ -86,8 +95,10 @@ const LevelBadge = ({ level }: { level: ModDependency["level"] }) => {
 
 const InternalDependencyRow = ({
   dependency,
+  modId,
 }: {
   dependency: Extract<ResolvedDependency, { kind: "internal" }>;
+  modId: string;
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -95,6 +106,7 @@ const InternalDependencyRow = ({
   const { mod } = dependency;
   const level = dependency.dependency.level;
   const image = getModCoverImage(mod);
+  const requirementState = useRequirementState(dependency.dependency);
 
   const goToMod = () => {
     prefetchModDetail(queryClient, mod.remoteId);
@@ -120,6 +132,7 @@ const InternalDependencyRow = ({
               {mod.name}
             </span>
             {level === "recommended" && <LevelBadge level='recommended' />}
+            <RequirementStatus dependency={dependency.dependency} />
           </div>
           <p className='truncate text-muted-foreground text-sm'>
             {t("mods.by")} {mod.author}
@@ -127,8 +140,14 @@ const InternalDependencyRow = ({
         </div>
       </button>
 
-      <div className='flex shrink-0 items-center pr-1'>
-        <ModButton remoteMod={mod} variant='default' />
+      <div className='flex shrink-0 items-center gap-2 pr-1'>
+        {!dependency.dependency.mustBeDisabled && (
+          <RequirementLoadOrder modId={modId} requirementId={mod.remoteId} />
+        )}
+        {(!dependency.dependency.mustBeDisabled ||
+          requirementState === "shouldBeOff") && (
+          <ModButton remoteMod={mod} variant='default' />
+        )}
       </div>
     </li>
   );
@@ -159,6 +178,7 @@ const ExternalDependencyRow = ({
               {label || t("modDependencies.openExternal")}
             </span>
             {level === "recommended" && <LevelBadge level='recommended' />}
+            <RequirementStatus dependency={dependency.dependency} />
           </div>
           {url && (
             <p className='truncate text-muted-foreground text-sm' title={url}>
@@ -187,6 +207,7 @@ const ExternalDependencyRow = ({
               {label || t("modDependencies.openExternal")}
             </span>
             {level === "recommended" && <LevelBadge level='recommended' />}
+            <RequirementStatus dependency={dependency.dependency} />
           </div>
           <p className='truncate text-muted-foreground text-sm'>{url}</p>
         </div>

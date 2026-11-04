@@ -49,6 +49,8 @@ pub enum Error {
   GameRunning,
   #[error("Game is not running")]
   GameNotRunning,
+  #[error("Could not stop the game")]
+  GameStopFailed,
   #[error("Failed to launch game: {0}")]
   GameLaunchFailed(String),
   #[error("Merged mod data must be reviewed before launching")]
@@ -62,8 +64,13 @@ pub enum Error {
   ModExtractionFailed(String),
   #[error("Invalid input: {0}")]
   InvalidInput(String),
+  #[error("{message}")]
+  Preview { kind: &'static str, message: String },
   #[error("Unauthorized path access attempted: {0}")]
   UnauthorizedPath(String),
+  /// A plugin call refused because the plugin is disabled, revoked or updated.
+  #[error("{0}")]
+  ExternalPluginSession(String),
   #[error("Network error: {0}")]
   Network(String),
   #[error("GameBanana rate limit reached; retry in {retry_after_secs} seconds")]
@@ -82,6 +89,11 @@ pub enum Error {
   Catalog(String),
   #[error("Performance config error: {0}")]
   PerformanceConfig(String),
+  #[error("Server picker: {message}")]
+  ServerPicker {
+    subcode: &'static str,
+    message: String,
+  },
   #[error("Tauri error: {0}")]
   Tauri(#[from] tauri::Error),
   #[error("Failed to create backup: {0}")]
@@ -160,6 +172,7 @@ impl serde::Serialize for Error {
         | Error::MissingEnabledModFiles(_)
         | Error::ReadOnlyFile(_)
         | Error::MakeWritableFailed { .. }
+        | Error::ServerPicker { .. }
     ) {
       4
     } else {
@@ -187,12 +200,15 @@ impl serde::Serialize for Error {
       Error::DuplicateVpkOwnership { .. } => "duplicateVpkOwnership",
       Error::GameRunning => "gameRunning",
       Error::GameNotRunning => "gameNotRunning",
+      Error::GameStopFailed => "gameStopFailed",
       Error::GameLaunchFailed(_) => "gameLaunchFailed",
       Error::ModDataReviewRequired => "modDataReviewRequired",
       Error::MissingEnabledModFiles(_) => "missingEnabledModFiles",
       Error::ModExtractionFailed(_) => "modExtractionFailed",
       Error::InvalidInput(_) => "invalidInput",
+      Error::Preview { kind, .. } => kind,
       Error::UnauthorizedPath(_) => "unauthorizedPath",
+      Error::ExternalPluginSession(_) => "externalPluginSession",
       Error::Network(_) => "networkError",
       Error::ProviderRateLimited { .. } => "providerRateLimited",
       Error::ProviderRefused => "providerRefused",
@@ -202,6 +218,7 @@ impl serde::Serialize for Error {
       Error::ProviderCancelled => "providerCancelled",
       Error::Catalog(_) => "catalogError",
       Error::PerformanceConfig(_) => "performanceConfig",
+      Error::ServerPicker { .. } => "serverPicker",
       Error::Tauri(_) => "tauri",
       Error::BackupCreationFailed(_) => "backupCreationFailed",
       Error::BackupRestoreFailed(_) => "backupRestoreFailed",
@@ -229,6 +246,9 @@ impl serde::Serialize for Error {
     state.serialize_field("kind", kind)?;
     state.serialize_field("message", &self.to_string())?;
     state.serialize_field("matchSyncKind", &match_sync_kind)?;
+    if let Error::ServerPicker { subcode, .. } = self {
+      state.serialize_field("serverPickerKind", subcode)?;
+    }
     if let Error::DuplicateVpkOwnership {
       mod_ids,
       path,

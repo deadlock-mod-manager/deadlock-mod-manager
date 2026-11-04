@@ -14,6 +14,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { retainFoundryModel } from "@/lib/model-assets";
+import logger from "@/lib/logger";
 import type { FoundryModel } from "@/types/foundry";
 import { loadPreviewModel } from "./model-loader";
 import {
@@ -21,6 +22,11 @@ import {
   type PreviewPlayback,
 } from "@/lib/preview-animation";
 import { PreviewClock } from "@/lib/preview-clock";
+import {
+  installAnimatedMaterials,
+  type AnimatedMaterials,
+} from "@/lib/animated-materials";
+import { createSceneColorCapture } from "@/lib/particles/scene-color";
 import { type ViewerCallout, ViewerCallouts } from "./viewer-callouts";
 import { colorTextureOf } from "./viewer-color-texture";
 import {
@@ -51,7 +57,8 @@ import {
   ViewerViewMenu,
   ViewerWipBadge,
 } from "./viewer-tools";
-import { createViewerRecorder } from "./viewer-capture";
+import { createViewerRecorder, captureHeroStill } from "./viewer-capture";
+import { disposeObject } from "./viewer-model-resources";
 import { createViewerCamera } from "./viewer-camera";
 import type { ViewerBackground } from "./viewer-background";
 import { createViewerPostFx } from "./viewer-postfx";
@@ -61,6 +68,17 @@ import {
   readMeshGroups,
 } from "./viewer-mesh-groups";
 import { createViewerScene } from "./viewer-scene";
+import { createViewerPerformance } from "./viewer-performance";
+import { ViewerMaterialStatus } from "./viewer-material-status";
+import { createViewerComparison } from "./viewer-comparison";
+import type { PreviewAnimation } from "@/types/generated/PreviewAnimation";
+
+interface ViewerComparison {
+  model: FoundryModel;
+  animation: PreviewAnimation | null;
+  effects: ViewerEffectFactory[];
+  visible: boolean;
+}
 
 /** A live paint preview: the color maps it covers and the exact paint. */
 /** Color maps whose files changed; a new `revision` asks for another swap. */
@@ -78,6 +96,9 @@ export interface FoundryPreviewTint {
 
 interface FoundryModelViewerProps {
   model: FoundryModel;
+  comparison?: ViewerComparison;
+  onComparisonReady?: (ready: boolean) => void;
+  onComparisonFailure?: (failed: boolean) => void;
   label: string;
   /** Paints the matching materials on the GPU, without touching any file, so
    *  the paint tab shows a color the instant it is picked. */
@@ -87,6 +108,8 @@ interface FoundryModelViewerProps {
   highlightTextures?: readonly string[];
   /** Color maps the user hid to reach what is behind them; not drawn or picked. */
   hiddenTextures?: readonly string[];
+  /** The hero the loading embers build while the model decodes. */
+  hero?: string;
   /** The hero whose shape the loading embers should learn from this model. */
   silhouetteHero?: string;
   /** Sections to label on the model, with a leader line to each. */
@@ -108,7 +131,7 @@ interface FoundryModelViewerProps {
   /** Edited color maps to swap into the loaded model without a rebuild. */
   textureRefresh?: FoundryTextureRefresh;
   /** Reads a color map's current image as a data URL. */
-  readTexture?: (path: string) => Promise<string>;
+  readTexture?: (path: string, opaque: boolean) => Promise<string>;
   /** Told whether a model is on screen, for overlays that sit over the stage. */
   onReadyChange?: (ready: boolean) => void;
   /** Receives a still of the hero cropped to its outline, or null once gone. */
@@ -249,65 +272,6 @@ const applyPreviewTint = (
   }
 };
 
-/** Room left around the hero in a still, as a share of its height. */
-const STILL_PADDING = 0.06;
-
-/**
- * Render one frame and crop it to the hero's posed outline, for places that
- * show the finished skin without a live viewer.
- */
-const captureHeroStill = async (
-  root: THREE.Object3D,
-  camera: THREE.Camera,
-  renderer: THREE.WebGLRenderer,
-  render: () => Promise<Blob | null> | undefined,
-): Promise<Blob | null> => {
-  const frame = await render();
-  if (!frame) return null;
-  const box = new THREE.Box3().setFromObject(root, true);
-  const canvas = renderer.domElement;
-  let [left, top, right, bottom] = [Infinity, Infinity, -Infinity, -Infinity];
-  for (const x of [box.min.x, box.max.x]) {
-    for (const y of [box.min.y, box.max.y]) {
-      for (const z of [box.min.z, box.max.z]) {
-        const point = new THREE.Vector3(x, y, z).project(camera);
-        const px = ((point.x + 1) / 2) * canvas.width;
-        const py = ((1 - point.y) / 2) * canvas.height;
-        left = Math.min(left, px);
-        right = Math.max(right, px);
-        top = Math.min(top, py);
-        bottom = Math.max(bottom, py);
-      }
-    }
-  }
-  const pad = (bottom - top) * STILL_PADDING;
-  left = Math.max(0, Math.floor(left - pad));
-  top = Math.max(0, Math.floor(top - pad));
-  right = Math.min(canvas.width, Math.ceil(right + pad));
-  bottom = Math.min(canvas.height, Math.ceil(bottom + pad));
-  if (right <= left || bottom <= top) return frame;
-
-  const image = await createImageBitmap(frame);
-  const crop = document.createElement("canvas");
-  crop.width = right - left;
-  crop.height = bottom - top;
-  crop
-    .getContext("2d")
-    ?.drawImage(
-      image,
-      left,
-      top,
-      crop.width,
-      crop.height,
-      0,
-      0,
-      crop.width,
-      crop.height,
-    );
-  image.close();
-  return new Promise((resolve) => crop.toBlob(resolve, "image/png"));
-};
-
 /**
  * Hide the meshes drawn with one of `hidden`'s color maps, outline shells
  * included. Materials rather than meshes, because mesh visibility already
@@ -345,43 +309,6 @@ const GIZMO_AXES: {
   { dir: [0, 0, -1], label: "", color: "#8fb0c9" },
 ];
 
-const disposeObject = (root: THREE.Object3D) => {
-  const textures = new Set<THREE.Texture>();
-  root.traverse((child) => {
-    if (child instanceof THREE.Mesh) {
-      child.geometry.dispose();
-      const materials = Array.isArray(child.material)
-        ? child.material
-        : [child.material];
-      for (const material of materials) {
-        if (material instanceof THREE.MeshStandardMaterial) {
-          for (const texture of [
-            material.map,
-            material.normalMap,
-            material.roughnessMap,
-            material.metalnessMap,
-            material.aoMap,
-            material.emissiveMap,
-          ]) {
-            if (texture) textures.add(texture);
-          }
-        }
-        material.dispose();
-      }
-      if (child instanceof THREE.SkinnedMesh) child.skeleton.dispose();
-    }
-  });
-  const bitmaps = new Set<ImageBitmap>();
-  for (const texture of textures) {
-    texture.dispose();
-    const image = texture.source.data;
-    if (typeof ImageBitmap !== "undefined" && image instanceof ImageBitmap) {
-      bitmaps.add(image);
-    }
-  }
-  for (const bitmap of bitmaps) bitmap.close();
-};
-
 /** A round handle sprite (filled + labelled for the positive axis, faint ring
  * for the negative one) drawn on a small canvas so it always faces the camera. */
 const makeHandleTexture = (
@@ -416,10 +343,14 @@ const makeHandleTexture = (
 
 export const FoundryModelViewer = ({
   model,
+  comparison,
+  onComparisonReady,
+  onComparisonFailure,
   label,
   tint,
   highlightTextures,
   hiddenTextures,
+  hero,
   silhouetteHero,
   callouts,
   onPickPart,
@@ -455,6 +386,7 @@ export const FoundryModelViewer = ({
   const [loading, setLoading] = useState(true);
   const [scanGone, setScanGone] = useState(false);
   const [failed, setFailed] = useState(false);
+  const [materialDiagnostics, setMaterialDiagnostics] = useState<string[]>([]);
   const [autoRotate, setAutoRotate] = useState(false);
   const [background, setBackground] = useState<ViewerBackground | null>(null);
   const [look, setLook] = useState<ViewerLook>(DEFAULT_LOOK);
@@ -474,6 +406,91 @@ export const FoundryModelViewer = ({
   const stageRef = useRef<Omit<ViewerEffectContext, "model"> | null>(null);
   const getCamera = useCallback(() => stageRef.current?.camera ?? null, []);
   const activeEffectsRef = useRef<ViewerEffect[]>([]);
+  const comparisonRef = useRef<ReturnType<
+    typeof createViewerComparison
+  > | null>(null);
+  const primaryEffectsRef = useRef<THREE.Scene | null>(null);
+  const comparisonModel = comparison?.model;
+  const [comparisonLoaded, setComparisonLoaded] = useState(false);
+  const [comparisonFailed, setComparisonFailed] = useState(false);
+  useEffect(() => {
+    const stage = stageRef.current;
+    const primary = modelRef.current;
+    if (!comparisonModel || !stage || !primary || loading) return;
+    const controller = new AbortController();
+    const release = retainFoundryModel(comparisonModel);
+    let stockRoot: THREE.Object3D | null = null;
+    setComparisonLoaded(false);
+    setComparisonFailed(false);
+    void loadPreviewModel(comparisonModel, controller.signal)
+      .then(async (gltf) => {
+        const materials = await installAnimatedMaterials(gltf.scene, (index) =>
+          gltf.parser.getDependency("texture", index),
+        );
+        if (controller.signal.aborted) {
+          materials.dispose();
+          disposeObject(gltf.scene);
+          return;
+        }
+        stockRoot = gltf.scene;
+        stockRoot.position.copy(primary.position);
+        stockRoot.quaternion.copy(primary.quaternion);
+        stockRoot.scale.copy(primary.scale);
+        stage.scene.add(stockRoot);
+        const stock = createViewerComparison(
+          { ...stage, model: stockRoot },
+          materials,
+        );
+        comparisonRef.current = stock;
+        stock.setLook(lookRef.current);
+        stock.setVisible(false);
+        setComparisonLoaded(true);
+      })
+      .catch((error) => {
+        if (!controller.signal.aborted) {
+          setComparisonFailed(true);
+          logger
+            .withMetadata({ assetId: comparisonModel.assetId })
+            .withError(error)
+            .warn("[Preview] Could not load comparison model");
+        }
+      })
+      .finally(release);
+    return () => {
+      controller.abort();
+      comparisonRef.current?.dispose();
+      comparisonRef.current = null;
+      if (stockRoot) {
+        stage.scene.remove(stockRoot);
+        disposeObject(stockRoot);
+      }
+      primary.visible = true;
+      setComparisonLoaded(false);
+    };
+  }, [comparisonModel, loading, model]);
+  useEffect(() => {
+    onComparisonReady?.(comparisonLoaded);
+    return () => onComparisonReady?.(false);
+  }, [comparisonLoaded, onComparisonReady]);
+  useEffect(() => {
+    onComparisonFailure?.(comparisonFailed);
+  }, [comparisonFailed, onComparisonFailure]);
+  useEffect(() => {
+    comparisonRef.current?.setAnimation(
+      comparison?.animation ?? null,
+      clockRef.current?.time ?? 0,
+      playback?.animation?.duration ?? 0,
+    );
+  }, [comparison?.animation, comparisonLoaded, playback?.animation?.duration]);
+  useEffect(() => {
+    comparisonRef.current?.setEffects(comparison?.effects ?? []);
+  }, [comparison?.effects, comparisonLoaded]);
+  useEffect(() => {
+    const visible = comparisonLoaded && (comparison?.visible ?? false);
+    comparisonRef.current?.setVisible(visible);
+    if (modelRef.current) modelRef.current.visible = !visible;
+    if (primaryEffectsRef.current) primaryEffectsRef.current.visible = !visible;
+  }, [comparison?.visible, comparisonLoaded]);
   useEffect(() => {
     playbackRef.current = playback;
   }, [playback]);
@@ -485,8 +502,12 @@ export const FoundryModelViewer = ({
     const model = modelRef.current;
     const stage = stageRef.current;
     if (!model || !stage || loading || !effects?.length) return;
+    const effectScene = new THREE.Scene();
+    stage.scene.add(effectScene);
+    primaryEffectsRef.current = effectScene;
+    effectScene.visible = !(comparisonLoaded && comparison?.visible);
     const created = effects
-      .map((factory) => factory({ ...stage, model }))
+      .map((factory) => factory({ ...stage, scene: effectScene, model }))
       .filter((effect): effect is ViewerEffect => effect !== null);
     activeEffectsRef.current = created;
     const duration = playbackRef.current?.animation?.duration ?? 0;
@@ -496,6 +517,8 @@ export const FoundryModelViewer = ({
     return () => {
       activeEffectsRef.current = [];
       for (const effect of created) effect.dispose();
+      stage.scene.remove(effectScene);
+      primaryEffectsRef.current = null;
     };
   }, [effects, loading, model]);
   useEffect(() => {
@@ -531,6 +554,7 @@ export const FoundryModelViewer = ({
   useEffect(() => {
     lookRef.current = { background, ...look };
     applyLookRef.current?.();
+    comparisonRef.current?.setLook(look);
   }, [background, look]);
 
   // Keep the live controls in sync with the auto-rotate toggle without
@@ -566,8 +590,12 @@ export const FoundryModelViewer = ({
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 0.95;
     container.appendChild(renderer.domElement);
-    stageRef.current = { scene, camera, renderer };
+    const sceneColor = createSceneColorCapture(renderer, scene, camera);
+    stageRef.current = { scene, camera, renderer, sceneColor };
     const recorder = createViewerRecorder(renderer.domElement);
+    const performanceStats = import.meta.env.DEV
+      ? createViewerPerformance(renderer)
+      : null;
     recorderRef.current = recorder;
 
     const environment = new RoomEnvironment();
@@ -602,6 +630,11 @@ export const FoundryModelViewer = ({
     const applyLook = () => {
       stage.setBackground(lookRef.current.background?.image ?? null);
       postFx.setBloom(lookRef.current.bloom);
+      postFx.setBloomStrength(lookRef.current.bloomStrength);
+      stage.setLighting(
+        lookRef.current.lighting,
+        lookRef.current.lightIntensity,
+      );
       outlines?.setVisible(lookRef.current.outlines);
       postFx.setAntialias(lookRef.current.antialias);
       renderer.toneMappingExposure = lookRef.current.exposure;
@@ -611,6 +644,7 @@ export const FoundryModelViewer = ({
     applyLookRef.current = applyLook;
     applyLook();
     captureRef.current = () => {
+      sceneColor.capture();
       postFx.render();
       return new Promise((resolve) =>
         renderer.domElement.toBlob(resolve, "image/png"),
@@ -675,6 +709,7 @@ export const FoundryModelViewer = ({
 
     let disposed = false;
     let loadedRoot: THREE.Object3D | null = null;
+    let animatedMaterials: AnimatedMaterials | null = null;
     let picks: PickTarget[] = [];
     let frame = 0;
 
@@ -783,6 +818,7 @@ export const FoundryModelViewer = ({
       renderer.setSize(width, height, false);
       stage.resize(width, height);
       postFx.setSize(width, height);
+      sceneColor.setSize(width, height, renderer.getPixelRatio());
       outlines?.setViewportHeight(height);
     };
 
@@ -805,18 +841,29 @@ export const FoundryModelViewer = ({
     const loadController = new AbortController();
     const releaseAsset = retainFoundryModel(model);
     void loadPreviewModel(model, loadController.signal)
-      .then((gltf) => {
+      .then(async (gltf) => {
         if (disposed) {
           disposeObject(gltf.scene);
           return;
         }
+        cloneSceneMaterials(gltf.scene);
+        const snapshots = installPaintShaders(gltf.scene);
+        const installed = await installAnimatedMaterials(gltf.scene, (index) =>
+          gltf.parser.getDependency("texture", index),
+        );
+        if (disposed) {
+          installed.dispose();
+          disposeObject(gltf.scene);
+          return;
+        }
+        animatedMaterials = installed;
+        setMaterialDiagnostics(installed.diagnostics);
         loadedRoot = gltf.scene;
         modelRef.current = gltf.scene;
+        snapshotsRef.current = snapshots;
         const table = readMeshGroups(gltf.scene);
         setMeshGroups(table);
         setBodyChoice(table?.defaults ?? {});
-        cloneSceneMaterials(gltf.scene);
-        snapshotsRef.current = installPaintShaders(gltf.scene);
         picks = buildPickTargets(gltf.scene);
         outlines = attachNprOutlines(gltf.scene);
         outlines.setViewportHeight(Math.max(container.clientHeight, 1));
@@ -862,10 +909,12 @@ export const FoundryModelViewer = ({
         actionRef.current?.reset().play();
         mixerRef.current?.setTime(0);
         for (const effect of activeEffectsRef.current) effect.reset();
+        comparisonRef.current?.reset();
       },
       (delta) => {
         mixerRef.current?.update(delta);
         for (const effect of activeEffectsRef.current) effect.update(delta);
+        comparisonRef.current?.update(delta);
       },
     );
     clockRef.current = clock;
@@ -878,15 +927,21 @@ export const FoundryModelViewer = ({
     const render = () => {
       frame = window.requestAnimationFrame(render);
       const now = performance.now();
-      const delta = Math.min((now - previousTime) / 1000, 0.1);
+      const frameElapsed = (now - previousTime) / 1000;
+      const delta = Math.min(frameElapsed, 0.1);
       previousTime = now;
       if (document.hidden || !visible) return;
       const playback = playbackRef.current;
+      const simulationStart = performance.now();
       clock.tick(delta, playback?.playing ?? true, playback?.speed ?? 1);
+      const simulationEnd = performance.now();
       if (timeRef) timeRef.current = clock.time;
       renderer.domElement.dataset.seeking = String(clock.seeking);
-      for (const effect of activeEffectsRef.current) effect.update(0);
       controls.update();
+      animatedMaterials?.update(clock.time);
+      comparisonRef.current?.prepare(clock.time);
+      for (const effect of activeEffectsRef.current) effect.prepare?.();
+      const preparationEnd = performance.now();
       // Re-pick when the pointer moved, and now and then while the camera or
       // the pose moves under a still pointer.
       const moving =
@@ -903,7 +958,16 @@ export const FoundryModelViewer = ({
       } else if (!pickableRef.current && lastHovered !== null) {
         setHover(null);
       }
+      const submissionStart = performance.now();
+      performanceStats?.begin();
+      sceneColor.capture();
       postFx.render();
+      performanceStats?.end(
+        simulationEnd - simulationStart,
+        preparationEnd - simulationEnd,
+        performance.now() - submissionStart,
+        frameElapsed * 1000,
+      );
 
       // Mirror the main camera's orientation so the gizmo turns with the model.
       gizmoRoot.quaternion.copy(camera.quaternion).invert();
@@ -936,8 +1000,11 @@ export const FoundryModelViewer = ({
       applyLookRef.current = null;
       captureRef.current = null;
       recorder.dispose();
+      performanceStats?.dispose();
       recorderRef.current = null;
       outlines?.dispose();
+      animatedMaterials?.dispose();
+      sceneColor.dispose();
       postFx.dispose();
       stage.dispose();
       if (loadedRoot) {
@@ -1000,22 +1067,39 @@ export const FoundryModelViewer = ({
     let cancelled = false;
     for (const path of paths) {
       const key = path.toLowerCase();
-      read(path)
-        .then(async (url) => {
-          const image = new Image();
-          image.src = url;
-          await image.decode();
-          if (cancelled) return;
-          for (const snapshot of snapshotsRef.current) {
-            const map = snapshot.material.map;
-            if (snapshot.texture !== key || !map) continue;
-            map.image = image;
-            map.needsUpdate = true;
-          }
-        })
-        .catch(() => {
-          // The next full load reads the same file; nothing to recover here.
-        });
+      const matching = snapshotsRef.current.filter(
+        (snapshot) => snapshot.texture === key && snapshot.material.map,
+      );
+      for (const opaque of new Set(
+        matching.map(
+          ({ material }) => !material.transparent && material.alphaTest === 0,
+        ),
+      )) {
+        read(path, opaque)
+          .then(async (url) => {
+            const image = new Image();
+            image.src = url;
+            await image.decode();
+            if (cancelled) return;
+            for (const snapshot of matching) {
+              const map = snapshot.material.map;
+              if (
+                !map ||
+                (!snapshot.material.transparent &&
+                  snapshot.material.alphaTest === 0) !== opaque
+              )
+                continue;
+              // GLTF preview maps may be smaller than the edited texture. Free
+              // their immutable GPU allocation before uploading the new image.
+              map.dispose();
+              map.image = image;
+              map.needsUpdate = true;
+            }
+          })
+          .catch(() => {
+            // The next full load reads the same file; nothing to recover here.
+          });
+      }
     }
     return () => {
       cancelled = true;
@@ -1114,8 +1198,9 @@ export const FoundryModelViewer = ({
         />
         <ViewerActivePasses look={look} />
       </div>
-      <div className='absolute bottom-3 left-3'>
+      <div className='absolute bottom-3 left-3 flex items-end gap-2'>
         <ViewerWipBadge />
+        {!loading && <ViewerMaterialStatus diagnostics={materialDiagnostics} />}
       </div>
       <ViewerToolRail
         belowGizmo={showGizmo}
@@ -1162,7 +1247,13 @@ export const FoundryModelViewer = ({
             !loading && "opacity-0",
           )}
           onTransitionEnd={() => !loading && setScanGone(true)}>
-          <ModelLoadingStage status={t("foundry.preview.loading")} />
+          {/* Only the Foundry teaches silhouettes, and only it has opening
+              steps to show. */}
+          <ModelLoadingStage
+            hero={hero ?? silhouetteHero ?? null}
+            status={t("foundry.preview.loading")}
+            steps={silhouetteHero !== undefined}
+          />
         </div>
       )}
       {failed && (

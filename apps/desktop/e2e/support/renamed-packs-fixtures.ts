@@ -168,6 +168,12 @@ export const renamedPacksRoutes = async () => {
         ),
       ),
       json("/apiv11/Util/Fileservers", { _aRecords: [] }),
+      {
+        method: "GET",
+        path: `/dl/${Number(RENAMED_PACKS.id) * 100 + 1}`,
+        status: 404,
+        body: "Fallback file unavailable",
+      },
       ...mods.flatMap((mod, index) =>
         [
           json(`/apiv11/Mod/${mod.id}/ProfilePage`, profiles[index]),
@@ -232,6 +238,11 @@ export const assertRenamedPacksNetwork = (
   const count = (transfer: string) =>
     transfers.filter((item) => item === transfer).length;
   assert.equal(count(`${FAILING_DOWNLOAD} 404`), 1, transfers.join("\n"));
+  assert.equal(
+    count(`/dl/${Number(RENAMED_PACKS.id) * 100 + 1} 404`),
+    1,
+    transfers.join("\n"),
+  );
   assert.equal(count(`${FAILING_DOWNLOAD} 200`), 1, transfers.join("\n"));
   // The pick runs the update again, so the picked pack downloads twice.
   assert.equal(

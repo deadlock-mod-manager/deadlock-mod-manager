@@ -641,6 +641,94 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
       delete state.backupEnabled;
     },
   },
+  {
+    to: 39,
+    label: "background-plugin-to-setting",
+    apply: (state) => {
+      // The Background plugin became a theme setting and Flashbang was
+      // removed. Only an enabled Background plugin carries its image over.
+      const enabledPlugins = isPlainObject(state.enabledPlugins)
+        ? state.enabledPlugins
+        : {};
+      const pluginSettings = isPlainObject(state.pluginSettings)
+        ? state.pluginSettings
+        : {};
+      const background = pluginSettings.background;
+      if (enabledPlugins.background === true && isPlainObject(background)) {
+        const image =
+          background.sourceType === "local"
+            ? background.imageData
+            : background.imageUrl;
+        if (typeof image === "string" && image) {
+          state.appBackground = {
+            image,
+            opacity:
+              typeof background.opacity === "number" ? background.opacity : 25,
+            blur: typeof background.blur === "number" ? background.blur : 0,
+            includeSidebar: background.includeSidebar === true,
+          };
+        }
+      }
+      for (const id of ["background", "flashbang"]) {
+        delete enabledPlugins[id];
+        delete pluginSettings[id];
+      }
+    },
+  },
+  {
+    to: 40,
+    label: "player-stats-to-setting",
+    apply: (state) => {
+      // Stats and its Live tab left the experiments. Stats kept an off switch
+      // under Privacy, so a user who had turned it off stays opted out.
+      const features = state.experimentalFeatures;
+      if (!isPlainObject(features)) return;
+      if (features["player-stats"] === false) {
+        state.playerStatsEnabled ??= false;
+      }
+      delete features["player-stats"];
+      delete features["live-scoreboard"];
+    },
+  },
+  {
+    to: 41,
+    label: "plugins-opt-in",
+    apply: (state) => {
+      if (isPlainObject(state.experimentalFeatures)) {
+        state.experimentalFeatures.plugins ??= false;
+      }
+    },
+  },
+  {
+    to: 42,
+    label: "independent-background-surfaces",
+    apply: (state) => {
+      const background = state.appBackground;
+      if (!isPlainObject(background)) return;
+      background.includeTopBar ??= background.includeSidebar === true;
+      background.includeBottomBar ??= background.includeSidebar === true;
+    },
+  },
+  {
+    to: 43,
+    label: "optional-native-source-provenance",
+    apply: (state) => {
+      // Legacy identities and installed filenames remain unchanged. Missing
+      // provenance means the existing GameBanana/local path, never a new source.
+      const normalize = (mods: MutableState[string]) => {
+        if (!Array.isArray(mods)) return;
+        for (const mod of mods) {
+          if (isPlainObject(mod) && mod.source === null) delete mod.source;
+        }
+      };
+      normalize(state.localMods);
+      if (isPlainObject(state.profiles)) {
+        for (const profile of Object.values(state.profiles)) {
+          if (isPlainObject(profile)) normalize(profile.mods);
+        }
+      }
+    },
+  },
 ];
 
 const LEGACY_GAMEBANANA_ID = /^[1-9]\d*$/;

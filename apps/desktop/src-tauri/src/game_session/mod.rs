@@ -13,6 +13,7 @@
 //!
 //! Lock order: never take `MANAGER` while holding the tracker lock.
 
+mod attribution;
 pub mod classify;
 pub mod console;
 pub mod dumps;
@@ -20,7 +21,7 @@ pub mod fingerprint;
 pub mod steam_log;
 pub mod store;
 pub mod types;
-mod waiter;
+pub(crate) mod waiter;
 
 use std::io::{Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
@@ -547,6 +548,8 @@ fn finalize(
   store::save_pending(&sessions_dir, &tracker.pending);
   let app_handle = tracker.app_handle.clone();
   drop(tracker);
+  #[cfg(feature = "plugins")]
+  crate::external_plugins::events::game::session_classified(&report);
   emit(app_handle.as_ref(), SESSION_ENDED_EVENT, report);
 }
 
@@ -653,6 +656,16 @@ fn analyze(
       })
     });
 
+  let crash_suspect = if classification == types::SessionClassification::Crash {
+    dump
+      .as_ref()
+      .and_then(|dump| dump.abort_message.as_deref())
+      .and_then(|message| {
+        attribution::find_suspect(&record.game_path, &record.fingerprint, message)
+      })
+  } else {
+    None
+  };
   SessionReport {
     session_id: record.session_id,
     started_at: record.started_at.to_rfc3339(),
@@ -662,6 +675,7 @@ fn analyze(
     exit_code_source,
     classification,
     dump,
+    crash_suspect,
     console_clean,
     launched_by_dmm: record.launched_by_dmm,
     dmm_stopped: record.dmm_stop_requested,

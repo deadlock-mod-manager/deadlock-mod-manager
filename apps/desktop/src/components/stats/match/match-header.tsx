@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Copy,
   Flag,
+  Hash,
   Hammer,
   LayoutDashboard,
   Swords,
@@ -114,36 +115,17 @@ export const MatchHeader = ({
   return (
     <div className='flex flex-col gap-4'>
       <div className='flex flex-wrap items-center justify-between gap-3'>
-        <nav
-          aria-label={t("stats.match.breadcrumb")}
-          className='flex min-w-0 items-center gap-2 text-sm'>
-          <Button
-            asChild
-            className='h-8 gap-1.5 px-2.5'
-            size='sm'
-            variant='outline'>
-            <Link to='/stats'>
-              <ArrowLeft className='h-3.5 w-3.5' />
-              {t("stats.title")}
-            </Link>
-          </Button>
-          <ChevronRight
-            aria-hidden
-            className='h-3.5 w-3.5 text-muted-foreground/60'
-          />
-          <span className='font-mono font-medium'>
-            {t("stats.match.matchId", { id: match.match_id })}
-          </span>
-        </nav>
-        <div className='flex items-center gap-2'>
-          <Button
-            className='h-8 gap-1.5'
-            onClick={copyId}
-            size='sm'
-            variant='outline'>
-            <Copy className='h-3.5 w-3.5' />
-            {t("stats.match.copyId")}
-          </Button>
+        <Button
+          asChild
+          className='-ml-2 h-8 gap-1.5 px-2 text-muted-foreground hover:text-foreground'
+          size='sm'
+          variant='ghost'>
+          <Link to='/stats'>
+            <ArrowLeft className='h-4 w-4' />
+            {t("stats.match.backToStats")}
+          </Link>
+        </Button>
+        <div className='flex items-center rounded-md border border-border/60'>
           {(
             [
               [previousId, ChevronLeft, "stats.match.previous"],
@@ -153,21 +135,21 @@ export const MatchHeader = ({
             id === null ? (
               <Button
                 aria-label={t(label)}
-                className='h-8 w-8'
+                className='h-7 w-7 rounded-none first:rounded-l-md last:rounded-r-md'
                 disabled
                 key={label}
                 size='icon'
-                variant='outline'>
+                variant='ghost'>
                 <Icon className='h-4 w-4' />
               </Button>
             ) : (
               <Button
                 asChild
-                className='h-8 w-8'
+                className='h-7 w-7 rounded-none first:rounded-l-md last:rounded-r-md'
                 key={label}
                 size='icon'
                 title={t(label)}
-                variant='outline'>
+                variant='ghost'>
                 <Link
                   aria-label={t(label)}
                   to={`/stats/matches/${id}?view=${view}`}>
@@ -214,6 +196,19 @@ export const MatchHeader = ({
                 <Flag aria-hidden className='h-3.5 w-3.5' />
                 {t(`stats.match.teams.${me.team === 0 ? 0 : 1}`)}
               </span>
+              <button
+                aria-label={t("stats.match.copyId")}
+                className='group flex items-center gap-1.5 rounded-sm tabular-nums transition-colors hover:text-foreground focus-visible:text-foreground focus-visible:outline-none'
+                onClick={copyId}
+                title={t("stats.match.copyId")}
+                type='button'>
+                <Hash aria-hidden className='h-3.5 w-3.5' />
+                {match.match_id}
+                <Copy
+                  aria-hidden
+                  className='h-3 w-3 opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100'
+                />
+              </button>
             </div>
           </div>
         </div>

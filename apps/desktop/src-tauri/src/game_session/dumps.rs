@@ -108,6 +108,7 @@ pub fn find_session_dump(dir: &Path, search: &DumpSearch) -> Option<DumpSummary>
       addon_count: comment
         .and_then(|comment| comment.addons.as_ref())
         .map(|addons| addons.len() as u32),
+      abort_message: comment.and_then(|comment| comment.abort_message.clone()),
       file: name,
     })
   })

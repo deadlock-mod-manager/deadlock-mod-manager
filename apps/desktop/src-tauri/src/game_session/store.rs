@@ -166,6 +166,7 @@ pub(super) mod tests {
       exit_code_source: None,
       classification: SessionClassification::Crash,
       dump: None,
+      crash_suspect: None,
       console_clean: Some(false),
       launched_by_dmm: true,
       dmm_stopped: false,

@@ -221,12 +221,7 @@ fn finalize(manifest: &mut FoundryManifest) {
     .clone()
     .or_else(|| manifest.hero.clone());
   manifest.sound_groups = group_sounds(hero.as_deref(), &manifest.sounds);
-  manifest.primary_model_path =
-    primary_model_path(hero.as_deref(), &manifest.models).or_else(|| {
-      hero
-        .as_deref()
-        .and_then(super::vdata::canonical_model_entry)
-    });
+  manifest.primary_model_path = primary_model_path(hero.as_deref(), &manifest.models);
 
   log::info!(
     "[Foundry] Analyzed {} entries (hero={:?}, skin={}): {} models, {} materials, {} textures, {} cards, {} sounds in {} groups, body={:?}",
@@ -521,9 +516,15 @@ mod tests {
     let names = art_names("Abrams", &["atlas", "bull"]);
     let prefixes = card_prefixes(&names);
     for (path, variant) in [
-      ("panorama/images/heroes/backgrounds/abrams_bg_psd.vtex_c", "background"),
+      (
+        "panorama/images/heroes/backgrounds/abrams_bg_psd.vtex_c",
+        "background",
+      ),
       ("panorama/images/heroes/guns/bull_gun_psd.vtex_c", "weapon"),
-      ("panorama/images/hud/abilities/bull_charge_psd.vtex_c", "ability_charge"),
+      (
+        "panorama/images/hud/abilities/bull_charge_psd.vtex_c",
+        "ability_charge",
+      ),
     ] {
       assert!(is_hero_card_path(path, &prefixes), "{path}");
       assert_eq!(card_variant(path, &names), variant);

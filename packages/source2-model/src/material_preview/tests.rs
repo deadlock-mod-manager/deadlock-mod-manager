@@ -62,6 +62,68 @@ mod material_semantics_tests {
     use super::*;
     use kv3::KvValue;
 
+    #[test]
+    #[ignore = "requires installed game assets via DMM_VIEWER_TEST_VPK"]
+    fn local_animated_material_reference_set() {
+        let path = std::env::var("DMM_VIEWER_TEST_VPK").expect("DMM_VIEWER_TEST_VPK");
+        let archive = VpkArchive::open(Path::new(&path)).unwrap();
+        let entries = archive.list_entries();
+        for (hero, surface) in [
+            ("inferno", "flame"),
+            ("lash", "sparkle"),
+            ("viscous", "glass"),
+            ("haze", "smoke"),
+        ] {
+            let candidates = entries
+                .iter()
+                .filter(|path| {
+                    path.starts_with("models/")
+                        && path.ends_with(".vmat_c")
+                        && path.contains(hero)
+                        && path.contains(surface)
+                })
+                .take(4)
+                .collect::<Vec<_>>();
+            assert!(!candidates.is_empty(), "missing reference {hero}/{surface}");
+            let mut decoded = 0;
+            for path in candidates {
+                if let Some(properties) = material_preview_properties(&archive, path) {
+                    let effect = &properties.source2_effect;
+                    println!(
+                        "{path}: shader={} emission={:?} scroll={:?} jitter={:?}",
+                        effect.shader,
+                        effect.floats.get("g_flSelfIllumScale1"),
+                        effect.vectors.get("g_vSelfIllumScrollSpeed1"),
+                        effect.flags.get("F_JITTER_VERTICES")
+                    );
+                    let textures = decode_material_previews(
+                        &archive,
+                        std::iter::once((path.to_string(), properties)),
+                    );
+                    assert_eq!(textures.len(), 1, "texture decode failed: {path}");
+                    assert!(!textures[0].png.is_empty());
+                    assert_eq!(
+                        textures[0].source2_effect.as_ref().unwrap().material,
+                        path.as_str()
+                    );
+                    if path.contains("inferno_flame0") {
+                        assert!(textures[0].effect_mask_png.is_some(), "missing jitter mask");
+                    }
+                    if path.contains("lash_sparkles") {
+                        assert!(
+                            textures[0].emissive_png.is_some(),
+                            "missing sparkle emission"
+                        );
+                    }
+                    decoded += 1;
+                } else {
+                    println!("{path}: no preview material");
+                }
+            }
+            assert!(decoded > 0, "no decodable {hero}/{surface} materials");
+        }
+    }
+
     fn object(fields: Vec<(&str, KvValue)>) -> KvValue {
         KvValue::Object(
             fields
@@ -105,6 +167,55 @@ mod material_semantics_tests {
         ])
     }
 
+    #[test]
+    fn animated_material_parameters_survive_the_preview_boundary() {
+        let mut data = material(
+            "citadel_effects.vfx",
+            &[("g_tColor", "flame.vtex"), ("g_tJitterMask", "mask.vtex")],
+            &[("F_ADDITIVE_BLEND", 1)],
+        );
+        if let KvValue::Object(fields) = &mut data {
+            fields.insert(
+                "m_floatParams".to_string(),
+                KvValue::Array(vec![object(vec![
+                    ("m_name", KvValue::String("g_flJitterSpeedA".to_string())),
+                    ("m_flValue", KvValue::Float(2.5)),
+                ])]),
+            );
+            fields.insert(
+                "m_vectorParams".to_string(),
+                KvValue::Array(vec![object(vec![
+                    (
+                        "m_name",
+                        KvValue::String("g_vAlbedoScrollSpeed".to_string()),
+                    ),
+                    (
+                        "m_value",
+                        KvValue::Array(vec![
+                            KvValue::Float(0.25),
+                            KvValue::Float(-0.5),
+                            KvValue::Float(0.0),
+                            KvValue::Float(0.0),
+                        ]),
+                    ),
+                ])]),
+            );
+        }
+        let effect = material_preview_properties_from_data(&data)
+            .unwrap()
+            .source2_effect;
+        assert_eq!(effect.shader, "citadel_effects.vfx");
+        assert_eq!(effect.floats["g_flJitterSpeedA"], 2.5);
+        assert_eq!(
+            effect.vectors["g_vAlbedoScrollSpeed"],
+            [0.25, -0.5, 0.0, 0.0]
+        );
+        assert_eq!(effect.flags["F_ADDITIVE_BLEND"], 1);
+        assert_eq!(effect.textures["g_tJitterMask"], "mask.vtex_c");
+        let exported = serde_json::to_value(effect).unwrap();
+        assert_eq!(exported["floats"]["g_flJitterSpeedA"], 2.5);
+    }
+
     fn rgba_resource(pixel: [u8; 4]) -> Resource {
         let mut data = vec![0u8; 40];
         data[20..22].copy_from_slice(&1u16.to_le_bytes());
@@ -121,6 +232,48 @@ mod material_semantics_tests {
                 size: 40,
             }],
         }
+    }
+
+    #[test]
+    fn glb_embeds_effect_parameters_and_linear_mask_texture_reference() {
+        let mut texture = decode_texture_preview_resource(
+            "color.vtex_c".into(),
+            Some("effect.vmat_c".into()),
+            &rgba_resource([255; 4]),
+            true,
+        )
+        .unwrap();
+        texture.source2_effect = Some(
+            material_preview_properties_from_data(&material(
+                "pbr.vfx",
+                &[("g_tColor", "color.vtex")],
+                &[("F_ADDITIVE_BLEND", 1)],
+            ))
+            .unwrap()
+            .source2_effect,
+        );
+        texture.effect_mask_png = Some(texture.png.clone());
+        let primitive = vmesh::GlbPrimitive {
+            positions: &[0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0],
+            normals: None,
+            texcoords: Some(&[0.0, 0.0, 1.0, 0.0, 0.0, 1.0]),
+            colors: None,
+            joints: None,
+            weights: None,
+            indices: &[0, 0, 1, 0, 2, 0],
+            index_component: 5123,
+            material: 1,
+            mesh_group_mask: 0,
+        };
+        let glb = vmesh::build_glb(&[primitive], &[texture], None, None).unwrap();
+        let length = u32::from_le_bytes(glb[12..16].try_into().unwrap()) as usize;
+        let json: serde_json::Value = serde_json::from_slice(&glb[20..20 + length]).unwrap();
+        let effect = &json["materials"][1]["extras"]["source2Effect"];
+        assert_eq!(effect["shader"], "pbr.vfx");
+        assert_eq!(effect["flags"]["F_ADDITIVE_BLEND"], 1);
+        let mask = effect["maskTexture"].as_u64().unwrap() as usize;
+        assert!(json["textures"][mask]["source"].is_number());
+        assert_eq!(json["images"].as_array().unwrap().len(), 2);
     }
 
     fn pixel(png: &[u8]) -> [u8; 4] {
@@ -480,6 +633,6 @@ mod material_semantics_tests {
         assert!(decode_rgba(&resource).is_none());
         let mut bytes = vec![0u8; 16];
         bytes[12..16].copy_from_slice(&u32::MAX.to_le_bytes());
-        assert!(preview_resource(bytes).is_none());
+        assert!(textures::preview_resource(bytes).is_none());
     }
 }

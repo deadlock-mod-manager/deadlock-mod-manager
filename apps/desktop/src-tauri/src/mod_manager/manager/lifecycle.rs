@@ -55,6 +55,11 @@ impl ModManager {
     profile_folder: Option<String>,
     conflict_policy: ConflictPolicy<'_>,
   ) -> Result<Mod, Error> {
+    #[cfg(feature = "plugins")]
+    let observation = crate::external_plugins::events::ModInstallObservation::start(
+      &deadlock_mod.id,
+      profile_folder.as_deref(),
+    );
     log::info!(
       "Starting installation (enable) of mod: {} (profile: {profile_folder:?})",
       deadlock_mod.name,
@@ -280,6 +285,8 @@ impl ModManager {
 
     self.invalidate_localization_overlay(profile_folder.as_deref());
     log::info!("Mod installation (enable) completed successfully");
+    #[cfg(feature = "plugins")]
+    observation.complete();
     Ok(deadlock_mod)
   }
 
@@ -385,6 +392,8 @@ impl ModManager {
     );
 
     self.invalidate_localization_overlay(profile_folder.as_deref());
+    #[cfg(feature = "plugins")]
+    crate::external_plugins::events::mod_disabled(&mod_id, profile_folder.as_deref());
     Ok(())
   }
 
@@ -405,6 +414,8 @@ impl ModManager {
     profile_folder: Option<String>,
     mods_path: &Path,
   ) -> Result<(), Error> {
+    #[cfg(feature = "plugins")]
+    let event_profile = profile_folder.clone();
     log::info!("Purging mod: {mod_id} (profile: {profile_folder:?})");
     // Not redundant with the check in `remove_mod_vpks`: when the addons
     // directory is missing that call is skipped, and this is all that stands
@@ -439,6 +450,8 @@ impl ModManager {
       log::warn!("User-mod folder not found, skipping: {user_mod_dir:?}");
     }
 
+    #[cfg(feature = "plugins")]
+    crate::external_plugins::events::mod_removed(&mod_id, event_profile.as_deref());
     Ok(())
   }
 
@@ -877,6 +890,8 @@ impl ModManager {
       original_vpk_names,
     };
     self.mod_repository.add_mod(updated.clone());
+    #[cfg(feature = "plugins")]
+    crate::external_plugins::events::mod_updated(mod_id, profile_folder.as_deref());
     self.invalidate_localization_overlay(profile_folder.as_deref());
     Ok(updated)
   }

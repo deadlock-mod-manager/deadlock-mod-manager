@@ -45,6 +45,7 @@ import { Route as DownloadIndexRouteImport } from './routes/download/index'
 import { Route as DownloadLinuxRouteImport } from './routes/download/linux'
 import { Route as DownloadWindowsRouteImport } from './routes/download/windows'
 import { Route as ModIdRouteImport } from './routes/mod/$id'
+import { Route as V1TaxonomyDotjsonRouteImport } from './routes/v1/taxonomy[.]json'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -232,6 +233,11 @@ const ModIdRoute = ModIdRouteImport.update({
   path: '/mod/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const V1TaxonomyDotjsonRoute = V1TaxonomyDotjsonRouteImport.update({
+  id: '/v1/taxonomy.json',
+  path: '/v1/taxonomy.json',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -268,6 +274,7 @@ export interface FileRoutesByFullPath {
   '/download/linux': typeof DownloadLinuxRoute
   '/download/windows': typeof DownloadWindowsRoute
   '/mod/$id': typeof ModIdRoute
+  '/v1/taxonomy.json': typeof V1TaxonomyDotjsonRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/download/': typeof DownloadIndexRoute
 }
@@ -304,6 +311,7 @@ export interface FileRoutesByTo {
   '/download/linux': typeof DownloadLinuxRoute
   '/download/windows': typeof DownloadWindowsRoute
   '/mod/$id': typeof ModIdRoute
+  '/v1/taxonomy.json': typeof V1TaxonomyDotjsonRoute
   '/dashboard': typeof DashboardIndexRoute
   '/download': typeof DownloadIndexRoute
 }
@@ -343,6 +351,7 @@ export interface FileRoutesById {
   '/download/linux': typeof DownloadLinuxRoute
   '/download/windows': typeof DownloadWindowsRoute
   '/mod/$id': typeof ModIdRoute
+  '/v1/taxonomy.json': typeof V1TaxonomyDotjsonRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/download/': typeof DownloadIndexRoute
 }
@@ -383,6 +392,7 @@ export interface FileRouteTypes {
     | '/download/linux'
     | '/download/windows'
     | '/mod/$id'
+    | '/v1/taxonomy.json'
     | '/dashboard/'
     | '/download/'
   fileRoutesByTo: FileRoutesByTo
@@ -419,6 +429,7 @@ export interface FileRouteTypes {
     | '/download/linux'
     | '/download/windows'
     | '/mod/$id'
+    | '/v1/taxonomy.json'
     | '/dashboard'
     | '/download'
   id:
@@ -457,6 +468,7 @@ export interface FileRouteTypes {
     | '/download/linux'
     | '/download/windows'
     | '/mod/$id'
+    | '/v1/taxonomy.json'
     | '/dashboard/'
     | '/download/'
   fileRoutesById: FileRoutesById
@@ -493,6 +505,7 @@ export interface RootRouteChildren {
   AuthCallbackRoute: typeof AuthCallbackRoute
   CompareGrimoireRoute: typeof CompareGrimoireRoute
   ModIdRoute: typeof ModIdRoute
+  V1TaxonomyDotjsonRoute: typeof V1TaxonomyDotjsonRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -749,6 +762,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ModIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/v1/taxonomy.json': {
+      id: '/v1/taxonomy.json'
+      path: '/v1/taxonomy.json'
+      fullPath: '/v1/taxonomy.json'
+      preLoaderRoute: typeof V1TaxonomyDotjsonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -817,6 +837,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthCallbackRoute: AuthCallbackRoute,
   CompareGrimoireRoute: CompareGrimoireRoute,
   ModIdRoute: ModIdRoute,
+  V1TaxonomyDotjsonRoute: V1TaxonomyDotjsonRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

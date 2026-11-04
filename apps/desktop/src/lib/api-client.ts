@@ -22,6 +22,15 @@ import { HttpError } from "./http-error";
 import logger from "./logger";
 import { runtimeServiceOrigin } from "./runtime-bootstrap";
 import {
+  getNativeSourceMod,
+  getNativeSourceRecord,
+  isNativeSourceMod,
+  listNativeSources,
+  refreshNativeSource,
+} from "./mod-sources";
+import type { NativeSourceProvenance } from "@/types/generated/NativeSourceProvenance";
+import type { ModUpdateCandidate } from "@/types/mods";
+import {
   checkDirectGameBananaUpdates,
   getGameBananaCatalogDownloads,
   getGameBananaCatalogMod,
@@ -30,6 +39,11 @@ import {
 
 export const BASE_URL =
   import.meta.env.VITE_API_URL ?? "https://api.deadlockmods.app";
+
+interface ModUpdatesResult {
+  updates: Array<ModUpdateCandidate & { updatedAt: number }>;
+  unknown: string[];
+}
 
 const apiRequest = async <T>(
   endpoint: string,
@@ -76,7 +90,11 @@ export const getAnnouncements = async () => {
   return await apiRequest<AnnouncementDto[]>("/api/v2/announcements");
 };
 
-export const getMod = async (remoteId: string) => {
+export const getMod = async (
+  remoteId: string,
+): Promise<ModDto & { source?: NativeSourceProvenance }> => {
+  if (isNativeSourceMod(remoteId))
+    return (await getNativeSourceMod(remoteId)).mod;
   return getGameBananaCatalogMod(remoteId);
 };
 
@@ -92,10 +110,16 @@ export const getModAuthor = async (id: string) => {
 };
 
 export const getModDownload = async (remoteId: string) => {
+  if (isNativeSourceMod(remoteId))
+    return (await getNativeSourceMod(remoteId)).downloads;
   return (await getGameBananaCatalogDownloads(remoteId)).downloads;
 };
 
 export const getModDownloads = async (remoteId: string) => {
+  if (isNativeSourceMod(remoteId)) {
+    const { downloads } = await getNativeSourceMod(remoteId);
+    return { downloads, count: downloads.length };
+  }
   return getGameBananaCatalogDownloads(remoteId);
 };
 
@@ -105,15 +129,86 @@ export const checkModUpdates = async (
     // Persisted store dates come back from JSON as ISO strings.
     installedAt: Date | string;
     selectedFileIds: string[];
+    selectedFileNames: string[];
+    source?: NativeSourceProvenance;
   }>,
 ) => {
-  return checkDirectGameBananaUpdates(
-    mods.map((mod) => ({
-      remoteId: mod.remoteId,
-      installedAt: Math.floor(new Date(mod.installedAt).getTime() / 1_000),
-      selectedFileIds: mod.selectedFileIds,
-    })),
+  const nativeMods = mods.filter((mod) => isNativeSourceMod(mod.remoteId));
+  const legacy = mods.filter((mod) => !isNativeSourceMod(mod.remoteId));
+  let gameBanana: ModUpdatesResult = { updates: [], unknown: [] };
+  if (legacy.length) {
+    try {
+      gameBanana = await checkDirectGameBananaUpdates(
+        legacy.map((mod) => ({
+          remoteId: mod.remoteId,
+          installedAt: Math.floor(new Date(mod.installedAt).getTime() / 1_000),
+          selectedFileIds: mod.selectedFileIds,
+          selectedFileNames: mod.selectedFileNames,
+        })),
+      );
+    } catch (error) {
+      if (!nativeMods.length) throw error;
+      logger.withError(error).warn("GameBanana update check unavailable");
+      gameBanana.unknown = legacy.map((mod) => mod.remoteId);
+    }
+  }
+  if (!nativeMods.length) return gameBanana;
+  const sources = await listNativeSources().catch((error: Error) => {
+    logger.withError(error).warn("Native source update checks unavailable");
+    return [];
+  });
+  const active = new Set(
+    sources
+      .filter((source) => source.enabled && !source.removed)
+      .map((source) => source.key),
   );
+  const refreshed = await Promise.allSettled(
+    [
+      ...new Set(
+        nativeMods.flatMap((mod) =>
+          mod.source && active.has(mod.source.sourceKey)
+            ? [mod.source.sourceKey]
+            : [],
+        ),
+      ),
+    ].map((key) => refreshNativeSource(key)),
+  );
+  for (const result of refreshed) {
+    if (result.status === "rejected")
+      logger
+        .withError(result.reason)
+        .warn("Mod source refresh failed; keeping cached catalog");
+  }
+  const updates: Array<ModUpdateCandidate & { updatedAt: number }> = [
+    ...gameBanana.updates,
+  ];
+  const unavailable: string[] = [];
+  for (const installed of nativeMods) {
+    if (!installed.source || !active.has(installed.source.sourceKey)) continue;
+    try {
+      const current = await getNativeSourceMod(installed.remoteId);
+      if (
+        current.source.releaseId === installed.source.releaseId &&
+        current.source.contentRevision === installed.source.contentRevision
+      )
+        continue;
+      if (!current.downloads.length) {
+        unavailable.push(installed.remoteId);
+        continue;
+      }
+      const record = await getNativeSourceRecord(installed.remoteId);
+      updates.push({
+        mod: current.mod,
+        downloads: current.downloads,
+        nativeInstallation: record.listing.release?.installation,
+        updatedAt: Math.floor(Date.now() / 1_000),
+      });
+    } catch (error) {
+      logger.withError(error).warn("Mod source update unavailable");
+      unavailable.push(installed.remoteId);
+    }
+  }
+  return { updates, unknown: [...gameBanana.unknown, ...unavailable] };
 };
 
 export const getCustomSettings = async () => {

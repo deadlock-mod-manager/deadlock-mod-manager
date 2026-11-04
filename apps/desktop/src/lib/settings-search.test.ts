@@ -38,6 +38,16 @@ const SECTIONS: SettingsSearchSection[] = [
 const stripSettingsPrefix = (key: string) => key.replace("settings.", "");
 
 describe("searchSettings", () => {
+  it("opens background controls directly from search", () => {
+    const results = searchSettings("blur", translate);
+    expect(results).toContainEqual(
+      expect.objectContaining({
+        tab: "background",
+        sectionId: "background",
+      }),
+    );
+  });
+
   it("returns nothing for a blank query", () => {
     expect(searchSettings("   ", stripSettingsPrefix, SECTIONS)).toEqual([]);
   });
@@ -91,6 +101,22 @@ describe("searchSettings", () => {
       searchSettings("proxy", translate).some((r) => r.tab === "network"),
     ).toBe(true);
     expect(searchSettings("nsfw", translate)[0]?.tab).toBe("privacy");
+  });
+
+  it("sends plugin results to the Manage plugins page", () => {
+    const [result] = searchSettings("install from file", translate);
+    expect(result).toMatchObject({
+      tab: "plugin",
+      route: "/plugins/manage",
+    });
+  });
+
+  it("finds source actions in their settings section", () => {
+    for (const query of ["add source", "remove source"]) {
+      expect(searchSettings(query, translate)).toContainEqual(
+        expect.objectContaining({ tab: "mods", sectionId: "mod-sources" }),
+      );
+    }
   });
 });
 
@@ -202,13 +228,16 @@ describe("SETTINGS_SEARCH_INDEX", () => {
   });
 
   it("points at section anchors that exist on the settings page", async () => {
-    const page = await Bun.file(
-      join(import.meta.dir, "../pages/settings.tsx"),
-    ).text();
-    const anchors = Array.from(
-      page.matchAll(SEARCH_ID_PROP_REGEX),
-      ([, id]) => id,
-    ).sort();
+    const sources = await Promise.all(
+      SETTINGS_SOURCES.filter((path) => !IGNORED_FILES.has(basename(path))).map(
+        (path) => Bun.file(join(import.meta.dir, path)).text(),
+      ),
+    );
+    const anchors = sources
+      .flatMap((source) =>
+        Array.from(source.matchAll(SEARCH_ID_PROP_REGEX), ([, id]) => id),
+      )
+      .sort();
     const indexIds = SETTINGS_SEARCH_INDEX.flatMap(({ id }) =>
       id ? [id] : [],
     ).sort();

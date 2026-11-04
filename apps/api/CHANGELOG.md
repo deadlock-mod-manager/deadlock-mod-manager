@@ -1,5 +1,25 @@
 # api
 
+## 3.8.0
+
+### Minor Changes
+
+- cc4eacc: Add author socials and a Commission button for verified authors on author pages
+- d13eed9: Pin a mod of the week for a set number of days with the /modoftheweek bot command
+
+### Patch Changes
+
+- 1e83ca6: Check for updates through the Deadlock Mods API
+- 7fd9a1a: Order the VPKs inside a mod in the load order dialog, defaulting to author order
+- Updated dependencies [d16b676]
+- Updated dependencies [167143d]
+- Updated dependencies [7fd9a1a]
+  - @deadlock-mods/database@2.6.0
+  - @deadlock-mods/distributed-lock@1.0.15
+  - @deadlock-mods/feature-flags@0.2.13
+  - @deadlock-mods/instrumentation@0.1.15
+  - @deadlock-mods/shared@2.5.0
+
 ## 3.7.0
 
 ### Minor Changes

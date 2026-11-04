@@ -259,7 +259,10 @@ impl ModManager {
       Some(plan) => plan,
       None => build_overlay_plan(&citadel_dir, &inputs, &mut key, &self.plan_progress())?,
     };
-    let analysis = plan.analyze(resolutions);
+    let analysis = plan.analyze(resolutions).map(|mut analysis| {
+      analysis.refresh_hud_console(&citadel_dir);
+      analysis
+    });
     self
       .localization_overlay_plan_cache
       .lock()
@@ -529,18 +532,6 @@ impl ModManager {
     }
     Ok(())
   }
-
-  pub(super) fn has_localization_overlay(
-    &self,
-    profile_folder: Option<&str>,
-  ) -> Result<bool, Error> {
-    Ok(
-      self.mod_compatibility_enabled(profile_folder)?
-        && self
-          .localization_overlay_vpk_path(profile_folder)?
-          .is_file(),
-    )
-  }
 }
 
 fn input_fingerprint(key: &LocalizationOverlayPlanKey) -> Result<String, Error> {
@@ -718,6 +709,7 @@ fn loose_resource_stamps(
   let mut visited = HashSet::new();
   let mut pending: Vec<_> = [
     "resource/localization",
+    "panorama/layout",
     "scripts",
     "models",
     "materials",
@@ -916,6 +908,21 @@ mod tests {
         .unwrap()
         .len(),
       1
+    );
+  }
+
+  #[test]
+  fn loose_hud_layout_changes_invalidate_review_inputs() {
+    let temp = tempfile::tempdir().unwrap();
+    let path = temp.path().join("panorama/layout/hud.vxml_c");
+    fs::create_dir_all(path.parent().unwrap()).unwrap();
+    fs::write(&path, b"before").unwrap();
+    let before = loose_resource_stamps(temp.path(), &Default::default()).unwrap();
+    assert_eq!(before.len(), 1);
+    fs::write(&path, b"after").unwrap();
+    assert_ne!(
+      before,
+      loose_resource_stamps(temp.path(), &Default::default()).unwrap()
     );
   }
 
@@ -1162,6 +1169,7 @@ mod tests {
         vec!["pak01_dir.vpk".into()],
         Some(vec![file.display().to_string()]),
         None,
+        false,
       )
       .unwrap();
     let manifest = ProfileVpkManifest::load(&base).unwrap();
@@ -1206,7 +1214,8 @@ mod tests {
           "Ambiguous".into(),
           vec!["pak01_dir.vpk".into()],
           None,
-          None
+          None,
+          false
         )
         .is_err()
     );
@@ -1219,6 +1228,7 @@ mod tests {
         vec!["pak01_dir.vpk".into()],
         Some(vec![file.display().to_string()]),
         None,
+        false,
       )
       .unwrap();
     assert_eq!(
@@ -1252,7 +1262,15 @@ mod tests {
     ] {
       assert!(
         manager
-          .register_analyzed_mod(None, "invalid".into(), "Invalid".into(), files, None, None)
+          .register_analyzed_mod(
+            None,
+            "invalid".into(),
+            "Invalid".into(),
+            files,
+            None,
+            None,
+            false
+          )
           .is_err()
       );
       assert!(manager.mod_repository.get_mod("invalid").is_none());
@@ -1340,6 +1358,7 @@ mod tests {
         vec!["pak01_dir.vpk".into()],
         None,
         None,
+        false,
       )
       .unwrap();
     let manifest = ProfileVpkManifest::load(&base).unwrap();
@@ -1355,7 +1374,8 @@ mod tests {
           "Skin".into(),
           vec!["pak01_dir.vpk".into()],
           None,
-          None
+          None,
+          false
         )
         .is_err()
     );
@@ -1363,6 +1383,42 @@ mod tests {
       ProfileVpkManifest::load(&base).unwrap().mods["skin"].original_vpk_names,
       ["authored_skin.vpk"]
     );
+  }
+
+  #[test]
+  fn adding_a_file_by_hand_refuses_one_another_mod_already_owns() {
+    let temp = tempfile::tempdir().unwrap();
+    let mut manager = test_manager(temp.path());
+    let base = manager.get_addons_path(None).unwrap();
+    write_test_vpk(&base.join("pak01_dir.vpk"));
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mark_enabled(
+      "owner",
+      vec!["pak01_dir.vpk".into()],
+      Vec::new(),
+      Some(0),
+      ShardIndex::FIRST,
+    );
+    manifest.save(&base).unwrap();
+    let register = |manager: &mut ModManager, refuse| {
+      manager.register_analyzed_mod(
+        None,
+        "local-new".into(),
+        "New".into(),
+        vec!["pak01_dir.vpk".into()],
+        None,
+        None,
+        refuse,
+      )
+    };
+
+    assert!(register(&mut manager, true).is_err());
+    let unchanged = ProfileVpkManifest::load(&base).unwrap();
+    assert_eq!(unchanged.mods.keys().collect::<Vec<_>>(), ["owner"]);
+
+    // Without the switch, an identical file set still passes to the new mod.
+    let registration = register(&mut manager, false).unwrap();
+    assert_eq!(registration.replaced_mod_ids, ["owner"]);
   }
 
   #[test]
@@ -1388,6 +1444,7 @@ mod tests {
         vec!["pak01_dir.vpk".into()],
         None,
         None,
+        false,
       )
       .unwrap();
     let entry = ProfileVpkManifest::load(&base)
@@ -2275,6 +2332,94 @@ Game core
     assert!(entry.compatibility_enabled);
     assert!(!entry.compatibility_opted_out);
     assert_eq!(status(), ModHealthStatus::Fixed);
+  }
+
+  fn gameinfo_mounts_repairs(root: &Path) -> bool {
+    let overlay = ModManager::localization_overlay_search_path(None);
+    fs::read_to_string(root.join("game/citadel/gameinfo.gi"))
+      .unwrap()
+      .lines()
+      .any(|line| line.split_whitespace().eq(["Game", overlay.as_str()]))
+  }
+
+  fn packaged_files(manager: &ModManager) -> Vec<String> {
+    let overlay = manager.localization_overlay_vpk_path(None).unwrap();
+    let mut files: Vec<String> = vpk_parser::VpkParser::parse_directory_from_file(&overlay)
+      .unwrap()
+      .into_iter()
+      .map(|entry| entry.full_path)
+      .collect();
+    files.sort();
+    files
+  }
+
+  #[test]
+  fn choosing_original_files_keeps_the_other_fixed_mods_repairs_mounted() {
+    let temp = tempfile::tempdir().unwrap();
+    let mut manager = manager_with_gameinfo(temp.path());
+    let base = manager.get_addons_path(None).unwrap();
+    let first = "resource/localization/first/first_english.txt";
+    let second = "resource/localization/second/second_english.txt";
+    let game_text: &[u8] =
+      br#""lang" { "Language" "English" "Tokens" { "shared" "Game" "retained" "Game token" } }"#;
+    let mod_text: &[u8] = br#""lang" { "Language" "English" "Tokens" { "shared" "Mod" } }"#;
+    write_vpk(
+      &temp.path().join("game/citadel/pak01_dir.vpk"),
+      &[(first, game_text), (second, game_text)],
+    );
+    write_vpk(&base.join("pak01_dir.vpk"), &[(first, mod_text)]);
+    write_vpk(&base.join("pak02_dir.vpk"), &[(second, mod_text)]);
+    let mut manifest = ProfileVpkManifest::default();
+    for (id, name) in [("first", "pak01_dir.vpk"), ("second", "pak02_dir.vpk")] {
+      manifest.mark_enabled(
+        id,
+        vec![name.into()],
+        vec![name.into()],
+        None,
+        ShardIndex::FIRST,
+      );
+    }
+    manifest.save(&base).unwrap();
+    assert_eq!(
+      fix_mods(&mut manager, vec!["first".into(), "second".into()])
+        .unwrap()
+        .status,
+      FixModsStatus::Applied
+    );
+    assert_eq!(packaged_files(&manager), [first, second]);
+    assert!(gameinfo_mounts_repairs(temp.path()));
+
+    manager
+      .set_mod_compatibility_for_mod("second".into(), false, None)
+      .unwrap();
+    assert!(
+      !manager
+        .localization_overlay_vpk_path(None)
+        .unwrap()
+        .exists(),
+      "the package still holds the second mod's repair until it is rebuilt"
+    );
+    assert!(
+      gameinfo_mounts_repairs(temp.path()),
+      "the first mod is still fixed, so its repairs stay mounted"
+    );
+    // Any other search path rewrite before the rebuild keeps them too.
+    manager.apply_profile_gameinfo(None).unwrap();
+    assert!(gameinfo_mounts_repairs(temp.path()));
+
+    let gameinfo = fs::read(temp.path().join("game/citadel/gameinfo.gi")).unwrap();
+    refresh_repairs(&mut manager, None).unwrap();
+    assert_eq!(packaged_files(&manager), [first]);
+    assert_eq!(
+      fs::read(temp.path().join("game/citadel/gameinfo.gi")).unwrap(),
+      gameinfo,
+      "the rebuild fills the mounted folder without rewriting gameinfo.gi"
+    );
+
+    manager
+      .set_mod_compatibility_for_mod("first".into(), false, None)
+      .unwrap();
+    assert!(!gameinfo_mounts_repairs(temp.path()));
   }
 
   #[test]

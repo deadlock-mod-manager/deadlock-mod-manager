@@ -1,5 +1,6 @@
 import { Button } from "@deadlock-mods/ui/components/button";
 import { Separator } from "@deadlock-mods/ui/components/separator";
+import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useSidebar } from "@deadlock-mods/ui/components/sidebar";
 import {
   Tooltip,
@@ -134,7 +135,9 @@ export const Toolbar = () => {
                   if (launching) {
                     cancelLaunch();
                   } else if (isRunning) {
-                    invoke("stop_game").finally(() => refetch());
+                    invoke("stop_game")
+                      .catch(() => toast.error(t("common.stopGameFailed")))
+                      .finally(() => refetch());
                   } else {
                     setModdedAnimating(true);
                     setLaunching(true);

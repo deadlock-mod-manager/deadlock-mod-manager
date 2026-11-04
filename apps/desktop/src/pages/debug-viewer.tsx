@@ -41,6 +41,7 @@ export const DebugViewer = () => {
         ) : (
           <div className='relative min-h-0 flex-1'>
             <PreviewSurface
+              hero={hero}
               key={`${modId}:${hero}`}
               preview={preview}
               label={label}

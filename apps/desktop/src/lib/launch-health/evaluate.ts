@@ -14,7 +14,10 @@ import type {
  */
 const CRASH_WINDOW_SECONDS = 300;
 
-const modFilesChanged = (previous: ClientModRef, current: ClientModRef) =>
+export const modFilesChanged = (
+  previous: ClientModRef,
+  current: ClientModRef,
+) =>
   previous.downloadedAt !== current.downloadedAt ||
   previous.variant !== current.variant;
 
@@ -154,6 +157,19 @@ export const evaluateSession = (
   // We can't tell how these ended, but the setup ran for a good while.
   if (report.classification !== "crash" && ranAWhile) {
     return { kind: "normal" };
+  }
+  if (report.classification === "crash" && report.crashSuspect) {
+    return {
+      kind: "prompt",
+      changes: lastNormal
+        ? diffFingerprints(lastNormal, report.fingerprint)
+        : [],
+      buildChanged:
+        report.buildChanged ||
+        (lastNormal !== null && buildDiffers(lastNormal, report.fingerprint)),
+      modsLoaded: modsWereLoaded(report.fingerprint),
+      presentation: report.recovered ? "toast" : "dialog",
+    };
   }
   if (report.classification === "unknown" || uptime === null) {
     return { kind: "ignore", reason: "noSignal" };

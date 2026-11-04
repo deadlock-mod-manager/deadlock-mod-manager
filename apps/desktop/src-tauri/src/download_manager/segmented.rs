@@ -205,17 +205,12 @@ where
   if is_busy(source_kind, status) {
     return Err(busy_error(&response));
   }
-  // Ignoring the Range header or refusing it: either way an ordinary request
-  // may still work.
-  if status == reqwest::StatusCode::OK || status == reqwest::StatusCode::RANGE_NOT_SATISFIABLE {
+  // Ignoring the Range header, refusing it or failing it: an ordinary request
+  // may still work, and reports the status itself if it fails too.
+  if status == reqwest::StatusCode::OK || !status.is_success() {
     discard_staging(target_path).await?;
     return Ok(Segmented::Unsupported(format!(
       "the server answered the Range request with {status}"
-    )));
-  }
-  if !status.is_success() {
-    return Err(Error::Network(format!(
-      "Server returned error status: {status}"
     )));
   }
   if let Err(error) = validate_range_response(
@@ -807,25 +802,29 @@ mod tests {
 
   #[tokio::test]
   async fn a_server_that_refuses_ranges_is_left_to_the_single_stream() {
-    let dir = tempfile::tempdir().unwrap();
-    let target = dir.path().join("mod.zip");
-    let body = body();
-    let server = TestServer::start(|_, _| Reply::new(416, Vec::new())).await;
+    // Refused outright, or failed by a server that isn't GameBanana saying
+    // it's busy.
+    for status in [416, 400, 500] {
+      let dir = tempfile::tempdir().unwrap();
+      let target = dir.path().join("mod.zip");
+      let body = body();
+      let server = TestServer::start(move |_, _| Reply::new(status, Vec::new())).await;
 
-    let result = download(
-      &server,
-      &target,
-      &body,
-      &enabled_budget(),
-      &CancellationToken::new(),
-    )
-    .await;
+      let result = download(
+        &server,
+        &target,
+        &body,
+        &enabled_budget(),
+        &CancellationToken::new(),
+      )
+      .await;
 
-    assert!(
-      matches!(result, Ok(Segmented::Unsupported(_))),
-      "a 416 ended the download instead of falling back: {result:?}"
-    );
-    assert!(!staging_dir(&target).exists());
+      assert!(
+        matches!(result, Ok(Segmented::Unsupported(_))),
+        "a {status} ended the download instead of falling back: {result:?}"
+      );
+      assert!(!staging_dir(&target).exists());
+    }
   }
 
   #[tokio::test]

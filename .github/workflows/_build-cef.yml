@@ -41,7 +41,13 @@ on:
         required: false
         type: boolean
         default: true
+      environment:
+        description: "GitHub environment that holds TAURI_PRIVATE_KEY (Release or Nightly)"
+        required: false
+        type: string
+        default: ""
     secrets:
+      # Callers must pass this name even when its value comes from the job's environment.
       TAURI_PRIVATE_KEY:
         required: true
       VITE_GA_MEASUREMENT_ID:
@@ -74,6 +80,7 @@ env:
 
 jobs:
   build-cef:
+    environment: ${{ inputs.environment }}
     strategy:
       fail-fast: false
       matrix:
@@ -89,6 +96,18 @@ jobs:
     timeout-minutes: ${{ matrix.timeout_minutes }}
 
     steps:
+      - name: Check updater signing key
+        uses: actions/github-script@v9
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+        with:
+          script: |
+            if (!process.env.TAURI_SIGNING_PRIVATE_KEY?.trim()) {
+              core.setFailed(
+                'TAURI_PRIVATE_KEY is empty or unavailable. Configure it in the selected GitHub environment and pass it from the calling workflow.'
+              );
+            }
+
       - name: Checkout repository
         uses: actions/checkout@v7.0.1
 
@@ -159,7 +178,7 @@ jobs:
         with:
           # tauri-cli downloads CEF into dirs::cache_dir()/tauri-cef.
           path: ${{ matrix.os == 'windows' && '~/AppData/Local/tauri-cef' || '~/.cache/tauri-cef' }}
-          key: ${{ runner.os }}-${{ runner.arch }}-cef-${{ env.TAURI_CEF_TAG }}-${{ hashFiles('apps/desktop/Cargo.lock') }}
+          key: ${{ runner.os }}-${{ runner.arch }}-cef-${{ env.TAURI_CEF_TAG }}-${{ hashFiles('apps/desktop/Cargo.cef.lock') }}
           restore-keys: |
             ${{ runner.os }}-${{ runner.arch }}-cef-${{ env.TAURI_CEF_TAG }}-
 
@@ -219,6 +238,14 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install
+
+      - name: Validate vendored CEF lockfile
+        shell: bash
+        working-directory: apps/desktop
+        run: |
+          pnpm cef:prepare
+          cargo metadata --locked --format-version 1 --no-default-features --features cef,match-sync > /dev/null
+          pnpm cef:cleanup
 
       - name: Update version with commit hash (nightly only)
         # github.event_name is the caller's event here, so checking for

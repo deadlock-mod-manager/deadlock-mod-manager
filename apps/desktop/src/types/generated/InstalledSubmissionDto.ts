@@ -4,4 +4,5 @@ export type InstalledSubmissionDto = {
   remoteId: string;
   installedAt: number;
   selectedFileIds: Array<string>;
+  selectedFileNames: Array<string>;
 };

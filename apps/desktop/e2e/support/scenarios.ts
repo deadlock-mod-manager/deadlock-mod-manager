@@ -22,6 +22,12 @@ import {
   prepareGroupedIdentificationWorld,
 } from "./library-groups-fixtures";
 import { prepareProfileWorld } from "./profile-fixtures";
+import {
+  hashRequests,
+  prepareRescanAfterResetWorld,
+  rescanAfterResetRoutes,
+} from "./rescan-after-reset-fixtures";
+import { shareRoutes } from "./profile-share-fixtures";
 import { prepareFileOrderWorld } from "./file-order-fixtures";
 import { prepareBrokenProfileWorld } from "./broken-profile-fixtures";
 import { prepareCompatibilityFixWorld } from "./compatibility-fix-fixtures";
@@ -35,10 +41,19 @@ import {
 } from "./gameinfo-recovery-fixtures";
 import { prepareMissingVpkWorld } from "./missing-vpk-fixtures";
 import { prepareBrokenStateWorld } from "./broken-state-fixtures";
+import {
+  launchRepairRoutes,
+  prepareLaunchRepairWorld,
+} from "./launch-repair-fixtures";
 import { prepareShardWorld } from "./shard-fixtures";
 import { assertCrashEvidence } from "./filesystem-oracle";
 import { assertNormalExit, assertInterruptedExit } from "./phase-evidence";
 import { buildSyntheticVpk, writeSyntheticVpk } from "./vpk";
+import {
+  assertUnknownAddonNetwork,
+  prepareUnknownAddonWorld,
+  unknownAddonRoutes,
+} from "./analyze-known-files-fixtures";
 import { createArchive } from "./archive-fixtures";
 import { randomBytes } from "node:crypto";
 import { contentRoutes, prepareContentWorld } from "./content-fixtures";
@@ -64,6 +79,7 @@ import {
 import {
   multipakUpdateRoutes,
   assertMultipakUpdateNetwork,
+  assertUpdateRoutingNetwork,
 } from "./multipak-update-fixtures";
 import {
   variantNamesRoutes,
@@ -88,6 +104,12 @@ import {
   networkDiagnosticsRoutes,
   prepareNetworkDiagnosticsWorld,
 } from "./network-diagnostics-fixtures";
+
+import {
+  reliabilityRoutes,
+  prepareReliabilityWorld,
+  assertReliabilityNetwork,
+} from "./reliability-fixtures";
 
 type Definition = {
   family: string;
@@ -183,6 +205,16 @@ const profileRoutes = async () => () => [
     body: "[]",
   },
 ];
+const modRequirements: Definition = {
+  ...defaults,
+  family: "gamebanana",
+  spec: "mod-requirements",
+  phases: ["exercise", "restart"],
+  routes: reliabilityRoutes,
+  prepare: prepareReliabilityWorld,
+  verifyNetwork: assertReliabilityNetwork,
+};
+
 const profiles: Definition = {
   ...defaults,
   family: "profiles",
@@ -192,6 +224,13 @@ const profiles: Definition = {
   platforms: ["win32"],
   routes: profileRoutes,
   prepare: async (world) => prepareProfileWorld(world),
+};
+const profileShare: Definition = {
+  ...defaults,
+  family: "profile-share",
+  spec: "profiles-import-overlap",
+  phases: ["import-overlap"],
+  routes: shareRoutes,
 };
 const libraryGroups: Definition = {
   ...defaults,
@@ -209,6 +248,16 @@ const conflicts: Definition = {
   routes: profileRoutes,
   prepare: async (world) => prepareConflictWorld(world),
 };
+const downloadFallback: Definition = {
+  ...defaults,
+  family: "gamebanana",
+  spec: "download-fallback",
+  phases: ["exercise", "restart"],
+  routes: reliabilityRoutes,
+  prepare: prepareReliabilityWorld,
+  verifyNetwork: assertReliabilityNetwork,
+};
+
 const downloads: Definition = {
   ...defaults,
   family: "downloads",
@@ -225,6 +274,16 @@ const pauseQueue: Definition = {
   spec: "download-pause-queue",
   phases: ["pause"],
 };
+const crashAttribution: Definition = {
+  ...defaults,
+  family: "gamebanana",
+  spec: "crash-attribution",
+  phases: ["exercise", "restart"],
+  routes: reliabilityRoutes,
+  prepare: prepareReliabilityWorld,
+  verifyNetwork: assertReliabilityNetwork,
+};
+
 const filesystem: Definition = {
   ...defaults,
   family: "filesystem",
@@ -373,7 +432,19 @@ const networkDiagnostics: Definition = {
   routes: networkDiagnosticsRoutes,
   prepare: prepareNetworkDiagnosticsWorld,
 };
+const modUpdates: Definition = {
+  ...defaults,
+  family: "gamebanana",
+  spec: "mod-updates",
+  phases: ["exercise", "restart"],
+  routes: reliabilityRoutes,
+  prepare: prepareReliabilityWorld,
+  verifyNetwork: assertReliabilityNetwork,
+};
+
 export const scenarios = {
+  "gamebanana-mirror-fallback": downloadFallback,
+  "gamebanana-crash-cause": crashAttribution,
   "library-groups-organize": libraryGroups,
   "library-groups-identification": {
     ...libraryGroups,
@@ -381,6 +452,23 @@ export const scenarios = {
     phases: ["identify", "restart-identify"],
     routes: detectedModRoutes,
     prepare: prepareGroupedIdentificationWorld,
+  },
+  "addons-rescan-after-reset": {
+    ...defaults,
+    family: "addons-analysis",
+    spec: "rescan-after-reset",
+    phases: ["reset-rescan", "restart-rescan"],
+    routes: rescanAfterResetRoutes,
+    prepare: prepareRescanAfterResetWorld,
+    verifyNetwork: (_id: string, requests: readonly FixtureRequest[]) => {
+      // Only the hand-placed pak04 and the local import's pak03 may be looked
+      // up: the catalog mods' files are already accounted for by the manifest.
+      const lookups = hashRequests(requests).length;
+      if (lookups !== 2)
+        throw new Error(
+          `Analyze looked up ${lookups} files by hash; expected exactly 2`,
+        );
+    },
   },
   "library-groups-pagination": {
     ...libraryGroups,
@@ -466,6 +554,30 @@ export const scenarios = {
     phases: ["seed-launch", "launch-damaged", "restart-launch-damaged"],
     prepare: prepareBrokenStateWorld,
   },
+  "missing-vpks-launch-partial": {
+    ...defaults,
+    family: "missing-vpks",
+    spec: "launch-repair-partial",
+    phases: ["repair-partial", "restart-repair-partial"],
+    routes: launchRepairRoutes,
+    prepare: prepareLaunchRepairWorld,
+  },
+  "missing-vpks-launch-relaunch-error": {
+    ...defaults,
+    family: "missing-vpks",
+    spec: "launch-repair-partial",
+    phases: ["relaunch-error"],
+    routes: launchRepairRoutes,
+    prepare: prepareLaunchRepairWorld,
+  },
+  "missing-vpks-launch-relaunch-missing": {
+    ...defaults,
+    family: "missing-vpks",
+    spec: "launch-repair-partial",
+    phases: ["relaunch-missing"],
+    routes: launchRepairRoutes,
+    prepare: prepareLaunchRepairWorld,
+  },
   "gameinfo-reverted-launch": {
     ...defaults,
     family: "settings",
@@ -540,6 +652,15 @@ export const scenarios = {
         );
     },
   },
+  "analyze-known-files": {
+    ...defaults,
+    family: "analysis",
+    spec: "analyze-known-files",
+    phases: ["add-files", "restart-known"],
+    routes: unknownAddonRoutes,
+    prepare: prepareUnknownAddonWorld,
+    verifyNetwork: assertUnknownAddonNetwork,
+  },
   "onboarding-skip-analysis": onboarding,
   "onboarding-telemetry-default": {
     ...onboarding,
@@ -612,6 +733,7 @@ export const scenarios = {
   "local-mod-large-drop-zip": localLargeInPage,
   "local-mod-large-drop-path-vpk": localLargeOnDisk,
   "local-mod-large-drop-path-zip": localLargeOnDisk,
+  "profiles-import-overlap": profileShare,
   "profiles-pointer": profiles,
   "profiles-keyboard": profiles,
   "profiles-file-order": {
@@ -657,6 +779,8 @@ export const scenarios = {
   },
   "downloads-pause": downloads,
   "downloads-range": downloads,
+  "downloads-deleted-profile": downloads,
+  "downloads-deleted-default": downloads,
   "downloads-cancel": { ...downloads, coverage: "ipc-recovery" },
   "downloads-cancel-connecting": downloads,
   "downloads-cancel-queued": downloads,
@@ -671,6 +795,7 @@ export const scenarios = {
   "downloads-segmented": downloads,
   "downloads-segmented-off": downloads,
   "downloads-segmented-no-range": downloads,
+  "downloads-segmented-range-error": downloads,
   "downloads-segmented-wrong-range": downloads,
   "downloads-segmented-corrupt": downloads,
   "downloads-segmented-pause": downloads,
@@ -697,6 +822,11 @@ export const scenarios = {
     ...pauseQueue,
     phases: ["pause", "restart-pause"],
     exit: (phase: string) => (phase === "pause" ? "interrupt" : "normal"),
+  },
+  "downloads-queued-waiting": {
+    ...downloads,
+    spec: "download-queue-waiting",
+    phases: ["queue"],
   },
   "filesystem-backup-replace": filesystem,
   "filesystem-backup-merge": filesystem,
@@ -791,6 +921,7 @@ export const scenarios = {
   "gamebanana-unremembered": catalogLifecycle,
   "gamebanana-switch": catalogLifecycle,
   "gamebanana-switch-failure": catalogLifecycle,
+  "gamebanana-switch-reinstall": catalogLifecycle,
   "gamebanana-reselect": catalogLifecycle,
   "gamebanana-file-toggle": catalogLifecycle,
   "gamebanana-reinstall": catalogLifecycle,
@@ -798,12 +929,20 @@ export const scenarios = {
   "gamebanana-force-update": catalogLifecycle,
   "gamebanana-delete-parked": catalogDeleteParked,
   "gamebanana-delete-parked-disabled": catalogDeleteParked,
+  "gamebanana-requirements": modRequirements,
   "gamebanana-multipak-update": {
     ...catalog,
     spec: "gamebanana-multipak-update",
     phases: ["update-toggle", "restart-uninstall"],
     routes: multipakUpdateRoutes,
     verifyNetwork: assertMultipakUpdateNetwork,
+  },
+  "gamebanana-update-routing": {
+    ...catalog,
+    spec: "gamebanana-update-routing",
+    phases: ["update-auto", "restart-download-auto"],
+    routes: multipakUpdateRoutes,
+    verifyNetwork: assertUpdateRoutingNetwork,
   },
   "gamebanana-variant-names": {
     ...catalog,
@@ -812,6 +951,8 @@ export const scenarios = {
     routes: variantNamesRoutes,
     verifyNetwork: assertVariantNamesNetwork,
   },
+  "gamebanana-archived-files": modUpdates,
+  "gamebanana-update-choice": modUpdates,
   "gamebanana-renamed-packs": {
     ...catalog,
     spec: "gamebanana-renamed-packs",
@@ -866,6 +1007,10 @@ export const scenarios = {
     phases: ["broken"],
   },
   "network-diagnostics": networkDiagnostics,
+  "network-diagnostics-internet-down": {
+    ...networkDiagnostics,
+    phases: ["internet-down"],
+  },
 } satisfies Record<string, Definition>;
 export type ScenarioId = keyof typeof scenarios;
 const isScenario = (value: string): value is ScenarioId =>

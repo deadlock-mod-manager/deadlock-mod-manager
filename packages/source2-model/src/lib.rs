@@ -13,6 +13,9 @@ pub mod kv3;
 mod material_preview;
 pub mod nm_anim;
 pub mod particles;
+#[cfg(test)]
+mod preview_regressions;
+pub mod preview_report;
 pub mod resource;
 mod rest_pose;
 pub mod skeleton;
@@ -120,20 +123,20 @@ fn encode_png_bytes(decoded: &DecodedTexture, max_side: u32) -> Result<Vec<u8>> 
 /// Decode a `.vtex_c` entry inside a VPK to a PNG.
 pub fn decode_texture_png(vpk_path: &Path, entry_path: &str) -> Result<TexturePng> {
     let bytes = vpk_extract::extract_entry(vpk_path, entry_path)?;
-    decode_texture_png_bytes(bytes)
+    decode_texture_png_bytes(bytes, false)
 }
 
 /// Decode a `.vtex_c` file that is already available as raw bytes to a PNG.
-pub fn decode_texture_png_bytes(bytes: Vec<u8>) -> Result<TexturePng> {
+pub fn decode_texture_png_bytes(bytes: Vec<u8>, opaque: bool) -> Result<TexturePng> {
     let res = Resource::parse(bytes)?;
     let header = VtexHeader::parse(&res)?;
     let decoded = header.decode(&res.data)?;
-    encode_png(&decoded)
+    encode_png(decoded, opaque)
 }
 
 /// Decode a standalone `.vtex_c` file on disk to a PNG.
 pub fn decode_texture_file(path: &Path) -> Result<TexturePng> {
-    decode_texture_png_bytes(std::fs::read(path)?)
+    decode_texture_png_bytes(std::fs::read(path)?, false)
 }
 
 /// Decode a `.vmesh_c` entry inside a VPK to a binary GLB for the live preview.
@@ -187,17 +190,27 @@ pub fn decode_model_glb_from_archive(archive: &VpkArchive, entry_path: &str) -> 
             if !shown[mesh_index] {
                 continue;
             }
-            let mesh_bytes = archive.extract_entry(&mesh_path)?;
-            let mesh_res = Resource::parse(mesh_bytes)?;
-            let material_paths = vmesh::referenced_materials(&mesh_res);
-            let mesh_textures = decode_preview_textures(archive, &mesh_path, &material_paths);
+            let mesh = (|| {
+                let mesh_bytes = archive.extract_entry(&mesh_path)?;
+                let mesh_res = Resource::parse(mesh_bytes)?;
+                let material_paths = vmesh::referenced_materials(&mesh_res);
+                let mesh_textures = decode_preview_textures(archive, &mesh_path, &material_paths);
+                let bone_remap = vmesh::model_mesh_bone_remap(&res, mesh_index)?;
+                let mesh_primitives = vmesh::decode_mesh_primitives_from_resource(
+                    &mesh_res,
+                    &mesh_textures,
+                    bone_remap.as_deref(),
+                )?;
+                Ok::<_, Source2Error>((mesh_primitives, mesh_textures))
+            })();
+            let (mut mesh_primitives, mesh_textures) = match mesh {
+                Ok(mesh) => mesh,
+                Err(error) => {
+                    archive.record_preview_error(&mesh_path, &error);
+                    continue;
+                }
+            };
             let material_offset = preview_textures.len();
-            let bone_remap = vmesh::model_mesh_bone_remap(&res, mesh_index)?;
-            let mut mesh_primitives = vmesh::decode_mesh_primitives_from_resource(
-                &mesh_res,
-                &mesh_textures,
-                bone_remap.as_deref(),
-            )?;
             let group_mask = mesh_groups
                 .as_ref()
                 .and_then(|groups| groups.masks.get(mesh_index))
@@ -210,6 +223,11 @@ pub fn decode_model_glb_from_archive(archive: &VpkArchive, entry_path: &str) -> 
             }
             primitives.append(&mut mesh_primitives);
             preview_textures.extend(mesh_textures);
+        }
+        if primitives.is_empty() {
+            return Err(Source2Error::UnsupportedFormat(
+                "No supported model geometry remains; inspect dependency diagnostics".into(),
+            ));
         }
         return vmesh::model_from_decoded_primitives(
             &primitives,
@@ -387,15 +405,10 @@ pub fn pose_model_at_rest(
         Ok(None) => model,
         Err(error) => {
             log::warn!("[source2] Could not apply the rest pose to {entry_path}: {error}");
+            skin.record_preview_error(entry_path, &error);
             model
         }
     }
-}
-
-fn skeleton_from_archive(archive: &VpkArchive, entry_path: &str) -> Option<Skeleton> {
-    let bytes = archive.extract_entry(entry_path).ok()?;
-    let res = Resource::parse(bytes).ok()?;
-    skeleton::parse_model_skeleton(&res).ok().flatten()
 }
 
 fn try_pose_model_at_rest(
@@ -406,13 +419,12 @@ fn try_pose_model_at_rest(
 ) -> Result<Option<ModelGlb>> {
     // The skin's own VPK carries the skeleton when it ships the model; a
     // default-hero load reads it from the base game instead.
-    let Some(skeleton) =
-        skeleton_from_archive(skin, entry_path).or_else(|| skeleton_from_archive(base, entry_path))
-    else {
+    let resource = Resource::parse(skin.extract_entry(entry_path)?)?;
+    let Some(skeleton) = skeleton::parse_model_skeleton(&resource)? else {
         return Ok(None);
     };
 
-    // Clips live beside the model in the base pak, never in a skin mod.
+    // Use the base catalog to locate the clip, then honor a mod's explicit override.
     let mut pose = match nm_anim::resolve_nm_clip_from_archive(
         base,
         entry_path,
@@ -420,7 +432,8 @@ fn try_pose_model_at_rest(
         None,
     )? {
         Some(resolved) => {
-            let animation = nm_anim::load_nm_animation_from_archive(base, &resolved.clip_path)?;
+            let animation = nm_anim::load_nm_animation_from_archive(skin, &resolved.clip_path)
+                .inspect_err(|error| skin.record_preview_error(&resolved.clip_path, error))?;
             let frame = animation.sample_frame(0)?;
             nm_anim::retarget_nm_pose(&animation, &frame, &skeleton)
         }
@@ -435,11 +448,53 @@ fn try_pose_model_at_rest(
     vmesh::pose_model_glb(model, &skeleton, &pose).map(Some)
 }
 
-fn encode_png(decoded: &DecodedTexture) -> Result<TexturePng> {
-    let png = encode_png_bytes(decoded, u32::MAX)?;
+fn encode_png(mut decoded: DecodedTexture, opaque: bool) -> Result<TexturePng> {
+    if opaque {
+        for pixel in decoded.rgba.as_chunks_mut::<4>().0 {
+            pixel[3] = 255;
+        }
+    }
+    let png = encode_png_bytes(&decoded, u32::MAX)?;
     Ok(TexturePng {
         width: decoded.width,
         height: decoded.height,
         png,
     })
+}
+
+#[cfg(test)]
+mod texture_png_tests {
+    use super::*;
+
+    #[test]
+    fn opaque_color_maps_preserve_rgb_behind_shader_masks() {
+        let texture = encode_png(
+            DecodedTexture {
+                width: 2,
+                height: 1,
+                rgba: vec![0, 0, 255, 0, 200, 30, 10, 128],
+            },
+            true,
+        )
+        .unwrap();
+        let image = image::load_from_memory(&texture.png).unwrap().to_rgba8();
+        assert_eq!(image.get_pixel(0, 0).0, [0, 0, 255, 255]);
+        assert_eq!(image.get_pixel(1, 0).0, [200, 30, 10, 255]);
+    }
+
+    #[test]
+    fn transparent_previews_keep_their_alpha() {
+        let texture = encode_png(
+            DecodedTexture {
+                width: 2,
+                height: 1,
+                rgba: vec![0, 0, 255, 0, 200, 30, 10, 128],
+            },
+            false,
+        )
+        .unwrap();
+        let image = image::load_from_memory(&texture.png).unwrap().to_rgba8();
+        assert_eq!(image.get_pixel(0, 0).0, [0, 0, 255, 0]);
+        assert_eq!(image.get_pixel(1, 0).0, [200, 30, 10, 128]);
+    }
 }

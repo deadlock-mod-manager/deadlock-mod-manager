@@ -1,6 +1,6 @@
 ---
 name: version-bump
-description: Version Bump
+description: "Apply pending changesets, sync Cargo.toml versions, and update the What's New translations."
 disable-model-invocation: true
 ---
 

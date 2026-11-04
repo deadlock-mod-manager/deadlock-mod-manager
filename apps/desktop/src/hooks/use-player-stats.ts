@@ -60,11 +60,13 @@ type StatsQueryOptions = {
   key: string;
   ttl: number;
   enabled?: boolean;
+  /** Asks again this often (ms) while the request keeps failing. */
+  retryEvery?: number;
 };
 
 /** Options for a cached stats request, for `useQuery` and `useQueries` alike. */
 const statsQueryOptions = <T>(
-  { key, ttl, enabled = true }: StatsQueryOptions,
+  { key, ttl, enabled = true, retryEvery }: StatsQueryOptions,
   fetcher: () => Promise<T>,
 ) => ({
   queryKey: ["stats", key],
@@ -73,6 +75,10 @@ const statsQueryOptions = <T>(
   gcTime: ttl * 2,
   refetchOnWindowFocus: false,
   retry: 1,
+  refetchInterval: (query: { state: { status: string } }) =>
+    retryEvery !== undefined && query.state.status === "error"
+      ? retryEvery
+      : false,
   enabled,
   // The page renders its own inline error/stale state instead of a toast.
   meta: { skipGlobalErrorHandler: true },
@@ -432,6 +438,7 @@ export const useMatchDetails = (
     // every purchase through it, so without it the match reads as though the
     // player never bought anything.
     isError: metadata.isError || catalog.isError,
+    isFetching: metadata.isFetching,
     refetch: metadata.refetch,
   };
 };

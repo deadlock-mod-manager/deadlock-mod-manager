@@ -45,6 +45,25 @@ pub struct DumpSummary {
   /// Source 2 addons from the dump's `Addons:` line. These are not the VPKs
   /// gameinfo.gi mounts, so zero does not mean mods weren't loaded.
   pub addon_count: Option<u32>,
+  /// The engine's fatal error, read at analysis time to find a suspect.
+  #[serde(skip)]
+  #[ts(skip)]
+  pub abort_message: Option<String>,
+}
+
+/// The mounted VPK that provides a resource the fatal error names. A hint,
+/// not proof: the engine can fail on a file it was given correctly.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct CrashSuspect {
+  /// As the engine loads it, e.g. `panorama/layout/citadel_hud.vxml_c`.
+  pub resource_path: String,
+  /// The VPK's file name, e.g. `pak03_dir.vpk`.
+  pub vpk: String,
+  /// The profile's mod that owns the VPK; `None` for a VPK the app didn't install.
+  pub mod_id: Option<String>,
+  pub mod_name: Option<String>,
 }
 
 /// The VPKs one `citadel/addons…` search path mounted at launch.
@@ -129,6 +148,9 @@ pub struct SessionReport {
   pub exit_code_source: Option<ExitCodeSource>,
   pub classification: SessionClassification,
   pub dump: Option<DumpSummary>,
+  /// Reports saved by older versions lack it.
+  #[serde(default)]
+  pub crash_suspect: Option<CrashSuspect>,
   /// `Some` only when the game ran with `-condebug` and its log was ours.
   pub console_clean: Option<bool>,
   pub launched_by_dmm: bool,

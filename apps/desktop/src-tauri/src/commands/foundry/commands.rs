@@ -18,12 +18,13 @@ use super::analyze::{analyze_default_hero, analyze_vpk_path, decode_foundry_card
 use super::export::{ExportDestination, FoundryExportResult, export_workspace};
 use super::paint::{describe_paint_targets, model_paint_parts, paint_parts, paint_target};
 use super::palette::{sample_color_map, skin_palette};
+use super::remove_parts::remove_parts;
 use super::sounds::find_mp3_payload;
 use super::types::{
   ExportDestinationKind, FoundryAppliedPaint, FoundryBuildResult, FoundryCardPreview,
   FoundryManifest, FoundryPaintPart, FoundryPaintResult, FoundryPaintTargetInfo,
-  FoundryReplacementResult, FoundrySoundPreview, FoundrySoundSettings, FoundryTexture,
-  FoundryWorkspace, PaintTarget,
+  FoundryRemovedParts, FoundryReplacementResult, FoundrySoundPreview, FoundrySoundSettings,
+  FoundryTexture, FoundryWorkspace, PaintTarget,
 };
 use super::workspace::{
   adjust_workspace_sound, build_workspace_vpk, entry_bytes_from_sources, hue_of, parse_hex_color,
@@ -321,6 +322,29 @@ pub async fn foundry_paint_parts(
   .map_err(|e| Error::InvalidInput(format!("paint task failed: {e}")))?
 }
 
+/// Remove exactly these sections of the model from the game, putting back any
+/// removed earlier and no longer listed. An empty list restores the model.
+#[tauri::command]
+pub async fn foundry_remove_parts(
+  workspace_root: String,
+  file_path: String,
+  model_path: String,
+  hero_display: Option<String>,
+  textures: Vec<String>,
+) -> Result<FoundryRemovedParts, Error> {
+  tauri::async_runtime::spawn_blocking(move || {
+    remove_parts(
+      PathBuf::from(workspace_root),
+      PathBuf::from(file_path),
+      &model_path,
+      hero_display.as_deref(),
+      textures,
+    )
+  })
+  .await
+  .map_err(|e| Error::InvalidInput(format!("part removal task failed: {e}")))?
+}
+
 /// Resolve an optional pattern name into a [`vpkmanager::Pattern`]. `None` and
 /// `"none"` both mean a plain recolor; an unknown name is rejected rather than
 /// silently ignored, so a typo surfaces instead of quietly doing nothing.
@@ -420,6 +444,7 @@ pub async fn foundry_decode_texture(
   file_path: String,
   entry_path: String,
   workspace_root: Option<String>,
+  opaque: Option<bool>,
 ) -> Result<FoundryTexture, Error> {
   let vpk_path = PathBuf::from(&file_path);
   tauri::async_runtime::spawn_blocking(move || {
@@ -428,7 +453,7 @@ pub async fn foundry_decode_texture(
       &vpk_path,
       &entry_path,
     )?;
-    let decoded = source2_model::decode_texture_png_bytes(bytes)
+    let decoded = source2_model::decode_texture_png_bytes(bytes, opaque.unwrap_or(false))
       .map_err(|e| Error::InvalidInput(format!("failed to decode texture: {e}")))?;
     let b64 = base64::engine::general_purpose::STANDARD.encode(&decoded.png);
     Ok(FoundryTexture {

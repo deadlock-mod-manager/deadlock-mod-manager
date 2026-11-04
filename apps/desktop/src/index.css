@@ -5,6 +5,7 @@
 @import "./plugins/themes/pre-defined/gridline/gridline.css";
 @import "./plugins/themes/pre-defined/coding/coding.css";
 @import "./plugins/themes/pre-defined/seasonal/seasonal.css";
+@import "./plugins/themes/pre-defined/french/french.css";
 
 @tailwind base;
 @tailwind components;
@@ -138,6 +139,10 @@
     --primary-foreground: 20 9% 6%;
     /* Healthy status icons keep the stock accent; themes must not override this. */
     --status-ok: 42 60% 84%;
+    /* Relay ping scale, also used for blocked/open relay state. */
+    --signal-good: 152 55% 58%;
+    --signal-fair: 40 85% 60%;
+    --signal-poor: 355 75% 66%;
     --secondary: 15 10% 16%;
     --secondary-foreground: 41.6 60% 63%;
     --muted: 0 0% 14.9%;
@@ -168,6 +173,9 @@
 
   .light {
     --background: 0 0% 100%;
+    --signal-good: 152 60% 32%;
+    --signal-fair: 35 90% 38%;
+    --signal-poor: 355 65% 45%;
     --foreground: 15 10% 16%;
     --card: 0 0% 100%;
     --card-foreground: 15 10% 16%;
@@ -698,46 +706,46 @@
   }
 }
 
-/* Background Plugin Styles */
-.background-plugin-active [data-sidebar="sidebar"] {
+/* Set by AppBackground when the background image covers the sidebar too. */
+.app-background-sidebar [data-sidebar="sidebar"] {
   background-color: transparent;
   border-color: transparent;
 }
 
-.background-plugin-active [data-sidebar="sidebar"] * {
+.app-background-sidebar [data-sidebar="sidebar"] * {
   background-color: transparent;
 }
 
-.background-plugin-active [data-sidebar="content"] {
+.app-background-sidebar [data-sidebar="content"] {
   background-color: transparent;
 }
 
-.background-plugin-active [data-sidebar="footer"] {
+.app-background-sidebar [data-sidebar="footer"] {
   background-color: transparent;
 }
 
-.background-plugin-active [data-sidebar="group"] {
+.app-background-sidebar [data-sidebar="group"] {
   background-color: transparent;
 }
 
-.background-plugin-active [data-sidebar="group-content"] {
+.app-background-sidebar [data-sidebar="group-content"] {
   background-color: transparent;
 }
 
-.background-plugin-active [data-sidebar="menu"] {
+.app-background-sidebar [data-sidebar="menu"] {
   background-color: transparent;
 }
 
-.background-plugin-active [data-sidebar="menu-item"] {
+.app-background-sidebar [data-sidebar="menu-item"] {
   background-color: transparent;
 }
 
-.background-plugin-active [data-sidebar="menu-button"] {
+.app-background-sidebar [data-sidebar="menu-button"] {
   background-color: transparent;
 }
 
-/* Target the bottom bar by its structure */
-.background-plugin-active [data-bottom-bar="true"] {
+.app-background-bottom-bar [data-bottom-bar="true"],
+.app-background-top-bar [data-titlebar="true"] {
   background-color: transparent;
   border-color: transparent;
 }
@@ -1567,6 +1575,56 @@
 
 .wn-feature-enter {
   animation: wn-feature-enter 0.3s ease both;
+}
+
+/* The badge strikes out the version you upgraded from, then shows the new one */
+@keyframes wn-version-strike {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes wn-version-dim {
+  to {
+    opacity: 0.45;
+  }
+}
+
+.wn-version-from {
+  position: relative;
+  animation: wn-version-dim 0.3s ease-out 0.45s both;
+}
+
+.wn-version-from::after {
+  content: "";
+  position: absolute;
+  inset-inline: -1px;
+  top: 50%;
+  height: 1px;
+  background: currentColor;
+  transform-origin: left;
+  animation: wn-version-strike 0.3s cubic-bezier(0.16, 1, 0.3, 1) 0.45s both;
+}
+
+.wn-version-arrow,
+.wn-version-to {
+  animation: wn-title-enter 0.35s cubic-bezier(0.16, 1, 0.3, 1) 0.7s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wn-version-from,
+  .wn-version-from::after,
+  .wn-version-arrow,
+  .wn-version-to {
+    animation: none;
+  }
+
+  .wn-version-from {
+    opacity: 0.45;
+  }
 }
 
 /*

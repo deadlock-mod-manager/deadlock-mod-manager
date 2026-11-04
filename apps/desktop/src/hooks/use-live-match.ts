@@ -59,11 +59,11 @@ export const useLiveMatchDetection = (enabled: boolean) =>
   });
 
 /**
- * The board the bridge reports, gated like the Live tab gates it, for the parts
- * of the Stats page outside the tab. Shares the tab's query, so no extra polls.
+ * The board the bridge reports, for the parts of the Stats page outside the Live
+ * tab. Shares the tab's query, so no extra polls.
  */
-export const useLiveBoard = (enabled: boolean): LiveBoard => {
-  const detection = useLiveMatchDetection(enabled);
+export const useLiveBoard = (): LiveBoard => {
+  const detection = useLiveMatchDetection(true);
   const gameRunning = useGameRunning();
   return liveBoard(detection.data, gameRunning, Date.now());
 };

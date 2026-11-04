@@ -51,7 +51,7 @@ impl MatchMode {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct GameState {
     pub phase: GamePhase,
     pub match_mode: MatchMode,

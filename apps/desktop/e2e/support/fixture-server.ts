@@ -42,7 +42,7 @@ export type FixtureResponse = {
 export type FixtureRoute = FixtureResponse & {
   method: string;
   path: string;
-  query?: Record<string, string>;
+  query?: Record<string, string | string[]>;
   sequence?: readonly FixtureResponse[];
 };
 
@@ -265,7 +265,10 @@ export const startFixtureServer = async (
         candidate.method.toUpperCase() === record.method.toUpperCase() &&
         candidate.path === requestUrl.pathname &&
         Object.entries(candidate.query ?? {}).every(([key, value]) =>
-          requestUrl.searchParams.getAll(key).includes(value),
+          Array.isArray(value)
+            ? JSON.stringify(requestUrl.searchParams.getAll(key)) ===
+              JSON.stringify(value)
+            : requestUrl.searchParams.getAll(key).includes(value),
         ),
     );
     if (route) {

@@ -49,6 +49,7 @@ const report = (overrides: Partial<SessionReport> = {}): SessionReport => ({
   exitCodeSource: "processHandle",
   classification: "crash",
   dump: null,
+  crashSuspect: null,
   consoleClean: false,
   launchedByDmm: true,
   dmmStopped: false,
@@ -326,4 +327,55 @@ describe("planReports", () => {
       { sessionId: "crash", outcome: "ignored" },
     ]);
   });
+});
+
+it("shows a named resource suspect without a baseline or recent setup change", () => {
+  expect(
+    evaluateSession(
+      report({
+        uptimeSecs: 1800,
+        crashSuspect: {
+          resourcePath: "scripts/test.vdata_c",
+          vpk: "pak01_dir.vpk",
+          modId: "Mod-1",
+          modName: "Test",
+        },
+      }),
+      null,
+    ),
+  ).toMatchObject({ kind: "prompt", changes: [] });
+});
+
+it("shows named resource evidence even when dump uptime is missing", () => {
+  expect(
+    evaluateSession(
+      report({
+        uptimeSecs: null,
+        crashSuspect: {
+          resourcePath: "scripts/test.vdata_c",
+          vpk: "pak01_dir.vpk",
+          modId: "Mod-1",
+          modName: "Test",
+        },
+      }),
+      null,
+    ),
+  ).toMatchObject({ kind: "prompt" });
+});
+
+it("flags a game update behind a named resource crash", () => {
+  expect(
+    evaluateSession(
+      report({
+        crashSuspect: {
+          resourcePath: "scripts/test.vdata_c",
+          vpk: "pak01_dir.vpk",
+          modId: "Mod-1",
+          modName: "Test",
+        },
+        fingerprint: fingerprint({ steamBuildId: "20499999" }),
+      }),
+      baseline,
+    ),
+  ).toMatchObject({ kind: "prompt", buildChanged: true });
 });

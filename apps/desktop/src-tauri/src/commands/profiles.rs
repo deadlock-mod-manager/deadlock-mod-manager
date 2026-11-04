@@ -45,6 +45,8 @@ fn create_profile_folder_unguarded(profile_id: &str, profile_name: &str) -> Resu
 
   std::fs::create_dir_all(&profile_folder)?;
   log::info!("Created profile folder: {profile_folder:?}");
+  #[cfg(feature = "plugins")]
+  crate::external_plugins::events::profile_created(&folder_name);
 
   Ok(folder_name)
 }
@@ -122,6 +124,8 @@ pub async fn delete_profile_folder(
 
   if removed {
     log::info!("Deleted profile shard folders for: {profile_folder}");
+    #[cfg(feature = "plugins")]
+    crate::external_plugins::events::profile_removed(&profile_folder);
   } else {
     log::warn!("Profile folder does not exist in any addon shard: {profile_folder}");
   }
@@ -139,7 +143,11 @@ pub async fn switch_profile(
 
   let mut mod_manager = MANAGER.lock().unwrap();
   mod_manager.migrate_profile_to_shards(profile_folder.clone())?;
+  #[cfg(feature = "plugins")]
+  let event_profile = profile_folder.clone();
   mod_manager.apply_profile_gameinfo(profile_folder)?;
+  #[cfg(feature = "plugins")]
+  crate::external_plugins::events::profile_activated(event_profile.as_deref());
 
   log::info!("Successfully switched profile");
   Ok(())
@@ -338,12 +346,14 @@ pub async fn show_profile_vpk_in_folder(
 pub async fn import_profile_batch(
   app_handle: AppHandle,
   catalog_state: State<'_, super::gamebanana_catalog::GameBananaCatalogState>,
+  native_sources: State<'_, crate::providers::native_sources::NativeSourceManager>,
   policy: State<'_, super::policy::PolicyState>,
   profile_name: String,
   _profile_description: String,
   profile_folder: String,
   mods: Vec<super::downloads::ProfileImportMod>,
   import_type: String,
+  fileserver_preference: FileserverPreference,
   guard_permit: Option<String>,
 ) -> Result<super::downloads::ProfileImportResult, Error> {
   crate::game_guard::ensure_game_idle_locked("import_profile_batch", guard_permit.as_deref())?;
@@ -376,11 +386,12 @@ pub async fn import_profile_batch(
   for mod_data in &mods {
     resolved_downloads.push(
       resolve_download_files(
+        &native_sources,
         &catalog_state,
         &policy,
         &mod_data.mod_id,
         &mod_data.download_files,
-        FileserverPreference::Default,
+        fileserver_preference,
       )
       .await
       .map_err(|error| format!("Failed to resolve download files: {error:?}")),
@@ -455,6 +466,7 @@ pub async fn import_profile_batch(
       profile_folder: Some(final_profile_folder.clone()),
       is_profile_import: true,
       file_tree: mod_data.file_tree.clone(),
+      native_component_plan: false,
     };
 
     let manager = get_download_manager(app_handle.clone()).await;

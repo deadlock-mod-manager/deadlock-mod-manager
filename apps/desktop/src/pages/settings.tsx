@@ -28,10 +28,10 @@ import {
   GamepadIcon,
   Globe,
   InfoIcon,
+  ImageIcon,
   MonitorIcon,
   PackageIcon,
   PaletteIcon,
-  PlugIcon,
   PlusIcon,
   ScrollTextIcon,
   Settings,
@@ -75,16 +75,18 @@ import { LanguageSettings } from "@/components/settings/language-settings";
 import { LinuxGpuToggle } from "@/components/settings/linux-gpu-toggle";
 import { LoggingSettings } from "@/components/settings/logging-settings";
 import OccultGeometrySettings from "@/components/settings/occult-geometry-settings";
-import { PluginList } from "@/components/settings/plugin-list";
 import { MatchSyncSettings } from "@/components/settings/match-sync-settings";
 import { FeatureTipsToggle } from "@/components/settings/feature-tips-toggle";
 import { ModUpdateBadgesToggle } from "@/components/settings/mod-update-badges-toggle";
+import { ModSourcesSettings } from "@/components/settings/mod-sources-settings";
 import { ModelPreviewToggle } from "@/components/settings/model-preview-toggle";
 import { RepairModFolder } from "@/components/settings/repair-mod-folder";
+import { ModRecoveryReportView } from "@/components/settings/mod-recovery-report";
 import PrivacySettings from "@/components/settings/privacy-settings";
 import { ProxySettings } from "@/components/settings/proxy-settings";
 import { RemoteInstallSettings } from "@/components/settings/remote-install-settings";
 import { GameBananaLogo } from "@/components/shared/gamebanana-logo";
+import BackgroundSettings from "@/components/settings/background-settings";
 import Section, { SectionSkeleton } from "@/components/settings/section";
 import SettingCard, {
   SettingCardSkeleton,
@@ -116,6 +118,8 @@ import {
 } from "@/hooks/use-gamebanana-catalog-sync";
 import { invokeGuarded } from "@/lib/game-guard";
 import { isMatchSyncBuilt } from "@/lib/runtime-bootstrap";
+import { useModRecovery } from "@/hooks/use-mod-recovery";
+import { useVpkScanDismissal } from "@/lib/vpk-scan-dismissal";
 
 type DangerActionProps = {
   disabled?: boolean;
@@ -397,22 +401,9 @@ const CustomSettings = ({ value }: { value?: string }) => {
   const { t } = useTranslation();
   const catalogSync = useCatalogSyncMutation();
   const wipeCatalog = useWipeLocalCatalog();
-  const { clearMods, localMods: mods, getActiveProfile } = usePersistedStore();
-
-  const clearModsState = async () => {
-    if (
-      !(await confirm({
-        title: t("settings.confirmClearModsState"),
-        body: t("settings.confirmClearModsStateBody"),
-        actionButton: t("settings.confirmClearModsStateAction"),
-        cancelButton: t("common.cancel"),
-      }))
-    ) {
-      return;
-    }
-    clearMods();
-    toast.success(t("settings.modsStateCleared"));
-  };
+  const recovery = useModRecovery();
+  const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
+  const { dismissedFingerprint, restore } = useVpkScanDismissal();
   const confirm = useConfirm();
   const { analytics } = useAnalyticsContext();
   const location = useLocation();
@@ -431,7 +422,15 @@ const CustomSettings = ({ value }: { value?: string }) => {
     }
   }, [value]);
 
-  const goToSearchResult = ({ tab, sectionId }: SettingsSearchResult) => {
+  const goToSearchResult = ({
+    tab,
+    route,
+    sectionId,
+  }: SettingsSearchResult) => {
+    if (route) {
+      navigate(route);
+      return;
+    }
     setActiveTab(tab);
     // Radix mounts a newly selected tab's content one render late.
     requestAnimationFrame(() => {
@@ -509,37 +508,6 @@ const CustomSettings = ({ value }: { value?: string }) => {
     }
   };
 
-  const clearAllMods = async () => {
-    if (
-      !(await confirm({
-        title: t("settings.confirmClearAllMods"),
-        actionButton: t("settings.confirmClearAllModsAction"),
-        cancelButton: t("common.cancel"),
-      }))
-    ) {
-      return;
-    }
-    try {
-      const activeProfile = getActiveProfile();
-      const profileFolder = activeProfile?.folderName ?? null;
-
-      await Promise.all(
-        mods.map((mod) =>
-          invokeGuarded("purge_mod", {
-            modId: mod.remoteId,
-            vpks: mod.installedVpks ?? [],
-            profileFolder,
-          }),
-        ),
-      );
-      clearMods();
-      toast.success(t("settings.allModsCleared"));
-    } catch (error) {
-      logger.errorOnly(error);
-      toast.error(t("settings.failedToClearMods"));
-    }
-  };
-
   return (
     <div className='flex h-full w-full min-h-0 flex-col gap-4 overflow-hidden'>
       <PageTitle className='shrink-0 px-4' title={t("navigation.settings")} />
@@ -586,6 +554,11 @@ const CustomSettings = ({ value }: { value?: string }) => {
                   value='themes'
                 />
                 <SettingsNavItem
+                  icon={ImageIcon}
+                  label={t("settings.background")}
+                  value='background'
+                />
+                <SettingsNavItem
                   icon={Globe}
                   label={t("settings.network")}
                   value='network'
@@ -603,11 +576,6 @@ const CustomSettings = ({ value }: { value?: string }) => {
                     />
                   </div>
                 </HintAnchor>
-                <SettingsNavItem
-                  icon={PlugIcon}
-                  label={t("settings.plugin")}
-                  value='plugin'
-                />
                 <SettingsNavItem
                   icon={DiscordLogoIcon}
                   label={t("settings.discord")}
@@ -678,14 +646,6 @@ const CustomSettings = ({ value }: { value?: string }) => {
             </Suspense>
           </TabsContent>
 
-          <TabsContent className='mt-0 space-y-4' value='plugin'>
-            <Section
-              description={t("settings.pluginDescription")}
-              title={t("settings.plugin")}>
-              <PluginList />
-            </Section>
-          </TabsContent>
-
           <TabsContent className='mt-0 space-y-4' value='themes'>
             <ErrorBoundary>
               <Suspense
@@ -697,6 +657,15 @@ const CustomSettings = ({ value }: { value?: string }) => {
                 {ThemesPlugin.Settings && <ThemesPlugin.Settings />}
               </Suspense>
             </ErrorBoundary>
+          </TabsContent>
+
+          <TabsContent className='mt-0 space-y-4' value='background'>
+            <Section
+              description={t("settings.backgroundDescription")}
+              searchId='background'
+              title={t("settings.background")}>
+              <BackgroundSettings />
+            </Section>
           </TabsContent>
 
           <TabsContent className='mt-0 space-y-4' value='game'>
@@ -743,6 +712,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
           </TabsContent>
 
           <TabsContent className='mt-0 space-y-4' value='mods'>
+            <ModSourcesSettings />
             <Section
               description={t("settings.modInstallingSectionDescription")}
               searchId='mod-installing'
@@ -949,6 +919,19 @@ const CustomSettings = ({ value }: { value?: string }) => {
                   </p>
                   <NetworkDiagnosticsButton className='w-fit' />
                   <RepairModFolder />
+                  <SettingRow
+                    title={t("settings.restoreVpkScanAlert")}
+                    description={t("settings.restoreVpkScanAlertDescription")}>
+                    <Button
+                      variant='outline'
+                      disabled={!dismissedFingerprint}
+                      onClick={restore}>
+                      {t("settings.restoreVpkScanAlert")}
+                    </Button>
+                  </SettingRow>
+                  {recovery.clear.data && (
+                    <ModRecoveryReportView report={recovery.clear.data} />
+                  )}
                 </div>
 
                 <div className='relative overflow-hidden rounded-lg border border-destructive/30 bg-gradient-to-b from-destructive/8 to-destructive/3'>
@@ -984,22 +967,26 @@ const CustomSettings = ({ value }: { value?: string }) => {
                           "settings.clearDownloadCacheDescription",
                         )}
                         label={t("settings.clearDownloadCache")}
+                        disabled={recovery.isPending}
                         onClick={clearDownloadCache}
                       />
                       <DangerAction
                         description={t("settings.clearAllModsDataDescription")}
                         label={t("settings.clearAllModsData")}
+                        disabled={recovery.isPending}
                         onClick={clearAllModsData}
                       />
                       <DangerAction
                         description={t("debug.clearModsStateDescription")}
                         label={t("debug.clearModsState")}
-                        onClick={clearModsState}
+                        disabled={recovery.isPending}
+                        onClick={() => recovery.reset.mutate()}
                       />
                       <DangerAction
                         description={t("settings.clearAllModsDescription")}
                         label={t("settings.clearAllMods")}
-                        onClick={clearAllMods}
+                        disabled={recovery.isPending}
+                        onClick={() => recovery.clear.mutate()}
                       />
                     </div>
                   </div>

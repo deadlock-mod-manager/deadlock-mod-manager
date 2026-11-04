@@ -98,6 +98,10 @@ const segmentedRoutes = (scenario: string): FixtureRoute[] => {
     case "downloads-segmented-no-range":
       sequence = [{ ...good, range: false }];
       break;
+    case "downloads-segmented-range-error":
+      // Fails the first segment's request but serves an ordinary one.
+      sequence = [{ status: 400, body: "Bad Request" }, good];
+      break;
     case "downloads-segmented-wrong-range":
       // The third segment comes back one byte later than it says it starts.
       sequence = [{ ...good, rangeFrom: { at: third, serveFrom: third + 1 } }];
@@ -144,6 +148,10 @@ const queueRoute = (): FixtureRoute => ({
   chunkBytes: 20 * 1024,
   chunkDelayMs: 100,
 });
+/** Cases whose world holds a second mod that blocks the queue. */
+const hasQueueBlocker = (scenario: string) =>
+  scenario === "downloads-queued-retry" ||
+  scenario === "downloads-queued-waiting";
 export const downloadRoutes = (scenario: string): FixtureRoute[] => {
   if (isSegmentedCase(scenario)) return segmentedRoutes(scenario);
   const body = downloadPayload();
@@ -162,6 +170,10 @@ export const downloadRoutes = (scenario: string): FixtureRoute[] => {
     case "downloads-variants":
     case "downloads-queued-retry":
       sequence = [{ status: 401, body: "Authentication required" }, good];
+      break;
+    case "downloads-queued-waiting":
+      // About 24 s, so it is still running when it is paused; the resume is quick.
+      sequence = [{ ...good, chunkBytes: 32768, chunkDelayMs: 1500 }, good];
       break;
     case "downloads-redirect":
       sequence = [
@@ -213,7 +225,7 @@ export const downloadRoutes = (scenario: string): FixtureRoute[] => {
   const routes: FixtureRoute[] = [
     { method: "GET", path: `/downloads/${DOWNLOAD_FILE}`, ...good, sequence },
   ];
-  if (scenario === "downloads-queued-retry") routes.push(queueRoute());
+  if (hasQueueBlocker(scenario)) routes.push(queueRoute());
   // Served so a cancel that fails to drop the queued mod shows as a download.
   if (queuesBehindRunning(scenario))
     routes.push({ method: "GET", path: `/downloads/${QUEUED_FILE}`, ...good });
@@ -237,6 +249,9 @@ export const prepareDownloadWorld = async (
   scenario: string,
 ): Promise<void> => {
   const payload = payloadFor(scenario);
+  const missingActiveProfile =
+    scenario === "downloads-deleted-profile" ||
+    scenario === "downloads-deleted-default";
   const selected: ModDownloadItem = {
     name: DOWNLOAD_FILE,
     url: `${origin}/downloads/${DOWNLOAD_FILE}`,
@@ -263,13 +278,15 @@ export const prepareDownloadWorld = async (
   const mod = {
     ...fixtureMod(DOWNLOAD_MOD, 0),
     name: DOWNLOAD_NAME,
-    status: ModStatus.FailedToDownload,
+    status: missingActiveProfile
+      ? ModStatus.Downloading
+      : ModStatus.FailedToDownload,
     installedVpks: [],
     downloads,
     selectedDownloads: files,
   };
   const mods = [mod];
-  if (scenario === "downloads-queued-retry") {
+  if (hasQueueBlocker(scenario)) {
     const blocker = queuePayload();
     const file: ModDownloadItem = {
       ...selected,
@@ -316,14 +333,32 @@ export const prepareDownloadWorld = async (
     mods,
     enabledMods: {},
   };
+  const otherProfile = {
+    ...profile,
+    id: "other",
+    name: "Other Profile",
+    folderName: "other",
+    isDefault: false,
+    mods: [],
+  };
+  const profiles: Record<string, typeof profile | typeof otherProfile> = {};
+  if (scenario !== "downloads-deleted-default") {
+    profiles.default = { ...profile, mods: missingActiveProfile ? [] : mods };
+  }
+  const modProgress: Record<string, { percentage: number }> = {};
+  if (missingActiveProfile) {
+    profiles.other = otherProfile;
+    modProgress[DOWNLOAD_MOD] = { percentage: 100 };
+  }
   const state = {
     ...persisted.state,
     // `downloads-segmented` turns it on through Settings instead.
     segmentedDownloads:
       segmentedEnabled(scenario) && scenario !== "downloads-segmented",
-    activeProfileId: "default",
+    activeProfileId: missingActiveProfile ? "profile_deleted" : "default",
     localMods: mods,
-    profiles: { default: profile },
+    profiles,
+    modProgress,
   };
   await writeFile(
     storePath,
@@ -417,25 +452,35 @@ const assertSegmentedNetwork = (
       return;
     }
     case "downloads-segmented-no-range":
+    case "downloads-segmented-range-error":
       assert.deepEqual(
         requests.map((request) => [
           request.headers.range,
           request.responseStatus,
         ]),
         [
-          [planned[0], 200],
+          [planned[0], scenario === "downloads-segmented-no-range" ? 200 : 400],
           [undefined, 200],
         ],
-        "A server ignoring Range must get one ordinary request",
+        "A server ignoring or failing Range must get one ordinary request",
       );
       return;
-    case "downloads-segmented-wrong-range":
-      assert.deepEqual(rangesOf(ranged), plannedTimes(1));
+    case "downloads-segmented-wrong-range": {
+      // The misanswered third segment stops the others, so one that hadn't
+      // sent its request yet never does.
+      const sent = rangesOf(ranged);
+      assert.ok(
+        sent.every((range) => planned.includes(range)),
+        `${sent.join(", ")} are not the planned spans`,
+      );
+      assert.equal(new Set(sent).size, sent.length, "A span was asked twice");
+      assert.ok(sent.includes(planned[0]) && sent.includes(planned[2]));
       allPartial(ranged);
       assert.equal(whole.length, 1);
       assert.equal(requests.at(-1)?.headers.range, undefined);
       assert.equal(requests.at(-1)?.responseStatus, 200);
       return;
+    }
     case "downloads-segmented-budget":
       assert.equal(whole.length, 0);
       assert.equal(ranged.length, BUDGET_FILES.length * 4);
@@ -446,11 +491,33 @@ const assertSegmentedNetwork = (
         "Three segmented files on one server may only use four connections",
       );
       return;
-    default: {
-      // Corrupt, cancel and restart download twice; pause once.
-      const attempts = scenario === "downloads-segmented-pause" ? 1 : 2;
+    case "downloads-segmented-pause": {
       assert.equal(whole.length, 0);
-      assert.deepEqual(rangesOf(ranged), plannedTimes(attempts));
+      assert.deepEqual(rangesOf(ranged.slice(0, 4)), plannedTimes(1));
+      const resumed = new Map(
+        ranged.slice(4).map((request) => {
+          const range = String(request.headers.range);
+          assert.match(range, /^bytes=\d+-\d+$/);
+          const [start, end] = range.slice(6).split("-").map(Number);
+          return [end, start];
+        }),
+      );
+      assert.equal(ranged.length, 8);
+      assert.equal(resumed.size, 4);
+      let reusedPrefix = false;
+      for (const range of planned) {
+        const [start, end] = range.slice(6).split("-").map(Number);
+        const offset = resumed.get(end);
+        assert.ok(offset !== undefined && offset >= start && offset <= end);
+        reusedPrefix ||= offset > start;
+      }
+      assert.ok(reusedPrefix, "Resume must reuse partial segment bytes");
+      allPartial(ranged);
+      return;
+    }
+    default: {
+      assert.equal(whole.length, 0);
+      assert.deepEqual(rangesOf(ranged), plannedTimes(2));
       allPartial(ranged);
     }
   }
@@ -485,13 +552,20 @@ export const assertDownloadNetwork = (
     );
     return;
   }
-  if (scenario === "downloads-queued-retry") {
+  if (hasQueueBlocker(scenario)) {
     const statuses = (file: string) =>
       requests
         .filter((request) => request.url === `/downloads/${file}`)
         .map((request) => request.responseStatus);
-    assert.deepEqual(statuses(DOWNLOAD_FILE), [401, 200]);
-    assert.deepEqual(statuses(QUEUE_FILE), [200]);
+    if (scenario === "downloads-queued-retry") {
+      assert.deepEqual(statuses(DOWNLOAD_FILE), [401, 200]);
+      assert.deepEqual(statuses(QUEUE_FILE), [200]);
+      return;
+    }
+    // Nothing is requested while it waits, paused or not; paused after it
+    // started, it continues with a Range request. The blocker runs twice.
+    assert.deepEqual(statuses(DOWNLOAD_FILE), [200, 206]);
+    assert.deepEqual(statuses(QUEUE_FILE), [200, 200]);
     return;
   }
   if (pausesQueue(scenario)) {

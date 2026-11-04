@@ -14,6 +14,8 @@ pub mod deep_link;
 pub mod downloads;
 #[cfg(feature = "e2e-harness")]
 pub mod e2e;
+#[cfg(feature = "plugins")]
+pub mod external_plugins;
 pub mod folders;
 pub mod fonts;
 pub mod forge;
@@ -33,6 +35,7 @@ pub mod match_sync;
 pub mod mod_folder_repair;
 pub mod mod_interchange;
 pub mod mods;
+pub mod native_sources;
 pub mod network_diagnostics;
 pub mod performance;
 pub mod policy;
@@ -42,6 +45,7 @@ pub mod remote_install;
 pub mod reports;
 pub mod server_browser;
 pub mod server_connect;
+pub mod server_picker;
 pub mod server_profiles;
 pub mod shards;
 pub mod source_install;

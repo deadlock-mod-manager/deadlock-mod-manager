@@ -136,6 +136,7 @@ pub struct CatalogDonationLinkDto {
 #[ts(export, rename_all = "camelCase")]
 #[serde(rename_all = "camelCase")]
 pub struct CatalogDependencyDto {
+  pub must_be_disabled: bool,
   pub label: String,
   pub url: Option<String>,
   pub remote_id: Option<String>,
@@ -208,6 +209,8 @@ pub struct InstalledSubmissionDto {
   pub installed_at: i64,
   #[serde(default)]
   pub selected_file_ids: Vec<String>,
+  #[serde(default)]
+  pub selected_file_names: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
@@ -296,6 +299,7 @@ impl CatalogModDto {
     let dependencies = parse_requirements(&profile.requirements)
       .into_iter()
       .map(|dependency| CatalogDependencyDto {
+        must_be_disabled: dependency.must_be_disabled,
         label: dependency.label,
         url: dependency.url,
         remote_id: dependency.remote_id,

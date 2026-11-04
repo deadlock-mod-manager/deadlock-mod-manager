@@ -255,6 +255,16 @@ describe("runNetworkDiagnostics", () => {
     expect(byId(results, "catalog").url).toBeUndefined();
   });
 
+  it("passes the host that the internet check's message names", async () => {
+    const { fetch } = fakeFetch({ "https://": "fail" });
+    const results = await runNetworkDiagnostics(deps({ fetch }));
+
+    expect(byId(results, "internet")).toMatchObject({
+      message: "unreachable",
+      params: { host: "dns.test" },
+    });
+  });
+
   it("names a failing lookup as DNS instead of blaming a firewall", async () => {
     const { fetch } = fakeFetch({ "https://assets.test": "dns" });
     const results = await runNetworkDiagnostics(deps({ fetch }));

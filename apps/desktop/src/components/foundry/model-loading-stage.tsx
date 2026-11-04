@@ -85,22 +85,26 @@ const OpeningSteps = () => {
 };
 
 /**
- * The stage a model is about to stand on: embers that build a hero, and either
- * the steps of opening the skin or a single status line. It sits where the
- * model will land, so the model can fade in over it.
+ * The stage a model is about to stand on: embers that build `hero`, and either
+ * the Foundry's steps of opening the skin or a single status line. It sits
+ * where the model will land, so the model can fade in over it. With `idle`,
+ * nothing is loading yet: the hero builds once and `status` says what to do.
  */
 export const ModelLoadingStage = ({
   status,
+  hero,
+  steps = false,
+  idle = false,
   className,
 }: {
   status: string;
+  /** The hero being loaded; null when unknown. */
+  hero: string | null;
+  /** Show the open Foundry skin's progress instead of `status`. */
+  steps?: boolean;
+  idle?: boolean;
   className?: string;
 }) => {
-  const foundry = useOptionalFoundry();
-  const steps = foundry?.manifest;
-  const hero = foundry?.manifest
-    ? (foundry.manifest.heroDisplay ?? foundry.manifest.hero)
-    : null;
   // Undefined while the lookup runs, so a known hero never flashes the
   // generic figure first.
   const [silhouette, setSilhouette] = useState<Silhouette | null | undefined>(
@@ -129,6 +133,7 @@ export const ModelLoadingStage = ({
       {silhouette !== undefined && (
         <FoundryHeroAssembling
           className='absolute inset-x-0 top-[3%] bottom-[27%]'
+          loop={!idle}
           silhouette={silhouette}
         />
       )}
@@ -137,10 +142,15 @@ export const ModelLoadingStage = ({
           <OpeningSteps />
         ) : (
           <>
-            <p className='text-muted-foreground text-xs' role='status'>
+            <p
+              className={cn(
+                "text-muted-foreground",
+                idle ? "text-sm" : "text-xs",
+              )}
+              role='status'>
               {status}
             </p>
-            <FoundryLoadingBar className='max-w-xs' />
+            {!idle && <FoundryLoadingBar className='max-w-xs' />}
           </>
         )}
       </div>

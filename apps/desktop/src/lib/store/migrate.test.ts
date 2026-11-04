@@ -28,6 +28,47 @@ const { LATEST_VERSION, MIGRATION_STEPS, safeMigrate } =
   await import("./migrate");
 
 describe("safeMigrate", () => {
+  it("preserves legacy files and source provenance in every profile", () => {
+    const source = {
+      sourceKey: "accepted-origin-and-id",
+      listingId: "42",
+      releaseId: "r1",
+      contentRevision: "1",
+    };
+    const mods = [
+      { remoteId: "42", installedVpks: ["pak01_dir.vpk"] },
+      { remoteId: "snd-42", installedVpks: ["snd-42_audio.vpk"] },
+      { remoteId: "source-custom", source, installedVpks: ["pak02_dir.vpk"] },
+    ];
+    const state = {
+      localMods: mods,
+      profiles: { default: { mods }, second: { mods } },
+    };
+    expect(safeMigrate(structuredClone(state), 42)).toEqual(state);
+  });
+  it("preserves background coverage when splitting the switches", () => {
+    for (const includeSidebar of [true, false]) {
+      expect(safeMigrate({ appBackground: { includeSidebar } }, 41)).toEqual({
+        appBackground: {
+          includeSidebar,
+          includeTopBar: includeSidebar,
+          includeBottomBar: includeSidebar,
+        },
+      });
+    }
+  });
+
+  it("keeps independent coverage when migration runs again", () => {
+    const state = {
+      appBackground: {
+        includeSidebar: true,
+        includeTopBar: false,
+        includeBottomBar: true,
+      },
+    };
+    expect(safeMigrate(structuredClone(state), 41)).toEqual(state);
+  });
+
   it("adds empty groups to older profiles and preserves existing organization", () => {
     const existing = [
       { id: "group", name: "Silver", modIds: ["silver"], collapsed: true },
@@ -264,14 +305,14 @@ describe("safeMigrate", () => {
   it("LATEST_VERSION matches the highest step target", () => {
     const max = Math.max(...MIGRATION_STEPS.map((s) => s.to));
     expect(LATEST_VERSION).toBe(max);
-    expect(LATEST_VERSION).toBe(38);
+    expect(LATEST_VERSION).toBe(43);
   });
 
   it("v25 (themes switch): drops the leftover enabledPlugins.themes entry", () => {
-    const state = { enabledPlugins: { themes: false, background: true } };
+    const state = { enabledPlugins: { themes: false, discord: true } };
 
     expect(safeMigrate(state, 24)).toStrictEqual({
-      enabledPlugins: { background: true },
+      enabledPlugins: { discord: true },
       experimentalTourDismissed: false,
     });
   });
@@ -279,6 +320,63 @@ describe("safeMigrate", () => {
   it("v25 (themes switch): tolerates a missing enabledPlugins map", () => {
     expect(safeMigrate({}, 24)).toStrictEqual({
       experimentalTourDismissed: false,
+    });
+  });
+
+  it("v39 (background setting): keeps an enabled plugin's image and drops the plugins", () => {
+    const state = {
+      enabledPlugins: { background: true, flashbang: true },
+      pluginSettings: {
+        background: {
+          sourceType: "local",
+          imageUrl: "https://example.com/old.png",
+          imageData: "data:image/png;base64,AAAA",
+          opacity: 40,
+          blur: 3,
+          includeSidebar: true,
+        },
+        flashbang: { chance: 50 },
+      },
+    };
+
+    expect(safeMigrate(state, 38)).toStrictEqual({
+      enabledPlugins: {},
+      pluginSettings: {},
+      appBackground: {
+        image: "data:image/png;base64,AAAA",
+        opacity: 40,
+        blur: 3,
+        includeSidebar: true,
+        includeTopBar: true,
+        includeBottomBar: true,
+      },
+    });
+  });
+
+  it("v39 (background setting): drops a disabled plugin's image", () => {
+    const state = {
+      enabledPlugins: { background: false },
+      pluginSettings: { background: { imageUrl: "https://example.com/a.png" } },
+    };
+
+    expect(safeMigrate(state, 38)).toStrictEqual({
+      enabledPlugins: {},
+      pluginSettings: {},
+    });
+  });
+
+  it("v40 (stats setting): keeps a user who turned Player Stats off opted out", () => {
+    const state = {
+      experimentalFeatures: {
+        "custom-maps": true,
+        "player-stats": false,
+        "live-scoreboard": true,
+      },
+    };
+
+    expect(safeMigrate(state, 39)).toStrictEqual({
+      experimentalFeatures: { "custom-maps": true, plugins: false },
+      playerStatsEnabled: false,
     });
   });
 
@@ -424,4 +522,15 @@ it("initializes tour dismissal without resetting an existing choice", () => {
   expect(safeMigrate({ experimentalTourDismissed: true }, 29)).toMatchObject({
     experimentalTourDismissed: true,
   });
+});
+
+it("keeps plugins opt-in without changing other experiments or an existing choice", () => {
+  expect(
+    safeMigrate({ experimentalFeatures: { "custom-maps": true } }, 40),
+  ).toMatchObject({
+    experimentalFeatures: { "custom-maps": true, plugins: false },
+  });
+  expect(
+    safeMigrate({ experimentalFeatures: { plugins: true } }, 40),
+  ).toMatchObject({ experimentalFeatures: { plugins: true } });
 });

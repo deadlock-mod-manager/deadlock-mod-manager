@@ -197,6 +197,7 @@ const catalogModToModDto = (mod: CatalogModDto): ModDto => ({
     url: dependency.url,
     remoteId: dependency.remoteId,
     level: dependencyLevel(dependency.level),
+    mustBeDisabled: dependency.mustBeDisabled,
   })),
   overrides: null,
   createdAt: secondsToNullableDate(mod.createdAt),

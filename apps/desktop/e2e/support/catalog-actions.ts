@@ -10,6 +10,7 @@ import {
   openFilesTab,
   reveal,
   selectDownloads,
+  waitForDisplayed,
 } from "./ui";
 import { step } from "./evidence";
 
@@ -264,9 +265,9 @@ export const applyInstalledFiles = (
     const dialog = await openCatalogOptions(modName);
     const installed = await chooseInstalledFiles(names);
     await installed.$("button=Apply").click();
-    await expect(
-      $('//*[@data-sonner-toast and contains(., "Mod files updated")]'),
-    ).toBeDisplayed();
+    await waitForDisplayed(
+      '//*[@data-sonner-toast and contains(., "Mod files updated")]',
+    );
     await expect(dialog).not.toBeDisplayed();
   });
 
@@ -296,5 +297,17 @@ export const reinstallCatalog = async (world: string, enabled: boolean) => {
   await expect(
     $('//*[@data-sonner-toast and contains(., "reinstalled")]'),
   ).toBeDisplayed();
-  await waitCatalogStatus(world, enabled ? "installed" : "downloaded");
+  // Status and profile enablement reach disk in separate queued snapshots.
+  await observeUntil(
+    "Persisted catalog reinstall",
+    () => readCatalogState(world),
+    (state) => {
+      const mod = state.localMods[0];
+      return (
+        mod?.status === (enabled ? "installed" : "downloaded") &&
+        state.profiles[state.activeProfileId].enabledMods[mod.remoteId]
+          ?.enabled === enabled
+      );
+    },
+  );
 };

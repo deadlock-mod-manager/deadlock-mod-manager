@@ -75,3 +75,21 @@ export function groupFindingsByMod<T>(
     groups: [...groups].map(([label, entries]) => ({ label, entries })),
   }));
 }
+
+export function compatibilityRepairSummary(
+  analysis: LocalizationOverlayAnalysis,
+) {
+  const repairCount =
+    analysis.assetRepairs.length +
+    analysis.dataRepairs.length +
+    analysis.heroIdReassignments.length;
+  const hasChanges =
+    repairCount > 0 ||
+    analysis.changedTokens > 0 ||
+    analysis.newTokens > 0 ||
+    analysis.changedRows > 0 ||
+    analysis.newRows > 0 ||
+    analysis.conflicts.length > 0 ||
+    analysis.compiledDataConflicts.length > 0;
+  return { repairCount, hasChanges };
+}

@@ -227,6 +227,8 @@ impl Default for PauseHandle {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 struct PartialMeta {
+  #[serde(default)]
+  url: Option<String>,
   etag: Option<String>,
   last_modified: Option<String>,
 }
@@ -349,6 +351,84 @@ pub async fn download_file_resumable<F>(
 where
   F: Fn(DownloadProgress) + Send + 'static,
 {
+  if trusted_hosts_only {
+    validate_download_url(url)?;
+  }
+  let client = download_client(trusted_hosts_only, true, false)?;
+  download_file_resumable_with_client(
+    url,
+    target_path,
+    expected_size,
+    on_progress,
+    cancel_token,
+    pause,
+    max_bytes,
+    expected_md5,
+    client,
+  )
+  .await
+}
+
+/// Uses the source's validated, DNS-pinned transport with existing staging.
+pub async fn download_native_artifact<F>(
+  artifact: &crate::providers::native_sources::ResolvedNativeArtifact,
+  target_path: &Path,
+  on_progress: F,
+  cancel_token: CancellationToken,
+  pause: PauseHandle,
+) -> Result<(), Error>
+where
+  F: Fn(DownloadProgress) + Send + 'static,
+{
+  let client = crate::providers::native_sources::artifact_download_client(artifact).await?;
+  download_file_resumable_with_client(
+    &artifact.url,
+    target_path,
+    artifact.size.unwrap_or(0),
+    on_progress,
+    cancel_token,
+    pause,
+    Some(2 * 1024 * 1024 * 1024),
+    artifact
+      .hashes
+      .as_ref()
+      .and_then(|hashes| hashes.md5.as_deref()),
+    client,
+  )
+  .await?;
+  let downloaded_size = tokio::fs::metadata(target_path).await?.len();
+  if artifact.size.is_some_and(|size| size != downloaded_size) {
+    let _ = tokio::fs::remove_file(target_path).await;
+    return Err(Error::DownloadFailed(
+      "Source artifact byte size did not match its declaration".into(),
+    ));
+  }
+  if let Some(hashes) = &artifact.hashes
+    && let Err(error) = crate::providers::native_sources::verify_artifact(target_path, hashes).await
+  {
+    let _ = tokio::fs::remove_file(target_path).await;
+    return Err(error);
+  }
+  Ok(())
+}
+
+/// Keeps trusted GameBanana downloads and native source downloads on the same
+/// cancellation, transfer limit, resume, and staging implementation.
+#[allow(clippy::too_many_arguments)]
+pub(crate) async fn download_file_resumable_with_client<F>(
+  url: &str,
+  target_path: &Path,
+  expected_size: u64,
+  on_progress: F,
+  cancel_token: CancellationToken,
+  pause: PauseHandle,
+  max_bytes: Option<u64>,
+  expected_md5: Option<&str>,
+  client: reqwest::Client,
+) -> Result<(), Error>
+where
+  F: Fn(DownloadProgress) + Send + 'static,
+{
   log::info!(
     "Starting resumable download to {target_path:?} (expected_size={expected_size}, max_bytes={max_bytes:?})"
   );
@@ -360,10 +440,6 @@ where
     tokio::fs::create_dir_all(parent).await.map_err(Error::Io)?;
   }
 
-  if trusted_hosts_only {
-    validate_download_url(url)?;
-  }
-  let client = download_client(trusted_hosts_only, true, false)?;
   let budget = app_budget();
   // Where the next request's connection is counted; becomes the server the
   // redirects reached once that's known.
@@ -386,8 +462,10 @@ where
 
     if resume_from == 0 {
       let _ = tokio::fs::remove_file(&meta_path).await;
-    } else if stored_meta.etag.is_none() && stored_meta.last_modified.is_none() {
-      log::warn!("Partial file without resume metadata; restarting download");
+    } else if stored_meta.url.as_deref() != Some(url)
+      || (stored_meta.etag.is_none() && stored_meta.last_modified.is_none())
+    {
+      log::warn!("Partial file belongs to another source or has no validator; restarting download");
       remove_partial_pair(&partial_path, &meta_path).await;
       continue 'retry;
     }
@@ -580,6 +658,7 @@ where
         .await
         .map_err(|e| Error::FileWriteFailed(format!("Failed to create partial file: {e}")))?;
       let meta = PartialMeta {
+        url: Some(url.to_string()),
         etag: resp_etag.clone(),
         last_modified: resp_last_modified.clone(),
       };
@@ -821,11 +900,12 @@ mod tests {
 
   /// A partial holding the first `kept` bytes of `body`, with the ETag the
   /// scripted server sends.
-  async fn resumable_partial(target: &Path, body: &[u8], kept: usize) {
+  async fn resumable_partial(url: &str, target: &Path, body: &[u8], kept: usize) {
     tokio::fs::write(partial_download_path(target), &body[..kept])
       .await
       .unwrap();
     let stored = PartialMeta {
+      url: Some(url.to_string()),
       etag: Some("\"v1\"".to_string()),
       last_modified: None,
     };
@@ -865,7 +945,6 @@ mod tests {
     let dir = tempfile::tempdir().unwrap();
     let target = dir.path().join("mod.zip");
     let body = test_body();
-    resumable_partial(&target, &body, 65_536).await;
     let server = TestServer::start({
       let body = body.clone();
       move |request, _| {
@@ -882,6 +961,7 @@ mod tests {
     })
     .await;
 
+    resumable_partial(&server.url("/mod.zip"), &target, &body, 65_536).await;
     let result = resume(&server.url("/mod.zip"), &target, &body).await;
 
     assert!(result.is_ok(), "{result:?}");
@@ -901,7 +981,6 @@ mod tests {
     let dir = tempfile::tempdir().unwrap();
     let target = dir.path().join("mod.zip");
     let body = test_body();
-    resumable_partial(&target, &body, 65_536).await;
     let server = TestServer::start({
       let body = body.clone();
       move |_, _| {
@@ -916,6 +995,7 @@ mod tests {
     })
     .await;
 
+    resumable_partial(&server.url("/mod.zip"), &target, &body, 65_536).await;
     let result = resume(&server.url("/mod.zip"), &target, &body).await;
 
     assert!(
@@ -937,9 +1017,9 @@ mod tests {
     let dir = tempfile::tempdir().unwrap();
     let target = dir.path().join("mod.zip");
     let body = test_body();
-    resumable_partial(&target, &body, 65_536).await;
     let server = TestServer::start(|_, _| Reply::new(416, Vec::new())).await;
 
+    resumable_partial(&server.url("/mod.zip"), &target, &body, 65_536).await;
     let result = resume(&server.url("/mod.zip"), &target, &body).await;
 
     assert!(matches!(result, Err(Error::Network(_))), "{result:?}");
@@ -1084,13 +1164,13 @@ mod tests {
     let dir = tempfile::tempdir().unwrap();
     let target = dir.path().join("mod.zip");
     let body = test_body();
-    resumable_partial(&target, &body, 65_536).await;
     let server = TestServer::start({
       let body = body.clone();
       move |request, _| Reply::serve(&body, request).header("etag", "\"v1\"")
     })
     .await;
 
+    resumable_partial(&server.url("/mod.zip"), &target, &body, 65_536).await;
     let result = resume(&server.url("/mod.zip"), &target, &body).await;
 
     assert!(result.is_ok(), "{result:?}");
@@ -1129,13 +1209,14 @@ mod tests {
     let partial = partial_download_path(&target);
     let meta = partial_meta_path(&partial);
     tokio::fs::write(&partial, b"first bytes").await.unwrap();
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let url = format!("http://{}/mod.zip", listener.local_addr().unwrap());
     let stored = PartialMeta {
+      url: Some(url.to_string()),
       etag: Some("\"v1\"".to_string()),
       last_modified: None,
     };
     write_partial_meta(&meta, &stored).await.unwrap();
-    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let url = format!("http://{}/mod.zip", listener.local_addr().unwrap());
     let cancel_token = CancellationToken::new();
 
     let download = tokio::spawn({
@@ -1185,13 +1266,14 @@ mod tests {
     let partial = partial_download_path(&target);
     let meta = partial_meta_path(&partial);
     tokio::fs::write(&partial, b"first bytes").await.unwrap();
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let url = format!("http://{}/mod.zip", listener.local_addr().unwrap());
     let stored = PartialMeta {
+      url: Some(url.to_string()),
       etag: Some("\"v1\"".to_string()),
       last_modified: None,
     };
     write_partial_meta(&meta, &stored).await.unwrap();
-    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
-    let url = format!("http://{}/mod.zip", listener.local_addr().unwrap());
     let pause = PauseHandle::new();
 
     let download = tokio::spawn({

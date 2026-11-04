@@ -48,17 +48,16 @@ export type ModsFilters = {
 
 export type ExperimentalFeature = (typeof EXPERIMENTAL_FEATURES)[number];
 
-const DEFAULT_EXPERIMENTAL_FEATURES: Record<ExperimentalFeature, boolean> = {
+const DEFAULT_EXPERIMENTAL_FEATURES = {
   "custom-maps": false,
   "mod-foundry": true,
-  "player-stats": true,
   "profile-management": true,
   "profile-sharing": true,
   "conflict-detection": true,
   "performance-configs": true,
   "cloud-backup": true,
-  "live-scoreboard": false,
-};
+  plugins: false,
+} satisfies Record<ExperimentalFeature, boolean>;
 
 export type CrosshairFilters = {
   selectedHeroes: string[];
@@ -66,6 +65,27 @@ export type CrosshairFilters = {
   currentSort: SortType;
   filterMode: FilterMode;
   searchQuery: string;
+};
+
+/** A user image painted behind the app; an empty `image` shows none. */
+type AppBackground = {
+  /** An image URL, or a data URL for a file picked from disk. */
+  image: string;
+  opacity: number;
+  /** Blur radius in px. */
+  blur: number;
+  includeSidebar: boolean;
+  includeTopBar: boolean;
+  includeBottomBar: boolean;
+};
+
+const DEFAULT_APP_BACKGROUND: AppBackground = {
+  image: "",
+  opacity: 25,
+  blur: 0,
+  includeSidebar: false,
+  includeTopBar: false,
+  includeBottomBar: false,
 };
 
 export type UIState = {
@@ -88,6 +108,9 @@ export type UIState = {
   animateOccultGeometry: boolean;
   experimentalFeatures: Record<ExperimentalFeature, boolean>;
   autoFixMods: boolean;
+  /** Shows the Stats page, which looks players up on deadlock-api. */
+  playerStatsEnabled: boolean;
+  appBackground: AppBackground;
 
   // Plugins
   enabledPlugins: Record<string, boolean>;
@@ -112,6 +135,8 @@ export type UIState = {
     enabled: boolean,
   ) => void;
   setAutoFixMods: (enabled: boolean) => void;
+  setPlayerStatsEnabled: (enabled: boolean) => void;
+  updateAppBackground: (background: Partial<AppBackground>) => void;
   setEnabledPlugin: (id: string, enabled: boolean) => void;
   setPluginSettings: (id: string, value: unknown) => void;
 };
@@ -144,6 +169,7 @@ export const uiDeepMergeKeys = [
   "mapsFilters",
   "crosshairFilters",
   "experimentalFeatures",
+  "appBackground",
 ] as const satisfies readonly (keyof UIState)[];
 
 export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
@@ -163,6 +189,8 @@ export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
   animateOccultGeometry: true,
   experimentalFeatures: DEFAULT_EXPERIMENTAL_FEATURES,
   autoFixMods: true,
+  playerStatsEnabled: true,
+  appBackground: DEFAULT_APP_BACKGROUND,
   enabledPlugins: {},
   pluginSettings: {},
 
@@ -250,6 +278,16 @@ export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
   setAutoFixMods: (enabled: boolean) =>
     set(() => ({
       autoFixMods: enabled,
+    })),
+
+  setPlayerStatsEnabled: (enabled: boolean) =>
+    set(() => ({
+      playerStatsEnabled: enabled,
+    })),
+
+  updateAppBackground: (background: Partial<AppBackground>) =>
+    set((state) => ({
+      appBackground: { ...state.appBackground, ...background },
     })),
 
   setEnabledPlugin: (id: string, enabled: boolean) =>

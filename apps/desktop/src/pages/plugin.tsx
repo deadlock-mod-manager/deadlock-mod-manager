@@ -89,9 +89,7 @@ const PluginEntry = () => {
           <div className='flex items-start gap-2 flex-col py-8 w-full'>
             <Button
               className='flex items-center gap-1 my-2'
-              onClick={() =>
-                navigate("/settings", { state: { activeTab: "plugin" } })
-              }
+              onClick={() => navigate("/plugins/manage")}
               variant='transparent'
               size='text'>
               <ArrowLeft className='h-4 w-4' />

@@ -5,7 +5,7 @@ use crate::types::{
     DmpThreadInfo,
 };
 use chrono::{DateTime, Utc};
-use minidump::format::MINIDUMP_STREAM_TYPE;
+use minidump::format::{MINIDUMP_EXCEPTION, MINIDUMP_STREAM_TYPE};
 use minidump::{
     Minidump, MinidumpException, MinidumpMiscInfo, MinidumpModuleList, MinidumpSystemInfo,
     MinidumpThreadList, Module,
@@ -171,10 +171,24 @@ impl DmpParser {
         let thread_id = raw.thread_id;
 
         let description = Self::get_exception_description(raw.exception_record.exception_code);
+        let faulting_module = dump
+            .get_stream::<MinidumpModuleList>()
+            .ok()
+            .and_then(|modules| {
+                Self::module_offset(&modules, raw.exception_record.exception_address)
+            });
+        let access = Self::access_violation(&raw.exception_record);
 
         raw_text.push_str("=== EXCEPTION INFO ===\n");
         raw_text.push_str(&format!("Exception Code: {exception_code}\n"));
         raw_text.push_str(&format!("Exception Address: {exception_address}\n"));
+        raw_text.push_str(&format!(
+            "Faulting Module: {}\n",
+            faulting_module.as_deref().unwrap_or("unknown")
+        ));
+        if let Some(access) = &access {
+            raw_text.push_str(&format!("Access: {access}\n"));
+        }
         raw_text.push_str(&format!("Thread ID: {thread_id}\n"));
         raw_text.push_str(&format!("Description: {description}\n\n"));
 
@@ -183,7 +197,40 @@ impl DmpParser {
             exception_address,
             thread_id,
             description,
+            faulting_module,
+            access,
         })
+    }
+
+    fn module_offset(modules: &MinidumpModuleList, address: u64) -> Option<String> {
+        let module = modules.module_at_address(address)?;
+        Some(format!(
+            "{}+0x{:X}",
+            Self::module_file_name(&module.name),
+            address - module.base_address()
+        ))
+    }
+
+    fn module_file_name(path: &str) -> &str {
+        path.rsplit(['/', '\\']).next().unwrap_or(path)
+    }
+
+    /// Windows stores the access kind and target address in the first two
+    /// parameters of an access violation.
+    fn access_violation(record: &MINIDUMP_EXCEPTION) -> Option<String> {
+        if record.exception_code != 0xC0000005 || record.number_parameters < 2 {
+            return None;
+        }
+        let kind = match record.exception_information[0] {
+            0 => "read",
+            1 => "write",
+            8 => "execute",
+            _ => "access",
+        };
+        Some(format!(
+            "{kind} of 0x{:016X}",
+            record.exception_information[1]
+        ))
     }
 
     /// The header timestamp is when the dump was written. MiscInfo's process
@@ -265,12 +312,7 @@ impl DmpParser {
             .iter()
             .take(max_modules.unwrap_or(usize::MAX))
             .map(|module| {
-                let name = module
-                    .name
-                    .rsplit(['/', '\\'])
-                    .next()
-                    .unwrap_or(&module.name)
-                    .to_string();
+                let name = Self::module_file_name(&module.name).to_string();
                 let base_address = format!("0x{:016X}", module.base_address());
                 let size = module.size();
                 let version = module.version().map(|v| v.to_string());
@@ -381,6 +423,108 @@ mod tests {
         assert_eq!(comment.kind.as_deref(), Some("Crash"));
         assert_eq!(comment.uptime_secs, Some(112.592268));
         assert_eq!(comment.addons, Some(Vec::new()));
+    }
+
+    /// A minidump with a two-module list and an access violation that read
+    /// `0x10` from inside the second module.
+    fn access_violation_dump() -> Vec<u8> {
+        let directory_rva = 32u32;
+        let modules_rva = directory_rva + 2 * 12;
+        let module_size = 108u32;
+        let modules_len = 4 + 2 * module_size;
+        let exception_rva = modules_rva + modules_len;
+        let exception_len = 168u32;
+        let names_rva = exception_rva + exception_len;
+        let module_names = [
+            "C:\\game\\bin\\win64\\engine2.dll",
+            "C:\\game\\bin\\win64\\client.dll",
+        ];
+        let module_bases = [0x7FFE_0000_0000u64, 0x7FFE_03D1_0000];
+
+        let mut names = Vec::new();
+        let mut name_rvas = Vec::new();
+        for name in module_names {
+            name_rvas.push(names_rva + names.len() as u32);
+            let utf16: Vec<u16> = name.encode_utf16().collect();
+            names.extend_from_slice(&(utf16.len() as u32 * 2).to_le_bytes());
+            for unit in utf16 {
+                names.extend_from_slice(&unit.to_le_bytes());
+            }
+            names.extend_from_slice(&0u16.to_le_bytes());
+        }
+
+        let mut bytes = Vec::new();
+        for value in [0x504D_444D, 0xA793, 2, directory_rva, 0, DUMP_TIME] {
+            bytes.extend_from_slice(&u32::to_le_bytes(value));
+        }
+        bytes.extend_from_slice(&0u64.to_le_bytes());
+        for value in [
+            MINIDUMP_STREAM_TYPE::ModuleListStream as u32,
+            modules_len,
+            modules_rva,
+            MINIDUMP_STREAM_TYPE::ExceptionStream as u32,
+            exception_len,
+            exception_rva,
+        ] {
+            bytes.extend_from_slice(&value.to_le_bytes());
+        }
+
+        bytes.extend_from_slice(&2u32.to_le_bytes());
+        for (base, name_rva) in module_bases.into_iter().zip(name_rvas) {
+            bytes.extend_from_slice(&base.to_le_bytes());
+            for value in [0x0020_0000u32, 0, 0, name_rva] {
+                bytes.extend_from_slice(&value.to_le_bytes());
+            }
+            // Version info, CodeView and misc records, reserved fields.
+            bytes.extend_from_slice(&[0; 52 + 8 + 8 + 16]);
+        }
+
+        for value in [7u32, 0, 0xC000_0005, 0] {
+            bytes.extend_from_slice(&value.to_le_bytes());
+        }
+        bytes.extend_from_slice(&0u64.to_le_bytes());
+        bytes.extend_from_slice(&0x7FFE_03E3_79A5u64.to_le_bytes());
+        bytes.extend_from_slice(&2u32.to_le_bytes());
+        bytes.extend_from_slice(&0u32.to_le_bytes());
+        let mut information = [0u64; 15];
+        information[1] = 0x10;
+        for value in information {
+            bytes.extend_from_slice(&value.to_le_bytes());
+        }
+        bytes.extend_from_slice(&[0; 8]);
+
+        bytes.extend_from_slice(&names);
+        bytes
+    }
+
+    #[test]
+    fn names_the_faulting_module_past_the_module_cap() {
+        let bytes = access_violation_dump();
+        let dump = Minidump::read(bytes.as_slice()).unwrap();
+        let options = DmpParseOptions {
+            include_modules: true,
+            include_threads: false,
+            max_modules: Some(1),
+        };
+
+        let parsed =
+            DmpParser::parse_minidump(&dump, "crash.mdmp".to_string(), 0, options).unwrap();
+
+        let exception = parsed.exception_info.unwrap();
+        assert_eq!(parsed.modules.len(), 1);
+        assert_eq!(
+            exception.faulting_module.as_deref(),
+            Some("client.dll+0x1279A5")
+        );
+        assert_eq!(
+            exception.access.as_deref(),
+            Some("read of 0x0000000000000010")
+        );
+        assert!(
+            parsed
+                .raw_text
+                .contains("Faulting Module: client.dll+0x1279A5\n")
+        );
     }
 
     #[test]

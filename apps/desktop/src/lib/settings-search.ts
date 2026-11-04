@@ -8,6 +8,7 @@ export const SETTINGS_TAB_LABEL_KEYS = {
   mods: "settings.mods",
   application: "settings.application",
   themes: "settings.themes",
+  background: "settings.background",
   network: "settings.network",
   integrations: "settings.integrations",
   plugin: "settings.plugin",
@@ -22,6 +23,11 @@ export const SETTINGS_TAB_LABEL_KEYS = {
 } as const;
 
 type SettingsTab = keyof typeof SETTINGS_TAB_LABEL_KEYS;
+
+/** Former settings tabs that now have their own page; their results open it. */
+const SETTINGS_TAB_ROUTES = new Map<SettingsTab, string>([
+  ["plugin", "/plugins/manage"],
+]);
 
 type SearchableText = {
   titleKey: string;
@@ -39,6 +45,8 @@ export type SettingsSearchSection = SearchableText & {
 
 export type SettingsSearchResult = {
   tab: SettingsTab;
+  /** Set when the result lives on another page instead of a settings tab. */
+  route?: string;
   sectionId?: string;
   titleKey: string;
   title: string;
@@ -46,6 +54,22 @@ export type SettingsSearchResult = {
 };
 
 export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
+  {
+    id: "mod-sources",
+    tab: "mods",
+    titleKey: "modSources.title",
+    descriptionKey: "modSources.description",
+    settings: [
+      {
+        titleKey: "modSources.add",
+        descriptionKey: "modSources.addDescription",
+      },
+      {
+        titleKey: "modSources.remove",
+        descriptionKey: "modSources.removeDescription",
+      },
+    ],
+  },
   {
     tab: "launch-options",
     titleKey: "settings.launchOptions",
@@ -266,6 +290,26 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
     titleKey: "settings.themes",
   },
   {
+    id: "background",
+    tab: "background",
+    titleKey: "settings.background",
+    descriptionKey: "settings.backgroundDescription",
+    settings: [
+      {
+        titleKey: "settings.backgroundImage",
+        descriptionKey: "settings.backgroundImageDescription",
+      },
+      { titleKey: "settings.backgroundOpacity" },
+      { titleKey: "settings.backgroundBlur" },
+      {
+        titleKey: "settings.backgroundIncludeSidebar",
+        descriptionKey: "settings.backgroundIncludeSidebarDescription",
+      },
+      { titleKey: "settings.backgroundIncludeTopBar" },
+      { titleKey: "settings.backgroundIncludeBottomBar" },
+    ],
+  },
+  {
     id: "fileserver",
     tab: "network",
     titleKey: "settings.fileserverSectionTitle",
@@ -313,6 +357,13 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
     tab: "plugin",
     titleKey: "settings.plugin",
     descriptionKey: "settings.pluginDescription",
+    settings: [
+      { titleKey: "plugins.manage.installFromFile" },
+      {
+        titleKey: "plugins.manage.findMore.title",
+        descriptionKey: "plugins.manage.findMore.body",
+      },
+    ],
   },
   {
     tab: "discord",
@@ -345,6 +396,10 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
       {
         titleKey: "settings.troubleshooting",
         descriptionKey: "settings.troubleshootingDescription",
+      },
+      {
+        titleKey: "settings.restoreVpkScanAlert",
+        descriptionKey: "settings.restoreVpkScanAlertDescription",
       },
       {
         titleKey: "settings.clearCatalog",
@@ -453,6 +508,10 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
       { titleKey: "privacy.savedPerItemChoices" },
       { titleKey: "privacy.clearPerItemChoices" },
       {
+        titleKey: "privacy.playerStats",
+        descriptionKey: "privacy.playerStatsDescription",
+      },
+      {
         titleKey: "privacy.analyticsEnabled",
         descriptionKey: "privacy.analyticsEnabledDescription",
       },
@@ -549,6 +608,7 @@ const toCandidates = (
       return {
         result: {
           tab: section.tab,
+          route: SETTINGS_TAB_ROUTES.get(section.tab),
           sectionId: section.id,
           titleKey: item.titleKey,
           title,

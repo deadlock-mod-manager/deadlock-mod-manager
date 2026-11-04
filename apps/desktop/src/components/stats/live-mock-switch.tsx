@@ -37,6 +37,7 @@ const toSource = (mock: LiveMock): LiveSource => ({
   lobby: mock.lobby,
   curve: mock.curve,
   benchmarkPending: false,
+  benchmarkFailed: false,
   trail: mock.trail,
   matches: mock.matches,
   finalGrades: mock.finalGrades,

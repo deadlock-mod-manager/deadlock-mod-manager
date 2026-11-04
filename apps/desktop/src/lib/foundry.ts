@@ -11,6 +11,7 @@ import type {
   FoundryPatternId,
   FoundryPaintTargetId,
   FoundryPaintTargetInfo,
+  FoundryRemovedParts,
   FoundryReplacementResult,
   FoundrySoundPreview,
   FoundrySoundSettings,
@@ -151,11 +152,13 @@ export const decodeFoundryTexture = async (
   filePath: string,
   entryPath: string,
   workspaceRoot: string | null = null,
+  opaque = false,
 ): Promise<FoundryTexture> => {
   return await invoke<FoundryTexture>("foundry_decode_texture", {
     filePath,
     entryPath,
     workspaceRoot,
+    opaque,
   });
 };
 
@@ -248,6 +251,26 @@ export const paintFoundryParts = async (
     pattern: paint.pattern === "none" ? null : paint.pattern,
     patternIntensity: paint.patternIntensity,
     patternPhase: paint.patternPhase,
+  });
+};
+
+/**
+ * Remove exactly these sections of the model from the game, putting back any
+ * removed earlier and no longer listed. An empty list restores the model.
+ */
+export const removeFoundryParts = async (
+  workspaceRoot: string,
+  filePath: string,
+  modelPath: string,
+  heroDisplay: string | null,
+  textures: string[],
+): Promise<FoundryRemovedParts> => {
+  return await invoke<FoundryRemovedParts>("foundry_remove_parts", {
+    workspaceRoot,
+    filePath,
+    modelPath,
+    heroDisplay,
+    textures,
   });
 };
 

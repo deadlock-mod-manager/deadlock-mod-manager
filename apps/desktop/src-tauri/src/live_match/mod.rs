@@ -120,6 +120,13 @@ pub struct LivePhase {
   bridge: Option<BridgeState>,
 }
 
+#[cfg(feature = "plugins")]
+impl LivePhase {
+  pub(crate) fn scoreboard(&self) -> Option<LiveScoreboard> {
+    self.bridge.as_ref().map(BridgeState::board)
+  }
+}
+
 /// A line of `console.log` the live tab cares about.
 enum LogEvent<'a> {
   Bridge(BridgeLine),
@@ -201,10 +208,19 @@ fn classify(line: &str) -> Option<LogEvent<'_>> {
 /// 13:38:12 Lobby 102014987589037612 for Match 97003070 destroyed
 /// ```
 pub fn fold_phase(log: &str, previous: LivePhase) -> LivePhase {
+  fold_observing(log, previous, |_, _| {})
+}
+
+fn fold_observing(
+  log: &str,
+  previous: LivePhase,
+  mut observe: impl FnMut(&LivePhase, &LivePhase),
+) -> LivePhase {
   let mut phase = previous;
   // Line by line, because a lobby line resets the board and has to be seen in
   // order with the bridge lines around it.
   for event in log.lines().filter_map(classify) {
+    let before = phase.clone();
     match event {
       LogEvent::Bridge(line) => BridgeState::apply(&mut phase.bridge, line),
       LogEvent::GameState(name) => {
@@ -241,6 +257,7 @@ pub fn fold_phase(log: &str, previous: LivePhase) -> LivePhase {
         }
       }
     }
+    observe(&before, &phase);
   }
   phase
 }
@@ -259,6 +276,19 @@ struct ScanState {
 }
 
 static STATE: LazyLock<Mutex<ScanState>> = LazyLock::new(Mutex::default);
+
+#[cfg(feature = "plugins")]
+pub(crate) fn reset_observation(replay: bool) {
+  let mut state = STATE.lock().unwrap_or_else(|error| error.into_inner());
+  crate::external_plugins::events::game::observe_live(&state.phase, &LivePhase::default(), replay);
+  *state = ScanState::default();
+}
+
+#[cfg(feature = "plugins")]
+pub(crate) fn seed_observation() {
+  let state = STATE.lock().unwrap_or_else(|error| error.into_inner());
+  crate::external_plugins::events::game::observe_live(&LivePhase::default(), &state.phase, false);
+}
 
 /// Reads whatever was appended since the last call and folds it in. The first
 /// call walks the whole log, which is what makes starting the app in the middle
@@ -312,8 +342,26 @@ fn phase(path: &Path) -> Option<LivePhase> {
   };
   let chunk = String::from_utf8_lossy(&buf[..=end]).into_owned();
 
+  #[cfg(feature = "plugins")]
+  let initial = state.offset == 0;
   state.offset += end as u64 + 1;
-  state.phase = fold_phase(&chunk, std::mem::take(&mut state.phase));
+  let previous = std::mem::take(&mut state.phase);
+  #[cfg(feature = "plugins")]
+  {
+    state.phase = if initial {
+      let phase = fold_phase(&chunk, previous);
+      crate::external_plugins::events::game::observe_live(&LivePhase::default(), &phase, false);
+      phase
+    } else {
+      fold_observing(&chunk, previous, |before, after| {
+        crate::external_plugins::events::game::observe_live(before, after, true)
+      })
+    };
+  }
+  #[cfg(not(feature = "plugins"))]
+  {
+    state.phase = fold_phase(&chunk, previous);
+  }
   Some(state.phase.clone())
 }
 
@@ -327,6 +375,28 @@ mod tests {
 
   const QUEUED: &str =
     "08/02 13:05:21 [GCClient] Send msg 9010 (k_EMsgClientToGCStartMatchmaking), 263 bytes";
+
+  #[test]
+  fn observes_transient_lobbies_even_when_they_close_in_the_same_read() {
+    let mut transitions = Vec::new();
+    fold_observing(
+      &format!("{CREATED}\n{DESTROYED}\n"),
+      LivePhase::default(),
+      |before, after| {
+        transitions.push((
+          before.current.as_ref().map(|live| live.match_id.clone()),
+          after.current.as_ref().map(|live| live.match_id.clone()),
+        ));
+      },
+    );
+    assert_eq!(
+      transitions,
+      vec![
+        (None, Some("96996563".into())),
+        (Some("96996563".into()), None)
+      ]
+    );
+  }
 
   /// Folding a whole log at once, the way the first scan of a session does.
   fn fold_matches_from(log: &str) -> Option<LiveMatch> {

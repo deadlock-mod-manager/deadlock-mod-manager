@@ -1,15 +1,10 @@
+import { CompatibilityModRow } from "./compatibility-mod-row";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@deadlock-mods/ui/components/accordion";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@deadlock-mods/ui/components/collapsible";
-import { ChevronDown, TriangleAlert } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
 import { groupFindingsByMod } from "@/lib/mods/compatibility";
 import type { AssetRepair, AssetWarning } from "./asset-compatibility-report";
@@ -57,12 +52,14 @@ function FindingEntries({ entries }: { entries: readonly FindingEntry[] }) {
 }
 
 interface CompatibilityWarningsProps {
+  embedded?: boolean;
   assetWarnings: readonly AssetWarning[];
   dataWarnings: readonly DataWarning[];
   modNames: ReadonlyMap<string, string>;
 }
 
 export function CompatibilityWarnings({
+  embedded = false,
   assetWarnings,
   dataWarnings,
   modNames,
@@ -110,6 +107,19 @@ export function CompatibilityWarnings({
     }),
   ]);
   if (mods.length === 0) return null;
+  if (embedded)
+    return (
+      <div className='space-y-3'>
+        {mods.flatMap((mod) =>
+          mod.groups.map((group) => (
+            <div key={`${mod.modId}:${group.label}`}>
+              <p className='font-medium text-xs'>{group.label}</p>
+              <FindingEntries entries={group.entries} />
+            </div>
+          )),
+        )}
+      </div>
+    );
 
   return (
     <Accordion className='rounded-md border' type='multiple'>
@@ -119,29 +129,23 @@ export function CompatibilityWarnings({
           key={mod.modId}
           value={mod.modId}>
           <AccordionTrigger className='gap-3 py-2.5 hover:no-underline'>
-            <span className='flex min-w-0 flex-1 items-start gap-2.5'>
-              <TriangleAlert
-                aria-hidden
-                className='mt-0.5 size-4 shrink-0 text-amber-400'
-              />
-              <span className='min-w-0 flex-1'>
-                <span className='flex items-baseline gap-2'>
-                  <span className='truncate'>
-                    {modNames.get(mod.modId) ?? mod.modId}
-                  </span>
-                  <span className='shrink-0 font-normal text-muted-foreground text-xs tabular-nums'>
-                    {t("modOrdering.compatibility.warningSummary", {
-                      count: mod.count,
-                    })}
-                  </span>
+            <span className='min-w-0 flex-1 space-y-1'>
+              <span className='flex items-baseline justify-between gap-3'>
+                <span className='truncate'>
+                  {modNames.get(mod.modId) ?? mod.modId}
                 </span>
-                <span className='block truncate font-normal text-muted-foreground text-xs'>
-                  {mod.groups.map((group) => group.label).join(", ")}
+                <span className='shrink-0 font-normal text-muted-foreground text-xs tabular-nums'>
+                  {t("modOrdering.compatibility.warningSummary", {
+                    count: mod.count,
+                  })}
                 </span>
+              </span>
+              <span className='line-clamp-2 font-normal text-muted-foreground text-xs leading-relaxed'>
+                {mod.groups.map((group) => group.label).join(", ")}
               </span>
             </span>
           </AccordionTrigger>
-          <AccordionContent className='space-y-3 pl-6.5'>
+          <AccordionContent className='space-y-3'>
             {mod.groups.map((group) => (
               <div key={group.label}>
                 <p className='font-medium text-xs'>
@@ -206,37 +210,30 @@ export function CompatibilityFixes({
   if (mods.length === 0) return null;
 
   return (
-    <ul className='space-y-3'>
+    <ul className='space-y-1'>
       {mods.map((mod) => (
         <li key={mod.modId}>
-          <p className='font-medium text-sm'>
-            {modNames.get(mod.modId) ?? mod.modId}
-          </p>
-          <ul className='mt-1 space-y-1'>
-            {mod.groups.map((group) => (
-              <li key={group.label}>
-                <Collapsible className='text-xs'>
-                  <CollapsibleTrigger
-                    className='group flex items-center gap-1.5 rounded text-left text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring'
-                    data-testid='compatibility-repair-files-toggle'>
-                    <ChevronDown
-                      aria-hidden
-                      className='size-3 shrink-0 transition-transform group-data-[state=closed]:-rotate-90'
-                    />
-                    <span className='text-foreground'>{group.label}</span>
-                    <span className='tabular-nums'>
-                      {t("modOrdering.compatibility.affectedFiles", {
-                        count: group.entries.length,
-                      })}
-                    </span>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className='max-h-48 overflow-y-auto pl-4.5'>
-                    <FindingEntries entries={group.entries} />
-                  </CollapsibleContent>
-                </Collapsible>
-              </li>
-            ))}
-          </ul>
+          <CompatibilityModRow
+            modId={mod.modId}
+            name={modNames.get(mod.modId) ?? mod.modId}
+            labels={[
+              ...new Set(
+                [...assetRepairs, ...dataRepairs]
+                  .filter((repair) => repair.modId === mod.modId)
+                  .map((repair) =>
+                    t(`myMods.compatibility.repairLabels.${repair.kind}`),
+                  ),
+              ),
+            ]}>
+            <div className='mt-3 space-y-3'>
+              {mod.groups.map((group) => (
+                <div key={group.label}>
+                  <p className='text-xs font-medium'>{group.label}</p>
+                  <FindingEntries entries={group.entries} />
+                </div>
+              ))}
+            </div>
+          </CompatibilityModRow>
         </li>
       ))}
     </ul>
