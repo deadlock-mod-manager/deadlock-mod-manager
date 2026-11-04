@@ -1,4 +1,5 @@
 import { RuntimeError } from "@deadlock-mods/common/client-errors";
+import { useIsMutating, useMutation } from "@tanstack/react-query";
 import { analytics } from "@/lib/analytics";
 import {
   createContext,
@@ -57,6 +58,26 @@ import type {
 import { FOUNDRY_PATTERNS } from "@/types/foundry";
 
 type FoundryStatus = "idle" | "analyzing" | "ready" | "error";
+
+/**
+ * Every workspace write shares one mutation key, so `busy` covers them all and
+ * the edit controls stay disabled while any one of them runs.
+ */
+const FOUNDRY_EDIT_KEY = ["foundry-edit"];
+
+const useFoundryEdit = <TVariables, TResult>(
+  mutationFn: (variables: TVariables) => Promise<TResult>,
+) =>
+  useMutation({
+    mutationKey: FOUNDRY_EDIT_KEY,
+    // Local Tauri commands: never pause for connectivity, or `busy` would
+    // hold every edit control disabled while offline.
+    networkMode: "always",
+    // Each caller toasts its own failure.
+    meta: { skipGlobalErrorHandler: true },
+    mutationFn,
+  }).mutateAsync;
+
 type AsyncStatus = "idle" | "loading" | "ready" | "error";
 
 interface TexturePreview {
@@ -340,7 +361,7 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
   const [paintParts, setPaintParts] = useState<FoundryPaintPart[]>([]);
   const [paintSelection, setPaintSelection] =
     useState<FoundryPaintSelection>(DEFAULT_SELECTION);
-  const [busy, setBusy] = useState(false);
+  const busy = useIsMutating({ mutationKey: FOUNDRY_EDIT_KEY }) > 0;
   const [hiddenParts, setHiddenParts] = useState<string[]>([]);
   const [removedParts, setRemovedParts] = useState<
     Record<string, FoundryRemovedParts>
@@ -822,162 +843,163 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
     return workspace;
   }, [workspace]);
 
-  const replaceEntry = useCallback(
-    async (entryPath: string, sourceFilePath: string) => {
+  const replace = useFoundryEdit(
+    async ({
+      entryPath,
+      sourceFilePath,
+    }: {
+      entryPath: string;
+      sourceFilePath: string;
+    }) => {
       const active = requireWorkspace();
-      setBusy(true);
-      try {
-        await replaceFoundryFile(
-          active.root,
-          entryPath,
-          sourceFilePath,
-          filePath,
-        );
-        if (entryPath.endsWith(".vsnd_c")) {
-          setSoundSettings((current) =>
-            new Map(current).set(entryPath, {
-              ...(current.get(entryPath) ?? {
-                entryPath,
-                ...NO_SOUND_ADJUST,
-              }),
-              replaced: true,
+      await replaceFoundryFile(
+        active.root,
+        entryPath,
+        sourceFilePath,
+        filePath,
+      );
+      if (entryPath.endsWith(".vsnd_c")) {
+        setSoundSettings((current) =>
+          new Map(current).set(entryPath, {
+            ...(current.get(entryPath) ?? {
+              entryPath,
+              ...NO_SOUND_ADJUST,
             }),
-          );
-        }
-        afterEdit(entryPath, true);
-      } finally {
-        setBusy(false);
+            replaced: true,
+          }),
+        );
       }
+      afterEdit(entryPath, true);
     },
-    [afterEdit, filePath, requireWorkspace],
+  );
+  const replaceEntry = useCallback(
+    (entryPath: string, sourceFilePath: string) =>
+      replace({ entryPath, sourceFilePath }),
+    [replace],
   );
 
-  const paintTarget = useCallback(
-    async (target: FoundryPaintTargetId, paint: FoundryPaint) => {
+  const paintWholeTarget = useFoundryEdit(
+    async ({
+      target,
+      paint,
+    }: {
+      target: FoundryPaintTargetId;
+      paint: FoundryPaint;
+    }) => {
       const active = requireWorkspace();
       if (!filePath) {
         throw new Error("No skin is loaded.");
       }
-      setBusy(true);
-      try {
-        const result = await paintFoundryTarget(
-          active.root,
-          filePath,
-          target,
-          manifest?.heroDisplay ?? null,
-          paint,
-        );
-        setEditedPaths((current) => {
-          const next = new Set(current);
-          for (const path of result.paintedPaths) next.add(path);
-          return next;
-        });
-        setAppliedPaint((current) => ({
-          ...withPaintedSections(
-            current,
-            result.paintedPaths,
-            paint,
-            paintParts,
-          ),
-          [targetPaintKey(target)]: paint,
-        }));
-        // A repaint changes what the model samples and what the cards show.
-        texturePreviewCacheRef.current.clear();
-        afterContentChange(result.paintedPaths);
-        return result;
-      } finally {
-        setBusy(false);
-      }
+      const result = await paintFoundryTarget(
+        active.root,
+        filePath,
+        target,
+        manifest?.heroDisplay ?? null,
+        paint,
+      );
+      setEditedPaths((current) => {
+        const next = new Set(current);
+        for (const path of result.paintedPaths) next.add(path);
+        return next;
+      });
+      setAppliedPaint((current) => ({
+        ...withPaintedSections(current, result.paintedPaths, paint, paintParts),
+        [targetPaintKey(target)]: paint,
+      }));
+      // A repaint changes what the model samples and what the cards show.
+      texturePreviewCacheRef.current.clear();
+      afterContentChange(result.paintedPaths);
+      return result;
     },
-    [afterContentChange, filePath, manifest, paintParts, requireWorkspace],
+  );
+  const paintTarget = useCallback(
+    (target: FoundryPaintTargetId, paint: FoundryPaint) =>
+      paintWholeTarget({ target, paint }),
+    [paintWholeTarget],
   );
 
-  const paintSelectedParts = useCallback(
-    async (textures: string[], paint: FoundryPaint) => {
+  const paintSections = useFoundryEdit(
+    async ({
+      textures,
+      paint,
+    }: {
+      textures: string[];
+      paint: FoundryPaint;
+    }) => {
       const active = requireWorkspace();
       if (!filePath || !primaryModelPath) {
         throw new Error("No model is loaded.");
       }
-      setBusy(true);
-      try {
-        const result = await paintFoundryParts(
-          active.root,
-          filePath,
-          primaryModelPath,
-          manifest?.heroDisplay ?? null,
-          textures,
-          paint,
-        );
-        setEditedPaths((current) => {
-          const next = new Set(current);
-          for (const path of result.paintedPaths) next.add(path);
-          return next;
-        });
-        setAppliedPaint((current) =>
-          withPaintedSections(current, result.paintedPaths, paint, paintParts),
-        );
-        texturePreviewCacheRef.current.clear();
-        afterContentChange(result.paintedPaths);
-        return result;
-      } finally {
-        setBusy(false);
-      }
+      const result = await paintFoundryParts(
+        active.root,
+        filePath,
+        primaryModelPath,
+        manifest?.heroDisplay ?? null,
+        textures,
+        paint,
+      );
+      setEditedPaths((current) => {
+        const next = new Set(current);
+        for (const path of result.paintedPaths) next.add(path);
+        return next;
+      });
+      setAppliedPaint((current) =>
+        withPaintedSections(current, result.paintedPaths, paint, paintParts),
+      );
+      texturePreviewCacheRef.current.clear();
+      afterContentChange(result.paintedPaths);
+      return result;
     },
-    [
-      afterContentChange,
-      filePath,
-      manifest,
-      paintParts,
-      primaryModelPath,
-      requireWorkspace,
-    ],
+  );
+  const paintSelectedParts = useCallback(
+    (textures: string[], paint: FoundryPaint) =>
+      paintSections({ textures, paint }),
+    [paintSections],
   );
 
-  const updateRemovedParts = useCallback(
-    async (modelPath: string, textures: string[]) => {
+  const updateRemovedParts = useFoundryEdit(
+    async ({
+      modelPath,
+      textures,
+    }: {
+      modelPath: string;
+      textures: string[];
+    }) => {
       const active = requireWorkspace();
       if (!filePath) {
         throw new RuntimeError("No model is loaded.");
       }
       const previous = removedParts[modelPath];
-      setBusy(true);
-      try {
-        const removed = await removeFoundryParts(
-          active.root,
-          filePath,
-          modelPath,
-          manifest?.heroDisplay ?? null,
-          textures,
-        );
-        setEditedPaths((current) => {
-          const next = new Set(current);
-          for (const path of previous?.resources ?? []) next.delete(path);
-          for (const path of removed.resources) next.add(path);
-          return next;
-        });
-        setRemovedParts(({ [modelPath]: _previous, ...rest }) =>
-          removed.textures.length > 0
-            ? { ...rest, [modelPath]: removed }
-            : rest,
-        );
-        // The viewer hides a removed section without a rebuild, but one put
-        // back is missing from a model decoded while it was removed.
-        const restored = (previous?.textures ?? []).some(
-          (texture) => !removed.textures.includes(texture),
-        );
-        if (restored) {
-          afterContentChange([
-            ...(previous?.resources ?? []),
-            ...removed.resources,
-          ]);
-        } else {
-          setEditRevision((revision) => revision + 1);
-        }
-      } finally {
-        setBusy(false);
+      const removed = await removeFoundryParts(
+        active.root,
+        filePath,
+        modelPath,
+        manifest?.heroDisplay ?? null,
+        textures,
+      );
+      setEditedPaths((current) => {
+        const next = new Set(current);
+        for (const path of previous?.resources ?? []) next.delete(path);
+        for (const path of removed.resources) next.add(path);
+        return next;
+      });
+      setRemovedParts(({ [modelPath]: _previous, ...rest }) =>
+        removed.textures.length > 0 ? { ...rest, [modelPath]: removed } : rest,
+      );
+      // The viewer hides a removed section without a rebuild, but one put
+      // back is missing from a model decoded while it was removed.
+      const restored = (previous?.textures ?? []).some(
+        (texture) => !removed.textures.includes(texture),
+      );
+      if (restored) {
+        afterContentChange([
+          ...(previous?.resources ?? []),
+          ...removed.resources,
+        ]);
+      } else {
+        setEditRevision((revision) => revision + 1);
       }
     },
-    [afterContentChange, filePath, manifest, removedParts, requireWorkspace],
   );
 
   const toggleRemovedPart = useCallback(
@@ -986,16 +1008,26 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
         throw new RuntimeError("No model is loaded.");
       }
       const current = removedParts[primaryModelPath]?.textures ?? [];
-      await updateRemovedParts(
-        primaryModelPath,
-        current.includes(texture)
+      await updateRemovedParts({
+        modelPath: primaryModelPath,
+        textures: current.includes(texture)
           ? current.filter((entry) => entry !== texture)
           : [...current, texture],
-      );
+      });
     },
     [primaryModelPath, removedParts, updateRemovedParts],
   );
 
+  const revert = useFoundryEdit(async (entryPath: string) => {
+    const active = requireWorkspace();
+    await revertFoundryFile(active.root, entryPath, filePath);
+    setSoundSettings((current) => {
+      const next = new Map(current);
+      next.delete(entryPath);
+      return next;
+    });
+    afterEdit(entryPath, false);
+  });
   const revertEntry = useCallback(
     async (entryPath: string) => {
       // Removed sections share their model and mesh files, so undoing any one
@@ -1004,53 +1036,46 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
         removed.resources.includes(entryPath),
       );
       if (owner) {
-        await updateRemovedParts(owner.modelPath, []);
+        await updateRemovedParts({ modelPath: owner.modelPath, textures: [] });
         return;
       }
-      const active = requireWorkspace();
-      setBusy(true);
-      try {
-        await revertFoundryFile(active.root, entryPath, filePath);
-        setSoundSettings((current) => {
-          const next = new Map(current);
-          next.delete(entryPath);
-          return next;
-        });
-        afterEdit(entryPath, false);
-      } finally {
-        setBusy(false);
-      }
+      await revert(entryPath);
     },
-    [afterEdit, filePath, removedParts, requireWorkspace, updateRemovedParts],
+    [removedParts, revert, updateRemovedParts],
   );
 
-  const adjustSound = useCallback(
-    async (entryPath: string, adjust: FoundrySoundAdjust) => {
+  const adjust = useFoundryEdit(
+    async ({
+      entryPath,
+      settings,
+    }: {
+      entryPath: string;
+      settings: FoundrySoundAdjust;
+    }) => {
       const active = requireWorkspace();
-      setBusy(true);
-      try {
-        const settings = await adjustFoundrySound(
-          active.root,
-          entryPath,
-          filePath,
-          adjust,
-        );
-        const kept = settings.replaced || !isNoSoundAdjust(settings);
-        setSoundSettings((current) => {
-          const next = new Map(current);
-          if (kept) {
-            next.set(entryPath, settings);
-          } else {
-            next.delete(entryPath);
-          }
-          return next;
-        });
-        afterEdit(entryPath, kept);
-      } finally {
-        setBusy(false);
-      }
+      const adjusted = await adjustFoundrySound(
+        active.root,
+        entryPath,
+        filePath,
+        settings,
+      );
+      const kept = adjusted.replaced || !isNoSoundAdjust(adjusted);
+      setSoundSettings((current) => {
+        const next = new Map(current);
+        if (kept) {
+          next.set(entryPath, adjusted);
+        } else {
+          next.delete(entryPath);
+        }
+        return next;
+      });
+      afterEdit(entryPath, kept);
     },
-    [afterEdit, filePath, requireWorkspace],
+  );
+  const adjustSound = useCallback(
+    (entryPath: string, settings: FoundrySoundAdjust) =>
+      adjust({ entryPath, settings }),
+    [adjust],
   );
 
   const playSound = useCallback(
@@ -1072,30 +1097,24 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
     [filePath, workspaceRoot],
   );
 
-  const exportVpk = useCallback(
-    async (request: FoundryExportRequest) => {
-      const active = requireWorkspace();
-      const attempt = analytics.start("foundry_export", {
-        edited_asset_count: editedPaths.size,
+  const exportVpk = useFoundryEdit(async (request: FoundryExportRequest) => {
+    const active = requireWorkspace();
+    const attempt = analytics.start("foundry_export", {
+      edited_asset_count: editedPaths.size,
+    });
+    try {
+      const result = await exportFoundryWorkspace(active.root, {
+        ...request,
+        name: request.name ?? manifest?.heroDisplay ?? manifest?.hero ?? null,
+        sourcePath: request.sourcePath ?? manifest?.sourcePath ?? null,
       });
-      setBusy(true);
-      try {
-        const result = await exportFoundryWorkspace(active.root, {
-          ...request,
-          name: request.name ?? manifest?.heroDisplay ?? manifest?.hero ?? null,
-          sourcePath: request.sourcePath ?? manifest?.sourcePath ?? null,
-        });
-        attempt.finish("completed");
-        return result;
-      } catch (error) {
-        attempt.finish("failed");
-        throw error;
-      } finally {
-        setBusy(false);
-      }
-    },
-    [editedPaths.size, manifest, requireWorkspace],
-  );
+      attempt.finish("completed");
+      return result;
+    } catch (error) {
+      attempt.finish("failed");
+      throw error;
+    }
+  });
 
   const highlightTextures = useMemo(
     () =>
