@@ -80,7 +80,8 @@ automatic migration.
   source artifacts are rejected until the package-specific choice flow is wired.
   Sources
   cannot provide installation scripts or arbitrary destination paths.
-- Optional plain-text description, author, hero/content-type, tags, images,
+- Optional description (plain text, or Markdown with
+  `descriptionFormat: "markdown"`), author, hero/content-type, tags, images,
   homepage, update date and `isNsfw` classification as accepted by the native
   implementation. Use `isNsfw: false` only for content you have classified as
   non-adult; `true` means adult and omission/null means unknown. DMM excludes

@@ -26,7 +26,9 @@ enable/disable/remove use the existing mod-management flow.
 A source's network access is limited to its accepted declared origins. Public
 sources use HTTPS. Local-network HTTP access is a separate explicit opt-in for
 development/testing, not a production hosting requirement. A descriptor ID does
-not transfer trust to another origin.
+not transfer trust to another origin. An artifact URL may redirect, for
+example to a presigned storage URL, but only to an origin listed in
+`networkOrigins.downloads`.
 
 ## Documents and stable identity
 
@@ -46,6 +48,11 @@ Relative URLs resolve against their containing document. IDs are opaque,
 case-sensitive strings. DMM scopes source identity by accepted origin plus
 declared source ID, and listing/release/artifact identity within that source.
 Never reuse a stable ID for unrelated content.
+
+`description` is plain text unless the listing sets `descriptionFormat` to
+`"markdown"`. DMM renders Markdown with GitHub extensions such as tables and
+task lists, opens links in the browser and drops inline images. An unknown
+format falls back to plain text.
 
 `isNsfw` is optional: `true` means adult, `false` means explicitly classified
 non-adult, and omitted/null means unknown. When the user hides adult content,

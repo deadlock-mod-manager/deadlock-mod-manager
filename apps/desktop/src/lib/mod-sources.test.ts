@@ -48,6 +48,7 @@ const listing: NativeSourceListing = {
   availability: "available",
   detailUrl: null,
   description: "An example mod",
+  descriptionFormat: null,
   author: "Example author",
   hero: null,
   contentType: "mod",

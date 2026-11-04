@@ -83,6 +83,90 @@
   .gamebanana-description pre code {
     @apply border-0 bg-transparent p-0 text-sm;
   }
+
+  .markdown-description > * + * {
+    @apply mt-3;
+  }
+
+  .markdown-description :is(h1, h2, h3, h4, h5, h6) {
+    @apply mt-5 font-semibold text-foreground;
+  }
+
+  .markdown-description h1 {
+    @apply text-lg;
+  }
+
+  .markdown-description h2 {
+    @apply text-base;
+  }
+
+  .markdown-description :is(h3, h4, h5, h6) {
+    @apply text-sm;
+  }
+
+  .markdown-description > :first-child {
+    @apply mt-0;
+  }
+
+  .markdown-description ul {
+    @apply list-disc pl-6;
+  }
+
+  .markdown-description ol {
+    @apply list-decimal pl-6;
+  }
+
+  .markdown-description li {
+    @apply py-0.5;
+  }
+
+  .markdown-description li > :is(ul, ol) {
+    @apply mt-1;
+  }
+
+  .markdown-description input[type="checkbox"] {
+    @apply mr-2 align-middle;
+  }
+
+  .markdown-description li:has(> input[type="checkbox"]) {
+    @apply list-none;
+  }
+
+  .markdown-description code {
+    @apply rounded-md bg-muted px-1.5 py-0.5 font-mono text-[0.875em] text-foreground;
+  }
+
+  .markdown-description pre {
+    @apply overflow-x-auto rounded-md border border-border bg-muted p-3 font-mono text-sm text-foreground;
+  }
+
+  .markdown-description pre code {
+    @apply border-0 bg-transparent p-0 text-sm;
+  }
+
+  .markdown-description blockquote {
+    @apply border-l-2 border-border pl-4 text-muted-foreground;
+  }
+
+  .markdown-description hr {
+    @apply border-border;
+  }
+
+  .markdown-description table {
+    @apply w-full border-collapse text-left;
+  }
+
+  .markdown-description :is(th, td) {
+    @apply border border-border px-3 py-1.5;
+  }
+
+  .markdown-description th {
+    @apply bg-muted/40 font-semibold;
+  }
+
+  .markdown-description del {
+    @apply opacity-85;
+  }
 }
 
 @layer utilities {

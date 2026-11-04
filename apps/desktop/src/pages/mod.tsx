@@ -576,7 +576,12 @@ const Mod = () => {
               {mod.description && (
                 <ModDescription
                   description={mod.description}
-                  plainText={isNativeMod}
+                  format={
+                    isNativeMod
+                      ? (nativeContext.data?.listing.descriptionFormat ??
+                        "plain")
+                      : "gamebanana"
+                  }
                 />
               )}
 

@@ -91,6 +91,7 @@ pub struct NativeSourceListing {
   pub availability: NativeSourceAvailability,
   pub detail_url: Option<String>,
   pub description: Option<String>,
+  pub description_format: Option<NativeSourceDescriptionFormat>,
   pub author: Option<String>,
   pub hero: Option<String>,
   pub content_type: Option<String>,
@@ -113,6 +114,25 @@ pub enum NativeSourceAvailability {
   Available,
   Unavailable,
   Removed,
+}
+
+/// How a listing's description is rendered. Formats this client does not know
+/// fall back to plain text instead of rejecting the listing.
+#[derive(Debug, Clone, Serialize, PartialEq, Eq, TS)]
+#[ts(export)]
+#[serde(rename_all = "lowercase")]
+pub enum NativeSourceDescriptionFormat {
+  Plain,
+  Markdown,
+}
+
+impl<'de> Deserialize<'de> for NativeSourceDescriptionFormat {
+  fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+    Ok(match String::deserialize(deserializer)?.as_str() {
+      "markdown" => Self::Markdown,
+      _ => Self::Plain,
+    })
+  }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
