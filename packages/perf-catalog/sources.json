@@ -606,23 +606,23 @@
     "sqooky-default": {
       "repo": "Sqooky/OptimizationLock",
       "path": "Sqooky's .gi/gameinfo.gi",
-      "commit": "01992b4ddd1b0dd2ff493770da2246f1e46dac05",
-      "date": "2026-11-02",
-      "sha256": "635b2c8caca2cee617ca85ab4764168c868d7be92f6cd5220c4e75be88229dab"
+      "commit": "334b09bc3f2c38177bb726fba4d179bd17cd13ec",
+      "date": "2026-11-04",
+      "sha256": "d5e4e6678eabfc61280f518367428fed555720d3924f5c24c623595be8df4619"
     },
     "sqooky-eskay": {
       "repo": "Sqooky/OptimizationLock",
       "path": "Eskay's config/gameinfo.gi",
-      "commit": "bb69d9d0f49e7b609b2248b05175c515e86c588d",
-      "date": "2026-10-05",
-      "sha256": "c7a496cd9c4b62de03ae03f4bbfda9cd8228bf97cdd1a0824aafe441809dd3ba"
+      "commit": "293c548cc6ffd61bc0736cb222d2a05562c0f8a2",
+      "date": "2026-11-04",
+      "sha256": "d97843df870ea5ed5cd92d2fb77eb86e74c66ec080f0125f2273b096b280c80b"
     },
     "sqooky-maxfps": {
       "repo": "Sqooky/OptimizationLock",
       "path": "maximumfps or minimum spec config and resources here/gameinfo.gi",
-      "commit": "01992b4ddd1b0dd2ff493770da2246f1e46dac05",
-      "date": "2026-11-02",
-      "sha256": "531c7d883aaff6cf6c9cd14492b50a05f28c767c0412cf439bf9bc2caacec89a",
+      "commit": "7d2cb2b171c77637e4b4c7d276efc6ff9c036d4e",
+      "date": "2026-11-04",
+      "sha256": "0f57b42df8b71314a2e4843d33be63ec3e8b3e7483e975d8bea396e128d43b8b",
       "videos": [
         {
           "path": "maximumfps or minimum spec config and resources here/video.txt",
@@ -721,7 +721,7 @@
       "md5": "5f5e8209ac0cbc3199f2a573cd1a959f",
       "name": "configuration optimization from dyson",
       "author": "dyson behind",
-      "downloads": 133645,
+      "downloads": 147095,
       "updatedAt": "2026-10-16"
     },
     "650519": {
