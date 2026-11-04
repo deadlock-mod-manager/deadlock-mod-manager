@@ -730,6 +730,33 @@ async fn downloaded_archive_uses_existing_selection_and_install_operations_and_h
 }
 
 #[tokio::test]
+async fn untitled_tombstones_are_accepted_but_untitled_live_listings_are_not() {
+  let server = SourceServer::start();
+  server.set_json("/catalog.json", json!({"snapshotId":"tombstone-1", "items":[
+    {"id":"gone", "availability":"removed", "detailUrl":"./mods/gone.json"},
+    {"id":"example", "title":"Harmless source example", "availability":"available", "detailUrl":"./mods/example.json"}
+  ]}));
+  server.set_json(
+    "/mods/gone.json",
+    json!({"id":"gone", "availability":"removed", "detailUrl":"./gone.json"}),
+  );
+  let temp = tempfile::tempdir().unwrap();
+  let manager = NativeSourceManager::open(temp.path().join("sources.json")).unwrap();
+  let source = manager.add(&server.descriptor_url(), true).await.unwrap();
+  let listings = manager.query(&source.key, "").await.unwrap();
+  assert_eq!(listings.len(), 1);
+  assert_eq!(listings[0].id, "example");
+
+  server.set_json(
+    "/catalog.json",
+    json!({"snapshotId":"tombstone-2", "items":[
+      {"id":"example", "availability":"available", "detailUrl":"./mods/example.json"}
+    ]}),
+  );
+  assert!(manager.refresh(&source.key).await.is_err());
+}
+
+#[tokio::test]
 async fn component_choices_select_exact_archive_paths_and_changed_choices_require_a_new_decision() {
   let server = SourceServer::start();
   server.set_json("/catalog.json", json!({"snapshotId":"choices-1", "items":[{

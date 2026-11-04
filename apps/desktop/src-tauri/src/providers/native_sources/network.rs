@@ -201,8 +201,11 @@ pub(super) async fn fetch_json<T: DeserializeOwned>(
     }
     bytes.extend_from_slice(&chunk);
   }
-  serde_json::from_slice(&bytes)
-    .map_err(|_| invalid("Response does not match the native source contract"))
+  serde_json::from_slice(&bytes).map_err(|error| {
+    invalid(format!(
+      "Response does not match the native source contract: {error}"
+    ))
+  })
 }
 
 #[cfg(test)]

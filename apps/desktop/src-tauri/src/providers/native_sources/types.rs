@@ -86,6 +86,7 @@ pub struct NativeSourceListing {
   #[serde(default)]
   pub remote_id: String,
   pub id: String,
+  #[serde(default)]
   pub title: String,
   pub availability: NativeSourceAvailability,
   pub detail_url: Option<String>,

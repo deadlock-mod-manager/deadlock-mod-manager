@@ -139,7 +139,9 @@ pub(super) fn normalize_listing(
   source: &NativeSourceSummary,
 ) -> Result<(), Error> {
   validate_id(&listing.id)?;
-  validate_text(&listing.title, 1024)?;
+  if listing.availability != NativeSourceAvailability::Removed {
+    validate_text(&listing.title, 1024)?;
+  }
   if listing
     .description
     .as_ref()
