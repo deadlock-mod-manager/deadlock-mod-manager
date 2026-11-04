@@ -1,3 +1,4 @@
+import { RuntimeError } from "@deadlock-mods/common/client-errors";
 import { analytics } from "@/lib/analytics";
 import {
   createContext,
@@ -25,6 +26,7 @@ import {
   paintFoundryTarget,
   prepareFoundryWorkspace,
   releaseFoundryArchives,
+  removeFoundryParts,
   replaceFoundryFile,
   resolveModVpk,
   revertFoundryFile,
@@ -47,6 +49,7 @@ import type {
   FoundryPaintTargetId,
   FoundryPaintResult,
   FoundryPaintTargetInfo,
+  FoundryRemovedParts,
   FoundrySoundSettings,
   FoundryTab,
   FoundryWorkspace,
@@ -240,6 +243,10 @@ interface FoundryContextValue {
   /** Sections hidden in the paint tab's preview, so what is behind shows. */
   hiddenParts: readonly string[];
   toggleHiddenPart: (texture: string) => void;
+  /** Sections removed from the game, keyed by model path. */
+  removedParts: Readonly<Record<string, FoundryRemovedParts>>;
+  /** Remove one of the primary model's sections from the game, or put it back. */
+  toggleRemovedPart: (texture: string) => Promise<void>;
   busy: boolean;
   setActiveTab: (tab: FoundryTab) => void;
   setSelectedEntryPath: (path: string | null) => void;
@@ -335,6 +342,9 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
     useState<FoundryPaintSelection>(DEFAULT_SELECTION);
   const [busy, setBusy] = useState(false);
   const [hiddenParts, setHiddenParts] = useState<string[]>([]);
+  const [removedParts, setRemovedParts] = useState<
+    Record<string, FoundryRemovedParts>
+  >({});
   // Bumped by every edit. Each derived preview keys its cache on it, so one
   // counter keeps the textures and the card gallery in step.
   const [editRevision, setEditRevision] = useState(0);
@@ -400,6 +410,7 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
     setPaintParts([]);
     setPaintSelection(DEFAULT_SELECTION);
     setHiddenParts([]);
+    setRemovedParts({});
     setTexturePreview(IDLE_TEXTURE);
     setModelPreview(IDLE_MODEL);
     setCardPreviews(IDLE_CARDS);
@@ -669,6 +680,11 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
           ]),
         ),
       );
+      setRemovedParts(
+        Object.fromEntries(
+          prepared.removedParts.map((removed) => [removed.modelPath, removed]),
+        ),
+      );
       setWorkspace(prepared);
     } catch (err) {
       logger.withError(err).error("[Foundry] Failed to prepare workspace");
@@ -687,6 +703,7 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       setWorkspace(null);
       setEditedPaths(new Set());
       setSoundSettings(new Map());
+      setRemovedParts({});
       setStatus("analyzing");
       setError(null);
       try {
@@ -916,8 +933,80 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
     ],
   );
 
+  const updateRemovedParts = useCallback(
+    async (modelPath: string, textures: string[]) => {
+      const active = requireWorkspace();
+      if (!filePath) {
+        throw new RuntimeError("No model is loaded.");
+      }
+      const previous = removedParts[modelPath];
+      setBusy(true);
+      try {
+        const removed = await removeFoundryParts(
+          active.root,
+          filePath,
+          modelPath,
+          manifest?.heroDisplay ?? null,
+          textures,
+        );
+        setEditedPaths((current) => {
+          const next = new Set(current);
+          for (const path of previous?.resources ?? []) next.delete(path);
+          for (const path of removed.resources) next.add(path);
+          return next;
+        });
+        setRemovedParts(({ [modelPath]: _previous, ...rest }) =>
+          removed.textures.length > 0
+            ? { ...rest, [modelPath]: removed }
+            : rest,
+        );
+        // The viewer hides a removed section without a rebuild, but one put
+        // back is missing from a model decoded while it was removed.
+        const restored = (previous?.textures ?? []).some(
+          (texture) => !removed.textures.includes(texture),
+        );
+        if (restored) {
+          afterContentChange([
+            ...(previous?.resources ?? []),
+            ...removed.resources,
+          ]);
+        } else {
+          setEditRevision((revision) => revision + 1);
+        }
+      } finally {
+        setBusy(false);
+      }
+    },
+    [afterContentChange, filePath, manifest, removedParts, requireWorkspace],
+  );
+
+  const toggleRemovedPart = useCallback(
+    async (texture: string) => {
+      if (!primaryModelPath) {
+        throw new RuntimeError("No model is loaded.");
+      }
+      const current = removedParts[primaryModelPath]?.textures ?? [];
+      await updateRemovedParts(
+        primaryModelPath,
+        current.includes(texture)
+          ? current.filter((entry) => entry !== texture)
+          : [...current, texture],
+      );
+    },
+    [primaryModelPath, removedParts, updateRemovedParts],
+  );
+
   const revertEntry = useCallback(
     async (entryPath: string) => {
+      // Removed sections share their model and mesh files, so undoing any one
+      // of those files puts the whole model back.
+      const owner = Object.values(removedParts).find((removed) =>
+        removed.resources.includes(entryPath),
+      );
+      if (owner) {
+        await updateRemovedParts(owner.modelPath, []);
+        return;
+      }
       const active = requireWorkspace();
       setBusy(true);
       try {
@@ -932,7 +1021,7 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
         setBusy(false);
       }
     },
-    [afterEdit, filePath, requireWorkspace],
+    [afterEdit, filePath, removedParts, requireWorkspace, updateRemovedParts],
   );
 
   const adjustSound = useCallback(
@@ -1055,6 +1144,8 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       highlightTextures,
       hiddenParts,
       toggleHiddenPart,
+      removedParts,
+      toggleRemovedPart,
       busy,
       setActiveTab,
       setSelectedEntryPath: selectEntryPath,
@@ -1098,6 +1189,8 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       highlightTextures,
       hiddenParts,
       toggleHiddenPart,
+      removedParts,
+      toggleRemovedPart,
       busy,
       selectEntryPath,
       previewCard,

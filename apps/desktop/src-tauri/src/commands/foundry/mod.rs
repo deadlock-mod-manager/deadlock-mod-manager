@@ -9,6 +9,7 @@
 //! - `workspace` owns the unpacked, editable copy and the VPK writer
 //! - `paint` recolors whole parts of the hero (body, gun, abilities), and
 //!   `palette` offers the colors the skin already wears
+//! - `remove_parts` takes sections of the hero out of the game
 //! - `sounds` groups a hero's clips by ability slot
 //! - `hero` holds the codename tables those two need
 //! - `vdata` asks the game which model is a hero's body
@@ -31,6 +32,7 @@ mod paint;
 mod palette;
 mod particles;
 mod preview;
+mod remove_parts;
 mod resolve;
 mod sounds;
 mod staging;
