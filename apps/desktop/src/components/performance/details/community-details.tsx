@@ -7,7 +7,7 @@ import {
 } from "@/lib/performance/config-list";
 import { formatCompact } from "@/lib/stats/format";
 import { Chip } from "../configs/card-parts";
-import { OutdatedPatchChip } from "../configs/community-card";
+import { OutdatedPatchChip } from "../configs/outdated-patch-chip";
 import { usePerformanceUi } from "../performance-context";
 import { DetailsHeader, LinkChip } from "./details-header";
 import { DetailsSection } from "./details-parts";

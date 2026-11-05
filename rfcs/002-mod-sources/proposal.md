@@ -206,7 +206,10 @@ All remote rich content is sanitized; scripts and executable embeds are not
 rendered. Media URLs obey the accepted network origins. Counts include their
 meaning, and ratings include their scale; they are not comparable across sources.
 
-DMM publishes stable hero and content-type identifiers. Native sources use them;
+DMM publishes stable hero and content-type identifiers at
+`https://deadlockmods.app/v1/taxonomy.json` (`dmm-taxonomy` version 1, built from
+`packages/shared/src/taxonomy.ts`). IDs are never renamed or reused; display names
+may change. Native sources use them;
 mappings translate provider values with lookup tables. Unrecognized categories
 remain source tags. Unknown values fail a positive filter rather than being
 invented. DMM shows when a source cannot satisfy a requested filter. Hiding adult

@@ -11,19 +11,42 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Component, Path, PathBuf};
 
 use base64::Engine;
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use vpk_parser::{VpkParseOptions, VpkParser};
 use vpkmanager::{SoundAdjust, SoundSource};
 
 use crate::errors::Error;
+use crate::vpk_archive_cache::open_archive;
 
 use super::analyze::classify;
 use super::game::foundry_workspace_root;
+use super::remove_parts::{REMOVED_JOURNAL, removal_owner, removed_parts_list};
 use super::staging::staged_base_game_vpk;
 use super::types::{
   FoundryAppliedPaint, FoundryBuildResult, FoundryCategory, FoundryEntry, FoundryEntrySource,
   FoundryReplacementResult, FoundrySoundSettings, FoundryTexture, FoundryWorkspace,
 };
+
+/// A JSON journal beside `files/`, or its empty value when it is missing or
+/// unreadable: a lost journal only forgets edits, it never blocks the workspace.
+pub(super) fn read_journal<T: DeserializeOwned + Default>(workspace_root: &Path, name: &str) -> T {
+  std::fs::read(workspace_root.join(name))
+    .ok()
+    .and_then(|bytes| serde_json::from_slice(&bytes).ok())
+    .unwrap_or_default()
+}
+
+pub(super) fn write_journal<T: Serialize + ?Sized>(
+  workspace_root: &Path,
+  name: &str,
+  value: &T,
+) -> Result<(), Error> {
+  let bytes = serde_json::to_vec(value)
+    .map_err(|e| Error::InvalidInput(format!("failed to write {name}: {e}")))?;
+  std::fs::write(workspace_root.join(name), bytes)?;
+  Ok(())
+}
 
 /// Beside `files/`, the entries this workspace has edited. The tree itself
 /// cannot say which files differ from the source, and edits outlive the session
@@ -32,10 +55,7 @@ const EDIT_JOURNAL: &str = "edits.json";
 
 /// The entries the workspace's journal lists as edited, sorted.
 pub(crate) fn read_edit_journal(workspace_root: &Path) -> Vec<String> {
-  std::fs::read(workspace_root.join(EDIT_JOURNAL))
-    .ok()
-    .and_then(|bytes| serde_json::from_slice::<Vec<String>>(&bytes).ok())
-    .unwrap_or_default()
+  read_journal(workspace_root, EDIT_JOURNAL)
 }
 
 /// Mark `entries` as edited, or as back to their original when `edited` is false.
@@ -52,10 +72,7 @@ pub(crate) fn record_edits(
       journal.remove(entry);
     }
   }
-  let bytes = serde_json::to_vec(&journal.into_iter().collect::<Vec<_>>())
-    .map_err(|e| Error::InvalidInput(format!("failed to write edit journal: {e}")))?;
-  std::fs::write(workspace_root.join(EDIT_JOURNAL), bytes)?;
-  Ok(())
+  write_journal(workspace_root, EDIT_JOURNAL, &journal)
 }
 
 /// Beside `files/`, the paint each painted color map wears, so a reopened skin
@@ -63,10 +80,7 @@ pub(crate) fn record_edits(
 const PAINT_JOURNAL: &str = "paint.json";
 
 fn read_paint_journal(workspace_root: &Path) -> BTreeMap<String, FoundryAppliedPaint> {
-  std::fs::read(workspace_root.join(PAINT_JOURNAL))
-    .ok()
-    .and_then(|bytes| serde_json::from_slice::<Vec<FoundryAppliedPaint>>(&bytes).ok())
-    .unwrap_or_default()
+  read_journal::<Vec<FoundryAppliedPaint>>(workspace_root, PAINT_JOURNAL)
     .into_iter()
     .map(|paint| (paint.entry_path.clone(), paint))
     .collect()
@@ -95,10 +109,11 @@ pub(crate) fn record_paint(
       }
     }
   }
-  let bytes = serde_json::to_vec(&journal.into_values().collect::<Vec<_>>())
-    .map_err(|e| Error::InvalidInput(format!("failed to write paint journal: {e}")))?;
-  std::fs::write(workspace_root.join(PAINT_JOURNAL), bytes)?;
-  Ok(())
+  write_journal(
+    workspace_root,
+    PAINT_JOURNAL,
+    &journal.into_values().collect::<Vec<_>>(),
+  )
 }
 
 /// Beside `files/`, each reworked sound's volume edits and replacement.
@@ -128,20 +143,14 @@ impl StoredSound {
 }
 
 fn read_sound_settings(workspace_root: &Path) -> BTreeMap<String, StoredSound> {
-  std::fs::read(workspace_root.join(SOUND_SETTINGS))
-    .ok()
-    .and_then(|bytes| serde_json::from_slice(&bytes).ok())
-    .unwrap_or_default()
+  read_journal(workspace_root, SOUND_SETTINGS)
 }
 
 fn write_sound_settings(
   workspace_root: &Path,
   settings: &BTreeMap<String, StoredSound>,
 ) -> Result<(), Error> {
-  let bytes = serde_json::to_vec(settings)
-    .map_err(|e| Error::InvalidInput(format!("failed to write sound settings: {e}")))?;
-  std::fs::write(workspace_root.join(SOUND_SETTINGS), bytes)?;
-  Ok(())
+  write_journal(workspace_root, SOUND_SETTINGS, settings)
 }
 
 pub(crate) fn sound_settings_list(workspace_root: &Path) -> Vec<FoundrySoundSettings> {
@@ -489,7 +498,7 @@ fn workspace_entry_bytes(
 }
 
 /// Read an entry's current bytes, preferring the user's edited copy, then the
-/// skin VPK, then the base game.
+/// skin VPK, then the base game and core. A corrupt override never falls through.
 pub(crate) fn entry_bytes_from_sources(
   workspace_root: Option<&Path>,
   vpk_path: &Path,
@@ -498,19 +507,17 @@ pub(crate) fn entry_bytes_from_sources(
   if let Some(bytes) = workspace_entry_bytes(workspace_root, entry_path)? {
     return Ok(bytes);
   }
-  if vpk_path.exists()
-    && let Ok(bytes) = source2_model::vpk_extract::extract_entry(vpk_path, entry_path)
-  {
-    return Ok(bytes);
-  }
-  if let Some(base_vpk) = staged_base_game_vpk()?
-    && let Ok(bytes) = source2_model::vpk_extract::extract_entry(&base_vpk, entry_path)
-  {
-    return Ok(bytes);
-  }
-  Err(Error::InvalidInput(format!(
-    "entry not found: {entry_path}"
-  )))
+  let (archive, _) = super::animation::archives(&vpk_path.to_string_lossy())?;
+  archive
+    .extract_entry(entry_path)
+    .map_err(|error| Error::Preview {
+      kind: if matches!(error, source2_model::Source2Error::EntryNotFound(_)) {
+        "previewMissingAssets"
+      } else {
+        "previewCorruptOverride"
+      },
+      message: format!("{entry_path}: {error}"),
+    })
 }
 
 pub(crate) fn workspace_files_dir(workspace_root: &Path) -> Result<PathBuf, Error> {
@@ -522,6 +529,47 @@ pub(crate) fn workspace_files_dir(workspace_root: &Path) -> Result<PathBuf, Erro
     )));
   }
   Ok(files_dir)
+}
+
+/// Read an entry from the skin, falling back to the base game: a skin often
+/// ships only the textures it changes, while the model and materials it
+/// paints over stay in `pak01`.
+pub(crate) fn extract_either(
+  skin: &source2_model::vpk_extract::VpkArchive,
+  base: Option<&source2_model::vpk_extract::VpkArchive>,
+  entry_path: &str,
+) -> Result<Vec<u8>, Error> {
+  skin
+    .extract_entry(entry_path)
+    .or_else(|error| match base {
+      Some(base) => base.extract_entry(entry_path),
+      None => Err(error),
+    })
+    .map_err(|e| Error::InvalidInput(format!("{e}")))
+}
+
+pub(crate) fn base_archive() -> Option<std::sync::Arc<source2_model::vpk_extract::VpkArchive>> {
+  match staged_base_game_vpk() {
+    Ok(Some(path)) => open_archive(&path, None).ok(),
+    Ok(None) => None,
+    Err(error) => {
+      log::warn!("[Foundry] No base pak to read originals from: {error}");
+      None
+    }
+  }
+}
+
+pub(crate) fn write_workspace_entry(
+  files_dir: &Path,
+  entry_path: &str,
+  bytes: &[u8],
+) -> Result<(), Error> {
+  let target_path = files_dir.join(safe_entry_relative(entry_path)?);
+  if let Some(parent) = target_path.parent() {
+    std::fs::create_dir_all(parent)?;
+  }
+  std::fs::write(target_path, bytes)?;
+  Ok(())
 }
 
 fn replacement_result(
@@ -569,6 +617,13 @@ pub(crate) fn replace_workspace_file(
     return Err(Error::InvalidInput(format!(
       "replacement file not found: {}",
       source_file_path.display()
+    )));
+  }
+  // The next removal toggle rebuilds this file from the packed original, which
+  // would silently drop the replacement.
+  if let Some(model) = removal_owner(&workspace_root, &entry_path) {
+    return Err(Error::InvalidInput(format!(
+      "{entry_path} has sections of {model} removed; put them back before replacing it"
     )));
   }
 
@@ -786,7 +841,7 @@ pub(crate) fn prepare_workspace(
       std::fs::remove_dir_all(&files_dir)?;
     }
     // A fresh unpack holds no edits, so neither does its journal.
-    for state in [EDIT_JOURNAL, PAINT_JOURNAL, SOUND_SETTINGS] {
+    for state in [EDIT_JOURNAL, PAINT_JOURNAL, SOUND_SETTINGS, REMOVED_JOURNAL] {
       let path = root.join(state);
       if path.exists() {
         std::fs::remove_file(path)?;
@@ -816,6 +871,7 @@ pub(crate) fn prepare_workspace(
     edited_paths: read_edit_journal(&root),
     sound_settings: sound_settings_list(&root),
     applied_paint: read_paint_journal(&root).into_values().collect(),
+    removed_parts: removed_parts_list(&root),
     root: root.to_string_lossy().to_string(),
     files_dir: files_dir.to_string_lossy().to_string(),
     vpk_copy,

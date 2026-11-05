@@ -15,26 +15,29 @@ test("replaces the override for a path, matching case-insensitively", () => {
   });
 });
 
+const VIDEO = { writeVideo: true, videoVariant: null };
+
 test("compares tweaks regardless of order", () => {
   const reversed = [overrides[1], overrides[0]];
   expect(
     sameApplyOptions(
-      { overrides, includeEngineSections: false },
-      { overrides: reversed, includeEngineSections: false },
+      { overrides, includeEngineSections: false, ...VIDEO },
+      { overrides: reversed, includeEngineSections: false, ...VIDEO },
     ),
   ).toBe(true);
   expect(
     sameApplyOptions(
-      { overrides, includeEngineSections: false },
-      { overrides, includeEngineSections: true },
+      { overrides, includeEngineSections: false, ...VIDEO },
+      { overrides, includeEngineSections: true, ...VIDEO },
     ),
   ).toBe(false);
   expect(
     sameApplyOptions(
-      { overrides, includeEngineSections: false },
+      { overrides, includeEngineSections: false, ...VIDEO },
       {
         overrides: withOverride(overrides, ["ConVars", "fov"], null),
         includeEngineSections: false,
+        ...VIDEO,
       },
     ),
   ).toBe(false);

@@ -11,6 +11,7 @@ import type { ImportSource } from "@/types/generated/ImportSource";
 const PERFORMANCE_TABS = [
   "configs",
   "editor",
+  "video",
   "history",
   "howItWorks",
 ] as const;

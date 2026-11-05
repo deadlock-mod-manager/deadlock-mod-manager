@@ -68,8 +68,7 @@ export const compileOperator = (operator: JsonObject): FrameOperator | null => {
       };
     }
     case "C_OP_SetChildControlPoints": {
-      // Moves control points onto particles so children follow them. Children
-      // share their parent's control points here, so the write reaches them.
+      // Child writes must not move the emitting parent's own attachment frame.
       const first = numberOf(operator.m_nFirstControlPoint, 0);
       const count = numberOf(operator.m_nNumControlPoints, 1);
       const source = parseFloatInput(operator.m_nFirstSourcePoint, 0);
@@ -79,9 +78,11 @@ export const compileOperator = (operator: JsonObject): FrameOperator | null => {
         system.byAge(order);
         for (let offset = 0; offset < count; offset += 1) {
           const particle = order[start + offset];
-          const point = system.controlPoints[first + offset];
-          if (particle === undefined || !point) break;
-          point.position.fromArray(position, particle * 3);
+          if (particle === undefined) break;
+          for (const points of system.childControlPoints) {
+            const point = points[first + offset];
+            point?.position.fromArray(position, particle * 3);
+          }
         }
       };
     }

@@ -19,6 +19,7 @@ const CRITICAL_GAME_PATHS: [&str; 3] = [
 ];
 
 fn extract_internal_name(path: &str) -> Option<&str> {
+    let path = path.strip_prefix("materials/").unwrap_or(path);
     for prefix in &HERO_PATH_PREFIXES {
         if let Some(rest) = path.strip_prefix(prefix) {
             return rest.split('/').next().filter(|s| !s.is_empty());
@@ -191,6 +192,17 @@ pub fn detect_hero_from_vpk_files(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn texture_only_assets_use_the_shared_hero_registry() {
+        let paths = vec!["materials/models/heroes/kelvin/body_color.vtex_c".to_string()];
+        let result = super::detect_hero_from_paths(&paths);
+        assert_eq!(result.hero_display.as_deref(), Some("Kelvin"));
+        let mixed = vec![
+            paths[0].clone(),
+            "materials/models/heroes_wip/haze/body_color.vtex_c".to_string(),
+        ];
+        assert!(super::detect_hero_from_paths(&mixed).hero.is_none());
+    }
     use super::*;
 
     #[test]

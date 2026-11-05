@@ -24,16 +24,19 @@ pub enum FileserverPreference {
   Auto,
 }
 
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub async fn queue_download(
   app_handle: AppHandle,
   catalog_state: State<'_, super::gamebanana_catalog::GameBananaCatalogState>,
+  native_sources: State<'_, crate::providers::native_sources::NativeSourceManager>,
   policy: State<'_, super::policy::PolicyState>,
   mod_id: String,
   files: Vec<DownloadFileDto>,
   profile_folder: Option<String>,
   fileserver_preference: FileserverPreference,
   _is_map: bool,
+  source_component_ids: Option<Vec<String>>,
 ) -> Result<(), Error> {
   log::info!(
     "Received download request for mod: {mod_id} with {} files (profile: {profile_folder:?})",
@@ -41,11 +44,20 @@ pub async fn queue_download(
   );
 
   let resolved_files = resolve_download_files(
+    &native_sources,
     &catalog_state,
     &policy,
     &mod_id,
     &files,
     fileserver_preference,
+  )
+  .await?;
+
+  let component_plan = native_download_selection(
+    &native_sources,
+    &mod_id,
+    &files,
+    source_component_ids.as_deref().unwrap_or_default(),
   )
   .await?;
 
@@ -57,23 +69,62 @@ pub async fn queue_download(
     target_dir,
     profile_folder,
     is_profile_import: false,
-    file_tree: None,
+    native_component_plan: component_plan.is_some(),
+    file_tree: component_plan,
   };
 
   let manager = get_download_manager(app_handle).await;
   manager.queue_download(task).await
 }
 
+pub(crate) async fn native_download_selection(
+  sources: &crate::providers::native_sources::NativeSourceManager,
+  mod_id: &str,
+  files: &[DownloadFileDto],
+  component_ids: &[String],
+) -> Result<Option<ModFileTree>, Error> {
+  use crate::providers::native_sources::{
+    build_component_selection, parse_artifact_reference, validate_source_listing_slug,
+  };
+  if !validate_source_listing_slug(mod_id) {
+    return Ok(None);
+  }
+  let record = sources.mod_by_remote_id(mod_id).await?;
+  let release = record
+    .listing
+    .release
+    .ok_or_else(|| Error::InvalidInput("Source has no installable release".into()))?;
+  let mut artifacts = Vec::new();
+  for file in files {
+    let reference = parse_artifact_reference(&file.url)?;
+    if reference.source_key != record.source.key
+      || reference.listing_id != record.listing.id
+      || reference.release_id != release.id
+      || reference.content_revision != release.content_revision
+    {
+      return Err(Error::InvalidInput(
+        "Exact source selection is no longer available".into(),
+      ));
+    }
+    artifacts.push(reference.artifact_id);
+  }
+  build_component_selection(&release, component_ids, &artifacts)
+}
+
 pub(crate) fn ensure_download_allowed(
   policy: &super::policy::PolicyState,
   mod_id: &str,
 ) -> Result<(), Error> {
+  if crate::providers::native_sources::validate_source_listing_slug(mod_id) {
+    return Ok(());
+  }
   crate::providers::SubmissionRef::parse_slug(mod_id)
     .map_err(|_| Error::InvalidInput("Invalid download identity".to_string()))?;
   policy.ensure_download_allowed(mod_id)
 }
 
 pub(crate) async fn resolve_download_files(
+  native_sources: &crate::providers::native_sources::NativeSourceManager,
   catalog_state: &super::gamebanana_catalog::GameBananaCatalogState,
   policy: &super::policy::PolicyState,
   mod_id: &str,
@@ -89,7 +140,43 @@ pub(crate) async fn resolve_download_files(
 
   let mut resolved_files = Vec::with_capacity(files.len());
   for file in files {
-    let resolved = if file.url.starts_with("gamebanana-file://") {
+    let resolved = if file.url.starts_with("dmm-source-file://") {
+      let reference = crate::providers::native_sources::parse_artifact_reference(&file.url)?;
+      if crate::providers::native_sources::listing_slug(
+        &reference.source_key,
+        &reference.listing_id,
+      ) != mod_id
+      {
+        return Err(Error::InvalidInput(
+          "Source artifact belongs to another listing".into(),
+        ));
+      }
+      let artifact = native_sources
+        .resolve_artifact(
+          &reference.source_key,
+          &reference.listing_id,
+          &reference.release_id,
+          &reference.content_revision,
+          &reference.artifact_id,
+        )
+        .await?;
+      validate_download_file_name(&artifact.filename)?;
+      DownloadFileDto {
+        url: artifact.url.clone(),
+        fallback_urls: Vec::new(),
+        name: artifact.filename.clone(),
+        size: artifact.size.unwrap_or(0),
+        md5_checksum: artifact
+          .hashes
+          .as_ref()
+          .and_then(|hashes| hashes.md5.clone()),
+        native_artifact: Some(artifact),
+      }
+    } else if crate::providers::native_sources::validate_source_listing_slug(mod_id) {
+      return Err(Error::InvalidInput(
+        "Native downloads require a stable source artifact reference".into(),
+      ));
+    } else if file.url.starts_with("gamebanana-file://") {
       resolve_gamebanana_file(catalog_state, mod_id, &file.url, fileserver_preference).await?
     } else {
       validate_download_file_name(&file.name)?;
@@ -174,6 +261,7 @@ async fn resolve_gamebanana_file(
     name: file.name,
     size: file.size,
     md5_checksum: file.md5,
+    native_artifact: None,
   })
 }
 
@@ -653,11 +741,13 @@ pub async fn debug_queue_local_zip(
       name: file_name,
       size,
       md5_checksum: None,
+      native_artifact: None,
     }],
     target_dir,
     profile_folder: None,
     is_profile_import: false,
     file_tree: None,
+    native_component_plan: false,
   };
 
   DownloadManager::process_local_file(task, dest, app_handle).await

@@ -85,6 +85,7 @@ dmp-parser = { path = "../../../packages/dmp-parser" }
 kv-parser = { path = "../../../packages/kv-parser" }
 deadlock-discord-presence = { path = "../../../packages/deadlock-discord-presence" }
 deadlock-match-sync = { path = "../../../packages/deadlock-match-sync", optional = true }
+deadlock-server-picker = { path = "../../../packages/deadlock-server-picker" }
 tokio = { version = "1.50.0", features = ["full"] }
 tokio-util = "0.7"
 # Already in the tree via reqwest; the loopback forge bridge only needs the
