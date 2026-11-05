@@ -40,7 +40,8 @@ export type GuardedCommand =
   | "perf_apply"
   | "perf_remove"
   | "perf_reapply"
-  | "perf_restore_video_backup";
+  | "perf_restore_video_backup"
+  | "perf_video_use_config";
 
 export const isGameRunningError = (error: unknown): boolean =>
   isTauriError(error) && error.kind === "gameRunning";

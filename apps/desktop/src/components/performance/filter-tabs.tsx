@@ -15,6 +15,8 @@ type FilterTabsProps<T extends string> = {
   value: T;
   onValueChange: (value: T) => void;
   ariaLabel?: string;
+  /** `underline` heads a list it filters; `segmented` stands on its own. */
+  variant?: "segmented" | "underline";
 };
 
 export const FilterTabs = <T extends string>({
@@ -22,10 +24,13 @@ export const FilterTabs = <T extends string>({
   value,
   onValueChange,
   ariaLabel,
+  variant = "segmented",
 }: FilterTabsProps<T>) => (
   <ToggleGroup
     aria-label={ariaLabel}
-    className='gap-0.5 rounded-lg bg-muted p-0.5'
+    className={
+      variant === "segmented" ? "gap-0.5 rounded-lg bg-muted p-0.5" : "gap-5"
+    }
     onValueChange={(next) => {
       const tab = tabs.find((candidate) => candidate.value === next);
       if (tab) onValueChange(tab.value);
@@ -36,9 +41,11 @@ export const FilterTabs = <T extends string>({
     {tabs.map((tab) => (
       <ToggleGroupItem
         className={cn(
-          "group h-7 gap-1.5 rounded-md px-3 font-medium text-xs",
-          "text-muted-foreground hover:bg-transparent hover:text-foreground",
-          "data-[state=on]:bg-background data-[state=on]:font-semibold data-[state=on]:text-foreground data-[state=on]:shadow-sm",
+          "group gap-1.5 font-medium text-muted-foreground hover:bg-transparent hover:text-foreground",
+          variant === "segmented" &&
+            "h-7 rounded-md px-3 text-xs data-[state=on]:bg-background data-[state=on]:font-semibold data-[state=on]:text-foreground data-[state=on]:shadow-sm",
+          variant === "underline" &&
+            "relative h-10 rounded-none px-0 text-sm after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:rounded-full after:bg-transparent after:transition-colors after:duration-200 data-[state=on]:bg-transparent data-[state=on]:text-foreground data-[state=on]:after:bg-primary",
         )}
         key={tab.value}
         value={tab.value}>

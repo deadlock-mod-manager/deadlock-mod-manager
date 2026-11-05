@@ -24,7 +24,7 @@ import {
 } from "../../curated/presets";
 import { REMOVED_CONVARS } from "../../curated/removed";
 import { RULES } from "../../curated/rules";
-import { VIDEO_MENU, type VideoMenuOption } from "../../curated/video";
+import { VIDEO_MENU, videoDisplay } from "../../curated/video";
 import {
   type Catalog,
   type CatalogCommunityConfig,
@@ -123,21 +123,6 @@ const inferKind = (name: string, values: string[]): ConvarMeta["kind"] => {
   if (lower.every((value) => /^-?\d+$/.test(value))) return "int";
   if (lower.every((value) => isNumeric(value))) return "float";
   return "string";
-};
-
-const videoDisplay = (
-  option: VideoMenuOption,
-  value: string,
-): string | null => {
-  const normalized = normalizeValue(value);
-  if (option.values) return option.values[normalized] ?? null;
-  if (option.bool)
-    return normalized === "1" ? "On" : normalized === "0" ? "Off" : null;
-  const number = Number(value);
-  if (!Number.isFinite(number)) return null;
-  if (option.range && (number < option.range[0] || number > option.range[1]))
-    return null;
-  return option.percent ? `${Math.round(number * 100)}%` : String(number);
 };
 
 /**

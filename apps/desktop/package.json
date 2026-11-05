@@ -41,6 +41,7 @@
     "@deadlock-mods/crosshair": "workspace:*",
     "@deadlock-mods/deadlock-discord-presence": "workspace:*",
     "@deadlock-mods/hero-parser": "workspace:*",
+    "@deadlock-mods/perf-catalog": "workspace:*",
     "@deadlock-mods/plugin-sdk": "workspace:*",
     "@deadlock-mods/shared": "workspace:*",
     "@deadlock-mods/ui": "workspace:*",

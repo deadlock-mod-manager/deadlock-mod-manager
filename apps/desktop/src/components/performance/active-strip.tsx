@@ -40,6 +40,10 @@ export const ActiveStrip = ({
       : t("performance.activeStatus.settings", {
           count: desired.counts.applies,
         }),
+    status.video.inEffect > 0 &&
+      t("performance.activeStatus.videoInFile", {
+        count: status.video.inEffect,
+      }),
     tweakCount > 0 &&
       t("performance.activeStatus.tweaks", { count: tweakCount }),
   ]

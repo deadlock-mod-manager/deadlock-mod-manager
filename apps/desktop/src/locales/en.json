@@ -219,9 +219,29 @@
     "subtitle": "Community configs that trade visual detail for frame rate. Turn them off anytime.",
     "tabs": {
       "configs": "Configs",
-      "editor": "Settings editor",
+      "editor": "Config settings",
+      "video": "Video settings",
       "history": "History",
       "howItWorks": "How it works"
+    },
+    "video": {
+      "emptyTitle": "No video.txt settings",
+      "noConfig": "Apply a config that ships a video.txt and its settings show up here.",
+      "noVideo": "{{name}} doesn't ship a video.txt, so your own video settings stay as they are.",
+      "changes": {
+        "title": "Changed in game",
+        "description": "You changed these in Deadlock's graphics menu after the config set them. Keep yours, or go back to the config's.",
+        "values": "{{config}} → {{yours}} (yours)",
+        "kept": "Keeping yours: {{yours}}",
+        "removed": "removed",
+        "keep": "Keep yours",
+        "use": "Use {{value}}",
+        "useAll": "Use the config's values",
+        "settled": "Your video.txt matches the config again.",
+        "useConfig_one": "Use the config's value",
+        "useConfig_other": "Use the config's values",
+        "failed": "Couldn't update video.txt"
+      }
     },
     "howItWorks": {
       "basics": {
@@ -240,7 +260,7 @@
         },
         "video": {
           "title": "Your video.txt is backed up",
-          "body": "Saved before the first write, so you can restore it from a config's details."
+          "body": "Saved before the first write, so you can restore it from the Video settings tab."
         }
       },
       "writes": {
@@ -250,7 +270,7 @@
         "turnOff": "It marks every line it adds or changes, so Turn off removes them and puts back the values they replaced. Your configs and tweaks stay saved.",
         "reapply": "A game update or Reset to Vanilla replaces gameinfo.gi. The mod manager writes your config back when it starts, when you switch back to its window, and before every launch from it, vanilla launches included. It waits while Deadlock is running. If you start Deadlock from Steam with the mod manager closed, the config is missing until you open it again.",
         "untouched": "SearchPaths, which keeps your mods loading, is never changed.",
-        "video": "When a config ships a video.txt, its settings go into the video.txt Deadlock reads. The first time, your own file is saved, and you can restore it from the config's details. Turn off puts back the values it replaced, except ones you changed in-game since."
+        "video": "When a config ships a video.txt, its settings go into the video.txt Deadlock reads. The first time, your own file is saved, and you can restore it from the Video settings tab. The game rewrites video.txt when you change a graphics setting, so settings you change in game stay yours: they show up in the Video settings tab and in History, and Turn off leaves them alone."
       },
       "sources": {
         "title": "Where the information comes from",
@@ -280,7 +300,7 @@
       "statuses": {
         "title": "What happens to each setting",
         "summary": "The labels on each setting, and which ones get written.",
-        "description": "Config details, the import review and the settings editor give every line of a config one of these labels.",
+        "description": "Config details, the import review and Config settings give every line of a config one of these labels.",
         "written": "Written to gameinfo.gi",
         "notWritten": "Not written",
         "applies": "Written, and the game uses it.",
@@ -381,6 +401,8 @@
       "videoWritten_other": "{{count}} video settings written to video.txt.",
       "videoMissing": "Launch Deadlock once so it creates video.txt, then apply again for the video settings.",
       "videoRestored": "Your own video.txt is back",
+      "videoAdopted": "This video.txt is now your own",
+      "videoAdoptFailed": "Couldn't save your video.txt",
       "videoRestoreFailed": "Couldn't restore your video.txt"
     },
     "editor": {
@@ -500,14 +522,14 @@
         "engineSection": "Left out because engine-section edits are off for this config."
       },
       "engine": {
-        "excluded_one": "{{count}} engine-section edit ({{sections}}) is turned off.",
-        "excluded_other": "{{count}} engine-section edits ({{sections}}) are turned off.",
-        "included_one": "{{count}} engine-section edit ({{sections}}) is included.",
-        "included_other": "{{count}} engine-section edits ({{sections}}) are included.",
+        "title": "Engine sections",
+        "about": "About engine-section edits",
+        "included_one": "{{count}} edit outside the ConVars block, in {{sections}}. It's written with the rest of the config.",
+        "included_other": "{{count}} edits outside the ConVars block, in {{sections}}. They're written with the rest of the config.",
+        "excluded_one": "{{count}} edit outside the ConVars block, in {{sections}}. It's left out of your gameinfo.gi.",
+        "excluded_other": "{{count}} edits outside the ConVars block, in {{sections}}. They're left out of your gameinfo.gi.",
         "sectionsMore": "{{sections}} and {{count}} more",
-        "why": "About these sections",
-        "valveMessage": "Deadlock's matchmaking error lists {{sections}} among the gameinfo.gi sections where it doesn't support some changes. If Deadlock won't let you queue, turn these edits off.",
-        "toggle": "Include engine-section edits"
+        "valveMessage": "Deadlock's matchmaking error lists {{sections}} among the gameinfo.gi sections where it doesn't support some changes. If Deadlock won't let you queue, turn these edits off."
       },
       "add": {
         "placeholder": "Search convars by name or label",
@@ -654,7 +676,7 @@
           "title": "Will apply",
           "alreadySet_one": "{{count}} more setting already matches your gameinfo.gi or the game's default.",
           "alreadySet_other": "{{count}} more settings already match your gameinfo.gi or the game's defaults.",
-          "editorHint": "Review every setting in the settings editor after import."
+          "editorHint": "Review every setting in Config settings after import."
         },
         "camera": {
           "title": "Camera & visibility (from the author)",
@@ -809,6 +831,7 @@
       "current": "Your current config",
       "active": "Active",
       "notWritten": "Not in gameinfo.gi",
+      "videoInFile": "{{count}} in video.txt",
       "tweaks_one": "{{count}} tweak by you",
       "tweaks_other": "{{count}} tweaks by you",
       "inFile_one": "{{count}} setting in gameinfo.gi",
@@ -894,7 +917,7 @@
         "yours": "Yours"
       },
       "sortLabel": "Sort configs",
-      "sortPrefix": "Sort:",
+      "clearTier": "Show all tiers, not just {{tier}}",
       "sorts": {
         "downloads": "Most downloaded",
         "name": "Name",
@@ -959,7 +982,12 @@
         "write": "Write to video.txt",
         "variantLabel": "Video settings variant",
         "backup": "Your own video.txt from {{date}} is saved.",
-        "restore": "Restore it"
+        "restore": "Restore it",
+        "adopt": "Make this my video.txt",
+        "adoptConfirm": {
+          "title": "Make this video.txt your own?",
+          "body": "Your video.txt as it is now, with {{name}}'s settings, replaces the copy saved on {{date}}. Restore and Turn off bring back this one instead, and {{name}} stops writing to video.txt. Apply another config with \"Write to video.txt\" off to keep these settings with it."
+        }
       },
       "view": {
         "title": "Camera & visibility (from the author)",
@@ -1044,12 +1072,20 @@
       }
     },
     "history": {
-      "description": "Configs you applied or turned off, newest first.",
+      "description": "Configs you applied or turned off, and what happened to your video.txt, newest first.",
       "applied": "Applied {{name}}",
       "removed": "Turned off the performance config",
       "current": "Current",
       "applyAgain": "Apply again",
       "configDeleted": "The config was deleted, so it can't be applied again",
+      "videoCount": "{{count}} in video.txt",
+      "videoReverted": "Went back to the config's video settings",
+      "videoKept": "Kept your video settings",
+      "videoChange": "{{setting}}: {{config}} → {{yours}}",
+      "videoRestored": "Restored your own video.txt",
+      "videoAdopted": "Made the current video.txt your own",
+      "videoChanged_one": "{{count}} video setting changed in game",
+      "videoChanged_other": "{{count}} video settings changed in game",
       "emptyTitle": "No changes yet",
       "emptyDescription": "Configs you apply or turn off show up here, so you can go back to one."
     },

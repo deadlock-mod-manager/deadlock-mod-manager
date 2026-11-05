@@ -6,18 +6,24 @@ import type { ResolvedEntry } from "@/types/generated/ResolvedEntry";
 export const DetailsSection = ({
   title,
   description,
+  action,
   children,
 }: {
   title: string;
   description?: string;
+  /** Shown beside the title. */
+  action?: ReactNode;
   children: ReactNode;
 }) => (
   <section className='flex flex-col gap-3'>
-    <div>
-      <h3 className='font-semibold text-sm'>{title}</h3>
-      {description && (
-        <p className='text-muted-foreground text-xs'>{description}</p>
-      )}
+    <div className='flex flex-wrap items-end justify-between gap-3'>
+      <div className='min-w-0'>
+        <h3 className='font-semibold text-sm'>{title}</h3>
+        {description && (
+          <p className='text-muted-foreground text-xs'>{description}</p>
+        )}
+      </div>
+      {action}
     </div>
     {children}
   </section>

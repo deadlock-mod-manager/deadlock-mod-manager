@@ -1,11 +1,12 @@
 import { Button } from "@deadlock-mods/ui/components/button";
 import { ArrowCounterClockwiseIcon } from "@phosphor-icons/react";
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useRestoreVideoBackup } from "@/hooks/performance/use-perf-mutations";
 import { usePerfStatus } from "@/hooks/performance/use-perf-queries";
 
 /** Offers the player's own video.txt back once the mod manager has written it. */
-export const VideoBackupNotice = () => {
+export const VideoBackupNotice = ({ action }: { action?: ReactNode }) => {
   const { t, i18n } = useTranslation();
   const { data: status } = usePerfStatus();
   const restore = useRestoreVideoBackup();
@@ -22,14 +23,17 @@ export const VideoBackupNotice = () => {
           }),
         })}
       </p>
-      <Button
-        icon={<ArrowCounterClockwiseIcon aria-hidden weight='bold' />}
-        isLoading={restore.isPending}
-        onClick={() => restore.mutate()}
-        size='sm'
-        variant='outline'>
-        {t("performance.details.video.restore")}
-      </Button>
+      <div className='flex items-center gap-2'>
+        {action}
+        <Button
+          icon={<ArrowCounterClockwiseIcon aria-hidden weight='bold' />}
+          isLoading={restore.isPending}
+          onClick={() => restore.mutate()}
+          size='sm'
+          variant='outline'>
+          {t("performance.details.video.restore")}
+        </Button>
+      </div>
     </div>
   );
 };

@@ -91,6 +91,7 @@ export const ConfigCardShell = ({
         active && "border-primary/70 ring-1 ring-primary/30",
         pointedAt && !active && "border-primary/40",
       )}
+      data-config-id={configId}
       {...handlers}>
       {children}
     </article>

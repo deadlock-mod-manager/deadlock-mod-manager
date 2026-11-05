@@ -7,6 +7,7 @@ import type { ConfigEntry } from "@/types/generated/ConfigEntry";
 import type { EntryOverride } from "@/types/generated/EntryOverride";
 import type { ImportFormat } from "@/types/generated/ImportFormat";
 import type { PerfApplyRequest } from "@/types/generated/PerfApplyRequest";
+import type { VideoChange } from "@/types/generated/VideoChange";
 import type { VideoSetting } from "@/types/generated/VideoSetting";
 import type { State } from "..";
 
@@ -50,7 +51,8 @@ export type UserPerfConfig = {
   baseBuild: number | null;
 };
 
-export type PerfHistoryEntry = {
+/** A config applied or removed. */
+export type PerfConfigHistoryEntry = {
   id: string;
   at: string;
   action: "applied" | "removed";
@@ -59,11 +61,49 @@ export type PerfHistoryEntry = {
   /** Lets the History tab re-apply what was applied. */
   request: PerfHistoryRequest | null;
   appliedCount: number | null;
+  /** video.txt settings written with it. */
+  videoCount: number | null;
 };
 
-type NewPerfHistoryEntry = Omit<PerfHistoryEntry, "id" | "at" | "request"> & {
-  request: PerfApplyRequest | null;
+/** A video.txt setting changed outside the app, under its menu name when known. */
+type PerfVideoHistoryChange = Omit<VideoChange, "kept"> & {
+  label: string | null;
 };
+
+/** Something that happened to video.txt alone. */
+type PerfVideoHistoryEntry =
+  | { id: string; at: string; action: "videoRestored" | "videoAdopted" }
+  | {
+      id: string;
+      at: string;
+      /** Noticed when the app next read the file, not when it happened. */
+      action: "videoChanged";
+      changes: PerfVideoHistoryChange[];
+    }
+  | {
+      id: string;
+      at: string;
+      /** What the player did about settings changed in game. */
+      action: "videoReverted" | "videoKept";
+      /** `setting.*` keys without the prefix. */
+      keys: string[];
+    };
+
+export type PerfHistoryEntry = PerfConfigHistoryEntry | PerfVideoHistoryEntry;
+
+type Unstamped<T extends PerfVideoHistoryEntry> =
+  T extends PerfVideoHistoryEntry ? Omit<T, "id" | "at"> : never;
+
+type NewPerfHistoryEntry =
+  | (Omit<PerfConfigHistoryEntry, "id" | "at" | "request"> & {
+      request: PerfApplyRequest | null;
+    })
+  | Unstamped<PerfVideoHistoryEntry>;
+
+export const isConfigHistoryEntry = (
+  entry: PerfHistoryEntry,
+): entry is PerfConfigHistoryEntry =>
+  entry.action === "applied" || entry.action === "removed";
 
 export type PerformanceState = {
   perfUserConfigs: Record<string, UserPerfConfig>;
@@ -144,18 +184,21 @@ export const createPerformanceSlice: StateCreator<
     set((state) => ({
       perfVideoChoices: { ...state.perfVideoChoices, [configId]: choice },
     })),
-  recordPerfHistory: ({ request, ...entry }) =>
-    set((state) => ({
-      perfHistory: [
-        {
-          ...entry,
-          id: crypto.randomUUID(),
-          at: new Date().toISOString(),
-          request: request && compactHistoryRequest(request),
-        },
-        ...state.perfHistory,
-      ].slice(0, MAX_HISTORY_SIZE),
-    })),
+  recordPerfHistory: (entry) =>
+    set((state) => {
+      const stamp = { id: crypto.randomUUID(), at: new Date().toISOString() };
+      const stored: PerfHistoryEntry =
+        entry.action === "applied" || entry.action === "removed"
+          ? {
+              ...entry,
+              ...stamp,
+              request: entry.request && compactHistoryRequest(entry.request),
+            }
+          : { ...entry, ...stamp };
+      return {
+        perfHistory: [stored, ...state.perfHistory].slice(0, MAX_HISTORY_SIZE),
+      };
+    }),
   dismissModConfig: (modId) =>
     set((state) => ({
       perfDismissedModConfigs: {

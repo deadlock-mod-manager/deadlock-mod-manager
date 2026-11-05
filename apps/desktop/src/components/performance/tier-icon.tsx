@@ -4,8 +4,8 @@ import type { PerfTier } from "@/types/generated/PerfTier";
 
 /**
  * Each tier drawn with fewer sides than the last, the way a game drops
- * level of detail: a smooth sphere, then a hexagon, a square, a triangle, and
- * finally a low-poly potato. Drawn on Phosphor's 256 grid with its 16px round
+ * level of detail: a smooth sphere, then an octagon, a hexagon, a diamond, and
+ * finally a low-poly potato. No triangle, which reads as a warning sign. Drawn on Phosphor's 256 grid with its 16px round
  * stroke so they sit with the app's other icons.
  */
 const TIER_GLYPHS = {
@@ -18,11 +18,16 @@ const TIER_GLYPHS = {
   balanced: (
     <polygon
       pathLength='1'
+      points='162.4,44.8 211.2,93.6 211.2,162.4 162.4,211.2 93.6,211.2 44.8,162.4 44.8,93.6 93.6,44.8'
+    />
+  ),
+  lean: (
+    <polygon
+      pathLength='1'
       points='128,40 204,84 204,172 128,216 52,172 52,84'
     />
   ),
-  lean: <rect height='144' pathLength='1' width='144' x='56' y='56' />,
-  sweaty: <polygon pathLength='1' points='128,40 220,200 36,200' />,
+  sweaty: <polygon pathLength='1' points='128,36 220,128 128,220 36,128' />,
   potato: (
     <>
       <polygon
@@ -52,6 +57,7 @@ export const TierIcon = ({
   <svg
     aria-hidden
     className={cn("size-4 shrink-0", draw && "perf-draw", className)}
+    data-tier={tier}
     fill='none'
     stroke='currentColor'
     strokeLinecap='round'
