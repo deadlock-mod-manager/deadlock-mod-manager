@@ -32,6 +32,8 @@ import {
   writeFileText,
 } from "@/lib/file-utils";
 import logger from "@/lib/logger";
+import { localModThumbnailOptions } from "@/lib/mod-thumbnails";
+import { needsLocalThumbnail } from "@/lib/mods/local-preview-image";
 import { usePersistedStore } from "@/lib/store";
 import { getProfileVpkSnapshot } from "@/lib/tauri-commands";
 import { isVpkOwned } from "@/lib/vpk-scan";
@@ -87,13 +89,23 @@ const placeSource = async (
 };
 
 export const useModProcessor = () => {
+  const queryClient = useQueryClient();
   const { t } = useTranslation();
   const { setProcessing } = useProgress();
-  const queryClient = useQueryClient();
   const addMod = usePersistedStore((state) => state.addLocalMod);
   const setModStatus = usePersistedStore((state) => state.setModStatus);
   const setDetectedHero = usePersistedStore((state) => state.setDetectedHero);
   const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
+
+  const queueThumbnail = (modId: string) => {
+    const mod = usePersistedStore
+      .getState()
+      .localMods.find((candidate) => candidate.remoteId === modId);
+    if (!mod || !needsLocalThumbnail(mod)) return;
+    void queryClient.prefetchQuery(
+      localModThumbnailOptions(mod, getActiveProfile()?.folderName ?? null),
+    );
+  };
 
   // Kept beside the files folder, which receives the extracted VPKs.
   const extractArchive = async (
@@ -283,6 +295,7 @@ export const useModProcessor = () => {
       installSource: metadata.installSource,
     });
     setModStatus(modId, ModStatus.Downloaded);
+    queueThumbnail(modId);
 
     invoke<HeroDetectionResult>("detect_mod_hero", { modId })
       .then((result) =>
@@ -436,6 +449,7 @@ export const useModProcessor = () => {
     );
     setModStatus(modId, ModStatus.Installed, profile?.id);
     queryClient.invalidateQueries({ queryKey: PROFILE_VPKS_QUERY_KEY });
+    queueThumbnail(modId);
 
     invoke<HeroDetectionResult>("detect_mod_hero", { modId })
       .then((result) =>

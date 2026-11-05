@@ -12,6 +12,8 @@ import {
 } from "@/lib/performance/config-list";
 import { sameApplyOptions } from "@/lib/performance/overrides";
 import { usePersistedStore } from "@/lib/store";
+import { cn } from "@/lib/utils";
+import { justApplied } from "../just-applied";
 
 type ApplyConfigButtonProps = {
   config: ApplicableConfig;
@@ -45,7 +47,21 @@ export const ApplyConfigButton = ({
   if (isActive && !hasChanges) {
     return (
       <span className='inline-flex h-8 items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-2.5 font-medium text-primary text-xs'>
-        <CheckIcon aria-hidden className='size-3.5' weight='bold' />
+        <svg
+          aria-hidden
+          className={cn(
+            "size-3.5",
+            justApplied(desired.appliedAt) && "perf-draw",
+          )}
+          fill='none'
+          key={desired.appliedAt}
+          stroke='currentColor'
+          strokeLinecap='round'
+          strokeLinejoin='round'
+          strokeWidth='24'
+          viewBox='0 0 256 256'>
+          <polyline pathLength='1' points='40,144 96,200 224,72' />
+        </svg>
         {t("performance.configs.applied")}
       </span>
     );

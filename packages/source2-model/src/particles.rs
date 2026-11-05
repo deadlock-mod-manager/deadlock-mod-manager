@@ -527,27 +527,268 @@ pub fn particle_texture(
     path: &str,
     max_side: u32,
 ) -> Result<ParticleTexture> {
+    decode_particle_texture(archive, path, max_side, None)
+}
+
+/// Reserve enough atlas resolution for a 128px frame, within the caller's pixel budget.
+pub fn particle_texture_adaptive(
+    archive: &VpkArchive,
+    path: &str,
+    max_side: u32,
+    max_pixels: u32,
+) -> Result<ParticleTexture> {
+    decode_particle_texture(archive, path, max_side, Some(max_pixels))
+}
+
+fn atlas_side(
+    width: u32,
+    height: u32,
+    sequences: &[SpriteSheetSequence],
+    max_side: u32,
+    max_pixels: u32,
+) -> u32 {
+    let smallest_frame = sequences
+        .iter()
+        .flat_map(|s| &s.frames)
+        .map(|frame| {
+            (frame.cropped_max[0] - frame.cropped_min[0])
+                .abs()
+                .min((frame.cropped_max[1] - frame.cropped_min[1]).abs())
+        })
+        .filter(|size| size.is_finite() && *size > 0.0)
+        .fold(1.0_f32, f32::min);
+    let desired = (128.0 / smallest_frame)
+        .ceil()
+        .max(512.0)
+        .min(max_side as f32);
+    let aspect = width.min(height).max(1) as f64 / width.max(height).max(1) as f64;
+    let budget_side = (f64::from(max_pixels) / aspect).sqrt().floor() as u32;
+    (desired as u32)
+        .min(budget_side)
+        .min(width.max(height))
+        .max(1)
+}
+
+fn decode_particle_texture(
+    archive: &VpkArchive,
+    path: &str,
+    max_side: u32,
+    max_pixels: Option<u32>,
+) -> Result<ParticleTexture> {
     let resource =
         Resource::parse(archive.extract_entry_limited(&compiled(path), MAX_TEXTURE_ENTRY_BYTES)?)?;
     let header = VtexHeader::parse(&resource)?;
+    let sequences = header.sprite_sheet_sequences(&resource.data)?;
+    let max_side = max_pixels.map_or(max_side, |pixels| {
+        atlas_side(
+            u32::from(header.width),
+            u32::from(header.height),
+            &sequences,
+            max_side,
+            pixels,
+        )
+    });
+    particle_decode_dimensions(&header, max_side)?;
+    use std::hash::{Hash, Hasher};
+    use std::sync::{Mutex, OnceLock};
+    static CACHE: OnceLock<Mutex<std::collections::VecDeque<(u64, ParticleTexture)>>> =
+        OnceLock::new();
+    let cache = CACHE.get_or_init(|| Mutex::new(Default::default()));
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    resource.data.hash(&mut hasher);
+    max_side.hash(&mut hasher);
+    let key = hasher.finish();
+    if let Ok(entries) = cache.lock()
+        && let Some((_, texture)) = entries.iter().find(|(cached, _)| *cached == key)
+    {
+        return Ok(texture.clone());
+    }
     let decoded = header.decode_preview(&resource.data, max_side)?;
     let png = crate::encode_png_bytes(&decoded, max_side)?;
     // Matches the downscale `encode_png_bytes` applies.
     let scale = (max_side as f32 / decoded.width.max(decoded.height) as f32).min(1.0);
-    Ok(ParticleTexture {
+    let texture = ParticleTexture {
         width: ((decoded.width as f32 * scale).round() as u32).max(1),
         height: ((decoded.height as f32 * scale).round() as u32).max(1),
         png,
-        sequences: header
-            .sprite_sheet_sequences(&resource.data)
-            .unwrap_or_default(),
-    })
+        sequences,
+    };
+    // Cache compressed PNGs, never expanded RGBA or GPU resources.
+    if particle_texture_cache_bytes(&texture) <= 8 * 1024 * 1024
+        && let Ok(mut entries) = cache.lock()
+    {
+        while entries.len() >= 64
+            || entries
+                .iter()
+                .map(|(_, t)| particle_texture_cache_bytes(t))
+                .sum::<usize>()
+                + particle_texture_cache_bytes(&texture)
+                > 24 * 1024 * 1024
+        {
+            entries.pop_front();
+        }
+        entries.push_back((key, texture.clone()));
+    }
+    Ok(texture)
+}
+
+/// Bound decompression before allocating RGBA; missing mip levels must not turn
+/// a small preview request into a full-resolution texture decode.
+fn particle_decode_dimensions(header: &VtexHeader, max_side: u32) -> Result<(u32, u32)> {
+    if matches!(
+        header.format,
+        crate::VtexFormat::PngRgba8888
+            | crate::VtexFormat::JpegRgba8888
+            | crate::VtexFormat::PngDxt5
+            | crate::VtexFormat::JpegDxt5
+    ) || header.width == 0
+        || header.height == 0
+        || header.depth > 1
+        || header.flags & 0x70 != 0
+        || header.num_mip_levels == 0
+        || header.num_mip_levels > 16
+    {
+        return Err(Source2Error::UnsupportedFormat(
+            "particle preview requires a bounded 2D mip chain".into(),
+        ));
+    }
+    let mut width = u32::from(header.width);
+    let mut height = u32::from(header.height);
+    width
+        .checked_mul(height)
+        .and_then(|pixels| pixels.checked_mul(4))
+        .ok_or_else(|| Source2Error::Resource("particle texture dimensions overflow".into()))?;
+    for _ in 1..header.num_mip_levels {
+        if width.max(height) <= max_side {
+            break;
+        }
+        width = (width >> 1).max(1);
+        height = (height >> 1).max(1);
+    }
+    if width * height > 4 * 1024 * 1024 {
+        return Err(Source2Error::Resource(
+            "particle decoded mip exceeds pixel budget".into(),
+        ));
+    }
+    Ok((width, height))
+}
+
+fn particle_texture_cache_bytes(texture: &ParticleTexture) -> usize {
+    texture.png.len()
+        + texture.sequences.capacity() * std::mem::size_of::<SpriteSheetSequence>()
+        + texture
+            .sequences
+            .iter()
+            .map(|sequence| {
+                sequence.frames.capacity() * std::mem::size_of::<crate::vtex::SpriteSheetFrame>()
+            })
+            .sum::<usize>()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::collections::BTreeMap;
+
+    #[test]
+    fn rejects_oversized_missing_mips_before_decoding() {
+        let mut header = VtexHeader {
+            version: 1,
+            flags: 0,
+            width: 8192,
+            height: 8192,
+            depth: 1,
+            format: crate::VtexFormat::Dxt5,
+            num_mip_levels: 1,
+            extra: Vec::new(),
+            data_offset: 0,
+            block_offset: 0,
+        };
+        assert!(particle_decode_dimensions(&header, 512).is_err());
+        header.num_mip_levels = 6;
+        assert_eq!(
+            particle_decode_dimensions(&header, 512).unwrap(),
+            (512, 512)
+        );
+        header.format = crate::VtexFormat::PngRgba8888;
+        assert!(particle_decode_dimensions(&header, 512).is_err());
+    }
+
+    #[test]
+    #[ignore = "requires installed game assets via DMM_VIEWER_TEST_VPK"]
+    fn local_particle_atlas_budget_and_cache() {
+        let path = std::path::PathBuf::from(std::env::var("DMM_VIEWER_TEST_VPK").unwrap());
+        let core = path
+            .parent()
+            .unwrap()
+            .parent()
+            .unwrap()
+            .join("core/pak01_dir.vpk");
+        let fallbacks = if core.is_file() {
+            vec![std::sync::Arc::new(VpkArchive::open(&core).unwrap())]
+        } else {
+            Vec::new()
+        };
+        let archive = VpkArchive::open(&path).unwrap().with_fallbacks(fallbacks);
+        for path in [
+            "materials/particle/smoke1/smoke1.vtex",
+            "materials/particle/sparks/sparks.vtex",
+        ] {
+            let started = std::time::Instant::now();
+            let baseline = particle_texture(&archive, path, 256).unwrap();
+            let baseline_ms = started.elapsed().as_secs_f64() * 1000.0;
+            let started = std::time::Instant::now();
+            let adaptive =
+                particle_texture_adaptive(&archive, path, 4096, 4 * 1024 * 1024).unwrap();
+            let first_ms = started.elapsed().as_secs_f64() * 1000.0;
+            let started = std::time::Instant::now();
+            let warm = particle_texture_adaptive(&archive, path, 4096, 4 * 1024 * 1024).unwrap();
+            let warm_ms = started.elapsed().as_secs_f64() * 1000.0;
+            assert!(adaptive.width * adaptive.height <= 4 * 1024 * 1024);
+            assert_eq!(adaptive.png, warm.png);
+            assert_eq!(adaptive.sequences, warm.sequences);
+            println!(
+                "{path}: baseline={}x{} baseline_ms={baseline_ms:.2} adaptive={}x{} frames={} png_bytes={} rgba_bytes={} first_ms={first_ms:.2} warm_ms={warm_ms:.2}",
+                baseline.width,
+                baseline.height,
+                adaptive.width,
+                adaptive.height,
+                adaptive
+                    .sequences
+                    .iter()
+                    .map(|s| s.frames.len())
+                    .sum::<usize>(),
+                adaptive.png.len(),
+                adaptive.width * adaptive.height * 4
+            );
+        }
+    }
+
+    #[test]
+    fn atlas_budget_preserves_frame_resolution_and_bounds_pixels() {
+        let sheet = SpriteSheetSequence {
+            frames_per_second: 30.0,
+            frames: vec![crate::vtex::SpriteSheetFrame {
+                display_time: 1.0,
+                cropped_min: [0.0, 0.0],
+                cropped_max: [0.0625, 0.0625],
+                uncropped_min: [0.0, 0.0],
+                uncropped_max: [0.0625, 0.0625],
+            }],
+        };
+        assert_eq!(
+            atlas_side(
+                4096,
+                4096,
+                std::slice::from_ref(&sheet),
+                4096,
+                4 * 1024 * 1024
+            ),
+            2048
+        );
+        assert_eq!(atlas_side(4096, 4096, &[sheet], 4096, 512 * 512), 512);
+        assert_eq!(atlas_side(2048, 1024, &[], 4096, 4 * 1024 * 1024), 512);
+    }
 
     struct TestArchive {
         archive: VpkArchive,

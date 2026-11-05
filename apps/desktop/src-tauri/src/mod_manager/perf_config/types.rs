@@ -64,6 +64,9 @@ pub struct PerfConfigDefinition {
   pub id: String,
   pub name: String,
   pub entries: Vec<ConfigEntry>,
+  /// The author's video.txt settings, written unless the request turns them off.
+  #[serde(default)]
+  pub video_settings: Vec<VideoSetting>,
 }
 
 /// Everything needed to turn a config into lines in gameinfo.gi. The same
@@ -83,6 +86,70 @@ pub struct PerfApplyRequest {
   /// default; Valve's matchmaking message names these sections.
   #[serde(default)]
   pub include_engine_sections: bool,
+  /// Write the author's video.txt settings too. On unless the user turns it
+  /// off, because authors say their configs look wrong without them.
+  #[serde(default = "default_true")]
+  pub write_video: bool,
+  /// Which of a preset's video.txt files to write, by label; `None` is the first.
+  #[serde(default)]
+  pub video_variant: Option<String>,
+}
+
+fn default_true() -> bool {
+  true
+}
+
+/// What happened to video.txt on apply.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(tag = "kind", rename_all = "camelCase")]
+pub enum VideoOutcome {
+  /// The config has no video settings, or the user turned them off.
+  Skipped,
+  Written {
+    path: String,
+    settings: u32,
+  },
+  /// Neither the Steam account nor the game folder has a video.txt yet; it
+  /// appears after Deadlock's first launch.
+  FileMissing,
+}
+
+/// The player's own video.txt, saved before the mod manager first wrote it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct VideoBackup {
+  /// The file it was copied from, which a restore writes back to.
+  pub path: String,
+  pub taken_at: String,
+}
+
+/// The video.txt settings the mod manager wrote, as the file holds them now.
+/// The game rewrites the file whenever a graphics setting changes, and Steam
+/// Cloud can replace it, so ours don't always survive.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct VideoState {
+  /// Settings that still hold the value we wrote.
+  pub in_effect: u32,
+  /// Settings changed since we wrote them, kept ones included.
+  pub changed: Vec<VideoChange>,
+}
+
+/// A video.txt setting changed since the mod manager wrote it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct VideoChange {
+  /// The `setting.*` key without the prefix, as in [`VideoSetting`].
+  pub key: String,
+  pub written: String,
+  /// `None` when the line is gone.
+  pub current: Option<String>,
+  /// The player chose to keep their value.
+  pub kept: bool,
 }
 
 /// What happens to one entry when the config is applied.
@@ -94,11 +161,12 @@ pub enum EntryStatus {
   Applies,
   /// The live file already has this value; nothing to write.
   Unchanged,
-  /// Valve flags the convar `gameinfo_cannot_override`; the game ignores it.
+  /// Written, but Valve flags the convar `gameinfo_cannot_override`, so the
+  /// game should ignore it.
   Blocked,
-  /// Not a convar in the current game build.
+  /// Written, but not a convar in the current game build.
   Removed,
-  /// A console command, not a convar.
+  /// Written, but a console command, not a convar.
   NotConvar,
   /// An edit outside ConVars that is only written when engine sections are
   /// included.
@@ -112,6 +180,17 @@ pub enum EntryStatus {
   /// Can't be expressed as an edit to the live file (object value for a new
   /// key, missing section).
   Unsupported,
+}
+
+impl EntryStatus {
+  /// The overlay carries the entry. Convars the catalog says Deadlock won't
+  /// read are written too, so the file holds every edit its author made.
+  pub fn is_written(self) -> bool {
+    matches!(
+      self,
+      Self::Applies | Self::Blocked | Self::Removed | Self::NotConvar
+    )
+  }
 }
 
 /// Convars that change what the player sees or how the camera is framed.
@@ -271,6 +350,13 @@ pub struct ResolvedCounts {
   pub overridden: u32,
 }
 
+impl ResolvedCounts {
+  /// Entries the overlay carries; see [`EntryStatus::is_written`].
+  pub fn written(&self) -> u32 {
+    self.applies + self.blocked + self.removed + self.not_convar
+  }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
 #[ts(export, rename_all = "camelCase")]
 #[serde(rename_all = "camelCase")]
@@ -295,8 +381,7 @@ pub enum PerfTier {
   Potato,
 }
 
-/// One in-game video setting an author recommends. We never write video.txt;
-/// these are shown as a checklist.
+/// One video.txt setting from an author's config.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export, rename_all = "camelCase")]
 #[serde(rename_all = "camelCase")]
@@ -483,6 +568,10 @@ pub struct PerfStatus {
   /// edits, a copied-in file), minus keys the chosen config covers.
   pub unmanaged_changes: u32,
   pub build_id: Option<String>,
+  /// The player's own video.txt, kept until they restore it.
+  pub video_backup: Option<VideoBackup>,
+  /// How the video.txt settings written for the chosen config stand now.
+  pub video: VideoState,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
@@ -493,6 +582,7 @@ pub struct PerfApplyResult {
   pub resolved: ResolvedConfig,
   /// Foreign overlays that were removed because the request asked for it.
   pub removed_foreign: Vec<ForeignOverlay>,
+  pub video: VideoOutcome,
 }
 
 /// What to import. Archives (zip/rar/7z) are extracted to a staging folder and

@@ -3,6 +3,7 @@ use super::import_test_support::{
   SQOOKY, STOCK_6711, fixture, fixture_bytes, path,
 };
 use super::*;
+use crate::mod_manager::perf_config::live::normalize_value;
 
 fn leaf_value<'a>(parsed: &'a ParsedConfig, joined: &str) -> Option<&'a str> {
   let wanted = path(joined);
@@ -395,25 +396,14 @@ fn overrides_lock_values_and_force_comment_outs() {
 }
 
 #[test]
-fn video_settings_skip_machine_specific_keys_and_get_menu_labels() {
+fn video_settings_keep_every_setting_and_get_menu_labels() {
   let parsed = parse(&fixture(OPTILOCK_VIDEO), ImportFormat::VideoTxt);
   assert_eq!(parsed.format, ImportFormat::VideoTxt);
-  assert!(parsed.leaves.is_empty(), "video.txt is never written");
-  let machine: Vec<&str> = ignored_of(&parsed, IgnoredKind::MachineSpecific)
-    .iter()
-    .map(|part| part.detail.as_str())
-    .collect();
-  for key in [
-    "setting.defaultres",
-    "setting.defaultresheight",
-    "setting.refreshrate_numerator",
-    "setting.fullscreen",
-    "setting.monitor_index",
-    "setting.aspectratiomode",
-    "setting.gpu_mem_level",
-  ] {
-    assert!(machine.contains(&key), "{key} is machine-specific");
-  }
+  assert!(
+    parsed.leaves.is_empty(),
+    "video.txt adds nothing to gameinfo.gi"
+  );
+  assert!(ignored_of(&parsed, IgnoredKind::MachineSpecific).is_empty());
   assert_eq!(
     ignored_of(&parsed, IgnoredKind::ParseError)
       .iter()
@@ -429,12 +419,9 @@ fn video_settings_skip_machine_specific_keys_and_get_menu_labels() {
       .find(|setting| setting.key == key)
       .unwrap_or_else(|| panic!("{key}"))
   };
-  assert!(
-    parsed
-      .video_settings
-      .iter()
-      .all(|setting| !setting.key.starts_with("defaultres"))
-  );
+  // Written as the author ships them, display settings included.
+  assert_eq!(setting("defaultres").value, "-1");
+  assert_eq!(setting("nowindowborder").value, "1");
   let shadows = setting("r_citadel_shadow_quality");
   assert_eq!(shadows.label.as_deref(), Some("Shadow quality"));
   assert_eq!(shadows.display.as_deref(), Some("Low"));

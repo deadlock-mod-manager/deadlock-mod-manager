@@ -139,7 +139,7 @@ describe("particle preview simulation", () => {
     expect(system.vector(FIELD.color)[0]).toBeCloseTo(0.75);
   });
 
-  test("disabled and endcap-only operators cannot block or alter a system", () => {
+  test("disabled operators are omitted and endcap-only operators wait for release", () => {
     const system = systemOf({
       m_Initializers: [
         { _class: "C_INIT_CreateOnModel", m_bDisableOperator: true },
@@ -163,6 +163,9 @@ describe("particle preview simulation", () => {
     expect(system.spec.blockedBy).toBeNull();
     expect(system.scalar(FIELD.alpha)[0]).toBe(1);
     expect(system.spec.diagnostics).toEqual([]);
+    system.release();
+    system.update(0.125);
+    expect(system.scalar(FIELD.alpha)[0]).toBe(0);
   });
 
   test("reset reproduces seeded inputs and clears leftover scratch attributes", () => {
@@ -241,7 +244,6 @@ test("diagnostics identify blocked, omitted, approximated, and unsupported input
     ["unsupported-input", "C_OP_SetFloat"],
     ["unsupported", "C_OP_Unimplemented"],
     ["unsupported", "C_OP_ConstrainDistance"],
-    ["approximation", "C_OP_RenderTrails"],
   ]);
 });
 
@@ -399,4 +401,28 @@ test("operators exceeding the input scan budget are reported and omitted", () =>
       detail: "input-scan-limit",
     },
   ]);
+});
+
+test("trail lengths preserve authored constants and deterministic initializer ranges", () => {
+  const constant = systemOf({ m_flConstantTrailLength: 0.75 });
+  constant.update(0.125);
+  expect(constant.scalar(FIELD.trailLength)[0]).toBe(0.75);
+  const random = systemOf({
+    m_Emitters: [
+      { _class: "C_OP_InstantaneousEmitter", m_nParticlesToEmit: 4 },
+    ],
+    m_Initializers: [
+      {
+        _class: "C_INIT_RandomTrailLength",
+        m_flMinLength: 0.25,
+        m_flMaxLength: 0.5,
+      },
+    ],
+  });
+  random.update(0.125);
+  const first = Array.from(random.scalar(FIELD.trailLength));
+  expect(first.every((length) => length >= 0.25 && length <= 0.5)).toBe(true);
+  random.reset();
+  random.update(0.125);
+  expect(Array.from(random.scalar(FIELD.trailLength))).toEqual(first);
 });

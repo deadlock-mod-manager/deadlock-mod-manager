@@ -48,12 +48,18 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use std::ops::Range;
 use std::sync::LazyLock;
 
-use kv_parser::{AstNode, ParseOptions, Parser, ValueNode};
 use regex::Regex;
 
 use super::live::{path_key, values_equal};
-use super::types::{AppliedOverlay, ForeignOverlay, ForeignTool, ResolvedEntry};
+use super::types::{AppliedOverlay, ResolvedEntry};
 use crate::errors::Error;
+
+mod foreign;
+mod sites;
+
+use foreign::GRIMOIRE_TAG;
+pub use foreign::{detect_foreign, strip_foreign};
+pub(crate) use sites::{Site, SiteKind, parse_sites, scalar_values};
 
 pub const BEGIN_MARKER: &str = "// ==== Deadlock Mod Manager · Performance BEGIN";
 pub const END_MARKER: &str = "// ==== Deadlock Mod Manager · Performance END ====";
@@ -91,7 +97,7 @@ pub struct OverlayPlan<'a> {
   pub config_id: &'a str,
   pub name: &'a str,
   pub rev: &'a str,
-  /// Entries with status `Applies`.
+  /// Entries whose status [`is_written`](super::types::EntryStatus::is_written).
   pub entries: Vec<&'a ResolvedEntry>,
   /// Credit lines written under the BEGIN marker (author, source, licence).
   pub credits: Vec<String>,
@@ -438,225 +444,6 @@ pub fn is_writable_value(value: &str) -> bool {
     && !value.contains(GRIMOIRE_TAG)
 }
 
-/// Overlays written by Grimoire, DeadTune, Sqooky's updater or gameinfo-editor.
-pub fn detect_foreign(text: &str) -> Vec<ForeignOverlay> {
-  let lines = split_lines(text);
-  let mut found = Vec::new();
-
-  let grimoire_lines = lines
-    .iter()
-    .filter(|line| grimoire_line(line.content) != GrimoireLine::Keep)
-    .count();
-  if grimoire_lines > 0 {
-    let label = lines.iter().find_map(|line| {
-      let captures = GRIMOIRE_BEGIN.captures(line.content)?;
-      Some(format!("{} v{}", &captures[1], &captures[2]))
-    });
-    found.push(ForeignOverlay {
-      tool: ForeignTool::Grimoire,
-      label,
-      line_count: grimoire_lines as u32,
-    });
-  }
-
-  for marker in BLOCK_TOOLS {
-    let line_count: usize = find_blocks(&lines, marker.header, marker.footer)
-      .iter()
-      .map(|range| range.end - range.start)
-      .sum();
-    if line_count > 0 {
-      found.push(ForeignOverlay {
-        tool: marker.tool,
-        label: None,
-        line_count: line_count as u32,
-      });
-    }
-  }
-  found
-}
-
-/// Removes those overlays, restoring the values their markers recorded.
-///
-/// Grimoire marks every line, so its edits are undone exactly. DeadTune,
-/// Sqooky's updater and gameinfo-editor only mark the block of keys they
-/// added; their in-place edits carry no record of the original and stay.
-pub fn strip_foreign(text: &str) -> (String, Vec<ForeignOverlay>) {
-  let found = detect_foreign(text);
-  if found.is_empty() {
-    return (text.to_string(), found);
-  }
-  let mut lines: Vec<OwnedLine> = split_lines(text)
-    .into_iter()
-    .filter_map(|line| {
-      let content = match grimoire_line(line.content) {
-        GrimoireLine::Drop => return None,
-        GrimoireLine::Replace(content) => content,
-        GrimoireLine::Keep => line.content.to_string(),
-      };
-      Some(OwnedLine {
-        content,
-        eol: line.eol.to_string(),
-      })
-    })
-    .collect();
-
-  for marker in BLOCK_TOOLS {
-    let borrowed: Vec<Line> = lines
-      .iter()
-      .map(|line| Line {
-        content: &line.content,
-        eol: &line.eol,
-      })
-      .collect();
-    let blocks = find_blocks(&borrowed, marker.header, marker.footer);
-    for range in blocks.into_iter().rev() {
-      let (start, end) = (range.start, range.end);
-      let rejoin = marker.inserted_after_brace
-        && start > 0
-        && lines
-          .get(end)
-          .is_some_and(|next| next.content.trim().is_empty());
-      if rejoin {
-        let next = lines.remove(end);
-        lines[start - 1].content.push_str(&next.content);
-        lines[start - 1].eol = next.eol;
-      }
-      lines.drain(start..end);
-    }
-  }
-
-  let mut out = String::with_capacity(text.len());
-  for line in &lines {
-    out.push_str(&line.content);
-    out.push_str(&line.eol);
-  }
-  (out, found)
-}
-
-/// One scalar or block in a parsed gameinfo.gi, by its path below the root.
-pub(crate) struct Site {
-  pub path: Vec<String>,
-  /// Byte offset of the key token.
-  pub key_start: usize,
-  pub kind: SiteKind,
-}
-
-pub(crate) enum SiteKind {
-  /// `value` has no quotes; `value_range` covers the raw token in the text.
-  Scalar {
-    value: String,
-    value_range: Range<usize>,
-  },
-  /// Byte offsets of the braces.
-  Object { open: usize, close: usize },
-}
-
-/// Every key/value and block below the root block, in file order.
-///
-/// Escape sequences are off: the engine reads backslashes in gameinfo.gi
-/// literally, and so do the other tools that edit it. A byte-order mark (an
-/// editor saving the file as "UTF-8 with BOM") is skipped.
-pub(crate) fn parse_sites(text: &str) -> Result<Vec<Site>, Error> {
-  let bom = if text.starts_with('\u{feff}') {
-    '\u{feff}'.len_utf8()
-  } else {
-    0
-  };
-  let body = &text[bom..];
-  let options = ParseOptions {
-    allow_escape_sequences: false,
-    allow_conditionals: true,
-    allow_includes: true,
-  };
-  let parsed = Parser::parse(body, options)
-    .map_err(|error| fail(format!("gameinfo.gi could not be parsed: {error}")))?;
-  let root = parsed
-    .ast
-    .children
-    .iter()
-    .find_map(|node| match node {
-      AstNode::KeyValue(pair) => match &pair.value {
-        ValueNode::Object(object) => Some(object),
-        _ => None,
-      },
-      _ => None,
-    })
-    .ok_or_else(|| fail("gameinfo.gi has no GameInfo block"))?;
-  let offsets = CharOffsets::new(body, bom);
-  let mut sites = Vec::new();
-  collect_sites(&root.children, &mut Vec::new(), &offsets, &mut sites);
-  Ok(sites)
-}
-
-fn collect_sites(
-  children: &[AstNode],
-  path: &mut Vec<String>,
-  offsets: &CharOffsets,
-  sites: &mut Vec<Site>,
-) {
-  for child in children {
-    let AstNode::KeyValue(pair) = child else {
-      continue;
-    };
-    path.push(pair.key.value.clone());
-    let key_start = offsets.byte(pair.key.start.offset);
-    let scalar = |value: String, start: usize, raw: &str| SiteKind::Scalar {
-      value,
-      value_range: offsets.byte(start)..offsets.byte(start + raw.chars().count()),
-    };
-    match &pair.value {
-      ValueNode::Object(object) => {
-        sites.push(Site {
-          path: path.clone(),
-          key_start,
-          kind: SiteKind::Object {
-            open: offsets.byte(object.open_brace.start.offset),
-            close: offsets.byte(object.close_brace.start.offset),
-          },
-        });
-        collect_sites(&object.children, path, offsets, sites);
-      }
-      ValueNode::String(node) => sites.push(Site {
-        path: path.clone(),
-        key_start,
-        kind: scalar(node.value.clone(), node.start.offset, &node.raw),
-      }),
-      ValueNode::Number(node) => sites.push(Site {
-        path: path.clone(),
-        key_start,
-        kind: scalar(node.raw.clone(), node.start.offset, &node.raw),
-      }),
-    }
-    path.pop();
-  }
-}
-
-/// kv-parser reports offsets in chars of what it parsed; we edit bytes of the
-/// whole file.
-struct CharOffsets {
-  bytes: Option<Vec<usize>>,
-  shift: usize,
-}
-
-impl CharOffsets {
-  fn new(parsed: &str, shift: usize) -> Self {
-    let bytes = (!parsed.is_ascii()).then(|| {
-      let mut bytes: Vec<usize> = parsed.char_indices().map(|(byte, _)| byte).collect();
-      bytes.push(parsed.len());
-      bytes
-    });
-    Self { bytes, shift }
-  }
-
-  fn byte(&self, char_offset: usize) -> usize {
-    let byte = match &self.bytes {
-      None => char_offset,
-      Some(bytes) => bytes[char_offset.min(bytes.len() - 1)],
-    };
-    byte + self.shift
-  }
-}
-
 #[derive(Clone, Copy)]
 struct Line<'a> {
   content: &'a str,
@@ -883,17 +670,6 @@ fn brace_count(text: &str) -> usize {
   text.chars().filter(|ch| matches!(ch, '{' | '}')).count()
 }
 
-/// Values by path; the last occurrence of a key wins, as in the engine.
-pub(crate) fn scalar_values(sites: &[Site]) -> HashMap<String, String> {
-  let mut values = HashMap::new();
-  for site in sites {
-    if let SiteKind::Scalar { value, .. } = &site.kind {
-      values.insert(path_key(&site.path), value.clone());
-    }
-  }
-  values
-}
-
 fn contains_reserved(text: &str) -> bool {
   let lower = text.to_ascii_lowercase();
   RESERVED
@@ -1096,103 +872,6 @@ fn path_at(sites: Option<&[Site]>, offset: usize, key: String) -> Vec<String> {
   let mut path = parent.unwrap_or_default();
   path.push(key);
   path
-}
-
-const GRIMOIRE_TAG: &str = "grimoire-perf";
-
-static GRIMOIRE_BEGIN: LazyLock<Regex> = LazyLock::new(|| {
-  Regex::new(r"Grimoire Performance Config BEGIN \(preset=([\w-]+) v(.+?)(?: @([0-9a-f]{6,40}))?\)")
-    .expect("valid regex")
-});
-static GRIMOIRE_BLOCK: LazyLock<Regex> =
-  LazyLock::new(|| Regex::new(r"Grimoire Performance Config (BEGIN|END)").expect("valid regex"));
-static GRIMOIRE_WAS: LazyLock<Regex> = LazyLock::new(|| {
-  Regex::new(r#"^(.*?) // grimoire-perf was ("[^"]*"|\S+)\s*$"#).expect("valid regex")
-});
-static GRIMOIRE_REMOVED: LazyLock<Regex> =
-  LazyLock::new(|| Regex::new(r"^([ \t]*)// grimoire-perf removed: (.*)$").expect("valid regex"));
-static GRIMOIRE_ENTRY: LazyLock<Regex> = LazyLock::new(|| {
-  Regex::new(r#"^([ \t]*"?[A-Za-z_][A-Za-z0-9_]*"?[ \t]+)("[^"]*"|[^\s/]+)(.*)$"#)
-    .expect("valid regex")
-});
-
-#[derive(Debug, PartialEq, Eq)]
-enum GrimoireLine {
-  Drop,
-  Replace(String),
-  Keep,
-}
-
-/// Grimoire's own `removeMarkers` (electron/main/services/performanceConfig.ts),
-/// line for line, so a file it patched comes back exactly as it was.
-fn grimoire_line(content: &str) -> GrimoireLine {
-  if !content.contains(GRIMOIRE_TAG) && !content.contains("Grimoire Performance Config") {
-    return GrimoireLine::Keep;
-  }
-  if content.contains("// grimoire-perf added")
-    || content.contains("[grimoire-perf]")
-    || GRIMOIRE_BLOCK.is_match(content)
-  {
-    return GrimoireLine::Drop;
-  }
-  if let Some(was) = GRIMOIRE_WAS.captures(content)
-    && let Some(entry) = GRIMOIRE_ENTRY.captures(&was[1])
-  {
-    return GrimoireLine::Replace(format!("{}{}{}", &entry[1], &was[2], &entry[3]));
-  }
-  if let Some(removed) = GRIMOIRE_REMOVED.captures(content) {
-    return GrimoireLine::Replace(format!("{}{}", &removed[1], &removed[2]));
-  }
-  GrimoireLine::Keep
-}
-
-struct BlockTool {
-  tool: ForeignTool,
-  header: &'static str,
-  footer: &'static str,
-  /// gameinfo-editor splices its block right after the `{` character rather
-  /// than after the line, which leaves the rest of the brace line below it.
-  inserted_after_brace: bool,
-}
-
-const BLOCK_TOOLS: [BlockTool; 3] = [
-  BlockTool {
-    tool: ForeignTool::Deadtune,
-    header: "// ===== deadtune managed convars",
-    footer: "// ===== end deadtune managed convars",
-    inserted_after_brace: false,
-  },
-  BlockTool {
-    tool: ForeignTool::SqookyUpdater,
-    header: "// ===== gameinfo-updater added convars",
-    footer: "// ===== end gameinfo-updater added convars",
-    inserted_after_brace: false,
-  },
-  BlockTool {
-    tool: ForeignTool::GameinfoEditor,
-    header: "// Editor OptimizationsPreset - Start",
-    footer: "// Editor OptimizationsPreset - End",
-    inserted_after_brace: true,
-  },
-];
-
-/// Line ranges from a header line through its footer line. A header without a
-/// footer is left alone, as those tools do.
-fn find_blocks(lines: &[Line], header: &str, footer: &str) -> Vec<Range<usize>> {
-  let starts_with = |line: &Line, tag: &str| line.content.trim().starts_with(tag);
-  let mut blocks = Vec::new();
-  let mut index = 0;
-  while index < lines.len() {
-    if starts_with(&lines[index], header)
-      && let Some(end) = (index + 1..lines.len()).find(|&end| starts_with(&lines[end], footer))
-    {
-      blocks.push(index..end + 1);
-      index = end + 1;
-      continue;
-    }
-    index += 1;
-  }
-  blocks
 }
 
 #[cfg(test)]

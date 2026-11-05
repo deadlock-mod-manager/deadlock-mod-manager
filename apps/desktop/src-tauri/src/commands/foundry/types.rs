@@ -196,6 +196,21 @@ pub struct FoundryWorkspace {
   pub sound_settings: Vec<FoundrySoundSettings>,
   /// The paint each painted color map wears.
   pub applied_paint: Vec<FoundryAppliedPaint>,
+  /// The sections removed from each model's in-game look.
+  pub removed_parts: Vec<FoundryRemovedParts>,
+}
+
+/// The sections of one model removed from the game, and the model and mesh
+/// files rewritten to remove them.
+#[derive(Debug, Clone, Default, Serialize, Deserialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct FoundryRemovedParts {
+  pub model_path: String,
+  /// The removed sections' color maps, the id paint parts are keyed by.
+  pub textures: Vec<String>,
+  /// The workspace entries whose draw calls were emptied.
+  pub resources: Vec<String>,
 }
 
 /// The paint one color map wears, as the paint tab applied it.
@@ -265,6 +280,67 @@ pub struct FoundryModel {
   pub byte_length: usize,
   pub vertex_count: u32,
   pub index_count: u32,
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  #[ts(optional)]
+  pub report: Option<ModelPreviewReport>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct ModelPreviewReport {
+  pub issues: Vec<ModelPreviewIssue>,
+  pub dependencies: Vec<ModelPreviewDependency>,
+  pub truncated: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct ModelPreviewIssue {
+  pub path: String,
+  pub kind: String,
+  pub detail: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct ModelPreviewDependency {
+  pub path: String,
+  pub archive: String,
+  pub overlay: bool,
+}
+
+impl From<source2_model::preview_report::PreviewReport> for ModelPreviewReport {
+  fn from(report: source2_model::preview_report::PreviewReport) -> Self {
+    use source2_model::preview_report::PreviewIssueKind;
+    Self {
+      issues: report
+        .issues
+        .into_iter()
+        .map(|issue| ModelPreviewIssue {
+          path: issue.path,
+          kind: match issue.kind {
+            PreviewIssueKind::MissingDependency => "missingDependency",
+            PreviewIssueKind::CorruptOverride => "corruptOverride",
+            PreviewIssueKind::InvalidGameAsset => "invalidGameAsset",
+            PreviewIssueKind::Unsupported => "unsupported",
+          }
+          .into(),
+          detail: issue.detail,
+        })
+        .collect(),
+      dependencies: report
+        .dependencies
+        .into_iter()
+        .map(|dependency| ModelPreviewDependency {
+          path: dependency.path,
+          archive: dependency.archive,
+          overlay: dependency.overlay,
+        })
+        .collect(),
+      truncated: report.truncated,
+    }
+  }
 }
 
 /// How much of a hero one paint target covers in the loaded skin, so the UI can

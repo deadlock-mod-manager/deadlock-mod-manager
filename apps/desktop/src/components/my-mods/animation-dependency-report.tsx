@@ -7,14 +7,66 @@ import { useTranslation } from "react-i18next";
 import type { AnimationDependencyCheck } from "@/types/generated/AnimationDependencyCheck";
 
 export function AnimationDependencyReport({
+  embedded = false,
   checks,
   modNames,
 }: {
+  embedded?: boolean;
   checks: readonly AnimationDependencyCheck[];
   modNames: ReadonlyMap<string, string>;
 }) {
   const { t } = useTranslation();
   if (checks.length === 0) return null;
+  const content = (
+    <div className='space-y-3'>
+      <p className='text-muted-foreground text-xs'>
+        {t("modOrdering.animationChecks.scope")}
+      </p>
+      {checks.map((check) => (
+        <div
+          className='space-y-1 text-xs'
+          key={`${check.modId}:${check.filePath}`}>
+          <p className='font-medium'>
+            {modNames.get(check.modId) ?? check.modId}
+          </p>
+          <code className='block break-all text-muted-foreground'>
+            {check.filePath}
+          </code>
+          <p>
+            {t("modOrdering.animationChecks.result", {
+              before: t(
+                `modOrdering.animationChecks.status.${check.before.status}`,
+              ),
+              after: t(
+                `modOrdering.animationChecks.status.${check.after.status}`,
+              ),
+              count: check.after.checkedResources,
+            })}
+          </p>
+          {check.after.issues.length > 0 ? (
+            <ul className='space-y-1 text-muted-foreground'>
+              {check.after.issues.map((issue) => (
+                <li
+                  className='break-all'
+                  key={`${issue.resource}:${issue.kind}:${issue.detail}`}>
+                  <code>{issue.resource}</code>: {issue.detail}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      ))}
+    </div>
+  );
+  if (embedded)
+    return (
+      <section className='space-y-3'>
+        <h3 className='font-medium text-sm'>
+          {t("modOrdering.animationChecks.title")}
+        </h3>
+        {content}
+      </section>
+    );
   return (
     <AccordionItem
       className='px-3 last:border-b-0'
@@ -22,45 +74,7 @@ export function AnimationDependencyReport({
       <AccordionTrigger className='py-2.5 hover:no-underline'>
         {t("modOrdering.animationChecks.title")}
       </AccordionTrigger>
-      <AccordionContent className='space-y-3'>
-        <p className='text-muted-foreground text-xs'>
-          {t("modOrdering.animationChecks.scope")}
-        </p>
-        {checks.map((check) => (
-          <div
-            className='space-y-1 text-xs'
-            key={`${check.modId}:${check.filePath}`}>
-            <p className='font-medium'>
-              {modNames.get(check.modId) ?? check.modId}
-            </p>
-            <code className='block break-all text-muted-foreground'>
-              {check.filePath}
-            </code>
-            <p>
-              {t("modOrdering.animationChecks.result", {
-                before: t(
-                  `modOrdering.animationChecks.status.${check.before.status}`,
-                ),
-                after: t(
-                  `modOrdering.animationChecks.status.${check.after.status}`,
-                ),
-                count: check.after.checkedResources,
-              })}
-            </p>
-            {check.after.issues.length > 0 ? (
-              <ul className='space-y-1 text-muted-foreground'>
-                {check.after.issues.map((issue) => (
-                  <li
-                    className='break-all'
-                    key={`${issue.resource}:${issue.kind}:${issue.detail}`}>
-                    <code>{issue.resource}</code>: {issue.detail}
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </div>
-        ))}
-      </AccordionContent>
+      <AccordionContent className='space-y-3'>{content}</AccordionContent>
     </AccordionItem>
   );
 }

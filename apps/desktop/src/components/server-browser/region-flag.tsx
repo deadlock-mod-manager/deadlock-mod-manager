@@ -137,12 +137,14 @@ export const FlagGlyph = ({ region, className }: FlagGlyphProps) => {
     );
   }
 
+  // flag-icons' `.fi.fis { width: 1em }` outranks a single utility class, so
+  // sizes here and in callers need `!` or the circle squashes to the font size.
   return (
     <span
       aria-hidden
       className={cn(
         `fi fi-${iso} fis`,
-        "inline-block size-4 shrink-0 rounded-full bg-cover bg-center shadow-[0_0_0_1px_rgb(0_0_0/0.25),0_1px_2px_rgb(0_0_0/0.4)]",
+        "inline-block !size-4 shrink-0 rounded-full shadow-[0_0_0_1px_rgb(0_0_0/0.25),0_1px_2px_rgb(0_0_0/0.4)]",
         className,
       )}
     />
