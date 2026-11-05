@@ -10,7 +10,14 @@ import type {
 import { getErrorMessage } from "@/lib/errors";
 import { isGameRunningError } from "@/lib/game-guard";
 import logger from "@/lib/logger";
-import { applyPerfConfig, removePerfConfig } from "@/lib/performance/api";
+import {
+  adoptVideo,
+  applyPerfConfig,
+  keepVideoValues,
+  removePerfConfig,
+  restoreVideoBackup,
+  writeConfigVideoValues,
+} from "@/lib/performance/api";
 import { applySourceFor } from "@/lib/performance/config-list";
 import { perfQueryKeys } from "@/lib/performance/query-keys";
 import { presetIdFromConfigId } from "@/lib/performance/request";
@@ -21,6 +28,7 @@ import type { CatalogSummary } from "@/types/generated/CatalogSummary";
 import type { PerfApplyRequest } from "@/types/generated/PerfApplyRequest";
 import type { PerfApplyResult } from "@/types/generated/PerfApplyResult";
 import type { PerfStatus } from "@/types/generated/PerfStatus";
+import type { VideoOutcome } from "@/types/generated/VideoOutcome";
 import { refreshPerfCatalogNow } from "./use-perf-queries";
 
 /** One toast at a time, so an older toast's Undo can't revert a newer change. */
@@ -89,6 +97,7 @@ export const useRemovePerfConfig = () => {
         name: null,
         request: null,
         appliedCount: null,
+        videoCount: null,
       });
       queryClient.setQueryData(perfQueryKeys.status(), status);
       queryClient.invalidateQueries({ queryKey: perfQueryKeys.all });
@@ -108,6 +117,85 @@ export const useRemovePerfConfig = () => {
 };
 
 /**
+ * Puts the player's own video.txt back. The backend also stops writing video
+ * settings for the applied config, so its saved choice follows.
+ */
+export const useRestoreVideoBackup = () => {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const setPerfVideoChoice = usePersistedStore(
+    (state) => state.setPerfVideoChoice,
+  );
+  const recordPerfHistory = usePersistedStore(
+    (state) => state.recordPerfHistory,
+  );
+
+  return useMutation<PerfStatus, Error>({
+    mutationFn: () => restoreVideoBackup(),
+    meta: { skipGlobalErrorHandler: true },
+    onSuccess: (status) => {
+      recordPerfHistory({ action: "videoRestored" });
+      const request = status.desired?.request;
+      if (request) {
+        setPerfVideoChoice(request.configId, {
+          write: request.writeVideo,
+          variant: request.videoVariant,
+        });
+      }
+      queryClient.setQueryData(perfQueryKeys.status(), status);
+      queryClient.invalidateQueries({ queryKey: perfQueryKeys.all });
+      toast.success(t("performance.toasts.videoRestored"));
+    },
+    onError: (error) => {
+      if (isGameRunningError(error)) return;
+      logger.withError(error).error("Restoring video.txt failed");
+      toast.error(t("performance.toasts.videoRestoreFailed"), {
+        description: getErrorMessage(error),
+      });
+    },
+  });
+};
+
+/**
+ * Makes the current video.txt the player's own base, so the next config can
+ * leave it as it is. The chosen config stops writing video settings.
+ */
+export const useAdoptVideo = () => {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const setPerfVideoChoice = usePersistedStore(
+    (state) => state.setPerfVideoChoice,
+  );
+  const recordPerfHistory = usePersistedStore(
+    (state) => state.recordPerfHistory,
+  );
+
+  return useMutation<PerfStatus, Error>({
+    mutationFn: () => adoptVideo(),
+    meta: { skipGlobalErrorHandler: true },
+    onSuccess: (status) => {
+      recordPerfHistory({ action: "videoAdopted" });
+      const request = status.desired?.request;
+      if (request) {
+        setPerfVideoChoice(request.configId, {
+          write: request.writeVideo,
+          variant: request.videoVariant,
+        });
+      }
+      queryClient.setQueryData(perfQueryKeys.status(), status);
+      queryClient.invalidateQueries({ queryKey: perfQueryKeys.all });
+      toast.success(t("performance.toasts.videoAdopted"));
+    },
+    onError: (error) => {
+      logger.withError(error).error("Adopting video.txt failed");
+      toast.error(t("performance.toasts.videoAdoptFailed"), {
+        description: getErrorMessage(error),
+      });
+    },
+  });
+};
+
+/**
  * Applies a config, saves its tweaks as the config's own, records it in
  * History, and offers Undo, which goes back to whatever was applied before (or
  * to no config).
@@ -122,7 +210,19 @@ export const useApplyPerfConfig = () => {
   const setPerfIncludeEngineSections = usePersistedStore(
     (state) => state.setPerfIncludeEngineSections,
   );
+  const setPerfVideoChoice = usePersistedStore(
+    (state) => state.setPerfVideoChoice,
+  );
   const { mutate: removeConfig } = useRemovePerfConfig();
+
+  const videoNote = (video: VideoOutcome) => {
+    if (video.kind === "written") {
+      return t("performance.toasts.videoWritten", { count: video.settings });
+    }
+    if (video.kind === "fileMissing")
+      return t("performance.toasts.videoMissing");
+    return null;
+  };
 
   const mutation = useMutation<
     PerfApplyResult,
@@ -161,12 +261,18 @@ export const useApplyPerfConfig = () => {
         request.configId,
         request.includeEngineSections,
       );
+      setPerfVideoChoice(request.configId, {
+        write: request.writeVideo,
+        variant: request.videoVariant,
+      });
       recordPerfHistory({
         action: "applied",
         configId: request.configId,
         name: request.name,
         request,
         appliedCount: result.resolved.counts.applies,
+        videoCount:
+          result.video.kind === "written" ? result.video.settings : null,
       });
       queryClient.setQueryData(perfQueryKeys.status(), result.status);
       queryClient.invalidateQueries({ queryKey: perfQueryKeys.all });
@@ -181,14 +287,16 @@ export const useApplyPerfConfig = () => {
         .catch(() => false)
         .then((gameRunning) => {
           const count = result.resolved.counts.applies;
+          const video = videoNote(result.video);
+          const written = gameRunning
+            ? t("performance.toasts.restartToUse", { count })
+            : t("performance.toasts.nextLaunch", { count });
           toast.success(
             t("performance.toasts.applied", { name: request.name }),
             {
               id: APPLIED_TOAST_ID,
               duration: 8000,
-              description: gameRunning
-                ? t("performance.toasts.restartToUse", { count })
-                : t("performance.toasts.nextLaunch", { count }),
+              description: video ? `${written} ${video}` : written,
               action: {
                 label: t("performance.toasts.undo"),
                 onClick: () => undo(previousRequest),
@@ -226,4 +334,45 @@ export const useApplyPerfConfig = () => {
   };
 
   return mutation;
+};
+
+type VideoChoice = "useConfig" | "keep";
+
+/**
+ * Settles video.txt settings changed in game: writes the config's value back,
+ * or keeps the player's. Either way History records it.
+ */
+export const useResolveVideoChanges = () => {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const recordPerfHistory = usePersistedStore(
+    (state) => state.recordPerfHistory,
+  );
+
+  return useMutation<
+    PerfStatus,
+    Error,
+    { choice: VideoChoice; keys: string[] }
+  >({
+    mutationFn: ({ choice, keys }) =>
+      choice === "useConfig"
+        ? writeConfigVideoValues(keys)
+        : keepVideoValues(keys),
+    meta: { skipGlobalErrorHandler: true },
+    onSuccess: (status, { choice, keys }) => {
+      recordPerfHistory({
+        action: choice === "useConfig" ? "videoReverted" : "videoKept",
+        keys,
+      });
+      queryClient.setQueryData(perfQueryKeys.status(), status);
+      queryClient.invalidateQueries({ queryKey: perfQueryKeys.all });
+    },
+    onError: (error) => {
+      if (isGameRunningError(error)) return;
+      logger.withError(error).error("Settling video.txt changes failed");
+      toast.error(t("performance.video.changes.failed"), {
+        description: getErrorMessage(error),
+      });
+    },
+  });
 };

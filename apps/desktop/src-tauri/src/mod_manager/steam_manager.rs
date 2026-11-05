@@ -268,12 +268,19 @@ impl SteamManager {
   }
 
   pub fn crosshair_userdata_path(&self) -> Result<PathBuf, Error> {
-    let steam = self.get_steam_path().ok_or(Error::SteamNotFound)?;
+    self.get_steam_path().ok_or(Error::SteamNotFound)?;
+    self
+      .active_userdata_path()
+      .ok_or_else(|| Error::InvalidInput("Sign in to Steam before changing crosshairs".into()))
+  }
+
+  /// `userdata/<account>/1422450` for the account signed in to Steam.
+  pub fn active_userdata_path(&self) -> Option<PathBuf> {
+    let steam = self.get_steam_path()?;
     let account = crate::steam_user::list_accounts_in(&steam)
       .into_iter()
-      .find(|account| account.is_active)
-      .ok_or_else(|| Error::InvalidInput("Sign in to Steam before changing crosshairs".into()))?;
-    Ok(
+      .find(|account| account.is_active)?;
+    Some(
       steam
         .join("userdata")
         .join(account.account_id.to_string())

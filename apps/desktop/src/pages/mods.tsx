@@ -1,6 +1,9 @@
 import { Alert, AlertDescription } from "@deadlock-mods/ui/components/alert";
 import { Warning } from "@phosphor-icons/react";
 import { Suspense, useCallback } from "react";
+import { useSearchParams } from "react-router";
+import { SourceSelector } from "@/components/mod-browsing/source-selector";
+import { NativeSourceCatalog } from "@/components/mod-browsing/catalog/native-source-catalog";
 import { useTranslation } from "react-i18next";
 import ContentTypeTabs from "@/components/mod-browsing/content-type-tabs";
 import {
@@ -25,6 +28,16 @@ const resolveContentType = (
 
 const GetMods = () => {
   const { t } = useTranslation();
+  // In the URL so a source link can open the Store on the source it added.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const sourceKey = searchParams.get("source") ?? "gamebanana";
+  const setSourceKey = useCallback(
+    (key: string) =>
+      setSearchParams(key === "gamebanana" ? {} : { source: key }, {
+        replace: true,
+      }),
+    [setSearchParams],
+  );
   const isCustomMapsEnabled = useExperimentalFeature("custom-maps");
   const storedContentType = usePersistedStore(
     (state) => state.modsFilters.contentType,
@@ -51,14 +64,18 @@ const GetMods = () => {
           subtitle={t("mods.subtitle")}
           title={t("navigation.getMods")}
         />
-        <ContentTypeTabs
-          className='-mb-px'
-          onChange={handleContentTypeChange}
-          showMaps={isCustomMapsEnabled}
-          value={contentType}
-        />
+        <div className='-mb-px flex items-center gap-3'>
+          <ContentTypeTabs
+            onChange={handleContentTypeChange}
+            showMaps={isCustomMapsEnabled}
+            value={contentType}
+          />
+          <SourceSelector onChange={setSourceKey} value={sourceKey} />
+        </div>
       </div>
-      {contentType === "collection" ? (
+      {sourceKey !== "gamebanana" ? (
+        <NativeSourceCatalog sourceKey={sourceKey} contentType={contentType} />
+      ) : contentType === "collection" ? (
         <Suspense fallback={<CollectionGridSkeleton />}>
           <ErrorBoundary>
             <CollectionGrid />

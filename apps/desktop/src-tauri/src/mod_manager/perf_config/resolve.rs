@@ -6,10 +6,10 @@
 //! 1. Root keys (`PGIVersion`) and excluded sections (FileSystem, RenderModes)
 //!    → `Excluded`.
 //! 2. Denied paths/patterns → `Denied`.
-//! 3. ConVars: blocked → `Blocked`; not in the dump → `Removed` (with a
-//!    `SectionKey` note when Valve's file sets the key in another section);
-//!    concommand →
-//!    `NotConvar`; user omit → `Omitted`; same as live, or as the convar's default
+//! 3. ConVars: user omit → `Omitted`; blocked → `Blocked`; not in the dump →
+//!    `Removed` (with a `SectionKey` note when Valve's file sets the key in
+//!    another section); concommand → `NotConvar`. Those three are still
+//!    written (see [`EntryStatus::is_written`]). Otherwise same as live, or as the convar's default
 //!    when the live file doesn't set it → `Unchanged`; object leaf
 //!    for a key the live file lacks, a value where the file has a block, or
 //!    text gameinfo.gi can't hold → `Unsupported`; otherwise `Applies`
@@ -295,25 +295,32 @@ impl Check<'_> {
           section: section.to_string(),
         })
     };
-    let Some(meta) = meta else {
-      return (EntryStatus::Removed, section_key().into_iter().collect());
-    };
-    let since = || {
+    let since = |meta: &ConvarMeta| {
       meta
         .status_since_build
         .map(|build| EntryNote::SinceBuild { build })
-        .into_iter()
-        .collect()
     };
-    match meta.status {
-      ConvarStatus::Blocked => return (EntryStatus::Blocked, since()),
-      ConvarStatus::Removed => {
-        let notes = since().into_iter().chain(section_key()).collect();
-        return (EntryStatus::Removed, notes);
-      }
-      ConvarStatus::NotConvar => return (EntryStatus::NotConvar, Vec::new()),
-      ConvarStatus::Active => {}
+    let unread = match meta {
+      None => (EntryStatus::Removed, section_key().into_iter().collect()),
+      Some(meta) => match meta.status {
+        ConvarStatus::Blocked => (EntryStatus::Blocked, since(meta).into_iter().collect()),
+        ConvarStatus::Removed => (
+          EntryStatus::Removed,
+          since(meta).into_iter().chain(section_key()).collect(),
+        ),
+        ConvarStatus::NotConvar => (EntryStatus::NotConvar, Vec::new()),
+        ConvarStatus::Active => return self.active_convar(meta),
+      },
+    };
+    // Written as the author set them: the catalog's flags can lag the game,
+    // and a line Deadlock ignores costs nothing.
+    if matches!(self.action, Some(OverrideAction::Omit)) {
+      return (EntryStatus::Omitted, Vec::new());
     }
+    self.unsupported().unwrap_or(unread)
+  }
+
+  fn active_convar(&self, meta: &ConvarMeta) -> (EntryStatus, Vec<EntryNote>) {
     if let Some(result) = self.omitted_or_unchanged(meta.default.as_deref()) {
       return result;
     }
@@ -421,12 +428,12 @@ fn value_notes(meta: &ConvarMeta, value: &str) -> Vec<EntryNote> {
   notes
 }
 
-/// First 12 hex chars of a SHA-256 over what will be written: the `Applies`
+/// First 12 hex chars of a SHA-256 over what will be written: the written
 /// entries sorted by path, then whether engine sections were included.
 fn revision(entries: &[ResolvedEntry], include_engine_sections: bool) -> String {
   let mut applied: Vec<(String, &ResolvedEntry)> = entries
     .iter()
-    .filter(|entry| entry.status == EntryStatus::Applies)
+    .filter(|entry| entry.status.is_written())
     .map(|entry| (path_key(&entry.path), entry))
     .collect();
   applied.sort_by(|a, b| a.0.cmp(&b.0));

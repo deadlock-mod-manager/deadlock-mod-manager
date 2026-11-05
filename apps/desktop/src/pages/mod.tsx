@@ -26,6 +26,7 @@ import ModButton from "@/components/mod-browsing/mod-button";
 import { InstalledVpksSection } from "@/components/mod-detail/installed-vpks-section";
 import { ModAudioPreview } from "@/components/mod-detail/mod-audio-preview";
 import { ModChangelog } from "@/components/mod-detail/mod-changelog";
+import { NativeSourceChangelog } from "@/components/mod-detail/native-source-changelog";
 import { ModCommissionButton } from "@/components/mod-detail/mod-commission-button";
 import { ModComments } from "@/components/mod-detail/mod-comments";
 import { ModDependencies } from "@/components/mod-detail/mod-dependencies";
@@ -53,6 +54,7 @@ import ErrorBoundary from "@/components/shared/error-boundary";
 import { useConfigListing } from "@/hooks/performance/use-config-listing";
 import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { useMod } from "@/hooks/use-mod";
+import { useLocalModThumbnail } from "@/hooks/use-local-mod-thumbnail";
 import { useModDetailNavigation } from "@/hooks/use-mod-detail-navigation";
 import { useResolvedDependencies } from "@/hooks/use-mod-dependencies";
 import {
@@ -75,6 +77,8 @@ import { useCheckUpdates, useModHasUpdate } from "@/hooks/use-check-updates";
 import { isModOutdated, isModStale } from "@/lib/utils";
 import { ModStatus } from "@/types/mods";
 import { NetworkDiagnosticsButton } from "@/components/shared/network-diagnostics-dialog";
+import { isNativeSourceMod, useNativeSourceContext } from "@/lib/mod-sources";
+import { parseSubmissionSlug } from "@/lib/mods/submission-ref";
 
 const Mod = () => {
   const params = useParams();
@@ -103,7 +107,21 @@ const Mod = () => {
     onBackClick: goBack,
   });
 
-  const isGameBananaMod = !!params.id && !params.id.includes("local");
+  const isGameBananaMod =
+    !!params.id && parseSubmissionSlug(params.id)?.provider === "gamebanana";
+  const isNativeMod = !!params.id && isNativeSourceMod(params.id);
+  const nativeContext = useNativeSourceContext(params.id ?? "");
+  const nativeDownloadsAllowed =
+    !isNativeMod ||
+    (!!nativeContext.data?.source.enabled &&
+      !nativeContext.data.source.removed &&
+      nativeContext.data.listing.availability === "available");
+  const nativeSource = nativeContext.data?.source;
+  const hasNativeChangelog =
+    isNativeMod &&
+    !!nativeSource?.enabled &&
+    !nativeSource.removed &&
+    !!nativeSource.descriptor.capabilities?.releaseHistory;
   const configListingKind = useConfigListing(mod);
   const {
     availableFiles,
@@ -114,7 +132,7 @@ const Mod = () => {
   } = useModDownloads({
     remoteId: params.id,
     isDownloadable: mod?.downloadable,
-    enabled: isGameBananaMod,
+    enabled: isGameBananaMod || isNativeMod,
   });
   // Retrying resets a failed query to pending, so keep the failure until it loads.
   const filesLoadFailed = !filesLoaded && filesErrorCount > 0;
@@ -124,6 +142,8 @@ const Mod = () => {
   const localMod = usePersistedStore((state) =>
     findLocalMod(state.localMods, mod?.remoteId),
   );
+  const thumbnail = useLocalModThumbnail(localMod);
+  const images = thumbnail.data ? [thumbnail.data] : (mod?.images ?? []);
   const resolvedDependencies = useResolvedDependencies(
     mod?.dependencies ?? undefined,
   );
@@ -152,7 +172,7 @@ const Mod = () => {
   );
 
   const { data: reportCounts } = useReportCounts(
-    mod?.isMap ? "" : (mod?.id ?? ""),
+    !isGameBananaMod || mod?.isMap ? "" : (mod?.id ?? ""),
   );
   const staleResult =
     mod && !mod.isMap && reportCounts ? isModStale(mod, reportCounts) : null;
@@ -160,8 +180,8 @@ const Mod = () => {
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
 
   const isInstalled = localMod?.status === ModStatus.Installed;
-  const hasImages = mod?.images && mod.images.length > 0;
-  const hasHero = !!mod?.hero || hasImages || !!mod?.isAudio;
+  const hasImages = images.length > 0;
+  const hasHero = hasImages || !!(mod?.isAudio && mod.audioUrl);
   const canPreviewModel = !mod?.isAudio && !mod?.isMap && !shouldBlur;
   const activeTab =
     selectedTab.modId === mod?.remoteId ? selectedTab.tab : "overview";
@@ -193,8 +213,17 @@ const Mod = () => {
 
   const forceUpdateData = useMemo(
     () =>
-      mod && availableFiles?.length ? [{ mod, downloads: availableFiles }] : [],
-    [mod, availableFiles],
+      mod && availableFiles?.length
+        ? [
+            {
+              mod,
+              downloads: availableFiles,
+              nativeInstallation:
+                nativeContext.data?.listing.release?.installation,
+            },
+          ]
+        : [],
+    [mod, availableFiles, nativeContext.data?.listing.release?.installation],
   );
 
   const currentModUpdate = useMemo(
@@ -324,7 +353,9 @@ const Mod = () => {
             </div>
           )}
           {showsDateOutdatedWarning(
-            isModOutdated(mod) && configListingKind !== "confirmed",
+            isGameBananaMod &&
+              isModOutdated(mod) &&
+              configListingKind !== "confirmed",
             health,
           ) &&
             !staleResult && (
@@ -352,16 +383,19 @@ const Mod = () => {
 
           <Card className='overflow-hidden space-y-4 shadow-none [contain:layout_style_paint]'>
             <ModHero
-              mod={mod}
+              mod={{ ...mod, images }}
+              imageFit={thumbnail.data ? "contain" : "cover"}
               shouldBlur={shouldBlur}
               actions={
-                <BrokenModButton
-                  mod={mod}
-                  localMod={localMod}
-                  hasUpdate={hasUpdate}
-                  onTriggerUpdate={() => setUpdateDialogOpen(true)}
-                  variant='hero'
-                />
+                isGameBananaMod && (
+                  <BrokenModButton
+                    mod={mod}
+                    localMod={localMod}
+                    hasUpdate={hasUpdate}
+                    onTriggerUpdate={() => setUpdateDialogOpen(true)}
+                    variant='hero'
+                  />
+                )
               }
               cornerAction={
                 canPreviewModel && (
@@ -402,7 +436,14 @@ const Mod = () => {
                     }
                   }}
                   variant='link'>
-                  {t("modDetail.viewOriginalPost")}
+                  {isNativeMod
+                    ? t("modSources.viewOriginalPost", {
+                        name:
+                          nativeContext.data?.source.descriptor.name ??
+                          localMod?.source?.sourceName ??
+                          new URL(mod.remoteUrl).hostname,
+                      })
+                    : t("modDetail.viewOriginalPost")}
                 </Button>
               )}
               <div className='flex items-center gap-2'>
@@ -419,7 +460,7 @@ const Mod = () => {
                   <ModCommissionButton authorId={mod.modAuthorId} />
                 )}
                 <FavoriteButton remoteId={mod.remoteId} variant='inline' />
-                {hasUpdate && (
+                {hasUpdate && nativeDownloadsAllowed && (
                   <UpdateButton
                     onClick={() => setUpdateDialogOpen(true)}
                     size='default'
@@ -428,20 +469,27 @@ const Mod = () => {
                     {t("modDetail.updateMod")}
                   </UpdateButton>
                 )}
-                {isInstalled && !hasUpdate && availableFiles?.length > 0 && (
-                  <UpdateButton
-                    onClick={forceUpdate}
-                    size='default'
-                    updatePercent={updatePercent}
-                    variant='outline'>
-                    {t("modDetail.forceUpdate")}
-                  </UpdateButton>
-                )}
-                {localMod && !isLocalMod(localMod) && (
+                {isInstalled &&
+                  !hasUpdate &&
+                  nativeDownloadsAllowed &&
+                  availableFiles?.length > 0 && (
+                    <UpdateButton
+                      onClick={forceUpdate}
+                      size='default'
+                      updatePercent={updatePercent}
+                      variant='outline'>
+                      {t("modDetail.forceUpdate")}
+                    </UpdateButton>
+                  )}
+                {localMod && !isLocalMod(localMod) && !isNativeMod && (
                   <ReinstallModButton mod={localMod} variant='default' />
                 )}
                 <ModButton
-                  remoteMod={mod}
+                  remoteMod={
+                    nativeDownloadsAllowed
+                      ? mod
+                      : { ...mod, downloadable: false }
+                  }
                   variant='default'
                   analyticsEntryPoint={analyticsEntryPoint}
                 />
@@ -498,6 +546,12 @@ const Mod = () => {
                   </TabsTrigger>
                 </>
               )}
+              {hasNativeChangelog && (
+                <TabsTrigger className='gap-1.5' value='changelog'>
+                  <ClockCounterClockwiseIcon className='size-4' />
+                  {t("modDetail.tabs.changelog")}
+                </TabsTrigger>
+              )}
               {hasFilesTab && (
                 <TabsTrigger className='gap-1.5' value='files'>
                   <FilesIcon className='size-4' />
@@ -520,7 +574,15 @@ const Mod = () => {
               )}
 
               {mod.description && (
-                <ModDescription description={mod.description} />
+                <ModDescription
+                  description={mod.description}
+                  format={
+                    isNativeMod
+                      ? (nativeContext.data?.listing.descriptionFormat ??
+                        "plain")
+                      : "gamebanana"
+                  }
+                />
               )}
 
               {mod.audioUrl && (
@@ -530,9 +592,9 @@ const Mod = () => {
                 />
               )}
 
-              {!mod.isAudio && hasImages && mod.images && (
+              {!mod.isAudio && hasImages && (
                 <ModGallery
-                  images={mod.images}
+                  images={images}
                   nsfwSettings={nsfwSettings}
                   onNSFWToggle={(visible) => handleNSFWToggle(visible)}
                   shouldBlur={shouldBlur}
@@ -542,7 +604,11 @@ const Mod = () => {
 
             {canPreviewModel && (
               <TabsContent className='mt-4' value='3d'>
-                <ModModelPreview mod={mod} localMod={localMod} />
+                <ModModelPreview
+                  mod={mod}
+                  localMod={localMod}
+                  files={isGameBananaMod ? availableFiles : []}
+                />
               </TabsContent>
             )}
 
@@ -565,6 +631,16 @@ const Mod = () => {
                   />
                 </TabsContent>
               </>
+            )}
+
+            {hasNativeChangelog && (
+              <TabsContent className='mt-4' value='changelog'>
+                <NativeSourceChangelog
+                  currentReleaseId={nativeContext.data?.listing.release?.id}
+                  remoteId={mod.remoteId}
+                  sourceName={nativeSource.descriptor.name}
+                />
+              </TabsContent>
             )}
 
             {hasFilesTab && (

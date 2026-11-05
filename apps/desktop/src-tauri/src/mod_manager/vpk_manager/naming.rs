@@ -41,7 +41,9 @@ impl VpkManager {
 
     if let Some(underscore_pos) = filename.find('_') {
       let potential_id = &filename[..underscore_pos];
-      if SubmissionRef::parse_slug(potential_id).is_ok() {
+      if SubmissionRef::parse_slug(potential_id).is_ok()
+        || crate::providers::native_sources::validate_source_listing_slug(potential_id)
+      {
         return Some(potential_id.to_string());
       }
     }
