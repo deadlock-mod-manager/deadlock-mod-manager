@@ -84,6 +84,7 @@ export function extractSubmissionSlugFromFilename(
   if (separatorIndex < 1) return null;
 
   const slug = basename.slice(0, separatorIndex);
+  if (/^source-[a-f0-9]{64}$/.test(slug)) return slug;
   const submission = parseSubmissionSlug(slug);
   return submission ? serializeSubmissionRef(submission) : null;
 }

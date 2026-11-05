@@ -24,6 +24,7 @@ import { invokeRepairPlan } from "@/hooks/use-mod-health";
 import { getErrorMessage } from "@/lib/errors";
 import {
   compatibilityResolutions,
+  compatibilityRepairSummary,
   type LocalizationOverlayApplyResult,
 } from "@/lib/mods/compatibility";
 import { invalidateModHealth } from "@/lib/mods/mod-health-queries";
@@ -136,6 +137,10 @@ export function CompatibilityReviewDialog({
     onSettled: () => invalidateModHealth(queryClient),
   });
   const modNames = new Map(mods.map((mod) => [mod.remoteId, mod.name]));
+  const repairSummary = review.data
+    ? compatibilityRepairSummary(review.data)
+    : null;
+  const showApply = launchAfterApply || !!repairSummary?.hasChanges;
   const changeOpen = (next: boolean) => {
     if (apply.isPending) return;
     if (!next) setSelection({ scope, choices: {} });
@@ -144,19 +149,26 @@ export function CompatibilityReviewDialog({
 
   return (
     <Dialog open={open} onOpenChange={changeOpen}>
-      <DialogContent className='flex max-h-[82vh] max-w-2xl flex-col overflow-hidden'>
-        <DialogHeader className='shrink-0 pr-8'>
-          <DialogTitle className='flex items-center gap-2'>
-            <ShieldCheck aria-hidden className='size-5 text-muted-foreground' />
-            {t("myMods.compatibility.review")}
-          </DialogTitle>
-          <DialogDescription>
-            {t(
-              launchAfterApply
-                ? "myMods.compatibility.launchReviewDescription"
-                : "myMods.compatibility.reviewDescription",
-            )}
-          </DialogDescription>
+      <DialogContent className='flex max-h-[80vh] max-w-2xl flex-col overflow-hidden'>
+        <DialogHeader className='shrink-0 space-y-2 pr-8'>
+          <div className='flex items-center gap-3 text-left'>
+            <span className='flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/15'>
+              <ShieldCheck aria-hidden className='size-4' />
+            </span>
+            <div className='min-w-0 space-y-0.5'>
+              <DialogTitle className='text-lg leading-6 tracking-tight'>
+                {t("myMods.compatibility.title")}
+              </DialogTitle>
+              <DialogDescription className='text-xs leading-4'>
+                {t("myMods.compatibility.reviewDescription")}
+              </DialogDescription>
+            </div>
+          </div>
+          {launchAfterApply ? (
+            <p className='text-muted-foreground text-xs'>
+              {t("myMods.compatibility.launchReviewDescription")}
+            </p>
+          ) : null}
           {gameRunning ? (
             <p className='text-muted-foreground text-sm'>
               {t("myMods.compatibility.closeGame")}
@@ -201,38 +213,47 @@ export function CompatibilityReviewDialog({
         {apply.isPending ? (
           <RepairPlanProgressStatus className='shrink-0 pb-1' />
         ) : null}
+        {showApply ? (
+          <p className='text-muted-foreground text-xs'>
+            {t("myMods.compatibility.repairDestination")}
+          </p>
+        ) : null}
         <DialogFooter className='shrink-0 border-t pt-4'>
           <Button
             variant='outline'
             disabled={apply.isPending}
             onClick={() => changeOpen(false)}>
-            {t("common.close")}
+            {t(showApply ? "common.close" : "myMods.compatibility.done")}
           </Button>
-          <Button
-            disabled={
-              !enabled ||
-              !review.data ||
-              analysis.isFetching ||
-              analysis.isError ||
-              review.isFetching ||
-              review.isError ||
-              gameRunning
-            }
-            isLoading={apply.isPending}
-            icon={
-              launchAfterApply ? (
-                <Play className='h-4 w-4' />
-              ) : (
-                <Wrench className='h-4 w-4' />
-              )
-            }
-            onClick={() => apply.mutate()}>
-            {t(
-              launchAfterApply
-                ? "myMods.compatibility.applyAndLaunch"
-                : "myMods.compatibility.apply",
-            )}
-          </Button>
+          {showApply ? (
+            <Button
+              disabled={
+                !enabled ||
+                !review.data ||
+                analysis.isFetching ||
+                analysis.isError ||
+                review.isFetching ||
+                review.isError ||
+                gameRunning
+              }
+              isLoading={apply.isPending}
+              icon={
+                launchAfterApply ? (
+                  <Play className='h-4 w-4' />
+                ) : (
+                  <Wrench className='h-4 w-4' />
+                )
+              }
+              onClick={() => apply.mutate()}>
+              {launchAfterApply
+                ? t("myMods.compatibility.applyAndLaunch")
+                : repairSummary && repairSummary.repairCount > 0
+                  ? t("myMods.compatibility.applyRepairs", {
+                      count: repairSummary.repairCount,
+                    })
+                  : t("myMods.compatibility.apply")}
+            </Button>
+          ) : null}
         </DialogFooter>
       </DialogContent>
     </Dialog>

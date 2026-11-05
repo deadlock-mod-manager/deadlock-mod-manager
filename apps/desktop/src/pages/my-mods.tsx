@@ -47,10 +47,10 @@ import {
   Power,
   PowerOff,
   RefreshCw,
+  ShieldCheck,
   ScanSearch,
   SquareCheck,
   TriangleAlert,
-  Wrench,
 } from "@deadlock-mods/ui/icons";
 import { Radioactive } from "@phosphor-icons/react";
 import { MagnifyingGlass } from "@phosphor-icons/react";
@@ -60,6 +60,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { HintAnchor } from "@/components/feature-hints/hint-anchor";
 import { useThemeOverride } from "@/components/providers/theme-overrides";
+import { useCompatibilityReview } from "@/components/providers/compatibility-review";
 import SearchBar from "@/components/mod-browsing/search-bar";
 import { SortSelect } from "@/components/mod-browsing/sort-select";
 import { VpkScanAlert } from "@/components/mods/vpk-scan-alert";
@@ -177,6 +178,7 @@ const MyMods = () => {
   } = useVpkScan();
   const healthReport = useModHealthReport(activeProfileFolder);
   const checkModHealth = useCheckModHealth();
+  const reviewCompatibility = useCompatibilityReview();
   const isCheckingModHealth = useIsCheckingModHealth();
   const healthById = useMemo(
     () => healthByModId(healthReport.data),
@@ -725,12 +727,13 @@ const MyMods = () => {
                     profileFolder: activeProfileFolder,
                     force: true,
                   });
+                  void reviewCompatibility(activeProfileFolder, {
+                    launchAfterApply: false,
+                  });
                 }}
                 disabled={installedMods.length === 0 || isCheckingModHealth}>
-                <Wrench className='h-4 w-4' />
-                {isCheckingModHealth
-                  ? t("modHealth.checkingForRepairs")
-                  : t("modHealth.checkForRepairs")}
+                <ShieldCheck className='h-4 w-4' />
+                {t("myMods.compatibility.review")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => {

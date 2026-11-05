@@ -3,7 +3,7 @@ import type { EntryStatus } from "@/types/generated/EntryStatus";
 import type { ResolvedEntry } from "@/types/generated/ResolvedEntry";
 import { isConvarPath } from "./editor/values";
 
-/** The game build doesn't read these from gameinfo.gi. */
+/** Written, but the game build doesn't read these from gameinfo.gi. */
 export const UNREAD_STATUSES: ReadonlySet<EntryStatus> = new Set([
   "blocked",
   "removed",
@@ -24,7 +24,6 @@ const ENGINE_EDIT_STATUSES: ReadonlySet<EntryStatus> = new Set([
 ]);
 
 const NOT_WRITTEN_STATUSES: ReadonlySet<EntryStatus> = new Set([
-  ...UNREAD_STATUSES,
   ...LEFT_OUT_STATUSES,
   "engineSection",
 ]);

@@ -49,11 +49,13 @@ import { AddSettingPopover } from "./add-setting-popover";
 import { ApplyBar } from "./apply-bar";
 import { CategoryRail } from "./category-rail";
 import { EditorHeader } from "./editor-header";
-import { EditorToolbar } from "./editor-toolbar";
+import { ConvarNamesToggle, EditorToolbar } from "./editor-toolbar";
 import { useEditorDrafts } from "./editor-drafts-context";
-import { EngineSectionsNotice } from "./engine-sections-notice";
+import { EngineSectionsToggle } from "./engine-sections-toggle";
 import { EntryGroup } from "./entry-group";
 import { entryDomId } from "./entry-row";
+import { NoMatches } from "./no-matches";
+import { OpenInEditorButton } from "../open-in-editor-button";
 
 const RESOLVE_DEBOUNCE_MS = 250;
 const HIGHLIGHT_MS = 1600;
@@ -130,6 +132,11 @@ export const ConfigEditor = ({
   const [addQuery, setAddQuery] = useState("");
   const [pendingScrollKey, setPendingScrollKey] = useState<string | null>(null);
   const [highlightKey, setHighlightKey] = useState<string | null>(null);
+  // The category last picked in the rail; `token` replays the flash on a repeat click.
+  const [flashedCategory, setFlashedCategory] = useState<{
+    id: string;
+    token: number;
+  } | null>(null);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
   const overrides = useMemo(
@@ -214,9 +221,21 @@ export const ConfigEditor = ({
 
   const scrollToCategory = (id: string) => {
     setActiveCategory(id);
-    groupElements.current
-      .get(id)
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    setFlashedCategory((previous) => ({
+      id,
+      token: (previous?.token ?? 0) + 1,
+    }));
+    const element = groupElements.current.get(id);
+    if (!element) return;
+    element.scrollIntoView({ behavior: "smooth", block: "start" });
+    // Groups render as the page scrolls past them (content-visibility) and
+    // change height on the way, so the smooth scroll can overshoot; settle on
+    // the group once it ends.
+    document.addEventListener(
+      "scrollend",
+      () => element.scrollIntoView({ block: "start" }),
+      { capture: true, once: true },
+    );
   };
 
   const openAddSetting = (query: string) => {
@@ -253,9 +272,10 @@ export const ConfigEditor = ({
     });
   };
 
-  const clearFilters = () => {
-    setSearch("");
-    setFilter("all");
+  // A search is cleared first; the filter only widens once there's no search left.
+  const showMore = () => {
+    if (search.trim() !== "") setSearch("");
+    else setFilter("all");
   };
 
   const renderList = () => {
@@ -310,44 +330,23 @@ export const ConfigEditor = ({
           onSelect={scrollToCategory}
         />
         <div className='min-w-0 space-y-4'>
-          {engineEntries.length > 0 && (
-            <EngineSectionsNotice
-              count={engineEntries.length}
-              included={draft.includeEngineSections}
-              onIncludedChange={(include) =>
-                dispatch({ kind: "includeEngineSections", include })
-              }
-              sections={engineSections}
-            />
-          )}
           {visibleGroups.length === 0 ? (
-            <Empty className='border'>
-              <EmptyHeader>
-                <EmptyTitle>
-                  {t("performance.editor.noMatches.title")}
-                </EmptyTitle>
-              </EmptyHeader>
-              <EmptyContent className='flex-row justify-center'>
-                <Button onClick={clearFilters} size='sm' variant='outline'>
-                  {t("performance.editor.noMatches.clear")}
-                </Button>
-                {search.trim() !== "" && (
-                  <Button
-                    onClick={() => openAddSetting(search.trim())}
-                    size='sm'
-                    variant='ghost'>
-                    {t("performance.editor.noMatches.searchAll", {
-                      query: search.trim(),
-                    })}
-                  </Button>
-                )}
-              </EmptyContent>
-            </Empty>
+            <NoMatches
+              filter={filter}
+              onSearchAll={openAddSetting}
+              onShowAll={showMore}
+              search={search}
+            />
           ) : (
             visibleGroups.map((group) => (
               <EntryGroup
                 engineIncluded={draft.includeEngineSections}
                 expanded={expanded.has(group.id)}
+                flashToken={
+                  flashedCategory?.id === group.id
+                    ? flashedCategory.token
+                    : null
+                }
                 group={group}
                 highlightKey={highlightKey}
                 key={group.id}
@@ -367,6 +366,25 @@ export const ConfigEditor = ({
   return (
     <div className='flex flex-col gap-4'>
       <EditorHeader
+        actions={
+          <>
+            {engineEntries.length > 0 && (
+              <EngineSectionsToggle
+                count={engineEntries.length}
+                included={draft.includeEngineSections}
+                onIncludedChange={(include) =>
+                  dispatch({ kind: "includeEngineSections", include })
+                }
+                sections={engineSections}
+              />
+            )}
+            <ConvarNamesToggle
+              onShowKeysChange={setShowKeys}
+              showKeys={showKeys}
+            />
+            <OpenInEditorButton />
+          </>
+        }
         appliedConfigId={desired?.configId ?? null}
         isUpdating={
           resolve.data !== undefined &&
@@ -394,9 +412,7 @@ export const ConfigEditor = ({
         filter={filter}
         onFilterChange={setFilter}
         onSearchChange={setSearch}
-        onShowKeysChange={setShowKeys}
         search={search}
-        showKeys={showKeys}
       />
       {renderList()}
       {(unsavedCount > 0 || !appliedAsSaved || apply.isPending) && (

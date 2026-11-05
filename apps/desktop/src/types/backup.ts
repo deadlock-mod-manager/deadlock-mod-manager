@@ -1,4 +1,5 @@
 import type { InstalledModInfo } from "@/types/mods";
+import type { NativeSourceBackupEntry } from "@/types/generated/NativeSourceBackupEntry";
 
 export interface AddonsBackup {
   file_name: string;
@@ -14,6 +15,7 @@ export type RestoreStrategy = "replace" | "merge";
 
 /** Mods an update backup put back; empty for full restores. */
 export interface RestoredBackup {
+  sourceProvenance: NativeSourceBackupEntry[];
   profileFolder: string | null;
   mods: InstalledModInfo[];
 }

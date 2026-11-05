@@ -15,6 +15,7 @@ pub mod audio;
 pub mod audio_edit;
 pub mod error;
 pub mod material_repair;
+pub mod mesh_edit;
 pub mod pack;
 pub mod particle_edit;
 pub mod pattern;
@@ -25,6 +26,7 @@ pub mod texture_edit;
 
 pub use audio_edit::{SoundAdjust, SoundSource, is_decodable_audio, rebuild_sound};
 pub use error::{Result, VpkManagerError};
+pub use mesh_edit::hide_draw_calls;
 pub use pack::pack_directory;
 pub use particle_edit::recolor_particle_colors;
 pub use pattern::{Pattern, PatternStyle, pattern_swatch, pattern_texture};

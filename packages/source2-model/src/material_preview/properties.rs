@@ -1,5 +1,6 @@
 use super::normalize_compiled_path;
-use super::textures::preview_resource;
+use super::textures::load_preview_resource;
+use crate::preview_report::PreviewIssueKind;
 use crate::vpk_extract::VpkArchive;
 use crate::{kv3, vmesh};
 
@@ -121,6 +122,7 @@ pub(super) struct MaterialPreviewProperties {
     pub(super) emissive_factor: Option<[f32; 3]>,
     pub(super) emissive_strength: f32,
     pub(super) outline: Option<vmesh::MaterialOutline>,
+    pub(super) source2_effect: vmesh::Source2Effect,
 }
 
 pub(super) fn material_preview_properties(
@@ -128,12 +130,30 @@ pub(super) fn material_preview_properties(
     material_path: &str,
 ) -> Option<MaterialPreviewProperties> {
     let material_path = normalize_compiled_path(material_path, ".vmat");
-    let bytes = archive.extract_entry(&material_path).ok()?;
-    let res = preview_resource(bytes)?;
-    let data = res
-        .block_bytes("DATA")
-        .and_then(|bytes| kv3::parse(bytes).ok())?;
-    material_preview_properties_from_data(&data)
+    let res = load_preview_resource(archive, &material_path)?;
+    let Some(bytes) = res.block_bytes("DATA") else {
+        archive.record_preview_error(
+            &material_path,
+            &crate::Source2Error::Resource("Material has no DATA block".into()),
+        );
+        return None;
+    };
+    let data = match kv3::parse(bytes) {
+        Ok(data) => data,
+        Err(error) => {
+            archive.record_preview_error(&material_path, &error);
+            return None;
+        }
+    };
+    let properties = material_preview_properties_from_data(&data);
+    if properties.is_none() {
+        archive.record_preview_issue(
+            &material_path,
+            PreviewIssueKind::Unsupported,
+            "Material has no supported surface color mapping",
+        );
+    }
+    properties
 }
 
 pub(super) fn material_preview_properties_from_data(
@@ -310,5 +330,75 @@ pub(super) fn material_preview_properties_from_data(
         emissive_factor,
         emissive_strength,
         outline,
+        source2_effect: effect_parameters(data),
     })
+}
+
+/// Keep parameter names rather than guessing a shader from the hero's directory.
+/// The bounded maps also retain unsupported shader inputs for diagnostics.
+fn effect_parameters(data: &kv3::KvValue) -> vmesh::Source2Effect {
+    let mut effect = vmesh::Source2Effect {
+        shader: data
+            .get("m_shaderName")
+            .and_then(kv3::KvValue::as_string)
+            .unwrap_or("")
+            .to_string(),
+        material: String::new(),
+        floats: Default::default(),
+        vectors: Default::default(),
+        flags: Default::default(),
+        textures: Default::default(),
+    };
+    for (collection, kind) in [
+        ("m_floatParams", 0),
+        ("m_vectorParams", 1),
+        ("m_intParams", 2),
+        ("m_textureParams", 3),
+    ] {
+        let Some(params) = data.get(collection).and_then(kv3::KvValue::as_array) else {
+            continue;
+        };
+        for param in params.iter().take(128) {
+            let Some(name) = param
+                .get("m_name")
+                .and_then(kv3::KvValue::as_string)
+                .filter(|name| name.len() <= 128)
+            else {
+                continue;
+            };
+            match kind {
+                0 => {
+                    if let Some(value) =
+                        named_f32(data, collection, name).filter(|value| value.is_finite())
+                    {
+                        effect.floats.insert(name.to_string(), value);
+                    }
+                }
+                1 => {
+                    if let Some(value) =
+                        named_vec4(data, name).filter(|value| value.iter().all(|v| v.is_finite()))
+                    {
+                        effect.vectors.insert(name.to_string(), value);
+                    }
+                }
+                2 => {
+                    if let Some(value) = named_i64(data, collection, name) {
+                        effect.flags.insert(name.to_string(), value);
+                    }
+                }
+                _ => {
+                    if let Some(path) = param
+                        .get("m_pValue")
+                        .and_then(kv3::KvValue::as_string)
+                        .filter(|path| path.len() <= 512)
+                    {
+                        effect
+                            .textures
+                            .insert(name.to_string(), normalize_compiled_path(path, ".vtex"));
+                    }
+                }
+            }
+        }
+    }
+    effect
 }

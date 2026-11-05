@@ -33,9 +33,12 @@ import { ModStatus } from "@/types/mods";
 import FavoriteButton from "./favorite-button";
 import ModButton from "./mod-button";
 import { NSFWBlur } from "./nsfw-blur";
+import { isNativeSourceMod } from "@/lib/mod-sources";
+import type { NativeSourceProvenance } from "@/types/generated/NativeSourceProvenance";
+import { ModSourceIcon } from "@/components/shared/mod-source-icon";
 
 interface ModCardProps {
-  mod?: ModDto;
+  mod?: ModDto & { source?: NativeSourceProvenance };
   readOnly?: boolean;
   collection?: ModsCollection;
   author?: AuthorNavigationTarget;
@@ -88,7 +91,9 @@ const ModCard = memo((props: ModCardProps) => {
   }
 
   // A config-only upload is a gameinfo.gi config, not a VPK a patch breaks.
-  const isOutdated = isModOutdated(mod) && configListingKind !== "confirmed";
+  const native = isNativeSourceMod(mod.remoteId);
+  const isOutdated =
+    !native && isModOutdated(mod) && configListingKind !== "confirmed";
 
   const entryPoint = cardEntryPoint(props, searching);
   const openModDetail = () => {
@@ -217,29 +222,37 @@ const ModCard = memo((props: ModCardProps) => {
                     {t("mods.by")} {mod.author}
                   </span>
                 )}
+                <ModSourceIcon
+                  source={mod.source ?? localMod?.source}
+                  local={mod.remoteId.startsWith("local-")}
+                />
               </div>
             </div>
 
             <div className='flex flex-row justify-between'>
               <div className='flex flex-col gap-1.5'>
-                <div className='flex items-center gap-1.5 text-muted-foreground text-xs'>
-                  <div className='flex items-center gap-1.5'>
-                    <DownloadIcon className='h-3 w-3 flex-shrink-0' />
-                    <span>{mod.downloadCount.toLocaleString()}</span>
-                  </div>
-                  {mod.likes > 0 && (
+                {!native && (
+                  <div className='flex items-center gap-1.5 text-muted-foreground text-xs'>
                     <div className='flex items-center gap-1.5'>
-                      <HeartIcon className='ml-2 h-3 w-3 flex-shrink-0' />
-                      <span>{mod.likes.toLocaleString()}</span>
+                      <DownloadIcon className='h-3 w-3 flex-shrink-0' />
+                      <span>{mod.downloadCount.toLocaleString()}</span>
                     </div>
-                  )}
-                </div>
-                <div className='flex items-center gap-1.5 text-muted-foreground text-xs'>
-                  <CalendarIcon className='h-3 w-3 flex-shrink-0' />
-                  <span title={format(new Date(mod.remoteUpdatedAt), "PPP")}>
-                    {format(new Date(mod.remoteUpdatedAt), "MMM d, yyyy")}
-                  </span>
-                </div>
+                    {mod.likes > 0 && (
+                      <div className='flex items-center gap-1.5'>
+                        <HeartIcon className='ml-2 h-3 w-3 flex-shrink-0' />
+                        <span>{mod.likes.toLocaleString()}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {(!native || mod.remoteUpdatedAt.getTime() !== 0) && (
+                  <div className='flex items-center gap-1.5 text-muted-foreground text-xs'>
+                    <CalendarIcon className='h-3 w-3 flex-shrink-0' />
+                    <span title={format(new Date(mod.remoteUpdatedAt), "PPP")}>
+                      {format(new Date(mod.remoteUpdatedAt), "MMM d, yyyy")}
+                    </span>
+                  </div>
+                )}
               </div>
               {!readOnly && (
                 <ModButton
