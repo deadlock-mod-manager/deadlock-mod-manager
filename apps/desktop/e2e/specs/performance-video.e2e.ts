@@ -1,72 +1,32 @@
 import assert from "node:assert/strict";
-import { access, readFile } from "node:fs/promises";
-import { $, browser, expect } from "@wdio/globals";
+import { readFile } from "node:fs/promises";
+import { $, expect } from "@wdio/globals";
 import { startApplication } from "../support/application";
 import { closeApplication } from "../support/application-exit";
 import { step } from "../support/evidence";
 import { observeUntil } from "../support/observations";
 import {
+  applyPreset,
+  confirmDialog,
+  exists,
+  openTab,
+  refocusWindow,
+  turnOff,
+} from "../support/performance-actions";
+import {
   CHANGED_KEY,
   FIRST_PRESET,
   PLAYER_VIDEO,
   SECOND_PRESET,
+  VARIANT_PRESET,
   changeInGame,
   presetVideo,
   readVideoRecord,
   readVideoSettings,
   videoPaths,
 } from "../support/performance-fixtures";
-import { navigate, reveal, waitForOverlaysClosed } from "../support/ui";
+import { navigate, reveal } from "../support/ui";
 import { assertOwnedWorld } from "../support/world";
-
-const exists = (file: string) =>
-  access(file).then(
-    () => true,
-    () => false,
-  );
-
-const applyPreset = (presetId: string) =>
-  step(`apply ${presetId}`, async () => {
-    const card = await $(`article[data-config-id="preset:${presetId}"]`);
-    const apply = await card.$("button*=Apply");
-    await reveal(apply);
-    await apply.click();
-    await expect(card).toHaveText(expect.stringContaining("Applied"));
-  });
-
-// A status refresh re-renders the tabs and can swallow a click, so look the
-// tab up again and retry, falling back to the keyboard, until it is selected.
-const openTab = async (name: string) => {
-  const tab = `//button[@role="tab"][normalize-space()="${name}"]`;
-  await reveal(await $(tab));
-  await browser.waitUntil(
-    async () => {
-      if ((await $(tab).getAttribute("aria-selected")) === "true") return true;
-      await $(tab).click();
-      if ((await $(tab).getAttribute("aria-selected")) === "true") return true;
-      await browser.execute((node: HTMLElement) => node.focus(), await $(tab));
-      await browser.keys("Enter");
-      return false;
-    },
-    { timeoutMsg: `${name} tab never opened` },
-  );
-};
-
-const confirmDialog = async () => {
-  const confirm = await $('[role="alertdialog"] button[type="submit"]');
-  await confirm.waitForClickable();
-  await confirm.click();
-  await waitForOverlaysClosed();
-};
-
-const turnOff = () =>
-  step("turn the config off", async () => {
-    const button = await $("button=Turn off");
-    await reveal(button);
-    await button.click();
-    await confirmDialog();
-    await expect(button).not.toBeDisplayed();
-  });
 
 describe("performance configs and video.txt", () => {
   it("writes, settles and restores the player's video.txt", async () => {
@@ -138,8 +98,7 @@ describe("performance configs and video.txt", () => {
       await step("a value changed in game shows up", async () => {
         await openTab("Video settings");
         await changeInGame(paths.video, CHANGED_KEY, "2");
-        // Coming back from the game is a window focus.
-        await browser.execute(() => window.dispatchEvent(new Event("focus")));
+        await refocusWindow();
         await row.waitForDisplayed();
       });
       await step("keep the player's value", async () => {
@@ -184,6 +143,41 @@ describe("performance configs and video.txt", () => {
         () => readFile(paths.video, "utf8"),
         (text) => text === PLAYER_VIDEO,
       );
+    } else if (runtime.caseId === "perf-video-variant") {
+      const applyChanges = async () => {
+        const apply = await $("button=Apply changes");
+        await reveal(apply);
+        await apply.click();
+        await expect(apply).not.toBeDisplayed();
+      };
+      await applyPreset(VARIANT_PRESET);
+      await holds(
+        await presetVideo(VARIANT_PRESET, "Shadows"),
+        "The first variant by default",
+      );
+      await step("pick the other variant", async () => {
+        await openTab("Video settings");
+        const variant = await $("button*=No Shadows");
+        await reveal(variant);
+        await variant.click();
+        await applyChanges();
+        await holds(
+          await presetVideo(VARIANT_PRESET, "No Shadows"),
+          "No Shadows variant's video settings",
+        );
+      });
+      await step("stop writing video.txt", async () => {
+        const write = await $(`[id="write-video-preset:${VARIANT_PRESET}"]`);
+        await reveal(write);
+        await write.click();
+        await expect(write).toHaveAttribute("aria-checked", "false");
+        await applyChanges();
+        await observeUntil(
+          "The player's file is back",
+          () => readFile(paths.video, "utf8"),
+          (text) => text === PLAYER_VIDEO,
+        );
+      });
     } else {
       assert.equal(runtime.caseId, "perf-video-adopt");
       await step("make the config's file the player's own", async () => {
