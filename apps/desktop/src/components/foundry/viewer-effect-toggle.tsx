@@ -6,11 +6,13 @@ export const EffectToggle = ({
   onChange,
   icon: ToggleIcon,
   label,
+  showLabel = false,
 }: {
   on: boolean;
   onChange: (on: boolean) => void;
   icon: Icon;
   label: string;
+  showLabel?: boolean;
 }) => (
   <button
     type='button'
@@ -25,6 +27,9 @@ export const EffectToggle = ({
         : "bg-background text-muted-foreground hover:text-foreground",
     )}>
     <ToggleIcon className='size-3.5' weight={on ? "fill" : "regular"} />
-    <span className='hidden @[36rem]/transport:inline'>{label}</span>
+    <span
+      className={showLabel ? undefined : "hidden @[36rem]/transport:inline"}>
+      {label}
+    </span>
   </button>
 );

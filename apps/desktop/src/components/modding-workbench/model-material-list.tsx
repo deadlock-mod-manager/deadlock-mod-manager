@@ -53,7 +53,7 @@ export function ModelMaterialList({
             variant={isolated ? "secondary" : "ghost"}
             className='h-7 px-2 text-xs'
             aria-pressed={isolated}
-            disabled={!selection.materials.size}
+            disabled={disabled || !selection.materials.size}
             title={t("modelEditor.isolateHint")}
             onClick={onIsolate}>
             {t("modelEditor.isolate")}

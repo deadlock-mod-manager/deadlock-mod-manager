@@ -7,6 +7,25 @@ fn image(width: u32, height: u32) -> Image {
     data: ImageData::Rgba8([80, 100, 120, 73].repeat((width * height) as usize)),
   }
 }
+
+#[test]
+fn animated_paint_scales_to_the_export_cells_before_allocating_each_frame() {
+  let count = 41;
+  let original = image(2048, 1024);
+  assert!(
+    u64::from(original.width) * u64::from(original.height) * 4 * count as u64 > 128 * 1024 * 1024
+  );
+  let expected =
+    modding_model_images::animation::layout(original.width, original.height, count).unwrap();
+  let base = animation_base(original, count).unwrap();
+  assert_eq!(
+    (base.width, base.height),
+    (expected.frame_width, expected.frame_height)
+  );
+  assert!(u64::from(base.width) * u64::from(base.height) * 4 * count as u64 <= 64 * 1024 * 1024);
+  assert_eq!(pixel(&base, 0, 0), [80, 100, 120, 73]);
+  assert!(animation_base(image(1, 1), 129).is_err());
+}
 fn document() -> ModdingModelPaint {
   ModdingModelPaint {
     layers: vec![ModdingPaintLayer {

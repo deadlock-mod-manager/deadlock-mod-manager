@@ -3,6 +3,7 @@ import * as THREE from "three";
 import {
   projectModelImage,
   projectModelImages,
+  modelImageProjectionResolution,
   type ModelImageProjectionOptions,
   type ModelProjectionImage,
 } from "./model-image-projection";
@@ -38,6 +39,16 @@ function pixel(result: ModelProjectionImage, x: number, y: number) {
 }
 
 describe("image projection", () => {
+  test("projection detail shares a bounded animation budget instead of a fixed 512-pixel map", () => {
+    expect(modelImageProjectionResolution(1)).toBe(1024);
+    for (const count of [2, 41, 128]) {
+      const resolution = modelImageProjectionResolution(count);
+      expect(resolution * resolution * 4 * count).toBeLessThanOrEqual(
+        64 * 1024 * 1024,
+      );
+    }
+    expect(modelImageProjectionResolution(41)).toBeGreaterThan(512);
+  });
   test("projects camera image into UV coordinates with transparency and no upload flip", () => {
     const result = projectModelImage(fixture());
     expect(pixel(result, 0, 0)).toEqual([0, 0, 255, 255]);
@@ -231,7 +242,7 @@ describe("image projection", () => {
       },
     ];
     const results = projectModelImages({ ...options, frames });
-    expect(mesh.samples).toBe(6);
+    expect(mesh.samples).toBe(4);
     expect(results.map((frame) => frame.durationMs)).toEqual([40, 170, 90]);
     expect(pixel(results[0], 0, 0)).toEqual([0, 0, 0, 0]);
     expect(pixel(results[1], 0, 0)).toEqual([0, 255, 0, 128]);

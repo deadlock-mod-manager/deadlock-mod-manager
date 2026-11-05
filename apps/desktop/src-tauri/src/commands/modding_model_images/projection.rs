@@ -70,7 +70,9 @@ pub(super) fn save(
     plays,
     frames: Vec::new(),
   };
-  let mut pngs = Vec::new();
+  let staging_root = contained(root, PREFIX.trim_end_matches('/'))?;
+  std::fs::create_dir_all(&staging_root)?;
+  let staging = tempfile::tempdir_in(staging_root)?;
   for frame in frames {
     if frame.width != width
       || frame.height != height
@@ -86,16 +88,17 @@ pub(super) fn save(
       .map_err(|e| invalid(e.to_string()))?;
     let image = RgbaImage::from_raw(width, height, pixels)
       .ok_or_else(|| invalid("Projected frame dimensions do not match RGBA bytes"))?;
-    let mut png = Cursor::new(Vec::new());
-    image
-      .write_to(&mut png, image::ImageFormat::Png)
-      .map_err(|e| invalid(e.to_string()))?;
-    let png = png.into_inner();
+    let png = super::encode_png(&image)?;
     sequence.frames.push(Frame {
       hash: super::super::modding_edits::fingerprint(&png),
       duration_ms: frame.duration_ms,
     });
-    pngs.push(png);
+    std::fs::write(
+      staging
+        .path()
+        .join(format!("frame_{:04}.png", sequence.frames.len() - 1)),
+      png,
+    )?;
   }
   if sequence.frames.len() > 1 && sequence.frames.iter().any(|frame| frame.duration_ms == 0) {
     return Err(invalid("Animation frame durations must be positive"));
@@ -106,15 +109,26 @@ pub(super) fn save(
     super::super::modding_edits::fingerprint(&original)
   );
   let directory = contained(root, &folder)?;
-  std::fs::create_dir_all(directory)?;
-  for (index, png) in pngs.iter().enumerate() {
-    super::super::modding_edits::write_atomic(
-      &contained(root, &format!("{folder}/frame_{index:04}.png"))?,
-      png,
-    )?;
-  }
   let path = format!("{folder}/original.json");
-  super::super::modding_edits::write_atomic(&contained(root, &path)?, &original)?;
+  std::fs::write(staging.path().join("original.json"), &original)?;
+  match std::fs::rename(staging.path(), &directory) {
+    Ok(()) => {}
+    Err(_) if directory.is_dir() => {
+      if load(root, &path).is_ok() {
+        return Ok(metadata(&path, &sequence));
+      }
+      for index in 0..sequence.frames.len() {
+        let name = format!("frame_{index:04}.png");
+        let png = std::fs::read(staging.path().join(&name))?;
+        super::super::modding_edits::write_atomic(
+          &contained(root, &format!("{folder}/{name}"))?,
+          &png,
+        )?;
+      }
+      super::super::modding_edits::write_atomic(&contained(root, &path)?, &original)?;
+    }
+    Err(error) => return Err(error.into()),
+  }
   Ok(metadata(&path, &sequence))
 }
 pub(super) fn load(root: &Path, path: &str) -> Result<ModdingModelImage, Error> {
@@ -201,16 +215,17 @@ mod tests {
   #[test]
   fn lossless_sequence_roundtrip_and_tamper_detection() {
     let root = tempfile::tempdir().unwrap();
-    let frames = [([255, 11, 24, 123], 30), ([19, 255, 83, 48], 90)]
-      .into_iter()
-      .map(|(pixel, duration_ms)| ModdingProjectedImageFrame {
-        width: 2,
-        height: 2,
-        rgba_base64: base64::engine::general_purpose::STANDARD.encode(pixel.repeat(4)),
-        duration_ms,
-      })
-      .collect();
-    let image = save(root.path(), frames, 3).unwrap();
+    let frames: Vec<ModdingProjectedImageFrame> =
+      [([255, 11, 24, 123], 30), ([19, 255, 83, 48], 90)]
+        .into_iter()
+        .map(|(pixel, duration_ms)| ModdingProjectedImageFrame {
+          width: 2,
+          height: 2,
+          rgba_base64: base64::engine::general_purpose::STANDARD.encode(pixel.repeat(4)),
+          duration_ms,
+        })
+        .collect();
+    let image = save(root.path(), frames.clone(), 3).unwrap();
     assert_eq!(load(root.path(), &image.path).unwrap(), image);
     let frame = image::open(root.path().join(&image.frames[0].path))
       .unwrap()
@@ -218,5 +233,26 @@ mod tests {
     assert_eq!(frame.get_pixel(0, 0).0, [255, 11, 24, 123]);
     std::fs::write(root.path().join(&image.frames[0].path), b"tampered").unwrap();
     assert!(load(root.path(), &image.path).is_err());
+    assert_eq!(save(root.path(), frames, 3).unwrap(), image);
+    assert_eq!(load(root.path(), &image.path).unwrap(), image);
+  }
+
+  #[test]
+  fn invalid_projected_sequences_do_not_publish_partial_frames() {
+    let root = tempfile::tempdir().unwrap();
+    let frames = [30, 0]
+      .into_iter()
+      .map(|duration_ms| ModdingProjectedImageFrame {
+        rgba_base64: base64::engine::general_purpose::STANDARD.encode([255, 0, 0, 128]),
+        width: 1,
+        height: 1,
+        duration_ms,
+      })
+      .collect();
+    assert!(save(root.path(), frames, 0).is_err());
+    assert_eq!(
+      std::fs::read_dir(root.path().join(PREFIX)).unwrap().count(),
+      0
+    );
   }
 }

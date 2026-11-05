@@ -6,6 +6,7 @@ import {
 } from "./model-material-expression";
 import { updateSource2Color } from "./source2-material";
 import { PLAYGROUND_TOON_LIGHTING } from "./playground-toon-shader";
+import { updateSource2Emission } from "./source2-emission";
 
 export function installMaterialStylePreview(
   material: THREE.MeshStandardMaterial | THREE.MeshBasicMaterial,
@@ -56,6 +57,7 @@ export function installMaterialStylePreview(
   }
   const apply = (values: ReadonlyMap<string, readonly number[]>) => {
     updateSource2Color(material, values);
+    updateSource2Emission(material, values);
     nprEnabled.value =
       !material.transparent && material.blending === THREE.NormalBlending
         ? (values.get("F_USE_NPR_LIGHTING")?.[0] ?? 0)

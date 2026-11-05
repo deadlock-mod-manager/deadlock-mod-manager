@@ -5,6 +5,7 @@ import type { ModdingPaintPreview } from "@/types/generated/ModdingPaintPreview"
 import type { ModelPaintAnimation } from "@/lib/model-paint-animation";
 import type { ModdingModelPaint } from "@/types/generated/ModdingModelPaint";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { decodeImagePixels } from "@/lib/model-image-layer-data";
 
 export const modelPaintQuery = (
   addonId: string,
@@ -23,10 +24,12 @@ export const modelPaintQuery = (
     );
     return {
       frames: data.frames.map((frame) => ({
-        pixels: Uint8Array.from(atob(frame.rgbaBase64), (c) => c.charCodeAt(0)),
+        pixels: decodeImagePixels(frame.rgbaBase64),
         durationMs: frame.durationMs,
       })),
       plays: data.plays,
+      width: data.width,
+      height: data.height,
       frameWidth: data.frameWidth,
       frameHeight: data.frameHeight,
     };

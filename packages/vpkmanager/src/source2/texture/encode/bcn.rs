@@ -21,6 +21,7 @@
 
 use intel_tex_2::{RSurface, RgSurface, RgbaSurface, bc1, bc3, bc4, bc5, bc6h, bc7};
 use rayon::prelude::*;
+use std::borrow::Cow;
 
 use crate::source2::error::EncodeError;
 use crate::source2::texture::format::TextureFormat;
@@ -226,11 +227,11 @@ fn block_pad(n: u32) -> u32 {
 /// Replicate edge pixels to grow an RGBA8 buffer up to `BCn` block-multiple
 /// dims. Returns the padded buffer and its dims. Pass-through when the
 /// input is already aligned.
-fn pad_rgba8(buf: &[u8], width: u32, height: u32) -> (Vec<u8>, u32, u32) {
+fn pad_rgba8(buf: &[u8], width: u32, height: u32) -> (Cow<'_, [u8]>, u32, u32) {
     let padded_width = block_pad(width);
     let padded_height = block_pad(height);
     if padded_width == width && padded_height == height {
-        return (buf.to_vec(), width, height);
+        return (Cow::Borrowed(buf), width, height);
     }
     let src_width = width as usize;
     let src_height = height as usize;
@@ -246,7 +247,7 @@ fn pad_rgba8(buf: &[u8], width: u32, height: u32) -> (Vec<u8>, u32, u32) {
             out[dst..dst + 4].copy_from_slice(&buf[src..src + 4]);
         }
     }
-    (out, padded_width, padded_height)
+    (Cow::Owned(out), padded_width, padded_height)
 }
 
 /// Same as [`pad_rgba8`] but for RGBA f16 buffers (BC6H input).

@@ -2,6 +2,7 @@ import * as THREE from "three";
 import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { z } from "zod";
 import type { PaintableMaterial } from "./workbench-paint-shader";
+import { installSource2Emission } from "./source2-emission";
 
 const vector = z.tuple([
   z.number().finite(),
@@ -25,6 +26,12 @@ const metadataSchema = z.object({
   blendMode: z.enum(["opaque", "translucent", "additive"]),
   unlit: z.boolean(),
   color: colorSchema.nullable(),
+  emission: z
+    .object({
+      maskTexture: z.number().int().nonnegative().nullable(),
+      albedoFactor: z.number().finite().min(0).max(1),
+    })
+    .nullish(),
 });
 type Source2Color = z.infer<typeof colorSchema>;
 
@@ -64,6 +71,8 @@ export async function loadSource2Textures(gltf: GLTF, textureOffset = 0) {
     const index =
       color && needsTintMask(material, color) ? color.tintMaskTexture : null;
     if (index != null) indices.add(index);
+    const emissionIndex = source2Metadata(material)?.emission?.maskTexture;
+    if (emissionIndex != null) indices.add(emissionIndex);
   }
   const textures = new Map<number, THREE.Texture>();
   await Promise.all(
@@ -84,13 +93,27 @@ export async function loadSource2Textures(gltf: GLTF, textureOffset = 0) {
   if (textureOffset) {
     for (const material of sceneMaterials(gltf.scene)) {
       const data = source2Metadata(material);
-      if (data?.color?.tintMaskTexture != null)
+      if (data)
         material.userData.source2 = {
           ...data,
-          color: {
-            ...data.color,
-            tintMaskTexture: data.color.tintMaskTexture + textureOffset,
-          },
+          color: data.color
+            ? {
+                ...data.color,
+                tintMaskTexture:
+                  data.color.tintMaskTexture == null
+                    ? null
+                    : data.color.tintMaskTexture + textureOffset,
+              }
+            : null,
+          emission: data.emission
+            ? {
+                ...data.emission,
+                maskTexture:
+                  data.emission.maskTexture == null
+                    ? null
+                    : data.emission.maskTexture + textureOffset,
+              }
+            : null,
         };
     }
   }
@@ -203,6 +226,7 @@ export function installSource2Color(
   editing = false,
 ) {
   const data = source2Metadata(material);
+  installSource2Emission(material, textures, data?.emission);
   const color = data?.color;
   if (!color || data.shader.toLowerCase() !== "pbr.vfx") return false;
   // Only remove the factor owned by this exporter/schema. Imported and edited GLBs stay intact.

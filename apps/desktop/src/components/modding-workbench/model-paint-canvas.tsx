@@ -13,12 +13,16 @@ const point = (e: PointerEvent<HTMLCanvasElement>): [number, number] => {
 
 export function ModelPaintCanvas({
   pixels,
+  width = 256,
+  height = 256,
   brush,
   disabled,
   maxPoints,
   onStroke,
 }: {
   pixels: Uint8Array | undefined;
+  width?: number;
+  height?: number;
   brush: Omit<ModdingPaintStroke, "points">;
   disabled: boolean;
   maxPoints: number;
@@ -31,19 +35,20 @@ export function ModelPaintCanvas({
     if (!pixels || !canvas.current) return;
     const context = canvas.current.getContext("2d");
     context?.putImageData(
-      new ImageData(opaquePaintPreview(pixels), 256, 256),
+      new ImageData(opaquePaintPreview(pixels), width, height),
       0,
       0,
     );
-  }, [pixels]);
+  }, [pixels, width, height]);
   return (
     <canvas
       ref={canvas}
       tabIndex={0}
-      width={256}
-      height={256}
+      width={width}
+      height={height}
+      style={{ aspectRatio: `${width} / ${height}` }}
       aria-label={t("modelEditor.paint.canvas")}
-      className='aspect-square w-full touch-none rounded border bg-muted cursor-crosshair'
+      className='w-full touch-none rounded border bg-muted cursor-crosshair'
       onPointerDown={(e) => {
         if (disabled || !pixels || e.button !== 0) return;
         e.currentTarget.focus();
@@ -68,17 +73,19 @@ export function ModelPaintCanvas({
         stroke.points.push(next);
         const context = e.currentTarget.getContext("2d");
         if (!context) return;
+        context.save();
+        context.scale(width, height);
         context.strokeStyle = stroke.erase
           ? "#888888"
           : `rgb(${stroke.color.join(",")})`;
         context.globalAlpha = 0.5;
-        context.lineWidth = stroke.radius * 256 * 2;
+        context.lineWidth = stroke.radius * 2;
         context.lineCap = "round";
         context.beginPath();
-        context.moveTo(previous[0] * 256, previous[1] * 256);
-        context.lineTo(next[0] * 256, next[1] * 256);
+        context.moveTo(previous[0], previous[1]);
+        context.lineTo(next[0], next[1]);
         context.stroke();
-        context.globalAlpha = 1;
+        context.restore();
       }}
       onPointerUp={(e) => {
         const stroke = active.current;
@@ -93,7 +100,7 @@ export function ModelPaintCanvas({
           canvas.current
             ?.getContext("2d")
             ?.putImageData(
-              new ImageData(opaquePaintPreview(pixels), 256, 256),
+              new ImageData(opaquePaintPreview(pixels), width, height),
               0,
               0,
             );

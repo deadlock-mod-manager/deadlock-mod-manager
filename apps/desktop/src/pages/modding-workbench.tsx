@@ -33,7 +33,6 @@ import { Link } from "react-router";
 import { AddonWorkspace } from "@/components/modding-workbench/addon-workspace";
 import { WorkbenchSetup } from "@/components/modding-workbench/workbench-setup";
 import { WorkbenchGuide } from "@/components/modding-workbench/workbench-guide";
-import PageTitle from "@/components/shared/page-title";
 import type { ModdingSetupStatus } from "@/types/generated/ModdingSetupStatus";
 import type { ModdingSdkStatus } from "@/types/generated/ModdingSdkStatus";
 import type { ModdingToolsConfig } from "@/types/generated/ModdingToolsConfig";
@@ -43,6 +42,7 @@ const ModdingWorkbench = () => {
   const [comparing, setComparing] = useState(false);
   const [variantsOpen, setVariantsOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
+  const [setupOpen, setSetupOpen] = useState(false);
   const [comparisonDirty, setComparisonDirty] = useState(false);
   const [snapshot, setSnapshot] = useState(emptyWorkspace);
   const [comparisonKey, setComparisonKey] = useState(0);
@@ -101,108 +101,116 @@ const ModdingWorkbench = () => {
   const checkingTools = config.isPending || sdk.isFetching || tools.isPending;
   const ready = !!sdk.data?.prepared && !!tools.data?.cliReady;
   return (
-    <div className='flex h-full min-h-0 flex-col gap-3 px-4 pb-4'>
-      <PageTitle
-        title={t("moddingWorkbench.title")}
-        subtitle={t("moddingWorkbench.description")}
-        action={
-          <div className='ml-auto flex shrink-0 items-center gap-1.5'>
-            <Button
-              asChild
-              variant='outline'
-              size='sm'
-              aria-label={t("workbenchGuide.toolSetup")}
-              title={t("workbenchGuide.toolSetup")}>
-              <Link to='/settings/tools'>
-                {ready ? (
-                  <CheckCircleIcon className='text-green-500' />
-                ) : (
-                  <GearIcon />
-                )}
-                <span>
-                  {t(
-                    checkingTools
-                      ? "moddingTools.checking"
-                      : "workbenchGuide.toolSetup",
-                  )}
-                </span>
-              </Link>
-            </Button>
-            <Button
-              size='sm'
-              variant='outline'
-              aria-label={t(
+    <div className='flex h-full min-h-0 flex-col overflow-hidden bg-background'>
+      <header className='flex h-11 shrink-0 items-center justify-between gap-3 border-b bg-card px-3'>
+        <div className='min-w-0'>
+          <h1 className='truncate text-sm font-semibold'>
+            {t("moddingWorkbench.title")}
+          </h1>
+        </div>
+        <div className='flex shrink-0 items-center gap-1.5'>
+          <Button
+            variant='ghost'
+            size='sm'
+            className='h-7'
+            disabled={!config.data}
+            aria-expanded={setupOpen}
+            aria-controls='workbench-setup-form'
+            aria-label={t("workbenchGuide.toolSetup")}
+            title={t("workbenchGuide.toolSetup")}
+            onClick={() => setSetupOpen(!setupOpen)}>
+            {ready ? (
+              <CheckCircleIcon className='text-primary' />
+            ) : (
+              <GearIcon />
+            )}
+            <span>
+              {t(
+                checkingTools
+                  ? "moddingTools.checking"
+                  : ready
+                    ? "workbenchGuide.toolsReady"
+                    : "workbenchGuide.toolSetup",
+              )}
+            </span>
+          </Button>
+          <Button
+            size='sm'
+            variant='ghost'
+            className='h-7'
+            aria-label={t(
+              comparing
+                ? "workbenchAuthoring.closeComparison"
+                : "workbenchAuthoring.compare",
+            )}
+            disabled={detached || (comparisonDirty && comparing)}
+            onClick={() => setComparing(!comparing)}>
+            <ColumnsIcon />
+            <span className='hidden xl:inline'>
+              {t(
                 comparing
                   ? "workbenchAuthoring.closeComparison"
                   : "workbenchAuthoring.compare",
               )}
-              disabled={detached || (comparisonDirty && comparing)}
-              onClick={() => setComparing(!comparing)}>
-              <ColumnsIcon />
-              <span className='hidden xl:inline'>
-                {t(
-                  comparing
-                    ? "workbenchAuthoring.closeComparison"
-                    : "workbenchAuthoring.compare",
-                )}
-              </span>
-            </Button>
-            <Button
-              size='icon'
-              variant='ghost'
-              aria-label={t("workbenchGuide.title")}
-              title={t("workbenchGuide.title")}
-              aria-expanded={guideOpen}
-              onClick={() => setGuideOpen(!guideOpen)}>
-              <QuestionIcon />
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  size='icon'
-                  variant='ghost'
-                  aria-label={t("workbenchGuide.moreActions")}
-                  title={t("workbenchGuide.moreActions")}>
-                  <DotsThreeIcon />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align='end'>
+            </span>
+          </Button>
+          <Button
+            size='icon'
+            variant='ghost'
+            className='size-7'
+            aria-label={t("workbenchGuide.title")}
+            title={t("workbenchGuide.title")}
+            aria-expanded={guideOpen}
+            aria-controls='workbench-guide'
+            onClick={() => setGuideOpen(!guideOpen)}>
+            <QuestionIcon />
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size='icon'
+                variant='ghost'
+                className='size-7'
+                aria-label={t("workbenchGuide.moreActions")}
+                title={t("workbenchGuide.moreActions")}>
+                <DotsThreeIcon />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align='end'>
+              <DropdownMenuItem asChild>
+                <Link to='/settings/tools'>
+                  {t("moddingWorkbench.advancedSettings")}
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={!sdk.data?.prepared}
+                onSelect={() => setVariantsOpen(true)}>
+                {t("workbenchAuthoring.variantBuilds")}
+              </DropdownMenuItem>
+              {comparing || detached ? (
                 <DropdownMenuItem
-                  disabled={!sdk.data?.prepared}
-                  onSelect={() => setVariantsOpen(true)}>
-                  {t("workbenchAuthoring.variantBuilds")}
+                  disabled={comparisonDirty || popout.isPending}
+                  onSelect={() => popout.mutate()}>
+                  {t(
+                    detached
+                      ? "workbenchCompare.focus"
+                      : "workbenchCompare.popout",
+                  )}
                 </DropdownMenuItem>
-                {comparing || detached ? (
-                  <DropdownMenuItem
-                    disabled={comparisonDirty || popout.isPending}
-                    onSelect={() => popout.mutate()}>
-                    {t(
-                      detached
-                        ? "workbenchCompare.focus"
-                        : "workbenchCompare.popout",
-                    )}
-                  </DropdownMenuItem>
-                ) : null}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        }
-      />
-      {config.data && !checkingTools && !ready ? (
-        <section
-          className='shrink-0 rounded-md border border-primary/40 bg-primary/5 p-3'
-          aria-label={t("moddingWorkbench.setupTitle")}>
-          <h2 className='text-sm font-semibold'>
-            {t("moddingWorkbench.setupTitle")}
-          </h2>
-          <div className='max-h-80 overflow-auto pt-3'>
-            <WorkbenchSetup key={config.data.csdk} config={config.data} />
-          </div>
-        </section>
+              ) : null}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </header>
+      {config.data ? (
+        <div
+          id='workbench-setup-form'
+          hidden={!setupOpen && !tools.data?.running}
+          className='max-h-72 shrink-0 overflow-auto border-b bg-card p-4'>
+          <WorkbenchSetup config={config.data} />
+        </div>
       ) : null}
-      {guideOpen || (!checkingTools && !ready) ? (
-        <WorkbenchGuide expanded />
-      ) : null}
+      {guideOpen ? <WorkbenchGuide expanded /> : null}
       <ResizablePanelGroup
         deferResize
         direction='horizontal'

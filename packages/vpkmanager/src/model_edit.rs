@@ -237,85 +237,18 @@ pub fn edit_texture_with_image(
     edit: TextureEdit,
     replacement: Option<source2::Image>,
 ) -> Result<Vec<u8>> {
-    if edit
-        .tint
-        .is_some_and(|v| v.iter().any(|v| !v.is_finite() || !(0.0..=1.0).contains(v)))
-        || edit
-            .channels
-            .iter()
-            .flatten()
-            .any(|v| !v.is_finite() || !(0.0..=1.0).contains(v))
-        || edit.recolor.is_some_and(|[h, s, b]| {
-            !h.is_finite()
-                || !s.is_finite()
-                || !b.is_finite()
-                || !(0.0..=360.0).contains(&h)
-                || !(0.0..=2.0).contains(&s)
-                || !(0.0..=2.0).contains(&b)
-        })
-    {
-        return Err(invalid("Invalid model texture edit"));
-    }
     if !texture_editable(bytes) {
         return Err(invalid(
             "Model editing supports LDR 2D textures up to 16 megapixels; HDR, YCoCg and cubemaps are not editable",
         ));
     }
     let info = source2::inspect(bytes)?;
-    let mut image = match replacement {
+    let image = match replacement {
         Some(image) => image,
         None => source2::decode(bytes)?,
     };
-    if image.width == 0
-        || image.height == 0
-        || u64::from(image.width) * u64::from(image.height) > 16 * 1024 * 1024
-        || !matches!(&image.data, ImageData::Rgba8(pixels) if pixels.len() as u64 == u64::from(image.width) * u64::from(image.height) * 4)
-    {
-        return Err(invalid("Invalid painted texture dimensions or pixels"));
-    }
-    let expand_pattern = edit.pattern.is_some() && (image.width < 128 || image.height < 128);
-    let expanded = expand_pattern
-        || image.width != u32::from(info.width)
-        || image.height != u32::from(info.height);
-    if expand_pattern {
-        let ImageData::Rgba8(pixels) = &image.data else {
-            return Err(invalid("LDR required"));
-        };
-        let buffer = image::RgbaImage::from_raw(image.width, image.height, pixels.clone())
-            .ok_or_else(|| invalid("Invalid pattern input"))?;
-        let resized =
-            image::imageops::resize(&buffer, 256, 256, image::imageops::FilterType::Nearest);
-        image = source2::Image {
-            width: 256,
-            height: 256,
-            data: ImageData::Rgba8(resized.into_raw()),
-        };
-    }
-    if let Some(pattern) = edit.pattern {
-        crate::pattern::paint_image(&mut image, pattern)?;
-    }
-    let ImageData::Rgba8(pixels) = &mut image.data else {
-        return Err(invalid("Model editing supports LDR textures only"));
-    };
-    for pixel in pixels.chunks_exact_mut(4) {
-        if edit.tint.is_some() || edit.recolor.is_some() {
-            let mut rgb = [pixel[0], pixel[1], pixel[2]].map(|v| linear(f64::from(v) / 255.));
-            if let Some(recolor) = edit.recolor {
-                rgb = paint(rgb, recolor);
-            }
-            if let Some(tint) = edit.tint {
-                rgb = std::array::from_fn(|i| rgb[i] * tint[i]);
-            }
-            for i in 0..3 {
-                pixel[i] = byte(srgb(rgb[i]));
-            }
-        }
-        for (channel, value) in edit.channels.iter().enumerate() {
-            if let Some(value) = value {
-                pixel[channel] = byte(*value);
-            }
-        }
-    }
+    let image = edit_image(image, edit)?;
+    let expanded = image.width != u32::from(info.width) || image.height != u32::from(info.height);
     if expanded {
         return source2::texture::encode_vtex_png_rgba8888(&image, info.flags)
             .map_err(|e| invalid(e.to_string()));
@@ -342,6 +275,81 @@ pub fn edit_texture_with_image(
         .map_err(|e| invalid(e.to_string()));
     }
     Ok(source2::edit::replace_mip_chain(bytes, &image)?)
+}
+
+/// Apply appearance edits to decoded pixels without encoding an intermediate texture.
+/// Atlas builders can edit each frame and compress only the completed atlas.
+pub fn edit_image(mut image: source2::Image, edit: TextureEdit) -> Result<source2::Image> {
+    if edit
+        .tint
+        .is_some_and(|v| v.iter().any(|v| !v.is_finite() || !(0.0..=1.0).contains(v)))
+        || edit
+            .channels
+            .iter()
+            .flatten()
+            .any(|v| !v.is_finite() || !(0.0..=1.0).contains(v))
+        || edit.recolor.is_some_and(|[h, s, b]| {
+            !h.is_finite()
+                || !s.is_finite()
+                || !b.is_finite()
+                || !(0.0..=360.0).contains(&h)
+                || !(0.0..=2.0).contains(&s)
+                || !(0.0..=2.0).contains(&b)
+        })
+    {
+        return Err(invalid("Invalid model texture edit"));
+    }
+    if image.width == 0
+        || image.height == 0
+        || u64::from(image.width) * u64::from(image.height) > 16 * 1024 * 1024
+        || !matches!(&image.data, ImageData::Rgba8(pixels) if pixels.len() as u64 == u64::from(image.width) * u64::from(image.height) * 4)
+    {
+        return Err(invalid("Invalid painted texture dimensions or pixels"));
+    }
+    let expand_pattern = edit.pattern.is_some() && (image.width < 128 || image.height < 128);
+    if expand_pattern {
+        let ImageData::Rgba8(pixels) = &image.data else {
+            return Err(invalid("LDR required"));
+        };
+        let buffer = image::RgbaImage::from_raw(image.width, image.height, pixels.clone())
+            .ok_or_else(|| invalid("Invalid pattern input"))?;
+        let resized =
+            image::imageops::resize(&buffer, 256, 256, image::imageops::FilterType::Nearest);
+        image = source2::Image {
+            width: 256,
+            height: 256,
+            data: ImageData::Rgba8(resized.into_raw()),
+        };
+    }
+    if let Some(pattern) = edit.pattern {
+        crate::pattern::paint_image(&mut image, pattern)?;
+    }
+    if edit.tint.is_none() && edit.recolor.is_none() && edit.channels.iter().all(Option::is_none) {
+        return Ok(image);
+    }
+    let ImageData::Rgba8(pixels) = &mut image.data else {
+        return Err(invalid("Model editing supports LDR textures only"));
+    };
+    for pixel in pixels.chunks_exact_mut(4) {
+        if edit.tint.is_some() || edit.recolor.is_some() {
+            let mut rgb = [pixel[0], pixel[1], pixel[2]].map(|v| linear(f64::from(v) / 255.));
+            if let Some(recolor) = edit.recolor {
+                rgb = paint(rgb, recolor);
+            }
+            if let Some(tint) = edit.tint {
+                rgb = std::array::from_fn(|i| rgb[i] * tint[i]);
+            }
+            for i in 0..3 {
+                pixel[i] = byte(srgb(rgb[i]));
+            }
+        }
+        for (channel, value) in edit.channels.iter().enumerate() {
+            if let Some(value) = value {
+                pixel[channel] = byte(*value);
+            }
+        }
+    }
+    Ok(image)
 }
 
 #[cfg(test)]

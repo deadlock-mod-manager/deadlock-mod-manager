@@ -157,6 +157,96 @@ fn unchanged_model_overrides_keep_their_compiler_timestamps() {
   }
   storage::verify(&addon, &storage::load(&addon).unwrap()).unwrap();
 }
+
+#[test]
+fn gif_import_paint_and_streamed_save_preserve_timeline_colors_masks_and_restore() {
+  use super::super::modding_model_images;
+  use paint::{ModdingModelPaint, ModdingPaintBlend, ModdingPaintLayer};
+  let (dir, addon) = setup();
+  let source = dir.path().join("overlay.gif");
+  {
+    let mut encoder = image::codecs::gif::GifEncoder::new(std::fs::File::create(&source).unwrap());
+    encoder
+      .set_repeat(image::codecs::gif::Repeat::Infinite)
+      .unwrap();
+    for (color, duration) in [([255, 0, 0, 255], 30), ([0, 255, 0, 255], 90)] {
+      encoder
+        .encode_frame(image::Frame::from_parts(
+          image::RgbaImage::from_pixel(4, 4, image::Rgba(color)),
+          0,
+          0,
+          image::Delay::from_numer_denom_ms(duration, 1),
+        ))
+        .unwrap();
+    }
+  }
+  let imported = modding_model_images::import(Path::new(&addon.content_path), &source).unwrap();
+  let mut body = default_edit("materials/body.vmat".into());
+  body.paint = Some(ModdingModelPaint {
+    layers: vec![ModdingPaintLayer {
+      id: "gif".into(),
+      name: "GIF".into(),
+      visible: true,
+      opacity: 1.,
+      blend: ModdingPaintBlend::Normal,
+      strokes: Vec::new(),
+      image: Some(imported.path),
+    }],
+  });
+  let mut saved = storage::load(&addon).unwrap();
+  saved.models.insert(
+    "models/test.vmdl_c".into(),
+    vec![body, default_edit("materials/head.vmat".into())],
+  );
+  bake::apply(&addon, saved, false, None).unwrap();
+  let saved = storage::load(&addon).unwrap();
+  storage::verify(&addon, &saved).unwrap();
+  let atlas_path = saved
+    .resources
+    .keys()
+    .find(|path| path.starts_with("materials/dmm_model_edits/"))
+    .unwrap();
+  let bytes = storage::read(&Path::new(&addon.game_path).join(atlas_path)).unwrap();
+  assert_eq!(
+    source2::inspect(&bytes).unwrap().format,
+    source2::texture::format::TextureFormat::Bc7
+  );
+  let atlas = source2::decode(&bytes).unwrap();
+  assert_eq!((atlas.width, atlas.height), (16, 8));
+  let source2::ImageData::Rgba8(pixels) = atlas.data else {
+    panic!("RGBA required")
+  };
+  for (x, expected) in [(2, [255u8, 0, 0, 99]), (10, [0, 255, 0, 99])] {
+    let start = (2 * 16 + x) * 4;
+    for (actual, expected) in pixels[start..start + 4].iter().zip(expected) {
+      assert!(actual.abs_diff(expected) <= 3);
+    }
+  }
+  let material = storage::read(&Path::new(&addon.game_path).join("materials/body.vmat_c")).unwrap();
+  let tree = kv3::decode(Resource::parse(&material).unwrap().data_block().unwrap()).unwrap();
+  let metadata = tree
+    .get("m_stringAttributes")
+    .unwrap()
+    .as_array()
+    .unwrap()
+    .iter()
+    .find(|entry| entry.get("m_name").and_then(Value::as_str) == Some("DmmAnimatedAlbedo"))
+    .unwrap()
+    .get("m_value")
+    .and_then(Value::as_str)
+    .unwrap();
+  let metadata: serde_json::Value = serde_json::from_str(metadata).unwrap();
+  assert_eq!(metadata["durationsMs"], serde_json::json!([30, 90]));
+  reapply_after_compile(&addon).unwrap();
+  assert_eq!(
+    storage::read(&Path::new(&addon.game_path).join(atlas_path)).unwrap(),
+    bytes
+  );
+  let mut reset = storage::load(&addon).unwrap();
+  reset.models.clear();
+  bake::apply(&addon, reset, false, None).unwrap();
+  assert!(!Path::new(&addon.game_path).join(atlas_path).exists());
+}
 #[test]
 fn model_edits_survive_recompilation_and_restore_every_original_without_cumulative_paint() {
   let (_dir, addon) = setup();

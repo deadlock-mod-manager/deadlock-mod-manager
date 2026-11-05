@@ -12,6 +12,15 @@ pub struct Source2Material {
     pub blend_mode: Source2BlendMode,
     pub unlit: bool,
     pub color: Option<Source2Color>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub emission: Option<Source2Emission>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Source2Emission {
+    pub mask_texture: Option<usize>,
+    pub albedo_factor: f32,
 }
 
 #[derive(Debug, Clone, Copy, Serialize)]
@@ -117,6 +126,7 @@ pub(super) fn metadata(data: &KvValue, shader: &str) -> Source2Material {
         },
         unlit: flag("F_UNLIT"),
         color,
+        emission: None,
     }
 }
 

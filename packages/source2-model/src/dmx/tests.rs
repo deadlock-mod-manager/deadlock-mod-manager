@@ -121,6 +121,7 @@ fn texture(path: &str) -> PreviewTexture {
             blend_mode: crate::Source2BlendMode::Opaque,
             unlit: false,
             color: None,
+            emission: None,
         }),
         tint_mask_png: None,
         effect_mask_png: None,
@@ -139,6 +140,7 @@ fn texture(path: &str) -> PreviewTexture {
         normal_png: None,
         orm_png: None,
         emissive_png: None,
+        self_illum_mask_png: None,
         vertex_color: false,
         double_sided: false,
         base_color_factor: [1.; 4],
@@ -154,6 +156,35 @@ fn texture(path: &str) -> PreviewTexture {
 fn json(model: &ModelGlb) -> Value {
     let length = u32::from_le_bytes(model.glb[12..16].try_into().unwrap()) as usize;
     serde_json::from_slice(&model.glb[20..20 + length]).unwrap()
+}
+
+#[test]
+fn raw_glow_mask_is_exported_separately_from_the_baked_gltf_fallback() {
+    let mut texture = texture("materials/blue.vmat_c");
+    texture.emissive_png = Some(texture.png.clone());
+    texture.self_illum_mask_png = Some(texture.png.clone());
+    texture.emissive_factor = Some([1.; 3]);
+    texture.source2.as_mut().unwrap().emission =
+        Some(crate::material_preview::metadata::Source2Emission {
+            mask_texture: None,
+            albedo_factor: 1.,
+        });
+    let model = DmxModel::decode(MATERIALS)
+        .unwrap()
+        .into_glb(&[texture], &[])
+        .unwrap();
+    let data = json(&model);
+    let material = &data["materials"][1];
+    let mask = material["extras"]["source2"]["emission"]["maskTexture"]
+        .as_u64()
+        .unwrap();
+    let fallback = material["emissiveTexture"]["index"].as_u64().unwrap();
+    assert_ne!(mask, fallback);
+    assert!(data["textures"][mask as usize].get("source").is_some());
+    assert_eq!(
+        material["extras"]["source2"]["emission"]["albedoFactor"],
+        1.
+    );
 }
 
 fn assert_same_geometry(actual: &ModelGlb, expected: &ModelGlb) {

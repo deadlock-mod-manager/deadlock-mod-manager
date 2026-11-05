@@ -235,6 +235,7 @@ pub(super) fn apply(
       let variant_path = compiled(&variant);
       let signature = fingerprint(
         &serde_json::to_vec(&(
+          "streamed-bc7-v1",
           &slot,
           fingerprint(&original),
           patch.tint,
@@ -269,46 +270,29 @@ pub(super) fn apply(
         if animation.frames.len() > 128 {
           return Err(invalid("Animated painting supports at most 128 frames"));
         }
-        let base = vpkmanager::source2::decode(&original).map_err(|e| invalid(e.to_string()))?;
-        if u64::from(base.width) * u64::from(base.height) * 4 * animation.frames.len() as u64
-          > 128 * 1024 * 1024
-        {
-          return Err(invalid(
-            "Painted animation exceeds 128 MB; use a smaller texture or fewer frames",
-          ));
-        }
-        let mut frames = Vec::new();
-        let mut elapsed = 0u64;
-        for frame in &animation.frames {
-          let mut image = base.clone();
-          paint::apply_resolved(
-            &mut image,
-            paint,
-            Some(Path::new(&addon.content_path)),
-            &source_images,
-            elapsed,
-          )?;
-          let bytes = edit_texture_with_image(&original, patch, Some(image))
-            .map_err(|e| invalid(e.to_string()))?;
-          let image = vpkmanager::source2::decode(&bytes).map_err(|e| invalid(e.to_string()))?;
-          let vpkmanager::source2::ImageData::Rgba8(pixels) = image.data else {
-            return Err(invalid("LDR required"));
-          };
-          let pixels = image::RgbaImage::from_raw(image.width, image.height, pixels)
-            .ok_or_else(|| invalid("Invalid painted animation frame"))?;
-          frames.push(
-            super::super::modding_model_images::animation::AnimationFrame {
-              pixels,
-              duration_ms: frame.duration_ms,
-            },
-          );
-          elapsed += u64::from(frame.duration_ms);
-        }
+        let base = paint::animation_base(
+          vpkmanager::source2::decode(&original).map_err(|e| invalid(e.to_string()))?,
+          animation.frames.len(),
+        )?;
+        let cached = match previous.resources.get(&variant_path) {
+          Some(record) if record.input.as_deref() == Some(&signature) && target.is_file() => {
+            let bytes = storage::read(&target)?;
+            if fingerprint(&bytes) != record.applied {
+              return Err(invalid("Edited texture changed outside DMM"));
+            }
+            Some(bytes)
+          }
+          _ => None,
+        };
         animated_bake = Some((
           variant_path.clone(),
-          original.clone(),
-          frames,
+          original,
+          base,
+          paint.clone(),
+          patch,
           animation.plays,
+          source_images,
+          cached,
         ));
         None
       } else {
@@ -404,12 +388,70 @@ pub(super) fn apply(
       edited = vpkmanager::model_edit::material::set_expression(&edited, &expr.name, &expr.source)
         .map_err(|e| invalid(e.to_string()))?;
     }
-    if let Some((texture_path, original_texture, frames, plays)) = animated_bake {
-      let baked = super::super::modding_model_images::animation::bake(
+    if let Some((
+      texture_path,
+      original_texture,
+      base,
+      paint,
+      patch,
+      plays,
+      source_images,
+      cached,
+    )) = animated_bake
+    {
+      let animation = source_images
+        .values()
+        .find(|source| source.frames.len() > 1)
+        .expect("animated bake has a source timeline");
+      let durations: Vec<_> = animation
+        .frames
+        .iter()
+        .map(|frame| frame.duration_ms)
+        .collect();
+      let mut elapsed = 0u64;
+      let prepared = if cached.is_none() {
+        Some(paint::PreparedPaint::new(
+          &paint,
+          Some(Path::new(&addon.content_path)),
+          &source_images,
+          base.width,
+          base.height,
+        )?)
+      } else {
+        None
+      };
+      let baked = super::super::modding_model_images::animation::bake_with(
         &edited,
         &original_texture,
-        &frames,
+        (base.width, base.height),
+        &durations,
         plays,
+        cached,
+        |index| {
+          let mut image = base.clone();
+          prepared
+            .as_ref()
+            .expect("uncached bake prepares paint")
+            .apply(&mut image, elapsed)?;
+          elapsed += u64::from(durations[index]);
+          let image = vpkmanager::model_edit::edit_image(image, patch)
+            .map_err(|error| invalid(error.to_string()))?;
+          let vpkmanager::source2::ImageData::Rgba8(pixels) = image.data else {
+            return Err(invalid("LDR required"));
+          };
+          let pixels = image::RgbaImage::from_raw(image.width, image.height, pixels)
+            .ok_or_else(|| invalid("Invalid painted animation frame"))?;
+          if pixels.width() == base.width && pixels.height() == base.height {
+            Ok(pixels)
+          } else {
+            Ok(image::imageops::resize(
+              &pixels,
+              base.width,
+              base.height,
+              image::imageops::FilterType::Lanczos3,
+            ))
+          }
+        },
       )?;
       log::debug!(
         "[Workbench] Animated texture {texture_path}: {}x{} per frame",

@@ -1,10 +1,11 @@
 //! Managed image sources keep their original bytes and GIF disposal-composited frames.
 pub(crate) mod animation;
+mod cache;
 pub(crate) mod projection;
 
 use super::modding_workspace::{contained, resolve};
 use crate::{app_runtime::AppHandle, errors::Error};
-use image::{AnimationDecoder, ImageDecoder, RgbaImage};
+use image::{AnimationDecoder, ImageDecoder, ImageEncoder, RgbaImage};
 use serde::{Deserialize, Serialize};
 use std::{io::Cursor, path::Path};
 use ts_rs::TS;
@@ -118,9 +119,11 @@ fn gif_plays(bytes: &[u8]) -> Result<u32, Error> {
   }
   Err(invalid("Missing GIF trailer"))
 }
-type DecodedImage = (Vec<(RgbaImage, u32)>, u32, &'static str);
-
-fn decode(bytes: &[u8], source: &Path) -> Result<DecodedImage, Error> {
+fn decode_each(
+  bytes: &[u8],
+  source: &Path,
+  mut emit: impl FnMut(RgbaImage, u32) -> Result<(), Error>,
+) -> Result<(u32, &'static str), Error> {
   // TGA has no reliable magic signature. Only an explicit TGA extension enables its decoder.
   let format = image::guess_format(bytes)
     .or_else(|error| {
@@ -144,12 +147,12 @@ fn decode(bytes: &[u8], source: &Path) -> Result<DecodedImage, Error> {
     decoder
       .set_limits(limits)
       .map_err(|e| invalid(e.to_string()))?;
-    let mut frames = Vec::new();
+    let mut count = 0;
     let mut allocated = 0u64;
     for frame in decoder.into_frames() {
       let frame = frame.map_err(|e| invalid(e.to_string()))?;
       allocated += frame.buffer().as_raw().len() as u64;
-      if frames.len() >= MAX_FRAMES || allocated > MAX_BYTES {
+      if count >= MAX_FRAMES || allocated > MAX_BYTES {
         return Err(invalid(
           "Image animation exceeds 512 frames or 128 MB decoded",
         ));
@@ -157,12 +160,13 @@ fn decode(bytes: &[u8], source: &Path) -> Result<DecodedImage, Error> {
       let (numerator, denominator) = frame.delay().numer_denom_ms();
       // Zero-delay GIF frames need a nonzero timeline interval in both preview and bake.
       let duration = numerator.div_ceil(denominator).max(10);
-      frames.push((frame.into_buffer(), duration));
+      emit(frame.into_buffer(), duration)?;
+      count += 1;
     }
-    if frames.is_empty() {
+    if count == 0 {
       return Err(invalid("GIF contains no frames"));
     }
-    Ok((frames, plays, "gif"))
+    Ok((plays, "gif"))
   } else {
     let extension = match format {
       image::ImageFormat::Png => "png",
@@ -178,8 +182,36 @@ fn decode(bytes: &[u8], source: &Path) -> Result<DecodedImage, Error> {
       .decode()
       .map_err(|e| invalid(e.to_string()))?
       .to_rgba8();
-    Ok((vec![(image, 0)], 1, extension))
+    emit(image, 0)?;
+    Ok((1, extension))
   }
+}
+
+/// Managed intermediates favor encoding speed; the original and all RGBA pixels remain lossless.
+fn encode_png(image: &RgbaImage) -> Result<Vec<u8>, Error> {
+  use image::codecs::png::{CompressionType, FilterType, PngEncoder};
+  let mut bytes = Vec::new();
+  PngEncoder::new_with_quality(&mut bytes, CompressionType::Fast, FilterType::Adaptive)
+    .write_image(
+      image.as_raw(),
+      image.width(),
+      image.height(),
+      image::ExtendedColorType::Rgba8,
+    )
+    .map_err(|error| invalid(error.to_string()))?;
+  Ok(bytes)
+}
+
+#[cfg(test)]
+type DecodedImage = (Vec<(RgbaImage, u32)>, u32, &'static str);
+#[cfg(test)]
+fn decode(bytes: &[u8], source: &Path) -> Result<DecodedImage, Error> {
+  let mut frames = Vec::new();
+  let (plays, extension) = decode_each(bytes, source, |image, duration| {
+    frames.push((image, duration));
+    Ok(())
+  })?;
+  Ok((frames, plays, extension))
 }
 pub(super) fn import(root: &Path, source: &Path) -> Result<ModdingModelImage, Error> {
   let file = std::fs::File::open(source)?;
@@ -192,33 +224,51 @@ pub(super) fn import(root: &Path, source: &Path) -> Result<ModdingModelImage, Er
   if bytes.len() as u64 > MAX_BYTES {
     return Err(invalid("Image exceeds 128 MB"));
   }
-  let (frames, plays, extension) = decode(&bytes, source)?;
   let folder = format!("{PREFIX}{}", super::modding_edits::fingerprint(&bytes));
   let directory = contained(root, &folder)?;
+  if let Some(image) = cache::get(&directory)? {
+    return Ok(image);
+  }
   std::fs::create_dir_all(&directory)?;
-  let path = format!("{folder}/original.{extension}");
-  super::modding_edits::write_atomic(&contained(root, &path)?, &bytes)?;
   let mut output = ModdingModelImage {
-    path,
-    width: frames[0].0.width(),
-    height: frames[0].0.height(),
+    path: String::new(),
+    width: 0,
+    height: 0,
     frames: Vec::new(),
-    plays,
+    plays: 1,
   };
-  for (index, (image, duration_ms)) in frames.into_iter().enumerate() {
+  let mut hashes = Vec::new();
+  let (plays, extension) = decode_each(&bytes, source, |image, duration_ms| {
+    let index = output.frames.len();
+    if index == 0 {
+      output.width = image.width();
+      output.height = image.height();
+    }
     let path = format!("{folder}/frame_{index:04}.png");
-    let mut encoded = Cursor::new(Vec::new());
-    image
-      .write_to(&mut encoded, image::ImageFormat::Png)
-      .map_err(|e| invalid(e.to_string()))?;
-    super::modding_edits::write_atomic(&contained(root, &path)?, &encoded.into_inner())?;
+    let encoded = encode_png(&image)?;
+    let hash = super::modding_edits::fingerprint(&encoded);
+    if hashes.last() == Some(&hash) {
+      output
+        .frames
+        .last_mut()
+        .expect("matching hash has a frame")
+        .duration_ms += duration_ms;
+      return Ok(());
+    }
+    hashes.push(hash);
+    super::modding_edits::write_atomic(&contained(root, &path)?, &encoded)?;
     output
       .frames
       .push(ModdingModelImageFrame { path, duration_ms });
-  }
+    Ok(())
+  })?;
+  output.path = format!("{folder}/original.{extension}");
+  output.plays = plays;
+  super::modding_edits::write_atomic(&contained(root, &output.path)?, &bytes)?;
+  cache::insert(directory, output.clone(), hashes);
   Ok(output)
 }
-/// Read only managed source originals. Decode again so stale editor metadata is never trusted.
+/// Validate source identity before reusing decoded metadata and hashed frame files.
 pub(super) fn load(root: &Path, path: &str) -> Result<ModdingModelImage, Error> {
   if !path.starts_with(PREFIX)
     || !Path::new(path)
@@ -230,7 +280,30 @@ pub(super) fn load(root: &Path, path: &str) -> Result<ModdingModelImage, Error> 
   if path.ends_with("/original.json") {
     return projection::load(root, path);
   }
-  let image = import(root, &contained(root, path)?)?;
+  let source = contained(root, path)?;
+  if let Some(image) = cache::get(source.parent().expect("managed source has a directory"))?
+    && image.path == path
+  {
+    return Ok(image);
+  }
+  use std::io::Read;
+  let mut bytes = Vec::new();
+  std::fs::File::open(&source)?
+    .take(MAX_BYTES + 1)
+    .read_to_end(&mut bytes)?;
+  if bytes.len() as u64 > MAX_BYTES
+    || Path::new(path)
+      .parent()
+      .and_then(Path::file_name)
+      .and_then(|name| name.to_str())
+      != Some(&super::modding_edits::fingerprint(&bytes))
+  {
+    return Err(invalid(
+      "Managed image source changed outside DMM; import it again",
+    ));
+  }
+  drop(bytes);
+  let image = import(root, &source)?;
   if image.path != path {
     return Err(invalid(
       "Managed image source changed outside DMM; import it again",
@@ -357,6 +430,39 @@ mod tests {
     assert!(load(root.path(), "../../outside.png").is_err());
   }
   #[test]
+  fn cached_load_preserves_frames_and_repairs_changed_derivatives_without_trusting_a_changed_source()
+   {
+    let root = tempfile::tempdir().unwrap();
+    let source = root.path().join("animation.gif");
+    std::fs::write(&source, gif(Some(image::codecs::gif::Repeat::Infinite))).unwrap();
+    let imported = import(root.path(), &source).unwrap();
+    let frame_path = root.path().join(&imported.frames[0].path);
+    let recorded = std::time::SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(100);
+    std::fs::File::options()
+      .write(true)
+      .open(&frame_path)
+      .unwrap()
+      .set_modified(recorded)
+      .unwrap();
+    assert_eq!(load(root.path(), &imported.path).unwrap(), imported);
+    assert_eq!(
+      std::fs::metadata(&frame_path).unwrap().modified().unwrap(),
+      recorded
+    );
+    std::fs::write(&frame_path, b"corrupted derivative").unwrap();
+    assert_eq!(load(root.path(), &imported.path).unwrap(), imported);
+    assert_eq!(
+      frame_pixels(root.path(), &imported, &imported.frames[0])
+        .unwrap()
+        .get_pixel(0, 0)
+        .0,
+      [255, 0, 0, 255]
+    );
+    let original = root.path().join(&imported.path);
+    std::fs::write(&original, gif(None)).unwrap();
+    assert!(load(root.path(), &imported.path).is_err());
+  }
+  #[test]
   fn tga_import_and_managed_reload_preserve_pixels_and_reject_malformed_inputs() {
     let root = tempfile::tempdir().unwrap();
     let source = root.path().join("overlay.TGA");
@@ -393,5 +499,29 @@ mod tests {
     let mut truncated = gif(None);
     truncated.truncate(truncated.len() - 5);
     assert!(decode(&truncated, Path::new("truncated.gif")).is_err());
+  }
+
+  #[test]
+  fn consecutive_duplicate_frames_share_pixels_and_keep_the_total_duration() {
+    let root = tempfile::tempdir().unwrap();
+    let source = root.path().join("duplicate.gif");
+    {
+      let mut encoder =
+        image::codecs::gif::GifEncoder::new(std::fs::File::create(&source).unwrap());
+      for delay in [30, 90] {
+        encoder
+          .encode_frame(image::Frame::from_parts(
+            RgbaImage::from_pixel(2, 2, image::Rgba([255, 0, 0, 255])),
+            0,
+            0,
+            image::Delay::from_numer_denom_ms(delay, 1),
+          ))
+          .unwrap();
+      }
+    }
+    let imported = import(root.path(), &source).unwrap();
+    assert_eq!(imported.frames.len(), 1);
+    assert_eq!(imported.frames[0].duration_ms, 120);
+    assert_eq!(load(root.path(), &imported.path).unwrap(), imported);
   }
 }

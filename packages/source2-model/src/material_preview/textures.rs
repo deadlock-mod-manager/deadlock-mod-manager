@@ -95,6 +95,7 @@ pub(super) fn decode_texture_preview_resource(
         normal_png: None,
         orm_png: None,
         emissive_png: None,
+        self_illum_mask_png: None,
         vertex_color: false,
         double_sided: false,
         base_color_factor: [1.0; 4],

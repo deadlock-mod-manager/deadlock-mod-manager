@@ -5,12 +5,53 @@ import {
   dragImagePlacement,
   imagePlacementGeometry,
   createImagePlacementUpdates,
+  trimModelImageFrames,
 } from "./model-image-placement";
 
 const viewport = { width: 800, height: 400 };
 const image = { width: 400, height: 200 };
 
 describe("viewport image placement", () => {
+  test("sticker trimming uses the whole animation footprint without clipping motion or changing the wrap source", () => {
+    const first = new Uint8Array(4 * 2 * 4);
+    const second = new Uint8Array(first.length);
+    first.set([10, 20, 30, 255], 4);
+    second.set([40, 50, 60, 128], (4 + 3) * 4);
+    const frames = [
+      { rgba: first, width: 4, height: 2, durationMs: 80 },
+      { rgba: second, width: 4, height: 2, durationMs: 120 },
+    ];
+    const trimmed = trimModelImageFrames(frames);
+    expect(
+      trimmed.map((frame) => [frame.width, frame.height, frame.durationMs]),
+    ).toEqual([
+      [3, 2, 80],
+      [3, 2, 120],
+    ]);
+    expect(Array.from(trimmed[0].rgba.subarray(0, 4))).toEqual([
+      10, 20, 30, 255,
+    ]);
+    expect(
+      Array.from(trimmed[1].rgba.subarray((3 + 2) * 4, (3 + 3) * 4)),
+    ).toEqual([40, 50, 60, 128]);
+    expect(frames[0].width).toBe(4);
+    expect(Array.from(frames[0].rgba.subarray(4, 8))).toEqual([
+      10, 20, 30, 255,
+    ]);
+  });
+  test("opaque and fully transparent images keep their original frame bounds", () => {
+    for (const alpha of [0, 255]) {
+      const frames = [
+        {
+          rgba: new Uint8Array([20, 30, 40, alpha]),
+          width: 1,
+          height: 1,
+          durationMs: 100,
+        },
+      ];
+      expect(trimModelImageFrames(frames)).toBe(frames);
+    }
+  });
   test("high-rate pointer input publishes once per display frame and release keeps the last position", () => {
     const callbacks: FrameRequestCallback[] = [];
     const published: number[] = [];

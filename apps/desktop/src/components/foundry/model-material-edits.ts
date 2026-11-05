@@ -166,7 +166,11 @@ diffuseColor.rgb *= uModelTint;`,
         const painted = paints.get(identity);
         if (painted && painted !== paintBytes) {
           paintBytes = painted;
-          const texture = new THREE.DataTexture(painted, 256, 256);
+          const texture = new THREE.DataTexture(
+            painted,
+            paintAnimation?.width ?? 256,
+            paintAnimation?.height ?? 256,
+          );
           texture.colorSpace = THREE.SRGBColorSpace;
           texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
           texture.minFilter = texture.magFilter = THREE.LinearFilter;

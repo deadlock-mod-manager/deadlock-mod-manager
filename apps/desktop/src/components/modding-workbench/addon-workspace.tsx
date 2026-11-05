@@ -1,15 +1,9 @@
-import { Button } from "@deadlock-mods/ui/components/button";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@deadlock-mods/ui/components/resizable";
-import {
-  ArrowClockwiseIcon,
-  FolderIcon,
-  PlusIcon,
-  ArrowsLeftRightIcon,
-} from "@phosphor-icons/react";
+import { FolderIcon } from "@phosphor-icons/react";
 import {
   Empty,
   EmptyDescription,
@@ -32,7 +26,6 @@ import {
   emptyWorkspace,
   workspaceForSource,
   sourceKey,
-  WORKSPACE_SOURCE_DRAG,
   type WorkspaceSnapshot,
   type WorkspaceView,
   type WorkspaceSource,
@@ -47,9 +40,11 @@ import { useTranslation } from "react-i18next";
 import type { ModdingAddon } from "@/types/generated/ModdingAddon";
 import type { ModdingLibraryVpk } from "@/types/generated/ModdingLibraryVpk";
 import { ArchiveBrowser } from "./archive-browser";
-import { VpkSources } from "./vpk-sources";
+import { WorkbenchSidebar, type WorkbenchSourceTab } from "./workbench-sidebar";
 import { CreateAddonDialog } from "./create-addon-dialog";
 import { OpenAddon } from "./open-addon";
+import { WorkbenchEmptyState } from "./workbench-empty-state";
+import { useWorkbenchArchives } from "./use-workbench-archives";
 
 export const AddonWorkspace = ({
   addonsEnabled,
@@ -68,6 +63,7 @@ export const AddonWorkspace = ({
   const [workspaceId] = useState(() => crypto.randomUUID());
   const [createOpen, setCreateOpen] = useState(false);
   const [dirty, setDirty] = useState(false);
+  const [sourceTab, setSourceTab] = useState<WorkbenchSourceTab | null>(null);
   const exporting = useIsMutating({ mutationKey: ["workbench-export"] }) > 0;
   const working =
     useIsMutating({
@@ -83,7 +79,8 @@ export const AddonWorkspace = ({
   const [dragging, setDragging] = useState(false);
   const source = snapshot.source;
   const archive = source?.kind === "archive" ? source : null;
-  const setArchive = (value: ModdingLibraryVpk) =>
+  const setArchive = (value: ModdingLibraryVpk) => {
+    setSourceTab("mods");
     setSnapshot(
       workspaceForSource({
         kind: "archive",
@@ -91,6 +88,8 @@ export const AddonWorkspace = ({
         label: value.label,
       }),
     );
+  };
+  const archives = useWorkbenchArchives(setArchive);
   const updateView = useCallback(
     (view: WorkspaceView) =>
       setSnapshot((previous) =>
@@ -115,6 +114,7 @@ export const AddonWorkspace = ({
       return addonId;
     },
     onSuccess: (id) => {
+      setSourceTab("addons");
       setSnapshot(
         workspaceForSource({
           kind: "addon",
@@ -136,10 +136,18 @@ export const AddonWorkspace = ({
       : source?.kind === "addon"
         ? addons.data?.find((candidate) => candidate.id === source.addonId)
         : undefined;
-  const busy = dirty || working || exporting || open.isPending || createOpen;
+  const busy =
+    dirty ||
+    working ||
+    exporting ||
+    open.isPending ||
+    archives.browse.isPending ||
+    createOpen;
   const openSources = (sources: WorkspaceSource[]) => {
-    if (sources[0])
+    if (sources[0]) {
+      setSourceTab(sources[0].kind === "archive" ? "mods" : "addons");
       setSnapshot({ ...workspaceForSource(sources[0]), recent: sources });
+    }
   };
   const drop = useWorkspaceDrop(openSources);
   useEffect(() => {
@@ -246,130 +254,25 @@ export const AddonWorkspace = ({
         autoSaveId={
           comparison ? "workbench-comparison-content" : "workbench-addons"
         }
-        className='min-h-0 flex-1 rounded-lg border bg-background/95'>
+        className='min-h-0 flex-1 overflow-hidden bg-background'>
         {!comparison ? (
           <>
-            <ResizablePanel defaultSize={18} minSize={12} maxSize={30}>
-              <aside
-                className='flex h-full min-h-0 flex-col bg-muted/20'
-                aria-label={t("workbenchExplorer.addons")}>
-                <div className='flex h-12 shrink-0 items-center justify-between border-b px-3'>
-                  <h2 className='text-sm font-semibold'>
-                    {t("workbenchExplorer.addons")}
-                  </h2>
-                  <div className='flex gap-0.5'>
-                    <Button
-                      size='icon'
-                      variant='ghost'
-                      className='size-7'
-                      disabled={!addonsEnabled || dirty}
-                      aria-label={t("workbenchAuthoring.createAddon")}
-                      title={t("workbenchAuthoring.createAddon")}
-                      onClick={() => setCreateOpen(true)}>
-                      <PlusIcon />
-                    </Button>
-                    <Button
-                      size='icon'
-                      variant='ghost'
-                      className='size-7'
-                      disabled={!addonsEnabled || addons.isFetching}
-                      aria-label={t("workbenchExplorer.refresh")}
-                      title={t("workbenchExplorer.refresh")}
-                      onClick={() => void addons.refetch()}>
-                      <ArrowClockwiseIcon />
-                    </Button>
-                  </div>
-                </div>
-                <div className='min-h-0 flex-1 overflow-auto py-2'>
-                  {[
-                    ...new Set(
-                      addons.data?.map((candidate) => candidate.sdkRoot),
-                    ),
-                  ].map((root) => (
-                    <div key={root} className='mb-3 px-2'>
-                      <p
-                        title={root}
-                        className='truncate px-2 pb-1 pt-2 text-[10px] font-medium uppercase tracking-wide text-muted-foreground'>
-                        {root.split(/[/\\]/).pop()}
-                      </p>
-                      {addons.data
-                        ?.filter((candidate) => candidate.sdkRoot === root)
-                        .map((candidate) => (
-                          <button
-                            type='button'
-                            draggable={!busy}
-                            onDragStart={(event) => {
-                              const value = JSON.stringify({
-                                kind: "addon",
-                                addonId: candidate.id,
-                                hierarchy: "content",
-                                path: "",
-                              });
-                              event.dataTransfer.effectAllowed = "copy";
-                              event.dataTransfer.setData(
-                                WORKSPACE_SOURCE_DRAG,
-                                value,
-                              );
-                              event.dataTransfer.setData("text/plain", value);
-                            }}
-                            key={candidate.id}
-                            disabled={busy || drop.isPending}
-                            aria-pressed={addon?.id === candidate.id}
-                            title={`${candidate.name}\n${candidate.sdkRoot}`}
-                            className={`mb-0.5 flex w-full items-center gap-2 rounded-md border px-2 py-2 text-left text-xs transition-colors focus-visible:outline focus-visible:outline-ring ${addon?.id === candidate.id ? "border-primary/30 bg-primary/10 text-primary" : "border-transparent hover:bg-muted"}`}
-                            onClick={() => open.mutate(candidate.id)}>
-                            <FolderIcon
-                              aria-hidden
-                              weight='duotone'
-                              className='size-4 shrink-0'
-                            />
-                            <span className='truncate font-medium'>
-                              {candidate.name}
-                            </span>
-                          </button>
-                        ))}
-                    </div>
-                  ))}
-                  {addons.error ? (
-                    <p role='alert' className='p-3 text-sm text-destructive'>
-                      {addons.error.message}
-                    </p>
-                  ) : null}
-                  {addonsEnabled &&
-                  !addons.isPending &&
-                  !addons.data?.length ? (
-                    <p className='p-3 text-sm text-muted-foreground'>
-                      {t("workbenchExplorer.noAddons")}
-                    </p>
-                  ) : null}
-                  {!addonsEnabled ? (
-                    <p className='p-3 text-xs text-muted-foreground'>
-                      {t("moddingWorkbench.sdkRequired")}
-                    </p>
-                  ) : null}
-                  <VpkSources
-                    disabled={busy || drop.isPending}
-                    activePath={archive?.filePath}
-                    onOpen={setArchive}
-                  />
-                </div>
-                <p className='flex items-center gap-2 border-t px-3 py-2.5 text-[10px] text-muted-foreground'>
-                  <ArrowsLeftRightIcon
-                    aria-hidden
-                    className='size-3 shrink-0'
-                  />
-                  {t(
-                    open.isPending
-                      ? "workbenchExplorer.preparingAddon"
-                      : "workbenchExplorer.openAddonHint",
-                  )}
-                </p>
-                {open.error ? (
-                  <p role='alert' className='p-3 text-xs text-destructive'>
-                    {open.error.message}
-                  </p>
-                ) : null}
-              </aside>
+            <ResizablePanel defaultSize={20} minSize={15} maxSize={35}>
+              <WorkbenchSidebar
+                tab={sourceTab ?? (addonsEnabled ? "addons" : "mods")}
+                onTabChange={setSourceTab}
+                addons={addons}
+                addonsEnabled={addonsEnabled}
+                selectedAddonId={addon?.id}
+                activeArchivePath={archive?.filePath}
+                archives={archives}
+                busy={busy || drop.isPending}
+                preparing={open.isPending}
+                openError={open.error}
+                onCreate={() => setCreateOpen(true)}
+                onOpenAddon={(id) => open.mutate(id)}
+                onOpenArchive={setArchive}
+              />
             </ResizablePanel>
             <ResizableHandle withHandle />
           </>
@@ -397,43 +300,33 @@ export const AddonWorkspace = ({
               onViewChange={updateView}
               onDirtyChange={setDirty}
             />
-          ) : (
+          ) : comparison ? (
             <Empty className='h-full border-0'>
               <EmptyHeader>
                 <EmptyMedia variant='icon'>
                   <FolderIcon weight='duotone' />
                 </EmptyMedia>
-                <EmptyTitle>
-                  {t(
-                    comparison
-                      ? "workbenchCompare.workspace"
-                      : "workbenchGuide.emptyTitle",
-                  )}
-                </EmptyTitle>
+                <EmptyTitle>{t("workbenchCompare.workspace")}</EmptyTitle>
                 <EmptyDescription>
-                  {t(
-                    comparison
-                      ? "workbenchCompare.emptyHint"
-                      : "workbenchGuide.emptyDescription",
-                  )}
+                  {t("workbenchCompare.emptyHint")}
                 </EmptyDescription>
               </EmptyHeader>
-              {!comparison && addonsEnabled ? (
-                <Button
-                  size='sm'
-                  variant='outline'
-                  onClick={() => setCreateOpen(true)}>
-                  <PlusIcon />
-                  {t("workbenchAuthoring.createAddon")}
-                </Button>
-              ) : null}
             </Empty>
+          ) : (
+            <WorkbenchEmptyState
+              addonsEnabled={addonsEnabled}
+              disabled={busy || drop.isPending}
+              opening={archives.browse.isPending}
+              onOpenArchive={() => archives.browse.mutate()}
+              onCreateAddon={() => setCreateOpen(true)}
+            />
           )}
         </ResizablePanel>
         {createOpen ? (
           <CreateAddonDialog
             onClose={() => setCreateOpen(false)}
             onCreated={(addon) => {
+              setSourceTab("addons");
               setSnapshot(
                 workspaceForSource({
                   kind: "addon",

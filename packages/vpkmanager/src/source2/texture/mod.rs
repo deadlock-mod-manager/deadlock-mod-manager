@@ -40,7 +40,7 @@ use byteorder::{ByteOrder, LittleEndian};
 use crate::source2::error::DecodeError;
 use crate::source2::resource::Resource;
 use format::{TextureFlags, TextureFormat};
-pub use vtex::{encode_vtex_png_rgba8888, encode_vtex_png_rgba8888_from_png};
+pub use vtex::{encode_vtex_bc7, encode_vtex_png_rgba8888, encode_vtex_png_rgba8888_from_png};
 
 const TEXTURE_VERSION: u16 = 1;
 const TEXTURE_HEADER_SIZE: usize = 40;

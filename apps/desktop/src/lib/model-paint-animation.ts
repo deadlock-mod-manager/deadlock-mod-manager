@@ -5,6 +5,8 @@ interface ModelPaintFrame {
 export interface ModelPaintAnimation {
   frames: readonly ModelPaintFrame[];
   plays: number;
+  width?: number;
+  height?: number;
 }
 export function modelPaintFrameAt(
   animation: { frames: readonly { durationMs: number }[]; plays: number },

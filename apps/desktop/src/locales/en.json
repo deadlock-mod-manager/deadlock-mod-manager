@@ -8590,6 +8590,23 @@
     "modelCount_one": "{{count}} matching model",
     "modelCount_other": "{{count}} matching models"
   },
+  "workbenchHome": {
+    "export": "Export",
+    "sources": "Workspace sources",
+    "yourMods": "Your mods",
+    "modsCount_one": "{{count}} mod",
+    "modsCount_other": "{{count}} mods",
+    "workspace": "Workspace",
+    "title": "Start a workspace",
+    "description": "Open a VPK to explore its assets, or create an addon to edit, preview, and test your changes.",
+    "setupTitle": "Connect your modding tools",
+    "setupHint": "Browse VPKs now. Set up CSDK to create, compile, and test addons.",
+    "createHint": "Creating addons requires CSDK setup. You can browse VPKs while your SDK downloads.",
+    "addonsHint": "Connect CSDK to create and open addons. Your downloaded and installed mods are available in Your mods.",
+    "browse": "Browse assets",
+    "edit": "Edit & preview",
+    "test": "Compile & test"
+  },
   "workbenchGuide": {
     "toolsReady": "Tools ready",
     "moreActions": "More workbench actions",
@@ -8617,7 +8634,7 @@
       "title": "Test",
       "description": "Pack & Test builds the addon and starts a game test."
     },
-    "modelEditingPlanned": "Model previews are available. Model editing is planned."
+    "modelEditingScope": "Edit compiled model materials and particle colors here. Use external tools for source meshes and animations."
   },
   "workbenchAssets": {
     "sourcePreview": "Source preview",
@@ -8873,7 +8890,7 @@
     "open": "Open VPK…",
     "library": "Mods library ({{count}})",
     "noMods": "Your current profile has no library mods.",
-    "noVpks": "No VPKs found in this mod.",
+    "noVpks": "No cached or installed VPKs are available. Download this mod again to browse its assets.",
     "openHint": "Open an addon or choose a VPK archive to browse its files.",
     "exportOriginals": "Export originals",
     "exportEditable": "Export editable",
@@ -9337,6 +9354,10 @@
       "imageLayer": "Image",
       "exportResolution": "Animated export: {{width}} × {{height}} per frame",
       "imagePlacement": "Image placement",
+      "imageSticker": "Sticker",
+      "imageWrap": "Wrap",
+      "imageStickerHint": "Trim transparent margins and place from this view, keeping image proportions. Apply to the selected material.",
+      "imageWrapHint": "Map across the material’s UV layout. The image follows its texture islands and seams.",
       "imageUv": "UV texture",
       "imageProjection": "Project onto model",
       "imageProjectionHint": "Import an image to place an animated draft in the viewport. Move, resize, rotate or crop it, then apply it to the selected material.",

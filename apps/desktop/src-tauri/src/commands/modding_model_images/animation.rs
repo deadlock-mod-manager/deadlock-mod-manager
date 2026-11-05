@@ -7,6 +7,7 @@ use vpkmanager::source2::{
   vfx_expr,
 };
 
+#[cfg(test)]
 pub(crate) struct AnimationFrame {
   pub pixels: RgbaImage,
   pub duration_ms: u32,
@@ -103,17 +104,18 @@ pub(crate) fn layout(width: u32, height: u32, count: usize) -> Result<AtlasLayou
   .min(1.)
   .min(8192. / f64::from((width + 4) * columns))
   .min(8192. / f64::from((height + 4) * rows));
-  let mut cell_width = (f64::from(width) * scale).floor() as u32 + 4;
-  let mut cell_height = (f64::from(height) * scale).floor() as u32 + 4;
+  // Keep frame borders on BC7 block boundaries so compression cannot mix neighboring frames.
+  let mut cell_width = (((f64::from(width) * scale).floor() as u32 + 4).div_ceil(4) * 4).max(8);
+  let mut cell_height = (((f64::from(height) * scale).floor() as u32 + 4).div_ceil(4) * 4).max(8);
   while u64::from(cell_width) * u64::from(cell_height) * u64::from(columns * rows)
     > 16 * 1024 * 1024
     || cell_width * columns > 8192
     || cell_height * rows > 8192
   {
     if cell_width * columns >= cell_height * rows {
-      cell_width = cell_width.saturating_sub(1);
+      cell_width = cell_width.saturating_sub(4);
     } else {
-      cell_height = cell_height.saturating_sub(1);
+      cell_height = cell_height.saturating_sub(4);
     }
   }
   let atlas_width = cell_width * columns;
@@ -133,18 +135,46 @@ pub(crate) fn layout(width: u32, height: u32, count: usize) -> Result<AtlasLayou
 }
 /// Frames contain the entire painted base-color map, including static layers.
 /// Full-resolution cells are preserved within the 16 megapixel, 8192-pixel atlas limits.
+#[cfg(test)]
 pub(crate) fn bake(
   original_material: &[u8],
   original_texture: &[u8],
   frames: &[AnimationFrame],
   plays: u32,
 ) -> Result<AnimatedTexture, Error> {
+  let first = frames
+    .first()
+    .ok_or_else(|| invalid("Animation contains no frames"))?;
+  bake_with(
+    original_material,
+    original_texture,
+    (first.pixels.width(), first.pixels.height()),
+    &frames
+      .iter()
+      .map(|frame| frame.duration_ms)
+      .collect::<Vec<_>>(),
+    plays,
+    None,
+    |index| Ok(frames[index].pixels.clone()),
+  )
+}
+
+/// Produce and release one frame at a time; only the atlas and current frame stay resident.
+pub(crate) fn bake_with(
+  original_material: &[u8],
+  original_texture: &[u8],
+  dimensions: (u32, u32),
+  durations: &[u32],
+  plays: u32,
+  cached_texture: Option<Vec<u8>>,
+  mut frame_at: impl FnMut(usize) -> Result<RgbaImage, Error>,
+) -> Result<AnimatedTexture, Error> {
   if plays != 0 {
     return Err(invalid(
       "In-game image animation requires Repeat forever because the engine shares one animation clock. Convert this image to infinite looping before saving the model",
     ));
   }
-  if frames.len() < 2 || frames.len() > 128 || frames.iter().any(|frame| frame.duration_ms == 0) {
+  if durations.len() < 2 || durations.len() > 128 || durations.contains(&0) {
     return Err(invalid(
       "Animated textures require 2 to 128 frames with positive durations",
     ));
@@ -185,7 +215,7 @@ pub(crate) fn bake(
       "Animated painting cannot replace existing dynamic or rotated base-color UVs",
     ));
   }
-  let (width, height) = (frames[0].pixels.width(), frames[0].pixels.height());
+  let (width, height) = dimensions;
   if width == 0 || height == 0 || width > 8192 || height > 8192 {
     return Err(invalid("Invalid animation dimensions"));
   }
@@ -195,36 +225,48 @@ pub(crate) fn bake(
     columns,
     atlas_width,
     atlas_height,
-  } = layout(width, height, frames.len())?;
+  } = layout(width, height, durations.len())?;
   let (cell_width, cell_height) = (frame_width + 4, frame_height + 4);
-  let mut atlas = RgbaImage::new(atlas_width, atlas_height);
+  let mut atlas = if cached_texture.is_none() {
+    Some(RgbaImage::new(atlas_width, atlas_height))
+  } else {
+    None
+  };
   let mut x = Vec::new();
   let mut y = Vec::new();
-  for (index, frame) in frames.iter().enumerate() {
-    if frame.pixels.width() != width || frame.pixels.height() != height {
-      return Err(invalid(
-        "Painted animation frames must match the original texture dimensions",
-      ));
-    }
-    let resized = imageops::resize(
-      &frame.pixels,
-      frame_width,
-      frame_height,
-      imageops::FilterType::Lanczos3,
-    );
+  for index in 0..durations.len() {
     let left = (index as u32 % columns) * cell_width;
     let top = (index as u32 / columns) * cell_height;
-    // Extruded borders prevent neighboring frame colors entering ordinary bilinear samples.
-    for dy in 0..cell_height {
-      for dx in 0..cell_width {
-        atlas.put_pixel(
-          left + dx,
-          top + dy,
-          *resized.get_pixel(
-            dx.saturating_sub(2).min(frame_width - 1),
-            dy.saturating_sub(2).min(frame_height - 1),
-          ),
-        );
+    if let Some(atlas) = &mut atlas {
+      let frame = frame_at(index)?;
+      if frame.width() != width || frame.height() != height {
+        return Err(invalid(
+          "Painted animation frames must match the original texture dimensions",
+        ));
+      }
+      let resized = if frame.width() == frame_width && frame.height() == frame_height {
+        frame
+      } else {
+        imageops::resize(
+          &frame,
+          frame_width,
+          frame_height,
+          imageops::FilterType::Lanczos3,
+        )
+      };
+      // Extruded borders prevent neighboring frame colors entering ordinary bilinear samples.
+      for dy in 0..cell_height {
+        let source_y = dy.saturating_sub(2).min(frame_height - 1);
+        let start = (source_y * frame_width * 4) as usize;
+        let source = &resized.as_raw()[start..start + frame_width as usize * 4];
+        let start = (((top + dy) * atlas_width + left) * 4) as usize;
+        let row = &mut atlas.as_mut()[start..start + cell_width as usize * 4];
+        row[8..8 + source.len()].copy_from_slice(source);
+        for offset in [0, 4] {
+          row[offset..offset + 4].copy_from_slice(&source[..4]);
+          let end = 8 + source.len() + offset;
+          row[end..end + 4].copy_from_slice(&source[source.len() - 4..]);
+        }
       }
     }
     x.push(
@@ -236,11 +278,10 @@ pub(crate) fn bake(
         - (1. - f64::from(frame_height) / f64::from(atlas_height)) / 2.,
     );
   }
-  let durations: Vec<_> = frames.iter().map(|frame| frame.duration_ms).collect();
   let source = format!(
     "float2({}, {})",
-    expression(&x, &durations, plays),
-    expression(&y, &durations, plays)
+    expression(&x, durations, plays),
+    expression(&y, durations, plays)
   );
   let expression = vfx_expr::compile(&source).map_err(|e| invalid(e.to_string()))?;
   replace_entry(
@@ -294,15 +335,21 @@ pub(crate) fn bake(
     .rebuild_with_data_preserving(&encoded)
     .map_err(|e| invalid(e.to_string()))?;
   let info = vpkmanager::source2::inspect(original_texture).map_err(|e| invalid(e.to_string()))?;
-  let texture = vpkmanager::source2::texture::encode_vtex_png_rgba8888(
-    &vpkmanager::source2::Image {
-      width: atlas_width,
-      height: atlas_height,
-      data: vpkmanager::source2::ImageData::Rgba8(atlas.into_raw()),
-    },
-    info.flags,
-  )
-  .map_err(|e| invalid(e.to_string()))?;
+  let texture = if let Some(texture) = cached_texture {
+    texture
+  } else {
+    vpkmanager::source2::texture::encode_vtex_bc7(
+      &vpkmanager::source2::Image {
+        width: atlas_width,
+        height: atlas_height,
+        data: vpkmanager::source2::ImageData::Rgba8(
+          atlas.expect("uncached bake allocates an atlas").into_raw(),
+        ),
+      },
+      info.flags,
+    )
+    .map_err(|e| invalid(e.to_string()))?
+  };
   Ok(AnimatedTexture {
     material,
     texture,
@@ -370,7 +417,8 @@ mod tests {
         &kv3::wire::encode_preserving_v5(&tree, &encoding, &format).unwrap(),
       )
       .unwrap();
-    let frames: Vec<_> = [([255, 0, 0, 255], 30), ([0, 255, 0, 255], 90)]
+    // Opaque PBR textures can store a zero metalness mask in alpha.
+    let frames: Vec<_> = [([255, 0, 0, 0], 30), ([0, 255, 0, 0], 90)]
       .into_iter()
       .map(|(pixel, duration_ms)| AnimationFrame {
         pixels: RgbaImage::from_pixel(original.width, original.height, image::Rgba(pixel)),
@@ -430,8 +478,10 @@ mod tests {
       panic!("Expected LDR image");
     };
     assert!(pixels[0] > 240 && pixels[1] < 10);
+    assert_eq!(pixels[3], 0);
     let next = ((result.frame_width + 4) as usize) * 4;
     assert!(pixels[next] < 10 && pixels[next + 1] > 240);
+    assert_eq!(pixels[next + 3], 0);
     assert!(bake(&result.material, &result.texture, &frames, 0).is_err());
     if let Ok(directory) = std::env::var("DMM_ANIMATION_PROOF_OUTPUT") {
       std::fs::create_dir_all(&directory).unwrap();

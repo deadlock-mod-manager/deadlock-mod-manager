@@ -19,18 +19,9 @@ pub fn decode_inline(_info: &TextureInfo, pixels: &[u8]) -> Result<Image, Decode
         .map_err(|e| DecodeError::InlineImage(e.to_string()))?
         .to_rgba8();
     let (w, h) = (img.width(), img.height());
-    let mut raw = img.into_raw();
-    // VRF decodes via Skia (premultiplied alpha) and re-encodes. For A=0
-    // pixels Skia zeroes RGB; we match that so the diff against the oracle
-    // PNG is byte-exact. Partial-alpha pixels are unaffected: Skia's
-    // round-trip preserves them.
-    for px in raw.chunks_exact_mut(4) {
-        if px[3] == 0 {
-            px[0] = 0;
-            px[1] = 0;
-            px[2] = 0;
-        }
-    }
+    // Source 2 can pack material masks into alpha. Preserve straight RGB even
+    // where that mask is zero; treating it as opacity destroys the albedo.
+    let raw = img.into_raw();
     Ok(Image {
         width: w,
         height: h,

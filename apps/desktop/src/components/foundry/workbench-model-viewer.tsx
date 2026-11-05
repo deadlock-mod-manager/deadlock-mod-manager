@@ -98,6 +98,7 @@ import {
 
 import {
   projectModelImages,
+  modelImageProjectionResolution,
   type ModelImageProjector,
 } from "@/lib/model-image-projection";
 import {
@@ -782,6 +783,7 @@ export const FoundryModelViewer = ({
       camera,
       () => loadedRoot ?? null,
       () => materialPickRef.current,
+      () => Boolean(imageDraftRef.current?.current),
     );
     const stopSurfacePainting = attachModelSurfacePainting(
       renderer.domElement,
@@ -852,7 +854,7 @@ export const FoundryModelViewer = ({
               },
               size: placement.size,
               rotation: request.rotation,
-              resolution: 512,
+              resolution: modelImageProjectionResolution(request.frames.length),
             });
           };
         if (geometryRef.current)
@@ -1188,26 +1190,8 @@ export const FoundryModelViewer = ({
     pickable && hovered ? (partLabel?.(hovered) ?? null) : null;
 
   return (
-    <div className='@container relative h-full w-full overflow-hidden bg-background'>
-      <div
-        ref={containerRef}
-        className={cn(
-          "h-full w-full transition-opacity duration-700 ease-out",
-          loading && "opacity-0",
-          hoveredLabel && "cursor-pointer",
-        )}
-        title={label}
-      />
-      <div
-        ref={gizmoRef}
-        className={cn(
-          overlaySurface,
-          "absolute top-3 right-3 cursor-pointer overflow-hidden rounded-full bg-background/40",
-          !showGizmo && "hidden",
-        )}
-        style={{ width: 84, height: 84 }}
-      />
-      <div className='absolute top-3 left-3 flex items-start gap-1.5'>
+    <div className='@container flex h-full min-h-0 w-full flex-col overflow-hidden bg-background'>
+      <div className='flex h-9 shrink-0 items-center gap-1.5 border-b bg-card/70 px-2'>
         <ViewerViewMenu
           look={look}
           onChange={setLook}
@@ -1238,68 +1222,90 @@ export const FoundryModelViewer = ({
           background={background}
           onBackgroundChange={setBackground}
         />
-        <ViewerActivePasses look={look} />
+        <div className='hidden @[32rem]:block'>
+          <ViewerActivePasses look={look} />
+        </div>
+        <div className='ml-auto'>
+          <ViewerWipBadge />
+        </div>
       </div>
-      <div className='absolute bottom-3 left-3'>
-        <ViewerWipBadge />
-      </div>
-      <ViewerToolRail
-        belowGizmo={showGizmo}
-        autoRotate={autoRotate}
-        onAutoRotateChange={setAutoRotate}
-        onFit={() => fitRef.current?.()}
-        capture={() => captureRef.current?.() ?? Promise.resolve(null)}
-        record={() =>
-          recorderRef.current?.record() ??
-          Promise.reject(new RuntimeError("Viewer is loading"))
-        }
-        stopRecording={() => recorderRef.current?.stop()}
-        fullscreen={async () => {
-          if (document.fullscreenElement) await document.exitFullscreen();
-          else await fullscreenTarget.current?.requestFullscreen();
-        }}
-      />
-      {!loading && !failed && children}
-      {callouts && !loading && (
-        <ViewerCallouts
-          callouts={callouts}
-          containerRef={containerRef}
-          getCamera={getCamera}
-          modelRef={modelRef}
+      <div className='relative min-h-0 flex-1'>
+        <div
+          ref={containerRef}
+          className={cn(
+            "h-full w-full transition-opacity duration-700 ease-out",
+            loading && "opacity-0",
+            hoveredLabel && "cursor-pointer",
+          )}
+          title={label}
         />
-      )}
-      {hoveredLabel && (
-        <p
+        <div
+          ref={gizmoRef}
           className={cn(
             overlaySurface,
-            "pointer-events-none absolute top-14 left-3 flex h-7 max-w-[calc(100%-7rem)] items-center gap-2 rounded-full px-2.5 text-[11px]",
-          )}>
-          <span className='truncate font-medium'>{hoveredLabel}</span>
-          <span className='shrink-0 text-muted-foreground'>
-            {t("foundry.paint.pickHint")}
-          </span>
-        </p>
-      )}
-
-      {!scanGone && !failed && (
-        <div
-          className={cn(
-            "pointer-events-none absolute inset-0 transition-opacity duration-500 ease-out",
-            !loading && "opacity-0",
+            "absolute top-3 right-3 cursor-pointer overflow-hidden rounded-full bg-background/40",
+            !showGizmo && "hidden",
           )}
-          onTransitionEnd={() => !loading && setScanGone(true)}>
-          <ModelLoadingStage
-            status={t("foundry.preview.loading")}
-            hero={silhouetteHero ?? null}
+          style={{ width: 84, height: 84 }}
+        />
+        <ViewerToolRail
+          belowGizmo={showGizmo}
+          autoRotate={autoRotate}
+          onAutoRotateChange={setAutoRotate}
+          onFit={() => fitRef.current?.()}
+          capture={() => captureRef.current?.() ?? Promise.resolve(null)}
+          record={() =>
+            recorderRef.current?.record() ??
+            Promise.reject(new RuntimeError("Viewer is loading"))
+          }
+          stopRecording={() => recorderRef.current?.stop()}
+          fullscreen={async () => {
+            if (document.fullscreenElement) await document.exitFullscreen();
+            else await fullscreenTarget.current?.requestFullscreen();
+          }}
+        />
+        {!loading && !failed && children}
+        {callouts && !loading && (
+          <ViewerCallouts
+            callouts={callouts}
+            containerRef={containerRef}
+            getCamera={getCamera}
+            modelRef={modelRef}
           />
-        </div>
-      )}
-      {failed && (
-        <div className='absolute inset-0 flex flex-col items-center justify-center gap-3 bg-background text-muted-foreground'>
-          <CubeIcon className='h-14 w-14 opacity-40' weight='duotone' />
-          <p className='text-sm'>{t("foundry.preview.modelDecodeFailed")}</p>
-        </div>
-      )}
+        )}
+        {hoveredLabel && (
+          <p
+            className={cn(
+              overlaySurface,
+              "pointer-events-none absolute top-14 left-3 flex h-7 max-w-[calc(100%-7rem)] items-center gap-2 rounded-full px-2.5 text-[11px]",
+            )}>
+            <span className='truncate font-medium'>{hoveredLabel}</span>
+            <span className='shrink-0 text-muted-foreground'>
+              {t("foundry.paint.pickHint")}
+            </span>
+          </p>
+        )}
+
+        {!scanGone && !failed && (
+          <div
+            className={cn(
+              "pointer-events-none absolute inset-0 transition-opacity duration-500 ease-out",
+              !loading && "opacity-0",
+            )}
+            onTransitionEnd={() => !loading && setScanGone(true)}>
+            <ModelLoadingStage
+              status={t("foundry.preview.loading")}
+              hero={silhouetteHero ?? null}
+            />
+          </div>
+        )}
+        {failed && (
+          <div className='absolute inset-0 flex flex-col items-center justify-center gap-3 bg-background text-muted-foreground'>
+            <CubeIcon className='h-14 w-14 opacity-40' weight='duotone' />
+            <p className='text-sm'>{t("foundry.preview.modelDecodeFailed")}</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

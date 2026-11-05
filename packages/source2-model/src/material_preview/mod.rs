@@ -177,18 +177,21 @@ fn decode_material_previews(
                         };
                     // Drop decoded ORM inputs before allocating the emissive mask and output.
                     drop((roughness_tex, occlusion_tex, metalness_tex));
+                    let emission_mask =
+                        emissive.and_then(|resource| decode_rgba(&resource, texture_side));
+                    texture.self_illum_mask_png = emission_mask
+                        .as_ref()
+                        .and_then(|mask| bake_self_illum_png(mask, None, 0.));
                     texture.emissive_png = report_texture_result(
                         archive,
                         properties.emissive_texture.as_deref(),
-                        emissive
-                            .and_then(|resource| decode_rgba(&resource, texture_side))
-                            .and_then(|mask| {
-                                bake_self_illum_png(
-                                    &mask,
-                                    albedo.as_ref(),
-                                    properties.self_illum_albedo_factor,
-                                )
-                            }),
+                        emission_mask.as_ref().and_then(|mask| {
+                            bake_self_illum_png(
+                                mask,
+                                albedo.as_ref(),
+                                properties.self_illum_albedo_factor,
+                            )
+                        }),
                     );
                     texture.vertex_color = properties.vertex_color;
                     texture.double_sided = properties.double_sided;
@@ -218,6 +221,14 @@ fn decode_material_previews(
                     effect.material = texture.material.clone().unwrap_or_default();
                     texture.source2_effect = Some(effect);
                     let mut source2 = properties.source2;
+                    if texture.self_illum_mask_png.is_some()
+                        && source2.shader.eq_ignore_ascii_case("pbr.vfx")
+                    {
+                        source2.emission = Some(metadata::Source2Emission {
+                            mask_texture: None,
+                            albedo_factor: properties.self_illum_albedo_factor,
+                        });
+                    }
                     if let Some(color) = &mut source2.color {
                         if let Some(reflectivity) = metadata::reflectivity(&resource) {
                             color.reflectivity = reflectivity;

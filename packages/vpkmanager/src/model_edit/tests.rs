@@ -2,6 +2,35 @@ use super::*;
 fn object(fields: Vec<(&str, Value)>) -> Value {
     Value::Object(fields.into_iter().map(|(k, v)| (k.into(), v)).collect())
 }
+
+#[test]
+fn resized_painted_texture_keeps_rgb_under_zero_material_mask_alpha() {
+    let original = source2::texture::encode_vtex_png_rgba8888(
+        &source2::Image {
+            width: 2,
+            height: 2,
+            data: ImageData::Rgba8([80, 100, 120, 255].repeat(4)),
+        },
+        source2::texture::format::TextureFlags::empty(),
+    )
+    .unwrap();
+    let pixels = [80, 100, 120, 0].repeat(16);
+    let replacement = source2::Image {
+        width: 4,
+        height: 4,
+        data: ImageData::Rgba8(pixels.clone()),
+    };
+    let edited =
+        edit_texture_with_image(&original, TextureEdit::default(), Some(replacement)).unwrap();
+    let decoded = source2::decode(&edited).unwrap();
+    let ImageData::Rgba8(actual) = decoded.data else {
+        panic!("LDR required");
+    };
+    assert_eq!(
+        actual, pixels,
+        "PBR alpha stores material masks; zero alpha must not erase albedo RGB"
+    );
+}
 fn resource(blocks: Vec<([u8; 4], Vec<u8>)>, tail: &[u8]) -> Vec<u8> {
     let blocks: Vec<_> = blocks
         .iter()
@@ -49,11 +78,13 @@ fn hiding_materials_preserves_animation_and_unrelated_draws_and_rejects_all_hidd
         Some(30)
     );
     assert_eq!(draws[0].get("untouched").and_then(Value::as_int), Some(73));
-    assert!(hide_materials(
-        &original,
-        &["materials/red.vmat".into(), "materials/blue.vmat".into()]
-    )
-    .is_err());
+    assert!(
+        hide_materials(
+            &original,
+            &["materials/red.vmat".into(), "materials/blue.vmat".into()]
+        )
+        .is_err()
+    );
     assert!(hide_materials(&original, &["materials/nope.vmat".into()]).is_err());
 }
 #[test]
@@ -92,14 +123,16 @@ fn albedo_edits_preserve_opacity_and_finish_preserves_normal_channels() {
         panic!("LDR")
     };
     assert_eq!(pixels, [255, 0, 128, 77].repeat(4));
-    assert!(edit_texture(
-        &original,
-        TextureEdit {
-            channels: [Some(f64::NAN), None, None, None],
-            ..Default::default()
-        }
-    )
-    .is_err());
+    assert!(
+        edit_texture(
+            &original,
+            TextureEdit {
+                channels: [Some(f64::NAN), None, None, None],
+                ..Default::default()
+            }
+        )
+        .is_err()
+    );
 }
 #[test]
 fn paint_keeps_neutrals_and_scales_linear_brightness() {
@@ -221,9 +254,11 @@ fn dynamic_material_patches_register_inputs_preserve_wire_data_and_reject_confli
     assert_eq!(data[0], 5);
     let tree = kv3::decode(data).unwrap();
     assert_eq!(array(&tree, "m_renderAttributesUsed").len(), 2);
-    assert!(material_expressions(&tree)
-        .iter()
-        .any(|(n, s)| n == "g_flSelfIllumScale1" && s == expression));
+    assert!(
+        material_expressions(&tree)
+            .iter()
+            .any(|(n, s)| n == "g_flSelfIllumScale1" && s == expression)
+    );
     assert!(tree.get("untouched").is_some());
     assert!(set_parameter(&edited, "g_flSelfIllumScale1", &[0.2]).is_err());
     assert!(set_parameter(&edited, "F_UNLIT", &[1.]).is_ok());
@@ -238,11 +273,13 @@ fn dynamic_material_patches_register_inputs_preserve_wire_data_and_reject_confli
     assert!(validate_parameter("g_flSelfIllumScale1", &[f64::NAN]).is_err());
     assert!(validate_parameter("F_UNLIT", &[0.5]).is_err());
     assert!(compile_expression("TextureNormal1", "float3(1,1,1)").is_err());
-    assert!(compile_expression(
-        "g_flSelfIllumScale1",
-        &format!("{}1{}", "(".repeat(40), ")".repeat(40))
-    )
-    .is_err());
+    assert!(
+        compile_expression(
+            "g_flSelfIllumScale1",
+            &format!("{}1{}", "(".repeat(40), ")".repeat(40))
+        )
+        .is_err()
+    );
 }
 
 #[test]
@@ -310,9 +347,7 @@ fn textures_over_one_megabyte_remain_editable_within_the_decoded_pixel_budget() 
     let ImageData::Rgba8(pixels) = decoded.data else {
         panic!("Expected an LDR texture")
     };
-    assert!(pixels
-        .chunks_exact(4)
-        .all(|pixel| pixel[0] == if pixel[3] == 0 { 0 } else { 128 }));
+    assert!(pixels.chunks_exact(4).all(|pixel| pixel[0] == 128));
 }
 
 #[test]

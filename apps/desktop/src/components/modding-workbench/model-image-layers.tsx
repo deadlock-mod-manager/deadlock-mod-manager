@@ -15,9 +15,14 @@ import { createPortal } from "react-dom";
 import {
   defaultImageAlignment,
   fullImageCrop,
+  trimModelImageFrames,
   type ModelImageAlignment,
 } from "@/lib/model-image-placement";
 import { ModelImagePlacement } from "./model-image-placement";
+import {
+  ModelImagePlacementMode,
+  type ImagePlacementMode,
+} from "./model-image-placement-mode";
 import {
   FoundryDropZone,
   extensionOf,
@@ -38,7 +43,6 @@ import { getFileBaseName } from "@/lib/file-utils";
 import type { ModelImageSurfaceDraft } from "@/lib/model-image-surface-preview";
 
 const EXTENSIONS = ["png", "jpg", "jpeg", "webp", "bmp", "tga", "gif"];
-type Mode = "uv" | "projection";
 interface ImageSource {
   name: string;
   addonId: string;
@@ -46,13 +50,14 @@ interface ImageSource {
   path: string;
   layerId: string;
   frames: ModelImageProjectionFrame[] | null;
+  stickerFrames: readonly ModelImageProjectionFrame[] | null;
   plays: number;
   frameCount: number;
 }
 interface Request {
   addonId: string;
   material: string;
-  mode: Mode;
+  mode: ImagePlacementMode;
   alignment: ModelImageAlignment;
   operation:
     | { kind: "path"; path: string }
@@ -95,20 +100,20 @@ export function ModelImageLayers({
       generation.active = false;
     };
   }, [addonId, material]);
-  const [mode, setMode] = useState<Mode>("projection");
+  const [mode, setMode] = useState<ImagePlacementMode>("projection");
   const [alignment, setAlignment] = useState(defaultImageAlignment);
   const [draftOpen, setDraftOpen] = useState(false);
   const [source, setSource] = useState<ImageSource | null>(null);
   const currentSource =
     source?.addonId === addonId && source.material === material ? source : null;
   const placementActive =
-    mode === "projection" && draftOpen && Boolean(currentSource?.frames);
+    mode === "projection" && draftOpen && Boolean(currentSource?.stickerFrames);
   useEffect(() => {
     imageDraft.current =
-      placementActive && currentSource?.frames
+      placementActive && currentSource?.stickerFrames
         ? {
             material,
-            frames: currentSource.frames,
+            frames: currentSource.stickerFrames,
             plays: currentSource.plays,
             alignment,
           }
@@ -117,10 +122,6 @@ export function ModelImageLayers({
       imageDraft.current = null;
     };
   }, [imageDraft, placementActive, currentSource, alignment, material]);
-  useEffect(() => {
-    onPlacementActiveChange(placementActive);
-    return () => onPlacementActiveChange(false);
-  }, [placementActive, onPlacementActiveChange]);
   const importImage = useMutation({
     mutationKey: ["workbench-model-image-layer", addonId, material],
     mutationFn: async (request: Request) => {
@@ -151,6 +152,7 @@ export function ModelImageLayers({
           path: imported.path,
           layerId: crypto.randomUUID(),
           frames: null,
+          stickerFrames: null,
           plays: imported.plays,
           frameCount: imported.frames.length,
         };
@@ -164,9 +166,11 @@ export function ModelImageLayers({
           "read_modding_model_image",
           { addonId: request.addonId, path: original.path },
         );
+        const frames = decodeModelImageFrames(pixels.frames);
         original = {
           ...original,
-          frames: decodeModelImageFrames(pixels.frames),
+          frames,
+          stickerFrames: trimModelImageFrames(frames),
           plays: pixels.plays,
           frameCount: pixels.frames.length,
         };
@@ -195,7 +199,7 @@ export function ModelImageLayers({
         throw new ValidationError(t("modelEditor.paint.projectionNotReady"));
       const frames = project({
         material: request.material,
-        frames: original.frames ?? [],
+        frames: original.stickerFrames ?? [],
         ...request.alignment,
       });
       if (
@@ -227,6 +231,12 @@ export function ModelImageLayers({
       if (result.path) onImage(result.path, result.source.layerId);
     },
   });
+  const placementBusy =
+    placementActive || (mode === "projection" && importImage.isPending);
+  useEffect(() => {
+    onPlacementActiveChange(placementBusy);
+    return () => onPlacementActiveChange(false);
+  }, [placementBusy, onPlacementActiveChange]);
   const busy = disabled || importImage.isPending;
   const drop = useEffectEvent((file: File, point: { x: number; y: number }) => {
     if (busy || !EXTENSIONS.includes(extensionOf(getFileBaseName(file))))
@@ -293,11 +303,24 @@ export function ModelImageLayers({
     <div className='space-y-2'>
       {placementTarget &&
       mode === "projection" &&
+      (importImage.isPending || importImage.error)
+        ? createPortal(
+            <p
+              role={importImage.error ? "alert" : "status"}
+              className='pointer-events-none absolute top-3 left-3 z-30 max-w-[calc(100%-6rem)] rounded border bg-popover px-3 py-2 text-xs'>
+              {importImage.error?.message ??
+                t("modelEditor.paint.importingImage")}
+            </p>,
+            placementTarget,
+          )
+        : null}
+      {placementTarget &&
+      mode === "projection" &&
       draftOpen &&
-      currentSource?.frames
+      currentSource?.stickerFrames
         ? createPortal(
             <ModelImagePlacement
-              frames={currentSource.frames}
+              frames={currentSource.stickerFrames}
               plays={currentSource.plays}
               alignment={alignment}
               disabled={busy}
@@ -311,35 +334,21 @@ export function ModelImageLayers({
             placementTarget,
           )
         : null}
-      <label className='flex items-center justify-between gap-2'>
-        <span>{t("modelEditor.paint.imagePlacement")}</span>
-        <select
-          value={mode}
-          disabled={busy}
-          className='h-8 rounded border bg-background px-2 text-xs'
-          onChange={(event) => {
-            if (
-              event.target.value === "uv" ||
-              event.target.value === "projection"
-            ) {
-              const next = event.target.value;
-              setMode(next);
-              if (next === "projection" && currentSource)
-                importImage.mutate({
-                  addonId,
-                  material,
-                  mode: next,
-                  alignment,
-                  operation: { kind: "preview", source: currentSource },
-                });
-            }
-          }}>
-          <option value='uv'>{t("modelEditor.paint.imageUv")}</option>
-          <option value='projection'>
-            {t("modelEditor.paint.imageProjection")}
-          </option>
-        </select>
-      </label>
+      <ModelImagePlacementMode
+        value={mode}
+        disabled={busy}
+        onChange={(next) => {
+          setMode(next);
+          if (next === "projection" && currentSource)
+            importImage.mutate({
+              addonId,
+              material,
+              mode: next,
+              alignment,
+              operation: { kind: "preview", source: currentSource },
+            });
+        }}
+      />
       <FoundryDropZone
         title={t(
           currentSource
@@ -372,13 +381,6 @@ export function ModelImageLayers({
           </span>
         </p>
       ) : null}
-      <p className='text-[11px] text-muted-foreground'>
-        {t(
-          mode === "projection"
-            ? "modelEditor.paint.imageProjectionHint"
-            : "modelEditor.paint.importImageHint",
-        )}
-      </p>
       {mode === "projection" && currentSource ? (
         <details className='border-y py-2'>
           <summary className='cursor-pointer text-xs font-medium'>

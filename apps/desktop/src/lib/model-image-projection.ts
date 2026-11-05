@@ -22,6 +22,14 @@ export type ModelImageProjector = (
   request: ModelImageProjectionRequest,
 ) => ModelImageProjectionFrame[];
 
+/** Match the native atlas budget without allocating full-size UV maps for every GIF frame. */
+export function modelImageProjectionResolution(frameCount: number) {
+  return Math.min(
+    1024,
+    Math.floor(Math.sqrt((64 * 1024 * 1024) / (Math.max(1, frameCount) * 4))),
+  );
+}
+
 export interface ModelImageProjectionOptions {
   root: THREE.Object3D;
   camera: THREE.Camera;
@@ -108,6 +116,10 @@ function triangles(options: ProjectionView): Triangle[] {
     const position = geometry.getAttribute("position");
     const index = geometry.index;
     if (!position) return;
+    const verticesByMaterial = new Map<
+      THREE.Material,
+      (Vertex | undefined)[]
+    >();
     const end = Math.min(
       index?.count ?? position.count,
       geometry.drawRange.start + geometry.drawRange.count,
@@ -131,8 +143,15 @@ function triangles(options: ProjectionView): Triangle[] {
       const uv = geometry.getAttribute(
         texture?.channel ? `uv${texture.channel}` : "uv",
       );
+      let cached = verticesByMaterial.get(material);
+      if (!cached) {
+        cached = [];
+        verticesByMaterial.set(material, cached);
+      }
       const vertex = (at: number): Vertex => {
         const i = index ? index.getX(at) : at;
+        const previous = cached[i];
+        if (previous) return previous;
         const world = object
           .getVertexPosition(i, new THREE.Vector3())
           .applyMatrix4(object.matrixWorld);
@@ -140,11 +159,13 @@ function triangles(options: ProjectionView): Triangle[] {
           ? new THREE.Vector2(uv.getX(i), uv.getY(i))
           : new THREE.Vector2();
         if (texture) point.applyMatrix3(texture.matrix);
-        return {
+        const projected = {
           world,
           uv: point,
           screen: stampPoint(world.clone().project(options.camera), options),
         };
+        cached[i] = projected;
+        return projected;
       };
       const vertices: [Vertex, Vertex, Vertex] = [
         vertex(offset),

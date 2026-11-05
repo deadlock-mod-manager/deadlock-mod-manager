@@ -472,7 +472,25 @@ pub(crate) fn build_glb(
                     &format!("{} tint mask", texture.name),
                 )
             });
-            (base, normal, orm, emissive, effect_mask, tint_mask)
+            let emission_mask = texture.self_illum_mask_png.as_deref().map(|png| {
+                append_png_texture(
+                    &mut bin,
+                    &mut buffer_views,
+                    &mut images,
+                    &mut texture_defs,
+                    png,
+                    &format!("{} self illumination mask", texture.name),
+                )
+            });
+            (
+                base,
+                normal,
+                orm,
+                emissive,
+                effect_mask,
+                tint_mask,
+                emission_mask,
+            )
         })
         .collect::<Vec<_>>();
 
@@ -486,7 +504,7 @@ pub(crate) fn build_glb(
     })];
     let mut uses_emissive_strength = false;
     let mut uses_unlit = false;
-    for (texture, (base, normal, orm, emissive, effect_mask, tint_mask)) in
+    for (texture, (base, normal, orm, emissive, effect_mask, tint_mask, emission_mask)) in
         textures.iter().zip(&texture_indices)
     {
         let alpha_mode = match texture.alpha_mode {
@@ -553,6 +571,9 @@ pub(crate) fn build_glb(
             let mut source2 = source2.clone();
             if let Some(color) = &mut source2.color {
                 color.tint_mask_texture = *tint_mask;
+            }
+            if let Some(emission) = &mut source2.emission {
+                emission.mask_texture = *emission_mask;
             }
             if source2.unlit {
                 material["extensions"]["KHR_materials_unlit"] = json!({});

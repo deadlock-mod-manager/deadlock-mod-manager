@@ -102,6 +102,50 @@ export function cropModelImageFrames(
   });
 }
 
+/** One shared alpha bound keeps the whole animation moving inside a useful sticker frame. */
+export function trimModelImageFrames(
+  frames: readonly ModelImageProjectionFrame[],
+): readonly ModelImageProjectionFrame[] {
+  const first = frames[0];
+  if (
+    !first ||
+    frames.some(
+      (frame) => frame.width !== first.width || frame.height !== first.height,
+    )
+  )
+    return frames;
+  let left = first.width,
+    top = first.height,
+    right = 0,
+    bottom = 0;
+  for (const frame of frames) {
+    for (let y = 0; y < frame.height; y++) {
+      for (let x = 0; x < frame.width; x++) {
+        if (!frame.rgba[(y * frame.width + x) * 4 + 3]) continue;
+        left = Math.min(left, x);
+        top = Math.min(top, y);
+        right = Math.max(right, x + 1);
+        bottom = Math.max(bottom, y + 1);
+      }
+    }
+  }
+  if (
+    right <= left ||
+    bottom <= top ||
+    (left === 0 &&
+      top === 0 &&
+      right === first.width &&
+      bottom === first.height)
+  )
+    return frames;
+  return cropModelImageFrames(frames, {
+    left: left / first.width,
+    top: top / first.height,
+    right: right / first.width,
+    bottom: bottom / first.height,
+  });
+}
+
 export type ImagePlacementHandle =
   | "move"
   | "rotate"

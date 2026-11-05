@@ -2,18 +2,8 @@ import type { ModelPaintAnimation } from "@/lib/model-paint-animation";
 import type { ModdingModelPartEdit } from "@/types/generated/ModdingModelPartEdit";
 import { Button } from "@deadlock-mods/ui/components/button";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@deadlock-mods/ui/components/tooltip";
-import { cn } from "@deadlock-mods/ui/lib/utils";
-import {
   ArrowUUpLeftIcon,
-  PauseIcon,
-  PlayIcon,
-  SkipBackIcon,
   SquaresFourIcon,
-  WarningIcon,
   WindIcon,
   SparkleIcon,
 } from "@phosphor-icons/react";
@@ -44,17 +34,12 @@ import {
   type FoundryPreviewTint,
   type FoundryTextureRefresh,
 } from "./workbench-model-viewer";
-import { ViewerAnimationPicker } from "./workbench-viewer-animation-picker";
 import type { ViewerEffectFactory } from "./viewer-effects";
 import type { ViewerCallout } from "./viewer-callouts";
 import { MODEL_PREVIEW_GC_TIME } from "@/lib/model-assets";
-import { overlaySurface } from "./workbench-viewer-tools";
-import {
-  AbilityBar,
-  EffectToggle,
-  SpeedPicker,
-  Timeline,
-} from "./workbench-viewer-transport";
+import { AbilityBar } from "./workbench-viewer-ability-bar";
+import { EffectToggle } from "./viewer-effect-toggle";
+import { WorkbenchPlaybackControls } from "./workbench-playback-controls";
 
 import type { ParticleSystemInUse } from "./particles/systems-in-use";
 import { ModelParticleList } from "../modding-workbench/model-particle-list";
@@ -135,7 +120,6 @@ export const AnimatedModelPreview = ({
   pauseForImagePlacement = false,
 }: Props) => {
   const { t } = useTranslation();
-  const editing = modelEdits !== undefined;
   const fullscreenRef = useRef<HTMLDivElement>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [playing, setPlaying] = useState(true);
@@ -337,7 +321,7 @@ export const AnimatedModelPreview = ({
   return (
     <div
       ref={fullscreenRef}
-      className='flex h-full min-h-0 w-full flex-col overflow-hidden rounded-lg border bg-background'>
+      className='flex h-full min-h-0 w-full flex-col overflow-hidden bg-background'>
       <div className='relative min-h-0 flex-1'>
         <FoundryModelViewer
           imageDraft={imageDraft}
@@ -387,156 +371,85 @@ export const AnimatedModelPreview = ({
               : []
           }>
           {viewportOverlay}
-          {effectsNote && !pauseForImagePlacement && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <p
-                  role='status'
-                  className={cn(
-                    overlaySurface,
-                    "absolute top-14 left-3 flex h-7 max-w-[calc(100%-7rem)] items-center gap-1.5 rounded-full px-2.5 text-[11px] text-muted-foreground",
-                  )}>
-                  <WarningIcon
-                    className='size-3.5 shrink-0 text-amber-400'
-                    weight='fill'
-                  />
-                  <span className='truncate'>{effectsNote}</span>
-                </p>
-              </TooltipTrigger>
-              <TooltipContent side='bottom' className='max-w-64'>
-                {effectsNote}
-              </TooltipContent>
-            </Tooltip>
-          )}
-          {hasAbilityBar && !pauseForImagePlacement && (
-            <AbilityBar
-              slots={slots}
-              activeId={action?.id}
-              onSelect={select}
-              hidden={abilitiesHidden}
-              onHiddenChange={setAbilitiesHidden}
-              animation={current}
-              timeRef={timeRef}
-            />
-          )}
         </FoundryModelViewer>
       </div>
-      <div className='@container/transport shrink-0 space-y-2 border-t bg-muted/30 px-3 py-2'>
-        <div className='flex flex-wrap items-center gap-2'>
-          <Button
-            size='icon'
-            variant={playing ? "default" : "secondary"}
-            className='size-8 shrink-0'
-            disabled={!current || pauseForImagePlacement}
-            title={
-              pauseForImagePlacement
-                ? t("modelEditor.paint.poseHeld")
-                : undefined
-            }
-            aria-label={
-              pauseForImagePlacement
-                ? t("modelEditor.paint.poseHeld")
-                : t(playing ? "modelPreview.pause" : "modelPreview.play")
-            }
-            onClick={() => setPlaying(!playing)}>
-            {playing ? <PauseIcon weight='fill' /> : <PlayIcon weight='fill' />}
-          </Button>
-          <Button
-            size='icon'
-            variant='ghost'
-            className='hidden size-8 shrink-0 @[44rem]/transport:inline-flex'
-            disabled={!current}
-            aria-label={t("modelPreview.restart")}
-            title={t("modelPreview.restart")}
-            onClick={restart}>
-            <SkipBackIcon />
-          </Button>
-          <ViewerAnimationPicker
-            compact={editing}
-            actions={actions}
-            selected={action}
-            onSelect={select}
-          />
-          <Button
-            size='sm'
-            variant='ghost'
-            className='hidden h-8 shrink-0 gap-1.5 px-2 text-muted-foreground text-xs hover:text-foreground @[44rem]/transport:inline-flex'
-            disabled={
-              action?.id === "idle" ||
-              !actions.some((candidate) => candidate.id === "idle")
-            }
-            aria-label={t("modelPreview.returnToIdle")}
-            title={t("modelPreview.returnToIdle")}
-            onClick={() => select("idle")}>
-            <ArrowUUpLeftIcon />
-            {!editing && t("modelPreview.actions.idle")}
-          </Button>
-          <Timeline
-            animation={current}
-            timeRef={timeRef}
-            onSeek={seekTo}
-            className={
-              editing
-                ? "min-w-0 basis-full px-1"
-                : "min-w-40 flex-1 basis-40 px-1"
-            }
-          />
-          <details
-            open={editing ? undefined : true}
-            className={
-              editing ? "w-full text-xs text-muted-foreground" : "contents"
-            }>
-            <summary className={editing ? "cursor-pointer py-1" : "hidden"}>
-              {t("modelPreview.previewOptions")}
-            </summary>
-            <div
-              className={
-                editing ? "flex flex-wrap items-center gap-2 pt-2" : "contents"
-              }>
-              {cloth.data && (
+      {hasAbilityBar && !pauseForImagePlacement ? (
+        <AbilityBar
+          slots={slots}
+          activeId={action?.id}
+          onSelect={select}
+          hidden={abilitiesHidden}
+          onHiddenChange={setAbilitiesHidden}
+          animation={current}
+          timeRef={timeRef}
+        />
+      ) : null}
+      <div className='shrink-0'>
+        <WorkbenchPlaybackControls
+          actions={actions}
+          selected={action}
+          animation={current}
+          timeRef={timeRef}
+          playing={playing}
+          disabled={pauseForImagePlacement}
+          speed={speed}
+          onPlayingChange={setPlaying}
+          onSpeedChange={setSpeed}
+          onSelect={select}
+          onSeek={seekTo}
+          onRestart={restart}>
+          <div className='flex flex-wrap gap-2'>
+            {cloth.data ? (
+              <EffectToggle
+                showLabel
+                icon={WindIcon}
+                label={t("modelPreview.cloth")}
+                on={clothOn}
+                onChange={setClothOn}
+              />
+            ) : null}
+            {particles.data ? (
+              <>
                 <EffectToggle
-                  icon={WindIcon}
-                  label={t("modelPreview.cloth")}
-                  on={clothOn}
-                  onChange={setClothOn}
+                  showLabel
+                  icon={SparkleIcon}
+                  label={t("modelPreview.particles")}
+                  on={particlesOn}
+                  onChange={setParticlesOn}
                 />
-              )}
-              {particles.data ? (
-                <>
-                  <EffectToggle
-                    icon={SparkleIcon}
-                    label={t("modelPreview.particles")}
-                    on={particlesOn}
-                    onChange={setParticlesOn}
-                  />
-                  <ViewerParticlePicker
-                    effects={particles.data.abilityEffects}
-                    selected={additionalRoots}
-                    pending={particles.isFetching}
-                    onChange={(roots) =>
-                      setEffectSelection({ action: action?.id ?? "", roots })
-                    }
-                  />
-                </>
-              ) : null}
-              <SpeedPicker speed={speed} onChange={setSpeed} />
-              <details className='w-full'>
-                <summary className='cursor-pointer py-1'>
-                  {t("modelEditor.particlesInUse")}
-                </summary>
-                <ModelParticleList
+                <ViewerParticlePicker
+                  effects={particles.data.abilityEffects}
+                  selected={additionalRoots}
                   pending={particles.isFetching}
-                  systems={
-                    particleInventory &&
-                    particleInventory.graph === particles.data
-                      ? particleInventory.systems
-                      : []
+                  onChange={(roots) =>
+                    setEffectSelection({ action: action?.id ?? "", roots })
                   }
                 />
-              </details>
-            </div>
-          </details>
-        </div>
+              </>
+            ) : null}
+            <Button
+              size='sm'
+              variant='ghost'
+              disabled={!actions.some((candidate) => candidate.id === "idle")}
+              onClick={() => select("idle")}>
+              <ArrowUUpLeftIcon />
+              {t("modelPreview.returnToIdle")}
+            </Button>
+          </div>
+          {effectsNote ? (
+            <p role='status' className='text-xs text-muted-foreground'>
+              {effectsNote}
+            </p>
+          ) : null}
+          <ModelParticleList
+            pending={particles.isFetching}
+            systems={
+              particleInventory && particleInventory.graph === particles.data
+                ? particleInventory.systems
+                : []
+            }
+          />
+        </WorkbenchPlaybackControls>
         {current?.additiveReferencePose ? (
           <p className='text-xs text-muted-foreground'>
             {t("modelPreview.additiveReferencePose")}

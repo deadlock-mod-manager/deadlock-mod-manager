@@ -24,6 +24,7 @@ import {
   FolderOpenIcon,
   FolderSimpleIcon,
   SquaresFourIcon,
+  PaintBrushIcon,
 } from "@phosphor-icons/react";
 import { useIsMutating, useMutation } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
@@ -144,7 +145,7 @@ export const OpenAddon = ({
   }, [busy, batchOpen, importOpen, colorsOpen, repairOpen, onDirtyChange]);
   return (
     <div className='flex h-full min-h-0 flex-col'>
-      <div className='flex flex-wrap items-center justify-between gap-3 border-b bg-background/60 px-4 py-3'>
+      <div className='flex min-h-10 flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b bg-card/60 px-3 py-1'>
         <div className='flex min-w-0 items-center gap-2'>
           <Button
             size='icon'
@@ -169,13 +170,6 @@ export const OpenAddon = ({
         </div>
         {!readOnly && !repairOpen ? (
           <div className='flex flex-wrap items-center gap-1'>
-            <Button
-              size='sm'
-              variant='outline'
-              disabled={busy}
-              onClick={() => setColorsOpen(true)}>
-              {t("particleColors.title")}
-            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button size='sm' variant='outline' disabled={busy}>
@@ -229,6 +223,10 @@ export const OpenAddon = ({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align='end'>
+                <DropdownMenuItem onSelect={() => setColorsOpen(true)}>
+                  <PaintBrushIcon className='mr-2 size-4' />
+                  {t("particleColors.title")}
+                </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => setImportOpen(true)}>
                   <PlusIcon className='mr-2 size-4' />
                   {t("workbenchExplorer.addFiles")}
@@ -297,24 +295,24 @@ export const OpenAddon = ({
           direction='horizontal'
           autoSaveId='workbench-files-preview'
           className='min-h-0 flex-1'>
-          <ResizablePanel defaultSize={44} minSize={25}>
+          <ResizablePanel defaultSize={38} minSize={25}>
             <section
               className='flex h-full min-h-0 flex-col'
               aria-label={t("workbenchExplorer.files")}>
-              <div className='flex min-h-12 flex-wrap items-center justify-between gap-1 border-b bg-background/60 px-2'>
+              <div className='flex min-h-9 flex-wrap items-center justify-between gap-1 border-b bg-background/60 px-2'>
                 {!readOnly ? (
                   <Tabs
                     value={assetView ? "assets" : "files"}
                     onValueChange={(value) => setAssetView(value === "assets")}>
                     <TabsList
-                      className='h-11 gap-1 rounded-none bg-transparent p-0'
+                      className='h-9 gap-1 rounded-none bg-transparent p-0'
                       aria-label={t("workbenchAssets.view")}>
                       {(["assets", "files"] as const).map((value) => (
                         <TabsTrigger
                           key={value}
                           value={value}
                           disabled={busy}
-                          className='relative h-11 gap-2 rounded-none bg-transparent px-2 text-xs data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:bg-primary after:opacity-0 data-[state=active]:after:opacity-100'>
+                          className='relative h-9 gap-2 rounded-none bg-transparent px-2 text-xs data-[state=active]:bg-transparent data-[state=active]:text-primary data-[state=active]:shadow-none after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:bg-primary after:opacity-0 data-[state=active]:after:opacity-100'>
                           {value === "assets" ? (
                             <SquaresFourIcon
                               aria-hidden
@@ -419,7 +417,7 @@ export const OpenAddon = ({
             </section>
           </ResizablePanel>
           <ResizableHandle withHandle />
-          <ResizablePanel defaultSize={56} minSize={25}>
+          <ResizablePanel defaultSize={62} minSize={25}>
             <Suspense
               fallback={<p className='p-4 text-sm'>{t("common.loading")}</p>}>
               <AddonPreview

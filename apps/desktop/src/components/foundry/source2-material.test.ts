@@ -29,6 +29,27 @@ const metadata = () => ({
     tintMaskTexture: null,
   },
 });
+
+test("raw self-illumination masks load and keep distinct indices across source meshes", async () => {
+  const gltf = await new GLTFLoader().parseAsync(
+    JSON.stringify({ asset: { version: "2.0" }, scene: 0, scenes: [{}] }),
+    "",
+  );
+  const material = new THREE.MeshStandardMaterial();
+  material.userData.source2 = {
+    ...metadata(),
+    color: null,
+    emission: { maskTexture: 2, albedoFactor: 0.5 },
+  };
+  gltf.scene.add(new THREE.Mesh(undefined, material));
+  const texture = new THREE.Texture();
+  const load = spyOn(gltf.parser, "getDependency").mockResolvedValue(texture);
+  const textures = await loadSource2Textures(gltf, 7);
+  expect(load).toHaveBeenCalledWith("texture", 2);
+  expect(textures.get(9)).toBe(texture);
+  expect(texture.colorSpace).toBe(THREE.NoColorSpace);
+  expect(source2Metadata(material)?.emission?.maskTexture).toBe(9);
+});
 const corrected = (input: number[], csb: number[], pivot: number[]) => {
   const plan = colorCorrection(csb, pivot);
   return new THREE.Vector3(...input).applyMatrix3(plan.matrix).add(plan.offset);

@@ -3,6 +3,53 @@ import * as THREE from "three";
 import { resetModelPart } from "@/lib/model-edit-history";
 import { installModelMaterialEdits } from "./model-material-edits";
 
+test("paint textures keep the native preview dimensions across animated frames", () => {
+  const material = new THREE.MeshStandardMaterial();
+  material.userData.sourceMaterial = "head.vmat";
+  const root = new THREE.Group();
+  const geometry = new THREE.PlaneGeometry();
+  root.add(new THREE.Mesh(geometry, material));
+  const apply = installModelMaterialEdits(root);
+  const first = new Uint8Array(96 * 48 * 4).fill(20);
+  const second = new Uint8Array(first.length).fill(90);
+  apply(
+    [{ ...resetModelPart("head.vmat"), paint: { layers: [] } }],
+    new Map(),
+    new Map([["head.vmat", first]]),
+    new Map([
+      [
+        "head.vmat",
+        {
+          width: 96,
+          height: 48,
+          plays: 0,
+          frames: [
+            { pixels: first, durationMs: 100 },
+            { pixels: second, durationMs: 100 },
+          ],
+        },
+      ],
+    ]),
+  );
+  const shader = {
+    uniforms: { uModelAlbedoPaint: { value: new THREE.Texture() } },
+    vertexShader: THREE.ShaderLib.standard.vertexShader,
+    fragmentShader: THREE.ShaderLib.standard.fragmentShader,
+  };
+  // oxlint-disable-next-line anti-slop/no-reflect-apply
+  Reflect.apply(material.onBeforeCompile, material, [shader]);
+  const texture = shader.uniforms.uModelAlbedoPaint.value;
+  if (!(texture instanceof THREE.DataTexture))
+    throw new Error("Missing paint texture");
+  expect([texture.image.width, texture.image.height]).toEqual([96, 48]);
+  apply.tick({ time: 0.15, attributes: {} });
+  expect(texture.image.data).toBe(second);
+  expect([texture.image.width, texture.image.height]).toEqual([96, 48]);
+  apply.dispose();
+  material.dispose();
+  geometry.dispose();
+});
+
 test("exact material identity controls every matching part and restores authored maps", () => {
   const root = new THREE.Group();
   const map = new THREE.Texture();

@@ -199,6 +199,7 @@ export function ModelMaterialWorkspace({
               modelPaintAnimations={paint.animations}
               materialInputs={materialInputs}
               onMaterialPick={(material) => {
+                if (imagePlacementActive) return;
                 if (document.parts.some((part) => part.material === material))
                   setSelection((current) =>
                     selectModelMaterial(
@@ -235,7 +236,7 @@ export function ModelMaterialWorkspace({
               edits={history.edits}
               selection={selection}
               isolated={isolated}
-              disabled={save.isPending}
+              disabled={save.isPending || imagePlacementActive}
               onPick={(material, visible, modifiers) =>
                 setSelection((current) =>
                   selectModelMaterial(current, material, visible, modifiers),

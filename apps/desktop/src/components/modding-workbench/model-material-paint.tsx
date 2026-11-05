@@ -223,6 +223,8 @@ export function ModelMaterialPaint({
           ) : null}
           <ModelPaintCanvas
             pixels={preview.data?.frames[0]?.pixels}
+            width={preview.data?.width}
+            height={preview.data?.height}
             disabled={
               disabled ||
               preview.isFetching ||

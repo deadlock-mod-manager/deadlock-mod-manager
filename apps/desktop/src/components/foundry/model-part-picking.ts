@@ -1,6 +1,34 @@
 import * as THREE from "three";
 import { z } from "zod";
 
+type PickingPointer = Pick<
+  PointerEvent,
+  | "button"
+  | "pointerId"
+  | "clientX"
+  | "clientY"
+  | "ctrlKey"
+  | "shiftKey"
+  | "altKey"
+  | "metaKey"
+>;
+interface PickingSurface {
+  getBoundingClientRect: () => {
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+  };
+  addEventListener: (
+    name: string,
+    listener: (event: PickingPointer) => void,
+  ) => void;
+  removeEventListener: (
+    name: string,
+    listener: (event: PickingPointer) => void,
+  ) => void;
+}
+
 export function pickModelMaterial(
   root: THREE.Object3D,
   camera: THREE.Camera,
@@ -34,14 +62,16 @@ export function pickModelMaterial(
 }
 
 export function attachModelPartPicking(
-  element: HTMLElement,
+  element: PickingSurface,
   camera: THREE.Camera,
   root: () => THREE.Object3D | null,
   pick: () => ((material: string) => void) | undefined,
+  blocked: () => boolean = () => false,
 ) {
   let down: { x: number; y: number; pointer: number } | null = null;
-  const start = (event: PointerEvent) => {
+  const start = (event: PickingPointer) => {
     down =
+      !blocked() &&
       event.button === 0 &&
       !event.ctrlKey &&
       !event.shiftKey &&
@@ -50,13 +80,14 @@ export function attachModelPartPicking(
         ? { x: event.clientX, y: event.clientY, pointer: event.pointerId }
         : null;
   };
-  const end = (event: PointerEvent) => {
+  const end = (event: PickingPointer) => {
     const start = down;
     down = null;
     const model = root();
     const onPick = pick();
     if (
       !start ||
+      blocked() ||
       !model ||
       !onPick ||
       event.button !== 0 ||

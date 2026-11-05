@@ -331,60 +331,145 @@ pub(super) fn apply_resolved(
   sources: &BTreeMap<String, ModdingModelImage>,
   elapsed_ms: u64,
 ) -> Result<(), Error> {
-  validate(paint)?;
-  let (width, height) = (image.width as usize, image.height as usize);
-  if width == 0 || height == 0 || width.saturating_mul(height) > 16 * 1024 * 1024 {
-    return Err(invalid("Paint image exceeds 16 megapixels"));
-  }
-  let ImageData::Rgba8(base) = &mut image.data else {
-    return Err(invalid("Painting requires an LDR texture"));
-  };
-  if base.len() != width * height * 4 {
-    return Err(invalid("Invalid paint image length"));
-  }
-  for layer in paint.layers.iter().filter(|l| l.visible && l.opacity > 0.) {
-    let mut pixels = if let Some(path) = &layer.image {
-      let root = root.ok_or_else(|| invalid("Managed image layers require an addon root"))?;
-      let source = sources
-        .get(path)
-        .ok_or_else(|| invalid("Missing managed paint image"))?;
-      let frame = modding_model_images::frame_at(source, elapsed_ms)
-        .ok_or_else(|| invalid("Image has no frames"))?;
-      let image = modding_model_images::frame_pixels(root, source, frame)?;
-      image::imageops::resize(
-        &image,
-        width as u32,
-        height as u32,
-        image::imageops::FilterType::Lanczos3,
-      )
-      .into_raw()
-    } else {
-      vec![0u8; base.len()]
-    };
-    for s in &layer.strokes {
-      if let Some(tolerance) = s.fill_tolerance {
-        fill(&mut pixels, width, height, base, layer, s, tolerance);
-      } else {
-        stroke(&mut pixels, width, height, s);
-      }
+  PreparedPaint::new(paint, root, sources, image.width, image.height)?.apply(image, elapsed_ms)
+}
+
+/// Static layers are decoded, resized and stroked once for the whole animation.
+pub(super) struct PreparedPaint<'a> {
+  paint: &'a ModdingModelPaint,
+  root: Option<&'a Path>,
+  sources: &'a BTreeMap<String, ModdingModelImage>,
+  layers: Vec<Option<Vec<u8>>>,
+}
+
+impl<'a> PreparedPaint<'a> {
+  pub(super) fn new(
+    paint: &'a ModdingModelPaint,
+    root: Option<&'a Path>,
+    sources: &'a BTreeMap<String, ModdingModelImage>,
+    width: u32,
+    height: u32,
+  ) -> Result<Self, Error> {
+    validate(paint)?;
+    if width == 0 || height == 0 || u64::from(width) * u64::from(height) > 16 * 1024 * 1024 {
+      return Err(invalid("Paint image exceeds 16 megapixels"));
     }
-    for (bottom, top) in base
-      .as_chunks_mut::<4>()
-      .0
-      .iter_mut()
-      .zip(pixels.as_chunks::<4>().0)
-    {
-      let alpha = f32::from(top[3]) / 255. * layer.opacity;
-      if alpha == 0. {
+    let mut prepared = Self {
+      paint,
+      root,
+      sources,
+      layers: Vec::new(),
+    };
+    let mut cached_bytes = 0usize;
+    let frame_bytes = width as usize * height as usize * 4;
+    for layer in &paint.layers {
+      let animated = layer
+        .image
+        .as_ref()
+        .and_then(|path| sources.get(path))
+        .is_some_and(|source| source.frames.len() > 1);
+      if !layer.visible
+        || layer.opacity == 0.
+        || animated
+        || layer.strokes.iter().any(|s| s.fill_tolerance.is_some())
+        || cached_bytes + frame_bytes > 16 * 1024 * 1024
+      {
+        prepared.layers.push(None);
         continue;
       }
-      for c in 0..3 {
-        let b = linear(bottom[c]);
-        bottom[c] = encoded(b * (1. - alpha) + blend(b, linear(top[c]), layer.blend) * alpha);
+      let mut pixels = prepared.layer_pixels(layer, width, height, 0)?;
+      for s in &layer.strokes {
+        stroke(&mut pixels, width as usize, height as usize, s);
+      }
+      prepared.layers.push(Some(pixels));
+      cached_bytes += frame_bytes;
+    }
+    Ok(prepared)
+  }
+
+  fn layer_pixels(
+    &self,
+    layer: &ModdingPaintLayer,
+    width: u32,
+    height: u32,
+    elapsed_ms: u64,
+  ) -> Result<Vec<u8>, Error> {
+    let Some(path) = &layer.image else {
+      return Ok(vec![0; width as usize * height as usize * 4]);
+    };
+    let root = self
+      .root
+      .ok_or_else(|| invalid("Managed image layers require an addon root"))?;
+    let source = self
+      .sources
+      .get(path)
+      .ok_or_else(|| invalid("Missing managed paint image"))?;
+    let frame = modding_model_images::frame_at(source, elapsed_ms)
+      .ok_or_else(|| invalid("Image has no frames"))?;
+    let image = modding_model_images::frame_pixels(root, source, frame)?;
+    if image.width() == width && image.height() == height {
+      return Ok(image.into_raw());
+    }
+    Ok(
+      image::imageops::resize(&image, width, height, image::imageops::FilterType::Lanczos3)
+        .into_raw(),
+    )
+  }
+
+  pub(super) fn apply(&self, image: &mut Image, elapsed_ms: u64) -> Result<(), Error> {
+    let (width, height) = (image.width as usize, image.height as usize);
+    if width == 0 || height == 0 || width.saturating_mul(height) > 16 * 1024 * 1024 {
+      return Err(invalid("Paint image exceeds 16 megapixels"));
+    }
+    let ImageData::Rgba8(base) = &mut image.data else {
+      return Err(invalid("Painting requires an LDR texture"));
+    };
+    if base.len() != width * height * 4 {
+      return Err(invalid("Invalid paint image length"));
+    }
+    for (index, layer) in self
+      .paint
+      .layers
+      .iter()
+      .enumerate()
+      .filter(|(_, l)| l.visible && l.opacity > 0.)
+    {
+      let mut generated;
+      let pixels = if let Some(pixels) = &self.layers[index] {
+        pixels
+      } else {
+        generated = self.layer_pixels(layer, width as u32, height as u32, elapsed_ms)?;
+        for s in &layer.strokes {
+          if let Some(tolerance) = s.fill_tolerance {
+            fill(&mut generated, width, height, base, layer, s, tolerance);
+          } else {
+            stroke(&mut generated, width, height, s);
+          }
+        }
+        &generated
+      };
+      for (bottom, top) in base
+        .as_chunks_mut::<4>()
+        .0
+        .iter_mut()
+        .zip(pixels.as_chunks::<4>().0)
+      {
+        let alpha = f32::from(top[3]) / 255. * layer.opacity;
+        if alpha == 0. {
+          continue;
+        }
+        if alpha == 1. && layer.blend == ModdingPaintBlend::Normal {
+          bottom[..3].copy_from_slice(&top[..3]);
+          continue;
+        }
+        for c in 0..3 {
+          let b = linear(bottom[c]);
+          bottom[c] = encoded(b * (1. - alpha) + blend(b, linear(top[c]), layer.blend) * alpha);
+        }
       }
     }
+    Ok(())
   }
-  Ok(())
 }
 pub(super) fn base(addon: &ModdingAddon, material: &str) -> Result<Image, Error> {
   relative(material, false)?;
@@ -430,6 +515,33 @@ pub struct ModdingPaintPreview {
   pub frame_width: u32,
   pub frame_height: u32,
 }
+
+pub(super) fn animation_base(original: Image, count: usize) -> Result<Image, Error> {
+  let layout = modding_model_images::animation::layout(original.width, original.height, count)?;
+  resize_base(original, layout.frame_width, layout.frame_height)
+}
+
+fn resize_base(original: Image, width: u32, height: u32) -> Result<Image, Error> {
+  if original.width == width && original.height == height {
+    return Ok(original);
+  }
+  let ImageData::Rgba8(pixels) = original.data else {
+    return Err(invalid("LDR required"));
+  };
+  let buffer = image::RgbaImage::from_raw(original.width, original.height, pixels)
+    .ok_or_else(|| invalid("Invalid paint base"))?;
+  let buffer = image::imageops::resize(
+    &buffer,
+    width,
+    height,
+    image::imageops::FilterType::Triangle,
+  );
+  Ok(Image {
+    width,
+    height,
+    data: ImageData::Rgba8(buffer.into_raw()),
+  })
+}
 #[tauri::command]
 pub async fn preview_modding_model_paint(
   app: AppHandle,
@@ -442,17 +554,6 @@ pub async fn preview_modding_model_paint(
   tauri::async_runtime::spawn_blocking(move || {
     let original = base(&addon, &material)?;
     let original_size = (original.width, original.height);
-    let ImageData::Rgba8(pixels) = original.data else {
-      return Err(invalid("LDR required"));
-    };
-    let buffer = image::RgbaImage::from_raw(original.width, original.height, pixels)
-      .ok_or_else(|| invalid("Invalid paint base"))?;
-    let buffer = image::imageops::resize(&buffer, 256, 256, image::imageops::FilterType::Triangle);
-    let preview = Image {
-      width: 256,
-      height: 256,
-      data: ImageData::Rgba8(buffer.into_raw()),
-    };
     let root = Path::new(&addon.content_path);
     let sources = sources(&paint, root)?;
     let animation = sources.values().find(|source| source.frames.len() > 1);
@@ -476,11 +577,17 @@ pub async fn preview_modding_model_paint(
     } else {
       original_size
     };
+    // Animated previews use the same bounded cells as the native export atlas.
+    let scale = (1024. / f64::from(frame_width.max(frame_height))).min(1.);
+    let width = (f64::from(frame_width) * scale).round().max(1.) as u32;
+    let height = (f64::from(frame_height) * scale).round().max(1.) as u32;
+    let preview = resize_base(original, width, height)?;
     let mut frames = Vec::new();
     let mut elapsed = 0u64;
+    let prepared = PreparedPaint::new(&paint, Some(root), &sources, width, height)?;
     for duration_ms in durations {
       let mut frame = preview.clone();
-      apply_resolved(&mut frame, &paint, Some(root), &sources, elapsed)?;
+      prepared.apply(&mut frame, elapsed)?;
       let ImageData::Rgba8(pixels) = frame.data else {
         unreachable!()
       };
@@ -493,8 +600,8 @@ pub async fn preview_modding_model_paint(
     Ok(ModdingPaintPreview {
       frames,
       plays,
-      width: 256,
-      height: 256,
+      width,
+      height,
       frame_width,
       frame_height,
     })

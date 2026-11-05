@@ -4,9 +4,11 @@ import { invoke } from "@tauri-apps/api/core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ModdingLibraryVpk } from "@/types/generated/ModdingLibraryVpk";
+import { usePersistedStore } from "@/lib/store";
+import { FileArchiveIcon } from "@phosphor-icons/react";
 
 interface Props {
-  mod: { id: string; name: string };
+  mod: { remoteId: string; name: string };
   disabled: boolean;
   activePath?: string;
   onOpen: (vpk: ModdingLibraryVpk) => void;
@@ -15,19 +17,25 @@ interface Props {
 export const LibraryVpkRow = ({ mod, disabled, activePath, onOpen }: Props) => {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
+  const profileFolder = usePersistedStore(
+    (state) => state.profiles[state.activeProfileId]?.folderName ?? null,
+  );
   const vpks = useQuery({
-    queryKey: ["workbench-library-vpks", mod.id],
+    queryKey: ["workbench-library-vpks", mod.remoteId, profileFolder],
     queryFn: () =>
       invoke<ModdingLibraryVpk[]>("list_modding_library_vpks", {
-        modId: mod.id,
+        modId: mod.remoteId,
+        profileFolder,
       }),
     enabled: expanded,
     staleTime: 60_000,
   });
   return (
-    <details onToggle={(event) => setExpanded(event.currentTarget.open)}>
+    <details
+      className='group border-b border-border/50 last:border-0'
+      onToggle={(event) => setExpanded(event.currentTarget.open)}>
       <summary
-        className='cursor-pointer truncate px-3 py-2 text-xs'
+        className='cursor-pointer truncate px-3 py-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted/50 group-open:text-foreground focus-visible:outline focus-visible:outline-ring'
         title={mod.name}>
         {mod.name}
       </summary>
@@ -65,9 +73,10 @@ export const LibraryVpkRow = ({ mod, disabled, activePath, onOpen }: Props) => {
             disabled={disabled}
             title={vpk.filePath}
             aria-pressed={activePath === vpk.filePath}
-            className={`block w-full truncate px-3 py-2 text-left font-mono text-[11px] hover:bg-accent disabled:opacity-50 ${activePath === vpk.filePath ? "bg-accent" : ""}`}
+            className={`flex w-full items-center gap-2 px-3 py-2 text-left font-mono text-[11px] transition-colors hover:bg-accent focus-visible:outline focus-visible:outline-ring disabled:opacity-50 ${activePath === vpk.filePath ? "bg-primary/10 text-primary" : "text-muted-foreground"}`}
             onClick={() => onOpen(vpk)}>
-            {vpk.label}
+            <FileArchiveIcon aria-hidden className='size-3.5 shrink-0' />
+            <span className='truncate'>{vpk.label}</span>
           </button>
         ))}
       </div>

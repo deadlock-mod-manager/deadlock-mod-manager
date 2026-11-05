@@ -17,6 +17,7 @@ use crate::source2::texture::format::{TextureFlags, TextureFormat};
 const RESOURCE_VERSION: u16 = 1;
 const VTEX_VERSION: u16 = 1;
 const VTEX_FORMAT_PNG_RGBA8888: u8 = 16;
+const VTEX_FORMAT_BC7: u8 = 20;
 const TEXTURE_DATA_HEADER_SIZE: usize = 40;
 
 /// Build a complete `.vtex_c` resource using inline `PNG_RGBA8888` pixel data.
@@ -49,18 +50,34 @@ pub fn encode_vtex_png_rgba8888_from_png(
     build_png_rgba8888_resource(width, height, flags, png_bytes)
 }
 
+/// Build a single-mip, GPU-compressed BC7 texture. RGBA channels, including
+/// packed material masks in alpha, are encoded together in 4x4 blocks.
+pub fn encode_vtex_bc7(image: &Image, flags: TextureFlags) -> Result<Vec<u8>, EncodeError> {
+    if image.width == 0 || image.height == 0 {
+        return Err(EncodeError::InlineImage(
+            "BC7 textures require nonzero dimensions".into(),
+        ));
+    }
+    let width = u16_dimension(image.width, "width")?;
+    let height = u16_dimension(image.height, "height")?;
+    let pixels = encode_image(image, TextureFormat::Bc7)?;
+    let data = texture_data_header(width, height, flags, VTEX_FORMAT_BC7);
+    build_resource_with_tail(&[(*b"DATA", data.as_slice())], &pixels, RESOURCE_VERSION)
+        .map_err(EncodeError::Decode)
+}
+
 fn build_png_rgba8888_resource(
     width: u16,
     height: u16,
     flags: TextureFlags,
     png_bytes: &[u8],
 ) -> Result<Vec<u8>, EncodeError> {
-    let data = texture_data_header(width, height, flags);
+    let data = texture_data_header(width, height, flags, VTEX_FORMAT_PNG_RGBA8888);
     build_resource_with_tail(&[(*b"DATA", data.as_slice())], png_bytes, RESOURCE_VERSION)
         .map_err(EncodeError::Decode)
 }
 
-fn texture_data_header(width: u16, height: u16, flags: TextureFlags) -> Vec<u8> {
+fn texture_data_header(width: u16, height: u16, flags: TextureFlags, format: u8) -> Vec<u8> {
     let mut data = Vec::with_capacity(48);
     data.extend_from_slice(&VTEX_VERSION.to_le_bytes());
     data.extend_from_slice(&flags.bits().to_le_bytes());
@@ -72,7 +89,7 @@ fn texture_data_header(width: u16, height: u16, flags: TextureFlags) -> Vec<u8> 
     data.extend_from_slice(&width.to_le_bytes());
     data.extend_from_slice(&height.to_le_bytes());
     data.extend_from_slice(&1u16.to_le_bytes()); // depth
-    data.push(VTEX_FORMAT_PNG_RGBA8888);
+    data.push(format);
     data.push(1); // mip_count
     data.extend_from_slice(&0u32.to_le_bytes()); // picmip0_res
     data.extend_from_slice(&0u32.to_le_bytes()); // extra_data_offset
@@ -99,6 +116,41 @@ fn u16_dimension(value: u32, label: &str) -> Result<u16, EncodeError> {
 mod tests {
     use super::*;
     use crate::source2::{ImageData, resource::Resource};
+    #[test]
+    fn bc7_rejects_empty_dimensions_before_block_encoding() {
+        for (width, height) in [(0, 4), (4, 0)] {
+            let image = Image {
+                width,
+                height,
+                data: ImageData::Rgba8(Vec::new()),
+            };
+            assert!(encode_vtex_bc7(&image, TextureFlags::empty()).is_err());
+        }
+    }
+    #[test]
+    fn bc7_atlas_uses_one_byte_per_pixel_and_retains_color_and_packed_alpha() {
+        let image = Image {
+            width: 16,
+            height: 8,
+            data: ImageData::Rgba8([18, 42, 73, 109].repeat(128)),
+        };
+        let encoded = encode_vtex_bc7(&image, TextureFlags::SUGGEST_CLAMP_S).unwrap();
+        let resource = Resource::parse(&encoded).unwrap();
+        let block = resource.data_block_meta().unwrap();
+        assert_eq!(encoded.len() - (block.offset + block.size) as usize, 128);
+        let info = crate::source2::inspect(&encoded).unwrap();
+        assert_eq!(info.format, TextureFormat::Bc7);
+        assert!(info.flags.contains(TextureFlags::SUGGEST_CLAMP_S));
+        let decoded = crate::source2::decode(&encoded).unwrap();
+        let ImageData::Rgba8(pixels) = decoded.data else {
+            panic!("RGBA required")
+        };
+        for pixel in pixels.chunks_exact(4) {
+            for (actual, expected) in pixel.iter().zip([18u8, 42, 73, 109]) {
+                assert!(actual.abs_diff(expected) <= 3);
+            }
+        }
+    }
     #[test]
     fn inline_texture_resource_size_excludes_streamed_png_payload() {
         let image = Image {

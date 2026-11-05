@@ -103,7 +103,7 @@ export const ViewerWipBadge = () => {
           aria-label={t("modelPreview.disclaimerTitle")}
           className={cn(
             overlaySurface,
-            "flex h-8 shrink-0 cursor-default items-center whitespace-nowrap rounded-md px-2 font-medium text-xs",
+            "flex h-5 shrink-0 cursor-default items-center whitespace-nowrap rounded px-1.5 font-medium text-[9px] text-muted-foreground",
           )}>
           {t("modelPreview.wipBadge")}
         </span>
@@ -563,12 +563,11 @@ export const ViewerToolRail = ({
       )}
       <div
         role='toolbar'
-        aria-orientation='vertical'
+        aria-orientation='horizontal'
         aria-label={t("modelPreview.viewerTools")}
         className={cn(
           overlaySurface,
-          "absolute right-3 flex flex-col gap-0.5 rounded-lg p-1",
-          belowGizmo ? "top-[100px]" : "top-3",
+          "absolute bottom-2 right-2 flex items-center gap-0.5 rounded-md p-0.5",
         )}>
         <RailButton label={t("modelPreview.fitCamera")} onClick={onFit}>
           <FrameCornersIcon className='size-4' />
@@ -590,7 +589,7 @@ export const ViewerToolRail = ({
             weight='bold'
           />
         </RailButton>
-        <div className='mx-1.5 my-0.5 h-px bg-white/10' />
+        <div className='mx-0.5 h-4 w-px bg-border' />
         <RailButton
           label={t(
             saved ? "modelPreview.screenshotSaved" : "modelPreview.screenshot",
