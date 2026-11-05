@@ -3,6 +3,7 @@ use super::import_test_support::{
   SQOOKY, STOCK_6711, fixture, fixture_bytes, path,
 };
 use super::*;
+use crate::mod_manager::perf_config::live::normalize_value;
 
 fn leaf_value<'a>(parsed: &'a ParsedConfig, joined: &str) -> Option<&'a str> {
   let wanted = path(joined);
