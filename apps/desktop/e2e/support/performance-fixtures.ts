@@ -27,6 +27,8 @@ export const PLAYER_VIDEO = [
   '\t"DeviceID"\t\t"9988"',
   '\t"setting.defaultres"\t\t"2560"',
   '\t"setting.defaultresheight"\t\t"1440"',
+  // No preset writes this one, so every apply must leave it.
+  '\t"setting.e2e_player_only"\t\t"7"',
   `\t"setting.${CHANGED_KEY}"\t\t"3"`,
   '\t"setting.mat_viewportscale"\t\t"0.770000"',
   "}",
