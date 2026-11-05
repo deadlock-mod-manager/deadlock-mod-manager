@@ -3,9 +3,11 @@ import type { ModDto } from "@deadlock-mods/shared";
 import { CONTENT_TYPES } from "@deadlock-mods/shared";
 import { useQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
+import type { NativeSourceLinkTarget } from "@/types/generated/NativeSourceLinkTarget";
 import type { NativeSourceListing } from "@/types/generated/NativeSourceListing";
 import type { NativeSourceMod } from "@/types/generated/NativeSourceMod";
 import type { NativeSourceProvenance } from "@/types/generated/NativeSourceProvenance";
+import type { NativeSourceRelease } from "@/types/generated/NativeSourceRelease";
 import type { NativeSourceSummary } from "@/types/generated/NativeSourceSummary";
 import type { ModDownloadItem } from "@/types/mods";
 import { getErrorMessage } from "@/lib/errors";
@@ -54,7 +56,7 @@ export const nativeListingMatchesContentType = (
 
 const invokeNative = async <T>(
   command: string,
-  args?: Record<string, string | boolean>,
+  args?: Record<string, string | boolean | null>,
 ): Promise<T> => {
   try {
     return await invoke<T>(command, args);
@@ -65,8 +67,15 @@ const invokeNative = async <T>(
 
 export const listNativeSources = () =>
   invokeNative<NativeSourceSummary[]>("list_native_sources");
+// Dev builds can enroll sources served over local HTTP; release builds keep
+// the HTTPS and public-host requirement.
+const allowLocalNetwork = import.meta.env.DEV;
+
 export const previewNativeSource = (descriptorUrl: string) =>
-  invokeNative<NativeSourceSummary>("preview_native_source", { descriptorUrl });
+  invokeNative<NativeSourceSummary>("preview_native_source", {
+    descriptorUrl,
+    allowLocalNetwork,
+  });
 export const addNativeSource = ({
   descriptorUrl,
   previewToken,
@@ -76,6 +85,7 @@ export const addNativeSource = ({
 }) =>
   invokeNative<NativeSourceSummary>("add_native_source", {
     descriptorUrl,
+    allowLocalNetwork,
     previewToken,
   });
 export const setNativeSourceEnabled = (sourceKey: string, enabled: boolean) =>
@@ -93,6 +103,14 @@ export const queryNativeSource = (sourceKey: string, query = "") =>
     query,
   });
 
+export const resolveNativeSourceLink = (link: {
+  descriptorUrl: string;
+  sourceId: string;
+  listingId: string;
+  releaseId: string | null;
+  artifactId: string | null;
+}) => invokeNative<NativeSourceLinkTarget>("resolve_native_source_link", link);
+
 export const useNativeSources = () =>
   useQuery({
     queryKey: NATIVE_SOURCES_QUERY_KEY,
@@ -109,6 +127,18 @@ export const useNativeSourceContext = (remoteId: string) =>
     queryFn: () => getNativeSourceRecord(remoteId),
     enabled: isNativeSourceMod(remoteId),
     staleTime: 30_000,
+    meta: { skipGlobalErrorHandler: true },
+  });
+
+export const useNativeSourceReleaseHistory = (remoteId: string) =>
+  useQuery({
+    queryKey: [...NATIVE_SOURCES_QUERY_KEY, "release-history", remoteId],
+    queryFn: () =>
+      invokeNative<NativeSourceRelease[]>("get_native_source_release_history", {
+        remoteId,
+      }),
+    enabled: isNativeSourceMod(remoteId),
+    staleTime: 5 * 60_000,
     meta: { skipGlobalErrorHandler: true },
   });
 
@@ -189,13 +219,16 @@ export const nativeModDownloads = (
     listing.availability !== "available"
   )
     return [];
+  // Artifacts carry no dates of their own, so they take their release's. Not
+  // the listing's `updatedAt`: metadata edits must leave download items equal.
+  const releasedAt = release.publishedAt;
   return release.artifacts.map((artifact) => ({
     url: `dmm-source-file://${source.key}/${[listing.id, release.id, release.contentRevision, artifact.id].map(encodeURIComponent).join("/")}`,
     size: artifact.size ?? 0,
     name: artifact.filename,
     description: null,
     createdAt: null,
-    updatedAt: null,
+    updatedAt: releasedAt ? new Date(releasedAt) : null,
     md5Checksum: artifact.hashes?.md5 ?? null,
   }));
 };

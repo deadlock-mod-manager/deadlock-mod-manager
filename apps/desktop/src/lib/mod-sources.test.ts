@@ -48,6 +48,7 @@ const listing: NativeSourceListing = {
   availability: "available",
   detailUrl: null,
   description: "An example mod",
+  descriptionFormat: null,
   author: "Example author",
   hero: null,
   contentType: "mod",
@@ -57,10 +58,13 @@ const listing: NativeSourceListing = {
   homepageUrl: "https://mods.example/example",
   updatedAt: null,
   releaseUrl: null,
+  releaseHistoryUrl: null,
   release: {
     id: "release #1",
     contentRevision: "revision?2",
     version: null,
+    publishedAt: null,
+    changelog: null,
     artifacts: [
       {
         id: "asset/雪",

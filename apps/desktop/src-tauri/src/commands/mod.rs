@@ -45,6 +45,7 @@ pub mod remote_install;
 pub mod reports;
 pub mod server_browser;
 pub mod server_connect;
+pub mod server_picker;
 pub mod server_profiles;
 pub mod shards;
 pub mod source_install;

@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use tokio::sync::Mutex;
 
+use super::links::{NativeSourceLink, NativeSourceLinkTarget};
 use super::network::{fetch_json, invalid, resolve_url, validate_source_url};
 use super::types::*;
 use super::validation::{normalize_listing, validate_descriptor, validate_release};
@@ -15,6 +16,8 @@ use super::validation::{normalize_listing, validate_descriptor, validate_release
 const MAX_PAGES: usize = 100;
 const MAX_LISTINGS: usize = 10_000;
 const MAX_REFRESH_DOCUMENTS: usize = 1_000;
+const MAX_HISTORY_PAGES: usize = 20;
+const MAX_HISTORY_RELEASES: usize = 500;
 
 #[derive(Clone, Default, Serialize, Deserialize)]
 struct Registry {
@@ -357,6 +360,104 @@ impl NativeSourceManager {
     Err(invalid("Source listing was not found in the local catalog"))
   }
 
+  /// Finds an install link's listing among added sources. The source is the
+  /// one at the link's origin with its declared ID, so a link cannot point an
+  /// added source's name at another site. A listing the cached catalog lacks
+  /// gets one refresh, since a site links to mods it has just published.
+  pub async fn resolve_link(
+    &self,
+    link: &NativeSourceLink,
+  ) -> Result<NativeSourceLinkTarget, Error> {
+    self.ensure_available()?;
+    let NativeSourceLink::Install {
+      descriptor_url,
+      source_id,
+      listing_id,
+      release_id,
+      artifact_id,
+    } = link
+    else {
+      return Err(invalid("Not an install link"));
+    };
+    let url = validate_source_url(descriptor_url, true)?;
+    let key = super::source_key(&url.origin().ascii_serialization(), source_id);
+
+    let find = |registry: &Registry| -> Option<Result<NativeSourceLinkTarget, Error>> {
+      let source = registry.sources.get(&key).filter(|s| !s.summary.removed)?;
+      if !source.summary.enabled {
+        return Some(Ok(NativeSourceLinkTarget::Disabled {
+          source_key: key.clone(),
+        }));
+      }
+      let listing = source
+        .listings
+        .iter()
+        .find(|listing| &listing.id == listing_id)?;
+      Some(link_target(source, listing, release_id, artifact_id))
+    };
+
+    if let Some(target) = find(&*self.registry.lock().await) {
+      return target;
+    }
+    if !self
+      .registry
+      .lock()
+      .await
+      .sources
+      .get(&key)
+      .is_some_and(|source| !source.summary.removed)
+    {
+      return Ok(NativeSourceLinkTarget::NotAdded);
+    }
+    self.refresh(&key).await?;
+    find(&*self.registry.lock().await)
+      .unwrap_or_else(|| Err(invalid("This mod is not in the source's catalog")))
+  }
+
+  /// Fetched on demand rather than during refresh, so history never counts
+  /// against the snapshot budget or blocks installing the current release.
+  pub async fn release_history(&self, remote_id: &str) -> Result<Vec<NativeSourceRelease>, Error> {
+    let NativeSourceMod {
+      source, listing, ..
+    } = self.mod_by_remote_id(remote_id).await?;
+    if !source.enabled || source.removed {
+      return Err(invalid("Source is disabled or removed"));
+    }
+    if !source
+      .descriptor
+      .capabilities
+      .as_ref()
+      .is_some_and(|capabilities| capabilities.release_history)
+    {
+      return Err(invalid("Source does not declare release history"));
+    }
+    let history_url = listing
+      .release_history_url
+      .clone()
+      .or_else(|| match &source.descriptor.catalog {
+        NativeSourceCatalog::Api {
+          release_history_url_template: Some(template),
+          ..
+        } => Some(expand_listing_template(template, &listing.id)),
+        _ => None,
+      })
+      .ok_or_else(|| invalid("Source declares release history without a history URL"))?;
+    let descriptor_url =
+      Url::parse(&source.descriptor_url).map_err(|_| invalid("Invalid descriptor locator"))?;
+    let initial_url = resolve_url(
+      &descriptor_url,
+      &history_url,
+      &source.descriptor.network_origins.api,
+      source.allow_local_network,
+    )?;
+    tokio::time::timeout(
+      std::time::Duration::from_secs(30),
+      fetch_release_history(&source, initial_url),
+    )
+    .await
+    .map_err(|_| invalid("Release history exceeded its 30-second budget"))?
+  }
+
   pub async fn resolve_artifact(
     &self,
     source_key: &str,
@@ -455,6 +556,44 @@ impl NativeSourceManager {
   }
 }
 
+/// A link may pin the current release and name one of its files; older
+/// releases cannot be installed, so a stale pin is an error rather than a
+/// silent upgrade.
+fn link_target(
+  source: &StoredSource,
+  listing: &NativeSourceListing,
+  release_id: &Option<String>,
+  artifact_id: &Option<String>,
+) -> Result<NativeSourceLinkTarget, Error> {
+  if listing.availability != NativeSourceAvailability::Available {
+    return Err(invalid("This mod is not available from its source"));
+  }
+  let release = listing
+    .release
+    .as_ref()
+    .ok_or_else(|| invalid("This mod has no installable release"))?;
+  if release_id.as_ref().is_some_and(|id| id != &release.id) {
+    return Err(invalid(
+      "The linked release is not the mod's current release",
+    ));
+  }
+  if artifact_id
+    .as_ref()
+    .is_some_and(|id| !release.artifacts.iter().any(|artifact| &artifact.id == id))
+  {
+    return Err(invalid(
+      "The linked file is not part of the current release",
+    ));
+  }
+  Ok(NativeSourceLinkTarget::Ready {
+    record: Box::new(NativeSourceMod {
+      remote_id: listing.remote_id.clone(),
+      source: source.summary.clone(),
+      listing: listing.clone(),
+    }),
+  })
+}
+
 fn active_source<'a>(registry: &'a Registry, key: &str) -> Result<&'a StoredSource, Error> {
   registry
     .sources
@@ -538,11 +677,7 @@ async fn fetch_catalog(source: &NativeSourceSummary) -> Result<Vec<NativeSourceL
           NativeSourceCatalog::Api {
             detail_url_template: Some(template),
             ..
-          } => Some(
-            template
-              .replace("%7BlistingId%7D", &urlencoding::encode(&listing.id))
-              .replace("{listingId}", &urlencoding::encode(&listing.id)),
-          ),
+          } => Some(expand_listing_template(template, &listing.id)),
           _ => None,
         });
       if let Some(detail_url) = detail_url {
@@ -642,6 +777,60 @@ async fn fetch_catalog(source: &NativeSourceSummary) -> Result<Vec<NativeSourceL
   Err(invalid(
     "Catalog pagination exceeded its 100-page budget; previous catalog retained",
   ))
+}
+
+/// Validated templates are stored joined to their base URL, which percent-
+/// encodes the braces, so both spellings are expanded.
+fn expand_listing_template(template: &str, listing_id: &str) -> String {
+  let id = urlencoding::encode(listing_id);
+  template
+    .replace("%7BlistingId%7D", &id)
+    .replace("{listingId}", &id)
+}
+
+async fn fetch_release_history(
+  source: &NativeSourceSummary,
+  initial_url: Url,
+) -> Result<Vec<NativeSourceRelease>, Error> {
+  let mut next_url = initial_url.clone();
+  let mut visited = HashSet::new();
+  let mut releases = Vec::new();
+  let mut ids = HashSet::new();
+  for _ in 0..MAX_HISTORY_PAGES {
+    if !visited.insert(next_url.to_string()) {
+      return Err(invalid("Release history pagination repeated a cursor"));
+    }
+    let page: ReleaseHistoryPage = fetch_json(&next_url, source.allow_local_network).await?;
+    if releases.len() + page.items.len() > MAX_HISTORY_RELEASES {
+      return Err(invalid("Release history exceeds the 500-release limit"));
+    }
+    for mut release in page.items {
+      validate_release(&mut release, &next_url, source)?;
+      if !ids.insert(release.id.clone()) {
+        return Err(invalid("Release IDs must be unique within a history"));
+      }
+      releases.push(release);
+    }
+    match page.next_cursor {
+      CatalogCursor::Missing => {
+        return Err(invalid(
+          "Release history pages must explicitly terminate with nextCursor: null",
+        ));
+      }
+      CatalogCursor::Done => return Ok(releases),
+      CatalogCursor::Next(cursor) => {
+        if cursor.is_empty() || cursor.len() > 8192 {
+          return Err(invalid("API cursor is empty or exceeds its safety limit"));
+        }
+        next_url = initial_url.clone();
+        next_url
+          .query_pairs_mut()
+          .append_pair("cursor", &cursor)
+          .append_pair("limit", "100");
+      }
+    }
+  }
+  Err(invalid("Release history exceeded its 20-page budget"))
 }
 
 fn validate_revision_invariants(

@@ -3,10 +3,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@deadlock-mods/ui/components/tooltip";
-import { Folder, Globe } from "@deadlock-mods/ui/icons";
-import { useState } from "react";
+import { Folder } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
-import { isNativeSourceImage } from "@/lib/mod-sources";
+import { ModSourceGlyph } from "./mod-source-glyph";
 
 interface ModSourceIconProps {
   source?: {
@@ -22,13 +21,11 @@ export const ModSourceIcon = ({
   local = false,
 }: ModSourceIconProps) => {
   const { t } = useTranslation();
-  const [failedIcon, setFailedIcon] = useState<string>();
   if (!source && !local) return null;
 
   const name = source?.sourceName ?? t("modSources.localFiles");
   const host = source?.acceptedOrigin;
   const sourceLabel = t("modSources.sourceLabel", { name });
-  const iconUrl = source?.iconUrl;
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -39,18 +36,8 @@ export const ModSourceIcon = ({
           onClick={(event) => event.stopPropagation()}>
           {local ? (
             <Folder className='size-4' />
-          ) : iconUrl &&
-            isNativeSourceImage(iconUrl) &&
-            failedIcon !== iconUrl ? (
-            <img
-              className='size-4 object-contain'
-              src={iconUrl}
-              alt=''
-              referrerPolicy='no-referrer'
-              onError={() => setFailedIcon(iconUrl)}
-            />
           ) : (
-            <Globe className='size-4' />
+            <ModSourceGlyph iconUrl={source?.iconUrl} />
           )}
         </span>
       </TooltipTrigger>

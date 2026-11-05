@@ -728,6 +728,11 @@ pub(crate) fn decode_mesh_glb_from_resource_with_skeleton(
         .block_bytes("DATA")
         .and_then(|bytes| crate::kv3::parse(bytes).ok())
     {
+        if drawcalls_all_emptied(&mesh_data) {
+            return Err(Source2Error::Resource(
+                "every draw call of this mesh is removed".into(),
+            ));
+        }
         let mut decoded = decode_drawcall_primitives(&vbib, &mesh_data, preview_textures)?;
         apply_bone_remap_to_primitives(&mut decoded, bone_remap);
         if !decoded.is_empty() {

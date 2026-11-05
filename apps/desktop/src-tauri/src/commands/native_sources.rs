@@ -1,6 +1,8 @@
 use crate::errors::Error;
+use crate::providers::native_sources::links::{self, LINKS_ALLOW_LOCAL_NETWORK};
 use crate::providers::native_sources::{
-  NativeSourceListing, NativeSourceManager, NativeSourceMod, NativeSourceSummary,
+  NativeSourceLink, NativeSourceLinkTarget, NativeSourceListing, NativeSourceManager,
+  NativeSourceMod, NativeSourceRelease, NativeSourceSummary,
 };
 use tauri::State;
 
@@ -92,4 +94,39 @@ pub async fn get_native_source_mod(
   remote_id: String,
 ) -> Result<NativeSourceMod, Error> {
   state.mod_by_remote_id(&remote_id).await
+}
+
+#[tauri::command]
+pub async fn get_native_source_release_history(
+  state: State<'_, NativeSourceManager>,
+  remote_id: String,
+) -> Result<Vec<NativeSourceRelease>, Error> {
+  state.release_history(&remote_id).await
+}
+
+/// Hands the window every source link that arrived since it last asked.
+#[tauri::command]
+pub fn take_pending_native_source_links() -> Vec<NativeSourceLink> {
+  links::take_pending()
+}
+
+/// Rechecks the link the renderer sends back, then finds its listing.
+#[tauri::command]
+pub async fn resolve_native_source_link(
+  state: State<'_, NativeSourceManager>,
+  descriptor_url: String,
+  source_id: String,
+  listing_id: String,
+  release_id: Option<String>,
+  artifact_id: Option<String>,
+) -> Result<NativeSourceLinkTarget, Error> {
+  let link = links::install_link(
+    &descriptor_url,
+    &source_id,
+    &listing_id,
+    release_id.as_deref(),
+    artifact_id.as_deref(),
+    LINKS_ALLOW_LOCAL_NETWORK,
+  )?;
+  state.resolve_link(&link).await
 }

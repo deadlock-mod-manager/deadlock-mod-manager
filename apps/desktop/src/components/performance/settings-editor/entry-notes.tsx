@@ -21,7 +21,7 @@ const statusLine = (entry: ResolvedEntry, t: TFunction): NoteLine | null => {
   switch (entry.status) {
     case "blocked":
       return {
-        tone: "warning",
+        tone: "info",
         text: since
           ? t("performance.editor.notes.blockedSince", { build: since })
           : t("performance.editor.notes.blocked"),
@@ -29,7 +29,7 @@ const statusLine = (entry: ResolvedEntry, t: TFunction): NoteLine | null => {
     case "removed": {
       const section = findNote(entry.notes, "sectionKey")?.section;
       return {
-        tone: "warning",
+        tone: "info",
         text: section
           ? t("performance.editor.notes.sectionKey", { section })
           : since
@@ -38,7 +38,7 @@ const statusLine = (entry: ResolvedEntry, t: TFunction): NoteLine | null => {
       };
     }
     case "notConvar":
-      return { tone: "warning", text: t("performance.editor.notes.notConvar") };
+      return { tone: "info", text: t("performance.editor.notes.notConvar") };
     case "denied": {
       const reason = findNote(entry.notes, "denied")?.reason;
       return {

@@ -23,7 +23,6 @@ import { useTranslation } from "react-i18next";
 import { GrInstallOption } from "react-icons/gr";
 import { RiErrorWarningLine } from "react-icons/ri";
 import { FileSelectorDialog } from "@/components/downloads/file-selector-dialog";
-import { NativeSourceSelectionDialog } from "@/components/downloads/native-source-selection-dialog";
 import { OpenInPerformanceButton } from "@/components/mod-browsing/config-listing";
 import { MultiFileDownloadDialog } from "@/components/downloads/multi-file-download-dialog";
 import {
@@ -44,6 +43,7 @@ import useUninstall from "@/hooks/use-uninstall";
 import logger from "@/lib/logger";
 import { resolveLocalModHero } from "@/lib/mods/hero-resolution";
 import { usePersistedStore } from "@/lib/store";
+import { nativeModDownloads } from "@/lib/mod-sources";
 import { findLocalMod } from "@/lib/store/selectors";
 import { cn } from "@/lib/utils";
 import { type LocalMod, ModStatus } from "@/types/mods";
@@ -481,12 +481,19 @@ const InstallModButton = ({
 
       <div className='contents' onClick={(e) => e.stopPropagation()}>
         {nativeSelection?.listing.release && (
-          <NativeSourceSelectionDialog
-            installation={nativeSelection.listing.release.installation}
+          <MultiFileDownloadDialog
+            components={{
+              installation: nativeSelection.listing.release.installation,
+              selectedComponentIds: localMod?.source?.componentIds,
+              onConfirm: confirmNativeSelection,
+            }}
+            files={nativeModDownloads(
+              nativeSelection.source,
+              nativeSelection.listing,
+            )}
+            isOpen
             modName={nativeSelection.listing.title}
-            selectedComponentIds={localMod?.source?.componentIds}
-            onConfirm={confirmNativeSelection}
-            onCancel={cancelNativeSelection}
+            onClose={cancelNativeSelection}
           />
         )}
         {fileSelectorOpened && (

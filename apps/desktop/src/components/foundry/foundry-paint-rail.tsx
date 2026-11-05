@@ -27,6 +27,9 @@ export const PaintRail = ({ brush }: { brush: PaintBrush }) => {
     appliedPaint,
     hiddenParts,
     toggleHiddenPart,
+    primaryModelPath,
+    removedParts,
+    toggleRemovedPart,
     editedPaths,
     revertEntry,
     workspace,
@@ -36,6 +39,25 @@ export const PaintRail = ({ brush }: { brush: PaintBrush }) => {
     revertEntry(part.texture).catch((err) => {
       logger.withError(err).error("[Foundry] Section reset failed");
       toast.error(t("foundry.editor.revertFailed"));
+    });
+  const removed = new Set(
+    (primaryModelPath && removedParts[primaryModelPath]?.textures) || [],
+  );
+  // The backend refuses to remove the last body section (it would make the
+  // hero invisible in game), so that toggle is not offered.
+  const lastBody = (part: FoundryPaintPart) =>
+    part.target === "body" &&
+    !removed.has(part.texture) &&
+    paintParts.every(
+      (other) =>
+        other.target !== "body" ||
+        other.texture === part.texture ||
+        removed.has(other.texture),
+    );
+  const toggleRemoved = (part: FoundryPaintPart) =>
+    toggleRemovedPart(part.texture).catch((err) => {
+      logger.withError(err).error("[Foundry] Section removal failed");
+      toast.error(t("foundry.paint.removeFailed"));
     });
   const hasSections = paintParts.length > 0;
   // A hero without sections can only be painted part by part.
@@ -137,6 +159,7 @@ export const PaintRail = ({ brush }: { brush: PaintBrush }) => {
                         appliedPaint[partPaintKey(part.texture)]?.colorHex
                       }
                       hidden={hiddenParts.includes(part.texture)}
+                      removed={removed.has(part.texture)}
                       pendingColor={brush.pendingColors.get(part.texture)}
                       key={part.texture}
                       onReset={
@@ -146,6 +169,11 @@ export const PaintRail = ({ brush }: { brush: PaintBrush }) => {
                       }
                       onToggle={() => toggle(part.texture)}
                       onToggleHidden={() => toggleHiddenPart(part.texture)}
+                      onToggleRemoved={
+                        workspace && !busy && !lastBody(part)
+                          ? () => toggleRemoved(part)
+                          : undefined
+                      }
                       part={part}
                       selected={selected.has(part.texture)}
                     />

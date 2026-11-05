@@ -1,3 +1,4 @@
+use crate::mod_manager::perf_config::types::ForeignTool;
 use std::path::Path;
 
 use super::test_support::*;

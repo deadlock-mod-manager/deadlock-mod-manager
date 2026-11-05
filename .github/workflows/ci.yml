@@ -204,6 +204,7 @@ jobs:
             packages/vpkmanager -> target
             packages/source2-model -> target
             packages/deadlock-match-sync -> target
+            packages/deadlock-server-picker -> target
             packages/plugin-runtime -> target
 
       - name: Install dependencies
@@ -226,6 +227,11 @@ jobs:
 
       - name: Run match sync tests
         run: cargo test --manifest-path packages/deadlock-match-sync/Cargo.toml --locked
+
+      - name: Check server picker
+        run: |
+          cargo test --manifest-path packages/deadlock-server-picker/Cargo.toml --locked
+          cargo clippy --manifest-path packages/deadlock-server-picker/Cargo.toml --locked --all-targets -- -D warnings
 
       - name: Check build with plugins
         run: cargo check --manifest-path apps/desktop/src-tauri/Cargo.toml --locked --all-targets --features plugins

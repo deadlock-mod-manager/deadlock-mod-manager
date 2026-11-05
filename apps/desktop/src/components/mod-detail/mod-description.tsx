@@ -5,16 +5,20 @@ import {
   CardTitle,
 } from "@deadlock-mods/ui/components/card";
 import { GameBananaMarkup } from "@/components/mod-detail/gamebanana-markup";
+import { MarkdownContent } from "@/components/mod-detail/markdown-content";
 import { useTranslation } from "react-i18next";
+
+/** GameBanana sends its own HTML markup; custom sources declare plain text or Markdown. */
+type ModDescriptionFormat = "gamebanana" | "plain" | "markdown";
 
 interface ModDescriptionProps {
   description: string;
-  plainText?: boolean;
+  format: ModDescriptionFormat;
 }
 
 export const ModDescription = ({
   description,
-  plainText = false,
+  format,
 }: ModDescriptionProps) => {
   const { t } = useTranslation();
   if (!description) {
@@ -27,7 +31,9 @@ export const ModDescription = ({
         <CardTitle>{t("modSources.modDescription")}</CardTitle>
       </CardHeader>
       <CardContent>
-        {plainText ? (
+        {format === "markdown" ? (
+          <MarkdownContent content={description} />
+        ) : format === "plain" ? (
           <p className='whitespace-pre-wrap break-words text-sm leading-relaxed'>
             {description}
           </p>

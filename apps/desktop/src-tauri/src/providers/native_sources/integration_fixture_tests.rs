@@ -52,6 +52,7 @@ const CHOICES_ZIP: &[u8] = include_bytes!(concat!(
 struct Response {
   status: u16,
   bytes: Vec<u8>,
+  location: Option<String>,
 }
 
 /// A real HTTP boundary with mutable snapshots and failures; it serves the same
@@ -100,10 +101,15 @@ impl SourceServer {
           .unwrap_or(Response {
             status: 404,
             bytes: b"missing fixture".to_vec(),
+            location: None,
           });
         drop(routes);
+        let location = response
+          .location
+          .map(|location| format!("Location: {location}\r\n"))
+          .unwrap_or_default();
         let header = format!(
-          "HTTP/1.1 {} Fixture\r\nContent-Length: {}\r\nContent-Type: application/json\r\nConnection: close\r\n\r\n",
+          "HTTP/1.1 {} Fixture\r\nContent-Length: {}\r\nContent-Type: application/json\r\n{location}Connection: close\r\n\r\n",
           response.status,
           response.bytes.len()
         );
@@ -144,7 +150,22 @@ impl SourceServer {
       .routes
       .lock()
       .unwrap()
-      .insert(path.into(), Response { status: 200, bytes });
+      .insert(path.into(), Response {
+        status: 200,
+        bytes,
+        location: None,
+      });
+  }
+
+  fn redirect(&self, path: &str, location: String) {
+    self.routes.lock().unwrap().insert(
+      path.into(),
+      Response {
+        status: 302,
+        bytes: Vec::new(),
+        location: Some(location),
+      },
+    );
   }
 
   fn set_json(&self, path: &str, value: Value) {
@@ -163,6 +184,7 @@ impl SourceServer {
       Response {
         status: 503,
         bytes: b"source offline".to_vec(),
+        location: None,
       },
     );
   }
@@ -290,6 +312,55 @@ async fn api_catalog_continues_after_an_empty_page_and_requires_explicit_complet
 }
 
 #[tokio::test]
+async fn release_history_follows_declared_template_and_pagination_on_demand() {
+  let server = SourceServer::start();
+  let detail: Value = serde_json::from_str(EXAMPLE_DETAIL).unwrap();
+  let current = detail["release"].clone();
+  let mut previous = current.clone();
+  previous["id"] = json!("release-0");
+  previous["publishedAt"] = json!("2026-01-01T00:00:00Z");
+  previous["changelog"] = json!("Initial release");
+  server.edit_json("/dmm-source.json", |descriptor| {
+    descriptor["catalog"] = json!({
+      "kind":"api",
+      "listUrl":"./api",
+      "releaseHistoryUrlTemplate":"./history/{listingId}"
+    });
+    // Comments and dependencies are not implemented and must be ignored.
+    descriptor["capabilities"] = json!({"comments":true, "dependencies":true});
+  });
+  server.set_json("/api", json!({"items":[detail], "nextCursor":null}));
+  server.set_json(
+    "/history/example",
+    json!({"items":[current], "nextCursor":"older"}),
+  );
+  server.set_json(
+    "/history/example?cursor=older&limit=100",
+    json!({"items":[previous], "nextCursor":null}),
+  );
+  let temp = tempfile::tempdir().unwrap();
+  let manager = NativeSourceManager::open(temp.path().join("sources.json")).unwrap();
+  let source = manager.add(&server.descriptor_url(), true).await.unwrap();
+  let remote_id = listing_slug(&source.key, "example");
+  assert!(manager.release_history(&remote_id).await.is_err());
+
+  server.edit_json("/dmm-source.json", |descriptor| {
+    descriptor["capabilities"] = json!({"releaseHistory":true});
+  });
+  manager.refresh(&source.key).await.unwrap();
+  let history = manager.release_history(&remote_id).await.unwrap();
+  let ids: Vec<_> = history.iter().map(|release| release.id.as_str()).collect();
+  assert_eq!(ids, ["release-1", "release-0"]);
+  assert_eq!(history[1].changelog.as_deref(), Some("Initial release"));
+
+  server.set_json(
+    "/history/example?cursor=older&limit=100",
+    json!({"items":[]}),
+  );
+  assert!(manager.release_history(&remote_id).await.is_err());
+}
+
+#[tokio::test]
 async fn copied_source_can_enroll_browse_persist_and_resolve_stable_artifact_identity() {
   let server = SourceServer::start();
   let temp = tempfile::tempdir().unwrap();
@@ -336,6 +407,52 @@ async fn copied_source_can_enroll_browse_persist_and_resolve_stable_artifact_ide
   drop(manager);
   let reopened = NativeSourceManager::open(path).unwrap();
   assert_eq!(reopened.query(&added.key, "").await.unwrap().len(), 1);
+}
+
+#[tokio::test]
+async fn artifact_redirects_are_followed_only_to_declared_download_origins() {
+  let source = SourceServer::start();
+  let storage = SourceServer::start();
+  let temp = tempfile::tempdir().unwrap();
+  source.redirect(
+    "/files/example.vpk",
+    format!("{}/bucket/example.vpk", storage.origin),
+  );
+  storage.set_bytes("/bucket/example.vpk", EXAMPLE_VPK.to_vec());
+  let artifact = |allowed_origins: Vec<String>| super::ResolvedNativeArtifact {
+    url: format!("{}/files/example.vpk", source.origin),
+    filename: "example.vpk".into(),
+    size: Some(EXAMPLE_VPK.len() as u64),
+    hashes: None,
+    allowed_origins,
+    allow_local_network: true,
+  };
+
+  let downloaded = temp.path().join("declared/example.vpk");
+  download_native_artifact(
+    &artifact(vec![source.origin.clone(), storage.origin.clone()]),
+    &downloaded,
+    |_| {},
+    CancellationToken::new(),
+    PauseHandle::new(),
+  )
+  .await
+  .unwrap();
+  assert_eq!(std::fs::read(&downloaded).unwrap(), EXAMPLE_VPK);
+
+  let refused = temp.path().join("undeclared/example.vpk");
+  assert!(
+    download_native_artifact(
+      &artifact(vec![source.origin.clone()]),
+      &refused,
+      |_| {},
+      CancellationToken::new(),
+      PauseHandle::new(),
+    )
+    .await
+    .is_err()
+  );
+  assert!(!refused.exists());
 }
 
 #[tokio::test]
@@ -678,6 +795,33 @@ async fn downloaded_archive_uses_existing_selection_and_install_operations_and_h
     std::fs::read(addons.join(&reenabled[0])).unwrap(),
     EXAMPLE_VPK
   );
+}
+
+#[tokio::test]
+async fn untitled_tombstones_are_accepted_but_untitled_live_listings_are_not() {
+  let server = SourceServer::start();
+  server.set_json("/catalog.json", json!({"snapshotId":"tombstone-1", "items":[
+    {"id":"gone", "availability":"removed", "detailUrl":"./mods/gone.json"},
+    {"id":"example", "title":"Harmless source example", "availability":"available", "detailUrl":"./mods/example.json"}
+  ]}));
+  server.set_json(
+    "/mods/gone.json",
+    json!({"id":"gone", "availability":"removed", "detailUrl":"./gone.json"}),
+  );
+  let temp = tempfile::tempdir().unwrap();
+  let manager = NativeSourceManager::open(temp.path().join("sources.json")).unwrap();
+  let source = manager.add(&server.descriptor_url(), true).await.unwrap();
+  let listings = manager.query(&source.key, "").await.unwrap();
+  assert_eq!(listings.len(), 1);
+  assert_eq!(listings[0].id, "example");
+
+  server.set_json(
+    "/catalog.json",
+    json!({"snapshotId":"tombstone-2", "items":[
+      {"id":"example", "availability":"available", "detailUrl":"./mods/example.json"}
+    ]}),
+  );
+  assert!(manager.refresh(&source.key).await.is_err());
 }
 
 #[tokio::test]

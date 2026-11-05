@@ -2,6 +2,7 @@
 //! remains owned by the existing download manager and mod manager.
 #[cfg(test)]
 mod integration_fixture_tests;
+pub mod links;
 mod media;
 mod network;
 mod selection;
@@ -9,6 +10,7 @@ mod store;
 mod types;
 mod validation;
 
+pub use links::{NativeSourceLink, NativeSourceLinkTarget};
 pub use network::{artifact_download_client, source_request_client, validate_source_url};
 pub use selection::build_component_selection;
 pub use store::NativeSourceManager;

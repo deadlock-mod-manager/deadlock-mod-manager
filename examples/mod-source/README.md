@@ -41,6 +41,10 @@ a work in progress; this example does not promise every RFC capability.
    complete public URL of `dmm-source.json`. Check the displayed name and origin
    before adding it. Select your source in the Mods Store, open the example,
    and download/install through the usual selection flow.
+7. Optionally add **Add to DMM** and **Install with DMM** buttons to your site.
+   They use `deadlock-mod-manager://sources/add` and
+   `deadlock-mod-manager://sources/install` links; see
+   [Links for your website](https://docs.deadlockmods.app/developer-docs/mod-sources#links-for-your-website).
 
 ## Publishing another mod or update
 
@@ -80,7 +84,8 @@ automatic migration.
   source artifacts are rejected until the package-specific choice flow is wired.
   Sources
   cannot provide installation scripts or arbitrary destination paths.
-- Optional plain-text description, author, hero/content-type, tags, images,
+- Optional description (plain text, or Markdown with
+  `descriptionFormat: "markdown"`), author, hero/content-type, tags, images,
   homepage, update date and `isNsfw` classification as accepted by the native
   implementation. Use `isNsfw: false` only for content you have classified as
   non-adult; `true` means adult and omission/null means unknown. DMM excludes

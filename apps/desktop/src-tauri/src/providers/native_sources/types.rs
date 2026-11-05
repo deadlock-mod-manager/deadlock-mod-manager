@@ -32,6 +32,7 @@ pub enum NativeSourceCatalog {
     list_url: String,
     detail_url_template: Option<String>,
     release_url_template: Option<String>,
+    release_history_url_template: Option<String>,
   },
 }
 
@@ -85,10 +86,12 @@ pub struct NativeSourceListing {
   #[serde(default)]
   pub remote_id: String,
   pub id: String,
+  #[serde(default)]
   pub title: String,
   pub availability: NativeSourceAvailability,
   pub detail_url: Option<String>,
   pub description: Option<String>,
+  pub description_format: Option<NativeSourceDescriptionFormat>,
   pub author: Option<String>,
   pub hero: Option<String>,
   pub content_type: Option<String>,
@@ -101,6 +104,7 @@ pub struct NativeSourceListing {
   pub updated_at: Option<String>,
   pub release: Option<NativeSourceRelease>,
   pub release_url: Option<String>,
+  pub release_history_url: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, TS)]
@@ -112,6 +116,25 @@ pub enum NativeSourceAvailability {
   Removed,
 }
 
+/// How a listing's description is rendered. Formats this client does not know
+/// fall back to plain text instead of rejecting the listing.
+#[derive(Debug, Clone, Serialize, PartialEq, Eq, TS)]
+#[ts(export)]
+#[serde(rename_all = "lowercase")]
+pub enum NativeSourceDescriptionFormat {
+  Plain,
+  Markdown,
+}
+
+impl<'de> Deserialize<'de> for NativeSourceDescriptionFormat {
+  fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+    Ok(match String::deserialize(deserializer)?.as_str() {
+      "markdown" => Self::Markdown,
+      _ => Self::Plain,
+    })
+  }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 #[serde(rename_all = "camelCase")]
@@ -119,6 +142,8 @@ pub struct NativeSourceRelease {
   pub id: String,
   pub content_revision: String,
   pub version: Option<String>,
+  pub published_at: Option<String>,
+  pub changelog: Option<String>,
   pub artifacts: Vec<NativeSourceArtifact>,
   pub installation: NativeSourceInstallation,
   #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -256,6 +281,14 @@ pub(super) struct CatalogPage {
   pub snapshot_id: Option<String>,
   pub items: Vec<NativeSourceListing>,
   pub next_url: Option<String>,
+  #[serde(default)]
+  pub next_cursor: CatalogCursor,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub(super) struct ReleaseHistoryPage {
+  pub items: Vec<NativeSourceRelease>,
   #[serde(default)]
   pub next_cursor: CatalogCursor,
 }
