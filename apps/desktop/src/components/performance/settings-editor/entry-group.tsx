@@ -20,6 +20,8 @@ type EntryGroupProps = {
   showKeys: boolean;
   engineIncluded: boolean;
   highlightKey: string | null;
+  /** Set when the category was just picked in the rail; a new value replays the flash. */
+  flashToken: number | null;
   onAction: (action: DraftAction) => void;
   registerElement: (id: string, element: HTMLElement | null) => void;
 };
@@ -32,6 +34,7 @@ export const EntryGroup = ({
   showKeys,
   engineIncluded,
   highlightKey,
+  flashToken,
   onAction,
   registerElement,
 }: EntryGroupProps) => {
@@ -44,9 +47,16 @@ export const EntryGroup = ({
 
   return (
     <section
-      className='scroll-mt-16 overflow-hidden rounded-lg border border-border/50 bg-card [contain-intrinsic-size:auto_640px] [content-visibility:auto]'
+      className='relative scroll-mt-16 overflow-hidden rounded-lg border border-border/50 bg-card [contain-intrinsic-size:auto_640px] [content-visibility:auto]'
       data-category={group.id}
       ref={(element) => registerElement(group.id, element)}>
+      {flashToken !== null && (
+        <span
+          aria-hidden
+          className='perf-group-flash pointer-events-none absolute inset-0 z-10 rounded-lg'
+          key={flashToken}
+        />
+      )}
       <header
         className={cn(
           ENTRY_ROW_GRID,

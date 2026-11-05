@@ -32,6 +32,12 @@ export type UserPerfConfigOrigin =
   | { kind: "shareCode"; presetId: string | null }
   | { kind: "fork"; fromConfigId: string };
 
+export type PerfVideoChoice = {
+  write: boolean;
+  /** Label of the preset's video.txt variant; `null` is the first. */
+  variant: string | null;
+};
+
 /** An imported, pasted or forked config. Presets live in the catalog instead. */
 export type UserPerfConfig = {
   /** `user:<uuid>` */
@@ -64,6 +70,8 @@ export type PerformanceState = {
   /** The user's tweaks per config id, kept when switching configs. */
   perfOverrides: Record<string, EntryOverride[]>;
   perfIncludeEngineSections: Record<string, boolean>;
+  /** Whether to write each config's video.txt settings, and which variant. */
+  perfVideoChoices: Record<string, PerfVideoChoice>;
   perfHistory: PerfHistoryEntry[];
   /** Mods whose bundled config the user chose not to import. */
   perfDismissedModConfigs: Record<string, true>;
@@ -72,6 +80,7 @@ export type PerformanceState = {
   removeUserPerfConfig: (id: string) => void;
   setPerfOverrides: (configId: string, overrides: EntryOverride[]) => void;
   setPerfIncludeEngineSections: (configId: string, include: boolean) => void;
+  setPerfVideoChoice: (configId: string, choice: PerfVideoChoice) => void;
   recordPerfHistory: (entry: NewPerfHistoryEntry) => void;
   dismissModConfig: (modId: string) => void;
 };
@@ -88,6 +97,7 @@ export const createPerformanceSlice: StateCreator<
   perfUserConfigs: {},
   perfOverrides: {},
   perfIncludeEngineSections: {},
+  perfVideoChoices: {},
   perfHistory: [],
   perfDismissedModConfigs: {},
   addUserPerfConfig: (config) =>
@@ -111,7 +121,13 @@ export const createPerformanceSlice: StateCreator<
       const { [id]: _overrides, ...perfOverrides } = state.perfOverrides;
       const { [id]: _include, ...perfIncludeEngineSections } =
         state.perfIncludeEngineSections;
-      return { perfUserConfigs, perfOverrides, perfIncludeEngineSections };
+      const { [id]: _video, ...perfVideoChoices } = state.perfVideoChoices;
+      return {
+        perfUserConfigs,
+        perfOverrides,
+        perfIncludeEngineSections,
+        perfVideoChoices,
+      };
     }),
   setPerfOverrides: (configId, overrides) =>
     set((state) => ({
@@ -123,6 +139,10 @@ export const createPerformanceSlice: StateCreator<
         ...state.perfIncludeEngineSections,
         [configId]: include,
       },
+    })),
+  setPerfVideoChoice: (configId, choice) =>
+    set((state) => ({
+      perfVideoChoices: { ...state.perfVideoChoices, [configId]: choice },
     })),
   recordPerfHistory: ({ request, ...entry }) =>
     set((state) => ({

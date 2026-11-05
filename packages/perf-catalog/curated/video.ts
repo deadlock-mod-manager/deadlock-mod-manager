@@ -1,8 +1,8 @@
 /**
  * In-game video menu options, as Deadlock words them
  * (`panorama/layout/popups/popup_settings.xml` + `citadel_main_english.txt`).
- * Only these keys are taken from an author's video.txt: resolution, monitor,
- * window mode, device ids and the keys the menu doesn't expose are left out.
+ * These get a label and a readable value; every other `setting.*` key in an
+ * author's video.txt is kept too and written as shipped.
  */
 export interface VideoMenuOption {
   label: string;

@@ -6,11 +6,13 @@ import {
 } from "@deadlock-mods/ui/components/tooltip";
 import { useTranslation } from "react-i18next";
 import type { ConfigListItem } from "@/lib/performance/config-list";
-import { presetPosition, TIERS } from "@/lib/performance/scale";
+import { presetPosition, TIERS, tierInfo } from "@/lib/performance/scale";
 import { assignLabelRows } from "@/lib/performance/scale-pins";
 import { cn } from "@/lib/utils";
 import type { PerfTier } from "@/types/generated/PerfTier";
 import { usePerformanceUi } from "../performance-context";
+import { TierIcon } from "../tier-icon";
+import { useScaleLink } from "./scale-link";
 
 const LABEL_MIN_GAP = 0.09;
 const LABEL_ROW_OFFSET = ["top-4", "top-8"] as const;
@@ -22,6 +24,9 @@ type Pin = {
   kind: ConfigListItem["kind"];
   active: boolean;
 };
+
+/** Half the width of the stretch of track a tier covers around its stop. */
+const TIER_BAND = 0.1;
 
 const toPercent = (score: number) =>
   `${Math.min(0.98, Math.max(0.02, score)) * 100}%`;
@@ -75,6 +80,7 @@ export const LooksFramesScale = ({
 }: LooksFramesScaleProps) => {
   const { t } = useTranslation();
   const { openDetails, setTab } = usePerformanceUi();
+  const { focus, setFocus } = useScaleLink();
   const pins = scalePins(items, activeConfigId, activeCutScore);
   const labelRows = assignLabelRows(
     pins
@@ -101,9 +107,37 @@ export const LooksFramesScale = ({
         </span>
       </div>
 
-      <div className='relative mx-3 mt-9 mb-12 h-1.5 rounded-full bg-gradient-to-r from-primary/70 via-amber-500/70 to-orange-600/80'>
+      <div className='relative mx-3 mt-9 mb-12 h-1.5'>
+        <span
+          aria-hidden
+          className={cn(
+            "absolute inset-0 rounded-full bg-gradient-to-r from-primary/15 to-primary/80 transition-opacity duration-200 ease-out",
+            focus?.kind === "tier" && "opacity-30",
+          )}
+        />
+        {TIERS.map((info) => (
+          <span
+            aria-hidden
+            className={cn(
+              "absolute inset-y-0 rounded-full bg-primary transition-opacity duration-200 ease-out",
+              focus?.kind === "tier" && focus.tier === info.id
+                ? "opacity-100"
+                : "opacity-0",
+            )}
+            key={info.id}
+            style={{
+              left: `${(info.position - TIER_BAND) * 100}%`,
+              width: `${TIER_BAND * 2 * 100}%`,
+            }}
+          />
+        ))}
         {pins.map((pin) => {
           const row = labelRows.get(pin.configId) ?? null;
+          const dimmed =
+            focus?.kind === "tier" &&
+            Math.abs(pin.position - tierInfo(focus.tier).position) > TIER_BAND;
+          const pointedAt =
+            focus?.kind === "config" && focus.configId === pin.configId;
           return (
             <div
               className='absolute top-1/2 -translate-x-1/2 -translate-y-1/2'
@@ -116,13 +150,23 @@ export const LooksFramesScale = ({
                       name: pin.name,
                     })}
                     className={cn(
-                      "block rounded-full border-primary bg-card transition-transform hover:scale-125 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                      "block rounded-full border-primary bg-card transition-[transform,opacity] duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                       pin.kind === "community"
                         ? "size-2.5 border"
                         : "size-3.5 border-2",
                       pin.active && "size-4 bg-primary ring-4 ring-primary/25",
+                      pointedAt && "scale-150",
+                      dimmed && "opacity-25",
                     )}
+                    onBlur={() => setFocus(null)}
                     onClick={() => openDetails(pin.configId)}
+                    onFocus={() =>
+                      setFocus({ kind: "config", configId: pin.configId })
+                    }
+                    onPointerEnter={() =>
+                      setFocus({ kind: "config", configId: pin.configId })
+                    }
+                    onPointerLeave={() => setFocus(null)}
                     type='button'
                   />
                 </TooltipTrigger>
@@ -160,11 +204,13 @@ export const LooksFramesScale = ({
                   : "border-transparent bg-muted/20",
               )}
               key={info.id}
+              onBlur={() => setFocus(null)}
               onClick={() => onSelectTier(selected ? null : info.id)}
+              onFocus={() => setFocus({ kind: "tier", tier: info.id })}
+              onPointerEnter={() => setFocus({ kind: "tier", tier: info.id })}
+              onPointerLeave={() => setFocus(null)}
               type='button'>
-              <span aria-hidden className='text-lg leading-none'>
-                {info.emoji}
-              </span>
+              <TierIcon className='size-5' tier={info.id} />
               <span className='min-w-0'>
                 <span className='block truncate font-medium text-sm'>
                   {t(`performance.tiers.${info.id}.label`)}

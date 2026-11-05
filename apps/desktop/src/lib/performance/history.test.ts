@@ -21,6 +21,8 @@ const presetRequest = (configId: string): PerfApplyRequest => ({
   source: { kind: "preset", id: configId },
   overrides: [],
   includeEngineSections: false,
+  writeVideo: true,
+  videoVariant: null,
 });
 
 const userConfig: UserPerfConfig = {
@@ -45,10 +47,13 @@ const userRequest: PerfApplyRequest = {
       id: userConfig.id,
       name: userConfig.name,
       entries: userConfig.entries,
+      videoSettings: [],
     },
   },
   overrides: TWEAKS,
   includeEngineSections: true,
+  writeVideo: false,
+  videoVariant: null,
 };
 
 const applied = (request: PerfApplyRequest): PerfHistoryEntry => ({
@@ -81,6 +86,8 @@ describe("compactHistoryRequest", () => {
       source: { kind: "inline" },
       overrides: TWEAKS,
       includeEngineSections: true,
+      writeVideo: false,
+      videoVariant: null,
     });
   });
 

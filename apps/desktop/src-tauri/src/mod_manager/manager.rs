@@ -290,7 +290,7 @@ impl ModManager {
   /// update or a reset may have replaced. A problem here never stops the
   /// launch: it is logged and reported to the frontend instead.
   pub(crate) fn reapply_performance_config(&self) {
-    use crate::mod_manager::perf_config::{catalog, client_version, ops};
+    use crate::mod_manager::perf_config::{catalog, client_version, ops, video};
     use tauri::Emitter;
 
     let (Some(game_path), Ok(app_data_dir)) = (
@@ -305,6 +305,10 @@ impl ModManager {
       app_data_dir: &app_data_dir,
       catalog: &catalog,
       build_id: client_version(game_path).map(|version| version.to_string()),
+      video_path: video::locate(
+        Some(game_path),
+        self.steam_manager.active_userdata_path().as_deref(),
+      ),
     };
     match ops::reapply_desired(&ctx, ops::HandEdits::Keep) {
       ops::ReapplyOutcome::Applied => log::info!("Re-applied performance config before launch"),

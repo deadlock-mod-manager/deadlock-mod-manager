@@ -4,7 +4,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@deadlock-mods/ui/components/tooltip";
-import { PencilSimpleIcon, TrashIcon, UserIcon } from "@phosphor-icons/react";
+import {
+  MonitorIcon,
+  PencilSimpleIcon,
+  SlidersHorizontalIcon,
+  TrashIcon,
+  UserIcon,
+} from "@phosphor-icons/react";
 import { formatDistanceToNow } from "date-fns";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -15,10 +21,11 @@ import { usePerformanceUi } from "../performance-context";
 import { ApplyConfigButton } from "./apply-config-button";
 import {
   CardFooter,
-  Chip,
+  CardHeader,
   ConfigCardShell,
+  MetaItem,
+  MetaRow,
   TierLabel,
-  TierMeter,
 } from "./card-parts";
 import { useOriginLabel } from "./use-origin-label";
 
@@ -97,30 +104,24 @@ export const UserConfigCard = ({
   };
 
   return (
-    <ConfigCardShell active={active}>
-      <div className='flex items-center justify-between gap-2'>
-        {item.tier ? (
-          <TierLabel tier={item.tier} />
-        ) : (
-          <span className='inline-flex items-center gap-1.5 font-semibold text-muted-foreground text-xs uppercase tracking-wide'>
-            <UserIcon aria-hidden className='size-3.5' />
-            {t("performance.configs.yours")}
-          </span>
-        )}
-        <div className='flex items-center gap-1'>
-          {item.tier && <TierMeter tier={item.tier} />}
-          <IconAction
-            label={t("performance.configs.rename.label")}
-            onClick={handleRename}>
-            <PencilSimpleIcon aria-hidden />
-          </IconAction>
-          <IconAction
-            label={t("performance.configs.delete.label")}
-            onClick={handleDelete}>
-            <TrashIcon aria-hidden />
-          </IconAction>
-        </div>
-      </div>
+    <ConfigCardShell active={active} configId={item.configId}>
+      <CardHeader
+        label={
+          item.tier ? (
+            <TierLabel tier={item.tier} />
+          ) : (
+            <span className='inline-flex items-center gap-1.5 font-semibold text-muted-foreground text-xs uppercase tracking-wide'>
+              <UserIcon aria-hidden className='size-3.5' />
+              {t("performance.configs.yours")}
+            </span>
+          )
+        }
+        provenance={t("performance.configs.created", {
+          time: formatDistanceToNow(new Date(config.createdAt), {
+            addSuffix: true,
+          }),
+        })}
+      />
       <div className='min-w-0'>
         <h3 className='truncate font-semibold text-base' title={config.name}>
           {config.name}
@@ -129,22 +130,33 @@ export const UserConfigCard = ({
           {originLabel(config)}
         </p>
       </div>
-      <div className='flex flex-wrap gap-1.5'>
-        <Chip>
+      <MetaRow>
+        <MetaItem icon={<SlidersHorizontalIcon aria-hidden />}>
           {t("performance.configs.settingsCount", {
             count: config.entries.length,
           })}
-        </Chip>
+        </MetaItem>
         {config.videoSettings.length > 0 && (
-          <Chip>{t("performance.configs.suggestsVideoSettings")}</Chip>
+          <MetaItem icon={<MonitorIcon aria-hidden />}>
+            {t("performance.configs.suggestsVideoSettings")}
+          </MetaItem>
         )}
-      </div>
+      </MetaRow>
       <CardFooter
-        source={t("performance.configs.created", {
-          time: formatDistanceToNow(new Date(config.createdAt), {
-            addSuffix: true,
-          }),
-        })}>
+        start={
+          <>
+            <IconAction
+              label={t("performance.configs.rename.label")}
+              onClick={handleRename}>
+              <PencilSimpleIcon aria-hidden />
+            </IconAction>
+            <IconAction
+              label={t("performance.configs.delete.label")}
+              onClick={handleDelete}>
+              <TrashIcon aria-hidden />
+            </IconAction>
+          </>
+        }>
         <Button
           onClick={() => openDetails(config.id)}
           size='sm'

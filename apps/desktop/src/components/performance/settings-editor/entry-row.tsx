@@ -162,7 +162,6 @@ const EntryRowComponent = ({
               className={cn(
                 "font-medium text-sm",
                 !meta?.label && "break-all font-mono",
-                entry.status === "blocked" && "line-through",
               )}>
               {name}
             </span>

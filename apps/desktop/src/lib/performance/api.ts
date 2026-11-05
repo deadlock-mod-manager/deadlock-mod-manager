@@ -29,6 +29,10 @@ export const applyPerfConfig = (
 
 export const removePerfConfig = () => invokeGuarded<PerfStatus>("perf_remove");
 
+/** Writes the player's own video.txt back as it was before the first write. */
+export const restoreVideoBackup = () =>
+  invokeGuarded<PerfStatus>("perf_restore_video_backup");
+
 export const reapplyPerfConfig = () =>
   invokeGuarded<PerfStatus>("perf_reapply");
 

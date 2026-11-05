@@ -2,6 +2,7 @@
 import type { AppliedOverlay } from "./AppliedOverlay";
 import type { DesiredOverlay } from "./DesiredOverlay";
 import type { ForeignOverlay } from "./ForeignOverlay";
+import type { VideoBackup } from "./VideoBackup";
 
 export type PerfStatus = {
   gamePathSet: boolean;
@@ -19,4 +20,8 @@ export type PerfStatus = {
    */
   unmanagedChanges: number;
   buildId: string | null;
+  /**
+   * The player's own video.txt, kept until they restore it.
+   */
+  videoBackup: VideoBackup | null;
 };

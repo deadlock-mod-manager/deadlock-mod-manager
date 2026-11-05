@@ -1,5 +1,6 @@
 use super::*;
 use crate::mod_manager::perf_config::patch::test_support::{applies, entry, path};
+use crate::mod_manager::perf_config::types::EntryStatus;
 use crate::mod_manager::perf_config::types::{PerfConfigDefinition, ResolvedCounts};
 
 fn preset_request() -> PerfApplyRequest {
@@ -26,6 +27,8 @@ fn preset_request() -> PerfApplyRequest {
       },
     ],
     include_engine_sections: true,
+    write_video: true,
+    video_variant: None,
   }
 }
 
@@ -38,10 +41,13 @@ fn inline_request(entries: Vec<ConfigEntry>) -> PerfApplyRequest {
         id: "user:1".to_string(),
         name: "Мой конфиг".to_string(),
         entries,
+        video_settings: Vec::new(),
       },
     },
     overrides: Vec::new(),
     include_engine_sections: false,
+    write_video: true,
+    video_variant: None,
   }
 }
 
@@ -245,7 +251,7 @@ fn snippet_lists_written_entries_by_section() {
   };
   assert_eq!(
     snippet(&config),
-    "ConVars\n{\n\t\"r_ssao\"\t\t\"0\"\n\t\"rate\"\n\t{\n\t\t\"max\"\t\t\"2000000\"\n\t\t\"min\"\t\t\"1\"\n\t}\n\t// \"sv_minrate\"\n}\n\nSceneSystem\n{\n\t\"CSMCascadeResolution\"\t\t\"512\"\n}\n"
+    "ConVars\n{\n\t\"r_ssao\"\t\t\"0\"\n\t\"rate\"\n\t{\n\t\t\"max\"\t\t\"2000000\"\n\t\t\"min\"\t\t\"1\"\n\t}\n\t// \"sv_minrate\"\n\t\"r_shadows\"\t\t\"0\"\n}\n\nSceneSystem\n{\n\t\"CSMCascadeResolution\"\t\t\"512\"\n}\n"
   );
   assert_eq!(
     snippet(&ResolvedConfig {

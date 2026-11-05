@@ -100,7 +100,7 @@ Performance configs are community `gameinfo.gi` tunings that trade visual detail
 The page has four tabs: **Configs**, **Settings editor**, **History** and **How it works**. The strip above them shows the applied config, how many settings it wrote, and any notice that needs you, such as a config lost after a game update with a **Re-apply now** button.
 
 1. Pick a config on the **Configs** tab. Curated presets, configs published on GameBanana and your own imports share one list, and the **Looks best ⟷ Runs fastest** scale above it filters them by how much they cut.
-2. Choose **Details** to see what a config changes, the in-game video settings its author recommends, and anything that won't be applied.
+2. Choose **Details** to see what a config changes, the video settings its author ships, and anything the game won't use.
 3. Choose **Apply**, then restart Deadlock if it is running. The game reads these settings at startup.
 
 ![Details sheet for the DMM Clean config, comparing what it changes by category with the current config](/assets/v2-performance-details.png)
@@ -111,10 +111,11 @@ The manager edits `gameinfo.gi` in place next to your mods instead of replacing 
 
 What gets written:
 
-- Settings that Valve's convar list marks as not read from `gameinfo.gi`, or that aren't in that list at all, are left out and listed in the config's details. The list comes from the newest game build the catalog knows.
+- Settings that Valve's convar list marks as not read from `gameinfo.gi`, or that aren't in that list at all, are still written as the author set them, and the config's details list them as ones Deadlock may ignore. The list comes from the newest game build the catalog knows.
 - Edits outside the ConVars block (SceneSystem, RenderSystem and other engine sections) are written as the config sets them. Deadlock's matchmaking error lists Engine2, MaterialSystem2, NetworkSystem, Particles, RenderSystem, SceneSystem and WorldRenderer as `gameinfo.gi` sections where it doesn't support some changes, so if Deadlock won't let you queue, turn off **Include engine-section edits** for that config.
 - Camera and visibility settings, such as field of view or outlines, and developer or hideout tools follow the config's author. You can turn each one off.
-- SearchPaths and `video.txt` are never changed.
+- When the author ships a `video.txt`, its settings are written to the `video.txt` Deadlock reads (your Steam account's copy, or the game folder's before the game creates one), exactly as the author ships them. Your own file is saved the first time, and **Restore it** in the config's details puts it back. Turn off **Write to video.txt** for a config to keep your own video settings.
+- SearchPaths is never changed.
 
 ![Settings editor grouping a config's settings by category, with switches and the config's value next to the game default](/assets/v2-performance-editor.png)
 

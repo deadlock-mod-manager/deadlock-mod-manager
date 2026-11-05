@@ -91,7 +91,7 @@ pub struct OverlayPlan<'a> {
   pub config_id: &'a str,
   pub name: &'a str,
   pub rev: &'a str,
-  /// Entries with status `Applies`.
+  /// Entries whose status [`is_written`](super::types::EntryStatus::is_written).
   pub entries: Vec<&'a ResolvedEntry>,
   /// Credit lines written under the BEGIN marker (author, source, licence).
   pub credits: Vec<String>,
