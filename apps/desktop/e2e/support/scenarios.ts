@@ -1017,6 +1017,11 @@ export const scenarios = {
   "perf-video-apply-restore": performance,
   "perf-video-changed-in-game": performance,
   "perf-video-adopt": performance,
+  "perf-video-variant": performance,
+  "perf-gameinfo-resync": { ...performance, spec: "performance-configs" },
+  "perf-gameinfo-launch": { ...performance, spec: "performance-configs" },
+  "perf-editor-undo": { ...performance, spec: "performance-configs" },
+  "perf-import-paste": { ...performance, spec: "performance-configs" },
   "network-diagnostics": networkDiagnostics,
   "network-diagnostics-internet-down": {
     ...networkDiagnostics,

@@ -35,32 +35,42 @@ export const PLAYER_VIDEO = [
   "",
 ].join("\r\n");
 
+const setting = z.object({ key: z.string(), value: z.string() });
 const catalogSchema = z.object({
   presets: z.array(
     z.object({
       id: z.string(),
-      videoSettings: z
-        .array(z.object({ key: z.string(), value: z.string() }))
+      videoSettings: z.array(setting).default([]),
+      videoVariants: z
+        .array(z.object({ label: z.string(), settings: z.array(setting) }))
         .default([]),
     }),
   ),
 });
 
-/** The video.txt settings a bundled preset writes, by lower-case key. */
+/** A preset that ships two video.txt files to pick from. */
+export const VARIANT_PRESET = "optilock-ultra-potato";
+
+/**
+ * The video.txt settings a bundled preset writes, by lower-case key: its own,
+ * or those of the named variant.
+ */
 export const presetVideo = async (
   presetId: string,
+  variant?: string,
 ): Promise<Map<string, string>> => {
   const catalog = catalogSchema.parse(
     JSON.parse(await readFile(CATALOG, "utf8")),
   );
   const preset = catalog.presets.find((candidate) => candidate.id === presetId);
-  if (!preset || preset.videoSettings.length === 0)
-    throw new Error(`Bundled preset ${presetId} ships no video.txt`);
+  const settings = variant
+    ? preset?.videoVariants.find((candidate) => candidate.label === variant)
+        ?.settings
+    : preset?.videoSettings;
+  if (!settings || settings.length === 0)
+    throw new Error(`Bundled preset ${presetId} ships no such video.txt`);
   return new Map(
-    preset.videoSettings.map((setting) => [
-      setting.key.toLowerCase(),
-      setting.value,
-    ]),
+    settings.map((setting) => [setting.key.toLowerCase(), setting.value]),
   );
 };
 
@@ -116,8 +126,39 @@ export const readVideoRecord = async (file: string) =>
       .keys.map((key) => [key.key.toLowerCase(), key.kept]),
   );
 
+/** Valve's own gameinfo.gi, which a game update writes over ours. */
+export const STOCK_GAMEINFO = path.resolve(
+  HERE,
+  "../../src-tauri/tests/fixtures/perf_config/stock-2026-09-29.gi",
+);
+/** A convar the first preset sets and the stock file doesn't have. */
+export const CONFIG_CONVAR = "r_farz";
+
+export const gameinfoPath = (world: CreatedWorld["configuration"]) =>
+  path.join(world.roots.game, "game", "citadel", "gameinfo.gi");
+
+/** The value gameinfo.gi gives `name`, quoted or not; `undefined` if unset. */
+export const readConvar = async (file: string, name: string) =>
+  new RegExp(`^\\s*"?${name}"?\\s+"?([^"\\s]+)"?`, "im").exec(
+    await readFile(file, "utf8"),
+  )?.[1];
+
+/**
+ * Valve's file with one line the player added by hand, as a game update
+ * leaves it: the config's lines gone, the hand edit kept.
+ */
+export const stockWithHandEdit = async () =>
+  (await readFile(STOCK_GAMEINFO, "utf8")).replace(
+    /(\n\tConVars\s*\n\t\{[^\n]*\n)/,
+    '$1\t\t"e2e_hand_edit"\t\t"1"\n',
+  );
+
 export const preparePerformanceWorld = async (world: CreatedWorld) => {
   const { video } = videoPaths(world.configuration);
   await mkdir(path.dirname(video), { recursive: true });
   await writeFile(video, PLAYER_VIDEO);
+  await writeFile(
+    gameinfoPath(world.configuration),
+    await readFile(STOCK_GAMEINFO),
+  );
 };

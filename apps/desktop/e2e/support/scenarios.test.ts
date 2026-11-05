@@ -13,7 +13,7 @@ const windows = process.platform === "win32";
 describe("scenario selection", () => {
   it("registers every case with explicit phases and capability requirements", () => {
     const ids = selectScenarios("all");
-    expect(ids).toHaveLength(windows ? 141 : 130);
+    expect(ids).toHaveLength(windows ? 146 : 135);
     expect(ids).toContain("downloads-segmented-range-error");
     for (const id of ids) {
       expect(parseScenarioId(id)).toBe(id);
@@ -47,6 +47,11 @@ describe("scenario selection", () => {
       "perf-video-apply-restore",
       "perf-video-changed-in-game",
       "perf-video-adopt",
+      "perf-video-variant",
+      "perf-gameinfo-resync",
+      "perf-gameinfo-launch",
+      "perf-editor-undo",
+      "perf-import-paste",
     ]);
     expect(selectScenarios("diagnostics")).toEqual([
       "network-diagnostics",
