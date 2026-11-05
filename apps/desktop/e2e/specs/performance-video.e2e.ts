@@ -27,22 +27,33 @@ const exists = (file: string) =>
 
 const applyPreset = (presetId: string) =>
   step(`apply ${presetId}`, async () => {
-    const card = $(`article[data-config-id="preset:${presetId}"]`);
-    const apply = card.$("button*=Apply");
+    const card = await $(`article[data-config-id="preset:${presetId}"]`);
+    const apply = await card.$("button*=Apply");
     await reveal(apply);
     await apply.click();
     await expect(card).toHaveText(expect.stringContaining("Applied"));
   });
 
+// A status refresh re-renders the tabs and can swallow a click, so look the
+// tab up again and retry, falling back to the keyboard, until it is selected.
 const openTab = async (name: string) => {
-  const tab = $(`//button[@role="tab"][normalize-space()="${name}"]`);
-  await reveal(tab);
-  await tab.click();
-  await expect(tab).toHaveAttribute("data-state", "active");
+  const tab = `//button[@role="tab"][normalize-space()="${name}"]`;
+  await reveal(await $(tab));
+  await browser.waitUntil(
+    async () => {
+      if ((await $(tab).getAttribute("aria-selected")) === "true") return true;
+      await $(tab).click();
+      if ((await $(tab).getAttribute("aria-selected")) === "true") return true;
+      await browser.execute((node: HTMLElement) => node.focus(), await $(tab));
+      await browser.keys("Enter");
+      return false;
+    },
+    { timeoutMsg: `${name} tab never opened` },
+  );
 };
 
 const confirmDialog = async () => {
-  const confirm = $('[role="alertdialog"] button[type="submit"]');
+  const confirm = await $('[role="alertdialog"] button[type="submit"]');
   await confirm.waitForClickable();
   await confirm.click();
   await waitForOverlaysClosed();
@@ -50,7 +61,7 @@ const confirmDialog = async () => {
 
 const turnOff = () =>
   step("turn the config off", async () => {
-    const button = $("button=Turn off");
+    const button = await $("button=Turn off");
     await reveal(button);
     await button.click();
     await confirmDialog();
@@ -82,7 +93,7 @@ describe("performance configs and video.txt", () => {
     const assertPlayerLinesKept = async () => {
       const text = await readFile(paths.video, "utf8");
       assert.match(text, /^"video\.cfg"\r\n\{\r\n\t"Version"\t\t"20"\r\n/);
-      assert.match(text, /"setting\.defaultres"\t\t"2560"/);
+      assert.match(text, /"setting\.e2e_player_only"\t\t"7"/);
     };
 
     await navigate("performance");
@@ -109,7 +120,7 @@ describe("performance configs and video.txt", () => {
       });
       await step("restore the player's own file", async () => {
         await openTab("Video settings");
-        const restore = $("button*=Restore it");
+        const restore = await $("button*=Restore it");
         await reveal(restore);
         await restore.click();
         await observeUntil(
@@ -123,7 +134,7 @@ describe("performance configs and video.txt", () => {
     } else if (runtime.caseId === "perf-video-changed-in-game") {
       const configValue = first.get(CHANGED_KEY);
       assert(configValue && configValue !== "2");
-      const row = $(`li[data-video-key="${CHANGED_KEY}"]`);
+      const row = await $(`li[data-video-key="${CHANGED_KEY}"]`);
       await step("a value changed in game shows up", async () => {
         await openTab("Video settings");
         await changeInGame(paths.video, CHANGED_KEY, "2");
@@ -158,7 +169,7 @@ describe("performance configs and video.txt", () => {
       });
       await step("History lists each step", async () => {
         await openTab("History");
-        const history = $("main");
+        const history = await $("main");
         for (const line of [
           "1 video setting changed in game",
           "Kept your video settings",
@@ -177,7 +188,7 @@ describe("performance configs and video.txt", () => {
       assert.equal(runtime.caseId, "perf-video-adopt");
       await step("make the config's file the player's own", async () => {
         await openTab("Video settings");
-        const adopt = $("button=Make this my video.txt");
+        const adopt = await $("button=Make this my video.txt");
         await reveal(adopt);
         await adopt.click();
         await confirmDialog();
@@ -193,7 +204,7 @@ describe("performance configs and video.txt", () => {
       );
       await step("restore brings back the adopted file", async () => {
         await openTab("Video settings");
-        const restore = $("button*=Restore it");
+        const restore = await $("button*=Restore it");
         await reveal(restore);
         await restore.click();
         await observeUntil(
