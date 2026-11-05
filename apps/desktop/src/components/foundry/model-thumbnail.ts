@@ -54,6 +54,7 @@ export async function renderModelThumbnail(
       controls,
       renderer.domElement,
       () => gltf.scene,
+      () => false,
     );
     cleanup = () => {
       framing.dispose();

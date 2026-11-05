@@ -139,6 +139,7 @@ pub(super) fn apply(
     for edit in edits {
       let mut edit = edit.clone();
       edit.hidden = false;
+      edit.patches = None;
       if !changed(&edit) {
         continue;
       }
@@ -462,6 +463,43 @@ pub(super) fn apply(
       stage_output(&mut output, texture_path, baked.texture)?;
     }
     stage_output(&mut output, path, edited)?;
+  }
+  for (model, edits) in &saved.models {
+    if !edits
+      .iter()
+      .any(|edit| !edit.hidden && edit.patches.as_ref().is_some_and(|p| !p.is_empty()))
+    {
+      continue;
+    }
+    let original = bytes(addon, &previous, &current, &mut originals, model, refresh)?.to_vec();
+    let mut model_bytes = output.remove(model).unwrap_or(original);
+    for edit in edits.iter().filter(|edit| !edit.hidden) {
+      for patch in edit.patches.iter().flatten() {
+        let template = bytes(
+          addon,
+          &previous,
+          &current,
+          &mut originals,
+          &compiled(&edit.material),
+          refresh,
+        )?
+        .to_vec();
+        let generated = super::patches::bake(
+          addon,
+          &model_bytes,
+          &edit.material,
+          patch,
+          &template,
+          &previous,
+        )?;
+        model_bytes = generated.model;
+        for (path, data) in generated.files {
+          stage_output(&mut output, path, data)?;
+        }
+        signatures.extend(generated.signatures);
+      }
+    }
+    stage_output(&mut output, model.clone(), model_bytes)?;
   }
   let mut files = BTreeMap::new();
   let mut resources = BTreeMap::new();

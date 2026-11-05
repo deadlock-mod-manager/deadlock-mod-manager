@@ -18,18 +18,28 @@ export const createViewerAxisProjection = () => {
     color: axis.color,
     label: axis.label,
     direction: new Vector3(...axis.direction),
+    localDirection: new Vector3(...axis.direction),
     projected: new Vector3(),
   }));
   const previous = new Quaternion(0, 0, 0, 0);
+  const previousModel = new Quaternion(0, 0, 0, 0);
+  const identity = new Quaternion();
   const inverse = new Quaternion();
   return {
     axes,
-    update(rotation: Quaternion) {
-      if (1 - Math.abs(previous.dot(rotation)) < 1e-8) return false;
+    update(rotation: Quaternion, modelRotation: Quaternion = identity) {
+      if (
+        1 - Math.abs(previous.dot(rotation)) < 1e-8 &&
+        1 - Math.abs(previousModel.dot(modelRotation)) < 1e-8
+      )
+        return false;
       previous.copy(rotation);
+      previousModel.copy(modelRotation);
       inverse.copy(rotation).invert();
-      for (const axis of axes)
+      for (const axis of axes) {
+        axis.direction.copy(axis.localDirection).applyQuaternion(modelRotation);
         axis.projected.copy(axis.direction).applyQuaternion(inverse);
+      }
       axes.sort((a, b) => a.projected.z - b.projected.z);
       return true;
     },

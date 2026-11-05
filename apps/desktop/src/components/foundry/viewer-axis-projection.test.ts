@@ -35,3 +35,18 @@ test("axis picking follows visible depth order and rejects empty space", () => {
   );
   expect(pickViewerAxis(projection.axes, 0, 0)?.toArray()).toEqual([0, 0, -1]);
 });
+
+test("model-relative axis picking follows a turning character while the camera is still", () => {
+  const projection = createViewerAxisProjection();
+  const camera = new Quaternion(),
+    model = new Quaternion().setFromAxisAngle(
+      new Vector3(0, 1, 0),
+      Math.PI / 2,
+    );
+  projection.update(camera);
+  expect(projection.update(camera, model)).toBe(true);
+  const front = projection.axes.find((axis) => axis.label === "X");
+  expect(front?.direction.x).toBeCloseTo(0);
+  expect(front?.direction.z).toBeCloseTo(-1);
+  expect(projection.update(camera, model)).toBe(false);
+});

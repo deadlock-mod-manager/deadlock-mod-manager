@@ -2,6 +2,7 @@
 import type { ModdingMaterialExpression } from "./ModdingMaterialExpression";
 import type { ModdingMaterialProperty } from "./ModdingMaterialProperty";
 import type { ModdingModelPaint } from "./ModdingModelPaint";
+import type { ModdingModelPatch } from "./ModdingModelPatch";
 import type { ModdingModelPattern } from "./ModdingModelPattern";
 import type { ModdingModelRecolor } from "./ModdingModelRecolor";
 
@@ -14,6 +15,7 @@ export type ModdingModelPartEdit = {
   metalness: number | null;
   pattern: ModdingModelPattern | null;
   paint: ModdingModelPaint | null;
+  patches?: Array<ModdingModelPatch>;
   parameters: Array<ModdingMaterialProperty>;
   expressions: Array<ModdingMaterialExpression>;
 };

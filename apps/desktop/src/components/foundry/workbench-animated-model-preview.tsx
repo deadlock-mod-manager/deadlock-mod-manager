@@ -49,9 +49,11 @@ import type { ReactNode, RefObject } from "react";
 
 import type { ModelImageProjector } from "@/lib/model-image-projection";
 import type { ModelImageSurfaceDraft } from "@/lib/model-image-surface-preview";
+import type { ModelPatchRuntime } from "@/lib/model-patch-runtime";
 
 interface Props {
   imageDraft?: RefObject<ModelImageSurfaceDraft | null>;
+  attachedPatches?: RefObject<ModelPatchRuntime | null>;
   pauseForImagePlacement?: boolean;
   viewportOverlay?: ReactNode;
   imageProjector?: RefObject<ModelImageProjector | null>;
@@ -116,6 +118,7 @@ export const AnimatedModelPreview = ({
   imageProjector,
   imageDrop,
   imageDraft,
+  attachedPatches,
   viewportOverlay,
   pauseForImagePlacement = false,
 }: Props) => {
@@ -325,6 +328,7 @@ export const AnimatedModelPreview = ({
       <div className='relative min-h-0 flex-1'>
         <FoundryModelViewer
           imageDraft={imageDraft}
+          attachedPatches={attachedPatches}
           imageProjector={imageProjector}
           imageDrop={imageDrop}
           surfacePaint={surfacePaint}

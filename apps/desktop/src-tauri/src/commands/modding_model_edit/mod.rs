@@ -1,5 +1,7 @@
 //! Reversible, addon-local model edits applied again after resource compilation.
 mod bake;
+mod patches;
+pub use patches::ModdingModelPatch;
 pub(crate) mod paint;
 mod runtime_cloth;
 mod storage;
@@ -43,6 +45,9 @@ pub struct ModdingModelPartEdit {
   pub pattern: Option<ModdingModelPattern>,
   #[serde(default)]
   pub paint: Option<ModdingModelPaint>,
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  #[ts(optional)]
+  pub patches: Option<Vec<ModdingModelPatch>>,
   #[serde(default)]
   pub parameters: Vec<ModdingMaterialProperty>,
   #[serde(default)]
@@ -96,10 +101,21 @@ fn validate_edits(edits: &[ModdingModelPartEdit]) -> Result<(), Error> {
       "Choose 1–256 material groups and keep at least one visible",
     ));
   }
+  let mut patch_ids = BTreeSet::new();
   for edit in edits {
     style::validate(edit)?;
     if let Some(paint) = &edit.paint {
       paint::validate(paint)?;
+    }
+    if let Some(patches) = &edit.patches {
+      patches::validate(patches)?;
+      for patch in patches {
+        if !patch_ids.insert(&patch.id) || patch_ids.len() > 8 {
+          return Err(invalid(
+            "A model supports at most eight stickers with unique IDs",
+          ));
+        }
+      }
     }
     relative(&edit.material, false)?;
     if !edit.material.ends_with(".vmat")
@@ -130,6 +146,10 @@ fn changed(edit: &ModdingModelPartEdit) -> bool {
     || edit.metalness.is_some()
     || edit.pattern.is_some()
     || edit.paint.is_some()
+    || edit
+      .patches
+      .as_ref()
+      .is_some_and(|patches| !patches.is_empty())
     || !edit.parameters.is_empty()
     || !edit.expressions.is_empty()
 }
@@ -143,6 +163,7 @@ fn default_edit(material: String) -> ModdingModelPartEdit {
     metalness: None,
     pattern: None,
     paint: None,
+    patches: None,
     parameters: Vec::new(),
     expressions: Vec::new(),
   }
@@ -312,6 +333,13 @@ fn inspect(
         })
         .cloned()
         .unwrap_or_else(|| default_edit(part.material.clone()));
+      edit.patches = saved
+        .models
+        .get(path)
+        .into_iter()
+        .flatten()
+        .find(|local| local.material == part.material)
+        .and_then(|local| local.patches.clone());
       edit.hidden = saved
         .models
         .get(path)

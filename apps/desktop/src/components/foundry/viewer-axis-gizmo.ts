@@ -1,4 +1,4 @@
-import type { Camera, Vector3 } from "three";
+import type { Camera, Vector3, Quaternion } from "three";
 import {
   createViewerAxisProjection,
   pickViewerAxis,
@@ -12,6 +12,7 @@ export const createViewerAxisGizmo = (
   container: HTMLDivElement,
   camera: Camera,
   onDirection: (direction: Vector3) => void,
+  modelOrientation?: () => Quaternion,
 ) => {
   const canvas = document.createElement("canvas");
   canvas.style.width = canvas.style.height = "100%";
@@ -38,7 +39,11 @@ export const createViewerAxisGizmo = (
       if (!context) return;
       const nextRatio = Math.min(window.devicePixelRatio, 2);
       const resized = nextRatio !== ratio;
-      if (!projection.update(camera.quaternion) && !resized) return;
+      if (
+        !projection.update(camera.quaternion, modelOrientation?.()) &&
+        !resized
+      )
+        return;
       if (resized) {
         ratio = nextRatio;
         canvas.width = canvas.height = Math.round(SIZE * ratio);

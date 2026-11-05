@@ -61,6 +61,8 @@ import {
 import { createViewerRecorder } from "./viewer-capture";
 import { createViewerAxisGizmo } from "./viewer-axis-gizmo";
 import { createViewerCamera } from "./viewer-camera";
+import { installModelAttachedPatches } from "./model-attached-patches";
+import type { ModelPatchRuntime } from "@/lib/model-patch-runtime";
 import type { ViewerBackground } from "./viewer-background";
 import { createViewerPostFx } from "./workbench-viewer-postfx";
 import {
@@ -111,6 +113,7 @@ import {
 } from "@/lib/model-image-surface-preview";
 
 interface FoundryModelViewerProps {
+  attachedPatches?: RefObject<ModelPatchRuntime | null>;
   imageDraft?: RefObject<ModelImageSurfaceDraft | null>;
   imageProjector?: RefObject<ModelImageProjector | null>;
   imageDrop?: RefObject<
@@ -377,6 +380,7 @@ const applyHiddenParts = (
 };
 
 export const FoundryModelViewer = ({
+  attachedPatches,
   model,
   hiddenSourceLayers,
   label,
@@ -464,6 +468,8 @@ export const FoundryModelViewer = ({
   const imageDropRef = useRef(imageDrop);
   imageDropRef.current = imageDrop;
   const imageDraftRef = useRef(imageDraft);
+  const attachedPatchesRef = useRef(attachedPatches);
+  attachedPatchesRef.current = attachedPatches;
   imageDraftRef.current = imageDraft;
   const surfacePaintRef = useRef(surfacePaint);
   surfacePaintRef.current = surfacePaint;
@@ -603,6 +609,7 @@ export const FoundryModelViewer = ({
       controls,
       renderer.domElement,
       () => modelRef.current,
+      () => mixerRef.current !== null,
     );
     fitRef.current = cameraControls.fit;
     renderer.domElement.setAttribute(
@@ -783,7 +790,11 @@ export const FoundryModelViewer = ({
       camera,
       () => loadedRoot ?? null,
       () => materialPickRef.current,
-      () => Boolean(imageDraftRef.current?.current),
+      () =>
+        Boolean(
+          imageDraftRef.current?.current ||
+          attachedPatchesRef.current?.current?.selection,
+        ),
     );
     const stopSurfacePainting = attachModelSurfacePainting(
       renderer.domElement,
@@ -822,6 +833,8 @@ export const FoundryModelViewer = ({
     renderer.domElement.addEventListener("dragover", dragImage);
     renderer.domElement.addEventListener("drop", dropImage);
     let animatedAlbedo: ReturnType<typeof installAnimatedAlbedo> | null = null;
+    let patchPreview: ReturnType<typeof installModelAttachedPatches> | null =
+      null;
     let imageSurface: ReturnType<
       typeof installModelImageSurfacePreview
     > | null = null;
@@ -878,6 +891,17 @@ export const FoundryModelViewer = ({
         animatedAlbedo = installAnimatedAlbedo(gltf.scene, editingRef.current);
         if (imageDraftRef.current)
           imageSurface = installModelImageSurfacePreview(gltf.scene);
+        if (attachedPatchesRef.current)
+          patchPreview = installModelAttachedPatches(
+            gltf.scene,
+            scene,
+            camera,
+            renderer.domElement,
+            controls,
+            () => {
+              renderDirty.current = true;
+            },
+          );
         picks = buildPickTargets(gltf.scene);
         outlines = attachNprOutlines(gltf.scene);
         outlines.setViewportHeight(Math.max(container.clientHeight, 1));
@@ -894,17 +918,12 @@ export const FoundryModelViewer = ({
       })
       .finally(releaseAsset);
 
-    const gizmo = createViewerAxisGizmo(gizmoContainer, camera, (direction) => {
-      const distance = camera.position.distanceTo(controls.target);
-      camera.up.set(0, 1, 0);
-      if (Math.abs(direction.y) > 0.9) {
-        camera.up.set(0, 0, direction.y > 0 ? -1 : 1);
-      }
-      camera.position
-        .copy(controls.target)
-        .addScaledVector(direction, distance);
-      controls.update();
-    });
+    const gizmo = createViewerAxisGizmo(
+      gizmoContainer,
+      camera,
+      cameraControls.snap,
+      cameraControls.orientation,
+    );
 
     const clock = new PreviewClock(
       () => {
@@ -948,6 +967,10 @@ export const FoundryModelViewer = ({
       )
         renderDirty.current = true;
       const playback = playbackRef.current;
+      if (
+        patchPreview?.update(attachedPatchesRef.current?.current ?? null, now)
+      )
+        renderDirty.current = true;
       const materialMotion =
         (modelEditsRef.current?.tick({
           time: clock.time,
@@ -1039,6 +1062,7 @@ export const FoundryModelViewer = ({
       modelRef.current = null;
       stageRef.current = null;
       cameraControls.dispose();
+      patchPreview?.dispose();
       fitRef.current = null;
       controls.dispose();
       controlsRef.current = null;

@@ -17,6 +17,7 @@ pub mod error;
 pub mod material_repair;
 pub mod mesh_edit;
 pub mod model_edit;
+pub mod model_patch;
 pub mod pack;
 pub mod particle_edit;
 pub mod pattern;

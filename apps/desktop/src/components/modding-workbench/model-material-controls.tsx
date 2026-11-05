@@ -1,51 +1,26 @@
-import { Button } from "@deadlock-mods/ui/components/button";
 import { Input } from "@deadlock-mods/ui/components/input";
+import { Switch } from "@deadlock-mods/ui/components/switch";
 import { Slider } from "@deadlock-mods/ui/components/slider";
-import { ArrowCounterClockwiseIcon } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import type { ModdingModelPart } from "@/types/generated/ModdingModelPart";
 import type { ModdingModelPartEdit } from "@/types/generated/ModdingModelPartEdit";
-import { resetModelPart } from "@/lib/model-edit-history";
 
 export function ModelMaterialControls({
   part,
   edit,
   disabled,
   onChange,
-  onReset,
-  resetLabel,
 }: {
   part: ModdingModelPart;
   edit: ModdingModelPartEdit;
   disabled: boolean;
   onChange: (edit: ModdingModelPartEdit) => void;
-  onReset?: () => void;
-  resetLabel?: string;
 }) {
   const { t } = useTranslation();
   return (
-    <fieldset disabled={disabled} className='min-w-0 space-y-4 p-3 text-xs'>
-      <div className='flex min-w-0 items-center gap-2'>
-        <h4
-          className='min-w-0 flex-1 truncate text-sm font-medium'
-          title={part.material}>
-          {part.material
-            .split("/")
-            .at(-1)
-            ?.replace(/\.vmat$/, "")}
-        </h4>
-        <Button
-          size='icon'
-          variant='ghost'
-          className='size-7 shrink-0'
-          aria-label={resetLabel ?? t("modelEditor.resetPart")}
-          title={resetLabel ?? t("modelEditor.resetPart")}
-          onClick={() =>
-            onReset ? onReset() : onChange(resetModelPart(edit.material))
-          }>
-          <ArrowCounterClockwiseIcon />
-        </Button>
-      </div>
+    <fieldset
+      disabled={disabled}
+      className='min-w-0 space-y-5 px-4 py-4 text-xs'>
       {part.diagnostic ? (
         <p className='text-muted-foreground'>
           {part.diagnostic === "shader"
@@ -59,14 +34,14 @@ export function ModelMaterialControls({
       ) : null}
       <div className='space-y-3'>
         <label className='flex items-center gap-2'>
-          <input
-            type='checkbox'
+          <Switch
+            aria-label={t("modelEditor.tint")}
             disabled={!part.tintable}
             checked={edit.tint !== null}
-            onChange={(event) =>
+            onCheckedChange={(checked) =>
               onChange({
                 ...edit,
-                tint: event.target.checked ? "#ffffff" : null,
+                tint: checked ? "#ffffff" : null,
               })
             }
           />
@@ -78,7 +53,7 @@ export function ModelMaterialControls({
             disabled={!part.tintable}
             aria-label={t("modelEditor.tintColor")}
             value={edit.tint}
-            className='h-8 w-full cursor-pointer rounded border bg-background'
+            className='h-10 w-full cursor-pointer rounded-md border border-input bg-background p-1'
             onChange={(event) =>
               onChange({ ...edit, tint: event.target.value })
             }
@@ -87,14 +62,14 @@ export function ModelMaterialControls({
       </div>
       <div className='space-y-3'>
         <label className='flex items-center gap-2'>
-          <input
-            type='checkbox'
+          <Switch
+            aria-label={t("modelEditor.recolor")}
             disabled={!part.tintable}
             checked={edit.recolor !== null}
-            onChange={(event) =>
+            onCheckedChange={(checked) =>
               onChange({
                 ...edit,
-                recolor: event.target.checked
+                recolor: checked
                   ? { color: "#e1ac47", saturation: 1, brightness: 1 }
                   : null,
               })
@@ -109,7 +84,7 @@ export function ModelMaterialControls({
               disabled={!part.tintable}
               aria-label={t("modelEditor.recolorColor")}
               value={edit.recolor.color}
-              className='h-8 w-full cursor-pointer rounded border bg-background'
+              className='h-10 w-full cursor-pointer rounded-md border border-input bg-background p-1'
               onChange={(event) =>
                 onChange({
                   ...edit,
@@ -166,14 +141,14 @@ export function ModelMaterialControls({
       <div className='space-y-3'>
         <label className='flex items-center justify-between gap-2'>
           <span className='flex items-center gap-2'>
-            <input
-              type='checkbox'
+            <Switch
+              aria-label={t("modelEditor.roughness")}
               disabled={!part.roughnessEditable}
               checked={edit.roughness !== null}
-              onChange={(event) =>
+              onCheckedChange={(checked) =>
                 onChange({
                   ...edit,
-                  roughness: event.target.checked ? 0.5 : null,
+                  roughness: checked ? 0.5 : null,
                 })
               }
             />
@@ -216,14 +191,14 @@ export function ModelMaterialControls({
       <div className='space-y-3'>
         <label className='flex items-center justify-between gap-2'>
           <span className='flex items-center gap-2'>
-            <input
-              type='checkbox'
+            <Switch
+              aria-label={t("modelEditor.metalness")}
               disabled={!part.metalnessEditable}
               checked={edit.metalness !== null}
-              onChange={(event) =>
+              onCheckedChange={(checked) =>
                 onChange({
                   ...edit,
-                  metalness: event.target.checked ? 0 : null,
+                  metalness: checked ? 0 : null,
                 })
               }
             />

@@ -26,6 +26,7 @@ const layer = (name: string): ModdingPaintLayer => ({
 });
 
 export function ModelMaterialPaint({
+  active: toolActive,
   addonId,
   edit,
   disabled,
@@ -39,6 +40,7 @@ export function ModelMaterialPaint({
   surfaceEnabled,
   onSurfaceEnabledChange,
 }: {
+  active: boolean;
   addonId: string;
   edit: ModdingModelPartEdit;
   disabled: boolean;
@@ -55,7 +57,6 @@ export function ModelMaterialPaint({
   onSurfaceEnabledChange: (enabled: boolean) => void;
 }) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
   const [selected, select] = useState(0);
   const [color, setColor] = useState("#e87523");
   const [radius, setRadius] = useState(0.04);
@@ -92,7 +93,7 @@ export function ModelMaterialPaint({
   const active = paint.layers[index];
   const preview = useQuery({
     ...modelPaintQuery(addonId, edit.material, debounced),
-    enabled: open,
+    enabled: toolActive,
   });
   const replace = (updated: ModdingPaintLayer) =>
     onChange({
@@ -116,7 +117,7 @@ export function ModelMaterialPaint({
   const blocked =
     disabled || !active?.visible || remaining <= 0 || strokeCount >= 128;
   surfaceTool.current =
-    open && surfaceEnabled && !blocked
+    toolActive && surfaceEnabled && !blocked
       ? {
           material: edit.material,
           brush,
@@ -132,16 +133,9 @@ export function ModelMaterialPaint({
         }
       : null;
   return (
-    <details
-      className='border-t p-3 text-xs'
-      onToggle={(e) => {
-        setOpen(e.currentTarget.open);
-        if (!e.currentTarget.open) onSurfaceEnabledChange(false);
-      }}>
-      <summary className='cursor-pointer font-medium leading-5'>
-        {t("modelEditor.paint.title")}
-      </summary>
-      {open ? (
+    <section className='p-4 text-xs'>
+      <h4 className='font-medium leading-5'>{t("modelEditor.paint.title")}</h4>
+      {toolActive ? (
         <fieldset disabled={disabled} className='mt-3 min-w-0 space-y-3'>
           <ModelImageLayers
             imageDraft={imageDraft}
@@ -437,6 +431,6 @@ export function ModelMaterialPaint({
           </p>
         </fieldset>
       ) : null}
-    </details>
+    </section>
   );
 }

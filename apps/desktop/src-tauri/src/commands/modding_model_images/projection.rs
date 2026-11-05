@@ -181,19 +181,45 @@ pub async fn save_modding_projected_image(
     .await
     .map_err(|e| Error::BackgroundTaskFailed(e.to_string()))?
 }
+fn preview_dimensions(width: u32, height: u32, frames: usize, max_side: Option<u32>) -> (u32, u32) {
+  let scale = max_side
+    .map(|side| {
+      let memory_side = (8. * 1024. * 1024. / (frames.max(1) as f64 * 4.)).sqrt();
+      (f64::from(side.clamp(1, 512)).min(memory_side) / f64::from(width.max(height).max(1))).min(1.)
+    })
+    .unwrap_or(1.);
+  (
+    (f64::from(width) * scale).floor().max(1.) as u32,
+    (f64::from(height) * scale).floor().max(1.) as u32,
+  )
+}
+
 #[tauri::command]
 pub async fn read_modding_model_image(
   app: AppHandle,
   addon_id: String,
   path: String,
+  max_side: Option<u32>,
 ) -> Result<ModdingModelImagePixels, Error> {
   let addon = resolve(&app, &addon_id)?;
   tauri::async_runtime::spawn_blocking(move || {
     let root = Path::new(&addon.content_path);
     let image = super::load(root, &path)?;
+    let (width, height) =
+      preview_dimensions(image.width, image.height, image.frames.len(), max_side);
     let mut frames = Vec::new();
     for frame in &image.frames {
       let pixels = super::frame_pixels(root, &image, frame)?;
+      let pixels = if pixels.width() == width && pixels.height() == height {
+        pixels
+      } else {
+        image::imageops::resize(
+          &pixels,
+          width,
+          height,
+          image::imageops::FilterType::Triangle,
+        )
+      };
       frames.push(ModdingProjectedImageFrame {
         width: pixels.width(),
         height: pixels.height(),
@@ -212,6 +238,17 @@ pub async fn read_modding_model_image(
 #[cfg(test)]
 mod tests {
   use super::*;
+  #[test]
+  fn sticker_previews_bound_decoded_memory_without_upscaling_or_affecting_exports() {
+    for frames in [1, 8, 128] {
+      let (width, height) = preview_dimensions(4096, 2048, frames, Some(512));
+      assert!(width <= 512 && height <= 512);
+      assert!(u64::from(width) * u64::from(height) * frames as u64 * 4 <= 8 * 1024 * 1024);
+      assert_eq!(width, height * 2);
+    }
+    assert_eq!(preview_dimensions(32, 16, 8, Some(512)), (32, 16));
+    assert_eq!(preview_dimensions(4096, 2048, 128, None), (4096, 2048));
+  }
   #[test]
   fn lossless_sequence_roundtrip_and_tamper_detection() {
     let root = tempfile::tempdir().unwrap();

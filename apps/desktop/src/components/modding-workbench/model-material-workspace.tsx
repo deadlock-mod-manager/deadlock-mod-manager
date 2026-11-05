@@ -1,4 +1,5 @@
 import { Button } from "@deadlock-mods/ui/components/button";
+import { TabsContent } from "@deadlock-mods/ui/components/tabs";
 import { Input } from "@deadlock-mods/ui/components/input";
 import {
   ResizableHandle,
@@ -35,6 +36,7 @@ import type { ModelImageProjector } from "@/lib/model-image-projection";
 import type { ModelImageSurfaceDraft } from "@/lib/model-image-surface-preview";
 import type { ModelSurfacePaintTool } from "@/lib/model-surface-paint";
 import { modelEditShortcut } from "@/lib/model-edit-shortcuts";
+import { ModelEditorTools, type ModelEditorTool } from "./model-editor-tools";
 import { ModelMaterialList } from "./model-material-list";
 import { ModelMaterialPatterns } from "./model-material-patterns";
 import { ModelMaterialStyleControls } from "./model-material-style-controls";
@@ -43,6 +45,8 @@ import { useModelPatterns } from "./use-model-patterns";
 import { ModelMaterialControls } from "./model-material-controls";
 import { ModelMaterialPaint } from "./model-material-paint";
 import { useModelPaint } from "./use-model-paint";
+import { ModelAttachedStickers } from "./model-attached-stickers";
+import type { ModelPatchRuntime } from "@/lib/model-patch-runtime";
 
 export function ModelMaterialWorkspace({
   addon,
@@ -71,6 +75,8 @@ export function ModelMaterialWorkspace({
       anchor: first,
     };
   });
+  const [tool, setTool] = useState<ModelEditorTool>("material");
+  const [materialBrowserExpanded, setMaterialBrowserExpanded] = useState(true);
   const [isolated, setIsolated] = useState(false);
   const [imagePlacementTarget, setImagePlacementTarget] =
     useState<HTMLDivElement | null>(null);
@@ -78,6 +84,8 @@ export function ModelMaterialWorkspace({
   const surfaceTool = useRef<ModelSurfacePaintTool | null>(null);
   const imageProjector = useRef<ModelImageProjector | null>(null);
   const imageDraft = useRef<ModelImageSurfaceDraft | null>(null);
+  const attachedPatches = useRef<ModelPatchRuntime | null>(null);
+  const [patchManipulating, setPatchManipulating] = useState(false);
   const imageDrop = useRef<
     ((file: File, point: { x: number; y: number }) => void) | null
   >(null);
@@ -113,8 +121,16 @@ export function ModelMaterialWorkspace({
     onSuccess: onSaved,
   });
   useEffect(() => {
-    onDirtyChange?.(dirty || save.isPending || imagePlacementActive);
-  }, [dirty, save.isPending, imagePlacementActive, onDirtyChange]);
+    onDirtyChange?.(
+      dirty || save.isPending || imagePlacementActive || patchManipulating,
+    );
+  }, [
+    dirty,
+    save.isPending,
+    imagePlacementActive,
+    patchManipulating,
+    onDirtyChange,
+  ]);
   useEffect(() => () => onDirtyChange?.(false), [onDirtyChange]);
   const change = (edit: ModdingModelPartEdit) =>
     dispatch({
@@ -171,19 +187,20 @@ export function ModelMaterialWorkspace({
           dispatch({ type: action });
         }
       }}>
-      <p className='shrink-0 pb-2 text-[11px] text-muted-foreground'>
+      <p className='shrink-0 px-1 pb-2 text-[11px] text-muted-foreground'>
         {t("modelEditor.compiledHint")}
       </p>
       <ResizablePanelGroup
         deferResize
         direction='horizontal'
-        autoSaveId='workbench-material-editor'
+        autoSaveId='workbench-material-editor-v2'
         className='min-h-0 flex-1'>
-        <ResizablePanel defaultSize={58} minSize={35}>
+        <ResizablePanel defaultSize={60} minSize={25}>
           <div className='h-full min-h-0 min-w-0'>
             <AnimatedModelPreview
+              attachedPatches={attachedPatches}
               imageDraft={imageDraft}
-              pauseForImagePlacement={imagePlacementActive}
+              pauseForImagePlacement={imagePlacementActive || patchManipulating}
               viewportOverlay={
                 <div
                   ref={setImagePlacementTarget}
@@ -228,11 +245,17 @@ export function ModelMaterialWorkspace({
           </div>
         </ResizablePanel>
         <ResizableHandle withHandle />
-        <ResizablePanel defaultSize={42} minSize={27} maxSize={65}>
+        <ResizablePanel
+          defaultSize={40}
+          minSize={30}
+          maxSize={70}
+          style={{ minWidth: "min(20rem, 70%)" }}>
           <aside
             aria-label={t("modelEditor.materials")}
             className='flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-background'>
             <ModelMaterialList
+              expanded={materialBrowserExpanded}
+              onExpandedChange={setMaterialBrowserExpanded}
               edits={history.edits}
               selection={selection}
               isolated={isolated}
@@ -256,9 +279,22 @@ export function ModelMaterialWorkspace({
               }
               onIsolate={() => setIsolated(!isolated)}
             />
-            <div
-              className='min-h-0 flex-1 overflow-y-auto overscroll-contain [scrollbar-gutter:stable]'
-              aria-label={t("modelEditor.materialSettings")}>
+            <ModelEditorTools
+              tool={tool}
+              material={edit?.material}
+              selectedCount={selection.materials.size}
+              disabled={imagePlacementActive || patchManipulating}
+              resetDisabled={
+                save.isPending || imagePlacementActive || patchManipulating
+              }
+              onReset={() =>
+                changeSelected((_part, edit) => resetModelPart(edit.material))
+              }
+              onToolChange={(value) => {
+                setSurfaceEnabled(false);
+                setTool(value);
+                setMaterialBrowserExpanded(false);
+              }}>
               {isolated && selection.materials.size > 0 ? (
                 <p
                   role='status'
@@ -325,65 +361,105 @@ export function ModelMaterialWorkspace({
                       })}
                     </p>
                   ) : null}
-                  <ModelMaterialControls
-                    part={part}
-                    edit={edit}
-                    disabled={save.isPending}
-                    onChange={change}
-                    onReset={() =>
-                      changeSelected((_part, edit) =>
-                        resetModelPart(edit.material),
-                      )
-                    }
-                    resetLabel={t(
-                      multiple
-                        ? "modelEditor.resetSelected"
-                        : "modelEditor.resetPart",
-                    )}
-                  />
-                  <ModelMaterialPatterns
-                    edit={edit}
-                    disabled={save.isPending || !part.tintable}
-                    onChange={change}
-                  />
-                  <ModelMaterialPaint
-                    imageDraft={imageDraft}
-                    key={edit.material}
-                    addonId={addon.id}
-                    imageProjector={imageProjector}
-                    imageDrop={imageDrop}
-                    imagePlacementTarget={imagePlacementTarget}
-                    onPlacementActiveChange={setPlacementActive}
-                    surfaceTool={surfaceTool}
-                    surfaceEnabled={surfaceEnabled}
-                    onSurfaceEnabledChange={setSurfaceEnabled}
-                    edit={edit}
-                    disabled={multiple || save.isPending || !part.tintable}
-                    onChange={change}
-                  />
-                  {multiple ? (
-                    <p className='border-t px-3 py-2 text-[11px] text-muted-foreground'>
-                      {t("modelEditor.paintSingleMaterial")}
-                    </p>
-                  ) : null}
-                  <ModelMaterialStyleControls
-                    part={part}
-                    edit={edit}
-                    disabled={save.isPending}
-                    onChange={change}
-                    onPreset={() => changeSelected(applyToonPreset)}
-                  />
-                  <ModelMaterialReactivity
-                    part={part}
-                    edit={edit}
-                    disabled={save.isPending}
-                    onChange={change}
-                    onPreset={(source) =>
-                      changeSelected((part, edit) =>
-                        applyReactivePreset(part, edit, source),
-                      )
-                    }
-                  />
+                  <TabsContent
+                    value='material'
+                    forceMount
+                    className='m-0 data-[state=inactive]:hidden'>
+                    <ModelMaterialControls
+                      part={part}
+                      edit={edit}
+                      disabled={save.isPending}
+                      onChange={change}
+                    />
+                    <ModelMaterialStyleControls
+                      part={part}
+                      edit={edit}
+                      disabled={save.isPending}
+                      onChange={change}
+                      onPreset={() => changeSelected(applyToonPreset)}
+                    />
+                  </TabsContent>
+                  <TabsContent
+                    value='effects'
+                    forceMount
+                    className='m-0 data-[state=inactive]:hidden'>
+                    <ModelMaterialPatterns
+                      edit={edit}
+                      disabled={save.isPending || !part.tintable}
+                      onChange={change}
+                    />
+                    <ModelMaterialReactivity
+                      part={part}
+                      edit={edit}
+                      disabled={save.isPending}
+                      onChange={change}
+                      onPreset={(source) =>
+                        changeSelected((part, edit) =>
+                          applyReactivePreset(part, edit, source),
+                        )
+                      }
+                    />
+                  </TabsContent>
+                  <TabsContent
+                    value='stickers'
+                    forceMount
+                    className='m-0 data-[state=inactive]:hidden'>
+                    <div className='px-4'>
+                      <ModelAttachedStickers
+                        active={tool === "stickers"}
+                        addonId={addon.id}
+                        supported={part.diagnostic !== "shader"}
+                        material={edit.material}
+                        edits={history.edits}
+                        disabled={
+                          multiple || save.isPending || imagePlacementActive
+                        }
+                        runtime={attachedPatches}
+                        onActiveChange={setPatchManipulating}
+                        onChange={(material, patches) =>
+                          dispatch({
+                            type: "change",
+                            edits: history.edits.map((part) =>
+                              part.material === material
+                                ? {
+                                    ...part,
+                                    patches: patches.length
+                                      ? patches
+                                      : undefined,
+                                  }
+                                : part,
+                            ),
+                          })
+                        }
+                      />
+                    </div>
+                  </TabsContent>
+                  <TabsContent
+                    value='paint'
+                    forceMount
+                    className='m-0 data-[state=inactive]:hidden'>
+                    <ModelMaterialPaint
+                      active={tool === "paint"}
+                      imageDraft={imageDraft}
+                      key={edit.material}
+                      addonId={addon.id}
+                      imageProjector={imageProjector}
+                      imageDrop={imageDrop}
+                      imagePlacementTarget={imagePlacementTarget}
+                      onPlacementActiveChange={setPlacementActive}
+                      surfaceTool={surfaceTool}
+                      surfaceEnabled={surfaceEnabled}
+                      onSurfaceEnabledChange={setSurfaceEnabled}
+                      edit={edit}
+                      disabled={multiple || save.isPending || !part.tintable}
+                      onChange={change}
+                    />
+                    {multiple ? (
+                      <p className='border-t px-3 py-2 text-[11px] text-muted-foreground'>
+                        {t("modelEditor.paintSingleMaterial")}
+                      </p>
+                    ) : null}
+                  </TabsContent>
                 </>
               ) : (
                 <p className='p-3 text-xs text-muted-foreground'>
@@ -401,11 +477,11 @@ export function ModelMaterialWorkspace({
                   {t("modelEditor.previewAccuracy")}
                 </p>
               </details>
-            </div>
+            </ModelEditorTools>
           </aside>
         </ResizablePanel>
       </ResizablePanelGroup>
-      <div className='flex shrink-0 flex-wrap items-center gap-2 border-t bg-background py-2'>
+      <div className='flex shrink-0 flex-wrap items-center gap-2 border-t bg-background px-2 py-2.5'>
         <Button
           size='sm'
           variant='outline'
@@ -438,7 +514,7 @@ export function ModelMaterialWorkspace({
           {t(
             save.isPending
               ? "modelEditor.saving"
-              : imagePlacementActive
+              : imagePlacementActive || patchManipulating
                 ? "modelEditor.paint.placementDraft"
                 : dirty
                   ? "modelEditor.unsaved"
@@ -448,7 +524,11 @@ export function ModelMaterialWorkspace({
         <Button
           size='sm'
           disabled={
-            !dirty || allHidden || save.isPending || imagePlacementActive
+            !dirty ||
+            allHidden ||
+            save.isPending ||
+            imagePlacementActive ||
+            patchManipulating
           }
           onClick={() => save.mutate()}>
           {t("modelEditor.save")}

@@ -617,6 +617,7 @@ export const FoundryModelViewer = ({
       controls,
       renderer.domElement,
       () => modelRef.current,
+      () => mixerRef.current !== null,
     );
     fitRef.current = cameraControls.fit;
     renderer.domElement.setAttribute(

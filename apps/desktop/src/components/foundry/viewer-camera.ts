@@ -1,12 +1,23 @@
 import * as THREE from "three";
 import type { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { createViewerModelOrientation } from "./viewer-model-orientation";
+import { snapViewerCamera } from "./viewer-camera-snap";
+
+function ancestorsVisible(object: THREE.Object3D) {
+  for (let parent = object.parent; parent; parent = parent.parent) {
+    if (!parent.visible) return false;
+  }
+  return true;
+}
 
 export const createViewerCamera = (
   camera: THREE.PerspectiveCamera,
   controls: OrbitControls,
   canvas: HTMLCanvasElement,
   model: () => THREE.Object3D | null,
+  animated: () => boolean,
 ) => {
+  const orientation = createViewerModelOrientation(model, animated);
   const raycaster = new THREE.Raycaster();
   const pointer = new THREE.Vector2();
   const surfaces = () => {
@@ -15,7 +26,9 @@ export const createViewerCamera = (
       if (
         object instanceof THREE.Mesh &&
         object.visible &&
-        !object.userData.previewOutline
+        !object.userData.previewOutline &&
+        !object.userData.attachedPatch &&
+        ancestorsVisible(object)
       ) {
         if (object instanceof THREE.SkinnedMesh) {
           object.computeBoundingBox();
@@ -45,7 +58,9 @@ export const createViewerCamera = (
     const halfFov = THREE.MathUtils.degToRad(camera.fov / 2);
     // Source models face +X; fit their projected box rather than a sphere so
     // wide viewports keep a useful amount of the character on screen.
-    const direction = new THREE.Vector3(1, 0.04, 0.18).normalize();
+    const direction = new THREE.Vector3(1, 0.04, 0.18)
+      .normalize()
+      .applyQuaternion(orientation());
     const right = new THREE.Vector3(0, 1, 0).cross(direction).normalize();
     const up = direction.clone().cross(right).normalize();
     const tangent = Math.tan(halfFov);
@@ -63,7 +78,7 @@ export const createViewerCamera = (
         }
       }
     }
-    distance *= 1.08;
+    distance *= 1.03;
     controls.target.copy(sphere.center);
     camera.up.set(0, 1, 0);
     camera.position.copy(sphere.center).addScaledVector(direction, distance);
@@ -72,7 +87,7 @@ export const createViewerCamera = (
     camera.updateProjectionMatrix();
     controls.minDistance = radius * 0.015;
     controls.maxDistance = distance * 20;
-    controls.update();
+    snapViewerCamera(camera, controls, direction);
     controls.saveState();
   };
   const focus = (event: MouseEvent) => {
@@ -107,6 +122,9 @@ export const createViewerCamera = (
   canvas.addEventListener("keydown", onKey);
   return {
     fit,
+    orientation,
+    snap: (direction: THREE.Vector3) =>
+      snapViewerCamera(camera, controls, direction),
     dispose() {
       controls.stopListenToKeyEvents();
       canvas.removeEventListener("dblclick", focus);

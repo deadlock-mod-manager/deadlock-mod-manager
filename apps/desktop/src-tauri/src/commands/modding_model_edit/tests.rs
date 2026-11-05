@@ -512,3 +512,37 @@ fn pattern_and_gameplay_recipes_restore_without_touching_the_model() {
     original_material
   );
 }
+
+#[test]
+fn attached_stickers_reopen_on_their_own_model_without_leaking_to_shared_materials() {
+  let (_dir, addon) = setup();
+  std::fs::write(
+    Path::new(&addon.game_path).join("models/second.vmdl_c"),
+    model(),
+  )
+  .unwrap();
+  let mut saved = storage::load(&addon).unwrap();
+  let patch: ModdingModelPatch = serde_json::from_value(serde_json::json!({
+    "id":"test", "image":"materials/dmm_images/test/original.png", "bone":"spine", "position":[0,0,0], "rotation":[0,0,0,1], "size":[20,20], "shape":"conform", "curvature":0.03, "thickness":0.1, "offset":0.3, "roughness":0.7, "glow":0, "crop":[0,0,1,1], "background":null
+  })).unwrap();
+  let mut body = default_edit("materials/body.vmat".into());
+  body.patches = Some(vec![patch.clone()]);
+  saved
+    .models
+    .insert("models/test.vmdl_c".into(), vec![body.clone()]);
+  let archive = archive(&addon).unwrap();
+  let (_, _, edits) = inspect(&addon, "models/test.vmdl_c", &saved, &archive).unwrap();
+  assert_eq!(edits[0].patches.as_ref().unwrap()[0].id, "test");
+  body.tint = Some("#22aaee".into());
+  saved.models.insert("models/test.vmdl_c".into(), vec![body]);
+  let (_, _, edits) = inspect(&addon, "models/second.vmdl_c", &saved, &archive).unwrap();
+  assert!(edits.iter().all(|edit| edit.patches.is_none()));
+  let mut duplicate = default_edit("materials/head.vmat".into());
+  duplicate.patches = Some(vec![patch]);
+  saved
+    .models
+    .get_mut("models/test.vmdl_c")
+    .unwrap()
+    .push(duplicate);
+  assert!(validate_edits(saved.models.get("models/test.vmdl_c").unwrap()).is_err());
+}
