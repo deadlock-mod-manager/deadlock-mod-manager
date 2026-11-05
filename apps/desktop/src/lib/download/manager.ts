@@ -448,6 +448,7 @@ class DownloadManager {
       profileFolder,
       fileserverPreference,
       isMap: mod.isMap,
+      sourceComponentIds: mod.source?.componentIds,
     });
   }
 

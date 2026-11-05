@@ -1,4 +1,9 @@
 import { selectUpdateDownloads } from "@/lib/mods/update-download-selection";
+import {
+  nativeChoicesFit,
+  nativeManualFileTree,
+  nativeComponentDownloads,
+} from "@/lib/mods/native-update-selection";
 import { analytics } from "@/lib/analytics";
 import { failureOutcome } from "@/lib/analytics/client";
 import { isTauriError } from "@/types/tauri";
@@ -104,19 +109,38 @@ export const useBatchUpdate = () => {
         (m) => m.remoteId === update.mod.remoteId,
       );
 
-      const selectedDownloads = selectUpdateDownloads(
-        update.downloads,
-        localMod,
-      );
+      const selectedDownloads =
+        update.nativeInstallation?.mode === "components"
+          ? nativeComponentDownloads(
+              update.nativeInstallation,
+              localMod?.source?.componentIds ?? [],
+              update.downloads,
+            )
+          : selectUpdateDownloads(update.downloads, localMod);
 
-      const selectedFileTree = localMod?.installedFileTree;
+      const selectedFileTree = nativeManualFileTree(localMod, update.downloads);
 
       return {
-        mod: update.mod,
         updatedAt: update.updatedAt,
         downloads: update.downloads,
         selectedDownloads,
         selectedFileTree,
+        nativeInstallation: update.nativeInstallation,
+        nativeSelectionRequired:
+          !!update.nativeInstallation &&
+          !nativeChoicesFit(
+            update.nativeInstallation,
+            localMod?.source?.componentIds ?? [],
+          ),
+        mod: update.mod.source
+          ? {
+              ...update.mod,
+              source: {
+                ...update.mod.source,
+                componentIds: localMod?.source?.componentIds ?? [],
+              },
+            }
+          : update.mod,
       };
     });
 
@@ -140,6 +164,40 @@ export const useBatchUpdate = () => {
     });
     return prepared;
   }, []);
+
+  const confirmNativeChoices = (remoteId: string, componentIds: string[]) => {
+    setUpdatableMods((previous) =>
+      previous.map((update) => {
+        if (
+          update.mod.remoteId !== remoteId ||
+          !update.mod.source ||
+          !update.nativeInstallation
+        )
+          return update;
+        const selectedDownloads = nativeComponentDownloads(
+          update.nativeInstallation,
+          componentIds,
+          update.downloads,
+        );
+        return {
+          ...update,
+          mod: {
+            ...update.mod,
+            source: {
+              ...update.mod.source,
+              componentIds,
+              artifactIds: selectedDownloads.flatMap((file) => {
+                const id = file.url.split("/").pop();
+                return id ? [decodeURIComponent(id)] : [];
+              }),
+            },
+          },
+          selectedDownloads,
+          nativeSelectionRequired: false,
+        };
+      }),
+    );
+  };
 
   const setSelectedDownloads = (
     remoteId: string,
@@ -196,6 +254,8 @@ export const useBatchUpdate = () => {
         return {
           enabled: localMod?.status === ModStatus.Installed,
           modId: um.mod.remoteId,
+          sourceComponentIds: um.mod.source?.componentIds,
+          installedSource: localMod?.source,
           modName: um.mod.name,
           downloadFiles: um.selectedDownloads.map((d) => ({
             url: d.url,
@@ -260,6 +320,19 @@ export const useBatchUpdate = () => {
                 : ModStatus.Installed,
               updatableMod.mod.filesUpdatedAt,
             );
+          if (updatableMod.mod.source) {
+            usePersistedStore.getState().setModSource(
+              installedModInfo.modId,
+              {
+                ...updatableMod.mod.source,
+                artifactIds: updatableMod.selectedDownloads.flatMap((file) => {
+                  const id = file.url.split("/").pop();
+                  return id ? [decodeURIComponent(id)] : [];
+                }),
+              },
+              activeProfileId,
+            );
+          }
         }
       }
 
@@ -342,5 +415,6 @@ export const useBatchUpdate = () => {
     updateProgress,
     pendingSelections,
     dismissSelection,
+    confirmNativeChoices,
   };
 };

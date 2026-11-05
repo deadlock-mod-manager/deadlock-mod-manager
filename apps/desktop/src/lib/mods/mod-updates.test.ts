@@ -15,6 +15,36 @@ const updateFor = (mod: LocalMod, updatedAt = 200) => ({
 });
 
 describe("mod update availability", () => {
+  it("skips only the chosen native release revision", () => {
+    const source = {
+      sourceKey: "accepted-source",
+      sourceId: "example",
+      sourceName: "Example",
+      acceptedOrigin: "https://example.org",
+      descriptorUrl: "https://example.org/source.json",
+      listingId: "42",
+      releaseId: "release",
+      contentRevision: "2",
+      artifactIds: ["pack"],
+      componentIds: [],
+      iconUrl: null,
+    };
+    const installed = {
+      ...modFor(`source-${"a".repeat(64)}`),
+      source: { ...source, contentRevision: "1" },
+      skippedSourceRevision: JSON.stringify([
+        source.releaseId,
+        source.contentRevision,
+      ]),
+    };
+    const skipped = updateFor({ ...installed, source });
+    expect(availableModUpdates([skipped], [installed])).toEqual([]);
+    const newer = updateFor({
+      ...installed,
+      source: { ...source, contentRevision: "3" },
+    });
+    expect(availableModUpdates([newer], [installed])).toEqual([newer]);
+  });
   it("checks enabled and disabled downloads, excluding local and unfinished mods", () => {
     const mods = [
       modFor("enabled"),

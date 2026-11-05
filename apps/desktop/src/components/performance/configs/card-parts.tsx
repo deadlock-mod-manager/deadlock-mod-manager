@@ -5,9 +5,10 @@ import {
 } from "@deadlock-mods/ui/components/tooltip";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { TIERS, tierInfo, tierLevel } from "@/lib/performance/scale";
 import { cn } from "@/lib/utils";
+import { TierIcon } from "../tier-icon";
 import type { PerfTier } from "@/types/generated/PerfTier";
+import { useScaleFocusHandlers, useScaleLink } from "./scale-link";
 
 export const TierLabel = ({
   tier,
@@ -23,32 +24,8 @@ export const TierLabel = ({
         "inline-flex items-center gap-1.5 font-semibold text-primary text-xs uppercase tracking-wide",
         className,
       )}>
-      <span aria-hidden>{tierInfo(tier).emoji}</span>
+      <TierIcon tier={tier} />
       {t(`performance.tiers.${tier}.label`)}
-    </span>
-  );
-};
-
-export const TierMeter = ({ tier }: { tier: PerfTier }) => {
-  const { t } = useTranslation();
-  const level = tierLevel(tier);
-  return (
-    <span
-      aria-label={t("performance.configs.meter", {
-        level,
-        total: TIERS.length,
-      })}
-      className='flex shrink-0 items-center gap-0.5'
-      role='img'>
-      {TIERS.map((info, index) => (
-        <span
-          className={cn(
-            "h-1 w-3 rounded-full",
-            index < level ? "bg-primary" : "bg-muted",
-          )}
-          key={info.id}
-        />
-      ))}
     </span>
   );
 };
@@ -94,33 +71,98 @@ export const Chip = ({
   );
 };
 
+/** A config card; hovering or focusing it points at its pin on the scale. */
 export const ConfigCardShell = ({
+  configId,
   active,
   children,
 }: {
+  configId: string;
   active: boolean;
   children: ReactNode;
+}) => {
+  const { focus } = useScaleLink();
+  const handlers = useScaleFocusHandlers({ kind: "config", configId });
+  const pointedAt = focus?.kind === "config" && focus.configId === configId;
+  return (
+    <article
+      className={cn(
+        "flex h-full flex-col gap-3 rounded-lg border bg-card p-4 transition-colors duration-200 ease-out",
+        active && "border-primary/70 ring-1 ring-primary/30",
+        pointedAt && !active && "border-primary/40",
+      )}
+      data-config-id={configId}
+      {...handlers}>
+      {children}
+    </article>
+  );
+};
+
+/** Tier and badges on the left; where the config comes from and when, on the right. */
+export const CardHeader = ({
+  label,
+  provenance,
+}: {
+  label: ReactNode;
+  provenance: ReactNode;
 }) => (
-  <article
-    className={cn(
-      "flex h-full flex-col gap-3 rounded-lg border bg-card p-4",
-      active && "border-primary/70 ring-1 ring-primary/30",
-    )}>
-    {children}
-  </article>
+  <div className='flex items-center justify-between gap-3'>
+    <div className='flex min-w-0 items-center gap-2'>{label}</div>
+    <span className='flex shrink-0 items-center gap-1.5 text-muted-foreground text-xs [&_svg]:size-3.5 [&_svg]:shrink-0'>
+      {provenance}
+    </span>
+  </div>
 );
 
-export const CardFooter = ({
-  source,
+/** Plain counts under the blurb; chips stay for tags that describe the config. */
+export const MetaRow = ({ children }: { children: ReactNode }) => (
+  <div className='flex flex-wrap items-center gap-x-4 gap-y-1 text-muted-foreground text-xs tabular-nums [&_svg]:size-3.5 [&_svg]:shrink-0'>
+    {children}
+  </div>
+);
+
+export const MetaItem = ({
+  icon,
+  tooltip,
   children,
 }: {
-  source: ReactNode;
+  icon: ReactNode;
+  tooltip?: string;
+  children: ReactNode;
+}) => {
+  const item = (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5",
+        tooltip &&
+          "cursor-help rounded-sm underline decoration-dotted underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+      )}
+      tabIndex={tooltip ? 0 : undefined}>
+      {icon}
+      {children}
+    </span>
+  );
+  if (!tooltip) return item;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{item}</TooltipTrigger>
+      <TooltipContent className='max-w-xs leading-relaxed'>
+        {tooltip}
+      </TooltipContent>
+    </Tooltip>
+  );
+};
+
+/** Actions on the right; `start` holds secondary controls such as rename. */
+export const CardFooter = ({
+  start,
+  children,
+}: {
+  start?: ReactNode;
   children: ReactNode;
 }) => (
-  <div className='mt-auto flex items-center justify-between gap-2 pt-1'>
-    <span className='flex min-w-0 items-center gap-1.5 truncate text-muted-foreground text-xs [&_svg]:size-3.5 [&_svg]:shrink-0'>
-      {source}
-    </span>
-    <div className='flex shrink-0 items-center gap-1.5'>{children}</div>
+  <div className='mt-auto flex items-center gap-1.5 pt-1'>
+    {start}
+    <div className='ml-auto flex shrink-0 items-center gap-1.5'>{children}</div>
   </div>
 );

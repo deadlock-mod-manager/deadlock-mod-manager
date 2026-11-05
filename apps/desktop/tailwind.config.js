@@ -32,6 +32,11 @@ export default {
           foreground: 'hsl(var(--popover-foreground))',
         },
         'status-ok': 'hsl(var(--status-ok))',
+        signal: {
+          good: 'hsl(var(--signal-good))',
+          fair: 'hsl(var(--signal-fair))',
+          poor: 'hsl(var(--signal-poor))',
+        },
         primary: {
           DEFAULT: 'hsl(var(--primary))',
           foreground: 'hsl(var(--primary-foreground))',

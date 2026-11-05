@@ -45,6 +45,7 @@ import { LiveBridgeRenderer } from "./components/live-bridge-renderer";
 import { useGameBananaCatalogSync } from "./hooks/use-gamebanana-catalog-sync";
 import { useRemoteInstallPoll } from "./hooks/use-remote-install";
 import { useSourceInstall } from "./hooks/use-source-install";
+import { NativeSourceLinkHandler } from "./components/mod-sources/native-source-link-handler";
 import { Layout } from "./layout";
 import { queryClient } from "./lib/client";
 import { downloadManager } from "./lib/download/manager";
@@ -220,6 +221,7 @@ const App = ({ runtime, storage }: AppProps) => {
                           <LiveBridgeRenderer />
                           <GameGuardRenderer />
                           <DeepLinkListener />
+                          <NativeSourceLinkHandler />
                           <RemoteInstallPairDialog />
                           <FilePermissionsRenderer />
                           <PerformanceRenderer />

@@ -13,6 +13,7 @@ export const FIELD = {
   alpha: 7,
   creationTime: 8,
   sequence: 9,
+  trailLength: 10,
   alpha2: 16,
   normal: 21,
 };
@@ -39,11 +40,29 @@ export type Emitter = (
 ) => number;
 
 export interface SpriteRendererSpec {
-  kind: "sprites" | "ropes";
+  kind: "sprites" | "ropes" | "trails" | "models";
+  phase: "any" | "active" | "endcap";
+  models: string[];
   texture: string | null;
   /** A second layer multiplied over the first, like a ring masking noise. */
   mask: string | null;
+  distortionTexture: string | null;
+  refractive: boolean;
   additive: boolean;
+  blend: "alpha" | "add" | "multiply" | "opaque";
+  minLength: FloatInput;
+  maxLength: FloatInput;
+  lengthScale: FloatInput;
+  lengthFadeInTime: FloatInput;
+  tailAlphaScale: FloatInput;
+  tailColorScale: VectorInput;
+  constrainRadiusToLengthRatio: FloatInput;
+  ignoreDT: boolean;
+  tailFade: boolean;
+  subdivisions: number;
+  refractStrength: FloatInput;
+  uvScale: [number, number];
+  uvOffset: [number, number];
   overbright: FloatInput;
   alphaScale: FloatInput;
   radiusScale: FloatInput;
@@ -83,6 +102,8 @@ export interface ParticleDiagnostic {
 }
 
 export interface CompiledSystem {
+  /** Timing of this instance relative to its parent; roots start immediately. */
+  lifecycle: { delay: number; endCap: boolean };
   diagnostics: ParticleDiagnostic[];
   path: string;
   maxParticles: number;
@@ -90,6 +111,8 @@ export interface CompiledSystem {
   constantRadius: number;
   constantColor: [number, number, number, number];
   constantSequence: number;
+  /** Velocity history duration in seconds for trail renderers. */
+  constantTrailLength: number;
   emitters: Emitter[];
   continuous: boolean;
   lastEmissionTime: number;
@@ -100,13 +123,16 @@ export interface CompiledSystem {
     index: number,
     out: THREE.Vector3,
   ) => void)[];
-  preEmission: ((controlPoints: ControlPoint[]) => void)[];
+  preEmission: ((
+    controlPoints: ControlPoint[],
+    system?: ParticleSystem,
+  ) => void)[];
   renderers: SpriteRendererSpec[];
   /** Why this system is not simulated, when it is not. */
   blockedBy: string | null;
   children: CompiledSystem[];
   /**
-   * The `preview` control point drivers, read from the root system only.
+   * The system's own `preview` control point drivers.
    * `offset` is in the attachment's frame, or the model's when unattached.
    */
   drivers: {

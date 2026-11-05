@@ -1,13 +1,13 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
+import { useModPreviewInfo } from "./use-mod-preview-info";
+import type { ModPreviewInfo } from "@/types/generated/ModPreviewInfo";
 import { useActiveProfileFolder } from "@/hooks/use-mod-health";
 import {
   analyzeDefaultFoundryHero,
-  analyzeFoundryVpk,
   decodeFoundryModel,
   getPrimaryModelPath,
   releaseFoundryArchives,
-  resolveModVpk,
 } from "@/lib/foundry";
 import { cacheFoundryModel, releaseFoundryModel } from "@/lib/model-assets";
 import type { FoundryModel } from "@/types/foundry";
@@ -15,8 +15,16 @@ import type { LocalMod } from "@/types/mods";
 
 /** `unsupported` is not a failure: the VPK simply holds no hero model. */
 export type SkinModel =
-  | { kind: "model"; model: FoundryModel; filePath: string; entryPath: string }
-  | { kind: "unsupported" };
+  | {
+      kind: "model";
+      model: FoundryModel;
+      filePath: string;
+      entryPath: string;
+      stockFilePath: string | null;
+      revision: string;
+    }
+  | { kind: "unsupported" }
+  | { kind: "missingAssets" };
 
 /** How long a decoded model survives with nothing on screen showing it. */
 const MODEL_CACHE_TIME_MS = 0;
@@ -28,33 +36,28 @@ const MODEL_CACHE_TIME_MS = 0;
 const decodeSkinModel = async (
   mod: LocalMod | null,
   hero: string,
-  profileFolder: string | null,
+  info: ModPreviewInfo | null,
   signal: AbortSignal,
 ): Promise<SkinModel> => {
-  const manifest = mod
-    ? await analyzeFoundryVpk(
-        await resolveModVpk(
-          mod.remoteId ?? mod.id,
-          mod.installedVpks ?? [],
-          profileFolder,
-        ),
-      )
-    : await analyzeDefaultFoundryHero(hero);
-
-  const modelPath = manifest.isHeroSkin ? getPrimaryModelPath(manifest) : null;
-  if (!modelPath) {
+  const manifest = mod ? null : await analyzeDefaultFoundryHero(hero);
+  const modelPath = mod
+    ? info?.modelPath
+    : manifest
+      ? getPrimaryModelPath(manifest)
+      : null;
+  const filePath = info?.filePath ?? manifest?.filePath;
+  if (info?.hero && !info.modelPath && !info.gameAssetsAvailable)
+    return { kind: "missingAssets" };
+  if (!modelPath || !filePath) {
     return { kind: "unsupported" };
   }
-  const model = await decodeFoundryModel(
-    manifest.filePath,
-    modelPath,
-    null,
-    signal,
-  );
+  const model = await decodeFoundryModel(filePath, modelPath, null, signal);
   return {
     kind: "model",
     model,
-    filePath: manifest.filePath,
+    filePath,
+    stockFilePath: info?.stockFilePath ?? null,
+    revision: info?.identity ?? filePath,
     entryPath: modelPath,
   };
 };
@@ -72,6 +75,7 @@ export const useSkinModelPreview = (
 ) => {
   const profileFolder = useActiveProfileFolder();
   const client = useQueryClient();
+  const info = useModPreviewInfo(mod, enabled);
 
   // Parsed VPK indexes stay cached in the backend so switching skins is quick;
   // a parsed pak01 is a large thing to hold onto once the page is gone.
@@ -86,12 +90,18 @@ export const useSkinModelPreview = (
     mod?.downloadedAt ?? null,
     mod?.status ?? null,
     profileFolder,
+    info.data?.identity,
   ];
-  return useQuery({
-    enabled,
+  const preview = useQuery({
+    enabled: enabled && (!mod || !!info.data),
     queryKey,
     queryFn: async ({ signal }) => {
-      const preview = await decodeSkinModel(mod, hero, profileFolder, signal);
+      const preview = await decodeSkinModel(
+        mod,
+        hero,
+        info.data ?? null,
+        signal,
+      );
       if (preview.kind === "model") {
         if (signal.aborted) {
           releaseFoundryModel(preview.model);
@@ -109,4 +119,13 @@ export const useSkinModelPreview = (
     // that would say the same thing twice.
     meta: { skipGlobalErrorHandler: true },
   });
+  return info.isError
+    ? {
+        ...preview,
+        isError: true,
+        isPending: false,
+        error: info.error,
+        refetch: info.refetch,
+      }
+    : preview;
 };

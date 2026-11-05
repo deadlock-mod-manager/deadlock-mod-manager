@@ -78,6 +78,7 @@ import OccultGeometrySettings from "@/components/settings/occult-geometry-settin
 import { MatchSyncSettings } from "@/components/settings/match-sync-settings";
 import { FeatureTipsToggle } from "@/components/settings/feature-tips-toggle";
 import { ModUpdateBadgesToggle } from "@/components/settings/mod-update-badges-toggle";
+import { ModSourcesSettings } from "@/components/settings/mod-sources-settings";
 import { ModelPreviewToggle } from "@/components/settings/model-preview-toggle";
 import { RepairModFolder } from "@/components/settings/repair-mod-folder";
 import { ModRecoveryReportView } from "@/components/settings/mod-recovery-report";
@@ -711,6 +712,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
           </TabsContent>
 
           <TabsContent className='mt-0 space-y-4' value='mods'>
+            <ModSourcesSettings />
             <Section
               description={t("settings.modInstallingSectionDescription")}
               searchId='mod-installing'

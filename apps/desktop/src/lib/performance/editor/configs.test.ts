@@ -47,6 +47,8 @@ const desired = (
     { path: ["ConVars", "r_ssao"], action: { kind: "set", value: "1" } },
   ],
   includeEngineSections: true,
+  writeVideo: true,
+  videoVariant: null,
   ...overrides,
 });
 
@@ -75,6 +77,8 @@ describe("editorBaseRequest", () => {
       source: { kind: "preset", id: "dmm-clean" },
       overrides: [],
       includeEngineSections: true,
+      writeVideo: true,
+      videoVariant: null,
     });
   });
 
@@ -86,6 +90,7 @@ describe("editorBaseRequest", () => {
         id: "user:old",
         name: "Config user:old",
         entries: [{ path: ["ConVars", "r_ssao"], value: "0" }],
+        videoSettings: [],
       },
     });
   });
@@ -107,6 +112,8 @@ describe("editorBaseRequest", () => {
     const draft = {
       overrides: [{ path: ["ConVars", "r_ssao"], action: { kind: "omit" } }],
       includeEngineSections: true,
+      writeVideo: false,
+      videoVariant: "No Shadows",
     } satisfies Parameters<typeof withDraft>[1];
     expect(withDraft(base, draft)).toMatchObject(draft);
   });
@@ -135,24 +142,38 @@ const applied = (
   },
 });
 
+const NOTHING_SAVED = { overrides: {}, includeEngineSections: {}, video: {} };
+
 describe("saved tweaks", () => {
   test("come from the store; overrides fall back to what was applied", () => {
     const leftOut = applied(desired({ includeEngineSections: false }), 3);
-    expect(savedDraftFor("preset:optilock", {}, {}, leftOut)).toEqual({
+    expect(savedDraftFor("preset:optilock", NOTHING_SAVED, leftOut)).toEqual({
       overrides: desired().overrides,
       includeEngineSections: true,
+      writeVideo: true,
+      videoVariant: null,
     });
     expect(
       savedDraftFor(
         "preset:optilock",
-        { "preset:optilock": [] },
-        { "preset:optilock": false },
+        {
+          overrides: { "preset:optilock": [] },
+          includeEngineSections: { "preset:optilock": false },
+          video: { "preset:optilock": { write: false, variant: "No Shadows" } },
+        },
         leftOut,
       ),
-    ).toEqual({ overrides: [], includeEngineSections: false });
-    expect(savedDraftFor("user:old", {}, {}, leftOut)).toEqual({
+    ).toEqual({
+      overrides: [],
+      includeEngineSections: false,
+      writeVideo: false,
+      videoVariant: "No Shadows",
+    });
+    expect(savedDraftFor("user:old", NOTHING_SAVED, leftOut)).toEqual({
       overrides: [],
       includeEngineSections: true,
+      writeVideo: true,
+      videoVariant: null,
     });
   });
 
@@ -161,7 +182,11 @@ describe("saved tweaks", () => {
       desired({ includeEngineSections: false }),
       0,
     );
-    const saved = savedDraftFor("preset:optilock", {}, {}, nothingLeftOut);
+    const saved = savedDraftFor(
+      "preset:optilock",
+      NOTHING_SAVED,
+      nothingLeftOut,
+    );
     expect(saved.includeEngineSections).toBe(false);
     expect(isAppliedAs("preset:optilock", saved, nothingLeftOut.request)).toBe(
       true,
@@ -171,8 +196,7 @@ describe("saved tweaks", () => {
   test("isAppliedAs compares config, tweaks and the engine toggle", () => {
     const saved = savedDraftFor(
       "preset:optilock",
-      {},
-      {},
+      NOTHING_SAVED,
       applied(desired(), 0),
     );
     expect(isAppliedAs("preset:optilock", saved, desired())).toBe(true);
@@ -181,6 +205,13 @@ describe("saved tweaks", () => {
       isAppliedAs(
         "preset:optilock",
         { ...saved, includeEngineSections: false },
+        desired(),
+      ),
+    ).toBe(false);
+    expect(
+      isAppliedAs(
+        "preset:optilock",
+        { ...saved, writeVideo: false },
         desired(),
       ),
     ).toBe(false);

@@ -1,0 +1,31 @@
+{
+  "id": "example",
+  "title": "Harmless source example",
+  "availability": "available",
+  "isNsfw": false,
+  "description": "A valid VPK containing one harmless text file. Replace it with your mod before publishing.",
+  "author": "Your community",
+  "homepageUrl": "https://mods.example.org/",
+  "release": {
+    "id": "release-1",
+    "contentRevision": "revision-1",
+    "version": "1.0.0",
+    "artifacts": [
+      {
+        "id": "example-vpk",
+        "filename": "example.vpk",
+        "format": "vpk",
+        "download": {
+          "url": "../files/example.vpk"
+        },
+        "size": 141,
+        "hashes": {
+          "sha256": "0ef66746810e2611130e9407a078daeb9657f3716fe5f952bc555276b2af7c5a"
+        }
+      }
+    ],
+    "installation": {
+      "mode": "manual"
+    }
+  }
+}

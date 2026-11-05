@@ -5,10 +5,12 @@ import type {
 } from "@/lib/store/slices/performance";
 import type { EntryOverride } from "@/types/generated/EntryOverride";
 import type { PerfApplyRequest } from "@/types/generated/PerfApplyRequest";
+import type { VideoChange } from "@/types/generated/VideoChange";
 import {
   compactHistoryRequest,
   historyApplyRequest,
   undoTarget,
+  unloggedVideoChanges,
 } from "./history";
 
 const TWEAKS: EntryOverride[] = [
@@ -21,6 +23,8 @@ const presetRequest = (configId: string): PerfApplyRequest => ({
   source: { kind: "preset", id: configId },
   overrides: [],
   includeEngineSections: false,
+  writeVideo: true,
+  videoVariant: null,
 });
 
 const userConfig: UserPerfConfig = {
@@ -45,10 +49,13 @@ const userRequest: PerfApplyRequest = {
       id: userConfig.id,
       name: userConfig.name,
       entries: userConfig.entries,
+      videoSettings: [],
     },
   },
   overrides: TWEAKS,
   includeEngineSections: true,
+  writeVideo: false,
+  videoVariant: null,
 };
 
 const applied = (request: PerfApplyRequest): PerfHistoryEntry => ({
@@ -59,6 +66,7 @@ const applied = (request: PerfApplyRequest): PerfHistoryEntry => ({
   name: request.name,
   request: compactHistoryRequest(request),
   appliedCount: 10,
+  videoCount: null,
 });
 
 const removed: PerfHistoryEntry = {
@@ -69,7 +77,27 @@ const removed: PerfHistoryEntry = {
   name: null,
   request: null,
   appliedCount: null,
+  videoCount: null,
 };
+
+const SHADOWS: VideoChange = {
+  key: "r_citadel_shadow_quality",
+  written: "0",
+  current: "2",
+  kept: false,
+};
+
+const videoChanged = (changes: VideoChange[]): PerfHistoryEntry => ({
+  id: "video",
+  at: "2026-10-08T00:00:00.000Z",
+  action: "videoChanged",
+  changes: changes.map(({ key, written, current }) => ({
+    key,
+    written,
+    current,
+    label: null,
+  })),
+});
 
 const USER_CONFIGS = { [userConfig.id]: userConfig };
 
@@ -81,6 +109,8 @@ describe("compactHistoryRequest", () => {
       source: { kind: "inline" },
       overrides: TWEAKS,
       includeEngineSections: true,
+      writeVideo: false,
+      videoVariant: null,
     });
   });
 
@@ -157,5 +187,53 @@ describe("undoTarget", () => {
     expect(undoTarget([applied(presetRequest("a"))], "b", {})).toBeNull();
     expect(undoTarget([], null, {})).toBeNull();
     expect(undoTarget([removed], null, {})).toBeNull();
+  });
+});
+
+describe("video.txt entries", () => {
+  test("undo skips them and goes back to the config before", () => {
+    expect(
+      undoTarget(
+        [
+          videoChanged([SHADOWS]),
+          applied(presetRequest("b")),
+          applied(presetRequest("a")),
+        ],
+        "b",
+        {},
+      ),
+    ).toEqual({ kind: "apply", request: presetRequest("a") });
+  });
+
+  test("a change is logged once until the config is applied again", () => {
+    expect(unloggedVideoChanges([videoChanged([SHADOWS])], [SHADOWS])).toEqual(
+      [],
+    );
+    const again = { ...SHADOWS, current: "1" };
+    expect(unloggedVideoChanges([videoChanged([SHADOWS])], [again])).toEqual([
+      again,
+    ]);
+    expect(
+      unloggedVideoChanges(
+        [applied(presetRequest("a")), videoChanged([SHADOWS])],
+        [SHADOWS],
+      ),
+    ).toEqual([SHADOWS]);
+  });
+
+  test("keeping one setting doesn't log the others again", () => {
+    const fog: VideoChange = { ...SHADOWS, key: "r_citadel_fog_quality" };
+    const kept: PerfHistoryEntry = {
+      id: "kept",
+      at: "2026-10-08T00:00:00.000Z",
+      action: "videoKept",
+      keys: [fog.key],
+    };
+    expect(
+      unloggedVideoChanges([kept, videoChanged([SHADOWS, fog])], [SHADOWS]),
+    ).toEqual([]);
+    expect(
+      unloggedVideoChanges([kept, videoChanged([SHADOWS, fog])], [fog]),
+    ).toEqual([fog]);
   });
 });

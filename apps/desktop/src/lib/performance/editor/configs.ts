@@ -1,12 +1,16 @@
 import { sameApplyOptions } from "@/lib/performance/overrides";
 import {
+  DEFAULT_APPLY_OPTIONS,
   isPresetConfigId,
   presetApplyRequest,
   presetConfigId,
   presetIdFromConfigId,
   userConfigApplyRequest,
 } from "@/lib/performance/request";
-import type { UserPerfConfig } from "@/lib/store/slices/performance";
+import type {
+  PerfVideoChoice,
+  UserPerfConfig,
+} from "@/lib/store/slices/performance";
 import type { DesiredOverlay } from "@/types/generated/DesiredOverlay";
 import type { EntryOverride } from "@/types/generated/EntryOverride";
 import type { PerfApplyRequest } from "@/types/generated/PerfApplyRequest";
@@ -20,8 +24,6 @@ export type EditorConfigOption = {
 };
 
 type PresetRef = Pick<PresetSummary, "id" | "name">;
-
-const NO_TWEAKS: EditorDraft = { overrides: [], includeEngineSections: true };
 
 /**
  * Every config the editor can open: catalog presets, then the user's own
@@ -74,10 +76,14 @@ export const editorBaseRequest = (
   const presetId = presetIdFromConfigId(configId);
   const preset =
     presetId === null ? undefined : presets.find((p) => p.id === presetId);
-  if (preset) return presetApplyRequest(preset, NO_TWEAKS);
+  if (preset) return presetApplyRequest(preset, DEFAULT_APPLY_OPTIONS);
   const userConfig = userConfigs[configId];
-  if (userConfig) return userConfigApplyRequest(userConfig, NO_TWEAKS);
-  if (desired?.configId === configId) return { ...desired, ...NO_TWEAKS };
+  if (userConfig) {
+    return userConfigApplyRequest(userConfig, DEFAULT_APPLY_OPTIONS);
+  }
+  if (desired?.configId === configId) {
+    return { ...desired, ...DEFAULT_APPLY_OPTIONS };
+  }
   return null;
 };
 
@@ -88,6 +94,8 @@ export const withDraft = (
   ...base,
   overrides: draft.overrides,
   includeEngineSections: draft.includeEngineSections,
+  writeVideo: draft.writeVideo,
+  videoVariant: draft.videoVariant,
 });
 
 /**
@@ -95,21 +103,30 @@ export const withDraft = (
  * config applied before the store had an entry for it (e.g. from History).
  * Engine sections are included unless the user turned them off, except that a
  * config applied with nothing left out keeps its applied choice: the toggle
- * changes nothing there, so it shouldn't show as a pending change.
+ * changes nothing there, so it shouldn't show as a pending change. Video.txt
+ * settings are written unless the user turned them off.
  */
 export const savedDraftFor = (
   configId: string,
-  savedOverrides: Record<string, EntryOverride[]>,
-  savedIncludeEngineSections: Record<string, boolean>,
+  saved: {
+    overrides: Record<string, EntryOverride[]>;
+    includeEngineSections: Record<string, boolean>;
+    video: Record<string, PerfVideoChoice>;
+  },
   desired: DesiredOverlay | null,
 ): EditorDraft => {
   const applied = desired?.request.configId === configId ? desired : null;
   const toggleChangesNothing = applied?.counts.engineSection === 0;
+  const video = saved.video[configId];
   return {
-    overrides: savedOverrides[configId] ?? applied?.request.overrides ?? [],
+    overrides: saved.overrides[configId] ?? applied?.request.overrides ?? [],
     includeEngineSections:
-      savedIncludeEngineSections[configId] ??
+      saved.includeEngineSections[configId] ??
       (toggleChangesNothing ? applied.request.includeEngineSections : true),
+    writeVideo: video?.write ?? applied?.request.writeVideo ?? true,
+    videoVariant: video
+      ? video.variant
+      : (applied?.request.videoVariant ?? null),
   };
 };
 

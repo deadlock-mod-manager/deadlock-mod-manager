@@ -10,10 +10,27 @@ pub use properties::material_color_texture;
 use properties::{MaterialPreviewProperties, material_preview_properties};
 use textures::{
     bake_self_illum_png, decode_normal_png, decode_rgba, decode_texture_preview,
-    decode_texture_preview_resource, pack_orm_png, preview_resource,
+    decode_texture_preview_resource, load_preview_resource, pack_orm_png, report_texture_failure,
 };
 
 const PREVIEW_WORKERS: usize = 4;
+
+fn report_texture_result<T>(
+    archive: &VpkArchive,
+    path: Option<&str>,
+    result: Option<T>,
+) -> Option<T> {
+    if result.is_none()
+        && let Some(path) = path
+    {
+        archive.record_preview_issue(
+            path,
+            crate::preview_report::PreviewIssueKind::Unsupported,
+            "Texture channel could not be decoded for preview",
+        );
+    }
+    result
+}
 
 fn normalize_compiled_path(path: &str, source_extension: &str) -> String {
     let mut normalized = path.replace('\\', "/").to_ascii_lowercase();
@@ -37,8 +54,7 @@ fn cached_texture_resource(
     {
         return Some(Arc::clone(resource));
     }
-    let bytes = archive.extract_entry(texture_path).ok()?;
-    let resource = Arc::new(preview_resource(bytes)?);
+    let resource = Arc::new(load_preview_resource(archive, texture_path)?);
     cache.push((texture_path.to_string(), Arc::clone(&resource)));
     Some(resource)
 }
@@ -78,20 +94,57 @@ fn decode_material_previews(
                 let occlusion = load(properties.occlusion_texture.as_deref());
                 let emissive = load(properties.emissive_texture.as_deref());
                 let metalness = load(properties.metalness_texture.as_deref());
+                let effect_mask = load(
+                    properties
+                        .source2_effect
+                        .textures
+                        .iter()
+                        .find(|(name, _)| {
+                            matches!(
+                                name.to_ascii_lowercase().as_str(),
+                                "g_tjittermask"
+                                    | "g_ttranslucencymask"
+                                    | "g_ttranslucency"
+                                    | "g_ttranslucency1"
+                                    | "g_tmask"
+                            )
+                        })
+                        .map(|(_, path)| path.as_str()),
+                );
                 handles.push(scope.spawn(move || {
                     let albedo = emissive.is_some().then(|| decode_rgba(&resource)).flatten();
-                    let mut texture = decode_texture_preview_resource(
-                        texture_path,
+                    let decoded = decode_texture_preview_resource(
+                        texture_path.clone(),
                         Some(material_path),
                         &resource,
                         matches!(properties.alpha_mode, vmesh::MaterialAlphaMode::Opaque),
-                    )?;
-                    texture.normal_png = normal.and_then(|resource| {
-                        decode_normal_png(&resource, properties.hemi_oct_normal)
-                    });
-                    let roughness_tex = roughness.and_then(|resource| decode_rgba(&resource));
-                    let occlusion_tex = occlusion.and_then(|resource| decode_rgba(&resource));
-                    let metalness_tex = metalness.and_then(|resource| decode_rgba(&resource));
+                    );
+                    if decoded.is_none() {
+                        report_texture_failure(archive, &texture_path, &resource);
+                    }
+                    let mut texture = decoded?;
+                    texture.normal_png = report_texture_result(
+                        archive,
+                        properties.normal_texture.as_deref(),
+                        normal.and_then(|resource| {
+                            decode_normal_png(&resource, properties.hemi_oct_normal)
+                        }),
+                    );
+                    let roughness_tex = report_texture_result(
+                        archive,
+                        properties.roughness_texture.as_deref(),
+                        roughness.and_then(|resource| decode_rgba(&resource)),
+                    );
+                    let occlusion_tex = report_texture_result(
+                        archive,
+                        properties.occlusion_texture.as_deref(),
+                        occlusion.and_then(|resource| decode_rgba(&resource)),
+                    );
+                    let metalness_tex = report_texture_result(
+                        archive,
+                        properties.metalness_texture.as_deref(),
+                        metalness.and_then(|resource| decode_rgba(&resource)),
+                    );
                     texture.orm_png = pack_orm_png(
                         roughness_tex.as_ref(),
                         properties.roughness_channel,
@@ -107,15 +160,19 @@ fn decode_material_previews(
                         };
                     // Drop decoded ORM inputs before allocating the emissive mask and output.
                     drop((roughness_tex, occlusion_tex, metalness_tex));
-                    texture.emissive_png = emissive
-                        .and_then(|resource| decode_rgba(&resource))
-                        .and_then(|mask| {
-                            bake_self_illum_png(
-                                &mask,
-                                albedo.as_ref(),
-                                properties.self_illum_albedo_factor,
-                            )
-                        });
+                    texture.emissive_png = report_texture_result(
+                        archive,
+                        properties.emissive_texture.as_deref(),
+                        emissive
+                            .and_then(|resource| decode_rgba(&resource))
+                            .and_then(|mask| {
+                                bake_self_illum_png(
+                                    &mask,
+                                    albedo.as_ref(),
+                                    properties.self_illum_albedo_factor,
+                                )
+                            }),
+                    );
                     texture.vertex_color = properties.vertex_color;
                     texture.double_sided = properties.double_sided;
                     texture.base_color_factor = properties.base_color_factor;
@@ -129,6 +186,14 @@ fn decode_material_previews(
                         1.0
                     };
                     texture.outline = properties.outline;
+                    texture.effect_mask_png = effect_mask
+                        .and_then(|resource| {
+                            decode_texture_preview_resource(String::new(), None, &resource, true)
+                        })
+                        .map(|texture| texture.png);
+                    let mut effect = properties.source2_effect;
+                    effect.material = texture.material.clone().unwrap_or_default();
+                    texture.source2_effect = Some(effect);
                     Some(texture)
                 }));
             }
@@ -207,7 +272,13 @@ pub(crate) fn decode_preview_textures(
         material_paths.to_vec()
     };
     let textures = decode_material_preview_textures(archive, &candidates);
-    if textures.is_empty() {
+    // Guessed images must never disguise a failed explicit material/texture override.
+    if textures.is_empty() && material_paths.is_empty() {
+        archive.record_preview_issue(
+            model_entry_path,
+            crate::preview_report::PreviewIssueKind::Unsupported,
+            "Material bindings were inferred; surface appearance is approximate",
+        );
         decode_fallback_preview_textures(archive, model_entry_path)
     } else {
         textures

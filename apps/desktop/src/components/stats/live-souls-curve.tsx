@@ -42,6 +42,7 @@ const MIN_AXIS_MINUTES = 25;
 const Y_STEP = 5000;
 /** How far back "lately" reaches for the recent souls rate. */
 const RECENT_MINUTES = 3;
+const Y_AXIS_WIDTH = 32;
 
 const BRACKET = "hsl(var(--primary))";
 
@@ -89,7 +90,10 @@ const Callout = ({
   const charWidth = 6.6;
   const width = (souls.length + (lead ? lead.length + 1 : 0)) * charWidth + 16;
   const centerY = viewBox.y + (viewBox.height ?? 0) / 2;
-  const left = viewBox.x - width - 12;
+  // Early in the match the dot hugs the axis, so the callout flips right.
+  const before = viewBox.x - width - 12;
+  const left =
+    before < Y_AXIS_WIDTH ? viewBox.x + (viewBox.width ?? 0) + 12 : before;
   return (
     <g transform={`translate(${left}, ${centerY - 11})`}>
       <rect
@@ -249,7 +253,7 @@ export const LiveSoulsCurve = ({
               tickFormatter={(value: number) => formatThousands(value, 0)}
               tickLine={false}
               ticks={yTicks}
-              width={32}
+              width={Y_AXIS_WIDTH}
             />
             <Area
               data={bracket}
