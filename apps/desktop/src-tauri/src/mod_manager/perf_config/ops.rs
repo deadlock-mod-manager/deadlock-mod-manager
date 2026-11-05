@@ -78,6 +78,7 @@ pub fn status(ctx: &PerfContext) -> Result<PerfStatus, Error> {
     unmanaged_changes,
     build_id: ctx.build_id.clone(),
     video_backup: video::backup(ctx.app_data_dir),
+    video: video::state(ctx.app_data_dir, ctx.video_path.as_deref()),
   })
 }
 
@@ -248,12 +249,37 @@ pub fn remove(ctx: &PerfContext) -> Result<PerfStatus, Error> {
 /// config so a launch doesn't write them again.
 pub fn restore_video_backup(ctx: &PerfContext) -> Result<PerfStatus, Error> {
   video::restore_backup(ctx.app_data_dir)?;
+  stop_writing_video(ctx)?;
+  status(ctx)
+}
+
+fn stop_writing_video(ctx: &PerfContext) -> Result<(), Error> {
   if let Some(mut desired) = store::load(ctx.app_data_dir)
     && desired.request.write_video
   {
     desired.request.write_video = false;
     store::save(ctx.app_data_dir, &desired)?;
   }
+  Ok(())
+}
+
+/// Makes the current video.txt the player's own, and stops writing video
+/// settings for the chosen config so its values stay as the file holds them.
+pub fn adopt_video(ctx: &PerfContext) -> Result<PerfStatus, Error> {
+  video::adopt(ctx.app_data_dir, ctx.video_path.as_deref())?;
+  stop_writing_video(ctx)?;
+  status(ctx)
+}
+
+/// Writes the config's value back for video.txt settings changed in game.
+pub fn use_config_video(ctx: &PerfContext, keys: &[String]) -> Result<PerfStatus, Error> {
+  video::use_written(ctx.app_data_dir, keys)?;
+  status(ctx)
+}
+
+/// Keeps the player's in-game value for video.txt settings changed in game.
+pub fn keep_player_video(ctx: &PerfContext, keys: &[String]) -> Result<PerfStatus, Error> {
+  video::keep_current(ctx.app_data_dir, keys)?;
   status(ctx)
 }
 
@@ -342,7 +368,19 @@ pub fn reapply_desired(ctx: &PerfContext, hand_edits: HandEdits) -> ReapplyOutco
       None => resolved.counts.written() == 0,
     };
     if in_sync && hand_edits == HandEdits::Keep {
-      return Ok(ReapplyOutcome::AlreadyInSync);
+      // gameinfo.gi is fine, but the game may have moved to the Steam
+      // account's video.txt, or created one only now.
+      let settings = video_settings_for(ctx.catalog, &desired.request);
+      if settings.is_empty() || !video::out_of_place(ctx.app_data_dir, ctx.video_path.as_deref()) {
+        return Ok(ReapplyOutcome::AlreadyInSync);
+      }
+      video::apply(
+        ctx.app_data_dir,
+        ctx.video_path.as_deref(),
+        &settings,
+        ChangedKeys::Keep,
+      )?;
+      return Ok(ReapplyOutcome::Applied);
     }
     apply_with(ctx, desired.request, false, hand_edits)?;
     Ok(ReapplyOutcome::Applied)

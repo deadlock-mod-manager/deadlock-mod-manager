@@ -27,7 +27,8 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 
 use super::catalog::cache_dir;
-use super::types::{VideoBackup, VideoOutcome, VideoSetting};
+use super::live::values_equal;
+use super::types::{VideoBackup, VideoChange, VideoOutcome, VideoSetting, VideoState};
 use crate::errors::Error;
 
 const RECORD_FILE: &str = "video.json";
@@ -42,6 +43,10 @@ struct WrittenKey {
   written: String,
   /// The value it replaced; `None` when the file didn't have the key.
   original: Option<String>,
+  /// The player chose to keep the value they set in game: no apply writes
+  /// ours over it until they ask for the config's value again.
+  #[serde(default)]
+  kept: bool,
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -89,7 +94,14 @@ pub fn apply(
   changed: ChangedKeys,
 ) -> Result<VideoOutcome, Error> {
   let mut record = load(app_data_dir)?;
+  // Keys from the file we wrote before, when the game reads another now.
+  let mut inherited: HashMap<String, WrittenKey> = HashMap::new();
   if record.path.as_deref() != path || settings.is_empty() {
+    inherited = record
+      .keys
+      .iter()
+      .map(|key| (key.key.to_ascii_lowercase(), key.clone()))
+      .collect();
     revert_keys(&mut record)?;
   }
   let Some(path) = path else {
@@ -133,10 +145,18 @@ pub fn apply(
   for (key, value) in wanted {
     let lower = key.to_ascii_lowercase();
     let live = current.get(&lower).cloned();
-    let previous = owned.get(&lower);
+    // The game builds a new video.txt from the old one, ours included: a key
+    // that still holds our value, or one the player kept, carries over with
+    // the player's original. Anything else is that file's own value (another
+    // Steam account's, say), which ours replaces.
+    let previous = owned.get(&lower).or_else(|| {
+      inherited
+        .get(&lower)
+        .filter(|key| key.kept || holds(&current, key))
+    });
     if let Some(previous) = previous
-      && live.as_ref() != Some(&previous.written)
-      && changed == ChangedKeys::Keep
+      && !holds(&current, previous)
+      && (previous.kept || changed == ChangedKeys::Keep)
     {
       // The player's value stays; the record keeps the original for Remove,
       // which only reverts keys still holding ours.
@@ -150,17 +170,18 @@ pub fn apply(
       },
       written: value.clone(),
       key: key.clone(),
+      kept: false,
     });
     if live.as_deref() != Some(value.as_str()) {
       edits.push((key, Some(value)));
     }
   }
   // Keys the previous config owned that this one doesn't set go back.
-  for (lower, previous) in &owned {
+  for (lower, previous) in owned.iter().chain(&inherited) {
     if keys.iter().any(|key| key.key.eq_ignore_ascii_case(lower)) {
       continue;
     }
-    if current.get(lower) == Some(&previous.written) {
+    if holds(&current, previous) {
       edits.push((previous.key.clone(), previous.original.clone()));
     }
   }
@@ -186,20 +207,118 @@ pub fn revert(app_data_dir: &Path) -> Result<(), Error> {
   save(app_data_dir, &record)
 }
 
+/// How the settings we wrote stand in the video.txt the game reads (`located`):
+/// still ours, or changed since (in game, or by Steam Cloud from another PC).
+/// Settings left in a file the game no longer reads count as neither until
+/// the next sync writes them to the right one.
+pub fn state(app_data_dir: &Path, located: Option<&Path>) -> VideoState {
+  let Ok(record) = load(app_data_dir) else {
+    return VideoState::default();
+  };
+  let Some(path) = record.path.as_deref() else {
+    return VideoState::default();
+  };
+  if record.keys.is_empty() || located != Some(path) {
+    return VideoState::default();
+  }
+  let current = read(path)
+    .map(|text| setting_values(&text))
+    .unwrap_or_default();
+  let mut state = VideoState::default();
+  for key in &record.keys {
+    if holds(&current, key) {
+      state.in_effect += 1;
+    } else {
+      state.changed.push(VideoChange {
+        key: key.key["setting.".len()..].to_string(),
+        written: key.written.clone(),
+        current: current.get(&key.key.to_ascii_lowercase()).cloned(),
+        kept: key.kept,
+      });
+    }
+  }
+  state
+}
+
+/// Writes the config's value back for `keys` (without the `setting.`
+/// prefix), keeping the player's no longer.
+pub fn use_written(app_data_dir: &Path, keys: &[String]) -> Result<(), Error> {
+  let mut record = load(app_data_dir)?;
+  let Some(path) = record.path.clone() else {
+    return Ok(());
+  };
+  let text = read(&path)?;
+  let mut edits = Vec::new();
+  for key in record.keys.iter_mut().filter(|key| named(key, keys)) {
+    key.kept = false;
+    edits.push((key.key.clone(), Some(key.written.clone())));
+  }
+  let updated = edit_settings(&text, &edits)?;
+  if updated != text {
+    write_checked(&path, &text, &updated)?;
+  }
+  save(app_data_dir, &record)
+}
+
+/// Keeps the values the player set in game for `keys` (without the
+/// `setting.` prefix): applies leave them, and Turn off does too.
+pub fn keep_current(app_data_dir: &Path, keys: &[String]) -> Result<(), Error> {
+  let mut record = load(app_data_dir)?;
+  for key in record.keys.iter_mut().filter(|key| named(key, keys)) {
+    key.kept = true;
+  }
+  save(app_data_dir, &record)
+}
+
+fn named(key: &WrittenKey, names: &[String]) -> bool {
+  names
+    .iter()
+    .any(|name| key.key["setting.".len()..].eq_ignore_ascii_case(name))
+}
+
+/// Whether the settings belong in another file than the one we last wrote:
+/// the game reads a different video.txt now, or it only appeared since.
+pub fn out_of_place(app_data_dir: &Path, located: Option<&Path>) -> bool {
+  located.is_some_and(|located| {
+    load(app_data_dir).is_ok_and(|record| record.path.as_deref() != Some(located))
+  })
+}
+
 /// The saved copy of the player's own video.txt, if there is one.
 pub fn backup(app_data_dir: &Path) -> Option<VideoBackup> {
   load(app_data_dir).ok()?.backup
 }
 
+/// Makes the video.txt the game reads (`located`) the player's own, config
+/// values included: it becomes the saved copy Restore writes back, and the
+/// settings we wrote in it are forgotten, so Turn off and the next config's
+/// apply leave them alone.
+pub fn adopt(app_data_dir: &Path, located: Option<&Path>) -> Result<(), Error> {
+  let path = located
+    .ok_or_else(|| Error::PerformanceConfig("Deadlock hasn't created video.txt yet".into()))?;
+  let text = read(path)?;
+  let record = Record {
+    backup: Some(take_backup(app_data_dir, path, &text)?),
+    ..Record::default()
+  };
+  save(app_data_dir, &record)
+}
+
 /// Writes the saved copy back over the file it came from, exactly as it was,
 /// and forgets every key we wrote since.
 pub fn restore_backup(app_data_dir: &Path) -> Result<(), Error> {
-  let record = load(app_data_dir)?;
+  let mut record = load(app_data_dir)?;
   let backup = record
     .backup
+    .clone()
     .ok_or_else(|| Error::PerformanceConfig("There is no saved video.txt to restore".into()))?;
   let saved = fs::read(cache_dir(app_data_dir).join(BACKUP_FILE))?;
   let target = PathBuf::from(&backup.path);
+  // Keys written to another file since (the game moved to the Steam
+  // account's copy) go back too, or they would outlive the restore.
+  if record.path.as_deref() != Some(target.as_path()) {
+    revert_keys(&mut record)?;
+  }
   let expected = match fs::read(&target) {
     Ok(bytes) => bytes,
     Err(error) if error.kind() == ErrorKind::NotFound => Vec::new(),
@@ -225,7 +344,7 @@ fn revert_keys(record: &mut Record) -> Result<(), Error> {
   let current = setting_values(&text);
   let edits: Vec<(String, Option<String>)> = keys
     .into_iter()
-    .filter(|key| current.get(&key.key.to_ascii_lowercase()) == Some(&key.written))
+    .filter(|key| holds(&current, key))
     .map(|key| (key.key, key.original))
     .collect();
   let updated = edit_settings(&text, &edits)?;
@@ -247,6 +366,13 @@ fn take_backup(app_data_dir: &Path, path: &Path, text: &str) -> Result<VideoBack
 
 fn read(path: &Path) -> Result<String, Error> {
   Ok(String::from_utf8_lossy(&fs::read(path)?).into_owned())
+}
+
+/// Whether the file still holds the value we wrote for `key`.
+fn holds(current: &HashMap<String, String>, key: &WrittenKey) -> bool {
+  current
+    .get(&key.key.to_ascii_lowercase())
+    .is_some_and(|value| values_equal(value, &key.written))
 }
 
 /// `setting.*` values by lower-case key; the last line wins, as in the game.

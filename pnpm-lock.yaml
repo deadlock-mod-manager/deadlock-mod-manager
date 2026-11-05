@@ -499,6 +499,9 @@ importers:
       '@deadlock-mods/hero-parser':
         specifier: workspace:*
         version: link:../../packages/hero-parser
+      '@deadlock-mods/perf-catalog':
+        specifier: workspace:*
+        version: link:../../packages/perf-catalog
       '@deadlock-mods/plugin-sdk':
         specifier: workspace:*
         version: link:../../packages/plugin-sdk

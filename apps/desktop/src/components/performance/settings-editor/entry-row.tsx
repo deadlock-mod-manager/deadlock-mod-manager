@@ -146,7 +146,7 @@ const EntryRowComponent = ({
     <div
       className={cn(
         ENTRY_ROW_GRID,
-        "group/row relative scroll-mt-24 items-start border-border/40 border-b px-4 py-3 transition-colors last:border-b-0",
+        "relative scroll-mt-24 items-start border-border/40 border-b px-4 py-3 transition-colors last:border-b-0",
         highlighted && "bg-primary/10",
       )}
       id={entryDomId(entryKey)}>
@@ -186,7 +186,7 @@ const EntryRowComponent = ({
             )}
           </div>
           {help && (
-            <p className='line-clamp-1 text-muted-foreground text-xs leading-relaxed group-focus-within/row:line-clamp-none group-hover/row:line-clamp-none'>
+            <p className='text-muted-foreground text-xs leading-relaxed'>
               {help}
             </p>
           )}

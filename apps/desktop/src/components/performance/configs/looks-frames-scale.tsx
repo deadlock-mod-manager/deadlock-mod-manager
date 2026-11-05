@@ -198,7 +198,7 @@ export const LooksFramesScale = ({
             <button
               aria-pressed={selected}
               className={cn(
-                "flex min-w-0 items-center gap-2.5 rounded-md border px-3 py-2 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                "perf-tier flex min-w-0 items-center gap-2.5 rounded-md border px-3 py-2 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                 selected
                   ? "border-primary/70 bg-primary/10"
                   : "border-transparent bg-muted/20",
@@ -210,7 +210,13 @@ export const LooksFramesScale = ({
               onPointerEnter={() => setFocus({ kind: "tier", tier: info.id })}
               onPointerLeave={() => setFocus(null)}
               type='button'>
-              <TierIcon className='size-5' tier={info.id} />
+              {/* Picking a tier renders it again, outline first. */}
+              <TierIcon
+                className='size-5'
+                draw={selected}
+                key={selected ? "picked" : "idle"}
+                tier={info.id}
+              />
               <span className='min-w-0'>
                 <span className='block truncate font-medium text-sm'>
                   {t(`performance.tiers.${info.id}.label`)}

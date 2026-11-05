@@ -125,6 +125,33 @@ pub struct VideoBackup {
   pub taken_at: String,
 }
 
+/// The video.txt settings the mod manager wrote, as the file holds them now.
+/// The game rewrites the file whenever a graphics setting changes, and Steam
+/// Cloud can replace it, so ours don't always survive.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct VideoState {
+  /// Settings that still hold the value we wrote.
+  pub in_effect: u32,
+  /// Settings changed since we wrote them, kept ones included.
+  pub changed: Vec<VideoChange>,
+}
+
+/// A video.txt setting changed since the mod manager wrote it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct VideoChange {
+  /// The `setting.*` key without the prefix, as in [`VideoSetting`].
+  pub key: String,
+  pub written: String,
+  /// `None` when the line is gone.
+  pub current: Option<String>,
+  /// The player chose to keep their value.
+  pub kept: bool,
+}
+
 /// What happens to one entry when the config is applied.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, TS)]
 #[ts(export, rename_all = "camelCase")]
@@ -354,8 +381,7 @@ pub enum PerfTier {
   Potato,
 }
 
-/// One in-game video setting an author recommends. We never write video.txt;
-/// these are shown as a checklist.
+/// One video.txt setting from an author's config.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export, rename_all = "camelCase")]
 #[serde(rename_all = "camelCase")]
@@ -544,6 +570,8 @@ pub struct PerfStatus {
   pub build_id: Option<String>,
   /// The player's own video.txt, kept until they restore it.
   pub video_backup: Option<VideoBackup>,
+  /// How the video.txt settings written for the chosen config stand now.
+  pub video: VideoState,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]

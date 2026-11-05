@@ -19,11 +19,14 @@ export const VideoSettings = ({
   settings,
   variants = [],
   notes,
+  showBackup = true,
 }: {
   configId: string;
   settings: VideoSetting[];
   variants?: VideoVariant[];
   notes: string[];
+  /** Off where the page shows the saved-copy row itself. */
+  showBackup?: boolean;
 }) => {
   const { t } = useTranslation();
   const { writeVideo, videoVariant } = useStoredRequestOptions(configId);
@@ -86,7 +89,7 @@ export const VideoSettings = ({
         </div>
       )}
       {shown.length > 0 && (
-        <ul className='divide-y rounded-md border'>
+        <ul className='divide-y rounded-md border bg-card'>
           {shown.map((setting) => (
             <li className='flex items-center gap-3 px-3 py-2' key={setting.key}>
               <span
@@ -101,7 +104,7 @@ export const VideoSettings = ({
           ))}
         </ul>
       )}
-      <VideoBackupNotice />
+      {showBackup && <VideoBackupNotice />}
       {notes.map((note) => (
         <p
           className='flex items-start gap-1.5 text-muted-foreground text-xs'

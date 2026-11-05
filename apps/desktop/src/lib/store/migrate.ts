@@ -729,6 +729,17 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
       }
     },
   },
+  {
+    to: 44,
+    label: "perf-history-video-count",
+    apply: (state) => {
+      // History entries record how many video.txt settings an apply wrote.
+      if (!Array.isArray(state.perfHistory)) return;
+      for (const entry of state.perfHistory) {
+        if (isPlainObject(entry)) entry.videoCount ??= null;
+      }
+    },
+  },
 ];
 
 const LEGACY_GAMEBANANA_ID = /^[1-9]\d*$/;

@@ -51,7 +51,7 @@ import { CategoryRail } from "./category-rail";
 import { EditorHeader } from "./editor-header";
 import { ConvarNamesToggle, EditorToolbar } from "./editor-toolbar";
 import { useEditorDrafts } from "./editor-drafts-context";
-import { EngineSectionsNotice } from "./engine-sections-notice";
+import { EngineSectionsToggle } from "./engine-sections-toggle";
 import { EntryGroup } from "./entry-group";
 import { entryDomId } from "./entry-row";
 import { NoMatches } from "./no-matches";
@@ -225,9 +225,17 @@ export const ConfigEditor = ({
       id,
       token: (previous?.token ?? 0) + 1,
     }));
-    groupElements.current
-      .get(id)
-      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const element = groupElements.current.get(id);
+    if (!element) return;
+    element.scrollIntoView({ behavior: "smooth", block: "start" });
+    // Groups render as the page scrolls past them (content-visibility) and
+    // change height on the way, so the smooth scroll can overshoot; settle on
+    // the group once it ends.
+    document.addEventListener(
+      "scrollend",
+      () => element.scrollIntoView({ block: "start" }),
+      { capture: true, once: true },
+    );
   };
 
   const openAddSetting = (query: string) => {
@@ -322,16 +330,6 @@ export const ConfigEditor = ({
           onSelect={scrollToCategory}
         />
         <div className='min-w-0 space-y-4'>
-          {engineEntries.length > 0 && visibleGroups.length > 0 && (
-            <EngineSectionsNotice
-              count={engineEntries.length}
-              included={draft.includeEngineSections}
-              onIncludedChange={(include) =>
-                dispatch({ kind: "includeEngineSections", include })
-              }
-              sections={engineSections}
-            />
-          )}
           {visibleGroups.length === 0 ? (
             <NoMatches
               filter={filter}
@@ -370,6 +368,16 @@ export const ConfigEditor = ({
       <EditorHeader
         actions={
           <>
+            {engineEntries.length > 0 && (
+              <EngineSectionsToggle
+                count={engineEntries.length}
+                included={draft.includeEngineSections}
+                onIncludedChange={(include) =>
+                  dispatch({ kind: "includeEngineSections", include })
+                }
+                sections={engineSections}
+              />
+            )}
             <ConvarNamesToggle
               onShowKeysChange={setShowKeys}
               showKeys={showKeys}

@@ -137,10 +137,12 @@ export const ConfigsTab = () => {
         {items.length > 0 && (
           <ConfigToolbar
             counts={counts}
+            onClearTier={() => setTier(null)}
             onSortChange={setSort}
             onSourceChange={setSource}
             sort={sort}
             source={source}
+            tier={tier}
           />
         )}
 

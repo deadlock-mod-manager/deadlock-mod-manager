@@ -144,6 +144,36 @@ pub async fn perf_restore_video_backup(
   with_write_context(&app_handle, ops::restore_video_backup)
 }
 
+/// Writes the config's value back for video.txt settings changed in game.
+/// Guarded: Deadlock writes video.txt when it exits.
+#[tauri::command]
+pub async fn perf_video_use_config(
+  app_handle: AppHandle,
+  keys: Vec<String>,
+  guard_permit: Option<String>,
+) -> Result<PerfStatus, Error> {
+  crate::game_guard::ensure_game_idle_locked("perf_video_use_config", guard_permit.as_deref())?;
+  with_write_context(&app_handle, |ctx| ops::use_config_video(ctx, &keys))
+}
+
+/// Keeps the player's in-game value for video.txt settings changed in game.
+/// Only the app's record changes, so the game may be running.
+#[tauri::command]
+pub async fn perf_video_keep(
+  app_handle: AppHandle,
+  keys: Vec<String>,
+) -> Result<PerfStatus, Error> {
+  // The write lock keeps the record from racing an apply's.
+  with_write_context(&app_handle, |ctx| ops::keep_player_video(ctx, &keys))
+}
+
+/// Makes the current video.txt the player's own base. Only the app's files
+/// change, so the game may be running.
+#[tauri::command]
+pub async fn perf_video_adopt(app_handle: AppHandle) -> Result<PerfStatus, Error> {
+  with_write_context(&app_handle, ops::adopt_video)
+}
+
 /// Writes the chosen config back into gameinfo.gi after a game update or a
 /// reset removed it, or removes an overlay when no config is chosen.
 #[tauri::command]

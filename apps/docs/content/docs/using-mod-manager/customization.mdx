@@ -97,7 +97,7 @@ Open **Autoexec Config** from the sidebar or Settings to edit startup console co
 
 Performance configs are community `gameinfo.gi` tunings that trade visual detail for frame rate. The feature is experimental and off by default: enable **Performance Configs** under **Settings → Experimental**, then open **Performance** from the sidebar.
 
-The page has four tabs: **Configs**, **Settings editor**, **History** and **How it works**. The strip above them shows the applied config, how many settings it wrote, and any notice that needs you, such as a config lost after a game update with a **Re-apply now** button.
+The page has five tabs: **Configs**, **Config settings**, **Video settings**, **History** and **How it works**. The strip above them shows the applied config, how many settings it wrote, and any notice that needs you, such as a config lost after a game update with a **Re-apply now** button.
 
 1. Pick a config on the **Configs** tab. Curated presets, configs published on GameBanana and your own imports share one list, and the **Looks best ⟷ Runs fastest** scale above it filters them by how much they cut.
 2. Choose **Details** to see what a config changes, the video settings its author ships, and anything the game won't use.
@@ -114,14 +114,18 @@ What gets written:
 - Settings that Valve's convar list marks as not read from `gameinfo.gi`, or that aren't in that list at all, are still written as the author set them, and the config's details list them as ones Deadlock may ignore. The list comes from the newest game build the catalog knows.
 - Edits outside the ConVars block (SceneSystem, RenderSystem and other engine sections) are written as the config sets them. Deadlock's matchmaking error lists Engine2, MaterialSystem2, NetworkSystem, Particles, RenderSystem, SceneSystem and WorldRenderer as `gameinfo.gi` sections where it doesn't support some changes, so if Deadlock won't let you queue, turn off **Include engine-section edits** for that config.
 - Camera and visibility settings, such as field of view or outlines, and developer or hideout tools follow the config's author. You can turn each one off.
-- When the author ships a `video.txt`, its settings are written to the `video.txt` Deadlock reads (your Steam account's copy, or the game folder's before the game creates one), exactly as the author ships them. Your own file is saved the first time, and **Restore it** in the config's details puts it back. Turn off **Write to video.txt** for a config to keep your own video settings.
+- When the author ships a `video.txt`, its settings are written to the `video.txt` Deadlock reads (your Steam account's copy, or the game folder's before the game creates one), exactly as the author ships them. Your own file is saved the first time, and **Restore it** on the **Video settings** tab puts it back. Turn off **Write to video.txt** for a config to keep your own video settings.
 - SearchPaths is never changed.
 
-![Settings editor grouping a config's settings by category, with switches and the config's value next to the game default](/assets/v2-performance-editor.png)
+![Config settings grouping a config's settings by category, with switches and the config's value next to the game default](/assets/v2-performance-editor.png)
 
-Use **Settings editor** to change any value the config sets, turn individual settings off, or add another setting. It opens on **Differs from game**, the settings the config actually changes; **All** lists every line, including ones that already match the game. Settings are grouped by category, use a switch, slider, number or list depending on their type, and show the game's value under the control when it differs. **Won't apply** shows the settings the game ignores. Edits stay unsaved until you choose **Apply changes**, or **Discard** to drop them.
+Use **Config settings** to change any value the config sets, turn individual settings off, or add another setting. It opens on **Differs from game**, the settings the config actually changes; **All** lists every line, including ones that already match the game. Settings are grouped by category, use a switch, slider, number or list depending on their type, and show the game's value under the control when it differs. **Won't apply** shows the settings the game ignores. Edits stay unsaved until you choose **Apply changes**, or **Discard** to drop them.
 
-**History** lists the configs you applied or turned off, newest first, with **Apply again**. **Undo last change** goes back to the config you had before, or turns the config off if there wasn't one.
+**Video settings** lists the `video.txt` settings of the applied config. Deadlock rewrites `video.txt` whenever you change a graphics setting in game, so settings you change there show up under **Changed in game** with the config's value and yours. **Keep yours** keeps your value through later applies and **Turn off**; **Use** puts the config's value back. If Deadlock starts reading a different `video.txt` (the first launch after the September 29, 2026 update, or another Steam account), the manager writes the settings there the next time it starts or you switch back to its window.
+
+To keep one config's video settings while using another config, open **Video settings** while the first config is applied and choose **Make this my video.txt**. Your `video.txt` as it is then becomes the saved copy that **Restore it** and **Turn off** bring back, and that config stops writing to `video.txt`. Then apply the other config with **Write to video.txt** turned off.
+
+**History** lists the configs you applied or turned off, video settings changed in game, and restores of your own `video.txt`, newest first. Configs have **Apply again**; video settings changed in game have **Keep yours** and **Use the config's values** while the file still holds them. **Undo last change** goes back to the config you had before, or turns the config off if there wasn't one.
 
 ![Import dialog reviewing a pasted ConVars block: what will apply, camera settings from the author, and what won't apply](/assets/v2-performance-import.png)
 

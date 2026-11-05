@@ -518,12 +518,29 @@
   animation: perf-draw-fill 160ms ease-out 320ms forwards;
 }
 
+/* The potato tier blinks at whoever hovers it */
+@keyframes perf-blink {
+  45%,
+  55% {
+    transform: scaleY(0.1);
+  }
+}
+
+.perf-tier:hover [data-tier="potato"] > circle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: perf-blink 220ms ease-in-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .perf-draw > [pathLength],
   .perf-draw > :not([pathLength]) {
     animation: none;
     stroke-dashoffset: 0;
     opacity: 1;
+  }
+  .perf-tier:hover [data-tier="potato"] > circle {
+    animation: none;
   }
 }
 
