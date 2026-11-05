@@ -1,9 +1,11 @@
 import path from "node:path";
 import { $, browser, expect } from "@wdio/globals";
+import { z } from "zod";
 import {
   analysisCard,
+  PROFILE_PAGE,
   readLibraryIds,
-  RESTORE_METADATA_DELAY_MS,
+  RESTORE_METADATA_HOLD,
 } from "../support/analysis-library-status-fixtures";
 import { startApplication } from "../support/application";
 import { closeApplication } from "../support/application-exit";
@@ -19,8 +21,15 @@ import {
   waitForDisplayed,
   waitForOverlaysClosed,
 } from "../support/ui";
+import { assertOwnedWorld } from "../support/world";
 
 const INTERRUPTED = "restoring it was interrupted";
+
+const profilePageRequests = async (origin: string) =>
+  z
+    .object({ requests: z.array(z.object({ url: z.string() })) })
+    .parse(await (await fetch(`${origin}/__control/requests`)).json())
+    .requests.filter(({ url }) => url === PROFILE_PAGE).length;
 
 const startAnalysis = async () => {
   await navigate("my-mods");
@@ -60,20 +69,31 @@ describe("Analyze after an interrupted restore from DMM's records", () => {
       await waitForOverlaysClosed();
     });
 
+    const { configuration } = await assertOwnedWorld(world);
+    const origin = configuration.endpoints[0].origin;
     await step(
       "analyze, then switch profiles while restoring waits",
       async () => {
         await startAnalysis();
-        // Switching back to Alpha marks its library as changed, so the restore
-        // Analyze started for Alpha is dropped when its mod page arrives.
-        await activateProfile(BETA.name);
-        await activateProfile(ALPHA.name);
+        try {
+          await observeUntil(
+            "restoring never asked for the mod page",
+            () => profilePageRequests(origin),
+            (count) => count === 1,
+          );
+          // Switching back to Alpha marks its library as changed, so the
+          // restore Analyze started for Alpha is dropped when its page arrives.
+          await activateProfile(BETA.name);
+          await activateProfile(ALPHA.name);
+        } finally {
+          await fetch(`${origin}/__control/release/${RESTORE_METADATA_HOLD}`);
+        }
       },
     );
     await step("analysis reports the interrupted restore", async () => {
       const error = `//div[@role="dialog"]//*[contains(normalize-space(), "${INTERRUPTED}")]`;
       await browser.waitUntil(async () => (await $(error)).isDisplayed(), {
-        timeout: RESTORE_METADATA_DELAY_MS * 4,
+        timeout: 30_000,
         timeoutMsg: "Analysis never reported the interrupted restore",
       });
       const ids = await readLibraryIds(world, ALPHA.id);
@@ -104,7 +124,7 @@ describe("Analyze after an interrupted restore from DMM's records", () => {
         () => readLibraryIds(world, ALPHA.id),
         ({ active, profile }) =>
           active.includes(CATALOG_MOD_ID) && profile.includes(CATALOG_MOD_ID),
-        RESTORE_METADATA_DELAY_MS * 4,
+        30_000,
       );
     });
 

@@ -10,9 +10,9 @@ import { ALPHA, BETA, prepareInstalledProfiles } from "./profile-fixtures";
 import type { CreatedWorld } from "./world";
 
 const HASH_PATH = "/api/v2/vpk-analyse-hashes";
-const PROFILE_PAGE = `/apiv11/Mod/${CATALOG_MOD_ID}/ProfilePage`;
-/** Long enough to switch profiles away and back while restoring waits on it. */
-export const RESTORE_METADATA_DELAY_MS = 15_000;
+export const PROFILE_PAGE = `/apiv11/Mod/${CATALOG_MOD_ID}/ProfilePage`;
+/** Holds the restore's mod page until the spec has switched profiles. */
+export const RESTORE_METADATA_HOLD = "restore-metadata";
 
 /** Every analyzed file is identified as the catalog mod's `common.vpk`. */
 const matchedHashRoute: FixtureRoute = {
@@ -78,17 +78,23 @@ export const registrationFailureRoutes = async () => {
 };
 
 /**
- * Restoring the catalog mod from DMM's records waits on its mod page, which
- * leaves time to switch profiles before the restore lands.
+ * Restoring the catalog mod from DMM's records waits on its mod page. The
+ * first request for it is held, so the spec can switch profiles before the
+ * restore lands; the retry's request is answered at once.
  */
 export const interruptedRestoreRoutes = async () => {
   const catalogRoutes = await createCatalogRoutes("gamebanana-switch-restore");
-  return (origin: string): FixtureRoute[] => [
-    ...withRoute(catalogRoutes(origin), PROFILE_PAGE, {
-      headerDelayMs: RESTORE_METADATA_DELAY_MS,
-    }),
-    { method: "POST", path: HASH_PATH, status: 200, body: "[]" },
-  ];
+  return (origin: string): FixtureRoute[] => {
+    const routes = catalogRoutes(origin);
+    const page = routes.find((route) => route.path === PROFILE_PAGE);
+    if (!page) throw new Error("The catalog fixture has no mod page");
+    return [
+      ...withRoute(routes, PROFILE_PAGE, {
+        sequence: [{ ...page, holdUntilReleased: RESTORE_METADATA_HOLD }, page],
+      }),
+      { method: "POST", path: HASH_PATH, status: 200, body: "[]" },
+    ];
+  };
 };
 
 /** Alpha has the catalog mod installed as `pak01`; Beta is empty. */
