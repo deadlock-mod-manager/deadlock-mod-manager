@@ -316,7 +316,10 @@ it("holds a response until a spec releases it", async () => {
       answered = true;
       return value;
     });
-    await delay(200);
+    for (let i = 0; i < 50 && server.requests().length === 0; i++)
+      await delay(20);
+    await delay(100);
+    expect(server.requests()).toHaveLength(1);
     expect(answered).toBe(false);
     await fetch(`${server.origin}/__control/release/gate`);
     expect((await response).status).toBe(200);
