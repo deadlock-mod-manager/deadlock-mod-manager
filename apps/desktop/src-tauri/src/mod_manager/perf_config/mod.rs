@@ -16,6 +16,7 @@
 //! - [`resolve`]: config + overrides + rules → what gets written and why.
 //! - [`patch`]: marker grammar; strip and apply overlays; other tools' overlays.
 //! - [`store`]: the persisted desired overlay.
+//! - [`video`]: the author's video.txt settings, with a backup of the player's own.
 //! - [`ops`]: status / apply / remove / re-apply on top of the above.
 //! - [`formats`], [`analyze`], [`staging`], [`share`]: importing configs and
 //!   exporting share codes.
@@ -31,6 +32,7 @@ pub mod share;
 pub mod staging;
 pub mod store;
 pub mod types;
+pub mod video;
 
 use std::path::{Path, PathBuf};
 

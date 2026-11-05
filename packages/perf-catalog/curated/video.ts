@@ -1,9 +1,11 @@
 /**
  * In-game video menu options, as Deadlock words them
  * (`panorama/layout/popups/popup_settings.xml` + `citadel_main_english.txt`).
- * Only these keys are taken from an author's video.txt: resolution, monitor,
- * window mode, device ids and the keys the menu doesn't expose are left out.
+ * These get a label and a readable value; every other `setting.*` key in an
+ * author's video.txt is kept too and written as shipped.
  */
+import { normalizeValue } from "../scripts/lib/kv";
+
 export interface VideoMenuOption {
   label: string;
   /** Menu value (normalized) to the text the menu shows. */
@@ -89,3 +91,19 @@ export const VIDEO_MENU = new Map(
     r_fullscreen_gamma: { label: "Full Screen Brightness" },
   }),
 );
+
+/** A value as the menu shows it, or `null` when the menu can't show it. */
+export const videoDisplay = (
+  option: VideoMenuOption,
+  value: string,
+): string | null => {
+  const normalized = normalizeValue(value);
+  if (option.values) return option.values[normalized] ?? null;
+  if (option.bool)
+    return normalized === "1" ? "On" : normalized === "0" ? "Off" : null;
+  const number = Number(value);
+  if (!Number.isFinite(number)) return null;
+  if (option.range && (number < option.range[0] || number > option.range[1]))
+    return null;
+  return option.percent ? `${Math.round(number * 100)}%` : String(number);
+};

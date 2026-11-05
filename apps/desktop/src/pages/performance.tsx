@@ -22,10 +22,13 @@ import {
   usePerformanceUi,
 } from "@/components/performance/performance-context";
 import { SettingsEditorTab } from "@/components/performance/settings-editor/settings-editor-tab";
+import { VideoTab } from "@/components/performance/video-tab";
+import { useLogVideoChanges } from "@/hooks/performance/use-log-video-changes";
 
 const PerformancePage = () => {
   const { t } = useTranslation();
   const { tab, setTab } = usePerformanceUi();
+  useLogVideoChanges();
   // The editor is costly to mount, so once opened it stays mounted (hidden)
   // across tab switches.
   const [editorOpened, setEditorOpened] = useState(tab === "editor");
@@ -49,6 +52,7 @@ const PerformancePage = () => {
           <TabsTrigger value='editor'>
             {t("performance.tabs.editor")}
           </TabsTrigger>
+          <TabsTrigger value='video'>{t("performance.tabs.video")}</TabsTrigger>
           <TabsTrigger value='history'>
             {t("performance.tabs.history")}
           </TabsTrigger>
@@ -64,6 +68,9 @@ const PerformancePage = () => {
           forceMount={editorOpened || undefined}
           value='editor'>
           <SettingsEditorTab />
+        </TabsContent>
+        <TabsContent className='mt-5' value='video'>
+          <VideoTab />
         </TabsContent>
         <TabsContent className='mt-5' value='history'>
           <HistoryTab />

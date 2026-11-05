@@ -1,9 +1,9 @@
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Button } from "@deadlock-mods/ui/components/button";
 import {
-  ClockCounterClockwiseIcon,
   DownloadSimpleIcon,
   GlobeIcon,
+  SlidersHorizontalIcon,
 } from "@phosphor-icons/react";
 import { formatDistanceToNow } from "date-fns";
 import { useTranslation } from "react-i18next";
@@ -12,52 +12,17 @@ import {
   gameBananaImportSource,
 } from "@/lib/performance/config-list";
 import { formatCompact } from "@/lib/stats/format";
-import type { CommunityConfigSummary } from "@/types/generated/CommunityConfigSummary";
 import { usePerformanceUi } from "../performance-context";
 import { ApplyConfigButton } from "./apply-config-button";
+import { OutdatedPatchMark } from "./outdated-patch-mark";
 import {
   CardFooter,
-  Chip,
+  CardHeader,
   ConfigCardShell,
+  MetaItem,
+  MetaRow,
   TierLabel,
-  TierMeter,
 } from "./card-parts";
-
-/** "Made for the April patch" when the config predates the newest build we know. */
-export const OutdatedPatchChip = ({
-  community,
-  latestBuild,
-}: {
-  community: CommunityConfigSummary;
-  latestBuild: number | null;
-}) => {
-  const { t, i18n } = useTranslation();
-  if (
-    community.baseBuild === null ||
-    latestBuild === null ||
-    community.baseBuild >= latestBuild
-  ) {
-    return null;
-  }
-  return (
-    <Chip
-      icon={<ClockCounterClockwiseIcon aria-hidden />}
-      tone='warning'
-      tooltip={t("performance.configs.outdatedHint", {
-        build: community.baseBuild,
-        latest: latestBuild,
-      })}>
-      {community.updatedAt
-        ? t("performance.configs.updatedIn", {
-            month: new Date(community.updatedAt).toLocaleDateString(
-              i18n.language,
-              { month: "short", year: "numeric" },
-            ),
-          })
-        : t("performance.configs.madeForOlderBuild")}
-    </Chip>
-  );
-};
 
 export const CommunityCard = ({
   item,
@@ -71,20 +36,41 @@ export const CommunityCard = ({
   const { t } = useTranslation();
   const { openDetails, openImport } = usePerformanceUi();
   const { community, imported } = item;
+  const sourceName = t("performance.configs.sources.gamebanana");
 
   return (
-    <ConfigCardShell active={active}>
-      <div className='flex items-center justify-between gap-2'>
-        <div className='flex min-w-0 items-center gap-2'>
-          <TierLabel tier={community.tier} />
-          {imported && (
-            <Badge className='px-1.5 py-0 text-[11px]' variant='secondary'>
-              {t("performance.configs.imported")}
-            </Badge>
-          )}
-        </div>
-        <TierMeter tier={community.tier} />
-      </div>
+    <ConfigCardShell active={active} configId={item.configId}>
+      <CardHeader
+        label={
+          <>
+            <TierLabel tier={community.tier} />
+            {imported && (
+              <Badge className='px-1.5 py-0 text-[11px]' variant='secondary'>
+                {t("performance.configs.imported")}
+              </Badge>
+            )}
+          </>
+        }
+        provenance={
+          <>
+            <GlobeIcon aria-hidden />
+            {community.updatedAt ? (
+              <>
+                <span className='sr-only'>{sourceName}</span>
+                {formatDistanceToNow(new Date(community.updatedAt), {
+                  addSuffix: true,
+                })}
+              </>
+            ) : (
+              sourceName
+            )}
+            <OutdatedPatchMark
+              community={community}
+              latestBuild={latestBuild}
+            />
+          </>
+        }
+      />
       <div className='min-w-0'>
         <h3 className='truncate font-semibold text-base' title={community.name}>
           {community.name}
@@ -96,36 +82,22 @@ export const CommunityCard = ({
       <p className='line-clamp-2 text-muted-foreground text-sm'>
         {community.blurb}
       </p>
-      <div className='flex flex-wrap gap-1.5'>
-        <Chip icon={<DownloadSimpleIcon aria-hidden />}>
+      <MetaRow>
+        <MetaItem icon={<DownloadSimpleIcon aria-hidden />}>
           {t("performance.configs.downloads", {
             count: community.downloads,
             formatted: formatCompact(community.downloads),
           })}
-        </Chip>
+        </MetaItem>
         {community.settingsCount > 0 && (
-          <Chip>
+          <MetaItem icon={<SlidersHorizontalIcon aria-hidden />}>
             {t("performance.configs.settingsCount", {
               count: community.settingsCount,
             })}
-          </Chip>
+          </MetaItem>
         )}
-        <OutdatedPatchChip community={community} latestBuild={latestBuild} />
-      </div>
-      <CardFooter
-        source={
-          <>
-            <GlobeIcon aria-hidden />
-            {community.updatedAt
-              ? t("performance.configs.sourceWithTime", {
-                  source: t("performance.configs.sources.gamebanana"),
-                  time: formatDistanceToNow(new Date(community.updatedAt), {
-                    addSuffix: true,
-                  }),
-                })
-              : t("performance.configs.sources.gamebanana")}
-          </>
-        }>
+      </MetaRow>
+      <CardFooter>
         <Button
           onClick={() => openDetails(imported ? imported.id : item.configId)}
           size='sm'

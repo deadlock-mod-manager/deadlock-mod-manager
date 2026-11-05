@@ -16,6 +16,7 @@ export type { FoundryModel } from "./generated/FoundryModel";
 export type { FoundryPaintPart } from "./generated/FoundryPaintPart";
 export type { FoundryPaintResult } from "./generated/FoundryPaintResult";
 export type { FoundryPaintTargetInfo } from "./generated/FoundryPaintTargetInfo";
+export type { FoundryRemovedParts } from "./generated/FoundryRemovedParts";
 export type { FoundryReplacementResult } from "./generated/FoundryReplacementResult";
 export type { FoundrySoundGroup } from "./generated/FoundrySoundGroup";
 export type { FoundrySoundGroupKind } from "./generated/FoundrySoundGroupKind";

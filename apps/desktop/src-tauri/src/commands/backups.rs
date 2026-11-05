@@ -13,6 +13,7 @@ use super::state::MANAGER;
 #[derive(Debug, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RestoredBackup {
+  source_provenance: Vec<crate::providers::native_sources::NativeSourceBackupEntry>,
   profile_folder: Option<String>,
   mods: Vec<InstalledModInfo>,
 }
@@ -77,10 +78,13 @@ pub async fn restore_addons_backup(
     if !backup_path.exists() {
       return Err(Error::BackupNotFound);
     }
+    let source_provenance =
+      crate::mod_manager::manager::update_backup::update_backup_source_provenance(&backup_path)?;
     let (profile_folder, restored) = mod_manager
       .restore_update_backup(&backup_path)
       .inspect_err(|e| log::error!("Failed to restore update backup '{file_name}': {e}"))?;
     return Ok(RestoredBackup {
+      source_provenance,
       profile_folder,
       mods: restored
         .into_iter()

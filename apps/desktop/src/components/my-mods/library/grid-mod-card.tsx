@@ -1,3 +1,5 @@
+import { LocalModThumbnail } from "@/components/mod-management/local-mod-thumbnail";
+import { needsLocalThumbnail } from "@/lib/mods/local-preview-image";
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Button } from "@deadlock-mods/ui/components/button";
 import {
@@ -101,6 +103,15 @@ export const GridModCard = memo(function GridModCard({
                 onPlayClick={(e) => e.stopPropagation()}
                 variant='default'
               />
+            ) : needsLocalThumbnail(mod) ? (
+              <NSFWBlur
+                blurStrength={nsfwSettings.blurStrength}
+                className='h-48 w-full overflow-hidden rounded-t-xl'
+                disableBlur={nsfwSettings.disableBlur}
+                isNSFW={shouldBlur}
+                onToggleVisibility={handleNSFWToggle}>
+                <LocalModThumbnail mod={mod} />
+              </NSFWBlur>
             ) : mod.images && mod.images.length > 0 ? (
               <NSFWBlur
                 blurStrength={nsfwSettings.blurStrength}

@@ -36,6 +36,8 @@ import { DateDisplay } from "../date-display";
 import { AuthorStat } from "./author-stat";
 import { HeroOverridePicker } from "./hero-override-picker";
 import { HeroSourceBadge } from "./hero-source-badge";
+import { ModSourceIcon } from "@/components/shared/mod-source-icon";
+import { isNativeSourceMod, useNativeSourceContext } from "@/lib/mod-sources";
 
 interface ModInfoProps {
   mod: ModDto;
@@ -56,8 +58,10 @@ export const ModInfo = ({
   collection,
 }: ModInfoProps) => {
   const { t } = useTranslation();
+  const native = isNativeSourceMod(mod.remoteId);
+  const nativeContext = useNativeSourceContext(mod.remoteId);
   const navigate = useNavigate();
-  const showHeader = hasHero ? false : !mod.isAudio;
+  const showHeader = !hasHero && !(mod.isAudio && mod.audioUrl);
   const localMod = usePersistedStore((state) =>
     findLocalMod(state.localMods, mod.remoteId),
   );
@@ -66,7 +70,8 @@ export const ModInfo = ({
   const showHeroStat = resolvedHero.hero !== null || localMod !== undefined;
   const hasTags = mod.tags && mod.tags.length > 0;
   const hasFileInfo = activeArchiveNames.size > 0 && totalDownloads > 1;
-  const statCount = (showHeroStat ? 1 : 0) + 3 + (hasFileInfo ? 1 : 0);
+  const statCount =
+    (showHeroStat ? 1 : 0) + (native ? 1 : 3) + (hasFileInfo ? 1 : 0);
   const gridCols =
     statCount <= 3
       ? "grid grid-cols-1 gap-3 sm:grid-cols-3"
@@ -109,27 +114,51 @@ export const ModInfo = ({
               <PrimaryStat
                 icon={<User className='h-4 w-4' />}
                 label={t("modDetail.authorLabel")}
-                value={mod.author}
+                value={
+                  <span className='inline-flex max-w-full items-center gap-1.5'>
+                    <span className='truncate'>{mod.author}</span>
+                    <ModSourceIcon
+                      source={
+                        localMod?.source ??
+                        (nativeContext.data
+                          ? {
+                              sourceName:
+                                nativeContext.data.source.descriptor.name,
+                              acceptedOrigin:
+                                nativeContext.data.source.acceptedOrigin,
+                              iconUrl:
+                                nativeContext.data.source.descriptor.iconUrl,
+                            }
+                          : undefined)
+                      }
+                      local={mod.remoteId.startsWith("local-")}
+                    />
+                  </span>
+                }
               />
             )}
-            <PrimaryStat
-              icon={<Download className='h-4 w-4' />}
-              label={t("modDetail.downloadsLabel")}
-              value={
-                <span className='font-mono tabular-nums'>
-                  {formatNumber(mod.downloadCount)}
-                </span>
-              }
-            />
-            <PrimaryStat
-              icon={<Heart className='h-4 w-4' />}
-              label={t("modDetail.likesLabel")}
-              value={
-                <span className='font-mono tabular-nums'>
-                  {formatNumber(mod.likes)}
-                </span>
-              }
-            />
+            {!native && (
+              <PrimaryStat
+                icon={<Download className='h-4 w-4' />}
+                label={t("modDetail.downloadsLabel")}
+                value={
+                  <span className='font-mono tabular-nums'>
+                    {formatNumber(mod.downloadCount)}
+                  </span>
+                }
+              />
+            )}
+            {!native && (
+              <PrimaryStat
+                icon={<Heart className='h-4 w-4' />}
+                label={t("modDetail.likesLabel")}
+                value={
+                  <span className='font-mono tabular-nums'>
+                    {formatNumber(mod.likes)}
+                  </span>
+                }
+              />
+            )}
             {hasFileInfo && (
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -170,16 +199,20 @@ export const ModInfo = ({
           <Separator />
 
           <div className='grid auto-cols-fr grid-flow-col gap-3'>
-            <TimelineItem
-              icon={<CalendarPlus className='h-3.5 w-3.5' />}
-              label={t("modDetail.publishedAt")}
-              date={mod.remoteAddedAt}
-            />
-            <TimelineItem
-              icon={<Calendar className='h-3.5 w-3.5' />}
-              label={t("modDetail.lastModifiedAt")}
-              date={mod.remoteUpdatedAt}
-            />
+            {!native && (
+              <TimelineItem
+                icon={<CalendarPlus className='h-3.5 w-3.5' />}
+                label={t("modDetail.publishedAt")}
+                date={mod.remoteAddedAt}
+              />
+            )}
+            {(!native || !!nativeContext.data?.listing.updatedAt) && (
+              <TimelineItem
+                icon={<Calendar className='h-3.5 w-3.5' />}
+                label={t("modDetail.lastModifiedAt")}
+                date={mod.remoteUpdatedAt}
+              />
+            )}
             {localMod?.downloadedAt != null && (
               <TimelineItem
                 icon={<Download className='h-3.5 w-3.5' />}

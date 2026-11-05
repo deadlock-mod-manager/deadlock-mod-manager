@@ -36,9 +36,6 @@ const ATTENTION_STATUSES: ReadonlySet<EntryStatus> = new Set([
 
 /** Never written whatever the user does, so the row is read-only. */
 const INERT_STATUSES: ReadonlySet<EntryStatus> = new Set([
-  "blocked",
-  "removed",
-  "notConvar",
   "excluded",
   "denied",
   "unsupported",

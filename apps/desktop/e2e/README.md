@@ -65,6 +65,22 @@ current. Both run in the Windows and Linux E2E matrices with no host update.
 
 `deep-link-other-file` installs `base.zip` from a GameBanana 1-click link, then sends a link for the same mod's `effects.zip`. The second link must add `effects.vpk` beside `base.vpk` in the author's order, and a repeat link for `base.zip` must only report it as already installed. Each archive downloads exactly once. E2E builds skip the OS deep-link plugin, so the case emits `deep-link-received` through Tauri's event IPC, the event the Rust handler emits after validating a link.
 
+The `performance` family starts from Valve's stock `gameinfo.gi` (build 2026-09-29) and a player `video.txt` in the game folder's `cfg`, with CRLF line endings, a header and a setting the presets overwrite. The `gameinfo.gi` cases check one convar the first preset sets and the stock file doesn't:
+
+- `perf-gameinfo-resync`: after a game update writes Valve's file back with a line the player added by hand, window focus writes the config back and the hand-added line stays.
+- `perf-gameinfo-launch`: with the config gone from the file, Launch without mods writes it back before the launch is recorded.
+- `perf-editor-undo`: a value changed in Config settings and applied lands in the file, and Undo puts the preset's value back.
+- `perf-import-paste`: a pasted ConVars block, reviewed, named and saved with Save and apply, is written and listed under Yours.
+
+The `video.txt` cases apply presets that ship one. Every case first checks that the preset's values land, the header and the settings no config writes stay, and the saved copy matches the player's file byte for byte:
+
+- `perf-video-apply-restore`: a second preset replaces the first, settings only the first wrote go back to the player's values, and the saved copy is still the file from before the first config. Restore it writes that file back exactly and drops the copy.
+- `perf-video-changed-in-game`: a setting rewritten outside the app shows under Changed in game after a window focus. Keep yours marks it kept and leaves the file alone; Use writes the config's value back and confirms the file matches again. History lists the change, the keep and the revert, and Turn off restores the player's file exactly.
+- `perf-video-variant`: a preset with two video.txt files writes the first by default and the other once it is picked and applied; turning Write to video.txt off and applying gives the player's file back exactly.
+- `perf-video-adopt`: Make this my video.txt makes the file the config wrote the saved copy. Turn off and Restore it both leave those values in place.
+
+Each case checks the file again after a normal close.
+
 `network-diagnostics` runs Settings → Tools → Diagnose connection with every service on the fixture origin, including Cloudflare's trace probes through the `connectivity` endpoint, so every check except TCP auto-tuning must pass. On Windows the world injects a `Disabled` TCP auto-tuning level instead of reading the host's, and the row must warn and show the command to turn it back on; on Linux that row must not exist. `network-diagnostics-internet-down` cuts every trace probe off before it gets a response, and the internet row must name the host it couldn't reach.
 
 `catalog-refresh` checks that manual refresh finds a new sound during the automatic sync cooldown, disables duplicate clicks while syncing, preserves saved entries, and fetches no unchanged details on a repeated refresh. Its network assertions require only the latest index pages and one new sound hydration.

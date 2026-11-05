@@ -102,6 +102,8 @@ test("blocked parents retain healthy children and release shared render resource
           (path) => ({
             path,
             dataUrl: "data:image/png;base64,",
+            width: 1,
+            height: 1,
             sequences: [],
           }),
         ),
@@ -133,10 +135,10 @@ test("blocked parents retain healthy children and release shared render resource
     mesh.material.addEventListener("dispose", () => {
       materialDisposals += 1;
     });
-    effect.update(0);
+    effect.prepare?.();
     expect(mesh.geometry.instanceCount).toBe(1);
     effect.reset();
-    effect.update(0);
+    effect.prepare?.();
     expect(mesh.geometry.instanceCount).toBe(1);
     effect.dispose();
     effect.dispose();
@@ -211,6 +213,8 @@ test("late texture completions release images and failures cannot notify a dispo
           {
             path: "used.vtex",
             dataUrl: "data:image/png;base64,",
+            width: 1,
+            height: 1,
             sequences: [],
           },
         ],
@@ -254,7 +258,7 @@ const attachmentDrivers = (name: string) => ({
   ],
 });
 
-test("missing root drivers skip only their shared tree while valid attachments still position particles", () => {
+test("missing drivers skip their own system while children keep independent valid attachments", () => {
   const scene = new THREE.Scene();
   const model = new THREE.Group();
   const bone = new THREE.Bone();
@@ -301,8 +305,8 @@ test("missing root drivers skip only their shared tree while valid attachments s
   if (!effect) throw new Error("Expected an effect");
   try {
     expect(codes).toEqual(["missing-attachment"]);
-    expect(scene.children[0].children).toHaveLength(1);
-    effect.update(0);
+    expect(scene.children[0].children).toHaveLength(2);
+    effect.prepare?.();
     const mesh = scene.children[0].children[0];
     if (!(mesh instanceof THREE.Mesh)) throw new Error("Expected a sprite");
     const position = mesh.geometry.getAttribute("iPosition");

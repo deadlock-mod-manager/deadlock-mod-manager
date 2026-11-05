@@ -7,7 +7,9 @@ use crate::mod_manager::perf_config::catalog::cache_dir;
 use crate::mod_manager::perf_config::patch::test_support::{
   CURRENT_STOCK, OPTILOCK, fixture, test_catalog,
 };
-use crate::mod_manager::perf_config::types::{ForeignTool, PerfConfigDefinition, PerfConfigSource};
+use crate::mod_manager::perf_config::types::{
+  ForeignTool, PerfConfigDefinition, PerfConfigSource, VideoOutcome,
+};
 
 struct Setup {
   _game_dir: TempDir,
@@ -39,6 +41,7 @@ impl Setup {
       app_data_dir: &self.data_path,
       catalog: &self.catalog,
       build_id: Some("6711".to_string()),
+      video_path: None,
     }
   }
 
@@ -58,6 +61,8 @@ fn preset_request(id: &str) -> PerfApplyRequest {
     source: PerfConfigSource::Preset { id: id.to_string() },
     overrides: Vec::new(),
     include_engine_sections: false,
+    write_video: true,
+    video_variant: None,
   }
 }
 
@@ -180,7 +185,7 @@ fn a_failed_write_puts_the_previous_choice_back() {
     rev: "ffffffffffff".to_string(),
     ..first.clone()
   };
-  let failing = || Err(Error::PerformanceConfig("write failed".into()));
+  let failing = || Err::<(), _>(Error::PerformanceConfig("write failed".into()));
 
   save_choice_then(&setup.data_path, &second, failing).expect_err("write fails");
   assert_eq!(store::load(&setup.data_path), Some(first));
@@ -466,10 +471,13 @@ fn unmanaged_changes_count_until_a_config_covers_them() {
         id: "mine".to_string(),
         name: "My gameinfo.gi".to_string(),
         entries,
+        video_settings: Vec::new(),
       },
     },
     overrides: Vec::new(),
     include_engine_sections: true,
+    write_video: true,
+    video_variant: None,
   };
   let applied = apply(&setup.ctx(), request, false).expect("apply");
   assert_eq!(applied.status.unmanaged_changes, 0);
@@ -509,4 +517,61 @@ fn writes_refuse_a_file_that_changed_since_it_was_read() {
     .expect("list")
     .count();
   assert_eq!(leftovers, 1);
+}
+
+/// Deadlock writes the Steam account's video.txt on its first launch after
+/// an update, and reads that one from then on: a sync with gameinfo.gi
+/// already in place still writes the video settings there.
+#[test]
+fn sync_writes_video_settings_to_a_video_txt_that_appeared_since() {
+  let setup = Setup::new(&fixture(CURRENT_STOCK));
+  let request = PerfApplyRequest {
+    config_id: "user:video".to_string(),
+    name: "Video".to_string(),
+    source: PerfConfigSource::Inline {
+      definition: PerfConfigDefinition {
+        id: "video".to_string(),
+        name: "Video".to_string(),
+        entries: Vec::new(),
+        video_settings: vec![VideoSetting {
+          key: "r_citadel_shadow_quality".to_string(),
+          value: "0".to_string(),
+          label: None,
+          display: None,
+        }],
+      },
+    },
+    overrides: Vec::new(),
+    include_engine_sections: false,
+    write_video: true,
+    video_variant: None,
+  };
+  let applied = apply(&setup.ctx(), request, false).expect("apply");
+  assert_eq!(applied.video, VideoOutcome::FileMissing);
+
+  let video_path = setup.game_path.join("video.txt");
+  fs::write(
+    &video_path,
+    "\"video.cfg\"\n{\n\t\"setting.r_citadel_shadow_quality\"\t\t\"3\"\n}\n",
+  )
+  .expect("video.txt");
+  let ctx = PerfContext {
+    video_path: Some(video_path.clone()),
+    ..setup.ctx()
+  };
+  assert_eq!(
+    reapply_desired(&ctx, HandEdits::Keep),
+    ReapplyOutcome::Applied
+  );
+  assert!(
+    fs::read_to_string(&video_path)
+      .expect("video.txt")
+      .contains("_quality\"\t\t\"0\"")
+  );
+  let video = status(&ctx).expect("status").video;
+  assert_eq!((video.in_effect, video.changed.len()), (1, 0));
+  assert_eq!(
+    reapply_desired(&ctx, HandEdits::Keep),
+    ReapplyOutcome::AlreadyInSync
+  );
 }
