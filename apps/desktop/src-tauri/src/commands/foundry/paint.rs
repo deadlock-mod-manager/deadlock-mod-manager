@@ -17,7 +17,7 @@ use crate::errors::Error;
 
 use super::hero::{panorama_codenames, sound_codename_for_hero};
 use super::types::{FoundryPaintPart, FoundryPaintResult, FoundryPaintTargetInfo, PaintTarget};
-use super::workspace::{safe_entry_relative, workspace_files_dir};
+use super::workspace::{base_archive, extract_either, workspace_files_dir, write_workspace_entry};
 use crate::vpk_archive_cache::open_archive;
 
 /// Path tokens that mark a material as belonging to a weapon.
@@ -350,34 +350,6 @@ fn part_label(material: &str, hero_terms: &[String]) -> String {
   })
 }
 
-/// Read an entry from the skin, falling back to the base game: a skin often
-/// ships only the textures it changes, while the model and materials it
-/// paints over stay in `pak01`.
-fn extract_either(
-  skin: &source2_model::vpk_extract::VpkArchive,
-  base: Option<&source2_model::vpk_extract::VpkArchive>,
-  entry_path: &str,
-) -> Result<Vec<u8>, Error> {
-  skin
-    .extract_entry(entry_path)
-    .or_else(|error| match base {
-      Some(base) => base.extract_entry(entry_path),
-      None => Err(error),
-    })
-    .map_err(|e| Error::InvalidInput(format!("{e}")))
-}
-
-fn base_archive() -> Option<std::sync::Arc<source2_model::vpk_extract::VpkArchive>> {
-  match super::staging::staged_base_game_vpk() {
-    Ok(Some(path)) => open_archive(&path, None).ok(),
-    Ok(None) => None,
-    Err(error) => {
-      log::warn!("[Foundry] No base pak for paint parts: {error}");
-      None
-    }
-  }
-}
-
 /// The paintable sections of one model, in the order the model draws them.
 ///
 /// Materials come from the model's default look (LOD0, default body groups),
@@ -536,15 +508,6 @@ pub(crate) fn paint_parts(
     painted_paths: painted,
     skipped_paths: skipped,
   })
-}
-
-fn write_workspace_entry(files_dir: &Path, entry_path: &str, bytes: &[u8]) -> Result<(), Error> {
-  let target_path = files_dir.join(safe_entry_relative(entry_path)?);
-  if let Some(parent) = target_path.parent() {
-    std::fs::create_dir_all(parent)?;
-  }
-  std::fs::write(target_path, bytes)?;
-  Ok(())
 }
 
 /// Recolor a texture, lay a pattern over it, or both — in one decode/encode pass.

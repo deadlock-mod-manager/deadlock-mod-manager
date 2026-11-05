@@ -43,6 +43,7 @@ import useUninstall from "@/hooks/use-uninstall";
 import logger from "@/lib/logger";
 import { resolveLocalModHero } from "@/lib/mods/hero-resolution";
 import { usePersistedStore } from "@/lib/store";
+import { nativeModDownloads } from "@/lib/mod-sources";
 import { findLocalMod } from "@/lib/store/selectors";
 import { cn } from "@/lib/utils";
 import { type LocalMod, ModStatus } from "@/types/mods";
@@ -161,6 +162,9 @@ const InstallModButton = ({
     closeDialog,
     localMod,
     isDialogOpen,
+    nativeSelection,
+    confirmNativeSelection,
+    cancelNativeSelection,
   } = useDownload(remoteMod, availableFiles, analyticsEntryPoint);
   const {
     performInstall,
@@ -447,7 +451,11 @@ const InstallModButton = ({
           <TooltipTrigger asChild>
             <Button
               aria-label={tooltip}
-              disabled={isActionInProgress || isAnalyzing}
+              disabled={
+                isActionInProgress ||
+                isAnalyzing ||
+                (!localMod && remoteMod?.downloadable === false)
+              }
               icon={
                 showProgressRing ? (
                   <DownloadProgressRing percentage={progressPercent} />
@@ -472,6 +480,22 @@ const InstallModButton = ({
       )}
 
       <div className='contents' onClick={(e) => e.stopPropagation()}>
+        {nativeSelection?.listing.release && (
+          <MultiFileDownloadDialog
+            components={{
+              installation: nativeSelection.listing.release.installation,
+              selectedComponentIds: localMod?.source?.componentIds,
+              onConfirm: confirmNativeSelection,
+            }}
+            files={nativeModDownloads(
+              nativeSelection.source,
+              nativeSelection.listing,
+            )}
+            isOpen
+            modName={nativeSelection.listing.title}
+            onClose={cancelNativeSelection}
+          />
+        )}
         {fileSelectorOpened && (
           <FileSelectorDialog
             fileTree={currentFileTree}

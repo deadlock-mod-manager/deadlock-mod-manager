@@ -15,7 +15,12 @@ const FOV = ["ConVars", "citadel_camera_hero_fov"];
 const draft = (
   overrides: EntryOverride[] = [],
   includeEngineSections = false,
-): EditorDraft => ({ overrides, includeEngineSections });
+): EditorDraft => ({
+  overrides,
+  includeEngineSections,
+  writeVideo: true,
+  videoVariant: null,
+});
 
 describe("applyDraftAction", () => {
   test("adds, replaces and removes one override per path", () => {

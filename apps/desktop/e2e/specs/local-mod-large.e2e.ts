@@ -141,6 +141,8 @@ describe("large local mod import", () => {
     await add.waitForClickable();
     await add.click();
 
+    // Manifest recovery can add a placeholder before metadata and cleanup finish.
+    await dialog.waitForDisplayed({ reverse: true, timeout: 240_000 });
     const state = await observeUntil(
       "Large mod was not added",
       () => readLifecycleState(world),

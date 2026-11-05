@@ -273,6 +273,22 @@ pub(crate) fn drawcalls_from_mesh_data(mesh_data: &KvValue) -> Vec<DrawCall> {
     drawcalls
 }
 
+/// Whether every draw call of a mesh has an explicit index count of zero: a
+/// part the Foundry removed from the game. Such a mesh draws nothing in game,
+/// so the preview must skip it rather than fall back to its whole index buffer.
+pub(crate) fn drawcalls_all_emptied(mesh_data: &KvValue) -> bool {
+    let counts = mesh_data
+        .get("m_sceneObjects")
+        .and_then(KvValue::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(|scene_object| scene_object.get("m_drawCalls").and_then(KvValue::as_array))
+        .flatten()
+        .map(|drawcall| kv_usize(drawcall, "m_nIndexCount"))
+        .collect::<Vec<_>>();
+    !counts.is_empty() && counts.iter().all(|count| *count == Some(0))
+}
+
 pub(crate) fn material_paths_from_mesh_data(mesh_data: &KvValue, out: &mut Vec<String>) {
     for drawcall in drawcalls_from_mesh_data(mesh_data) {
         if let Some(material) = drawcall.material
@@ -564,5 +580,40 @@ mod mesh_group_tests {
             }
         );
         assert_eq!(mesh_group_choice("unnamed", 0).name, "unnamed");
+    }
+}
+
+#[cfg(test)]
+mod emptied_drawcall_tests {
+    use super::*;
+    use std::collections::BTreeMap;
+
+    fn mesh(counts: &[Option<i64>]) -> KvValue {
+        let drawcalls = counts
+            .iter()
+            .map(|count| {
+                KvValue::Object(
+                    count
+                        .map(|count| ("m_nIndexCount".to_string(), KvValue::Int(count)))
+                        .into_iter()
+                        .collect(),
+                )
+            })
+            .collect();
+        let scene_object = BTreeMap::from([("m_drawCalls".to_string(), KvValue::Array(drawcalls))]);
+        KvValue::Object(BTreeMap::from([(
+            "m_sceneObjects".to_string(),
+            KvValue::Array(vec![KvValue::Object(scene_object)]),
+        )]))
+    }
+
+    #[test]
+    fn only_explicitly_zeroed_draw_calls_count_as_removed() {
+        assert!(drawcalls_all_emptied(&mesh(&[Some(0), Some(0)])));
+        assert!(!drawcalls_all_emptied(&mesh(&[Some(0), Some(300)])));
+        // A count the file never stored is not a removal; such meshes keep
+        // their whole-buffer fallback.
+        assert!(!drawcalls_all_emptied(&mesh(&[None])));
+        assert!(!drawcalls_all_emptied(&mesh(&[])));
     }
 }

@@ -110,6 +110,14 @@ describe("searchSettings", () => {
       route: "/plugins/manage",
     });
   });
+
+  it("finds source actions in their settings section", () => {
+    for (const query of ["add source", "remove source"]) {
+      expect(searchSettings(query, translate)).toContainEqual(
+        expect.objectContaining({ tab: "mods", sectionId: "mod-sources" }),
+      );
+    }
+  });
 });
 
 describe("searchSettings by platform", () => {
@@ -220,13 +228,16 @@ describe("SETTINGS_SEARCH_INDEX", () => {
   });
 
   it("points at section anchors that exist on the settings page", async () => {
-    const page = await Bun.file(
-      join(import.meta.dir, "../pages/settings.tsx"),
-    ).text();
-    const anchors = Array.from(
-      page.matchAll(SEARCH_ID_PROP_REGEX),
-      ([, id]) => id,
-    ).sort();
+    const sources = await Promise.all(
+      SETTINGS_SOURCES.filter((path) => !IGNORED_FILES.has(basename(path))).map(
+        (path) => Bun.file(join(import.meta.dir, path)).text(),
+      ),
+    );
+    const anchors = sources
+      .flatMap((source) =>
+        Array.from(source.matchAll(SEARCH_ID_PROP_REGEX), ([, id]) => id),
+      )
+      .sort();
     const indexIds = SETTINGS_SEARCH_INDEX.flatMap(({ id }) =>
       id ? [id] : [],
     ).sort();

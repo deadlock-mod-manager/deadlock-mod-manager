@@ -10,11 +10,12 @@ import {
 import { parseSubmissionSlug } from "@/lib/mods/submission-ref";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import type { LocalMod } from "@/types/mods";
+import { ModSourceIcon } from "@/components/shared/mod-source-icon";
 
 export const LibraryModAuthor = ({
   mod,
 }: {
-  mod: Pick<LocalMod, "remoteId" | "author" | "modAuthorId">;
+  mod: Pick<LocalMod, "remoteId" | "author" | "modAuthorId" | "source">;
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -49,8 +50,16 @@ export const LibraryModAuthor = ({
     parseSubmissionSlug(mod.remoteId)?.provider !== "gamebanana"
   ) {
     return (
-      <span title={mod.author}>
-        {t("mods.by")} {mod.author}
+      <span
+        className='inline-flex max-w-full items-center gap-1.5'
+        title={mod.author}>
+        <span className='truncate'>
+          {t("mods.by")} {mod.author}
+        </span>
+        <ModSourceIcon
+          source={mod.source}
+          local={mod.remoteId.startsWith("local-")}
+        />
       </span>
     );
   }

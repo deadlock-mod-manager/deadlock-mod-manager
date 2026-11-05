@@ -321,7 +321,12 @@ async fn every_text_format_imports() {
   assert_eq!(video.format, ImportFormat::VideoTxt);
   assert!(video.entries.is_empty());
   assert!(!video.video_settings.is_empty());
-  assert!(!ignored_details(&video.ignored, IgnoredKind::MachineSpecific).is_empty());
+  assert!(
+    video
+      .video_settings
+      .iter()
+      .any(|setting| setting.key == "defaultres")
+  );
 
   for garbage in ["", "hello there, this is my config", "{{{{"] {
     assert!(
@@ -358,6 +363,8 @@ async fn share_codes_import_presets_with_their_overrides() {
       },
     }],
     include_engine_sections: false,
+    write_video: true,
+    video_variant: None,
   };
   let code = share::encode(&request).unwrap();
   let report = analyze(
@@ -495,7 +502,12 @@ async fn archives_stage_variants_and_pick_the_original() {
       .any(|setting| setting.key == "r_citadel_shadow_quality"),
     "video.txt beside the variant"
   );
-  assert!(!ignored_details(&report.ignored, IgnoredKind::MachineSpecific).is_empty());
+  assert!(
+    report
+      .video_settings
+      .iter()
+      .any(|setting| setting.key == "defaultres")
+  );
 
   let staged = analyze(
     &ctx,

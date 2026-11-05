@@ -404,6 +404,11 @@ pub(crate) fn decode_mesh_render_model_from_resource_with_skeleton(
         .block_bytes("DATA")
         .and_then(|bytes| crate::kv3::parse(bytes).ok())
     {
+        if drawcalls_all_emptied(&mesh_data) {
+            return Err(Source2Error::Resource(
+                "every draw call of this mesh is removed".into(),
+            ));
+        }
         let mut decoded = decode_drawcall_primitives(&vbib, &mesh_data, &[])?;
         apply_bone_remap_to_primitives(&mut decoded, bone_remap);
         if !decoded.is_empty() {
@@ -429,6 +434,9 @@ pub(crate) fn decode_mesh_primitives_from_resource(
         .block_bytes("DATA")
         .and_then(|bytes| crate::kv3::parse(bytes).ok())
     {
+        if drawcalls_all_emptied(&mesh_data) {
+            return Ok(Vec::new());
+        }
         let mut primitives = decode_drawcall_primitives(&vbib, &mesh_data, preview_textures)?;
         apply_bone_remap_to_primitives(&mut primitives, bone_remap);
         if !primitives.is_empty() {
@@ -509,6 +517,9 @@ pub fn decode_embedded_model_render_model_from_resource(
             .or_else(|| kv_usize(mesh, "data_block"))
             .and_then(|index| block_value(res, index));
         if let Some(mesh_data) = mesh_data {
+            if drawcalls_all_emptied(&mesh_data) {
+                continue;
+            }
             let mut drawcall_primitives =
                 decode_drawcall_primitives(&vbib, &mesh_data, preview_textures)?;
             if !drawcall_primitives.is_empty() {
@@ -673,6 +684,9 @@ pub fn decode_embedded_model_glb_from_resource(
             .or_else(|| kv_usize(mesh, "data_block"))
             .and_then(|index| block_value(res, index));
         if let Some(mesh_data) = mesh_data {
+            if drawcalls_all_emptied(&mesh_data) {
+                continue;
+            }
             let mut drawcall_primitives =
                 decode_drawcall_primitives(&vbib, &mesh_data, preview_textures)?;
             if !drawcall_primitives.is_empty() {

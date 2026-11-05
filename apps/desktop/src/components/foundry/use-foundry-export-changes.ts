@@ -15,8 +15,14 @@ export interface Change {
 /** Every edit in the workspace, named the way its tab names it. */
 export const useChanges = (): Change[] => {
   const { t } = useTranslation();
-  const { manifest, editedPaths, paintParts, appliedPaint, cardPreviews } =
-    useFoundry();
+  const {
+    manifest,
+    editedPaths,
+    paintParts,
+    appliedPaint,
+    cardPreviews,
+    removedParts,
+  } = useFoundry();
   return useMemo(() => {
     if (!manifest) return [];
     const parts = new Map(
@@ -35,7 +41,33 @@ export const useChanges = (): Change[] => {
         .pop()
         ?.replace(/\.[^.]+$/, "") ?? path;
 
-    return [...editedPaths].map((path): Change => {
+    // A model's removed sections rewrite several files; they read as one
+    // change, listed under its first file, and undo together.
+    const removalOwners = new Map(
+      Object.values(removedParts).flatMap((removed) =>
+        removed.resources.map((path) => [path, removed] as const),
+      ),
+    );
+
+    const paths = [...editedPaths].filter((path) => {
+      const removal = removalOwners.get(path);
+      return !removal || removal.resources[0] === path;
+    });
+
+    return paths.map((path): Change => {
+      const removal = removalOwners.get(path);
+      if (removal) {
+        return {
+          path,
+          group: "paint",
+          label: t("foundry.exportSheet.removedParts"),
+          detail: removal.textures
+            .map(
+              (texture) => parts.get(texture.toLowerCase())?.label ?? texture,
+            )
+            .join(", "),
+        };
+      }
       const part = parts.get(path.toLowerCase());
       const card = cards.get(path);
       if (part) {
@@ -74,5 +106,13 @@ export const useChanges = (): Change[] => {
         detail: t("foundry.exportSheet.edited"),
       };
     });
-  }, [manifest, editedPaths, paintParts, appliedPaint, cardPreviews, t]);
+  }, [
+    manifest,
+    editedPaths,
+    paintParts,
+    appliedPaint,
+    cardPreviews,
+    removedParts,
+    t,
+  ]);
 };

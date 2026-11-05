@@ -8,6 +8,8 @@ import { sameValue } from "./values";
 export type EditorDraft = {
   overrides: EntryOverride[];
   includeEngineSections: boolean;
+  writeVideo: boolean;
+  videoVariant: string | null;
 };
 
 export type DraftAction =
@@ -123,4 +125,8 @@ export const countUnsavedChanges = (
   draft: EditorDraft,
 ): number =>
   diffOverrides(saved.overrides, draft.overrides).length +
-  (saved.includeEngineSections === draft.includeEngineSections ? 0 : 1);
+  (saved.includeEngineSections === draft.includeEngineSections ? 0 : 1) +
+  (saved.writeVideo === draft.writeVideo &&
+  saved.videoVariant === draft.videoVariant
+    ? 0
+    : 1);

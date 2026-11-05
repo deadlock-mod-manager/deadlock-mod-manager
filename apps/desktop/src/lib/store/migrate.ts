@@ -709,6 +709,37 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
       background.includeBottomBar ??= background.includeSidebar === true;
     },
   },
+  {
+    to: 43,
+    label: "optional-native-source-provenance",
+    apply: (state) => {
+      // Legacy identities and installed filenames remain unchanged. Missing
+      // provenance means the existing GameBanana/local path, never a new source.
+      const normalize = (mods: MutableState[string]) => {
+        if (!Array.isArray(mods)) return;
+        for (const mod of mods) {
+          if (isPlainObject(mod) && mod.source === null) delete mod.source;
+        }
+      };
+      normalize(state.localMods);
+      if (isPlainObject(state.profiles)) {
+        for (const profile of Object.values(state.profiles)) {
+          if (isPlainObject(profile)) normalize(profile.mods);
+        }
+      }
+    },
+  },
+  {
+    to: 44,
+    label: "perf-history-video-count",
+    apply: (state) => {
+      // History entries record how many video.txt settings an apply wrote.
+      if (!Array.isArray(state.perfHistory)) return;
+      for (const entry of state.perfHistory) {
+        if (isPlainObject(entry)) entry.videoCount ??= null;
+      }
+    },
+  },
 ];
 
 const LEGACY_GAMEBANANA_ID = /^[1-9]\d*$/;

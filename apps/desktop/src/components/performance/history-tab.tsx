@@ -20,13 +20,17 @@ import { usePerfStatus } from "@/hooks/performance/use-perf-queries";
 import { applySourceFor } from "@/lib/performance/config-list";
 import { historyApplyRequest } from "@/lib/performance/history";
 import { usePersistedStore } from "@/lib/store";
-import type { PerfHistoryEntry } from "@/lib/store/slices/performance";
+import {
+  isConfigHistoryEntry,
+  type PerfConfigHistoryEntry,
+} from "@/lib/store/slices/performance";
+import { HistoryVideoRow } from "./history-video-row";
 
 const HistoryRow = ({
   entry,
   isCurrent,
 }: {
-  entry: PerfHistoryEntry;
+  entry: PerfConfigHistoryEntry;
   isCurrent: boolean;
 }) => {
   const { t } = useTranslation();
@@ -62,6 +66,13 @@ const HistoryRow = ({
             <span>
               {t("performance.configs.settingsCount", {
                 count: entry.appliedCount,
+              })}
+            </span>
+          )}
+          {entry.videoCount !== null && (
+            <span>
+              {t("performance.history.videoCount", {
+                count: entry.videoCount,
               })}
             </span>
           )}
@@ -102,6 +113,8 @@ export const HistoryTab = () => {
   const history = usePersistedStore((state) => state.perfHistory);
   const { data: status } = usePerfStatus();
   const currentConfigId = status?.desired?.request.configId ?? null;
+  // Video.txt entries in between don't change which config is current.
+  const latestConfigEntry = history.find(isConfigHistoryEntry);
 
   if (history.length === 0) {
     return (
@@ -125,17 +138,21 @@ export const HistoryTab = () => {
         {t("performance.history.description")}
       </p>
       <ul className='divide-y rounded-lg border bg-card'>
-        {history.map((entry, index) => (
-          <HistoryRow
-            entry={entry}
-            isCurrent={
-              index === 0 &&
-              entry.action === "applied" &&
-              entry.configId === currentConfigId
-            }
-            key={entry.id}
-          />
-        ))}
+        {history.map((entry) =>
+          isConfigHistoryEntry(entry) ? (
+            <HistoryRow
+              entry={entry}
+              isCurrent={
+                entry === latestConfigEntry &&
+                entry.action === "applied" &&
+                entry.configId === currentConfigId
+              }
+              key={entry.id}
+            />
+          ) : (
+            <HistoryVideoRow entry={entry} key={entry.id} />
+          ),
+        )}
       </ul>
     </section>
   );

@@ -15,8 +15,6 @@ type EditorToolbarProps = {
   filter: EditorFilter;
   onFilterChange: (filter: EditorFilter) => void;
   counts: FilterCounts;
-  showKeys: boolean;
-  onShowKeysChange: (show: boolean) => void;
   addSetting: ReactNode;
 };
 
@@ -26,8 +24,6 @@ export const EditorToolbar = ({
   filter,
   onFilterChange,
   counts,
-  showKeys,
-  onShowKeysChange,
   addSetting,
 }: EditorToolbarProps) => {
   const { t } = useTranslation();
@@ -56,7 +52,7 @@ export const EditorToolbar = ({
 
   return (
     <div className='sticky top-0 z-20 -mx-1 flex flex-wrap items-center gap-3 bg-background px-1 py-2.5'>
-      <div className='w-72 min-w-48'>
+      <div className='min-w-48 max-w-72 flex-1'>
         <SearchInput
           className='h-8'
           onChange={(event) => onSearchChange(event.target.value)}
@@ -67,21 +63,32 @@ export const EditorToolbar = ({
         />
       </div>
       <FilterTabs onValueChange={onFilterChange} tabs={tabs} value={filter} />
-      <div className='ml-auto flex items-center gap-4'>
-        <div className='flex items-center gap-2'>
-          <Switch
-            checked={showKeys}
-            id='perf-editor-convar-names'
-            onCheckedChange={onShowKeysChange}
-          />
-          <Label
-            className='font-normal text-muted-foreground text-sm'
-            htmlFor='perf-editor-convar-names'>
-            {t("performance.editor.toolbar.convarNames")}
-          </Label>
-        </div>
-        {addSetting}
-      </div>
+      <div className='ml-auto'>{addSetting}</div>
+    </div>
+  );
+};
+
+/** Shows each setting's convar name next to its label. */
+export const ConvarNamesToggle = ({
+  showKeys,
+  onShowKeysChange,
+}: {
+  showKeys: boolean;
+  onShowKeysChange: (show: boolean) => void;
+}) => {
+  const { t } = useTranslation();
+  return (
+    <div className='flex items-center gap-2'>
+      <Switch
+        checked={showKeys}
+        id='perf-editor-convar-names'
+        onCheckedChange={onShowKeysChange}
+      />
+      <Label
+        className='font-normal text-muted-foreground text-sm'
+        htmlFor='perf-editor-convar-names'>
+        {t("performance.editor.toolbar.convarNames")}
+      </Label>
     </div>
   );
 };

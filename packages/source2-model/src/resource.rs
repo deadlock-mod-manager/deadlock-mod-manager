@@ -51,6 +51,9 @@ impl Resource {
         let block_count = read_u32(&data, 12)? as usize;
 
         let blocks_start = 8 + block_offset;
+        if block_count > data.len().saturating_sub(blocks_start) / 12 || blocks_start > data.len() {
+            return Err(Source2Error::Resource("block table out of bounds".into()));
+        }
         let mut blocks = Vec::with_capacity(block_count);
         let mut pos = blocks_start;
         for _ in 0..block_count {
@@ -79,5 +82,23 @@ impl Resource {
     pub fn block_bytes(&self, name: &str) -> Option<&[u8]> {
         self.block(name)
             .and_then(|b| self.data.get(b.offset..b.offset + b.size))
+    }
+}
+
+#[cfg(test)]
+mod bounds_tests {
+    use super::*;
+
+    #[test]
+    fn rejects_declared_block_count_before_allocation() {
+        let mut bytes = vec![0; 16];
+        bytes[4..6].copy_from_slice(&12u16.to_le_bytes());
+        bytes[12..16].copy_from_slice(&u32::MAX.to_le_bytes());
+        assert!(
+            Resource::parse(bytes)
+                .unwrap_err()
+                .to_string()
+                .contains("block table")
+        );
     }
 }
