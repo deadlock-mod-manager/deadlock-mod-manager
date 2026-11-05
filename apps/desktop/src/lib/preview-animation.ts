@@ -11,6 +11,7 @@ import type { PreviewAnimation } from "@/types/generated/PreviewAnimation";
 import type { PreviewCloth } from "@/types/generated/PreviewCloth";
 import type { PreviewParticles } from "@/types/generated/PreviewParticles";
 import type { PreviewAnimationChoice } from "@/types/generated/PreviewAnimationChoice";
+import type { PreviewEffectChoice } from "@/types/generated/PreviewEffectChoice";
 
 export interface PreviewSource {
   filePath: string;
@@ -60,6 +61,23 @@ export const decodePreviewParticles = (source: PreviewSource) =>
     filePath: source.filePath,
     entryPath: source.entryPath,
   });
+
+export const listPreviewEffects = (
+  source: PreviewSource,
+  heroName: string,
+  abilityClasses: string[],
+) =>
+  invoke<PreviewEffectChoice[]>("foundry_list_effects", {
+    ...source,
+    heroName,
+    abilityClasses,
+  });
+
+export const decodePreviewEffect = (
+  source: PreviewSource,
+  effectPath: string,
+) =>
+  invoke<PreviewParticles>("foundry_decode_effect", { ...source, effectPath });
 
 /** The particle effects an ability plays on its caster, bound to this model. */
 export const decodePreviewAbilityParticles = (

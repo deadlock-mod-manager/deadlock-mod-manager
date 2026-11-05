@@ -90,6 +90,7 @@ export function lookupHero(internalName: string): HeroMapping | undefined {
 }
 
 export function extractInternalName(path: string): string | undefined {
+  path = path.replace(/^materials\//, "");
   for (const prefix of HERO_PATH_PREFIXES) {
     if (path.startsWith(prefix)) {
       const rest = path.slice(prefix.length);

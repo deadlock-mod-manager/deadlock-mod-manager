@@ -28,6 +28,7 @@ const toModToCheck = (mod: LocalMod): ModToCheck => {
   if (cached) return cached;
   const entry = {
     remoteId: mod.remoteId,
+    source: mod.source,
     installedAt:
       mod.downloadedAt ??
       mod.selectedDownloads?.[0]?.createdAt ??

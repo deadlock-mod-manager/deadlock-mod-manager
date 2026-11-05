@@ -13,7 +13,7 @@ const windows = process.platform === "win32";
 describe("scenario selection", () => {
   it("registers every case with explicit phases and capability requirements", () => {
     const ids = selectScenarios("all");
-    expect(ids).toHaveLength(windows ? 139 : 128);
+    expect(ids).toHaveLength(windows ? 147 : 136);
     expect(ids).toContain("downloads-segmented-range-error");
     for (const id of ids) {
       expect(parseScenarioId(id)).toBe(id);
@@ -46,6 +46,16 @@ describe("scenario selection", () => {
     expect(scenarios["library-groups-drag"].nativeInput).toBe(true);
     expect(scenarios["library-groups-drag"].platforms).toContain("linux");
     expect(selectScenarios("monkey")).toEqual(["monkey"]);
+    expect(selectScenarios("performance")).toEqual([
+      "perf-video-apply-restore",
+      "perf-video-changed-in-game",
+      "perf-video-adopt",
+      "perf-video-variant",
+      "perf-gameinfo-resync",
+      "perf-gameinfo-launch",
+      "perf-editor-undo",
+      "perf-import-paste",
+    ]);
     expect(selectScenarios("diagnostics")).toEqual([
       "network-diagnostics",
       "network-diagnostics-internet-down",

@@ -1,3 +1,4 @@
+import * as THREE from "three";
 import { RuntimeError } from "@deadlock-mods/common/client-errors";
 export const RECORDING_LIMIT_MS = 10_000;
 
@@ -91,4 +92,63 @@ export const createViewerRecorder = (canvas: HTMLCanvasElement) => {
       cancel?.();
     },
   };
+};
+
+/** Room left around the hero in a still, as a share of its height. */
+const STILL_PADDING = 0.06;
+
+/**
+ * Render one frame and crop it to the hero's posed outline, for places that
+ * show the finished skin without a live viewer.
+ */
+export const captureHeroStill = async (
+  root: THREE.Object3D,
+  camera: THREE.Camera,
+  renderer: THREE.WebGLRenderer,
+  render: () => Promise<Blob | null> | undefined,
+): Promise<Blob | null> => {
+  const frame = await render();
+  if (!frame) return null;
+  const box = new THREE.Box3().setFromObject(root, true);
+  const canvas = renderer.domElement;
+  let [left, top, right, bottom] = [Infinity, Infinity, -Infinity, -Infinity];
+  for (const x of [box.min.x, box.max.x]) {
+    for (const y of [box.min.y, box.max.y]) {
+      for (const z of [box.min.z, box.max.z]) {
+        const point = new THREE.Vector3(x, y, z).project(camera);
+        const px = ((point.x + 1) / 2) * canvas.width;
+        const py = ((1 - point.y) / 2) * canvas.height;
+        left = Math.min(left, px);
+        right = Math.max(right, px);
+        top = Math.min(top, py);
+        bottom = Math.max(bottom, py);
+      }
+    }
+  }
+  const pad = (bottom - top) * STILL_PADDING;
+  left = Math.max(0, Math.floor(left - pad));
+  top = Math.max(0, Math.floor(top - pad));
+  right = Math.min(canvas.width, Math.ceil(right + pad));
+  bottom = Math.min(canvas.height, Math.ceil(bottom + pad));
+  if (right <= left || bottom <= top) return frame;
+
+  const image = await createImageBitmap(frame);
+  const crop = document.createElement("canvas");
+  crop.width = right - left;
+  crop.height = bottom - top;
+  crop
+    .getContext("2d")
+    ?.drawImage(
+      image,
+      left,
+      top,
+      crop.width,
+      crop.height,
+      0,
+      0,
+      crop.width,
+      crop.height,
+    );
+  image.close();
+  return new Promise((resolve) => crop.toBlob(resolve, "image/png"));
 };

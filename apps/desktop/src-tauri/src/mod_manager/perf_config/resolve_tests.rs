@@ -187,6 +187,12 @@ fn convar_statuses_from_the_catalog() {
     status_of("ConVars/cl_interp", Some("0")).0,
     EntryStatus::NotConvar
   );
+  let turned_off = resolve_one(
+    entry("ConVars/r_shadows", Some("0")),
+    &[action("ConVars/r_shadows", OverrideAction::Omit)],
+    false,
+  );
+  assert_eq!(turned_off.status, EntryStatus::Omitted);
 }
 
 #[test]
@@ -499,10 +505,17 @@ fn revision_tracks_only_what_is_written() {
 
   let mut with_noise = config.clone();
   with_noise.push(entry("ConVars/fps_max", Some("0")));
-  with_noise.push(entry("ConVars/r_shadows", Some("0")));
   with_noise.push(entry("ConVars/sv_minrate", None));
   with_noise.push(entry("ConVars/fps_max_ui", Some("120")));
   assert_eq!(rev(&with_noise, false), base);
+
+  let mut with_blocked = config.clone();
+  with_blocked.push(entry("ConVars/r_shadows", Some("0")));
+  assert_ne!(
+    rev(&with_blocked, false),
+    base,
+    "blocked convars are written"
+  );
 
   let mut changed = config.clone();
   changed[0] = entry("ConVars/fps_max", Some("1"));
@@ -604,6 +617,7 @@ fn presets_and_inline_sources() {
         id: "user:1".to_string(),
         name: "Mine".to_string(),
         entries: vec![entry("ConVars/r_ssao", Some("0"))],
+        video_settings: Vec::new(),
       },
     },
   )

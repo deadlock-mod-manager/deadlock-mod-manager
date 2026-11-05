@@ -56,6 +56,39 @@ beforeEach(() => {
   profileTestBackend.seedManifest = async () => {};
 });
 
+it("switches the active profile and its mods in the same observable snapshot", async () => {
+  const store = createTestStore();
+  const firstMod = modFor("7");
+  const secondMod = modFor("42");
+  store.setState({
+    profiles: {
+      [defaultProfileId]: profileFor("default", [firstMod]),
+      [secondaryProfileId]: profileFor("secondary", [secondMod]),
+    },
+    activeProfileId: defaultProfileId,
+    localMods: [firstMod],
+    syncProfileEnabledMods: async () => {},
+  });
+  const observed: { profileId: string; modIds: string[] }[] = [];
+  const unsubscribe = store.subscribe((state) => {
+    observed.push({
+      profileId: state.activeProfileId,
+      modIds: state.localMods.map((mod) => mod.remoteId),
+    });
+  });
+  try {
+    const result = await store.getState().switchToProfile(secondaryProfileId);
+    expect(result.errors).toEqual([]);
+    const switched = observed.filter(
+      ({ profileId }) => profileId === secondaryProfileId,
+    );
+    expect(switched.length).toBeGreaterThan(0);
+    for (const snapshot of switched) expect(snapshot.modIds).toEqual(["42"]);
+  } finally {
+    unsubscribe();
+  }
+});
+
 describe("profiles deleted outside the app", () => {
   it("leaves the user in Default when the fallback switch fails", async () => {
     const store = createTestStore();
@@ -455,6 +488,34 @@ describe("profile snapshot reconciliation", () => {
       store.getState().localMods,
     );
     expect(remoteReads).toBe(0);
+  });
+
+  it("recovers source identity without claiming cached latest is installed", async () => {
+    const store = createTestStore();
+    const id = `source-${"a".repeat(64)}`;
+    profileTestBackend.readSnapshot = async () => snapshotFor(id);
+    profileTestBackend.readMetadata = async () => ({
+      ...modFor(id),
+      source: {
+        sourceKey: "accepted",
+        sourceId: "example",
+        sourceName: "Example",
+        acceptedOrigin: "https://example.org",
+        descriptorUrl: "https://example.org/source.json",
+        listingId: "42",
+        releaseId: "latest",
+        contentRevision: "latest",
+        artifactIds: ["pack"],
+        componentIds: ["blue"],
+        iconUrl: null,
+      },
+    });
+    await store.getState().restoreModsFromManifest();
+    const recovered = store.getState().localMods[0];
+    expect(recovered.source?.sourceKey).toBe("accepted");
+    expect(recovered.source?.releaseId).toBe("");
+    expect(recovered.source?.artifactIds).toEqual([]);
+    expect(recovered.installedVpks).toEqual(["pak01_dir.vpk"]);
   });
 
   it("allows overlapping syncs for different profiles", async () => {

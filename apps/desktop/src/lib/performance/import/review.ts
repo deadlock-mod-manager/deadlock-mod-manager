@@ -10,9 +10,9 @@ type ImportReviewGroups = {
   alreadySet: ResolvedEntry[];
   /** Camera and visibility settings: applied as the author set them unless turned off. */
   cameraVisibility: ResolvedEntry[];
-  /** Flagged `gameinfo_cannot_override`: the game ignores them from gameinfo.gi. */
+  /** Written, but flagged `gameinfo_cannot_override`: the game ignores them from gameinfo.gi. */
   blocked: ResolvedEntry[];
-  /** Not a convar in this build (removed, or a console command). */
+  /** Written, but not a convar in this build (removed, or a console command). */
   removed: ResolvedEntry[];
   /** Refused, inexpressible as an edit, or turned off. */
   refused: ResolvedEntry[];

@@ -6,9 +6,25 @@ const uploadBaseName = (name: string) =>
 
 export function selectUpdateDownloads(
   downloads: ModDownloadItem[],
-  installed?: Pick<LocalMod, "selectedDownloads" | "installedFileTree">,
+  installed?: Pick<
+    LocalMod,
+    "selectedDownloads" | "installedFileTree" | "source"
+  >,
 ): ModDownloadItem[] {
   const current = downloads.filter((file) => !file.isArchived);
+  if (installed?.source) {
+    const wanted = installed.source.artifactIds;
+    const selected = current.filter((file) => {
+      const artifactId = file.url.split("/").pop();
+      return (
+        artifactId !== undefined &&
+        wanted.includes(decodeURIComponent(artifactId))
+      );
+    });
+    return wanted.length > 0 && selected.length === wanted.length
+      ? selected
+      : [];
+  }
   const names = installed?.selectedDownloads?.length
     ? installed.selectedDownloads.map((file) => file.name)
     : [

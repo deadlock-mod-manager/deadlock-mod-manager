@@ -29,6 +29,21 @@ export const applyPerfConfig = (
 
 export const removePerfConfig = () => invokeGuarded<PerfStatus>("perf_remove");
 
+/** Writes the player's own video.txt back as it was before the first write. */
+export const restoreVideoBackup = () =>
+  invokeGuarded<PerfStatus>("perf_restore_video_backup");
+
+/** Makes the current video.txt the player's own: the copy Restore brings back. */
+export const adoptVideo = () => invoke<PerfStatus>("perf_video_adopt");
+
+/** Writes the config's value back for video.txt settings changed in game. */
+export const writeConfigVideoValues = (keys: string[]) =>
+  invokeGuarded<PerfStatus>("perf_video_use_config", { keys });
+
+/** Keeps the player's in-game value for video.txt settings changed in game. */
+export const keepVideoValues = (keys: string[]) =>
+  invoke<PerfStatus>("perf_video_keep", { keys });
+
 export const reapplyPerfConfig = () =>
   invokeGuarded<PerfStatus>("perf_reapply");
 

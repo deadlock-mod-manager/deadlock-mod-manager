@@ -22,6 +22,7 @@ export type ModEntryPoint =
   | "skins"
   | "deep_link"
   | "remote_install"
+  | "source_link"
   | "reinstall"
   | "retry"
   | "other";
