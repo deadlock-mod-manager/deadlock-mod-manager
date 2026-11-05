@@ -208,3 +208,93 @@ test("large deltas are bounded and invalid deltas do not poison future stepping"
   valid.start().update(STEP);
   expectRotation(invalid.bone.quaternion, valid.bone.quaternion);
 });
+
+test("recompiled procedural bones follow their animated anchor", () => {
+  const model = new THREE.Group();
+  const anchor = new THREE.Bone();
+  anchor.name = "pelvis";
+  const attachment = new THREE.Bone();
+  attachment.name = "_cloth_anchor";
+  const tip = new THREE.Bone();
+  tip.name = "_cloth_tip";
+  tip.position.x = 1;
+  model.add(anchor, attachment, tip);
+  const cloth: PreviewCloth = {
+    nodes: [
+      clothNode("pelvis", -1, [0, 0, 0], true),
+      clothNode("$cloth_anchor", 0, [0, 0, 0], true),
+      {
+        ...clothNode("$cloth_tip", 1, [1, 0, 0]),
+        animationVertexAttraction: 1,
+      },
+    ],
+    rods: [],
+    colliders: [],
+    strayRadii: [],
+    nodeBases: [],
+  };
+  const effect = createClothEffect(cloth)({ model });
+  expect(effect).not.toBeNull();
+  if (!effect) return;
+  effect.update(STEP);
+  anchor.position.set(10, 3, -2);
+  effect.update(STEP);
+  expect(attachment.position.toArray()).toEqual([10, 3, -2]);
+  expect(tip.position.toArray()).toEqual([11, 3, -2]);
+  effect.dispose();
+  expect(attachment.position.toArray()).toEqual([0, 0, 0]);
+  expect(tip.position.toArray()).toEqual([1, 0, 0]);
+});
+
+test("exact procedural names take precedence over compiler aliases", () => {
+  const { model, anchor, bone, cloth, start } = fixture();
+  bone.name = "$cloth";
+  cloth.nodes[1].name = "$cloth";
+  cloth.nodes[1].animationVertexAttraction = 1;
+  const alias = new THREE.Bone();
+  alias.name = "_cloth";
+  alias.position.x = 99;
+  model.add(alias);
+  const effect = start();
+  effect.update(STEP);
+  anchor.position.x = 10;
+  effect.update(STEP);
+  model.updateMatrixWorld(true);
+  expect(bone.getWorldPosition(new THREE.Vector3()).x).toBeCloseTo(10);
+  expect(alias.position.x).toBe(99);
+});
+
+test("animated bones use their skeleton goal when FE bind frames differ", () => {
+  const model = new THREE.Group();
+  const arm = new THREE.Bone();
+  arm.name = "arm";
+  arm.position.y = 20;
+  const cable = new THREE.Bone();
+  cable.name = "cable";
+  cable.position.set(1, 2, 3);
+  arm.add(cable);
+  model.add(arm);
+  const cloth: PreviewCloth = {
+    nodes: [
+      clothNode("arm", -1, [0, 0, 0], true),
+      {
+        ...clothNode("cable", 0, [1, 22, 3]),
+        animationVertexAttraction: 1,
+      },
+    ],
+    rods: [],
+    colliders: [],
+    strayRadii: [],
+    nodeBases: [],
+  };
+  const effect = createClothEffect(cloth)({ model });
+  if (!effect) throw new Error("Fixture must produce a cloth effect");
+  effect.update(0);
+  expect(cable.position.toArray()).toEqual([1, 2, 3]);
+  arm.position.y = 30;
+  cable.position.set(2, 4, 6);
+  effect.update(STEP);
+  expect(cable.position.toArray()).toEqual([2, 4, 6]);
+  for (let index = 0; index < 20; index += 1) effect.update(0);
+  expect(cable.position.toArray()).toEqual([2, 4, 6]);
+});

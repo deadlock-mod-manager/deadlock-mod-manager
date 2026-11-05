@@ -38,7 +38,7 @@ pub struct PreviewReport {
     pub truncated: bool,
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub(crate) struct PreviewEvidence {
     issues: BTreeMap<String, PreviewIssue>,
     dependencies: BTreeMap<String, PreviewDependency>,

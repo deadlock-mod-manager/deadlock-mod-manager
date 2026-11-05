@@ -6,19 +6,22 @@ import { BaseDirectory, mkdir, writeFile } from "@tauri-apps/plugin-fs";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 
+import { getFileBaseName, getSourceFilePath } from "@/lib/file-utils";
+
 const DROP_DIR = "foundry-drops";
 
 /**
- * The window has native file drops off (so in-app drag and drop works), which
- * means a dropped file arrives without a path. Stage its bytes under app data so
- * the backend can read it like a picked file.
+ * Native drops already carry a backend-readable path. HTML drops without a
+ * path need their bytes staged under app data.
  */
 export const stageDroppedFile = async (file: File): Promise<string> => {
+  const sourcePath = getSourceFilePath(file);
+  if (sourcePath) return sourcePath;
   await mkdir(DROP_DIR, {
     baseDir: BaseDirectory.AppLocalData,
     recursive: true,
   });
-  const name = `${crypto.randomUUID()}-${file.name}`;
+  const name = `${crypto.randomUUID()}-${getFileBaseName(file)}`;
   const relative = `${DROP_DIR}/${name}`;
   await writeFile(relative, new Uint8Array(await file.arrayBuffer()), {
     baseDir: BaseDirectory.AppLocalData,
@@ -69,7 +72,7 @@ export const FoundryDropZone = ({
       setOver(false);
       const file = event.dataTransfer.files[0];
       if (!file || disabled) return;
-      if (!extensions.includes(extensionOf(file.name))) return;
+      if (!extensions.includes(extensionOf(getFileBaseName(file)))) return;
       await onFile(await stageDroppedFile(file));
     },
     [disabled, extensions, onFile],

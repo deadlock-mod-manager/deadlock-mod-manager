@@ -13,6 +13,9 @@ use crate::errors::Error;
 #[serde(default, rename_all = "camelCase")]
 #[ts(export, rename_all = "camelCase")]
 pub struct ModdingToolsConfig {
+  pub sdk: String,
+  pub addon_sdks: Vec<String>,
+  // Retained for discovery of addons created before direct SDK support.
   pub csdk: String,
   pub dota_tools: String,
   pub dota_runtime: String,
@@ -26,23 +29,19 @@ pub struct ModdingToolsConfig {
 #[serde(rename_all = "camelCase")]
 #[ts(export, rename_all = "camelCase")]
 pub struct ModdingSdkStatus {
-  pub profile: String,
   pub compatible: bool,
-  pub checked_modules: usize,
-  pub different_modules: Vec<String>,
+  pub prepared: bool,
+  pub checked_files: usize,
+  pub missing_files: Vec<String>,
 }
 
-impl From<source2_tools::SdkInspection> for ModdingSdkStatus {
-  fn from(report: source2_tools::SdkInspection) -> Self {
+impl From<source2_tools::InstallationInspection> for ModdingSdkStatus {
+  fn from(report: source2_tools::InstallationInspection) -> Self {
     Self {
-      profile: report.profile,
       compatible: report.compatible,
-      checked_modules: report.checked_modules,
-      different_modules: report
-        .differences
-        .into_iter()
-        .map(|item| item.path)
-        .collect(),
+      prepared: report.prepared,
+      checked_files: report.checked_files,
+      missing_files: report.missing_files,
     }
   }
 }
@@ -69,15 +68,7 @@ pub fn get_modding_tools_config(app: AppHandle) -> Result<ModdingToolsConfig, Er
       serde_json::from_slice(&bytes).map_err(|error| Error::InvalidInput(error.to_string()))
     }
     Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
-      let config = ModdingToolsConfig {
-        prepared_sdk: app
-          .path()
-          .app_data_dir()?
-          .join("tools/csdk12-ag2")
-          .to_string_lossy()
-          .into_owned(),
-        ..Default::default()
-      };
+      let config = ModdingToolsConfig::default();
       Ok(config)
     }
     Err(error) => Err(error.into()),
@@ -85,8 +76,12 @@ pub fn get_modding_tools_config(app: AppHandle) -> Result<ModdingToolsConfig, Er
 }
 
 #[tauri::command]
-pub fn save_modding_tools_config(app: AppHandle, config: ModdingToolsConfig) -> Result<(), Error> {
+pub fn save_modding_tools_config(
+  app: AppHandle,
+  mut config: ModdingToolsConfig,
+) -> Result<(), Error> {
   let path = config_path(&app)?;
+  config.retain_addons(&get_modding_tools_config(app.clone())?);
   let parent = path
     .parent()
     .ok_or_else(|| Error::InvalidInput("Missing app configuration directory".into()))?;
@@ -108,9 +103,7 @@ fn tool_error(error: source2_tools::ToolError) -> Error {
 pub async fn inspect_modding_sdk(app: AppHandle) -> Result<ModdingSdkStatus, Error> {
   let config = get_modding_tools_config(app)?;
   tauri::async_runtime::spawn_blocking(move || {
-    source2_tools::inspect_sdk(&PathBuf::from(config.prepared_sdk))
-      .map(Into::into)
-      .map_err(tool_error)
+    Ok(source2_tools::inspect_installation(&PathBuf::from(config.sdk)).into())
   })
   .await
   .map_err(|error| Error::BackgroundTaskFailed(error.to_string()))?
@@ -119,18 +112,9 @@ pub async fn inspect_modding_sdk(app: AppHandle) -> Result<ModdingSdkStatus, Err
 #[tauri::command]
 pub async fn prepare_modding_sdk(app: AppHandle) -> Result<ModdingSdkStatus, Error> {
   let config = get_modding_tools_config(app)?;
-  let options = source2_tools::PrepareOptions {
-    csdk: config.csdk.into(),
-    deadlock: super::state::game_path()?,
-    dota_tools: config.dota_tools.into(),
-    dota_runtime: config.dota_runtime.into(),
-    output: config.prepared_sdk.into(),
-  };
+  let game = super::state::game_path()?;
   tauri::async_runtime::spawn_blocking(move || {
-    if let Some(parent) = options.output.parent() {
-      std::fs::create_dir_all(parent)?;
-    }
-    source2_tools::prepare_sdk(&options)
+    source2_tools::prepare_installation(&PathBuf::from(config.sdk), &game)
       .map(Into::into)
       .map_err(tool_error)
   })
@@ -166,7 +150,7 @@ pub(super) async fn launch_tool(
         PathBuf::from(&config.proton)
       },
       steam_root,
-      prefix: data.join("csdk12-prefix"),
+      prefix: data.join("csdk-prefix"),
     });
     if let Some(runtime) = &runtime {
       std::fs::create_dir_all(&runtime.prefix)?;
@@ -174,9 +158,8 @@ pub(super) async fn launch_tool(
     let _launch_guard = SDK_LAUNCH_LOCK
       .lock()
       .map_err(|_| Error::BackgroundTaskFailed("SDK launch lock poisoned".into()))?;
-    let sdk = PathBuf::from(&config.prepared_sdk);
     let project = if matches!(tool, ModdingTool::ModelDoc | ModdingTool::AssetBrowser) {
-      super::modding_sdk_addon::select(&sdk, addon.as_ref())?
+      super::modding_sdk_addon::select(&config.sdk_path()?, addon.as_ref())?
     } else {
       source2_tools::WORKBENCH_ADDON.to_owned()
     };
@@ -188,17 +171,17 @@ pub(super) async fn launch_tool(
       ),
       ModdingTool::Source2ViewerAssets => source2_tools::viewer_command(
         &PathBuf::from(config.source2_viewer),
-        Some(&PathBuf::from(config.prepared_sdk).join("game/citadel/pak01_dir.vpk")),
+        Some(&super::state::game_path()?.join("game/citadel/pak01_dir.vpk")),
         runtime.as_ref(),
       ),
       ModdingTool::ModelDoc => source2_tools::sdk_project_command(
-        &PathBuf::from(config.prepared_sdk),
+        &PathBuf::from(config.sdk),
         source2_tools::SdkTool::ModelDoc,
         &project,
         runtime.as_ref(),
       ),
       ModdingTool::AssetBrowser => source2_tools::sdk_project_command(
-        &PathBuf::from(config.prepared_sdk),
+        &PathBuf::from(config.sdk),
         source2_tools::SdkTool::AssetBrowser,
         &project,
         runtime.as_ref(),
@@ -223,4 +206,55 @@ pub(super) async fn launch_tool(
   })
   .await
   .map_err(|error| Error::BackgroundTaskFailed(error.to_string()))?
+}
+
+impl ModdingToolsConfig {
+  pub(super) fn sdk_path(&self) -> Result<PathBuf, Error> {
+    let root = PathBuf::from(&self.sdk);
+    if self.sdk.is_empty() || !source2_tools::inspect_installation(&root).compatible {
+      return Err(Error::InvalidInput(
+        "Select and set up an extracted CSDK installation in Workbench tools".into(),
+      ));
+    }
+    Ok(root)
+  }
+
+  fn retain_addons(&mut self, previous: &Self) {
+    for root in previous
+      .addon_sdks
+      .iter()
+      .chain(std::iter::once(&previous.sdk))
+    {
+      if !root.is_empty() && root != &self.sdk && !self.addon_sdks.contains(root) {
+        self.addon_sdks.push(root.clone());
+      }
+    }
+  }
+}
+
+#[cfg(test)]
+mod config_tests {
+  use super::*;
+
+  #[test]
+  fn old_configuration_requires_sdk_selection_and_preserves_addon_locations() {
+    let old: ModdingToolsConfig = serde_json::from_str(
+      r#"{"csdk":"old-csdk","preparedSdk":"old-prepared","dotaTools":"old-depot"}"#,
+    )
+    .unwrap();
+    assert!(old.sdk.is_empty());
+    assert_eq!(old.csdk, "old-csdk");
+    assert_eq!(old.prepared_sdk, "old-prepared");
+    let mut next = ModdingToolsConfig {
+      sdk: "next-sdk".into(),
+      ..old.clone()
+    };
+    let current = ModdingToolsConfig {
+      sdk: "current-sdk".into(),
+      ..old
+    };
+    next.retain_addons(&current);
+    next.retain_addons(&current);
+    assert_eq!(next.addon_sdks, ["current-sdk"]);
+  }
 }

@@ -596,3 +596,37 @@ pub fn replace_texture_parameter(
 #[cfg(test)]
 #[path = "material_repair/tests.rs"]
 mod tests;
+
+/// Override an existing static vector while retaining its native KV3 encoding.
+pub fn set_static_vector(current: &[u8], name: &str, rgb: [f64; 3]) -> Result<Vec<u8>> {
+    let (mut tree, encoding, format) = decode(current)?;
+    let Some(Value::Array(params)) = tree.get_mut("m_vectorParams") else {
+        return Ok(current.to_vec());
+    };
+    let matches: Vec<_> = params
+        .iter()
+        .enumerate()
+        .filter(|(_, p)| p.get("m_name").and_then(Value::as_str) == Some(name))
+        .map(|(i, _)| i)
+        .collect();
+    if matches.is_empty() {
+        return Ok(current.to_vec());
+    }
+    let [index] = matches.as_slice() else {
+        return Err("ambiguous vector parameter".into());
+    };
+    let Some(Value::Array(values)) = params[*index].get_mut("m_value") else {
+        return Err("invalid vector parameter".into());
+    };
+    if values.len() != 4
+        || rgb
+            .iter()
+            .any(|v| !v.is_finite() || !(0.0..=1.0).contains(v))
+    {
+        return Err("invalid static vector".into());
+    }
+    for (target, value) in values.iter_mut().zip(rgb) {
+        *target = Value::Double(value);
+    }
+    rebuild(current, &tree, &encoding, &format)
+}

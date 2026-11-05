@@ -383,7 +383,7 @@ fn supplied_addon_stock_recovery_round_trip() {
     archive_path: std::env::var("DMM_REPAIR_ARCHIVE").unwrap(),
   };
   let config = ModdingToolsConfig {
-    prepared_sdk: sdk,
+    sdk,
     ..Default::default()
   };
   let stock = Stock::open(

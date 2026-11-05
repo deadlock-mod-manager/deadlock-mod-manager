@@ -10,6 +10,7 @@ import { useStartGame } from "@/components/providers/launch-repair";
 import { getErrorMessage } from "@/lib/errors";
 import type { ModdingAddon } from "@/types/generated/ModdingAddon";
 import type { ModdingBuildResult } from "@/types/generated/ModdingBuildResult";
+import { usePackGameCloseConfirmation } from "./use-pack-game-close-confirmation";
 import { packAndTest, type Phase } from "./pack-and-test";
 
 type Request = { id: string; addonId: string };
@@ -57,6 +58,7 @@ export async function requestPackAndTest(
 export function WorkbenchActionBridge() {
   const { t } = useTranslation();
   const startGame = useStartGame();
+  const confirmClose = usePackGameCloseConfirmation();
   const active = useRef(false);
   const mutation = useMutation({
     mutationKey: ["workbench-build"],
@@ -88,6 +90,7 @@ export function WorkbenchActionBridge() {
           },
           () => {},
           t,
+          confirmClose,
         );
         await reply({ id: request.id, kind: "result", build });
       } catch (error) {

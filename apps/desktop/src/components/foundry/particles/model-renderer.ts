@@ -4,12 +4,14 @@ import { bool, fields, list, scalar, str, type Fields } from "./values";
 import { cloneParticleModelMaterial } from "./model-material";
 import { particleModelTransform } from "./model-transform";
 import { ParticleModelPoses } from "./model-poses";
+import { AnimatedParticleModels } from "./animated-models";
 import type { ParticleAssets } from "./assets";
 import type { ParticleSimulation } from "./simulation";
 
 export class ParticleModels {
   readonly root = new THREE.Group();
   private poses: ParticleModelPoses | null = null;
+  private animated: AnimatedParticleModels | null = null;
   private readonly instances: {
     mesh: THREE.InstancedMesh;
     local: THREE.Matrix4;
@@ -39,11 +41,23 @@ export class ParticleModels {
       this.root.add(this.poses.root);
       return;
     }
+    const model = assets.models.get(path);
+    const animation = assets.animations.get(path);
+    if (bool(op.m_bAnimated) && model && animation) {
+      this.animated = new AnimatedParticleModels(
+        model,
+        animation,
+        op,
+        simulation,
+        assets,
+      );
+      this.root.add(this.animated.root);
+      return;
+    }
     if (bool(op.m_bAnimated))
       assets.warnings.add(
         `Animated particle model sequence unavailable: ${path}`,
       );
-    const model = assets.models.get(path);
     if (!model) {
       assets.warnings.add(`Renderer model unavailable: ${path}`);
       return;
@@ -97,7 +111,7 @@ export class ParticleModels {
       );
       mesh.count = 0;
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-      mesh.frustumCulled = false;
+      mesh.frustumCulled = true;
       const conversion = new THREE.Matrix4().makeRotationFromQuaternion(
         SOURCE_TO_GLTF.clone().invert(),
       );
@@ -110,6 +124,10 @@ export class ParticleModels {
     });
   }
   update(_camera: THREE.Camera, _frame: THREE.Object3D, fade: number) {
+    if (this.animated) {
+      this.animated.update(fade);
+      return;
+    }
     if (this.poses) {
       this.poses.update(fade);
       return;
@@ -149,15 +167,26 @@ export class ParticleModels {
           ),
         );
       }
-      mesh.instanceMatrix.needsUpdate = true;
-      alpha.needsUpdate = true;
-      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+      mesh.computeBoundingSphere();
+      for (const attribute of [
+        mesh.instanceMatrix,
+        alpha,
+        mesh.instanceColor,
+      ]) {
+        if (!attribute) continue;
+        attribute.clearUpdateRanges();
+        if (mesh.count > 0) {
+          attribute.addUpdateRange(0, mesh.count * attribute.itemSize);
+          attribute.needsUpdate = true;
+        }
+      }
     }
     ctx.particle = undefined;
   }
   dispose() {
     this.root.removeFromParent();
     this.poses?.dispose();
+    this.animated?.dispose();
     for (const { mesh } of this.instances) {
       for (const material of Array.isArray(mesh.material)
         ? mesh.material

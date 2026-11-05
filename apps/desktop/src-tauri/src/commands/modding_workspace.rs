@@ -77,6 +77,21 @@ impl ModdingAddon {
   }
 }
 
+#[tauri::command]
+pub async fn open_modding_addon_folder(
+  app: AppHandle,
+  addon_id: String,
+  hierarchy: ModdingHierarchy,
+) -> Result<(), Error> {
+  let root = resolve(&app, &addon_id)?.root(hierarchy);
+  if !root.is_dir() {
+    return Err(Error::InvalidInput(
+      "The addon folder does not exist".into(),
+    ));
+  }
+  crate::utils::show_in_folder(&root.to_string_lossy())
+}
+
 pub(super) fn discover(roots: &[PathBuf], archive: &Path) -> Result<Vec<ModdingAddon>, Error> {
   let mut addons = Vec::new();
   let mut seen = BTreeSet::new();
@@ -93,6 +108,11 @@ pub(super) fn discover(roots: &[PathBuf], archive: &Path) -> Result<Vec<ModdingA
       }
       for entry in std::fs::read_dir(parent)? {
         let entry = entry?;
+        if entry.file_type()?.is_symlink()
+          && entry.file_name().to_string_lossy().starts_with("dmm_link_")
+        {
+          continue;
+        }
         if entry.path().is_dir() {
           let name = entry.file_name().to_string_lossy().into_owned();
           if !name.starts_with('.') && !name.starts_with(".tmp") {
@@ -142,11 +162,14 @@ pub(super) fn discover(roots: &[PathBuf], archive: &Path) -> Result<Vec<ModdingA
 #[tauri::command]
 pub fn list_modding_addons(app: AppHandle) -> Result<Vec<ModdingAddon>, Error> {
   let config = get_modding_tools_config(app)?;
+  let roots = std::iter::once(config.sdk)
+    .chain([config.csdk, config.prepared_sdk])
+    .chain(config.addon_sdks)
+    .filter(|path| !path.is_empty())
+    .map(PathBuf::from)
+    .collect::<Vec<_>>();
   discover(
-    &[
-      PathBuf::from(config.csdk),
-      PathBuf::from(config.prepared_sdk),
-    ],
+    &roots,
     &super::state::game_path()?.join("game/citadel/pak01_dir.vpk"),
   )
 }
@@ -244,19 +267,6 @@ pub(super) fn mount(addon: &ModdingAddon, sdk: &Path) -> Result<String, Error> {
     }
   }
   let support = tempfile::tempdir()?;
-  std::fs::create_dir(support.path().join("tools"))?;
-  for (source, destination) in [
-    (
-      "game/citadel_addons/dmm_workbench/toolscenelightrigs.vdata_c",
-      "toolscenelightrigs.vdata_c",
-    ),
-    (
-      "game/citadel/tools/modeldoc_editor_presets.txt",
-      "tools/modeldoc_editor_presets.txt",
-    ),
-  ] {
-    std::fs::copy(sdk.join(source), support.path().join(destination))?;
-  }
   std::fs::write(
     support.path().join("addoninfo.txt"),
     "\"AddonInfo\" { \"IsTemplate\" \"0\" \"IsPlayable\" \"0\" }\n",
@@ -350,6 +360,31 @@ pub async fn find_modding_clip_model(
 #[cfg(test)]
 mod tests {
   use super::*;
+  #[cfg(unix)]
+  #[test]
+  fn compiler_mounts_do_not_shadow_original_addons_after_refresh() {
+    let temp = tempfile::tempdir().unwrap();
+    let active = temp.path().join("active-sdk");
+    let original = temp.path().join("original-sdk");
+    for tree in ["content", "game"] {
+      let source = original.join(tree).join("citadel_addons/beeskulls");
+      let mounts = active.join(tree).join("citadel_addons");
+      std::fs::create_dir_all(&source).unwrap();
+      std::fs::create_dir_all(&mounts).unwrap();
+      std::os::unix::fs::symlink(source, mounts.join("dmm_link_0123456789abcdef")).unwrap();
+    }
+    let addons = discover(&[active, original.clone()], Path::new("pak.vpk")).unwrap();
+    assert_eq!(addons.len(), 1);
+    assert_eq!(addons[0].name, "beeskulls");
+    assert_eq!(addons[0].sdk_root, original.to_string_lossy());
+    assert_eq!(
+      addons[0].content_path,
+      original
+        .join("content/citadel_addons/beeskulls")
+        .to_string_lossy()
+    );
+  }
+
   #[test]
   fn discovers_both_hierarchies_and_preserves_original_paths() {
     let temp = tempfile::tempdir().unwrap();

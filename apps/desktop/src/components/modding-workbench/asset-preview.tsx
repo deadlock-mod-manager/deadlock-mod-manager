@@ -1,3 +1,5 @@
+import { SourceGeometryWorkspace } from "./source-geometry-workspace";
+import { ModelMaterialEditor } from "./model-material-editor";
 import { Button } from "@deadlock-mods/ui/components/button";
 import { CubeIcon, InfoIcon } from "@phosphor-icons/react";
 import { Badge } from "@deadlock-mods/ui/components/badge";
@@ -8,7 +10,7 @@ import {
 } from "@deadlock-mods/ui/components/tooltip";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { ParticleColorsDialog } from "./particle-colors-dialog";
 import { ResourceInspector } from "./resource-inspector";
 import { useTranslation } from "react-i18next";
@@ -49,6 +51,15 @@ export const AssetPreview = ({
   onSaved,
 }: Props) => {
   const [dirty, setDirty] = useState(false);
+  const modelDirtyChange = useCallback(
+    (value: boolean) => {
+      setDirty(value);
+      onDirtyChange?.(value);
+    },
+    [onDirtyChange],
+  );
+  const [editingModel, setEditingModel] = useState(false);
+  const [editingGeometry, setEditingGeometry] = useState(false);
   const [inspecting, setInspecting] = useState(false);
   const [colorsOpen, setColorsOpen] = useState(false);
   const fullscreen = useRef<HTMLDivElement>(null);
@@ -98,6 +109,11 @@ export const AssetPreview = ({
   const isImage = /\.(png|jpe?g|tga|webp|bmp|gif|vtex_c)$/i.test(path);
   const isAudio = /\.(mp3|wav|ogg|flac|m4a|aac|vsnd_c)$/i.test(path);
   const isDmx = /\.dmx$/i.test(path);
+  const canEditGeometry =
+    !!addon &&
+    !localSource &&
+    hierarchy === "content" &&
+    (sourceModel || isDmx);
   const isText =
     !!path &&
     !isModel &&
@@ -169,7 +185,10 @@ export const AssetPreview = ({
       cacheFoundryModel(client, key, result);
       return result;
     },
-    enabled: canPreviewModel || (isClip && !!entryPath),
+    enabled:
+      !editingModel &&
+      !editingGeometry &&
+      (canPreviewModel || (isClip && !!entryPath)),
     gcTime: MODEL_PREVIEW_GC_TIME,
     staleTime: 60_000,
     retry: false,
@@ -229,7 +248,7 @@ export const AssetPreview = ({
                 className='shrink-0 gap-1.5 text-[10px] font-normal text-muted-foreground'>
                 <InfoIcon className='size-3' />
                 {t(
-                  sourceModel
+                  sourceModel && !editingModel
                     ? "workbenchAssets.sourcePreview"
                     : "workbenchAssets.compiledPreview",
                 )}
@@ -237,7 +256,7 @@ export const AssetPreview = ({
             </TooltipTrigger>
             <TooltipContent className='max-w-72'>
               {t(
-                sourceModel
+                sourceModel && !editingModel
                   ? "workbenchAssets.sourcePreviewHint"
                   : archive
                     ? "workbenchExplorer.archivePreview"
@@ -247,6 +266,45 @@ export const AssetPreview = ({
           </Tooltip>
         ) : null}
       </div>
+      {(isModel && /\.vmdl(_c)?$/i.test(path) && addon && !localSource) ||
+      canEditGeometry ? (
+        <div className='flex gap-1 border-b p-2'>
+          <Button
+            size='sm'
+            variant={editingModel || editingGeometry ? "ghost" : "secondary"}
+            disabled={dirty}
+            onClick={() => {
+              setEditingModel(false);
+              setEditingGeometry(false);
+            }}>
+            {t("workbenchExplorer.preview")}
+          </Button>
+          {isModel && (
+            <Button
+              size='sm'
+              variant={editingModel ? "secondary" : "ghost"}
+              disabled={dirty}
+              onClick={() => {
+                setEditingModel(true);
+                setEditingGeometry(false);
+              }}>
+              {t("modelEditor.title")}
+            </Button>
+          )}
+          {canEditGeometry && (
+            <Button
+              size='sm'
+              variant={editingGeometry ? "secondary" : "ghost"}
+              disabled={dirty}
+              onClick={() => {
+                setEditingGeometry(true);
+                setEditingModel(false);
+              }}>
+              {t("geometry.title")}
+            </Button>
+          )}
+        </div>
+      ) : null}
       {isResource ? (
         <div className='flex gap-1 border-b p-2'>
           <Button
@@ -294,7 +352,25 @@ export const AssetPreview = ({
         />
       ) : null}
       <div className='min-h-0 flex-1 p-2'>
-        {isResource && inspecting ? (
+        {editingGeometry && canEditGeometry && addon ? (
+          <SourceGeometryWorkspace
+            key={`${addon.id}:${path}`}
+            addonId={addon.id}
+            path={path}
+            revision={revision}
+            onDirtyChange={modelDirtyChange}
+            onSaved={onSaved}
+          />
+        ) : editingModel && isModel && addon ? (
+          <ModelMaterialEditor
+            key={`${addon.id}:${entryPath}`}
+            addon={addon}
+            path={entryPath}
+            revision={revision}
+            onDirtyChange={modelDirtyChange}
+            onSaved={onSaved}
+          />
+        ) : isResource && inspecting ? (
           <ResourceInspector
             key={`${sourceId}:${path}`}
             addonId={addonId}
@@ -444,7 +520,10 @@ export const AssetPreview = ({
           </div>
         )}
       </div>
-      {model.data && "meshes" in model.data && model.data.diagnostics.length ? (
+      {!editingGeometry &&
+      model.data &&
+      "meshes" in model.data &&
+      model.data.diagnostics.length ? (
         <details className='shrink-0 border-t px-3 py-2 text-xs text-muted-foreground'>
           <summary className='cursor-pointer'>
             {t("workbenchAssets.sourceWarnings")}

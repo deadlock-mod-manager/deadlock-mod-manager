@@ -1,12 +1,15 @@
 import * as THREE from "three";
 import type { ParticleBurst } from "./types";
 import { cp } from "./values";
+import { particleSystemsInUse } from "./systems-in-use";
 import type { ParticleValue } from "@/types/generated/ParticleValue";
 import { ModelSurface } from "./model-surface";
 import { ParticleAttachments } from "./attachments";
 import { ParticleSimulation } from "./simulation";
 import { ParticleSprites } from "./sprite-renderer";
 import { ParticleRibbon } from "./ribbon-renderer";
+import { ParticleProjected } from "./projected-renderer";
+import { ParticleBeamLights } from "./beam-lights";
 import { ParticleModels } from "./model-renderer";
 import type { ParticleAssets } from "./assets";
 import { fields, list, num, scalar, str, type Fields } from "./values";
@@ -68,7 +71,14 @@ interface RunningGraph {
   simulation: ParticleSimulation;
   drivers: ParticleValue[];
   renderers: Renderer[];
-  motion?: { speed: number; start: THREE.Vector3 | null };
+  motion?: {
+    speed: number;
+    distance: number;
+    start: THREE.Vector3 | null;
+    offset: THREE.Vector3;
+    onImpact?: (position: THREE.Vector3) => void;
+    impacted: boolean;
+  };
 }
 export class SourceParticlePlayer {
   readonly root: THREE.Group;
@@ -78,11 +88,13 @@ export class SourceParticlePlayer {
   private current: string[] = [];
   private closed = false;
   private loaded = false;
+  private nextSeed = 1;
   private surface: ModelSurface | null = null;
   constructor(
     private readonly assets: ParticleAssets,
     private readonly rig: THREE.Object3D,
     private readonly changed: () => void,
+    private readonly graphLimit = 32,
   ) {
     this.attachments = new ParticleAttachments(rig, assets.graph.attachments);
     this.root = this.attachments.root;
@@ -98,6 +110,7 @@ export class SourceParticlePlayer {
       for (const renderer of graph.renderers) renderer.dispose();
     this.graphs.length = 0;
     this.current = [];
+    this.nextSeed = 1;
     this.setRoots(roots);
   }
   setRoots(roots: string[]) {
@@ -114,23 +127,28 @@ export class SourceParticlePlayer {
     this.changed();
   }
   burst(burst: ParticleBurst) {
-    if (!this.loaded) return;
-    this.start(burst.root, burst);
+    if (!this.loaded) return false;
+    return this.start(burst.root, burst);
   }
   private start(path: string, burst?: ParticleBurst) {
-    if (this.graphs.length >= 32) {
+    if (this.graphs.length >= this.graphLimit) {
       this.warnings.add("Active particle graph limit reached");
-      return;
+      return false;
     }
     const data = this.assets.graph.systems[path];
     if (!data) {
       this.warnings.add(`Missing particle root: ${path}`);
-      return;
+      return false;
     }
+    let seed = this.nextSeed++;
+    seed = Math.imul(seed ^ (seed >>> 16), 0x21f0aaad);
+    seed = Math.imul(seed ^ (seed >>> 15), 0x735a2d97);
+    seed ^= seed >>> 15;
     const definition = fields(data),
       simulation = new ParticleSimulation(
         definition,
         this.assets.graph.systems,
+        seed >>> 0,
       );
     if (
       simulation
@@ -174,6 +192,15 @@ export class SourceParticlePlayer {
           case "C_OP_RenderModels":
             renderer = new ParticleModels(op, node, this.assets);
             break;
+          case "C_OP_RenderProjected":
+            renderer = new ParticleProjected(op, node, this.assets);
+            break;
+          case "C_OP_RenderLightBeam":
+            renderer = new ParticleBeamLights(op, node);
+            this.warnings.add(
+              "Beam tube lighting uses bounded point-light samples",
+            );
+            break;
           case "C_OP_RenderStandardLight":
             renderer = new ParticleLights(op, node);
             break;
@@ -185,30 +212,67 @@ export class SourceParticlePlayer {
         renderers.push(renderer);
         this.root.add(renderer.root);
       }
+    const radius = burst?.spawnRadius ?? 0;
+    const angle = simulation.context.random() * Math.PI * 2;
+    const offset = new THREE.Vector3(
+      0,
+      Math.cos(angle) * radius,
+      Math.sin(angle) * radius,
+    );
     this.graphs.push({
       simulation,
       drivers,
       renderers,
-      motion: burst ? { speed: burst.speed, start: null } : undefined,
+      motion: burst
+        ? {
+            speed: burst.speed,
+            distance: burst.distance ?? burst.speed * 0.4,
+            start: burst.position?.clone() ?? null,
+            offset,
+            onImpact: burst.onImpact,
+            impacted: false,
+          }
+        : undefined,
     });
+    return true;
   }
   update(dt: number, camera: THREE.Camera, fade = 1, updateRenderers = true) {
+    if (this.graphs.some((graph) => !graph.motion?.start))
+      this.attachments.prepare();
     for (const graph of this.graphs) {
-      this.attachments.update(graph.simulation.controls, graph.drivers);
+      if (!graph.motion?.start)
+        this.attachments.update(graph.simulation.controls, graph.drivers, true);
       if (graph.motion) {
         const point = cp(graph.simulation.context);
-        graph.motion.start ??= point.position.clone();
+        graph.motion.start ??= point.position.clone().add(graph.motion.offset);
+        const distance = Math.min(
+          graph.motion.distance,
+          graph.simulation.age * graph.motion.speed,
+        );
         point.position
           .copy(graph.motion.start)
-          .addScaledVector(
-            new THREE.Vector3(1, 0, 0),
-            graph.simulation.age * graph.motion.speed,
-          );
-        if (graph.simulation.age > 0.4) graph.simulation.stop();
+          .addScaledVector(new THREE.Vector3(1, 0, 0), distance);
+        cp(graph.simulation.context, 1)
+          .position.copy(graph.motion.start)
+          .add(new THREE.Vector3(graph.motion.distance, 0, 0));
       }
       const steps = Math.ceil(Math.max(0, dt) / (1 / 60)),
         step = steps > 0 ? dt / steps : 0;
       for (let i = 0; i < steps; i++) graph.simulation.step(step);
+      if (
+        graph.motion &&
+        !graph.motion.impacted &&
+        graph.simulation.age > 0 &&
+        graph.simulation.age * graph.motion.speed >= graph.motion.distance
+      ) {
+        graph.motion.impacted = true;
+        graph.motion.onImpact?.(
+          (graph.motion.start ?? cp(graph.simulation.context).position)
+            .clone()
+            .add(new THREE.Vector3(graph.motion.distance, 0, 0)),
+        );
+        graph.simulation.stop();
+      }
       if (updateRenderers)
         for (const renderer of graph.renderers)
           renderer.update(camera, this.root, fade);
@@ -227,6 +291,12 @@ export class SourceParticlePlayer {
         this.graphs.splice(i, 1);
       }
     }
+  }
+  systemsInUse() {
+    return particleSystemsInUse(
+      this.graphs.map((graph) => graph.simulation),
+      this.assets.graph.systems,
+    );
   }
   dispose() {
     if (this.closed) return;

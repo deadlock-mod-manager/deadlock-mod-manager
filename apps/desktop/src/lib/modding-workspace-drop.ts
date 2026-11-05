@@ -18,6 +18,60 @@ export interface WorkspaceDrop {
   directory: boolean;
 }
 
+export function acceptsWorkspaceDrop(
+  types: readonly string[],
+  comparison: boolean,
+): boolean {
+  if (types.includes(ADDON_FILE_DRAG)) return comparison;
+  return (
+    types.includes(WORKSPACE_SOURCE_DRAG) ||
+    types.includes("Files") ||
+    types.includes("text/uri-list")
+  );
+}
+
+// Capture archive opens before file trees can import the VPK itself. Other
+// external files reach child import/projection targets before workspace fallback.
+export function workspaceDropRoute(
+  transfer: WorkspaceTransfer & { types: readonly string[] },
+  comparison: boolean,
+  workspaceId: string,
+): "capture" | "fallback" | "ignore" {
+  if (!acceptsWorkspaceDrop(transfer.types, comparison)) return "ignore";
+  if (transfer.types.includes(ADDON_FILE_DRAG)) {
+    const file = readAddonDrag(transfer.getData(ADDON_FILE_DRAG));
+    return file?.workspaceId === workspaceId ? "ignore" : "capture";
+  }
+  if (transfer.types.includes(WORKSPACE_SOURCE_DRAG)) return "capture";
+  const files = [
+    ...transfer.files,
+    ...Array.from(transfer.items).flatMap((item) => {
+      const file = item.kind === "file" ? item.getAsFile() : null;
+      return file ? [file] : [];
+    }),
+  ];
+  const names = [
+    ...files.map(getFileName),
+    ...droppedPaths(
+      transfer.getData("text/uri-list") || transfer.getData("text/plain"),
+    ),
+    ...(transfer.getData("text/html").match(/file:\/\/[^"'\s<>]+/g) ?? []),
+  ];
+  return names.some((name) => /\.(vpk|zip|7z|rar|dmodpkg)$/i.test(name))
+    ? "capture"
+    : "fallback";
+}
+
+export function handlesWorkspaceDrop(
+  route: ReturnType<typeof workspaceDropRoute>,
+  phase: "capture" | "bubble",
+  defaultPrevented: boolean,
+): boolean {
+  return phase === "capture"
+    ? route === "capture"
+    : route === "fallback" && !defaultPrevented;
+}
+
 // Start all browser reads before the drop handler returns and drag data expires.
 export async function captureWorkspaceDrop(
   transfer: WorkspaceTransfer,

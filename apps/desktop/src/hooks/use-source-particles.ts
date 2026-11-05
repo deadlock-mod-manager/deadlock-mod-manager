@@ -7,6 +7,12 @@ import type { FoundryParticleGraph } from "@/types/generated/FoundryParticleGrap
 import type { ParticleSourceDraft } from "@/types/generated/ParticleSourceDraft";
 import type { ParticleGraphOptions } from "@/types/generated/ParticleGraphOptions";
 import logger from "@/lib/logger";
+import { useMemo } from "react";
+import {
+  decodePreviewAnimation,
+  listPreviewAnimations,
+} from "@/lib/preview-animation";
+import { bool, fields, list, str } from "@/components/foundry/particles/values";
 
 export interface ParticleDraftSources {
   addonId: string;
@@ -93,6 +99,7 @@ export const useSourceParticles = (
         source.overlayRoot,
         source.revision,
         path,
+        textureSide,
       ];
       return {
         queryKey: key,
@@ -103,6 +110,7 @@ export const useSourceParticles = (
             null,
             signal,
             source.overlayRoot,
+            textureSide,
           );
           cacheFoundryModel(client, key, model);
           return model;
@@ -119,5 +127,64 @@ export const useSourceParticles = (
         return result.data && path ? [{ path, asset: result.data }] : [];
       }),
   });
-  return { graph, models };
+  const animated = useMemo(
+    () =>
+      [
+        ...new Set(
+          Object.values(graph.data?.systems ?? {}).flatMap((system) =>
+            list(fields(system).m_Renderers)
+              .map(fields)
+              .filter((renderer) => bool(renderer.m_bAnimated))
+              .flatMap((renderer) =>
+                list(renderer.m_ModelList).map((model) =>
+                  str(fields(model).m_model),
+                ),
+              ),
+          ),
+        ),
+      ].filter((path) => paths.includes(path)),
+    [graph.data?.systems, paths],
+  );
+  const animations = useQueries({
+    queries: animated.map((path) => ({
+      queryKey: [
+        "particle-model-animation",
+        source.filePath,
+        source.overlayRoot,
+        source.revision,
+        path,
+      ],
+      queryFn: async () => {
+        const model = {
+          ...source,
+          entryPath: path.endsWith("_c") ? path : `${path}_c`,
+        };
+        const choices = await listPreviewAnimations(model, [], true);
+        const choice = choices[0];
+        return choice
+          ? {
+              path,
+              animation: await decodePreviewAnimation(model, choice.clips),
+            }
+          : { path, animation: null };
+      },
+      staleTime: 60_000,
+      gcTime: 30_000,
+      retry: false,
+      meta: { skipGlobalErrorHandler: true },
+    })),
+    combine: (results) =>
+      results.flatMap((result) => (result.data ? [result.data] : [])),
+  });
+  const withAnimations = useMemo(
+    () =>
+      models.map((model) => ({
+        ...model,
+        animation:
+          animations.find((entry) => entry.path === model.path)?.animation ??
+          undefined,
+      })),
+    [models, animations],
+  );
+  return { graph, models: withAnimations };
 };

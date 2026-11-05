@@ -54,6 +54,7 @@ pub(super) fn decode_texture_preview(
     archive: &VpkArchive,
     texture_path: &str,
     material_path: Option<&str>,
+    texture_side: u32,
 ) -> Option<PreviewTexture> {
     let resource = load_preview_resource(archive, texture_path)?;
     let texture = decode_texture_preview_resource(
@@ -61,6 +62,7 @@ pub(super) fn decode_texture_preview(
         material_path.map(str::to_string),
         &resource,
         true,
+        texture_side,
     );
     if texture.is_none() {
         report_texture_failure(archive, texture_path, &resource);
@@ -73,8 +75,9 @@ pub(super) fn decode_texture_preview_resource(
     material_path: Option<String>,
     resource: &Resource,
     opaque: bool,
+    texture_side: u32,
 ) -> Option<PreviewTexture> {
-    let mut decoded = decode_rgba(resource)?;
+    let mut decoded = decode_rgba(resource, texture_side)?;
     if opaque {
         // Source alpha can hold shader masks. Preserve RGB through browser image
         // decoding instead of exporting those masks as transparency.
@@ -82,8 +85,10 @@ pub(super) fn decode_texture_preview_resource(
             pixel[3] = 255;
         }
     }
-    let png = encode_png_bytes(&decoded, PREVIEW_TEXTURE_SIDE).ok()?;
+    let png = encode_png_bytes(&decoded, texture_side).ok()?;
     Some(PreviewTexture {
+        source2: None,
+        tint_mask_png: None,
         name: texture_path,
         material: material_path.map(|path| normalize_compiled_path(&path, ".vmat")),
         png,
@@ -123,12 +128,16 @@ pub(super) fn decode_normal_pixel(pixel: [u8; 4], hemi_oct: bool) -> [u8; 4] {
     [encode(x), encode(y), encode(z), 255]
 }
 
-pub(super) fn decode_normal_png(resource: &Resource, hemi_oct: bool) -> Option<Vec<u8>> {
-    let mut decoded = decode_rgba(resource)?;
+pub(super) fn decode_normal_png(
+    resource: &Resource,
+    hemi_oct: bool,
+    texture_side: u32,
+) -> Option<Vec<u8>> {
+    let mut decoded = decode_rgba(resource, texture_side)?;
     for pixel in decoded.rgba.as_chunks_mut::<4>().0 {
         *pixel = decode_normal_pixel(*pixel, hemi_oct);
     }
-    encode_png_bytes(&decoded, PREVIEW_TEXTURE_SIDE).ok()
+    encode_png_bytes(&decoded, texture_side).ok()
 }
 
 pub(super) fn preview_resource(bytes: Vec<u8>) -> Option<Resource> {
@@ -141,15 +150,14 @@ pub(super) fn preview_resource(bytes: Vec<u8>) -> Option<Resource> {
 }
 
 pub(super) fn preview_dimensions(header: &VtexHeader) -> Option<(u32, u32)> {
-    // Embedded images and non-2D layouts need their own preview decoding path.
-    if header.format.mip_byte_size(1, 1).is_err()
-        || matches!(
-            header.format,
-            VtexFormat::PngRgba8888
-                | VtexFormat::JpegRgba8888
-                | VtexFormat::PngDxt5
-                | VtexFormat::JpegDxt5
-        )
+    let embedded = matches!(
+        header.format,
+        VtexFormat::PngRgba8888
+            | VtexFormat::JpegRgba8888
+            | VtexFormat::PngDxt5
+            | VtexFormat::JpegDxt5
+    );
+    if (!embedded && header.format.mip_byte_size(1, 1).is_err())
         || header.num_mip_levels == 0
         || header.num_mip_levels > 16
         || header.width == 0
@@ -173,7 +181,7 @@ pub(super) fn preview_dimensions(header: &VtexHeader) -> Option<(u32, u32)> {
     Some((width, height))
 }
 
-pub(super) fn decode_rgba(resource: &Resource) -> Option<DecodedTexture> {
+pub(super) fn decode_rgba(resource: &Resource, texture_side: u32) -> Option<DecodedTexture> {
     let block = resource.block_bytes("DATA")?;
     let extra_count = u32::from_le_bytes(block.get(36..40)?.try_into().ok()?);
     if extra_count as usize > resource.data.len() / 12 {
@@ -189,9 +197,7 @@ pub(super) fn decode_rgba(resource: &Resource) -> Option<DecodedTexture> {
             return None;
         }
     }
-    header
-        .decode_preview(&resource.data, PREVIEW_TEXTURE_SIDE)
-        .ok()
+    header.decode_preview(&resource.data, texture_side).ok()
 }
 
 /// Bake the glTF emissive map for a self-illuminated material.

@@ -100,6 +100,7 @@ pub(crate) fn compact_primitive(
     }
 
     let mut remap = HashMap::<u32, u32>::new();
+    let mut source_vertices = Vec::new();
     let mut indices = Vec::<u32>::with_capacity(source_indices.len());
     let mut positions = Vec::<f32>::new();
     let mut normals = vertices.normals.as_ref().map(|_| Vec::<f32>::new());
@@ -112,6 +113,7 @@ pub(crate) fn compact_primitive(
         let next_index = remap.len() as u32;
         let target_index = *remap.entry(*source_index).or_insert_with(|| {
             let index = *source_index as usize;
+            source_vertices.push(*source_index);
             positions.extend_from_slice(&vertices.positions[index * 3..index * 3 + 3]);
             if let (Some(source), Some(out)) = (&vertices.normals, &mut normals) {
                 out.extend_from_slice(&source[index * 3..index * 3 + 3]);
@@ -143,6 +145,7 @@ pub(crate) fn compact_primitive(
     let vertex_count = positions.len() / 3;
     let (index_bytes, index_component) = write_index_bytes(&indices, vertex_count);
     Some(DecodedPrimitive {
+        source_vertices,
         positions,
         normals,
         texcoords,
@@ -284,6 +287,7 @@ pub(crate) fn decode_vbib_primitive(
         4
     };
     Ok(DecodedPrimitive {
+        source_vertices: (0..vertex_buffer.element_count as u32).collect(),
         positions,
         normals,
         texcoords,
@@ -621,6 +625,7 @@ pub fn default_embedded_materials(res: &Resource) -> Vec<String> {
 pub fn decode_embedded_model_glb_from_resource(
     res: &Resource,
     preview_textures: &[PreviewTexture],
+    archive: &crate::vpk_extract::VpkArchive,
 ) -> Result<ModelGlb> {
     let skeleton = parse_model_skeleton(res)?;
     let ctrl = res
@@ -711,12 +716,27 @@ pub fn decode_embedded_model_glb_from_resource(
         ));
     }
 
-    model_from_decoded_primitives(
+    let mut model = model_from_decoded_primitives(
         &decoded,
         preview_textures,
         skeleton.as_ref(),
         mesh_groups.as_ref(),
-    )
+    )?;
+    if res.block_bytes("MRPH").is_some() && res.block_bytes("ANIM").is_some() {
+        match crate::morph::animated_glb(
+            &model.glb,
+            res,
+            archive,
+            &decoded
+                .iter()
+                .map(|p| p.source_vertices.as_slice())
+                .collect::<Vec<_>>(),
+        ) {
+            Ok(glb) => model.glb = glb,
+            Err(error) => log::warn!("[source2] Particle morph animation unavailable: {error}"),
+        }
+    }
+    Ok(model)
 }
 
 pub fn referenced_meshes(res: &Resource) -> Result<Vec<String>> {

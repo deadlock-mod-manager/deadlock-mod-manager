@@ -1,5 +1,6 @@
 import { Button } from "@deadlock-mods/ui/components/button";
 import { Input } from "@deadlock-mods/ui/components/input";
+import { Switch } from "@deadlock-mods/ui/components/switch";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -15,7 +16,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
@@ -28,6 +29,7 @@ import {
 import type { ModdingAddon } from "@/types/generated/ModdingAddon";
 import type { ModdingArchiveEntry } from "@/types/generated/ModdingArchiveEntry";
 import type { ModdingImportResult } from "@/types/generated/ModdingImportResult";
+import { ArchiveAssetGrid } from "./archive-asset-grid";
 import { AssetImportFolder } from "./asset-import-folder";
 import { AssetImportList } from "./asset-import-list";
 import { AssetPreview } from "./asset-preview";
@@ -44,7 +46,11 @@ import {
 } from "@/lib/archive-content-search";
 
 type ArchiveMode =
-  | { kind: "import"; addon: ModdingAddon; onImported: () => void }
+  | {
+      kind: "import";
+      addon: ModdingAddon;
+      onImported: (hierarchy: "content" | "game") => void;
+    }
   | { kind: "browse"; archivePath: string; label: string };
 
 import {
@@ -83,6 +89,16 @@ export const ArchiveBrowser = ({
     initialView.contentCaseSensitive,
   );
   const [pathFilter, setPathFilter] = useState(initialView.contentPathFilter);
+  const [compiledOnly, setCompiledOnly] = useState(false);
+  const [exportAddon, setExportAddon] = useState("");
+  const [assetView, setAssetView] = useState(true);
+  const addons = useQuery({
+    queryKey: ["workbench-addons"],
+    queryFn: () => invoke<ModdingAddon[]>("list_modding_addons"),
+    enabled: mode.kind === "browse",
+  });
+  const [showTreeFiles, setShowTreeFiles] = useState(false);
+  const treeFilesId = useId();
   const [contentRequest, setContentRequest] =
     useState<ArchiveContentQuery | null>(null);
   const [contentTarget, setContentTarget] =
@@ -150,6 +166,7 @@ export const ArchiveBrowser = ({
     mutationFn: () => {
       if (mode.kind !== "import") throw new Error("No addon selected");
       return invoke<ModdingImportResult>("import_modding_files", {
+        compiledOnly,
         addonId: mode.addon.id,
         selections: archiveSelectionPayload(selection),
       });
@@ -159,26 +176,39 @@ export const ArchiveBrowser = ({
       await client.invalidateQueries({
         queryKey: ["workbench-files", mode.addon.id],
       });
-      mode.onImported();
+      mode.onImported(compiledOnly ? "game" : "content");
     },
   });
   const exportFiles = useMutation({
     mutationKey: ["workbench-export"],
     mutationFn: async (decompile: boolean) => {
-      const destination = await openDialog({
-        directory: true,
-        multiple: false,
-      });
+      const targetAddon = addons.data?.find(
+        (addon) => addon.id === exportAddon,
+      );
+      const destination = targetAddon
+        ? decompile
+          ? targetAddon.contentPath
+          : targetAddon.gamePath
+        : await openDialog({ directory: true, multiple: false });
       if (!destination) return null;
       const result = await invoke<ModdingImportResult>(
         "export_modding_archive_files",
         {
           archivePath,
-          destination,
+          destination: targetAddon ? null : destination,
+          addonId: targetAddon?.id ?? null,
           decompile,
           selections: archiveSelectionPayload(selection),
         },
       );
+      if (targetAddon) {
+        await client.invalidateQueries({
+          queryKey: ["workbench-files", targetAddon.id],
+        });
+        await client.invalidateQueries({
+          queryKey: ["workbench-batch-files", targetAddon.id],
+        });
+      }
       return { ...result, destination };
     },
   });
@@ -260,6 +290,25 @@ export const ArchiveBrowser = ({
         </header>
       ) : null}
       <div className='flex shrink-0 flex-wrap items-center gap-1 border-b px-3 py-2'>
+        <div
+          role='group'
+          aria-label={t("workbenchAssets.view")}
+          className='mr-2 flex gap-1'>
+          <Button
+            size='sm'
+            variant={assetView ? "secondary" : "ghost"}
+            aria-pressed={assetView}
+            onClick={() => setAssetView(true)}>
+            {t("workbenchAssets.assets")}
+          </Button>
+          <Button
+            size='sm'
+            variant={assetView ? "ghost" : "secondary"}
+            aria-pressed={!assetView}
+            onClick={() => setAssetView(false)}>
+            {t("workbenchAssets.files")}
+          </Button>
+        </div>
         <Button
           size='icon'
           variant='ghost'
@@ -418,34 +467,57 @@ export const ArchiveBrowser = ({
       ) : null}
       <ResizablePanelGroup direction='horizontal' className='min-h-0 flex-1'>
         <ResizablePanel defaultSize={18} minSize={12} maxSize={30}>
-          <aside
-            className='h-full overflow-auto bg-muted/15 py-2'
-            role='tree'
-            aria-label={t("workbenchExplorer.archiveFolders")}>
-            <AssetImportFolder
-              node={root}
-              archivePath={archivePath}
-              directory={directory}
-              depth={0}
-              expanded={expanded}
-              selection={selection}
-              disabled={busy}
-              onNavigate={navigate}
-              onSelect={(node, checked) => select([node], checked)}
-              onExpand={(path) =>
-                setExpanded((previous) => {
-                  const next = new Set(previous);
-                  if (next.has(path)) next.delete(path);
-                  else next.add(path);
-                  return next;
-                })
-              }
-            />
-            {rootListing.isPending ? (
-              <p role='status' className='p-3 text-xs text-muted-foreground'>
-                {t("common.loading")}
-              </p>
-            ) : null}
+          <aside className='flex h-full min-h-0 flex-col bg-muted/15'>
+            <div className='flex shrink-0 items-center justify-between gap-2 border-b px-3 py-2'>
+              <label htmlFor={treeFilesId} className='cursor-pointer text-xs'>
+                {t("workbenchExplorer.showTreeFiles")}
+              </label>
+              <Switch
+                id={treeFilesId}
+                checked={showTreeFiles}
+                onCheckedChange={setShowTreeFiles}
+                disabled={busy}
+              />
+            </div>
+            <div
+              className='min-h-0 flex-1 overflow-auto py-2'
+              role='tree'
+              aria-label={t("workbenchExplorer.archiveTree")}>
+              <AssetImportFolder
+                node={root}
+                showFiles={showTreeFiles}
+                previewed={previewed}
+                onPreview={(path) => {
+                  const parent = path.slice(
+                    0,
+                    Math.max(0, path.lastIndexOf("/")),
+                  );
+                  if (parent !== directory) navigate(parent);
+                  preview(path);
+                }}
+                archivePath={archivePath}
+                directory={directory}
+                depth={0}
+                expanded={expanded}
+                selection={selection}
+                disabled={busy}
+                onNavigate={navigate}
+                onSelect={(node, checked) => select([node], checked)}
+                onExpand={(path) =>
+                  setExpanded((previous) => {
+                    const next = new Set(previous);
+                    if (next.has(path)) next.delete(path);
+                    else next.add(path);
+                    return next;
+                  })
+                }
+              />
+              {rootListing.isPending ? (
+                <p role='status' className='p-3 text-xs text-muted-foreground'>
+                  {t("common.loading")}
+                </p>
+              ) : null}
+            </div>
           </aside>
         </ResizablePanel>
         <ResizableHandle withHandle />
@@ -471,7 +543,19 @@ export const ArchiveBrowser = ({
                 })}
               </span>
             </div>
-            {searchMode === "contents" ? (
+            {assetView && searchMode === "paths" ? (
+              <ArchiveAssetGrid
+                archivePath={archivePath}
+                directory={directory}
+                search={debouncedSearch}
+                regex={regex}
+                selected={previewed}
+                selection={selection}
+                disabled={busy}
+                onPreview={preview}
+                onSelect={(entry, checked) => select([entry], checked)}
+              />
+            ) : searchMode === "contents" ? (
               <ArchiveContentSearchPanel
                 search={content}
                 submitted={contentRequest !== null}
@@ -570,9 +654,15 @@ export const ArchiveBrowser = ({
           <FolderOpenIcon className='mt-0.5 size-4 shrink-0' />
           <p
             className='min-w-0 truncate'
-            title={mode.kind === "import" ? mode.addon.contentPath : undefined}>
+            title={
+              mode.kind === "import"
+                ? compiledOnly
+                  ? mode.addon.gamePath
+                  : mode.addon.contentPath
+                : undefined
+            }>
             {mode.kind === "import"
-              ? `${t("workbenchExplorer.decompileDestination")} ${mode.addon.contentPath}`
+              ? `${t(compiledOnly ? "workbenchExplorer.compiledDestination" : "workbenchExplorer.decompileDestination")} ${compiledOnly ? mode.addon.gamePath : mode.addon.contentPath}`
               : t("workbenchArchives.exportHint")}
           </p>
         </div>
@@ -601,7 +691,26 @@ export const ArchiveBrowser = ({
               </Button>
             ) : null}
           </div>
-          <div className='flex gap-2'>
+          <div className='flex flex-wrap items-center gap-3'>
+            {mode.kind === "import" ? (
+              <label className='flex max-w-sm cursor-pointer items-start gap-2 text-xs'>
+                <input
+                  type='checkbox'
+                  className='mt-0.5'
+                  disabled={busy}
+                  checked={compiledOnly}
+                  onChange={(event) => setCompiledOnly(event.target.checked)}
+                />
+                <span>
+                  <span className='block font-medium'>
+                    {t("workbenchExplorer.compiledOnly")}
+                  </span>
+                  <span className='text-[11px] text-muted-foreground'>
+                    {t("workbenchExplorer.compiledOnlyHint")}
+                  </span>
+                </span>
+              </label>
+            ) : null}
             {mode.kind === "import" ? (
               <Button
                 disabled={!count || count > MAX_IMPORT_FILES || busy}
@@ -609,11 +718,31 @@ export const ArchiveBrowser = ({
                 {t(
                   busy
                     ? "workbenchExplorer.importing"
-                    : "workbenchExplorer.decompileSelected",
+                    : compiledOnly
+                      ? "workbenchExplorer.importCompiled"
+                      : "workbenchExplorer.decompileSelected",
                 )}
               </Button>
             ) : (
               <>
+                <select
+                  aria-label={t("workbenchArchives.exportTarget")}
+                  value={exportAddon}
+                  disabled={busy}
+                  onChange={(event) => {
+                    setExportAddon(event.target.value);
+                    exportFiles.reset();
+                  }}
+                  className='h-9 max-w-52 rounded border bg-background px-2 text-xs'>
+                  <option value=''>
+                    {t("workbenchArchives.exportFolder")}
+                  </option>
+                  {addons.data?.map((addon) => (
+                    <option key={addon.id} value={addon.id}>
+                      {addon.name}
+                    </option>
+                  ))}
+                </select>
                 <Button
                   variant='outline'
                   disabled={!count || count > MAX_IMPORT_FILES || busy}

@@ -4,6 +4,7 @@ import { modelAssetUrl, retainFoundryModel } from "@/lib/model-assets";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import type { FoundryParticleGraph } from "@/types/generated/FoundryParticleGraph";
 import type { ParticleTexture } from "@/types/generated/ParticleTexture";
+import type { PreviewAnimation } from "@/types/generated/PreviewAnimation";
 
 import { gradientTexture } from "./texture-layers";
 import { bool, str, type Fields } from "./values";
@@ -11,6 +12,7 @@ import { bool, str, type Fields } from "./values";
 export interface ParticleModelAsset {
   path: string;
   asset: FoundryModel;
+  animation?: PreviewAnimation;
 }
 
 export class ParticleAssets {
@@ -30,6 +32,10 @@ export class ParticleAssets {
     { texture: THREE.Texture; sheet: ParticleTexture }
   >();
   readonly models = new Map<string, THREE.Group>();
+  readonly animations = new Map<
+    string,
+    PreviewAnimation | THREE.AnimationClip
+  >();
   readonly warnings = new Set<string>();
   readonly ready: Promise<void>;
   private closed = false;
@@ -65,11 +71,15 @@ export class ParticleAssets {
         }
       }),
       ...models.map(async (model) => {
+        if (model.animation) this.animations.set(model.path, model.animation);
         const reusable = previous?.models.get(model.path);
         if (
           reusable &&
           previous?.modelIds.get(model.path) === model.asset.assetId
         ) {
+          const previousAnimation = previous.animations.get(model.path);
+          if (!model.animation && previousAnimation)
+            this.animations.set(model.path, previousAnimation);
           this.models.set(model.path, reusable);
           this.modelIds.set(model.path, model.asset.assetId);
           previous.models.delete(model.path);
@@ -85,6 +95,8 @@ export class ParticleAssets {
             disposeModel(gltf.scene);
             return;
           }
+          if (!model.animation && gltf.animations[0])
+            this.animations.set(model.path, gltf.animations[0]);
           this.models.set(model.path, gltf.scene);
           this.modelIds.set(model.path, model.asset.assetId);
         } catch {
@@ -104,6 +116,7 @@ export class ParticleAssets {
     for (const model of this.models.values()) disposeModel(model);
     this.textures.clear();
     this.models.clear();
+    this.animations.clear();
     this.modelIds.clear();
   }
 }

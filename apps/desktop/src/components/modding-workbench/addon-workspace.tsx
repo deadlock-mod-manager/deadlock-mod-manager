@@ -19,8 +19,14 @@ import {
 } from "@deadlock-mods/ui/components/empty";
 import { useIsMutating, useMutation, useQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ADDON_FILE_DRAG, readAddonDrag } from "@/lib/modding-file-drag";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type DragEvent,
+} from "react";
+import { ADDON_FILE_DRAG } from "@/lib/modding-file-drag";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import {
   emptyWorkspace,
@@ -31,7 +37,11 @@ import {
   type WorkspaceView,
   type WorkspaceSource,
 } from "@/lib/modding-workspace";
-import { captureWorkspaceDrop } from "@/lib/modding-workspace-drop";
+import {
+  handlesWorkspaceDrop,
+  workspaceDropRoute,
+  captureWorkspaceDrop,
+} from "@/lib/modding-workspace-drop";
 import { useWorkspaceDrop } from "./use-workspace-drop";
 import { useTranslation } from "react-i18next";
 import type { ModdingAddon } from "@/types/generated/ModdingAddon";
@@ -135,12 +145,41 @@ export const AddonWorkspace = ({
   useEffect(() => {
     onDirtyChange?.(busy || drop.isPending);
   }, [busy, drop.isPending, onDirtyChange]);
-  const acceptDrop = (transfer: DataTransfer) =>
-    transfer.types.includes(WORKSPACE_SOURCE_DRAG) ||
-    (comparison &&
-      (transfer.types.includes(ADDON_FILE_DRAG) ||
-        transfer.types.includes("Files") ||
-        transfer.types.includes("text/uri-list")));
+  const handleDragOver = (
+    event: DragEvent<HTMLElement>,
+    phase: "capture" | "bubble",
+  ) => {
+    const route = workspaceDropRoute(
+      event.dataTransfer,
+      comparison,
+      workspaceId,
+    );
+    if (!handlesWorkspaceDrop(route, phase, event.defaultPrevented)) return;
+    event.preventDefault();
+    if (!event.dataTransfer.types.includes(ADDON_FILE_DRAG))
+      event.stopPropagation();
+    event.dataTransfer.dropEffect = busy ? "none" : "copy";
+    setDragging(!busy);
+  };
+  const handleDrop = (
+    event: DragEvent<HTMLElement>,
+    phase: "capture" | "bubble",
+  ) => {
+    setDragging(false);
+    const route = workspaceDropRoute(
+      event.dataTransfer,
+      comparison,
+      workspaceId,
+    );
+    if (!handlesWorkspaceDrop(route, phase, event.defaultPrevented)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (busy || drop.isPending) {
+      toast.error(t("workbenchCompare.finishEditing"));
+      return;
+    }
+    drop.mutate(captureWorkspaceDrop(event.dataTransfer));
+  };
 
   return (
     <section
@@ -148,13 +187,10 @@ export const AddonWorkspace = ({
       aria-label={t(
         comparison ? "workbenchCompare.workspace" : "workbenchExplorer.addons",
       )}
-      onDragOverCapture={(event) => {
-        if (!acceptDrop(event.dataTransfer)) return;
+      onDragOverCapture={(event) => handleDragOver(event, "capture")}
+      onDragOver={(event) => {
+        handleDragOver(event, "bubble");
         event.preventDefault();
-        if (!event.dataTransfer.types.includes(ADDON_FILE_DRAG))
-          event.stopPropagation();
-        event.dataTransfer.dropEffect = busy ? "none" : "copy";
-        setDragging(!busy);
       }}
       onDragLeave={(event) => {
         if (
@@ -163,21 +199,10 @@ export const AddonWorkspace = ({
         )
           setDragging(false);
       }}
-      onDropCapture={(event) => {
-        if (!acceptDrop(event.dataTransfer)) return;
-        const file = readAddonDrag(event.dataTransfer.getData(ADDON_FILE_DRAG));
-        if (file?.workspaceId === workspaceId) {
-          setDragging(false);
-          return;
-        }
+      onDropCapture={(event) => handleDrop(event, "capture")}
+      onDrop={(event) => {
+        handleDrop(event, "bubble");
         event.preventDefault();
-        event.stopPropagation();
-        setDragging(false);
-        if (busy || drop.isPending) {
-          toast.error(t("workbenchCompare.finishEditing"));
-          return;
-        }
-        drop.mutate(captureWorkspaceDrop(event.dataTransfer));
       }}>
       {comparison ? (
         <div className='flex shrink-0 flex-wrap items-center gap-2 border-b px-3 py-2 text-xs text-muted-foreground'>
@@ -216,6 +241,7 @@ export const AddonWorkspace = ({
         </p>
       ) : null}
       <ResizablePanelGroup
+        deferResize
         direction='horizontal'
         autoSaveId={
           comparison ? "workbench-comparison-content" : "workbench-addons"

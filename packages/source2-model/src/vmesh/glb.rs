@@ -462,7 +462,17 @@ pub(crate) fn build_glb(
                     &format!("{} effect mask", texture.name),
                 )
             });
-            (base, normal, orm, emissive, effect_mask)
+            let tint_mask = texture.tint_mask_png.as_deref().map(|png| {
+                append_png_texture(
+                    &mut bin,
+                    &mut buffer_views,
+                    &mut images,
+                    &mut texture_defs,
+                    png,
+                    &format!("{} tint mask", texture.name),
+                )
+            });
+            (base, normal, orm, emissive, effect_mask, tint_mask)
         })
         .collect::<Vec<_>>();
 
@@ -475,7 +485,8 @@ pub(crate) fn build_glb(
         "doubleSided": false
     })];
     let mut uses_emissive_strength = false;
-    for (texture, (base, normal, orm, emissive, effect_mask)) in
+    let mut uses_unlit = false;
+    for (texture, (base, normal, orm, emissive, effect_mask, tint_mask)) in
         textures.iter().zip(&texture_indices)
     {
         let alpha_mode = match texture.alpha_mode {
@@ -537,6 +548,17 @@ pub(crate) fn build_glb(
         }
         if let Some(path) = &texture.material {
             material["extras"]["sourceMaterial"] = json!(path.trim_end_matches("_c"));
+        }
+        if let Some(source2) = &texture.source2 {
+            let mut source2 = source2.clone();
+            if let Some(color) = &mut source2.color {
+                color.tint_mask_texture = *tint_mask;
+            }
+            if source2.unlit {
+                material["extensions"]["KHR_materials_unlit"] = json!({});
+                uses_unlit = true;
+            }
+            material["extras"]["source2"] = json!(source2);
         }
         materials.push(material);
     }
@@ -621,8 +643,15 @@ pub(crate) fn build_glb(
         "bufferViews": buffer_views,
         "accessors": accessors
     });
+    let mut extensions = Vec::new();
     if uses_emissive_strength {
-        gltf["extensionsUsed"] = json!(["KHR_materials_emissive_strength"]);
+        extensions.push("KHR_materials_emissive_strength");
+    }
+    if uses_unlit {
+        extensions.push("KHR_materials_unlit");
+    }
+    if !extensions.is_empty() {
+        gltf["extensionsUsed"] = json!(extensions);
     }
     if let Some(groups) = mesh_groups {
         let all = groups.choices.len();
@@ -780,6 +809,7 @@ pub(crate) fn decode_mesh_glb_from_resource_with_skeleton(
     }
 
     let mut decoded = DecodedPrimitive {
+        source_vertices: Vec::new(),
         positions,
         normals,
         texcoords,

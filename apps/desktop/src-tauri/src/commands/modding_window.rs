@@ -57,7 +57,7 @@ pub async fn open_modding_comparison_window(app: AppHandle, snapshot: String) ->
     detached: true,
     dirty: false,
   };
-  if let Err(error) = WebviewWindowBuilder::new(
+  let builder = WebviewWindowBuilder::new(
     &app,
     COMPARISON_WINDOW,
     WebviewUrl::App("index.html".into()),
@@ -65,10 +65,10 @@ pub async fn open_modding_comparison_window(app: AppHandle, snapshot: String) ->
   .title("DMM Workbench — Comparison")
   .inner_size(1280.0, 850.0)
   .min_inner_size(760.0, 520.0)
-  .decorations(true)
-  .disable_drag_drop_handler()
-  .build()
-  {
+  .decorations(true);
+  #[cfg(not(all(target_os = "linux", feature = "tauri-wry")))]
+  let builder = builder.disable_drag_drop_handler();
+  if let Err(error) = builder.build() {
     COMPARISON
       .lock()
       .map_err(|error| Error::BackgroundTaskFailed(error.to_string()))?

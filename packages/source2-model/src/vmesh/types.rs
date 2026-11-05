@@ -49,6 +49,8 @@ pub struct ModelGlb {
 
 #[derive(Debug, Clone)]
 pub struct PreviewTexture {
+    pub source2: Option<crate::material_preview::metadata::Source2Material>,
+    pub tint_mask_png: Option<Vec<u8>>,
     pub name: String,
     pub material: Option<String>,
     pub png: Vec<u8>,
@@ -79,6 +81,15 @@ pub struct PreviewTexture {
 
 #[derive(Debug, Clone, serde::Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct Source2AnimatedAlbedo {
+    pub scale: [f32; 2],
+    pub offsets: Vec<[f32; 2]>,
+    pub durations_ms: Vec<u32>,
+    pub plays: u32,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Source2Effect {
     pub shader: String,
     pub material: String,
@@ -86,6 +97,8 @@ pub struct Source2Effect {
     pub vectors: std::collections::BTreeMap<String, [f32; 4]>,
     pub flags: std::collections::BTreeMap<String, i64>,
     pub textures: std::collections::BTreeMap<String, String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub animated_albedo: Option<Source2AnimatedAlbedo>,
 }
 
 /// Deadlock's toon outline around NPR-lit materials.
@@ -151,6 +164,7 @@ pub(crate) struct GlbPrimitive<'a> {
 }
 
 pub(crate) struct DecodedPrimitive {
+    pub(crate) source_vertices: Vec<u32>,
     pub(crate) positions: Vec<f32>,
     pub(crate) normals: Option<Vec<f32>>,
     pub(crate) texcoords: Option<Vec<f32>>,

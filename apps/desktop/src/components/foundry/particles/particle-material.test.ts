@@ -101,3 +101,25 @@ test("reports unavailable layer rendering instead of silently pretending it is s
   material?.dispose();
   assets.dispose();
 });
+
+test("one shared texture can clamp on a smoke layer and repeat on a noise layer", () => {
+  const assets = assetsForTest();
+  const texture = assets.textures.get("smoke")?.texture;
+  if (!texture) throw new Error("Missing smoke texture");
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  const material = particleMaterial(
+    {
+      m_vecTexturesInput: [
+        { m_hTexture: "smoke", m_TextureControls: { m_bClampUVs: true } },
+        { m_hTexture: "smoke" },
+      ],
+    },
+    assets,
+    SPRITE_VERTEX,
+  );
+  expect(material?.uniforms.clampUVs.value).toEqual([true, false]);
+  expect(material?.uniforms.map0.value).toBe(material?.uniforms.map1.value);
+  expect(texture.wrapS).toBe(THREE.RepeatWrapping);
+  material?.dispose();
+  assets.dispose();
+});

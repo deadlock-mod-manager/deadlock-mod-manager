@@ -93,7 +93,7 @@ pub async fn preview_modding_image(
     }
     let data = std::fs::read(&file)?;
     let png = if path.ends_with(".vtex_c") {
-      source2_model::decode_texture_png_bytes(data)
+      source2_model::decode_texture_png_bytes(data, false)
         .map_err(|e| Error::InvalidInput(e.to_string()))?
         .png
     } else {

@@ -7,22 +7,28 @@ import {
   releaseFoundryModel,
   retainFoundryModel,
   decodeModdingSourceModel,
+  decodeModdingDmx,
 } from "./model-assets";
 import type { ModdingSourceModel } from "@/types/generated/ModdingSourceModel";
+import type { ModdingDmxModel } from "@/types/generated/ModdingDmxModel";
 
 interface IpcArguments {
   assetId?: string;
   requestId?: string;
+  textureSide?: number;
 }
 
 let nextDecode: Promise<FoundryModel>;
 let nextSource: Promise<ModdingSourceModel>;
+let nextDmx: Promise<ModdingDmxModel>;
 const invoke = mock((command: string, _args?: IpcArguments) =>
   command === "foundry_decode_model"
     ? nextDecode
     : command === "preview_modding_source_model"
       ? nextSource
-      : Promise.resolve(),
+      : command === "preview_modding_dmx"
+        ? nextDmx
+        : Promise.resolve(),
 );
 mock.module("@tauri-apps/api/core", () => ({
   invoke,
@@ -48,6 +54,12 @@ const released = () =>
 beforeEach(() => {
   invoke.mockClear();
   nextDecode = Promise.resolve(artifact());
+  nextDmx = Promise.resolve({
+    ...artifact(),
+    skeletonOnly: true,
+    associatedModel: null,
+    layers: [],
+  });
   nextSource = Promise.resolve({
     meshes: [
       { asset: artifact(), name: "body", scale: 0.4 },
@@ -55,6 +67,70 @@ beforeEach(() => {
     ],
     diagnostics: [],
   });
+});
+
+test("DMX preview keeps skeleton metadata and releases its model artifact", async () => {
+  const model = await decodeModdingDmx(
+    "addon",
+    "content",
+    "skeleton.dmx",
+    new AbortController().signal,
+  );
+  expect(model.skeletonOnly).toBe(true);
+  expect(model.vertexCount).toBe(3);
+  releaseFoundryModel(model);
+  expect(released()).toContain(model.assetId);
+});
+
+test("thumbnail decoding requests a small texture bound without changing full previews", async () => {
+  const small = await decodeFoundryModel(
+    "game.vpk",
+    "hero.vmdl_c",
+    null,
+    undefined,
+    "addon",
+    256,
+  );
+  expect(
+    invoke.mock.calls.find(([name]) => name === "foundry_decode_model")?.[1]
+      ?.textureSide,
+  ).toBe(256);
+  releaseFoundryModel(small);
+  invoke.mockClear();
+  nextDecode = Promise.resolve(artifact());
+  const full = await decodeFoundryModel("game.vpk", "hero.vmdl_c");
+  expect(
+    invoke.mock.calls.find(([name]) => name === "foundry_decode_model")?.[1]
+      ?.textureSide,
+  ).toBeUndefined();
+  releaseFoundryModel(full);
+});
+
+test("native source thumbnails request small material textures independently of foreground previews", async () => {
+  const thumbnail = await decodeModdingSourceModel(
+    "addon",
+    "hero.vmdl",
+    new AbortController().signal,
+    256,
+  );
+  expect(
+    invoke.mock.calls.find(
+      ([name]) => name === "preview_modding_source_model",
+    )?.[1]?.textureSide,
+  ).toBe(256);
+  releaseFoundryModel(thumbnail);
+  invoke.mockClear();
+  const foreground = await decodeModdingSourceModel(
+    "addon",
+    "hero.vmdl",
+    new AbortController().signal,
+  );
+  expect(
+    invoke.mock.calls.find(
+      ([name]) => name === "preview_modding_source_model",
+    )?.[1]?.textureSide,
+  ).toBeUndefined();
+  releaseFoundryModel(foreground);
 });
 
 test("source model mesh leases stay alive until the renderer finishes reading", async () => {

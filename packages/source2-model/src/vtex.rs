@@ -216,8 +216,8 @@ impl VtexHeader {
             entry_pos += 12;
         }
 
-        // Pixel data begins after the fixed header (40 bytes) plus the extra-data
-        // table and any inline extra-data payloads.
+        // Streamed pixels follow the entire DATA block, including compiler alignment padding
+        // after the fixed header and any extra-data payloads.
         let header_end = base + 40;
         let extra_end = extra
             .iter()
@@ -225,7 +225,7 @@ impl VtexHeader {
             .max()
             .unwrap_or(header_end)
             .max(entry_pos);
-        let data_offset = extra_end.max(header_end);
+        let data_offset = extra_end.max(header_end).max(base + block.size);
 
         Ok(VtexHeader {
             version,
@@ -472,8 +472,17 @@ impl VtexHeader {
         // mip-size math and drop the card entirely).
         if self.format.is_embedded_image() {
             let blob = self.embedded_mip_bytes(data, level)?;
-            let img = image::load_from_memory(blob)
-                .map_err(|e| Source2Error::Decode(format!("embedded image: {e}")))?
+            let mut reader = image::ImageReader::new(std::io::Cursor::new(blob))
+                .with_guessed_format()
+                .map_err(|error| Source2Error::Decode(format!("embedded image: {error}")))?;
+            let mut limits = image::Limits::default();
+            limits.max_alloc = Some(128 * 1024 * 1024);
+            limits.max_image_width = Some((u32::from(self.width) >> level).max(1));
+            limits.max_image_height = Some((u32::from(self.height) >> level).max(1));
+            reader.limits(limits);
+            let img = reader
+                .decode()
+                .map_err(|error| Source2Error::Decode(format!("embedded image: {error}")))?
                 .to_rgba8();
             return Ok(DecodedTexture {
                 width: img.width(),
@@ -569,6 +578,86 @@ mod sheet_budget_tests {
         );
     }
 
+    #[test]
+    fn padded_data_block_is_skipped_before_embedded_png_pixels() {
+        let mut bytes = vec![0u8; 48];
+        bytes[..2].copy_from_slice(&1u16.to_le_bytes());
+        bytes[20..22].copy_from_slice(&2u16.to_le_bytes());
+        bytes[22..24].copy_from_slice(&2u16.to_le_bytes());
+        bytes[24..26].copy_from_slice(&1u16.to_le_bytes());
+        bytes[26] = VtexFormat::PngRgba8888 as u8;
+        bytes[27] = 1;
+        let image = image::RgbaImage::from_pixel(2, 2, image::Rgba([18, 42, 73, 109]));
+        let mut png = std::io::Cursor::new(Vec::new());
+        image.write_to(&mut png, image::ImageFormat::Png).unwrap();
+        bytes.extend(png.into_inner());
+        let resource = Resource {
+            data: bytes,
+            blocks: vec![crate::resource::ResourceBlock {
+                name: "DATA".into(),
+                offset: 0,
+                size: 48,
+            }],
+        };
+        let header = VtexHeader::parse(&resource).unwrap();
+        assert_eq!(header.data_offset, 48);
+        let decoded = header.decode(&resource.data).unwrap();
+        assert_eq!(decoded.rgba, [18, 42, 73, 109].repeat(4));
+    }
+    #[test]
+    #[ignore = "Requires DMM_ATLAS_TEXTURE_FIXTURE exported game texture"]
+    fn actual_exported_atlas_decodes_through_source2_model() {
+        let file = std::env::var("DMM_ATLAS_TEXTURE_FIXTURE").expect("Set exported texture path");
+        let texture = crate::decode_texture_file(std::path::Path::new(&file)).unwrap();
+        let png = image::load_from_memory(&texture.png).unwrap();
+        assert!(png.width() > 0 && png.height() > 0);
+    }
+    #[test]
+    #[ignore = "Requires DMM_ATLAS_ARCHIVE_FIXTURE and DMM_ATLAS_ADDON_FIXTURE"]
+    fn saved_haze_overlay_glb_contains_animated_atlas_pixels() {
+        let archive = std::env::var("DMM_ATLAS_ARCHIVE_FIXTURE").expect("Set game archive");
+        let addon = std::env::var("DMM_ATLAS_ADDON_FIXTURE").expect("Set addon game root");
+        let model = crate::decode_model_glb_with_overlay(
+            std::path::Path::new(&archive),
+            "models/heroes_staging/haze/haze.vmdl_c",
+            Some(std::path::Path::new(&addon)),
+        )
+        .unwrap();
+        if let Ok(path) = std::env::var("DMM_ATLAS_GLB_PROOF_OUTPUT") {
+            std::fs::write(path, &model.glb).unwrap();
+        }
+        let length = u32::from_le_bytes(model.glb[12..16].try_into().unwrap()) as usize;
+        let json: serde_json::Value = serde_json::from_slice(&model.glb[20..20 + length]).unwrap();
+        let body = json["materials"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|material| {
+                material["extras"]["source2Effect"]["material"]
+                    .as_str()
+                    .is_some_and(|name| name.contains("hazev2.vmat"))
+            })
+            .expect("Haze body material");
+        assert!(
+            body["extras"]["source2Effect"]["animatedAlbedo"]["offsets"]
+                .as_array()
+                .unwrap()
+                .len()
+                > 1
+        );
+        let texture = body["pbrMetallicRoughness"]["baseColorTexture"]["index"]
+            .as_u64()
+            .expect("Body albedo texture") as usize;
+        let image = json["textures"][texture]["source"].as_u64().unwrap() as usize;
+        let view = json["images"][image]["bufferView"].as_u64().unwrap() as usize;
+        let offset = json["bufferViews"][view]["byteOffset"].as_u64().unwrap() as usize;
+        let size = json["bufferViews"][view]["byteLength"].as_u64().unwrap() as usize;
+        let binary = 20 + length + 8;
+        let pixels = image::load_from_memory(&model.glb[binary + offset..binary + offset + size])
+            .unwrap()
+            .to_rgba8();
+        assert!(pixels.pixels().any(|pixel| pixel.0[..3] != [255; 3]));
+    }
     #[test]
     fn rejects_compressed_mip_count_before_reserving() {
         let mut bytes = vec![0; 12];

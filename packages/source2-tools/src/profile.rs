@@ -165,7 +165,7 @@ fn check_model_metadata(root: &Path) -> Result<(), ToolError> {
 }
 
 pub fn inspect_sdk(root: &Path) -> Result<SdkInspection, ToolError> {
-    inspect_sdk_with(root, file_hash)
+    inspect_sdk_cached(root)
 }
 
 fn inspect_sdk_with(

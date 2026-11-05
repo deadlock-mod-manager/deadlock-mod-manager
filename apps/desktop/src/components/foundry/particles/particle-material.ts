@@ -61,6 +61,11 @@ export function particleMaterial(
       map3: { value: textures[3] ?? primary },
       map4: { value: textures[4] ?? primary },
       layerCount: { value: refs.length },
+      clampUVs: {
+        value: refs.map((ref) =>
+          bool(fields(ref.m_TextureControls).m_bClampUVs),
+        ),
+      },
       channels: {
         value: refs.map((ref) =>
           layerIndex(
@@ -102,9 +107,9 @@ export function particleMaterial(
     },
     vertexShader: vertex,
     fragmentShader: `uniform sampler2D map0;uniform sampler2D map1;uniform sampler2D map2;uniform sampler2D map3;uniform sampler2D map4;
-      uniform int layerCount;uniform int channels[5];uniform int blends[5];uniform int effects[5];uniform float layerBlend[5];uniform float distortion[5];uniform float zoom[5];uniform float rotation[5];uniform vec4 uvTransforms[5];uniform float opacity;uniform float brightness;uniform float outputAlphaFactor;uniform bool modulate2x;
+      uniform int layerCount;uniform int channels[5];uniform int blends[5];uniform int effects[5];uniform float layerBlend[5];uniform float distortion[5];uniform float zoom[5];uniform float rotation[5];uniform vec4 uvTransforms[5];uniform float opacity;uniform float brightness;uniform float outputAlphaFactor;uniform bool modulate2x;uniform bool clampUVs[5];
       varying vec2 vUv;varying vec4 vRect0;varying vec4 vRect1;varying vec4 vRect2;varying vec4 vRect3;varying vec4 vRect4;varying vec4 vColor;
-      vec4 sampleLayer(int i,vec2 uv){if(i==0)return texture2D(map0,uv);if(i==1)return texture2D(map1,uv);if(i==2)return texture2D(map2,uv);if(i==3)return texture2D(map3,uv);return texture2D(map4,uv);}
+      vec4 sampleLayer(int i,vec2 uv){if(clampUVs[i]){vec4 bounds=i==0?vRect0:i==1?vRect1:i==2?vRect2:i==3?vRect3:vRect4;uv=clamp(uv,bounds.xy,bounds.zw);}if(i==0)return texture2D(map0,uv);if(i==1)return texture2D(map1,uv);if(i==2)return texture2D(map2,uv);if(i==3)return texture2D(map3,uv);return texture2D(map4,uv);}
       float luma(vec3 c){return dot(c,vec3(.299,.587,.114));}
       vec4 maskLayer(vec4 a,vec4 b,int mode){
         if(mode==0)return vec4(b.rgb,a.a);if(mode==1)return b;if(mode==2)return vec4(a.rgb,b.a);if(mode==3)return vec4(b.rgb,a.a*b.a);

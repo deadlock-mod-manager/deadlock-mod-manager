@@ -1,3 +1,5 @@
+import type { ModelPaintAnimation } from "@/lib/model-paint-animation";
+import type { ModdingModelPartEdit } from "@/types/generated/ModdingModelPartEdit";
 import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Tooltip,
@@ -42,18 +44,37 @@ import {
   type FoundryPreviewTint,
   type FoundryTextureRefresh,
 } from "./workbench-model-viewer";
-import { ViewerAnimationPicker } from "./viewer-animation-picker";
-import { type ViewerEffectFactory } from "./viewer-effects";
+import { ViewerAnimationPicker } from "./workbench-viewer-animation-picker";
+import type { ViewerEffectFactory } from "./viewer-effects";
 import type { ViewerCallout } from "./viewer-callouts";
-import { overlaySurface } from "./viewer-tools";
+import { MODEL_PREVIEW_GC_TIME } from "@/lib/model-assets";
+import { overlaySurface } from "./workbench-viewer-tools";
 import {
   AbilityBar,
   EffectToggle,
   SpeedPicker,
   Timeline,
-} from "./viewer-transport";
+} from "./workbench-viewer-transport";
+
+import type { ParticleSystemInUse } from "./particles/systems-in-use";
+import { ModelParticleList } from "../modding-workbench/model-particle-list";
+
+import type { ModelSurfacePaintTool } from "@/lib/model-surface-paint";
+import type { ReactNode, RefObject } from "react";
+
+import type { ModelImageProjector } from "@/lib/model-image-projection";
+import type { ModelImageSurfaceDraft } from "@/lib/model-image-surface-preview";
 
 interface Props {
+  imageDraft?: RefObject<ModelImageSurfaceDraft | null>;
+  pauseForImagePlacement?: boolean;
+  viewportOverlay?: ReactNode;
+  imageProjector?: RefObject<ModelImageProjector | null>;
+  imageDrop?: RefObject<
+    ((file: File, point: { x: number; y: number }) => void) | null
+  >;
+  surfacePaint?: RefObject<ModelSurfacePaintTool | null>;
+  onMaterialPick?: (material: string) => void;
   model: FoundryModel;
   label: string;
   source: PreviewSource;
@@ -68,6 +89,11 @@ interface Props {
   readTexture?: (path: string) => Promise<string>;
   onReadyChange?: (ready: boolean) => void;
   onHeroCapture?: (capture: (() => Promise<Blob | null>) | null) => void;
+  modelEdits?: readonly ModdingModelPartEdit[];
+  modelPatterns?: ReadonlyMap<string, Uint8Array>;
+  modelPaints?: ReadonlyMap<string, Uint8Array>;
+  modelPaintAnimations?: ReadonlyMap<string, ModelPaintAnimation>;
+  materialInputs?: Readonly<Record<string, number>>;
   clipPath?: string;
 }
 
@@ -94,9 +120,22 @@ export const AnimatedModelPreview = ({
   readTexture,
   onReadyChange,
   onHeroCapture,
+  modelEdits,
+  modelPatterns,
+  modelPaints,
+  modelPaintAnimations,
+  materialInputs,
+  onMaterialPick,
   clipPath,
+  surfacePaint,
+  imageProjector,
+  imageDrop,
+  imageDraft,
+  viewportOverlay,
+  pauseForImagePlacement = false,
 }: Props) => {
   const { t } = useTranslation();
+  const editing = modelEdits !== undefined;
   const fullscreenRef = useRef<HTMLDivElement>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [playing, setPlaying] = useState(true);
@@ -114,10 +153,14 @@ export const AnimatedModelPreview = ({
     data: FoundryParticleGraph;
     diagnostics: string[];
   } | null>(null);
+  const [particleInventory, setParticleInventory] = useState<{
+    graph: FoundryParticleGraph;
+    systems: ParticleSystemInUse[];
+  } | null>(null);
   const modelAssetQuery = {
     enabled: source.entryPath.endsWith(".vmdl_c"),
     staleTime: 60_000,
-    gcTime: 0,
+    gcTime: MODEL_PREVIEW_GC_TIME,
     retry: false,
     meta: { skipGlobalErrorHandler: true },
   };
@@ -249,6 +292,10 @@ export const AnimatedModelPreview = ({
               particles: particlesOn,
               period: loopSeconds,
               releaseAt: releaseSeconds,
+              onParticlesInUse: (systems) => {
+                if (particles.data)
+                  setParticleInventory({ graph: particles.data, systems });
+              },
               onWarnings: (diagnostics) => {
                 if (particles.data)
                   setParticleReport({ data: particles.data, diagnostics });
@@ -293,6 +340,16 @@ export const AnimatedModelPreview = ({
       className='flex h-full min-h-0 w-full flex-col overflow-hidden rounded-lg border bg-background'>
       <div className='relative min-h-0 flex-1'>
         <FoundryModelViewer
+          imageDraft={imageDraft}
+          imageProjector={imageProjector}
+          imageDrop={imageDrop}
+          surfacePaint={surfacePaint}
+          onMaterialPick={onMaterialPick}
+          modelEdits={modelEdits}
+          modelPatterns={modelPatterns}
+          modelPaints={modelPaints}
+          modelPaintAnimations={modelPaintAnimations}
+          materialInputs={materialInputs}
           fullscreenTarget={fullscreenRef}
           model={model}
           label={label}
@@ -311,7 +368,7 @@ export const AnimatedModelPreview = ({
           timeRef={timeRef}
           playback={{
             animation: current,
-            playing,
+            playing: playing && !surfacePaint && !pauseForImagePlacement,
             speed,
             seek,
           }}
@@ -329,7 +386,8 @@ export const AnimatedModelPreview = ({
                 ]
               : []
           }>
-          {effectsNote && (
+          {viewportOverlay}
+          {effectsNote && !pauseForImagePlacement && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <p
@@ -350,7 +408,7 @@ export const AnimatedModelPreview = ({
               </TooltipContent>
             </Tooltip>
           )}
-          {hasAbilityBar && (
+          {hasAbilityBar && !pauseForImagePlacement && (
             <AbilityBar
               slots={slots}
               activeId={action?.id}
@@ -369,8 +427,17 @@ export const AnimatedModelPreview = ({
             size='icon'
             variant={playing ? "default" : "secondary"}
             className='size-8 shrink-0'
-            disabled={!current}
-            aria-label={t(playing ? "modelPreview.pause" : "modelPreview.play")}
+            disabled={!current || pauseForImagePlacement}
+            title={
+              pauseForImagePlacement
+                ? t("modelEditor.paint.poseHeld")
+                : undefined
+            }
+            aria-label={
+              pauseForImagePlacement
+                ? t("modelEditor.paint.poseHeld")
+                : t(playing ? "modelPreview.pause" : "modelPreview.play")
+            }
             onClick={() => setPlaying(!playing)}>
             {playing ? <PauseIcon weight='fill' /> : <PlayIcon weight='fill' />}
           </Button>
@@ -385,6 +452,7 @@ export const AnimatedModelPreview = ({
             <SkipBackIcon />
           </Button>
           <ViewerAnimationPicker
+            compact={editing}
             actions={actions}
             selected={action}
             onSelect={select}
@@ -401,43 +469,73 @@ export const AnimatedModelPreview = ({
             title={t("modelPreview.returnToIdle")}
             onClick={() => select("idle")}>
             <ArrowUUpLeftIcon />
-            {t("modelPreview.actions.idle")}
+            {!editing && t("modelPreview.actions.idle")}
           </Button>
           <Timeline
             animation={current}
             timeRef={timeRef}
             onSeek={seekTo}
-            className='min-w-40 flex-1 basis-40 px-1'
+            className={
+              editing
+                ? "min-w-0 basis-full px-1"
+                : "min-w-40 flex-1 basis-40 px-1"
+            }
           />
-          {cloth.data && (
-            <EffectToggle
-              icon={WindIcon}
-              label={t("modelPreview.cloth")}
-              on={clothOn}
-              onChange={setClothOn}
-            />
-          )}
-          {particles.data ? (
-            <>
-              <EffectToggle
-                icon={SparkleIcon}
-                label={t("modelPreview.particles")}
-                on={particlesOn}
-                onChange={setParticlesOn}
-              />
-              <ViewerParticlePicker
-                effects={particles.data.abilityEffects}
-                selected={additionalRoots}
-                pending={particles.isFetching}
-                onChange={(roots) =>
-                  setEffectSelection({ action: action?.id ?? "", roots })
-                }
-              />
-            </>
-          ) : null}
-          <div className='hidden @[40rem]/transport:block'>
-            <SpeedPicker speed={speed} onChange={setSpeed} />
-          </div>
+          <details
+            open={editing ? undefined : true}
+            className={
+              editing ? "w-full text-xs text-muted-foreground" : "contents"
+            }>
+            <summary className={editing ? "cursor-pointer py-1" : "hidden"}>
+              {t("modelPreview.previewOptions")}
+            </summary>
+            <div
+              className={
+                editing ? "flex flex-wrap items-center gap-2 pt-2" : "contents"
+              }>
+              {cloth.data && (
+                <EffectToggle
+                  icon={WindIcon}
+                  label={t("modelPreview.cloth")}
+                  on={clothOn}
+                  onChange={setClothOn}
+                />
+              )}
+              {particles.data ? (
+                <>
+                  <EffectToggle
+                    icon={SparkleIcon}
+                    label={t("modelPreview.particles")}
+                    on={particlesOn}
+                    onChange={setParticlesOn}
+                  />
+                  <ViewerParticlePicker
+                    effects={particles.data.abilityEffects}
+                    selected={additionalRoots}
+                    pending={particles.isFetching}
+                    onChange={(roots) =>
+                      setEffectSelection({ action: action?.id ?? "", roots })
+                    }
+                  />
+                </>
+              ) : null}
+              <SpeedPicker speed={speed} onChange={setSpeed} />
+              <details className='w-full'>
+                <summary className='cursor-pointer py-1'>
+                  {t("modelEditor.particlesInUse")}
+                </summary>
+                <ModelParticleList
+                  pending={particles.isFetching}
+                  systems={
+                    particleInventory &&
+                    particleInventory.graph === particles.data
+                      ? particleInventory.systems
+                      : []
+                  }
+                />
+              </details>
+            </div>
+          </details>
         </div>
         {current?.additiveReferencePose ? (
           <p className='text-xs text-muted-foreground'>

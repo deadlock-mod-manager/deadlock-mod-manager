@@ -92,7 +92,7 @@ fn preview_bytes(path: &str, data: &[u8]) -> Result<String, Error> {
   let extension = path.rsplit('.').next().unwrap_or("").to_ascii_lowercase();
   let (mime, payload) = match extension.as_str() {
     "vtex_c" => {
-      let decoded = source2_model::decode_texture_png_bytes(data.to_vec())
+      let decoded = source2_model::decode_texture_png_bytes(data.to_vec(), false)
         .map_err(|error| Error::InvalidInput(error.to_string()))?;
       return Ok(format!(
         "data:image/png;base64,{}",

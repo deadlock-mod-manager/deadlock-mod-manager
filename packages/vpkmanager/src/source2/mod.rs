@@ -62,3 +62,6 @@ pub fn decode_at(bytes: &[u8], opts: &DecodeOptions) -> Result<Image, DecodeErro
 }
 
 pub use texture::encode::encode_image;
+
+/// Source 2 expression compiler adapted from vpkmerge (MIT); see LICENSE.vpkmerge.
+pub mod vfx_expr;

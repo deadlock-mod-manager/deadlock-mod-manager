@@ -19,21 +19,45 @@ fn extract_originals(archive: &VpkArchive, entries: &[String], output: &Path) ->
   Ok(())
 }
 
+fn export_destination(
+  destination: Option<String>,
+  addon: Option<&super::modding_workspace::ModdingAddon>,
+  decompile: bool,
+) -> Result<PathBuf, Error> {
+  let target = if let Some(addon) = addon {
+    PathBuf::from(if decompile {
+      &addon.content_path
+    } else {
+      &addon.game_path
+    })
+  } else {
+    PathBuf::from(
+      destination.ok_or_else(|| Error::InvalidInput("Choose an export folder or addon".into()))?,
+    )
+  };
+  if !target.is_absolute() || (addon.is_none() && !target.is_dir()) {
+    return Err(Error::InvalidInput(
+      "Choose an existing export folder".into(),
+    ));
+  }
+  Ok(target)
+}
+
 #[tauri::command]
 pub async fn export_modding_archive_files(
   app: AppHandle,
   archive_path: String,
   selections: Vec<ModdingAssetSelection>,
-  destination: String,
+  destination: Option<String>,
+  addon_id: Option<String>,
   decompile: bool,
 ) -> Result<ModdingImportResult, Error> {
   let path = super::modding_archive::archive_path(Some(archive_path))?;
-  let destination = PathBuf::from(destination);
-  if !destination.is_absolute() || !destination.is_dir() {
-    return Err(Error::InvalidInput(
-      "Choose an existing export folder".into(),
-    ));
-  }
+  let addon = addon_id
+    .as_deref()
+    .map(|id| super::modding_workspace::resolve(&app, id))
+    .transpose()?;
+  let destination = export_destination(destination, addon.as_ref(), decompile)?;
   let compiler = if decompile {
     let cli = super::modding_import::cli_path(&app)?;
     if !cli.is_file() {
@@ -42,7 +66,7 @@ pub async fn export_modding_archive_files(
       ));
     }
     let config = super::modding_tools::get_modding_tools_config(app)?;
-    Some((cli, PathBuf::from(config.prepared_sdk)))
+    Some((cli, config.sdk_path()?))
   } else {
     None
   };
@@ -134,6 +158,54 @@ mod tests {
       archive.extract_entry("folder/nested/sample.txt").unwrap(),
       b"second archive"
     );
+  }
+
+  #[test]
+  fn existing_addon_exports_use_content_or_game_and_preserve_edits() {
+    let sdk = tempfile::tempdir().unwrap();
+    let addon = super::super::modding_workspace::ModdingAddon {
+      id: "fixture".into(),
+      name: "fixture".into(),
+      sdk_root: sdk.path().to_string_lossy().into_owned(),
+      content_path: sdk
+        .path()
+        .join("content/citadel_addons/fixture")
+        .to_string_lossy()
+        .into_owned(),
+      game_path: sdk
+        .path()
+        .join("game/citadel_addons/fixture")
+        .to_string_lossy()
+        .into_owned(),
+      archive_path: String::new(),
+    };
+    let content = export_destination(None, Some(&addon), true).unwrap();
+    let game = export_destination(None, Some(&addon), false).unwrap();
+    assert_eq!(content, PathBuf::from(&addon.content_path));
+    assert_eq!(game, PathBuf::from(&addon.game_path));
+    let staging = tempfile::tempdir().unwrap();
+    std::fs::create_dir_all(staging.path().join("particles/nested")).unwrap();
+    std::fs::write(
+      staging.path().join("particles/nested/test.vpcf"),
+      b"decompiled",
+    )
+    .unwrap();
+    assert_eq!(
+      publish_missing(staging.path(), &content).unwrap().created,
+      1
+    );
+    std::fs::write(content.join("particles/nested/test.vpcf"), b"my addon edit").unwrap();
+    assert_eq!(
+      publish_missing(staging.path(), &content).unwrap().preserved,
+      1
+    );
+    assert_eq!(
+      std::fs::read(content.join("particles/nested/test.vpcf")).unwrap(),
+      b"my addon edit"
+    );
+    assert!(!game.exists());
+    assert!(export_destination(None, None, true).is_err());
+    assert!(export_destination(Some("relative".into()), None, false).is_err());
   }
 
   #[test]

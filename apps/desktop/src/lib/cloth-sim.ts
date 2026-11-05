@@ -76,7 +76,12 @@ export const createClothEffect =
       ),
     );
     const state: NodeState[] = nodes.map((node, index) => {
-      const bone = model.getObjectByName(sanitize(node.name));
+      // ModelDoc recompilation replaces the leading $ in procedural bone names.
+      const bone =
+        model.getObjectByName(sanitize(node.name)) ??
+        (node.name.startsWith("$")
+          ? model.getObjectByName(sanitize(`_${node.name.slice(1)}`))
+          : undefined);
       const parentBind = node.parent >= 0 ? bind[node.parent] : null;
       return {
         bone: bone instanceof THREE.Bone ? bone : null,
@@ -167,7 +172,11 @@ export const createClothEffect =
       for (const index of order) {
         const node = state[index];
         const parent = nodes[index].parent;
-        if (node.driven && node.bone) node.goal.copy(node.bone.matrixWorld);
+        // FE bind frames can differ between attached submodels. Named bones
+        // already have the right animated frame; only virtual controls need
+        // their goal reconstructed from the FE hierarchy.
+        if (node.bone && !nodes[index].name.startsWith("$"))
+          node.goal.copy(node.bone.matrixWorld);
         else if (parent >= 0)
           node.goal.multiplyMatrices(state[parent].goal, node.relative);
         // A node with no cloth parent hangs off its bone's own animated pose.

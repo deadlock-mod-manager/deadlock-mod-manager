@@ -10,6 +10,10 @@ import {
 
 export class ParticleRibbon {
   readonly root = new THREE.Group();
+  private readonly bounds = new THREE.Box3();
+  private readonly view = new THREE.Frustum();
+  private readonly viewMatrix = new THREE.Matrix4();
+  private readonly viewSphere = new THREE.Sphere();
   private readonly geometry = new THREE.BufferGeometry();
   private readonly mesh: THREE.Mesh<
     THREE.BufferGeometry,
@@ -50,17 +54,41 @@ export class ParticleRibbon {
     this.colors.setUsage(THREE.DynamicDrawUsage);
     this.uvs.setUsage(THREE.DynamicDrawUsage);
     this.mesh = new THREE.Mesh(this.geometry, material);
-    this.mesh.frustumCulled = false;
+    this.geometry.boundingSphere = new THREE.Sphere();
     this.root.add(this.mesh);
   }
   update(camera: THREE.Camera, frame: THREE.Object3D, fade: number) {
     if (!this.mesh) return;
     const particles = this.simulation.particles,
       ctx = this.simulation.context;
-    if (particles.length < 2) {
+    if (
+      particles.length < 2 ||
+      !particles.some(
+        (particle) => particle.values[7] * particle.values[16] * fade > 0.002,
+      )
+    ) {
       this.geometry.setDrawRange(0, 0);
       return;
     }
+    this.bounds.makeEmpty();
+    let padding = 0;
+    for (const particle of particles) {
+      this.bounds.expandByPoint(particle.vector(0));
+      padding = Math.max(padding, Math.abs(particle.values[3]));
+    }
+    this.bounds.getBoundingSphere(this.viewSphere);
+    this.viewSphere.radius = this.viewSphere.radius * 1.5 + padding * 2;
+    frame.updateWorldMatrix(true, false);
+    camera.updateWorldMatrix(true, false);
+    this.viewSphere.applyMatrix4(frame.matrixWorld);
+    this.view.setFromProjectionMatrix(
+      this.viewMatrix.multiplyMatrices(
+        camera.projectionMatrix,
+        camera.matrixWorldInverse,
+      ),
+    );
+    this.mesh.visible = this.view.intersectsSphere(this.viewSphere);
+    if (!this.mesh.visible) return;
     const points = particles.map((p) => p.vector(0));
     const curve = new THREE.CatmullRomCurve3(points, false, "centripetal");
     const subdivisions = Math.round(
@@ -77,6 +105,7 @@ export class ParticleRibbon {
       scroll =
         scalar(this.op.m_flTextureVScrollRate, ctx) * this.simulation.age +
         scalar(this.op.m_flTextureVOffset, ctx);
+    this.bounds.makeEmpty();
     let distance = 0,
       previous: THREE.Vector3 | null = null;
     for (let i = 0; i < count; i++) {
@@ -105,6 +134,7 @@ export class ParticleRibbon {
         );
       if (previous) distance += position.distanceTo(previous);
       previous = position;
+      this.bounds.expandByPoint(a).expandByPoint(b);
       this.positions.setXYZ(i * 2, a.x, a.y, a.z);
       this.positions.setXYZ(i * 2 + 1, b.x, b.y, b.z);
       this.colors.setXYZW(i * 2, color.x, color.y, color.z, alpha);
@@ -113,10 +143,13 @@ export class ParticleRibbon {
       this.uvs.setXY(i * 2 + 1, 1, distance / worldSize + scroll);
     }
     this.geometry.setDrawRange(0, (count - 1) * 6);
-    this.positions.needsUpdate =
-      this.colors.needsUpdate =
-      this.uvs.needsUpdate =
-        true;
+    if (this.geometry.boundingSphere)
+      this.bounds.getBoundingSphere(this.geometry.boundingSphere);
+    for (const attribute of [this.positions, this.colors, this.uvs]) {
+      attribute.clearUpdateRanges();
+      attribute.addUpdateRange(0, count * 2 * attribute.itemSize);
+      attribute.needsUpdate = true;
+    }
     updateMaterial(this.mesh.material, this.op, ctx, fade);
   }
   dispose() {

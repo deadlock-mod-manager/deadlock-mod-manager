@@ -202,10 +202,12 @@ pub async fn foundry_list_animations(
   entry_path: String,
   ability_names: Vec<String>,
   overlay_root: Option<String>,
+  include_unclassified: Option<bool>,
 ) -> Result<Vec<PreviewAnimationChoice>, Error> {
   tauri::async_runtime::spawn_blocking(move || {
     clip_directory(&entry_path)?;
-    let (archive, base) = archives_with_overlay(&file_path, overlay_root.as_deref().map(Path::new))?;
+    let (archive, base) =
+      archives_with_overlay(&file_path, overlay_root.as_deref().map(Path::new))?;
     let mut listing = archive.list_entries();
     if let Some(root) = overlay_root {
       let root = std::path::PathBuf::from(root);
@@ -232,10 +234,27 @@ pub async fn foundry_list_animations(
     if let Some(base) = base {
       listing.extend(base.list_entries());
     }
-    Ok(choices(
-      nm_anim::model_clip_paths(&archive, &entry_path, &listing).into_iter(),
-      &ability_names,
-    ))
+    let paths = nm_anim::model_clip_paths(&archive, &entry_path, &listing);
+    if include_unclassified.unwrap_or(false) {
+      return Ok(
+        paths
+          .into_iter()
+          .filter(|path| {
+            !["refpose", "bindpose", "reference"]
+              .iter()
+              .any(|name| path.to_ascii_lowercase().contains(name))
+          })
+          .map(|path| PreviewAnimationChoice {
+            id: path.clone(),
+            kind: PreviewAnimationKind::Movement,
+            label: path.rsplit('/').next().unwrap_or(&path).to_owned(),
+            clips: vec![path],
+            ability: None,
+          })
+          .collect(),
+      );
+    }
+    Ok(choices(paths.into_iter(), &ability_names))
   })
   .await
   .map_err(invalid)?

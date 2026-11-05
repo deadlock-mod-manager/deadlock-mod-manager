@@ -2,11 +2,17 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import {
   ParticleAssets,
-  disposeModel,
   type ParticleModelAsset,
 } from "@/components/foundry/particles/assets";
 import { SourceParticlePlayer } from "@/components/foundry/particles/player";
-import { loadPreviewModel } from "@/components/foundry/model-loader";
+import { loadPreviewModel } from "@/components/foundry/workbench-model-loader";
+import { installAnimatedAlbedo } from "@/lib/animated-albedo";
+import { viewerDrawBudget } from "@/components/foundry/viewer-render-budget";
+import {
+  applySource2DrawState,
+  installSource2Color,
+  sceneMaterials,
+} from "@/components/foundry/source2-material";
 import { retainFoundryModel, type PreviewModel } from "@/lib/model-assets";
 import { previewPixel, previewPixelHex } from "@/lib/preview-color";
 import type { FoundryParticleGraph } from "@/types/generated/FoundryParticleGraph";
@@ -30,13 +36,16 @@ export class PreviewStage {
   private playing = true;
   private closed = false;
   private frame: number | null = null;
+  private readonly drawSlot = viewerDrawBudget.createSlot();
   private previous = performance.now();
   private elapsed = 0;
   private captured = false;
+  private generation = 0;
   private ready = false;
   private assets: ParticleAssets | null = null;
   private player: SourceParticlePlayer | null = null;
   private model: THREE.Group | null = null;
+  private releaseModel: (() => void) | null = null;
   private load: AbortController | null = null;
   private report = "";
   private reportedAt = 0;
@@ -98,8 +107,14 @@ export class PreviewStage {
     this.frame = null;
     const delta = Math.min(0.05, Math.max(0, (now - this.previous) / 1000));
     this.previous = now;
-    if (document.hidden || (!this.visible && !this.thumbnail)) return;
-    if (this.thumbnail && this.captured) return;
+    if (
+      document.hidden ||
+      (!this.visible && !this.thumbnail) ||
+      (this.thumbnail && this.captured)
+    ) {
+      this.drawSlot.idle();
+      return;
+    }
     if (this.ready && this.player) {
       this.scene.updateMatrixWorld(true);
       if (this.thumbnail) {
@@ -109,6 +124,7 @@ export class PreviewStage {
           this.elapsed += 1 / 60;
         }
         if (this.elapsed < 1) {
+          this.drawSlot.idle();
           this.invalidate();
           return;
         }
@@ -122,6 +138,10 @@ export class PreviewStage {
       );
     }
     const moving = this.controls.update();
+    if (!this.drawSlot.ready(now)) {
+      this.invalidate();
+      return;
+    }
     this.renderer.render(this.scene, this.camera);
     if (
       this.thumbnail &&
@@ -130,7 +150,32 @@ export class PreviewStage {
       this.callbacks.snapshot
     ) {
       this.captured = true;
-      this.callbacks.snapshot(this.renderer.domElement.toDataURL("image/png"));
+      const generation = this.generation;
+      const snapshot = this.callbacks.snapshot;
+      this.renderer.domElement.toBlob((blob) => {
+        if (this.closed || generation !== this.generation) return;
+        if (!blob) {
+          snapshot(null);
+          return;
+        }
+        const reader = new FileReader();
+        reader.addEventListener(
+          "load",
+          () => {
+            if (!this.closed && generation === this.generation)
+              snapshot(String(reader.result));
+          },
+          { once: true },
+        );
+        reader.addEventListener(
+          "error",
+          () => {
+            if (!this.closed && generation === this.generation) snapshot(null);
+          },
+          { once: true },
+        );
+        reader.readAsDataURL(blob);
+      }, "image/png");
     }
     if (now - this.reportedAt >= 250 && this.assets && this.player) {
       this.reportedAt = now;
@@ -151,12 +196,14 @@ export class PreviewStage {
   };
 
   setGraph(graph: FoundryParticleGraph, models: ParticleModelAsset[]) {
+    this.generation++;
+    this.releaseModel?.();
+    this.releaseModel = null;
     const resetCamera = !this.assets || !!this.model;
     this.load?.abort();
     this.load = null;
     if (this.model) {
       this.model.removeFromParent();
-      disposeModel(this.model);
       this.model = null;
     }
     this.player?.dispose();
@@ -197,13 +244,35 @@ export class PreviewStage {
     const load = new AbortController();
     this.load = load;
     const release = retainFoundryModel(model);
-    void loadPreviewModel(model, load.signal)
-      .then(({ scene }) => {
+    void loadPreviewModel(model, load.signal, this.thumbnail)
+      .then((loaded) => {
+        const { scene, source2Textures } = loaded;
         if (this.closed || load.signal.aborted) {
-          disposeModel(scene);
+          loaded.dispose();
           return;
         }
         this.model = scene;
+        const atlas = installAnimatedAlbedo(scene);
+        atlas.update(0);
+        this.releaseModel = () => {
+          atlas.dispose();
+          loaded.dispose();
+        };
+        for (const material of sceneMaterials(scene)) {
+          if (
+            material instanceof THREE.MeshStandardMaterial ||
+            material instanceof THREE.MeshBasicMaterial
+          )
+            installSource2Color(material, source2Textures);
+        }
+        scene.traverse((object) => {
+          if (object instanceof THREE.Mesh) {
+            for (const material of Array.isArray(object.material)
+              ? object.material
+              : [object.material])
+              applySource2DrawState(object, material);
+          }
+        });
         this.scene.add(scene);
         this.grid.visible = false;
         const box = new THREE.Box3().setFromObject(scene);
@@ -265,6 +334,9 @@ export class PreviewStage {
   }
 
   clear() {
+    this.generation++;
+    this.releaseModel?.();
+    this.releaseModel = null;
     this.load?.abort();
     this.load = null;
     this.player?.dispose();
@@ -273,7 +345,6 @@ export class PreviewStage {
     this.assets = null;
     if (this.model) {
       this.model.removeFromParent();
-      disposeModel(this.model);
       this.model = null;
     }
     this.ready = false;
@@ -284,6 +355,7 @@ export class PreviewStage {
   dispose() {
     this.closed = true;
     if (this.frame !== null) cancelAnimationFrame(this.frame);
+    this.drawSlot.idle();
     this.clear();
     this.resize.disconnect();
     this.visibility.disconnect();

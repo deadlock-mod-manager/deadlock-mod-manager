@@ -1,4 +1,5 @@
 mod clock;
+mod installation;
 mod launch;
 mod metadata;
 mod prepare;
@@ -6,8 +7,10 @@ mod profile;
 mod provision;
 
 pub use clock::{ANIMATION_SYSTEM_SHA256, EDITOR_SHA256, PATCHED_EDITOR_SHA256, patch_modeldoc};
+pub use installation::{InstallationInspection, inspect_installation, prepare_installation};
 pub use launch::{
-    ProtonRuntime, SdkTool, compiler_command, sdk_command, sdk_project_command, viewer_command,
+    CompileMode, ProtonRuntime, SdkTool, compiler_command, sdk_command, sdk_project_command,
+    viewer_command,
 };
 pub use metadata::{editor_addon_root, modeldoc_preview_entity};
 pub use prepare::{PrepareOptions, WORKBENCH_ADDON, prepare_sdk};

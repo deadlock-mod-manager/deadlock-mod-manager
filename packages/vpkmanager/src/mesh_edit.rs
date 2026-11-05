@@ -142,7 +142,10 @@ mod tests {
             .collect();
         let value = object(vec![(
             "m_sceneObjects",
-            Value::Array(vec![object(vec![("m_drawCalls", Value::Array(draw_calls))])]),
+            Value::Array(vec![object(vec![(
+                "m_drawCalls",
+                Value::Array(draw_calls),
+            )])]),
         )]);
         kv3::encode(&value, &kv3::Format([43; 16]))
     }
@@ -163,9 +166,15 @@ mod tests {
     #[test]
     fn hides_the_part_in_every_lod_and_nothing_else() {
         let model = resource(vec![
-            (*b"MDAT", mesh(&["materials/body.vmat", "materials/hat.vmat"])),
+            (
+                *b"MDAT",
+                mesh(&["materials/body.vmat", "materials/hat.vmat"]),
+            ),
             (*b"MVTX", vec![1, 2, 3]),
-            (*b"MDAT", mesh(&["materials/hat.vmat", "materials/body.vmat"])),
+            (
+                *b"MDAT",
+                mesh(&["materials/hat.vmat", "materials/body.vmat"]),
+            ),
         ]);
         let output = hide_draw_calls(&model, &["Materials\\Hat.vmat_c".into()])
             .unwrap()

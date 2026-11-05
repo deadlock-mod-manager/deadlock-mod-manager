@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { useCallback } from "react";
+import { AssetImportTreeFile } from "./asset-import-tree-file";
 import { AssetImportCheckbox } from "./asset-import-checkbox";
 import {
   archiveQueryKey,
@@ -24,6 +25,9 @@ interface Props {
   expanded: ReadonlySet<string>;
   selection: AssetSelection;
   disabled: boolean;
+  showFiles: boolean;
+  previewed: string;
+  onPreview: (path: string) => void;
   onExpand: (path: string) => void;
   onNavigate: (path: string) => void;
   onSelect: (node: ModdingArchiveEntry, selected: boolean) => void;
@@ -97,15 +101,28 @@ export const AssetImportFolder = ({ node, depth, ...props }: Props) => {
       {open ? (
         <div role='group'>
           {listing.data
-            ?.filter((file) => file.directory)
-            .map((child) => (
-              <AssetImportFolder
-                {...props}
-                key={child.path}
-                node={child}
-                depth={depth + 1}
-              />
-            ))}
+            ?.filter((file) => file.directory || props.showFiles)
+            .map((child) =>
+              child.directory ? (
+                <AssetImportFolder
+                  {...props}
+                  key={child.path}
+                  node={child}
+                  depth={depth + 1}
+                />
+              ) : (
+                <AssetImportTreeFile
+                  key={child.path}
+                  node={child}
+                  depth={depth + 1}
+                  selection={props.selection}
+                  disabled={props.disabled}
+                  selected={props.previewed === child.path}
+                  onPreview={props.onPreview}
+                  onSelect={props.onSelect}
+                />
+              ),
+            )}
           {listing.error ? (
             <p role='alert' className='px-3 py-1 text-xs text-destructive'>
               {listing.error.message}

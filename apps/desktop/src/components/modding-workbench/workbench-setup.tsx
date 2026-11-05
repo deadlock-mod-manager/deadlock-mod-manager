@@ -3,7 +3,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { SteamAuthorizationCode } from "@/components/modding-workbench/steam-authorization-code";
 import { ModdingToolPath } from "@/components/settings/modding-tool-path";
 import type { ModdingSetupStatus } from "@/types/generated/ModdingSetupStatus";
 import type { ModdingToolsConfig } from "@/types/generated/ModdingToolsConfig";
@@ -11,11 +10,11 @@ import type { ModdingToolsConfig } from "@/types/generated/ModdingToolsConfig";
 export const WorkbenchSetup = ({ config }: { config: ModdingToolsConfig }) => {
   const { t } = useTranslation();
   const client = useQueryClient();
-  const [csdk, setCsdk] = useState(config.csdk);
+  const [csdk, setCsdk] = useState(config.sdk);
   const setup = useMutation({
     mutationFn: async () => {
       await invoke("save_modding_tools_config", {
-        config: { ...config, csdk },
+        config: { ...config, sdk: csdk },
       });
       await invoke("setup_modding_workbench");
     },
@@ -39,9 +38,6 @@ export const WorkbenchSetup = ({ config }: { config: ModdingToolsConfig }) => {
     idle: "",
     starting: t("moddingWorkbench.setup.starting"),
     cliDownload: t("moddingWorkbench.setup.cliDownload"),
-    downloaderDownload: t("moddingWorkbench.setup.downloaderDownload"),
-    steamAuthorization: t("moddingWorkbench.setup.steamAuthorization"),
-    runtimeDownload: t("moddingWorkbench.setup.runtimeDownload"),
     preparing: t("moddingWorkbench.setup.preparing"),
     ready: t("moddingWorkbench.setup.ready"),
     failed: t("moddingWorkbench.setup.failed"),
@@ -77,15 +73,6 @@ export const WorkbenchSetup = ({ config }: { config: ModdingToolsConfig }) => {
           {status.data ? labels[status.data.phase] : null}
         </span>
       </div>
-      {status.data?.qrLines.length ? (
-        <div className='space-y-2'>
-          <p className='text-sm'>{t("moddingWorkbench.scanSteamQr")}</p>
-          <SteamAuthorizationCode
-            lines={status.data.qrLines}
-            label={t("moddingWorkbench.steamQr")}
-          />
-        </div>
-      ) : null}
       {setup.error || status.data?.error || cancel.error ? (
         <p role='alert' className='text-sm text-destructive'>
           {setup.error?.message ?? status.data?.error ?? cancel.error?.message}

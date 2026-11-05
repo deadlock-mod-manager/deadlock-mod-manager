@@ -1,13 +1,10 @@
-import { Button } from "@deadlock-mods/ui/components/button";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { invoke } from "@tauri-apps/api/core";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { FoundryModelViewer } from "@/components/foundry/foundry-model-viewer";
+import { FoundryModelViewer } from "@/components/foundry/workbench-model-viewer";
 import { cacheFoundryModel, decodeModdingDmx } from "@/lib/model-assets";
-import type { BlenderAddonStatus } from "@/types/generated/BlenderAddonStatus";
 import type { ModdingHierarchy } from "@/types/generated/ModdingHierarchy";
-import { BlenderSetupRequest } from "./blender-setup-request";
+import { DmxLayerPreview } from "./dmx-layer-preview";
 
 interface Props {
   addonId: string;
@@ -20,14 +17,6 @@ export const AddonDmxPreview = ({ revision, ...file }: Props) => {
   const { t } = useTranslation();
   const client = useQueryClient();
   const fullscreen = useRef<HTMLDivElement>(null);
-  const [showSetup, setShowSetup] = useState(true);
-  const status = useQuery({
-    queryKey: ["workbench-blender-status"],
-    queryFn: () => invoke<BlenderAddonStatus>("inspect_modding_blender"),
-    staleTime: 0,
-    retry: false,
-    meta: { skipGlobalErrorHandler: true },
-  });
   const key = [
     "workbench-dmx",
     file.addonId,
@@ -47,31 +36,34 @@ export const AddonDmxPreview = ({ revision, ...file }: Props) => {
       cacheFoundryModel(client, key, result);
       return result;
     },
-    enabled: status.data?.ready === true,
     gcTime: 0,
     staleTime: 60_000,
     retry: false,
     meta: { skipGlobalErrorHandler: true },
   });
-  if (status.data && !status.data.ready) {
-    return showSetup ? (
-      <BlenderSetupRequest
-        {...file}
-        status={status.data}
-        onClose={() => setShowSetup(false)}
-        onConfigured={() => void status.refetch()}
-      />
-    ) : (
-      <Button variant='outline' onClick={() => setShowSetup(true)}>
-        {t("workbenchExplorer.blenderSetup")}
-      </Button>
-    );
-  }
-  const error = status.error ?? model.error;
+  const error = model.error;
   return (
     <div ref={fullscreen} className='flex h-full min-h-0 flex-col'>
+      {model.data?.skeletonOnly && !model.data.layers?.length && (
+        <div role='note' className='border-b bg-muted/30 px-3 py-2 text-xs'>
+          <p className='font-medium'>
+            {t("workbenchExplorer.dmxSkeletonTitle")}
+          </p>
+          <p className='mt-1 text-muted-foreground'>
+            {t("workbenchExplorer.dmxSkeletonDescription")}
+          </p>
+        </div>
+      )}
       <div className='min-h-0 flex-1'>
-        {model.data ? (
+        {model.data?.layers?.length ? (
+          <DmxLayerPreview
+            key={`${file.addonId}:${file.hierarchy}:${file.path}:${revision}`}
+            base={model.data}
+            {...file}
+            revision={revision}
+            fullscreenTarget={fullscreen}
+          />
+        ) : model.data ? (
           <FoundryModelViewer
             model={model.data}
             label={file.path}

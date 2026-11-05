@@ -36,8 +36,10 @@ page.
   detailed guidance and advanced controls on demand; tester feedback identified
   too many simultaneous choices and explanations as overwhelming.
 - Show proposed changes, affected files, and unsaved edits as distinct states.
-- Describe current capabilities accurately: models can be previewed; model
-  editing is planned.
+- Describe current capabilities accurately: Workbench edits compiled material
+  groups (visibility, tint, recoloring, roughness and metalness). New source models
+  need one compile first. DMM saves reversible addon overrides and reapplies them
+  during Compile and Pack & Test; source mesh and animation editing remain external.
 - Bulk operations should use an explicit selection mode with a sticky action bar
   showing selected count and available actions.
 - Delete, reset, repair, and file mutation flows should disclose affected count

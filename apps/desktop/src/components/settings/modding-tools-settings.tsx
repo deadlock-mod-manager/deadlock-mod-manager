@@ -34,7 +34,7 @@ const ModdingToolsForm = ({ config }: { config: ModdingToolsConfig }) => {
   });
   const busy = save.isPending || inspect.isPending || launch.isPending;
   const report = inspect.data;
-  const ready = report?.compatible && !dirty;
+  const ready = report?.prepared && !dirty;
   const error = [save, inspect, launch].reduce((latest, current) =>
     current.submittedAt > latest.submittedAt ? current : latest,
   ).error;
@@ -53,10 +53,10 @@ const ModdingToolsForm = ({ config }: { config: ModdingToolsConfig }) => {
       <ModdingToolPath
         id='modding-prepared-sdk'
         label={t("moddingTools.preparedSdk")}
-        value={draft.preparedSdk}
+        value={draft.sdk}
         directory
         disabled={busy}
-        onChange={(path) => setPath("preparedSdk", path)}
+        onChange={(path) => setPath("sdk", path)}
       />
       <div className='flex flex-wrap gap-2'>
         <Button
@@ -72,7 +72,7 @@ const ModdingToolsForm = ({ config }: { config: ModdingToolsConfig }) => {
         </Button>
         <Button
           variant='outline'
-          disabled={busy || dirty || !draft.preparedSdk}
+          disabled={busy || dirty || !draft.sdk}
           onClick={() => inspect.mutate()}>
           {inspect.isPending
             ? t("moddingTools.checking")
@@ -86,18 +86,23 @@ const ModdingToolsForm = ({ config }: { config: ModdingToolsConfig }) => {
           <div className='space-y-2'>
             <p>
               {report.compatible
-                ? t("moddingTools.compatible", { count: report.checkedModules })
+                ? t("moddingTools.compatible", { count: report.checkedFiles })
                 : t("moddingTools.incompatible", {
-                    count: report.differentModules.length,
+                    count: report.missingFiles.length,
                   })}
             </p>
+            {report.compatible && !report.prepared ? (
+              <p className='text-muted-foreground'>
+                {t("moddingTools.setupRequired")}
+              </p>
+            ) : null}
             {!report.compatible ? (
               <details className='text-xs text-muted-foreground'>
                 <summary className='cursor-pointer'>
                   {t("moddingTools.showDifferences")}
                 </summary>
                 <ul className='mt-2 max-h-40 overflow-auto font-mono'>
-                  {report.differentModules.map((path) => (
+                  {report.missingFiles.map((path) => (
                     <li key={path}>{path}</li>
                   ))}
                 </ul>
@@ -122,14 +127,6 @@ const ModdingToolsForm = ({ config }: { config: ModdingToolsConfig }) => {
         <p className='max-w-prose text-xs text-muted-foreground'>
           {t("moddingTools.setupDescription")}
         </p>
-        <ModdingToolPath
-          id='modding-csdk'
-          label={t("moddingTools.csdk")}
-          value={draft.csdk}
-          directory
-          disabled={busy}
-          onChange={(path) => setPath("csdk", path)}
-        />
         <ModdingToolPath
           id='modding-proton'
           label={t("moddingTools.proton")}

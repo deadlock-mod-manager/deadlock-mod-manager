@@ -48,7 +48,7 @@ pub fn material_color_texture(archive: &VpkArchive, material_path: &str) -> Opti
     material_preview_properties(archive, material_path).map(|properties| properties.color_texture)
 }
 
-fn named_i64(data: &kv3::KvValue, collection: &str, name: &str) -> Option<i64> {
+pub(super) fn named_i64(data: &kv3::KvValue, collection: &str, name: &str) -> Option<i64> {
     data.get(collection)?.as_array()?.iter().find_map(|param| {
         param
             .get("m_name")?
@@ -58,7 +58,7 @@ fn named_i64(data: &kv3::KvValue, collection: &str, name: &str) -> Option<i64> {
     })
 }
 
-fn named_f32(data: &kv3::KvValue, collection: &str, name: &str) -> Option<f32> {
+pub(super) fn named_f32(data: &kv3::KvValue, collection: &str, name: &str) -> Option<f32> {
     data.get(collection)?.as_array()?.iter().find_map(|param| {
         if !param.get("m_name")?.as_string()?.eq_ignore_ascii_case(name) {
             return None;
@@ -72,7 +72,7 @@ fn named_f32(data: &kv3::KvValue, collection: &str, name: &str) -> Option<f32> {
     })
 }
 
-fn named_vec4(data: &kv3::KvValue, name: &str) -> Option<[f32; 4]> {
+pub(super) fn named_vec4(data: &kv3::KvValue, name: &str) -> Option<[f32; 4]> {
     let value = data
         .get("m_vectorParams")?
         .as_array()?
@@ -98,6 +98,8 @@ fn named_vec4(data: &kv3::KvValue, name: &str) -> Option<[f32; 4]> {
 
 #[derive(Debug, Clone)]
 pub(super) struct MaterialPreviewProperties {
+    pub(super) source2: super::metadata::Source2Material,
+    pub(super) tint_mask_texture: Option<String>,
     pub(super) color_texture: String,
     pub(super) normal_texture: Option<String>,
     pub(super) roughness_texture: Option<String>,
@@ -237,7 +239,9 @@ pub(super) fn material_preview_properties_from_data(
         }
     });
     let alpha_test = int_flag("F_ALPHA_TEST");
-    let translucent = int_flag("F_TRANSLUCENT") || int_flag("F_ADVANCED_TRANSLUCENCY");
+    let translucent = int_flag("F_TRANSLUCENT")
+        || int_flag("F_ADVANCED_TRANSLUCENCY")
+        || int_flag("F_ADDITIVE_BLEND");
     let alpha_mode = if alpha_test {
         vmesh::MaterialAlphaMode::Mask
     } else if translucent {
@@ -245,11 +249,22 @@ pub(super) fn material_preview_properties_from_data(
     } else {
         vmesh::MaterialAlphaMode::Opaque
     };
-    let mut base_color_factor = named_vec4(data, "g_vColorTint")
-        .or_else(|| named_vec4(data, "g_vColorTint1"))
+    let source2 = super::metadata::metadata(data, shader);
+    let mut base_color_factor = named_vec4(data, "g_vColorTint1")
+        .or_else(|| named_vec4(data, "g_vColorTint"))
         .unwrap_or([1.0; 4]);
     // VMAT tint vectors use W for shader-specific data; it is not opacity.
     base_color_factor[3] = 1.0;
+    if let Some(color) = &source2.color {
+        base_color_factor[..3].copy_from_slice(&color.tint);
+    }
+    if translucent {
+        base_color_factor[3] = named_f32(data, "m_floatParams", "g_flOpacityScale1")
+            .or_else(|| named_f32(data, "m_floatParams", "g_flOpacityScale"))
+            .filter(|value| value.is_finite())
+            .unwrap_or(1.)
+            .clamp(0., 1.);
+    }
     let metalness_factor = if pbr {
         0.0
     } else {
@@ -308,6 +323,12 @@ pub(super) fn material_preview_properties_from_data(
         .unwrap_or(1.0)
         .clamp(0.0, 1.0);
     Some(MaterialPreviewProperties {
+        source2,
+        tint_mask_texture: if int_flag("F_USE_NPR_LIGHTING") {
+            find_texture(|name, _| i32::from(name == "g_ttintmaskrimlightmask"))
+        } else {
+            find_texture(|name, _| i32::from(name == "g_ttintmask"))
+        },
         color_texture,
         normal_texture,
         roughness_texture,
@@ -348,6 +369,7 @@ fn effect_parameters(data: &kv3::KvValue) -> vmesh::Source2Effect {
         vectors: Default::default(),
         flags: Default::default(),
         textures: Default::default(),
+        animated_albedo: super::metadata::animated_albedo(data),
     };
     for (collection, kind) in [
         ("m_floatParams", 0),

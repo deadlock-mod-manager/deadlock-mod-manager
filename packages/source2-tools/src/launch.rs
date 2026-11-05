@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use crate::profile::inspect_sdk_cached;
+use crate::installation::require_installation;
 use crate::{ToolError, WORKBENCH_ADDON};
 
 pub struct ProtonRuntime {
@@ -13,6 +13,13 @@ pub struct ProtonRuntime {
 pub enum SdkTool {
     ModelDoc,
     AssetBrowser,
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+pub enum CompileMode {
+    #[default]
+    Incremental,
+    Rebuild,
 }
 
 fn executable_command(
@@ -77,16 +84,12 @@ pub fn sdk_project_command(
     {
         return Err(ToolError::InvalidInput("Invalid addon name".into()));
     }
-    let inspection = inspect_sdk_cached(sdk)?;
-    if !inspection.compatible {
-        return Err(ToolError::InvalidInput(format!(
-            "The SDK differs from compatibility profile {} in {} modules; prepare a compatible SDK before launching",
-            inspection.profile,
-            inspection.differences.len()
-        )));
-    }
+    require_installation(sdk)?;
     let bin = sdk.join("game/bin/win64");
     let mut command = executable_command(&bin.join("deadlock.exe"), proton)?;
+    if !cfg!(windows) {
+        command.env("QT_AUTO_SCREEN_SCALE_FACTOR", "0");
+    }
     command
         .current_dir(bin)
         .env("SteamAppId", "1422450")
@@ -94,6 +97,7 @@ pub fn sdk_project_command(
         .env("VPROJECT", "1")
         .args([
             "-tools",
+            "-clientonly",
             "-dx11",
             "-multiple_tools_instances",
             "-allowmultiple",
@@ -113,6 +117,7 @@ pub fn compiler_command(
     sdk: &Path,
     addon: &str,
     file_list: &Path,
+    mode: CompileMode,
     proton: Option<&ProtonRuntime>,
 ) -> Result<Command, ToolError> {
     // The same profile and addon validation applies to the compiler and GUI.
@@ -120,7 +125,11 @@ pub fn compiler_command(
     let mut command = executable_command_with_mode(
         &sdk.join("game/bin/win64/resourcecompiler.exe"),
         proton,
-        "runinprefix",
+        if proton.is_some_and(|runtime| runtime.prefix.join("pfx/system.reg").is_file()) {
+            "runinprefix"
+        } else {
+            "run"
+        },
     )?;
     let path_arg = |path: PathBuf| -> Result<String, ToolError> {
         let text = path
@@ -146,7 +155,12 @@ pub fn compiler_command(
             "-danger_mode_ignore_schema_mismatches",
         ])
         .arg(if cfg!(windows) { "-dx11" } else { "-vulkan" })
-        .args(["-addon", addon, "-nop4", "-fshallow", "-filelist"])
+        .args(["-addon", addon, "-nop4"]);
+    if matches!(mode, CompileMode::Rebuild) {
+        command.arg("-fshallow");
+    }
+    command
+        .arg("-filelist")
         .arg(path_arg(file_list.to_path_buf())?);
     Ok(command)
 }

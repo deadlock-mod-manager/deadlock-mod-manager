@@ -14,6 +14,8 @@ pub enum Source2Error {
     UnsupportedFormat(String),
     #[error("texture decode failed: {0}")]
     Decode(String),
+    #[error("DMX decode failed: {0}")]
+    DmxDecode(String),
     #[error("image encode failed: {0}")]
     Encode(#[from] image::ImageError),
 }

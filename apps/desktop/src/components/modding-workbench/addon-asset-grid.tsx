@@ -187,7 +187,7 @@ export function AddonAssetGrid({
                           ? "workbenchAssets.modelPreview"
                           : "workbenchAssets.particlePreview",
                       )}
-                      className='size-full object-cover'
+                      className='absolute inset-0 size-full object-cover'
                     />
                   ) : model ? (
                     <CubeIcon

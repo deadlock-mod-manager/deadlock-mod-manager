@@ -7,10 +7,12 @@
 //! [ValveResourceFormat](https://github.com/ValveResourceFormat/ValveResourceFormat)
 //! project. The full license text is in `LICENSE-ValveResourceFormat`.
 
+pub mod dmx;
 pub mod error;
 pub mod fe_model;
 pub mod kv3;
 mod material_preview;
+mod morph;
 pub mod nm_anim;
 pub mod particles;
 #[cfg(test)]
@@ -32,7 +34,9 @@ use image::{ExtendedColorType, ImageBuffer, ImageEncoder, Rgba};
 
 pub use error::{Result, Source2Error};
 use material_preview::decode_preview_textures;
+pub use material_preview::decode_referenced_materials;
 pub use material_preview::material_color_texture;
+pub use material_preview::metadata::{Source2BlendMode, Source2Color, Source2Material};
 pub use resource::Resource;
 pub use skeleton::{Bone, BoneTransform, Skeleton};
 pub use vmesh::{ModelGlb, PreviewTexture, RenderMaterial, RenderModel, RenderPrimitive};
@@ -142,14 +146,23 @@ pub fn decode_texture_file(path: &Path) -> Result<TexturePng> {
 /// Decode a `.vmesh_c` entry inside a VPK to a binary GLB for the live preview.
 pub fn decode_mesh_glb(vpk_path: &Path, entry_path: &str) -> Result<ModelGlb> {
     let archive = VpkArchive::open(vpk_path)?;
-    decode_mesh_glb_from_archive(&archive, entry_path)
+    decode_mesh_glb_from_archive(&archive, entry_path, 1024)
 }
 
-fn decode_mesh_glb_from_archive(archive: &VpkArchive, entry_path: &str) -> Result<ModelGlb> {
+fn decode_mesh_glb_from_archive(
+    archive: &VpkArchive,
+    entry_path: &str,
+    texture_side: u32,
+) -> Result<ModelGlb> {
     let bytes = archive.extract_entry(entry_path)?;
     let res = Resource::parse(bytes)?;
     let material_paths = vmesh::referenced_materials(&res);
-    let preview_textures = decode_preview_textures(archive, entry_path, &material_paths);
+    let preview_textures = material_preview::decode_preview_textures_with_side(
+        archive,
+        entry_path,
+        &material_paths,
+        texture_side,
+    );
     vmesh::decode_mesh_glb_from_resource(&res, &preview_textures)
 }
 
@@ -173,8 +186,19 @@ pub fn decode_model_glb_with_overlay(
 }
 
 pub fn decode_model_glb_from_archive(archive: &VpkArchive, entry_path: &str) -> Result<ModelGlb> {
+    decode_model_glb_from_archive_with_texture_side(archive, entry_path, 1024)
+}
+
+/// Decode an interactive preview (1024) or a small grid thumbnail (256).
+/// The texture bound changes mip selection, never mesh geometry or materials.
+pub fn decode_model_glb_from_archive_with_texture_side(
+    archive: &VpkArchive,
+    entry_path: &str,
+    texture_side: u32,
+) -> Result<ModelGlb> {
+    let texture_side = texture_side.clamp(64, 1024);
     if entry_path.ends_with(".vmesh_c") {
-        return decode_mesh_glb_from_archive(archive, entry_path);
+        return decode_mesh_glb_from_archive(archive, entry_path, texture_side);
     }
 
     let bytes = archive.extract_entry(entry_path)?;
@@ -194,7 +218,12 @@ pub fn decode_model_glb_from_archive(archive: &VpkArchive, entry_path: &str) -> 
                 let mesh_bytes = archive.extract_entry(&mesh_path)?;
                 let mesh_res = Resource::parse(mesh_bytes)?;
                 let material_paths = vmesh::referenced_materials(&mesh_res);
-                let mesh_textures = decode_preview_textures(archive, &mesh_path, &material_paths);
+                let mesh_textures = material_preview::decode_preview_textures_with_side(
+                    archive,
+                    &mesh_path,
+                    &material_paths,
+                    texture_side,
+                );
                 let bone_remap = vmesh::model_mesh_bone_remap(&res, mesh_index)?;
                 let mesh_primitives = vmesh::decode_mesh_primitives_from_resource(
                     &mesh_res,
@@ -237,8 +266,13 @@ pub fn decode_model_glb_from_archive(archive: &VpkArchive, entry_path: &str) -> 
         );
     }
     let material_paths = vmesh::referenced_materials(&res);
-    let preview_textures = decode_preview_textures(archive, entry_path, &material_paths);
-    vmesh::decode_embedded_model_glb_from_resource(&res, &preview_textures)
+    let preview_textures = material_preview::decode_preview_textures_with_side(
+        archive,
+        entry_path,
+        &material_paths,
+        texture_side,
+    );
+    vmesh::decode_embedded_model_glb_from_resource(&res, &preview_textures, archive)
 }
 
 /// The materials a model draws in the 3D preview (LOD0, every body group the

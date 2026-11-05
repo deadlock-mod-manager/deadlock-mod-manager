@@ -2,13 +2,22 @@ import { RuntimeError } from "@deadlock-mods/common/client-errors";
 import { invoke } from "@tauri-apps/api/core";
 import type { TFunction } from "i18next";
 import type { useStartGame } from "@/components/providers/launch-repair";
+import { pauseGameinfoAutoReset } from "@/lib/gameinfo-auto-reset";
+import { isGameRunning } from "@/lib/tauri-commands";
+import { useLaunchProgress } from "@/lib/launch-progress";
+import { closeGameForPack } from "./pack-game-close";
 import { invokeGuarded } from "@/lib/game-guard";
 import { usePersistedStore } from "@/lib/store";
 import { createProfileId, type VpkManifest } from "@/types/profiles";
 import type { ModdingAddon } from "@/types/generated/ModdingAddon";
 import type { ModdingBuildResult } from "@/types/generated/ModdingBuildResult";
 
-export type Phase = "compiling" | "installing" | "launching";
+export type Phase =
+  | "checkingGame"
+  | "stopping"
+  | "compiling"
+  | "installing"
+  | "launching";
 let packActive = false;
 
 export async function packAndTest(
@@ -17,10 +26,30 @@ export async function packAndTest(
   setPhase: (phase: Phase) => void,
   onCompiled: () => void,
   t: TFunction,
+  confirmClose: () => Promise<boolean>,
 ): Promise<ModdingBuildResult> {
+  if (useLaunchProgress.getState().progress?.current)
+    throw new RuntimeError(t("workbenchExplorer.launchInProgress"));
   if (packActive) throw new RuntimeError(t("workbenchCompare.buildBusy"));
   packActive = true;
+  const resumeAutoReset = pauseGameinfoAutoReset();
   try {
+    setPhase("checkingGame");
+    const game = await closeGameForPack({
+      isRunning: isGameRunning,
+      confirmClose,
+      stop: () => invoke<void>("stop_game"),
+      wait: () => new Promise((resolve) => setTimeout(resolve, 500)),
+      onStopping: () => setPhase("stopping"),
+    });
+    if (game !== "ready")
+      throw new RuntimeError(
+        t(
+          game === "cancelled"
+            ? "workbenchExplorer.closeGameCancelled"
+            : "workbenchExplorer.gameStillRunning",
+        ),
+      );
     setPhase("compiling");
     const build = await invoke<ModdingBuildResult>("build_modding_addon", {
       addonId: addon.id,
@@ -95,6 +124,7 @@ export async function packAndTest(
       throw new RuntimeError(t("workbenchExplorer.launchCancelled"));
     return build;
   } finally {
+    resumeAutoReset();
     packActive = false;
   }
 }

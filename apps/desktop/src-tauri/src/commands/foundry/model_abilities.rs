@@ -1,6 +1,6 @@
-use std::path::Path;
 use serde::Serialize;
 use source2_model::kv3::KvValue;
+use std::path::Path;
 use ts_rs::TS;
 
 use super::animation::{archives_with_overlay, invalid};
@@ -104,7 +104,8 @@ pub async fn foundry_model_abilities(
     if !entry_path.ends_with(".vmdl_c") || entry_path.contains("..") {
       return Err(invalid("Abilities require a compiled character model"));
     }
-    let (archive, base) = archives_with_overlay(&file_path, overlay_root.as_deref().map(Path::new))?;
+    let (archive, base) =
+      archives_with_overlay(&file_path, overlay_root.as_deref().map(Path::new))?;
     let base = base.as_deref().unwrap_or(&archive);
     let heroes = kv(&archive, base, None, "scripts/heroes.vdata_c")?;
     let abilities = kv(&archive, base, None, "scripts/abilities.vdata_c")?;

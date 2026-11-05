@@ -54,6 +54,53 @@ fn packed_asset(path: &Path) -> bool {
       ["tools", "addoninfo.txt", "toolscenelightrigs.vdata_c"]
         .contains(&part.as_os_str().to_string_lossy().as_ref())
     })
+    && !path.starts_with("_bakeresourcecache/maps/editor")
+    && !path.file_name().is_some_and(|name| {
+      path.parent() == Some(Path::new(""))
+        && (name == "tools_asset_info.bin"
+          || name
+            .to_string_lossy()
+            .starts_with("tools_thumbnail_cache.sqlite3"))
+    })
+}
+
+pub(super) fn pack_addon(
+  addon: &super::modding_workspace::ModdingAddon,
+  output: &mut (impl Write + std::io::Seek),
+) -> Result<usize, Error> {
+  let root = Path::new(&addon.game_path);
+  let base = source2_model::vpk_extract::VpkArchive::open(Path::new(&addon.archive_path))
+    .map_err(|e| Error::InvalidInput(e.to_string()))?;
+  let mut changed = std::collections::BTreeSet::new();
+  for path in super::modding_batch::files(root)? {
+    if !packed_asset(Path::new(&path)) {
+      continue;
+    }
+    let identical = if base.contains_entry(&path) {
+      let original = base
+        .extract_entry_limited(&path, 256 * 1024 * 1024)
+        .map_err(|e| Error::InvalidInput(e.to_string()))?;
+      std::fs::read(super::modding_workspace::contained(root, &path)?)? == original
+    } else {
+      false
+    };
+    if !identical {
+      changed.insert(PathBuf::from(path));
+    }
+  }
+  if changed.is_empty() {
+    return Err(Error::InvalidInput(
+      "This addon has no changes to pack. Its compiled assets match the base game.".into(),
+    ));
+  }
+  let directories = changed
+    .iter()
+    .flat_map(|path| path.ancestors().skip(1).map(Path::to_path_buf))
+    .collect::<std::collections::BTreeSet<_>>();
+  vpkmanager::pack::pack_directory_to_writer(root, output, |path| {
+    changed.contains(path) || directories.contains(path)
+  })
+  .map_err(|e| Error::InvalidInput(e.to_string()))
 }
 
 fn compiler_extensions(text: &str) -> std::collections::BTreeSet<String> {
@@ -166,6 +213,14 @@ fn source_files(
 }
 
 fn compiler_source(path: &Path, extensions: &std::collections::BTreeSet<String>) -> bool {
+  let mut materials = false;
+  for component in path.components() {
+    let name = component.as_os_str().to_string_lossy();
+    if materials && name.eq_ignore_ascii_case("dmm_images") {
+      return false;
+    }
+    materials = name.eq_ignore_ascii_case("materials");
+  }
   !path
     .file_name()
     .is_some_and(|name| name.to_string_lossy().contains('+'))
@@ -202,6 +257,7 @@ pub(super) fn compile(
   steam: Option<PathBuf>,
   log_path: &Path,
   selected: Option<Vec<PathBuf>>,
+  mode: source2_tools::CompileMode,
 ) -> Result<(), Error> {
   let started = std::time::Instant::now();
   let root = Path::new(&addon.content_path);
@@ -220,7 +276,10 @@ pub(super) fn compile(
     }
   }
   let image_compilers = super::modding_image_compiler::sync(Path::new(&addon.content_path))?;
-  let sdk = PathBuf::from(config.prepared_sdk);
+  let _edits = super::modding_edits::EDIT_LOCK
+    .lock()
+    .map_err(|e| Error::BackgroundTaskFailed(e.to_string()))?;
+  let sdk = config.sdk_path()?;
   let alias = super::modding_workspace::mount(addon, &sdk)?;
   let runtime = steam.map(|steam_root| source2_tools::ProtonRuntime {
     launcher: if config.proton.is_empty() {
@@ -229,7 +288,7 @@ pub(super) fn compile(
       config.proton.into()
     },
     steam_root,
-    prefix: tools.join("csdk12-compiler-prefix"),
+    prefix: tools.join("csdk-compiler-prefix"),
   });
   if let Some(runtime) = &runtime {
     std::fs::create_dir_all(&runtime.prefix)?;
@@ -240,6 +299,7 @@ pub(super) fn compile(
       sdk.join("game/bin").join(metadata),
     )?));
   }
+  let explicit = selected.is_some();
   let mut inputs = match selected {
     Some(inputs) => inputs
       .into_iter()
@@ -251,31 +311,57 @@ pub(super) fn compile(
             input.display()
           )));
         }
-        let relative = input.strip_prefix(&addon.content_path).map_err(|_| {
-          Error::InvalidInput("Compiler input is outside the selected addon".into())
-        })?;
-        Ok(
-          sdk
-            .join("content/citadel_addons")
-            .join(&alias)
-            .join(relative),
-        )
+        if !input.starts_with(root) {
+          return Err(Error::InvalidInput("Compiler input is outside the selected addon".into()));
+        }
+        Ok(input)
       })
       .collect::<Result<Vec<_>, Error>>()?,
-    None => source_files(
-      &sdk.join("content/citadel_addons").join(&alias),
-      &extensions,
-    )?,
+    None => source_files(root, &extensions)?,
   };
   inputs.sort();
   inputs.dedup();
-  if inputs.is_empty() {
+  if inputs.is_empty() && matches!(mode, source2_tools::CompileMode::Rebuild) {
     return Err(Error::InvalidInput(
       "This addon has no compilable source resources".into(),
     ));
   }
+  let mut state = super::modding_build_state::State::load(root)?;
+  let snapshot = super::modding_build_state::Snapshot::capture(addon, &inputs)?;
+  if !explicit && matches!(mode, source2_tools::CompileMode::Incremental) {
+    let cli = tools.join("source2viewer-cli-20.1").join(if cfg!(windows) {
+      "Source2Viewer-CLI.exe"
+    } else {
+      "Source2Viewer-CLI"
+    });
+    if cli.is_file() {
+      super::modding_build_state::adopt_existing(
+        addon, &sdk, &cli, &snapshot, &mut state, &inputs,
+      )?;
+      snapshot.verify(root, &inputs)?;
+    }
+    inputs = snapshot.changed(&state, root, Path::new(&addon.game_path), &inputs)?;
+  }
+  if inputs.is_empty() {
+    super::modding_model_edit::reapply_after_compile(addon)?;
+    std::fs::write(
+      log_path,
+      "No changed source resources. Preserved compiled assets and applied saved model edits without invoking CSDK.\n",
+    )?;
+    return Ok(());
+  }
+  let bindings =
+    super::modding_build_state::AnimationBindings::capture(Path::new(&addon.game_path), &inputs)?;
   let mut file_list = tempfile::NamedTempFile::new()?;
-  for input in inputs {
+  let input_count = inputs.len();
+  for input in &inputs {
+    let relative = input
+      .strip_prefix(root)
+      .map_err(|_| Error::InvalidInput("Compiler input is outside the selected addon".into()))?;
+    let input = sdk
+      .join("content/citadel_addons")
+      .join(&alias)
+      .join(relative);
     let path = input.to_string_lossy();
     if path.contains(['\n', '\r']) {
       return Err(Error::InvalidInput(
@@ -296,7 +382,7 @@ pub(super) fn compile(
   let log = std::fs::File::create(log_path)?;
   let prepared_ms = started.elapsed().as_millis();
   let mut command =
-    source2_tools::compiler_command(&sdk, &alias, file_list.path(), runtime.as_ref())
+    source2_tools::compiler_command(&sdk, &alias, file_list.path(), mode, runtime.as_ref())
       .map_err(|e| Error::InvalidInput(e.to_string()))?;
   let verified_ms = started.elapsed().as_millis() - prepared_ms;
   let status = command
@@ -305,7 +391,7 @@ pub(super) fn compile(
     .stderr(log)
     .status()?;
   log::info!(
-    "[Workbench] Compile {}: prepare {} ms, SDK verification {} ms, compiler {} ms",
+    "[Workbench] Compile {} ({mode:?}, {input_count} inputs): prepare {} ms, SDK verification {} ms, compiler {} ms",
     addon.id,
     prepared_ms,
     verified_ms,
@@ -319,6 +405,12 @@ pub(super) fn compile(
       log_path.display()
     )));
   }
+  snapshot.verify(root, &inputs)?;
+  bindings.verify(Path::new(&addon.game_path))?;
+  // The compiler can replace edited outputs; apply the addon's saved model recipes again.
+  super::modding_model_edit::reapply_after_compile(addon)?;
+  snapshot.record(&mut state, root, Path::new(&addon.game_path), &inputs)?;
+  state.save(root)?;
   Ok(())
 }
 
@@ -327,6 +419,7 @@ pub async fn compile_modding_addon(
   app: AppHandle,
   addon_id: String,
   paths: Option<Vec<String>>,
+  rebuild: Option<bool>,
 ) -> Result<String, Error> {
   let addon = super::modding_workspace::resolve(&app, &addon_id)?;
   let config = super::modding_tools::get_modding_tools_config(app.clone())?;
@@ -345,7 +438,12 @@ pub async fn compile_modding_addon(
     let selected = paths
       .map(|paths| selected_sources(Path::new(&addon.content_path), paths))
       .transpose()?;
-    compile(&addon, config, &tools, steam, &log, selected)?;
+    let mode = if rebuild.unwrap_or(false) {
+      source2_tools::CompileMode::Rebuild
+    } else {
+      source2_tools::CompileMode::Incremental
+    };
+    compile(&addon, config, &tools, steam, &log, selected, mode)?;
     Ok(log.to_string_lossy().into_owned())
   })
   .await
@@ -375,18 +473,18 @@ pub async fn build_modding_addon(
     let mod_dir = store.join(&mod_id);
     std::fs::create_dir_all(&mod_dir)?;
     let log_path = mod_dir.join("compile.log");
-    compile(&addon, config, &tools, steam, &log_path, None)?;
+    compile(&addon, config, &tools, steam, &log_path, None, source2_tools::CompileMode::Incremental)?;
     let packing = std::time::Instant::now();
     let final_files = mod_dir.join("files");
     std::fs::create_dir_all(&final_files)?;
     let output = final_files.join("addon_dir.vpk");
     let mut temporary = tempfile::NamedTempFile::new_in(&final_files)?;
-    let file_count = vpkmanager::pack::pack_directory_to_writer(Path::new(&addon.game_path), &mut temporary, packed_asset).map_err(|e| Error::InvalidInput(e.to_string()))?;
+    let file_count = pack_addon(&addon, &mut temporary)?;
     temporary.flush()?;
     temporary.as_file().sync_all()?;
     temporary.persist(&output).map_err(|e| e.error)?;
     log::info!("[Workbench] Packed {} files for {} in {} ms", file_count, addon.id, packing.elapsed().as_millis());
-    let metadata = serde_json::json!({"id":mod_id,"kind":"local","name":addon.name,"author":"Modding Workbench","category":"Skins","description":"Built from a CSDK12 addon.","createdAt":chrono::Utc::now().to_rfc3339(),"_schema":1});
+    let metadata = serde_json::json!({"id":mod_id,"kind":"local","name":addon.name,"author":"Modding Workbench","category":"Skins","description":"Built from a CSDK addon.","createdAt":chrono::Utc::now().to_rfc3339(),"_schema":1});
     std::fs::write(mod_dir.join("metadata.json"), serde_json::to_vec_pretty(&metadata).map_err(|e| Error::InvalidInput(e.to_string()))?)?;
     Ok(ModdingBuildResult { mod_id, addon_id, output_path: output.to_string_lossy().into_owned(), file_count, log_path: log_path.to_string_lossy().into_owned() })
   }).await.map_err(|e| Error::BackgroundTaskFailed(e.to_string()))?
@@ -395,6 +493,96 @@ pub async fn build_modding_addon(
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  #[test]
+  fn managed_paint_images_do_not_enter_the_sdk_compiler() {
+    let extensions = ["png".to_string(), "vmat".to_string()]
+      .into_iter()
+      .collect();
+    assert!(!compiler_source(
+      Path::new("addon/materials/dmm_images/hash/frame.png"),
+      &extensions
+    ));
+    assert!(!compiler_source(
+      Path::new("addon/MATERIALS/DMM_IMAGES/hash/frame.png"),
+      &extensions
+    ));
+    assert!(compiler_source(
+      Path::new("addon/materials/hero/albedo.png"),
+      &extensions
+    ));
+    assert!(compiler_source(
+      Path::new("addon/materials/hero/body.vmat"),
+      &extensions
+    ));
+  }
+
+  #[test]
+  fn native_overlay_keeps_nested_edits_and_omits_identical_base_models() {
+    let root = tempfile::tempdir().unwrap();
+    let base = root.path().join("base");
+    let game = root.path().join("game");
+    for directory in [&base, &game] {
+      std::fs::create_dir_all(directory.join("models/hero")).unwrap();
+    }
+    for directory in [&base, &game] {
+      std::fs::write(
+        directory.join("models/hero/body.vmdl_c"),
+        b"original skeleton and animations",
+      )
+      .unwrap();
+    }
+    std::fs::create_dir_all(game.join("materials/hero")).unwrap();
+    std::fs::write(
+      game.join("materials/hero/paint.vmat_c"),
+      b"edited appearance",
+    )
+    .unwrap();
+    for cache in [
+      "tools_asset_info.bin",
+      "tools_thumbnail_cache.sqlite3",
+      "tools_thumbnail_cache.sqlite3-wal",
+    ] {
+      std::fs::write(game.join(cache), b"editor cache").unwrap();
+    }
+    std::fs::create_dir_all(game.join("_bakeresourcecache/maps/editor/lighting")).unwrap();
+    std::fs::write(
+      game.join("_bakeresourcecache/maps/editor/lighting/cubemap.vtex_c"),
+      b"editor lighting",
+    )
+    .unwrap();
+    let archive_path = root.path().join("base_dir.vpk");
+    let mut writer = std::fs::File::create(&archive_path).unwrap();
+    vpkmanager::pack::pack_directory_to_writer(&base, &mut writer, |_| true).unwrap();
+    drop(writer);
+    let addon = super::super::modding_workspace::ModdingAddon {
+      id: "fixture".into(),
+      name: "fixture".into(),
+      sdk_root: String::new(),
+      content_path: String::new(),
+      game_path: game.to_string_lossy().into(),
+      archive_path: archive_path.to_string_lossy().into(),
+    };
+    let output = root.path().join("overlay_dir.vpk");
+    let mut writer = std::fs::File::create(&output).unwrap();
+    assert_eq!(pack_addon(&addon, &mut writer).unwrap(), 1);
+    drop(writer);
+    let packed = source2_model::vpk_extract::VpkArchive::open(&output).unwrap();
+    assert_eq!(packed.list_entries(), ["materials/hero/paint.vmat_c"]);
+    assert_eq!(
+      packed.extract_entry("materials/hero/paint.vmat_c").unwrap(),
+      b"edited appearance"
+    );
+    std::fs::remove_file(game.join("materials/hero/paint.vmat_c")).unwrap();
+    let mut writer = std::io::Cursor::new(Vec::new());
+    assert!(
+      pack_addon(&addon, &mut writer)
+        .unwrap_err()
+        .to_string()
+        .contains("no changes to pack")
+    );
+    assert!(writer.into_inner().is_empty());
+  }
 
   #[test]
   fn streaming_packages_preserve_asset_contents_and_skip_editor_support() {

@@ -160,3 +160,25 @@ describe("compiled particle simulation", () => {
     expect(wide.all().length).toBeLessThanOrEqual(128);
   });
 });
+
+it("applies authored Source pitch/yaw offsets to particle model orientation", () => {
+  const simulation = new ParticleSimulation(
+    {
+      m_Emitters: [
+        { _class: "C_OP_InstantaneousEmitter", m_nParticlesToEmit: 1 },
+      ],
+      m_Operators: [
+        {
+          _class: "C_OP_RemapTransformOrientationToRotations",
+          m_vecRotation: [0, -90, 0],
+        },
+      ],
+    },
+    {},
+  );
+  simulation.step(1 / 60);
+  const particle = simulation.particles[0];
+  expect(particle.values[4]).toBeCloseTo(0);
+  expect(particle.values[12]).toBeCloseTo(-Math.PI / 2);
+  expect(particle.values[20]).toBeCloseTo(0);
+});

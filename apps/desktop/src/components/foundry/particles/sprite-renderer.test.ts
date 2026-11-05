@@ -99,3 +99,15 @@ test("keeps a world-Z ground ring flat when the camera tilts", () => {
   renderer.dispose();
   assets.dispose();
 });
+
+test("culling bounds follow instanced particles rather than the unit quad at the origin", () => {
+  const { particle, renderer, geometry, assets } = sprite({});
+  particle.vector(0).set(1500, 100, 200);
+  renderer.update(new THREE.PerspectiveCamera(), new THREE.Group(), 1);
+  expect(geometry.boundingSphere?.containsPoint(particle.vector(0))).toBe(true);
+  expect(geometry.boundingSphere?.containsPoint(new THREE.Vector3())).toBe(
+    false,
+  );
+  renderer.dispose();
+  assets.dispose();
+});

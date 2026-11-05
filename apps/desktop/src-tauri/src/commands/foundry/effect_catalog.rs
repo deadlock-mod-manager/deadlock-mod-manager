@@ -271,6 +271,7 @@ pub async fn foundry_decode_effect(
       &file_path,
       &entry_path,
       "Effect preview requires a compiled character model",
+      None,
     )?;
     preview_particles(&archive, &resource, &[effect_path], Vec::new())
   })

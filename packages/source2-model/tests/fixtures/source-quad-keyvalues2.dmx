@@ -1,0 +1,52 @@
+<!-- dmx encoding keyvalues2 4 format model 22 -->
+"DmElement"
+{
+	"id" "elementid" "01010101-0101-0101-0101-010101010101"
+	"name" "string" "Scene"
+	"model" "DmeModel"
+	{
+		"id" "elementid" "02020202-0202-0202-0202-020202020202"
+		"name" "string" "Model"
+		"children" "element_array"
+		[
+			"DmeDag"
+			{
+				"id" "elementid" "03030303-0303-0303-0303-030303030303"
+				"name" "string" "Mesh"
+				"shape" "DmeMesh"
+				{
+					"id" "elementid" "04040404-0404-0404-0404-040404040404"
+					"name" "string" "Mesh"
+					"bindState" "DmeVertexData"
+					{
+						"id" "elementid" "05050505-0505-0505-0505-050505050505"
+						"name" "string" "bind"
+						"position$0" "vector3_array" ["0.0 0.0 0.0", "1.0 0.0 0.0", "1.0 1.0 0.0", "0.0 1.0 0.0"]
+						"position$0Indices" "int_array" ["0", "1", "2", "3"]
+						"normal$0" "vector3_array" ["0.0 0.0 1.0"]
+						"normal$0Indices" "int_array" ["0", "0", "0", "0"]
+						"texcoord$0" "vector2_array" ["0.0 0.0", "1.0 0.0", "1.0 1.0", "0.0 1.0"]
+						"texcoord$0Indices" "int_array" ["0", "1", "2", "3"]
+						"flipVCoordinates" "bool" "1"
+					}
+					"faceSets" "element_array"
+					[
+						"DmeFaceSet"
+						{
+							"id" "elementid" "06060606-0606-0606-0606-060606060606"
+							"name" "string" "Material"
+							"faces" "int_array" ["0", "1", "2", "3", "-1"]
+						}
+					]
+				}
+				"transform" "DmeTransform"
+				{
+					"id" "elementid" "07070707-0707-0707-0707-070707070707"
+					"name" "string" "MeshTransform"
+					"position" "vector3" "10.0 20.0 30.0"
+					"orientation" "quaternion" "0.0 0.0 0.0 1.0"
+				}
+			}
+		]
+	}
+}

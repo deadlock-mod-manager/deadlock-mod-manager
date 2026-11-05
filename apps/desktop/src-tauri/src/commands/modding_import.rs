@@ -153,21 +153,39 @@ pub async fn import_modding_files(
   app: AppHandle,
   addon_id: String,
   selections: Vec<super::modding_archive::ModdingAssetSelection>,
+  compiled_only: Option<bool>,
 ) -> Result<ModdingImportResult, Error> {
   let addon = resolve(&app, &addon_id)?;
   let cli = cli_path(&app)?;
   let config = super::modding_tools::get_modding_tools_config(app)?;
   tauri::async_runtime::spawn_blocking(move || {
+    let compiled_only = compiled_only.unwrap_or(false);
+    let _build = super::modding_build::BUILD_LOCK
+      .lock()
+      .map_err(|e| Error::BackgroundTaskFailed(e.to_string()))?;
     let _guard = IMPORT_LOCK
       .lock()
       .map_err(|e| Error::BackgroundTaskFailed(e.to_string()))?;
-    let sdk = PathBuf::from(config.prepared_sdk);
-    let archive_path = PathBuf::from(addon.archive_path);
-    let core = source2_model::vpk_extract::VpkArchive::open(&sdk.join("game/core/pak01_dir.vpk"))
-      .map_err(|e| Error::InvalidInput(e.to_string()))?;
+    let sdk = config.sdk_path()?;
+    let archive_path = PathBuf::from(&addon.archive_path);
+    let mut fallbacks = Vec::new();
+    let game_core = archive_path
+      .parent()
+      .and_then(Path::parent)
+      .map(|game| game.join("core/pak01_dir.vpk"));
+    for path in [Some(sdk.join("game/core/pak01_dir.vpk")), game_core]
+      .into_iter()
+      .flatten()
+    {
+      if path.is_file() {
+        let core = source2_model::vpk_extract::VpkArchive::open(&path)
+          .map_err(|e| Error::InvalidInput(e.to_string()))?;
+        fallbacks.push(std::sync::Arc::new(core));
+      }
+    }
     let archive = source2_model::vpk_extract::VpkArchive::open(&archive_path)
       .map_err(|e| Error::InvalidInput(e.to_string()))?
-      .with_fallbacks(vec![std::sync::Arc::new(core)]);
+      .with_fallbacks(fallbacks);
     let entries = super::modding_archive::expand_selection(&selections, archive.list_entries())?;
     let content = tempfile::tempdir()?;
     let game = tempfile::tempdir()?;
@@ -185,7 +203,12 @@ pub async fn import_modding_files(
         let data = archive
           .extract_entry_limited(entry, 256 * 1024 * 1024)
           .map_err(|e| Error::InvalidInput(e.to_string()))?;
-        for root in [content.path(), game.path()] {
+        let roots = if compiled_only {
+          vec![game.path()]
+        } else {
+          vec![content.path(), game.path()]
+        };
+        for root in roots {
           let target = root.join(entry);
           std::fs::create_dir_all(
             target
@@ -196,8 +219,18 @@ pub async fn import_modding_files(
         }
       }
     }
+    if compiled_only {
+      return publish_missing(game.path(), Path::new(&addon.game_path));
+    }
     for chunk in compiled_entries.chunks(32) {
-      decompile(&cli, &sdk, &archive_path, chunk, content.path())?;
+      let remaining = chunk
+        .iter()
+        .filter(|entry| !content.path().join(entry.trim_end_matches("_c")).is_file())
+        .cloned()
+        .collect::<Vec<_>>();
+      if !remaining.is_empty() {
+        decompile(&cli, &sdk, &archive_path, &remaining, content.path())?;
+      }
     }
     for entry in compiled_entries
       .iter()
@@ -212,12 +245,16 @@ pub async fn import_modding_files(
       &cli,
       &sdk,
       &archive_path,
-      &skeletons.into_iter().collect::<Vec<_>>(),
+      &skeletons
+        .into_iter()
+        .filter(|entry| !content.path().join(entry.trim_end_matches("_c")).is_file())
+        .collect::<Vec<_>>(),
       content.path(),
     )?;
     super::modding_housekeeping::normalize_particles(content.path())?;
     let sources = publish_missing(content.path(), Path::new(&addon.content_path))?;
     publish_missing(game.path(), Path::new(&addon.game_path))?;
+    super::modding_build_state::record_import(&addon, content.path(), game.path())?;
     super::modding_image_compiler::sync(Path::new(&addon.content_path))?;
     Ok(ModdingImportResult {
       created: sources.created,

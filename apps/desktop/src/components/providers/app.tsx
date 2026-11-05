@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { createContext, useContext, useEffect, useMemo } from "react";
 import logger from "@/lib/logger";
+import { useNativeFileDrops } from "@/hooks/use-native-file-drops";
 import { notifyRemovedMods } from "@/lib/mods/missing-vpks";
 import { usePersistedStore } from "@/lib/store";
 
@@ -15,6 +16,7 @@ type AppProviderState = {
 const AppProviderContext = createContext<AppProviderState>({});
 
 export const AppProvider = ({ children, ...props }: AppProviderProps) => {
+  useNativeFileDrops();
   const clearLastJoin = usePersistedStore((s) => s.clearLastJoin);
 
   useEffect(() => {

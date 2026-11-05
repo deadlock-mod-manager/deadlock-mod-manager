@@ -93,10 +93,17 @@ export class ParticleAttachments {
       this.rig
     ).matrixWorld.clone();
   }
-  update(controls: Map<number, ControlPoint>, drivers: ParticleValue[]) {
+  prepare() {
     this.rig.updateWorldMatrix(true, true);
     this.root.updateWorldMatrix(true, false);
     this.inverse.copy(this.root.matrixWorld).invert();
+  }
+  update(
+    controls: Map<number, ControlPoint>,
+    drivers: ParticleValue[],
+    prepared = false,
+  ) {
+    if (!prepared) this.prepare();
     for (const value of drivers) {
       const driver = fields(value),
         index = num(driver.m_iControlPoint);

@@ -1,6 +1,6 @@
-use std::path::Path;
 //! Compiled particle graphs and their dependencies, read from the skin before the game.
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
+use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, LazyLock, Mutex};
 
@@ -115,6 +115,9 @@ pub struct FoundryParticleGraph {
   pub release_roots: Vec<String>,
   pub ability: ParticleValue,
   pub ability_effects: Vec<PreviewAbilityEffect>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  #[ts(optional)]
+  pub projectiles: Option<Vec<super::ability_vfx::PreviewAbilityProjectile>>,
   pub systems: BTreeMap<String, ParticleValue>,
   pub attachments: BTreeMap<String, ParticleValue>,
   pub textures: Vec<ParticleTexture>,
@@ -260,8 +263,10 @@ fn texture(
         .into_iter()
         .map(|frame| ParticleSheetFrame {
           duration: frame.display_time,
-          min: frame.cropped_min,
-          max: frame.cropped_max,
+          // The preview draws full quads, so retain the transparent frame padding.
+          // Cropped UVs require a matching cropped quad, otherwise smoke develops hard edges.
+          min: frame.uncropped_min,
+          max: frame.uncropped_max,
         })
         .collect()
     })
@@ -418,6 +423,10 @@ pub async fn foundry_particle_graph(
       .as_ref()
       .map(super::ability_vfx::ability_caster_particles)
       .unwrap_or_default();
+    let projectiles = ability
+      .as_ref()
+      .map(super::ability_vfx::ability_projectiles)
+      .unwrap_or_default();
     let mut ambient_roots = if standalone {
       vec![entry_path.trim_end_matches("_c").to_owned()]
     } else if roots.is_empty() {
@@ -435,6 +444,12 @@ pub async fn foundry_particle_graph(
       .iter()
       .chain(&caster.cast)
       .chain(&caster.release)
+      .chain(projectiles.iter().map(|projectile| &projectile.path))
+      .chain(
+        projectiles
+          .iter()
+          .flat_map(|projectile| &projectile.hit_particles),
+      )
       .cloned()
       .collect::<BTreeSet<_>>()
       .into_iter()
@@ -448,6 +463,7 @@ pub async fn foundry_particle_graph(
         .as_ref()
         .map(super::ability_vfx::discover_ability_effects)
         .unwrap_or_default(),
+      projectiles: (!projectiles.is_empty()).then_some(projectiles),
       ambient_roots,
       cast_roots: caster.cast,
       release_roots: caster.release,

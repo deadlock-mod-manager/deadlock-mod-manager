@@ -20,6 +20,7 @@ mod patch;
 mod reader;
 mod rewrap;
 mod types;
+pub mod wire;
 mod writer;
 
 pub use patch::{

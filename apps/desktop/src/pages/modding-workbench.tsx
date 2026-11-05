@@ -89,7 +89,7 @@ const ModdingWorkbench = () => {
     queryFn: () => invoke<ModdingToolsConfig>("get_modding_tools_config"),
   });
   const sdk = useQuery({
-    queryKey: ["modding-sdk", config.data?.preparedSdk],
+    queryKey: ["modding-sdk", config.data?.sdk],
     queryFn: () => invoke<ModdingSdkStatus>("inspect_modding_sdk"),
     enabled: !!config.data,
     retry: false,
@@ -99,7 +99,7 @@ const ModdingWorkbench = () => {
     queryFn: () => invoke<ModdingSetupStatus>("get_modding_setup_status"),
   });
   const checkingTools = config.isPending || sdk.isFetching || tools.isPending;
-  const ready = !!sdk.data?.compatible && !!tools.data?.cliReady;
+  const ready = !!sdk.data?.prepared && !!tools.data?.cliReady;
   return (
     <div className='flex h-full min-h-0 flex-col gap-3 px-4 pb-4'>
       <PageTitle
@@ -168,7 +168,7 @@ const ModdingWorkbench = () => {
               </DropdownMenuTrigger>
               <DropdownMenuContent align='end'>
                 <DropdownMenuItem
-                  disabled={!sdk.data?.compatible}
+                  disabled={!sdk.data?.prepared}
                   onSelect={() => setVariantsOpen(true)}>
                   {t("workbenchAuthoring.variantBuilds")}
                 </DropdownMenuItem>
@@ -203,12 +203,15 @@ const ModdingWorkbench = () => {
       {guideOpen || (!checkingTools && !ready) ? (
         <WorkbenchGuide expanded />
       ) : null}
-      <ResizablePanelGroup direction='horizontal' className='min-h-0 flex-1'>
+      <ResizablePanelGroup
+        deferResize
+        direction='horizontal'
+        className='min-h-0 flex-1'>
         <ResizablePanel
           minSize={30}
           defaultSize={comparing && !detached ? 50 : 100}>
           <AddonWorkspace
-            addonsEnabled={!!sdk.data?.compatible && !!tools.data?.cliReady}
+            addonsEnabled={!!sdk.data?.prepared && !!tools.data?.cliReady}
           />
         </ResizablePanel>
         {comparing && !detached ? (
@@ -220,7 +223,7 @@ const ModdingWorkbench = () => {
                 comparison
                 initialSnapshot={snapshot}
                 onSnapshotChange={updateSnapshot}
-                addonsEnabled={!!sdk.data?.compatible && !!tools.data?.cliReady}
+                addonsEnabled={!!sdk.data?.prepared && !!tools.data?.cliReady}
                 onDirtyChange={setComparisonDirty}
               />
             </ResizablePanel>

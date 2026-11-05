@@ -1,18 +1,23 @@
-use std::sync::{Arc, OnceLock};
+use std::sync::Arc;
 
-use serde::Deserialize;
-use tauri::{Manager, State};
-use tokio::sync::Semaphore;
+use serde::Serialize;
+use tauri::State;
+use ts_rs::TS;
 
 use super::foundry::{FoundryModel, ModelAssets};
 use super::modding_workspace::{ModdingHierarchy, contained};
 use crate::app_runtime::AppHandle;
 use crate::errors::Error;
 
-#[derive(Deserialize)]
-struct ModelStats {
-  vertices: u32,
-  indices: u32,
+#[derive(Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, rename_all = "camelCase")]
+pub struct ModdingDmxModel {
+  #[serde(flatten)]
+  pub model: FoundryModel,
+  pub skeleton_only: bool,
+  pub associated_model: Option<String>,
+  pub layers: Vec<super::modding_dmx_layers::ModdingDmxLayer>,
 }
 
 #[tauri::command]
@@ -23,56 +28,46 @@ pub async fn preview_modding_dmx(
   addon_id: String,
   hierarchy: ModdingHierarchy,
   path: String,
-) -> Result<FoundryModel, Error> {
+  discover_layers: Option<bool>,
+) -> Result<ModdingDmxModel, Error> {
   if !path.to_ascii_lowercase().ends_with(".dmx") {
-    return Err(Error::InvalidInput("Select a source DMX model".into()));
+    return Err(Error::InvalidInput("Select a source DMX file".into()));
   }
   let addon = super::modding_local::resolve_read(&app, &addon_id)?;
   let source = contained(&addon.root(hierarchy), &path)?;
-  if std::fs::metadata(&source)?.len() > 256 * 1024 * 1024 {
-    return Err(Error::InvalidInput(
-      "This DMX exceeds the 256 MB preview limit".into(),
-    ));
-  }
   let assets = assets.inner().clone();
   let job = assets.start_job(request_id)?;
-  static SLOTS: OnceLock<Arc<Semaphore>> = OnceLock::new();
-  let _permit = job
-    .acquire(SLOTS.get_or_init(|| Arc::new(Semaphore::new(1))).clone())
-    .await?;
-  job.check()?;
-  let tools = app.path().app_data_dir()?.join("tools");
-  std::fs::create_dir_all(&tools)?;
-  let temporary = tempfile::tempdir_in(tools)?;
-  let output = temporary.path().join("preview.glb");
-  let stdout = super::modding_blender::run_blender_script(
-    &app,
-    vec![
-      "preview".into(),
-      source.into_os_string(),
-      output.clone().into_os_string(),
-    ],
-    job.cancellation_token(),
-  )
-  .await?;
-  job.check()?;
-  let stats: ModelStats = serde_json::from_str(
-    stdout
-      .lines()
-      .find_map(|line| line.strip_prefix("DMM_MODEL_STATS="))
-      .ok_or_else(|| Error::InvalidInput("Blender returned no DMX geometry".into()))?,
-  )
-  .map_err(|error| Error::InvalidInput(error.to_string()))?;
-  if std::fs::metadata(&output)?.len() > 256 * 1024 * 1024 {
-    return Err(Error::InvalidInput(
-      "The DMX preview exceeds the 256 MB limit".into(),
-    ));
-  }
-  let bytes = tokio::fs::read(output).await?;
-  let model = assets.publish(&bytes, stats.vertices, stats.indices)?;
-  if let Err(error) = job.check() {
-    assets.release(&model.asset_id)?;
-    return Err(error);
-  }
-  Ok(model)
+  tauri::async_runtime::spawn_blocking(move || {
+    job.check()?;
+    if std::fs::metadata(&source)?.len() > 256 * 1024 * 1024 {
+      return Err(Error::InvalidInput(
+        "This DMX exceeds the 256 MB preview limit".into(),
+      ));
+    }
+    let decoded = source2_model::dmx::DmxModel::decode(&std::fs::read(source)?)
+      .map_err(|error| Error::InvalidInput(error.to_string()))?;
+    let skeleton_only = decoded.is_skeleton_only();
+    let (associated_model, layers) = if discover_layers.unwrap_or(true) {
+      super::modding_dmx_layers::discover(&addon.root(hierarchy), &path, skeleton_only)?
+    } else {
+      (None, Vec::new())
+    };
+    let decoded = decoded
+      .into_glb(&[], &[])
+      .map_err(|error| Error::InvalidInput(error.to_string()))?;
+    job.check()?;
+    let model = assets.publish(&decoded.glb, decoded.vertex_count, decoded.index_count)?;
+    if let Err(error) = job.check() {
+      assets.release(&model.asset_id)?;
+      return Err(error);
+    }
+    Ok(ModdingDmxModel {
+      model,
+      skeleton_only,
+      associated_model,
+      layers,
+    })
+  })
+  .await
+  .map_err(|error| Error::BackgroundTaskFailed(error.to_string()))?
 }

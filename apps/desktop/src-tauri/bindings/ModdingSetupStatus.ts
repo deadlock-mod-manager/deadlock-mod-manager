@@ -5,6 +5,5 @@ export type ModdingSetupStatus = {
   running: boolean;
   phase: ModdingSetupPhase;
   cliReady: boolean;
-  qrLines: Array<string>;
   error: string | null;
 };

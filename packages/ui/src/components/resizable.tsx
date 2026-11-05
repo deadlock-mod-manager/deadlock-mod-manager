@@ -1,22 +1,53 @@
 "use client";
 
 import { GripVertical } from "lucide-react";
+import { useCallback, useEffect, useRef } from "react";
+import { attachDeferredPanelResize } from "../lib/deferred-panel-resize";
 import * as ResizablePrimitive from "react-resizable-panels";
 
 import { cn } from "../lib/utils";
 
 const ResizablePanelGroup = ({
   className,
+  deferResize = false,
+  ref,
   ...props
-}: React.ComponentProps<typeof ResizablePrimitive.PanelGroup>) => (
-  <ResizablePrimitive.PanelGroup
-    className={cn(
-      "flex h-full w-full data-[panel-group-direction=vertical]:flex-col",
-      className,
-    )}
-    {...props}
-  />
-);
+}: React.ComponentProps<typeof ResizablePrimitive.PanelGroup> & {
+  deferResize?: boolean;
+}) => {
+  const groupRef = useRef<ResizablePrimitive.ImperativePanelGroupHandle | null>(
+    null,
+  );
+  const setRef = useCallback(
+    (group: ResizablePrimitive.ImperativePanelGroupHandle | null) => {
+      groupRef.current = group;
+      const cleanup = typeof ref === "function" ? ref(group) : undefined;
+      if (ref && typeof ref !== "function") ref.current = group;
+      return () => {
+        groupRef.current = null;
+        if (typeof cleanup === "function") cleanup();
+        else if (typeof ref === "function") ref(null);
+        else if (ref) ref.current = null;
+      };
+    },
+    [ref],
+  );
+  useEffect(() => {
+    const group = groupRef.current;
+    if (!deferResize || !group) return;
+    return attachDeferredPanelResize(group);
+  }, [deferResize]);
+  return (
+    <ResizablePrimitive.PanelGroup
+      ref={setRef}
+      className={cn(
+        "flex h-full w-full data-[panel-group-direction=vertical]:flex-col",
+        className,
+      )}
+      {...props}
+    />
+  );
+};
 
 const ResizablePanel = ResizablePrimitive.Panel;
 

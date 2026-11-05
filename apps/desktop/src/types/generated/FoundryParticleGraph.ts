@@ -2,6 +2,7 @@
 import type { ParticleTexture } from "./ParticleTexture";
 import type { ParticleValue } from "./ParticleValue";
 import type { PreviewAbilityEffect } from "./PreviewAbilityEffect";
+import type { PreviewAbilityProjectile } from "./PreviewAbilityProjectile";
 
 export type FoundryParticleGraph = {
   roots: Array<string>;
@@ -10,6 +11,7 @@ export type FoundryParticleGraph = {
   releaseRoots: Array<string>;
   ability: ParticleValue;
   abilityEffects: Array<PreviewAbilityEffect>;
+  projectiles?: Array<PreviewAbilityProjectile>;
   systems: { [key in string]?: ParticleValue };
   attachments: { [key in string]?: ParticleValue };
   textures: Array<ParticleTexture>;

@@ -51,27 +51,40 @@ pub async fn list_modding_archive_files(
   search: String,
   regex: Option<bool>,
   archive_path: Option<String>,
+  assets_only: Option<bool>,
 ) -> Result<Vec<ModdingArchiveEntry>, Error> {
   relative(&directory, true)?;
   let archive = self::archive_path(archive_path)?;
   tauri::async_runtime::spawn_blocking(move || {
     let archive = super::foundry::open_archive(&archive, None)?;
-    archive_listing(
+    archive_listing_impl(
       archive.entries_with_sizes(),
       &directory,
       &search,
       regex.unwrap_or(false),
+      assets_only.unwrap_or(false),
     )
   })
   .await
   .map_err(|error| Error::BackgroundTaskFailed(error.to_string()))?
 }
 
+#[cfg(test)]
 fn archive_listing<'a>(
   entries: impl Iterator<Item = (&'a str, u64)>,
   directory: &str,
   search: &str,
   use_regex: bool,
+) -> Result<Vec<ModdingArchiveEntry>, Error> {
+  archive_listing_impl(entries, directory, search, use_regex, false)
+}
+
+fn archive_listing_impl<'a>(
+  entries: impl Iterator<Item = (&'a str, u64)>,
+  directory: &str,
+  search: &str,
+  use_regex: bool,
+  assets_only: bool,
 ) -> Result<Vec<ModdingArchiveEntry>, Error> {
   let prefix = if directory.is_empty() {
     String::new()
@@ -100,7 +113,14 @@ fn archive_listing<'a>(
     let Some(rest) = path.strip_prefix(&prefix) else {
       continue;
     };
-    if !search.is_empty() {
+    if assets_only
+      && ![".vmdl", ".vmdl_c", ".vpcf", ".vpcf_c"]
+        .iter()
+        .any(|extension| path.to_ascii_lowercase().ends_with(extension))
+    {
+      continue;
+    }
+    if assets_only || !search.is_empty() {
       if expression.as_ref().map_or_else(
         || path.to_lowercase().contains(&search),
         |expression| expression.is_match(path),
@@ -115,7 +135,7 @@ fn archive_listing<'a>(
             file_count: 1,
           },
         );
-        if listing.len() == 2000 {
+        if !assets_only && listing.len() == 2000 {
           break;
         }
       }
@@ -293,6 +313,48 @@ mod tests {
       archive_listing(entries.into_iter(), "", "body|hair", false)
         .unwrap()
         .is_empty()
+    );
+  }
+
+  #[test]
+  fn asset_grid_lists_models_and_particles_recursively_without_the_search_cap() {
+    let mut entries = (0..2005)
+      .map(|index| (format!("models/nested/{index}.vmdl_c"), 12))
+      .collect::<Vec<_>>();
+    entries.push(("particles/test.vpcf_c".into(), 5));
+    entries.push(("textures/test.vtex_c".into(), 8));
+    let listing = archive_listing_impl(
+      entries.iter().map(|(path, size)| (path.as_str(), *size)),
+      "",
+      "",
+      false,
+      true,
+    )
+    .unwrap();
+    assert_eq!(listing.len(), 2006);
+    assert!(
+      listing
+        .iter()
+        .all(|entry| !entry.directory && entry.file_count == 1)
+    );
+    let listing = archive_listing_impl(
+      entries.iter().map(|(path, size)| (path.as_str(), *size)),
+      "models",
+      r"nested/200[0-4]\.vmdl_c$",
+      true,
+      true,
+    )
+    .unwrap();
+    assert_eq!(listing.len(), 5);
+    assert!(
+      archive_listing_impl(
+        entries.iter().map(|(path, size)| (path.as_str(), *size)),
+        "",
+        "[",
+        true,
+        true
+      )
+      .is_err()
     );
   }
 

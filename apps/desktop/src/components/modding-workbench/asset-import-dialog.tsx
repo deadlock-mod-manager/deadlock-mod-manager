@@ -13,7 +13,7 @@ import { ArchiveBrowser } from "./archive-browser";
 interface Props {
   addon: ModdingAddon;
   onClose: () => void;
-  onImported: () => void;
+  onImported: (hierarchy: "content" | "game") => void;
 }
 
 export const AssetImportDialog = ({ addon, onClose, onImported }: Props) => {

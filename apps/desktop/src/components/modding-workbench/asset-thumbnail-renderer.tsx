@@ -16,33 +16,40 @@ const NO_EXTRA_ROOTS: string[] = [];
 
 export function AssetThumbnailRenderer({
   addon,
+  archivePath,
   path,
   revision,
   particle,
   hierarchy,
   onReady,
 }: {
-  addon: ModdingAddon;
   path: string;
   revision: number;
   particle?: ModdingParticleFile;
   hierarchy: ModdingHierarchy;
   onReady: (image: string | null) => void;
-}) {
+} & (
+  | { addon: ModdingAddon; archivePath?: never }
+  | { archivePath: string; addon?: never }
+)) {
   const host = useRef<HTMLDivElement>(null);
   const stage = useRef<PreviewStage | null>(null);
   const ready = useRef(onReady);
   ready.current = onReady;
-  const taskKey = `${addon.id}:${hierarchy}:${path}:${revision}`;
+  const sourceId = addon?.id ?? archivePath ?? "";
+  const filePath = addon?.archivePath ?? archivePath ?? "";
+  const taskKey = `${sourceId}:${hierarchy}:${path}:${revision}`;
   const task = useRef(taskKey);
   task.current = taskKey;
   const client = useQueryClient();
   const entryPath = path.endsWith("_c") ? path : `${path}_c`;
   const isModel = /\.vmdl(_c)?$/i.test(path);
-  const sourceModel = hierarchy === "content" && /\.vmdl$/i.test(path);
+  const sourceModel = addon && hierarchy === "content" && /\.vmdl$/i.test(path);
   const key = [
-    sourceModel ? "workbench-source-model" : "workbench-model",
-    addon.id,
+    sourceModel
+      ? "workbench-thumbnail-source-model"
+      : "workbench-thumbnail-model",
+    sourceId,
     sourceModel ? path : entryPath,
     revision,
     false,
@@ -51,13 +58,14 @@ export function AssetThumbnailRenderer({
     queryKey: key,
     queryFn: async ({ signal }) => {
       const result = sourceModel
-        ? await decodeModdingSourceModel(addon.id, path, signal)
+        ? await decodeModdingSourceModel(addon.id, path, signal, 256)
         : await decodeFoundryModel(
-            addon.archivePath,
+            filePath,
             entryPath,
             null,
             signal,
-            addon.gamePath,
+            addon?.gamePath,
+            256,
           );
       cacheFoundryModel(client, key, result);
       return result;
@@ -70,14 +78,14 @@ export function AssetThumbnailRenderer({
   });
   const { graph, models } = useSourceParticles(
     {
-      filePath: addon.archivePath,
+      filePath,
       entryPath,
-      overlayRoot: addon.gamePath,
+      overlayRoot: addon?.gamePath,
       revision,
     },
     null,
     NO_EXTRA_ROOTS,
-    particle
+    particle && addon
       ? {
           addonId: addon.id,
           version: particle.fingerprint,

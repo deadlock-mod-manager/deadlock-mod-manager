@@ -225,13 +225,14 @@ pub(crate) fn build_resource_with_tail(
         .checked_add(tail.len())
         .ok_or(DecodeError::BadResource("resource size overflow"))?;
 
-    let total_len_u32 =
-        u32::try_from(total_len).map_err(|_| DecodeError::BadResource("resource too large"))?;
+    // Streamed texture bytes are counted separately by Source 2 resource readers.
+    let resource_len_u32 =
+        u32::try_from(tail_start).map_err(|_| DecodeError::BadResource("resource too large"))?;
     let block_count_u32 =
         u32::try_from(block_count).map_err(|_| DecodeError::BadResource("too many blocks"))?;
 
     let mut out = vec![0u8; total_len];
-    out[0..4].copy_from_slice(&total_len_u32.to_le_bytes());
+    out[0..4].copy_from_slice(&resource_len_u32.to_le_bytes());
     out[4..6].copy_from_slice(&12u16.to_le_bytes());
     out[6..8].copy_from_slice(&resource_version.to_le_bytes());
     out[8..12].copy_from_slice(&8u32.to_le_bytes());

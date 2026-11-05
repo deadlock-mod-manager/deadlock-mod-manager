@@ -82,7 +82,7 @@ function ComparisonContent({ initial }: { initial: WorkspaceSnapshot }) {
       </header>
       <AddonWorkspace
         comparison
-        addonsEnabled={!!sdk.data?.compatible}
+        addonsEnabled={!!sdk.data?.prepared}
         initialSnapshot={initial}
         onSnapshotChange={update}
         onDirtyChange={setBusy}

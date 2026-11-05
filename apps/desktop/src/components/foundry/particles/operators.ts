@@ -1,4 +1,4 @@
-import { Euler, MathUtils, Vector3 } from "three";
+import { Euler, Quaternion, MathUtils, Vector3 } from "three";
 import {
   bool,
   clamp,
@@ -334,13 +334,36 @@ export function operate(
           .applyQuaternion(
             at.rotation.clone().multiply(p.spawnRotation.clone().invert()),
           );
-      else if (bool(op.m_bWriteNormal))
-        p.vector(21).set(1, 0, 0).applyQuaternion(at.rotation);
       else {
-        const e = new Euler().setFromQuaternion(at.rotation);
-        p.values[4] = e.x;
-        p.values[12] = e.y;
-        p.values[20] = e.z;
+        const offset = vector(op.m_vecRotation, ctx).multiplyScalar(
+          Math.PI / 180,
+        );
+        let rotation: Quaternion;
+        if (bool(op.m_bUseQuat)) {
+          rotation = at.rotation
+            .clone()
+            .multiply(
+              new Quaternion().setFromEuler(
+                new Euler(offset.x, offset.y, offset.z, "ZYX"),
+              ),
+            );
+        } else {
+          const forward = new Vector3(1, 0, 0).applyQuaternion(at.rotation);
+          const pitch =
+            Math.atan2(-forward.z, Math.hypot(forward.x, forward.y)) + offset.x;
+          const yaw = Math.atan2(forward.y, forward.x) + offset.y;
+          rotation = new Quaternion().setFromEuler(
+            new Euler(offset.z, pitch, yaw, "ZYX"),
+          );
+        }
+        if (bool(op.m_bWriteNormal))
+          p.vector(21).set(1, 0, 0).applyQuaternion(rotation);
+        else {
+          const e = new Euler().setFromQuaternion(rotation, "ZYX");
+          p.values[4] = e.x;
+          p.values[12] = e.z;
+          p.values[20] = e.y;
+        }
       }
       break;
     }

@@ -40,9 +40,19 @@ installGlobal("ResizeObserver", Observer);
 installGlobal("IntersectionObserver", Observer);
 
 const renderers: FakeRenderer[] = [];
+class FakeFileReader extends EventTarget {
+  result = "data:image/png;base64,thumbnail";
+  readAsDataURL() {
+    queueMicrotask(() => this.dispatchEvent(new Event("load")));
+  }
+}
+installGlobal("FileReader", FakeFileReader);
 class FakeRenderer {
   domElement = {
     toDataURL: mock(() => "data:image/png;base64,thumbnail"),
+    toBlob: mock((callback: BlobCallback) =>
+      queueMicrotask(() => callback(new Blob(["thumbnail"]))),
+    ),
     remove: mock(),
   };
   outputColorSpace = "";
@@ -68,8 +78,12 @@ mock.module("three/examples/jsm/controls/OrbitControls.js", () => ({
     dispose() {}
   },
 }));
-mock.module("@/components/foundry/model-loader", () => ({
-  loadPreviewModel: async () => ({ scene: new three.Group() }),
+mock.module("@/components/foundry/workbench-model-loader", () => ({
+  loadPreviewModel: async () => ({
+    scene: new three.Group(),
+    source2Textures: new Map(),
+    dispose: mock(),
+  }),
 }));
 mock.module("@/lib/model-assets", () => ({
   retainFoundryModel: () => () => {},
@@ -115,6 +129,46 @@ function drawFrame(now = performance.now()) {
   next[1](now);
 }
 
+test("two preview stages share browser frames without starving either view", async () => {
+  const first = new PreviewStage(document.createElement("div"));
+  const second = new PreviewStage(document.createElement("div"));
+  const views = renderers.slice(-2);
+  first.setPlaying(false);
+  second.setPlaying(false);
+  first.setGraph(graph(), []);
+  second.setGraph(graph(), []);
+  await settleAssets();
+  const now = performance.now();
+  drawFrame(now);
+  drawFrame(now);
+  expect(
+    views.reduce((sum, view) => sum + view.render.mock.calls.length, 0),
+  ).toBe(1);
+  expect(frames.size).toBe(1);
+  drawFrame(now + 17);
+  expect(views.map((view) => view.render.mock.calls.length)).toEqual([1, 1]);
+  expect(frames.size).toBe(0);
+  first.dispose();
+  second.dispose();
+});
+
+test("disposing a queued preview releases the next browser frame", () => {
+  const first = new PreviewStage(document.createElement("div"));
+  const second = new PreviewStage(document.createElement("div"));
+  const renderer = renderers.at(-2);
+  first.setPlaying(false);
+  second.setPlaying(false);
+  const now = performance.now();
+  drawFrame(now);
+  drawFrame(now);
+  second.dispose();
+  first.invalidate();
+  drawFrame(now + 17);
+  expect(renderer?.render).toHaveBeenCalledTimes(2);
+  expect(frames.size).toBe(0);
+  first.dispose();
+});
+
 test("draft changes keep the renderer and paused scenes stop requesting frames", async () => {
   const stage = new PreviewStage(document.createElement("div"));
   const renderer = renderers.at(-1);
@@ -147,9 +201,11 @@ test("thumbnail simulation reaches its capture time without waiting for wall tim
   await settleAssets();
   const sameTime = performance.now();
   for (let frame = 0; frame < 12 && frames.size; frame++) drawFrame(sameTime);
+  await settleAssets();
   expect(snapshot).toHaveBeenCalledTimes(1);
   expect(snapshot).toHaveBeenCalledWith("data:image/png;base64,thumbnail");
   expect(frames.size).toBe(0);
+  expect(renderers.at(-1)?.domElement.toDataURL).not.toHaveBeenCalled();
   stage.dispose();
 });
 
@@ -170,5 +226,18 @@ test("hidden scenes sleep and resume after visibility changes", async () => {
   stage.setPlaying(false);
   drawFrame();
   expect(frames.size).toBe(0);
+  stage.dispose();
+});
+
+test("a thumbnail capture arriving after its task changes is discarded", async () => {
+  const stage = new PreviewStage(document.createElement("div"), true);
+  const snapshot = mock();
+  stage.callbacks = { snapshot };
+  stage.setGraph(graph(), []);
+  await settleAssets();
+  for (let frame = 0; frame < 12 && frames.size; frame++) drawFrame();
+  stage.clear();
+  await settleAssets();
+  expect(snapshot).not.toHaveBeenCalled();
   stage.dispose();
 });

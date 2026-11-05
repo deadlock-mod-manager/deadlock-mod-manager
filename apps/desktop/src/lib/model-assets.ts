@@ -1,8 +1,10 @@
+import type { ModdingModelEditDocument } from "@/types/generated/ModdingModelEditDocument";
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import type { QueryClient, QueryKey, QueryCache } from "@tanstack/react-query";
 import type { FoundryModel } from "@/types/foundry";
 import type { ModdingHierarchy } from "@/types/generated/ModdingHierarchy";
 import type { ModdingSourceModel } from "@/types/generated/ModdingSourceModel";
+import type { ModdingDmxModel } from "@/types/generated/ModdingDmxModel";
 import logger from "./logger";
 
 const references = new Map<string, number>();
@@ -21,6 +23,7 @@ export async function decodeFoundryModel(
   workspaceRoot: string | null = null,
   signal?: AbortSignal,
   overlayRoot?: string,
+  textureSide?: number,
 ): Promise<FoundryModel> {
   signal?.throwIfAborted();
   const requestId = crypto.randomUUID();
@@ -30,6 +33,7 @@ export async function decodeFoundryModel(
     entryPath,
     workspaceRoot,
     overlayRoot,
+    textureSide,
   });
   return ownModelDecode(requestId, pending, signal);
 }
@@ -39,16 +43,18 @@ export async function decodeModdingDmx(
   hierarchy: ModdingHierarchy,
   path: string,
   signal: AbortSignal,
-): Promise<FoundryModel> {
+  discoverLayers = true,
+): Promise<ModdingDmxModel> {
   signal.throwIfAborted();
   const requestId = crypto.randomUUID();
-  return ownModelDecode(
+  return ownPreviewDecode(
     requestId,
-    invoke<FoundryModel>("preview_modding_dmx", {
+    invoke<ModdingDmxModel>("preview_modding_dmx", {
       requestId,
       addonId,
       hierarchy,
       path,
+      discoverLayers,
     }),
     signal,
   );
@@ -66,6 +72,7 @@ export async function decodeModdingSourceModel(
   addonId: string,
   path: string,
   signal: AbortSignal,
+  textureSide?: number,
 ): Promise<ModdingSourceModel> {
   signal.throwIfAborted();
   const requestId = crypto.randomUUID();
@@ -75,6 +82,7 @@ export async function decodeModdingSourceModel(
       requestId,
       addonId,
       path,
+      textureSide,
     }),
     signal,
   );
@@ -209,4 +217,22 @@ function trimModelCache(
     );
     client.removeQueries({ queryKey: query.queryKey, exact: true });
   }
+}
+
+export async function inspectModdingModelEdits(
+  addonId: string,
+  path: string,
+  signal?: AbortSignal,
+): Promise<ModdingModelEditDocument> {
+  const requestId = crypto.randomUUID();
+  const pending = invoke<ModdingModelEditDocument>(
+    "inspect_modding_model_edits",
+    { addonId, path, requestId },
+  );
+  await ownPreviewDecode(
+    requestId,
+    pending.then((document) => document.model),
+    signal,
+  );
+  return pending;
 }

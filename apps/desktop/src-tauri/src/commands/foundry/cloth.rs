@@ -43,6 +43,16 @@ fn cloth_bindings_match<'a>(
       .bones
       .iter()
       .find(|bone| bone.name.eq_ignore_ascii_case(name))
+      .or_else(|| {
+        // ModelDoc replaces the leading $ when recompiling procedural bones.
+        let renamed = name.strip_prefix('$')?;
+        target.bones.iter().find(|bone| {
+          bone
+            .name
+            .strip_prefix('_')
+            .is_some_and(|candidate| candidate.eq_ignore_ascii_case(renamed))
+        })
+      })
     else {
       return false;
     };
@@ -278,6 +288,26 @@ mod tests {
       &rig("head", 2.0),
       &original,
       ["$virtual"].into_iter()
+    ));
+  }
+
+  #[test]
+  fn inherits_recompiled_procedural_bone_names_only_with_matching_bind_poses() {
+    let original = rig("$cloth_m1p72", 2.0);
+    assert!(cloth_bindings_match(
+      &rig("_cloth_m1p72", 2.001),
+      &original,
+      ["$cloth_m1p72"].into_iter()
+    ));
+    assert!(!cloth_bindings_match(
+      &rig("_cloth_m1p72", 3.0),
+      &original,
+      ["$cloth_m1p72"].into_iter()
+    ));
+    assert!(!cloth_bindings_match(
+      &rig("_head", 2.0),
+      &rig("head", 2.0),
+      ["head"].into_iter()
     ));
   }
 }

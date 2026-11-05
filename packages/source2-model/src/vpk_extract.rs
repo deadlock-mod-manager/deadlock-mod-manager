@@ -54,7 +54,6 @@ pub fn companion_dir(vpk_path: &Path) -> PathBuf {
         .to_path_buf()
 }
 
-#[derive(Clone)]
 pub struct VpkArchive {
     path: PathBuf,
     companion_dir: PathBuf,
@@ -69,6 +68,24 @@ pub struct VpkArchive {
     overlay_dir: Option<PathBuf>,
     fallbacks: Vec<Arc<VpkArchive>>,
     evidence: Option<Mutex<PreviewEvidence>>,
+}
+
+impl Clone for VpkArchive {
+    fn clone(&self) -> Self {
+        Self {
+            path: self.path.clone(),
+            companion_dir: self.companion_dir.clone(),
+            data_section_start: self.data_section_start,
+            inline_data_length: self.inline_data_length,
+            entries: Arc::clone(&self.entries),
+            entry_index: Arc::clone(&self.entry_index),
+            overlay_dir: self.overlay_dir.clone(),
+            fallbacks: self.fallbacks.clone(),
+            evidence: self.evidence.as_ref().map(|evidence| {
+                Mutex::new(evidence.lock().unwrap_or_else(|e| e.into_inner()).clone())
+            }),
+        }
+    }
 }
 
 impl VpkArchive {
@@ -602,6 +619,20 @@ mod tests {
             sanitize_relative("models/hero.vmdl_c"),
             Some(PathBuf::from("models").join("hero.vmdl_c"))
         );
+    }
+
+    #[test]
+    fn cloned_archives_keep_preview_evidence_independent() {
+        let dir = scratch_dir("cloned-evidence");
+        let path = dir.join("source.vpk");
+        fs::write(&path, inline_vpk(b"", b"original")).unwrap();
+        let archive = VpkArchive::open(&path).unwrap().with_preview_report();
+        archive.record_preview_issue("before", PreviewIssueKind::Unsupported, "before clone");
+        let view = archive.clone();
+        view.record_preview_issue("after", PreviewIssueKind::Unsupported, "after clone");
+        assert_eq!(archive.preview_report().issues.len(), 1);
+        assert_eq!(view.preview_report().issues.len(), 2);
+        fs::remove_dir_all(dir).unwrap();
     }
 
     #[test]

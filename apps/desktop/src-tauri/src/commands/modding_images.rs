@@ -46,6 +46,12 @@ pub(super) fn image_inputs(root: &Path) -> Result<Vec<ModdingImageInput>, Error>
     super::modding_batch::files(root)?
       .into_iter()
       .filter(|path| {
+        if path
+          .to_ascii_lowercase()
+          .starts_with("materials/dmm_images/")
+        {
+          return false;
+        }
         Path::new(path)
           .extension()
           .and_then(|ext| ext.to_str())
@@ -85,7 +91,10 @@ fn misplaced_images(root: &Path) -> Result<Vec<String>, Error> {
           .iter()
           .any(|supported| extension.eq_ignore_ascii_case(supported))
         });
-      image && !normalized.starts_with("panorama/images/")
+      image
+        && !normalized.starts_with("panorama/images/")
+        && !normalized.starts_with("materials/default/")
+        && !normalized.starts_with("materials/dmm_images/")
     })
     .cloned()
     .collect();
@@ -226,6 +235,19 @@ pub(super) fn prepare(root: &Path, inputs: &[ModdingImageInput]) -> Result<Vec<P
   for input in inputs {
     relative(&input.path, false)?;
     relative(&input.output, false)?;
+    if input
+      .path
+      .to_ascii_lowercase()
+      .starts_with("materials/dmm_images/")
+      || input
+        .output
+        .to_ascii_lowercase()
+        .starts_with("materials/dmm_images/")
+    {
+      return Err(Error::InvalidInput(
+        "Managed paint images are compiled with their model recipe".into(),
+      ));
+    }
     if !input.output.ends_with(".vtex_c") || !targets.insert(input.output.to_lowercase()) {
       return Err(Error::InvalidInput(format!(
         "Choose a unique .vtex_c output path for {}",
@@ -364,7 +386,15 @@ pub async fn compile_modding_images(
     let selected = prepare(Path::new(&addon.content_path), &inputs)?;
     std::fs::create_dir_all(&tools)?;
     let log = tools.join(format!("images-{}.log", addon.id));
-    super::modding_build::compile(&addon, config, &tools, steam, &log, Some(selected))?;
+    super::modding_build::compile(
+      &addon,
+      config,
+      &tools,
+      steam,
+      &log,
+      Some(selected),
+      source2_tools::CompileMode::Incremental,
+    )?;
     for input in &inputs {
       if !contained(Path::new(&addon.game_path), &input.output)?.is_file() {
         return Err(Error::InvalidInput(format!(
@@ -509,8 +539,16 @@ pub async fn build_modding_variant(
     };
     std::fs::create_dir_all(&tools)?;
     let log = tools.join(format!("variant-{id}.log"));
-    let sdk = PathBuf::from(&config.prepared_sdk);
-    let result = super::modding_build::compile(&addon, config, &tools, steam, &log, None);
+    let sdk = config.sdk_path()?;
+    let result = super::modding_build::compile(
+      &addon,
+      config,
+      &tools,
+      steam,
+      &log,
+      None,
+      source2_tools::CompileMode::Incremental,
+    );
     // Remove only the two mounts owned by this temporary variant, including failed builds.
     for (hierarchy, target) in [("content", &content), ("game", &game)] {
       let link = sdk
@@ -547,6 +585,27 @@ pub async fn build_modding_variant(
 #[cfg(test)]
 mod tests {
   use super::*;
+  #[test]
+  fn managed_paint_images_are_not_standalone_texture_sources_or_misplaced() {
+    let root = tempfile::tempdir().unwrap();
+    let managed = root.path().join("materials/dmm_images/hash");
+    std::fs::create_dir_all(&managed).unwrap();
+    for name in ["original.gif", "frame_0000.png", "frame_0001.png"] {
+      std::fs::write(managed.join(name), b"fixture").unwrap();
+    }
+    assert!(image_inputs(root.path()).unwrap().is_empty());
+    assert!(misplaced_images(root.path()).unwrap().is_empty());
+    assert!(
+      prepare(
+        root.path(),
+        &[ModdingImageInput {
+          path: "materials/dmm_images/hash/frame_0000.png".into(),
+          output: "materials/accidental.vtex_c".into()
+        }]
+      )
+      .is_err()
+    );
+  }
   #[test]
   fn variant_discovery_skips_helper_folders_and_keeps_independent_paths() {
     let root = tempfile::tempdir().unwrap();
@@ -690,6 +749,9 @@ mod location_tests {
       "panorama/images_backup/wrong.jpg",
       "panorama/other/wrong.WEBP",
       "materials/texture.vtex_c",
+      "materials/default/texture.png",
+      "Materials/Default/nested/normal.TGA",
+      "materials/default_backup/wrong.png",
       "models/model.vmdl",
       ".dmm-generated/ignored.png",
     ] {
@@ -702,6 +764,7 @@ mod location_tests {
       [
         "icon.svg",
         "images/wrong.png",
+        "materials/default_backup/wrong.png",
         "models/images/wrong.tga",
         "panorama/images_backup/wrong.jpg",
         "panorama/other/wrong.WEBP"

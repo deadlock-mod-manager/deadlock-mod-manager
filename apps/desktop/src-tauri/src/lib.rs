@@ -103,6 +103,10 @@ pub fn run() {
   let mut context: tauri::Context<app_runtime::AppRuntime> = tauri::generate_context!();
   runtime_environment::apply_to_context(&mut context);
   updater_channel::apply_to_context(&mut context);
+  #[cfg(all(target_os = "linux", feature = "tauri-wry"))]
+  for window in &mut context.config_mut().app.windows {
+    window.drag_drop_enabled = true;
+  }
 
   let log_file_target = runtime_environment::current()
     .e2e()
@@ -565,6 +569,16 @@ pub fn run() {
       commands::modding_images::discover_modding_variants,
       commands::modding_images::build_modding_variant,
       commands::modding_build::compile_modding_addon,
+      commands::modding_model_edit::inspect_modding_model_edits,
+      commands::modding_model_edit::preview_modding_model_pattern,
+      commands::modding_model_edit::paint::preview_modding_model_paint,
+      commands::modding_model_edit::save_modding_model_edits,
+      commands::modding_model_images::import_modding_model_image,
+      commands::modding_model_images::projection::read_modding_model_image,
+      commands::modding_model_images::projection::save_modding_projected_image,
+      commands::modding_geometry::list_modding_geometry_sources,
+      commands::modding_geometry::read_modding_geometry,
+      commands::modding_geometry::save_modding_geometry,
       commands::modding_build::build_modding_addon,
       commands::modding_workspace::launch_modding_addon,
       commands::modding_files::change_modding_file,
@@ -584,6 +598,7 @@ pub fn run() {
       commands::modding_model_source::preview_modding_source_model,
       commands::modding_workspace::find_modding_clip_model,
       commands::modding_workspace::list_modding_addons,
+      commands::modding_workspace::open_modding_addon_folder,
       commands::modding_workspace::list_modding_files,
       commands::modding_archive::list_modding_archive_files,
       commands::modding_content_search::search_modding_archive_contents,

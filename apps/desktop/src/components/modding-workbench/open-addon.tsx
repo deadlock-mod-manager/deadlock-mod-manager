@@ -89,6 +89,13 @@ export const OpenAddon = ({
     },
     onSuccess: () => setRevision((previous) => previous + 1),
   });
+  const openFolder = useMutation({
+    mutationFn: () =>
+      invoke<void>("open_modding_addon_folder", {
+        addonId: addon.id,
+        hierarchy,
+      }),
+  });
   const launch = useMutation({
     mutationFn: () => invoke("launch_modding_addon", { addonId: addon.id }),
   });
@@ -97,8 +104,18 @@ export const OpenAddon = ({
   );
   const compile = useMutation({
     mutationKey: ["workbench-build"],
-    mutationFn: (paths: string[] | null) =>
-      invoke<string>("compile_modding_addon", { addonId: addon.id, paths }),
+    mutationFn: ({
+      paths,
+      rebuild = false,
+    }: {
+      paths: string[] | null;
+      rebuild?: boolean;
+    }) =>
+      invoke<string>("compile_modding_addon", {
+        addonId: addon.id,
+        paths,
+        rebuild,
+      }),
     onSuccess: () => setRevision((previous) => previous + 1),
   });
   const changingFiles =
@@ -116,6 +133,7 @@ export const OpenAddon = ({
     pack.error ??
     compile.error ??
     launch.error ??
+    openFolder.error ??
     refresh.error ??
     imageWatchError;
   useEffect(() => {
@@ -128,11 +146,20 @@ export const OpenAddon = ({
     <div className='flex h-full min-h-0 flex-col'>
       <div className='flex flex-wrap items-center justify-between gap-3 border-b bg-background/60 px-4 py-3'>
         <div className='flex min-w-0 items-center gap-2'>
-          <FolderOpenIcon
-            aria-hidden
-            weight='duotone'
-            className='size-5 shrink-0 text-primary'
-          />
+          <Button
+            size='icon'
+            variant='ghost'
+            className='shrink-0 text-primary'
+            disabled={openFolder.isPending}
+            aria-label={t("workbenchExplorer.openAddonFolder", {
+              hierarchy: t(`workbenchExplorer.${hierarchy}`),
+            })}
+            title={t("workbenchExplorer.openAddonFolder", {
+              hierarchy: t(`workbenchExplorer.${hierarchy}`),
+            })}
+            onClick={() => openFolder.mutate()}>
+            <FolderOpenIcon aria-hidden weight='duotone' className='size-5' />
+          </Button>
           <h2 className='truncate text-sm font-semibold'>{addon.name}</h2>
           {readOnly ? (
             <span className='text-xs text-muted-foreground'>
@@ -155,7 +182,9 @@ export const OpenAddon = ({
                   <HammerIcon />
                   {t(
                     compile.isPending
-                      ? "workbenchExplorer.compilingOnly"
+                      ? compile.variables.rebuild
+                        ? "workbenchExplorer.rebuilding"
+                        : "workbenchExplorer.compilingOnly"
                       : "workbenchExplorer.compile",
                   )}
                   <CaretDownIcon />
@@ -164,11 +193,27 @@ export const OpenAddon = ({
               <DropdownMenuContent align='end'>
                 <DropdownMenuItem
                   disabled={!canCompileFile}
-                  onSelect={() => compile.mutate([selected])}>
+                  onSelect={() => compile.mutate({ paths: [selected] })}>
                   {t("workbenchExplorer.compileFile")}
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => compile.mutate(null)}>
-                  {t("workbenchRepair.compile")}
+                <DropdownMenuItem
+                  className='flex-col items-start'
+                  onSelect={() => compile.mutate({ paths: null })}>
+                  <span>{t("workbenchRepair.compile")}</span>
+                  <span className='text-xs text-muted-foreground'>
+                    {t("workbenchExplorer.incrementalHint")}
+                  </span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className='flex-col items-start'
+                  onSelect={() =>
+                    compile.mutate({ paths: null, rebuild: true })
+                  }>
+                  <span>{t("workbenchExplorer.rebuild")}</span>
+                  <span className='text-xs text-muted-foreground'>
+                    {t("workbenchExplorer.rebuildHint")}
+                  </span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -202,7 +247,10 @@ export const OpenAddon = ({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button size='sm' disabled={busy} onClick={() => pack.mutate()}>
+            <Button
+              size='sm'
+              disabled={busy || pack.launchPending}
+              onClick={() => pack.mutate()}>
               <PlayIcon />
               {t(
                 pack.isPending
@@ -245,6 +293,7 @@ export const OpenAddon = ({
       ) : null}
       {!repairOpen ? (
         <ResizablePanelGroup
+          deferResize
           direction='horizontal'
           autoSaveId='workbench-files-preview'
           className='min-h-0 flex-1'>
@@ -407,7 +456,8 @@ export const OpenAddon = ({
         <AssetImportDialog
           addon={addon}
           onClose={() => setImportOpen(false)}
-          onImported={() => {
+          onImported={(hierarchy) => {
+            setHierarchy(hierarchy);
             compile.reset();
             pack.reset();
             setRevision((previous) => previous + 1);

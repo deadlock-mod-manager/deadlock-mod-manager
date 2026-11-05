@@ -173,10 +173,6 @@ pub(crate) struct ModelJob {
 }
 
 impl ModelJob {
-  pub(crate) fn cancellation_token(&self) -> CancellationToken {
-    self.token.clone()
-  }
-
   pub(crate) fn check(&self) -> Result<(), Error> {
     if self.token.is_cancelled() {
       Err(Error::InvalidInput("Model decode cancelled".into()))
@@ -236,6 +232,7 @@ pub async fn foundry_decode_model(
   entry_path: String,
   workspace_root: Option<String>,
   overlay_root: Option<String>,
+  texture_side: Option<u32>,
 ) -> Result<FoundryModel, Error> {
   let job = assets.start_job(request_id)?;
   let permit = job.acquire(model_decode_slot()).await?;
@@ -243,7 +240,9 @@ pub async fn foundry_decode_model(
     let _permit = permit;
     job.check()?;
     let started = Instant::now();
-    let overlay = overlay_root.map(PathBuf::from).or_else(|| workspace_root.map(|root| PathBuf::from(root).join("files")));
+    let overlay = overlay_root
+      .map(PathBuf::from)
+      .or_else(|| workspace_root.map(|root| PathBuf::from(root).join("files")));
     let (archive, base) = super::animation::archives_with_overlay(&file_path, overlay.as_deref())
       .map_err(|error| Error::Preview {
       kind: "previewCorruptArchive",
@@ -255,35 +254,39 @@ pub async fn foundry_decode_model(
         .entry_source(&entry_path)
         .is_some_and(|source| source.archive == file_path)
     });
-    let decoded =
-      source2_model::decode_model_glb_from_archive(&archive, &entry_path).map_err(|error| {
-        archive.record_preview_error(&entry_path, &error);
-        let corrupt_override = !primary_is_game
-          && archive.preview_report().issues.iter().any(|issue| {
-            issue.kind == source2_model::preview_report::PreviewIssueKind::CorruptOverride
-          });
-        let kind = if corrupt_override {
-          "previewCorruptOverride"
-        } else {
-          match error {
-            source2_model::Source2Error::EntryNotFound(_) => "previewMissingAssets",
-            source2_model::Source2Error::UnsupportedFormat(_)
-            | source2_model::Source2Error::Decode(_) => "previewUnsupported",
-            _ if !primary_is_game
-              && archive
-                .entry_source(&entry_path)
-                .is_some_and(|source| source.archive == file_path) =>
-            {
-              "previewCorruptOverride"
-            }
-            _ => "previewMissingAssets",
+    let decoded = source2_model::decode_model_glb_from_archive_with_texture_side(
+      &archive,
+      &entry_path,
+      texture_side.unwrap_or(1024),
+    )
+    .map_err(|error| {
+      archive.record_preview_error(&entry_path, &error);
+      let corrupt_override = !primary_is_game
+        && archive.preview_report().issues.iter().any(|issue| {
+          issue.kind == source2_model::preview_report::PreviewIssueKind::CorruptOverride
+        });
+      let kind = if corrupt_override {
+        "previewCorruptOverride"
+      } else {
+        match error {
+          source2_model::Source2Error::EntryNotFound(_) => "previewMissingAssets",
+          source2_model::Source2Error::UnsupportedFormat(_)
+          | source2_model::Source2Error::Decode(_) => "previewUnsupported",
+          _ if !primary_is_game
+            && archive
+              .entry_source(&entry_path)
+              .is_some_and(|source| source.archive == file_path) =>
+          {
+            "previewCorruptOverride"
           }
-        };
-        Error::Preview {
-          kind,
-          message: format!("{entry_path}: {error}"),
+          _ => "previewMissingAssets",
         }
-      })?;
+      };
+      Error::Preview {
+        kind,
+        message: format!("{entry_path}: {error}"),
+      }
+    })?;
     job.check()?;
     let decoded = match base {
       Some(base) => source2_model::pose_model_at_rest(decoded, &base, &archive, &entry_path),

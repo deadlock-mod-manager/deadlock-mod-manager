@@ -17,7 +17,7 @@ export interface PreviewSource {
   filePath: string;
   entryPath: string;
   overlayRoot?: string;
-  revision?: number;
+  revision?: number | string;
   allowAdditiveReference?: boolean;
 }
 export interface PreviewPlayback {
@@ -34,12 +34,14 @@ export interface PreviewPlayback {
 export const listPreviewAnimations = (
   source: PreviewSource,
   abilityNames: string[],
+  includeUnclassified = false,
 ) =>
   invoke<PreviewAnimationChoice[]>("foundry_list_animations", {
     overlayRoot: source.overlayRoot,
     filePath: source.filePath,
     entryPath: source.entryPath,
     abilityNames,
+    includeUnclassified,
   });
 /** Decodes `clipPaths` back to back into one looping timeline. */
 export const decodePreviewAnimation = (

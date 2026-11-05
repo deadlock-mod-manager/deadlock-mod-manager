@@ -32,7 +32,7 @@ impl Stock {
         let mut result = Self {
           entries: BTreeMap::new(),
           archive: Some(addon.archive_path.clone().into()),
-          sdk: config.prepared_sdk.clone().into(),
+          sdk: config.sdk.clone().into(),
           cli: cli.into(),
           diagnostic: None,
         };

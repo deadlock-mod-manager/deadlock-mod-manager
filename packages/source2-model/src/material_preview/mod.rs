@@ -1,3 +1,4 @@
+pub mod metadata;
 mod properties;
 mod textures;
 
@@ -62,16 +63,18 @@ fn cached_texture_resource(
 fn decode_material_preview_textures(
     archive: &VpkArchive,
     material_paths: &[String],
+    texture_side: u32,
 ) -> Vec<PreviewTexture> {
     let materials = material_paths.iter().filter_map(|path| {
         material_preview_properties(archive, path).map(|properties| (path.clone(), properties))
     });
-    decode_material_previews(archive, materials)
+    decode_material_previews(archive, materials, texture_side)
 }
 
 fn decode_material_previews(
     archive: &VpkArchive,
     materials: impl Iterator<Item = (String, MaterialPreviewProperties)>,
+    texture_side: u32,
 ) -> Vec<PreviewTexture> {
     let mut materials = materials.peekable();
     let mut textures = Vec::new();
@@ -94,6 +97,16 @@ fn decode_material_previews(
                 let occlusion = load(properties.occlusion_texture.as_deref());
                 let emissive = load(properties.emissive_texture.as_deref());
                 let metalness = load(properties.metalness_texture.as_deref());
+                let needs_tint_mask = properties
+                    .source2
+                    .color
+                    .as_ref()
+                    .is_some_and(|color| color.needs_tint_mask(properties.vertex_color));
+                let tint_mask = if needs_tint_mask {
+                    load(properties.tint_mask_texture.as_deref())
+                } else {
+                    None
+                };
                 let effect_mask = load(
                     properties
                         .source2_effect
@@ -112,12 +125,16 @@ fn decode_material_previews(
                         .map(|(_, path)| path.as_str()),
                 );
                 handles.push(scope.spawn(move || {
-                    let albedo = emissive.is_some().then(|| decode_rgba(&resource)).flatten();
+                    let albedo = emissive
+                        .is_some()
+                        .then(|| decode_rgba(&resource, texture_side))
+                        .flatten();
                     let decoded = decode_texture_preview_resource(
                         texture_path.clone(),
                         Some(material_path),
                         &resource,
                         matches!(properties.alpha_mode, vmesh::MaterialAlphaMode::Opaque),
+                        texture_side,
                     );
                     if decoded.is_none() {
                         report_texture_failure(archive, &texture_path, &resource);
@@ -127,23 +144,23 @@ fn decode_material_previews(
                         archive,
                         properties.normal_texture.as_deref(),
                         normal.and_then(|resource| {
-                            decode_normal_png(&resource, properties.hemi_oct_normal)
+                            decode_normal_png(&resource, properties.hemi_oct_normal, texture_side)
                         }),
                     );
                     let roughness_tex = report_texture_result(
                         archive,
                         properties.roughness_texture.as_deref(),
-                        roughness.and_then(|resource| decode_rgba(&resource)),
+                        roughness.and_then(|resource| decode_rgba(&resource, texture_side)),
                     );
                     let occlusion_tex = report_texture_result(
                         archive,
                         properties.occlusion_texture.as_deref(),
-                        occlusion.and_then(|resource| decode_rgba(&resource)),
+                        occlusion.and_then(|resource| decode_rgba(&resource, texture_side)),
                     );
                     let metalness_tex = report_texture_result(
                         archive,
                         properties.metalness_texture.as_deref(),
-                        metalness.and_then(|resource| decode_rgba(&resource)),
+                        metalness.and_then(|resource| decode_rgba(&resource, texture_side)),
                     );
                     texture.orm_png = pack_orm_png(
                         roughness_tex.as_ref(),
@@ -164,7 +181,7 @@ fn decode_material_previews(
                         archive,
                         properties.emissive_texture.as_deref(),
                         emissive
-                            .and_then(|resource| decode_rgba(&resource))
+                            .and_then(|resource| decode_rgba(&resource, texture_side))
                             .and_then(|mask| {
                                 bake_self_illum_png(
                                     &mask,
@@ -188,12 +205,42 @@ fn decode_material_previews(
                     texture.outline = properties.outline;
                     texture.effect_mask_png = effect_mask
                         .and_then(|resource| {
-                            decode_texture_preview_resource(String::new(), None, &resource, true)
+                            decode_texture_preview_resource(
+                                String::new(),
+                                None,
+                                &resource,
+                                true,
+                                texture_side,
+                            )
                         })
                         .map(|texture| texture.png);
                     let mut effect = properties.source2_effect;
                     effect.material = texture.material.clone().unwrap_or_default();
                     texture.source2_effect = Some(effect);
+                    let mut source2 = properties.source2;
+                    if let Some(color) = &mut source2.color {
+                        if let Some(reflectivity) = metadata::reflectivity(&resource) {
+                            color.reflectivity = reflectivity;
+                        } else {
+                            source2.color = None;
+                        }
+                    }
+                    texture.tint_mask_png = tint_mask.and_then(|resource| {
+                        decode_rgba(&resource, texture_side).and_then(|mut decoded| {
+                            for pixel in decoded.rgba.as_chunks_mut::<4>().0 {
+                                pixel[3] = 255;
+                            }
+                            crate::encode_png_bytes(&decoded, texture_side).ok()
+                        })
+                    });
+                    // A bound-but-unreadable mask must not silently become an all-white mask.
+                    if needs_tint_mask
+                        && properties.tint_mask_texture.is_some()
+                        && texture.tint_mask_png.is_none()
+                    {
+                        source2.color = None;
+                    }
+                    texture.source2 = Some(source2);
                     Some(texture)
                 }));
             }
@@ -207,9 +254,19 @@ fn decode_material_previews(
     textures
 }
 
+/// Decode only explicitly referenced materials, without unrelated filename heuristics.
+pub fn decode_referenced_materials(
+    archive: &VpkArchive,
+    material_paths: &[String],
+    texture_side: u32,
+) -> Vec<PreviewTexture> {
+    decode_material_preview_textures(archive, material_paths, texture_side.clamp(64, 1024))
+}
+
 fn decode_fallback_preview_textures(
     archive: &VpkArchive,
     model_entry_path: &str,
+    texture_side: u32,
 ) -> Vec<PreviewTexture> {
     let mut texture_paths = archive
         .list_entries()
@@ -228,7 +285,9 @@ fn decode_fallback_preview_textures(
     texture_paths
         .into_iter()
         .take(4)
-        .filter_map(|(_, texture_path)| decode_texture_preview(archive, &texture_path, None))
+        .filter_map(|(_, texture_path)| {
+            decode_texture_preview(archive, &texture_path, None, texture_side)
+        })
         .collect()
 }
 
@@ -266,12 +325,21 @@ pub(crate) fn decode_preview_textures(
     model_entry_path: &str,
     material_paths: &[String],
 ) -> Vec<PreviewTexture> {
+    decode_preview_textures_with_side(archive, model_entry_path, material_paths, 1024)
+}
+
+pub(crate) fn decode_preview_textures_with_side(
+    archive: &VpkArchive,
+    model_entry_path: &str,
+    material_paths: &[String],
+    texture_side: u32,
+) -> Vec<PreviewTexture> {
     let candidates = if material_paths.is_empty() {
         candidate_material_paths(archive, model_entry_path)
     } else {
         material_paths.to_vec()
     };
-    let textures = decode_material_preview_textures(archive, &candidates);
+    let textures = decode_material_preview_textures(archive, &candidates, texture_side);
     // Guessed images must never disguise a failed explicit material/texture override.
     if textures.is_empty() && material_paths.is_empty() {
         archive.record_preview_issue(
@@ -279,7 +347,7 @@ pub(crate) fn decode_preview_textures(
             crate::preview_report::PreviewIssueKind::Unsupported,
             "Material bindings were inferred; surface appearance is approximate",
         );
-        decode_fallback_preview_textures(archive, model_entry_path)
+        decode_fallback_preview_textures(archive, model_entry_path, texture_side)
     } else {
         textures
     }

@@ -94,3 +94,32 @@ fn u16_dimension(value: u32, label: &str) -> Result<u16, EncodeError> {
         ))
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::source2::{ImageData, resource::Resource};
+    #[test]
+    fn inline_texture_resource_size_excludes_streamed_png_payload() {
+        let image = Image {
+            width: 8,
+            height: 4,
+            data: ImageData::Rgba8([18, 42, 73, 109].repeat(32)),
+        };
+        let encoded = encode_vtex_png_rgba8888(&image, TextureFlags::empty()).unwrap();
+        let resource = Resource::parse(&encoded).unwrap();
+        let data = resource.data_block_meta().unwrap();
+        let resource_size = u32::from_le_bytes(encoded[..4].try_into().unwrap()) as usize;
+        assert_eq!(resource_size, (data.offset + data.size) as usize);
+        assert_eq!(
+            &encoded[resource_size..resource_size + 8],
+            b"\x89PNG\r\n\x1a\n"
+        );
+        let decoded = crate::source2::decode(&encoded).unwrap();
+        assert_eq!((decoded.width, decoded.height), (8, 4));
+        let ImageData::Rgba8(pixels) = decoded.data else {
+            panic!("RGBA required")
+        };
+        assert_eq!(pixels, [18, 42, 73, 109].repeat(32));
+    }
+}

@@ -1,95 +1,91 @@
-import { Quaternion, Vector3, type Camera } from "three";
+import type { Camera, Vector3 } from "three";
+import {
+  createViewerAxisProjection,
+  pickViewerAxis,
+} from "./viewer-axis-projection";
 
-const SVG_NS = "http://www.w3.org/2000/svg";
-const AXES: {
-  direction: [number, number, number];
-  label: string;
-  color: string;
-}[] = [
-  { direction: [1, 0, 0], label: "X", color: "#d98d6a" },
-  { direction: [0, 1, 0], label: "Y", color: "#e7d5a3" },
-  { direction: [0, 0, 1], label: "Z", color: "#8fb0c9" },
-  { direction: [-1, 0, 0], label: "", color: "#d98d6a" },
-  { direction: [0, -1, 0], label: "", color: "#e7d5a3" },
-  { direction: [0, 0, -1], label: "", color: "#8fb0c9" },
-];
+const SIZE = 84;
+const EXTENT = 3.2;
 
-/** SVG keeps the camera overlay out of the model's WebGL render targets. */
+/** A bitmap overlay avoids SVG layout invalidation while the camera moves. */
 export const createViewerAxisGizmo = (
   container: HTMLDivElement,
   camera: Camera,
   onDirection: (direction: Vector3) => void,
 ) => {
-  const svg = document.createElementNS(SVG_NS, "svg");
-  svg.setAttribute("viewBox", "-1.6 -1.6 3.2 3.2");
-  svg.setAttribute("width", "100%");
-  svg.setAttribute("height", "100%");
-  svg.setAttribute("aria-hidden", "true");
-  const lines = document.createElementNS(SVG_NS, "g");
-  const handles = document.createElementNS(SVG_NS, "g");
-  svg.append(lines, handles);
-  container.append(svg);
-
-  const axes = AXES.map((axis) => {
-    const direction = new Vector3(...axis.direction);
-    const group = document.createElementNS(SVG_NS, "g");
-    const circle = document.createElementNS(SVG_NS, "circle");
-    circle.setAttribute("r", axis.label ? "0.26" : "0.17");
-    circle.setAttribute("fill", axis.label ? axis.color : "none");
-    circle.setAttribute("stroke", axis.color);
-    circle.setAttribute("stroke-width", "0.06");
-    group.setAttribute("opacity", axis.label ? "1" : "0.55");
-    group.append(circle);
-    const line = axis.label ? document.createElementNS(SVG_NS, "line") : null;
-    if (line) {
-      line.setAttribute("stroke", axis.color);
-      line.setAttribute("stroke-width", "0.04");
-      line.setAttribute("opacity", "0.8");
-      lines.append(line);
-      const text = document.createElementNS(SVG_NS, "text");
-      text.textContent = axis.label;
-      text.setAttribute("text-anchor", "middle");
-      text.setAttribute("dy", "0.13");
-      text.setAttribute("font-size", "0.4");
-      text.setAttribute("font-weight", "bold");
-      text.setAttribute("fill", "#1a1712");
-      group.append(text);
-    }
-    const pick = (event: PointerEvent) => {
-      event.stopPropagation();
-      onDirection(direction);
-    };
-    group.addEventListener("pointerdown", pick);
-    handles.append(group);
-    return { direction, group, line, pick, projected: new Vector3() };
-  });
-  const previousRotation = new Quaternion(0, 0, 0, 0);
-  const inverseRotation = new Quaternion();
+  const canvas = document.createElement("canvas");
+  canvas.style.width = canvas.style.height = "100%";
+  canvas.style.display = "block";
+  canvas.setAttribute("aria-hidden", "true");
+  container.append(canvas);
+  const context = canvas.getContext("2d");
+  const projection = createViewerAxisProjection();
+  let ratio = 0;
+  const pick = (event: PointerEvent) => {
+    if (event.button !== 0) return;
+    event.stopPropagation();
+    const rect = canvas.getBoundingClientRect();
+    const direction = pickViewerAxis(
+      projection.axes,
+      ((event.clientX - rect.left) / rect.width - 0.5) * EXTENT,
+      (0.5 - (event.clientY - rect.top) / rect.height) * EXTENT,
+    );
+    if (direction) onDirection(direction);
+  };
+  canvas.addEventListener("pointerdown", pick);
   return {
     update() {
-      if (previousRotation.equals(camera.quaternion)) return;
-      previousRotation.copy(camera.quaternion);
-      inverseRotation.copy(camera.quaternion).invert();
-      for (const axis of axes) {
-        const point = axis.projected
-          .copy(axis.direction)
-          .applyQuaternion(inverseRotation);
-        axis.group.setAttribute(
-          "transform",
-          `translate(${point.x},${-point.y})`,
-        );
-        axis.line?.setAttribute("x2", String(point.x * 0.8));
-        axis.line?.setAttribute("y2", String(-point.y * 0.8));
+      if (!context) return;
+      const nextRatio = Math.min(window.devicePixelRatio, 2);
+      const resized = nextRatio !== ratio;
+      if (!projection.update(camera.quaternion) && !resized) return;
+      if (resized) {
+        ratio = nextRatio;
+        canvas.width = canvas.height = Math.round(SIZE * ratio);
       }
-      for (const axis of [...axes].sort(
-        (a, b) => a.projected.z - b.projected.z,
-      ))
-        handles.append(axis.group);
+      const scale = (SIZE * ratio) / EXTENT;
+      context.setTransform(
+        scale,
+        0,
+        0,
+        scale,
+        canvas.width / 2,
+        canvas.height / 2,
+      );
+      context.clearRect(-EXTENT / 2, -EXTENT / 2, EXTENT, EXTENT);
+      for (const axis of projection.axes) {
+        if (!axis.label) continue;
+        context.globalAlpha = 0.8;
+        context.strokeStyle = axis.color;
+        context.lineWidth = 0.04;
+        context.beginPath();
+        context.moveTo(0, 0);
+        context.lineTo(axis.projected.x * 0.8, -axis.projected.y * 0.8);
+        context.stroke();
+      }
+      for (const axis of projection.axes) {
+        const x = axis.projected.x,
+          y = -axis.projected.y;
+        context.globalAlpha = axis.label ? 1 : 0.55;
+        context.strokeStyle = context.fillStyle = axis.color;
+        context.lineWidth = 0.06;
+        context.beginPath();
+        context.arc(x, y, axis.label ? 0.26 : 0.17, 0, Math.PI * 2);
+        if (axis.label) context.fill();
+        context.stroke();
+        if (axis.label) {
+          context.font = "bold 0.4px sans-serif";
+          context.textAlign = "center";
+          context.textBaseline = "middle";
+          context.fillStyle = "#1a1712";
+          context.fillText(axis.label, x, y);
+        }
+      }
+      context.globalAlpha = 1;
     },
     dispose() {
-      for (const axis of axes)
-        axis.group.removeEventListener("pointerdown", axis.pick);
-      svg.remove();
+      canvas.removeEventListener("pointerdown", pick);
+      canvas.remove();
     },
   };
 };

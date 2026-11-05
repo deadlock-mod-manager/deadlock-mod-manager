@@ -54,6 +54,65 @@ pub struct PreviewAbilityEffect {
   pub phase: PreviewEffectPhase,
 }
 
+#[derive(Clone, Debug, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export, rename_all = "camelCase")]
+pub struct PreviewAbilityProjectile {
+  pub path: String,
+  pub speed: f32,
+  pub hit_particles: Vec<String>,
+}
+
+pub(super) fn ability_projectiles(ability: &KvValue) -> Vec<PreviewAbilityProjectile> {
+  let Some(KvValue::Object(infos)) = ability.get("m_mapProjectileInfos") else {
+    return Vec::new();
+  };
+  let hits = discover_ability_effects(ability)
+    .into_iter()
+    .filter(|effect| {
+      !effect.field.contains('.')
+        && field_words(&effect.field)
+          .iter()
+          .any(|word| ["explode", "explosion", "impact", "hit"].contains(&word.as_str()))
+    })
+    .map(|effect| effect.path)
+    .collect::<Vec<_>>();
+  let mut result = Vec::new();
+  let definitions = infos
+    .get("primary")
+    .map(|value| vec![value])
+    .unwrap_or_else(|| infos.values().collect());
+  for info in definitions {
+    let Some(path) = info
+      .get("m_particle")
+      .and_then(KvValue::as_string)
+      .filter(|path| path.trim_end_matches("_c").ends_with(".vpcf"))
+    else {
+      continue;
+    };
+    let path = path.trim_end_matches("_c").to_owned();
+    if result
+      .iter()
+      .any(|projectile: &PreviewAbilityProjectile| projectile.path == path)
+    {
+      continue;
+    }
+    let speed = info
+      .get("m_flSpeed")
+      .and_then(KvValue::as_f32)
+      .unwrap_or(1000.);
+    if !speed.is_finite() || speed < 0. {
+      continue;
+    }
+    result.push(PreviewAbilityProjectile {
+      path,
+      speed,
+      hit_particles: hits.clone(),
+    });
+  }
+  result
+}
+
 /// Words in a modifier or effect name that put it on someone other than the
 /// caster, on the ground, or on the HUD.
 const ELSEWHERE: &[&str] = &[
@@ -123,6 +182,7 @@ pub(super) fn discover_ability_effects(ability: &KvValue) -> Vec<PreviewAbilityE
         let words: Vec<_> = fields.iter().flat_map(|f| field_words(f)).collect();
         let external = words.iter().any(|word| {
           ELSEWHERE.contains(&word.as_str())
+            || ["local", "viewmodel", "firstperson"].contains(&word.as_str())
             || ["hit", "projectile", "tracer", "explode", "explosion"].contains(&word.as_str())
         }) || elsewhere(path);
         let phase = if external {
@@ -228,6 +288,42 @@ mod tests {
 
   fn text(value: &str) -> KvValue {
     KvValue::String(value.to_string())
+  }
+
+  #[test]
+  fn projectiles_keep_authored_models_in_the_graph_without_playing_local_beams() {
+    let ability = object(&[
+      (
+        "m_mapProjectileInfos",
+        object(&[
+          (
+            "primary",
+            object(&[
+              ("m_particle", text("particles/swarm.vpcf")),
+              ("m_flSpeed", KvValue::Float(1800.)),
+            ]),
+          ),
+          (
+            "extra",
+            object(&[("m_particle", text("particles/swarm.vpcf"))]),
+          ),
+        ]),
+      ),
+      ("m_ExplodeParticle", text("particles/explosion.vpcf")),
+      ("m_BeamParticle", text("particles/beam.vpcf")),
+      ("m_BeamParticleLocal", text("particles/beam_player.vpcf")),
+    ]);
+    let projectiles = ability_projectiles(&ability);
+    assert_eq!(projectiles.len(), 1);
+    assert_eq!(projectiles[0].speed, 1800.);
+    assert_eq!(projectiles[0].hit_particles, ["particles/explosion.vpcf"]);
+    let caster = ability_caster_particles(&ability);
+    assert_eq!(caster.release, ["particles/beam.vpcf"]);
+    assert!(
+      discover_ability_effects(&ability)
+        .iter()
+        .any(|effect| effect.path == "particles/beam_player.vpcf")
+    );
   }
 
   #[test]

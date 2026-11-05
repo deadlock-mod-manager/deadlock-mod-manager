@@ -4,9 +4,6 @@ export type ModdingSetupPhase =
   | "idle"
   | "starting"
   | "cliDownload"
-  | "downloaderDownload"
-  | "steamAuthorization"
-  | "runtimeDownload"
   | "preparing"
   | "ready"
   | "failed";

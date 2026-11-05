@@ -12,6 +12,8 @@ import {
 export class ParticleSprites {
   readonly root = new THREE.Group();
   private readonly geometry = new THREE.InstancedBufferGeometry();
+  private readonly bounds = new THREE.Box3();
+  private readonly boundPoint = new THREE.Vector3();
   private readonly mesh: THREE.Mesh<
     THREE.InstancedBufferGeometry,
     THREE.ShaderMaterial
@@ -22,6 +24,7 @@ export class ParticleSprites {
     private readonly op: Fields,
     private readonly simulation: ParticleSimulation,
     private readonly assets: ParticleAssets,
+    private readonly projectFloor = false,
   ) {
     const material = particleMaterial(op, assets, SPRITE_VERTEX);
     if (!material) {
@@ -56,7 +59,7 @@ export class ParticleSprites {
       this.geometry.setAttribute(name, attribute);
     }
     this.mesh = new THREE.Mesh(this.geometry, material);
-    this.mesh.frustumCulled = false;
+    this.geometry.boundingSphere = new THREE.Sphere();
     this.root.add(this.mesh);
   }
   private rect(layer: number, p: Particle): [number, number, number, number] {
@@ -101,6 +104,7 @@ export class ParticleSprites {
       up = new THREE.Vector3(0, 1, 0).applyQuaternion(rotation),
       view = new THREE.Vector3(0, 0, 1).applyQuaternion(rotation);
     this.geometry.instanceCount = this.simulation.particles.length;
+    this.bounds.makeEmpty();
     for (const [i, p] of this.simulation.particles.entries()) {
       ctx.particle = p;
       const radius = Math.max(
@@ -156,18 +160,38 @@ export class ParticleSprites {
         x.multiplyScalar(radius);
         y.multiplyScalar(radius);
       }
+      const withinProjection =
+        !this.projectFloor ||
+        (center.z >= scalar(this.op.m_flMinProjectionDepth, ctx, -128) &&
+          center.z <= scalar(this.op.m_flMaxProjectionDepth, ctx, 128));
+      if (this.projectFloor) center.z = 0.05;
+      const extent = x.length() + y.length();
+      this.bounds.expandByPoint(this.boundPoint.copy(center).addScalar(extent));
+      this.bounds.expandByPoint(
+        this.boundPoint.copy(center).addScalar(-extent),
+      );
       this.attributes.get("center")?.setXYZ(i, center.x, center.y, center.z);
       this.attributes.get("axisX")?.setXYZ(i, x.x, x.y, x.z);
       this.attributes.get("axisY")?.setXYZ(i, y.x, y.y, y.z);
       const color = p.vector(6),
-        alpha = Math.max(0, p.values[7] * p.values[16]);
+        alpha = withinProjection ? Math.max(0, p.values[7] * p.values[16]) : 0;
       this.attributes.get("rgba")?.setXYZW(i, color.x, color.y, color.z, alpha);
       for (let layer = 0; layer < 5; layer++)
         this.attributes.get(`rect${layer}`)?.setXYZW(i, ...this.rect(layer, p));
     }
     ctx.particle = undefined;
-    for (const attribute of this.attributes.values())
-      attribute.needsUpdate = true;
+    if (this.geometry.boundingSphere)
+      this.bounds.getBoundingSphere(this.geometry.boundingSphere);
+    for (const attribute of this.attributes.values()) {
+      attribute.clearUpdateRanges();
+      if (this.geometry.instanceCount > 0) {
+        attribute.addUpdateRange(
+          0,
+          this.geometry.instanceCount * attribute.itemSize,
+        );
+        attribute.needsUpdate = true;
+      }
+    }
     updateMaterial(this.mesh.material, this.op, ctx, fade);
   }
   dispose() {

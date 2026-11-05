@@ -14,7 +14,7 @@ fn create(sdk: &Path, name: &str) -> Result<(), Error> {
   }
   if !sdk.join("game/citadel/gameinfo.gi").is_file() {
     return Err(Error::InvalidInput(
-      "Select a CSDK12 installation before creating an addon".into(),
+      "Select a CSDK installation before creating an addon".into(),
     ));
   }
   let content = sdk.join("content/citadel_addons").join(name);
@@ -44,11 +44,7 @@ fn create(sdk: &Path, name: &str) -> Result<(), Error> {
 #[tauri::command]
 pub async fn create_modding_addon(app: AppHandle, name: String) -> Result<ModdingAddon, Error> {
   let config = super::modding_tools::get_modding_tools_config(app.clone())?;
-  let sdk = if config.csdk.is_empty() {
-    config.prepared_sdk
-  } else {
-    config.csdk
-  };
+  let sdk = config.sdk_path()?.to_string_lossy().into_owned();
   tauri::async_runtime::spawn_blocking(move || {
     create(Path::new(&sdk), &name)?;
     super::modding_workspace::list_modding_addons(app)?
