@@ -19,7 +19,9 @@ use super::resolve::{self, ResolveOptions};
 use super::types::{
   CatalogSummary, CommunityConfigSummary, DesiredOverlay, EntryStatus, PerfApplyRequest,
   PerfApplyResult, PerfConfigSource, PerfStatus, PresetSourceInfo, PresetSummary, ResolvedConfig,
+  VideoSetting,
 };
+use super::video::{self, ChangedKeys};
 use super::{gameinfo_path, store};
 use crate::errors::Error;
 
@@ -30,6 +32,8 @@ pub struct PerfContext<'a> {
   /// The game's [`client_version`](super::client_version), the build number
   /// the catalog uses; not Steam's build id.
   pub build_id: Option<String>,
+  /// The video.txt Deadlock reads, when there is one (see [`video::locate`]).
+  pub video_path: Option<PathBuf>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -58,7 +62,7 @@ pub fn status(ctx: &PerfContext) -> Result<PerfStatus, Error> {
     .unwrap_or_default();
   let in_sync = match (&desired, &applied) {
     (Some(desired), Some(applied)) => desired.rev == applied.rev,
-    (Some(desired), None) => text.is_some() && desired.counts.applies == 0,
+    (Some(desired), None) => text.is_some() && desired.counts.written() == 0,
     _ => false,
   };
   let unmanaged_changes = text.as_deref().map_or(0, |text| {
@@ -73,6 +77,8 @@ pub fn status(ctx: &PerfContext) -> Result<PerfStatus, Error> {
     foreign,
     unmanaged_changes,
     build_id: ctx.build_id.clone(),
+    video_backup: video::backup(ctx.app_data_dir),
+    video: video::state(ctx.app_data_dir, ctx.video_path.as_deref()),
   })
 }
 
@@ -144,6 +150,17 @@ pub fn apply(
   request: PerfApplyRequest,
   remove_foreign: bool,
 ) -> Result<PerfApplyResult, Error> {
+  apply_with(ctx, request, remove_foreign, HandEdits::Overwrite)
+}
+
+/// [`apply`], keeping video.txt values changed in game since we wrote them
+/// when `hand_edits` says so.
+fn apply_with(
+  ctx: &PerfContext,
+  request: PerfApplyRequest,
+  remove_foreign: bool,
+  hand_edits: HandEdits,
+) -> Result<PerfApplyResult, Error> {
   let path = existing_gameinfo(ctx)?;
   let original = fs::read_to_string(&path)?;
   let (mut base, _) = patch::strip_overlay(&original);
@@ -162,7 +179,7 @@ pub fn apply(
     entries: resolved
       .entries
       .iter()
-      .filter(|entry| entry.status == EntryStatus::Applies)
+      .filter(|entry| entry.status.is_written())
       .collect(),
     credits: credits(ctx.catalog, &request.source),
   };
@@ -172,24 +189,43 @@ pub fn apply(
     patch::apply_overlay(&base, &plan)?
   };
 
+  let video_settings = video_settings_for(ctx.catalog, &request);
+  let changed_keys = match hand_edits {
+    HandEdits::Keep => ChangedKeys::Keep,
+    HandEdits::Overwrite => ChangedKeys::Overwrite,
+  };
   let desired = DesiredOverlay {
     request,
     rev: resolved.rev.clone(),
     applied_at: chrono::Utc::now().to_rfc3339(),
     counts: resolved.counts.clone(),
   };
-  save_choice_then(ctx.app_data_dir, &desired, || {
-    if updated == original {
-      Ok(())
-    } else {
-      write_gameinfo(&path, &original, &updated)
+  // Both halves or neither: a video.txt that can't be written puts
+  // gameinfo.gi back, so the two files never describe different configs.
+  let video = save_choice_then(ctx.app_data_dir, &desired, || {
+    if updated != original {
+      write_gameinfo(&path, &original, &updated)?;
     }
+    video::apply(
+      ctx.app_data_dir,
+      ctx.video_path.as_deref(),
+      &video_settings,
+      changed_keys,
+    )
+    .inspect_err(|_| {
+      if updated != original
+        && let Err(error) = write_gameinfo(&path, &updated, &original)
+      {
+        log::error!("Could not put gameinfo.gi back after video.txt failed: {error}");
+      }
+    })
   })?;
 
   Ok(PerfApplyResult {
     status: status(ctx)?,
     resolved,
     removed_foreign,
+    video,
   })
 }
 
@@ -203,8 +239,77 @@ pub fn remove(ctx: &PerfContext) -> Result<PerfStatus, Error> {
   if let Some(original) = read_if_exists(&path)? {
     write_stripped(&path, &original)?;
   }
+  video::revert(ctx.app_data_dir)?;
   store::clear(ctx.app_data_dir)?;
   status(ctx)
+}
+
+/// Puts the player's own video.txt back exactly as it was before the mod
+/// manager first wrote it, and stops writing video settings for the chosen
+/// config so a launch doesn't write them again.
+pub fn restore_video_backup(ctx: &PerfContext) -> Result<PerfStatus, Error> {
+  video::restore_backup(ctx.app_data_dir)?;
+  stop_writing_video(ctx)?;
+  status(ctx)
+}
+
+fn stop_writing_video(ctx: &PerfContext) -> Result<(), Error> {
+  if let Some(mut desired) = store::load(ctx.app_data_dir)
+    && desired.request.write_video
+  {
+    desired.request.write_video = false;
+    store::save(ctx.app_data_dir, &desired)?;
+  }
+  Ok(())
+}
+
+/// Makes the current video.txt the player's own, and stops writing video
+/// settings for the chosen config so its values stay as the file holds them.
+pub fn adopt_video(ctx: &PerfContext) -> Result<PerfStatus, Error> {
+  video::adopt(ctx.app_data_dir, ctx.video_path.as_deref())?;
+  stop_writing_video(ctx)?;
+  status(ctx)
+}
+
+/// Writes the config's value back for video.txt settings changed in game.
+pub fn use_config_video(ctx: &PerfContext, keys: &[String]) -> Result<PerfStatus, Error> {
+  video::use_written(ctx.app_data_dir, keys)?;
+  status(ctx)
+}
+
+/// Keeps the player's in-game value for video.txt settings changed in game.
+pub fn keep_player_video(ctx: &PerfContext, keys: &[String]) -> Result<PerfStatus, Error> {
+  video::keep_current(ctx.app_data_dir, keys)?;
+  status(ctx)
+}
+
+/// The video.txt settings `request` writes: the chosen variant of a preset's,
+/// or an imported config's own.
+fn video_settings_for(catalog: &Catalog, request: &PerfApplyRequest) -> Vec<VideoSetting> {
+  if !request.write_video {
+    return Vec::new();
+  }
+  match &request.source {
+    PerfConfigSource::Preset { id } => catalog
+      .preset(id)
+      .map(|preset| {
+        request
+          .video_variant
+          .as_ref()
+          .and_then(|label| {
+            preset
+              .video_variants
+              .iter()
+              .find(|variant| &variant.label == label)
+          })
+          .map_or_else(
+            || preset.video_settings.clone(),
+            |variant| variant.settings.clone(),
+          )
+      })
+      .unwrap_or_default(),
+    PerfConfigSource::Inline { definition } => definition.video_settings.clone(),
+  }
 }
 
 /// What a re-apply does with lines edited by hand since the overlay was written.
@@ -260,18 +365,31 @@ pub fn reapply_desired(ctx: &PerfContext, hand_edits: HandEdits) -> ReapplyOutco
     };
     let in_sync = match &applied {
       Some(applied) => carries_desired && applied.rev == resolved.rev,
-      None => resolved.counts.applies == 0,
+      None => resolved.counts.written() == 0,
     };
     if in_sync && hand_edits == HandEdits::Keep {
-      return Ok(ReapplyOutcome::AlreadyInSync);
+      // gameinfo.gi is fine, but the game may have moved to the Steam
+      // account's video.txt, or created one only now.
+      let settings = video_settings_for(ctx.catalog, &desired.request);
+      if settings.is_empty() || !video::out_of_place(ctx.app_data_dir, ctx.video_path.as_deref()) {
+        return Ok(ReapplyOutcome::AlreadyInSync);
+      }
+      video::apply(
+        ctx.app_data_dir,
+        ctx.video_path.as_deref(),
+        &settings,
+        ChangedKeys::Keep,
+      )?;
+      return Ok(ReapplyOutcome::Applied);
     }
-    apply(ctx, desired.request, false)?;
+    apply_with(ctx, desired.request, false, hand_edits)?;
     Ok(ReapplyOutcome::Applied)
   };
   reapply().unwrap_or_else(|error| ReapplyOutcome::Failed(error.to_string()))
 }
 
 fn remove_orphan(ctx: &PerfContext) -> Result<ReapplyOutcome, Error> {
+  video::revert(ctx.app_data_dir)?;
   let Some(game_path) = ctx.game_path else {
     return Ok(ReapplyOutcome::NothingDesired);
   };
@@ -426,15 +544,16 @@ fn credits(catalog: &Catalog, source: &PerfConfigSource) -> Vec<String> {
 /// Saves `desired`, then runs `write`, putting the previous choice back if
 /// `write` fails. Saving first means that if the app dies in between, the next
 /// launch re-applies the new choice instead of reverting to the old one.
-fn save_choice_then(
+fn save_choice_then<T>(
   app_data_dir: &Path,
   desired: &DesiredOverlay,
-  write: impl FnOnce() -> Result<(), Error>,
-) -> Result<(), Error> {
+  write: impl FnOnce() -> Result<T, Error>,
+) -> Result<T, Error> {
   let previous = store::load(app_data_dir);
   store::save(app_data_dir, desired)?;
-  let Err(error) = write() else {
-    return Ok(());
+  let error = match write() {
+    Ok(value) => return Ok(value),
+    Err(error) => error,
   };
   let rollback = match &previous {
     Some(previous) => store::save(app_data_dir, previous),

@@ -6,6 +6,9 @@ export interface ViewerLook {
   antialias: boolean;
   wireframe: boolean;
   exposure: number;
+  lighting: "studio" | "neutral" | "dramatic";
+  lightIntensity: number;
+  bloomStrength: number;
 }
 
 export const DEFAULT_LOOK: ViewerLook = {
@@ -14,6 +17,9 @@ export const DEFAULT_LOOK: ViewerLook = {
   antialias: true,
   wireframe: false,
   exposure: 0.95,
+  lighting: "studio",
+  lightIntensity: 1,
+  bloomStrength: 0.3,
 };
 
 /** A View menu switch for something drawn over the model, such as the ability bar. */

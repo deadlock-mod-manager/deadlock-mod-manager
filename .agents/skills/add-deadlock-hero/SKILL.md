@@ -39,6 +39,7 @@ Work through the list in order; each item is a file you open and edit.
 
 **Shared hero identity** (`@deadlock-mods/shared`)
 - `packages/shared/src/constants.ts` - add the enum member to `DeadlockHeroes`, alphabetical.
+- `packages/shared/src/taxonomy.ts` - add the hero's `HERO_IDS` entry: kebab-case display name, `&` as `and`. Mod sources store it, so never rename it later. It is published at `https://deadlockmods.app/v1/taxonomy.json`.
 - `packages/shared/src/heroes/constants.ts` - add a `HERO_DEFINITIONS` entry: codenames as `aliases`, multi-word names as `phrases`. A codename that is a common English word (`nurse`, `artist`) is **not** an alias - it would steal mod titles; leave a comment saying so.
 - `packages/shared/src/tests/heroes.spec.ts` - cover `normalizeHero` for the codename/alias and `guessHero` for a realistic mod title, plus a negative case for any common-word codename.
 - Check that the API `name` resolves through `normalizeHero` (API says "The Doorman", the enum says "Doorman"); add an alias when it does not, or the hero catalog lookup misses.

@@ -1,4 +1,7 @@
 {
+  "build": {
+    "additionalWatchFolders": ["../../../packages/deadlock-server-picker/src"]
+  },
   "app": {
     "withGlobalTauri": true
   }

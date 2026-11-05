@@ -26,8 +26,8 @@ use flate2::write::DeflateEncoder;
 use serde::{Deserialize, Serialize};
 
 use super::types::{
-  ConfigEntry, EntryOverride, EntryStatus, OverrideAction, PerfApplyRequest, PerfConfigSource,
-  ResolvedConfig, ResolvedEntry,
+  ConfigEntry, EntryOverride, OverrideAction, PerfApplyRequest, PerfConfigSource, ResolvedConfig,
+  ResolvedEntry,
 };
 use crate::errors::Error;
 
@@ -150,7 +150,7 @@ pub fn snippet(resolved: &ResolvedConfig) -> String {
   for entry in resolved
     .entries
     .iter()
-    .filter(|entry| entry.status == EntryStatus::Applies && entry.path.len() > 1)
+    .filter(|entry| entry.status.is_written() && entry.path.len() > 1)
   {
     insert_node(&mut sections, &entry.path, entry);
   }

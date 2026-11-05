@@ -80,6 +80,11 @@ export type ModsState = {
   ) => void;
   removeMod: (remoteId: string, profileId?: ProfileId) => void;
   setMods: (mods: LocalMod[]) => void;
+  setModSource: (
+    remoteId: string,
+    source: NonNullable<LocalMod["source"]>,
+    profileId?: ProfileId,
+  ) => void;
   setModStatus: (
     remoteId: string,
     status: ModStatus,
@@ -128,6 +133,7 @@ export type ModsState = {
     remoteId: string,
     updatedAt: number,
     profileId?: ProfileId,
+    sourceRevision?: string,
   ) => void;
   getModProgress: (remoteId: string) => ModProgress | undefined;
   setAnalysisResult: (result: AnalyzeAddonsResult | null) => void;
@@ -242,6 +248,18 @@ export const createModsSlice: StateCreator<
         localMods: nextMods,
       };
     });
+  },
+
+  setModSource: (remoteId, source, requestedProfileId) => {
+    const profileId = requestedProfileId ?? get().activeProfileId;
+    get().bumpProfileSyncRevision(profileId);
+    set((state) =>
+      applyToModsInProfile(state, profileId, (mods) =>
+        mods.map((mod) =>
+          mod.remoteId === remoteId ? { ...mod, source } : mod,
+        ),
+      ),
+    );
   },
 
   addIdentifiedLocalMod: (mod, filePath, markAsInstalled = true) =>
@@ -664,13 +682,17 @@ export const createModsSlice: StateCreator<
       );
     }),
 
-  skipModUpdate: (remoteId, updatedAt, requestedProfileId) =>
+  skipModUpdate: (remoteId, updatedAt, requestedProfileId, sourceRevision) =>
     set((state) => {
       const profileId = requestedProfileId ?? state.activeProfileId;
       return applyToModsInProfile(state, profileId, (mods) =>
         mods.map((mod) =>
           mod.remoteId === remoteId
-            ? { ...mod, skippedUpdateAt: updatedAt }
+            ? {
+                ...mod,
+                skippedUpdateAt: updatedAt,
+                skippedSourceRevision: sourceRevision,
+              }
             : mod,
         ),
       );

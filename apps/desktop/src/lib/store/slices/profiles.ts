@@ -7,6 +7,7 @@ import { getErrorMessage } from "@/lib/errors";
 import logger from "@/lib/logger";
 import { isInstalledModWithVpks } from "@/lib/mods/installed-helpers";
 import { readLocalModMetadata } from "@/lib/mods/local-metadata";
+import { unresolvedNativeProvenance } from "@/lib/mods/native-provenance";
 import { type LocalMod, ModStatus, type InstalledModInfo } from "@/types/mods";
 import {
   createProfileId,
@@ -416,9 +417,16 @@ const planManifestReconciliation = async (
     const missingVpks = missingById.get(modId)?.missingVpks ?? [];
     let restoredMod: LocalMod;
     try {
-      const modDetails = modId.startsWith("local-")
-        ? await readLocalModMetadata(modId)
+      const remoteDetails = modId.startsWith("local-")
+        ? undefined
         : await getMod(modId);
+      const modDetails = remoteDetails ?? (await readLocalModMetadata(modId));
+      const rememberedSource = trackedById.get(modId)?.source;
+      const source =
+        rememberedSource ??
+        (remoteDetails?.source
+          ? unresolvedNativeProvenance(remoteDetails.source)
+          : undefined);
       restoredMod = {
         ...placeholderModFromManifest(modId, entry, installedVpks),
         ...trackedById.get(modId),
@@ -431,6 +439,7 @@ const planManifestReconciliation = async (
         installOrder: entry.order ?? profile.mods.length + restored.length,
         downloadedAt: new Date(),
       };
+      if (source) restoredMod.source = source;
     } catch (error) {
       logger
         .withMetadata({ modId })
@@ -959,6 +968,7 @@ export const createProfilesSlice: StateCreator<
       const now = new Date();
       set((state) => ({
         activeProfileId: profileId,
+        localMods: [...targetProfile.mods],
         profiles: {
           ...state.profiles,
           [profileId]: {
@@ -967,8 +977,6 @@ export const createProfilesSlice: StateCreator<
           },
         },
       }));
-
-      get().loadModsFromProfile(profileId);
 
       await get().syncProfileEnabledMods(profileId);
     } catch (error) {

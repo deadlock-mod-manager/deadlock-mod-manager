@@ -13,7 +13,9 @@
 //! parsed, so only it is copied; payload reads reach the companions in place
 //! through the `.origin` sidecar (see `source2_model::vpk_extract`).
 
+use sha2::{Digest, Sha256};
 use std::collections::HashMap;
+use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, OnceLock};
 
@@ -52,15 +54,83 @@ fn stage_lock(id: &str) -> Arc<Mutex<()>> {
 /// staged copy is still current. Written next to the staged VPK rather than
 /// inferred from its own metadata, because `fs::copy` preserves timestamps on
 /// some platforms and not others.
-fn source_stamp(path: &Path) -> Result<String, Error> {
-  let metadata = std::fs::metadata(path)?;
-  let modified = metadata
-    .modified()
-    .ok()
-    .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok())
-    .map(|since_epoch| since_epoch.as_nanos())
-    .unwrap_or_default();
-  Ok(format!("{}:{modified}", metadata.len()))
+pub(super) fn source_stamp(path: &Path) -> Result<String, Error> {
+  fn stamp(hash: &mut Sha256, path: &Path) -> Result<(), Error> {
+    let metadata = std::fs::metadata(path)?;
+    hash.update(path.to_string_lossy().as_bytes());
+    hash.update(metadata.len().to_le_bytes());
+    hash.update(
+      metadata
+        .modified()?
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos()
+        .to_le_bytes(),
+    );
+    Ok(())
+  }
+  let mut hash = Sha256::new();
+  stamp(&mut hash, path)?;
+  // Hash the small directory tree, never the potentially multi-GB payload.
+  let mut file = std::fs::File::open(path)?;
+  let mut header = [0; 12];
+  file.read_exact(&mut header)?;
+  hash.update(header);
+  let version = u32::from_le_bytes(header[4..8].try_into().unwrap());
+  if u32::from_le_bytes(header[..4].try_into().unwrap()) != 0x55aa1234 || !matches!(version, 1 | 2)
+  {
+    return Err(Error::Preview {
+      kind: "previewCorruptArchive",
+      message: "Invalid VPK header".into(),
+    });
+  }
+  if version == 2 {
+    let mut rest = [0; 16];
+    file.read_exact(&mut rest)?;
+    hash.update(rest);
+  }
+  let mut remaining = u32::from_le_bytes(header[8..12].try_into().unwrap()) as usize;
+  if remaining > 64 * 1024 * 1024 {
+    return Err(Error::Preview {
+      kind: "previewUnsupported",
+      message: "VPK directory exceeds the preview analysis limit".into(),
+    });
+  }
+  let mut buffer = [0; 64 * 1024];
+  while remaining > 0 {
+    let count = remaining.min(buffer.len());
+    file.read_exact(&mut buffer[..count])?;
+    hash.update(&buffer[..count]);
+    remaining -= count;
+  }
+  if let Some(base) = path
+    .file_stem()
+    .and_then(|stem| stem.to_str())
+    .and_then(|stem| stem.strip_suffix("_dir"))
+  {
+    let mut companions = Vec::new();
+    for entry in std::fs::read_dir(path.parent().unwrap_or_else(|| Path::new(".")))? {
+      let path = entry?.path();
+      let name = path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or_default();
+      let numbered = name
+        .strip_prefix(&format!("{base}_"))
+        .and_then(|name| name.strip_suffix(".vpk"));
+      if numbered
+        .is_some_and(|number| number.len() == 3 && number.bytes().all(|byte| byte.is_ascii_digit()))
+        && path.is_file()
+      {
+        companions.push(path);
+      }
+    }
+    companions.sort();
+    for companion in companions {
+      stamp(&mut hash, &companion)?;
+    }
+  }
+  Ok(format!("{:x}", hash.finalize()))
 }
 
 /// Copy through a `.part` file so an interrupted or concurrent copy can never

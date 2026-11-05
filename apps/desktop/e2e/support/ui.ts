@@ -10,6 +10,7 @@ export const navigate = (
     | "settings"
     | "skins"
     | "stats"
+    | "performance"
     | "developer",
 ) =>
   step(`open ${destination}`, async () => {

@@ -9,7 +9,7 @@ import { savedDraftFor } from "@/lib/performance/editor/configs";
 import { usePersistedStore } from "@/lib/store";
 
 /**
- * The user's saved tweaks and engine-section choice for one config, with the
+ * The user's saved tweaks, engine-section and video.txt choices for one config, with the
  * same fallback to the applied request as the settings editor.
  */
 export const useStoredRequestOptions = (configId: string) => {
@@ -19,9 +19,19 @@ export const useStoredRequestOptions = (configId: string) => {
   const savedInclude = usePersistedStore(
     (state) => state.perfIncludeEngineSections,
   );
+  const savedVideo = usePersistedStore((state) => state.perfVideoChoices);
   return useMemo(
-    () => savedDraftFor(configId, savedOverrides, savedInclude, desired),
-    [configId, savedOverrides, savedInclude, desired],
+    () =>
+      savedDraftFor(
+        configId,
+        {
+          overrides: savedOverrides,
+          includeEngineSections: savedInclude,
+          video: savedVideo,
+        },
+        desired,
+      ),
+    [configId, savedOverrides, savedInclude, savedVideo, desired],
   );
 };
 
