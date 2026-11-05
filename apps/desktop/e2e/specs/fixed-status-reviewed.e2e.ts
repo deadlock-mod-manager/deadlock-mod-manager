@@ -51,7 +51,7 @@ describe("fixed status after a compatibility review", () => {
         await waitForStatus(STATUS.folder, FIXED_MOD, "fixable");
         await waitForStatus(STATUS.folder, RIVAL_MOD, "fixable");
         await fixAllInDialog();
-        const apply = await $("button=Apply fixes");
+        const apply = await $("button=Apply 2 repairs");
         await apply.waitForClickable({ timeout: 60_000 });
         await checkpoint("review-dialog", {
           health: await readHealth(STATUS.folder),
