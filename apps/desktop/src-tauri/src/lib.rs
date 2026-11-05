@@ -595,6 +595,7 @@ pub fn run() {
       commands::performance::perf_apply,
       commands::performance::perf_remove,
       commands::performance::perf_reapply,
+      commands::performance::perf_restore_video_backup,
       commands::performance::perf_sync,
       commands::performance::perf_analyze_import,
       commands::performance::perf_export,

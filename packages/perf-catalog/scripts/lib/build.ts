@@ -140,19 +140,35 @@ const videoDisplay = (
   return option.percent ? `${Math.round(number * 100)}%` : String(number);
 };
 
+/**
+ * Every `setting.*` key in the author's video.txt, written by the app as
+ * shipped. Menu options come first with their label, then the rest in file
+ * order; the last line wins for a repeated key, as in the game.
+ */
 const videoSettings = (text: string): VideoSetting[] => {
-  const settings = new Map<string, string>();
-  for (const match of text.matchAll(/"setting\.([^"]+)"\s+"([^"]*)"/g))
-    settings.set(match[1].toLowerCase(), match[2]);
+  const settings = new Map<string, { key: string; value: string }>();
+  for (const match of text.matchAll(/"setting\.([^"]+)"\s+"([^"]*)"/g)) {
+    const lower = match[1].toLowerCase();
+    settings.set(lower, {
+      key: settings.get(lower)?.key ?? match[1],
+      value: match[2],
+    });
+  }
   const out: VideoSetting[] = [];
   for (const [key, option] of VIDEO_MENU) {
-    const value = settings.get(key);
-    if (value === undefined) continue;
-    const entry: VideoSetting = { key, value, label: option.label };
-    const display = videoDisplay(option, value);
+    const setting = settings.get(key);
+    if (setting === undefined) continue;
+    settings.delete(key);
+    const entry: VideoSetting = {
+      key,
+      value: setting.value,
+      label: option.label,
+    };
+    const display = videoDisplay(option, setting.value);
     if (display) entry.display = display;
     out.push(entry);
   }
+  for (const { key, value } of settings.values()) out.push({ key, value });
   return out;
 };
 

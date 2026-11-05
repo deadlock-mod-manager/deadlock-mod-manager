@@ -23,6 +23,8 @@ export const compactHistoryRequest = (
     request.source.kind === "preset" ? request.source : { kind: "inline" },
   overrides: request.overrides,
   includeEngineSections: request.includeEngineSections,
+  writeVideo: request.writeVideo,
+  videoVariant: request.videoVariant,
 });
 
 /** The request that re-applies a History entry, or `null` once its config was deleted. */

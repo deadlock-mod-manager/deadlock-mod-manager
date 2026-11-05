@@ -66,11 +66,7 @@ export const EngineSectionsNotice = ({
         )}
       </p>
       <label className='flex shrink-0 items-center gap-2'>
-        <Switch
-          checked={included}
-          className='scale-90'
-          onCheckedChange={onIncludedChange}
-        />
+        <Switch checked={included} onCheckedChange={onIncludedChange} />
         {t("performance.editor.engine.toggle")}
       </label>
     </div>

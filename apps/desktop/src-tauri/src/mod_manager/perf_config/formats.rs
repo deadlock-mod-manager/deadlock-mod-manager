@@ -867,25 +867,8 @@ fn unquote(value: &str) -> &str {
     .unwrap_or(value)
 }
 
-/// Settings tied to one machine's monitor, GPU or memory. Copying them from
-/// another player's file is never a recommendation.
-const MACHINE_SPECIFIC_SETTINGS: &[&str] = &[
-  "defaultres",
-  "defaultresheight",
-  "recommendedheight",
-  "refreshrate_numerator",
-  "refreshrate_denominator",
-  "fullscreen",
-  "coop_fullscreen",
-  "nowindowborder",
-  "fullscreen_min_on_focus_loss",
-  "monitor_index",
-  "high_dpi",
-  "aspectratiomode",
-  "knowndevice",
-  "mem_level",
-  "gpu_mem_level",
-];
+/// Header keys naming the author's GPU. Never written: the game uses them to
+/// spot a new graphics card and reset its settings.
 const MACHINE_SPECIFIC_HEADER: &[&str] = &["vendorid", "deviceid"];
 
 enum MenuValues {
@@ -1005,11 +988,6 @@ fn parse_video(text: &str) -> ParsedConfig {
     };
     let lower = key.to_ascii_lowercase();
     match lower.strip_prefix("setting.") {
-      Some(name) if MACHINE_SPECIFIC_SETTINGS.contains(&name) => ignored.push(IgnoredPart {
-        kind: IgnoredKind::MachineSpecific,
-        detail: key.clone(),
-        line: Some(leaf.line),
-      }),
       Some(_) => settings.push(ParsedLeaf {
         path: vec![key["setting.".len()..].to_string()],
         value: leaf.value,

@@ -20,4 +20,13 @@ export type PerfApplyRequest = {
    * default; Valve's matchmaking message names these sections.
    */
   includeEngineSections: boolean;
+  /**
+   * Write the author's video.txt settings too. On unless the user turns it
+   * off, because authors say their configs look wrong without them.
+   */
+  writeVideo: boolean;
+  /**
+   * Which of a preset's video.txt files to write, by label; `None` is the first.
+   */
+  videoVariant: string | null;
 };

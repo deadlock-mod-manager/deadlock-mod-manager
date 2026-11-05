@@ -25,7 +25,7 @@ export const FilterTabs = <T extends string>({
 }: FilterTabsProps<T>) => (
   <ToggleGroup
     aria-label={ariaLabel}
-    className='gap-0.5 rounded-lg bg-muted p-[3px]'
+    className='gap-0.5 rounded-lg bg-muted p-0.5'
     onValueChange={(next) => {
       const tab = tabs.find((candidate) => candidate.value === next);
       if (tab) onValueChange(tab.value);

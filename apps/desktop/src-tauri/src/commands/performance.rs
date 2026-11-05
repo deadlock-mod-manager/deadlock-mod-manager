@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use super::state::{MANAGER, get_api_url};
 use crate::app_runtime::AppHandle;
@@ -9,7 +9,7 @@ use crate::mod_manager::perf_config::types::{
   CatalogSummary, ConvarMeta, ImportReport, ImportSource, PerfApplyRequest, PerfApplyResult,
   PerfExport, PerfStatus, ResolvedConfig,
 };
-use crate::mod_manager::perf_config::{catalog, client_version, share, staging};
+use crate::mod_manager::perf_config::{catalog, client_version, share, staging, video};
 
 fn app_data_dir(app_handle: &AppHandle) -> Result<PathBuf, Error> {
   crate::runtime_environment::app_local_data_dir(app_handle).map_err(Error::Tauri)
@@ -24,12 +24,33 @@ fn game_path() -> Option<PathBuf> {
     .cloned()
 }
 
+/// The game folder and the signed-in account's `userdata/<id>/1422450`.
+struct GamePaths {
+  game: Option<PathBuf>,
+  account: Option<PathBuf>,
+}
+
+fn game_paths(manager: &crate::mod_manager::ModManager) -> GamePaths {
+  let steam = manager.get_steam_manager();
+  GamePaths {
+    game: steam.get_game_path().cloned(),
+    account: steam.active_userdata_path(),
+  }
+}
+
 /// Runs `f` with a context for the current game folder and catalog.
 fn with_context<T>(
   app_handle: &AppHandle,
   f: impl FnOnce(&PerfContext) -> Result<T, Error>,
 ) -> Result<T, Error> {
-  run_in_context(app_handle, game_path().as_deref(), f)
+  let paths = MANAGER
+    .lock()
+    .map(|manager| game_paths(&manager))
+    .unwrap_or(GamePaths {
+      game: None,
+      account: None,
+    });
+  run_in_context(app_handle, &paths, f)
 }
 
 /// [`with_context`] for operations that write gameinfo.gi. The manager lock is
@@ -42,19 +63,20 @@ fn with_write_context<T>(
   let manager = MANAGER
     .lock()
     .map_err(|_| Error::BackgroundTaskFailed("Mod manager lock poisoned".to_string()))?;
-  let game_path = manager.get_steam_manager().get_game_path().cloned();
-  run_in_context(app_handle, game_path.as_deref(), f)
+  run_in_context(app_handle, &game_paths(&manager), f)
 }
 
 fn run_in_context<T>(
   app_handle: &AppHandle,
-  game_path: Option<&Path>,
+  paths: &GamePaths,
   f: impl FnOnce(&PerfContext) -> Result<T, Error>,
 ) -> Result<T, Error> {
   let app_data_dir = app_data_dir(app_handle)?;
   let catalog = catalog::current();
+  let game_path = paths.game.as_deref();
   let ctx = PerfContext {
     game_path,
+    video_path: video::locate(game_path, paths.account.as_deref()),
     app_data_dir: &app_data_dir,
     catalog: &catalog,
     build_id: game_path
@@ -111,6 +133,17 @@ pub async fn perf_remove(
   with_write_context(&app_handle, ops::remove)
 }
 
+/// Puts back the player's own video.txt as it was before the mod manager first
+/// wrote it.
+#[tauri::command]
+pub async fn perf_restore_video_backup(
+  app_handle: AppHandle,
+  guard_permit: Option<String>,
+) -> Result<PerfStatus, Error> {
+  crate::game_guard::ensure_game_idle_locked("perf_restore_video_backup", guard_permit.as_deref())?;
+  with_write_context(&app_handle, ops::restore_video_backup)
+}
+
 /// Writes the chosen config back into gameinfo.gi after a game update or a
 /// reset removed it, or removes an overlay when no config is chosen.
 #[tauri::command]
@@ -138,10 +171,9 @@ pub async fn perf_sync(app_handle: AppHandle) -> Result<bool, Error> {
   if manager.is_game_running()? {
     return Ok(false);
   }
-  let game_path = manager.get_steam_manager().get_game_path().cloned();
   run_in_context(
     &app_handle,
-    game_path.as_deref(),
+    &game_paths(&manager),
     |ctx| match ops::reapply_desired(ctx, ops::HandEdits::Keep) {
       ops::ReapplyOutcome::Applied | ops::ReapplyOutcome::RemovedOrphan => Ok(true),
       ops::ReapplyOutcome::NothingDesired | ops::ReapplyOutcome::AlreadyInSync => Ok(false),

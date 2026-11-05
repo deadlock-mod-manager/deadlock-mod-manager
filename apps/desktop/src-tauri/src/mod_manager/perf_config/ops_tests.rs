@@ -39,6 +39,7 @@ impl Setup {
       app_data_dir: &self.data_path,
       catalog: &self.catalog,
       build_id: Some("6711".to_string()),
+      video_path: None,
     }
   }
 
@@ -58,6 +59,8 @@ fn preset_request(id: &str) -> PerfApplyRequest {
     source: PerfConfigSource::Preset { id: id.to_string() },
     overrides: Vec::new(),
     include_engine_sections: false,
+    write_video: true,
+    video_variant: None,
   }
 }
 
@@ -180,7 +183,7 @@ fn a_failed_write_puts_the_previous_choice_back() {
     rev: "ffffffffffff".to_string(),
     ..first.clone()
   };
-  let failing = || Err(Error::PerformanceConfig("write failed".into()));
+  let failing = || Err::<(), _>(Error::PerformanceConfig("write failed".into()));
 
   save_choice_then(&setup.data_path, &second, failing).expect_err("write fails");
   assert_eq!(store::load(&setup.data_path), Some(first));
@@ -466,10 +469,13 @@ fn unmanaged_changes_count_until_a_config_covers_them() {
         id: "mine".to_string(),
         name: "My gameinfo.gi".to_string(),
         entries,
+        video_settings: Vec::new(),
       },
     },
     overrides: Vec::new(),
     include_engine_sections: true,
+    write_video: true,
+    video_variant: None,
   };
   let applied = apply(&setup.ctx(), request, false).expect("apply");
   assert_eq!(applied.status.unmanaged_changes, 0);

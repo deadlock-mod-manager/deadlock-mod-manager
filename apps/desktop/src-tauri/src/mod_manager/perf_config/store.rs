@@ -70,6 +70,8 @@ mod tests {
         },
         overrides: Vec::new(),
         include_engine_sections: false,
+        write_video: true,
+        video_variant: None,
       },
       rev: "0123456789ab".to_string(),
       applied_at: "2026-10-08T12:00:00+00:00".to_string(),
