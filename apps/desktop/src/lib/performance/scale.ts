@@ -2,17 +2,16 @@ import type { PerfTier } from "@/types/generated/PerfTier";
 
 type TierInfo = {
   id: PerfTier;
-  emoji: string;
   /** Where the tier's stop sits on the Looks ⟷ Frames track, 0 to 1. */
   position: number;
 };
 
 export const TIERS: readonly TierInfo[] = [
-  { id: "pretty", emoji: "✨", position: 0.1 },
-  { id: "balanced", emoji: "⚖️", position: 0.3 },
-  { id: "lean", emoji: "⚡", position: 0.5 },
-  { id: "sweaty", emoji: "🔥", position: 0.7 },
-  { id: "potato", emoji: "🥔", position: 0.9 },
+  { id: "pretty", position: 0.1 },
+  { id: "balanced", position: 0.3 },
+  { id: "lean", position: 0.5 },
+  { id: "sweaty", position: 0.7 },
+  { id: "potato", position: 0.9 },
 ];
 
 export const tierInfo = (tier: PerfTier): TierInfo =>

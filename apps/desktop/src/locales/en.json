@@ -1,4 +1,164 @@
 {
+  "serverPicker": {
+    "about": "About relay blocking",
+    "restoreShort": "Unblock all",
+    "restoring": "Restoring…",
+    "applying": "Applying…",
+    "unavailableShort": "N/A",
+    "notMeasuredShort": "…",
+    "dismiss": "Dismiss error",
+    "reviewStatus": "Review firewall status",
+    "systemScopeShort": "Linux: blocks these relays for all apps, including other Steam games.",
+    "title": "Server Picker",
+    "subtitle": "Block relay locations to steer Deadlock matchmaking.",
+    "defaultRouting": "Default routing",
+    "activeBlocks_one": "{{count}} location blocked",
+    "activeBlocks_other": "{{count}} locations blocked",
+    "unverified": "Firewall status not verified",
+    "partialRestrictions": "Some relay restrictions remain active",
+    "persistence": "Restrictions stay active after DMM closes. Restore default routing to remove them.",
+    "restore": "Restore default routing",
+    "routingNote": "Blocking Valve relay locations influences matchmaking routes. It does not guarantee the location of your match server.",
+    "applicationScope": "Restrictions apply only to Deadlock.",
+    "systemScope": "On Linux, restrictions apply to these relay addresses for every application, including other Steam games.",
+    "closeGame": "Close Deadlock to apply your selection. You can still restore default routing.",
+    "unsupportedDescription": "The required firewall or permission support is unavailable.",
+    "search": "Search locations…",
+    "region": "Filter by region",
+    "allRegions": "All regions",
+    "sort": "Sort locations",
+    "sortName": "Name",
+    "sortLatency": "Lowest ping",
+    "sortLatencyUnmeasured": "Lowest ping (measure first)",
+    "refresh": "Refresh locations",
+    "refreshShort": "Refresh",
+    "measurePing": "Measure ping",
+    "stopProbe": "Stop measuring",
+    "measuring": "Measuring relay latency…",
+    "measuredShort": "Measured {{time}}",
+    "fastestAllowed": "Fastest allowed:",
+    "presets": "Presets",
+    "newPreset": "Save as preset",
+    "presetBlocks_one": "Blocks {{count}} location",
+    "presetBlocks_other": "Blocks {{count}} locations",
+    "presetPending": "Loaded. Apply to activate.",
+    "presetName": "Preset name",
+    "savePreset": "Save",
+    "deletePreset": "Delete preset {{name}}",
+    "presetHint": "Keep your usual locations one click away.",
+    "cancel": "Cancel",
+    "locationCount_one": "{{count}} location",
+    "locationCount_other": "{{count}} locations",
+    "loading": "Loading relay locations",
+    "noMatches": "No matching locations",
+    "noCatalog": "Load Valve’s relay locations",
+    "clearFilters": "Clear filters",
+    "catalogUpdated": "Location catalog updated {{time}}",
+    "allowed": "Allowed",
+    "blocked": "Blocked",
+    "toggleLocation": "Block {{name}}",
+    "currentlyBlocked": "Currently blocked",
+    "currentlyAllowed": "Currently allowed",
+    "willAllow": "Will allow",
+    "willBlock": "Will block",
+    "notMeasured": "Not measured",
+    "milliseconds": "{{count}} ms",
+    "measuredAt": "Estimated relay latency, measured at {{time}}",
+    "groupCount": "{{count}} / {{total}} blocked",
+    "groupAllBlocked": "All {{total}} blocked",
+    "groupAllOpen": "All {{total}} open",
+    "allowAll": "Allow all",
+    "blockAll": "Block all",
+    "allowRegion": "Allow all visible locations in {{name}}",
+    "blockRegion": "Block all visible locations in {{name}}",
+    "pendingChanges_one": "{{count}} pending change",
+    "pendingChanges_other": "{{count}} pending changes",
+    "reconcile": "Verify and apply saved selection",
+    "allBlockedWarning": "Allow at least one location so Deadlock can connect.",
+    "discard": "Discard",
+    "apply": "Apply changes",
+    "regions": {
+      "northAmerica": "North America",
+      "southAmerica": "South America",
+      "europe": "Europe",
+      "asia": "Asia",
+      "oceania": "Oceania",
+      "africa": "Africa",
+      "middleEast": "Middle East",
+      "other": "Other locations"
+    }
+  },
+  "modSources": {
+    "sourceLabel": "Source: {{name}}",
+    "viewOriginalPost": "View post on {{name}}",
+    "unknownClassification": "Your adult-content filter hides listings whose source has not classified them.",
+    "modDescription": "Description",
+    "title": "Mod sources",
+    "description": "Browse mods from GameBanana and sources you add yourself.",
+    "add": "Add source",
+    "addTitle": "Add a mod source",
+    "addDescription": "Paste a source descriptor URL. Review its name and network origins before adding it.",
+    "descriptorUrl": "Descriptor URL",
+    "preview": "Preview source",
+    "acceptOrigins": "This source can contact these origins for catalog data, downloads, and images:",
+    "builtIn": "Built-in",
+    "synced": "Synced",
+    "disabled": "Disabled",
+    "notSynced": "Not synced yet",
+    "cachedResults": "Previously synced results remain available.",
+    "refresh": "Refresh {{name}}",
+    "refreshAction": "Refresh",
+    "enable": "Enable {{name}}",
+    "more": "More options for {{name}}",
+    "remove": "Remove source",
+    "removeTitle": "Remove {{name}}?",
+    "removeDescription": "Installed and downloaded mods stay in your library with their source details. This source will stop browsing and checking for updates. You can add it again later.",
+    "authorExample": "Publish your own source",
+    "selectSource": "Mod source",
+    "search": "Search this source",
+    "sourceUnavailable": "This source is disabled or no longer available. Your downloaded mods stay in the library.",
+    "localFiles": "Local files",
+    "selectComponents": "Choose mod components",
+    "selectComponentsDescription": "{{modName}} has optional components. Required components are included automatically.",
+    "componentGroup": "Choose {{min}} to {{max}}",
+    "componentGroupExact": "Choose {{count}}",
+    "selectComponentsRequiredHint": "Always installed",
+    "required": "Required",
+    "confirmSelection": "Download selection",
+    "releaseHistoryDescription": "Versions published on {{name}}.",
+    "releaseHistoryLoadError": "Couldn't load the release history from {{name}}.",
+    "releaseHistoryEmpty": "{{name}} has no published versions for this mod.",
+    "currentRelease": "Current",
+    "alreadyAdded": "{{name}} is already one of your sources.",
+    "alreadyAddedDisabled": "{{name}} is already one of your sources but is disabled. Enable it to browse and install its mods.",
+    "enableAction": "Enable source",
+    "linkSourceMismatch": "This descriptor belongs to a different source than the link named. Check the link with the website.",
+    "linkAddReason": "A website wants to install a mod from this source. Add the source to continue. Review its name and network origins first.",
+    "linkEnableTitle": "Enable {{name}}?",
+    "linkEnableBody": "A website wants to install a mod from {{name}}, which you disabled. Enable it to continue.",
+    "linkFailed": "Couldn't open the mod source link"
+  },
+  "hudCompatibility": {
+    "logModified": "Game log last updated: {{date}}",
+    "nextStep": "Having problems? Check for an update or try “$t(bisect.entry)”.",
+    "logUnavailable": "Game log unavailable. Layout checks still ran.",
+    "title": "HUD layout checks",
+    "logTruncated": "Checked the last 256 KiB of the game log and kept up to 40 matching lines.",
+    "status": {
+      "compared": "Compared with the current game",
+      "unreadable": "Couldn’t read the layout",
+      "unsupported": "Couldn’t check this layout format",
+      "noBaseline": "No matching game layout"
+    },
+    "logCaution": "This log entry may be from another session or profile; it doesn’t prove this mod caused the error.",
+    "advisory": "Only static layouts are compared. Scripts, styles, includes, and in-game behavior aren’t checked. No files are changed and launch isn’t blocked.",
+    "missing_one": "{{count}} panel left out",
+    "missing_other": "{{count}} panels left out",
+    "summary": "{{count}} layouts, {{unchanged}} with no findings",
+    "differences": "These differences can be intentional. They don’t mean the mod is broken.",
+    "about": "About these checks",
+    "logMatch": "Matching error in game log"
+  },
   "modelConflict": {
     "keptCurrent": "Skipped to keep current skins",
     "replaced": "Replaced by another selected skin"
@@ -56,23 +216,65 @@
   },
   "performance": {
     "title": "Performance",
-    "subtitle": "Community configs that trade visual detail for frame rate. They're written into gameinfo.gi alongside your mods, and you can turn them off at any time.",
+    "subtitle": "Community configs that trade visual detail for frame rate. Turn them off anytime.",
     "tabs": {
       "configs": "Configs",
-      "editor": "Settings editor",
+      "editor": "Config settings",
+      "video": "Video settings",
       "history": "History",
       "howItWorks": "How it works"
     },
+    "video": {
+      "emptyTitle": "No video.txt settings",
+      "noConfig": "Apply a config that ships a video.txt and its settings show up here.",
+      "noVideo": "{{name}} doesn't ship a video.txt, so your own video settings stay as they are.",
+      "changes": {
+        "title": "Changed in game",
+        "description": "You changed these in Deadlock's graphics menu after the config set them. Keep yours, or go back to the config's.",
+        "values": "{{config}} → {{yours}} (yours)",
+        "kept": "Keeping yours: {{yours}}",
+        "removed": "removed",
+        "keep": "Keep yours",
+        "use": "Use {{value}}",
+        "useAll": "Use the config's values",
+        "settled": "Your video.txt matches the config again.",
+        "useConfig_one": "Use the config's value",
+        "useConfig_other": "Use the config's values",
+        "failed": "Couldn't update video.txt"
+      }
+    },
     "howItWorks": {
+      "basics": {
+        "label": "The short version",
+        "inPlace": {
+          "title": "Edits in place",
+          "body": "Only the lines it marks in gameinfo.gi change, so your mods keep loading."
+        },
+        "turnOff": {
+          "title": "Undo anytime",
+          "body": "Turn off puts back every value it replaced. Your configs stay saved."
+        },
+        "updates": {
+          "title": "Survives game updates",
+          "body": "Written back after an update and before every launch from the mod manager."
+        },
+        "video": {
+          "title": "Your video.txt is backed up",
+          "body": "Saved before the first write, so you can restore it from the Video settings tab."
+        }
+      },
       "writes": {
         "title": "What the mod manager changes",
+        "summary": "When your files get written and how Turn off undoes it.",
         "inPlace": "A config is a list of console variables (convars), and sometimes engine settings, written into your gameinfo.gi. The mod manager edits the file in place, next to your mods, instead of replacing it.",
         "turnOff": "It marks every line it adds or changes, so Turn off removes them and puts back the values they replaced. Your configs and tweaks stay saved.",
-        "reapply": "A game update or Reset to Vanilla replaces gameinfo.gi. The mod manager writes your config back when it starts, when you switch back to its window, and before every launch from it (vanilla launches included), waiting while Deadlock is running. If you start Deadlock from Steam with the mod manager closed, the config is missing until you open it again.",
-        "untouched": "SearchPaths, which keeps your mods loading, and video.txt are never changed."
+        "reapply": "A game update or Reset to Vanilla replaces gameinfo.gi. The mod manager writes your config back when it starts, when you switch back to its window, and before every launch from it, vanilla launches included. It waits while Deadlock is running. If you start Deadlock from Steam with the mod manager closed, the config is missing until you open it again.",
+        "untouched": "SearchPaths, which keeps your mods loading, is never changed.",
+        "video": "When a config ships a video.txt, its settings go into the video.txt Deadlock reads. The first time, your own file is saved, and you can restore it from the Video settings tab. The game rewrites video.txt when you change a graphics setting, so settings you change in game stay yours: they show up in the Video settings tab and in History, and Turn off leaves them alone."
       },
       "sources": {
         "title": "Where the information comes from",
+        "summary": "The data behind every label, count and comparison on this page.",
         "convars": {
           "term": "Valve's convar list",
           "body": "The name, type, default, range and flags of every convar and console command in the current game, from <schemaExplorer>ValveResourceFormat's SchemaExplorer</schemaExplorer> dump of Deadlock."
@@ -97,13 +299,16 @@
       },
       "statuses": {
         "title": "What happens to each setting",
-        "description": "Config details, the import review and the settings editor label every line of a config with one of these. Only lines marked Applies are written.",
-        "applies": "Written to your gameinfo.gi.",
+        "summary": "The labels on each setting, and which ones get written.",
+        "description": "Config details, the import review and Config settings give every line of a config one of these labels.",
+        "written": "Written to gameinfo.gi",
+        "notWritten": "Not written",
+        "applies": "Written, and the game uses it.",
         "unchanged": "Your gameinfo.gi already has this value, or doesn't set it and the value is the convar's built-in default. Nothing is written.",
-        "blocked": "Valve flags this convar as one gameinfo.gi can't set (gameinfo_cannot_override).",
-        "removed": "Not in Deadlock's convar list. When the convar history shows it disappearing, the build is named.",
-        "notConvar": "Valve lists it as a console command, not a convar.",
-        "engineSection": "Outside the ConVars block, such as SceneSystem or RenderSystem. Left out because engine-section edits are off for this config. Deadlock's matchmaking error lists Engine2, MaterialSystem2, NetworkSystem, Particles, RenderSystem, SceneSystem and WorldRenderer as sections where it doesn't support some changes.",
+        "blocked": "Valve flags it as one gameinfo.gi can't set (gameinfo_cannot_override), so Deadlock ignores it.",
+        "removed": "Not in Deadlock's convar list, so it has no effect. When the convar history shows it disappearing, the build is named.",
+        "notConvar": "A console command, not a convar, so gameinfo.gi can't run it.",
+        "engineSection": "Outside the ConVars block, such as SceneSystem. Left out when you turn off engine-section edits for a config, since Deadlock's matchmaking can reject some changes there.",
         "omitted": "You turned it off.",
         "excluded": "FileSystem (which holds SearchPaths) and editor-only sections. The mod manager never writes them.",
         "denied": "Keys the mod manager won't write, such as sv_cheats. Each one shows its reason.",
@@ -112,12 +317,13 @@
       },
       "counts": {
         "title": "The numbers on each card",
-        "settings": "Settings: how many lines would be written to your gameinfo.gi.",
-        "unused": "Unused: settings that are not read from gameinfo.gi, not convars, or console commands.",
+        "summary": "What the settings and download counts mean.",
+        "settings": "Settings: how many lines take effect in your gameinfo.gi. On curated configs, hover the count to see how many more get written that Deadlock ignores.",
         "gamebanana": "GameBanana cards are counted against Valve's stock file instead of yours, so an import can show slightly different numbers."
       },
       "scale": {
         "title": "Categories, the scale and tiers",
+        "summary": "How the scale ranks configs and where tiers come from.",
         "categories": "Valve doesn't group convars, so the mod manager sorts each one into a category by its name: names with \"shadow\" go to Shadows, for example. A setting can occasionally land in the wrong group.",
         "position": "A config's place on the Lighter cuts to Heavier cuts scale comes from how many settings it changes in each category. Shadows count the most; Network and Camera & visibility don't count. It ranks configs against each other and isn't a frame-rate estimate: how many frames a cut gains depends on your hardware.",
         "tiers": "Tiers, from Pretty to Potato, are picked by hand for curated and GameBanana configs. Your own configs take the tier of the config they came from."
@@ -190,7 +396,14 @@
       "removeFailed": "Couldn't turn off the config",
       "catalogUpdated": "Config catalog updated to {{version}}",
       "catalogUpToDate": "The config catalog is up to date",
-      "catalogRefreshFailed": "Couldn't check for catalog updates"
+      "catalogRefreshFailed": "Couldn't check for catalog updates",
+      "videoWritten_one": "{{count}} video setting written to video.txt.",
+      "videoWritten_other": "{{count}} video settings written to video.txt.",
+      "videoMissing": "Launch Deadlock once so it creates video.txt, then apply again for the video settings.",
+      "videoRestored": "Your own video.txt is back",
+      "videoAdopted": "This video.txt is now your own",
+      "videoAdoptFailed": "Couldn't save your video.txt",
+      "videoRestoreFailed": "Couldn't restore your video.txt"
     },
     "editor": {
       "header": {
@@ -198,9 +411,7 @@
         "pickConfig": "Pick a config",
         "presets": "Presets",
         "yourConfigs": "Your configs",
-        "appliedOption": "{{name}} (applied)",
         "tierTooltip": "Where this config sits between lighter and heavier cuts. It moves as you edit.",
-        "summary": "{{written}} written to gameinfo.gi, {{leftOut}} left out, {{matching}} already match the game",
         "updating": "Updating…"
       },
       "empty": {
@@ -220,7 +431,13 @@
       },
       "noMatches": {
         "title": "No settings match",
-        "clear": "Clear filters",
+        "search": "Nothing in this config matches \"{{query}}\".",
+        "changed": "You haven't changed anything in this config yet.",
+        "attention": "Every setting in this config takes effect.",
+        "differs": "Every setting already matches the game.",
+        "all": "This config has no settings.",
+        "clearSearch": "Clear search",
+        "showAll": "Show all settings",
         "searchAll": "Search all convars for \"{{query}}\""
       },
       "toolbar": {
@@ -229,7 +446,7 @@
         "filterDiffers": "Differs from game",
         "filterAll": "All",
         "filterChanged": "Changed by you",
-        "filterAttention": "Won't apply",
+        "filterAttention": "Won't take effect",
         "convarNames": "Convar names",
         "addSetting": "Add setting"
       },
@@ -240,8 +457,8 @@
         "settings_one": "{{count}} setting",
         "settings_other": "{{count}} settings",
         "changed": "{{count}} changed by you",
-        "attention_one": "{{count}} won't apply",
-        "attention_other": "{{count}} won't apply",
+        "attention_one": "{{count}} won't take effect",
+        "attention_other": "{{count}} won't take effect",
         "value": "Value",
         "showMore": "Show {{count}} more in {{category}}",
         "showFewer": "Show fewer"
@@ -290,12 +507,12 @@
           "color": "a color",
           "vector": "a vector"
         },
-        "blockedSince": "Deadlock stopped reading this from gameinfo.gi in build {{build}}.",
-        "blocked": "Deadlock doesn't read this from gameinfo.gi.",
-        "removedSince": "Deadlock removed this convar in build {{build}}.",
-        "removed": "Deadlock's convar list has nothing by this name.",
-        "sectionKey": "Valve's gameinfo.gi sets this key under {{section}}, outside the ConVars block.",
-        "notConvar": "This is a console command, not a convar.",
+        "blockedSince": "Written as the author set it, but since build {{build}} Deadlock ignores this in gameinfo.gi and keeps its own value.",
+        "blocked": "Written as the author set it, but Deadlock ignores this in gameinfo.gi and keeps its own value.",
+        "removedSince": "Written as the author set it, but Deadlock removed this convar in build {{build}}, so it has no effect.",
+        "removed": "Written as the author set it, but Deadlock has no convar by this name, so it has no effect.",
+        "sectionKey": "Written as the author set it, but Deadlock reads this key under {{section}}, not ConVars, so it has no effect here.",
+        "notConvar": "Written as the author set it, but it's a console command, which gameinfo.gi can't run.",
         "denied": "{{reason}}",
         "deniedNoReason": "The mod manager doesn't write this key.",
         "excludedSection": "The mod manager never writes {{section}}.",
@@ -305,14 +522,14 @@
         "engineSection": "Left out because engine-section edits are off for this config."
       },
       "engine": {
-        "excluded_one": "{{count}} engine-section edit ({{sections}}) is turned off.",
-        "excluded_other": "{{count}} engine-section edits ({{sections}}) are turned off.",
-        "included_one": "{{count}} engine-section edit ({{sections}}) is included.",
-        "included_other": "{{count}} engine-section edits ({{sections}}) are included.",
+        "title": "Engine sections",
+        "about": "About engine-section edits",
+        "included_one": "{{count}} edit outside the ConVars block, in {{sections}}. It's written with the rest of the config.",
+        "included_other": "{{count}} edits outside the ConVars block, in {{sections}}. They're written with the rest of the config.",
+        "excluded_one": "{{count}} edit outside the ConVars block, in {{sections}}. It's left out of your gameinfo.gi.",
+        "excluded_other": "{{count}} edits outside the ConVars block, in {{sections}}. They're left out of your gameinfo.gi.",
         "sectionsMore": "{{sections}} and {{count}} more",
-        "why": "About these sections",
-        "valveMessage": "Deadlock's matchmaking error lists {{sections}} among the gameinfo.gi sections where it doesn't support some changes. If Deadlock won't let you queue, turn these edits off.",
-        "toggle": "Include engine-section edits"
+        "valveMessage": "Deadlock's matchmaking error lists {{sections}} among the gameinfo.gi sections where it doesn't support some changes. If Deadlock won't let you queue, turn these edits off."
       },
       "add": {
         "placeholder": "Search convars by name or label",
@@ -459,7 +676,7 @@
           "title": "Will apply",
           "alreadySet_one": "{{count}} more setting already matches your gameinfo.gi or the game's default.",
           "alreadySet_other": "{{count}} more settings already match your gameinfo.gi or the game's defaults.",
-          "editorHint": "Review every setting in the settings editor after import."
+          "editorHint": "Review every setting in Config settings after import."
         },
         "camera": {
           "title": "Camera & visibility (from the author)",
@@ -467,13 +684,13 @@
           "included": "Included"
         },
         "wontApply": {
-          "title": "Won't apply",
-          "blockedSince_one": "Deadlock stopped reading {{count}} setting from gameinfo.gi in build {{build}} ({{example}}).",
-          "blockedSince_other": "Deadlock stopped reading {{count}} settings from gameinfo.gi in build {{build}} (e.g. {{example}}).",
-          "blocked_one": "Deadlock doesn't read {{count}} setting from gameinfo.gi ({{example}}).",
-          "blocked_other": "Deadlock doesn't read {{count}} settings from gameinfo.gi (e.g. {{example}}).",
-          "removed_one": "{{count}} isn't in Deadlock's convar list ({{example}}).",
-          "removed_other": "{{count}} aren't in Deadlock's convar list (e.g. {{example}}).",
+          "title": "Won't take effect",
+          "blockedSince_one": "{{count}} setting is written, but Deadlock stopped reading it from gameinfo.gi in build {{build}} ({{example}}).",
+          "blockedSince_other": "{{count}} settings are written, but Deadlock stopped reading them from gameinfo.gi in build {{build}} (e.g. {{example}}).",
+          "blocked_one": "{{count}} setting is written, but Deadlock doesn't read it from gameinfo.gi ({{example}}).",
+          "blocked_other": "{{count}} settings are written, but Deadlock doesn't read them from gameinfo.gi (e.g. {{example}}).",
+          "removed_one": "{{count}} is written but isn't in Deadlock's convar list ({{example}}).",
+          "removed_other": "{{count}} are written but aren't in Deadlock's convar list (e.g. {{example}}).",
           "refused_one": "The mod manager won't write {{count}}: it's refused, turned off, or doesn't fit your file.",
           "refused_other": "The mod manager won't write {{count}}: they're refused, turned off, or don't fit your file."
         },
@@ -508,8 +725,9 @@
           }
         },
         "video": {
-          "title": "Recommended in-game settings",
-          "description": "The author also tunes Deadlock's Video menu. The mod manager never writes video.txt; set these in-game if you want them."
+          "title": "Video settings (video.txt)",
+          "description": "The author also ships a video.txt. It's written with the config exactly as they ship it, and your own file is saved first so you can restore it.",
+          "write": "Write to video.txt"
         },
         "notes": {
           "clamped": "the game uses {{value}}",
@@ -605,23 +823,25 @@
       "turnOff": "Turn off",
       "turnOffConfirm": {
         "title": "Turn off {{name}}?",
-        "body": "The mod manager removes the lines it added to gameinfo.gi and puts back the values they replaced. Your configs and tweaks stay saved."
+        "body": "The mod manager removes the lines it added to gameinfo.gi and puts back the values they replaced, in video.txt too. Your configs and tweaks stay saved."
       }
     },
     "activeStatus": {
       "label": "Active performance config",
+      "current": "Your current config",
       "active": "Active",
       "notWritten": "Not in gameinfo.gi",
-      "tweaks_one": "{{count}} tweak",
-      "tweaks_other": "{{count}} tweaks",
+      "videoInFile": "{{count}} in video.txt",
+      "tweaks_one": "{{count}} tweak by you",
+      "tweaks_other": "{{count}} tweaks by you",
       "inFile_one": "{{count}} setting in gameinfo.gi",
       "inFile_other": "{{count}} settings in gameinfo.gi",
       "settings_one": "{{count}} setting",
       "settings_other": "{{count}} settings",
-      "takesEffect": "Takes effect next time you start the game.",
       "editSettings": "Edit settings",
       "undo": "Undo last change",
-      "openInEditor": "Open in editor",
+      "undoShort": "Undo",
+      "openGameinfo": "Open gameinfo.gi",
       "openInEditorFailed": "Couldn't open gameinfo.gi",
       "none": "No performance config. Pick one below or import your own.",
       "noGamePath": "Set your Deadlock folder in Settings to use performance configs.",
@@ -656,7 +876,6 @@
       "gameinfoEditor": "Gameinfo Editor"
     },
     "configs": {
-      "meter": "Tier {{level}} of {{total}}",
       "apply": "Apply",
       "applyChanges": "Apply changes",
       "applied": "Applied",
@@ -667,10 +886,9 @@
       "yours": "Yours",
       "settingsCount_one": "{{count}} setting",
       "settingsCount_other": "{{count}} settings",
-      "unusedCount_one": "{{count}} unused",
-      "unusedCount_other": "{{count}} unused",
-      "unusedHint": "Settings the mod manager leaves out: Deadlock doesn't read them from gameinfo.gi, they aren't in its convar list, or they're console commands",
-      "suggestsVideoSettings": "Suggests video settings",
+      "unusedHint_one": "Plus {{count}} more that Deadlock ignores: it doesn't read it from gameinfo.gi, it isn't in the convar list, or it's a console command.",
+      "unusedHint_other": "Plus {{count}} more that Deadlock ignores: it doesn't read them from gameinfo.gi, they aren't in its convar list, or they're console commands.",
+      "suggestsVideoSettings": "Includes video settings",
       "downloads_one": "{{formatted}} download",
       "downloads_other": "{{formatted}} downloads",
       "updatedIn": "Updated {{month}}",
@@ -683,7 +901,6 @@
         "bundled": "Bundled",
         "gamebanana": "GameBanana"
       },
-      "sourceWithTime": "{{source}}, {{time}}",
       "catalogError": "Couldn't load the config catalog",
       "retry": "Retry",
       "scale": {
@@ -700,7 +917,7 @@
         "yours": "Yours"
       },
       "sortLabel": "Sort configs",
-      "sortPrefix": "Sort:",
+      "clearTier": "Show all tiers, not just {{tier}}",
       "sorts": {
         "downloads": "Most downloaded",
         "name": "Name",
@@ -758,10 +975,19 @@
         "currentValue_other": "Your current config: {{count}} settings"
       },
       "video": {
-        "title": "Recommended in-game settings",
+        "title": "Video settings (video.txt)",
         "notesTitle": "Notes from the author",
-        "description": "The author also tunes Deadlock's Video menu. The mod manager doesn't change these; set them in-game.",
-        "variantLabel": "Video settings variant"
+        "description": "The author's video.txt, written with this config exactly as they ship it, display settings included. Turn it off to keep your own.",
+        "descriptionOff": "Turned off: your video.txt keeps its own values.",
+        "write": "Write to video.txt",
+        "variantLabel": "Video settings variant",
+        "backup": "Your own video.txt from {{date}} is saved.",
+        "restore": "Restore it",
+        "adopt": "Make this my video.txt",
+        "adoptConfirm": {
+          "title": "Make this video.txt your own?",
+          "body": "Your video.txt as it is now, with {{name}}'s settings, replaces the copy saved on {{date}}. Restore and Turn off bring back this one instead, and {{name}} stops writing to video.txt. Apply another config with \"Write to video.txt\" off to keep these settings with it."
+        }
       },
       "view": {
         "title": "Camera & visibility (from the author)",
@@ -777,7 +1003,7 @@
         "description": "The author's config sets these. Turn any of them off here."
       },
       "notApplied": {
-        "title": "Not applied",
+        "title": "Left out or ignored",
         "view": "View"
       },
       "engine": {
@@ -795,8 +1021,8 @@
         "notSet": "not set"
       },
       "unread": {
-        "title_one": "{{count}} setting blocked or not a convar",
-        "title_other": "{{count}} settings blocked or not convars",
+        "title_one": "{{count}} setting written that Deadlock may ignore",
+        "title_other": "{{count}} settings written that Deadlock may ignore",
         "blocked_one": "{{count}} is ignored in gameinfo.gi",
         "blocked_other": "{{count}} are ignored in gameinfo.gi",
         "removed_one": "{{count}} isn't in Deadlock's convar list",
@@ -846,12 +1072,20 @@
       }
     },
     "history": {
-      "description": "Configs you applied or turned off, newest first.",
+      "description": "Configs you applied or turned off, and what happened to your video.txt, newest first.",
       "applied": "Applied {{name}}",
       "removed": "Turned off the performance config",
       "current": "Current",
       "applyAgain": "Apply again",
       "configDeleted": "The config was deleted, so it can't be applied again",
+      "videoCount": "{{count}} in video.txt",
+      "videoReverted": "Went back to the config's video settings",
+      "videoKept": "Kept your video settings",
+      "videoChange": "{{setting}}: {{config}} → {{yours}}",
+      "videoRestored": "Restored your own video.txt",
+      "videoAdopted": "Made the current video.txt your own",
+      "videoChanged_one": "{{count}} video setting changed in game",
+      "videoChanged_other": "{{count}} video settings changed in game",
       "emptyTitle": "No changes yet",
       "emptyDescription": "Configs you apply or turn off show up here, so you can go back to one."
     },
@@ -2632,6 +2866,10 @@
       "hidePart": "Hide in preview",
       "showPart": "Show in preview",
       "hiddenMeta": "Hidden in preview",
+      "removePart": "Remove from the game",
+      "restorePart": "Put back in the game",
+      "removedMeta": "Removed in game",
+      "removeFailed": "Couldn't update the removed sections",
       "resetPart": "Restore {{part}}'s original colors",
       "pendingPart": "Not painted yet",
       "effectsNote": "Ability effects are painted as one part.",
@@ -2731,6 +2969,7 @@
         "files": "Files"
       },
       "repainted": "Repainted",
+      "removedParts": "Removed sections",
       "replaced": "Replaced",
       "edited": "Edited",
       "undo": "Undo {{name}}",
@@ -3122,8 +3361,58 @@
       "deleted_other": "{{count}} mods deleted"
     },
     "compatibility": {
-      "review": "Review fixes",
-      "reviewDescription": "Some fixes need your approval before they apply. Your mod files are never changed.",
+      "done": "Done",
+      "sharedDetails": "Shared changes and game data",
+      "repairLabels": {
+        "animationSkeleton": "Animations",
+        "animationSkeletonRebased": "Animations",
+        "animationInterface": "Animations",
+        "animationClipTracks": "Animations",
+        "animationRigRebase": "Animations",
+        "cameraInterface": "Camera and aim",
+        "cameraControls": "Camera and aim",
+        "cameraAttachmentFrame": "Camera and aim",
+        "materialBindings": "Materials",
+        "modelRelocation": "Model location",
+        "taggedSounds": "Movement sounds",
+        "heroDevelopmentState": "Hero availability",
+        "inheritedDefinition": "Game data",
+        "retainedDependency": "Game data",
+        "currentReference": "Game references",
+        "enumMapEntry": "Game data",
+        "restoredGameData": "Game data",
+        "restoredGameText": "Game text"
+      },
+      "scanDetails": "Scan details",
+      "sharedFiles_one": "{{count}} shared file preserved",
+      "sharedFiles_other": "{{count}} shared files preserved",
+      "usingOriginalFiles": "Using original files",
+      "sharedChangesReady": "Game text and data changes ready to apply",
+      "copyFindings": "Copy findings",
+      "copyAllFindings": "Copy all findings",
+      "copied": "Copied",
+      "copyFailed": "Could not copy findings. Try again.",
+      "title": "Mod check",
+      "repairsTab": "Repairs",
+      "findingsTab": "Findings",
+      "repairsAvailable_one": "{{count}} repair available",
+      "repairsAvailable_other": "{{count}} repairs available",
+      "noRepairs": "No repairs needed for the checks completed.",
+      "findingsIntro": "Differences can be intentional. These findings do not prove a mod is broken.",
+      "details": "Details",
+      "checkCoverage": "Check coverage and limitations",
+      "resourceFindings_one": "{{count}} resource finding",
+      "resourceFindings_other": "{{count}} resource findings",
+      "layoutDifferences_one": "{{count}} layout finding",
+      "layoutDifferences_other": "{{count}} layout findings",
+      "uncheckedLayouts_one": "{{count}} layout couldn’t be checked",
+      "uncheckedLayouts_other": "{{count}} layouts couldn’t be checked",
+      "applyRepairs_one": "Apply {{count}} repair",
+      "applyRepairs_other": "Apply {{count}} repairs",
+      "repairDestination": "Repairs go into a separate compatibility package. Original mod files stay unchanged.",
+      "noFindings": "No additional findings from the checks completed.",
+      "review": "Check mod compatibility",
+      "reviewDescription": "Review mod compatibility, apply available repairs, and inspect findings.",
       "launchReviewDescription": "Launch is paused until you review these. Applying continues launch; closing cancels it.",
       "applyAndLaunch": "Apply fixes and launch",
       "closeGame": "Close Deadlock to apply fixes. You can still review the planned repairs.",
@@ -3452,7 +3741,7 @@
     "animationChecks": {
       "title": "Animation dependency checks",
       "scope": "Checks resource references, skeleton structure, and clip track counts before and after planned repairs. These checks do not verify playback, deformation, authored track order, or in-game behavior.",
-      "result": "Original: {{before}} · After repairs: {{after}} · Resources inspected: {{count}}",
+      "result": "Original: {{before}}. After repairs: {{after}}. Resources inspected: {{count}}",
       "status": {
         "verified": "Passed these checks",
         "unresolved": "Unresolved issues",
@@ -8151,6 +8440,9 @@
     "wipBadge": "WIP",
     "disclaimer": "This preview is very much a work in progress. It is limited and may not match everything you see in game, including models, materials, animations and effects.",
     "downloadFirstHint": "Download this mod to preview it here.",
+    "download": "Download for preview",
+    "chooseFile": "Choose a variant",
+    "downloadFailed": "The download could not be started. Try again.",
     "downloadBusy": "Download in progress. You can manage it in Downloads.",
     "animation": "Animation",
     "restPose": "Rest pose",
@@ -8176,9 +8468,9 @@
       "knockdown": "Knockdown"
     },
     "speed": "Playback speed",
-    "play": "Play animation",
-    "pause": "Pause animation",
-    "restart": "Restart animation",
+    "play": "Play preview",
+    "pause": "Pause preview",
+    "restart": "Restart preview",
     "returnToIdle": "Return to idle animation",
     "backgroundImage": "Background image",
     "chooseBackground": "Choose background image",
@@ -8189,6 +8481,45 @@
     "noAnimations": "No supported animation clips were found for this model.",
     "cloth": "Cloth physics",
     "particles": "Effects",
+    "effects": "Effects",
+    "effectPicker": "Preview effect",
+    "searchEffects": "Find an effect or ability…",
+    "automaticEffects": "Model and ability effects",
+    "loadingEffects": "Preparing effects…",
+    "effectsPreviewOnly": "Preview only. Effects and controls do not change your exported mod.",
+    "isolateEmitter": "Isolate emitter",
+    "allEmitters": "All emitters",
+    "effectMarkers": "Show attachments and control points",
+    "effectInputs": "Target and charge inputs",
+    "effectBindingsHint": "Select an effect to inspect its inputs. Control-point bindings vary by effect; these optional overrides are not game input mappings.",
+    "overrideInputs": "Override preview inputs",
+    "charge": "Charge",
+    "chargeControlPoint": "Charge control point",
+    "targetControlPoint": "Target control point",
+    "targetAxis": "Target {{axis}}",
+    "releaseEffect": "Release effect",
+    "effectDiagnostics_one": "{{count}} preview limitation",
+    "effectDiagnostics_other": "{{count}} preview limitations",
+    "particleIssues": {
+      "unsupported": "An authored operation is unsupported. Try isolating another emitter.",
+      "blocked": "This emitter needs unsupported geometry or inputs and is hidden.",
+      "approximation": "This part of the effect uses a preview approximation.",
+      "unsupported-input": "An authored input is unavailable. Use preview overrides to inspect it.",
+      "invalid-definition": "This effect definition could not be read. Try another effect.",
+      "system-limit": "The effect exceeds the preview budget; some emitters are hidden.",
+      "missing-texture": "A required texture could not be loaded. Check that the mod and game assets are available.",
+      "missing-attachment": "A model attachment is unavailable; this emitter is hidden."
+    },
+    "lighting": "Preview lighting",
+    "lightingStudio": "Studio",
+    "lightingNeutral": "Neutral",
+    "lightingDramatic": "Dramatic",
+    "lightIntensity": "Light intensity",
+    "bloomStrength": "Bloom strength",
+    "lightingPreviewOnly": "Lighting affects this preview and captures only. It is not exported.",
+    "materialEffectsLimited_one": "{{count}} material preview limitation",
+    "materialEffectsLimited_other": "{{count}} material preview limitations",
+    "materialEffectsHint": "Some animated material inputs could not be loaded. Check that the mod and game assets are available, then reopen the preview.",
     "effectsFailed": "Preview effects could not be loaded.",
     "effectsLimited": "Some effects are not fully supported in the preview.",
     "controls": {
@@ -8236,5 +8567,37 @@
       "outlines": "Outlines",
       "wireframe": "Wireframe"
     }
+  },
+  "modPreview": {
+    "generatedThumbnail": "Rendered preview of {{name}}",
+    "generatingThumbnail": "Preparing preview…",
+    "noThumbnail": "No rendered preview",
+    "partial": "Partial preview",
+    "copySupportDetails": "Copy details for support",
+    "detailsCopied": "Details copied",
+    "copyFailed": "Could not copy the details. Try again.",
+    "issues": {
+      "missingDependency": "A required asset was not found. Check the local game installation.",
+      "corruptOverride": "A mod override could not be read. Reimport the original mod file.",
+      "invalidGameAsset": "A game asset could not be read. Verify the game files in Steam.",
+      "unsupported": "This asset uses a format or material the preview cannot fully display.",
+      "changesNotShown": "The changes in this VPK are not visible in the character preview.",
+      "animation": "Animation could not be previewed; the available character remains visible.",
+      "effects": "Some cloth or effects could not be previewed."
+    },
+    "failures": {
+      "previewMissingAssets": "Required game assets are missing or unreadable. Check the game path and verify files in Steam.",
+      "previewCorruptArchive": "The VPK could not be read. Reimport the archive or verify the local game files.",
+      "previewCorruptOverride": "A required mod override could not be decoded. Reimport the original mod file.",
+      "previewUnsupported": "This model uses geometry or encoding the preview cannot display. This does not prove the mod is broken.",
+      "unavailable": "Preview is unavailable. Retry or check the local game path."
+    },
+    "unsupportedHint": "No unambiguous character model was found. Audio, mixed-hero and other content may have no character preview.",
+    "showStock": "Show stock",
+    "showMod": "Show mod",
+    "loadingStock": "Loading stock…",
+    "compareHint": "Compare the original game assets and this source mod with the same camera and playback. This does not change enabled mods.",
+    "noStock": "No matching stock model exists in the local game archives.",
+    "comparisonFailed": "Stock comparison is unavailable. The mod preview is still shown."
   }
 }

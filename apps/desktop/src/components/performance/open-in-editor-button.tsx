@@ -7,9 +7,10 @@ import { FileTextIcon } from "@phosphor-icons/react";
 import { useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 
-export const OpenInEditorButton = () => {
+/** Opens gameinfo.gi in the system's text editor. */
+const useOpenGameinfo = () => {
   const { t } = useTranslation();
-  const openMutation = useMutation({
+  return useMutation({
     mutationFn: openGameInfoEditor,
     meta: { skipGlobalErrorHandler: true },
     onError: (error) => {
@@ -19,7 +20,11 @@ export const OpenInEditorButton = () => {
       });
     },
   });
+};
 
+export const OpenInEditorButton = () => {
+  const { t } = useTranslation();
+  const openMutation = useOpenGameinfo();
   return (
     <Button
       icon={<FileTextIcon aria-hidden />}
@@ -27,7 +32,7 @@ export const OpenInEditorButton = () => {
       onClick={() => openMutation.mutate()}
       size='sm'
       variant='ghost'>
-      {t("performance.activeStatus.openInEditor")}
+      {t("performance.activeStatus.openGameinfo")}
     </Button>
   );
 };

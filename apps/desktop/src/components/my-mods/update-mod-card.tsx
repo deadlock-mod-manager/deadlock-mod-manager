@@ -108,90 +108,94 @@ export const UpdateModCard = ({
           </div>
         </div>
 
-        <UpdateChangelog
-          installedAt={installedAt}
-          remoteId={update.mod.remoteId}
-        />
-
-        {update.downloads.length > 1 && (
-          <div className='space-y-2'>
-            <div className='flex items-center justify-between'>
-              <label className='text-sm font-medium'>
-                {t("myMods.batchUpdate.selectVariant")}
-              </label>
-              <div className='flex items-center gap-2 text-muted-foreground text-sm'>
-                <HardDrive className='h-4 w-4' />
-                {formatSize(totalSize)}
-              </div>
-            </div>
-            <div className='flex gap-2'>
-              <Button size='sm' variant='outline' onClick={handleSelectAll}>
-                {t("downloads.selectAll")}
-              </Button>
-              <Button size='sm' variant='outline' onClick={handleKeepOne}>
-                {t("myMods.batchUpdate.keepOneFile")}
-              </Button>
-            </div>
-            <div className='space-y-2 max-h-40 overflow-y-auto'>
-              {sortedDownloads.map((download) => {
-                const isOnlySelected =
-                  selectedSet.has(download.name) && selectedSet.size === 1;
-                return (
-                  <label
-                    key={download.name}
-                    htmlFor={`download-${download.name}`}
-                    title={
-                      isOnlySelected
-                        ? t("myMods.batchUpdate.oneFileRequired")
-                        : undefined
-                    }
-                    className={`flex items-center space-x-3 rounded-lg border p-3 transition-colors hover:bg-muted/50 ${
-                      isOnlySelected
-                        ? "cursor-not-allowed opacity-50"
-                        : "cursor-pointer"
-                    }`}>
-                    <Checkbox
-                      id={`download-${download.name}`}
-                      checked={selectedSet.has(download.name)}
-                      disabled={isOnlySelected}
-                      onCheckedChange={(checked) =>
-                        handleFileToggle(download, !!checked)
-                      }
-                    />
-                    <div className='min-w-0 flex-1'>
-                      <span
-                        className='truncate font-medium text-foreground'
-                        title={download.name}>
-                        {download.name}
-                      </span>
-                      <span className='text-muted-foreground text-sm ml-2'>
-                        {formatSize(download.size)}
-                      </span>
-                    </div>
-                    {download.isArchived && (
-                      <Badge
-                        variant='outline'
-                        className='text-muted-foreground'
-                        title={t("myMods.batchUpdate.outdatedDescription")}>
-                        {t("myMods.batchUpdate.outdated")}
-                      </Badge>
-                    )}
-                  </label>
-                );
-              })}
-            </div>
-            {selectedSet.size === 1 && (
-              <p className='text-muted-foreground text-xs'>
-                {t("myMods.batchUpdate.oneFileRequired")}
-              </p>
-            )}
-            {selectedSet.size === 0 && (
-              <p className='text-foreground text-xs'>
-                {t("myMods.batchUpdate.chooseFiles")}
-              </p>
-            )}
-          </div>
+        {!update.mod.source && (
+          <UpdateChangelog
+            installedAt={installedAt}
+            remoteId={update.mod.remoteId}
+          />
         )}
+
+        {(update.downloads.length > 1 ||
+          (!!update.mod.source && update.selectedDownloads.length === 0)) &&
+          update.nativeInstallation?.mode !== "components" && (
+            <div className='space-y-2'>
+              <div className='flex items-center justify-between'>
+                <label className='text-sm font-medium'>
+                  {t("myMods.batchUpdate.selectVariant")}
+                </label>
+                <div className='flex items-center gap-2 text-muted-foreground text-sm'>
+                  <HardDrive className='h-4 w-4' />
+                  {formatSize(totalSize)}
+                </div>
+              </div>
+              <div className='flex gap-2'>
+                <Button size='sm' variant='outline' onClick={handleSelectAll}>
+                  {t("downloads.selectAll")}
+                </Button>
+                <Button size='sm' variant='outline' onClick={handleKeepOne}>
+                  {t("myMods.batchUpdate.keepOneFile")}
+                </Button>
+              </div>
+              <div className='space-y-2 max-h-40 overflow-y-auto'>
+                {sortedDownloads.map((download) => {
+                  const isOnlySelected =
+                    selectedSet.has(download.name) && selectedSet.size === 1;
+                  return (
+                    <label
+                      key={download.name}
+                      htmlFor={`download-${download.name}`}
+                      title={
+                        isOnlySelected
+                          ? t("myMods.batchUpdate.oneFileRequired")
+                          : undefined
+                      }
+                      className={`flex items-center space-x-3 rounded-lg border p-3 transition-colors hover:bg-muted/50 ${
+                        isOnlySelected
+                          ? "cursor-not-allowed opacity-50"
+                          : "cursor-pointer"
+                      }`}>
+                      <Checkbox
+                        id={`download-${download.name}`}
+                        checked={selectedSet.has(download.name)}
+                        disabled={isOnlySelected}
+                        onCheckedChange={(checked) =>
+                          handleFileToggle(download, !!checked)
+                        }
+                      />
+                      <div className='min-w-0 flex-1'>
+                        <span
+                          className='truncate font-medium text-foreground'
+                          title={download.name}>
+                          {download.name}
+                        </span>
+                        <span className='text-muted-foreground text-sm ml-2'>
+                          {formatSize(download.size)}
+                        </span>
+                      </div>
+                      {download.isArchived && (
+                        <Badge
+                          variant='outline'
+                          className='text-muted-foreground'
+                          title={t("myMods.batchUpdate.outdatedDescription")}>
+                          {t("myMods.batchUpdate.outdated")}
+                        </Badge>
+                      )}
+                    </label>
+                  );
+                })}
+              </div>
+              {selectedSet.size === 1 && (
+                <p className='text-muted-foreground text-xs'>
+                  {t("myMods.batchUpdate.oneFileRequired")}
+                </p>
+              )}
+              {selectedSet.size === 0 && (
+                <p className='text-foreground text-xs'>
+                  {t("myMods.batchUpdate.chooseFiles")}
+                </p>
+              )}
+            </div>
+          )}
       </div>
     </div>
   );

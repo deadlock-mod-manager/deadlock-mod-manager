@@ -104,6 +104,30 @@ beforeEach(() => {
 });
 
 describe("addLocalMod", () => {
+  it("updates installed source provenance only in the captured profile", () => {
+    const source: NonNullable<LocalMod["source"]> = {
+      sourceKey: "accepted",
+      sourceId: "example",
+      sourceName: "Example",
+      acceptedOrigin: "https://example.org",
+      descriptorUrl: "https://example.org/source.json",
+      listingId: "42",
+      releaseId: "release",
+      contentRevision: "2",
+      artifactIds: ["pack"],
+      componentIds: ["blue"],
+      iconUrl: null,
+    };
+    const active = store.getState().localMods;
+    const before = store.getState().profiles.secondary.mods[0];
+    store.getState().setModSource("1", source, createProfileId("secondary"));
+    expect(store.getState().localMods).toBe(active);
+    expect(store.getState().profiles.default.mods[0]?.source).toBeUndefined();
+    expect(store.getState().profiles.secondary.mods[0]).toEqual({
+      ...before,
+      source,
+    });
+  });
   it("keeps existing named mods unchanged when the same remote mod is added", () => {
     const before = store.getState().profiles.default.mods;
     store.getState().addLocalMod({

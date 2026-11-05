@@ -37,6 +37,8 @@ type ImportReviewProps = {
   onCameraIncludedChange: (included: boolean) => void;
   includeEngineSections: boolean;
   onIncludeEngineSectionsChange: (include: boolean) => void;
+  writeVideo: boolean;
+  onWriteVideoChange: (write: boolean) => void;
 };
 
 export const ImportReview = ({
@@ -46,6 +48,8 @@ export const ImportReview = ({
   onCameraIncludedChange,
   includeEngineSections,
   onIncludeEngineSectionsChange,
+  writeVideo,
+  onWriteVideoChange,
 }: ImportReviewProps) => {
   const { t } = useTranslation();
   const groups = groupReviewEntries(resolved.entries);
@@ -254,6 +258,15 @@ export const ImportReview = ({
 
       {report.videoSettings.length > 0 && (
         <ReviewSection
+          action={
+            <label className='flex items-center gap-2 text-muted-foreground text-xs'>
+              <Switch
+                checked={writeVideo}
+                onCheckedChange={onWriteVideoChange}
+              />
+              {t("performance.import.review.video.write")}
+            </label>
+          }
           count={report.videoSettings.length}
           icon={
             <MonitorIcon

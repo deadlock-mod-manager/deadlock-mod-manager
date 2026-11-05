@@ -12,9 +12,21 @@ export const canCheckModUpdates = (mod: LocalMod) =>
 export const isModUpdateSkipped = (
   update: ModUpdate,
   localMod: LocalMod | undefined,
-) =>
-  localMod?.skippedUpdateAt !== undefined &&
-  update.updatedAt <= localMod.skippedUpdateAt;
+) => {
+  if (update.mod.source) {
+    return (
+      localMod?.skippedSourceRevision ===
+      JSON.stringify([
+        update.mod.source.releaseId,
+        update.mod.source.contentRevision,
+      ])
+    );
+  }
+  return (
+    localMod?.skippedUpdateAt !== undefined &&
+    update.updatedAt <= localMod.skippedUpdateAt
+  );
+};
 
 export const availableModUpdates = (
   updates: ModUpdate[],

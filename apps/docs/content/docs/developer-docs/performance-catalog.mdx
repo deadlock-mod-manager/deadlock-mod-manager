@@ -62,9 +62,9 @@ Upstream configs are whole `gameinfo.gi` files. The catalog stores what the auth
 2. **Diff against it.** Keep ConVars that are new or differ, section scalars that are new or differ, and section keys the author commented out (value `null`). Values compare normalized: `true`/`1`, `false`/`0`, canonical numbers. A key that is only missing is never a deletion.
 3. **Drop what the app never writes.** FileSystem (including SearchPaths), list sections (`MaterialSystem2/RenderModes`) and root keys (`PGIVersion`, `DisallowGameInfoConditionals`). If a preset edits any other list section, or a section stock doesn't have, the run fails.
 
-Blocked and removed convars stay in a preset's entries so the app can show them as not applying.
+Blocked and removed convars stay in a preset's entries. The app writes them as the author set them and shows them as ones Deadlock may ignore.
 
-Some upstream authors ship a `video.txt`. The catalog keeps only the keys the in-game video menu exposes, with the menu's wording (`curated/video.ts`), and the app shows them as a checklist. It never writes `video.txt`. When an author ships several (OptiLock Ultra Potato has Shadows and No Shadows), each becomes a variant in `videoVariants` and the app lets the user switch between them; `videoSettings` holds the first, which is what older app versions show.
+Some upstream authors ship a `video.txt`. The catalog keeps every `setting.*` key, menu options first with the menu's wording (`curated/video.ts`), and the app writes them to the player's `video.txt` when the config is applied, unless the player turns that off. When an author ships several (OptiLock Ultra Potato has Shadows and No Shadows), each becomes a variant in `videoVariants` and the app lets the user switch between them; `videoSettings` holds the first, which is what older app versions show.
 
 ## Rules
 

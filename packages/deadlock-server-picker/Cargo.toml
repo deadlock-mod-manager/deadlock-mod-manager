@@ -1,0 +1,36 @@
+[package]
+name = "deadlock-server-picker"
+version = "0.1.0"
+edition = "2024"
+description = "Deadlock relay catalog, latency measurements, and owned firewall restrictions"
+license = "GPL-3.0"
+repository = "https://github.com/deadlock-mod-manager/deadlock-mod-manager"
+
+[dependencies]
+futures = "0.3"
+reqwest = { version = "0.12", features = ["json", "stream"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2.0.18"
+tokio = { version = "1.50.0", features = ["macros", "rt-multi-thread", "sync", "time", "net", "io-util", "process"] }
+tokio-util = "0.7"
+ts-rs = { version = "11.1.0", features = ["serde-compat"] }
+tempfile = "3.27.0"
+uuid = { version = "1", features = ["v4"] }
+
+[target.'cfg(windows)'.dependencies]
+windows = { version = "0.58", features = [
+  "Win32_NetworkManagement_WindowsFirewall",
+  "Win32_NetworkManagement_IpHelper",
+  "Win32_Networking_WinSock",
+  "Win32_System_Com",
+  "Win32_System_Ole",
+  "Win32_System_Variant",
+  "Win32_UI_Shell",
+  "Win32_UI_WindowsAndMessaging",
+  "Win32_System_Threading",
+  # ShellExecuteExW (elevated helper launch) is gated behind this feature.
+  "Win32_System_Registry",
+  "Win32_Security",
+  "Win32_Foundation",
+] }

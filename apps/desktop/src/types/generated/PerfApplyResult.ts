@@ -2,6 +2,7 @@
 import type { ForeignOverlay } from "./ForeignOverlay";
 import type { PerfStatus } from "./PerfStatus";
 import type { ResolvedConfig } from "./ResolvedConfig";
+import type { VideoOutcome } from "./VideoOutcome";
 
 export type PerfApplyResult = {
   status: PerfStatus;
@@ -10,4 +11,5 @@ export type PerfApplyResult = {
    * Foreign overlays that were removed because the request asked for it.
    */
   removedForeign: Array<ForeignOverlay>;
+  video: VideoOutcome;
 };

@@ -105,6 +105,7 @@ import {
   networkDiagnosticsRoutes,
   prepareNetworkDiagnosticsWorld,
 } from "./network-diagnostics-fixtures";
+import { preparePerformanceWorld } from "./performance-fixtures";
 
 import {
   reliabilityRoutes,
@@ -392,6 +393,13 @@ const stats: Definition = {
   routes: statsDashboardRoutes,
   prepare: prepareStatsDashboardWorld,
   verifyNetwork: assertStatsDashboardNetwork,
+};
+const performance: Definition = {
+  ...defaults,
+  family: "performance",
+  spec: "performance-video",
+  phases: ["video"],
+  prepare: preparePerformanceWorld,
 };
 const onboarding: Definition = {
   ...defaults,
@@ -1013,6 +1021,14 @@ export const scenarios = {
     spec: "stats-broken-endpoints",
     phases: ["broken"],
   },
+  "perf-video-apply-restore": performance,
+  "perf-video-changed-in-game": performance,
+  "perf-video-adopt": performance,
+  "perf-video-variant": performance,
+  "perf-gameinfo-resync": { ...performance, spec: "performance-configs" },
+  "perf-gameinfo-launch": { ...performance, spec: "performance-configs" },
+  "perf-editor-undo": { ...performance, spec: "performance-configs" },
+  "perf-import-paste": { ...performance, spec: "performance-configs" },
   "network-diagnostics": networkDiagnostics,
   "network-diagnostics-internet-down": {
     ...networkDiagnostics,

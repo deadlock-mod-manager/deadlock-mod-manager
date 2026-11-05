@@ -25,5 +25,6 @@ export * from "./schemas/profile.schemas";
 export * from "./schemas/profile-backup.schemas";
 export * from "./schemas/report.schemas";
 export * from "./schemas/server-browser.schemas";
+export * from "./taxonomy";
 export * from "./types/crosshair";
 export * from "./types/mod-metadata";

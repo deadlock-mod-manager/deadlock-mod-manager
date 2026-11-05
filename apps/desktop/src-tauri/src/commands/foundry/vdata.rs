@@ -40,7 +40,7 @@ type HeroModels = HashMap<String, String>;
 
 /// Identity of the pak a table was read from, so a game update is picked up
 /// rather than served from a stale parse. Mirrors `archive_cache`'s keying.
-type TableKey = (PathBuf, u64, u128);
+type TableKey = (PathBuf, u64, u128, Option<String>);
 
 /// One slot per table is enough: there is only ever one base pak to read.
 pub(super) type TableCache<T> = OnceLock<Mutex<Option<(TableKey, Arc<T>)>>>;
@@ -53,7 +53,12 @@ fn key_for(path: &Path) -> Result<TableKey, Error> {
     .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok())
     .map(|since| since.as_nanos())
     .unwrap_or_default();
-  Ok((path.to_path_buf(), metadata.len(), modified_nanos))
+  Ok((
+    path.to_path_buf(),
+    metadata.len(),
+    modified_nanos,
+    std::fs::read_to_string(path.with_extension("stamp")).ok(),
+  ))
 }
 
 fn as_str(value: Option<&KvValue>) -> Option<&str> {
@@ -207,50 +212,37 @@ fn fallback_score(path: &str) -> i32 {
   score
 }
 
-/// The model the preview should open on, and that an export is named after.
-///
-/// Three tiers, in descending order of how much they know:
-/// 1. the entry `heroes.vdata_c` names for this hero, if the skin ships it —
-///    skins normally override the game's canonical path in place, so this is
-///    the common case and it is authoritative rather than a guess;
-/// 2. the same file name somewhere else in the skin, for a skin that relocated
-///    the model instead of overriding it;
-/// 3. a scored guess, which at least keeps a weapon out of the slot.
+fn body_model_path(canonical: String, models: &[FoundryEntry]) -> String {
+  let wanted = canonical.to_ascii_lowercase();
+  if let Some(entry) = models
+    .iter()
+    .find(|entry| entry.path.to_ascii_lowercase() == wanted)
+  {
+    return entry.path.clone();
+  }
+
+  let wanted_name = file_name_of(&wanted).to_string();
+  if let Some(entry) = models
+    .iter()
+    .find(|entry| file_name_of(&entry.path.to_ascii_lowercase()) == wanted_name)
+  {
+    return entry.path.clone();
+  }
+
+  // An ability or accessory can ship whole .vmdl files too. The hero table
+  // supplies the body for those partial mods; guessing from those files can
+  // open a shield, summon or effect instead of the character.
+  canonical
+}
+
+/// Prefer the hero table's body, including a relocated body supplied by a mod.
+/// Only guess among models when the local game cannot identify a canonical body.
 pub(crate) fn primary_model_path(
   hero_name: Option<&str>,
   models: &[FoundryEntry],
 ) -> Option<String> {
-  if models.is_empty() {
-    return None;
-  }
-
   if let Some(canonical) = hero_name.and_then(canonical_model_entry) {
-    let wanted = canonical.to_ascii_lowercase();
-    if let Some(entry) = models
-      .iter()
-      .find(|entry| entry.path.to_ascii_lowercase() == wanted)
-    {
-      return Some(entry.path.clone());
-    }
-
-    let wanted_name = file_name_of(&wanted).to_string();
-    if let Some(entry) = models
-      .iter()
-      .find(|entry| file_name_of(&entry.path.to_ascii_lowercase()) == wanted_name)
-    {
-      log::info!(
-        "[Foundry] {} ships {} under a different path: {}",
-        hero_name.unwrap_or("?"),
-        wanted_name,
-        entry.path,
-      );
-      return Some(entry.path.clone());
-    }
-
-    log::info!(
-      "[Foundry] {} does not ship its own body model ({canonical}); falling back",
-      hero_name.unwrap_or("?"),
-    );
+    return Some(body_model_path(canonical, models));
   }
 
   models
@@ -303,7 +295,31 @@ mod tests {
 
   #[test]
   fn nothing_to_pick_from_stays_none() {
-    assert_eq!(primary_model_path(Some("Calico"), &[]), None);
+    assert_eq!(primary_model_path(None, &[]), None);
+  }
+
+  #[test]
+  fn accessory_and_ability_models_use_the_canonical_character() {
+    let canonical = "models/heroes_wip/bookworm/bookworm.vmdl_c";
+    let models = [
+      model("models/heroes_wip/bookworm/bookworm_dragon_fullbody.vmdl_c"),
+      model("models/heroes_wip/bookworm/bookworm_shield.vmdl_c"),
+      model("models/abilities/text_a_model_fx.vmdl_c"),
+    ];
+    assert_eq!(body_model_path(canonical.into(), &models), canonical);
+    assert_eq!(body_model_path(canonical.into(), &[]), canonical);
+  }
+
+  #[test]
+  fn a_relocated_custom_body_keeps_its_mod_path() {
+    let relocated = "models/custom/hero/bookworm.vmdl_c";
+    assert_eq!(
+      body_model_path(
+        "models/heroes_wip/bookworm/bookworm.vmdl_c".into(),
+        &[model(relocated)],
+      ),
+      relocated,
+    );
   }
 
   #[test]

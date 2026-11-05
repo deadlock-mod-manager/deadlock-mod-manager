@@ -2,11 +2,14 @@ use std::collections::HashMap;
 use std::fs;
 use std::io::{Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use vpk_parser::VpkParser;
 
 use crate::error::{Result, Source2Error};
+use crate::preview_report::{
+    PreviewDependency, PreviewEvidence, PreviewIssue, PreviewIssueKind, PreviewReport,
+};
 
 const VPK_SIGNATURE: u32 = 0x55aa1234;
 
@@ -64,6 +67,7 @@ pub struct VpkArchive {
     /// original.
     overlay_dir: Option<PathBuf>,
     fallbacks: Vec<Arc<VpkArchive>>,
+    evidence: Option<Mutex<PreviewEvidence>>,
 }
 
 impl VpkArchive {
@@ -123,6 +127,7 @@ impl VpkArchive {
             entry_index,
             overlay_dir: None,
             fallbacks: Vec::new(),
+            evidence: None,
         })
     }
 
@@ -140,14 +145,7 @@ impl VpkArchive {
     /// normalized, but a `..` is rejected rather than trusted.
     fn overlay_path(&self, entry_path: &str) -> Option<PathBuf> {
         let overlay_dir = self.overlay_dir.as_ref()?;
-        let normalized = entry_path.replace('\\', "/");
-        if normalized
-            .split('/')
-            .any(|part| part == ".." || part.is_empty())
-        {
-            return None;
-        }
-        let path = overlay_dir.join(normalized);
+        let path = overlay_dir.join(sanitize_relative(entry_path)?);
         path.is_file().then_some(path)
     }
 
@@ -155,6 +153,79 @@ impl VpkArchive {
     pub fn with_fallbacks(mut self, fallbacks: Vec<Arc<VpkArchive>>) -> Self {
         self.fallbacks = fallbacks;
         self
+    }
+
+    /// Enable evidence only for this request; shared cached base archives remain immutable.
+    pub fn with_preview_report(mut self) -> Self {
+        self.evidence = Some(Mutex::new(PreviewEvidence::default()));
+        self
+    }
+
+    pub fn preview_report(&self) -> PreviewReport {
+        crate::preview_report::snapshot(&self.evidence)
+    }
+
+    /// Return the actual byte source without reading it. A present corrupt override still wins.
+    pub fn entry_source(&self, entry_path: &str) -> Option<PreviewDependency> {
+        let key = entry_path.replace('\\', "/").to_ascii_lowercase();
+        let overlay = self.overlay_path(entry_path).is_some();
+        if overlay || self.entry_index.contains_key(&key) {
+            return Some(PreviewDependency {
+                path: key,
+                archive: self.path.to_string_lossy().into_owned(),
+                overlay,
+            });
+        }
+        self.fallback_for(entry_path)?.entry_source(entry_path)
+    }
+
+    pub fn record_preview_issue(
+        &self,
+        path: &str,
+        kind: PreviewIssueKind,
+        detail: impl Into<String>,
+    ) {
+        if let Some(evidence) = &self.evidence {
+            evidence
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .issue(PreviewIssue {
+                    path: path.to_string(),
+                    kind,
+                    detail: detail.into(),
+                });
+        }
+    }
+
+    pub fn record_preview_error(&self, path: &str, error: &Source2Error) {
+        let kind = match error {
+            Source2Error::EntryNotFound(_) => PreviewIssueKind::MissingDependency,
+            Source2Error::UnsupportedFormat(_) => PreviewIssueKind::Unsupported,
+            _ => match self.entry_source(path) {
+                Some(source) if source.overlay || source.archive == self.path.to_string_lossy() => {
+                    PreviewIssueKind::CorruptOverride
+                }
+                _ => PreviewIssueKind::InvalidGameAsset,
+            },
+        };
+        self.record_preview_issue(path, kind, error.to_string());
+    }
+
+    fn record_read(&self, path: &str, result: &Result<Vec<u8>>) {
+        if self.evidence.is_none() {
+            return;
+        }
+        if let Some(source) = self.entry_source(path)
+            && let Some(evidence) = &self.evidence
+        {
+            evidence
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .dependency(source);
+        }
+        if let Err(error) = result {
+            self.record_preview_error(path, error);
+        }
     }
 
     pub fn list_entries(&self) -> Vec<String> {
@@ -189,6 +260,12 @@ impl VpkArchive {
     }
 
     pub fn extract_entry(&self, entry_path: &str) -> Result<Vec<u8>> {
+        let result = self.extract_entry_inner(entry_path);
+        self.record_read(entry_path, &result);
+        result
+    }
+
+    fn extract_entry_inner(&self, entry_path: &str) -> Result<Vec<u8>> {
         if let Some(overlay) = self.overlay_path(entry_path) {
             return Ok(fs::read(overlay)?);
         }
@@ -208,6 +285,12 @@ impl VpkArchive {
 
     /// Reject oversized preview assets before allocating their archive payload.
     pub fn extract_entry_limited(&self, entry_path: &str, max_bytes: usize) -> Result<Vec<u8>> {
+        let result = self.extract_entry_limited_inner(entry_path, max_bytes);
+        self.record_read(entry_path, &result);
+        result
+    }
+
+    fn extract_entry_limited_inner(&self, entry_path: &str, max_bytes: usize) -> Result<Vec<u8>> {
         let too_large =
             || Source2Error::Vpk(format!("entry exceeds preview byte limit: {entry_path}"));
         if let Some(overlay) = self.overlay_path(entry_path) {

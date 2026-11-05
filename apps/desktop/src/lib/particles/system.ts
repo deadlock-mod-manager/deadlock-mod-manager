@@ -1,4 +1,5 @@
 import { type InputContext, hash01 } from "./inputs";
+import type { JsonObject } from "./json";
 import {
   FIELD,
   VECTOR_FIELDS,
@@ -11,6 +12,12 @@ import {
 export class ParticleSystem {
   readonly spec: CompiledSystem;
   readonly controlPoints: ControlPoint[];
+  /** Direct children's registries, used only by authored child-CP operators. */
+  readonly childControlPoints: ControlPoint[][] = [];
+  released = false;
+  private releaseAge = 0;
+  private seed = 0;
+  private readonly autoReplay: boolean;
   count = 0;
   age = 0;
   private emitCarry = 0;
@@ -26,11 +33,18 @@ export class ParticleSystem {
   readonly context: InputContext;
   private current = 0;
   private serial = 0;
+  private readonly emitted = new Set<JsonObject>();
 
-  constructor(spec: CompiledSystem, controlPoints: ControlPoint[]) {
+  constructor(
+    spec: CompiledSystem,
+    controlPoints: ControlPoint[],
+    options: { autoReplay?: boolean; seed?: number } = {},
+  ) {
     this.spec = spec;
     this.controlPoints = controlPoints;
-    this.capacity = Math.min(Math.max(spec.maxParticles, 1), MAX_PARTICLES);
+    this.autoReplay = options.autoReplay ?? true;
+    this.seed = options.seed ?? 0;
+    this.capacity = Math.min(Math.max(spec.maxParticles, 0), MAX_PARTICLES);
     this.velocity = new Float32Array(this.capacity * 3);
     this.seeds = new Float32Array(this.capacity);
     const point: [number, number, number] = [0, 0, 0];
@@ -76,6 +90,29 @@ export class ParticleSystem {
     return this.serial;
   }
 
+  get ending() {
+    return this.released || this.spec.lifecycle.endCap;
+  }
+
+  /** End-cap emitters use a release-relative clock without resetting particle ages. */
+  get endingAge() {
+    return this.released ? this.age - this.releaseAge : this.age;
+  }
+
+  release() {
+    if (this.released) return;
+    this.released = true;
+    this.releaseAge = this.age;
+    this.emitCarry = 0;
+  }
+
+  /** A compiled instantaneous emitter fires once per instance, including time zero. */
+  emitOnce(emitter: JsonObject) {
+    if (this.emitted.has(emitter)) return false;
+    this.emitted.add(emitter);
+    return true;
+  }
+
   /** Live particle indices from oldest to newest, ties in index order. */
   byAge(out: number[]) {
     const created = this.scalar(FIELD.creationTime);
@@ -113,7 +150,8 @@ export class ParticleSystem {
     const context = this.context;
     context.index = 0;
     context.count = this.count;
-    context.seed = 0.5;
+    context.seed =
+      this.seed === 0 ? 0.5 : hash01(this.seed, this.spec.maxParticles);
     context.age = this.age;
     context.lifetime = 1;
     context.collectionAge = this.age;
@@ -125,7 +163,7 @@ export class ParticleSystem {
     const index = this.count;
     this.count += 1;
     this.serial += 1;
-    this.seeds[index] = hash01(this.serial, this.spec.maxParticles);
+    this.seeds[index] = hash01(this.serial + this.seed, this.spec.maxParticles);
     const { spec } = this;
     for (const values of this.scalars.values()) values[index] = 0;
     for (const values of this.vectors.values())
@@ -137,6 +175,7 @@ export class ParticleSystem {
     this.scalar(FIELD.alpha)[index] = spec.constantColor[3];
     this.scalar(FIELD.alpha2)[index] = 1;
     this.scalar(FIELD.sequence)[index] = spec.constantSequence;
+    this.scalar(FIELD.trailLength)[index] = spec.constantTrailLength;
     this.scalar(FIELD.creationTime)[index] = this.age;
     const color = this.vector(FIELD.color);
     color.set(spec.constantColor.slice(0, 3), index * 3);
@@ -184,9 +223,15 @@ export class ParticleSystem {
     this.count = last;
   }
 
-  update(delta: number) {
+  update(delta: number, activation = false) {
     const { spec } = this;
-    if (spec.blockedBy || !Number.isFinite(delta) || delta <= 0) return;
+    if (
+      spec.blockedBy ||
+      !Number.isFinite(delta) ||
+      delta < 0 ||
+      (delta === 0 && !activation)
+    )
+      return;
     const previousAge = this.age;
     this.age += delta;
     let emitted = 0;
@@ -211,6 +256,8 @@ export class ParticleSystem {
     // One-shot effects replay so a looping preview keeps showing them.
     if (
       !spec.continuous &&
+      this.autoReplay &&
+      !this.released &&
       this.hasEmitted &&
       this.count === 0 &&
       this.age >= spec.lastEmissionTime &&
@@ -226,7 +273,8 @@ export class ParticleSystem {
     this.scalar(FIELD.lifetime)[index] = -1;
   }
 
-  reset() {
+  reset(seed = this.seed) {
+    this.seed = seed;
     this.restart();
     this.serial = 0;
     for (const values of this.scalars.values()) values.fill(0);
@@ -240,5 +288,8 @@ export class ParticleSystem {
     this.emitCarry = 0;
     this.restartTimer = 0;
     this.hasEmitted = false;
+    this.emitted.clear();
+    this.released = false;
+    this.releaseAge = 0;
   }
 }
