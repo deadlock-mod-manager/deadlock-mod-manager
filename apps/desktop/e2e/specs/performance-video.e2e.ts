@@ -6,6 +6,7 @@ import { closeApplication } from "../support/application-exit";
 import { step } from "../support/evidence";
 import { observeUntil } from "../support/observations";
 import {
+  applyChanges,
   applyPreset,
   confirmDialog,
   exists,
@@ -144,12 +145,6 @@ describe("performance configs and video.txt", () => {
         (text) => text === PLAYER_VIDEO,
       );
     } else if (runtime.caseId === "perf-video-variant") {
-      const applyChanges = async () => {
-        const apply = await $("button=Apply changes");
-        await reveal(apply);
-        await apply.click();
-        await expect(apply).not.toBeDisplayed();
-      };
       await applyPreset(VARIANT_PRESET);
       await holds(
         await presetVideo(VARIANT_PRESET, "Shadows"),
