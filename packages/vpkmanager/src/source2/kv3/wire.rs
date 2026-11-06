@@ -822,7 +822,15 @@ pub fn encode_preserving_v5(
                     let sub_flag = nodes[0].flag;
                     if nodes.iter().all(|n| n.tag == sub && n.flag == sub_flag) {
                         return Node {
-                            tag: e.datatype,
+                            tag: if matches!(
+                                e.datatype,
+                                node::ARRAY_TYPE_BYTE_LENGTH | node::ARRAY_TYPE_AUXILIARY_BUFFER
+                            ) && nodes.len() > usize::from(u8::MAX)
+                            {
+                                node::ARRAY_TYPED
+                            } else {
+                                e.datatype
+                            },
                             flag,
                             val: Val::Typed {
                                 sub,
@@ -849,4 +857,44 @@ pub fn encode_preserving_v5(
         strings: Vec::new(),
         root: from_encoding(value, Some(encoding)),
     })
+}
+
+#[cfg(test)]
+mod growth_tests {
+    use super::*;
+
+    #[test]
+    fn native_byte_length_arrays_grow_past_255_entries_without_changing_values() {
+        for tag in [
+            node::ARRAY_TYPE_BYTE_LENGTH,
+            node::ARRAY_TYPE_AUXILIARY_BUFFER,
+        ] {
+            let original = Value::Object(vec![(
+                "remapping".into(),
+                Value::Array(vec![Value::UInt(0); 255]),
+            )]);
+            let format = Format([0; 16]);
+            let bytes = super::super::encode(&original, &format);
+            let (_, mut encoding) = super::super::decode_preserving(&bytes).unwrap();
+            encoding.get_mut("remapping").unwrap().datatype = tag;
+            let bytes = encode_preserving_v5(&original, &encoding, &format).unwrap();
+            let (mut grown, mut encoding) = super::super::decode_preserving(&bytes).unwrap();
+            let Some(Value::Array(values)) = grown.get_mut("remapping") else {
+                panic!("array");
+            };
+            values.push(Value::UInt(0));
+            let entry = encoding.get_mut("remapping").unwrap();
+            let super::super::EncodingChildren::Array(children) = &mut entry.children else {
+                panic!("array encoding");
+            };
+            children.push(children[0].clone());
+            let bytes = encode_preserving_v5(&grown, &encoding, &format).unwrap();
+            let (decoded, encoding) = super::super::decode_preserving(&bytes).unwrap();
+            assert_eq!(decoded, grown);
+            assert_eq!(
+                encoding.get("remapping").unwrap().datatype,
+                node::ARRAY_TYPED
+            );
+        }
+    }
 }

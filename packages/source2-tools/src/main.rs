@@ -9,7 +9,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             if !report.compatible { std::process::exit(2); }
         }
         [command, root, game] if command == "prepare-installation" => {
-            let report = source2_tools::prepare_installation(Path::new(root), Path::new(game))?;
+            let report = source2_tools::prepare_installation(Path::new(root), Path::new(game), |_| {})?;
             println!("{}", serde_json::to_string_pretty(&report)?);
         }
 

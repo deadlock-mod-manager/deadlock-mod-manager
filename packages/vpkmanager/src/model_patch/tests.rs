@@ -28,6 +28,7 @@ fn fixture(bone_count: usize) -> Vec<u8> {
     let mesh = |block| {
         object(&[
             ("m_nDataBlock", number(block)),
+            ("m_nMeshIndex", number(block - 3)),
             ("m_vertexBuffers", Value::Array(vec![buffer.clone()])),
             ("m_indexBuffers", Value::Array(vec![buffer.clone()])),
         ])
@@ -68,9 +69,53 @@ fn fixture(bone_count: usize) -> Vec<u8> {
         ("m_sceneObjects", Value::Array(vec![scene])),
         ("m_skeleton", object(&[("m_bones", Value::Array(bones))])),
     ]));
+    let model_data = encoded(&object(&[
+        (
+            "m_refLODGroupMasks",
+            Value::Array(vec![number(1), number(2 | 4 | 8)]),
+        ),
+        (
+            "m_refMeshGroupMasks",
+            Value::Array(vec![number(1), number(1)]),
+        ),
+        (
+            "m_remappingTableStarts",
+            Value::Array(vec![number(0), number(bone_count)]),
+        ),
+        (
+            "m_remappingTable",
+            Value::Array((0..bone_count).chain(0..bone_count).map(number).collect()),
+        ),
+        (
+            "m_modelSkeleton",
+            object(&[
+                (
+                    "m_boneName",
+                    Value::Array(
+                        (0..bone_count)
+                            .map(|i| Value::String(format!("bone_{i}")))
+                            .collect(),
+                    ),
+                ),
+                (
+                    "m_nParent",
+                    Value::Array(
+                        (0..bone_count)
+                            .map(|i| Value::Int(if i == 0 { -1 } else { (i - 1) as i64 }))
+                            .collect(),
+                    ),
+                ),
+                ("m_nFlag", Value::Array(vec![number(0x400); bone_count])),
+            ]),
+        ),
+        (
+            "original",
+            Value::String("animation, camera and cloth references".into()),
+        ),
+    ]));
     build_resource_with_tail(
         &[
-            (*b"DATA", b"original animation, camera and cloth references"),
+            (*b"DATA", &model_data),
             (*b"CTRL", &ctrl),
             (*b"MVTX", b"original geometry"),
             (*b"MDAT", &data),
@@ -102,69 +147,150 @@ fn patch<'a>(vertices: &'a [PatchVertex], bone: &'a str) -> AttachedPatch<'a> {
         indices: &[0, 1, 2],
     }
 }
-#[test]
-fn adds_rigid_geometry_to_every_lod_without_changing_protected_blocks() {
-    for (bone, count, stride, weight_offset) in [("bone_2", 3, 64, 56), ("bone_260", 261, 72, 64)] {
-        let input = fixture(count);
-        let vertices = vertices();
-        let output = attach(&input, &[patch(&vertices, bone)]).unwrap();
-        let original = Resource::parse(&input).unwrap();
-        let result = Resource::parse(&output).unwrap();
-        for index in [0, 2, 5] {
-            assert_eq!(
-                original.get_block_by_index(index),
-                result.get_block_by_index(index)
-            );
+
+fn check_original_blocks(input: &[u8], output: &[u8]) {
+    let before = Resource::parse(input).unwrap();
+    let after = Resource::parse(output).unwrap();
+    for (i, block) in before.blocks().iter().enumerate() {
+        if !matches!(&block.kind, b"DATA" | b"CTRL" | b"RERL") {
+            assert_eq!(before.get_block_by_index(i), after.get_block_by_index(i));
         }
-        for index in [3, 4] {
-            let data = kv3::decode(result.get_block_by_index(index).unwrap()).unwrap();
-            let calls = array(&array(&data, "m_sceneObjects").unwrap()[0], "m_drawCalls").unwrap();
-            assert_eq!(calls.len(), 2);
-            assert_eq!(
-                calls[1].get("m_material").and_then(Value::as_str),
-                Some("materials/patch.vmat")
-            );
-        }
-        let registry = kv3::decode(result.get_block_by_index(1).unwrap()).unwrap();
-        let mesh = &array(&registry, "embedded_meshes").unwrap()[0];
-        let fields = array(
-            array(mesh, "m_vertexBuffers").unwrap().last().unwrap(),
-            "m_inputLayoutFields",
-        )
-        .unwrap();
-        for (semantic, shader) in [
-            ("NORMAL", "Normal"),
-            ("TANGENT", "TangentU_SignV"),
-            ("TEXCOORD", "LowPrecisionUv"),
-        ] {
-            let field = fields
-                .iter()
-                .find(|f| f.get("m_pSemanticName").and_then(Value::as_str) == Some(semantic))
-                .unwrap();
-            assert_eq!(
-                field.get("m_szShaderSemantic").and_then(Value::as_str),
-                Some(shader)
-            );
-        }
-        for index in [7, 9] {
-            let bytes = result.get_block_by_index(index).unwrap();
-            assert_eq!(bytes.len(), stride * 3);
-            for vertex in bytes.chunks_exact(stride) {
-                assert_eq!(
-                    &vertex[weight_offset..weight_offset + 8],
-                    &[255, 0, 0, 0, 0, 0, 0, 0]
-                );
-                if count > 255 {
-                    assert_eq!(u16::from_le_bytes([vertex[48], vertex[49]]), 260);
-                } else {
-                    assert_eq!(vertex[48], 2);
-                }
-            }
+    }
+    let original = kv3::decode(before.data_block().unwrap()).unwrap();
+    let result = kv3::decode(after.data_block().unwrap()).unwrap();
+    let Value::Object(fields) = original else {
+        panic!("model data");
+    };
+    for (key, value) in fields {
+        if !matches!(
+            key.as_str(),
+            "m_refLODGroupMasks"
+                | "m_refMeshGroupMasks"
+                | "m_remappingTableStarts"
+                | "m_remappingTable"
+                | "m_modelSkeleton"
+        ) {
+            assert!(equivalent(&value, result.get(&key).unwrap()));
         }
     }
 }
+
 #[test]
-fn rejects_unbindable_or_invalid_patches_without_rewriting_the_model() {
+fn independent_sticker_mesh_keeps_original_geometry_and_covers_all_lods() {
+    for (bone, count, stride) in [("bone_2", 3, 64), ("bone_260", 261, 72)] {
+        let input = fixture(count);
+        let vertices = vertices();
+        let output = attach(&input, &[patch(&vertices, bone)]).unwrap();
+        check_original_blocks(&input, &output);
+        let after = Resource::parse(&output).unwrap();
+        let ctrl = kv3::decode(after.find_block(*b"CTRL").unwrap()).unwrap();
+        let meshes = array(&ctrl, "embedded_meshes").unwrap();
+        assert_eq!(meshes.len(), 3);
+        let added = &meshes[2];
+        assert_eq!(added.get("m_nMeshIndex").and_then(Value::as_f64), Some(2.));
+        assert_eq!(array(added, "m_vertexBuffers").unwrap().len(), 1);
+        assert_eq!(array(added, "m_indexBuffers").unwrap().len(), 1);
+        let data = kv3::decode(after.get_block_by_index(9).unwrap()).unwrap();
+        let scenes = array(&data, "m_sceneObjects").unwrap();
+        assert_eq!(scenes.len(), 1);
+        let calls = array(&scenes[0], "m_drawCalls").unwrap();
+        assert_eq!(calls.len(), 1);
+        assert_eq!(
+            calls[0].get("m_material").and_then(Value::as_str),
+            Some("materials/patch.vmat")
+        );
+        let bytes = after.get_block_by_index(7).unwrap();
+        assert_eq!(bytes.len(), stride * 3);
+        let bound = if count > 255 {
+            usize::from(u16::from_le_bytes([bytes[48], bytes[49]]))
+        } else {
+            usize::from(bytes[48])
+        };
+        assert_eq!(bound, count - 1);
+        let model = kv3::decode(after.data_block().unwrap()).unwrap();
+        assert_eq!(
+            array(&model, "m_refLODGroupMasks")
+                .unwrap()
+                .last()
+                .and_then(Value::as_f64),
+            Some(15.)
+        );
+        assert_eq!(
+            array(&model, "m_remappingTableStarts")
+                .unwrap()
+                .last()
+                .and_then(Value::as_f64),
+            Some((count * 2) as f64)
+        );
+        let flags = array(model.get("m_modelSkeleton").unwrap(), "m_nFlag").unwrap();
+        assert!(
+            flags
+                .iter()
+                .all(|flag| flag.as_f64() == Some(0x3c80 as f64))
+        );
+    }
+}
+
+#[test]
+fn shared_material_on_parts_without_the_bone_and_reduced_lods_needs_no_manual_replacement() {
+    let original = fixture(3);
+    let resource = Resource::parse(&original).unwrap();
+    let mut unrelated = kv3::decode(resource.get_block_by_index(3).unwrap()).unwrap();
+    set(
+        unrelated.get_mut("m_skeleton").unwrap(),
+        "m_bones",
+        Value::Array(vec![object(&[(
+            "m_boneName",
+            Value::String("bone_0".into()),
+        )])]),
+    )
+    .unwrap();
+    let unrelated = encoded(&unrelated);
+    let blocks: Vec<_> = resource
+        .blocks()
+        .iter()
+        .enumerate()
+        .map(|(i, b)| {
+            (
+                b.kind,
+                if i == 3 {
+                    unrelated.as_slice()
+                } else {
+                    resource.get_block_by_index(i).unwrap()
+                },
+            )
+        })
+        .collect();
+    let input = build_resource_with_tail(&blocks, &[], 1).unwrap();
+    let vertices = vertices();
+    let output = attach(&input, &[patch(&vertices, "bone_2")]).unwrap();
+    check_original_blocks(&input, &output);
+    let after = Resource::parse(&output).unwrap();
+    let model = kv3::decode(after.data_block().unwrap()).unwrap();
+    assert_eq!(
+        array(&model, "m_refLODGroupMasks")
+            .unwrap()
+            .last()
+            .and_then(Value::as_f64),
+        Some(15.)
+    );
+}
+
+#[test]
+fn multiple_stickers_each_export_once_without_accumulating_host_buffers() {
+    let input = fixture(3);
+    let vertices = vertices();
+    let patches = [patch(&vertices, "bone_1"), patch(&vertices, "bone_2")];
+    let output = attach(&input, &patches).unwrap();
+    check_original_blocks(&input, &output);
+    let after = Resource::parse(&output).unwrap();
+    let ctrl = kv3::decode(after.find_block(*b"CTRL").unwrap()).unwrap();
+    assert_eq!(array(&ctrl, "embedded_meshes").unwrap().len(), 4);
+    assert_eq!(after.blocks().len(), 13);
+}
+
+#[test]
+fn rejects_invalid_geometry_or_missing_bones_without_changing_inputs() {
     let input = fixture(3);
     let mut vertices = vertices();
     assert!(attach(&input, &[patch(&vertices, "missing")]).is_err());
@@ -178,6 +304,7 @@ fn rejects_unbindable_or_invalid_patches_without_rewriting_the_model() {
     assert!(attach(&input, &[patch(&vertices, "bone_2")]).is_err());
     assert_eq!(attach(&input, &[]).unwrap(), input);
 }
+
 #[test]
 fn patch_material_has_independent_parameters_and_retains_shader_signature() {
     let data = encoded(&object(&[
@@ -244,6 +371,23 @@ fn patch_material_has_independent_parameters_and_retains_shader_signature() {
     );
     assert!(array(&decoded, "m_dynamicParams").unwrap().is_empty());
     assert_eq!(array(&decoded, "m_textureParams").unwrap().len(), 5);
+    for (key, expected) in [("F_ALPHA_TEST", 0.), ("F_TRANSLUCENT", 1.)] {
+        let flag = array(&decoded, "m_intParams")
+            .unwrap()
+            .iter()
+            .find(|entry| entry.get("m_name").and_then(Value::as_str) == Some(key))
+            .unwrap();
+        assert_eq!(flag.get("m_nValue").and_then(Value::as_f64), Some(expected));
+    }
+    assert!(
+        array(&decoded, "m_intAttributes")
+            .unwrap()
+            .iter()
+            .any(
+                |entry| entry.get("m_name").and_then(Value::as_str) == Some("translucent")
+                    && entry.get("m_nValue").and_then(Value::as_f64) == Some(1.)
+            )
+    );
     let lighting = array(&decoded, "m_intParams")
         .unwrap()
         .iter()
@@ -262,4 +406,45 @@ fn patch_material_has_independent_parameters_and_retains_shader_signature() {
             .iter()
             .any(|p| p.get("m_name").and_then(Value::as_str) == Some("g_vSelfIllumTint1"))
     );
+}
+
+#[test]
+fn static_hosts_and_omitted_normal_compression_flags_export_independently() {
+    let original = fixture(0);
+    let before = Resource::parse(&original).unwrap();
+    let mut data = kv3::decode(before.get_block_by_index(3).unwrap()).unwrap();
+    let Some(Value::Array(scenes)) = data.get_mut("m_sceneObjects") else {
+        panic!("fixture scenes");
+    };
+    let Some(Value::Array(calls)) = scenes[0].get_mut("m_drawCalls") else {
+        panic!("fixture draws");
+    };
+    let Value::Object(fields) = &mut calls[0] else {
+        panic!("fixture draw");
+    };
+    fields.retain(|(key, _)| key != "m_bUseCompressedNormalTangent");
+    let data = encoded(&data);
+    let blocks: Vec<_> = before
+        .blocks()
+        .iter()
+        .enumerate()
+        .map(|(i, block)| {
+            (
+                block.kind,
+                if i == 3 {
+                    data.as_slice()
+                } else {
+                    before.get_block_by_index(i).unwrap()
+                },
+            )
+        })
+        .collect();
+    let input = build_resource_with_tail(&blocks, &[], 1).unwrap();
+    let vertices = vertices();
+    let output = attach(&input, &[patch(&vertices, "")]).unwrap();
+    check_original_blocks(&input, &output);
+    let after = Resource::parse(&output).unwrap();
+    let mesh = kv3::decode(after.get_block_by_index(9).unwrap()).unwrap();
+    let call = &array(&array(&mesh, "m_sceneObjects").unwrap()[0], "m_drawCalls").unwrap()[0];
+    assert!(call.get("m_bUseCompressedNormalTangent").is_none());
 }

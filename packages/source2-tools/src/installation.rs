@@ -89,13 +89,20 @@ fn local_destination(root: &Path, destination: &Path) -> Result<(), ToolError> {
     Ok(())
 }
 
-fn copy_data_file(root: &Path, source: &Path, destination: &Path) -> Result<(), ToolError> {
+fn copy_data_file(
+    root: &Path,
+    source: &Path,
+    destination: &Path,
+    progress: &mut impl FnMut(PreparationEvent),
+) -> Result<(), ToolError> {
     local_destination(root, destination)?;
+    progress(PreparationEvent::Checking(source.to_path_buf()));
     let metadata = io(source, fs::metadata(source))?;
     if let Ok(existing) = fs::metadata(destination)
         && existing.len() == metadata.len()
         && existing.modified().ok() == metadata.modified().ok()
     {
+        progress(PreparationEvent::Completed { bytes: 0 });
         return Ok(());
     }
     let parent = destination
@@ -113,10 +120,18 @@ fn copy_data_file(root: &Path, source: &Path, destination: &Path) -> Result<(), 
         destination,
         staged.persist(destination).map_err(|error| error.error),
     )?;
+    progress(PreparationEvent::Completed {
+        bytes: metadata.len(),
+    });
     Ok(())
 }
 
-fn copy_data_tree(root: &Path, source: &Path, destination: &Path) -> Result<(), ToolError> {
+fn copy_data_tree(
+    root: &Path,
+    source: &Path,
+    destination: &Path,
+    progress: &mut impl FnMut(PreparationEvent),
+) -> Result<(), ToolError> {
     if !source.is_dir() {
         return Ok(());
     }
@@ -126,18 +141,24 @@ fn copy_data_tree(root: &Path, source: &Path, destination: &Path) -> Result<(), 
         let kind = io(&path, entry.file_type())?;
         let target = destination.join(entry.file_name());
         if kind.is_dir() {
-            copy_data_tree(root, &path, &target)?;
+            copy_data_tree(root, &path, &target, progress)?;
         } else if kind.is_file() {
-            copy_data_file(root, &path, &target)?;
+            copy_data_file(root, &path, &target, progress)?;
         }
     }
     Ok(())
+}
+
+pub enum PreparationEvent {
+    Checking(std::path::PathBuf),
+    Completed { bytes: u64 },
 }
 
 /// Uses the vendor's binaries unchanged. Only game data and the default addon are prepared.
 pub fn prepare_installation(
     root: &Path,
     deadlock: &Path,
+    mut progress: impl FnMut(PreparationEvent),
 ) -> Result<InstallationInspection, ToolError> {
     require_installation(root)?;
     let root = io(root, root.canonicalize())?;
@@ -167,17 +188,22 @@ pub fn prepare_installation(
                 .to_ascii_lowercase()
                 .contains("shader")
         {
-            copy_data_file(&root, &path, &target.join(entry.file_name()))?;
+            copy_data_file(&root, &path, &target.join(entry.file_name()), &mut progress)?;
         }
     }
     for directory in ["cfg", "maps", "panorama", "resource"] {
-        copy_data_tree(&root, &source.join(directory), &target.join(directory))?;
+        copy_data_tree(
+            &root,
+            &source.join(directory),
+            &target.join(directory),
+            &mut progress,
+        )?;
     }
     // This is the vendor-documented asset index switch for mounting the full game data.
     let disabled = target.join("readonly_tools_asset_info.binOFF");
     let enabled = target.join("readonly_tools_asset_info.bin");
     if disabled.is_file() && !enabled.exists() {
-        copy_data_file(&root, &disabled, &enabled)?;
+        copy_data_file(&root, &disabled, &enabled, &mut progress)?;
     }
     for tree in ["content", "game"] {
         let addon = root.join(tree).join("citadel_addons").join(WORKBENCH_ADDON);
@@ -250,7 +276,23 @@ mod tests {
             b"index",
         )
         .unwrap();
-        prepare_installation(&sdk, &game).unwrap();
+        let mut started = 0;
+        let mut completed = 0;
+        let mut copied_bytes = 0;
+        prepare_installation(&sdk, &game, |event| match event {
+            PreparationEvent::Checking(path) => {
+                assert!(path.is_file());
+                started += 1;
+            }
+            PreparationEvent::Completed { bytes } => {
+                completed += 1;
+                copied_bytes += bytes;
+            }
+        })
+        .unwrap();
+        assert_eq!(started, completed);
+        assert_eq!(completed, 3);
+        assert!(copied_bytes >= b"game dataitems".len() as u64);
         assert_eq!(
             fs::read(sdk.join("game/citadel/pak01_dir.vpk")).unwrap(),
             b"game data"
@@ -271,9 +313,9 @@ mod tests {
             fs::read(source.join("pak01_dir.vpk")).unwrap(),
             b"game data"
         );
-        prepare_installation(&sdk, &game).unwrap();
+        prepare_installation(&sdk, &game, |_| {}).unwrap();
         assert_eq!(fs::read(info).unwrap(), b"user addon info");
-        assert!(prepare_installation(&sdk, &sdk).is_err());
+        assert!(prepare_installation(&sdk, &sdk, |_| {}).is_err());
     }
 
     #[cfg(unix)]
@@ -290,7 +332,7 @@ mod tests {
         std::os::unix::fs::symlink(source.join("resource"), sdk.join("game/citadel/resource"))
             .unwrap();
         assert!(
-            prepare_installation(&sdk, &game)
+            prepare_installation(&sdk, &game, |_| {})
                 .unwrap_err()
                 .to_string()
                 .contains("symbolic link")

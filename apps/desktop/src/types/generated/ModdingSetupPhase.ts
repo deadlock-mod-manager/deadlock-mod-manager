@@ -4,6 +4,8 @@ export type ModdingSetupPhase =
   | "idle"
   | "starting"
   | "cliDownload"
+  | "verifying"
+  | "extracting"
   | "preparing"
   | "ready"
   | "failed";

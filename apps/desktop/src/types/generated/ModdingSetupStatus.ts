@@ -6,4 +6,10 @@ export type ModdingSetupStatus = {
   phase: ModdingSetupPhase;
   cliReady: boolean;
   error: string | null;
+  downloadedBytes: bigint;
+  totalBytes: bigint | null;
+  currentFile: string | null;
+  processedFiles: bigint;
+  copiedBytes: bigint;
+  elapsedSeconds: bigint;
 };

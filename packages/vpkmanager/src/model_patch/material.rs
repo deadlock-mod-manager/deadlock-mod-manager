@@ -30,7 +30,8 @@ pub fn material(template: &[u8], patch: PatchMaterial<'_>) -> Result<Vec<u8>> {
         Value::String(patch.name.into()),
     )?;
     let flags = [
-        ("F_ALPHA_TEST", 1),
+        ("F_ALPHA_TEST", 0),
+        ("F_TRANSLUCENT", 1),
         ("F_USE_NPR_LIGHTING", 1),
         ("g_bMaskVertexColorTint1", 0),
         ("g_bMaskColorTint1", 0),
@@ -103,6 +104,20 @@ pub fn material(template: &[u8], patch: PatchMaterial<'_>) -> Result<Vec<u8>> {
             old.children = EncodingChildren::Array(vec![first; values.len()]);
         }
         set(&mut tree, table, Value::Array(values))?;
+    }
+    // Alpha-tested coverage is spatially dithered by the game. Stickers need actual blending.
+    let mut attributes = tree
+        .get("m_intAttributes")
+        .and_then(Value::as_array)
+        .unwrap_or(&[])
+        .to_vec();
+    attributes
+        .retain(|attribute| attribute.get("m_name").and_then(Value::as_str) != Some("translucent"));
+    attributes.push(entry("translucent", "m_nValue", Value::Int(1)));
+    if tree.get("m_intAttributes").is_some() {
+        set(&mut tree, "m_intAttributes", Value::Array(attributes))?;
+    } else if let Value::Object(fields) = &mut tree {
+        fields.push(("m_intAttributes".into(), Value::Array(attributes)));
     }
     let data =
         kv3::wire::encode_preserving_v5(&tree, &shape, &kv3::Format::from_payload(payload)?)?;

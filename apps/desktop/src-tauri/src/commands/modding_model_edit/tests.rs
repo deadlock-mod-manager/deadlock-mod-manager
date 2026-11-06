@@ -546,3 +546,147 @@ fn attached_stickers_reopen_on_their_own_model_without_leaking_to_shared_materia
     .push(duplicate);
   assert!(validate_edits(saved.models.get("models/test.vmdl_c").unwrap()).is_err());
 }
+
+#[test]
+#[ignore = "Requires a local game VPK and transparent GIF fixture"]
+fn transparent_gif_eye_fixture_preserves_alpha_and_exports_one_lod_safe_mesh() {
+  let gif = std::env::var("DMM_VERIFY_GIF").expect("Set DMM_VERIFY_GIF");
+  let vpk = std::env::var("DMM_VERIFY_VPK").expect("Set DMM_VERIFY_VPK");
+  let archive = VpkArchive::open(Path::new(&vpk)).unwrap();
+  let root = tempfile::tempdir().unwrap();
+  let content = root.path().join("content");
+  let game = root.path().join("game");
+  std::fs::create_dir_all(&content).unwrap();
+  std::fs::create_dir_all(&game).unwrap();
+  let source = super::super::modding_model_images::import(&content, Path::new(&gif)).unwrap();
+  let host = "models/heroes_wip/artist/materials/artist_eye.vmat";
+  let model = archive
+    .extract_entry("models/heroes_wip/artist/artist.vmdl_c")
+    .unwrap();
+  let template = archive.extract_entry(&format!("{host}_c")).unwrap();
+  let addon = ModdingAddon {
+    id: "verify".into(),
+    name: "verify".into(),
+    sdk_root: root.path().display().to_string(),
+    content_path: content.display().to_string(),
+    game_path: game.display().to_string(),
+    archive_path: vpk,
+  };
+  let patch = ModdingModelPatch {
+    id: "alpha-eye-proof".into(),
+    image: source.path.clone(),
+    bone: "eye_0_R".into(),
+    position: [0.; 3],
+    rotation: [0., 0., 0., 1.],
+    size: [4., 4.],
+    shape: patches::ModdingPatchShape::Flat,
+    curvature: 0.,
+    contour: None,
+    conformity: None,
+    thickness: 0.,
+    offset: 0.3,
+    roughness: 0.3,
+    glow: 0.,
+    crop: [0., 0., 1., 1.],
+    background: None,
+  };
+  let output = patches::bake(
+    &addon,
+    &model,
+    host,
+    &patch,
+    &template,
+    &storage::Saved::default(),
+  )
+  .unwrap();
+  let material = vpkmanager::source2::resource::Resource::parse(
+    output
+      .files
+      .get("materials/dmm_model_edits/patch_alpha-eye-proof.vmat_c")
+      .unwrap(),
+  )
+  .unwrap();
+  let tree = vpkmanager::source2::kv3::decode(material.data_block().unwrap()).unwrap();
+  let params = tree.get("m_intParams").unwrap().as_array().unwrap();
+  for (key, expected) in [("F_ALPHA_TEST", 0.), ("F_TRANSLUCENT", 1.)] {
+    assert_eq!(
+      params
+        .iter()
+        .find(|p| p
+          .get("m_name")
+          .and_then(vpkmanager::source2::kv3::Value::as_str)
+          == Some(key))
+        .unwrap()
+        .get("m_nValue")
+        .and_then(vpkmanager::source2::kv3::Value::as_f64),
+      Some(expected)
+    );
+  }
+  let metadata = tree
+    .get("m_stringAttributes")
+    .unwrap()
+    .as_array()
+    .unwrap()
+    .iter()
+    .find(|p| {
+      p.get("m_name")
+        .and_then(vpkmanager::source2::kv3::Value::as_str)
+        == Some("DmmAnimatedAlbedo")
+    })
+    .unwrap()
+    .get("m_value")
+    .and_then(vpkmanager::source2::kv3::Value::as_str)
+    .unwrap();
+  let metadata: serde_json::Value = serde_json::from_str(metadata).unwrap();
+  let texture = vpkmanager::source2::decode(
+    output
+      .files
+      .get("materials/dmm_model_edits/patch_alpha-eye-proof_color.vtex_c")
+      .unwrap(),
+  )
+  .unwrap();
+  let vpkmanager::source2::ImageData::Rgba8(pixels) = texture.data else {
+    panic!("RGBA atlas");
+  };
+  let mut transparent = 0;
+  let mut opaque = 0;
+  for (frame, offset) in source
+    .frames
+    .iter()
+    .zip(metadata["offsets"].as_array().unwrap())
+  {
+    let image = image::open(content.join(&frame.path)).unwrap().to_rgba8();
+    let left = (offset[0].as_f64().unwrap() * f64::from(texture.width)).round() as u32;
+    let top = (offset[1].as_f64().unwrap() * f64::from(texture.height)).round() as u32;
+    for y in 1..image.height() - 1 {
+      for x in 1..image.width() - 1 {
+        let alpha = image.get_pixel(x, y)[3];
+        if !(y - 1..=y + 1).all(|ny| (x - 1..=x + 1).all(|nx| image.get_pixel(nx, ny)[3] == alpha))
+        {
+          continue;
+        }
+        let actual = pixels[(((top + y) * texture.width + left + x) * 4 + 3) as usize];
+        if alpha == 0 {
+          assert!(actual <= 8, "Opaque pixel in transparent GIF region");
+          transparent += 1;
+        }
+        if alpha == 255 {
+          assert!(actual >= 247, "Transparency hole inside opaque GIF region");
+          opaque += 1;
+        }
+      }
+    }
+  }
+  assert!(transparent > 1000 && opaque > 1000);
+  let before = vpkmanager::source2::resource::Resource::parse(&model).unwrap();
+  let after = vpkmanager::source2::resource::Resource::parse(&output.model).unwrap();
+  for (i, block) in before.blocks().iter().enumerate() {
+    if !matches!(&block.kind, b"DATA" | b"CTRL" | b"RERL") {
+      assert_eq!(before.get_block_by_index(i), after.get_block_by_index(i));
+    }
+  }
+  println!(
+    "Verified {} GIF frames, {transparent} transparent and {opaque} opaque interior pixels",
+    source.frames.len()
+  );
+}

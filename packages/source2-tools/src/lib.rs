@@ -7,7 +7,9 @@ mod profile;
 mod provision;
 
 pub use clock::{ANIMATION_SYSTEM_SHA256, EDITOR_SHA256, PATCHED_EDITOR_SHA256, patch_modeldoc};
-pub use installation::{InstallationInspection, inspect_installation, prepare_installation};
+pub use installation::{
+    InstallationInspection, PreparationEvent, inspect_installation, prepare_installation,
+};
 pub use launch::{
     CompileMode, ProtonRuntime, SdkTool, compiler_command, sdk_command, sdk_project_command,
     viewer_command,

@@ -338,7 +338,9 @@ pub(super) fn bake(
   let identity = [
     1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1.,
   ];
-  let bind = if let Some(skeleton) = &skeleton {
+  let bind = if patch.bone.is_empty() {
+    &identity
+  } else if let Some(skeleton) = &skeleton {
     skeleton
       .bones
       .iter()

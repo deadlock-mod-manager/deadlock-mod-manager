@@ -1,4 +1,5 @@
 //! Add rigid skinned patches without rebuilding a hero's skeleton, animation or physics.
+mod attachment;
 mod material;
 use crate::{
     error::{Result, VpkManagerError},
@@ -116,7 +117,7 @@ fn encode(value: &Value, shape: &Encoding, original: &[u8]) -> Result<Vec<u8>> {
     Ok(output)
 }
 
-/// Each patch is inserted in every host-material LOD using that mesh's existing bone palette.
+/// Export each patch once in its own mesh, retaining its animation bone at every host LOD.
 pub fn attach(model: &[u8], patches: &[AttachedPatch<'_>]) -> Result<Vec<u8>> {
     if patches.is_empty() {
         return Ok(model.to_vec());
@@ -141,11 +142,21 @@ pub fn attach(model: &[u8], patches: &[AttachedPatch<'_>]) -> Result<Vec<u8>> {
         .iter()
         .position(|b| b.kind == *b"CTRL")
         .ok_or_else(|| invalid("Model has no embedded mesh registry"))?;
+    let data_index = resource
+        .blocks()
+        .iter()
+        .position(|b| b.kind == *b"DATA")
+        .ok_or_else(|| invalid("Model has no skeleton data"))?;
     let original_ctrl = resource
         .get_block_by_index(ctrl_index)
         .ok_or_else(|| invalid("Missing model mesh registry"))?;
+    let original_data = resource
+        .get_block_by_index(data_index)
+        .ok_or_else(|| invalid("Missing model skeleton data"))?;
     let (mut ctrl, mut ctrl_shape) = kv3::decode_preserving(original_ctrl)?;
-    let mesh_count = array(&ctrl, "embedded_meshes")?.len();
+    let (mut model_data, mut model_shape) = kv3::decode_preserving(original_data)?;
+    let host_ctrl = ctrl.clone();
+    let host_shape = ctrl_shape.clone();
     let mut replacements = BTreeMap::new();
     let mut extra: Vec<([u8; 4], Vec<u8>)> = Vec::new();
     for patch in patches {
@@ -177,279 +188,261 @@ pub fn attach(model: &[u8], patches: &[AttachedPatch<'_>]) -> Result<Vec<u8>> {
         {
             return Err(invalid("Invalid attached patch geometry or material"));
         }
-        let mut found = 0;
-        for mesh_index in 0..mesh_count {
-            let Some(Value::Array(meshes)) = ctrl.get_mut("embedded_meshes") else {
-                unreachable!()
-            };
-            let mesh = &mut meshes[mesh_index];
-            let mesh_shape = ctrl_shape
-                .get_mut("embedded_meshes")
-                .and_then(Encoding::as_array_mut)
-                .and_then(|v| v.get_mut(mesh_index))
-                .ok_or_else(|| invalid("Missing embedded mesh encoding"))?;
-            let block = match mesh.get("m_nDataBlock") {
-                Some(Value::Int(v)) => usize::try_from(*v).ok(),
-                Some(Value::UInt(v)) => usize::try_from(*v).ok(),
-                _ => None,
-            }
-            .ok_or_else(|| invalid("Invalid embedded mesh data block"))?;
-            let original = resource
-                .get_block_by_index(block)
-                .ok_or_else(|| invalid("Missing embedded mesh data"))?;
-            let input = replacements
-                .get(&block)
-                .map(Vec::as_slice)
-                .unwrap_or(original);
-            let (mut data, mut data_shape) = kv3::decode_preserving(input)?;
-            let mut host = None;
-            for (scene, object) in array(&data, "m_sceneObjects")?.iter().enumerate() {
-                for (draw, call) in array(object, "m_drawCalls")?.iter().enumerate() {
-                    if call
-                        .get("m_material")
-                        .and_then(Value::as_str)
-                        .is_some_and(|m| {
-                            m.trim_end_matches("_c")
-                                .eq_ignore_ascii_case(patch.host_material.trim_end_matches("_c"))
-                        })
-                    {
-                        host = Some((scene, draw));
-                        break;
-                    }
-                }
-                if host.is_some() {
-                    break;
-                }
-            }
-            let Some((scene_index, draw_index)) = host else {
-                continue;
-            };
-            let bones = data
-                .get("m_skeleton")
-                .map(|v| array(v, "m_bones"))
-                .transpose()?
-                .unwrap_or(&[]);
-            let bone = if bones.is_empty() {
-                if !patch.bone.is_empty() {
-                    return Err(invalid("Static patch host cannot bind an animation bone"));
-                }
-                None
-            } else {
-                Some(
-                    bones
-                        .iter()
-                        .position(|v| {
-                            v.get("m_boneName").and_then(Value::as_str) == Some(patch.bone)
-                        })
-                        .ok_or_else(|| {
-                            invalid(format!(
-                                "Patch bone {} is unavailable in LOD {mesh_index}",
-                                patch.bone
-                            ))
-                        })?,
-                )
-            };
-            let vertex_template = array(mesh, "m_vertexBuffers")?
-                .first()
-                .ok_or_else(|| invalid("Missing vertex buffer template"))?
-                .clone();
-            let vertex_shape = mesh_shape
-                .get("m_vertexBuffers")
-                .and_then(Encoding::as_array)
-                .and_then(|v| v.first())
-                .ok_or_else(|| invalid("Missing vertex encoding"))?
-                .clone();
-            let index_template = array(mesh, "m_indexBuffers")?
-                .first()
-                .ok_or_else(|| invalid("Missing index buffer template"))?
-                .clone();
-            let index_shape = mesh_shape
-                .get("m_indexBuffers")
-                .and_then(Encoding::as_array)
-                .and_then(|v| v.first())
-                .ok_or_else(|| invalid("Missing index encoding"))?
-                .clone();
-            let wide = bone.is_some_and(|v| v > 255);
-            let stride = if wide { 72 } else { 64 };
-            let mut vertex_bytes = Vec::with_capacity(patch.vertices.len() * stride);
-            for vertex in patch.vertices {
-                for v in vertex
-                    .position
-                    .iter()
-                    .chain(&vertex.uv)
-                    .chain(&vertex.normal)
-                    .chain(&vertex.tangent)
-                {
-                    vertex_bytes.extend_from_slice(&v.to_le_bytes());
-                }
-                let bone = u16::try_from(bone.unwrap_or(0))
-                    .map_err(|_| invalid("Patch bone palette exceeds 16-bit indices"))?;
-                if wide {
-                    vertex_bytes.extend_from_slice(&bone.to_le_bytes());
-                    vertex_bytes.extend_from_slice(&[0; 14]);
-                } else {
-                    vertex_bytes.extend_from_slice(&[bone as u8, 0, 0, 0, 0, 0, 0, 0]);
-                }
-                vertex_bytes.extend_from_slice(&[255, 0, 0, 0, 0, 0, 0, 0]);
-            }
-            let mut vertices = vertex_template;
-            let mut vertices_shape = vertex_shape;
-            let field = array(&vertices, "m_inputLayoutFields")?
-                .first()
-                .ok_or_else(|| invalid("Missing vertex field template"))?
-                .clone();
-            let field_shape = vertices_shape
-                .get("m_inputLayoutFields")
-                .and_then(Encoding::as_array)
-                .and_then(|v| v.first())
-                .ok_or_else(|| invalid("Missing vertex field encoding"))?
-                .clone();
-            let fields = [
-                ("POSITION", "PosXyz", 6, 0),
-                ("TEXCOORD", "LowPrecisionUv", 16, 12),
-                ("NORMAL", "Normal", 6, 20),
-                ("TANGENT", "TangentU_SignV", 2, 32),
-                (
-                    "BLENDINDICES",
-                    "BlendIndices",
-                    if wide { 4 } else { 12 },
-                    48,
-                ),
-                ("BLENDWEIGHT", "", 11, if wide { 64 } else { 56 }),
-            ];
-            let mut layout = Vec::new();
-            let mut shapes = Vec::new();
-            for (semantic, shader, format, offset) in
-                fields.into_iter().take(if bone.is_some() { 6 } else { 4 })
+        let source = attachment::source(&resource, &host_ctrl, &host_shape, &model_data, patch)?;
+        let mut mesh = source.mesh;
+        let mut mesh_shape = source.mesh_shape;
+        let original = resource
+            .get_block_by_index(source.block)
+            .ok_or_else(|| invalid("Missing host mesh"))?;
+        let (mut data, mut data_shape) = kv3::decode_preserving(original)?;
+        let scene_index = source.scene;
+        let draw_index = source.draw;
+        let bone = source.bone;
+        let vertex_template = array(&mesh, "m_vertexBuffers")?
+            .first()
+            .ok_or_else(|| invalid("Missing vertex buffer template"))?
+            .clone();
+        let vertex_shape = mesh_shape
+            .get("m_vertexBuffers")
+            .and_then(Encoding::as_array)
+            .and_then(|v| v.first())
+            .ok_or_else(|| invalid("Missing vertex encoding"))?
+            .clone();
+        let index_template = array(&mesh, "m_indexBuffers")?
+            .first()
+            .ok_or_else(|| invalid("Missing index buffer template"))?
+            .clone();
+        let index_shape = mesh_shape
+            .get("m_indexBuffers")
+            .and_then(Encoding::as_array)
+            .and_then(|v| v.first())
+            .ok_or_else(|| invalid("Missing index encoding"))?
+            .clone();
+        attachment::clear(&mut mesh, &mut mesh_shape, "m_vertexBuffers")?;
+        attachment::clear(&mut mesh, &mut mesh_shape, "m_indexBuffers")?;
+        let wide = bone.is_some_and(|v| v > 255);
+        let stride = if wide { 72 } else { 64 };
+        let mut vertex_bytes = Vec::with_capacity(patch.vertices.len() * stride);
+        for vertex in patch.vertices {
+            for v in vertex
+                .position
+                .iter()
+                .chain(&vertex.uv)
+                .chain(&vertex.normal)
+                .chain(&vertex.tangent)
             {
-                let mut item = field.clone();
-                set(&mut item, "m_pSemanticName", Value::String(semantic.into()))?;
-                set(
-                    &mut item,
-                    "m_szShaderSemantic",
-                    Value::String(shader.into()),
-                )?;
-                set(&mut item, "m_Format", number(format))?;
-                set(&mut item, "m_nOffset", number(offset))?;
-                layout.push(item);
-                shapes.push(field_shape.clone());
+                vertex_bytes.extend_from_slice(&v.to_le_bytes());
             }
-            set(&mut vertices, "m_inputLayoutFields", Value::Array(layout))?;
-            vertices_shape
-                .get_mut("m_inputLayoutFields")
-                .ok_or_else(|| invalid("Missing layout encoding"))?
-                .children = EncodingChildren::Array(shapes);
-            set(
-                &mut vertices,
-                "m_nElementCount",
-                number(patch.vertices.len()),
-            )?;
-            set(&mut vertices, "m_nElementSizeInBytes", number(stride))?;
-            set(&mut vertices, "m_bMeshoptCompressed", Value::Bool(false))?;
-            set(&mut vertices, "m_bCompressedZSTD", Value::Bool(false))?;
-            set(
-                &mut vertices,
-                "m_nBlockIndex",
-                number(resource.blocks().len() + extra.len()),
-            )?;
-            extra.push((*b"MVTX", vertex_bytes));
-            let vertex_buffer = push(
-                mesh,
-                mesh_shape,
-                "m_vertexBuffers",
-                vertices,
-                vertices_shape,
-            )?;
-            let mut indices = index_template;
-            set(&mut indices, "m_nElementCount", number(patch.indices.len()))?;
-            set(&mut indices, "m_nElementSizeInBytes", number(2))?;
-            set(&mut indices, "m_bMeshoptCompressed", Value::Bool(false))?;
-            set(&mut indices, "m_bCompressedZSTD", Value::Bool(false))?;
-            set(
-                &mut indices,
-                "m_nBlockIndex",
-                number(resource.blocks().len() + extra.len()),
-            )?;
-            extra.push((
-                *b"MIDX",
-                patch.indices.iter().flat_map(|v| v.to_le_bytes()).collect(),
-            ));
-            let index_buffer = push(mesh, mesh_shape, "m_indexBuffers", indices, index_shape)?;
-            let Some(Value::Array(scenes)) = data.get_mut("m_sceneObjects") else {
-                unreachable!()
-            };
-            let scene = &mut scenes[scene_index];
-            let scene_shape = data_shape
-                .get_mut("m_sceneObjects")
-                .and_then(Encoding::as_array_mut)
-                .and_then(|v| v.get_mut(scene_index))
-                .ok_or_else(|| invalid("Missing scene encoding"))?;
-            let mut call = array(scene, "m_drawCalls")?[draw_index].clone();
-            let call_shape = scene_shape
-                .get("m_drawCalls")
-                .and_then(Encoding::as_array)
-                .and_then(|v| v.get(draw_index))
-                .ok_or_else(|| invalid("Missing draw encoding"))?
-                .clone();
-            set(
-                &mut call,
-                "m_material",
-                Value::String(patch.material.into()),
-            )?;
-            for (key, value) in [
-                ("m_nBaseVertex", 0),
-                ("m_nStartIndex", 0),
-                ("m_nIndexCount", patch.indices.len()),
-                ("m_nVertexCount", patch.vertices.len()),
-                ("m_nAppliedIndexOffset", 0),
-                ("m_nNumMeshlets", 0),
-                ("m_nFirstMeshlet", 0),
-            ] {
-                set(&mut call, key, number(value))?;
+            let bone = u16::try_from(bone.unwrap_or(0))
+                .map_err(|_| invalid("Patch bone palette exceeds 16-bit indices"))?;
+            if wide {
+                vertex_bytes.extend_from_slice(&bone.to_le_bytes());
+                vertex_bytes.extend_from_slice(&[0; 14]);
+            } else {
+                vertex_bytes.extend_from_slice(&[bone as u8, 0, 0, 0, 0, 0, 0, 0]);
             }
+            vertex_bytes.extend_from_slice(&[255, 0, 0, 0, 0, 0, 0, 0]);
+        }
+        let mut vertices = vertex_template;
+        let mut vertices_shape = vertex_shape;
+        let field = array(&vertices, "m_inputLayoutFields")?
+            .first()
+            .ok_or_else(|| invalid("Missing vertex field template"))?
+            .clone();
+        let field_shape = vertices_shape
+            .get("m_inputLayoutFields")
+            .and_then(Encoding::as_array)
+            .and_then(|v| v.first())
+            .ok_or_else(|| invalid("Missing vertex field encoding"))?
+            .clone();
+        let fields = [
+            ("POSITION", "PosXyz", 6, 0),
+            ("TEXCOORD", "LowPrecisionUv", 16, 12),
+            ("NORMAL", "Normal", 6, 20),
+            ("TANGENT", "TangentU_SignV", 2, 32),
+            (
+                "BLENDINDICES",
+                "BlendIndices",
+                if wide { 4 } else { 12 },
+                48,
+            ),
+            ("BLENDWEIGHT", "", 11, if wide { 64 } else { 56 }),
+        ];
+        let mut layout = Vec::new();
+        let mut shapes = Vec::new();
+        for (semantic, shader, format, offset) in
+            fields.into_iter().take(if bone.is_some() { 6 } else { 4 })
+        {
+            let mut item = field.clone();
+            set(&mut item, "m_pSemanticName", Value::String(semantic.into()))?;
+            set(
+                &mut item,
+                "m_szShaderSemantic",
+                Value::String(shader.into()),
+            )?;
+            set(&mut item, "m_Format", number(format))?;
+            set(&mut item, "m_nOffset", number(offset))?;
+            layout.push(item);
+            shapes.push(field_shape.clone());
+        }
+        set(&mut vertices, "m_inputLayoutFields", Value::Array(layout))?;
+        vertices_shape
+            .get_mut("m_inputLayoutFields")
+            .ok_or_else(|| invalid("Missing layout encoding"))?
+            .children = EncodingChildren::Array(shapes);
+        set(
+            &mut vertices,
+            "m_nElementCount",
+            number(patch.vertices.len()),
+        )?;
+        set(&mut vertices, "m_nElementSizeInBytes", number(stride))?;
+        set(&mut vertices, "m_bMeshoptCompressed", Value::Bool(false))?;
+        set(&mut vertices, "m_bCompressedZSTD", Value::Bool(false))?;
+        set(
+            &mut vertices,
+            "m_nBlockIndex",
+            number(resource.blocks().len() + extra.len()),
+        )?;
+        extra.push((*b"MVTX", vertex_bytes));
+        let vertex_buffer = push(
+            &mut mesh,
+            &mut mesh_shape,
+            "m_vertexBuffers",
+            vertices,
+            vertices_shape,
+        )?;
+        let mut indices = index_template;
+        set(&mut indices, "m_nElementCount", number(patch.indices.len()))?;
+        set(&mut indices, "m_nElementSizeInBytes", number(2))?;
+        set(&mut indices, "m_bMeshoptCompressed", Value::Bool(false))?;
+        set(&mut indices, "m_bCompressedZSTD", Value::Bool(false))?;
+        set(
+            &mut indices,
+            "m_nBlockIndex",
+            number(resource.blocks().len() + extra.len()),
+        )?;
+        extra.push((
+            *b"MIDX",
+            patch.indices.iter().flat_map(|v| v.to_le_bytes()).collect(),
+        ));
+        let index_buffer = push(
+            &mut mesh,
+            &mut mesh_shape,
+            "m_indexBuffers",
+            indices,
+            index_shape,
+        )?;
+        let Some(Value::Array(scenes)) = data.get_mut("m_sceneObjects") else {
+            unreachable!()
+        };
+        let scene = &mut scenes[scene_index];
+        let scene_shape = data_shape
+            .get_mut("m_sceneObjects")
+            .and_then(Encoding::as_array_mut)
+            .and_then(|v| v.get_mut(scene_index))
+            .ok_or_else(|| invalid("Missing scene encoding"))?;
+        let mut call = array(scene, "m_drawCalls")?[draw_index].clone();
+        let call_shape = scene_shape
+            .get("m_drawCalls")
+            .and_then(Encoding::as_array)
+            .and_then(|v| v.get(draw_index))
+            .ok_or_else(|| invalid("Missing draw encoding"))?
+            .clone();
+        set(
+            &mut call,
+            "m_material",
+            Value::String(patch.material.into()),
+        )?;
+        for (key, value) in [
+            ("m_nBaseVertex", 0),
+            ("m_nStartIndex", 0),
+            ("m_nIndexCount", patch.indices.len()),
+            ("m_nVertexCount", patch.vertices.len()),
+            ("m_nAppliedIndexOffset", 0),
+            ("m_nNumMeshlets", 0),
+            ("m_nFirstMeshlet", 0),
+        ] {
+            set(&mut call, key, number(value))?;
+        }
+        if call.get("m_bUseCompressedNormalTangent").is_some() {
             set(
                 &mut call,
                 "m_bUseCompressedNormalTangent",
                 Value::Bool(false),
             )?;
-            let binding = |handle| {
-                Value::Object(vec![
-                    ("m_hBuffer".into(), number(handle)),
-                    ("m_nBindOffsetBytes".into(), number(0)),
-                ])
-            };
-            set(&mut call, "m_indexBuffer", binding(index_buffer))?;
-            set(
-                &mut call,
-                "m_vertexBuffers",
-                Value::Array(vec![binding(vertex_buffer)]),
-            )?;
-            push(scene, scene_shape, "m_drawCalls", call, call_shape)?;
-            for (key, min) in [("m_vMinBounds", true), ("m_vMaxBounds", false)] {
-                if let Some(Value::Array(bounds)) = scene.get_mut(key) {
-                    for (axis, bound) in bounds.iter_mut().take(3).enumerate() {
-                        if let Value::Double(current) = bound {
-                            for v in patch.vertices {
-                                *current = if min {
-                                    current.min(f64::from(v.position[axis]))
-                                } else {
-                                    current.max(f64::from(v.position[axis]))
-                                };
-                            }
+        }
+        let binding = |handle| {
+            Value::Object(vec![
+                ("m_hBuffer".into(), number(handle)),
+                ("m_nBindOffsetBytes".into(), number(0)),
+            ])
+        };
+        set(&mut call, "m_indexBuffer", binding(index_buffer))?;
+        set(
+            &mut call,
+            "m_vertexBuffers",
+            Value::Array(vec![binding(vertex_buffer)]),
+        )?;
+        attachment::clear(scene, scene_shape, "m_drawCalls")?;
+        push(scene, scene_shape, "m_drawCalls", call, call_shape)?;
+        for (key, min) in [("m_vMinBounds", true), ("m_vMaxBounds", false)] {
+            if let Some(Value::Array(bounds)) = scene.get_mut(key) {
+                for (axis, bound) in bounds.iter_mut().take(3).enumerate() {
+                    if let Value::Double(current) = bound {
+                        for v in patch.vertices {
+                            *current = if min {
+                                current.min(f64::from(v.position[axis]))
+                            } else {
+                                current.max(f64::from(v.position[axis]))
+                            };
                         }
                     }
                 }
             }
-            replacements.insert(block, encode(&data, &data_shape, original)?);
-            found += 1;
         }
-        if found == 0 {
-            return Err(invalid(
-                "Patch host material is not drawn by an embedded model mesh",
-            ));
+        let scene = array(&data, "m_sceneObjects")?[scene_index].clone();
+        let scene_shape = data_shape
+            .get("m_sceneObjects")
+            .and_then(Encoding::as_array)
+            .and_then(|s| s.get(scene_index))
+            .ok_or_else(|| invalid("Missing scene encoding"))?
+            .clone();
+        set(&mut data, "m_sceneObjects", Value::Array(vec![scene]))?;
+        data_shape
+            .get_mut("m_sceneObjects")
+            .ok_or_else(|| invalid("Missing scene encoding"))?
+            .children = EncodingChildren::Array(vec![scene_shape]);
+        set(
+            &mut mesh,
+            "m_nDataBlock",
+            number(resource.blocks().len() + extra.len()),
+        )?;
+        extra.push((*b"MDAT", encode(&data, &data_shape, original)?));
+        let index = attachment::register(
+            &mut model_data,
+            &mut model_shape,
+            &mesh,
+            patch,
+            source.lods,
+            source.groups,
+        )?;
+        set(&mut mesh, "m_nMeshIndex", number(index))?;
+        if mesh.get("m_Name").is_some() {
+            set(&mut mesh, "m_Name", Value::String(patch.material.into()))?;
         }
+        push(
+            &mut ctrl,
+            &mut ctrl_shape,
+            "embedded_meshes",
+            mesh,
+            mesh_shape,
+        )?;
     }
     replacements.insert(ctrl_index, encode(&ctrl, &ctrl_shape, original_ctrl)?);
+    replacements.insert(
+        data_index,
+        encode(&model_data, &model_shape, original_data)?,
+    );
     let mut blocks = resource
         .blocks()
         .iter()

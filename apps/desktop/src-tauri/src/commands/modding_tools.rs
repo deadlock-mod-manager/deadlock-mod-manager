@@ -114,9 +114,13 @@ pub async fn prepare_modding_sdk(app: AppHandle) -> Result<ModdingSdkStatus, Err
   let config = get_modding_tools_config(app)?;
   let game = super::state::game_path()?;
   tauri::async_runtime::spawn_blocking(move || {
-    source2_tools::prepare_installation(&PathBuf::from(config.sdk), &game)
-      .map(Into::into)
-      .map_err(tool_error)
+    source2_tools::prepare_installation(
+      &PathBuf::from(config.sdk),
+      &game,
+      super::modding_setup::preparation_progress,
+    )
+    .map(Into::into)
+    .map_err(tool_error)
   })
   .await
   .map_err(|error| Error::BackgroundTaskFailed(error.to_string()))?

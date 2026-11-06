@@ -8579,6 +8579,13 @@
     "openProjectHint": "In Asset Browser, open the exported model to edit it and preview its AG2 animations in ModelDoc.",
     "setup": {
       "starting": "Starting setup…",
+      "verifying": "Verifying the downloaded tools…",
+      "extracting": "Extracting the tools…",
+      "downloadProgress": "{{downloaded}} of {{total}} downloaded",
+      "downloaded": "{{downloaded}} downloaded",
+      "elapsed": "{{seconds}}s elapsed",
+      "filesProgress_one": "{{count}} file checked · {{copied}} copied",
+      "filesProgress_other": "{{count}} files checked · {{copied}} copied",
       "cliDownload": "Installing Source 2 Viewer CLI…",
       "downloaderDownload": "Installing the Steam downloader…",
       "steamAuthorization": "Waiting for Steam authorization…",
