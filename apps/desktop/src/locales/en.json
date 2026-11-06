@@ -3610,6 +3610,24 @@
       "enable": "Enable",
       "close": "Close"
     },
+    "bulkActionRecap": {
+      "disableTitle": "Not every mod was disabled",
+      "deleteTitle": "Not every mod was deleted",
+      "disableSummary_one": "{{completed}} of {{count}} mod disabled.",
+      "disableSummary_other": "{{completed}} of {{count}} mods disabled.",
+      "deleteSummary_one": "{{completed}} of {{count}} mod deleted.",
+      "deleteSummary_other": "{{completed}} of {{count}} mods deleted.",
+      "stoppedError": "Stopped at the first failure, so the mods after it were not attempted.",
+      "stoppedGameRunning": "Stopped because Deadlock is running. Close the game, then try again.",
+      "stoppedProfileChanged": "Stopped because the active profile changed.",
+      "deletePartial": "A mod that failed to delete may have been partly removed.",
+      "disableFailed": "Failed to disable",
+      "deleteFailed": "Failed to delete",
+      "notAttempted": "Not attempted",
+      "disabled": "Disabled",
+      "deleted": "Deleted",
+      "close": "Close"
+    },
     "tabs": {
       "all": "All",
       "installed": "Installed",
