@@ -89,11 +89,16 @@ export const useLaunchRandomizer = () => {
       analyticsEntryPoint: ModEntryPoint,
     ) => {
       const state = usePersistedStore.getState();
+      // A retry can put back a mod the roll just took off, so its pool entry
+      // still reads as installed; install the store's current copy.
+      const current =
+        state.localMods.find((local) => local.remoteId === mod.remoteId) ?? mod;
       const result = await install(
-        mod,
+        current,
         {
           analyticsEntryPoint,
           analyticsOperationKind: "randomize",
+          unattended: true,
           onStart: (m) => state.setModStatus(m.remoteId, ModStatus.Installing),
           onComplete: (m, installed) => {
             state.setModStatus(m.remoteId, ModStatus.Installed);
@@ -123,7 +128,10 @@ export const useLaunchRandomizer = () => {
   /**
    * Swaps `active` for one roll from `pool`. Every candidate is checked before
    * anything is taken off, so a mod that turns out to need a file pick is never
-   * rolled and what was on stays on. Returns false when the swap failed.
+   * rolled. A pick that would need a prompt to install (a model conflict with a
+   * mod outside the pool, or a missing requirement) is cancelled, and the roll
+   * moves on to the rest, what was on before included. Returns false when
+   * nothing could be put on.
    */
   const roll = useCallback(
     async (
@@ -151,17 +159,36 @@ export const useLaunchRandomizer = () => {
       if (installable.length === 0) {
         return true;
       }
-      const pick = pickRandomOutcome(installable, currentOutcome(active));
-      const result = await applyHeroSelection(active, pick ? [pick] : [], {
-        uninstall: uninstallMod,
-        install: (mod) => {
-          const fileTree = fileTrees.get(mod.remoteId);
-          return fileTree
-            ? installMod(mod, fileTree, analyticsEntryPoint)
-            : Promise.resolve(false);
-        },
-      });
-      return result !== "aborted";
+      let current = active;
+      let candidates = installable;
+      while (candidates.length > 0) {
+        const pick = pickRandomOutcome(candidates, currentOutcome(current));
+        const result = await applyHeroSelection(current, pick ? [pick] : [], {
+          uninstall: uninstallMod,
+          install: (mod) => {
+            const fileTree = fileTrees.get(mod.remoteId);
+            return fileTree
+              ? installMod(mod, fileTree, analyticsEntryPoint)
+              : Promise.resolve(false);
+          },
+        });
+        if (result !== "aborted") {
+          return true;
+        }
+        const installed = new Set(
+          usePersistedStore
+            .getState()
+            .localMods.filter((mod) => mod.status === ModStatus.Installed)
+            .map((mod) => mod.remoteId),
+        );
+        current = current.filter((mod) => installed.has(mod.remoteId));
+        // A failed uninstall leaves things as they are rather than stacking.
+        if (current.length > 0) {
+          return false;
+        }
+        candidates = candidates.filter((outcome) => outcome !== pick);
+      }
+      return false;
     },
     [installMod, uninstallMod],
   );

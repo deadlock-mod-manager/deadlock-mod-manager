@@ -61,11 +61,13 @@ export function useModelConflictInstall() {
       profileFolder,
       bisectOriginalEnabled,
       keepBothWith,
+      unattended,
     }: {
       mod: LocalModWithFiles;
       profileFolder: string | null;
       bisectOriginalEnabled?: string[];
       keepBothWith?: string[];
+      unattended?: boolean;
     }) => {
       const profileId = usePersistedStore.getState().activeProfileId;
       const isCurrentProfile = () =>
@@ -73,6 +75,7 @@ export function useModelConflictInstall() {
       const state = usePersistedStore.getState();
       const unmet = unmetRequirements(mod.dependencies ?? [], state.localMods);
       if (!bisectOriginalEnabled && unmet.length > 0) {
+        if (unattended) return null;
         const proceed = await confirm({
           title: t("modDependencies.installTitle"),
           body: t("modDependencies.installBody", {
@@ -151,6 +154,7 @@ export function useModelConflictInstall() {
             ids.every((id) => keepBothWith?.includes(id) || requiredIds.has(id))
           )
             return "keepBoth";
+          if (unattended) return null;
           const { localMods } = usePersistedStore.getState();
           const conflicts = ids
             .filter((id) => !requiredIds.has(id))
