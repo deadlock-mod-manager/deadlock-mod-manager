@@ -5448,7 +5448,6 @@
     "analyzing": "جاري التحليل...",
     "analysisResults": "تحليل الإضافات المحلية",
     "analysisResultsDescription": "تم العثور على {{count}} إضافة في دليل اللعبة الخاص بك",
-    "identifiedAndAdded": "",
     "analysisSuccess": "اكتمل التحليل! تم العثور على {{count}} إضافة",
     "analysisSuccessWithIdentified": "اكتمل التحليل! تم العثور على {{count}} إضافة، تم تحديد {{identified}} وإضافتها إلى الملف الشخصي الحالي",
     "analysisSuccessAllIdentified": "اكتمل التحليل! تم تحديد جميع {{identified}} إضافة وإضافتها إلى الملف الشخصي الحالي",
@@ -5557,7 +5556,6 @@
       "noMods": "لم يتم العثور على تعديلات موجودة",
       "noModsDescription": "يمكنك البدء من جديد وتصفح التعديلات من الكتالوج.",
       "modsFound": "تم اكتشاف تعديلات موجودة!",
-      "modsFoundDescription": "هل تريد تحليلها واستيرادها؟",
       "analyze": "تحليل التعديلات",
       "analyzing": "جاري التحليل...",
       "skipAnalysis": "تخطي الآن"

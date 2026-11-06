@@ -5448,7 +5448,6 @@
     "analyzing": "Am Analysiere...",
     "analysisResults": "Lokali Addon-Analyse",
     "analysisResultsDescription": "{{count}} Addon(s) i dim Spiel-Verzeichnis gfunde",
-    "identifiedAndAdded": "",
     "analysisSuccess": "Analyse abgschlosse! {{count}} Addon(s) gfunde",
     "analysisSuccessWithIdentified": "Analyse abgschlosse! {{count}} Addon(s) gfunde, {{identified}} identifiziert und zum aktuelle Profil hinzuegfüegt",
     "analysisSuccessAllIdentified": "Analyse abgschlosse! Alli {{identified}} Addon(s) sind automatisch identifiziert und zum aktuelle Profil hinzuegfüegt worde",
@@ -5557,7 +5556,6 @@
       "noMods": "",
       "noModsDescription": "",
       "modsFound": "",
-      "modsFoundDescription": "",
       "analyze": "",
       "analyzing": "",
       "skipAnalysis": ""

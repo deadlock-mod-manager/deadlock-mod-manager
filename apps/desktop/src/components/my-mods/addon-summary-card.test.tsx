@@ -1,11 +1,15 @@
 import { describe, expect, it, mock } from "bun:test";
+import { createInstance } from "i18next";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { I18nextProvider } from "react-i18next";
+import en from "@/locales/en.json";
 import type { LocalAddonInfo } from "@/types/mods";
 
 type LibraryCheck = { owned: boolean | undefined; isLoading: boolean };
 let libraryCheck: LibraryCheck = { owned: undefined, isLoading: false };
 let lookedUp: string | undefined;
+let libraryModIds: string[] = [];
 
 mock.module("@/hooks/use-vpk-scan", () => ({
   useVpkScan: () => ({
@@ -15,6 +19,11 @@ mock.module("@/hooks/use-vpk-scan", () => ({
     },
     isLoading: libraryCheck.isLoading,
   }),
+}));
+mock.module("@/lib/store", () => ({
+  usePersistedStore: <T,>(
+    selector: (state: { localMods: { remoteId: string }[] }) => T,
+  ) => selector({ localMods: libraryModIds.map((remoteId) => ({ remoteId })) }),
 }));
 let openedUrls: string[] = [];
 let clickLink: (() => void) | undefined;
@@ -46,6 +55,19 @@ mock.module("@deadlock-mods/ui/icons", () => ({
 }));
 
 const { AddonSummaryCard } = await import("./addon-summary-card");
+
+const i18n = createInstance();
+await i18n.init({
+  lng: "en",
+  resources: { en: { translation: en } },
+  interpolation: { escapeValue: false },
+});
+const renderCard = (card: LocalAddonInfo) =>
+  renderToStaticMarkup(
+    <I18nextProvider i18n={i18n}>
+      <AddonSummaryCard addon={card} />
+    </I18nextProvider>,
+  );
 
 const addon: LocalAddonInfo = {
   filePath: "/game/citadel/addons2/pak01_dir.vpk",
@@ -82,7 +104,7 @@ const addon: LocalAddonInfo = {
 const render = (check: LibraryCheck) => {
   libraryCheck = check;
   lookedUp = undefined;
-  return renderToStaticMarkup(<AddonSummaryCard addon={addon} />);
+  return renderCard(addon);
 };
 
 describe("AddonSummaryCard library check", () => {
@@ -112,14 +134,35 @@ describe("AddonSummaryCard library check", () => {
   });
 });
 
+describe("AddonSummaryCard identified addon", () => {
+  const identified: LocalAddonInfo = { ...addon, remoteId: "900001" };
+  const renderIdentified = (inLibrary: string[], owned?: boolean) => {
+    libraryModIds = inLibrary;
+    libraryCheck = { owned, isLoading: false };
+    return renderCard(identified);
+  };
+
+  it("doesn't claim a mod the library lacks was added", () => {
+    const html = renderIdentified([]);
+    expect(html).not.toContain("Added to Library");
+    expect(html).toContain("Not in Library");
+    expect(html).not.toContain("<button");
+  });
+
+  it("goes by the library, not by who owns the file", () => {
+    // A parked, prefix-named file belongs to its library mod without being
+    // one of its installed files.
+    expect(renderIdentified(["900001"], false)).toContain("Added to Library");
+    expect(renderIdentified(["other"], true)).toContain("Not in Library");
+  });
+});
+
 describe("AddonSummaryCard GameBanana link", () => {
   const renderIdentified = (identity: Partial<LocalAddonInfo>) => {
     libraryCheck = { owned: true, isLoading: false };
     clickLink = undefined;
     openedUrls = [];
-    return renderToStaticMarkup(
-      <AddonSummaryCard addon={{ ...addon, ...identity }} />,
-    );
+    return renderCard({ ...addon, ...identity });
   };
   const LOCAL_ID = "local-550e8400-e29b-41d4-a716-446655440000";
 

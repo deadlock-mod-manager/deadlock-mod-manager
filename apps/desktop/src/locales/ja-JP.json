@@ -5448,7 +5448,6 @@
     "analyzing": "分析中...",
     "analysisResults": "ローカルアドオン分析",
     "analysisResultsDescription": "ゲームディレクトリに{{count}}個のアドオンが見つかりました",
-    "identifiedAndAdded": "",
     "analysisSuccess": "分析完了！{{count}}個のアドオンが見つかりました",
     "analysisSuccessWithIdentified": "分析完了！{{count}}個のアドオンが見つかり、{{identified}}個を識別して現在のプロファイルに追加しました",
     "analysisSuccessAllIdentified": "分析完了！{{identified}}個のアドオンがすべて自動識別され、現在のプロファイルに追加されました",
@@ -5557,7 +5556,6 @@
       "noMods": "既存のModは見つかりませんでした",
       "noModsDescription": "新しく始めて、カタログからModを閲覧できます。",
       "modsFound": "既存のModが検出されました！",
-      "modsFoundDescription": "分析してインポートしますか？",
       "analyze": "Modを分析",
       "analyzing": "分析中...",
       "skipAnalysis": "今はスキップ"

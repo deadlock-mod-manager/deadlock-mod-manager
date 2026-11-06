@@ -1,6 +1,7 @@
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Button } from "@deadlock-mods/ui/components/button";
 import { ExternalLink, Plus } from "@deadlock-mods/ui/icons";
+import { useTranslation } from "react-i18next";
 import type { LocalAddonInfo } from "@/types/mods";
 
 interface AddonActionsProps {
@@ -20,11 +21,17 @@ export const AddonActions = ({
   onAddToLibrary,
   onExternalLinkClick,
 }: AddonActionsProps) => {
+  const { t } = useTranslation();
+
   if (isIdentified) {
     return (
       <>
-        <Badge variant='default' className='bg-green-600 hover:bg-green-700'>
-          Auto-Added to Library
+        <Badge
+          variant={isAlreadyInLibrary ? "secondary" : "outline"}
+          className='h-7 text-xs'>
+          {isAlreadyInLibrary
+            ? t("addons.inLibrary")
+            : t("addons.notInLibrary")}
         </Badge>
         {onExternalLinkClick && (
           <ExternalLink
@@ -39,7 +46,7 @@ export const AddonActions = ({
   if (isAlreadyInLibrary) {
     return (
       <Badge variant='secondary' className='h-7 text-xs'>
-        Added to Library
+        {t("addons.inLibrary")}
       </Badge>
     );
   }

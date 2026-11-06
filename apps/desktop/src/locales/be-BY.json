@@ -5448,7 +5448,6 @@
     "analyzing": "",
     "analysisResults": "",
     "analysisResultsDescription": "",
-    "identifiedAndAdded": "",
     "analysisSuccess": "",
     "analysisSuccessWithIdentified": "",
     "analysisSuccessAllIdentified": "",
@@ -5557,7 +5556,6 @@
       "noMods": "",
       "noModsDescription": "",
       "modsFound": "",
-      "modsFoundDescription": "",
       "analyze": "",
       "analyzing": "",
       "skipAnalysis": ""

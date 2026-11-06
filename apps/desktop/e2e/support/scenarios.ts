@@ -67,6 +67,7 @@ import {
 } from "./catalog-refresh-fixtures";
 import { prepareLegacyCatalog } from "./catalog-upgrade-fixtures";
 import { prepareOnboardingWorld } from "./onboarding-fixtures";
+import { onboardingIdentifiedRoutes } from "./analysis-library-status-fixtures";
 import {
   libraryAuthorRoutes,
   legacyLibraryAuthorRoutes,
@@ -673,6 +674,12 @@ export const scenarios = {
   "onboarding-telemetry-default": {
     ...onboarding,
     prepare: (world: CreatedWorld) => prepareOnboardingWorld(world, false),
+  },
+  "onboarding-identified-addon": {
+    ...onboarding,
+    spec: "onboarding-identified",
+    phases: ["identified-analysis"],
+    routes: onboardingIdentifiedRoutes,
   },
   "content-blur": {
     ...settings,
