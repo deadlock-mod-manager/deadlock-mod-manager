@@ -268,7 +268,13 @@ export const useLaunchRandomizer = () => {
       // It only lets more variant mods roll, so a failed read leaves them out.
       manifest: await getProfileVpkSnapshot(folder)
         .then((snapshot) => snapshot.manifest)
-        .catch(() => undefined),
+        .catch((error) => {
+          logger
+            .withMetadata({ profileFolder: folder })
+            .withError(error)
+            .warn("Rolling without the profile manifest");
+          return undefined;
+        }),
     };
     const pools = groupRandomizerPools(
       randomizedGroups(start),
