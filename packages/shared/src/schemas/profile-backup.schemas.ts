@@ -8,6 +8,7 @@ export const profileBackupModGroupSchema = z.object({
   name: z.string().max(100),
   modIds: z.array(z.string()).max(2000),
   collapsed: z.boolean(),
+  randomize: z.boolean().optional(),
 });
 
 // Wraps the share format so backups restore through the same import path,
