@@ -254,10 +254,23 @@ struct ResolvedProfileVpk {
   profile_base: crate::mod_manager::shard::ProfileBase,
   shard: ShardIndex,
   filename: String,
+  /// The listed name is a link; `path` is its target.
+  linked: bool,
 }
 
 fn resolve_profile_vpk_path(
   profile_folder: Option<String>,
+  vpk_name: &str,
+) -> Result<ResolvedProfileVpk, Error> {
+  let base = MANAGER
+    .lock()
+    .unwrap()
+    .get_addons_path(profile_folder.as_deref())?;
+  resolve_profile_vpk_in(base, vpk_name)
+}
+
+fn resolve_profile_vpk_in(
+  base: crate::mod_manager::shard::ProfileBase,
   vpk_name: &str,
 ) -> Result<ResolvedProfileVpk, Error> {
   if vpk_name.is_empty() || vpk_name.contains('\\') || vpk_name.contains("..") {
@@ -266,8 +279,6 @@ fn resolve_profile_vpk_path(
     )));
   }
 
-  let mod_manager = MANAGER.lock().unwrap();
-  let base = mod_manager.get_addons_path(profile_folder.as_deref())?;
   let locator = ShardLocator::parse(vpk_name)?;
   let shard_index = locator.shard;
   let filename = locator.filename;
@@ -279,6 +290,9 @@ fn resolve_profile_vpk_path(
 
   let target_dir = base.shard_dir(shard_index);
   let vpk_path = target_dir.join(&filename);
+  let linked = vpk_path
+    .symlink_metadata()
+    .is_ok_and(|metadata| metadata.file_type().is_symlink());
   let target_canonical = target_dir
     .canonicalize()
     .map_err(|_| Error::UnauthorizedPath("Unable to resolve addon shard directory".to_string()))?;
@@ -300,6 +314,7 @@ fn resolve_profile_vpk_path(
     profile_base: base,
     shard: shard_index,
     filename,
+    linked,
   })
 }
 
@@ -311,16 +326,14 @@ pub async fn delete_profile_vpk(
 ) -> Result<(), Error> {
   crate::game_guard::ensure_game_idle_locked("delete_profile_vpk", guard_permit.as_deref())?;
   log::info!("Deleting VPK {vpk_name} from profile {profile_folder:?}");
-  let resolved = resolve_profile_vpk_path(profile_folder, &vpk_name)?;
+  // Held through the removal, so an install can't put a mod's file at this
+  // path after the ownership check.
+  let manager = MANAGER.lock().unwrap();
+  let base = manager.get_addons_path(profile_folder.as_deref())?;
+  let resolved = resolve_profile_vpk_in(base, &vpk_name)?;
+  ensure_unlinked(&resolved)?;
   let manifest = ProfileVpkManifest::open_for_write(&resolved.profile_base)?;
-  let is_managed = manifest.mods.values().any(|entry| {
-    if entry.enabled {
-      entry.shard == resolved.shard && entry.current_vpks.contains(&resolved.filename)
-    } else {
-      resolved.shard == ShardIndex::FIRST && entry.disabled_vpks.contains(&resolved.filename)
-    }
-  });
-  if is_managed {
+  if is_managed(&resolved, &manifest) {
     return Err(Error::ModInvalid(format!(
       "Cannot delete managed VPK {} as an unmatched file; refresh the VPK scan",
       resolved.filename
@@ -330,6 +343,120 @@ pub async fn delete_profile_vpk(
   std::fs::remove_file(&resolved.path)?;
   log::info!("Deleted unmanaged VPK file: {:?}", resolved.path);
   Ok(())
+}
+
+/// Deleting or moving a link would act on its target, which may be a file a
+/// mod owns under another name.
+fn ensure_unlinked(resolved: &ResolvedProfileVpk) -> Result<(), Error> {
+  if resolved.linked {
+    return Err(Error::UnauthorizedPath(format!(
+      "{} is a link; remove it outside DMM",
+      resolved.filename
+    )));
+  }
+  Ok(())
+}
+
+fn is_managed(resolved: &ResolvedProfileVpk, manifest: &ProfileVpkManifest) -> bool {
+  manifest.mods.values().any(|entry| {
+    if entry.enabled {
+      entry.shard == resolved.shard && entry.current_vpks.contains(&resolved.filename)
+    } else {
+      resolved.shard == ShardIndex::FIRST && entry.disabled_vpks.contains(&resolved.filename)
+    }
+  })
+}
+
+/// Folder inside a profile where Analyze sets aside files the user chose to
+/// quarantine. The game only loads VPKs at the top of each search path, and
+/// Analyze and the VPK scan read only that level, so nothing here is loaded or
+/// offered again until the user moves it back.
+const QUARANTINE_DIR: &str = ".dmm-quarantine";
+
+/// Move an unmanaged VPK into the profile's quarantine folder and return where
+/// it went. The manager lock is held throughout, so no mod can take the file
+/// between the ownership check and the move.
+#[tauri::command]
+pub async fn quarantine_profile_vpk(
+  profile_folder: Option<String>,
+  vpk_name: String,
+  guard_permit: Option<String>,
+) -> Result<String, Error> {
+  crate::game_guard::ensure_game_idle_locked("quarantine_profile_vpk", guard_permit.as_deref())?;
+  log::info!("Quarantining VPK {vpk_name} from profile {profile_folder:?}");
+  let manager = MANAGER.lock().unwrap();
+  let base = manager.get_addons_path(profile_folder.as_deref())?;
+  let destination = quarantine_unmanaged_vpk(base, &vpk_name)?;
+  Ok(destination.to_string_lossy().into_owned())
+}
+
+fn quarantine_unmanaged_vpk(
+  base: crate::mod_manager::shard::ProfileBase,
+  vpk_name: &str,
+) -> Result<std::path::PathBuf, Error> {
+  let resolved = resolve_profile_vpk_in(base, vpk_name)?;
+  ensure_unlinked(&resolved)?;
+  let manifest = ProfileVpkManifest::open_for_write(&resolved.profile_base)?;
+  if is_managed(&resolved, &manifest) {
+    return Err(Error::ModInvalid(format!(
+      "Cannot quarantine managed VPK {}; run Analyze again",
+      resolved.filename
+    )));
+  }
+
+  let folder = resolved.profile_base.join(QUARANTINE_DIR);
+  match std::fs::symlink_metadata(&folder) {
+    Ok(metadata) if metadata.is_dir() => {}
+    Ok(_) => {
+      return Err(Error::UnauthorizedPath(format!(
+        "{} is not a folder",
+        folder.display()
+      )));
+    }
+    Err(error) if error.kind() == std::io::ErrorKind::NotFound => std::fs::create_dir(&folder)?,
+    Err(error) => return Err(error.into()),
+  }
+
+  // Overflow shards reuse the base folder's pakNN names, so their files keep
+  // the shard in front to stay distinguishable.
+  let name = if resolved.shard == ShardIndex::FIRST {
+    resolved.filename.clone()
+  } else {
+    format!("{}-{}", resolved.shard.root_name(), resolved.filename)
+  };
+  let destination = free_path(&folder, &name);
+  std::fs::rename(&resolved.path, &destination)?;
+  log::info!(
+    "Quarantined unmanaged VPK {:?} to {:?}",
+    resolved.path,
+    destination
+  );
+  Ok(destination)
+}
+
+/// `name` in `folder`, or `name (2)`, `name (3)`... when it is taken. Any
+/// entry counts as taken, a dangling link too, which `rename` would replace.
+fn free_path(folder: &std::path::Path, name: &str) -> std::path::PathBuf {
+  let taken = |path: &std::path::Path| path.symlink_metadata().is_ok();
+  let candidate = folder.join(name);
+  if !taken(&candidate) {
+    return candidate;
+  }
+  let path = std::path::Path::new(name);
+  let stem = path
+    .file_stem()
+    .map(|s| s.to_string_lossy().into_owned())
+    .unwrap_or_default();
+  let extension = path.extension().map(|e| e.to_string_lossy().into_owned());
+  (2..)
+    .map(|n| {
+      folder.join(match &extension {
+        Some(extension) => format!("{stem} ({n}).{extension}"),
+        None => format!("{stem} ({n})"),
+      })
+    })
+    .find(|candidate| !taken(candidate))
+    .expect("an unused name exists")
 }
 
 #[tauri::command]
@@ -703,6 +830,203 @@ pub async fn seed_profile_vpk_manifest_entries(
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::mod_manager::shard::ProfileBase;
+  use crate::mod_manager::vpk_manifest::ProfileVpkManifestEntry;
+
+  fn profile() -> (tempfile::TempDir, ProfileBase) {
+    let temp = tempfile::tempdir().unwrap();
+    let base = ProfileBase::new(temp.path().join("citadel/addons/profile_1")).unwrap();
+    std::fs::create_dir_all(base.path()).unwrap();
+    (temp, base)
+  }
+
+  fn write(base: &ProfileBase, shard: ShardIndex, name: &str, bytes: &[u8]) -> std::path::PathBuf {
+    let dir = base.shard_dir(shard);
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join(name);
+    std::fs::write(&path, bytes).unwrap();
+    path
+  }
+
+  fn quarantine_folder(base: &ProfileBase) -> std::path::PathBuf {
+    base.path().join(QUARANTINE_DIR)
+  }
+
+  #[test]
+  fn quarantine_moves_an_unmanaged_file_out_of_the_loaded_folder() {
+    let (_temp, base) = profile();
+    let source = write(&base, ShardIndex::FIRST, "900001_green.vpk", b"leftover");
+
+    let destination = quarantine_unmanaged_vpk(base.clone(), "900001_green.vpk").unwrap();
+
+    assert!(!source.exists());
+    assert_eq!(
+      destination,
+      quarantine_folder(&base).join("900001_green.vpk")
+    );
+    assert_eq!(std::fs::read(&destination).unwrap(), b"leftover");
+  }
+
+  #[test]
+  fn quarantine_keeps_the_shard_and_never_overwrites() {
+    let (_temp, base) = profile();
+    let second = ShardIndex::new(2).unwrap();
+    write(&base, ShardIndex::FIRST, "pak01_dir.vpk", b"base");
+    write(&base, second, "pak01_dir.vpk", b"overflow");
+    std::fs::create_dir_all(quarantine_folder(&base)).unwrap();
+    std::fs::write(quarantine_folder(&base).join("pak01_dir.vpk"), b"earlier").unwrap();
+
+    let base_file = quarantine_unmanaged_vpk(base.clone(), "pak01_dir.vpk").unwrap();
+    let overflow_file = quarantine_unmanaged_vpk(base.clone(), "addons2/pak01_dir.vpk").unwrap();
+
+    assert_eq!(
+      base_file,
+      quarantine_folder(&base).join("pak01_dir (2).vpk")
+    );
+    assert_eq!(std::fs::read(&base_file).unwrap(), b"base");
+    assert_eq!(
+      overflow_file,
+      quarantine_folder(&base).join("addons2-pak01_dir.vpk")
+    );
+    assert_eq!(std::fs::read(&overflow_file).unwrap(), b"overflow");
+    assert_eq!(
+      std::fs::read(quarantine_folder(&base).join("pak01_dir.vpk")).unwrap(),
+      b"earlier"
+    );
+  }
+
+  /// The analysis the user acted on can be stale: a mod may have taken the
+  /// file since.
+  #[test]
+  fn quarantine_refuses_files_a_mod_owns() {
+    let (_temp, base) = profile();
+    let enabled = write(&base, ShardIndex::FIRST, "pak01_dir.vpk", b"enabled");
+    let parked = write(&base, ShardIndex::FIRST, "900077_red.vpk", b"parked");
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mods.insert(
+      "900001".to_string(),
+      ProfileVpkManifestEntry {
+        enabled: true,
+        current_vpks: vec!["pak01_dir.vpk".to_string()],
+        ..Default::default()
+      },
+    );
+    manifest.mods.insert(
+      "900077".to_string(),
+      ProfileVpkManifestEntry {
+        enabled: false,
+        disabled_vpks: vec!["900077_red.vpk".to_string()],
+        ..Default::default()
+      },
+    );
+    manifest.save(base.path()).unwrap();
+
+    for name in ["pak01_dir.vpk", "900077_red.vpk"] {
+      assert!(matches!(
+        quarantine_unmanaged_vpk(base.clone(), name),
+        Err(Error::ModInvalid(_))
+      ));
+    }
+    assert_eq!(std::fs::read(enabled).unwrap(), b"enabled");
+    assert_eq!(std::fs::read(parked).unwrap(), b"parked");
+  }
+
+  #[test]
+  fn quarantine_refuses_paths_outside_the_profile() {
+    let (_temp, base) = profile();
+    write(&base, ShardIndex::FIRST, "notes.txt", b"text");
+    for name in [
+      "../pak01_dir.vpk",
+      "",
+      "notes.txt",
+      "sub/pak01_dir.vpk",
+      "missing.vpk",
+    ] {
+      assert!(
+        quarantine_unmanaged_vpk(base.clone(), name).is_err(),
+        "{name:?} was accepted"
+      );
+    }
+  }
+
+  #[test]
+  fn a_failed_quarantine_leaves_the_file_in_place() {
+    let (_temp, base) = profile();
+    let source = write(&base, ShardIndex::FIRST, "pak04_dir.vpk", b"stray");
+    std::fs::write(quarantine_folder(&base), b"not a folder").unwrap();
+
+    assert!(quarantine_unmanaged_vpk(base.clone(), "pak04_dir.vpk").is_err());
+    assert_eq!(std::fs::read(source).unwrap(), b"stray");
+  }
+
+  /// A link named like a leftover would otherwise move the file it points
+  /// to, which may be one a mod owns.
+  #[cfg(unix)]
+  #[test]
+  fn quarantine_refuses_a_linked_file() {
+    let (_temp, base) = profile();
+    let owned = write(&base, ShardIndex::FIRST, "pak01_dir.vpk", b"owned");
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mods.insert(
+      "900001".to_string(),
+      ProfileVpkManifestEntry {
+        enabled: true,
+        current_vpks: vec!["pak01_dir.vpk".to_string()],
+        ..Default::default()
+      },
+    );
+    manifest.save(base.path()).unwrap();
+    let alias = base.path().join("900999_alias.vpk");
+    std::os::unix::fs::symlink(&owned, &alias).unwrap();
+
+    assert!(matches!(
+      quarantine_unmanaged_vpk(base.clone(), "900999_alias.vpk"),
+      Err(Error::UnauthorizedPath(_))
+    ));
+    assert_eq!(std::fs::read(&owned).unwrap(), b"owned");
+    assert!(alias.symlink_metadata().unwrap().file_type().is_symlink());
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn quarantine_treats_a_dangling_link_as_taken() {
+    let (temp, base) = profile();
+    write(&base, ShardIndex::FIRST, "pak04_dir.vpk", b"stray");
+    std::fs::create_dir_all(quarantine_folder(&base)).unwrap();
+    let dangling = quarantine_folder(&base).join("pak04_dir.vpk");
+    std::os::unix::fs::symlink(temp.path().join("gone"), &dangling).unwrap();
+
+    let destination = quarantine_unmanaged_vpk(base.clone(), "pak04_dir.vpk").unwrap();
+
+    assert_eq!(
+      destination,
+      quarantine_folder(&base).join("pak04_dir (2).vpk")
+    );
+    assert!(
+      dangling
+        .symlink_metadata()
+        .unwrap()
+        .file_type()
+        .is_symlink()
+    );
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn quarantine_refuses_a_linked_quarantine_folder() {
+    let (temp, base) = profile();
+    let source = write(&base, ShardIndex::FIRST, "pak04_dir.vpk", b"stray");
+    let elsewhere = temp.path().join("elsewhere");
+    std::fs::create_dir_all(&elsewhere).unwrap();
+    std::os::unix::fs::symlink(&elsewhere, quarantine_folder(&base)).unwrap();
+
+    assert!(matches!(
+      quarantine_unmanaged_vpk(base.clone(), "pak04_dir.vpk"),
+      Err(Error::UnauthorizedPath(_))
+    ));
+    assert!(source.exists());
+    assert_eq!(std::fs::read_dir(elsewhere).unwrap().count(), 0);
+  }
 
   /// Switching writes the folder into gameinfo.gi, which only accepts ASCII
   /// names. A folder that fails that check can never be switched to.

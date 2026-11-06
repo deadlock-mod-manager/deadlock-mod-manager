@@ -44,6 +44,11 @@ export type IdentityMigration = {
   to: string;
 };
 
+export type AnalysisTarget = {
+  profileFolder: string | null;
+  registering: boolean;
+};
+
 export type ModsState = {
   localMods: LocalMod[];
   modProgress: Record<string, ModProgress>;
@@ -64,6 +69,8 @@ export type ModsState = {
   // Analysis dialog state
   analysisResult: AnalyzeAddonsResult | null;
   analysisDialogOpen: boolean;
+  /** The profile the analysis result describes, and whether Analyze is still registering what it found. */
+  analysisTarget: AnalysisTarget | null;
   // Hero detection state (ephemeral)
   heroDetection: HeroDetectionProgress;
 
@@ -137,6 +144,9 @@ export type ModsState = {
   ) => void;
   getModProgress: (remoteId: string) => ModProgress | undefined;
   setAnalysisResult: (result: AnalyzeAddonsResult | null) => void;
+  setAnalysisTarget: (target: AnalysisTarget | null) => void;
+  /** Drops a file the user deleted or quarantined from the shown result. */
+  removeAnalyzedAddon: (filePath: string) => void;
   setAnalysisDialogOpen: (open: boolean) => void;
   clearAnalysisDialog: () => void;
   setModOrder: (remoteId: string, order: number, profileId?: ProfileId) => void;
@@ -191,6 +201,7 @@ export const createModsSlice: StateCreator<
   pendingIdentityMigrations: [],
   analysisResult: null,
   analysisDialogOpen: false,
+  analysisTarget: null,
   heroDetection: { status: "idle", current: 0, total: 0, currentModName: null },
 
   completeIdentityMigrations: () => set({ pendingIdentityMigrations: [] }),
@@ -701,9 +712,31 @@ export const createModsSlice: StateCreator<
     }),
 
   setAnalysisResult: (result) => set({ analysisResult: result }),
+  setAnalysisTarget: (target) => set({ analysisTarget: target }),
+  // Matched by path, not by result: the file is gone whichever analysis shows it.
+  removeAnalyzedAddon: (filePath) =>
+    set((state) => {
+      const result = state.analysisResult;
+      if (!result) return state;
+      const addons = result.addons.filter(
+        (addon) => addon.filePath !== filePath,
+      );
+      return {
+        analysisResult: {
+          ...result,
+          addons,
+          totalCount:
+            result.totalCount - (result.addons.length - addons.length),
+        },
+      };
+    }),
   setAnalysisDialogOpen: (open) => set({ analysisDialogOpen: open }),
   clearAnalysisDialog: () =>
-    set({ analysisResult: null, analysisDialogOpen: false }),
+    set({
+      analysisResult: null,
+      analysisDialogOpen: false,
+      analysisTarget: null,
+    }),
 
   setModOrder: (remoteId, order, requestedProfileId) => {
     get().bumpProfileSyncRevision(requestedProfileId ?? get().activeProfileId);

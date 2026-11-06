@@ -32,6 +32,7 @@ export const AnalyzeAddonsButton = ({
     progress,
     showProgressToast,
     analysisResult,
+    analysisTarget,
     dialogOpen,
     setDialogOpen,
     isPending,
@@ -80,6 +81,7 @@ export const AnalyzeAddonsButton = ({
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         result={analysisResult}
+        fileContext={analysisTarget}
       />
     </>
   );

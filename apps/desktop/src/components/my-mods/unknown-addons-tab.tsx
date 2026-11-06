@@ -1,15 +1,18 @@
 import { CheckCircle } from "@deadlock-mods/ui/icons";
 import type { LocalAddonInfo } from "@/types/mods";
+import type { AnalysisTarget } from "@/lib/store/slices/mods";
 import { AddonSummaryCard } from "./addon-summary-card";
 
 interface UnknownAddonsTabProps {
   unknownAddons: LocalAddonInfo[];
   onAddToLibrary: (addon: LocalAddonInfo) => void;
+  fileContext?: AnalysisTarget | null;
 }
 
 export const UnknownAddonsTab = ({
   unknownAddons,
   onAddToLibrary,
+  fileContext,
 }: UnknownAddonsTabProps) => {
   if (unknownAddons.length === 0) {
     return (
@@ -27,6 +30,7 @@ export const UnknownAddonsTab = ({
           key={addon.filePath}
           addon={addon}
           onAddToLibrary={onAddToLibrary}
+          fileContext={fileContext}
         />
       ))}
     </div>
