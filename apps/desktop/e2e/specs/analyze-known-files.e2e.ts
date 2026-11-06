@@ -11,7 +11,11 @@ import {
 } from "../support/analyze-known-files-fixtures";
 import { step } from "../support/evidence";
 import { observeUntil, readPersistedDocument } from "../support/observations";
-import { navigate, waitForOverlaysClosed } from "../support/ui";
+import {
+  navigate,
+  waitForDisplayed,
+  waitForOverlaysClosed,
+} from "../support/ui";
 
 type Row = (typeof UNKNOWN_ADDONS)[number];
 
@@ -41,29 +45,47 @@ const expectRows = (expected: readonly string[]) =>
     { timeoutMsg: `Analysis rows never showed ${expected.join(", ")}` },
   );
 
+const RESULTS_DIALOG =
+  '//div[@role="dialog"][.//h2[normalize-space()="Local Addon Analysis"]]';
+
 const closeResults = () =>
   step("close the analysis results", async () => {
     await $(
-      '//div[@role="dialog"][.//h2[normalize-space()="Local Addon Analysis"]]//button[.//span[normalize-space()="Close"]]',
+      `${RESULTS_DIALOG}//button[.//span[normalize-space()="Close"]]`,
     ).click();
     await waitForOverlaysClosed();
   });
 
+const startAnalysis = async () => {
+  await navigate("my-mods");
+  await waitForOverlaysClosed();
+  // An empty library shows Analyze as a button; otherwise it is in the menu.
+  if (await $("button=Analyze").isExisting()) {
+    await $("button=Analyze").click();
+  } else {
+    await $('button[aria-label="More actions"]').click();
+    await browser.keys("ArrowDown");
+    await $('[role="menuitem"]=Analyze Local Addons').click();
+  }
+};
+
 const analyze = () =>
   step("run Analyze", async () => {
-    await navigate("my-mods");
-    await waitForOverlaysClosed();
-    // An empty library shows Analyze as a button; otherwise it is in the menu.
-    if (await $("button=Analyze").isExisting()) {
-      await $("button=Analyze").click();
-    } else {
-      await $('button[aria-label="More actions"]').click();
-      await browser.keys("ArrowDown");
-      await $('[role="menuitem"]=Analyze Local Addons').click();
-    }
+    await startAnalysis();
     await browser.waitUntil(async () => (await rowState(1)) !== "missing", {
       timeoutMsg: "Analysis never listed both addons",
     });
+  });
+
+// Once .dmm.json records both files, Analyze identifies them from it and has
+// nothing to review, so it reports success instead of opening the results.
+const analyzeFindsBothKnown = (title: string) =>
+  step(title, async () => {
+    await startAnalysis();
+    await waitForDisplayed(
+      '//*[@data-sonner-toast and contains(., "All 2 addon(s) were automatically identified")]',
+    );
+    assert.equal(await $(RESULTS_DIALOG).isExisting(), false);
   });
 
 const libraryState = async (world: string) =>
@@ -171,20 +193,15 @@ describe("Analyze and files already in the library", () => {
       await addRow(world, 1, UNKNOWN_ADDONS[1]);
       await expectRows(["in library", "in library"]);
       await closeResults();
-      await analyze();
-      await step("a new analysis recognizes both files", () =>
-        expectRows(["in library", "in library"]),
-      );
+      await analyzeFindsBothKnown("a new analysis recognizes both files");
       await expectOneOwnerPerFile(world);
     } else {
       await expectOneOwnerPerFile(world);
-      await analyze();
-      await step("after a restart, Analyze still recognizes both files", () =>
-        expectRows(["in library", "in library"]),
+      await analyzeFindsBothKnown(
+        "after a restart, Analyze still recognizes both files",
       );
       await expectOneOwnerPerFile(world);
     }
-    await closeResults();
     await closeApplication(world, runtime.processId);
   });
 });

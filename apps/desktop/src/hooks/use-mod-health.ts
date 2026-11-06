@@ -85,7 +85,7 @@ export const useGameRunning = () => {
 export const useIsCheckingModHealth = () =>
   useIsMutating({ mutationKey: MOD_HEALTH_CHECK_KEY }) > 0;
 
-let queuedCheck: ModHealthCheckRequest | null = null;
+const queuedChecks = new Map<string | null, ModHealthCheckRequest>();
 
 export const useCheckModHealth = () => {
   const queryClient = useQueryClient();
@@ -113,14 +113,16 @@ export const useCheckModHealth = () => {
     },
     onSettled: () => {
       useModHealthProgress.getState().setProgress(null);
-      const next = queuedCheck;
-      queuedCheck = null;
-      if (next) mutateRef.current(next);
+      const [next] = queuedChecks.values();
+      if (!next) return;
+      queuedChecks.delete(next.profileFolder);
+      mutateRef.current(next);
     },
   });
   mutateRef.current = mutation.mutate;
 
-  // One check runs at a time; requests made meanwhile merge into the next.
+  // One check runs at a time; requests made meanwhile merge into the next
+  // one for their profile.
   return useCallback(
     ({
       profileFolder,
@@ -130,7 +132,10 @@ export const useCheckModHealth = () => {
       if (!usePersistedStore.getState().gamePath) return;
       const request = { profileFolder, modIds, force };
       if (queryClient.isMutating({ mutationKey: MOD_HEALTH_CHECK_KEY }) > 0) {
-        queuedCheck = mergeHealthChecks(queuedCheck, request);
+        queuedChecks.set(
+          profileFolder,
+          mergeHealthChecks(queuedChecks.get(profileFolder) ?? null, request),
+        );
         return;
       }
       mutateRef.current(request);

@@ -54,18 +54,24 @@ pub struct DownloadTask {
   pub is_profile_import: bool,
   pub file_tree: Option<crate::mod_manager::file_tree::ModFileTree>,
   pub native_component_plan: bool,
+  /// The window's id for this attempt, echoed on the events that settle it, so
+  /// a late event from an earlier attempt for the same mod isn't taken for this
+  /// one. `None` for downloads the backend queues itself.
+  pub attempt_id: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DownloadStartedEvent {
   pub mod_id: String,
+  pub attempt_id: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DownloadProgressEvent {
   pub mod_id: String,
+  pub attempt_id: Option<String>,
   pub file_index: usize,
   pub total_files: usize,
   pub progress: u64,
@@ -81,12 +87,14 @@ impl DownloadProgressEvent {
   fn from_accepted(
     accepted: AcceptedProgress,
     mod_id: &str,
+    attempt_id: Option<&str>,
     file_index: usize,
     total_files: usize,
     source: Option<DownloadSource>,
   ) -> Self {
     Self {
       mod_id: mod_id.to_string(),
+      attempt_id: attempt_id.map(str::to_string),
       file_index,
       total_files,
       progress: accepted.file_downloaded,
@@ -103,6 +111,7 @@ impl DownloadProgressEvent {
 #[serde(rename_all = "camelCase")]
 pub struct DownloadCompletedEvent {
   pub mod_id: String,
+  pub attempt_id: Option<String>,
   pub path: String,
 }
 
@@ -110,6 +119,7 @@ pub struct DownloadCompletedEvent {
 #[serde(rename_all = "camelCase")]
 pub struct DownloadFileTreeEvent {
   pub mod_id: String,
+  pub attempt_id: Option<String>,
   pub file_tree: crate::mod_manager::file_tree::ModFileTree,
 }
 
@@ -130,6 +140,7 @@ pub struct DownloadFontsFoundEvent {
 #[serde(rename_all = "camelCase")]
 pub struct DownloadErrorEvent {
   pub mod_id: String,
+  pub attempt_id: Option<String>,
   pub error: String,
   /// Set when the failure is on the download server's side rather than the app's.
   pub reason: Option<DownloadFailureReason>,
@@ -146,7 +157,7 @@ pub enum DownloadFailureReason {
 }
 
 impl DownloadErrorEvent {
-  fn new(mod_id: String, error: &Error) -> Self {
+  fn new(task: &DownloadTask, error: &Error) -> Self {
     let (reason, retry_after_secs) = match error {
       Error::DownloadSourceBusy {
         retry_after_secs, ..
@@ -155,7 +166,8 @@ impl DownloadErrorEvent {
       _ => (None, None),
     };
     Self {
-      mod_id,
+      mod_id: task.mod_id.clone(),
+      attempt_id: task.attempt_id.clone(),
       error: error.to_string(),
       reason,
       retry_after_secs,
@@ -404,6 +416,7 @@ impl DownloadManager {
                     "download-completed",
                     DownloadCompletedEvent {
                       mod_id: mod_id.clone(),
+                      attempt_id: queued.task.attempt_id.clone(),
                       path: task_path,
                     },
                   )
@@ -420,7 +433,7 @@ impl DownloadManager {
                 app_handle
                   .emit(
                     "download-error",
-                    DownloadErrorEvent::new(mod_id.clone(), error),
+                    DownloadErrorEvent::new(&queued.task, error),
                   )
                   .ok();
               }
@@ -464,6 +477,7 @@ impl DownloadManager {
         "download-started",
         DownloadStartedEvent {
           mod_id: mod_id.clone(),
+          attempt_id: task.attempt_id.clone(),
         },
       )
       .ok();
@@ -487,6 +501,7 @@ impl DownloadManager {
           Self::publish_progress(
             accepted,
             &mod_id,
+            task.attempt_id.as_deref(),
             file_index,
             total_files,
             None,
@@ -501,6 +516,7 @@ impl DownloadManager {
       let md5_checksum = file.md5_checksum.clone();
       let native_artifact = file.native_artifact.clone();
       let mod_id_clone = mod_id.clone();
+      let attempt_id = task.attempt_id.clone();
       let app_handle_clone = app_handle.clone();
       let cancel_token_clone = cancel_token.clone();
       let pause_clone = pause.clone();
@@ -514,6 +530,7 @@ impl DownloadManager {
           {
             let app_handle = app_handle_clone.clone();
             let mod_id = mod_id_clone.clone();
+            let attempt_id = attempt_id.clone();
             let aggregator = Arc::clone(&aggregator_shared);
 
             move |progress: FileProgress| {
@@ -526,6 +543,7 @@ impl DownloadManager {
                   Self::publish_progress(
                     accepted,
                     &mod_id,
+                    attempt_id.as_deref(),
                     file_index,
                     total_files,
                     Some(progress.source),
@@ -553,6 +571,7 @@ impl DownloadManager {
           Self::publish_progress(
             accepted,
             &mod_id_clone,
+            attempt_id.as_deref(),
             file_index,
             total_files,
             None,
@@ -628,6 +647,7 @@ impl DownloadManager {
                 "download-file-tree",
                 DownloadFileTreeEvent {
                   mod_id: task.mod_id.clone(),
+                  attempt_id: task.attempt_id.clone(),
                   file_tree: tree,
                 },
               )
@@ -1502,6 +1522,7 @@ impl DownloadManager {
   fn publish_progress(
     accepted: AcceptedProgress,
     mod_id: &str,
+    attempt_id: Option<&str>,
     file_index: usize,
     total_files: usize,
     source: Option<DownloadSource>,
@@ -1516,7 +1537,14 @@ impl DownloadManager {
     app_handle
       .emit(
         "download-progress",
-        DownloadProgressEvent::from_accepted(accepted, mod_id, file_index, total_files, source),
+        DownloadProgressEvent::from_accepted(
+          accepted,
+          mod_id,
+          attempt_id,
+          file_index,
+          total_files,
+          source,
+        ),
       )
       .ok();
   }
@@ -1822,6 +1850,7 @@ impl DownloadManager {
             "download-file-tree",
             DownloadFileTreeEvent {
               mod_id: task.mod_id.clone(),
+              attempt_id: task.attempt_id.clone(),
               file_tree: aggregated_tree,
             },
           )
@@ -1939,7 +1968,7 @@ impl DownloadManager {
         .app_handle
         .emit(
           "download-error",
-          DownloadErrorEvent::new(queued.task.mod_id.clone(), &Error::DownloadCancelled),
+          DownloadErrorEvent::new(&queued.task, &Error::DownloadCancelled),
         )
         .ok();
     }
@@ -2027,7 +2056,7 @@ impl DownloadManager {
         .app_handle
         .emit(
           "download-error",
-          DownloadErrorEvent::new(queued.task.mod_id.clone(), &Error::DownloadCancelled),
+          DownloadErrorEvent::new(&queued.task, &Error::DownloadCancelled),
         )
         .ok();
     }
@@ -2302,6 +2331,7 @@ mod tests {
         is_profile_import: false,
         file_tree: None,
         native_component_plan: false,
+        attempt_id: None,
       },
       purpose: DownloadPurpose::Install,
       completion: None,
@@ -3268,12 +3298,14 @@ mod tests {
         percentage: 5.0,
       },
       "mod-7",
+      Some("attempt-1"),
       8,
       9,
       None,
     );
 
     assert_eq!(event.mod_id, "mod-7");
+    assert_eq!(event.attempt_id.as_deref(), Some("attempt-1"));
     assert_eq!(event.file_index, 8);
     assert_eq!(event.total_files, 9);
     assert_eq!(
