@@ -2,13 +2,14 @@ import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { getMod, getModDownloads } from "@/lib/api-client";
 import {
   buildAnalyzedFileTree,
   isRecordedInManifest,
+  isUnrecordedLeftover,
   needsAnalysisReview,
 } from "@/lib/mods/analyzed-files";
 import { notifyRemovedMods } from "@/lib/mods/missing-vpks";
@@ -16,6 +17,7 @@ import { invalidateModHealth } from "@/lib/mods/mod-health-queries";
 import { analyzeLocalAddons } from "@/lib/tauri-commands";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
+import type { AnalysisTarget } from "@/lib/store/slices/mods";
 import type { AddonAnalysisProgress, ModDownloadItem } from "@/types/mods";
 import { getErrorMessage } from "@/lib/errors";
 import type { ProfileId } from "@/types/profiles";
@@ -35,6 +37,12 @@ export const useAddonAnalysis = () => {
   const setAnalysisResult = usePersistedStore(
     (state) => state.setAnalysisResult,
   );
+  const analysisTarget = usePersistedStore((state) => state.analysisTarget);
+  const setAnalysisTarget = usePersistedStore(
+    (state) => state.setAnalysisTarget,
+  );
+  // The target this hook's run published, so a newer analysis isn't touched.
+  const publishedTarget = useRef<AnalysisTarget | null>(null);
   const setDialogOpen = usePersistedStore(
     (state) => state.setAnalysisDialogOpen,
   );
@@ -108,8 +116,19 @@ export const useAddonAnalysis = () => {
         return;
       }
       setAnalysisResult(data);
+      const target = { profileFolder, registering: true };
+      publishedTarget.current = target;
+      setAnalysisTarget(target);
 
-      const shouldShowDialog = needsAnalysisReview(data);
+      // Taken after manifest reconciliation and before anything is registered,
+      // so mods added below can't change which files count as leftovers.
+      const libraryIds = new Set(
+        (profileId
+          ? usePersistedStore.getState().profiles[profileId]?.mods
+          : undefined
+        )?.map((mod) => mod.remoteId),
+      );
+      const shouldShowDialog = needsAnalysisReview(data, libraryIds);
       setDialogOpen(shouldShowDialog);
 
       // Group addons by remoteId so multi-VPK mods are processed together
@@ -118,7 +137,7 @@ export const useAddonAnalysis = () => {
 
       const modGroups = new Map<string, typeof data.addons>();
       for (const addon of data.addons) {
-        if (addon.remoteId) {
+        if (addon.remoteId && !isUnrecordedLeftover(addon, libraryIds)) {
           const existing = modGroups.get(addon.remoteId) ?? [];
           existing.push(addon);
           modGroups.set(addon.remoteId, existing);
@@ -303,6 +322,12 @@ export const useAddonAnalysis = () => {
         }
       }
     },
+    onSettled: () => {
+      const target = publishedTarget.current;
+      publishedTarget.current = null;
+      if (target && usePersistedStore.getState().analysisTarget === target)
+        setAnalysisTarget({ ...target, registering: false });
+    },
     onError: (error) => {
       logger.withError(error).error("Failed to analyze addons");
       toast.error(t("addons.analysisError"), {
@@ -347,6 +372,7 @@ export const useAddonAnalysis = () => {
     progress,
     showProgressToast,
     analysisResult,
+    analysisTarget,
     dialogOpen,
     setDialogOpen: safeSetDialogOpen,
     isPending,

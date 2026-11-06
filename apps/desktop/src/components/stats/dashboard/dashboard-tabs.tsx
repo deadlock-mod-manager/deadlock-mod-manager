@@ -36,6 +36,7 @@ import {
   TriangleAlert,
   Trophy,
   Users,
+  UsersRound,
 } from "@deadlock-mods/ui/icons";
 import { type ComponentType, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -54,6 +55,7 @@ const ICONS = {
   sword: Sword,
   package: Package,
   users: Users,
+  usersRound: UsersRound,
   radio: Radio,
   trophy: Trophy,
   target: Target,

@@ -23,6 +23,7 @@ export type GuardedCommand =
   | "delete_profile_folder"
   | "switch_profile"
   | "delete_profile_vpk"
+  | "quarantine_profile_vpk"
   | "import_profile_batch"
   | "restore_gameinfo_backup"
   | "reset_to_vanilla"

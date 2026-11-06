@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import useInstallWithCollection from "@/hooks/use-install-with-collection";
+import { randomizedGroupModIds } from "@/lib/mods/group-randomizer";
 import { usePersistedStore } from "@/lib/store";
 import { type LocalMod, ModStatus } from "@/types/mods";
 
@@ -33,11 +34,19 @@ export const useEnableAllMods = () => {
   const mutation = useMutation({
     mutationKey: ["library-bulk"],
     mutationFn: async (selectedIds?: ReadonlySet<string>) => {
-      const profileId = usePersistedStore.getState().activeProfileId;
+      const state = usePersistedStore.getState();
+      const profileId = state.activeProfileId;
+      // A randomized group keeps one member on, picked at launch, so enabling
+      // everything leaves its members alone unless they were picked by hand.
+      const rolled = randomizedGroupModIds(
+        state.getActiveProfile()?.modGroups ?? [],
+      );
       const disabledMods = mods.filter(
         (mod) =>
           mod.status === ModStatus.Downloaded &&
-          (!selectedIds || selectedIds.has(mod.remoteId)),
+          (selectedIds
+            ? selectedIds.has(mod.remoteId)
+            : !rolled.has(mod.remoteId)),
       );
       if (disabledMods.length === 0) return;
       const shouldEnable = await confirm({
