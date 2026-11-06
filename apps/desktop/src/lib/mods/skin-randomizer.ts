@@ -21,16 +21,16 @@ type RandomizableMod = Pick<
 >;
 
 /**
- * Whether a skin can be put on at launch without asking anything. A skin that
+ * Whether a mod can be put on at launch without asking anything. A mod that
  * still needs its variant picked, or that writes to critical paths, needs a
  * dialog, and nobody is looking at the app while the game starts.
  */
-export const canRandomizeSkin = (mod: RandomizableMod): boolean => {
+export const canRandomizeMod = (mod: RandomizableMod): boolean => {
   if (mod.usesCriticalPaths) {
     return false;
   }
   // Without a stored tree the launch looks at the files itself and skips the
-  // skin if it turns out to need a pick.
+  // mod if it turns out to need a pick.
   return (
     !mod.installedFileTree ||
     !requiresFileSelection(mod.installedFileTree) ||
@@ -47,7 +47,7 @@ export function randomizerPool<
   selection: SkinRandomizerSelection,
 ): RandomizerOutcome<T>[] {
   const skins = group.skins.filter(
-    (skin) => selection.skins[skin.remoteId] && canRandomizeSkin(skin),
+    (skin) => selection.skins[skin.remoteId] && canRandomizeMod(skin),
   );
   return selection.defaultHeroes[hero] ? [null, ...skins] : skins;
 }
@@ -56,17 +56,17 @@ export const isRandomizedPool = (pool: readonly unknown[]): boolean =>
   pool.length >= RANDOMIZER_MIN_POOL;
 
 /**
- * What the hero wears right now, as a pool outcome: its one installed skin, or
- * null for the default look. Undefined when several skins are installed, since
+ * What is on right now, as a pool outcome: the one installed mod, or null for
+ * nothing (a hero's default look). Undefined when several are installed, since
  * that matches no single outcome.
  */
 export function currentOutcome<T extends { remoteId: string }>(
-  group: HeroModGroup<T>,
+  active: readonly T[],
 ): RandomizerOutcome<T> | undefined {
-  if (group.activeSkins.length > 1) {
+  if (active.length > 1) {
     return undefined;
   }
-  return group.activeSkins[0] ?? null;
+  return active[0] ?? null;
 }
 
 const sameOutcome = <T extends { remoteId: string }>(
@@ -108,7 +108,7 @@ export function bulkSelectableSkins<
 ): string[] {
   const ids: string[] = [];
   for (const [hero, group] of groups) {
-    const skins = group.skins.filter(canRandomizeSkin);
+    const skins = group.skins.filter(canRandomizeMod);
     if (skins.length + (defaultHeroes[hero] ? 1 : 0) >= RANDOMIZER_MIN_POOL) {
       ids.push(...skins.map((skin) => skin.remoteId));
     }

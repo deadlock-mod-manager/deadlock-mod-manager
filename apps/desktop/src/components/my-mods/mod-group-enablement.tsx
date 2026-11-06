@@ -4,7 +4,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@deadlock-mods/ui/components/tooltip";
-import { Power } from "@deadlock-mods/ui/icons";
+import { Power, Shuffle } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
 import { isInstalledModWithVpks } from "@/lib/mods/installed-helpers";
 import { usePersistedStore } from "@/lib/store";
@@ -32,10 +32,12 @@ export const ModGroupEnablement = ({
   const enabled = members.filter(isInstalledModWithVpks).length;
   const canEnable = members.some((mod) => mod.status === ModStatus.Downloaded);
   const label = t(
-    canEnable ? "myMods.groups.enable" : "myMods.groups.disable",
-    {
-      name: group.name,
-    },
+    group.randomize
+      ? "myMods.groups.randomized"
+      : canEnable
+        ? "myMods.groups.enable"
+        : "myMods.groups.disable",
+    { name: group.name },
   );
   return (
     <div className='flex shrink-0 items-center gap-1'>
@@ -47,26 +49,39 @@ export const ModGroupEnablement = ({
           total: members.length,
         })}
       </span>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            size='icon'
-            variant='ghost'
-            aria-label={label}
-            disabled={actions.busy || (!canEnable && enabled === 0)}
-            onClick={() =>
-              canEnable ? actions.enable(ids) : actions.disable(ids)
-            }>
-            <Power
-              className={cn(
-                "size-4 transition-colors duration-200",
-                !canEnable && enabled > 0 && "text-primary",
-              )}
-            />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>{label}</TooltipContent>
-      </Tooltip>
+      {group.randomize ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span
+              className='flex size-9 items-center justify-center text-primary'
+              aria-label={label}>
+              <Shuffle className='size-4' />
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>{label}</TooltipContent>
+        </Tooltip>
+      ) : (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              size='icon'
+              variant='ghost'
+              aria-label={label}
+              disabled={actions.busy || (!canEnable && enabled === 0)}
+              onClick={() =>
+                canEnable ? actions.enable(ids) : actions.disable(ids)
+              }>
+              <Power
+                className={cn(
+                  "size-4 transition-colors duration-200",
+                  !canEnable && enabled > 0 && "text-primary",
+                )}
+              />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{label}</TooltipContent>
+        </Tooltip>
+      )}
     </div>
   );
 };

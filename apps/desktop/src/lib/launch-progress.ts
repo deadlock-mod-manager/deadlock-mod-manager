@@ -4,6 +4,7 @@ import { create } from "zustand";
 /** Steps reported by `useLaunch` and the backend `launch-progress` event. */
 export type LaunchStep =
   | "randomizingSkins"
+  | "randomizingMods"
   | "disablingMods"
   | "verifyingMods"
   | "checkingCompatibility"

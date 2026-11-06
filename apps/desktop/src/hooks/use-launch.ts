@@ -12,7 +12,10 @@ import { MOD_PATHS_KEY } from "@/hooks/use-game-config-alert";
 import { useCompatibilityReview } from "@/components/providers/compatibility-review";
 import { stopHeroDetection } from "@/hooks/use-hero-detection";
 import { useLaunchFixes } from "@/hooks/use-launch-fixes";
-import { useSkinRandomizer } from "@/hooks/use-skin-randomizer";
+import {
+  launchRandomizerStep,
+  useLaunchRandomizer,
+} from "@/hooks/use-launch-randomizer";
 import { restoreProfileGameinfo } from "@/lib/gameinfo";
 import { getLaunchErrorMessage } from "@/lib/launch-error";
 import { type LaunchStep, useLaunchProgress } from "@/lib/launch-progress";
@@ -50,7 +53,7 @@ export const useLaunch = () => {
   const queryClient = useQueryClient();
   const confirm = useConfirm();
   const startGame = useStartGame();
-  const { randomizeSkins } = useSkinRandomizer();
+  const { randomize } = useLaunchRandomizer();
   const reviewCompatibility = useCompatibilityReview();
   const prepareModFixes = useLaunchFixes();
   const {
@@ -138,15 +141,16 @@ export const useLaunch = () => {
             "writingSearchPaths",
             ...BACKEND_TAIL,
           ];
-      const randomizesSkins =
-        !vanilla && usePersistedStore.getState().skinRandomizerEnabled;
+      // A vanilla launch loads no mods, so there is nothing to roll.
+      const randomizerStep = vanilla
+        ? null
+        : launchRandomizerStep(usePersistedStore.getState());
       startProgress(
-        randomizesSkins ? ["randomizingSkins", ...backendSteps] : backendSteps,
+        randomizerStep ? [randomizerStep, ...backendSteps] : backendSteps,
         modCount,
       );
-      // A vanilla launch loads no mods, so there is nothing to dress up.
-      if (!vanilla) {
-        await randomizeSkins();
+      if (randomizerStep) {
+        await randomize();
       }
 
       const activeProfile = getActiveProfile();

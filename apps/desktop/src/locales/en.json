@@ -1174,8 +1174,7 @@
       "inPool": "Include in the skin randomizer",
       "defaultInPool": "Include the default skin in the randomizer",
       "unavailable": "Can’t be randomized: install it once to pick its files, or it needs a confirmation",
-      "listSubtitle": "Random skin",
-      "launchFailed": "The skin randomizer couldn’t change every hero. The game starts with the skins that were already on."
+      "listSubtitle": "Random skin"
     }
   },
   "stats": {
@@ -3313,6 +3312,9 @@
       "enabledCount": "{{count}}/{{total}} enabled",
       "enable": "Enable mods in {{name}}",
       "disable": "Disable mods in {{name}}",
+      "randomize": "Randomize on launch",
+      "randomizeHelp": "Each launch turns on one mod from this group at random and turns the rest off.",
+      "randomized": "One mod from {{name}} is picked at random on every launch",
       "expandAll": "Expand all groups",
       "collapseAll": "Collapse all groups",
       "draggingMods_one": "{{count}} mod",
@@ -4142,8 +4144,10 @@
     "title": "Launching Deadlock",
     "hide": "Hide (the launch keeps going)",
     "cancel": "Cancel launch",
+    "randomizerFailed": "The randomizer couldn’t swap every mod. The game starts with what was already on.",
     "steps": {
       "randomizingSkins": "Randomizing hero skins",
+      "randomizingMods": "Randomizing mods",
       "disablingMods": "Disabling mods",
       "verifyingMods_one": "Verifying {{count}} mod",
       "verifyingMods_other": "Verifying {{count}} mods",
