@@ -16,9 +16,11 @@ import {
 import {
   ArrowDown,
   ArrowUp,
+  Check,
   ChevronRight,
   EllipsisVertical,
   Pencil,
+  Shuffle,
   Trash2,
 } from "@deadlock-mods/ui/icons";
 import { useId, useState, type ReactNode } from "react";
@@ -62,6 +64,9 @@ export const ModGroupSection = ({
   const toggle = usePersistedStore((state) => state.toggleModGroup);
   const remove = usePersistedStore((state) => state.deleteModGroup);
   const move = usePersistedStore((state) => state.moveModGroup);
+  const setRandomized = usePersistedStore(
+    (state) => state.setModGroupRandomized,
+  );
   const expanded = revealMatches || !group.collapsed;
   const { draggable, droppable } = useModGroupDrag(
     profileId,
@@ -146,6 +151,18 @@ export const ModGroupSection = ({
                 <ArrowDown className='size-4' />
                 {t("myMods.groups.moveDown")}
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onSelect={() =>
+                  setRandomized(profileId, group.id, !group.randomize)
+                }>
+                <Shuffle className='size-4' />
+                {t("myMods.groups.randomize")}
+                {group.randomize && <Check className='ml-auto size-4' />}
+              </DropdownMenuItem>
+              <p className='max-w-60 px-2 py-1 text-xs text-muted-foreground'>
+                {t("myMods.groups.randomizeHelp")}
+              </p>
               <DropdownMenuSeparator />
               <DropdownMenuItem onSelect={() => remove(profileId, group.id)}>
                 <Trash2 className='size-4' />

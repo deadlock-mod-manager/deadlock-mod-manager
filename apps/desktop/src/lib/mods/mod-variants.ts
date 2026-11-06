@@ -92,7 +92,14 @@ export const deriveActiveVariantCount = (mod: LocalMod | null): number => {
  * ever offered one download, because then nothing was chosen and there is no
  * decision to carry over.
  */
-const deriveDownloadTimeArchiveNames = (mod: LocalMod | null): Set<string> => {
+type DownloadTimeChoice = Pick<
+  LocalMod,
+  "downloads" | "selectedDownloads" | "activeVariantArchive"
+>;
+
+const deriveDownloadTimeArchiveNames = (
+  mod: DownloadTimeChoice | null,
+): Set<string> => {
   const names = new Set<string>();
   if ((mod?.downloads?.length ?? 0) <= 1) {
     return names;
@@ -119,7 +126,7 @@ const deriveDownloadTimeArchiveNames = (mod: LocalMod | null): Set<string> => {
  * the chosen archives - and the file selector has to be shown after all.
  */
 export const applyDownloadTimeSelection = (
-  mod: LocalMod | null,
+  mod: DownloadTimeChoice | null,
   fileTree: ModFileTree,
 ): ModFileTree | null => {
   const chosen = deriveDownloadTimeArchiveNames(mod);
