@@ -20,6 +20,11 @@ export type ModGroupsState = {
   ) => boolean;
   deleteModGroup: (profileId: ProfileId, groupId: string) => void;
   toggleModGroup: (profileId: ProfileId, groupId: string) => void;
+  setModGroupRandomized: (
+    profileId: ProfileId,
+    groupId: string,
+    randomize: boolean,
+  ) => void;
   setModGroupsCollapsed: (
     profileId: ProfileId,
     collapsed: boolean,
@@ -137,6 +142,12 @@ export const createModGroupsSlice: StateCreator<
             : group,
         ),
       ),
+    setModGroupRandomized: (profileId, groupId, randomize) =>
+      updateGroups(profileId, (groups) =>
+        groups.map((group) =>
+          group.id === groupId ? { ...group, randomize } : group,
+        ),
+      ),
     setModGroupsCollapsed: (profileId, collapsed, groupId) =>
       updateGroups(profileId, (groups) =>
         groups.map((group) =>
@@ -168,6 +179,7 @@ export const createModGroupsSlice: StateCreator<
           id: crypto.randomUUID(),
           name: group.name,
           collapsed: group.collapsed,
+          randomize: group.randomize,
           modIds: group.modIds.filter((id) => available.has(id)),
         })),
       );

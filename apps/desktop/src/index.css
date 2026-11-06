@@ -631,6 +631,61 @@
   }
 }
 
+/* Party planner: a winrate change floats up beside the number, then fades */
+@keyframes party-shift {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  15%,
+  70% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+.party-shift {
+  animation: party-shift 1800ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+/* Party planner: a hero placed by a suggested swap glows once where it landed */
+@keyframes party-chip-land {
+  from {
+    box-shadow:
+      0 0 0 2px hsl(var(--primary) / 0.75),
+      0 0 18px 2px hsl(var(--primary) / 0.3);
+  }
+  to {
+    box-shadow:
+      0 0 0 2px hsl(var(--primary) / 0),
+      0 0 18px 2px hsl(var(--primary) / 0);
+  }
+}
+
+.party-chip-land {
+  animation: party-chip-land 1200ms cubic-bezier(0.25, 1, 0.5, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The change still has to be read, so it only fades instead of moving. */
+  @keyframes party-shift {
+    0%,
+    70% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+    }
+  }
+  .party-chip-land {
+    animation: none;
+  }
+}
+
 /* Occult Geometry Animations */
 @keyframes occult-rotate {
   from {
