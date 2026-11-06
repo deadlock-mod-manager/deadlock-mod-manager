@@ -42,7 +42,7 @@ const receiptSchema = z.object({
   data_repairs: z.array(z.object({ modId: z.string() })),
 });
 
-type RepairState = {
+export type RepairState = {
   folder: string;
   packageExists: boolean;
   receiptExists: boolean;
@@ -142,7 +142,7 @@ type JsonValue =
   | { [key: string]: JsonValue };
 
 /** Named values saved beside a case's other evidence. */
-type CheckpointData = { [key: string]: JsonValue };
+export type CheckpointData = { [key: string]: JsonValue };
 
 /** A JSON checkpoint, plus a matching screenshot while the window is open. */
 export const checkpoint = async (
@@ -161,13 +161,13 @@ export const checkpoint = async (
     );
 };
 
-type Sample = { atMs: number; status: string | undefined };
+export type Sample = { atMs: number; status: string | undefined };
 
 /**
  * Reads a mod's status every 250 ms for `durationMs` and records each change,
  * so a transient "Can be fixed" shows up in the evidence even if it heals.
  */
-const sampleStatus = async (
+export const sampleStatus = async (
   label: string,
   folder: string | null,
   modId: string,
@@ -191,6 +191,9 @@ const sampleStatus = async (
   );
   return samples;
 };
+
+const row = (modId: string) =>
+  `//*[@data-testid="mod-health-row"][.//button[@title="${modId}"]]`;
 
 const card = (modId: string) =>
   `//*[@title="${modId}"]/ancestor::*[.//button[@role="switch"]][1]`;
@@ -233,6 +236,14 @@ export const fixAllInDialog = async () => {
   await fixAll.click();
 };
 
+/** Clicks the row's Fix in the health dialog, as the player would. */
+const fixInDialog = async (modId: string) => {
+  const dialog = await openHealthDialog();
+  const fix = await dialog.$(row(modId)).$("button=Fix");
+  await fix.waitForClickable();
+  await fix.click();
+};
+
 export const waitForStatus = (
   folder: string | null,
   modId: string,
@@ -245,6 +256,23 @@ export const waitForStatus = (
     (health) => health[modId] === status,
     timeoutMs,
   );
+
+/** Fixes `modId` from the health dialog and waits for its repair on disk. */
+export const fixAndConfirm = async (
+  world: string,
+  folder: string | null,
+  modId: string,
+) => {
+  await waitForStatus(folder, modId, "fixable");
+  await fixInDialog(modId);
+  await waitForStatus(folder, modId, "fixed");
+  await closeDialogs();
+  return observeUntil(
+    `${modId} packaged`,
+    () => readRepairState(world, folder),
+    (state) => state.repairedMods.includes(modId) && state.packageExists,
+  );
+};
 
 /**
  * Samples `modId` for `durationMs`, saves a checkpoint, and asserts it ends
