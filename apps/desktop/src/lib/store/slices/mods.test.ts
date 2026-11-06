@@ -182,6 +182,7 @@ describe("removeMod", () => {
       name: "Cosmetics",
       modIds: ["1", "2"],
       collapsed: true,
+      randomize: true,
     };
     const { profiles } = store.getState();
     store.setState({
@@ -203,6 +204,7 @@ describe("removeMod", () => {
       name: "Cosmetics",
       modIds: [],
       collapsed: true,
+      randomize: true,
     });
   });
 

@@ -103,6 +103,13 @@ export const deleteProfileVpk = async (
   return await invokeGuarded("delete_profile_vpk", { profileFolder, vpkName });
 };
 
+/** Moves an unmanaged VPK into the profile's `.dmm-quarantine` folder; returns its new path. */
+export const quarantineProfileVpk = async (
+  vpkName: string,
+  profileFolder: string | null = null,
+): Promise<string> =>
+  await invokeGuarded("quarantine_profile_vpk", { profileFolder, vpkName });
+
 export const showProfileVpkInFolder = async (
   vpkName: string,
   profileFolder: string | null = null,

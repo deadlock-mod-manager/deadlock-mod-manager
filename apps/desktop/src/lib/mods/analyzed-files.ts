@@ -53,12 +53,45 @@ export const buildAnalyzedFileTree = (
   };
 };
 
-export const needsAnalysisReview = ({
-  addons,
-  errors,
-}: Pick<AnalyzeAddonsResult, "addons" | "errors">): boolean =>
+type IdentifiedFile = Pick<
+  LocalAddonInfo,
+  "fileName" | "remoteId" | "matchInfo" | "manifestModId"
+>;
+
+/**
+ * True when only the file's `<id>_` name prefix identifies it: no hash match,
+ * and no manifest entry records the file. Such a parked copy is DMM's only when
+ * its mod is still in the library; a mod whose installed files were deleted
+ * outside DMM leaves its Mod Options variants behind like this.
+ */
+export const isIdentifiedByNameOnly = <T extends IdentifiedFile>(
+  addon: T,
+): addon is T & { remoteId: string } =>
+  !!addon.remoteId &&
+  !addon.matchInfo &&
+  addon.manifestModId == null &&
+  addon.fileName.startsWith(`${addon.remoteId}_`);
+
+/**
+ * A parked file whose mod is no longer in the profile's library. Analyze asks
+ * the user what to do with it instead of putting the mod back.
+ */
+export const isUnrecordedLeftover = (
+  addon: IdentifiedFile,
+  libraryIds: ReadonlySet<string>,
+): boolean => isIdentifiedByNameOnly(addon) && !libraryIds.has(addon.remoteId);
+
+export const needsAnalysisReview = (
+  { addons, errors }: Pick<AnalyzeAddonsResult, "addons" | "errors">,
+  libraryIds: ReadonlySet<string>,
+): boolean =>
   errors.length > 0 ||
-  addons.some((addon) => !addon.remoteId || !addon.vpkParsed?.fingerprint);
+  addons.some(
+    (addon) =>
+      !addon.remoteId ||
+      !addon.vpkParsed?.fingerprint ||
+      isUnrecordedLeftover(addon, libraryIds),
+  );
 
 /**
  * True when the profile's manifest already assigns every file in this group to

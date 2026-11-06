@@ -17,6 +17,7 @@ import { Search } from "@deadlock-mods/ui/icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { AnalyzeAddonsResult, LocalAddonInfo } from "@/types/mods";
+import type { AnalysisTarget } from "@/lib/store/slices/mods";
 import { AddonSummaryCard } from "./addon-summary-card";
 import { IdentifiedAddonsTab } from "./identified-addons-tab";
 import { UnknownAddonsTab } from "./unknown-addons-tab";
@@ -27,12 +28,15 @@ interface AnalysisResultsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   result: AnalyzeAddonsResult | null;
+  /** The analyzed profile; enables Delete and Quarantine on unplaced files. */
+  fileContext?: AnalysisTarget | null;
 }
 
 export const AnalysisResultsDialog = ({
   open,
   onOpenChange,
   result,
+  fileContext,
 }: AnalysisResultsDialogProps) => {
   const { t } = useTranslation();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -73,7 +77,7 @@ export const AnalysisResultsDialog = ({
               {identifiedAddons.length > 0 && (
                 <span className='text-muted-foreground ml-2'>
                   •{" "}
-                  {t("addons.identifiedAndAdded", {
+                  {t("addons.identifiedCount", {
                     count: identifiedAddons.length,
                   })}
                 </span>
@@ -107,6 +111,7 @@ export const AnalysisResultsDialog = ({
                       key={addon.filePath}
                       addon={addon}
                       onAddToLibrary={handleAddToLibrary}
+                      fileContext={fileContext}
                     />
                   ))}
                   {result.errors.length > 0 && (
@@ -126,6 +131,7 @@ export const AnalysisResultsDialog = ({
                 <IdentifiedAddonsTab
                   identifiedAddons={identifiedAddons}
                   onAddToLibrary={handleAddToLibrary}
+                  fileContext={fileContext}
                 />
               </ScrollArea>
             </TabsContent>
@@ -137,6 +143,7 @@ export const AnalysisResultsDialog = ({
                 <UnknownAddonsTab
                   unknownAddons={unknownAddons}
                   onAddToLibrary={handleAddToLibrary}
+                  fileContext={fileContext}
                 />
               </ScrollArea>
             </TabsContent>
@@ -151,6 +158,7 @@ export const AnalysisResultsDialog = ({
                       key={addon.filePath}
                       addon={addon}
                       onAddToLibrary={handleAddToLibrary}
+                      fileContext={fileContext}
                     />
                   ))}
                   {result.errors.length > 0 && (

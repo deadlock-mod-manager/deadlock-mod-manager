@@ -216,23 +216,65 @@
   },
   "performance": {
     "title": "Прадукцыйнасць",
-    "subtitle": "Канфігурацыі ад супольнасці, якія зніжаюць якасць графікі дзеля павышэння частаты кадраў. Яны запісваюцца ў файл gameinfo.gi разам з вашымі модамі. Вы можаце адключыць іх у любы час.",
+    "subtitle": "",
     "tabs": {
       "configs": "Канфігурацыі",
-      "editor": "Рэдактар налад",
+      "editor": "",
+      "video": "",
       "history": "Гісторыя",
       "howItWorks": "Як гэта працуе"
     },
+    "video": {
+      "emptyTitle": "",
+      "noConfig": "",
+      "noVideo": "",
+      "changes": {
+        "title": "",
+        "description": "",
+        "values": "",
+        "kept": "",
+        "removed": "",
+        "keep": "",
+        "use": "",
+        "useAll": "",
+        "settled": "",
+        "useConfig_one": "",
+        "useConfig_other": "",
+        "failed": ""
+      }
+    },
     "howItWorks": {
+      "basics": {
+        "label": "",
+        "inPlace": {
+          "title": "",
+          "body": ""
+        },
+        "turnOff": {
+          "title": "",
+          "body": ""
+        },
+        "updates": {
+          "title": "",
+          "body": ""
+        },
+        "video": {
+          "title": "",
+          "body": ""
+        }
+      },
       "writes": {
         "title": "Што змяняе менеджар модаў",
+        "summary": "",
         "inPlace": "Канфігурацыя ўяўляе сабой спіс кансольных зменных (convars), а часам і налад рухавіка гульні, якія запісваюцца ў файл gameinfo.gi. Менеджар модаў рэдагуе гэты файл на месцы, побач з вашымі модамі, а не замяняе яго цалкам.",
         "turnOff": "Ён пазначае кожны радок, які дадае або змяняе. Таму пры адключэнні канфігурацыі гэтыя радкі выдаляюцца, а замест іх аднаўляюцца ранейшыя значэнні. Вашы канфігурацыі і налады застаюцца захаванымі.",
         "reapply": "",
-        "untouched": "SearchPaths, які забяспечвае загрузку вашых модаў, і файл video.txt ніколі не змяняюцца."
+        "untouched": "",
+        "video": ""
       },
       "sources": {
         "title": "Адкуль бярэцца інфармацыя",
+        "summary": "",
         "convars": {
           "term": "Спіс кансольных зменных Valve",
           "body": "Назва, тып, значэнне па змаўчанні, дыяпазон і сцягі кожнай кансольнай зменнай і каманды ў бягучай версіі гульні. Дадзеныя ўзятыя з <schemaExplorer>ValveResourceFormat's SchemaExplorer</schemaExplorer> з рэпазіторыя Deadlock."
@@ -257,13 +299,16 @@
       },
       "statuses": {
         "title": "Што адбываецца з кожнай наладай",
-        "description": "Падрабязнасці канфігурацыі, праверка імпарту і рэдактар налад пазначаюць кожны радок канфігурацыі адным з гэтых статусаў. Запісваюцца толькі радкі са статусам «Ужываецца».",
-        "applies": "Запісваецца ў файл gameinfo.gi.",
+        "summary": "",
+        "description": "",
+        "written": "",
+        "notWritten": "",
+        "applies": "",
         "unchanged": "У вашым файле gameinfo.gi ужо зададзена гэтае значэнне або яно не зададзена, і выкарыстоўваецца ўбудаванае значэнне кансольнай зменнай па змаўчанні. Нічога не запісваецца.",
-        "blocked": "Valve пазначае гэтую кансольную зменную як такую, значэнне якой нельга задаць праз gameinfo.gi (gameinfo_cannot_override).",
-        "removed": "Адсутнічае ў спісе кансольных зменных Deadlock. Калі ў гісторыі кансольных зменных зафіксавана яе выдаленне, указваецца зборка, у якой гэта адбылося.",
-        "notConvar": "Valve пазначае яе як каманду кансолі, а не як кансольную зменную.",
-        "engineSection": "Знаходзіцца па-за блокам ConVars, напрыклад у раздзеле SceneSystem або RenderSystem. Радок прапушчаны, бо для гэтай канфігурацыі змены ў раздзелах рухавіка гульні адключаны. У паведамленні пра памылку падбору гульцоў у Deadlock пералічаны раздзелы, у якіх некаторыя змены не падтрымліваюцца: Engine2, MaterialSystem2, NetworkSystem, Particles, RenderSystem, SceneSystem і WorldRenderer.",
+        "blocked": "",
+        "removed": "",
+        "notConvar": "",
+        "engineSection": "",
         "omitted": "Вы адключылі гэтую наладу.",
         "excluded": "FileSystem (які змяшчае SearchPaths) і раздзелы, прызначаныя толькі для рэдактара. Менеджар модаў ніколі не запісвае ў іх змены.",
         "denied": "Параметры, якія менеджар модаў не запісвае, напрыклад sv_cheats. Для кожнага параметра паказваецца прычына.",
@@ -272,12 +317,13 @@
       },
       "counts": {
         "title": "Лічбы на кожнай картцы",
-        "settings": "Налады: колькасць радкоў, якія будуць запісаны ў ваш файл gameinfo.gi.",
-        "unused": "Не выкарыстоўваюцца: налады, якія не счытваюцца з файла gameinfo.gi, не з'яўляюцца кансольнымі зменнымі або камандамі кансолі.",
+        "summary": "",
+        "settings": "",
         "gamebanana": "Карткі GameBanana падлічваюцца адносна стандартнага файла Valve, а не вашага. Таму пры імпарце колькасць можа крыху адрознівацца."
       },
       "scale": {
         "title": "Катэгорыі, шкала і ўзроўні",
+        "summary": "",
         "categories": "Valve не групуе кансольныя зменныя, таму менеджар модаў размяркоўвае іх па катэгорыях паводле назваў. Напрыклад, зменныя, у назвах якіх ёсць «shadow», трапляюць у катэгорыю «Цені». Часам налада можа апынуцца ў няправільнай катэгорыі.",
         "position": "Месца канфігурацыі на шкале ад меншых да большых скарачэнняў вызначаецца колькасцю налад, якія яна змяняе ў кожнай катэгорыі. Найбольшую вагу маюць цені. Катэгорыі «Сетка» і «Камера і бачнасць» не ўлічваюцца. Шкала параўноўвае канфігурацыі паміж сабой і не прадказвае частату кадраў: колькасць дадатковых кадраў залежыць ад вашага абсталявання.",
         "tiers": "Узроўні ад «Даволі добра» да «Бульба» вызначаюцца ўручную для правераных канфігурацый і канфігурацый з GameBanana. Вашы ўласныя канфігурацыі атрымліваюць узровень той канфігурацыі, на аснове якой яны створаны."
@@ -350,7 +396,14 @@
       "removeFailed": "",
       "catalogUpdated": "",
       "catalogUpToDate": "",
-      "catalogRefreshFailed": ""
+      "catalogRefreshFailed": "",
+      "videoWritten_one": "",
+      "videoWritten_other": "",
+      "videoMissing": "",
+      "videoRestored": "",
+      "videoAdopted": "",
+      "videoAdoptFailed": "",
+      "videoRestoreFailed": ""
     },
     "editor": {
       "header": {
@@ -358,9 +411,7 @@
         "pickConfig": "",
         "presets": "",
         "yourConfigs": "",
-        "appliedOption": "",
         "tierTooltip": "",
-        "summary": "",
         "updating": ""
       },
       "empty": {
@@ -380,7 +431,13 @@
       },
       "noMatches": {
         "title": "",
-        "clear": "",
+        "search": "",
+        "changed": "",
+        "attention": "",
+        "differs": "",
+        "all": "",
+        "clearSearch": "",
+        "showAll": "",
         "searchAll": ""
       },
       "toolbar": {
@@ -465,14 +522,14 @@
         "engineSection": ""
       },
       "engine": {
-        "excluded_one": "",
-        "excluded_other": "",
+        "title": "",
+        "about": "",
         "included_one": "",
         "included_other": "",
+        "excluded_one": "",
+        "excluded_other": "",
         "sectionsMore": "",
-        "why": "",
-        "valveMessage": "",
-        "toggle": ""
+        "valveMessage": ""
       },
       "add": {
         "placeholder": "",
@@ -669,7 +726,8 @@
         },
         "video": {
           "title": "",
-          "description": ""
+          "description": "",
+          "write": ""
         },
         "notes": {
           "clamped": "",
@@ -770,18 +828,20 @@
     },
     "activeStatus": {
       "label": "",
+      "current": "",
       "active": "",
       "notWritten": "",
+      "videoInFile": "",
       "tweaks_one": "",
       "tweaks_other": "",
       "inFile_one": "",
       "inFile_other": "",
       "settings_one": "",
       "settings_other": "",
-      "takesEffect": "",
       "editSettings": "",
       "undo": "",
-      "openInEditor": "",
+      "undoShort": "",
+      "openGameinfo": "",
       "openInEditorFailed": "",
       "none": "",
       "noGamePath": "",
@@ -816,7 +876,6 @@
       "gameinfoEditor": ""
     },
     "configs": {
-      "meter": "",
       "apply": "",
       "applyChanges": "",
       "applied": "",
@@ -827,9 +886,8 @@
       "yours": "",
       "settingsCount_one": "",
       "settingsCount_other": "",
-      "unusedCount_one": "",
-      "unusedCount_other": "",
-      "unusedHint": "",
+      "unusedHint_one": "",
+      "unusedHint_other": "",
       "suggestsVideoSettings": "",
       "downloads_one": "",
       "downloads_other": "",
@@ -843,7 +901,6 @@
         "bundled": "",
         "gamebanana": ""
       },
-      "sourceWithTime": "",
       "catalogError": "",
       "retry": "",
       "scale": {
@@ -860,7 +917,7 @@
         "yours": ""
       },
       "sortLabel": "",
-      "sortPrefix": "",
+      "clearTier": "",
       "sorts": {
         "downloads": "",
         "name": "",
@@ -921,7 +978,16 @@
         "title": "",
         "notesTitle": "",
         "description": "",
-        "variantLabel": ""
+        "descriptionOff": "",
+        "write": "",
+        "variantLabel": "",
+        "backup": "",
+        "restore": "",
+        "adopt": "",
+        "adoptConfirm": {
+          "title": "",
+          "body": ""
+        }
       },
       "view": {
         "title": "",
@@ -1012,6 +1078,14 @@
       "current": "",
       "applyAgain": "",
       "configDeleted": "",
+      "videoCount": "",
+      "videoReverted": "",
+      "videoKept": "",
+      "videoChange": "",
+      "videoRestored": "",
+      "videoAdopted": "",
+      "videoChanged_one": "",
+      "videoChanged_other": "",
       "emptyTitle": "",
       "emptyDescription": ""
     },
@@ -1100,8 +1174,7 @@
       "inPool": "",
       "defaultInPool": "",
       "unavailable": "",
-      "listSubtitle": "",
-      "launchFailed": ""
+      "listSubtitle": ""
     }
   },
   "stats": {
@@ -1125,6 +1198,7 @@
       "heroes": "",
       "items": "",
       "squad": "",
+      "party": "",
       "live": ""
     },
     "items": {
@@ -1624,6 +1698,74 @@
       "matesTitle": "",
       "matesDescription": ""
     },
+    "party": {
+      "title": "",
+      "description": "",
+      "clear": "",
+      "pickHero": "",
+      "remove": "",
+      "error": "",
+      "rank": {
+        "label": "",
+        "all": "",
+        "range": "",
+        "from": "",
+        "to": "",
+        "hint": ""
+      },
+      "member": {
+        "you": "",
+        "player": "",
+        "active": "",
+        "picks": "",
+        "add": "",
+        "remove": ""
+      },
+      "advice": {
+        "swap": "",
+        "add": "",
+        "swapAction": "",
+        "addAction": ""
+      },
+      "odds": {
+        "title": "",
+        "exact": "",
+        "estimate": "",
+        "estimateHint": "",
+        "needPlayers": "",
+        "noData": "",
+        "note_one": "",
+        "note_other": "",
+        "best": "",
+        "worst": "",
+        "shift": "",
+        "optimal": ""
+      },
+      "lineups": {
+        "title": "",
+        "descriptionEmpty": "",
+        "description_one": "",
+        "description_other": "",
+        "order": "",
+        "best": "",
+        "worst": "",
+        "lineup": "",
+        "winrate": "",
+        "matches": "",
+        "noData": "",
+        "noLineups": "",
+        "showAll": "",
+        "showFewer": "",
+        "footnote": ""
+      },
+      "picker": {
+        "title": "",
+        "count": "",
+        "search": "",
+        "noMatch": "",
+        "hint": ""
+      }
+    },
     "dashboard": {
       "customize": "",
       "customizeHint": "",
@@ -1685,6 +1827,7 @@
         "heroes": "",
         "items": "",
         "squad": "",
+        "party": "",
         "live": "",
         "performance": "",
         "habits": "",
@@ -1931,6 +2074,10 @@
           "description": ""
         },
         "squad": {
+          "title": "",
+          "description": ""
+        },
+        "partyPlanner": {
           "title": "",
           "description": ""
         },
@@ -3239,6 +3386,10 @@
       "enabledCount": "",
       "enable": "",
       "disable": "",
+      "randomize": "",
+      "randomizeHelp": "",
+      "randomized": "",
+      "randomizeIdle": "",
       "expandAll": "",
       "collapseAll": "",
       "draggingMods_one": "",
@@ -4068,8 +4219,10 @@
     "title": "",
     "hide": "",
     "cancel": "",
+    "randomizerFailed": "",
     "steps": {
       "randomizingSkins": "",
+      "randomizingMods": "",
       "disablingMods": "",
       "verifyingMods_one": "",
       "verifyingMods_other": "",
@@ -5295,7 +5448,11 @@
     "analyzing": "",
     "analysisResults": "",
     "analysisResultsDescription": "",
-    "identifiedAndAdded": "",
+    "identifiedCount": "",
+    "identifiedNoticeTitle": "",
+    "identifiedNoticeDescription": "",
+    "inLibrary": "",
+    "notInLibrary": "",
     "analysisSuccess": "",
     "analysisSuccessWithIdentified": "",
     "analysisSuccessAllIdentified": "",
@@ -5404,7 +5561,7 @@
       "noMods": "",
       "noModsDescription": "",
       "modsFound": "",
-      "modsFoundDescription": "",
+      "modsFoundAnalyzeDescription": "",
       "analyze": "",
       "analyzing": "",
       "skipAnalysis": ""

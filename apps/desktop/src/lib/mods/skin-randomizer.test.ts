@@ -3,7 +3,7 @@ import type { HeroModGroup } from "@/lib/mods/hero-mods";
 import type { ModFileTree } from "@/types/mods";
 import {
   bulkSelectableSkins,
-  canRandomizeSkin,
+  canRandomizeMod,
   currentOutcome,
   isRandomizedPool,
   pickRandomOutcome,
@@ -69,26 +69,24 @@ const group = (...skins: TestSkin[]): HeroModGroup<TestSkin> => ({
   activeExtras: [],
 });
 
-describe("canRandomizeSkin", () => {
+describe("canRandomizeMod", () => {
   it("accepts a skin that installs without questions", () => {
-    expect(canRandomizeSkin(skin("a"))).toBe(true);
+    expect(canRandomizeMod(skin("a"))).toBe(true);
   });
 
   it("rejects a skin that writes to critical paths", () => {
-    expect(canRandomizeSkin(skin("a", { usesCriticalPaths: true }))).toBe(
-      false,
-    );
+    expect(canRandomizeMod(skin("a", { usesCriticalPaths: true }))).toBe(false);
   });
 
   it("rejects a skin whose variant was never picked", () => {
-    expect(canRandomizeSkin(skin("a", { installedFileTree: needsPick }))).toBe(
+    expect(canRandomizeMod(skin("a", { installedFileTree: needsPick }))).toBe(
       false,
     );
   });
 
   it("accepts a variant skin once a previous install picked the files", () => {
     expect(
-      canRandomizeSkin(
+      canRandomizeMod(
         skin("a", {
           installedFileTree: needsPick,
           installedVpks: ["pak01_dir.vpk"],
@@ -98,7 +96,7 @@ describe("canRandomizeSkin", () => {
   });
 
   it("leaves a skin without a stored file tree to the launch", () => {
-    expect(canRandomizeSkin(skin("a", { installedFileTree: undefined }))).toBe(
+    expect(canRandomizeMod(skin("a", { installedFileTree: undefined }))).toBe(
       true,
     );
   });
@@ -177,23 +175,15 @@ describe("pickRandomOutcome", () => {
 
 describe("currentOutcome", () => {
   it("is the default look when no skin is installed", () => {
-    expect(currentOutcome(group(skin("a")))).toBeNull();
+    expect(currentOutcome([])).toBeNull();
   });
 
   it("is the one installed skin", () => {
-    expect(
-      currentOutcome({ ...group(skin("a")), activeSkins: [skin("a")] })
-        ?.remoteId,
-    ).toBe("a");
+    expect(currentOutcome([skin("a")])?.remoteId).toBe("a");
   });
 
   it("is unknown with several skins installed", () => {
-    expect(
-      currentOutcome({
-        ...group(skin("a"), skin("b")),
-        activeSkins: [skin("a"), skin("b")],
-      }),
-    ).toBeUndefined();
+    expect(currentOutcome([skin("a"), skin("b")])).toBeUndefined();
   });
 });
 

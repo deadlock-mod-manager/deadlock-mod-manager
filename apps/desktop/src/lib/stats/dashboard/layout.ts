@@ -49,6 +49,7 @@ export const TAB_ICONS = [
   "sword",
   "package",
   "users",
+  "usersRound",
   "radio",
   "trophy",
   "target",
@@ -241,6 +242,12 @@ export const DEFAULT_LAYOUT: DashboardLayout = {
       title: null,
       icon: "users",
       widgets: [panel("squad-explorer", "squad")],
+    },
+    {
+      id: "party",
+      title: null,
+      icon: "usersRound",
+      widgets: [panel("party-planner", "partyPlanner")],
     },
     {
       id: "live",

@@ -13,6 +13,7 @@ import {
   Trophy,
   UserRound,
   Users,
+  UsersRound,
 } from "@deadlock-mods/ui/icons";
 import type { ComponentType, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -25,6 +26,7 @@ import { LiveBridgeNotice } from "@/components/stats/live-bridge-notice";
 import { LiveScoreboard } from "@/components/stats/live-scoreboard";
 import { LiveTabIcon, LiveToolbar } from "@/components/stats/live-toolbar";
 import { OverviewTiles } from "@/components/stats/overview-tiles";
+import { PartyPlanner } from "@/components/stats/party/party-planner";
 import { ProfilePanel } from "@/components/stats/profile-panel";
 import { RankBenchmark } from "@/components/stats/rank-benchmark";
 import { RankChart } from "@/components/stats/rank-chart";
@@ -73,6 +75,7 @@ export const PANEL_IDS = [
   "heroes",
   "items",
   "squad",
+  "partyPlanner",
   "liveScoreboard",
 ] as const;
 export type PanelId = (typeof PANEL_IDS)[number];
@@ -304,6 +307,20 @@ const PANELS = {
     needsAccount: true,
     needsHistory: true,
     render: () => <SquadPanel />,
+  },
+  partyPlanner: {
+    icon: UsersRound,
+    skeleton: () => <ListSkeleton rows={6} />,
+    // Global hero stats, so it works without an account or match history.
+    needsAccount: false,
+    needsHistory: false,
+    render: ({ heroesById, rankAssets, scope }) => (
+      <PartyPlanner
+        heroesById={heroesById}
+        rankAssets={rankAssets}
+        scope={scope}
+      />
+    ),
   },
   liveScoreboard: {
     icon: Radio,
