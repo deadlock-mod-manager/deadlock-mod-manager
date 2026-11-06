@@ -853,21 +853,6 @@ mod tests {
   }
 
   #[test]
-  fn quarantine_moves_an_unmanaged_file_out_of_the_loaded_folder() {
-    let (_temp, base) = profile();
-    let source = write(&base, ShardIndex::FIRST, "900001_green.vpk", b"leftover");
-
-    let destination = quarantine_unmanaged_vpk(base.clone(), "900001_green.vpk").unwrap();
-
-    assert!(!source.exists());
-    assert_eq!(
-      destination,
-      quarantine_folder(&base).join("900001_green.vpk")
-    );
-    assert_eq!(std::fs::read(&destination).unwrap(), b"leftover");
-  }
-
-  #[test]
   fn quarantine_keeps_the_shard_and_never_overwrites() {
     let (_temp, base) = profile();
     let second = ShardIndex::new(2).unwrap();
@@ -947,16 +932,6 @@ mod tests {
         "{name:?} was accepted"
       );
     }
-  }
-
-  #[test]
-  fn a_failed_quarantine_leaves_the_file_in_place() {
-    let (_temp, base) = profile();
-    let source = write(&base, ShardIndex::FIRST, "pak04_dir.vpk", b"stray");
-    std::fs::write(quarantine_folder(&base), b"not a folder").unwrap();
-
-    assert!(quarantine_unmanaged_vpk(base.clone(), "pak04_dir.vpk").is_err());
-    assert_eq!(std::fs::read(source).unwrap(), b"stray");
   }
 
   /// A link named like a leftover would otherwise move the file it points

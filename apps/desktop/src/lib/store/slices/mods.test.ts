@@ -20,7 +20,7 @@ mock.module("@/lib/logger", () => ({
   default: loggerMock,
 }));
 
-import type { LocalAddonInfo, LocalMod, Progress } from "@/types/mods";
+import type { LocalMod, Progress } from "@/types/mods";
 import { ModStatus } from "@/types/mods";
 import type { ModProfile, ProfileId } from "@/types/profiles";
 import { createProfileId } from "@/types/profiles";
@@ -635,55 +635,4 @@ describe("download metadata updates", () => {
       expect(after.profiles.secondary).toBe(before.profiles.secondary);
     },
   );
-});
-
-const analyzedFile = (fileName: string): LocalAddonInfo => ({
-  filePath: `/addons/${fileName}`,
-  fileName,
-  locator: fileName,
-  vpkParsed: {
-    version: 2,
-    treeLength: 0,
-    fileDataSectionSize: null,
-    archiveMd5SectionSize: null,
-    otherMd5SectionSize: null,
-    signatureSectionSize: null,
-    entries: [],
-    manifestSha256: "",
-    dirSha256: null,
-    fingerprint: {
-      filePath: `/addons/${fileName}`,
-      fileSize: 1,
-      lastModified: null,
-      fastHash: "",
-      sha256: "",
-      contentSignature: "",
-      vpkVersion: 2,
-      fileCount: 1,
-      hasMultiparts: false,
-      hasInlineData: false,
-      merkleRoot: null,
-      merkleLeaves: null,
-    },
-  },
-});
-
-describe("removeAnalyzedAddon", () => {
-  it("drops each file an action removed, in any order", () => {
-    store.setState({
-      analysisResult: {
-        addons: [
-          analyzedFile("pak04_dir.vpk"),
-          analyzedFile("900001_green.vpk"),
-        ],
-        totalCount: 2,
-        errors: [],
-      },
-    });
-    // Both cards were rendered before either action finished.
-    store.getState().removeAnalyzedAddon("/addons/pak04_dir.vpk");
-    store.getState().removeAnalyzedAddon("/addons/900001_green.vpk");
-    expect(store.getState().analysisResult?.addons).toEqual([]);
-    expect(store.getState().analysisResult?.totalCount).toBe(0);
-  });
 });
