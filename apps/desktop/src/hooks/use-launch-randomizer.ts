@@ -169,11 +169,11 @@ export const useLaunchRandomizer = () => {
   const randomize = useCallback(async () => {
     let failed = false;
 
-    const groups = randomizedGroups(usePersistedStore.getState());
-    for (const { group, pool, active } of groupRandomizerPools(
-      groups,
+    const pools = groupRandomizerPools(
+      randomizedGroups(usePersistedStore.getState()),
       usePersistedStore.getState().localMods,
-    )) {
+    );
+    for (const { group, pool, active } of pools) {
       try {
         failed = !(await roll(pool, active, "library")) || failed;
       } catch (error) {
@@ -189,7 +189,7 @@ export const useLaunchRandomizer = () => {
     if (state.skinRandomizerEnabled) {
       // A hero with a skin in a randomized group already got its roll there,
       // and a second roll would take that skin straight back off.
-      const rolled = randomizedGroupModIds(groups);
+      const rolled = randomizedGroupModIds(pools.map(({ group }) => group));
       const heroes = groupModsByHero(state.localMods, {
         includeExtras: false,
         hidden: new Set(Object.keys(state.hiddenHeroMods)),

@@ -49,12 +49,10 @@ export const buildProfileBackupPayload = (
     // `randomize` is left out when off, so backups saved before it existed
     // still hash the same.
     modGroups: (profile.modGroups ?? []).map(
-      ({ id, name, modIds, collapsed, randomize }) => (Object.assign({
-	id,
-	name,
-	modIds,
-	collapsed
-}, randomize && { randomize })),
+      ({ id, name, modIds, collapsed, randomize }) =>
+        randomize
+          ? { id, name, modIds, collapsed, randomize }
+          : { id, name, modIds, collapsed },
     ),
     description: profile.description || undefined,
     modNames: Object.fromEntries(
