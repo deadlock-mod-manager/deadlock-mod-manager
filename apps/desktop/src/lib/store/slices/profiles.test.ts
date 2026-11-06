@@ -813,4 +813,71 @@ describe("mods a profile import installed", () => {
       expect(mod.selectedDownloads).toEqual([effects]);
     }
   });
+
+  it("keeps the import's picks when a sync that started earlier finishes later", async () => {
+    const store = createTestStore();
+    const earlier = {
+      ...modFor("42"),
+      downloads: [base],
+      selectedDownloads: [base],
+      status: ModStatus.Installed,
+    };
+    store.setState({
+      profiles: { [secondaryProfileId]: profileFor("secondary", [earlier]) },
+      activeProfileId: secondaryProfileId,
+      localMods: [earlier],
+    });
+    const snapshot = deferred<ProfileVpkSnapshot>();
+    profileTestBackend.readSnapshot = () => snapshot.promise;
+    const sync = store.getState().syncProfileEnabledMods(secondaryProfileId);
+
+    store
+      .getState()
+      .applyImportInstalledModsToProfile(
+        secondaryProfileId,
+        [installed("42")],
+        catalog("42"),
+        new Map([
+          ["42", { downloads: [base, effects], selectedDownloads: [effects] }],
+        ]),
+      );
+    snapshot.resolve(snapshotFor());
+    await sync;
+
+    const state = store.getState();
+    for (const mod of [
+      state.profiles[secondaryProfileId].mods[0],
+      state.localMods[0],
+    ]) {
+      expect(mod.selectedDownloads).toEqual([effects]);
+    }
+  });
+
+  it("lets an earlier sync finish when the import installed nothing", async () => {
+    const store = createTestStore();
+    store.setState({
+      profiles: {
+        [secondaryProfileId]: profileFor("secondary", [modFor("42")]),
+      },
+      activeProfileId: secondaryProfileId,
+    });
+    const snapshot = deferred<ProfileVpkSnapshot>();
+    profileTestBackend.readSnapshot = () => snapshot.promise;
+    const sync = store.getState().syncProfileEnabledMods(secondaryProfileId);
+
+    store
+      .getState()
+      .applyImportInstalledModsToProfile(
+        secondaryProfileId,
+        [],
+        catalog("42"),
+        new Map(),
+      );
+    snapshot.resolve(snapshotFor());
+    await sync;
+
+    expect(store.getState().profiles[secondaryProfileId].mods[0].status).toBe(
+      ModStatus.Installed,
+    );
+  });
 });

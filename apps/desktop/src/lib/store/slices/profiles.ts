@@ -830,6 +830,10 @@ export const createProfilesSlice: StateCreator<
     modsDataByRemoteId: Map<string, ModDto>,
     downloadsByRemoteId: Map<string, ImportedModDownloads>,
   ) => {
+    // A sync that read the profile before the import would write the old
+    // mods and picks back over it. An import that installed nothing leaves
+    // that sync's result valid.
+    if (installedMods.length > 0) get().bumpProfileSyncRevision(profileId);
     set((state) => {
       const profile = state.profiles[profileId];
 
