@@ -5,12 +5,20 @@ import { step } from "./evidence";
 import { readPersistedDocument } from "./observations";
 import { navigate, waitForDisplayed } from "./ui";
 
-export const DEFAULT_TAB_IDS = ["overview", "heroes", "items", "squad", "live"];
+export const DEFAULT_TAB_IDS = [
+  "overview",
+  "heroes",
+  "items",
+  "squad",
+  "party",
+  "live",
+];
 export const DEFAULT_TAB_TITLES = [
   "Overview",
   "Heroes",
   "Items",
   "Squad",
+  "Party",
   "Live",
 ];
 export const DEFAULT_OVERVIEW = [

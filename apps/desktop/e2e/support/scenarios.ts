@@ -54,6 +54,7 @@ import {
   prepareUnknownAddonWorld,
   unknownAddonRoutes,
 } from "./analyze-known-files-fixtures";
+import { prepareAnalyzeOrphansWorld } from "./analyze-orphans-fixtures";
 import { createArchive } from "./archive-fixtures";
 import { randomBytes } from "node:crypto";
 import { contentRoutes, prepareContentWorld } from "./content-fixtures";
@@ -67,6 +68,7 @@ import {
 } from "./catalog-refresh-fixtures";
 import { prepareLegacyCatalog } from "./catalog-upgrade-fixtures";
 import { prepareOnboardingWorld } from "./onboarding-fixtures";
+import { onboardingIdentifiedRoutes } from "./analysis-library-status-fixtures";
 import {
   libraryAuthorRoutes,
   legacyLibraryAuthorRoutes,
@@ -660,6 +662,14 @@ export const scenarios = {
         );
     },
   },
+  "analyze-orphans": {
+    ...defaults,
+    family: "analysis",
+    spec: "analyze-orphans",
+    phases: ["orphans", "restart-orphans"],
+    routes: rescanAfterResetRoutes,
+    prepare: prepareAnalyzeOrphansWorld,
+  },
   "analyze-known-files": {
     ...defaults,
     family: "analysis",
@@ -673,6 +683,12 @@ export const scenarios = {
   "onboarding-telemetry-default": {
     ...onboarding,
     prepare: (world: CreatedWorld) => prepareOnboardingWorld(world, false),
+  },
+  "onboarding-identified-addon": {
+    ...onboarding,
+    spec: "onboarding-identified",
+    phases: ["identified-analysis"],
+    routes: onboardingIdentifiedRoutes,
   },
   "content-blur": {
     ...settings,

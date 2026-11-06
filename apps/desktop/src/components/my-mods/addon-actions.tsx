@@ -1,6 +1,8 @@
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Button } from "@deadlock-mods/ui/components/button";
 import { ExternalLink, Plus } from "@deadlock-mods/ui/icons";
+import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import type { LocalAddonInfo } from "@/types/mods";
 
 interface AddonActionsProps {
@@ -9,7 +11,9 @@ interface AddonActionsProps {
   isAlreadyInLibrary: boolean;
   isCheckingLibrary: boolean;
   onAddToLibrary?: (addon: LocalAddonInfo) => void;
-  onExternalLinkClick: () => void;
+  onExternalLinkClick?: () => void;
+  /** Delete / Quarantine (and Add, for a leftover) for a file nothing owns. */
+  fileActions?: ReactNode;
 }
 
 export const AddonActions = ({
@@ -19,17 +23,28 @@ export const AddonActions = ({
   isCheckingLibrary,
   onAddToLibrary,
   onExternalLinkClick,
+  fileActions,
 }: AddonActionsProps) => {
+  const { t } = useTranslation();
+
   if (isIdentified) {
     return (
       <>
-        <Badge variant='default' className='bg-green-600 hover:bg-green-700'>
-          Auto-Added to Library
-        </Badge>
-        <ExternalLink
-          className='w-4 h-4 text-muted-foreground hover:text-foreground cursor-pointer'
-          onClick={onExternalLinkClick}
-        />
+        {fileActions ?? (
+          <Badge
+            variant={isAlreadyInLibrary ? "secondary" : "outline"}
+            className='h-7 text-xs'>
+            {isAlreadyInLibrary
+              ? t("addons.inLibrary")
+              : t("addons.notInLibrary")}
+          </Badge>
+        )}
+        {onExternalLinkClick && (
+          <ExternalLink
+            className='w-4 h-4 text-muted-foreground hover:text-foreground cursor-pointer'
+            onClick={onExternalLinkClick}
+          />
+        )}
       </>
     );
   }
@@ -37,20 +52,23 @@ export const AddonActions = ({
   if (isAlreadyInLibrary) {
     return (
       <Badge variant='secondary' className='h-7 text-xs'>
-        Added to Library
+        {t("addons.inLibrary")}
       </Badge>
     );
   }
 
   return (
-    <Button
-      size='sm'
-      variant='outline'
-      disabled={isCheckingLibrary}
-      onClick={() => onAddToLibrary?.(addon)}
-      className='h-7 text-xs'>
-      <Plus className='w-3 h-3 mr-1' />
-      Add to Library
-    </Button>
+    <>
+      <Button
+        size='sm'
+        variant='outline'
+        disabled={isCheckingLibrary}
+        onClick={() => onAddToLibrary?.(addon)}
+        className='h-7 text-xs'>
+        <Plus className='w-3 h-3 mr-1' />
+        Add to Library
+      </Button>
+      {fileActions}
+    </>
   );
 };

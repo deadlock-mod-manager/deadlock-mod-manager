@@ -4,8 +4,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@deadlock-mods/ui/components/tooltip";
-import { Power } from "@deadlock-mods/ui/icons";
+import { Power, Shuffle } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
+import { groupRandomizerPools } from "@/lib/mods/group-randomizer";
 import { isInstalledModWithVpks } from "@/lib/mods/installed-helpers";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -31,11 +32,16 @@ export const ModGroupEnablement = ({
   const members = mods.filter((mod) => ids.has(mod.remoteId));
   const enabled = members.filter(isInstalledModWithVpks).length;
   const canEnable = members.some((mod) => mod.status === ModStatus.Downloaded);
+  const rolls = groupRandomizerPools([group], members).length > 0;
   const label = t(
-    canEnable ? "myMods.groups.enable" : "myMods.groups.disable",
-    {
-      name: group.name,
-    },
+    group.randomize
+      ? rolls
+        ? "myMods.groups.randomized"
+        : "myMods.groups.randomizeIdle"
+      : canEnable
+        ? "myMods.groups.enable"
+        : "myMods.groups.disable",
+    { name: group.name },
   );
   return (
     <div className='flex shrink-0 items-center gap-1'>
@@ -47,26 +53,44 @@ export const ModGroupEnablement = ({
           total: members.length,
         })}
       </span>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            size='icon'
-            variant='ghost'
-            aria-label={label}
-            disabled={actions.busy || (!canEnable && enabled === 0)}
-            onClick={() =>
-              canEnable ? actions.enable(ids) : actions.disable(ids)
-            }>
-            <Power
+      {group.randomize ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span
+              role='img'
+              tabIndex={0}
               className={cn(
-                "size-4 transition-colors duration-200",
-                !canEnable && enabled > 0 && "text-primary",
+                "flex size-9 items-center justify-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                rolls ? "text-primary" : "text-muted-foreground",
               )}
-            />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>{label}</TooltipContent>
-      </Tooltip>
+              aria-label={label}>
+              <Shuffle className='size-4' />
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>{label}</TooltipContent>
+        </Tooltip>
+      ) : (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              size='icon'
+              variant='ghost'
+              aria-label={label}
+              disabled={actions.busy || (!canEnable && enabled === 0)}
+              onClick={() =>
+                canEnable ? actions.enable(ids) : actions.disable(ids)
+              }>
+              <Power
+                className={cn(
+                  "size-4 transition-colors duration-200",
+                  !canEnable && enabled > 0 && "text-primary",
+                )}
+              />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{label}</TooltipContent>
+        </Tooltip>
+      )}
     </div>
   );
 };

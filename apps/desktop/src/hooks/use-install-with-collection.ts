@@ -33,6 +33,11 @@ export type InstallWithCollectionOptions = InstallAnalyticsOptions & {
   bisectOriginalEnabled?: string[];
   /** Mods the user already chose to keep alongside this one. */
   keepBothWith?: string[];
+  /**
+   * Nobody is watching, as during a launch: cancel instead of asking about a
+   * missing requirement or a model conflict.
+   */
+  unattended?: boolean;
 };
 
 export type InstallWithCollectionFunction = (
@@ -123,6 +128,7 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
         profileFolder,
         bisectOriginalEnabled: options.bisectOriginalEnabled,
         keepBothWith: options.keepBothWith,
+        unattended: options.unattended,
       });
       if (!result) {
         options.onCancel?.(mod, "modelConflict");

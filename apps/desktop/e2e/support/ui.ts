@@ -88,7 +88,7 @@ export const selectDownloads = (names: readonly string[]) =>
     await dialog.waitForDisplayed();
     await expect(dialog.$("button=Download Selected")).toBeDisabled();
     for (const name of names) {
-      const checkbox = await dialog.$(`[id="file-${name}"]`);
+      const checkbox = await dialog.$(`[id="download-option-${name}"]`);
       await expect(checkbox).toHaveAttribute("aria-checked", "false");
       await checkbox.click();
     }
