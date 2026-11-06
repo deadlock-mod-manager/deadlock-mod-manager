@@ -37,6 +37,11 @@ import {
   PLAIN_MOD as STATUS_PLAIN_MOD,
   prepareFixedStatusWorld,
 } from "./fixed-status-fixtures";
+import {
+  assertHealthUpdateNetwork,
+  healthUpdateRoutes,
+  prepareHealthUpdateWorld,
+} from "./health-update-fixtures";
 import { prepareConflictWorld } from "./conflict-fixtures";
 import { prepareFilesystemWorld } from "./filesystem-fixtures";
 import { prepareManifestRepairWorld } from "./manifest-repair-fixtures";
@@ -817,6 +822,15 @@ export const scenarios = {
       )
         throw new Error("The fixed mod was never identified through analysis");
     },
+  },
+  "compatibility-health-update": {
+    ...defaults,
+    family: "compatibility",
+    spec: "compatibility-health-update",
+    phases: ["update"],
+    routes: healthUpdateRoutes,
+    prepare: prepareHealthUpdateWorld,
+    verifyNetwork: assertHealthUpdateNetwork,
   },
   // The stand-in game is a Linux `sleep` (e2e/support/fake-game.ts).
   "fixed-status-game-exit": {
