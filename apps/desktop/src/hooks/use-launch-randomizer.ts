@@ -14,6 +14,11 @@ import {
 import { groupModsByHero } from "@/lib/mods/hero-mods";
 import { applyHeroSelection } from "@/lib/mods/hero-selection";
 import {
+  applyDownloadTimeSelection,
+  previousInstallSelection,
+  requiresFileSelection,
+} from "@/lib/mods/mod-variants";
+import {
   currentOutcome,
   isRandomizedPool,
   pickRandomOutcome,
@@ -22,7 +27,9 @@ import {
 } from "@/lib/mods/skin-randomizer";
 import { type State, usePersistedStore } from "@/lib/store";
 import { EMPTY_MOD_GROUPS } from "@/lib/store/slices/mod-groups";
+import { getProfileVpkSnapshot } from "@/lib/tauri-commands";
 import { type LocalMod, type ModFileTree, ModStatus } from "@/types/mods";
+import type { ProfileId, VpkManifest } from "@/types/profiles";
 
 const logger = createLogger("launch-randomizer");
 
@@ -39,17 +46,53 @@ export const launchRandomizerStep = (state: State): LaunchStep | null => {
   return state.skinRandomizerEnabled ? "randomizingSkins" : null;
 };
 
+/** The profile a launch started on; a roll never touches another one. */
+type RollProfile = {
+  id: ProfileId;
+  folder: string | null;
+  manifest?: VpkManifest;
+};
+
 /**
- * The file tree to install a skin with, or null when installing it would need
- * the user to pick files. Old downloads have no stored tree, so theirs is read
- * from disk the way a normal install would.
+ * The file tree to install a mod with, or null when installing it would need
+ * the user to pick files. It reuses the earlier choices a normal install does.
+ * Old downloads have no stored tree, so theirs is read from disk.
  */
-const silentFileTree = async (mod: LocalMod): Promise<ModFileTree | null> => {
+const silentFileTree = async (
+  mod: LocalMod,
+  manifest?: VpkManifest,
+): Promise<ModFileTree | null> => {
   if (mod.installedFileTree) {
-    return mod.installedFileTree;
+    if (!requiresFileSelection(mod.installedFileTree)) {
+      return mod.installedFileTree;
+    }
+    return (
+      previousInstallSelection(mod, manifest) ??
+      applyDownloadTimeSelection(mod, mod.installedFileTree)
+    );
   }
   const tree = await readModFileTree(mod);
-  return tree.has_multiple_files ? null : tree;
+  return tree.has_multiple_files ? applyDownloadTimeSelection(mod, tree) : tree;
+};
+
+/** Installed mods outside `active` that need one of its members to work. */
+const dependentsOf = (
+  active: readonly LocalMod[],
+  mods: readonly LocalMod[],
+): LocalMod[] => {
+  const ids = new Set(active.map((mod) => mod.remoteId));
+  return mods.filter(
+    (mod) =>
+      mod.status === ModStatus.Installed &&
+      !ids.has(mod.remoteId) &&
+      (mod.dependencies ?? []).some(
+        (dependency) =>
+          dependency.level !== "recommended" &&
+          !dependency.mustBeDisabled &&
+          !!dependency.remoteId &&
+          ids.has(dependency.remoteId),
+      ),
+  );
 };
 
 /**
@@ -62,31 +105,35 @@ export const useLaunchRandomizer = () => {
   const { t } = useTranslation();
   const { install } = useInstallWithCollection();
 
-  const uninstallMod = useCallback(async (mod: LocalMod) => {
-    const state = usePersistedStore.getState();
-    try {
-      await invoke("uninstall_mod", {
-        modId: mod.remoteId,
-        vpks: mod.installedVpks ?? [],
-        profileFolder: state.getActiveProfile()?.folderName ?? null,
-      });
-      state.setModStatus(mod.remoteId, ModStatus.Downloaded);
-      state.setModEnabledInCurrentProfile(mod.remoteId, false);
-      return true;
-    } catch (error) {
-      logger
-        .withMetadata({ modId: mod.remoteId })
-        .withError(error)
-        .error("Failed to take off a randomized mod");
-      return false;
-    }
-  }, []);
+  const uninstallMod = useCallback(
+    async (mod: LocalMod, profile: RollProfile) => {
+      const state = usePersistedStore.getState();
+      try {
+        await invoke("uninstall_mod", {
+          modId: mod.remoteId,
+          vpks: mod.installedVpks ?? [],
+          profileFolder: profile.folder,
+        });
+        state.setModStatus(mod.remoteId, ModStatus.Downloaded);
+        state.setModEnabledInProfile(profile.id, mod.remoteId, false);
+        return true;
+      } catch (error) {
+        logger
+          .withMetadata({ modId: mod.remoteId })
+          .withError(error)
+          .error("Failed to take off a randomized mod");
+        return false;
+      }
+    },
+    [],
+  );
 
   const installMod = useCallback(
     async (
       mod: LocalMod,
       fileTree: ModFileTree,
       analyticsEntryPoint: ModEntryPoint,
+      profile: RollProfile,
     ) => {
       const state = usePersistedStore.getState();
       // A retry can put back a mod the roll just took off, so its pool entry
@@ -107,7 +154,7 @@ export const useLaunchRandomizer = () => {
               installed.installed_vpks,
               installed.file_tree,
             );
-            state.setModEnabledInCurrentProfile(m.remoteId, true);
+            state.setModEnabledInProfile(profile.id, m.remoteId, true);
           },
           onCancel: (m) => state.setModStatus(m.remoteId, ModStatus.Downloaded),
           onError: (m, error) => {
@@ -130,15 +177,29 @@ export const useLaunchRandomizer = () => {
    * anything is taken off, so a mod that turns out to need a file pick is never
    * rolled. A pick that would need a prompt to install (a model conflict with a
    * mod outside the pool, or a missing requirement) is cancelled, and the roll
-   * moves on to the rest, what was on before included. Returns false when
-   * nothing could be put on.
+   * moves on to the rest, what was on before included. Nothing is taken off
+   * while another installed mod needs it. Returns false when nothing could be
+   * put on, or when the user switched profiles mid-roll.
    */
   const roll = useCallback(
     async (
       pool: RandomizerOutcome<LocalMod>[],
       active: LocalMod[],
       analyticsEntryPoint: ModEntryPoint,
+      profile: RollProfile,
     ) => {
+      const onProfile = () =>
+        usePersistedStore.getState().activeProfileId === profile.id;
+      const dependents = dependentsOf(
+        active,
+        usePersistedStore.getState().localMods,
+      );
+      if (dependents.length > 0) {
+        logger
+          .withMetadata({ dependents: dependents.map((mod) => mod.remoteId) })
+          .warn("Skipping a roll that would take off a required mod");
+        return false;
+      }
       const fileTrees = new Map<string, ModFileTree>();
       const installable: typeof pool = [];
       for (const outcome of pool) {
@@ -146,7 +207,9 @@ export const useLaunchRandomizer = () => {
           installable.push(outcome);
           continue;
         }
-        const fileTree = await silentFileTree(outcome).catch(() => null);
+        const fileTree = await silentFileTree(outcome, profile.manifest).catch(
+          () => null,
+        );
         if (fileTree) {
           fileTrees.set(outcome.remoteId, fileTree);
           installable.push(outcome);
@@ -157,18 +220,19 @@ export const useLaunchRandomizer = () => {
         }
       }
       if (installable.length === 0) {
-        return true;
+        return false;
       }
       let current = active;
       let candidates = installable;
       while (candidates.length > 0) {
         const pick = pickRandomOutcome(candidates, currentOutcome(current));
         const result = await applyHeroSelection(current, pick ? [pick] : [], {
-          uninstall: uninstallMod,
+          uninstall: (mod) =>
+            onProfile() ? uninstallMod(mod, profile) : Promise.resolve(false),
           install: (mod) => {
             const fileTree = fileTrees.get(mod.remoteId);
-            return fileTree
-              ? installMod(mod, fileTree, analyticsEntryPoint)
+            return fileTree && onProfile()
+              ? installMod(mod, fileTree, analyticsEntryPoint, profile)
               : Promise.resolve(false);
           },
         });
@@ -183,7 +247,7 @@ export const useLaunchRandomizer = () => {
         );
         current = current.filter((mod) => installed.has(mod.remoteId));
         // A failed uninstall leaves things as they are rather than stacking.
-        if (current.length > 0) {
+        if (current.length > 0 || !onProfile()) {
           return false;
         }
         candidates = candidates.filter((outcome) => outcome !== pick);
@@ -196,13 +260,24 @@ export const useLaunchRandomizer = () => {
   const randomize = useCallback(async () => {
     let failed = false;
 
+    const start = usePersistedStore.getState();
+    const folder = start.getActiveProfile()?.folderName ?? null;
+    const profile: RollProfile = {
+      id: start.activeProfileId,
+      folder,
+      // It only lets more variant mods roll, so a failed read leaves them out.
+      manifest: await getProfileVpkSnapshot(folder)
+        .then((snapshot) => snapshot.manifest)
+        .catch(() => undefined),
+    };
     const pools = groupRandomizerPools(
-      randomizedGroups(usePersistedStore.getState()),
+      randomizedGroups(start),
       usePersistedStore.getState().localMods,
+      profile.manifest,
     );
     for (const { group, pool, active } of pools) {
       try {
-        failed = !(await roll(pool, active, "library")) || failed;
+        failed = !(await roll(pool, active, "library", profile)) || failed;
       } catch (error) {
         logger
           .withMetadata({ groupId: group.id })
@@ -236,7 +311,8 @@ export const useLaunchRandomizer = () => {
           continue;
         }
         try {
-          failed = !(await roll(pool, group.activeSkins, "skins")) || failed;
+          failed =
+            !(await roll(pool, group.activeSkins, "skins", profile)) || failed;
         } catch (error) {
           logger
             .withMetadata({ hero })

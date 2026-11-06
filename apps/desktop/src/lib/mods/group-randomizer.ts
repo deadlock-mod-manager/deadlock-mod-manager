@@ -1,6 +1,7 @@
+import { previousInstallSelection } from "@/lib/mods/mod-variants";
 import { canRandomizeMod, isRandomizedPool } from "@/lib/mods/skin-randomizer";
 import { type LocalMod, ModStatus } from "@/types/mods";
-import type { ModGroup } from "@/types/profiles";
+import type { ModGroup, VpkManifest } from "@/types/profiles";
 
 type GroupRandomizableMod = Pick<
   LocalMod,
@@ -9,6 +10,10 @@ type GroupRandomizableMod = Pick<
   | "usesCriticalPaths"
   | "installedFileTree"
   | "installedVpks"
+  | "downloads"
+  | "selectedDownloads"
+  | "activeVariantArchive"
+  | "isMap"
 >;
 
 export type GroupRandomizerPool<T> = {
@@ -30,11 +35,14 @@ export const randomizedGroupModIds = (
 /**
  * The randomized groups that have something to choose between. Every installed
  * member is listed as active so the roll takes off whatever the group had on,
- * including members that can't be rolled themselves.
+ * including members that can't be rolled themselves. Map mods never roll: the
+ * launch has just offered to take them off. `manifest` lets a variant mod whose
+ * installed VPKs were cleared on disable roll with the selection it had.
  */
 export function groupRandomizerPools<T extends GroupRandomizableMod>(
   groups: readonly ModGroup[],
   mods: readonly T[],
+  manifest?: VpkManifest,
 ): GroupRandomizerPool<T>[] {
   const byId = new Map(mods.map((mod) => [mod.remoteId, mod]));
   const pools: GroupRandomizerPool<T>[] = [];
@@ -47,7 +55,10 @@ export function groupRandomizerPools<T extends GroupRandomizableMod>(
       (mod) =>
         (mod.status === ModStatus.Downloaded ||
           mod.status === ModStatus.Installed) &&
-        canRandomizeMod(mod),
+        !mod.isMap &&
+        (canRandomizeMod(mod) ||
+          (!mod.usesCriticalPaths &&
+            previousInstallSelection(mod, manifest) !== undefined)),
     );
     if (isRandomizedPool(pool)) {
       pools.push({

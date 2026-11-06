@@ -1,5 +1,8 @@
 import type { HeroModGroup } from "@/lib/mods/hero-mods";
-import { requiresFileSelection } from "@/lib/mods/mod-variants";
+import {
+  applyDownloadTimeSelection,
+  requiresFileSelection,
+} from "@/lib/mods/mod-variants";
 import type { LocalMod } from "@/types/mods";
 
 /** Below this there is nothing to choose between, so the hero is left alone. */
@@ -17,7 +20,12 @@ export type RandomizerOutcome<T> = T | null;
 
 type RandomizableMod = Pick<
   LocalMod,
-  "usesCriticalPaths" | "installedFileTree" | "installedVpks"
+  | "usesCriticalPaths"
+  | "installedFileTree"
+  | "installedVpks"
+  | "downloads"
+  | "selectedDownloads"
+  | "activeVariantArchive"
 >;
 
 /**
@@ -30,11 +38,13 @@ export const canRandomizeMod = (mod: RandomizableMod): boolean => {
     return false;
   }
   // Without a stored tree the launch looks at the files itself and skips the
-  // mod if it turns out to need a pick.
+  // mod if it turns out to need a pick. With one, these are the choices the
+  // installer reuses without asking.
   return (
     !mod.installedFileTree ||
     !requiresFileSelection(mod.installedFileTree) ||
-    (mod.installedVpks?.length ?? 0) > 0
+    (mod.installedVpks?.length ?? 0) > 0 ||
+    applyDownloadTimeSelection(mod, mod.installedFileTree) !== null
   );
 };
 
