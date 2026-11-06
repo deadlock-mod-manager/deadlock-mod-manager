@@ -307,6 +307,13 @@ export const heroCounterStatsSchema = z.object({
   enemy_networth: count,
 });
 
+/** How often a set of heroes won on one team. */
+export const heroCombStatsSchema = z.object({
+  hero_ids: z.array(z.number()),
+  wins: count,
+  matches: count,
+});
+
 export type MatchHistoryEntry = z.infer<typeof matchHistoryEntrySchema>;
 export type MatchMetadataItem = z.infer<typeof matchMetadataItemSchema>;
 export type MatchMetadataStat = z.infer<typeof matchMetadataStatSchema>;
@@ -329,3 +336,4 @@ export type MetricSpread = z.infer<typeof metricSpreadSchema>;
 export type SeasonInterval = z.infer<typeof seasonIntervalSchema>;
 export type RankedSeason = z.infer<typeof rankedSeasonSchema>;
 export type HeroCounterStats = z.infer<typeof heroCounterStatsSchema>;
+export type HeroCombStats = z.infer<typeof heroCombStatsSchema>;

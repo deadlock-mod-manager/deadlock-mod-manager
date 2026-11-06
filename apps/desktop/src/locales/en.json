@@ -1198,6 +1198,7 @@
       "heroes": "Heroes",
       "items": "Items",
       "squad": "Squad",
+      "party": "Party",
       "live": "Live"
     },
     "items": {
@@ -1697,6 +1698,74 @@
       "matesTitle": "Teammates",
       "matesDescription": "Everyone you played 5+ games with"
     },
+    "party": {
+      "title": "Plan your party",
+      "description": "Each player offers up to 3 heroes, like in queue. The game gives everyone one of theirs.",
+      "clear": "Clear",
+      "pickHero": "Pick a hero",
+      "remove": "Remove {{hero}}",
+      "error": "Could not load party stats. Try again in a moment.",
+      "rank": {
+        "label": "Rank range",
+        "all": "All ranks",
+        "range": "{{from}} to {{to}}",
+        "from": "From",
+        "to": "To",
+        "hint": "Filters on the average rank of both teams in a match."
+      },
+      "member": {
+        "you": "You",
+        "player": "Player {{number}}",
+        "active": "Adding heroes",
+        "picks": "{{size}} of {{max}} heroes",
+        "add": "Add player",
+        "remove": "Remove {{player}}"
+      },
+      "advice": {
+        "swap": "{{pick}} is the weakest pick. Swapping it for {{hero}} lifts the expected winrate by {{points}} pts.",
+        "add": "Adding {{hero}} lifts the expected winrate by {{points}} pts.",
+        "swapAction": "Swap",
+        "addAction": "Add"
+      },
+      "odds": {
+        "title": "Expected winrate",
+        "exact": "Exact",
+        "estimate": "Estimate",
+        "estimateHint": "Parties of 4 or more are estimated from the trios inside each lineup.",
+        "needPlayers": "Give heroes to at least two players to see the party's odds.",
+        "noData": "No matches for these lineups yet. Try a wider rank range or date.",
+        "note_one": "The only lineup the game can give this party.",
+        "note_other": "Average of the {{count}} lineups the game can give this party, each counted the same.",
+        "best": "Best lineup",
+        "worst": "Worst lineup",
+        "shift": "{{value}} pts",
+        "optimal": "Already at its best: no single pick change raises the expected winrate."
+      },
+      "lineups": {
+        "title": "Every lineup you can get",
+        "descriptionEmpty": "Every combination of one hero per player.",
+        "description_one": "{{count}} lineup. The same hero can't go to two players.",
+        "description_other": "{{count}} lineups. The same hero can't go to two players.",
+        "order": "Sort order",
+        "best": "Best",
+        "worst": "Worst",
+        "lineup": "Lineup",
+        "winrate": "Winrate",
+        "matches": "Matches",
+        "noData": "No matches yet",
+        "noLineups": "These picks can't give every player a different hero. Add another hero to someone's picks.",
+        "showAll": "Show all {{count}}",
+        "showFewer": "Show fewer",
+        "footnote": "Exact records for parties of 2 or 3, estimated from trios for bigger ones. Lineups under {{matches}} matches are dimmed; the line marks the expected winrate."
+      },
+      "picker": {
+        "title": "Heroes for {{player}}",
+        "count": "{{size}} of {{max}}",
+        "search": "Search heroes",
+        "noMatch": "No hero matches \"{{query}}\".",
+        "hint": "Click a hero to add it to the highlighted player, up to {{max}}. Click a player to pick for them."
+      }
+    },
     "dashboard": {
       "customize": "Customize",
       "customizeHint": "Rearrange, resize, add or remove widgets and tabs",
@@ -1758,6 +1827,7 @@
         "heroes": "Heroes",
         "items": "Items",
         "squad": "Squad",
+        "party": "Party",
         "live": "Live",
         "performance": "Performance",
         "habits": "Habits",
@@ -2006,6 +2076,10 @@
         "squad": {
           "title": "Squad",
           "description": "Winrate with your mates, and the players who beat you most."
+        },
+        "partyPlanner": {
+          "title": "Party planner",
+          "description": "Every lineup your party can get when each player offers up to 3 heroes, with the best swaps."
         },
         "profile": {
           "title": "Profile",
