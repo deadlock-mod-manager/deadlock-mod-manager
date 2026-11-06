@@ -31,6 +31,7 @@ import { shareRoutes } from "./profile-share-fixtures";
 import { prepareFileOrderWorld } from "./file-order-fixtures";
 import { prepareBrokenProfileWorld } from "./broken-profile-fixtures";
 import { prepareCompatibilityFixWorld } from "./compatibility-fix-fixtures";
+import { prepareIdentifiedFixWorld } from "./compatibility-fix-identification-fixtures";
 import {
   FIXED_MOD as STATUS_FIXED_MOD,
   PLAIN_MOD as STATUS_PLAIN_MOD,
@@ -797,6 +798,25 @@ export const scenarios = {
     phases: ["library-changes"],
     routes: profileRoutes,
     prepare: async (world) => prepareCompatibilityFixWorld(world),
+  },
+  "compatibility-fix-identification": {
+    ...defaults,
+    family: "compatibility",
+    spec: "compatibility-fix-identification",
+    phases: ["identify-fixed"],
+    routes: detectedModRoutes,
+    prepare: async (world) => prepareIdentifiedFixWorld(world),
+    verifyNetwork: (_id: string, requests: readonly FixtureRequest[]) => {
+      if (
+        !requests.some(
+          (request) =>
+            request.method === "POST" &&
+            request.url.includes("/api/v2/vpk-analyse-hashes") &&
+            request.responseStatus === 200,
+        )
+      )
+        throw new Error("The fixed mod was never identified through analysis");
+    },
   },
   // The stand-in game is a Linux `sleep` (e2e/support/fake-game.ts).
   "fixed-status-game-exit": {
