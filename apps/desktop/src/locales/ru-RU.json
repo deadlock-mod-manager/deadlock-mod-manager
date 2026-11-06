@@ -1198,6 +1198,7 @@
       "heroes": "Герои",
       "items": "Предметы",
       "squad": "",
+      "party": "",
       "live": ""
     },
     "items": {
@@ -1697,6 +1698,74 @@
       "matesTitle": "",
       "matesDescription": ""
     },
+    "party": {
+      "title": "",
+      "description": "",
+      "clear": "",
+      "pickHero": "",
+      "remove": "",
+      "error": "",
+      "rank": {
+        "label": "",
+        "all": "",
+        "range": "",
+        "from": "",
+        "to": "",
+        "hint": ""
+      },
+      "member": {
+        "you": "",
+        "player": "",
+        "active": "",
+        "picks": "",
+        "add": "",
+        "remove": ""
+      },
+      "advice": {
+        "swap": "",
+        "add": "",
+        "swapAction": "",
+        "addAction": ""
+      },
+      "odds": {
+        "title": "",
+        "exact": "",
+        "estimate": "",
+        "estimateHint": "",
+        "needPlayers": "",
+        "noData": "",
+        "note_one": "",
+        "note_other": "",
+        "best": "",
+        "worst": "",
+        "shift": "",
+        "optimal": ""
+      },
+      "lineups": {
+        "title": "",
+        "descriptionEmpty": "",
+        "description_one": "",
+        "description_other": "",
+        "order": "",
+        "best": "",
+        "worst": "",
+        "lineup": "",
+        "winrate": "",
+        "matches": "",
+        "noData": "",
+        "noLineups": "",
+        "showAll": "",
+        "showFewer": "",
+        "footnote": ""
+      },
+      "picker": {
+        "title": "",
+        "count": "",
+        "search": "",
+        "noMatch": "",
+        "hint": ""
+      }
+    },
     "dashboard": {
       "customize": "",
       "customizeHint": "",
@@ -1758,6 +1827,7 @@
         "heroes": "",
         "items": "",
         "squad": "",
+        "party": "",
         "live": "",
         "performance": "",
         "habits": "",
@@ -2004,6 +2074,10 @@
           "description": ""
         },
         "squad": {
+          "title": "",
+          "description": ""
+        },
+        "partyPlanner": {
           "title": "",
           "description": ""
         },
