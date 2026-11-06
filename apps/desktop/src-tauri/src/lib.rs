@@ -574,6 +574,7 @@ pub fn run() {
       commands::shards::resync_profile_shards,
       commands::profiles::seed_profile_vpk_manifest_entries,
       commands::profiles::delete_profile_vpk,
+      commands::profiles::quarantine_profile_vpk,
       commands::profiles::show_profile_vpk_in_folder,
       commands::profiles::import_profile_batch,
       commands::mods::register_analyzed_mod,
