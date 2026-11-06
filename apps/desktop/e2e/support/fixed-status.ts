@@ -133,16 +133,8 @@ const readHistoryDigest = async (world: string): Promise<string | null> => {
   } = await assertOwnedWorld(world);
   const citadel = path.join(roots.game, "game", "citadel");
   const installation = createHash("sha256").update(citadel).digest("hex");
-  // The backend uses `dirs::cache_dir()`: the world's XDG cache on Linux, and
-  // Local AppData on Windows, which the harness doesn't redirect.
-  const cache =
-    process.platform === "win32"
-      ? process.env.LOCALAPPDATA
-      : path.join(roots.webviewData, "cache");
-  if (!cache) return null;
   const file = path.join(
-    cache,
-    "dev.stormix.deadlock-mod-manager",
+    roots.appCache,
     "compatibility",
     installation,
     "vdata-history.bin",

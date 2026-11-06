@@ -126,7 +126,7 @@ import {
   assertReliabilityNetwork,
 } from "./reliability-fixtures";
 
-type Definition = {
+export type Definition = {
   family: string;
   spec: string;
   phases: readonly string[];

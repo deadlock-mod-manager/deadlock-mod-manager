@@ -91,6 +91,16 @@ pub struct ModHealthReport {
   pub mods: Vec<ModHealth>,
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct ModHealthCheck {
+  pub report: ModHealthReport,
+  /// The check saved newly observed game data. Every repair receipt on this
+  /// install digests that data, so the active profile's repairs need a rebuild.
+  pub history_changed: bool,
+}
+
 /// Sent as `mod-health-progress` while `check_mod_health` runs.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, TS)]
 #[ts(export, rename_all = "camelCase")]

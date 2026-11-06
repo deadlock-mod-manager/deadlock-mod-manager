@@ -1,8 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, jest } from "bun:test";
-import {
-  createActivationTracker,
-  createModHealthRefreshQueue,
-} from "./mod-health-refresh";
+import { createModHealthRefreshQueue } from "./mod-health-refresh";
 
 const setup = () => {
   const calls: [string, string | null][] = [];
@@ -97,24 +94,5 @@ describe("mod health refresh queue", () => {
       ["refreshFixes", null],
       ["checkHealth", null],
     ]);
-  });
-});
-
-describe("activation tracker", () => {
-  it("refreshes once per activation, not on every report", () => {
-    const shouldRefresh = createActivationTracker();
-    const game = "/games/deadlock";
-
-    expect(shouldRefresh({ gamePath: game, profileFolder: null })).toBe(true);
-    expect(shouldRefresh({ gamePath: game, profileFolder: null })).toBe(false);
-    expect(shouldRefresh({ gamePath: game, profileFolder: "other" })).toBe(
-      true,
-    );
-    // Returning to a profile refreshes it again: another profile's check may
-    // have changed the observed game data its receipt digests.
-    expect(shouldRefresh({ gamePath: game, profileFolder: null })).toBe(true);
-    expect(
-      shouldRefresh({ gamePath: "/games/moved", profileFolder: null }),
-    ).toBe(true);
   });
 });

@@ -4,7 +4,7 @@ use crate::mod_manager::ModManager;
 use crate::mod_manager::localization_overlay::{
   LocalizationOverlayAnalysis, LocalizationOverlayApplyResult, LocalizationResolution,
 };
-use crate::mod_manager::mod_health::{FixModsResult, ModHealthReport};
+use crate::mod_manager::mod_health::{FixModsResult, ModHealthCheck, ModHealthReport};
 use std::sync::Mutex;
 use tauri::Emitter;
 
@@ -29,24 +29,15 @@ pub async fn check_mod_health(
   profile_folder: Option<String>,
   mod_ids: Option<Vec<String>>,
   force: bool,
-) -> Result<ModHealthReport, Error> {
+) -> Result<ModHealthCheck, Error> {
   tauri::async_runtime::spawn_blocking(move || {
     let context = MANAGER
       .lock()
       .map_err(|_| Error::BackgroundTaskFailed("Mod manager is unavailable".into()))?
       .mod_health_context(profile_folder.as_deref())?;
-    context.check(
-      mod_ids.as_deref(),
-      force,
-      |progress| {
-        app_handle.emit("mod-health-progress", progress).ok();
-      },
-      // The window rebuilds the active profile's repairs, whose receipt
-      // digests the observed data this check just saved.
-      || {
-        app_handle.emit("compatibility-history-changed", ()).ok();
-      },
-    )
+    context.check(mod_ids.as_deref(), force, |progress| {
+      app_handle.emit("mod-health-progress", progress).ok();
+    })
   })
   .await
   .map_err(|error| Error::BackgroundTaskFailed(format!("Could not check mods: {error}")))?

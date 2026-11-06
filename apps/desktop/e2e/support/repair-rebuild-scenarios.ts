@@ -3,19 +3,24 @@ import {
   PLAIN_MOD,
   prepareFixedStatusWorld,
 } from "./fixed-status-fixtures";
-import type { CreatedWorld } from "./world";
+import type { Definition } from "./scenarios";
 
 /**
  * Cases where a fixed mod's saved repair goes stale and DMM should rebuild it
  * by itself, plus a restart control. `base` is the compatibility family's
  * scenario settings; each case prepares a fixed mod and a plain skin.
  */
-export const repairRebuildScenarios = <Base extends object>(base: Base) => {
-  const repairRebuild = (spec: string, phases: readonly string[]) => ({
+export const repairRebuildScenarios = (
+  base: Omit<Definition, "spec" | "phases">,
+) => {
+  const repairRebuild = (
+    spec: string,
+    phases: readonly string[],
+  ): Definition => ({
     ...base,
     spec,
     phases,
-    prepare: async (world: CreatedWorld) =>
+    prepare: async (world) =>
       prepareFixedStatusWorld(world, [FIXED_MOD, PLAIN_MOD]),
   });
   const gameFiles = () =>
