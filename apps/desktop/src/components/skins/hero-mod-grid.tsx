@@ -19,7 +19,7 @@ import { DefaultSkinCard, HeroModCard } from "@/components/skins/hero-mod-card";
 import { HeroRandomizerBar } from "@/components/skins/skin-randomizer-controls";
 import type { HeroModGroup, HeroModKind } from "@/lib/mods/hero-mods";
 import {
-  canRandomizeSkin,
+  canRandomizeMod,
   isRandomizedPool,
   randomizerPool,
 } from "@/lib/mods/skin-randomizer";
@@ -108,7 +108,7 @@ export const HeroModGrid = ({
           kind === "skin"
             ? {
                 selected: randomizerSkins[mod.remoteId] === true,
-                available: canRandomizeSkin(mod),
+                available: canRandomizeMod(mod),
                 onToggle: (selected) =>
                   setRandomizerSkins([mod.remoteId], selected),
               }

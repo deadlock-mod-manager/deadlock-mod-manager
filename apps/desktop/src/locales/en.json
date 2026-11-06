@@ -1174,8 +1174,7 @@
       "inPool": "Include in the skin randomizer",
       "defaultInPool": "Include the default skin in the randomizer",
       "unavailable": "Can’t be randomized: install it once to pick its files, or it needs a confirmation",
-      "listSubtitle": "Random skin",
-      "launchFailed": "The skin randomizer couldn’t change every hero. The game starts with the skins that were already on."
+      "listSubtitle": "Random skin"
     }
   },
   "stats": {
@@ -1199,6 +1198,7 @@
       "heroes": "Heroes",
       "items": "Items",
       "squad": "Squad",
+      "party": "Party",
       "live": "Live"
     },
     "items": {
@@ -1698,6 +1698,74 @@
       "matesTitle": "Teammates",
       "matesDescription": "Everyone you played 5+ games with"
     },
+    "party": {
+      "title": "Plan your party",
+      "description": "Each player offers up to 3 heroes, like in queue. The game gives everyone one of theirs.",
+      "clear": "Clear",
+      "pickHero": "Pick a hero",
+      "remove": "Remove {{hero}}",
+      "error": "Could not load party stats. Try again in a moment.",
+      "rank": {
+        "label": "Rank range",
+        "all": "All ranks",
+        "range": "{{from}} to {{to}}",
+        "from": "From",
+        "to": "To",
+        "hint": "Filters on the average rank of both teams in a match."
+      },
+      "member": {
+        "you": "You",
+        "player": "Player {{number}}",
+        "active": "Adding heroes",
+        "picks": "{{size}} of {{max}} heroes",
+        "add": "Add player",
+        "remove": "Remove {{player}}"
+      },
+      "advice": {
+        "swap": "{{pick}} is the weakest pick. Swapping it for {{hero}} lifts the expected winrate by {{points}} pts.",
+        "add": "Adding {{hero}} lifts the expected winrate by {{points}} pts.",
+        "swapAction": "Swap",
+        "addAction": "Add"
+      },
+      "odds": {
+        "title": "Expected winrate",
+        "exact": "Exact",
+        "estimate": "Estimate",
+        "estimateHint": "Parties of 4 or more are estimated from the trios inside each lineup.",
+        "needPlayers": "Give heroes to at least two players to see the party's odds.",
+        "noData": "No matches for these lineups yet. Try a wider rank range or date.",
+        "note_one": "The only lineup the game can give this party.",
+        "note_other": "Average of the {{count}} lineups the game can give this party, each counted the same.",
+        "best": "Best lineup",
+        "worst": "Worst lineup",
+        "shift": "{{value}} pts",
+        "optimal": "Already at its best: no single pick change raises the expected winrate."
+      },
+      "lineups": {
+        "title": "Every lineup you can get",
+        "descriptionEmpty": "Every combination of one hero per player.",
+        "description_one": "{{count}} lineup. The same hero can't go to two players.",
+        "description_other": "{{count}} lineups. The same hero can't go to two players.",
+        "order": "Sort order",
+        "best": "Best",
+        "worst": "Worst",
+        "lineup": "Lineup",
+        "winrate": "Winrate",
+        "matches": "Matches",
+        "noData": "No matches yet",
+        "noLineups": "These picks can't give every player a different hero. Add another hero to someone's picks.",
+        "showAll": "Show all {{count}}",
+        "showFewer": "Show fewer",
+        "footnote": "Exact records for parties of 2 or 3, estimated from trios for bigger ones. Lineups under {{matches}} matches are dimmed; the line marks the expected winrate."
+      },
+      "picker": {
+        "title": "Heroes for {{player}}",
+        "count": "{{size}} of {{max}}",
+        "search": "Search heroes",
+        "noMatch": "No hero matches \"{{query}}\".",
+        "hint": "Click a hero to add it to the highlighted player, up to {{max}}. Click a player to pick for them."
+      }
+    },
     "dashboard": {
       "customize": "Customize",
       "customizeHint": "Rearrange, resize, add or remove widgets and tabs",
@@ -1759,6 +1827,7 @@
         "heroes": "Heroes",
         "items": "Items",
         "squad": "Squad",
+        "party": "Party",
         "live": "Live",
         "performance": "Performance",
         "habits": "Habits",
@@ -2007,6 +2076,10 @@
         "squad": {
           "title": "Squad",
           "description": "Winrate with your mates, and the players who beat you most."
+        },
+        "partyPlanner": {
+          "title": "Party planner",
+          "description": "Every lineup your party can get when each player offers up to 3 heroes, with the best swaps."
         },
         "profile": {
           "title": "Profile",
@@ -3313,6 +3386,10 @@
       "enabledCount": "{{count}}/{{total}} enabled",
       "enable": "Enable mods in {{name}}",
       "disable": "Disable mods in {{name}}",
+      "randomize": "Randomize on launch",
+      "randomizeHelp": "Each launch turns on one mod from this group at random and turns the rest off.",
+      "randomized": "One mod from {{name}} is picked at random on every launch",
+      "randomizeIdle": "{{name}} needs at least 2 mods that can turn on without a prompt before it can randomize",
       "expandAll": "Expand all groups",
       "collapseAll": "Collapse all groups",
       "draggingMods_one": "{{count}} mod",
@@ -4142,8 +4219,10 @@
     "title": "Launching Deadlock",
     "hide": "Hide (the launch keeps going)",
     "cancel": "Cancel launch",
+    "randomizerFailed": "The randomizer couldn’t put on every pick, so some randomized mods are off for this game.",
     "steps": {
       "randomizingSkins": "Randomizing hero skins",
+      "randomizingMods": "Randomizing mods",
       "disablingMods": "Disabling mods",
       "verifyingMods_one": "Verifying {{count}} mod",
       "verifyingMods_other": "Verifying {{count}} mods",
@@ -5369,7 +5448,28 @@
     "analyzing": "Analyzing...",
     "analysisResults": "Local Addon Analysis",
     "analysisResultsDescription": "Found {{count}} addon(s) in your game directory",
-    "identifiedAndAdded": "{{count}} identified and automatically added to your library",
+    "identifiedCount": "{{count}} identified",
+    "identifiedNoticeTitle": "Recognized mods",
+    "identifiedNoticeDescription": "These files match mods in our database. Each one shows whether its mod is in your library.",
+    "inLibrary": "Added to Library",
+    "notInLibrary": "Not in Library",
+    "fileActions": {
+      "addToLibrary": "Add to Library",
+      "quarantine": "Quarantine",
+      "delete": "Delete",
+      "deleteConfirmTitle": "Delete {{name}}?",
+      "deleteConfirmBody": "This permanently deletes \"{{name}}\" from this profile's addons folder. This can't be undone.",
+      "deleteConfirmAction": "Delete",
+      "deleted": "Deleted {{name}}",
+      "deleteError": "Couldn't delete {{name}}",
+      "quarantined": "Moved {{name}} to quarantine",
+      "quarantinedDescription": "The game won't load it from the profile's .dmm-quarantine folder. Move it back to use it again.",
+      "quarantineError": "Couldn't quarantine {{name}}",
+      "showInFolder": "Show in folder",
+      "added": "Added {{name}} to your library",
+      "addError": "Couldn't add {{name}} to your library",
+      "profileChanged": "The active profile changed. Run Analyze again."
+    },
     "analysisSuccess": "Analysis complete! Found {{count}} addon(s)",
     "analysisSuccessWithIdentified": "Analysis complete! Found {{count}} addon(s), identified {{identified}} and added to current profile",
     "analysisSuccessAllIdentified": "Analysis complete! All {{identified}} addon(s) were automatically identified and added to current profile",
@@ -5478,7 +5578,7 @@
       "noMods": "No existing mods found",
       "noModsDescription": "You can start fresh and browse mods from the catalog.",
       "modsFound": "Existing mods detected!",
-      "modsFoundDescription": "Would you like to analyze and import them?",
+      "modsFoundAnalyzeDescription": "Analyze them to see which mods we recognize. To add them to your library, run Analyze in My Mods after setup.",
       "analyze": "Analyze Mods",
       "analyzing": "Analyzing...",
       "skipAnalysis": "Skip for Now"

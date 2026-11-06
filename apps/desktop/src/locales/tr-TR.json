@@ -216,23 +216,65 @@
   },
   "performance": {
     "title": "Performans",
-    "subtitle": "Görsel ayrıntıdan ödün vererek kare hızını artıran topluluk yapılandırmaları. Bunlar modlarınızla birlikte gameinfo.gi dosyasına yazılır ve istediğiniz zaman kapatılabilir.",
+    "subtitle": "",
     "tabs": {
       "configs": "Yapılandırmalar",
-      "editor": "Ayar düzenleyici",
+      "editor": "",
+      "video": "",
       "history": "Geçmiş",
       "howItWorks": "Nasıl çalışır"
     },
+    "video": {
+      "emptyTitle": "",
+      "noConfig": "",
+      "noVideo": "",
+      "changes": {
+        "title": "",
+        "description": "",
+        "values": "",
+        "kept": "",
+        "removed": "",
+        "keep": "",
+        "use": "",
+        "useAll": "",
+        "settled": "",
+        "useConfig_one": "",
+        "useConfig_other": "",
+        "failed": ""
+      }
+    },
     "howItWorks": {
+      "basics": {
+        "label": "",
+        "inPlace": {
+          "title": "",
+          "body": ""
+        },
+        "turnOff": {
+          "title": "",
+          "body": ""
+        },
+        "updates": {
+          "title": "",
+          "body": ""
+        },
+        "video": {
+          "title": "",
+          "body": ""
+        }
+      },
       "writes": {
         "title": "Mod yöneticisi neleri değiştirir",
+        "summary": "",
         "inPlace": "Yapılandırma, gameinfo.gi dosyanıza yazılan konsol değişkenlerinin (convar) ve bazen motor ayarlarının listesidir. Mod yöneticisi dosyayı değiştirmek yerine modlarınızın yanında yerinde düzenler.",
         "turnOff": "Eklediği veya değiştirdiği her satırı işaretler. Bu sayede Kapat seçeneği bu satırları kaldırır ve önceki değerleri geri getirir. Yapılandırmalarınız ve ince ayarlarınız kayıtlı kalır.",
-        "reapply": "Oyun güncellemesi veya Modsuz Duruma Sıfırla işlemi gameinfo.gi dosyasını değiştirir. Mod yöneticisi başlatıldığında, penceresine geri döndüğünüzde ve uygulama üzerinden yapılan her başlatmadan önce (modsuz başlatmalar dâhil) yapılandırmanızı yeniden yazar; Deadlock çalışırken bekler. Mod yöneticisi kapalıyken Deadlock’u Steam’den başlatırsanız uygulamayı yeniden açana kadar yapılandırma uygulanmaz.",
-        "untouched": "Modlarınızın yüklenmesini sağlayan SearchPaths ve video.txt hiçbir zaman değiştirilmez."
+        "reapply": "",
+        "untouched": "",
+        "video": ""
       },
       "sources": {
         "title": "Bilgilerin kaynağı",
+        "summary": "",
         "convars": {
           "term": "Valve’ın konsol değişkenleri listesi",
           "body": "Güncel oyundaki her konsol değişkeninin ve komutunun adı, türü, varsayılan değeri, aralığı ve işaretleri; Deadlock için <schemaExplorer>ValveResourceFormat SchemaExplorer</schemaExplorer> dökümünden alınır."
@@ -257,13 +299,16 @@
       },
       "statuses": {
         "title": "Her ayara ne olur",
-        "description": "Yapılandırma ayrıntıları, içe aktarma incelemesi ve ayar düzenleyici, yapılandırmanın her satırını bu etiketlerden biriyle işaretler. Yalnızca Uygulanır olarak işaretlenen satırlar yazılır.",
-        "applies": "gameinfo.gi dosyanıza yazılır.",
+        "summary": "",
+        "description": "",
+        "written": "",
+        "notWritten": "",
+        "applies": "",
         "unchanged": "gameinfo.gi dosyanızda bu değer zaten bulunur veya değer belirtilmemiştir ve konsol değişkeninin yerleşik varsayılanı kullanılır. Hiçbir şey yazılmaz.",
-        "blocked": "Valve bu konsol değişkenini gameinfo.gi tarafından ayarlanamayanlardan biri olarak işaretler (gameinfo_cannot_override).",
-        "removed": "Deadlock’un konsol değişkeni listesinde yok. Geçmişte kaldırıldığı görülüyorsa kaldırıldığı sürüm belirtilir.",
-        "notConvar": "Valve bunu konsol değişkeni olarak değil, konsol komutu olarak listeler.",
-        "engineSection": "SceneSystem veya RenderSystem gibi ConVars bloğunun dışındadır. Bu yapılandırma için motor bölümlerindeki değişiklikler kapalı olduğundan atlanır. Deadlock’un eşleştirme hatası, bazı değişikliklerin desteklenmediği bölümler olarak Engine2, MaterialSystem2, NetworkSystem, Particles, RenderSystem, SceneSystem ve WorldRenderer’ı listeler.",
+        "blocked": "",
+        "removed": "",
+        "notConvar": "",
+        "engineSection": "",
         "omitted": "Siz kapattınız.",
         "excluded": "FileSystem (SearchPaths öğesini içerir) ve yalnızca düzenleyiciye ait bölümler. Mod yöneticisi bunlara hiçbir zaman yazmaz.",
         "denied": "Mod yöneticisinin yazmayacağı, sv_cheats gibi anahtarlar. Her biri için gerekçe gösterilir.",
@@ -272,12 +317,13 @@
       },
       "counts": {
         "title": "Her karttaki sayılar",
-        "settings": "Ayarlar: gameinfo.gi dosyanıza yazılacak satır sayısı.",
-        "unused": "Kullanılmayan: gameinfo.gi dosyasından okunmayan, konsol değişkeni olmayan veya konsol komutu olan ayarlar.",
+        "summary": "",
+        "settings": "",
         "gamebanana": "GameBanana kartları sizin dosyanız yerine Valve’ın özgün dosyasına göre sayılır; bu nedenle içe aktarma sırasında sayılar biraz farklı görünebilir."
       },
       "scale": {
         "title": "Kategoriler, ölçek ve seviyeler",
+        "summary": "",
         "categories": "Valve konsol değişkenlerini gruplamaz. Bu yüzden mod yöneticisi her birini adına göre kategorize eder; örneğin adında “shadow” bulunanlar Gölgeler kategorisine girer. Bazen bir ayar yanlış gruba yerleşebilir.",
         "position": "Bir yapılandırmanın Daha hafif kısıntılar ile Daha ağır kısıntılar ölçeğindeki yeri, her kategoride değiştirdiği ayar sayısına bağlıdır. Gölgeler en çok ağırlığa sahiptir; Ağ ile Kamera ve görünürlük hesaba katılmaz. Ölçek yapılandırmaları birbirine göre sıralar, kare hızı tahmini vermez: kazanılan kare sayısı donanımınıza bağlıdır.",
         "tiers": "Özenle seçilmiş ve GameBanana yapılandırmalarının Görselden En Düşüğe uzanan seviyeleri elle belirlenir. Kendi yapılandırmalarınız, kaynaklandıkları yapılandırmanın seviyesini alır."
@@ -350,7 +396,14 @@
       "removeFailed": "Yapılandırma kapatılamadı",
       "catalogUpdated": "Yapılandırma kataloğu {{version}} sürümüne güncellendi",
       "catalogUpToDate": "Yapılandırma kataloğu güncel",
-      "catalogRefreshFailed": "Katalog güncellemeleri denetlenemedi"
+      "catalogRefreshFailed": "Katalog güncellemeleri denetlenemedi",
+      "videoWritten_one": "",
+      "videoWritten_other": "",
+      "videoMissing": "",
+      "videoRestored": "",
+      "videoAdopted": "",
+      "videoAdoptFailed": "",
+      "videoRestoreFailed": ""
     },
     "editor": {
       "header": {
@@ -358,9 +411,7 @@
         "pickConfig": "Bir yapılandırma seçin",
         "presets": "Hazır ayarlar",
         "yourConfigs": "Yapılandırmalarınız",
-        "appliedOption": "{{name}} (uygulandı)",
         "tierTooltip": "Bu yapılandırmanın hafif ve ağır kısıntılar arasındaki konumu. Düzenledikçe yeri değişir.",
-        "summary": "{{written}} ayar gameinfo.gi dosyasına yazıldı, {{leftOut}} ayar atlandı, {{matching}} ayar oyunla zaten eşleşiyor",
         "updating": "Güncelleniyor…"
       },
       "empty": {
@@ -380,7 +431,13 @@
       },
       "noMatches": {
         "title": "Eşleşen ayar yok",
-        "clear": "Filtreleri temizle",
+        "search": "",
+        "changed": "",
+        "attention": "",
+        "differs": "",
+        "all": "",
+        "clearSearch": "",
+        "showAll": "",
         "searchAll": "“{{query}}” için tüm konsol değişkenlerinde ara"
       },
       "toolbar": {
@@ -389,7 +446,7 @@
         "filterDiffers": "Oyundakinden farklı",
         "filterAll": "Tümü",
         "filterChanged": "Sizin değiştirdikleriniz",
-        "filterAttention": "Uygulanmayacak",
+        "filterAttention": "",
         "convarNames": "Konsol değişkeni adları",
         "addSetting": "Ayar ekle"
       },
@@ -400,8 +457,8 @@
         "settings_one": "{{count}} ayar",
         "settings_other": "{{count}} ayar",
         "changed": "{{count}} ayarı siz değiştirdiniz",
-        "attention_one": "{{count}} ayar uygulanmayacak",
-        "attention_other": "{{count}} ayar uygulanmayacak",
+        "attention_one": "",
+        "attention_other": "",
         "value": "Değer",
         "showMore": "{{category}} kategorisinde {{count}} tane daha göster",
         "showFewer": "Daha az göster"
@@ -450,12 +507,12 @@
           "color": "bir renk",
           "vector": "bir vektör"
         },
-        "blockedSince": "Deadlock, {{build}} sürümünden itibaren bunu gameinfo.gi dosyasından okumayı bıraktı.",
-        "blocked": "Deadlock bunu gameinfo.gi dosyasından okumuyor.",
-        "removedSince": "Deadlock bu konsol değişkenini {{build}} sürümünde kaldırdı.",
-        "removed": "Deadlock’un konsol değişkeni listesinde bu adda bir öğe yok.",
-        "sectionKey": "Valve’ın gameinfo.gi dosyası bu anahtarı ConVars bloğunun dışında, {{section}} bölümünde ayarlar.",
-        "notConvar": "Bu bir konsol değişkeni değil, konsol komutudur.",
+        "blockedSince": "",
+        "blocked": "",
+        "removedSince": "",
+        "removed": "",
+        "sectionKey": "",
+        "notConvar": "",
         "denied": "{{reason}}",
         "deniedNoReason": "Mod yöneticisi bu anahtarı yazmaz.",
         "excludedSection": "Mod yöneticisi {{section}} bölümüne hiçbir zaman yazmaz.",
@@ -465,14 +522,14 @@
         "engineSection": "Bu yapılandırmada motor bölümü değişiklikleri kapalı olduğundan atlandı."
       },
       "engine": {
-        "excluded_one": "{{count}} motor bölümü değişikliği ({{sections}}) kapalı.",
-        "excluded_other": "{{count}} motor bölümü değişikliği ({{sections}}) kapalı.",
-        "included_one": "{{count}} motor bölümü değişikliği ({{sections}}) dâhil edildi.",
-        "included_other": "{{count}} motor bölümü değişikliği ({{sections}}) dâhil edildi.",
+        "title": "",
+        "about": "",
+        "included_one": "",
+        "included_other": "",
+        "excluded_one": "",
+        "excluded_other": "",
         "sectionsMore": "{{sections}} ve {{count}} tane daha",
-        "why": "Bu bölümler hakkında",
-        "valveMessage": "Deadlock’un eşleştirme hatası, bazı değişiklikleri desteklemediği gameinfo.gi bölümleri arasında {{sections}} öğelerini listeler. Deadlock sıraya girmenize izin vermiyorsa bu değişiklikleri kapatın.",
-        "toggle": "Motor bölümü değişikliklerini dâhil et"
+        "valveMessage": "Deadlock’un eşleştirme hatası, bazı değişiklikleri desteklemediği gameinfo.gi bölümleri arasında {{sections}} öğelerini listeler. Deadlock sıraya girmenize izin vermiyorsa bu değişiklikleri kapatın."
       },
       "add": {
         "placeholder": "Konsol değişkenlerini ada veya etikete göre ara",
@@ -619,7 +676,7 @@
           "title": "Uygulanacak",
           "alreadySet_one": "{{count}} ayar daha gameinfo.gi dosyanızla veya oyunun varsayılanıyla zaten eşleşiyor.",
           "alreadySet_other": "{{count}} ayar daha gameinfo.gi dosyanızla veya oyunun varsayılanlarıyla zaten eşleşiyor.",
-          "editorHint": "İçe aktarmadan sonra her ayarı ayar düzenleyicisinde inceleyin."
+          "editorHint": ""
         },
         "camera": {
           "title": "Kamera ve görünürlük (geliştiriciden)",
@@ -627,13 +684,13 @@
           "included": "Dâhil edildi"
         },
         "wontApply": {
-          "title": "Uygulanmayacak",
-          "blockedSince_one": "Deadlock, {{build}} sürümünde {{count}} ayarı gameinfo.gi dosyasından okumayı bıraktı ({{example}}).",
-          "blockedSince_other": "Deadlock, {{build}} sürümünde {{count}} ayarı gameinfo.gi dosyasından okumayı bıraktı (ör. {{example}})",
-          "blocked_one": "Deadlock {{count}} ayarı gameinfo.gi dosyasından okumuyor ({{example}}).",
-          "blocked_other": "Deadlock {{count}} ayarı gameinfo.gi dosyasından okumuyor (ör. {{example}}).",
-          "removed_one": "{{count}} öğe Deadlock’un konsol değişkeni listesinde yok ({{example}}).",
-          "removed_other": "{{count}} öğe Deadlock’un konsol değişkeni listesinde yok (ör. {{example}}).",
+          "title": "",
+          "blockedSince_one": "",
+          "blockedSince_other": "",
+          "blocked_one": "",
+          "blocked_other": "",
+          "removed_one": "",
+          "removed_other": "",
           "refused_one": "Mod yöneticisi {{count}} öğeyi yazmayacak: Reddedildi, kapatıldı veya dosyanıza uygun değil.",
           "refused_other": "Mod yöneticisi {{count}} öğeyi yazmayacak: Reddedildiler, kapatıldılar veya dosyanıza uygun değiller."
         },
@@ -668,8 +725,9 @@
           }
         },
         "video": {
-          "title": "Önerilen oyun içi ayarlar",
-          "description": "Hazırlayan kişi Deadlock’un Görüntü menüsündeki ayarları da düzenliyor. Mod yöneticisi video.txt dosyasına yazmaz; bu ayarları kullanmak isterseniz oyun içinden yapın."
+          "title": "",
+          "description": "",
+          "write": ""
         },
         "notes": {
           "clamped": "oyun {{value}} değerini kullanıyor",
@@ -765,23 +823,25 @@
       "turnOff": "Kapat",
       "turnOffConfirm": {
         "title": "{{name}} kapatılsın mı?",
-        "body": "Mod yöneticisi gameinfo.gi dosyasına eklediği satırları kaldırır ve değiştirdiği değerleri geri yükler. Yapılandırmalarınız ve ince ayarlarınız kayıtlı kalır."
+        "body": ""
       }
     },
     "activeStatus": {
       "label": "Etkin performans yapılandırması",
+      "current": "",
       "active": "Etkin",
       "notWritten": "gameinfo.gi dosyasında yok",
-      "tweaks_one": "{{count}} ince ayar",
-      "tweaks_other": "{{count}} ince ayar",
+      "videoInFile": "",
+      "tweaks_one": "",
+      "tweaks_other": "",
       "inFile_one": "gameinfo.gi dosyasında {{count}} ayar",
       "inFile_other": "gameinfo.gi dosyasında {{count}} ayar",
       "settings_one": "{{count}} ayar",
       "settings_other": "{{count}} ayar",
-      "takesEffect": "Oyunu bir sonraki başlatışınızda etkili olur.",
       "editSettings": "Ayarları düzenle",
       "undo": "Son değişikliği geri al",
-      "openInEditor": "Düzenleyicide aç",
+      "undoShort": "",
+      "openGameinfo": "",
       "openInEditorFailed": "gameinfo.gi dosyası açılamadı",
       "none": "Performans yapılandırması yok. Aşağıdan birini seçin veya kendinizinkini içe aktarın.",
       "noGamePath": "Performans yapılandırmalarını kullanmak için Ayarlar bölümünde Deadlock klasörünüzü seçin.",
@@ -816,7 +876,6 @@
       "gameinfoEditor": "Gameinfo Editor"
     },
     "configs": {
-      "meter": "{{total}} kademenin {{level}}. kademesi",
       "apply": "Uygula",
       "applyChanges": "Değişiklikleri uygula",
       "applied": "Uygulandı",
@@ -827,10 +886,9 @@
       "yours": "Sizin",
       "settingsCount_one": "{{count}} ayar",
       "settingsCount_other": "{{count}} ayar",
-      "unusedCount_one": "{{count}} kullanılmayan",
-      "unusedCount_other": "{{count}} kullanılmayan",
-      "unusedHint": "Mod yöneticisinin dışarıda bıraktığı ayarlar: Deadlock bunları gameinfo.gi dosyasından okumuyor, konsol değişkeni listesinde yer almıyorlar veya konsol komutlarıdır",
-      "suggestsVideoSettings": "Görüntü ayarları önerir",
+      "unusedHint_one": "",
+      "unusedHint_other": "",
+      "suggestsVideoSettings": "",
       "downloads_one": "{{formatted}} indirme",
       "downloads_other": "{{formatted}} indirme",
       "updatedIn": "{{month}} tarihinde güncellendi",
@@ -843,7 +901,6 @@
         "bundled": "Paketle birlikte gelen",
         "gamebanana": "GameBanana"
       },
-      "sourceWithTime": "{{source}}, {{time}}",
       "catalogError": "Yapılandırma kataloğu yüklenemedi",
       "retry": "Yeniden dene",
       "scale": {
@@ -860,7 +917,7 @@
         "yours": "Sizinkiler"
       },
       "sortLabel": "Yapılandırmaları sırala",
-      "sortPrefix": "Sıralama:",
+      "clearTier": "",
       "sorts": {
         "downloads": "En çok indirilen",
         "name": "Ad",
@@ -918,10 +975,19 @@
         "currentValue_other": "Geçerli yapılandırmanız: {{count}} ayar"
       },
       "video": {
-        "title": "Önerilen oyun içi ayarlar",
+        "title": "",
         "notesTitle": "Hazırlayanın notları",
-        "description": "Hazırlayan kişi Deadlock’un Görüntü menüsündeki ayarları da düzenliyor. Mod yöneticisi bunları değiştirmez; oyun içinden ayarlayın.",
-        "variantLabel": "Görüntü ayarları varyantı"
+        "description": "",
+        "descriptionOff": "",
+        "write": "",
+        "variantLabel": "Görüntü ayarları varyantı",
+        "backup": "",
+        "restore": "",
+        "adopt": "",
+        "adoptConfirm": {
+          "title": "",
+          "body": ""
+        }
       },
       "view": {
         "title": "Kamera ve görünürlük (hazırlayandan)",
@@ -937,7 +1003,7 @@
         "description": "Hazırlayanın yapılandırması bunları ayarlar. İstediğinizi buradan kapatabilirsiniz."
       },
       "notApplied": {
-        "title": "Uygulanmadı",
+        "title": "",
         "view": "Görüntüle"
       },
       "engine": {
@@ -955,8 +1021,8 @@
         "notSet": "ayarlanmadı"
       },
       "unread": {
-        "title_one": "{{count}} ayar engellendi veya konsol değişkeni değil",
-        "title_other": "{{count}} ayar engellendi veya konsol değişkeni değil",
+        "title_one": "",
+        "title_other": "",
         "blocked_one": "{{count}} ayar gameinfo.gi dosyasında yok sayılıyor",
         "blocked_other": "{{count}} ayar gameinfo.gi dosyasında yok sayılıyor",
         "removed_one": "{{count}} ayar Deadlock’un konsol değişkeni listesinde yok",
@@ -1006,12 +1072,20 @@
       }
     },
     "history": {
-      "description": "Uyguladığınız veya kapattığınız yapılandırmalar; en yenisi önce.",
+      "description": "",
       "applied": "{{name}} uygulandı",
       "removed": "Performans yapılandırması kapatıldı",
       "current": "Geçerli",
       "applyAgain": "Yeniden uygula",
       "configDeleted": "Yapılandırma silindiği için yeniden uygulanamaz",
+      "videoCount": "",
+      "videoReverted": "",
+      "videoKept": "",
+      "videoChange": "",
+      "videoRestored": "",
+      "videoAdopted": "",
+      "videoChanged_one": "",
+      "videoChanged_other": "",
       "emptyTitle": "Henüz değişiklik yok",
       "emptyDescription": "Uyguladığınız veya kapattığınız yapılandırmalar burada görünür; böylece birine geri dönebilirsiniz."
     },
@@ -1100,8 +1174,7 @@
       "inPool": "Görünüm rastgeleleştiricisine dâhil et",
       "defaultInPool": "Varsayılan görünümü rastgeleleştiriciye dâhil et",
       "unavailable": "Rastgeleleştirilemez: dosyalarını seçmek için bir kez yüklenmesi veya onaylanması gerekir",
-      "listSubtitle": "Rastgele görünüm",
-      "launchFailed": "Görünüm rastgeleleştirici tüm kahramanların görünümünü değiştiremedi. Oyun, önceden etkin olan görünümlerle başlar."
+      "listSubtitle": "Rastgele görünüm"
     }
   },
   "stats": {
@@ -1125,6 +1198,7 @@
       "heroes": "Kahramanlar",
       "items": "Eşyalar",
       "squad": "Takım",
+      "party": "",
       "live": ""
     },
     "items": {
@@ -1624,6 +1698,74 @@
       "matesTitle": "Takım arkadaşları",
       "matesDescription": "En az 5 maçta birlikte oynadığınız herkes"
     },
+    "party": {
+      "title": "",
+      "description": "",
+      "clear": "",
+      "pickHero": "",
+      "remove": "",
+      "error": "",
+      "rank": {
+        "label": "",
+        "all": "",
+        "range": "",
+        "from": "",
+        "to": "",
+        "hint": ""
+      },
+      "member": {
+        "you": "",
+        "player": "",
+        "active": "",
+        "picks": "",
+        "add": "",
+        "remove": ""
+      },
+      "advice": {
+        "swap": "",
+        "add": "",
+        "swapAction": "",
+        "addAction": ""
+      },
+      "odds": {
+        "title": "",
+        "exact": "",
+        "estimate": "",
+        "estimateHint": "",
+        "needPlayers": "",
+        "noData": "",
+        "note_one": "",
+        "note_other": "",
+        "best": "",
+        "worst": "",
+        "shift": "",
+        "optimal": ""
+      },
+      "lineups": {
+        "title": "",
+        "descriptionEmpty": "",
+        "description_one": "",
+        "description_other": "",
+        "order": "",
+        "best": "",
+        "worst": "",
+        "lineup": "",
+        "winrate": "",
+        "matches": "",
+        "noData": "",
+        "noLineups": "",
+        "showAll": "",
+        "showFewer": "",
+        "footnote": ""
+      },
+      "picker": {
+        "title": "",
+        "count": "",
+        "search": "",
+        "noMatch": "",
+        "hint": ""
+      }
+    },
     "dashboard": {
       "customize": "Özelleştir",
       "customizeHint": "Bileşenleri ve sekmeleri yeniden düzenleyin, boyutlandırın, ekleyin veya kaldırın",
@@ -1685,6 +1827,7 @@
         "heroes": "Kahramanlar",
         "items": "Eşyalar",
         "squad": "Takım",
+        "party": "",
         "live": "",
         "performance": "Performans",
         "habits": "Alışkanlıklar",
@@ -1933,6 +2076,10 @@
         "squad": {
           "title": "Takım",
           "description": "Takım arkadaşlarınızla kazanma oranınız ve sizi en çok yenen oyuncular."
+        },
+        "partyPlanner": {
+          "title": "",
+          "description": ""
         },
         "profile": {
           "title": "Profil",
@@ -3239,6 +3386,10 @@
       "enabledCount": "{{count}}/{{total}} etkin",
       "enable": "{{name}} grubundaki modları etkinleştir",
       "disable": "{{name}} grubundaki modları devre dışı bırak",
+      "randomize": "",
+      "randomizeHelp": "",
+      "randomized": "",
+      "randomizeIdle": "",
       "expandAll": "Tüm grupları genişlet",
       "collapseAll": "Tüm grupları daralt",
       "draggingMods_one": "{{count}} mod",
@@ -4068,8 +4219,10 @@
     "title": "Deadlock başlatılıyor",
     "hide": "Gizle (başlatma devam eder)",
     "cancel": "Başlatmayı İptal Et",
+    "randomizerFailed": "",
     "steps": {
       "randomizingSkins": "Kahraman kostümleri rastgele seçiliyor",
+      "randomizingMods": "",
       "disablingMods": "Modlar devre dışı bırakılıyor",
       "verifyingMods_one": "{{count}} mod doğrulanıyor",
       "verifyingMods_other": "{{count}} mod doğrulanıyor",
@@ -5295,7 +5448,11 @@
     "analyzing": "Analiz ediliyor...",
     "analysisResults": "Yerel Eklenti Analizi",
     "analysisResultsDescription": "Oyun dizininizde {{count}} eklenti bulundu",
-    "identifiedAndAdded": "{{count}} öğe bulundu ve kitaplığınıza otomatik olarak eklendi",
+    "identifiedCount": "",
+    "identifiedNoticeTitle": "",
+    "identifiedNoticeDescription": "",
+    "inLibrary": "",
+    "notInLibrary": "",
     "analysisSuccess": "Analiz tamamlandı! {{count}} eklenti bulundu",
     "analysisSuccessWithIdentified": "Analiz tamamlandı! {{count}} eklenti bulundu, {{identified}} tanımlandı",
     "analysisSuccessAllIdentified": "Analiz tamamlandı! Tüm {{identified}} eklenti otomatik olarak tanımlandı ve eklendi",
@@ -5404,7 +5561,7 @@
       "noMods": "Mevcut mod bulunamadı",
       "noModsDescription": "Sıfırdan başlayıp katalogdaki modlara göz atabilirsiniz.",
       "modsFound": "Mevcut modlar bulundu!",
-      "modsFoundDescription": "Bunları analiz edip içe aktarmak ister misiniz?",
+      "modsFoundAnalyzeDescription": "",
       "analyze": "Modları analiz et",
       "analyzing": "Analiz ediliyor...",
       "skipAnalysis": "Şimdilik atla"
