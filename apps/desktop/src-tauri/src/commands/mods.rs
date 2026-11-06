@@ -477,6 +477,7 @@ pub async fn batch_update_mods(
       is_profile_import: false,
       native_component_plan: component_plan.is_some(),
       file_tree: component_plan.or_else(|| mod_data.file_tree.clone()),
+      attempt_id: None,
     };
 
     let manager = get_download_manager(app_handle.clone()).await;
