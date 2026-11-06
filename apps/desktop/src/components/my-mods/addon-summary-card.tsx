@@ -8,6 +8,14 @@ import type { LocalAddonInfo } from "@/types/mods";
 import { AddonInfo } from "./addon-info";
 import { AddonActions } from "./addon-actions";
 
+const openGameBananaPage = async (url: string) => {
+  try {
+    await openUrl(url);
+  } catch (error) {
+    logger.withError(error).error("Failed to open GameBanana link");
+  }
+};
+
 export const AddonSummaryCard = ({
   addon,
   onAddToLibrary,
@@ -27,15 +35,6 @@ export const AddonSummaryCard = ({
   const gameBananaUrl = addon.remoteId
     ? gameBananaPageUrl(addon.remoteId)
     : null;
-  const handleExternalLinkClick = gameBananaUrl
-    ? async () => {
-        try {
-          await openUrl(gameBananaUrl);
-        } catch (error) {
-          logger.withError(error).error("Failed to open GameBanana link");
-        }
-      }
-    : undefined;
 
   if (hasError) {
     return (
@@ -71,7 +70,9 @@ export const AddonSummaryCard = ({
           isAlreadyInLibrary={owned === true}
           isCheckingLibrary={isCheckingLibrary}
           onAddToLibrary={onAddToLibrary}
-          onExternalLinkClick={handleExternalLinkClick}
+          onExternalLinkClick={
+            gameBananaUrl ? () => openGameBananaPage(gameBananaUrl) : undefined
+          }
         />
       </div>
     </div>

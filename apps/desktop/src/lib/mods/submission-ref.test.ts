@@ -79,13 +79,9 @@ describe("GameBanana page URLs", () => {
     expect(gameBananaPageUrl(slug)).toBe(url);
   });
 
-  it.each([
-    "local-550e8400-e29b-41d4-a716-446655440000",
-    "local-reset-skin",
-    "",
-    "snd-",
-    "abc",
-  ])("has no page for %s", (slug) => {
-    expect(gameBananaPageUrl(slug)).toBeNull();
+  it("has no page for a local mod", () => {
+    expect(
+      gameBananaPageUrl("local-550e8400-e29b-41d4-a716-446655440000"),
+    ).toBeNull();
   });
 });

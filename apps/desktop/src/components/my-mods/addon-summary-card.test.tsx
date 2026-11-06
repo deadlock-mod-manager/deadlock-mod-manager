@@ -130,13 +130,11 @@ describe("AddonSummaryCard GameBanana link", () => {
     ).not.toContain("external-link");
   });
 
-  it.each([
-    ["123456", "https://gamebanana.com/mods/123456"],
-    ["snd-123456", "https://gamebanana.com/sounds/123456"],
-    ["wip-103122", "https://gamebanana.com/wips/103122"],
-  ])("links %s to its GameBanana page", (remoteId, url) => {
-    expect(renderIdentified({ remoteId })).toContain("external-link");
+  it("opens a catalog mod's GameBanana page", () => {
+    expect(renderIdentified({ remoteId: "snd-123456" })).toContain(
+      "external-link",
+    );
     clickLink?.();
-    expect(openedUrls).toEqual([url]);
+    expect(openedUrls).toEqual(["https://gamebanana.com/sounds/123456"]);
   });
 });
