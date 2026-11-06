@@ -3315,6 +3315,7 @@
       "randomize": "Randomize on launch",
       "randomizeHelp": "Each launch turns on one mod from this group at random and turns the rest off.",
       "randomized": "One mod from {{name}} is picked at random on every launch",
+      "randomizeIdle": "{{name}} needs at least 2 mods that can turn on without a prompt before it can randomize",
       "expandAll": "Expand all groups",
       "collapseAll": "Collapse all groups",
       "draggingMods_one": "{{count}} mod",

@@ -188,8 +188,13 @@ export const useLaunchRandomizer = () => {
     const state = usePersistedStore.getState();
     if (state.skinRandomizerEnabled) {
       // A hero with a skin in a randomized group already got its roll there,
-      // and a second roll would take that skin straight back off.
+      // and a second roll would take that skin straight back off. Hidden skins
+      // count too: the hero list leaves them out but they still get installed.
       const rolled = randomizedGroupModIds(pools.map(({ group }) => group));
+      const rolledHeroes = groupModsByHero(
+        state.localMods.filter((mod) => rolled.has(mod.remoteId)),
+        { includeExtras: false, hidden: new Set() },
+      );
       const heroes = groupModsByHero(state.localMods, {
         includeExtras: false,
         hidden: new Set(Object.keys(state.hiddenHeroMods)),
@@ -200,10 +205,7 @@ export const useLaunchRandomizer = () => {
       };
       for (const [hero, group] of heroes) {
         const pool = randomizerPool(hero, group, selection);
-        if (
-          !isRandomizedPool(pool) ||
-          group.skins.some((skin) => rolled.has(skin.remoteId))
-        ) {
+        if (!isRandomizedPool(pool) || rolledHeroes.has(hero)) {
           continue;
         }
         try {

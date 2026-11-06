@@ -6,6 +6,7 @@ import {
 } from "@deadlock-mods/ui/components/tooltip";
 import { Power, Shuffle } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
+import { groupRandomizerPools } from "@/lib/mods/group-randomizer";
 import { isInstalledModWithVpks } from "@/lib/mods/installed-helpers";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -31,9 +32,12 @@ export const ModGroupEnablement = ({
   const members = mods.filter((mod) => ids.has(mod.remoteId));
   const enabled = members.filter(isInstalledModWithVpks).length;
   const canEnable = members.some((mod) => mod.status === ModStatus.Downloaded);
+  const rolls = groupRandomizerPools([group], members).length > 0;
   const label = t(
     group.randomize
-      ? "myMods.groups.randomized"
+      ? rolls
+        ? "myMods.groups.randomized"
+        : "myMods.groups.randomizeIdle"
       : canEnable
         ? "myMods.groups.enable"
         : "myMods.groups.disable",
@@ -53,7 +57,12 @@ export const ModGroupEnablement = ({
         <Tooltip>
           <TooltipTrigger asChild>
             <span
-              className='flex size-9 items-center justify-center text-primary'
+              role='img'
+              tabIndex={0}
+              className={cn(
+                "flex size-9 items-center justify-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                rolls ? "text-primary" : "text-muted-foreground",
+              )}
               aria-label={label}>
               <Shuffle className='size-4' />
             </span>

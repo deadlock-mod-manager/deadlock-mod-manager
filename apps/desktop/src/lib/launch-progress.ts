@@ -28,6 +28,8 @@ type LaunchProgressState = {
   cancelled: boolean;
   begin: () => void;
   start: (steps: LaunchStep[], modCount: number) => void;
+  /** The randomizer can change how many mods are on after the list started. */
+  setModCount: (modCount: number) => void;
   advance: (step: LaunchStep | null) => void;
   hide: () => void;
   cancel: () => void;
@@ -42,6 +44,10 @@ export const useLaunchProgress = create<LaunchProgressState>()((set) => ({
     set({
       progress: { steps, current: steps[0] ?? null, modCount, hidden: false },
     }),
+  setModCount: (modCount) =>
+    set(({ progress }) =>
+      progress ? { progress: { ...progress, modCount } } : {},
+    ),
   advance: (step) =>
     set(({ progress }) => {
       if (!progress) return {};

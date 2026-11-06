@@ -59,6 +59,7 @@ export const useLaunch = () => {
   const {
     begin: beginLaunch,
     start: startProgress,
+    setModCount,
     advance,
     clear: clearProgress,
   } = useLaunchProgress();
@@ -130,7 +131,7 @@ export const useLaunch = () => {
     try {
       await checkMapCommandInAutoexec();
       await disableInstalledMapMods();
-      const modCount = vanilla
+      let modCount = vanilla
         ? 0
         : usePersistedStore.getState().getEnabledModsCount();
       const backendSteps: LaunchStep[] = vanilla
@@ -151,6 +152,8 @@ export const useLaunch = () => {
       );
       if (randomizerStep) {
         await randomize();
+        modCount = usePersistedStore.getState().getEnabledModsCount();
+        setModCount(modCount);
       }
 
       const activeProfile = getActiveProfile();

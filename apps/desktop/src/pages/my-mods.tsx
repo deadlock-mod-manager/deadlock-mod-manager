@@ -3,6 +3,7 @@ import { ModGroupTools } from "@/components/my-mods/mod-group-tools";
 import { NukeReinstallDialog } from "@/components/my-mods/nuke-reinstall-dialog";
 import { groupLibraryMods } from "@/lib/mods/library-groups";
 import { EMPTY_MOD_GROUPS } from "@/lib/store/slices/mod-groups";
+import { randomizedGroupModIds } from "@/lib/mods/group-randomizer";
 import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Empty,
@@ -466,27 +467,31 @@ const MyMods = () => {
 
   const {
     enabledModsCount,
-    downloadedModsCount,
+    enableAllCount,
     disabledModsCount,
     enabledVpkFileCount,
   } = useMemo(() => {
+    // Enable all leaves randomized groups to the launch roll.
+    const rolled = randomizedGroupModIds(modGroups);
     let enabled = 0;
-    let downloaded = 0;
+    let enableable = 0;
     let vpkFiles = 0;
     for (const mod of mods) {
       if (isInstalledModWithVpks(mod)) {
         enabled++;
         vpkFiles += mod.installedVpks?.length ?? 0;
       }
-      if (mod.status === ModStatus.Downloaded) downloaded++;
+      if (mod.status === ModStatus.Downloaded && !rolled.has(mod.remoteId)) {
+        enableable++;
+      }
     }
     return {
       enabledModsCount: enabled,
-      downloadedModsCount: downloaded,
+      enableAllCount: enableable,
       disabledModsCount: mods.length - enabled,
       enabledVpkFileCount: vpkFiles,
     };
-  }, [mods]);
+  }, [mods, modGroups]);
 
   const copyModList = async (
     includeDisabled: boolean,
@@ -700,7 +705,7 @@ const MyMods = () => {
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => enableAll()}
-                disabled={downloadedModsCount === 0 || selectionBusy}>
+                disabled={enableAllCount === 0 || selectionBusy}>
                 <Power className='h-4 w-4' />
                 {t("myMods.enableAll")}
               </DropdownMenuItem>
