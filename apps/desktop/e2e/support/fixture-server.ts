@@ -27,11 +27,6 @@ export type FixtureResponse = {
   body: string | Buffer;
   range?: boolean;
   headerDelayMs?: number;
-  /**
-   * Answers only once a spec requests `/__control/release/<name>`, so it can
-   * act while the app waits on this response.
-   */
-  holdUntilReleased?: string;
   chunkBytes?: number;
   chunkDelayMs?: number;
   disconnectAfterBytes?: number;
@@ -75,18 +70,7 @@ const sendFixture = async (
   response: ServerResponse,
   fixture: FixtureResponse,
   record: FixtureRequest,
-  released?: Promise<void>,
 ): Promise<void> => {
-  if (released) {
-    await Promise.race([
-      released,
-      new Promise<void>((resolve) => response.once("close", resolve)),
-    ]);
-    if (response.destroyed) {
-      record.closedBeforeHeaders = true;
-      return;
-    }
-  }
   if (fixture.headerDelayMs) {
     await delay(response, fixture.headerDelayMs);
     if (response.destroyed) {
@@ -225,17 +209,6 @@ export const startFixtureServer = async (
   const journal: FixtureRequest[] = [];
   const unmatched: FixtureRequest[] = [];
   const occurrences = new Map<FixtureRoute, number>();
-  const holds = new Map<string, Promise<void>>();
-  const releases = new Map<string, () => void>();
-  // A release can arrive before the held request, so either side creates it.
-  const hold = (name: string) => {
-    let held = holds.get(name);
-    if (!held) {
-      held = new Promise<void>((resolve) => releases.set(name, resolve));
-      holds.set(name, held);
-    }
-    return held;
-  };
   const handleRequest = async (
     request: IncomingMessage,
     response: ServerResponse,
@@ -267,15 +240,6 @@ export const startFixtureServer = async (
     }
     if (request.url === "/__control/requests") {
       respond(response, 200, JSON.stringify({ requests: journal, unmatched }));
-      return;
-    }
-    if (request.url?.startsWith("/__control/release/")) {
-      const name = decodeURIComponent(
-        request.url.slice("/__control/release/".length),
-      );
-      hold(name);
-      releases.get(name)?.();
-      respond(response, 200, JSON.stringify({ ok: true }));
       return;
     }
     if (request.url?.startsWith("/__control")) {
@@ -314,15 +278,7 @@ export const startFixtureServer = async (
         ? pickInSequence(route.sequence, index)
         : route;
       try {
-        await sendFixture(
-          request,
-          response,
-          fixture,
-          record,
-          fixture.holdUntilReleased
-            ? hold(fixture.holdUntilReleased)
-            : undefined,
-        );
+        await sendFixture(request, response, fixture, record);
       } finally {
         record.endedAt = new Date().toISOString();
       }

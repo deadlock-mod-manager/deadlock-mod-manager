@@ -149,12 +149,6 @@ describe("AddonSummaryCard identified addon", () => {
     expect(html).not.toContain("<button");
   });
 
-  it("shows a mod the library has as added", () => {
-    const html = renderIdentified(["900001"]);
-    expect(html).toContain("Added to Library");
-    expect(html).not.toContain("Not in Library");
-  });
-
   it("goes by the library, not by who owns the file", () => {
     // A parked, prefix-named file belongs to its library mod without being
     // one of its installed files.

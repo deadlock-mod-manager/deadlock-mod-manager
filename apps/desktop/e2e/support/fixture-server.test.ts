@@ -2,7 +2,6 @@ import { describe, expect, it } from "bun:test";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { request } from "node:http";
 import { connect } from "node:net";
-import { setTimeout as delay } from "node:timers/promises";
 import os from "node:os";
 import path from "node:path";
 import { startFixtureServer } from "./fixture-server";
@@ -295,34 +294,6 @@ it("matches ordered repeated query values for provider multicalls", async () => 
       `${server.origin}/bulk?itemid[]=2&itemid[]=1&itemid[]=3`,
     );
     expect(extra.status).toBe(501);
-  } finally {
-    await server.close();
-  }
-});
-
-it("holds a response until a spec releases it", async () => {
-  const server = await startFixtureServer([
-    {
-      method: "GET",
-      path: "/held",
-      status: 200,
-      body: "{}",
-      holdUntilReleased: "gate",
-    },
-  ]);
-  try {
-    let answered = false;
-    const response = fetch(`${server.origin}/held`).then((value) => {
-      answered = true;
-      return value;
-    });
-    for (let i = 0; i < 50 && server.requests().length === 0; i++)
-      await delay(20);
-    await delay(100);
-    expect(server.requests()).toHaveLength(1);
-    expect(answered).toBe(false);
-    await fetch(`${server.origin}/__control/release/gate`);
-    expect((await response).status).toBe(200);
   } finally {
     await server.close();
   }

@@ -67,12 +67,7 @@ import {
 } from "./catalog-refresh-fixtures";
 import { prepareLegacyCatalog } from "./catalog-upgrade-fixtures";
 import { prepareOnboardingWorld } from "./onboarding-fixtures";
-import {
-  interruptedRestoreRoutes,
-  onboardingIdentifiedRoutes,
-  prepareInterruptedRestoreWorld,
-  registrationFailureRoutes,
-} from "./analysis-library-status-fixtures";
+import { onboardingIdentifiedRoutes } from "./analysis-library-status-fixtures";
 import {
   libraryAuthorRoutes,
   legacyLibraryAuthorRoutes,
@@ -674,22 +669,6 @@ export const scenarios = {
     routes: unknownAddonRoutes,
     prepare: prepareUnknownAddonWorld,
     verifyNetwork: assertUnknownAddonNetwork,
-  },
-  "analyze-registration-failure": {
-    ...defaults,
-    family: "analysis",
-    spec: "analyze-registration-failure",
-    phases: ["registration-failure"],
-    routes: registrationFailureRoutes,
-    prepare: prepareDetectedModWorld,
-  },
-  "analyze-interrupted-restore": {
-    ...defaults,
-    family: "analysis",
-    spec: "analyze-interrupted-restore",
-    phases: ["interrupted-restore"],
-    routes: interruptedRestoreRoutes,
-    prepare: prepareInterruptedRestoreWorld,
   },
   "onboarding-skip-analysis": onboarding,
   "onboarding-telemetry-default": {
