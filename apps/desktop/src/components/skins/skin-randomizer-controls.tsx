@@ -16,7 +16,7 @@ import { HintAnchor } from "@/components/feature-hints/hint-anchor";
 import type { HeroModGroup } from "@/lib/mods/hero-mods";
 import {
   bulkSelectableSkins,
-  canRandomizeSkin,
+  canRandomizeMod,
   RANDOMIZER_MIN_POOL,
 } from "@/lib/mods/skin-randomizer";
 import { usePersistedStore } from "@/lib/store";
@@ -70,7 +70,7 @@ export const HeroRandomizerBar = ({
 
   const hasSkins = group.skins.length > 0;
   const selectableSkinIds = group.skins
-    .filter(canRandomizeSkin)
+    .filter(canRandomizeMod)
     .map((skin) => skin.remoteId);
   const heroesWithSkins = [...groups]
     .filter(([, heroGroup]) => heroGroup.skins.length > 0)

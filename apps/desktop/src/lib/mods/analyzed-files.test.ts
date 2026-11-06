@@ -3,6 +3,7 @@ import type { ModDownloadItem, ModFileTree } from "@/types/mods";
 import {
   buildAnalyzedFileTree,
   isRecordedInManifest,
+  isUnrecordedLeftover,
   needsAnalysisReview,
 } from "./analyzed-files";
 
@@ -120,11 +121,54 @@ describe("analyzed addon archive identity", () => {
 describe("analysis review", () => {
   it("asks for review when files failed to parse even if every addon was identified", () => {
     expect(
-      needsAnalysisReview({
-        addons: [],
-        errors: ["Failed to parse pak03_dir.vpk: invalid header"],
-      }),
+      needsAnalysisReview(
+        {
+          addons: [],
+          errors: ["Failed to parse pak03_dir.vpk: invalid header"],
+        },
+        new Set(),
+      ),
     ).toBe(true);
+  });
+});
+
+const parked = {
+  fileName: "900001_green.vpk",
+  remoteId: "900001",
+};
+
+describe("parked files nothing records", () => {
+  const library = new Set<string>();
+  it("is a leftover when only the name identifies it and its mod is gone", () => {
+    expect(isUnrecordedLeftover(parked, library)).toBe(true);
+  });
+
+  it("is never a leftover once DMM records it or the hash service knows it", () => {
+    expect(
+      isUnrecordedLeftover({ ...parked, manifestModId: "900001" }, library),
+    ).toBe(false);
+    expect(
+      isUnrecordedLeftover(
+        {
+          ...parked,
+          matchInfo: { certainty: 100, matchType: "sha256" },
+        },
+        library,
+      ),
+    ).toBe(false);
+  });
+
+  it("ignores files identified any other way", () => {
+    // An enabled file the manifest assigns to a catalog mod.
+    expect(
+      isUnrecordedLeftover(
+        { fileName: "pak01_dir.vpk", remoteId: "900001" },
+        library,
+      ),
+    ).toBe(false);
+    expect(isUnrecordedLeftover({ fileName: "pak04_dir.vpk" }, library)).toBe(
+      false,
+    );
   });
 });
 

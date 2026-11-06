@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { I18nextProvider } from "react-i18next";
 import en from "@/locales/en.json";
 import { placeholderModFromManifest } from "@/lib/store/utils/manifest-install-state";
+import type { ModDto } from "@deadlock-mods/shared";
 import type { AnalyzeAddonsResult, LocalAddonInfo } from "@/types/mods";
 import { createProfileId, type ProfileId } from "@/types/profiles";
 
@@ -14,6 +15,9 @@ type Options = UseMutationOptions<AnalyzeAddonsResult | null, Error, Variables>;
 const captured: Options[] = [];
 const catalogLookups: string[] = [];
 const calls: string[] = [];
+const catalog = new Map<string, ModDto>();
+type Registration = { installedVpks: string[]; installedPaths: string[] };
+const registrations: Registration[] = [];
 const reactQuery = await import("@tanstack/react-query");
 mock.module("@tanstack/react-query", () => ({
   ...reactQuery,
@@ -38,7 +42,19 @@ mock.module("@/lib/api-client", () => ({
   ...apiClient,
   getMod: async (remoteId: string) => {
     catalogLookups.push(remoteId);
-    throw new Error("catalog unavailable");
+    const mod = catalog.get(remoteId);
+    if (!mod) throw new Error("catalog unavailable");
+    return mod;
+  },
+}));
+const tauriCore = await import("@tauri-apps/api/core");
+mock.module("@tauri-apps/api/core", () => ({
+  ...tauriCore,
+  invoke: async (command: string, args: Registration) => {
+    if (command !== "register_analyzed_mod")
+      throw new Error(`unexpected ${command}`);
+    registrations.push(args);
+    return { replacedModIds: [], installOrder: null };
   },
 }));
 mock.module("@deadlock-mods/ui/components/sonner", () => ({
@@ -166,25 +182,25 @@ const mutationContext = () => ({
   meta: undefined,
 });
 
-const analyze = async () => {
-  const onSuccess = (await renderOptions())?.onSuccess;
-  expect(onSuccess).toBeDefined();
+const analyze = async (addons: LocalAddonInfo[] = [recordedAddon()]) => {
+  const options = await renderOptions();
+  expect(options?.onSuccess).toBeDefined();
   const data: AnalyzeAddonsResult = {
-    addons: [recordedAddon()],
-    totalCount: 1,
+    addons,
+    totalCount: addons.length,
     errors: [],
   };
-  await onSuccess?.(
-    data,
-    { profileFolder: "reset", profileId: PROFILE },
-    undefined,
-    mutationContext(),
-  );
+  const variables = { profileFolder: "reset", profileId: PROFILE };
+  await options?.onSuccess?.(data, variables, undefined, mutationContext());
+  return () =>
+    options?.onSettled?.(data, null, variables, undefined, mutationContext());
 };
 
 afterEach(() => {
   catalogLookups.length = 0;
   calls.length = 0;
+  catalog.clear();
+  registrations.length = 0;
   usePersistedStore.setState({ localMods: [], profiles: {} });
 });
 
@@ -268,5 +284,80 @@ describe("restoring recorded mods before the scan", () => {
     restore.resolve();
     expect(await result).toBeNull();
     expect(calls).toEqual(["restore", "restored"]);
+  });
+});
+
+/** `900001_green.vpk`: a parked file only its name identifies. */
+const parkedAddon = (): LocalAddonInfo => {
+  const addon = recordedAddon();
+  const filePath = "/game/citadel/addons/reset/900001_green.vpk";
+  return {
+    ...addon,
+    filePath,
+    fileName: "900001_green.vpk",
+    locator: "900001_green.vpk",
+    remoteId: "900001",
+    manifestModId: undefined,
+    vpkParsed: {
+      ...addon.vpkParsed,
+      fingerprint: { ...addon.vpkParsed.fingerprint, filePath },
+    },
+  };
+};
+
+const hashMatchedAddon = (): LocalAddonInfo => ({
+  ...recordedAddon(),
+  filePath: "/game/citadel/addons/reset/pak05_dir.vpk",
+  fileName: "pak05_dir.vpk",
+  locator: "pak05_dir.vpk",
+  remoteId: "900001",
+  manifestModId: undefined,
+  matchInfo: { certainty: 100, matchType: "sha256", modName: "E2E mod" },
+});
+
+describe("parked files whose mod left the library", () => {
+  it("asks about the file instead of putting the mod back", async () => {
+    resetProfile(false);
+    const settle = await analyze([parkedAddon()]);
+    const state = usePersistedStore.getState();
+    expect(catalogLookups).toEqual([]);
+    expect(state.localMods).toEqual([]);
+    expect(state.analysisDialogOpen).toBe(true);
+    expect(state.analysisTarget).toEqual({
+      profileFolder: "reset",
+      registering: true,
+    });
+    await settle();
+    expect(usePersistedStore.getState().analysisTarget).toEqual({
+      profileFolder: "reset",
+      registering: false,
+    });
+  });
+
+  it("keeps treating the file as its mod's while the mod is in the library", async () => {
+    resetProfile(false);
+    const installed = { ...restoredMod, remoteId: "900001" };
+    usePersistedStore.setState((state) => ({
+      localMods: [installed],
+      profiles: {
+        [PROFILE]: { ...state.profiles[PROFILE], mods: [installed] },
+      },
+    }));
+    catalog.set("900001", installed);
+    await analyze([parkedAddon()]);
+    expect(catalogLookups).toEqual(["900001"]);
+    expect(usePersistedStore.getState().localMods).toEqual([installed]);
+    expect(usePersistedStore.getState().analysisDialogOpen).toBe(false);
+  });
+
+  it("registers a hash match of the same mod without the parked file", async () => {
+    resetProfile(false);
+    catalog.set("900001", { ...restoredMod, remoteId: "900001" });
+    await analyze([parkedAddon(), hashMatchedAddon()]);
+    expect(registrations).toHaveLength(1);
+    expect(registrations[0]?.installedVpks).toEqual(["pak05_dir.vpk"]);
+    expect(registrations[0]?.installedPaths).toEqual([
+      "/game/citadel/addons/reset/pak05_dir.vpk",
+    ]);
   });
 });
