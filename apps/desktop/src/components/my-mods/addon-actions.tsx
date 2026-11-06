@@ -9,7 +9,7 @@ interface AddonActionsProps {
   isAlreadyInLibrary: boolean;
   isCheckingLibrary: boolean;
   onAddToLibrary?: (addon: LocalAddonInfo) => void;
-  onExternalLinkClick: () => void;
+  onExternalLinkClick?: () => void;
 }
 
 export const AddonActions = ({
@@ -26,10 +26,12 @@ export const AddonActions = ({
         <Badge variant='default' className='bg-green-600 hover:bg-green-700'>
           Auto-Added to Library
         </Badge>
-        <ExternalLink
-          className='w-4 h-4 text-muted-foreground hover:text-foreground cursor-pointer'
-          onClick={onExternalLinkClick}
-        />
+        {onExternalLinkClick && (
+          <ExternalLink
+            className='w-4 h-4 text-muted-foreground hover:text-foreground cursor-pointer'
+            onClick={onExternalLinkClick}
+          />
+        )}
       </>
     );
   }

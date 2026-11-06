@@ -2,9 +2,19 @@ import { Badge } from "@deadlock-mods/ui/components/badge";
 import { XCircle } from "@deadlock-mods/ui/icons";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useVpkScan } from "@/hooks/use-vpk-scan";
+import logger from "@/lib/logger";
+import { gameBananaPageUrl } from "@/lib/mods/submission-ref";
 import type { LocalAddonInfo } from "@/types/mods";
 import { AddonInfo } from "./addon-info";
 import { AddonActions } from "./addon-actions";
+
+const openGameBananaPage = async (url: string) => {
+  try {
+    await openUrl(url);
+  } catch (error) {
+    logger.withError(error).error("Failed to open GameBanana link");
+  }
+};
 
 export const AddonSummaryCard = ({
   addon,
@@ -21,17 +31,10 @@ export const AddonSummaryCard = ({
   // Wait for the snapshot; if it can't be read, Add reports the error itself.
   const isCheckingLibrary = owned === undefined && isLoadingSnapshot;
 
-  const handleExternalLinkClick = async () => {
-    if (addon.remoteId) {
-      try {
-        // Construct GameBanana URL from remoteId
-        const gameBananaUrl = `https://gamebanana.com/mods/${addon.remoteId}`;
-        await openUrl(gameBananaUrl);
-      } catch (error) {
-        console.error("Failed to open GameBanana link:", error);
-      }
-    }
-  };
+  // Local mods are identified too, but have no GameBanana page to open.
+  const gameBananaUrl = addon.remoteId
+    ? gameBananaPageUrl(addon.remoteId)
+    : null;
 
   if (hasError) {
     return (
@@ -67,7 +70,9 @@ export const AddonSummaryCard = ({
           isAlreadyInLibrary={owned === true}
           isCheckingLibrary={isCheckingLibrary}
           onAddToLibrary={onAddToLibrary}
-          onExternalLinkClick={handleExternalLinkClick}
+          onExternalLinkClick={
+            gameBananaUrl ? () => openGameBananaPage(gameBananaUrl) : undefined
+          }
         />
       </div>
     </div>
