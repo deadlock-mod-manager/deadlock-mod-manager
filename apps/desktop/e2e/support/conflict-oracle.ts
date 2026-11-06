@@ -27,13 +27,15 @@ export const pairKey = (a: string, b: string): string =>
 /**
  * Checks that the profile holds exactly `order` (first loads first) with each
  * mod's own bytes in its pak slot, and that the persisted ignores match.
- * `ignoredPairs: null` means no ignore file was ever written.
+ * `ignoredPairs: null` means no ignore file was ever written; `ignoredFiles`
+ * holds the files ignored for one pair only, keyed by {@link pairKey}.
  */
 export const assertConflictDisk = async (
   world: string,
   step: string,
   order: readonly string[],
   ignoredPairs: readonly string[] | null,
+  ignoredFiles: Readonly<Record<string, readonly string[]>> = {},
 ): Promise<void> => {
   const {
     configuration: { roots },
@@ -101,7 +103,7 @@ export const assertConflictDisk = async (
     );
     assert.deepEqual(ignores, {
       pairs: [...ignoredPairs].sort(),
-      pairFiles: {},
+      pairFiles: ignoredFiles,
       mods: [],
     });
   }
