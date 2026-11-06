@@ -2,6 +2,7 @@ import { describe, expect, it, mock } from "bun:test";
 import { placeholderModFromManifest } from "@/lib/store/utils/manifest-install-state";
 import type { LocalMod } from "@/types/mods";
 import type { ErrorKind } from "@/types/tauri";
+import { runBulkModAction } from "./bulk-action";
 
 const logged: { error: ErrorKind | Error; mod: string; message: string }[] = [];
 let pending: { error?: ErrorKind | Error; mod?: string } = {};
@@ -24,8 +25,6 @@ mock.module("@/lib/logger", () => ({
   createLogger: () => testLogger,
   default: testLogger,
 }));
-
-const { runBulkModAction } = await import("./bulk-action");
 
 const mod = (remoteId: string): LocalMod =>
   placeholderModFromManifest(
