@@ -6,10 +6,10 @@
   "schemaExplorer": {
     "repo": "ValveResourceFormat/SchemaExplorer",
     "path": "schemas/deadlock.json",
-    "commit": "8e36b7c45d12fe3c887dd3a9f51bb3c9ae77ff78",
-    "sha256": "74039c6252787b3bfd953e01289979db300f29874ea2136aed5e3851cc6a0eb9",
-    "revision": 11203487,
-    "versionDate": "Nov 03 2026"
+    "commit": "15018faf41a82b12179fc652f462bc3a462065e9",
+    "sha256": "ed671173e9be4410dd256182a5e3f868d5326d7f0a283192eaf052261c7c3aeb",
+    "revision": 11211860,
+    "versionDate": "Nov 05 2026"
   },
   "gameTracking": {
     "repo": "SteamTracking/GameTracking-Deadlock",
@@ -275,6 +275,12 @@
       "path": "DumpSource2/convars.txt",
       "since": "2026-03-01",
       "versions": [
+        {
+          "commit": "0a1ddfb8d85aa5f56bddb88ea88523aafd430d33",
+          "date": "2026-11-05",
+          "build": 6857,
+          "sha256": "9163ebb202d3a757d0c1553eee85e295e32a294011f18f151596760691f695d7"
+        },
         {
           "commit": "fed007c2f240713754bb4fe6c6f2e9b8fe56e93a",
           "date": "2026-11-04",

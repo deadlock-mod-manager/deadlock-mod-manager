@@ -25,7 +25,13 @@ mock.module("@/lib/store", () => ({
     selector: (state: { localMods: { remoteId: string }[] }) => T,
   ) => selector({ localMods: libraryModIds.map((remoteId) => ({ remoteId })) }),
 }));
-mock.module("@tauri-apps/plugin-opener", () => ({ openUrl: async () => {} }));
+let openedUrls: string[] = [];
+let clickLink: (() => void) | undefined;
+mock.module("@tauri-apps/plugin-opener", () => ({
+  openUrl: async (url: string) => {
+    openedUrls.push(url);
+  },
+}));
 mock.module("./addon-info", () => ({ AddonInfo: () => null }));
 mock.module("@deadlock-mods/ui/components/button", () => ({
   Button: ({
@@ -40,7 +46,10 @@ mock.module("@deadlock-mods/ui/components/badge", () => ({
   Badge: ({ children }: { children: ReactNode }) => <span>{children}</span>,
 }));
 mock.module("@deadlock-mods/ui/icons", () => ({
-  ExternalLink: () => <svg />,
+  ExternalLink: ({ onClick }: { onClick?: () => void }) => {
+    clickLink = onClick;
+    return <svg data-icon='external-link' />;
+  },
   Plus: () => <svg />,
   XCircle: () => <svg />,
 }));
@@ -151,5 +160,30 @@ describe("AddonSummaryCard identified addon", () => {
     // one of its installed files.
     expect(renderIdentified(["900001"], false)).toContain("Added to Library");
     expect(renderIdentified(["other"], true)).toContain("Not in Library");
+  });
+});
+
+describe("AddonSummaryCard GameBanana link", () => {
+  const renderIdentified = (identity: Partial<LocalAddonInfo>) => {
+    libraryCheck = { owned: true, isLoading: false };
+    clickLink = undefined;
+    openedUrls = [];
+    return renderCard({ ...addon, ...identity });
+  };
+  const LOCAL_ID = "local-550e8400-e29b-41d4-a716-446655440000";
+
+  // Analyze names a local mod from the profile's records when no hash matches.
+  it("offers no GameBanana link for a local mod", () => {
+    expect(
+      renderIdentified({ remoteId: LOCAL_ID, manifestModId: LOCAL_ID }),
+    ).not.toContain("external-link");
+  });
+
+  it("opens a catalog mod's GameBanana page", () => {
+    expect(renderIdentified({ remoteId: "snd-123456" })).toContain(
+      "external-link",
+    );
+    clickLink?.();
+    expect(openedUrls).toEqual(["https://gamebanana.com/sounds/123456"]);
   });
 });

@@ -11,6 +11,7 @@ import {
   analyticsHeroStatsSchema,
   badgeDistributionEntrySchema,
   enemyStatsSchema,
+  heroCombStatsSchema,
   heroCounterStatsSchema,
   itemStatsSchema,
   matchHistoryEntrySchema,
@@ -40,6 +41,7 @@ export type {
   AnalyticsHeroStats,
   BadgeDistributionEntry,
   EnemyStats,
+  HeroCombStats,
   HeroCounterStats,
   ItemStats,
   LastRankedMatch,
@@ -233,6 +235,33 @@ export const getBracketCurve = ({
   getList(
     `/v1/analytics/player-performance-curve?hero_ids=${heroId}${badges ? `&min_average_badge=${badges.minBadge}&max_average_badge=${badges.maxBadge}` : ""}&resolution=0&${statsScopeQuery(scope)}`,
     performanceCurvePointSchema,
+  );
+
+/** A match's average badge range, or null for every rank. */
+export type BadgeRange = { minBadge: number; maxBadge: number } | null;
+
+const badgeQuery = (badges: BadgeRange) =>
+  badges
+    ? `&min_average_badge=${badges.minBadge}&max_average_badge=${badges.maxBadge}`
+    : "";
+
+/**
+ * Every set of `size` heroes that shared a team, with its record. Pairs (~60 KB)
+ * and trios (~900 KB, every one of them) are the only sizes small enough to
+ * fetch whole: sets of four already run past 8 MB.
+ */
+export const getHeroCombStats = ({
+  size,
+  badges,
+  scope,
+}: {
+  size: 2 | 3;
+  badges: BadgeRange;
+  scope: StatsScope;
+}) =>
+  getList(
+    `/v1/analytics/hero-comb-stats?comb_size=${size}${badgeQuery(badges)}&${statsScopeQuery(scope)}`,
+    heroCombStatsSchema,
   );
 
 /** The season definitions the game client ships, including its entry requirements. */
