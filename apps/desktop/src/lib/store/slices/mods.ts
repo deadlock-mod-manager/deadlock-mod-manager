@@ -470,6 +470,7 @@ export const createModsSlice: StateCreator<
                   id: group.id,
                   name: group.name,
                   collapsed: group.collapsed,
+                  randomize: group.randomize,
                   modIds: group.modIds.filter((id) => id !== remoteId),
                 }
               : group,
@@ -523,6 +524,7 @@ export const createModsSlice: StateCreator<
                         id: group.id,
                         name: group.name,
                         collapsed: group.collapsed,
+                        randomize: group.randomize,
                         modIds: [],
                       }
                     : group,

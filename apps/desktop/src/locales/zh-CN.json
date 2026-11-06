@@ -220,19 +220,61 @@
     "tabs": {
       "configs": "",
       "editor": "",
+      "video": "",
       "history": "",
       "howItWorks": ""
     },
+    "video": {
+      "emptyTitle": "",
+      "noConfig": "",
+      "noVideo": "",
+      "changes": {
+        "title": "",
+        "description": "",
+        "values": "",
+        "kept": "",
+        "removed": "",
+        "keep": "",
+        "use": "",
+        "useAll": "",
+        "settled": "",
+        "useConfig_one": "",
+        "useConfig_other": "",
+        "failed": ""
+      }
+    },
     "howItWorks": {
+      "basics": {
+        "label": "",
+        "inPlace": {
+          "title": "",
+          "body": ""
+        },
+        "turnOff": {
+          "title": "",
+          "body": ""
+        },
+        "updates": {
+          "title": "",
+          "body": ""
+        },
+        "video": {
+          "title": "",
+          "body": ""
+        }
+      },
       "writes": {
         "title": "",
+        "summary": "",
         "inPlace": "",
         "turnOff": "",
         "reapply": "",
-        "untouched": ""
+        "untouched": "",
+        "video": ""
       },
       "sources": {
         "title": "",
+        "summary": "",
         "convars": {
           "term": "",
           "body": ""
@@ -257,7 +299,10 @@
       },
       "statuses": {
         "title": "",
+        "summary": "",
         "description": "",
+        "written": "",
+        "notWritten": "",
         "applies": "",
         "unchanged": "",
         "blocked": "",
@@ -272,12 +317,13 @@
       },
       "counts": {
         "title": "",
+        "summary": "",
         "settings": "",
-        "unused": "",
         "gamebanana": ""
       },
       "scale": {
         "title": "",
+        "summary": "",
         "categories": "",
         "position": "",
         "tiers": ""
@@ -350,7 +396,14 @@
       "removeFailed": "",
       "catalogUpdated": "",
       "catalogUpToDate": "",
-      "catalogRefreshFailed": ""
+      "catalogRefreshFailed": "",
+      "videoWritten_one": "",
+      "videoWritten_other": "",
+      "videoMissing": "",
+      "videoRestored": "",
+      "videoAdopted": "",
+      "videoAdoptFailed": "",
+      "videoRestoreFailed": ""
     },
     "editor": {
       "header": {
@@ -358,9 +411,7 @@
         "pickConfig": "",
         "presets": "",
         "yourConfigs": "",
-        "appliedOption": "",
         "tierTooltip": "",
-        "summary": "",
         "updating": ""
       },
       "empty": {
@@ -380,7 +431,13 @@
       },
       "noMatches": {
         "title": "",
-        "clear": "",
+        "search": "",
+        "changed": "",
+        "attention": "",
+        "differs": "",
+        "all": "",
+        "clearSearch": "",
+        "showAll": "",
         "searchAll": ""
       },
       "toolbar": {
@@ -465,14 +522,14 @@
         "engineSection": ""
       },
       "engine": {
-        "excluded_one": "",
-        "excluded_other": "",
+        "title": "",
+        "about": "",
         "included_one": "",
         "included_other": "",
+        "excluded_one": "",
+        "excluded_other": "",
         "sectionsMore": "",
-        "why": "",
-        "valveMessage": "",
-        "toggle": ""
+        "valveMessage": ""
       },
       "add": {
         "placeholder": "",
@@ -669,7 +726,8 @@
         },
         "video": {
           "title": "",
-          "description": ""
+          "description": "",
+          "write": ""
         },
         "notes": {
           "clamped": "",
@@ -770,18 +828,20 @@
     },
     "activeStatus": {
       "label": "",
+      "current": "",
       "active": "",
       "notWritten": "",
+      "videoInFile": "",
       "tweaks_one": "",
       "tweaks_other": "",
       "inFile_one": "",
       "inFile_other": "",
       "settings_one": "",
       "settings_other": "",
-      "takesEffect": "",
       "editSettings": "",
       "undo": "",
-      "openInEditor": "",
+      "undoShort": "",
+      "openGameinfo": "",
       "openInEditorFailed": "",
       "none": "",
       "noGamePath": "",
@@ -816,7 +876,6 @@
       "gameinfoEditor": ""
     },
     "configs": {
-      "meter": "",
       "apply": "",
       "applyChanges": "",
       "applied": "",
@@ -827,9 +886,8 @@
       "yours": "",
       "settingsCount_one": "",
       "settingsCount_other": "",
-      "unusedCount_one": "",
-      "unusedCount_other": "",
-      "unusedHint": "",
+      "unusedHint_one": "",
+      "unusedHint_other": "",
       "suggestsVideoSettings": "",
       "downloads_one": "",
       "downloads_other": "",
@@ -843,7 +901,6 @@
         "bundled": "",
         "gamebanana": ""
       },
-      "sourceWithTime": "",
       "catalogError": "",
       "retry": "",
       "scale": {
@@ -860,7 +917,7 @@
         "yours": ""
       },
       "sortLabel": "",
-      "sortPrefix": "",
+      "clearTier": "",
       "sorts": {
         "downloads": "",
         "name": "",
@@ -921,7 +978,16 @@
         "title": "",
         "notesTitle": "",
         "description": "",
-        "variantLabel": ""
+        "descriptionOff": "",
+        "write": "",
+        "variantLabel": "",
+        "backup": "",
+        "restore": "",
+        "adopt": "",
+        "adoptConfirm": {
+          "title": "",
+          "body": ""
+        }
       },
       "view": {
         "title": "",
@@ -1012,6 +1078,14 @@
       "current": "",
       "applyAgain": "",
       "configDeleted": "",
+      "videoCount": "",
+      "videoReverted": "",
+      "videoKept": "",
+      "videoChange": "",
+      "videoRestored": "",
+      "videoAdopted": "",
+      "videoChanged_one": "",
+      "videoChanged_other": "",
       "emptyTitle": "",
       "emptyDescription": ""
     },
@@ -1100,8 +1174,7 @@
       "inPool": "纳入皮肤随机器",
       "defaultInPool": "将默认皮肤纳入随机器",
       "unavailable": "无法随机：先安装一次以选择其文件，或该模组需要确认",
-      "listSubtitle": "随机皮肤",
-      "launchFailed": "皮肤随机器未能更换所有英雄。本次将以已启用的皮肤启动游戏。"
+      "listSubtitle": "随机皮肤"
     }
   },
   "stats": {
@@ -1125,6 +1198,7 @@
       "heroes": "英雄",
       "items": "装备",
       "squad": "阵容",
+      "party": "",
       "live": ""
     },
     "items": {
@@ -1624,6 +1698,74 @@
       "matesTitle": "",
       "matesDescription": ""
     },
+    "party": {
+      "title": "",
+      "description": "",
+      "clear": "",
+      "pickHero": "",
+      "remove": "",
+      "error": "",
+      "rank": {
+        "label": "",
+        "all": "",
+        "range": "",
+        "from": "",
+        "to": "",
+        "hint": ""
+      },
+      "member": {
+        "you": "",
+        "player": "",
+        "active": "",
+        "picks": "",
+        "add": "",
+        "remove": ""
+      },
+      "advice": {
+        "swap": "",
+        "add": "",
+        "swapAction": "",
+        "addAction": ""
+      },
+      "odds": {
+        "title": "",
+        "exact": "",
+        "estimate": "",
+        "estimateHint": "",
+        "needPlayers": "",
+        "noData": "",
+        "note_one": "",
+        "note_other": "",
+        "best": "",
+        "worst": "",
+        "shift": "",
+        "optimal": ""
+      },
+      "lineups": {
+        "title": "",
+        "descriptionEmpty": "",
+        "description_one": "",
+        "description_other": "",
+        "order": "",
+        "best": "",
+        "worst": "",
+        "lineup": "",
+        "winrate": "",
+        "matches": "",
+        "noData": "",
+        "noLineups": "",
+        "showAll": "",
+        "showFewer": "",
+        "footnote": ""
+      },
+      "picker": {
+        "title": "",
+        "count": "",
+        "search": "",
+        "noMatch": "",
+        "hint": ""
+      }
+    },
     "dashboard": {
       "customize": "",
       "customizeHint": "",
@@ -1685,6 +1827,7 @@
         "heroes": "",
         "items": "",
         "squad": "",
+        "party": "",
         "live": "",
         "performance": "",
         "habits": "",
@@ -1931,6 +2074,10 @@
           "description": ""
         },
         "squad": {
+          "title": "",
+          "description": ""
+        },
+        "partyPlanner": {
           "title": "",
           "description": ""
         },
@@ -3239,6 +3386,10 @@
       "enabledCount": "",
       "enable": "",
       "disable": "",
+      "randomize": "",
+      "randomizeHelp": "",
+      "randomized": "",
+      "randomizeIdle": "",
       "expandAll": "",
       "collapseAll": "",
       "draggingMods_one": "",
@@ -4068,8 +4219,10 @@
     "title": "",
     "hide": "",
     "cancel": "",
+    "randomizerFailed": "",
     "steps": {
       "randomizingSkins": "",
+      "randomizingMods": "",
       "disablingMods": "",
       "verifyingMods_one": "",
       "verifyingMods_other": "",
@@ -5295,7 +5448,6 @@
     "analyzing": "分析中…",
     "analysisResults": "本地插件分析",
     "analysisResultsDescription": "在你的游戏目录中找到 {{count}} 个插件",
-    "identifiedAndAdded": "{{count}} 已识别并自动添加到你的库",
     "analysisSuccess": "分析完成！找到 {{count}} 个插件",
     "analysisSuccessWithIdentified": "分析完成！找到 {{count}} 个插件，识别出 {{identified}} 个并已添加到当前配置",
     "analysisSuccessAllIdentified": "分析完成！所有 {{identified}} 个插件均已自动识别并添加到当前配置",
@@ -5404,7 +5556,6 @@
       "noMods": "未找到现有模组",
       "noModsDescription": "可以从头开始浏览目录中的模组。",
       "modsFound": "检测到现有模组！",
-      "modsFoundDescription": "你要分析并导入它们吗？",
       "analyze": "分析模组",
       "analyzing": "分析中…",
       "skipAnalysis": "暂时跳过"

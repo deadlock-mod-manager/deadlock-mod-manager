@@ -70,7 +70,7 @@ export const AnalysisResultsDialog = ({
               {identifiedAddons.length > 0 && (
                 <span className='text-muted-foreground ml-2'>
                   •{" "}
-                  {t("addons.identifiedAndAdded", {
+                  {t("addons.identifiedCount", {
                     count: identifiedAddons.length,
                   })}
                 </span>

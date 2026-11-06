@@ -13,7 +13,7 @@ const windows = process.platform === "win32";
 describe("scenario selection", () => {
   it("registers every case with explicit phases and capability requirements", () => {
     const ids = selectScenarios("all");
-    expect(ids).toHaveLength(windows ? 147 : 136);
+    expect(ids).toHaveLength(windows ? 148 : 137);
     expect(ids).toContain("downloads-segmented-range-error");
     for (const id of ids) {
       expect(parseScenarioId(id)).toBe(id);
@@ -23,6 +23,7 @@ describe("scenario selection", () => {
     expect(selectScenarios("onboarding")).toEqual([
       "onboarding-skip-analysis",
       "onboarding-telemetry-default",
+      "onboarding-identified-addon",
     ]);
     expect(selectScenarios("gamebanana")).toHaveLength(31);
     expect(selectScenarios("gamebanana")).toContain(
