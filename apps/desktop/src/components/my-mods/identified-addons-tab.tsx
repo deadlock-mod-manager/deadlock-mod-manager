@@ -1,16 +1,19 @@
 import { Info, Search } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
 import type { LocalAddonInfo } from "@/types/mods";
+import type { AnalysisTarget } from "@/lib/store/slices/mods";
 import { AddonSummaryCard } from "./addon-summary-card";
 
 interface IdentifiedAddonsTabProps {
   identifiedAddons: LocalAddonInfo[];
   onAddToLibrary: (addon: LocalAddonInfo) => void;
+  fileContext?: AnalysisTarget | null;
 }
 
 export const IdentifiedAddonsTab = ({
   identifiedAddons,
   onAddToLibrary,
+  fileContext,
 }: IdentifiedAddonsTabProps) => {
   const { t } = useTranslation();
 
@@ -43,6 +46,7 @@ export const IdentifiedAddonsTab = ({
           key={addon.filePath}
           addon={addon}
           onAddToLibrary={onAddToLibrary}
+          fileContext={fileContext}
         />
       ))}
     </div>

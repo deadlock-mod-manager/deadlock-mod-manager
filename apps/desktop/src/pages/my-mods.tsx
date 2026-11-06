@@ -207,6 +207,7 @@ const MyMods = () => {
     progress: analysisProgress,
     showProgressToast,
     analysisResult,
+    analysisTarget,
     dialogOpen: analysisDialogOpen,
     setDialogOpen: setAnalysisDialogOpen,
     isPending: isAnalysisPending,
@@ -1122,6 +1123,7 @@ const MyMods = () => {
             open={analysisDialogOpen}
             onOpenChange={setAnalysisDialogOpen}
             result={analysisResult}
+            fileContext={analysisTarget}
           />
           <EnableAllRecapDialog
             recap={enableAllRecap}

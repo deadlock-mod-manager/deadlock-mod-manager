@@ -178,6 +178,7 @@ export const usePersistedStore = create<State>()(
           setShowWhatsNew: _setShowWhatsNew,
           analysisResult: _analysisResult,
           analysisDialogOpen: _analysisDialogOpen,
+          analysisTarget: _analysisTarget,
           heroDetection: _heroDetection,
           ...rest
         } = state;

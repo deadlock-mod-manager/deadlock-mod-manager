@@ -54,6 +54,7 @@ import {
   prepareUnknownAddonWorld,
   unknownAddonRoutes,
 } from "./analyze-known-files-fixtures";
+import { prepareAnalyzeOrphansWorld } from "./analyze-orphans-fixtures";
 import { createArchive } from "./archive-fixtures";
 import { randomBytes } from "node:crypto";
 import { contentRoutes, prepareContentWorld } from "./content-fixtures";
@@ -665,6 +666,14 @@ export const scenarios = {
           "File management must download only the newly added optional archive once",
         );
     },
+  },
+  "analyze-orphans": {
+    ...defaults,
+    family: "analysis",
+    spec: "analyze-orphans",
+    phases: ["orphans", "restart-orphans"],
+    routes: rescanAfterResetRoutes,
+    prepare: prepareAnalyzeOrphansWorld,
   },
   "analyze-known-files": {
     ...defaults,

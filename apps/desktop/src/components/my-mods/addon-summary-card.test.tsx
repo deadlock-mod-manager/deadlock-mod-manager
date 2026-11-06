@@ -5,11 +5,21 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { I18nextProvider } from "react-i18next";
 import en from "@/locales/en.json";
 import type { LocalAddonInfo } from "@/types/mods";
+import type { AnalysisTarget } from "@/lib/store/slices/mods";
 
 type LibraryCheck = { owned: boolean | undefined; isLoading: boolean };
 let libraryCheck: LibraryCheck = { owned: undefined, isLoading: false };
 let lookedUp: string | undefined;
-let libraryModIds: string[] = [];
+type StoreView = {
+  localMods: { remoteId: string }[];
+  activeProfileId: string;
+  profiles: Record<string, { folderName: string }>;
+};
+let store: StoreView = {
+  localMods: [],
+  activeProfileId: "alpha",
+  profiles: { alpha: { folderName: "alpha" } },
+};
 
 mock.module("@/hooks/use-vpk-scan", () => ({
   useVpkScan: () => ({
@@ -20,17 +30,29 @@ mock.module("@/hooks/use-vpk-scan", () => ({
     isLoading: libraryCheck.isLoading,
   }),
 }));
-mock.module("@/lib/store", () => ({
-  usePersistedStore: <T,>(
-    selector: (state: { localMods: { remoteId: string }[] }) => T,
-  ) => selector({ localMods: libraryModIds.map((remoteId) => ({ remoteId })) }),
-}));
 let openedUrls: string[] = [];
 let clickLink: (() => void) | undefined;
 mock.module("@tauri-apps/plugin-opener", () => ({
   openUrl: async (url: string) => {
     openedUrls.push(url);
   },
+}));
+mock.module("@/lib/store", () => ({
+  usePersistedStore: <T,>(select: (state: StoreView) => T) => select(store),
+}));
+mock.module("./addon-file-actions", () => ({
+  AddonFileActions: ({
+    leftoverOf,
+    disabled,
+  }: {
+    leftoverOf?: string;
+    disabled: boolean;
+  }) => (
+    <span>
+      {leftoverOf ? "leftover" : "unknown"} actions
+      {disabled ? " (disabled)" : ""}
+    </span>
+  ),
 }));
 mock.module("./addon-info", () => ({ AddonInfo: () => null }));
 mock.module("@deadlock-mods/ui/components/button", () => ({
@@ -134,10 +156,84 @@ describe("AddonSummaryCard library check", () => {
   });
 });
 
+const parked: LocalAddonInfo = {
+  ...addon,
+  filePath: "/game/citadel/addons/alpha/900001_green.vpk",
+  fileName: "900001_green.vpk",
+  locator: "900001_green.vpk",
+  remoteId: "900001",
+};
+const context = (registering = false): AnalysisTarget => ({
+  profileFolder: "alpha",
+  registering,
+});
+
+const renderWith = (
+  file: LocalAddonInfo,
+  fileContext: AnalysisTarget | undefined,
+  { owned = false, inLibrary = false, activeFolder = "alpha" } = {},
+) => {
+  libraryCheck = { owned, isLoading: false };
+  store = {
+    localMods: inLibrary ? [{ remoteId: "900001" }] : [],
+    activeProfileId: "alpha",
+    profiles: { alpha: { folderName: activeFolder } },
+  };
+  return renderToStaticMarkup(
+    <I18nextProvider i18n={i18n}>
+      <AddonSummaryCard addon={file} fileContext={fileContext} />
+    </I18nextProvider>,
+  );
+};
+
+describe("AddonSummaryCard file actions", () => {
+  it("offers a choice for a parked file whose mod left the library", () => {
+    const html = renderWith(parked, context());
+    expect(html).toContain("leftover actions");
+    expect(html).not.toContain("Not in Library");
+  });
+
+  it("leaves a parked file of a library mod alone", () => {
+    const html = renderWith(parked, context(), { inLibrary: true });
+    expect(html).not.toContain("actions");
+  });
+
+  it("offers Delete and Quarantine next to Add for an unknown file", () => {
+    const html = renderWith(addon, context());
+    expect(html).toContain("Add to Library");
+    expect(html).toContain("unknown actions");
+  });
+
+  it("offers nothing for a file a library mod owns", () => {
+    expect(renderWith(addon, context(), { owned: true })).not.toContain(
+      "actions",
+    );
+  });
+
+  it("waits for Analyze to finish registering and for the analyzed profile", () => {
+    const addDisabled = /<button[^>]*disabled=""[^>]*>.*?Add to Library/;
+    for (const html of [
+      renderWith(addon, context(true)),
+      renderWith(addon, context(), { activeFolder: "beta" }),
+    ]) {
+      expect(html).toContain("(disabled)");
+      expect(html).toMatch(addDisabled);
+    }
+    expect(renderWith(addon, context())).not.toMatch(addDisabled);
+  });
+
+  it("offers no file actions where the dialog has no analysis to act on", () => {
+    expect(renderWith(parked, undefined)).not.toContain("actions");
+  });
+});
+
 describe("AddonSummaryCard identified addon", () => {
   const identified: LocalAddonInfo = { ...addon, remoteId: "900001" };
   const renderIdentified = (inLibrary: string[], owned?: boolean) => {
-    libraryModIds = inLibrary;
+    store = {
+      ...store,
+      localMods: inLibrary.map((remoteId) => ({ remoteId })),
+    };
     libraryCheck = { owned, isLoading: false };
     return renderCard(identified);
   };
