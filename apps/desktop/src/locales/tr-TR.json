@@ -1198,6 +1198,7 @@
       "heroes": "Kahramanlar",
       "items": "Eşyalar",
       "squad": "Takım",
+      "party": "",
       "live": ""
     },
     "items": {
@@ -1697,6 +1698,74 @@
       "matesTitle": "Takım arkadaşları",
       "matesDescription": "En az 5 maçta birlikte oynadığınız herkes"
     },
+    "party": {
+      "title": "",
+      "description": "",
+      "clear": "",
+      "pickHero": "",
+      "remove": "",
+      "error": "",
+      "rank": {
+        "label": "",
+        "all": "",
+        "range": "",
+        "from": "",
+        "to": "",
+        "hint": ""
+      },
+      "member": {
+        "you": "",
+        "player": "",
+        "active": "",
+        "picks": "",
+        "add": "",
+        "remove": ""
+      },
+      "advice": {
+        "swap": "",
+        "add": "",
+        "swapAction": "",
+        "addAction": ""
+      },
+      "odds": {
+        "title": "",
+        "exact": "",
+        "estimate": "",
+        "estimateHint": "",
+        "needPlayers": "",
+        "noData": "",
+        "note_one": "",
+        "note_other": "",
+        "best": "",
+        "worst": "",
+        "shift": "",
+        "optimal": ""
+      },
+      "lineups": {
+        "title": "",
+        "descriptionEmpty": "",
+        "description_one": "",
+        "description_other": "",
+        "order": "",
+        "best": "",
+        "worst": "",
+        "lineup": "",
+        "winrate": "",
+        "matches": "",
+        "noData": "",
+        "noLineups": "",
+        "showAll": "",
+        "showFewer": "",
+        "footnote": ""
+      },
+      "picker": {
+        "title": "",
+        "count": "",
+        "search": "",
+        "noMatch": "",
+        "hint": ""
+      }
+    },
     "dashboard": {
       "customize": "Özelleştir",
       "customizeHint": "Bileşenleri ve sekmeleri yeniden düzenleyin, boyutlandırın, ekleyin veya kaldırın",
@@ -1758,6 +1827,7 @@
         "heroes": "Kahramanlar",
         "items": "Eşyalar",
         "squad": "Takım",
+        "party": "",
         "live": "",
         "performance": "Performans",
         "habits": "Alışkanlıklar",
@@ -2006,6 +2076,10 @@
         "squad": {
           "title": "Takım",
           "description": "Takım arkadaşlarınızla kazanma oranınız ve sizi en çok yenen oyuncular."
+        },
+        "partyPlanner": {
+          "title": "",
+          "description": ""
         },
         "profile": {
           "title": "Profil",
