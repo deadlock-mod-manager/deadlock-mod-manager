@@ -13,6 +13,10 @@ declare global {
       ) => Promise<TResult>;
       /** Tauri's registered callbacks by id, event listeners among them. */
       callbacks: Map<number, (data: TauriEventData) => void>;
+      transformCallback: <TResponse>(
+        callback: (response: TResponse) => void,
+        once?: boolean,
+      ) => number;
     };
   }
 }

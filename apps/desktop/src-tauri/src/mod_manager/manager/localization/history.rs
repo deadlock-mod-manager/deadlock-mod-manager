@@ -7,21 +7,23 @@ use std::{
   path::{Path, PathBuf},
 };
 
+/// The install's observed game data file, keyed by the citadel path. None when
+/// the platform has no cache folder; loads are then empty and saves skipped.
 pub(super) fn path(citadel: &Path) -> Option<PathBuf> {
   let installation = hex::encode(Sha256::digest(citadel.as_os_str().as_encoded_bytes()));
-  dirs::cache_dir().map(|root| {
+  crate::runtime_environment::app_cache_dir("dev.stormix.deadlock-mod-manager").map(|root| {
     root
-      .join("dev.stormix.deadlock-mod-manager/compatibility")
+      .join("compatibility")
       .join(installation)
       .join("vdata-history.bin")
   })
 }
 
-pub(super) fn load(citadel: &Path) -> VdataHistoryIndex {
-  let Some(path) = path(citadel) else {
+pub(super) fn load(path: Option<&Path>) -> VdataHistoryIndex {
+  let Some(path) = path else {
     return VdataHistoryIndex::default();
   };
-  match fs::read(&path) {
+  match fs::read(path) {
     Ok(bytes) => VdataHistoryIndex::from_bytes(&bytes).unwrap_or_else(|error| {
       log::warn!("Ignoring unreadable observed compatibility history: {error}");
       VdataHistoryIndex::default()
@@ -35,8 +37,8 @@ pub(super) fn load(citadel: &Path) -> VdataHistoryIndex {
   }
 }
 
-pub(super) fn digest(citadel: &Path) -> Option<String> {
-  let bytes = fs::read(path(citadel)?).ok()?;
+pub(super) fn digest(path: Option<&Path>) -> Option<String> {
+  let bytes = fs::read(path?).ok()?;
   Some(hex::encode(Sha256::digest(bytes)))
 }
 
@@ -52,10 +54,7 @@ pub(super) fn version(citadel: &Path) -> Option<u32> {
     })
 }
 
-pub(super) fn save(citadel: &Path, history: &VdataHistoryIndex) -> Result<(), Error> {
-  let Some(path) = path(citadel) else {
-    return Ok(());
-  };
+pub(super) fn save(path: &Path, history: &VdataHistoryIndex) -> Result<(), Error> {
   let parent = path.parent().expect("cache path has a parent");
   fs::create_dir_all(parent)?;
   let mut staged = tempfile::NamedTempFile::new_in(parent)?;

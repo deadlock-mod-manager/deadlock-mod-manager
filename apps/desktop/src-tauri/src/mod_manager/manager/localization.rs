@@ -226,7 +226,7 @@ impl ModManager {
         ))
       })
       .collect::<Result<Vec<_>, Error>>()?;
-    let history_digest = history::digest(&citadel_dir);
+    let history_digest = history::digest(history::path(&citadel_dir).as_deref());
     Ok((
       citadel_dir,
       inputs,
@@ -591,10 +591,11 @@ fn build_overlay_plan(
   progress: &dyn Fn(RepairPlanProgress),
 ) -> Result<LocalizationOverlayPlan, Error> {
   let started = Instant::now();
+  let history_path = history::path(citadel);
   let (mut plan, observed, changed) = LocalizationOverlayPlan::build_learning_history(
     citadel,
     inputs,
-    history::load(citadel),
+    history::load(history_path.as_deref()),
     history::version(citadel),
     &key.compatibility_mod_ids,
     progress,
@@ -605,13 +606,13 @@ fn build_overlay_plan(
     key.compatibility_mod_ids.len(),
     started.elapsed().as_millis()
   );
-  if changed {
+  if changed && let Some(path) = &history_path {
     // Learning is reproducible from these stamped inputs. A cache write failure
     // must not prevent analysis; the next plan can learn the same snapshot again.
-    if let Err(error) = history::save(citadel, &observed) {
+    if let Err(error) = history::save(path, &observed) {
       log::warn!("Could not persist observed compatibility history: {error}");
     }
-    key.history_digest = history::digest(citadel);
+    key.history_digest = history::digest(history_path.as_deref());
   }
   plan.analysis.review_fingerprint = input_fingerprint(key)?;
   plan.analysis.input_warnings = key.input_warnings.clone();

@@ -30,9 +30,9 @@ export const PLAIN_MOD = "local-status-plain";
 /** A mod in the other profile that ships a copy of a game data table. */
 const OTHER_DATA_MOD = "local-status-other-data";
 /** Imported during a run: ships a copy of a game data table. */
-const DATA_MOD_FILE = "local-status-data.vpk";
+export const DATA_MOD_FILE = "local-status-data.vpk";
 
-const GAME_BUILD = 7000;
+export const GAME_BUILD = 7000;
 const DATA_TABLE = "scripts/e2e_status.vdata_c";
 
 // A compiled KV3 table (four rows of `{ value: i }`), from the app's own test
@@ -48,7 +48,8 @@ const localization = (tokens: Record<string, string>) =>
     .map(([token, text]) => `\t\t"${token}"\t\t"${text}"\n`)
     .join("")}\t}\n}\n`;
 
-const TEXT_FILE = "resource/localization/e2e_status/e2e_status_english.txt";
+export const TEXT_FILE =
+  "resource/localization/e2e_status/e2e_status_english.txt";
 
 const SECOND_TEXT_FILE =
   "resource/localization/e2e_second/e2e_second_english.txt";

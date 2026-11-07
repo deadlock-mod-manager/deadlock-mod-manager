@@ -2991,7 +2991,7 @@ fn infer_language(path: &str) -> String {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
   use super::*;
 
   #[test]
@@ -3194,7 +3194,7 @@ mod tests {
     }
   }
 
-  pub(super) fn compiled_resource(rows: Vec<(String, Kv3Value)>) -> Vec<u8> {
+  pub(crate) fn compiled_resource(rows: Vec<(String, Kv3Value)>) -> Vec<u8> {
     let payload = kv3::encode(&Kv3Value::Object(rows), &kv3::Format([0; 16]));
     let payload_offset = 32usize;
     let total_len = payload_offset + payload.len();
