@@ -13,8 +13,20 @@ const windows = process.platform === "win32";
 describe("scenario selection", () => {
   it("registers every case with explicit phases and capability requirements", () => {
     const ids = selectScenarios("all");
-    expect(ids).toHaveLength(windows ? 154 : 144);
+    expect(ids).toHaveLength(windows ? 160 : 150);
     expect(ids).toContain("downloads-segmented-range-error");
+    // Some of these specs don't dispatch on their case ID, so a rename
+    // wouldn't fail them.
+    expect(ids).toEqual(
+      expect.arrayContaining([
+        "compatibility-rebuild-after-close",
+        "compatibility-rebuild-restart",
+        "compatibility-rebuild-steam-rewrite",
+        "compatibility-rebuild-game-update",
+        "compatibility-rebuild-app-update",
+        "compatibility-rebuild-new-data",
+      ]),
+    );
     for (const id of ids) {
       expect(parseScenarioId(id)).toBe(id);
       expect(scenarioSpec(id)).toContain("./specs/");
