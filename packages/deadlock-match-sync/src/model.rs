@@ -191,12 +191,15 @@ impl MatchSyncConfig {
 #[serde(rename_all = "camelCase")]
 pub struct AccountStatus {
   pub steam_id64: u64,
+  // Steam3 id: the SteamID64 doesn't fit a JS number, so the UI addresses accounts by this.
+  pub account_id: u32,
   pub account_name: String,
   pub quota_limit: u32,
   pub quota_remaining: u32,
   pub quota_reset_at: Option<i64>,
   pub full_sync_complete: bool,
   pub gc_unavailable: bool,
+  pub excluded: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]

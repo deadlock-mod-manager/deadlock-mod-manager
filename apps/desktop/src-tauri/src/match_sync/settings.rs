@@ -8,6 +8,7 @@ use std::sync::Arc;
 use deadlock_match_sync::error::MatchSyncError;
 use deadlock_match_sync::model::{FETCH_QUOTA_WINDOW_SECS, MatchSyncConfig, QuotaKind};
 use deadlock_match_sync::quota::QuotaWindow;
+use deadlock_match_sync::steam_id::account_id_of;
 use tauri_plugin_store::{Store, StoreExt};
 
 use crate::app_runtime::{AppHandle, AppRuntime};
@@ -24,6 +25,8 @@ const KEY_GC_BACKOFF: &str = "gc_backoff_until";
 const KEY_HISTORY_HITS: &str = "history_hits";
 // Global, not per account: a friend shared by several accounts is looked up once.
 const KEY_FRIEND_COOLDOWNS: &str = "friend_cooldowns";
+// Steam3 account ids the user turned off. Their saved sessions are never read.
+const KEY_EXCLUDED_ACCOUNTS: &str = "excluded_accounts";
 
 const MAX_FETCHED_IDS: usize = 10_000;
 
@@ -249,6 +252,30 @@ pub fn clear_friend_cooldowns(app: &AppHandle) -> Result<(), MatchSyncError> {
   }
 }
 
+pub fn load_excluded_accounts(app: &AppHandle) -> Result<Vec<u32>, MatchSyncError> {
+  Ok(
+    store(app)?
+      .get(KEY_EXCLUDED_ACCOUNTS)
+      .and_then(|v| serde_json::from_value(v).ok())
+      .unwrap_or_default(),
+  )
+}
+
+pub fn set_account_excluded(
+  app: &AppHandle,
+  account_id: u32,
+  excluded: bool,
+) -> Result<(), MatchSyncError> {
+  let mut ids = load_excluded_accounts(app)?;
+  ids.retain(|&id| id != account_id);
+  if excluded {
+    ids.push(account_id);
+  }
+  let store = store(app)?;
+  store.set(KEY_EXCLUDED_ACCOUNTS, serde_json::json!(ids));
+  save(&store)
+}
+
 pub fn prune_forgotten_accounts(
   app: &AppHandle,
   current_ids: &[u64],
@@ -273,11 +300,18 @@ pub fn prune_forgotten_accounts(
       })
     })
     .collect();
-  if stale.is_empty() {
+  let excluded = load_excluded_accounts(app)?;
+  let kept_excluded: Vec<u32> = excluded
+    .iter()
+    .copied()
+    .filter(|&id| current_ids.iter().any(|&sid| account_id_of(sid) == id))
+    .collect();
+  if stale.is_empty() && kept_excluded.len() == excluded.len() {
     return Ok(());
   }
   for key in stale {
     store.delete(key);
   }
+  store.set(KEY_EXCLUDED_ACCOUNTS, serde_json::json!(kept_excluded));
   save(&store)
 }

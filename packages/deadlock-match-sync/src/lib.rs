@@ -10,6 +10,6 @@ pub mod game_check;
 pub mod gc_client;
 pub mod model;
 pub mod quota;
-mod steam_id;
+pub mod steam_id;
 pub mod sync;
 pub mod throttle;

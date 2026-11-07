@@ -8,12 +8,14 @@ import { isMatchSyncBuilt } from "@/lib/runtime-bootstrap";
 
 export type AccountStatus = {
   steamId64: number;
+  accountId: number;
   accountName: string;
   quotaLimit: number;
   quotaRemaining: number;
   quotaResetAt: number | null;
   fullSyncComplete: boolean;
   gcUnavailable: boolean;
+  excluded: boolean;
 };
 
 export type MatchSyncStatus = {
@@ -91,6 +93,11 @@ export const useMatchSync = () => {
       invoke("set_match_sync_enabled", { enabled }),
     onSuccess: invalidate,
   });
+  const setAccountExcluded = useMutation({
+    mutationFn: (vars: { accountId: number; excluded: boolean }) =>
+      invoke("set_match_sync_account_excluded", vars),
+    onSuccess: invalidate,
+  });
   const startFullSync = useMutation({
     mutationFn: () => invoke("start_full_match_sync"),
     onSuccess: invalidate,
@@ -109,6 +116,7 @@ export const useMatchSync = () => {
     progress,
     setConsent,
     setEnabled,
+    setAccountExcluded,
     startFullSync,
     cancelFullSync,
   };

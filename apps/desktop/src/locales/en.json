@@ -5117,6 +5117,8 @@
       "accountsTitle": "Steam accounts",
       "left": "{{remaining}}/{{limit}} left today",
       "gcUnavailable": "Can't connect to Deadlock, retrying in 24h",
+      "syncAccount": "Sync matches for {{name}}",
+      "excluded": "Not synced",
       "reachedToday": "Daily limit reached. Come back tomorrow to fetch more."
     },
     "noAccounts": "No Steam accounts detected. Log into Steam to sync matches.",
