@@ -65,8 +65,9 @@ export const HeroModGrid = ({
 
   return (
     // The negative margin and padding keep the outline of a selected card
-    // from being clipped by the scroll container.
-    <div className='-ml-1 flex min-w-0 flex-1 flex-col gap-5 overflow-y-auto pr-2 pb-1 pl-1'>
+    // from being clipped by the scroll container. Children must not shrink:
+    // in a scrolling flex column they would otherwise squash and overlap.
+    <div className='-ml-1 flex min-w-0 flex-1 flex-col gap-5 overflow-y-auto pr-2 pb-1 pl-1 *:shrink-0'>
       <HeroBanner
         disabled={disabled}
         group={group}
