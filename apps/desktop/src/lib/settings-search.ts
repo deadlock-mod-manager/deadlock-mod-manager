@@ -375,6 +375,10 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
         descriptionKey: "gamePresence.description",
       },
       {
+        titleKey: "gamePresence.hidePartySize",
+        descriptionKey: "gamePresence.hidePartySizeDescription",
+      },
+      {
         titleKey: "gamePresence.templatesTitle",
         descriptionKey: "gamePresence.templatesDescription",
       },
