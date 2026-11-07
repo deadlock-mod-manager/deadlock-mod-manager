@@ -17,7 +17,7 @@ const SHARED_JACKET = "jacket model, identical in two mods\n";
 
 // Mods load in this order, so the first one wins every file it shares:
 // - hat-jacket and hat-pants replace the same model (critical).
-// - hat-pants and pants-texture replace the same material (normal).
+// - hat-pants and pants-texture replace the same material and texture (normal).
 // - hat-jacket and pants-texture ship a byte-identical jacket, which is not a
 //   conflict, and every mod carries packer noise that must be skipped.
 const RECIPES = new Map<string, readonly VpkRecipeEntry[]>([
@@ -39,6 +39,10 @@ const RECIPES = new Map<string, readonly VpkRecipeEntry[]>([
         path: "materials/outfit/pants.vmat_c",
         contents: "pants material from hat-pants\n",
       },
+      {
+        path: "materials/outfit/pants_color.vtex_c",
+        contents: "pants color from hat-pants\n",
+      },
       { path: "addoninfo.txt", contents: "hat-pants addon info\n" },
     ],
   ],
@@ -48,6 +52,10 @@ const RECIPES = new Map<string, readonly VpkRecipeEntry[]>([
       {
         path: "materials/outfit/pants.vmat_c",
         contents: "pants material from pants-texture\n",
+      },
+      {
+        path: "materials/outfit/pants_color.vtex_c",
+        contents: "pants color from pants-texture\n",
       },
       { path: "models/outfit/jacket.vmdl_c", contents: SHARED_JACKET },
       { path: "addoninfo.txt", contents: "pants-texture addon info\n" },
