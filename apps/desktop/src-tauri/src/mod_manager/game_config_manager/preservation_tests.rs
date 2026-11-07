@@ -13,6 +13,68 @@ fn game() -> (tempfile::TempDir, PathBuf) {
 }
 
 #[test]
+fn backup_restore_keeps_the_live_file_before_replacing_it() {
+  let (game, path) = game();
+  let current = fs::read(&path).unwrap();
+  let backup = fixture().replace("fps_max 240", "fps_max 0");
+  fs::write(path.with_extension("gi.bak"), &backup).unwrap();
+  GameConfigManager::new()
+    .restore_gameinfo_backup(game.path())
+    .unwrap();
+  assert_eq!(fs::read_to_string(&path).unwrap(), backup);
+  let copies: Vec<_> = fs::read_dir(path.parent().unwrap())
+    .unwrap()
+    .map(Result::unwrap)
+    .filter(|entry| {
+      entry
+        .file_name()
+        .to_string_lossy()
+        .starts_with("gameinfo.gi.pre-restore-")
+    })
+    .collect();
+  assert_eq!(
+    copies.len(),
+    1,
+    "restoring an older backup must retain current settings"
+  );
+  assert_eq!(fs::read(copies[0].path()).unwrap(), current);
+  assert_eq!(
+    fs::read_to_string(path.with_extension("gi.bak")).unwrap(),
+    backup
+  );
+}
+
+#[test]
+fn backup_restore_stops_if_the_safety_copy_cannot_be_verified() {
+  let (game, path) = game();
+  let current = fs::read(&path).unwrap();
+  let backup = fixture().replace("fps_max 240", "fps_max 0");
+  fs::write(path.with_extension("gi.bak"), &backup).unwrap();
+  GameConfigManager::keep_gameinfo_copy(&path, &current, "pre-restore").unwrap();
+  let copy = fs::read_dir(path.parent().unwrap())
+    .unwrap()
+    .map(Result::unwrap)
+    .find(|entry| {
+      entry
+        .file_name()
+        .to_string_lossy()
+        .starts_with("gameinfo.gi.pre-restore-")
+    })
+    .unwrap();
+  fs::write(copy.path(), "damaged safety copy").unwrap();
+  assert!(
+    GameConfigManager::new()
+      .restore_gameinfo_backup(game.path())
+      .is_err()
+  );
+  assert_eq!(fs::read(&path).unwrap(), current);
+  assert_eq!(
+    fs::read_to_string(path.with_extension("gi.bak")).unwrap(),
+    backup
+  );
+}
+
+#[test]
 fn stale_cleanup_cannot_remove_paths_reapplied_without_changing_the_file() {
   let (game, path) = game();
   let mut manager = GameConfigManager::new();

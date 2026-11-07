@@ -268,7 +268,7 @@ impl GameConfigManager {
     Ok(())
   }
 
-  /// Restore gameinfo.gi from backup
+  /// Restore a validated backup, retaining a safety copy of the current file.
   pub fn restore_gameinfo_backup(&mut self, game_path: &Path) -> Result<(), Error> {
     let gameinfo_path = game_path.join("game").join("citadel").join("gameinfo.gi");
     let backup_path = gameinfo_path.with_extension("gi.bak");
@@ -299,6 +299,9 @@ impl GameConfigManager {
 
     log::info!("Restoring gameinfo.gi from backup: {backup_path:?}");
     ensure_file_writable(&gameinfo_path)?;
+    if gameinfo_path.exists() {
+      Self::keep_gameinfo_copy(&gameinfo_path, &fs::read(&gameinfo_path)?, "pre-restore")?;
+    }
     fs::write(&gameinfo_path, backup_content)?;
     self.search_paths_revision += 1;
 

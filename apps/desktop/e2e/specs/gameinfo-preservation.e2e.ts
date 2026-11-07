@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile, readdir, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { $, browser, expect } from "@wdio/globals";
+import { $, $$, browser, expect } from "@wdio/globals";
 import { z } from "zod";
 import { startApplication } from "../support/application";
 import { closeApplication } from "../support/application-exit";
@@ -17,7 +17,7 @@ import { VANILLA_GAMEINFO } from "../support/gameinfo-recovery-fixtures";
 import { observeUntil } from "../support/observations";
 import { ALPHA, BETA, profilePayload } from "../support/profile-fixtures";
 import { openSettings, setSwitch } from "../support/settings-actions";
-import { activateProfile, navigate } from "../support/ui";
+import { activateProfile, navigate, reveal } from "../support/ui";
 import { assertOwnedWorld, collectFileInventory } from "../support/world";
 
 const cleanupSearchPaths = async () => {
@@ -43,6 +43,22 @@ const cleanupSearchPaths = async () => {
     `Cleanup must remove the current mounts: ${JSON.stringify(result)}`,
   );
   return true;
+};
+
+const expectRejectedLaunch = async (message: string) => {
+  await browser.waitUntil(
+    async () =>
+      (await $$('[data-sonner-toast][data-type="error"]').length) === 0,
+    { timeout: 15_000, timeoutMsg: "Previous launch errors did not clear" },
+  );
+  const button = await $("button*=Launch modded");
+  await button.waitForClickable();
+  await button.click();
+  await expect($('[data-sonner-toast][data-type="error"]')).toHaveText(
+    expect.stringContaining(message),
+  );
+  await $("button=Cancel launch").waitForExist({ reverse: true });
+  await button.waitForClickable();
 };
 
 describe("coexistence with other gameinfo editors", () => {
@@ -177,10 +193,7 @@ describe("coexistence with other gameinfo editors", () => {
         ]) {
           await writeFile(gameinfo, broken);
           const timestamp = (await stat(gameinfo)).mtimeMs;
-          await $("button*=Launch modded").click();
-          await expect($("body")).toHaveText(
-            expect.stringContaining("Failed to parse game configuration"),
-          );
+          await expectRejectedLaunch("Failed to parse game configuration");
           assert.equal(await readFile(gameinfo, "utf8"), broken);
           assert.equal((await stat(gameinfo)).mtimeMs, timestamp);
           assert.equal((await readBrokenLaunches(world)).length, count);
@@ -190,10 +203,7 @@ describe("coexistence with other gameinfo editors", () => {
           "      // Deadlock Mod Manager - Start (SearchPaths v2)\r\n      Game core",
         );
         await writeFile(gameinfo, malformedMarkers);
-        await $("button*=Launch modded").click();
-        await expect($("body")).toHaveText(
-          expect.stringContaining("DMM search-path markers are incomplete"),
-        );
+        await expectRejectedLaunch("DMM search-path markers are incomplete");
         assert.equal(await readFile(gameinfo, "utf8"), malformedMarkers);
         assert.equal((await readBrokenLaunches(world)).length, count);
         // Emulate Steam replacing the file while the same manager still has setup cached.
@@ -323,11 +333,8 @@ describe("coexistence with other gameinfo editors", () => {
           "GameInfo\n{ FileSystem\n { SearchPaths\n  {\n   // Other tool BEGIN\n   Game_UILanguage citadel_*LANGUAGE*\n   Game citadel\n   // Other tool END\n   Game core\n  }\n }\n}";
         await writeFile(gameinfo, blocked);
         const count = (await readBrokenLaunches(world)).length;
-        await $("button*=Launch modded").click();
-        await expect($("body")).toHaveText(
-          expect.stringContaining(
-            "preserves both language priority and the foreign block",
-          ),
+        await expectRejectedLaunch(
+          "preserves both language priority and the foreign block",
         );
         assert.equal(await readFile(gameinfo, "utf8"), blocked);
         assert.equal((await readBrokenLaunches(world)).length, count);
@@ -382,6 +389,39 @@ describe("coexistence with other gameinfo editors", () => {
         await cleanupSearchPaths();
         assert.equal(await readFile(gameinfo, "utf8"), fenced);
         await writeFile(gameinfo, PRESERVED_GAMEINFO);
+        await launch(false, ALPHA.folder);
+      },
+    );
+    await step(
+      "Keep current foreign settings recoverable when restoring an older backup",
+      async () => {
+        const current = await readFile(gameinfo);
+        const backupPath = path.join(citadel, "gameinfo.gi.bak");
+        const backup = await readFile(backupPath);
+        assert(!current.equals(backup));
+        await openSettings("game");
+        const restore = await $("button=Restore Backup");
+        await reveal(restore);
+        await restore.click();
+        const confirm = await $('[role="alertdialog"] button[type="submit"]');
+        await confirm.waitForClickable();
+        await confirm.click();
+        await observeUntil(
+          "The explicit restore applies the backup",
+          () => readFile(gameinfo),
+          (content) => content.equals(backup),
+        );
+        await restore.waitForClickable();
+        const copyNames = (await readdir(citadel)).filter((name) =>
+          name.startsWith("gameinfo.gi.pre-restore-"),
+        );
+        const copies = await Promise.all(
+          copyNames.map((name) => readFile(path.join(citadel, name))),
+        );
+        assert(copies.some((copy) => copy.equals(current)));
+        assert.deepEqual(await readFile(backupPath), backup);
+        await writeFile(gameinfo, current);
+        await navigate("my-mods");
         await launch(false, ALPHA.folder);
       },
     );

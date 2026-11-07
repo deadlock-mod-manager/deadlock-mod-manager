@@ -60,6 +60,13 @@ pub struct SourceDocument {
 }
 
 impl SourceDocument {
+    /// Parse the complete document strictly, retaining source order and conditions.
+    /// Ranges and comment offsets are UTF-8 bytes into `text`, including a BOM.
+    /// Conditions are validated and preserved without evaluating their symbols.
+    ///
+    /// # Errors
+    /// Returns an error for lexical errors, unconsumed syntax, unsupported
+    /// `#include`/`#base` directives, or malformed condition syntax.
     pub fn parse(text: &str, options: ParseOptions) -> Result<Self> {
         let shift = text
             .strip_prefix('\u{feff}')
@@ -160,12 +167,18 @@ impl CharOffsets {
 }
 
 /// Start of the line containing `at`, which must be a UTF-8 character boundary.
+///
+/// # Panics
+/// Panics if `at` is out of bounds or not a UTF-8 character boundary.
 pub fn line_start(text: &str, at: usize) -> usize {
     text[..at].rfind('\n').map_or(0, |previous| previous + 1)
 }
 
 /// End of the line containing `at`, including its newline when present.
 /// `at` must be a UTF-8 character boundary in `text`.
+///
+/// # Panics
+/// Panics if `at` is out of bounds or not a UTF-8 character boundary.
 pub fn line_end(text: &str, at: usize) -> usize {
     text[at..]
         .find('\n')
