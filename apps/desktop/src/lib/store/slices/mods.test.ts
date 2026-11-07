@@ -483,6 +483,47 @@ describe("mod recovery", () => {
 const broken = (mods: LocalMod[]) =>
   mods.map((mod) => ({ ...mod, missingVpks: ["gone.vpk"] }));
 
+describe("setModStatus", () => {
+  it.each(["default", "secondary"])(
+    "clears disabled VPK locators in %s without waiting for reconciliation",
+    (profileName) => {
+      const profileId = createProfileId(profileName);
+      const before = store.getState();
+
+      store.getState().setModStatus("1", ModStatus.Downloaded, profileId);
+
+      const after = store.getState();
+      expect(after.profiles[profileId].mods[0]).toEqual({
+        ...before.profiles[profileId].mods[0],
+        status: ModStatus.Downloaded,
+        installedVpks: [],
+        downloadedAt: before.profiles[profileId].mods[0].downloadedAt,
+      });
+      if (profileId === before.activeProfileId) {
+        expect(after.localMods).toEqual(after.profiles[profileId].mods);
+        expect(after.profiles.secondary).toBe(before.profiles.secondary);
+      } else {
+        expect(after.localMods).toBe(before.localMods);
+        expect(after.profiles.default).toBe(before.profiles.default);
+      }
+    },
+  );
+
+  it("keeps installed VPK locators while downloading an update", () => {
+    const before = store.getState();
+
+    store.getState().setModStatus("1", ModStatus.Downloading);
+
+    const after = store.getState();
+    expect(after.localMods[0].installedVpks).toEqual(
+      before.localMods[0].installedVpks,
+    );
+    expect(after.profiles.default.mods[0].installedVpks).toEqual(
+      before.profiles.default.mods[0].installedVpks,
+    );
+  });
+});
+
 describe("setInstalledVpks", () => {
   it("preserves unrelated mod references when installation completes", () => {
     store.setState((state) => ({ localMods: state.profiles.default.mods }));
