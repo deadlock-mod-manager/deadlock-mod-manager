@@ -68,7 +68,7 @@ export const UpdateChannelSelect = () => {
           <SelectTrigger
             aria-describedby={`${DESCRIPTION_ID} ${NOTES_ID}`}
             aria-label={t("settings.updateChannel")}
-            className='w-36'>
+            className='w-40 normal-case'>
             <SelectValue />
           </SelectTrigger>
         </HintAnchor>
