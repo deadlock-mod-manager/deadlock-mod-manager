@@ -67,6 +67,26 @@ const STATIC_CLIP_SECONDS: f32 = 0.1;
 const MAX_SEQUENCE_CLIPS: usize = nm_anim::MAX_PREVIEW_SEQUENCE_CLIPS;
 const MAX_SEQUENCE_SECONDS: f32 = 30.0;
 const MAX_SAMPLED_TRANSFORMS: usize = 180_000;
+const MAX_ANIMATED_BONES: usize = 2048;
+
+/// The bones that need tracks: those the clips move and the cloth roots pinned
+/// to them. The rest hold their bind transform, which the loaded model already
+/// has, so skipping them keeps cloth-heavy skins (thousands of procedural
+/// cloth bones) within the bone and sample budgets.
+fn driven_bones(clips: &[nm_anim::NmAnimation], skeleton: &skeleton::Skeleton) -> Vec<bool> {
+  let mut driven: Vec<_> = skeleton
+    .bones
+    .iter()
+    .map(skeleton::Bone::is_procedural_cloth_root)
+    .collect();
+  for animation in clips {
+    let retargeted = nm_anim::retargeted_bones(&animation.skeleton.bone_names, skeleton);
+    for (driven, retargeted) in driven.iter_mut().zip(retargeted) {
+      *driven |= retargeted;
+    }
+  }
+  driven
+}
 
 struct ClipSampling {
   duration: f32,
@@ -249,9 +269,6 @@ pub async fn foundry_decode_animation(
     let skeleton = skeleton::parse_model_skeleton(&resource)
       .map_err(invalid)?
       .ok_or_else(|| invalid("This model has no skeleton"))?;
-    if skeleton.bones.len() > 2048 {
-      return Err(invalid("The model has too many bones to animate"));
-    }
     let mut clips = Vec::with_capacity(clip_paths.len());
     for clip_path in &clip_paths {
       let animation =
@@ -272,18 +289,25 @@ pub async fn foundry_decode_animation(
       }
       clips.push(animation);
     }
+    let driven = driven_bones(&clips, &skeleton);
+    let driven_count = driven.iter().filter(|driven| **driven).count();
+    if driven_count > MAX_ANIMATED_BONES {
+      return Err(invalid("The model has too many bones to animate"));
+    }
     let metadata: Vec<_> = clips
       .iter()
       .map(|animation| (animation.clip.frame_count, animation.clip.duration_seconds))
       .collect();
-    let plan = sampling_plan(&metadata, skeleton.bones.len())?;
+    let plan = sampling_plan(&metadata, driven_count)?;
     let total_frames: usize = plan.iter().map(|clip| clip.sample_count).sum();
     let mut times = Vec::with_capacity(total_frames);
     let mut segments = Vec::with_capacity(clips.len());
     let mut tracks: Vec<_> = skeleton
       .bones
       .iter()
-      .map(|bone| PreviewBoneTrack {
+      .zip(&driven)
+      .filter(|(_, driven)| **driven)
+      .map(|(bone, _)| PreviewBoneTrack {
         name: bone.name.clone(),
         positions: Vec::with_capacity(total_frames * 3),
         rotations: Vec::with_capacity(total_frames * 4),
@@ -299,7 +323,11 @@ pub async fn foundry_decode_animation(
         let sampled = animation.sample_pose(time, false).map_err(invalid)?;
         let mut pose = nm_anim::retarget_nm_pose(animation, &sampled, &skeleton);
         skeleton.pin_procedural_cloth_roots(&mut pose);
-        for (track, transform) in tracks.iter_mut().zip(pose) {
+        let driven_pose = pose
+          .into_iter()
+          .zip(&driven)
+          .filter_map(|(transform, driven)| driven.then_some(transform));
+        for (track, transform) in tracks.iter_mut().zip(driven_pose) {
           if !transform
             .translation
             .iter()
