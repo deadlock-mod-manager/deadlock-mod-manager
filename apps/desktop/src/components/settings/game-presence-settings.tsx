@@ -71,6 +71,9 @@ export const GamePresenceSettings = () => {
   const setGamePresenceHeroOverrides = usePersistedStore(
     (state) => state.setGamePresenceHeroOverrides,
   );
+  const gamePresenceHidePartySize = usePersistedStore(
+    (state) => state.gamePresenceHidePartySize,
+  );
   const [draftTemplates, setDraftTemplates] = useState(
     gamePresenceTextTemplates,
   );
@@ -207,6 +210,11 @@ export const GamePresenceSettings = () => {
     selectedRow.defaultState,
     sampleValues,
   );
+
+  // Discord shows the party count beside the timer only while in a party.
+  const previewShowsPartySize =
+    !gamePresenceHidePartySize &&
+    (selectedRow.key === "partyHideout" || selectedRow.key === "partyMatch");
 
   const updateDraftField = (
     key: TemplateKey,
@@ -527,6 +535,7 @@ export const GamePresenceSettings = () => {
                   noDetailsText={t("gamePresence.previewNoDetails")}
                   previewDetails={previewDetails}
                   previewState={previewState}
+                  showPartySize={previewShowsPartySize}
                 />
               </div>
             </div>
