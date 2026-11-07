@@ -64,8 +64,10 @@ const skin = (
 
 const group = (...skins: TestSkin[]): HeroModGroup<TestSkin> => ({
   skins,
+  sounds: [],
   extras: [],
   activeSkins: [],
+  activeSounds: [],
   activeExtras: [],
 });
 

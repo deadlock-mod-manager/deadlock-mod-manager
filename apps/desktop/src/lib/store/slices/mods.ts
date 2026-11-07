@@ -1,3 +1,7 @@
+import {
+  type HeroDetectionResult,
+  resolveDetectedHeroLabel,
+} from "@deadlock-mods/hero-parser";
 import type { ModDto } from "@deadlock-mods/shared";
 import type { StateCreator } from "zustand";
 import { SortType } from "@/lib/constants";
@@ -159,10 +163,10 @@ export type ModsState = {
   getOrderedMods: () => LocalMod[];
   getNextInstallOrder: () => number;
   migrateLegacyMods: () => void;
+  /** Null records a scan that failed, so the mod is not scanned again. */
   setDetectedHero: (
     remoteId: string,
-    hero: string | null,
-    usesCriticalPaths?: boolean,
+    detection: HeroDetectionResult | null,
   ) => void;
   setHeroOverride: (
     remoteId: string,
@@ -919,19 +923,19 @@ export const createModsSlice: StateCreator<
     });
   },
 
-  setDetectedHero: (
-    remoteId: string,
-    hero: string | null,
-    usesCriticalPaths?: boolean,
-  ) =>
+  setDetectedHero: (remoteId, detection) =>
     set((state) => {
       const updateMods = (mods: LocalMod[]) =>
         mods.map((mod) =>
           mod.remoteId === remoteId
             ? {
                 ...mod,
-                detectedHero: hero,
-                usesCriticalPaths: usesCriticalPaths ?? mod.usesCriticalPaths,
+                detectedHero: detection
+                  ? resolveDetectedHeroLabel(detection)
+                  : null,
+                detectedContent: detection?.content ?? null,
+                usesCriticalPaths:
+                  detection?.usesCriticalPaths ?? mod.usesCriticalPaths,
               }
             : mod,
         );
@@ -966,6 +970,7 @@ export const createModsSlice: StateCreator<
         mods.map((mod) => ({
           ...mod,
           detectedHero: undefined,
+          detectedContent: undefined,
         }));
 
       return applyToModsAndAllProfiles(state, updateMods);

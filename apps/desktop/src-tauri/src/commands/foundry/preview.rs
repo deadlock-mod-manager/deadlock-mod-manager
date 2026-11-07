@@ -88,7 +88,12 @@ pub async fn foundry_mod_preview_info(file_path: String) -> Result<ModPreviewInf
     let manifest = analyze_vpk_path(Path::new(&file_path)).map_err(archive_error)?;
     let heroes = mod_entries(&manifest)
       .filter_map(|entry| {
-        hero_parser::detect_hero_from_paths(std::slice::from_ref(&entry.path)).hero_display
+        // Only model and material folders count; a skin often borrows another
+        // hero's sounds without being ambiguous about whose skin it is.
+        let detection = hero_parser::detect_hero_from_paths(std::slice::from_ref(&entry.path));
+        (detection.category == "hero")
+          .then_some(detection.hero_display)
+          .flatten()
       })
       .collect::<BTreeSet<_>>();
     let ambiguous_hero = heroes.len() > 1;

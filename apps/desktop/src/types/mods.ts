@@ -1,3 +1,4 @@
+import type { HeroContent } from "@deadlock-mods/hero-parser";
 import type { ModEntryPoint } from "@/lib/analytics/schema";
 import type { ModDto } from "@deadlock-mods/shared";
 import type { z } from "zod";
@@ -57,6 +58,8 @@ export interface LocalMod extends ModDto {
   installedFileTree?: ModFileTree;
   installOrder?: number;
   detectedHero?: string | null;
+  /** What the mod's VPKs change, from the same scan as `detectedHero`. */
+  detectedContent?: HeroContent | null;
   heroOverride?: string | null;
   usesCriticalPaths?: boolean;
   // Unix seconds of the update the user chose to skip.

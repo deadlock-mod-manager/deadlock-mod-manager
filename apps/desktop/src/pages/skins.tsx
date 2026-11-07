@@ -12,7 +12,11 @@ import { SkinPreviewPanel } from "@/components/skins/skin-preview-panel";
 import { useHeroSelection } from "@/hooks/use-hero-selection";
 import { useIsHeroAvailable } from "@/hooks/use-player-stats";
 import useUninstall from "@/hooks/use-uninstall";
-import { groupModsByHero, type HeroModGroup } from "@/lib/mods/hero-mods";
+import {
+  groupModsByHero,
+  type HeroModGroup,
+  type HeroModKind,
+} from "@/lib/mods/hero-mods";
 import { isRandomizedPool, randomizerPool } from "@/lib/mods/skin-randomizer";
 import { filterHiddenNSFWItems } from "@/lib/mods/nsfw-visibility";
 import { usePersistedStore } from "@/lib/store";
@@ -20,8 +24,10 @@ import type { LocalMod } from "@/types/mods";
 
 const EMPTY_GROUP: HeroModGroup<LocalMod> = {
   skins: [],
+  sounds: [],
   extras: [],
   activeSkins: [],
+  activeSounds: [],
   activeExtras: [],
 };
 
@@ -117,9 +123,11 @@ const Skins = () => {
       const randomized = randomizerEnabled && randomizedHeroes.has(hero);
       return {
         hero,
-        modCount: group.skins.length + group.extras.length,
+        modCount:
+          group.skins.length + group.sounds.length + group.extras.length,
         activeNames: [
           ...(randomized ? [] : group.activeSkins),
+          ...group.activeSounds,
           ...group.activeExtras,
         ].map((mod) => mod.name),
         randomized,
@@ -177,7 +185,7 @@ const Skins = () => {
     setPreviewEnabled(true);
   };
 
-  const handleSelect = (mod: LocalMod | null, kind: "skin" | "extra") => {
+  const handleSelect = (mod: LocalMod | null, kind: HeroModKind) => {
     if (effectiveHero) {
       if (kind === "skin") {
         handlePreview(mod);

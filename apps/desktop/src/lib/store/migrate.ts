@@ -740,6 +740,26 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
       }
     },
   },
+  {
+    to: 45,
+    label: "rescan-detected-content",
+    apply: (state) => {
+      // The hero scan now also records whether a mod is sound-only, so clear
+      // detectedHero once and let the background scan fill both in again.
+      const reset = (mods: MutableState[string]) => {
+        if (!Array.isArray(mods)) return;
+        for (const mod of mods) {
+          if (isPlainObject(mod)) delete mod.detectedHero;
+        }
+      };
+      reset(state.localMods);
+      if (isPlainObject(state.profiles)) {
+        for (const profile of Object.values(state.profiles)) {
+          if (isPlainObject(profile)) reset(profile.mods);
+        }
+      }
+    },
+  },
 ];
 
 const LEGACY_GAMEBANANA_ID = /^[1-9]\d*$/;

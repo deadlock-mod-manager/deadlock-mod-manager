@@ -48,6 +48,7 @@ Work through the list in order; each item is a file you open and edit.
 - `packages/hero-parser/src/mapping.ts` - `HERO_MAP`: `<model dir>: { enumKey, displayName }`.
 - `packages/hero-parser/src-rs/mapping.rs` - the same row as `("<model dir>", "<EnumKey>", "<Display>")`.
 - Add `_v2`-style variants of the model dir when the VPK ships them.
+- `packages/hero-parser/src-rs/mapping.rs` `HERO_SOUND_CODENAMES` - `("<sound codename>", "<Display>")`. Sound-only mods take their hero from it, and the Foundry reads it too. A legacy sound dir goes in `LEGACY_SOUND_CODENAMES`.
 
 **GameBanana registry** (desktop Rust)
 - Regenerate, never hand-edit: `pnpm --filter @deadlock-mods/desktop generate:gamebanana-heroes` rewrites `providers/gamebanana/generated_hero_registry.rs` from `HERO_DEFINITIONS`.
@@ -56,7 +57,6 @@ Work through the list in order; each item is a file you open and edit.
 **Mod Foundry** (`apps/desktop/src-tauri/src/commands/foundry/`)
 - `hero.rs` `panorama_codenames` - `"<Display>" => vec!["<panorama codename>", ...legacy]`.
 - `hero.rs` `default_model_codenames` - only when the model dir does not fall out of the display name.
-- `hero.rs` `HERO_SOUND_CODENAMES` - `("<sound codename>", "<Display>")`.
 - `hero-ability-slots.json` - `slots.<sound codename>.1..4` with `token` = ability `class_name` minus `ability_<codename>_` (keep underscores) and `display` = ability `name`; slot 4 is the ultimate. Write it with 2-space JSON, keys sorted, so the diff stays additive.
 - `apps/desktop/public/foundry/default-skins/cards/<snake_name>.png` - 280×380 card. Use `icon_hero_card`; if the API has none yet, crop the release-vote poster (what `2f18d23e` did).
 - `apps/desktop/src/lib/foundry-default-skins.ts` - `{ hero: "<Display>", image: cardPath("<snake_name>") }`, alphabetical.

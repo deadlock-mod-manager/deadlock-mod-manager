@@ -12,6 +12,8 @@ use std::sync::OnceLock;
 
 use serde::Deserialize;
 
+pub(crate) use hero_parser::{canonical_sound_codename, sound_codename_for_hero};
+
 /// Display-name to panorama `class_name` namespace, used to locate a hero's
 /// card textures (including the legacy packs that ship under an older name).
 pub(crate) fn panorama_codenames(hero_name: &str) -> Vec<&'static str> {
@@ -150,69 +152,6 @@ pub(crate) fn hero_asset_terms(hero_name: &str, codenames: &[&str]) -> Vec<Strin
   terms
 }
 
-/// Deadlock's sound-path codename per hero. Sound mods organize their payloads
-/// under `sounds/abilities/<sound_codename>/`, and that namespace diverges from
-/// both the panorama namespace and the script `class_name`.
-const HERO_SOUND_CODENAMES: &[(&str, &str)] = &[
-  ("abrams", "Abrams"),
-  ("artist", "Violet"),
-  ("astro", "Holliday"),
-  ("baba", "Baba"),
-  ("bebop", "Bebop"),
-  ("bookworm", "Paige"),
-  ("chessmaster", "Solomon"),
-  ("chrono", "Paradox"),
-  ("deadpack", "Deadman Danny"),
-  ("doorman", "Doorman"),
-  ("drifter", "Drifter"),
-  ("dynamo", "Dynamo"),
-  ("familiar", "Rem"),
-  ("fathom", "Fathom"),
-  ("fencer", "Apollo"),
-  ("forge", "McGinnis"),
-  ("frank", "Victor"),
-  ("ghost", "Lady Geist"),
-  ("gigawatt", "Seven"),
-  ("haze", "Haze"),
-  ("hornet", "Vindicta"),
-  ("inferno", "Infernus"),
-  ("kali", "Kali"),
-  ("kelvin", "Kelvin"),
-  ("lash", "Lash"),
-  ("magician", "Sinclair"),
-  ("mirage", "Mirage"),
-  ("mokrill", "Mo & Krill"),
-  ("nano", "Calico"),
-  ("necro", "Graves"),
-  ("nurse", "Nurse Harrow"),
-  ("orion", "Grey Talon"),
-  ("priest", "Venator"),
-  ("punkgoat", "Billy"),
-  ("ratking", "Rat King"),
-  ("shiv", "Shiv"),
-  ("synth", "Pocket"),
-  ("tengu", "Ivy"),
-  ("tokamak", "Tokamak"),
-  ("trapper", "Trapper"),
-  ("unicorn", "Celeste"),
-  ("vampirebat", "Mina"),
-  ("viper", "Vyper"),
-  ("viscous", "Viscous"),
-  ("warden", "Warden"),
-  ("werewolf", "Silver"),
-  ("wraith", "Wraith"),
-  ("wrecker", "Wrecker"),
-  ("yamato", "Yamato"),
-];
-
-pub(crate) fn sound_codename_for_hero(hero_name: &str) -> Option<&'static str> {
-  let trimmed = hero_name.trim();
-  HERO_SOUND_CODENAMES
-    .iter()
-    .find(|(_, name)| name.eq_ignore_ascii_case(trimmed))
-    .map(|(key, _)| *key)
-}
-
 /// One ability slot's reference data, as shown in the sound browser.
 ///
 /// Deliberately text only. The upstream table also carried an icon URL on
@@ -228,9 +167,6 @@ pub(crate) struct AbilitySlotMeta {
 struct AbilityTables {
   /// sound codename -> slot number (as a string key) -> ability metadata.
   slots: HashMap<String, HashMap<String, AbilitySlotMeta>>,
-  /// Legacy sound directories that still ship files, merged into the current
-  /// codename before lookup (Grey Talon ships under both `orion` and `archer`).
-  legacy: HashMap<String, String>,
   /// Hand-curated dev-token -> slot for tokens the ability's display name does
   /// not match.
   curation: HashMap<String, HashMap<String, u8>>,
@@ -244,12 +180,6 @@ fn tables() -> &'static AbilityTables {
     serde_json::from_str(include_str!("hero-ability-slots.json"))
       .expect("hero-ability-slots.json is malformed")
   })
-}
-
-/// Fold a legacy sound directory name into the codename it ships under today.
-pub(crate) fn canonical_sound_codename(raw: &str) -> String {
-  let lower = raw.to_ascii_lowercase();
-  tables().legacy.get(&lower).cloned().unwrap_or(lower)
 }
 
 /// The four ability slots for a sound codename, ordered 1-4 (4 = ultimate).

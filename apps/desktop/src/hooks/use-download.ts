@@ -1,5 +1,4 @@
 import type { ModDto } from "@deadlock-mods/shared";
-import { resolveDetectedHeroLabel } from "@deadlock-mods/hero-parser";
 import type { z } from "zod";
 import { ModDownloadDtoSchema } from "@deadlock-mods/shared";
 import { toast } from "@deadlock-mods/ui/components/sonner";
@@ -106,11 +105,7 @@ export const queueModDownload = (
 
       detectHeroForMod(mod.remoteId)
         .then((result) => {
-          setDetectedHero(
-            mod.remoteId,
-            resolveDetectedHeroLabel(result),
-            result.usesCriticalPaths,
-          );
+          setDetectedHero(mod.remoteId, result);
         })
         .catch((err) => {
           logger

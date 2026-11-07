@@ -1,9 +1,13 @@
 import { extractInternalName, lookupHero } from "./mapping";
 
+/** What a mod's files change; mirrors `content` in `src-rs/types.rs`. */
+export type HeroContent = "visual" | "sound" | "other";
+
 export type HeroDetectionResult = {
   hero: string | null;
   heroDisplay: string | null;
   category: "hero" | "other";
+  content: HeroContent;
   internalNames: string[];
   usesCriticalPaths: boolean;
   criticalPaths: string[];
@@ -14,6 +18,31 @@ const CRITICAL_GAME_PATHS = new Set([
   "scripts/heroes.vdata_c",
   "scripts/generic_data.vdata_c",
 ]);
+
+const VISUAL_EXTENSIONS = new Set([
+  "vmdl_c",
+  "vmesh_c",
+  "vmorf_c",
+  "vmat_c",
+  "vtex_c",
+]);
+const SOUND_EXTENSIONS = new Set(["vsnd_c", "vsndevts_c", "vsndstck_c"]);
+
+/** Panorama textures are UI art that sound packs ship too, so they never count as visual. */
+function detectContent(paths: string[]): HeroContent {
+  let hasSound = false;
+  for (const path of paths) {
+    const ext = path.slice(path.lastIndexOf(".") + 1);
+    if (VISUAL_EXTENSIONS.has(ext) && !path.startsWith("panorama/")) {
+      return "visual";
+    }
+    hasSound ||=
+      SOUND_EXTENSIONS.has(ext) ||
+      path.startsWith("sounds/") ||
+      path.startsWith("soundevents/");
+  }
+  return hasSound ? "sound" : "other";
+}
 
 function findCriticalPaths(paths: string[]): string[] {
   const found: string[] = [];
@@ -51,12 +80,14 @@ export function detectHero(entryPaths: string[]): HeroDetectionResult {
 
   const criticalPaths = findCriticalPaths(entryPaths);
   const usesCriticalPaths = criticalPaths.length > 0;
+  const content = detectContent(entryPaths);
 
   if (heroCounts.size === 0) {
     return {
       hero: null,
       heroDisplay: null,
       category: "other",
+      content,
       internalNames,
       usesCriticalPaths,
       criticalPaths,
@@ -81,6 +112,7 @@ export function detectHero(entryPaths: string[]): HeroDetectionResult {
       hero: null,
       heroDisplay: null,
       category: "other",
+      content,
       internalNames,
       usesCriticalPaths,
       criticalPaths,
@@ -96,6 +128,7 @@ export function detectHero(entryPaths: string[]): HeroDetectionResult {
     hero: primaryHeroKey,
     heroDisplay: displayName,
     category: "hero",
+    content,
     internalNames,
     usesCriticalPaths,
     criticalPaths,

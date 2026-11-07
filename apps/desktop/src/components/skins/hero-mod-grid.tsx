@@ -62,7 +62,7 @@ export const HeroModGrid = ({
   onShowPreview,
 }: HeroModGridProps) => {
   const { t } = useTranslation();
-  const { skins, extras } = group;
+  const { skins, sounds, extras } = group;
   const randomizerEnabled = usePersistedStore(
     (state) => state.skinRandomizerEnabled,
   );
@@ -85,9 +85,11 @@ export const HeroModGrid = ({
   // page stops pointing at it while the randomizer owns this hero.
   const hideActiveSkin = randomizerEnabled && isRandomizedPool(pool);
   const activeIds = new Set(
-    [...(hideActiveSkin ? [] : group.activeSkins), ...group.activeExtras].map(
-      (mod) => mod.remoteId,
-    ),
+    [
+      ...(hideActiveSkin ? [] : group.activeSkins),
+      ...group.activeSounds,
+      ...group.activeExtras,
+    ].map((mod) => mod.remoteId),
   );
 
   const renderCards = (mods: LocalMod[], kind: HeroModKind) =>
@@ -136,6 +138,8 @@ export const HeroModGrid = ({
           <h2 className='font-semibold text-xl'>{hero}</h2>
           <p className='text-muted-foreground text-sm'>
             {t("skins.skinsDownloaded", { count: skins.length })}
+            {sounds.length > 0 &&
+              `, ${t("skins.soundsCount", { count: sounds.length })}`}
             {extras.length > 0 &&
               `, ${t("skins.extrasCount", { count: extras.length })}`}
           </p>
@@ -172,7 +176,7 @@ export const HeroModGrid = ({
         randomizedHeroCount={randomizedHeroCount}
       />
 
-      {skins.length === 0 && extras.length === 0 ? (
+      {skins.length === 0 && sounds.length === 0 && extras.length === 0 ? (
         <Empty className='py-12'>
           <EmptyHeader>
             <EmptyMedia variant='default'>
@@ -194,7 +198,8 @@ export const HeroModGrid = ({
       ) : (
         <div className='flex flex-col gap-6'>
           {/* The default card belongs to the skins, so it goes with them rather
-              than sitting above an empty section when a hero only has extras. */}
+              than sitting above an empty section when a hero only has sounds
+              or extras. */}
           {skins.length > 0 && (
             <div className='grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4'>
               <DefaultSkinCard
@@ -211,6 +216,19 @@ export const HeroModGrid = ({
                 }}
               />
               {renderCards(skins, "skin")}
+            </div>
+          )}
+          {sounds.length > 0 && (
+            <div className='flex flex-col gap-2'>
+              <div>
+                <h3 className='font-semibold text-sm'>{t("skins.sounds")}</h3>
+                <p className='text-muted-foreground text-xs'>
+                  {t("skins.soundsHint")}
+                </p>
+              </div>
+              <div className='grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4'>
+                {renderCards(sounds, "sound")}
+              </div>
             </div>
           )}
           {extras.length > 0 && (

@@ -10,22 +10,24 @@ export type HeroSelectableMod = Pick<
   | "category"
   | "status"
   | "detectedHero"
+  | "detectedContent"
   | "heroOverride"
 >;
 
 /**
  * A skin owns how a hero looks, so only one of them can be installed at a time.
- * Extras - weapon skins, ability and voice sounds - sit next to a skin instead
- * of replacing it, so they are switched on and off one by one.
+ * Hero sounds (ability sounds, voice lines) and extras (weapon sounds, music
+ * and the like) sit next to a skin instead of replacing it, so they are
+ * switched on and off one by one.
  */
-export type HeroModKind = "skin" | "extra";
+export type HeroModKind = "skin" | "sound" | "extra";
 
 const KIND_BY_CATEGORY = new Map<string, HeroModKind>([
   [ModCategory.SKINS, "skin"],
   [ModCategory.MODEL_REPLACEMENT, "skin"],
+  [ModCategory.ABILITY_SOUNDS, "sound"],
+  [ModCategory.VOICE_LINES, "sound"],
   [ModCategory.WEAPON_SOUNDS, "extra"],
-  [ModCategory.ABILITY_SOUNDS, "extra"],
-  [ModCategory.VOICE_LINES, "extra"],
   [ModCategory.KILL_SOUNDS, "extra"],
   [ModCategory.MUSIC, "extra"],
   [ModCategory.KILLSTREAK_MUSIC, "extra"],
@@ -40,9 +42,11 @@ const SELECTABLE_STATUSES: ReadonlySet<ModStatus> = new Set([
 
 export type HeroModGroup<T> = {
   skins: T[];
+  sounds: T[];
   extras: T[];
   /** Installed skins - more than one only once multiple skins are allowed. */
   activeSkins: T[];
+  activeSounds: T[];
   activeExtras: T[];
 };
 
@@ -55,23 +59,36 @@ export type HeroModOptions = {
 
 const emptyGroup = <T>(): HeroModGroup<T> => ({
   skins: [],
+  sounds: [],
   extras: [],
   activeSkins: [],
+  activeSounds: [],
   activeExtras: [],
 });
+
+/**
+ * The category is all there is before a mod is scanned, but uploaders file
+ * hero sound packs under Skins too. Once its VPKs show nothing but sounds, a
+ * "skin" is a hero sound instead.
+ */
+const kindOf = (mod: HeroSelectableMod): HeroModKind | undefined => {
+  const kind = KIND_BY_CATEGORY.get(mod.category);
+  return kind === "skin" && mod.detectedContent === "sound" ? "sound" : kind;
+};
 
 /**
  * Where a mod belongs on the hero page, or null when it belongs nowhere: a
  * category that is not per-hero, a hero nothing resolved, a status it cannot be
  * selected in, or a mod the user took off the list. The hero behind an extra is
- * a guess far more often than the hero behind a skin, so extras only show up
- * once the setting asks for them - unless the hero was picked by hand.
+ * a guess far more often than the hero behind a skin or a hero sound, so extras
+ * only show up once the setting asks for them - unless the hero was picked by
+ * hand.
  */
 const placeHeroMod = (
   mod: HeroSelectableMod,
   { includeExtras, hidden }: HeroModOptions,
 ): { hero: string; kind: HeroModKind } | null => {
-  const kind = KIND_BY_CATEGORY.get(mod.category);
+  const kind = kindOf(mod);
   if (
     !kind ||
     !SELECTABLE_STATUSES.has(mod.status) ||
@@ -101,16 +118,16 @@ export function groupModsByHero<T extends HeroSelectableMod>(
     }
 
     const group = groups.get(placement.hero) ?? emptyGroup<T>();
+    const isActive = mod.status === ModStatus.Installed;
     if (placement.kind === "skin") {
       group.skins.push(mod);
-      if (mod.status === ModStatus.Installed) {
-        group.activeSkins.push(mod);
-      }
+      if (isActive) group.activeSkins.push(mod);
+    } else if (placement.kind === "sound") {
+      group.sounds.push(mod);
+      if (isActive) group.activeSounds.push(mod);
     } else {
       group.extras.push(mod);
-      if (mod.status === ModStatus.Installed) {
-        group.activeExtras.push(mod);
-      }
+      if (isActive) group.activeExtras.push(mod);
     }
     groups.set(placement.hero, group);
   }
@@ -144,7 +161,7 @@ export function heroAssignCandidates<T extends HeroSelectableMod>(
   const candidates: HeroAssignCandidate<T>[] = [];
 
   for (const mod of mods) {
-    const kind = KIND_BY_CATEGORY.get(mod.category);
+    const kind = kindOf(mod);
     if (!kind || !SELECTABLE_STATUSES.has(mod.status)) {
       continue;
     }

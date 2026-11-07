@@ -1,6 +1,5 @@
 import { ValidationError } from "@deadlock-mods/common/client-errors";
 import type { HeroDetectionResult } from "@deadlock-mods/hero-parser";
-import { resolveDetectedHeroLabel } from "@deadlock-mods/hero-parser";
 import type { ModDto } from "@deadlock-mods/shared";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { getVersion } from "@tauri-apps/api/app";
@@ -122,11 +121,7 @@ const detectHeroes = (modIds: string[]) => {
         const detection = await invoke<HeroDetectionResult>("detect_mod_hero", {
           modId,
         });
-        setDetectedHero(
-          modId,
-          resolveDetectedHeroLabel(detection),
-          detection.usesCriticalPaths,
-        );
+        setDetectedHero(modId, detection);
       } catch {
         setDetectedHero(modId, null);
       }

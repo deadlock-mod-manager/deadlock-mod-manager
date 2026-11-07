@@ -3,10 +3,7 @@ import {
   ValidationError,
 } from "@deadlock-mods/common/client-errors";
 import type { ModDto } from "@deadlock-mods/shared";
-import {
-  type HeroDetectionResult,
-  resolveDetectedHeroLabel,
-} from "@deadlock-mods/hero-parser";
+import type { HeroDetectionResult } from "@deadlock-mods/hero-parser";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
@@ -298,13 +295,7 @@ export const useModProcessor = () => {
     queueThumbnail(modId);
 
     invoke<HeroDetectionResult>("detect_mod_hero", { modId })
-      .then((result) =>
-        setDetectedHero(
-          modId,
-          resolveDetectedHeroLabel(result),
-          result.usesCriticalPaths,
-        ),
-      )
+      .then((result) => setDetectedHero(modId, result))
       .catch(() => setDetectedHero(modId, null));
 
     setProcessing(true, t("addMods.modAddedSuccess"));
@@ -452,13 +443,7 @@ export const useModProcessor = () => {
     queueThumbnail(modId);
 
     invoke<HeroDetectionResult>("detect_mod_hero", { modId })
-      .then((result) =>
-        setDetectedHero(
-          modId,
-          resolveDetectedHeroLabel(result),
-          result.usesCriticalPaths,
-        ),
-      )
+      .then((result) => setDetectedHero(modId, result))
       .catch(() => setDetectedHero(modId, null));
 
     setProcessing(true, t("addMods.modAddedSuccess"));
