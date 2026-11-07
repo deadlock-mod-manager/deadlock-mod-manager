@@ -2,6 +2,7 @@ import { $, browser, expect } from "@wdio/globals";
 import { step } from "./evidence";
 import { writeFile } from "node:fs/promises";
 import path from "node:path";
+import type { TauriEventData } from "./event-hold";
 
 declare global {
   interface Window {
@@ -10,6 +11,12 @@ declare global {
         command: string,
         argumentsValue?: TArguments,
       ) => Promise<TResult>;
+      /** Tauri's registered callbacks by id, event listeners among them. */
+      callbacks: Map<number, (data: TauriEventData) => void>;
+      transformCallback: <TResponse>(
+        callback: (response: TResponse) => void,
+        once?: boolean,
+      ) => number;
     };
   }
 }

@@ -23,6 +23,31 @@ export const retireClosedApplication = async (pid: number): Promise<void> => {
   throw new Error("Application did not exit");
 };
 
+/**
+ * Waits for an application whose main window is already closing to exit, then
+ * records the finished phase.
+ */
+export const completeApplicationExit = async (
+  world: string,
+  pid: number,
+): Promise<void> => {
+  await retireClosedApplication(pid);
+  const { configuration } = await assertOwnedWorld(world);
+  const phase = process.env.DMM_E2E_PHASE;
+  assert(phase && /^[a-z-]+$/.test(phase));
+  const document = await readPersistedDocument(world);
+  await writeFile(
+    path.join(world, "artifacts", `phase-completed-${phase}.json`),
+    JSON.stringify({
+      processId: pid,
+      runId: configuration.runId,
+      caseId: configuration.caseId,
+      phase,
+      document,
+    }),
+  );
+};
+
 export const closeApplication = async (
   world: string,
   pid: number,
@@ -37,19 +62,5 @@ export const closeApplication = async (
         });
       }, 100);
     });
-    await retireClosedApplication(pid);
-    const { configuration } = await assertOwnedWorld(world);
-    const phase = process.env.DMM_E2E_PHASE;
-    assert(phase && /^[a-z-]+$/.test(phase));
-    const document = await readPersistedDocument(world);
-    await writeFile(
-      path.join(world, "artifacts", `phase-completed-${phase}.json`),
-      JSON.stringify({
-        processId: pid,
-        runId: configuration.runId,
-        caseId: configuration.caseId,
-        phase,
-        document,
-      }),
-    );
+    await completeApplicationExit(world, pid);
   });

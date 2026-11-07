@@ -24,9 +24,11 @@ import { ModStatus } from "@/types/mods";
 
 /**
  * Keeps the mod health report current: checks once per profile after start,
- * rechecks every mod after a game update, and checks newly installed files.
- * After any library change, and whenever the game exits, it also rebuilds the
- * fixed mods' repair package. Mounted once in app.tsx.
+ * rechecks every mod after a game update, and after any library change or game
+ * exit checks the mods whose files changed. It rebuilds the fixed mods' repair
+ * package after any library change, when a profile becomes active, and whenever
+ * the game exits, since each of those can leave the saved package stale.
+ * Mounted once in app.tsx.
  */
 export const ModHealthRenderer = () => {
   const queryClient = useQueryClient();
@@ -36,15 +38,16 @@ export const ModHealthRenderer = () => {
   const { mutate: refreshFixes } = useRefreshModFixes();
   const setProgress = useModHealthProgress((state) => state.setProgress);
   const localMods = usePersistedStore((state) => state.localMods);
+  const gamePath = usePersistedStore((state) => state.gamePath);
   const gameRunning = useGameRunning();
   const previousGameRunning = useRef(gameRunning);
   const checkedProfiles = useRef(new Set<string | null>());
   const previousInstalled = useRef<ReadonlyMap<string, string> | null>(null);
   const refreshQueue = useMemo(
     () =>
-      createModHealthRefreshQueue((folder, modIds) => {
-        refreshFixes(folder);
-        if (modIds.length > 0) check({ profileFolder: folder, modIds });
+      createModHealthRefreshQueue({
+        refreshFixes,
+        checkHealth: (folder) => check({ profileFolder: folder }),
       }),
     [refreshFixes, check],
   );
@@ -105,6 +108,13 @@ export const ModHealthRenderer = () => {
     check({ profileFolder, force });
   }, [report.data, profileFolder, check]);
 
+  // The game or app may have changed while DMM was closed or this profile was
+  // inactive. A current package costs only a stamp comparison.
+  const hasReport = report.data !== undefined;
+  useEffect(() => {
+    if (gamePath && hasReport) refreshQueue.schedule(profileFolder);
+  }, [gamePath, hasReport, profileFolder, refreshQueue]);
+
   const installed = useMemo(
     () =>
       new Map(
@@ -119,14 +129,11 @@ export const ModHealthRenderer = () => {
     const before = previousInstalled.current;
     previousInstalled.current = installed;
     if (!before) return;
-    const modIds = [...installed]
-      .filter(([modId, vpks]) => before.get(modId) !== vpks)
-      .map(([modId]) => modId);
     if (
-      modIds.length > 0 ||
-      [...before.keys()].some((modId) => !installed.has(modId))
+      installed.size !== before.size ||
+      [...installed].some(([modId, vpks]) => before.get(modId) !== vpks)
     ) {
-      refreshQueue.schedule(profileFolder, modIds);
+      refreshQueue.schedule(profileFolder);
     }
   }, [installed, profileFolder, refreshQueue]);
 
