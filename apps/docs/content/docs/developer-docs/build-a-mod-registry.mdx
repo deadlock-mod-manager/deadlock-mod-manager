@@ -1,0 +1,891 @@
+---
+title: Build a mod registry
+description: Publish a static catalog or JSON API with taxonomy, variants, website install buttons, release history and updates
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+import { CopyAgentPrompt } from "@/components/mdx/copy-agent-prompt";
+import { MOD_REGISTRY_AGENT_PROMPT } from "@/lib/mod-registry-agent-prompt";
+
+A mod registry is a catalog of mods, their descriptions and the files players
+can download. If you run a mod website or maintain a community collection, you
+can connect your catalog to Deadlock Mod Manager (DMM) so players can browse
+and install your mods from its Mods Store.
+
+DMM was built from the start to support sources beyond GameBanana, but websites
+had no clear protocol to follow when integrating. The native source protocol
+defines how a site shares its catalog and downloads with the manager.
+
+In DMM, your catalog appears as a mod source. Players add your source once,
+then use the manager to choose files or variants and download updates. You keep
+hosting your catalog and mod files; DMM reads them directly from your site.
+
+You can publish a source with JSON files on public HTTPS hosting or provide
+the same information through an API. You don't need a DMM account, API key,
+plugin or registration with DMM infrastructure.
+
+<CopyAgentPrompt prompt={MOD_REGISTRY_AGENT_PROMPT} />
+
+## Choose your integration
+
+| Approach      | What you publish                                                                   | Use it when                                                          |
+| ------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Static source | JSON documents and mod files on HTTPS file hosting                                 | You can generate a complete catalog when publishing mods.            |
+| API source    | Public JSON endpoints implementing the same listing, release and artifact contract | You already have a database-backed site or need fresh download URLs. |
+
+Both approaches support the same metadata, installation choices, website
+buttons and current-release updates. DMM downloads API catalogs and searches
+their titles and tags locally. It does not call your server's search endpoint.
+
+<Callout type='info' title='Which install link should a new source use?'>
+  Native sources use `deadlock-mod-manager://sources/add` and
+  `deadlock-mod-manager://sources/install`. The older
+  `deadlock-mod-manager://install?source=...` integration uses a built-in source
+  allowlist and a different manifest. Publishing that manifest alone does not
+  add an independent registry to the Mods Store.
+</Callout>
+
+## Publish your first mod
+
+The examples use a fictional registry called Example Community.
+
+The [static example](https://github.com/deadlock-mod-manager/deadlock-mod-manager/tree/main/examples/mod-source)
+contains the JSON documents, a harmless VPK, an archive with component choices
+and an offline checker that needs no packages. Copy it to start with static
+hosting, or use the [runnable API example](#run-the-api-example).
+
+Create this directory on your HTTPS host:
+
+```text
+https://mods.example.org/
+  dmm-source.json
+  catalog.json
+  mods/example.json
+  files/example.vpk
+```
+
+Publish `dmm-source.json`:
+
+```json
+{
+  "format": "dmm-source",
+  "protocolVersion": "1.0",
+  "sourceId": "my-community",
+  "name": "Example Community",
+  "gameId": "deadlock",
+  "catalog": {
+    "kind": "static",
+    "indexUrl": "./catalog.json"
+  },
+  "networkOrigins": {
+    "api": ["https://mods.example.org"],
+    "downloads": ["https://mods.example.org"],
+    "media": []
+  }
+}
+```
+
+Publish `catalog.json`. Each static page needs the same nonempty `snapshotId`:
+
+```json
+{
+  "snapshotId": "example-1",
+  "items": [
+    {
+      "id": "example",
+      "title": "Harmless source example",
+      "availability": "available",
+      "isNsfw": false,
+      "detailUrl": "./mods/example.json"
+    }
+  ]
+}
+```
+
+Publish `mods/example.json`:
+
+```json
+{
+  "id": "example",
+  "title": "Harmless source example",
+  "availability": "available",
+  "isNsfw": false,
+  "description": "A VPK containing a harmless text notice.",
+  "author": "Example Community",
+  "hero": "abrams",
+  "contentType": "skins",
+  "tags": ["example"],
+  "release": {
+    "id": "release-1",
+    "contentRevision": "revision-1",
+    "version": "1.0.0",
+    "artifacts": [
+      {
+        "id": "example-vpk",
+        "filename": "example.vpk",
+        "format": "vpk",
+        "download": { "url": "../files/example.vpk" },
+        "size": 141,
+        "hashes": {
+          "sha256": "0ef66746810e2611130e9407a078daeb9657f3716fe5f952bc555276b2af7c5a"
+        }
+      }
+    ],
+    "installation": { "mode": "manual" }
+  }
+}
+```
+
+The size and hash match the repository's fixture VPK. Replace the VPK and update
+both values before publishing your own mod. Relative URLs resolve against the
+document containing them: `../files/example.vpk` resolves from
+`/mods/example.json` to `/files/example.vpk`.
+
+From a checkout of the repository, validate the static example:
+
+```sh
+node examples/mod-source/check.mjs examples/mod-source
+node --test examples/mod-source/check.test.mjs
+```
+
+The checker supports relative files in one directory tree and validates the
+example's static subset. It cannot validate the full protocol or parse VPKs.
+DMM validates your hosted documents again.
+
+Serve JSON as `application/json` and artifacts as downloadable bytes. In DMM,
+open **Settings > Mods > Mod sources > Add source**, paste the full descriptor
+URL, review it and choose **Add**. Select your source in the Mods Store and
+install the example through the normal file-selection flow.
+
+## Source descriptor reference
+
+Users supply the descriptor URL themselves or through your website button.
+You can host the descriptor at `/.well-known/dmm-source.json` or another path;
+DMM does not require a fixed discovery path.
+
+| Field             | Type           | Requirement and behavior                                                                   |
+| ----------------- | -------------- | ------------------------------------------------------------------------------------------ |
+| `format`          | string         | Required; exactly `"dmm-source"`.                                                          |
+| `protocolVersion` | string         | Required; exactly `"1.0"`.                                                                 |
+| `sourceId`        | string         | Required, permanent ID. Together with the accepted origin, identifies this source.         |
+| `name`            | string         | Required display name, 1 to 256 UTF-8 bytes.                                               |
+| `gameId`          | string         | Required; exactly `"deadlock"`.                                                            |
+| `catalog`         | object         | Required; one of the catalog configurations below.                                         |
+| `networkOrigins`  | object         | Required; accepted API, download and media origins.                                        |
+| `iconUrl`         | string or null | Optional raster icon URL on a declared media origin.                                       |
+| `homepageUrl`     | string or null | Optional website URL.                                                                      |
+| `capabilities`    | object or null | Optional declarations described under [Capabilities and limits](#capabilities-and-limits). |
+
+IDs are opaque, case-sensitive strings of 1 to 256 UTF-8 bytes without control
+characters. Choose permanent IDs; never reuse one for unrelated content.
+Changing the source's display name does not change its identity. Moving to a
+new origin does: an identical `sourceId` elsewhere does not transfer user trust
+or reconnect installed mods automatically.
+
+### Catalog configuration
+
+| Field                       | Type           | Requirement and behavior                                                                                                                                            |
+| --------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `kind`                      | string         | Required; `"static"` or `"api"`.                                                                                                                                    |
+| `indexUrl`                  | string         | Required for `static`; first catalog page URL.                                                                                                                      |
+| `listUrl`                   | string         | Required for `api`; first catalog page URL.                                                                                                                         |
+| `detailUrlTemplate`         | string or null | Optional for `api`; fills `{listingId}` when a listing has no `detailUrl`.                                                                                          |
+| `releaseHistoryUrlTemplate` | string or null | Optional for `api`; fills `{listingId}` when a listing has no `releaseHistoryUrl`.                                                                                  |
+| `releaseUrlTemplate`        | string or null | Accepted for `api`, but current-release ingestion uses the listing's embedded `release` or explicit `releaseUrl`. Do not rely on this template to select a release. |
+
+A detail document replaces the index listing, so include all metadata you want
+displayed and use the same `id`. DMM fetches linked details and current releases
+during catalog refresh.
+
+### Network origins
+
+| Field       | Type         | Requirement and behavior                                                                              |
+| ----------- | ------------ | ----------------------------------------------------------------------------------------------------- |
+| `api`       | string array | Required and nonempty. Allows catalog, detail, release, history and resolver requests.                |
+| `downloads` | string array | Required and nonempty. Allows artifact requests, resolver results and artifact redirect destinations. |
+| `media`     | string array | Optional, defaults to `[]`. Allows icons and listing images.                                          |
+
+Each list accepts at most 16 origins. An origin is a scheme, host and optional
+port, for example `https://files.example.org`; it has no path or query. Lists
+do not accept wildcard subdomains. Declare every origin you use,
+including your own host if it serves several roles. Optional homepage links
+do not authorize file, API or media requests.
+
+## Build an API-backed source
+
+You choose the paths on your server. DMM follows the URLs in your descriptor.
+
+Use an API catalog in your descriptor:
+
+```json
+{
+  "format": "dmm-source",
+  "protocolVersion": "1.0",
+  "sourceId": "my-community",
+  "name": "Example Community",
+  "gameId": "deadlock",
+  "catalog": {
+    "kind": "api",
+    "listUrl": "https://mods.example.org/dmm/v1/mods",
+    "releaseHistoryUrlTemplate": "https://mods.example.org/dmm/v1/mods/{listingId}/releases"
+  },
+  "networkOrigins": {
+    "api": ["https://mods.example.org"],
+    "downloads": ["https://mods.example.org"],
+    "media": []
+  },
+  "capabilities": {
+    "search": "local",
+    "releaseHistory": true,
+    "installationChoices": true
+  }
+}
+```
+
+| Request                                         | Response                                                 |
+| ----------------------------------------------- | -------------------------------------------------------- |
+| `GET /.well-known/dmm-source.json`              | Descriptor above.                                        |
+| `GET /dmm/v1/mods`                              | First catalog page.                                      |
+| `GET /dmm/v1/mods?cursor=second-page&limit=100` | Final catalog page.                                      |
+| `GET /dmm/v1/mods/example`                      | Listing detail with an embedded release or `releaseUrl`. |
+| `GET /dmm/v1/mods/example/current-release`      | Optional release document referenced by `releaseUrl`.    |
+| `GET /dmm/v1/mods/example/releases`             | Optional release-history page.                           |
+| `GET /dmm/v1/files/example-vpk/resolve`         | Optional fresh download URL.                             |
+
+### Catalog pagination
+
+For `GET /dmm/v1/mods`, return:
+
+```json
+{
+  "items": [
+    {
+      "id": "example",
+      "title": "Harmless source example",
+      "availability": "available",
+      "isNsfw": false,
+      "detailUrl": "https://mods.example.org/dmm/v1/mods/example"
+    }
+  ],
+  "nextCursor": "second-page"
+}
+```
+
+For `GET /dmm/v1/mods?cursor=second-page&limit=100`, return:
+
+```json
+{
+  "items": [
+    {
+      "id": "retired-example",
+      "availability": "removed"
+    }
+  ],
+  "nextCursor": null
+}
+```
+
+An API page must include `nextCursor`; `null` explicitly ends the complete
+catalog. An empty catalog is `{ "items": [], "nextCursor": null }`.
+Missing completion, repeated cursors/URLs, duplicate listing IDs, or a failure
+on a later page rejects the refresh and retains the previous cached catalog.
+API pages do not require `snapshotId`.
+
+DMM requests the exact `listUrl` first. For each continuation, it appends
+`cursor` and `limit=100` to that URL. Avoid fixing a `cursor` or `limit` in
+`listUrl`. Cursors must be nonempty strings, at most 8,192 UTF-8 bytes. Use
+opaque cursors that keep the catalog view consistent. Publishing during
+pagination must not cause listings to be skipped or repeated.
+
+Serve the complete catalog without requiring a search term, hero filter,
+browser cookie, or login. Optional search/filter APIs on your site are separate
+from DMM's local catalog browsing.
+
+Static catalogs paginate differently: use `nextUrl` on each non-final page and
+the same nonempty `snapshotId` throughout. Omit `nextUrl` or set it to `null` to
+end the static catalog. Do not substitute API cursors for static page links.
+
+### Run the API example
+
+The [API example](https://github.com/deadlock-mod-manager/deadlock-mod-manager/tree/main/examples/mod-source-api)
+uses Node.js 24 or newer and needs no packages:
+
+```sh
+node examples/mod-source-api/server.mjs examples/mod-source
+node --test examples/mod-source-api/server.test.mjs
+```
+
+The server prints
+`http://127.0.0.1:8787/.well-known/dmm-source.json`. DMM development builds can
+add this local HTTP source in Settings; release builds require public HTTPS.
+The tests start their own short-lived servers, so they can run separately.
+
+The server has both release styles, components, tombstones, history and download
+resolution. Its downloads use the fixture bytes. It reads the documents on
+startup, so restart it after editing them. For public hosting, place it behind
+an HTTPS reverse proxy and set `PUBLIC_ORIGIN` to your external origin. `PORT`
+changes the loopback listener port. Uploads, accounts, publishing and persistence
+are outside this example.
+
+## Listing metadata and taxonomy
+
+| Field               | Type            | Requirement and behavior                                                                                                     |
+| ------------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `id`                | string          | Required stable listing ID within this source.                                                                               |
+| `title`             | string          | Required unless `availability` is `"removed"`; 1 to 1,024 UTF-8 bytes.                                                       |
+| `availability`      | string          | Required; `"available"`, `"unavailable"`, or `"removed"`. Available listings must resolve to an installable current release. |
+| `detailUrl`         | string or null  | Optional full listing document, fetched during refresh.                                                                      |
+| `description`       | string or null  | Optional, at most 512 KiB.                                                                                                   |
+| `descriptionFormat` | string or null  | Optional `"plain"` or `"markdown"`; unknown formats fall back to plain text.                                                 |
+| `author`            | string or null  | Optional display name, at most 1,024 UTF-8 bytes.                                                                            |
+| `hero`              | string or null  | Optional single stable hero ID from the taxonomy.                                                                            |
+| `contentType`       | string or null  | Optional stable content-type ID; omitted/null uses the Mods tab.                                                             |
+| `isNsfw`            | boolean or null | Optional content classification; see below.                                                                                  |
+| `tags`              | string array    | Optional, defaults to `[]`; at most 100 tags. Included in local search.                                                      |
+| `images`            | string array    | Optional, defaults to `[]`; at most 32 URLs on declared media origins. Only the first four are fetched during refresh.       |
+| `homepageUrl`       | string or null  | Optional mod page to open on your website.                                                                                   |
+| `updatedAt`         | string or null  | Optional RFC 3339 timestamp, such as `"2026-11-01T12:00:00Z"`.                                                               |
+| `release`           | object or null  | Optional embedded current release. Required for an available listing unless `releaseUrl` supplies it.                        |
+| `releaseUrl`        | string or null  | Optional current-release document. Do not also embed `release`.                                                              |
+| `releaseHistoryUrl` | string or null  | Optional history endpoint, preferred over the catalog's history URL template.                                                |
+
+Do not send DMM's generated `remoteId` or internal source keys. DMM creates
+those from the accepted source identity and your listing ID.
+
+### Fetch the shared taxonomy
+
+Use the public endpoint:
+
+```sh
+curl https://deadlockmods.app/v1/taxonomy.json
+```
+
+The endpoint returns the full lists; this abbreviated example shows a few entries:
+
+```json
+{
+  "format": "dmm-taxonomy",
+  "version": 1,
+  "heroes": [
+    { "id": "abrams", "name": "Abrams" },
+    { "id": "lady-geist", "name": "Lady Geist" },
+    { "id": "mo-and-krill", "name": "Mo & Krill" }
+  ],
+  "contentTypes": [
+    { "id": "skins", "name": "Skins" },
+    { "id": "voice-lines", "name": "Voice Lines" }
+  ]
+}
+```
+
+Store the `id` and display the `name`. IDs are stable; display names can change.
+Do not derive IDs by lowercasing a display name. Fetch the full taxonomy so a
+new hero does not require a hand-maintained list in your registry.
+
+Fetch and validate a local copy with the example's sync script:
+
+```sh
+node examples/mod-source-api/sync-taxonomy.mjs taxonomy.json
+```
+
+It checks `format`, supported `version`, nonempty lists, unique kebab-case IDs
+and nonempty display names before atomically replacing the saved file. A failed
+HTTP request, invalid document or unsupported version leaves the last good copy
+intact. Load that copy in your site. Run the script when publishing or on a
+schedule. The destination's parent directory must exist.
+
+A listing accepts one `hero`; it has no `heroes` array. If your mod supports several
+heroes, choose a representative hero or omit the field and explain the others
+in the description. An omitted hero is appropriate for a global HUD or map.
+The taxonomy does not add a multi-hero field or new browsing filters to DMM.
+
+### Map your categories
+
+Map your site's category names explicitly to these content types. Tags are
+free-form labels and do not replace taxonomy. Unknown custom content types do
+not create new desktop tabs and may leave listings out of the expected tab.
+
+| Content-type ID    | Display name     | DMM tab |
+| ------------------ | ---------------- | ------- |
+| `skins`            | Skins            | Mods    |
+| `gameplay`         | Gameplay         | Mods    |
+| `hud`              | HUD              | Mods    |
+| `models`           | Models           | Mods    |
+| `music`            | Music            | Sounds  |
+| `maps`             | Maps             | Maps    |
+| `ability-sounds`   | Ability Sounds   | Sounds  |
+| `weapon-sounds`    | Weapon Sounds    | Sounds  |
+| `voice-lines`      | Voice Lines      | Sounds  |
+| `kill-sounds`      | Kill Sounds      | Sounds  |
+| `killstreak-music` | Killstreak Music | Sounds  |
+| `other`            | Other            | Mods    |
+
+For example, map your site's "Character outfit" category to `skins` and
+"Announcer replacements" to `voice-lines`; keep more specific labels in `tags`.
+
+### Classify adult content
+
+`isNsfw: true` means adult content. `false` means you have explicitly classified
+the listing as non-adult. Missing or `null` means unknown. When the user hides
+adult content, DMM also hides unknown classifications. Do not set `false`
+automatically on content you have not classified.
+
+## Releases and downloadable files
+
+A listing supplies one current release, either embedded as `release` or fetched
+from `releaseUrl`. The release JSON shape is identical in either case.
+
+| Release field     | Type           | Requirement and behavior                                                                          |
+| ----------------- | -------------- | ------------------------------------------------------------------------------------------------- |
+| `id`              | string         | Required stable release ID within the listing.                                                    |
+| `contentRevision` | string         | Required identity for the installable bytes and selection meaning. Change it when either changes. |
+| `version`         | string or null | Optional human-readable label; DMM does not require semantic versioning.                          |
+| `publishedAt`     | string or null | Optional RFC 3339 timestamp.                                                                      |
+| `changelog`       | string or null | Optional plain text, at most 64 KiB.                                                              |
+| `artifacts`       | object array   | Required, 1 to 100 files with unique IDs and case-insensitively unique filenames.                 |
+| `installation`    | object         | Required manual or component installation plan.                                                   |
+| `dependencies`    | array          | Omit or leave empty. Nonempty dependency plans are rejected by the current client.                |
+
+| Artifact field | Type                        | Requirement and behavior                                                                                             |
+| -------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `id`           | string                      | Required stable artifact ID within the release.                                                                      |
+| `filename`     | string                      | Required safe basename, at most 255 UTF-8 bytes, with a matching lowercase extension.                                |
+| `format`       | string                      | Required; `"vpk"`, `"zip"`, `"rar"`, or `"7z"`.                                                                      |
+| `download`     | object                      | Required; exactly one non-null `url` or `resolverUrl`.                                                               |
+| `size`         | nonnegative integer or null | Optional byte size. Publish the actual artifact size when available.                                                 |
+| `hashes`       | object or null              | Optional `sha256` and/or `md5` hex digests. If an object is present, at least one supported digest must be supplied. |
+
+Filenames cannot contain paths, control characters, Windows-reserved names or
+characters, or trailing dots or spaces. Use `example.vpk`; `files/example.vpk`
+and `example.VPK` are invalid. Specify paths inside an archive in the component
+plan.
+Native source downloads do not currently accept `.dmodpkg` artifacts.
+
+Size and hashes are optional. We recommend publishing the byte size and SHA-256
+of the exact uploaded artifact, including the whole archive for ZIP/RAR/7z
+downloads. This Node.js example streams the file and needs no packages:
+
+```js
+import { createHash } from "node:crypto";
+import { createReadStream } from "node:fs";
+
+const sha256 = createHash("sha256");
+let size = 0;
+for await (const bytes of createReadStream(
+  "examples/mod-source/files/example.vpk",
+)) {
+  size += bytes.length;
+  sha256.update(bytes);
+}
+process.stdout.write(
+  JSON.stringify({ size, sha256: sha256.digest("hex") }) + "\n",
+);
+```
+
+SHA-256 has 64 hexadecimal characters; MD5 has 32. DMM checks every supplied
+supported hash before extraction or replacement. A mismatch leaves the current
+installation unchanged. Hashes are optional for native sources, but omitting
+them prevents verification against a publisher's digest. Do not publish an empty `hashes`
+object or invent a digest.
+
+### Resolve expiring download URLs
+
+For a stable direct URL, use `download.url`. For a fresh URL at download time,
+use `download.resolverUrl` instead:
+
+```json
+{
+  "id": "example-vpk",
+  "filename": "example.vpk",
+  "format": "vpk",
+  "download": {
+    "resolverUrl": "https://mods.example.org/dmm/v1/files/example-vpk/resolve"
+  },
+  "size": 141,
+  "hashes": {
+    "sha256": "0ef66746810e2611130e9407a078daeb9657f3716fe5f952bc555276b2af7c5a"
+  }
+}
+```
+
+The resolver is a public GET endpoint on a declared API origin. It returns:
+
+```json
+{
+  "url": "https://mods.example.org/files/example.vpk"
+}
+```
+
+The result must use an accepted download origin. For CDN or presigned storage
+URLs, declare that origin in `networkOrigins.downloads` too, including each
+artifact redirect destination. The resolver returns the same artifact bytes;
+rotating the transport URL does not create a new content revision.
+
+## Variants and installation choices
+
+Use `installation: { "mode": "manual" }` for DMM's existing file-selection
+flow. Do not include component fields in a manual plan. If saved manual choices
+no longer fit an update, DMM asks for a new selection before replacing files.
+
+Use `mode: "components"` when your registry knows the exact VPK files and
+allowed combinations. An artifact is a downloadable file; a component selects
+one or more VPK paths from artifacts. Several components can share an archive.
+
+The static example's `example-choices.zip` contains:
+
+```text
+base/notice.vpk
+blue/choice.vpk
+red/choice.vpk
+```
+
+Require the base and exactly one color with this installation plan:
+
+```json
+{
+  "mode": "components",
+  "components": [
+    {
+      "id": "base",
+      "label": "Required notice",
+      "files": [{ "artifactId": "choices-archive", "path": "base/notice.vpk" }]
+    },
+    {
+      "id": "blue",
+      "label": "Blue notice",
+      "files": [{ "artifactId": "choices-archive", "path": "blue/choice.vpk" }]
+    },
+    {
+      "id": "red",
+      "label": "Red notice",
+      "files": [{ "artifactId": "choices-archive", "path": "red/choice.vpk" }]
+    }
+  ],
+  "requiredComponents": ["base"],
+  "choiceGroups": [
+    {
+      "id": "color",
+      "label": "Notice color",
+      "minSelections": 1,
+      "maxSelections": 1,
+      "componentIds": ["blue", "red"],
+      "defaultComponentIds": ["blue"]
+    }
+  ]
+}
+```
+
+See the [complete choices listing](https://github.com/deadlock-mod-manager/deadlock-mod-manager/blob/main/examples/mod-source/mods/choices.json)
+for the release and artifact hash.
+
+| Object         | Fields and rules                                                                                                                                                            |
+| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Installation   | `mode`, `components`, `requiredComponents`, `choiceGroups`. Component mode requires 1 to 500 components. Required IDs and choice groups default to empty arrays if omitted. |
+| Component      | Required `id`, display `label` and nonempty `files` array, with at most 500 files. Labels accept up to 1,024 UTF-8 bytes.                                                   |
+| Component file | Required `artifactId` referencing a release artifact, and exact `path` to a VPK inside it. Use the artifact filename as the path for a direct VPK.                          |
+| Choice group   | Required `id`, `label`, `minSelections`, `maxSelections`, `componentIds`, `defaultComponentIds`. At most 100 groups per plan.                                               |
+
+Every component must belong to the required set or exactly one choice group.
+Required components cannot also be choices. Bounds must satisfy
+`0 <= minSelections <= maxSelections <= componentIds.length`; defaults must be
+unique members and satisfy those bounds. For an optional choice, set
+`minSelections: 0` and use `defaultComponentIds: []` if nothing is preselected.
+
+Paths use `/`, must end in `.vpk`, and cannot contain empty segments, `.` or
+`..`, backslashes, colons or control characters. Keep paths within 4,096 UTF-8
+bytes. The source cannot run installation scripts or choose arbitrary game-file
+destinations.
+
+Defaults suggest choices for the first installation. DMM keeps saved user choices
+on updates. If a later release removes a saved component, the user must choose
+again, even if you publish a different default.
+
+## Add website buttons
+
+```text
+deadlock-mod-manager://sources/add?url=<encoded descriptor URL>
+deadlock-mod-manager://sources/install?url=<encoded descriptor URL>&source=<encoded sourceId>&listing=<encoded listing ID>
+```
+
+| Parameter  | Required   | Meaning                                                                                    |
+| ---------- | ---------- | ------------------------------------------------------------------------------------------ |
+| `url`      | Both links | Full descriptor URL, including its path.                                                   |
+| `source`   | Install    | Exact descriptor `sourceId`.                                                               |
+| `listing`  | Install    | Listing ID within your source.                                                             |
+| `release`  | No         | Pins the current release ID; an older/different release is refused, not substituted.       |
+| `artifact` | No         | Targets one artifact of the current release. Component choices can still require a picker. |
+
+Percent-encode each value, including opaque IDs. DMM's query parser treats an
+unencoded `=` or `&` as a separator and does not interpret `+` as a space.
+Use `encodeURIComponent` for each value:
+
+```js
+const descriptorUrl = "https://mods.example.org/.well-known/dmm-source.json";
+const sourceId = "my-community";
+
+function sourceLink(action, params) {
+  const query = Object.entries(params)
+    .map(([key, value]) => `${key}=${encodeURIComponent(value)}`)
+    .join("&");
+  return `deadlock-mod-manager://sources/${action}?${query}`;
+}
+
+const addLink = sourceLink("add", { url: descriptorUrl });
+const installLink = sourceLink("install", {
+  url: descriptorUrl,
+  source: sourceId,
+  listing: "example",
+  release: "release-1",
+  artifact: "example-vpk",
+});
+
+document.getElementById("add-source").href = addLink;
+document.getElementById("install-mod").href = installLink;
+```
+
+Place matching anchors in your page before running the script:
+
+```html
+<a id="add-source">Add source to DMM</a>
+<a id="install-mod">Install with DMM</a>
+<a href="https://deadlockmods.app/download">Download DMM</a>
+<a href="https://mods.example.org/.well-known/dmm-source.json"
+  >Source descriptor</a
+>
+```
+
+The add link opens a preview where the user chooses **Add**. An install link
+first enrolls an unknown source with user review, or asks before re-enabling a
+disabled source. It rejects a descriptor whose `sourceId` does not match the
+link. For an enabled source, it opens the listing and starts the existing
+download/install flow. If the mod is already in the library, it opens its page.
+If the listing is missing from the cache, DMM refreshes once to find
+just-published mods.
+
+Manual releases with several files need a picker unless `artifact` specifies
+one. Component releases include required components and the component holding
+the targeted artifact; unresolved choice groups still open the picker. Keep
+variant artifacts separate if you want a link to an artifact to identify a
+single variant; targeting an archive shared by several choices can be ambiguous.
+
+Links carry identities, never download URLs. DMM still fetches artifacts from
+your catalog and the origins the user accepted. Keep the descriptor URL and a
+Download DMM link visible because a custom-scheme link may do nothing when DMM
+is not installed.
+
+## Publish and maintain updates
+
+Keep listing, artifact and component IDs stable for the same content role.
+Use `contentRevision` to identify the bytes and installation meaning. Description
+edits and transport URL changes leave it unchanged.
+
+| Change                                                                             | What to publish                                                                                            |
+| ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Title, description, author, tags or screenshots                                    | Update listing metadata; keep the installed content revision unchanged.                                    |
+| Expiring URL rotation for identical bytes on accepted origins                      | Update the URL/resolver; URL changes alone are not a new mod version.                                      |
+| A change to the declared API, download or media origins                            | Update the descriptor and tell users to remove, review and add the source again.                           |
+| New bytes, artifact identities, filenames, sizes/hashes or installation selections | Publish a new `contentRevision` and accurate artifact evidence. Give a new release its own release ID.     |
+| A saved component or archive path disappears                                       | Expect user selection before replacement; keep the previous installation usable until the update succeeds. |
+| Temporary lack of installable content                                              | Set `availability: "unavailable"`; do not pretend a request error means removal.                           |
+| Listing removed from your service                                                  | Publish an explicit `"removed"` tombstone with its permanent listing ID.                                   |
+
+DMM rejects changed artifact evidence or installation meaning under an unchanged
+release ID and content revision. A version label or `updatedAt` alone does not
+prove that different bytes are installed. Keep old artifacts available long
+enough for in-progress downloads; a pinned link to a non-current release is
+still refused by the current client.
+
+DMM checks the descriptor again on refresh. Any change to its declared API,
+download or media origin sets blocks refresh until the user removes the source,
+reviews the new descriptor and adds it again. This includes adding a CDN origin.
+Re-adding the same accepted origin and `sourceId` reconnects the source to its
+local files and provenance. Changing a URL within an already accepted origin
+does not require this review; moving the source identity to another origin
+does not reconnect it automatically.
+
+For static publishing, upload artifact and versioned detail files first, then
+complete catalog pages, and atomically replace the entry index last. All pages
+must describe the same snapshot. Version detail URLs when necessary so an old
+index cannot accidentally read a partially published new release.
+
+For API publishing, provide a consistent view across cursor pages and linked
+documents. Do not return only the first page or silently truncate the catalog
+to stay below client limits. A failed or incomplete refresh keeps the previous
+complete catalog and records an error; there is no automatic refresh retry or
+conditional HTTP validator support to rely on.
+
+If you configure a detail template, tombstone detail URLs must return the
+matching removed listing too. An HTTP 404 on a linked detail fails the
+refresh. A minimal tombstone is:
+
+```json
+{
+  "id": "retired-example",
+  "availability": "removed"
+}
+```
+
+Disabling or removing a source stops its downloads and remote updates. Local
+files, source provenance and local enable/disable/remove operations remain.
+Re-adding the same origin and source ID reconnects that identity. Local profiles
+retain provenance, but portable source-aware profile import/sharing and
+automatic origin migration are not implemented.
+
+## Descriptions, media and release history
+
+### Descriptions and screenshots
+
+Descriptions default to plain text. Set `descriptionFormat: "markdown"` for
+GitHub-style tables, task lists, code and links. DMM opens links in the browser
+and drops inline Markdown images; provide screenshots through `images` instead.
+An unknown description format falls back to plain text.
+
+Use PNG, JPEG, WebP or GIF for listing images. Source icons also accept ICO;
+their URL must have a recognized raster extension. Media responses need the
+correct image MIME type and matching raster bytes. SVG and HTML are not accepted.
+Each response is limited to 2 MiB. Only the first four listing image URLs are
+fetched during refresh; keep source icon bytes at or below 128 KiB for retention.
+DMM omits media that fails to load and keeps the catalog available.
+
+### Release history
+
+Set `capabilities.releaseHistory: true` to show a read-only Changelog tab. Supply
+`releaseHistoryUrl` on the listing, or `releaseHistoryUrlTemplate` in an API
+catalog. DMM fetches history when the tab opens, independently of catalog refresh.
+
+A history page contains complete release documents, including artifacts and
+installation. Use the fields in the
+[release reference](#releases-and-downloadable-files):
+
+```json
+{
+  "items": [
+    {
+      "id": "release-1",
+      "contentRevision": "revision-1",
+      "version": "1.0.0",
+      "publishedAt": "2026-11-01T12:00:00Z",
+      "changelog": "First example release.",
+      "artifacts": [
+        {
+          "id": "example-vpk",
+          "filename": "example.vpk",
+          "format": "vpk",
+          "download": { "url": "https://mods.example.org/files/example.vpk" },
+          "size": 141,
+          "hashes": {
+            "sha256": "0ef66746810e2611130e9407a078daeb9657f3716fe5f952bc555276b2af7c5a"
+          }
+        }
+      ],
+      "installation": { "mode": "manual" }
+    }
+  ],
+  "nextCursor": null
+}
+```
+
+Paginate with nonempty `nextCursor` strings and explicitly end with `null`.
+Continuation requests use `cursor` and `limit=100`; release IDs must be unique
+throughout the history. The client accepts at most 20 history pages and 500
+releases. Changelogs are plain text. History does not enable older-release
+installation, and a history failure does not block installing the current release.
+
+## Hosting and troubleshooting
+
+Public sources need HTTPS with public DNS/IP addresses, without embedded URL
+credentials, login pages, cookies or OAuth. Local/private addresses and HTTP
+are accepted only through development-build enrollment in the current UI.
+Use the local API example to develop, then test your public HTTPS deployment.
+
+JSON and media requests do not follow redirects. Link directly to the final
+descriptor, API and media URLs. Artifacts can follow up to five redirects,
+provided every destination is on an accepted download origin. Declare CDN
+origins before enrollment; a descriptor ID does not grant access to other hosts.
+Browser CORS configuration is not needed for catalog/download fetching because
+Rust makes these requests.
+
+### Current request budgets
+
+| Limit                                                             | Maximum                                                   |
+| ----------------------------------------------------------------- | --------------------------------------------------------- |
+| JSON response                                                     | 10 MiB                                                    |
+| Catalog pages                                                     | 100                                                       |
+| Listings per complete catalog                                     | 10,000                                                    |
+| JSON documents per refresh, including pages, details and releases | 1,000                                                     |
+| Normalized catalog, including retained images                     | 64 MiB                                                    |
+| Catalog ingestion                                                 | Two minutes                                               |
+| History pages / releases                                          | 20 / 500                                                  |
+| Complete release-history fetch                                    | 30 seconds                                                |
+| Downloadable artifact                                             | 2 GiB                                                     |
+| Extracted bytes per archive                                       | 100 times archive size, clamped to 256 MiB through 16 GiB |
+
+Linked details and releases cost extra requests for every listing. For larger
+catalogs, embed complete records and current releases in catalog pages to reduce
+requests. Stay within both request and byte budgets; pagination alone does not
+remove them. History has its own budget and is not fetched on every refresh.
+The catalog-ingestion timeout starts after descriptor and source-icon fetching.
+Small archives get a 256 MiB extraction allowance. Larger archives can expand
+to 100 times their compressed size, up to 16 GiB per archive.
+
+### Common failures
+
+| Symptom                                      | Check                                                                                                                                               |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Source rejected on enrollment                | Exact format/version/game, public HTTPS descriptor, final URL without a redirect, and nonempty API/download origin lists.                           |
+| Listing is missing with adult content hidden | Publish a truthful `isNsfw` classification; missing/null is unknown and hidden.                                                                     |
+| Listing is missing from its expected tab     | Use a published `contentType` ID, not a display label or custom category name.                                                                      |
+| Refresh fails after page one                 | Explicit API `nextCursor: null`, unique IDs, stable cursors, consistent static snapshot IDs, and linked details/releases within request budgets.    |
+| Refresh reports changed network origins      | The declared origin sets changed. Remove the source, review its new descriptor and add it again.                                                    |
+| Detail is rejected                           | Its ID must match the index record, and an available listing must resolve to a current release. Do not combine embedded `release` and `releaseUrl`. |
+| Download rejected after redirect/resolution  | Every artifact destination must be in `networkOrigins.downloads`; the resolver itself belongs in `api`.                                             |
+| Integrity check fails                        | Calculate the digest and size from the exact uploaded bytes, not the VPK inside an archive or the HTML download page.                               |
+| Icon/screenshots are absent                  | Accepted media origin, direct raster URL, matching MIME/bytes, supported format and size.                                                           |
+| Update needs a new selection                 | Saved component IDs or archive paths no longer fit; defaults do not replace the user's previous choice.                                             |
+| Install button fails                         | Encode every parameter value, pass the full descriptor URL and exact IDs, and target the current release.                                           |
+
+## Capabilities and limits
+
+| Capability field      | Accepted values/default                          | What this client does                                                                                     |
+| --------------------- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| `search`              | `"local"`, `"server"`, `"none"`, or omitted/null | Searches cached titles/tags locally. Advertising `"server"` does not make DMM call a search endpoint.     |
+| `releaseHistory`      | boolean, default `false`                         | Enables the read-only Changelog tab using the declared history URL/template.                              |
+| `installationChoices` | boolean, default `false`                         | Declares choice support. The actual installation plan is validated from each release.                     |
+| `changelog`           | boolean, default `false`                         | Accepted declaration; use `releaseHistory` and history documents for the Changelog tab.                   |
+| `comments`            | boolean, default `false`                         | Accepted but not implemented.                                                                             |
+| `dependencies`        | boolean, default `false`                         | Accepted but dependency installation is not implemented; nonempty release dependency arrays are rejected. |
+
+`supportedFilters` and `supportedSorts` are not consumed by the current client.
+Adding them or unknown optional descriptor fields does not create new UI.
+Custom sources do not inherit GameBanana mirrors, comments, vote/download
+statistics, moderation or author enrichment.
+
+Mapped adapters, authenticated sources, equivalence links, automatic origin
+migration, installing older releases, version holds, portable source-aware
+profile sharing/import and progressive all-source search remain unimplemented.
+There is no published canonical schema package, OpenAPI contract or full
+conformance validator yet. The
+[mod-source RFC](https://github.com/deadlock-mod-manager/deadlock-mod-manager/blob/main/rfcs/002-mod-sources/proposal.md)
+includes proposals for features that are still unimplemented.
+
+## Publishing checklist
+
+- Serve your descriptor, complete catalog and referenced documents on public
+  HTTPS without authentication or API/media redirects.
+- Keep permanent source/listing IDs and accurate content revisions.
+- Publish installable artifacts with safe filenames and within download and
+  extraction limits. Include accurate size and SHA-256 when available.
+- Use current taxonomy IDs and truthful adult-content classifications.
+- Test catalog completion and artifact downloads. Check linked details,
+  component selections, resolvers and CDN/media origins where used.
+- Publish and install an update; verify saved choices still fit or require a
+  clear new selection before replacement.
+- Test removal and a failed refresh; existing local files and the previous
+  complete catalog should remain usable.
+- Offer encoded Add source and Install buttons alongside a visible descriptor
+  URL and Download DMM link.
+
+For implementation details, read the
+[native source types](https://github.com/deadlock-mod-manager/deadlock-mod-manager/blob/main/apps/desktop/src-tauri/src/providers/native_sources/types.rs),
+[validation](https://github.com/deadlock-mod-manager/deadlock-mod-manager/blob/main/apps/desktop/src-tauri/src/providers/native_sources/validation.rs)
+and [catalog reader](https://github.com/deadlock-mod-manager/deadlock-mod-manager/blob/main/apps/desktop/src-tauri/src/providers/native_sources/store.rs).

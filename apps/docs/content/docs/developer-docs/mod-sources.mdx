@@ -5,6 +5,10 @@ description: Publish a small static mod catalog and add it to Deadlock Mod Manag
 
 # Custom mod sources
 
+For the complete field reference, an API example, taxonomy, variants and website
+integration, see
+[Build a mod registry](/developer-docs/build-a-mod-registry).
+
 A native static source is a directory of JSON documents and downloadable mod
 files on public HTTPS hosting. You do not need to run a registry service or
 register it with DMM infrastructure.
@@ -143,6 +147,10 @@ and installed files and their provenance. Local enable/disable/remove operations
 remain available. Re-add the same accepted origin and source ID to reconnect it.
 An update that no longer fits saved file choices asks for a new selection and
 retains the current installation until replacement succeeds.
+
+If you change any declared API, download or media origin set, users must remove
+the source, review the new descriptor and add it again. This includes adding a
+CDN origin. Changing URLs within accepted origins does not require this review.
 
 Update backups retain the installed source revision and component choices.
 Older/full backups and files recovered without saved provenance retain their
