@@ -2,9 +2,7 @@
 //!
 //! Every write: read the file, build the new text, verify it parses and strips
 //! back to the base, then write atomically (temp file + rename) after checking
-//! the file didn't change since it was read. Errors here are never
-//! `GameConfigParse`: on the launch path that variant triggers a full reset to
-//! vanilla.
+//! the file didn't change since it was read.
 
 use std::collections::HashSet;
 use std::fs;

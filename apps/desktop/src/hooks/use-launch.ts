@@ -175,9 +175,6 @@ export const useLaunch = () => {
 
       stopHeroDetection();
 
-      const unlistenReset = await listen("gameinfo-auto-reset", () => {
-        toast.info(t("common.gameinfoAutoReset"));
-      });
       const unlistenProgress = await listen<LaunchStep>(
         "launch-progress",
         (event) => advance(event.payload),
@@ -208,7 +205,6 @@ export const useLaunch = () => {
           vanilla,
         );
       } finally {
-        unlistenReset();
         unlistenProgress();
       }
       if (!launched) {
