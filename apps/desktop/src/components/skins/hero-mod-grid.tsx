@@ -132,7 +132,7 @@ export const HeroModGrid = ({
   );
 
   return (
-    <div className='flex-1 overflow-y-auto pr-2'>
+    <div className='-ml-1 flex-1 overflow-y-auto pb-1 pl-1 pr-2'>
       <div className='mb-4 flex items-start justify-between gap-4'>
         <div className='min-w-0'>
           <h2 className='font-semibold text-xl'>{hero}</h2>
