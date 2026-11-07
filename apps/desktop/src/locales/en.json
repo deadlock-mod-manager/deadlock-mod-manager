@@ -4590,7 +4590,7 @@
     "autoUpdate": "Automatic Updates",
     "autoUpdateDescription": "Automatically check for and notify about application updates on startup.",
     "updateChannel": "Update Channel",
-    "updateChannelDescription": "Choose where future updates come from. A change applies after a restart and never downgrades the version you have installed.",
+    "updateChannelDescription": "Choose where future updates come from.",
     "updateChannelStable": "Stable",
     "updateChannelNightly": "Nightly (testing)",
     "updateChannelNightlyNote": "Nightly is a testing channel with daily builds that can be unstable.",
