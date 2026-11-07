@@ -6,4 +6,4 @@ mod write;
 
 pub(crate) use conditions::client_symbol;
 pub(crate) use source::{Comment, Document, Site, SiteKind, line_end, line_start};
-pub(crate) use write::{WriteError, commit};
+pub(crate) use write::{WriteError, commit, read};

@@ -2,4 +2,4 @@
 "@deadlock-mods/desktop": patch
 ---
 
-Keep current game settings recoverable when restoring a backup
+Preserve recovery copies and reject conflicting game settings restores and resets

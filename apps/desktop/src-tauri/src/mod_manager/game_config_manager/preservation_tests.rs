@@ -13,6 +13,68 @@ fn game() -> (tempfile::TempDir, PathBuf) {
 }
 
 #[test]
+fn a_write_conflict_does_not_fall_back_to_restoring_a_backup() {
+  let (game, path) = game();
+  let observed = fs::read(&path).unwrap();
+  fs::write(path.with_extension("gi.bak"), fixture()).unwrap();
+  let external = b"// another tool changed this file\n";
+  fs::write(&path, external).unwrap();
+
+  let error = GameConfigManager::commit_gameinfo(&path, Some(&observed), &fixture())
+    .expect_err("the stale snapshot must be rejected");
+  let mut manager = GameConfigManager::new();
+  assert!(matches!(
+    manager.reset_gameinfo(game.path(), Err(error)),
+    Err(Error::FileWriteFailed(_))
+  ));
+  assert_eq!(fs::read(&path).unwrap(), external);
+  assert_eq!(manager.search_paths_revision, 0);
+}
+
+#[test]
+fn explicit_recovery_handles_missing_and_non_utf8_live_files() {
+  for restore in [false, true] {
+    for current in [None, Some(vec![0xff, 0xfe, b'{'])] {
+      let (game, path) = game();
+      let backup = fixture();
+      fs::write(path.with_extension("gi.bak"), &backup).unwrap();
+      if let Some(content) = &current {
+        fs::write(&path, content).unwrap();
+      } else {
+        fs::remove_file(&path).unwrap();
+      }
+      let mut manager = GameConfigManager::new();
+      let purpose = if restore {
+        manager.restore_gameinfo_backup(game.path()).unwrap();
+        "pre-restore"
+      } else {
+        manager
+          .apply_vanilla_gameinfo(game.path(), backup.clone())
+          .unwrap();
+        "pre-reset"
+      };
+      assert_eq!(fs::read_to_string(&path).unwrap(), backup);
+      let copies: Vec<_> = fs::read_dir(path.parent().unwrap())
+        .unwrap()
+        .map(Result::unwrap)
+        .filter(|entry| {
+          entry
+            .file_name()
+            .to_string_lossy()
+            .starts_with(&format!("gameinfo.gi.{purpose}-"))
+        })
+        .collect();
+      if let Some(current) = current {
+        assert_eq!(copies.len(), 1);
+        assert_eq!(fs::read(copies[0].path()).unwrap(), current);
+      } else {
+        assert!(copies.is_empty());
+      }
+    }
+  }
+}
+
+#[test]
 fn backup_restore_keeps_the_live_file_before_replacing_it() {
   let (game, path) = game();
   let current = fs::read(&path).unwrap();

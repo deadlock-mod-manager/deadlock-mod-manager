@@ -299,10 +299,11 @@ impl GameConfigManager {
 
     log::info!("Restoring gameinfo.gi from backup: {backup_path:?}");
     ensure_file_writable(&gameinfo_path)?;
-    if gameinfo_path.exists() {
-      Self::keep_gameinfo_copy(&gameinfo_path, &fs::read(&gameinfo_path)?, "pre-restore")?;
+    let current = gameinfo::read(&gameinfo_path)?;
+    if let Some(current) = &current {
+      Self::keep_gameinfo_copy(&gameinfo_path, current, "pre-restore")?;
     }
-    fs::write(&gameinfo_path, backup_content)?;
+    Self::commit_gameinfo(&gameinfo_path, current.as_deref(), &backup_content)?;
     self.search_paths_revision += 1;
 
     // Verify restoration
@@ -336,8 +337,9 @@ impl GameConfigManager {
     gameinfo_search_paths::validate_reset(&vanilla_content)?;
 
     // Preserve the current file even if an older .bak already exists.
-    if gameinfo_path.exists() {
-      Self::keep_gameinfo_copy(&gameinfo_path, &fs::read(&gameinfo_path)?, "pre-reset")?;
+    let current = gameinfo::read(&gameinfo_path)?;
+    if let Some(current) = &current {
+      Self::keep_gameinfo_copy(&gameinfo_path, current, "pre-reset")?;
       let backup_path = gameinfo_path.with_extension("gi.bak");
       if !backup_path.exists() {
         fs::copy(&gameinfo_path, &backup_path)?;
@@ -346,7 +348,7 @@ impl GameConfigManager {
     }
 
     // Write the vanilla content
-    fs::write(&gameinfo_path, vanilla_content)?;
+    Self::commit_gameinfo(&gameinfo_path, current.as_deref(), &vanilla_content)?;
     self.search_paths_revision += 1;
     self.game_setup = false;
     self.backups.remove(&gameinfo_path);
@@ -575,12 +577,16 @@ impl GameConfigManager {
     if updated.migrated_legacy {
       Self::keep_gameinfo_copy(path, original.as_bytes(), "pre-dmm-migration")?;
     }
-    gameinfo::commit(path, &original, &updated.content).map_err(|error| match error {
-      WriteError::Changed => Error::GameConfigParse(error.to_string()),
-      WriteError::Io(error) => error.into(),
-    })?;
+    Self::commit_gameinfo(path, Some(original.as_bytes()), &updated.content)?;
     self.search_paths_revision += 1;
     Ok(())
+  }
+
+  fn commit_gameinfo(path: &Path, expected: Option<&[u8]>, updated: &str) -> Result<(), Error> {
+    gameinfo::commit(path, expected, updated.as_bytes()).map_err(|error| match error {
+      WriteError::Changed => Error::FileWriteFailed(error.to_string()),
+      WriteError::Io(error) => error.into(),
+    })
   }
 
   fn keep_gameinfo_copy(path: &Path, content: &[u8], purpose: &str) -> Result<(), Error> {

@@ -582,7 +582,8 @@ fn write_stripped(path: &Path, original: &str) -> Result<(), Error> {
 /// file still holds `expected`: Steam, the user or another tool may have
 /// written it since we read it.
 fn write_gameinfo(path: &Path, expected: &str, updated: &str) -> Result<(), Error> {
-  gameinfo::commit(path, expected, updated).map_err(|error| match error {
+  gameinfo::commit(path, Some(expected.as_bytes()), updated.as_bytes()).map_err(|error| match error
+  {
     WriteError::Changed => Error::PerformanceConfig(error.to_string()),
     WriteError::Io(error) => error.into(),
   })
