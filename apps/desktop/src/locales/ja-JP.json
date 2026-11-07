@@ -3661,6 +3661,7 @@
       "crashRisk": ""
     },
     "lastUpdatedBefore": "",
+    "appliesWhenEnabled": "",
     "stillNeedsUpdate": "",
     "fixForPatch": "",
     "checkForRepairs": "",
@@ -5500,6 +5501,8 @@
     "restoreFromRecordsInterrupted": "",
     "foundAddons": "見つかったアドオン",
     "noAddonsFound": "ゲームディレクトリにアドオンが見つかりませんでした",
+    "noIdentifiedAddons": "",
+    "noUnmatchedAddons": "",
     "errors": "エラー",
     "errorsCount": "{{count}}個のエラー",
     "fileCount": "ファイル数",
@@ -7448,7 +7451,19 @@
     "modsProcessed": "Modを処理しました",
     "importedProfileDescription": "",
     "importedProfileName": "",
-    "modsImportedCount": "",
+    "importFailures": {
+      "unnamed": "",
+      "lookup": "",
+      "downloads": "",
+      "install": ""
+    },
+    "importResult": {
+      "title": "",
+      "summary": "",
+      "notImported_one": "",
+      "notImported_other": "",
+      "done": ""
+    },
     "activateProfileLabel": "",
     "statusActive": "",
     "statusInactive": "",

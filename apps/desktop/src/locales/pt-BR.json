@@ -3661,6 +3661,7 @@
       "crashRisk": ""
     },
     "lastUpdatedBefore": "",
+    "appliesWhenEnabled": "",
     "stillNeedsUpdate": "",
     "fixForPatch": "",
     "checkForRepairs": "",
@@ -5500,6 +5501,8 @@
     "restoreFromRecordsInterrupted": "",
     "foundAddons": "Addons Encontrados",
     "noAddonsFound": "Nenhum addon encontrado em seu diretório do jogo",
+    "noIdentifiedAddons": "",
+    "noUnmatchedAddons": "",
     "errors": "Erros",
     "errorsCount": "{{count}} erro(s)",
     "fileCount": "Arquivos",
@@ -7448,7 +7451,19 @@
     "modsProcessed": "Mods processados",
     "importedProfileDescription": "",
     "importedProfileName": "",
-    "modsImportedCount": "",
+    "importFailures": {
+      "unnamed": "",
+      "lookup": "",
+      "downloads": "",
+      "install": ""
+    },
+    "importResult": {
+      "title": "",
+      "summary": "",
+      "notImported_one": "",
+      "notImported_other": "",
+      "done": ""
+    },
     "activateProfileLabel": "",
     "statusActive": "",
     "statusInactive": "",

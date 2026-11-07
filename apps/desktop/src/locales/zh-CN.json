@@ -3661,6 +3661,7 @@
       "crashRisk": ""
     },
     "lastUpdatedBefore": "",
+    "appliesWhenEnabled": "",
     "stillNeedsUpdate": "",
     "fixForPatch": "",
     "checkForRepairs": "",
@@ -5500,6 +5501,8 @@
     "restoreFromRecordsInterrupted": "",
     "foundAddons": "找到的插件",
     "noAddonsFound": "在你的游戏目录中未找到插件",
+    "noIdentifiedAddons": "",
+    "noUnmatchedAddons": "",
     "errors": "错误",
     "errorsCount": "{{count}} 个错误",
     "fileCount": "文件数",
@@ -7448,7 +7451,19 @@
     "modsProcessed": "模组处理完成",
     "importedProfileDescription": "从共享的配置文件 ID 导入的配置文件",
     "importedProfileName": "已导入配置 - {{date}}",
-    "modsImportedCount": "{{imported}}/{{total}} 个模组已导入",
+    "importFailures": {
+      "unnamed": "",
+      "lookup": "",
+      "downloads": "",
+      "install": ""
+    },
+    "importResult": {
+      "title": "",
+      "summary": "",
+      "notImported_one": "",
+      "notImported_other": "",
+      "done": ""
+    },
     "activateProfileLabel": "激活 {{profileName}} 配置文件",
     "statusActive": "活跃",
     "statusInactive": "未激活",

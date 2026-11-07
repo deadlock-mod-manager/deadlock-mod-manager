@@ -3661,6 +3661,7 @@
       "crashRisk": "Model verisi sorunları"
     },
     "lastUpdatedBefore": "Son güncelleme Paint the Town güncellemesinden önce yapıldı.",
+    "appliesWhenEnabled": "",
     "stillNeedsUpdate": "Bazı bölümler için bu yamaya uygun güncelleme gerekiyor: {{remainingSymptoms}}.",
     "fixForPatch": "Bu yama için düzelt",
     "checkForRepairs": "Modları onarım için denetle",
@@ -5500,6 +5501,8 @@
     "restoreFromRecordsInterrupted": "",
     "foundAddons": "Bulunan Eklentiler",
     "noAddonsFound": "Oyun dizininizde eklenti bulunamadı",
+    "noIdentifiedAddons": "",
+    "noUnmatchedAddons": "",
     "errors": "Hatalar",
     "errorsCount": "{{count}} hata",
     "fileCount": "Dosyalar",
@@ -7448,7 +7451,19 @@
     "modsProcessed": "Modlar işlendi",
     "importedProfileDescription": "Paylaşılan profil kimliğinden profil içe aktarıldı",
     "importedProfileName": "İçe aktarılan profil - {{date}}",
-    "modsImportedCount": "{{total}} moddan {{imported}} tanesi içe aktarıldı",
+    "importFailures": {
+      "unnamed": "",
+      "lookup": "",
+      "downloads": "",
+      "install": ""
+    },
+    "importResult": {
+      "title": "",
+      "summary": "",
+      "notImported_one": "",
+      "notImported_other": "",
+      "done": ""
+    },
     "activateProfileLabel": "{{profileName}} profilini etkinleştir",
     "statusActive": "Etkin",
     "statusInactive": "Etkin değil",

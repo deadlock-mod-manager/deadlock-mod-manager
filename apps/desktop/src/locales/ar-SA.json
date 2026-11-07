@@ -3661,6 +3661,7 @@
       "crashRisk": ""
     },
     "lastUpdatedBefore": "",
+    "appliesWhenEnabled": "",
     "stillNeedsUpdate": "",
     "fixForPatch": "",
     "checkForRepairs": "",
@@ -5500,6 +5501,8 @@
     "restoreFromRecordsInterrupted": "",
     "foundAddons": "الإضافات الموجودة",
     "noAddonsFound": "لم يتم العثور على إضافات",
+    "noIdentifiedAddons": "",
+    "noUnmatchedAddons": "",
     "errors": "الأخطاء",
     "errorsCount": "{{count}} خطأ",
     "fileCount": "الملفات",
@@ -7448,7 +7451,19 @@
     "modsProcessed": "تمت معالجة التعديلات",
     "importedProfileDescription": "",
     "importedProfileName": "",
-    "modsImportedCount": "",
+    "importFailures": {
+      "unnamed": "",
+      "lookup": "",
+      "downloads": "",
+      "install": ""
+    },
+    "importResult": {
+      "title": "",
+      "summary": "",
+      "notImported_one": "",
+      "notImported_other": "",
+      "done": ""
+    },
     "activateProfileLabel": "",
     "statusActive": "",
     "statusInactive": "",
