@@ -10,6 +10,7 @@ import type { FixtureRequest, FixtureRoute } from "./fixture-server";
 import {
   BULK_HYDRATION_FIELDS,
   BULK_UPDATE_FIELDS,
+  fileserver,
 } from "./gamebanana-fixtures";
 import { fixtureMod } from "./mod-fixtures";
 import { fingerprint, readPersistedDocument } from "./observations";
@@ -420,13 +421,6 @@ export async function reliabilityRoutes(caseId: string) {
     return routes;
   };
 }
-
-const fileserver = (id: number, domain: string, rate: number) => ({
-  _idRow: id,
-  _sDomain: domain,
-  _sState: "up",
-  _aStats: { _a1hr: { _fRate: rate, _nRequests: 100 } },
-});
 
 /**
  * GameBanana's `/dl/` link sends the download to a cache that cuts every

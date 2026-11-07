@@ -2,7 +2,11 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { FixtureRoute } from "./fixture-server";
 import { prepareInstalledProfiles } from "./profile-fixtures";
-import { buildSyntheticVpk, type VpkRecipeEntry } from "./vpk";
+import {
+  buildSyntheticVpk,
+  localizationText,
+  type VpkRecipeEntry,
+} from "./vpk";
 import type { CreatedWorld } from "./world";
 
 export const FIXES = {
@@ -29,8 +33,7 @@ const RECIPES = new Map<string, readonly VpkRecipeEntry[]>([
     [
       {
         path: "resource/localization/citadel_heroes/citadel_heroes_english.txt",
-        contents:
-          '"lang"\n{\n\t"Language"\t\t"English"\n\t"Tokens"\n\t{\n\t\t"hero_e2e"\t\t"Fixed hero name"\n\t}\n}\n',
+        contents: localizationText({ hero_e2e: "Fixed hero name" }),
       },
     ],
   ],
@@ -39,8 +42,7 @@ const RECIPES = new Map<string, readonly VpkRecipeEntry[]>([
     [
       {
         path: "resource/localization/citadel_mods/citadel_mods_english.txt",
-        contents:
-          '"lang"\n{\n\t"Language"\t\t"English"\n\t"Tokens"\n\t{\n\t\t"item_e2e"\t\t"Fixed item name"\n\t}\n}\n',
+        contents: localizationText({ item_e2e: "Fixed item name" }),
       },
     ],
   ],
@@ -89,12 +91,6 @@ export const ENABLED_FIX_MOD = "local-fix-enabled-text";
 export const DISABLED_FIX_MOD = "local-fix-disabled-text";
 const DISABLED_FIX_MODS = [ENABLED_FIX_MOD, DISABLED_FIX_MOD];
 
-const localization = (tokens: Record<string, string>) =>
-  `"lang"\n{\n\t"Language"\t\t"English"\n\t"Tokens"\n\t{\n${Object.entries(
-    tokens,
-  )
-    .map(([token, text]) => `\t\t"${token}"\t\t"${text}"\n`)
-    .join("")}\t}\n}\n`;
 const textFile = (modId: string) =>
   `resource/localization/${modId}/${modId}_english.txt`;
 
@@ -109,7 +105,7 @@ export const prepareDisabledFixWorld = async (
     await mkdir(path.dirname(file), { recursive: true });
     await writeFile(
       file,
-      localization({ e2e_kept: "Kept", e2e_new: "New game text" }),
+      localizationText({ e2e_kept: "Kept", e2e_new: "New game text" }),
     );
   }
   await prepareInstalledProfiles(
@@ -122,7 +118,7 @@ export const prepareDisabledFixWorld = async (
           buildSyntheticVpk([
             {
               path: textFile(modId),
-              contents: localization({ e2e_kept: "Kept" }),
+              contents: localizationText({ e2e_kept: "Kept" }),
             },
           ]),
       },

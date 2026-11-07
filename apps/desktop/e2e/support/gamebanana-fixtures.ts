@@ -24,6 +24,14 @@ export const UPDATE_SKIP_DATES = {
 } as const;
 export const OPTIONAL_FILE_ID = 910002;
 
+/** A healthy `/apiv11/Util/Fileservers` record. */
+export const fileserver = (id: number, domain: string, rate: number) => ({
+  _idRow: id,
+  _sDomain: domain,
+  _sState: "up",
+  _aStats: { _a1hr: { _fRate: rate, _nRequests: 100 } },
+});
+
 type CatalogArchive = {
   id: number;
   name: string;

@@ -6,6 +6,7 @@ import type { FixtureRequest, FixtureRoute } from "./fixture-server";
 import {
   BULK_HYDRATION_FIELDS,
   BULK_UPDATE_FIELDS,
+  fileserver,
 } from "./gamebanana-fixtures";
 import { buildSyntheticVpk } from "./vpk";
 
@@ -151,14 +152,7 @@ const buildMultipakRoutes = async (routingCache: boolean) => {
       ),
       json("/apiv11/Util/Fileservers", {
         _aRecords: routingCache
-          ? [
-              {
-                _idRow: 45,
-                _sDomain: "filecache45",
-                _sState: "up",
-                _aStats: { _a1hr: { _fRate: 1_000_000, _nRequests: 100 } },
-              },
-            ]
+          ? [fileserver(45, "filecache45", 1_000_000)]
           : [],
       }),
       // A updates from the cache to v2; B is first downloaded from it.

@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { prepareInstalledProfiles } from "./profile-fixtures";
-import { buildSyntheticVpk } from "./vpk";
+import { buildSyntheticVpk, localizationText } from "./vpk";
 import type { CreatedWorld } from "./world";
 
 // Worlds for checking that a fixed mod keeps "Fixed for this patch" and its
@@ -41,13 +41,6 @@ const DATA_TABLE_HEX =
   "eb0000000c0000000800000001000000444154410c000000cb000000000000000433564b000000000000000000000000000000000000000000000000000000000e0000000200000037000000000000008300000083000000000000000000000000000000000000000500000004000000000000000100000001000000020000000100000001000000030000000100000001000000040000000100000001000000020000000000000003000000000000006532655f726f775f300076616c7565006532655f726f775f31006532655f726f775f32006532655f726f775f330009090f09100903090300ddeeff";
 const dataTableBytes = (): Buffer => Buffer.from(DATA_TABLE_HEX, "hex");
 
-const localization = (tokens: Record<string, string>) =>
-  `"lang"\n{\n\t"Language"\t\t"English"\n\t"Tokens"\n\t{\n${Object.entries(
-    tokens,
-  )
-    .map(([token, text]) => `\t\t"${token}"\t\t"${text}"\n`)
-    .join("")}\t}\n}\n`;
-
 export const TEXT_FILE =
   "resource/localization/e2e_status/e2e_status_english.txt";
 
@@ -64,7 +57,7 @@ const textMod = (name: string) =>
   buildSyntheticVpk([
     {
       path: TEXT_FILE,
-      contents: localization({ e2e_kept: "Kept", e2e_name: name }),
+      contents: localizationText({ e2e_kept: "Kept", e2e_name: name }),
     },
   ]);
 
@@ -85,7 +78,10 @@ const PAYLOADS = new Map<string, () => Buffer>([
       buildSyntheticVpk([
         {
           path: SECOND_TEXT_FILE,
-          contents: localization({ e2e_kept: "Kept", e2e_name: "Second name" }),
+          contents: localizationText({
+            e2e_kept: "Kept",
+            e2e_name: "Second name",
+          }),
         },
       ]),
   ],
@@ -117,7 +113,7 @@ export const prepareFixedStatusWorld = async (
   for (const file of [TEXT_FILE, SECOND_TEXT_FILE]) {
     const text = path.join(citadel, file);
     await mkdir(path.dirname(text), { recursive: true });
-    await writeFile(text, localization(GAME_TEXT));
+    await writeFile(text, localizationText(GAME_TEXT));
   }
   await writeFile(
     path.join(citadel, "pak01_dir.vpk"),
