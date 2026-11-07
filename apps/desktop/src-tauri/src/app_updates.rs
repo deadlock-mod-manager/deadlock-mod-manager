@@ -192,21 +192,15 @@ mod tests {
         &semver::Version::parse(release).unwrap(),
       )
     };
-    assert!(offers("2.3.0", "2.4.0-nightly.20261107.abc1234"));
-    assert!(!offers("2.3.0", "2.3.0-nightly.20261106.abc1234"));
-    assert!(!offers("2.3.0", "2.3.0"));
-    assert!(offers(
-      "2.4.0-nightly.20261106.abc1234",
-      "2.4.0-nightly.20261107.def5678"
-    ));
-    assert!(offers(
-      "2.5.0-nightly.20261106.abc1234",
-      "2.4.0-nightly.20261107.def5678"
-    ));
-    assert!(!offers(
-      "2.4.0-nightly.20261107.def5678",
-      "2.4.0-nightly.20261107.def5678"
-    ));
+    // Published as v2.3.0 and the nightly manifest on 2026-11-02.
+    let stable = "2.3.0";
+    let nightly = "2.4.0-nightly.20261102.92bebec6";
+    assert!(offers(stable, nightly));
+    assert!(!offers("2.4.0", nightly));
+    assert!(!offers(stable, stable));
+    assert!(!offers(nightly, nightly));
+    assert!(offers(nightly, "2.4.0-nightly.20261107.12345678"));
+    assert!(offers("2.5.0-nightly.20261101.0abc1234", nightly));
   }
 
   #[test]
