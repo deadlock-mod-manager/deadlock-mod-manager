@@ -97,9 +97,10 @@ describe("addon shards in the library", () => {
       });
 
       await openShardStatus();
+      // An extra empty shard mount is harmless; diagnostics report missing paths.
       await expectShardStatus({
         shardsInUse: "1 / 10",
-        gameinfo: "Out of sync",
+        gameinfo: "In sync",
       });
       await step("resync gameinfo.gi", async () => {
         await $("button*=Resync").click();

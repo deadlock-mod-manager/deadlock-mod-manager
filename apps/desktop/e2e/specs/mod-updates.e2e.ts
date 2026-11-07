@@ -11,7 +11,7 @@ import {
   reliabilityFixture,
   assertReliabilityDisk,
 } from "../support/reliability-fixtures";
-import { navigate } from "../support/ui";
+import { navigate, waitForClickable } from "../support/ui";
 
 const { PRIMARY, readReliabilityState } = reliabilityFixture;
 const toast = (text: string) =>
@@ -19,9 +19,9 @@ const toast = (text: string) =>
 const modCard = () => $(`[data-library-mod="${PRIMARY.id}"]`);
 const openPrimary = async () => {
   await navigate("mods");
-  const title = await $(`[title="${PRIMARY.name}"]`);
-  await title.waitForClickable();
-  await title.click();
+  const title = `[title="${PRIMARY.name}"]`;
+  await waitForClickable(title);
+  await $(title).click();
 };
 const checkUpdates = async (count: 0 | 1) => {
   await navigate("my-mods");

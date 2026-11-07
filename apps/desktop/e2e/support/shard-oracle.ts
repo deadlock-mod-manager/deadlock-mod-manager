@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
+import { fixtureGamePaths } from "./gameinfo-mounts";
 import {
   fingerprint,
   observeUntil,
@@ -74,8 +75,8 @@ export const readShardStore = async (world: string) =>
 export const readGameinfoSearchPaths = async (world: string) => {
   const { citadel } = await shardPaths(world);
   const gameinfo = await readFile(path.join(citadel, "gameinfo.gi"), "utf8");
-  return [...gameinfo.matchAll(/^\s*Game\s+(citadel\/addons\S*)\s*$/gm)].map(
-    (match) => match[1],
+  return fixtureGamePaths(gameinfo).filter((mount) =>
+    mount.startsWith("citadel/addons"),
   );
 };
 

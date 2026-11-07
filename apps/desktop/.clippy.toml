@@ -1,0 +1,10 @@
+disallowed-types = [
+  { path = "kv_parser::Parser", reason = "Keep KeyValues grammar in kv-parser; use SourceDocument in desktop." },
+  { path = "kv_parser::Tokenizer", reason = "Keep KeyValues tokenization in kv-parser; use SourceDocument in desktop." },
+  { path = "kv_parser::AstNode", reason = "Keep generic AST traversal in kv-parser; use SourceDocument in desktop." },
+  "kv_parser::DocumentNode",
+  "kv_parser::KeyValueNode",
+  "kv_parser::Token",
+  "kv_parser::TokenType",
+  "kv_parser::ValueNode",
+]

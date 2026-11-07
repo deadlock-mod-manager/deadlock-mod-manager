@@ -39,6 +39,12 @@ export const resetToVanilla = async () => {
   return await invokeGuarded<"api" | "backup">("reset_to_vanilla");
 };
 
+export const gameinfoCleanupRevision = () =>
+  invoke<number | null>("gameinfo_cleanup_revision");
+
+export const removeModSearchPaths = (expectedRevision: number) =>
+  invoke<boolean>("remove_mod_search_paths", { expectedRevision });
+
 export const validateGameInfoPatch = async (expectedVanilla: boolean) => {
   return await invoke("validate_gameinfo_patch", { expectedVanilla });
 };

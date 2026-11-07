@@ -4,6 +4,9 @@ pub type Result<T> = std::result::Result<T, KvError>;
 
 #[derive(Debug, Error)]
 pub enum KvError {
+    #[error("Invalid KeyValues condition {condition}: {reason}")]
+    InvalidCondition { condition: String, reason: String },
+
     #[error("Parse error at line {line}, column {column}: {message}")]
     ParseError {
         line: usize,

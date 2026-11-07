@@ -54,10 +54,13 @@ export function formatUserError(error: unknown): FormattedError {
     };
   }
 
-  if (error instanceof Error && isGameConfigError(error)) {
+  if (
+    (error instanceof Error && isGameConfigError(error)) ||
+    (isTauriError(error) && error.kind === "gameConfigParse")
+  ) {
     return {
       title: i18n.t("errors.genericMessage"),
-      description: "",
+      description: error.message,
       category: "game-config",
     };
   }

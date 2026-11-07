@@ -39,6 +39,7 @@ Key directories:
 - When creating a requested branch, use a descriptive prefix such as `feature/`, `bugfix/`, or `chore/`; never use `codex/`.
 - Respect TypeScript strict mode — never use `any`, `unknown`, or type assertions (`as` or angle-bracket casts). Use explicit types, generics, type guards, and narrowing.
 - Use static imports at the top of files. Import across workspaces through package names and public exports; use existing relative imports or aliases within a package. Packages must not depend on app internals or bypass generated binding boundaries.
+- Keep reusable format syntax, validation, expression evaluation, and source-position logic in the owning parser package. Applications supply domain policy and filesystem effects; extend the parser's public interface instead of recreating its internals in an app. Desktop Clippy rules enforce use of KeyValues source inspection instead of lexer/AST internals.
 - Throw `BaseError` subclasses from `@deadlock-mods/common` in TypeScript application and library code. Tests and generated UI context invariants may keep raw `Error`; see [error handling](.agents/context/ERROR-HANDLING.md) when adding or changing errors.
 - Use Rust edition 2024 across Rust crates; verify Rust changes with appropriate `cargo check`, tests, and `cargo clippy`.
 - Use the initialized structured logger instead of `console.*`; follow [logging-best-practices](.agents/skills/logging-best-practices/SKILL.md) when adding or changing logging.

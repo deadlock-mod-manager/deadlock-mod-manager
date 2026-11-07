@@ -22,6 +22,7 @@ import {
   prepareGroupedIdentificationWorld,
 } from "./library-groups-fixtures";
 import { prepareProfileWorld } from "./profile-fixtures";
+import { prepareGameinfoPreservationWorld } from "./gameinfo-preservation-fixtures";
 import {
   hashRequests,
   prepareRescanAfterResetWorld,
@@ -543,6 +544,38 @@ export const scenarios = {
     platforms: ["win32"],
     routes: profileRoutes,
     prepare: prepareGameinfoRecoveryWorld,
+  },
+  "gameinfo-preserve-search-paths": {
+    ...defaults,
+    family: "filesystem",
+    spec: "gameinfo-preservation",
+    phases: ["preserve", "restart-preserve"],
+    prepare: prepareGameinfoPreservationWorld,
+    routes: async () => () => [
+      { method: "GET", path: "/api/v2/feature-flags", status: 200, body: "[]" },
+      {
+        method: "GET",
+        path: "/artifacts/deadlock/gameinfo.gi",
+        status: 200,
+        body: VANILLA_GAMEINFO,
+      },
+    ],
+  },
+  "gameinfo-preserve-legacy-search-paths": {
+    ...defaults,
+    family: "filesystem",
+    spec: "gameinfo-preservation",
+    phases: ["preserve", "restart-preserve"],
+    prepare: prepareGameinfoPreservationWorld,
+    routes: async () => () => [
+      { method: "GET", path: "/api/v2/feature-flags", status: 200, body: "[]" },
+      {
+        method: "GET",
+        path: "/artifacts/deadlock/gameinfo.gi",
+        status: 200,
+        body: VANILLA_GAMEINFO,
+      },
+    ],
   },
   "addons-missing-enable": {
     ...defaults,

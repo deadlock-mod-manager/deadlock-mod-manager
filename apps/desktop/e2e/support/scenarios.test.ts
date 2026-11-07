@@ -13,7 +13,7 @@ const windows = process.platform === "win32";
 describe("scenario selection", () => {
   it("registers every case with explicit phases and capability requirements", () => {
     const ids = selectScenarios("all");
-    expect(ids).toHaveLength(windows ? 167 : 157);
+    expect(ids).toHaveLength(windows ? 169 : 159);
     expect(ids).toContain("downloads-segmented-range-error");
     // Some of these specs don't dispatch on their case ID, so a rename
     // wouldn't fail them.
@@ -78,7 +78,20 @@ describe("scenario selection", () => {
       "app-update-check-failure",
     ]);
     expect(scenarios.monkey.nativeInput).toBe(false);
-    expect(selectScenarios("filesystem")).toHaveLength(windows ? 12 : 10);
+    expect(selectScenarios("filesystem")).toHaveLength(windows ? 14 : 12);
+    for (const id of [
+      "gameinfo-preserve-search-paths",
+      "gameinfo-preserve-legacy-search-paths",
+    ]) {
+      const scenario = parseScenarioId(id);
+      expect(scenarioPhases(scenario)).toEqual([
+        "preserve",
+        "restart-preserve",
+      ]);
+      expect(scenarioSpec(scenario)).toBe(
+        "./specs/gameinfo-preservation.e2e.ts",
+      );
+    }
     expect(selectScenarios("interchange")).toEqual(["grimoire-import"]);
     expect(selectScenarios("analyze")).toEqual(["analyze-errors"]);
     expect(selectScenarios("skins")).toEqual(["hero-skins-active"]);

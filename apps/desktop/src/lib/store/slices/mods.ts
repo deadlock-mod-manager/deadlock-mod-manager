@@ -399,6 +399,12 @@ export const createModsSlice: StateCreator<
           return {
             ...mod,
             status,
+            // A completed disable must not depend on watcher reconciliation.
+            installedVpks:
+              mod.status === ModStatus.Installed &&
+              status === ModStatus.Downloaded
+                ? []
+                : mod.installedVpks,
             downloadedAt:
               (status === ModStatus.Downloaded &&
                 mod.status !== ModStatus.Installed) ||

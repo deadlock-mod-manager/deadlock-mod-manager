@@ -112,7 +112,9 @@ const GameInfoManagement = () => {
       );
       toast.success(
         t(
-          source === "backup" ? "game.resetSuccessBackup" : "game.resetSuccess",
+          source === "backup"
+            ? "game.resetBackupRestored"
+            : "game.resetSuccess",
         ),
       );
     },

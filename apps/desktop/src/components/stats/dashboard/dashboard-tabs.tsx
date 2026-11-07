@@ -38,9 +38,15 @@ import {
   Users,
   UsersRound,
 } from "@deadlock-mods/ui/icons";
-import { type ComponentType, useState } from "react";
+import {
+  type ComponentType,
+  useCallback,
+  useLayoutEffect,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { HintAnchor } from "@/components/feature-hints/hint-anchor";
+import { useElementWidth } from "@/hooks/use-element-width";
 import { usePersistedStore } from "@/lib/store";
 import {
   type DashboardTab,
@@ -234,6 +240,17 @@ export const DashboardTabs = ({
   const tabTitle = useTabTitle();
   const activeIndex = tabs.findIndex((tab) => tab.id === activeTabId);
   const activeTab = tabs[activeIndex];
+  const { ref: tabStripRef, width: tabStripWidth } = useElementWidth();
+  const revealActiveTab = useCallback((node: HTMLButtonElement | null) => {
+    node?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, []);
+  useLayoutEffect(() => {
+    revealActiveTab(
+      tabStripRef.current?.querySelector<HTMLButtonElement>(
+        '[data-tab-id][data-state="active"]',
+      ) ?? null,
+    );
+  }, [tabStripRef, tabStripWidth, revealActiveTab]);
   const hasParty = usePersistedStore(
     (state) =>
       state.partyMembers.length > 1 ||
@@ -266,8 +283,12 @@ export const DashboardTabs = ({
   return (
     // Many tabs outgrow a narrow window before anything else in the header
     // does; scrolling them keeps every tab reachable instead of clipped.
-    <div className='flex max-w-full items-center gap-2 overflow-x-auto'>
-      <Tabs onValueChange={selectTab} value={activeTabId}>
+    <div className='flex max-w-full items-center gap-2'>
+      <Tabs
+        className='min-w-0 flex-1 overflow-x-auto'
+        onValueChange={selectTab}
+        ref={tabStripRef}
+        value={activeTabId}>
         <TabsList className='h-auto w-max gap-1 bg-transparent p-0'>
           {tabs.map((tab) => {
             const panel = tabPanel(tab);
@@ -278,6 +299,7 @@ export const DashboardTabs = ({
                 data-broken={brokenTabIds.has(tab.id)}
                 data-tab-id={tab.id}
                 key={tab.id}
+                ref={tab.id === activeTabId ? revealActiveTab : undefined}
                 value={tab.id}>
                 <Icon className='h-[15px] w-[15px]' />
                 {tabTitle(tab)}

@@ -2622,7 +2622,14 @@ Game core
     fs::read_to_string(root.join("game/citadel/gameinfo.gi"))
       .unwrap()
       .lines()
-      .any(|line| line.split_whitespace().eq(["Game", overlay.as_str()]))
+      .any(|line| {
+        line
+          .split("//")
+          .next()
+          .unwrap()
+          .split_whitespace()
+          .eq(["Game", overlay.as_str()])
+      })
   }
 
   fn packaged_files(manager: &ModManager) -> Vec<String> {

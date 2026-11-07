@@ -48,6 +48,8 @@ export const readBrokenLaunches = async (world: string) =>
     )) ?? ""
   )
     .split("\n")
+    // Rust appends the newline only after serializing the complete record.
+    .slice(0, -1)
     .filter(Boolean)
     .map((line) =>
       z

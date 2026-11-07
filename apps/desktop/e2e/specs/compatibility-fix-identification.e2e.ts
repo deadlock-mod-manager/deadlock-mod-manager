@@ -11,6 +11,7 @@ import {
   PLACEHOLDER_MOD,
 } from "../support/compatibility-fix-identification-fixtures";
 import { step } from "../support/evidence";
+import { fixtureGamePaths } from "../support/gameinfo-mounts";
 import {
   CATALOG_MOD_ID,
   CATALOG_MOD_NAME,
@@ -101,12 +102,7 @@ const readRepairs = async (world: string) => {
           ),
         ].sort()
       : [],
-    mounted: gameinfo
-      .split("\n")
-      .some(
-        (line) =>
-          line.trim().split(/\s+/).join(" ") === `Game citadel/${OVERLAY}`,
-      ),
+    mounted: fixtureGamePaths(gameinfo).includes(`citadel/${OVERLAY}`),
   };
 };
 
