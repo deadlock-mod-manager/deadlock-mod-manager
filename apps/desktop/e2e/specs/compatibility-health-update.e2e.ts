@@ -59,7 +59,7 @@ const readAddon = async (world: string) => {
 
 const readLaunchCount = async (world: string) =>
   readFile(path.join(world, "artifacts", "game-launches.ndjson"), "utf8").then(
-    (text) => text.trim().split("\n").filter(Boolean).length,
+    (text) => text.split("\n").slice(0, -1).filter(Boolean).length,
     () => 0,
   );
 

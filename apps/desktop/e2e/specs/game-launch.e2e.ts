@@ -36,8 +36,8 @@ const readLaunches = async (world: string) => {
       "utf8",
     );
     return text
-      .trim()
       .split("\n")
+      .slice(0, -1)
       .filter(Boolean)
       .map((line) =>
         z
