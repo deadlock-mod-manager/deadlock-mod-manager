@@ -2,13 +2,12 @@
 //!
 //! Every write: read the file, build the new text, verify it parses and strips
 //! back to the base, then write atomically (temp file + rename) after checking
-//! the file didn't change since it was read. Errors here are never
-//! `GameConfigParse`: on the launch path that variant triggers a full reset to
-//! vanilla.
+//! the file didn't change since it was read. Performance errors remain separate
+//! from the mod search-path configuration errors.
 
 use std::collections::HashSet;
 use std::fs;
-use std::io::{ErrorKind, Write};
+use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 
 use super::analyze;
@@ -24,6 +23,7 @@ use super::types::{
 use super::video::{self, ChangedKeys};
 use super::{gameinfo_path, store};
 use crate::errors::Error;
+use crate::mod_manager::gameinfo::{self, WriteError};
 
 pub struct PerfContext<'a> {
   pub game_path: Option<&'a Path>,
@@ -582,32 +582,10 @@ fn write_stripped(path: &Path, original: &str) -> Result<(), Error> {
 /// file still holds `expected`: Steam, the user or another tool may have
 /// written it since we read it.
 fn write_gameinfo(path: &Path, expected: &str, updated: &str) -> Result<(), Error> {
-  if fs::read_to_string(path)? != expected {
-    return Err(Error::PerformanceConfig(
-      "gameinfo.gi changed while the performance config was being written; try again".into(),
-    ));
-  }
-  // Renaming over a symlink would replace the link with a regular file, so a
-  // linked gameinfo.gi is written at its target.
-  let target = if fs::symlink_metadata(path)?.file_type().is_symlink() {
-    fs::canonicalize(path)?
-  } else {
-    path.to_path_buf()
-  };
-  let dir = target
-    .parent()
-    .ok_or_else(|| Error::FileWriteFailed(format!("{} has no folder", target.display())))?;
-  let mut temp = tempfile::NamedTempFile::new_in(dir)?;
-  temp.write_all(updated.as_bytes())?;
-  temp.as_file().sync_all()?;
-  #[cfg(unix)]
-  temp
-    .as_file()
-    .set_permissions(fs::metadata(&target)?.permissions())?;
-  temp
-    .persist(&target)
-    .map_err(|error| Error::FileWriteFailed(format!("{}: {}", target.display(), error.error)))?;
-  Ok(())
+  gameinfo::commit(path, expected, updated).map_err(|error| match error {
+    WriteError::Changed => Error::PerformanceConfig(error.to_string()),
+    WriteError::Io(error) => error.into(),
+  })
 }
 
 #[cfg(test)]

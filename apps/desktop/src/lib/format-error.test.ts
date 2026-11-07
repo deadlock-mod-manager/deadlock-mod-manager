@@ -3,6 +3,18 @@ import { formatUserError } from "@/lib/format-error";
 import { HttpError } from "@/lib/http-error";
 
 describe("formatUserError", () => {
+  it("keeps actionable gameinfo parse details for native and wrapped errors", () => {
+    const message =
+      "Failed to parse game configuration: Expected value at line 7, column 3";
+    for (const error of [
+      new Error(message),
+      { kind: "gameConfigParse", message },
+    ]) {
+      const formatted = formatUserError(error);
+      expect(formatted.category).toBe("game-config");
+      expect(formatted.description).toBe(message);
+    }
+  });
   it("explains a block from the running game", () => {
     const formatted = formatUserError({
       kind: "gameRunning",

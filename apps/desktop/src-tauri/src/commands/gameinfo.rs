@@ -82,6 +82,13 @@ pub async fn reset_to_vanilla(guard_permit: Option<String>) -> Result<GameInfoRe
 }
 
 #[tauri::command]
+pub async fn remove_mod_search_paths(guard_permit: Option<String>) -> Result<(), Error> {
+  crate::game_guard::ensure_game_idle_locked("remove_mod_search_paths", guard_permit.as_deref())?;
+  let mut manager = MANAGER.lock().unwrap();
+  manager.toggle_mods(true)
+}
+
+#[tauri::command]
 pub async fn make_file_writable(path: PathBuf) -> Result<(), Error> {
   let manager = MANAGER.lock().unwrap();
   let game_path = manager
@@ -116,7 +123,7 @@ pub async fn gameinfo_has_mod_paths() -> Result<bool, Error> {
     .ok_or(Error::GamePathNotSet)?;
   let content =
     std::fs::read_to_string(game_path.join("game").join("citadel").join("gameinfo.gi"))?;
-  Ok(content.contains("citadel/addons"))
+  crate::mod_manager::game_config_manager::GameConfigManager::has_mod_search_paths(&content)
 }
 
 #[tauri::command]

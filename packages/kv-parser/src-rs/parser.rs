@@ -3,6 +3,32 @@ use crate::error::{KvError, Result};
 use crate::tokenizer::Tokenizer;
 use crate::types::{KeyValuesObject, KeyValuesValue, ParseOptions, ParseResult, Token, TokenType};
 
+#[cfg(test)]
+mod separator_tests {
+    use super::*;
+    use crate::Serializer;
+
+    #[test]
+    fn comments_between_keys_and_values_round_trip_without_losing_duplicate_entries() {
+        let source = "GameInfo /* root */ { FileSystem // game files\n{ \"SearchPaths\" // shared mounts\n { Game /* first */ citadel Game // second\n core } } }";
+        let parsed = Parser::parse(source, ParseOptions::default()).unwrap();
+        assert_eq!(Serializer::serialize_ast(&parsed.ast), source);
+        let reparsed = Parser::parse(
+            &Serializer::serialize_ast(&parsed.ast),
+            ParseOptions::default(),
+        )
+        .unwrap();
+        assert_eq!(reparsed.data, parsed.data);
+    }
+
+    #[test]
+    fn a_comment_does_not_replace_a_missing_value() {
+        for source in ["GameInfo // no value", "GameInfo { Game /* no value */ }"] {
+            assert!(Parser::parse(source, ParseOptions::default()).is_err());
+        }
+    }
+}
+
 pub struct Parser {
     tokens: Vec<Token>,
     pos: usize,
@@ -101,12 +127,27 @@ impl Parser {
         // Parse key
         let key = self.parse_string()?;
 
-        // Parse separator (whitespace between key and value)
-        let separator = if self.current_token().token_type == TokenType::Whitespace {
-            Some(self.parse_whitespace()?)
-        } else {
-            None
-        };
+        // Comments between a key and its value are trivia too. Keep their raw
+        // text with the separator so AST serialization still round-trips it.
+        let start = self.current_token().clone();
+        let mut raw = String::new();
+        let mut end = self.make_position(&start);
+        while matches!(
+            self.current_token().token_type,
+            TokenType::Whitespace | TokenType::Comment
+        ) {
+            let token = self.current_token();
+            raw.push_str(&token.raw);
+            end = self.make_position(token);
+            self.advance();
+        }
+        let separator = (!raw.is_empty()).then(|| WhitespaceNode {
+            node_type: NodeType::Whitespace,
+            start: self.make_position(&start),
+            end,
+            value: raw.clone(),
+            raw,
+        });
 
         // Parse value
         let value = if self.current_token().token_type == TokenType::OpenBrace {

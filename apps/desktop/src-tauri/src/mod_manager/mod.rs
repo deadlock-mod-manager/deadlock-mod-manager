@@ -12,6 +12,8 @@ pub mod font_manager;
 pub mod fs_retry;
 pub mod game_config_manager;
 pub mod game_process_manager;
+mod gameinfo;
+mod gameinfo_search_paths;
 mod hero_settings;
 pub mod localization_overlay;
 pub mod manager;
