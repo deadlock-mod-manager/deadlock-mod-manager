@@ -8582,7 +8582,7 @@
     },
     "nightlyChannel": {
       "title": "Like living on the edge?",
-      "body": "Switch to the nightly testing channel to get new features before everyone else. Expect the occasional rough edge."
+      "body": "Switch to the nightly testing channel for daily builds with the newest features. They can be unstable."
     }
   },
   "configListing": {
