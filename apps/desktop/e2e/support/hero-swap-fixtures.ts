@@ -1,4 +1,4 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
 import { readPersistedDocument } from "./observations";
@@ -48,20 +48,5 @@ export const prepareHeroSwapWorld = async (world: CreatedWorld) => {
   await writeFile(
     path.join(world.configuration.roots.appData, "state.json"),
     JSON.stringify({ "local-config": JSON.stringify(persisted) }),
-  );
-  // A gameinfo.gi DMM already set up carries its markers around SearchPaths.
-  const gameinfo = path.join(
-    world.configuration.roots.game,
-    "game",
-    "citadel",
-    "gameinfo.gi",
-  );
-  await writeFile(
-    gameinfo,
-    (await readFile(gameinfo, "utf8")).replace(
-      /\t*SearchPaths\s*\{[^}]*\}/,
-      (block) =>
-        `// Deadlock Mod Manager - Start\n${block}\n// Deadlock Mod Manager - End`,
-    ),
   );
 };
