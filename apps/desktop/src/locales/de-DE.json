@@ -3810,6 +3810,8 @@
     "ignoreFailed": "",
     "markedFineSection": "",
     "ignoredPair": "",
+    "ignoredFilesRow_one": "",
+    "ignoredFilesRow_other": "",
     "ignoredModRow": "",
     "restore": "",
     "clearIgnores": "",

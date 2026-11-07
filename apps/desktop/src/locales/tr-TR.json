@@ -3810,6 +3810,8 @@
     "ignoreFailed": "Yoksayma tercihi kaydedilemedi",
     "markedFineSection": "Sorunsuz olarak işaretlenenler ({{count}})",
     "ignoredPair": "{{first}} ve {{second}}",
+    "ignoredFilesRow_one": "",
+    "ignoredFilesRow_other": "",
     "ignoredModRow": "{{mod}}: tüm çakışmalar",
     "restore": "Geri yükle",
     "clearIgnores": "Tümünü geri yükle",
