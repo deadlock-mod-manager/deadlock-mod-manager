@@ -236,8 +236,11 @@ export const DashboardTabs = ({
   return (
     // Many tabs outgrow a narrow window before anything else in the header
     // does; scrolling them keeps every tab reachable instead of clipped.
-    <div className='flex max-w-full items-center gap-2 overflow-x-auto'>
-      <Tabs onValueChange={onSelect} value={activeTabId}>
+    <div className='flex max-w-full items-center gap-2'>
+      <Tabs
+        className='min-w-0 flex-1 overflow-x-auto'
+        onValueChange={onSelect}
+        value={activeTabId}>
         <TabsList className='h-auto w-max gap-1 bg-transparent p-0'>
           {tabs.map((tab) => {
             const panel = tabPanel(tab);

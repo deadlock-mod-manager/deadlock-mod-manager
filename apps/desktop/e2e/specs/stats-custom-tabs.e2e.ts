@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { $, expect } from "@wdio/globals";
+import { $, browser, expect } from "@wdio/globals";
 import { startApplication } from "../support/application";
 import { closeApplication } from "../support/application-exit";
 import { step } from "../support/evidence";
@@ -67,6 +67,7 @@ const closeTabSettings = () =>
 describe("stats dashboard tabs", () => {
   it("builds tabs from templates and by hand, and keeps them after a restart", async () => {
     const runtime = await startApplication();
+    await browser.setWindowSize(1024, 800);
     const world = runtime.roots.world;
     const phase = process.env.DMM_E2E_PHASE;
     assert(phase === "tabs" || phase === "restart-tabs");
