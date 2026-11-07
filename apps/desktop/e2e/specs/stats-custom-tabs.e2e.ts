@@ -98,8 +98,11 @@ describe("stats dashboard tabs", () => {
       await step(
         "the Meta template brings its widgets, all loaded",
         async () => {
+          await browser.setWindowSize(1600, 800);
           await addTab("Meta");
           await expectActiveTab("Meta");
+          await expectActiveTabInView();
+          await browser.setWindowSize(1024, 800);
           await expectActiveTabInView();
           await expectWidgetSources(META_TEMPLATE);
           for (const source of META_TEMPLATE)
