@@ -3661,6 +3661,7 @@
       "crashRisk": ""
     },
     "lastUpdatedBefore": "",
+    "appliesWhenEnabled": "",
     "stillNeedsUpdate": "",
     "fixForPatch": "",
     "checkForRepairs": "",
@@ -5500,6 +5501,8 @@
     "restoreFromRecordsInterrupted": "",
     "foundAddons": "Gfundeni Addons",
     "noAddonsFound": "Kei Addons i dim Spielverzeichnis gfunde",
+    "noIdentifiedAddons": "",
+    "noUnmatchedAddons": "",
     "errors": "Fehler",
     "errorsCount": "{{count}} Fehler",
     "fileCount": "Dateie",
@@ -7448,7 +7451,19 @@
     "modsProcessed": "",
     "importedProfileDescription": "",
     "importedProfileName": "",
-    "modsImportedCount": "",
+    "importFailures": {
+      "unnamed": "",
+      "lookup": "",
+      "downloads": "",
+      "install": ""
+    },
+    "importResult": {
+      "title": "",
+      "summary": "",
+      "notImported_one": "",
+      "notImported_other": "",
+      "done": ""
+    },
     "activateProfileLabel": "",
     "statusActive": "",
     "statusInactive": "",

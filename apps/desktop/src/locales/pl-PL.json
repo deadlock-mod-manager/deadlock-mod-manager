@@ -3661,6 +3661,7 @@
       "crashRisk": ""
     },
     "lastUpdatedBefore": "",
+    "appliesWhenEnabled": "",
     "stillNeedsUpdate": "",
     "fixForPatch": "",
     "checkForRepairs": "",
@@ -5500,6 +5501,8 @@
     "restoreFromRecordsInterrupted": "",
     "foundAddons": "Znalezione dodatki",
     "noAddonsFound": "Nie znaleziono dodatków w katalogu gry",
+    "noIdentifiedAddons": "",
+    "noUnmatchedAddons": "",
     "errors": "Błędy",
     "errorsCount": "{{count}} błąd(-ów)",
     "fileCount": "Pliki",
@@ -7448,7 +7451,19 @@
     "modsProcessed": "Modyfikacje przetworzone",
     "importedProfileDescription": "Profil zaimportowany z ID profilu współdzielonego",
     "importedProfileName": "Zaimportowany profil - {{date}}",
-    "modsImportedCount": "{{imported}}/{{total}} mody zaimportowane",
+    "importFailures": {
+      "unnamed": "",
+      "lookup": "",
+      "downloads": "",
+      "install": ""
+    },
+    "importResult": {
+      "title": "",
+      "summary": "",
+      "notImported_one": "",
+      "notImported_other": "",
+      "done": ""
+    },
     "activateProfileLabel": "Aktywuj profil {{profileName}}",
     "statusActive": "Aktywny",
     "statusInactive": "Nieaktywny",

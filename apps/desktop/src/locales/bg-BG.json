@@ -3661,6 +3661,7 @@
       "crashRisk": ""
     },
     "lastUpdatedBefore": "",
+    "appliesWhenEnabled": "",
     "stillNeedsUpdate": "",
     "fixForPatch": "",
     "checkForRepairs": "",
@@ -5500,6 +5501,8 @@
     "restoreFromRecordsInterrupted": "",
     "foundAddons": "Намерени добавки",
     "noAddonsFound": "Не са намерени добавки във вашата игрова директория",
+    "noIdentifiedAddons": "",
+    "noUnmatchedAddons": "",
     "errors": "Грешки",
     "errorsCount": "{{count}} грешка/и",
     "fileCount": "Файлове",
@@ -7448,7 +7451,19 @@
     "modsProcessed": "",
     "importedProfileDescription": "",
     "importedProfileName": "",
-    "modsImportedCount": "",
+    "importFailures": {
+      "unnamed": "",
+      "lookup": "",
+      "downloads": "",
+      "install": ""
+    },
+    "importResult": {
+      "title": "",
+      "summary": "",
+      "notImported_one": "",
+      "notImported_other": "",
+      "done": ""
+    },
     "activateProfileLabel": "",
     "statusActive": "",
     "statusInactive": "",

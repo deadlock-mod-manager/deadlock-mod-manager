@@ -3661,6 +3661,7 @@
       "crashRisk": ""
     },
     "lastUpdatedBefore": "",
+    "appliesWhenEnabled": "",
     "stillNeedsUpdate": "",
     "fixForPatch": "",
     "checkForRepairs": "",
@@ -5500,6 +5501,8 @@
     "restoreFromRecordsInterrupted": "",
     "foundAddons": "Addons ที่พบ",
     "noAddonsFound": "ไม่พบ addons ในไดเรกทอรีเกมของคุณ",
+    "noIdentifiedAddons": "",
+    "noUnmatchedAddons": "",
     "errors": "ข้อผิดพลาด",
     "errorsCount": "{{count}} ข้อผิดพลาด",
     "fileCount": "ไฟล์",
@@ -7448,7 +7451,19 @@
     "modsProcessed": "ประมวลผลม็อดแล้ว",
     "importedProfileDescription": "",
     "importedProfileName": "",
-    "modsImportedCount": "",
+    "importFailures": {
+      "unnamed": "",
+      "lookup": "",
+      "downloads": "",
+      "install": ""
+    },
+    "importResult": {
+      "title": "",
+      "summary": "",
+      "notImported_one": "",
+      "notImported_other": "",
+      "done": ""
+    },
     "activateProfileLabel": "",
     "statusActive": "",
     "statusInactive": "",

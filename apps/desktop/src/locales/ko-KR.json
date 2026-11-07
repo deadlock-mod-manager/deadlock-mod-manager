@@ -3661,6 +3661,7 @@
       "crashRisk": ""
     },
     "lastUpdatedBefore": "",
+    "appliesWhenEnabled": "",
     "stillNeedsUpdate": "",
     "fixForPatch": "",
     "checkForRepairs": "",
@@ -5500,6 +5501,8 @@
     "restoreFromRecordsInterrupted": "",
     "foundAddons": "발견된 애드온",
     "noAddonsFound": "게임 디렉토리에 애드온이 없습니다",
+    "noIdentifiedAddons": "",
+    "noUnmatchedAddons": "",
     "errors": "오류",
     "errorsCount": "{{count}} 오류",
     "fileCount": "파일",
@@ -7448,7 +7451,19 @@
     "modsProcessed": "처리된 모드",
     "importedProfileDescription": "",
     "importedProfileName": "",
-    "modsImportedCount": "",
+    "importFailures": {
+      "unnamed": "",
+      "lookup": "",
+      "downloads": "",
+      "install": ""
+    },
+    "importResult": {
+      "title": "",
+      "summary": "",
+      "notImported_one": "",
+      "notImported_other": "",
+      "done": ""
+    },
     "activateProfileLabel": "",
     "statusActive": "",
     "statusInactive": "",
