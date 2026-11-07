@@ -15,12 +15,15 @@ The default channel. Stable releases are thoroughly tested and signed with the p
 
 ## Nightly Channel
 
-Nightly builds are generated automatically every day from the latest development branch. They include the newest features and bug fixes, but may contain unstable or incomplete functionality.
+Nightly is a testing channel, used mostly by maintainers and a small group of testers. Builds are generated automatically every day from the latest development branch. They include the newest features and bug fixes, but may contain unstable or incomplete functionality.
 
 <Callout type='warn'>
-  Nightly builds use a test code-signing policy. Windows SmartScreen may show a
-  warning when you first run a nightly build.
+  Nightly Windows installers are signed with a test certificate on purpose.
+  Windows SmartScreen or your antivirus may show a trust warning when you
+  install or first run a nightly build.
 </Callout>
+
+Both channels use the same updater signature check. The app refuses any update, stable or nightly, that isn't signed with the Deadlock Mod Manager updater key.
 
 ### Versioning
 
@@ -42,3 +45,37 @@ You opt in from within the app so there is a single installation and one place f
 4. Restart the application
 
 After restarting, the app will check for updates from the nightly channel. To switch back, change the setting to **Stable** and restart again.
+
+## What Switching Channels Does
+
+The channel only decides where future updates come from. Switching doesn't install anything and never downgrades the version you have installed:
+
+- Going from nightly back to stable keeps your nightly build until a stable release newer than it ships. To leave nightly sooner, [roll back manually](#rolling-back-to-an-earlier-version).
+- Going from stable to nightly only offers a nightly that is newer than your stable version.
+- Every update asks for confirmation before it installs.
+- The standard build only updates to standard builds, and the CEF build only to CEF builds. The updater never switches you from one to the other.
+
+## Rolling Back to an Earlier Version
+
+Rolling back is a manual reinstall. Your settings, profiles, and downloaded mods are kept, because they live in the app data folder, not the install folder. Settings that only exist in the newer version have no effect in the older one.
+
+1. Open **About** to check your current build. A **CEF** badge next to the Tauri version means you have the CEF build; otherwise you have the standard build.
+2. In **Settings**, set **Update Channel** to **Stable** and restart, so a nightly isn't offered again right away.
+3. Open the [releases page](https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases) and pick the stable version you want. Only the latest nightly is published, so you can't roll back to an older nightly.
+4. Download the file that matches your build and installer. Using a different file switches your build type.
+
+| Installer          | Standard build                                    | CEF build                                          |
+| ------------------ | ------------------------------------------------- | -------------------------------------------------- |
+| Windows installer  | `Deadlock.Mod.Manager_<version>_x64-setup.exe`    | `Deadlock.Mod.Manager_<version>_x64-cef-setup.exe` |
+| Windows portable   | `Deadlock.Mod.Manager_<version>_x64-portable.exe` | Not available                                      |
+| Debian or Ubuntu   | `Deadlock.Mod.Manager_<version>_amd64.deb`        | `Deadlock.Mod.Manager_<version>_amd64-cef.deb`     |
+| Fedora or openSUSE | `Deadlock.Mod.Manager-<version>-1.x86_64.rpm`     | Not available                                      |
+| Flatpak            | `deadlock-mod-manager.flatpak`                    | `deadlock-mod-manager-cef.flatpak`                 |
+
+5. Install it over your current version:
+   - **Windows installer:** run the setup file and accept when it offers to uninstall the current version first. If the uninstaller shows **Delete the application data**, leave it unchecked.
+   - **Windows portable:** replace the old executable with the new one.
+   - **Debian or Ubuntu:** `sudo apt install --allow-downgrades ./<file>.deb`
+   - **Fedora or openSUSE:** `sudo dnf downgrade ./<file>.rpm` or `sudo zypper install --oldpackage ./<file>.rpm`
+   - **Flatpak:** `flatpak install --reinstall ./<file>.flatpak`
+   - **AUR or Nix:** use your package manager to pin or downgrade the package.

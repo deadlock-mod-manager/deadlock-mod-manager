@@ -8,6 +8,8 @@ export const COMMISSIONS_URL = "https://commissions.deadlockmods.app/";
 export const PRIVACY_POLICY_URL = "https://deadlockmods.app/privacy";
 export const NETWORK_ACTIVITY_DOCS_URL =
   "https://docs.deadlockmods.app/using-mod-manager/privacy";
+export const UPDATE_ROLLBACK_DOCS_URL =
+  "https://docs.deadlockmods.app/using-mod-manager/update-channels#rolling-back-to-an-earlier-version";
 export const APP_DESCRIPTION =
   'Deadlock Mod Manager is a tool for installing and managing mods for the Valve game "Deadlock".';
 export const COPYRIGHT =

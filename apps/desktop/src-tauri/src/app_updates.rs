@@ -47,6 +47,17 @@ impl UpdateContext {
   }
 }
 
+fn is_nightly(version: &semver::Version) -> bool {
+  version.pre.as_str().starts_with("nightly.")
+}
+
+/// Nightly offers newer builds, plus older nightlies to an installed nightly so
+/// a reset nightly base version (#784) still reaches existing testers. An
+/// installed stable build is never offered anything older than itself.
+fn nightly_offers_release(current: &semver::Version, release: &semver::Version) -> bool {
+  release > current || (is_nightly(current) && is_nightly(release) && release != current)
+}
+
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UpdateMetadata {
@@ -107,7 +118,8 @@ pub async fn check_app_update(webview: tauri::Webview<AppRuntime>) -> UpdateChec
       builder = builder.endpoints(endpoints)?;
     }
     if context.channel == UpdateChannel::Nightly {
-      builder = builder.version_comparator(|current, release| release.version != current);
+      builder = builder
+        .version_comparator(|current, release| nightly_offers_release(&current, &release.version));
     }
     builder.build()?.check().await
   };
@@ -170,6 +182,31 @@ mod tests {
     assert_eq!(json["context"]["channel"], "stable");
     assert_eq!(json["context"]["installer"], "deb");
     assert!(!json["message"].as_str().unwrap().is_empty());
+  }
+
+  #[test]
+  fn nightly_offers_older_builds_only_from_one_nightly_to_another() {
+    let offers = |current: &str, release: &str| {
+      nightly_offers_release(
+        &semver::Version::parse(current).unwrap(),
+        &semver::Version::parse(release).unwrap(),
+      )
+    };
+    assert!(offers("2.3.0", "2.4.0-nightly.20261107.abc1234"));
+    assert!(!offers("2.3.0", "2.3.0-nightly.20261106.abc1234"));
+    assert!(!offers("2.3.0", "2.3.0"));
+    assert!(offers(
+      "2.4.0-nightly.20261106.abc1234",
+      "2.4.0-nightly.20261107.def5678"
+    ));
+    assert!(offers(
+      "2.5.0-nightly.20261106.abc1234",
+      "2.4.0-nightly.20261107.def5678"
+    ));
+    assert!(!offers(
+      "2.4.0-nightly.20261107.def5678",
+      "2.4.0-nightly.20261107.def5678"
+    ));
   }
 
   #[test]

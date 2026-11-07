@@ -4590,10 +4590,13 @@
     "autoUpdate": "Automatic Updates",
     "autoUpdateDescription": "Automatically check for and notify about application updates on startup.",
     "updateChannel": "Update Channel",
-    "updateChannelDescription": "Choose which release channel to receive updates from.",
+    "updateChannelDescription": "Choose where future updates come from. A change applies after a restart and never downgrades the version you have installed.",
     "updateChannelStable": "Stable",
-    "updateChannelNightly": "Nightly",
-    "updateChannelRestartRequired": "Restart Deadlock Mod Manager to switch update channels.",
+    "updateChannelNightly": "Nightly (testing)",
+    "updateChannelNightlyNote": "Nightly is a testing channel with daily builds that can be unstable.",
+    "updateChannelNightlyWindowsNote": "Its Windows installers use a test signing certificate, so Windows may show a trust warning.",
+    "updateChannelRollbackGuide": "How to go back to an earlier version",
+    "updateChannelRestartRequired": "Restart Deadlock Mod Manager to switch update channels. Your installed version stays the same.",
     "updateChannelChangeFailed": "Failed to change update channel.",
     "linuxGpuCompat": "NVIDIA Wayland Compatibility",
     "linuxGpuCompatDescription": "Workaround for a webkit2gtk rendering bug on NVIDIA GPUs with Wayland. Auto mode detects your GPU and display server at startup. Forcing this on when not needed causes poor scrolling performance.",
@@ -8579,7 +8582,7 @@
     },
     "nightlyChannel": {
       "title": "Like living on the edge?",
-      "body": "Switch to the nightly update channel to get new features before everyone else. Expect the occasional rough edge."
+      "body": "Switch to the nightly testing channel to get new features before everyone else. Expect the occasional rough edge."
     }
   },
   "configListing": {

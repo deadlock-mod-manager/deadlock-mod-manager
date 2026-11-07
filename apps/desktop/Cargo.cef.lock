@@ -1723,6 +1723,7 @@ dependencies = [
  "notify",
  "regex",
  "reqwest 0.12.28",
+ "semver",
  "serde",
  "serde_json",
  "sevenz-rust2",
