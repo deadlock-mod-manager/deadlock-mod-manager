@@ -43,6 +43,7 @@ import {
   prepareHealthUpdateWorld,
 } from "./health-update-fixtures";
 import { prepareConflictWorld } from "./conflict-fixtures";
+import { repairRebuildScenarios } from "./repair-rebuild-scenarios";
 import { prepareFilesystemWorld } from "./filesystem-fixtures";
 import { prepareManifestRepairWorld } from "./manifest-repair-fixtures";
 import { prepareModFolderRepairWorld } from "./mod-folder-repair-fixtures";
@@ -125,7 +126,7 @@ import {
   assertReliabilityNetwork,
 } from "./reliability-fixtures";
 
-type Definition = {
+export type Definition = {
   family: string;
   spec: string;
   phases: readonly string[];
@@ -832,6 +833,11 @@ export const scenarios = {
     prepare: prepareHealthUpdateWorld,
     verifyNetwork: assertHealthUpdateNetwork,
   },
+  ...repairRebuildScenarios({
+    ...defaults,
+    family: "compatibility",
+    routes: profileRoutes,
+  }),
   // The stand-in game is a Linux `sleep` (e2e/support/fake-game.ts).
   "fixed-status-game-exit": {
     ...defaults,
