@@ -1525,11 +1525,6 @@
     "unranked": "Unranked",
     "unknownPlayer": "Unknown player",
     "signedIn": "signed in",
-    "credit": {
-      "name": "Deadlock API",
-      "priorityHint": "Deadlock API patrons get their matches fetched first, with full history and accurate ranks.",
-      "priorityCta": "Learn more"
-    },
     "settings": {
       "matchSync": "Match sharing"
     },
