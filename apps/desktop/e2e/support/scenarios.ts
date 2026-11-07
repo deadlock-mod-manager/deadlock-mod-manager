@@ -37,7 +37,13 @@ import {
   PLAIN_MOD as STATUS_PLAIN_MOD,
   prepareFixedStatusWorld,
 } from "./fixed-status-fixtures";
+import {
+  assertHealthUpdateNetwork,
+  healthUpdateRoutes,
+  prepareHealthUpdateWorld,
+} from "./health-update-fixtures";
 import { prepareConflictWorld } from "./conflict-fixtures";
+import { repairRebuildScenarios } from "./repair-rebuild-scenarios";
 import { prepareFilesystemWorld } from "./filesystem-fixtures";
 import { prepareManifestRepairWorld } from "./manifest-repair-fixtures";
 import { prepareModFolderRepairWorld } from "./mod-folder-repair-fixtures";
@@ -120,7 +126,7 @@ import {
   assertReliabilityNetwork,
 } from "./reliability-fixtures";
 
-type Definition = {
+export type Definition = {
   family: string;
   spec: string;
   phases: readonly string[];
@@ -818,6 +824,20 @@ export const scenarios = {
         throw new Error("The fixed mod was never identified through analysis");
     },
   },
+  "compatibility-health-update": {
+    ...defaults,
+    family: "compatibility",
+    spec: "compatibility-health-update",
+    phases: ["update"],
+    routes: healthUpdateRoutes,
+    prepare: prepareHealthUpdateWorld,
+    verifyNetwork: assertHealthUpdateNetwork,
+  },
+  ...repairRebuildScenarios({
+    ...defaults,
+    family: "compatibility",
+    routes: profileRoutes,
+  }),
   // The stand-in game is a Linux `sleep` (e2e/support/fake-game.ts).
   "fixed-status-game-exit": {
     ...defaults,
@@ -859,6 +879,7 @@ export const scenarios = {
   "downloads-deleted-default": downloads,
   "downloads-cancel": { ...downloads, coverage: "ipc-recovery" },
   "downloads-cancel-connecting": downloads,
+  "downloads-cancel-late-error": downloads,
   "downloads-cancel-queued": downloads,
   "downloads-reload-queued": downloads,
   "downloads-delete-queued": downloads,

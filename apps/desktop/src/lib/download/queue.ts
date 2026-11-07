@@ -16,6 +16,8 @@ export class DownloadAlreadyQueuedError extends Error {}
 
 interface PendingDownload {
   mod: DownloadableMod;
+  /** Names this request in the backend's events. */
+  attemptId: string;
   attempt: AnalyticsAttempt<"mod_download">;
   quietCancels: number;
   /** False while the download waits in the backend's queue. */
@@ -25,13 +27,16 @@ interface DownloadQueueDependencies {
   start: (
     properties: AnalyticsOperations["mod_download"]["start"],
   ) => AnalyticsAttempt<"mod_download">;
-  queue: (mod: DownloadableMod) => Promise<void>;
+  queue: (mod: DownloadableMod, attemptId: string) => Promise<void>;
   cancel: (modId: string) => Promise<void>;
   duplicateMessage: () => string;
   onQueueError: (error: Error) => void;
+  /** Unique across reloads: a reloaded window must not reuse an earlier attempt's id. */
+  createAttemptId: () => string;
 }
 
-// Backend events identify only the mod: one record owns its callbacks and attempt.
+// One record per mod owns its callbacks and attempt. Backend events that settle
+// a download also name the attempt, and only that attempt's record takes them.
 export class DownloadQueue {
   private pending = new Map<string, PendingDownload>();
   constructor(private readonly dependencies: DownloadQueueDependencies) {}
@@ -39,8 +44,12 @@ export class DownloadQueue {
   getMod(modId: string) {
     return this.pending.get(modId)?.mod;
   }
-  start(modId: string) {
-    const entry = this.pending.get(modId);
+  /** The mod's pending download, if it is the attempt the event names. */
+  getAttempt(modId: string, attemptId: string | null) {
+    return this.attempt(modId, attemptId)?.mod;
+  }
+  start(modId: string, attemptId: string | null) {
+    const entry = this.attempt(modId, attemptId);
     if (entry) entry.started = true;
     return entry?.mod;
   }
@@ -68,6 +77,7 @@ export class DownloadQueue {
     }
     const entry: PendingDownload = {
       mod,
+      attemptId: this.dependencies.createAttemptId(),
       quietCancels: 0,
       attempt: this.dependencies.start({
         mod_id: mod.remoteId,
@@ -79,7 +89,7 @@ export class DownloadQueue {
       started: false,
     };
     this.pending.set(mod.remoteId, entry);
-    this.dependencies.queue(mod).catch((error) => {
+    this.dependencies.queue(mod, entry.attemptId).catch((error) => {
       if (!this.settle(mod.remoteId, "failed", entry)) return;
       const failure =
         error instanceof Error ? error : new Error(getErrorMessage(error));
@@ -88,14 +98,19 @@ export class DownloadQueue {
     });
   }
 
-  complete(modId: string, path: string) {
-    this.settle(modId, "completed")?.onComplete(path);
+  complete(modId: string, attemptId: string | null, path: string) {
+    const entry = this.attempt(modId, attemptId);
+    if (!entry) return;
+    this.settle(modId, "completed", entry)?.onComplete(path);
   }
 
-  fail(modId: string, error: string) {
+  fail(modId: string, attemptId: string | null, error: string) {
+    const entry = this.attempt(modId, attemptId);
+    if (!entry) return;
     this.settle(
       modId,
       error === "Download cancelled" ? "cancelled" : "failed",
+      entry,
     )?.onError(new Error(error));
   }
 
@@ -117,12 +132,17 @@ export class DownloadQueue {
     return true;
   }
 
+  private attempt(modId: string, attemptId: string | null) {
+    const entry = this.pending.get(modId);
+    return entry?.attemptId === attemptId ? entry : undefined;
+  }
+
   private settle(
     modId: string,
     outcome: AnalyticsOutcome,
-    expected = this.pending.get(modId),
+    expected: PendingDownload,
   ) {
-    if (!expected || this.pending.get(modId) !== expected) return;
+    if (this.pending.get(modId) !== expected) return;
     this.pending.delete(modId);
     expected.attempt.finish(outcome);
     return expected.quietCancels > 0 ? undefined : expected.mod;
