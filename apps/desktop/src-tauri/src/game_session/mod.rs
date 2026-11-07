@@ -237,6 +237,27 @@ pub fn note_dmm_stop_completed(session_id: Option<String>) {
   }
 }
 
+/// Called when the app's Stop failed, with the session `note_dmm_stop`
+/// returned. The game may still be running, so a later exit must not be
+/// credited to this Stop.
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
+pub fn note_dmm_stop_failed(session_id: Option<String>) {
+  let mut tracker = tracker();
+  tracker.dmm_stop_at = None;
+  let Some(sessions_dir) = tracker.sessions_dir.clone() else {
+    return;
+  };
+  let Some(current) = tracker
+    .current
+    .as_mut()
+    .filter(|current| Some(&current.session_id) == session_id.as_ref())
+  else {
+    return;
+  };
+  current.dmm_stop_requested = false;
+  store::save_current(&sessions_dir, Some(&*current));
+}
+
 pub fn pending_reports() -> Vec<SessionReport> {
   let mut reports = tracker().pending.clone();
   reports.sort_by(|a, b| a.started_at.cmp(&b.started_at));

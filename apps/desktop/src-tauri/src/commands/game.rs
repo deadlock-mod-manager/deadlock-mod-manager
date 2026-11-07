@@ -247,7 +247,10 @@ pub async fn stop_game() -> Result<(), Error> {
   let stopped_session = crate::game_session::note_dmm_stop();
   #[cfg(target_os = "linux")]
   if crate::flatpak::running_in_flatpak() {
-    crate::flatpak::game_process::stop_game().await?;
+    if let Err(error) = crate::flatpak::game_process::stop_game().await {
+      crate::game_session::note_dmm_stop_failed(stopped_session);
+      return Err(error);
+    }
     // Without a PID, the session can't see the game exit on its own.
     crate::game_session::note_dmm_stop_completed(stopped_session);
     return Ok(());
