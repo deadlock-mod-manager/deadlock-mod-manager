@@ -9,6 +9,9 @@ use ts_rs::TS;
 pub struct PresenceBuildConfig {
     pub templates: PresenceTextTemplates,
     pub hero_overrides: HashMap<String, PresenceTextTemplates>,
+    /// Leaves out the party count, both Discord's "(3 of 6)" and the built-in
+    /// "Party of 3" text. Templates are still rendered as written.
+    pub hide_party_size: bool,
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize, TS, PartialEq, Eq)]

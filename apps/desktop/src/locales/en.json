@@ -7855,6 +7855,8 @@
     "title": "Discord Game Presence",
     "description": "Show your live Deadlock status via Discord Rich Presence, such as current hero, match mode, party size, and more.",
     "settingsDescription": "Customize how Deadlock appears on your Discord profile.",
+    "hidePartySize": "Hide party size",
+    "hidePartySizeDescription": "Leave out how many players are in your party, such as \"Party of 3\". Your custom templates still show what you wrote in them.",
     "condebugOption": "Console Debug Log",
     "condebugOptionDescription": "Lets the mod manager read game info so your Discord status stays up to date.",
     "condebugDisableWarning": "You need to disable Discord Game Presence first before turning off Console Debug Log.",

@@ -39,6 +39,7 @@ import type { TemplateField } from "@/components/settings/game-presence/presence
 
 import { TemplateFieldEditor } from "@/components/settings/game-presence/template-field-editor";
 import { DiscordPreviewCard } from "@/components/settings/game-presence/discord-preview-card";
+import { HidePartySizeToggle } from "@/components/settings/game-presence/hide-party-size-toggle";
 
 interface GamePresenceHero {
   codename: string;
@@ -310,6 +311,9 @@ export const GamePresenceSettings = () => {
               htmlFor='toggle-game-presence'
             />
           </div>
+        </div>
+        <div className='mt-4 border-border/50 border-t pt-4'>
+          <HidePartySizeToggle />
         </div>
       </div>
 
