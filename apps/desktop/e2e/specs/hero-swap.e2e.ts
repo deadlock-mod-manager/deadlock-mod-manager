@@ -6,6 +6,7 @@ import { z } from "zod";
 import { startApplication } from "../support/application";
 import { closeApplication } from "../support/application-exit";
 import { step } from "../support/evidence";
+import { fixtureGamePaths } from "../support/gameinfo-mounts";
 import {
   HAZE_CURRENT,
   HAZE_SWAP,
@@ -61,9 +62,9 @@ const readLoadedHazeModels = async (world: string) => {
     path.join(game, "citadel", "gameinfo.gi"),
     "utf8",
   );
-  const searchPaths = [
-    ...gameinfo.matchAll(/^\s*Game\s+(citadel\/\S+)\s*$/gm),
-  ].map((match) => match[1]);
+  const searchPaths = fixtureGamePaths(gameinfo).filter((mount) =>
+    mount.startsWith("citadel/"),
+  );
   const loaded: string[] = [];
   for (const searchPath of searchPaths) {
     const directory = path.join(game, searchPath);

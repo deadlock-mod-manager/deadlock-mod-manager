@@ -13,6 +13,77 @@ fn game() -> (tempfile::TempDir, PathBuf) {
 }
 
 #[test]
+fn stale_cleanup_cannot_remove_paths_reapplied_without_changing_the_file() {
+  let (game, path) = game();
+  let mut manager = GameConfigManager::new();
+  let paths = ["citadel/addons/profile_current".into()];
+  manager.update_mod_paths(game.path(), &paths).unwrap();
+  let revision = manager.cleanup_revision(game.path()).unwrap().unwrap();
+  let original = fs::read(&path).unwrap();
+  let timestamp = fs::metadata(&path).unwrap().modified().unwrap();
+  manager.update_mod_paths(game.path(), &paths).unwrap();
+  assert!(
+    !manager
+      .remove_mod_paths_at_revision(game.path(), revision)
+      .unwrap()
+  );
+  assert_eq!(fs::read(&path).unwrap(), original);
+  assert_eq!(fs::metadata(&path).unwrap().modified().unwrap(), timestamp);
+  let current = manager.cleanup_revision(game.path()).unwrap().unwrap();
+  assert!(
+    manager
+      .remove_mod_paths_at_revision(game.path(), current)
+      .unwrap()
+  );
+  assert_eq!(fs::read_to_string(path).unwrap(), fixture());
+}
+
+#[test]
+fn legacy_migration_removes_manifest_owned_paths_and_keeps_unknown_profiles() {
+  use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
+  let (game, path) = game();
+  let managed = path.parent().unwrap().join("addons/profile_managed");
+  fs::create_dir_all(&managed).unwrap();
+  ProfileVpkManifest::default().save(&managed).unwrap();
+  let original = fixture()
+    .replace("  SearchPaths", &format!("{MOD_MANAGER_MARKER_START}\r\n  SearchPaths"))
+    .replace("   Game citadel\r\n", "   Game citadel/addons/profile_managed\r\n   Game citadel/addons/profile_external\r\n   Game citadel\r\n")
+    .replace("  }\r\n }", &format!("  }}\r\n{MOD_MANAGER_MARKER_END}\r\n }}"));
+  fs::write(&path, original).unwrap();
+  let mut manager = GameConfigManager::new();
+  assert_eq!(
+    manager.marker_addons_paths(game.path()).unwrap(),
+    ["citadel/addons/profile_managed"]
+  );
+  manager.toggle_mods(game.path(), true).unwrap();
+  let cleaned = fs::read_to_string(&path).unwrap();
+  assert!(!cleaned.contains("profile_managed"));
+  assert!(cleaned.contains("Game citadel/addons/profile_external"));
+}
+
+#[test]
+fn reset_rejects_candidates_without_an_active_game_mount_before_writing() {
+  for candidate in [
+    "GameInfo { FileSystem { SearchPaths {} } }",
+    "GameInfo { FileSystem { SearchPaths { Game linux_only [$LINUX] } } }",
+    "GameInfo { FileSystem { SearchPaths { Game citadel } } }}",
+  ] {
+    let (game, path) = game();
+    let original = fs::read(&path).unwrap();
+    let mut manager = GameConfigManager::new();
+    assert!(
+      manager
+        .apply_vanilla_gameinfo(game.path(), candidate.into())
+        .is_err()
+    );
+    assert_eq!(fs::read(&path).unwrap(), original);
+    fs::write(path.with_extension("gi.bak"), candidate).unwrap();
+    assert!(manager.restore_gameinfo_backup(game.path()).is_err());
+    assert_eq!(fs::read(&path).unwrap(), original);
+  }
+}
+
+#[test]
 fn role_only_cleanup_is_owned_by_dmm_without_enabled_mod_mounts() {
   let (game, path) = game();
   fs::write(
@@ -116,6 +187,11 @@ fn real_writers_preserve_custom_content_and_do_not_rewrite_noops() {
 #[test]
 fn migration_saves_the_current_file_even_when_the_backup_is_stale() {
   let (game, path) = game();
+  let stale_profile = path.parent().unwrap().join("addons/server_stale");
+  fs::create_dir_all(&stale_profile).unwrap();
+  crate::mod_manager::vpk_manifest::ProfileVpkManifest::default()
+    .save(&stale_profile)
+    .unwrap();
   let stale = fixture().replace("   Game citadel/addons/external // user's mount\r\n", "");
   fs::write(path.with_extension("gi.bak"), &stale).unwrap();
   let legacy = fixture()

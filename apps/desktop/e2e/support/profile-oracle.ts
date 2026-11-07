@@ -1,8 +1,9 @@
-import { readPersistedDocument, fingerprint } from "./observations";
 import assert from "node:assert/strict";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
+import { fixtureGamePaths } from "./gameinfo-mounts";
+import { readPersistedDocument, fingerprint } from "./observations";
 import { ALPHA, BETA, BETA_MODS, profilePayload } from "./profile-fixtures";
 import { assertOwnedWorld, collectFileInventory } from "./world";
 
@@ -152,9 +153,9 @@ export const assertProfilesDisk = async (
     "utf8",
   );
   const active = activeId === ALPHA.id ? ALPHA : BETA;
-  const addonSearchPaths = [
-    ...gameinfo.matchAll(/^\s*Game\s+(citadel\/addons\S*)\s*$/gm),
-  ].map((match) => match[1]);
+  const addonSearchPaths = fixtureGamePaths(gameinfo).filter((mount) =>
+    mount.startsWith("citadel/addons"),
+  );
   assert.deepEqual(addonSearchPaths, [`citadel/addons/${active.folder}`]);
   await writeFile(
     path.join(world, "artifacts", `profiles-${step}.json`),

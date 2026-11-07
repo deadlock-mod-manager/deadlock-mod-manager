@@ -7,6 +7,7 @@ import { startApplication } from "../support/application";
 import { closeApplication } from "../support/application-exit";
 import { readBrokenLaunches } from "../support/broken-state-oracle";
 import { step } from "../support/evidence";
+import { startFakeGame, stopFakeGame } from "../support/fake-game";
 import {
   HYPERLINE_PATHS,
   LEGACY_GAMEINFO,
@@ -15,14 +16,34 @@ import {
 import { VANILLA_GAMEINFO } from "../support/gameinfo-recovery-fixtures";
 import { observeUntil } from "../support/observations";
 import { ALPHA, BETA, profilePayload } from "../support/profile-fixtures";
+import { openSettings, setSwitch } from "../support/settings-actions";
 import { activateProfile, navigate } from "../support/ui";
 import { assertOwnedWorld, collectFileInventory } from "../support/world";
 
-const cleanupSearchPaths = () =>
-  browser.execute(() =>
+const cleanupSearchPaths = async () => {
+  const result = await browser.execute(async () => {
     // oxlint-disable-next-line no-underscore-dangle -- Tauri's injected IPC global.
-    window.__TAURI_INTERNALS__.invoke<void>("remove_mod_search_paths"),
+    const invoke = window.__TAURI_INTERNALS__.invoke;
+    const revision = await invoke<number | null>("gameinfo_cleanup_revision");
+    const running = await invoke<boolean>("is_game_running");
+    const removed =
+      revision !== null &&
+      (await invoke<boolean>("remove_mod_search_paths", {
+        expectedRevision: revision,
+      }));
+    return {
+      revision,
+      running,
+      removed,
+      currentRevision: await invoke<number | null>("gameinfo_cleanup_revision"),
+    };
+  });
+  assert(
+    result.removed,
+    `Cleanup must remove the current mounts: ${JSON.stringify(result)}`,
   );
+  return true;
+};
 
 describe("coexistence with other gameinfo editors", () => {
   it("preserves foreign mounts through launches, profile changes, cleanup, and restart", async () => {
@@ -74,6 +95,8 @@ describe("coexistence with other gameinfo editors", () => {
         () => readBrokenLaunches(world),
         (rows) => rows.length === count + 1,
       );
+      await $("button=Cancel launch").waitForExist({ reverse: true });
+      await button.waitForClickable();
     };
     const launch = async (vanilla: boolean, folder: string) => {
       await recordLaunch(vanilla);
@@ -92,8 +115,26 @@ describe("coexistence with other gameinfo editors", () => {
       async () => {
         const first = await launch(false, ALPHA.folder);
         const timestamp = (await stat(gameinfo)).mtimeMs;
+        const revision = await browser.execute(() =>
+          // oxlint-disable-next-line no-underscore-dangle -- Tauri's injected IPC global.
+          window.__TAURI_INTERNALS__.invoke<number | null>(
+            "gameinfo_cleanup_revision",
+          ),
+        );
+        assert.notEqual(revision, null);
         assert.equal(await launch(false, ALPHA.folder), first);
         assert.equal((await stat(gameinfo)).mtimeMs, timestamp);
+        const removed = await browser.execute(
+          (expectedRevision) =>
+            // oxlint-disable-next-line no-underscore-dangle -- Tauri's injected IPC global.
+            window.__TAURI_INTERNALS__.invoke<boolean>(
+              "remove_mod_search_paths",
+              { expectedRevision },
+            ),
+          revision,
+        );
+        assert.equal(removed, false);
+        assert.equal(await readFile(gameinfo, "utf8"), first);
         if (runtime.caseId === "gameinfo-preserve-legacy-search-paths") {
           const snapshots = (await readdir(citadel)).filter((name) =>
             name.startsWith("gameinfo.gi.pre-dmm-migration-"),
@@ -118,15 +159,19 @@ describe("coexistence with other gameinfo editors", () => {
     await step(
       "Reject broken syntax without resetting the file or launching",
       async () => {
-        const broken = PRESERVED_GAMEINFO.slice(0, -1);
-        await writeFile(gameinfo, broken);
         const count = (await readBrokenLaunches(world)).length;
-        await $("button*=Launch modded").click();
-        await expect($("body")).toHaveText(
-          expect.stringContaining("Failed to parse game configuration"),
-        );
-        assert.equal(await readFile(gameinfo, "utf8"), broken);
-        assert.equal((await readBrokenLaunches(world)).length, count);
+        for (const broken of [
+          PRESERVED_GAMEINFO.slice(0, -1),
+          `${PRESERVED_GAMEINFO}}`,
+        ]) {
+          await writeFile(gameinfo, broken);
+          await $("button*=Launch modded").click();
+          await expect($("body")).toHaveText(
+            expect.stringContaining("Failed to parse game configuration"),
+          );
+          assert.equal(await readFile(gameinfo, "utf8"), broken);
+          assert.equal((await readBrokenLaunches(world)).length, count);
+        }
         const malformedMarkers = PRESERVED_GAMEINFO.replace(
           "      Game core",
           "      // Deadlock Mod Manager - SearchPaths v2 - Start\r\n      Game core",
@@ -149,6 +194,35 @@ describe("coexistence with other gameinfo editors", () => {
         await cleanupSearchPaths();
         assert.equal(await readFile(gameinfo, "utf8"), PRESERVED_GAMEINFO);
         await activateProfile(ALPHA.name);
+        await launch(false, ALPHA.folder);
+      },
+    );
+    await step(
+      "Remove only DMM mounts after an opted-in game exit",
+      async () => {
+        await openSettings("game");
+        await setSwitch("#toggle-setting-auto-reset-gameinfo", true);
+        await navigate("my-mods");
+        const mounted = await readFile(gameinfo, "utf8");
+        const game = await startFakeGame(world);
+        try {
+          await expect($("button=Stop Game")).toBeDisplayed({ wait: 15_000 });
+          assert.equal(await readFile(gameinfo, "utf8"), mounted);
+        } finally {
+          await stopFakeGame(game);
+        }
+        await observeUntil(
+          "the exit hook removes DMM mounts while preserving foreign content",
+          () => readFile(gameinfo, "utf8"),
+          (content) => content === PRESERVED_GAMEINFO,
+          20_000,
+        );
+        await expect($("body")).toHaveText(
+          expect.stringContaining("Deadlock closed. DMM mod paths removed."),
+        );
+        await openSettings("game");
+        await setSwitch("#toggle-setting-auto-reset-gameinfo", false);
+        await navigate("my-mods");
         await launch(false, ALPHA.folder);
       },
     );
@@ -208,6 +282,42 @@ describe("coexistence with other gameinfo editors", () => {
         assert.equal((await stat(gameinfo)).mtimeMs, timestamp);
         await recordLaunch(false);
         await assertDeadworks();
+        await writeFile(gameinfo, PRESERVED_GAMEINFO);
+        await launch(false, ALPHA.folder);
+      },
+    );
+    await step(
+      "Handle compact mounts and opening-brace comments without splitting foreign fences",
+      async () => {
+        for (const original of [
+          "GameInfo { FileSystem { SearchPaths { // shared mounts\n Game citadel\n Game core\n} } }",
+          "GameInfo { FileSystem { SearchPaths { Game_UILanguage citadel_*LANGUAGE* Game_LowViolence citadel_lv Game citadel Game core } } }",
+        ]) {
+          await writeFile(gameinfo, original);
+          await recordLaunch(false);
+          const mounted = await readFile(gameinfo, "utf8");
+          assert(mounted.includes(`citadel/addons/${ALPHA.folder}`));
+          if (original.includes("Game_LowViolence")) {
+            assert(
+              mounted.indexOf("Game_LowViolence") <
+                mounted.indexOf(`citadel/addons/${ALPHA.folder}`),
+            );
+          }
+          assert(await cleanupSearchPaths());
+          assert.equal(await readFile(gameinfo, "utf8"), original);
+        }
+        const blocked =
+          "GameInfo\n{ FileSystem\n { SearchPaths\n  {\n   // Other tool BEGIN\n   Game_UILanguage citadel_*LANGUAGE*\n   Game citadel\n   // Other tool END\n   Game core\n  }\n }\n}";
+        await writeFile(gameinfo, blocked);
+        const count = (await readBrokenLaunches(world)).length;
+        await $("button*=Launch modded").click();
+        await expect($("body")).toHaveText(
+          expect.stringContaining(
+            "preserves both language priority and the foreign block",
+          ),
+        );
+        assert.equal(await readFile(gameinfo, "utf8"), blocked);
+        assert.equal((await readBrokenLaunches(world)).length, count);
         await writeFile(gameinfo, PRESERVED_GAMEINFO);
         await launch(false, ALPHA.folder);
       },

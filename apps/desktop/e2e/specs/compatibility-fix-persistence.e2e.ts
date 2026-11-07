@@ -15,6 +15,7 @@ import {
   UNRELATED_MOD,
 } from "../support/compatibility-fix-fixtures";
 import { step } from "../support/evidence";
+import { fixtureGamePaths } from "../support/gameinfo-mounts";
 import { readLifecycleState } from "../support/lifecycle-oracle";
 import { observeUntil } from "../support/observations";
 import { searchLibrary, setModEnabled } from "../support/shard-actions";
@@ -63,11 +64,7 @@ const readRepairPackage = async (world: string): Promise<RepairPackage> => {
   return {
     searchPath,
     packageExists,
-    inGameinfo: gameinfo
-      .split("\n")
-      .some(
-        (line) => line.trim().split(/\s+/).join(" ") === `Game ${searchPath}`,
-      ),
+    inGameinfo: fixtureGamePaths(gameinfo).includes(searchPath),
   };
 };
 

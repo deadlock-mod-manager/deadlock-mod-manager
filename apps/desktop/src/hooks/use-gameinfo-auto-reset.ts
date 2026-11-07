@@ -12,7 +12,7 @@ import { refreshGameinfoState } from "@/lib/gameinfo-reset";
 import { STALE_TIME_POLL } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 import {
-  gameinfoHasModPaths,
+  gameinfoCleanupRevision,
   isGameRunning,
   removeModSearchPaths,
 } from "@/lib/tauri-commands";
@@ -46,19 +46,26 @@ export const useGameinfoAutoReset = () => {
   const { mutate: resetGameinfo } = useMutation({
     meta: { skipGlobalErrorHandler: true },
     mutationFn: async () => {
-      if (!(await gameinfoHasModPaths())) return;
-      await removeModSearchPaths();
+      const pauseCount = gameinfoAutoResetPauseCount();
+      const revision = await gameinfoCleanupRevision();
+      if (revision === null) return;
+      if (
+        isGameinfoAutoResetPaused() ||
+        pauseCount !== gameinfoAutoResetPauseCount()
+      )
+        return;
+      if (!(await removeModSearchPaths(revision))) return;
       // Same as a vanilla launch: the missing mod paths are on purpose, so the
       // "mods detached" banner stays quiet until the next modded launch.
       await refreshGameinfoState(queryClient, setLastLaunchVanilla);
       logger.info("Removed DMM search paths after the game closed");
-      toast.info(t("settings.autoResetGameinfoSuccess"));
+      toast.info(t("settings.dmmPathsRemovedOnExit"));
     },
     onError: (error) => {
       logger
         .withError(error)
         .error("Failed to remove DMM search paths after the game closed");
-      toast.error(t("settings.autoResetGameinfoFailed"));
+      toast.error(t("settings.dmmPathsRemovalFailed"));
     },
   });
 

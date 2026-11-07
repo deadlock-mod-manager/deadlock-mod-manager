@@ -174,21 +174,27 @@ fn place<'a>(
     .entries()
     .filter(|site| site.key_start < first.key_start && is_language_path(site))
     .filter_map(|site| match &site.kind {
-      SiteKind::Scalar { value_range, .. } => Some(line_end(text, value_range.end)),
+      SiteKind::Scalar { value_range, .. } => Some(
+        if line_start(text, value_range.end) == line_start(text, first.key_start) {
+          first.key_start
+        } else {
+          line_end(text, value_range.end)
+        },
+      ),
       _ => None,
     })
     .max()
     .unwrap_or(doc.body.start);
   let line = line_start(text, first.key_start);
-  let inline = line <= doc.body.start || !text[line..first.key_start].trim().is_empty();
-  let ordinary = if inline {
-    doc.body.start
+  let ordinary = if line < floor || !text[line..first.key_start].trim().is_empty() {
+    floor
   } else {
     doc
       .comments
       .iter()
       .filter(|comment| comment.start >= floor && comment.start < first.key_start)
       .map(|comment| line_start(text, comment.start))
+      .filter(|at| *at >= floor)
       .min()
       .unwrap_or(line)
   };
@@ -199,7 +205,24 @@ fn place<'a>(
     .filter(|after| *after <= before);
   // If a foreign fence also encloses base mounts, reusing its bootstrap would
   // put profiles below stock assets. Keep the fence intact and add our own fallback.
-  let at = reusable.map_or(ordinary, |after| ordinary.max(after));
+  let mut at = reusable.map_or(ordinary, |after| ordinary.max(after));
+  if let Some(fence) = doc
+    .fences
+    .iter()
+    .find(|fence| fence.start < at && at <= fence.end)
+  {
+    let preceding = line_start(text, fence.start);
+    let following = line_end(text, fence.end);
+    at = if preceding >= floor {
+      preceding
+    } else if following <= before {
+      following
+    } else {
+      return Err(fail(
+        "No SearchPaths insertion point preserves both language priority and the foreign block; the file was left unchanged",
+      ));
+    };
+  }
   if at > before {
     return Err(fail(
       "No safe SearchPaths insertion point precedes the base game mounts; the file was left unchanged",
@@ -207,11 +230,11 @@ fn place<'a>(
   }
   Ok(Placement {
     at,
-    inline,
-    indent: if inline {
-      "      "
-    } else {
+    inline: at != line_start(text, at),
+    indent: if text[line..first.key_start].trim().is_empty() {
       &text[line..first.key_start]
+    } else {
+      "      "
     },
     newline: if text
       .find('\n')

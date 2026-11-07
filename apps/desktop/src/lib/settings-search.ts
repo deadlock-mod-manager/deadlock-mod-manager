@@ -103,8 +103,8 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
       { titleKey: "game.restoreBackup" },
       { titleKey: "game.resetToVanilla" },
       {
-        titleKey: "settings.autoResetGameinfo",
-        descriptionKey: "settings.autoResetGameinfoDescription",
+        titleKey: "settings.removeDmmPathsOnExit",
+        descriptionKey: "settings.removeDmmPathsOnExitDescription",
       },
       { titleKey: "game.validateConfiguration" },
     ],

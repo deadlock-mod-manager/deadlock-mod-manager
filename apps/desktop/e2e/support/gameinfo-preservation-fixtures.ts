@@ -23,6 +23,7 @@ export const HYPERLINE_PATHS = [
   '      "Game" "citadel/hyperline/panorama" [$WIN64]',
   "      // HYPERLINE PANORAMA END",
   "      Game citadel/addons/user_owned // Keep this unrelated addon mount",
+  "      Game citadel/addons/profile_external",
 ].join("\r\n");
 
 export const PRESERVED_GAMEINFO = [
@@ -76,6 +77,14 @@ export const prepareGameinfoPreservationWorld = async (world: CreatedWorld) => {
     profilePayload("local-beta-one"),
   );
   const citadel = path.join(world.configuration.roots.game, "game", "citadel");
+  if (world.configuration.caseId === "gameinfo-preserve-legacy-search-paths") {
+    const stale = path.join(citadel, "addons", "server_stale");
+    await mkdir(stale, { recursive: true });
+    await writeFile(
+      path.join(stale, ".dmm.json"),
+      JSON.stringify({ version: 3, mods: {} }),
+    );
+  }
   await writeFile(
     path.join(citadel, "gameinfo.gi"),
     world.configuration.caseId === "gameinfo-preserve-legacy-search-paths"

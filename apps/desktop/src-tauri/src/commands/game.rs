@@ -20,6 +20,9 @@ const GAME_LAUNCH_POLL_INTERVAL: Duration = Duration::from_secs(2);
 /// behind, and cancelling that is a no-op.
 static LAUNCH_CANCEL: Mutex<Option<CancellationToken>> = Mutex::new(None);
 
+/// Protect staged mounts until launch succeeds, fails, or is cancelled.
+pub(super) static GAMEINFO_LAUNCH: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+
 async fn await_launched_game(
   monitor: SteamUriLaunchMonitor,
   cancel: impl Future<Output = ()>,
@@ -142,6 +145,7 @@ pub async fn start_game(
   additional_args: String,
   profile_folder: Option<String>,
 ) -> Result<(), Error> {
+  let _gameinfo_launch = GAMEINFO_LAUNCH.lock().await;
   log::info!(
     "Starting game with args: {:?} (vanilla: {:?}, profile: {:?})",
     additional_args,
@@ -204,6 +208,7 @@ async fn prepare_game_launch(
 /// never touches search paths, is still re-applied.
 #[tauri::command]
 pub async fn launch_game_direct(additional_args: String) -> Result<(), Error> {
+  let _gameinfo_launch = GAMEINFO_LAUNCH.lock().await;
   log::info!("Launching game without search path changes, args: {additional_args:?}");
   crate::game_session::note_launch_requested(&additional_args);
   crate::match_sync::release_for_game_launch().await;

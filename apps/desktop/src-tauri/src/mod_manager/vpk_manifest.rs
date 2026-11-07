@@ -105,6 +105,14 @@ impl Default for ProfileVpkManifest {
 }
 
 impl ProfileVpkManifest {
+  /// Whether committed or recoverable DMM metadata claims this profile folder.
+  pub fn exists(addons_path: &Path) -> bool {
+    addons_path.join(MANIFEST_FILENAME).is_file()
+      || addons_path
+        .join(format!("{MANIFEST_FILENAME}.tmp"))
+        .is_file()
+  }
+
   /// Validate every manifest-backed profile in a shard-root snapshot, returning
   /// the first problem of each invalid profile keyed by its folder relative to
   /// `addons` (empty for the default profile).

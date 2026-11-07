@@ -5,6 +5,7 @@ import { pathToFileURL } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
 import { $, $$, browser } from "@wdio/globals";
 import { z } from "zod";
+import { fixtureGamePaths } from "./gameinfo-mounts";
 import { observeUntil } from "./observations";
 import { readLifecycleState } from "./lifecycle-oracle";
 import { findMod, searchLibrary } from "./shard-actions";
@@ -100,12 +101,7 @@ export const readRepairState = async (
     repairedMods: receipt
       ? [...new Set(receipt.data_repairs.map((repair) => repair.modId))].sort()
       : [],
-    mountedInGameinfo: gameinfo
-      .split("\n")
-      .some(
-        (line) =>
-          line.trim().split(/\s+/).join(" ") === `Game citadel/${folder}`,
-      ),
+    mountedInGameinfo: fixtureGamePaths(gameinfo).includes(`citadel/${folder}`),
   };
 };
 

@@ -2,7 +2,78 @@ use super::*;
 
 fn rewrite(text: &str, paths: Option<&[String]>, deadworks: bool) -> Result<String, Error> {
   let mode = paths.map_or(MountMode::Disabled, MountMode::Enabled);
-  super::rewrite(text, mode, deadworks).map(|result| result.content)
+  super::rewrite(text, mode, deadworks, &[]).map(|result| result.content)
+}
+
+fn mounted_paths(text: &str) -> Result<Vec<String>, Error> {
+  inspect(text, &[]).map(|inspection| inspection.mod_paths)
+}
+
+#[test]
+fn opening_brace_comments_keep_mounts_inside_search_paths() {
+  for newline in ["\n", "\r\n"] {
+    let original = "GameInfo\n{\n FileSystem\n {\n  SearchPaths\n  { // shared mounts\n   Game citadel\n   Game core\n  }\n }\n}".replace('\n', newline);
+    let mounted = rewrite(&original, Some(&paths()), false).unwrap();
+    assert!(mounted.find("{ // shared mounts").unwrap() < mounted.find(&paths()[0]).unwrap());
+    assert_eq!(rewrite(&mounted, Some(&paths()), false).unwrap(), mounted);
+    assert_eq!(rewrite(&mounted, None, false).unwrap(), original);
+  }
+}
+
+#[test]
+fn compact_language_mounts_keep_their_priority_and_round_trip() {
+  let original = "GameInfo { FileSystem { SearchPaths { Game_UILanguage citadel_*LANGUAGE* Game_LowViolence citadel_lv Game citadel Game core } } }";
+  let mounted = rewrite(original, Some(&paths()), false).unwrap();
+  assert!(mounted.find("Game_LowViolence").unwrap() < mounted.find(&paths()[0]).unwrap());
+  assert_eq!(rewrite(&mounted, Some(&paths()), false).unwrap(), mounted);
+  assert_eq!(rewrite(&mounted, None, false).unwrap(), original);
+}
+
+#[test]
+fn foreign_language_fences_are_kept_whole_or_rejected() {
+  let foreign = "   // Other tool BEGIN\n   Game_UILanguage citadel_*LANGUAGE*\n   Game citadel\n   // Other tool END\n";
+  let original = format!(
+    "GameInfo\n{{\n FileSystem\n {{\n  SearchPaths\n  {{\n{foreign}   Game core\n  }}\n }}\n}}"
+  );
+  assert!(rewrite(&original, Some(&paths()), false).is_err());
+  // With the stock mount outside the fence, a gap after the fence is safe.
+  let original = original.replace(
+    "   Game citadel\n   // Other tool END",
+    "   // Other tool END\n   Game citadel",
+  );
+  for original in [
+    original.clone(),
+    original.replace("   // Other tool END", "// Other tool END"),
+  ] {
+    let mounted = rewrite(&original, Some(&paths()), false).unwrap();
+    assert!(mounted.find("// Other tool END").unwrap() < mounted.find(&paths()[0]).unwrap());
+    assert_eq!(rewrite(&mounted, None, false).unwrap(), original);
+  }
+}
+
+#[test]
+fn unbalanced_outer_braces_are_rejected_before_rewriting() {
+  for bracket in ["}", "{"] {
+    let malformed = format!("{}{bracket}", fixture());
+    assert!(validate(&malformed).is_err());
+    assert!(rewrite(&malformed, Some(&paths()), false).is_err());
+  }
+}
+
+#[test]
+fn legacy_profile_names_are_not_proof_of_ownership() {
+  let original = fixture()
+    .replace(
+      "      Game citadel\n",
+      "      Game citadel/addons/profile_external\n      Game citadel\n",
+    )
+    .replace(
+      "    \"SearchPaths\"",
+      &format!("{LEGACY_START}\n    \"SearchPaths\""),
+    )
+    .replace("    }\n  }", &format!("    }}\n{LEGACY_END}\n  }}"));
+  let cleaned = rewrite(&original, None, false).unwrap();
+  assert!(cleaned.contains("      Game citadel/addons/profile_external\n"));
 }
 
 #[test]
@@ -249,7 +320,14 @@ fn legacy_migration_preserves_foreign_fences_and_unknown_addon_paths() {
   let original = fixture().replace("    \"SearchPaths\"", &format!("{LEGACY_START}\n    \"SearchPaths\""))
     .replace("      Game citadel\n", "      Game citadel/addons/server_stale\n      Game citadel/addons/unattributed\n      Game citadel/addons/profile_annotated // another tool\n      Game citadel\n")
     .replace("    }\n  }", &format!("    }}\n{LEGACY_END}\n  }}"));
-  let updated = rewrite(&original, Some(&paths()), false).unwrap();
+  let updated = super::rewrite(
+    &original,
+    MountMode::Enabled(&paths()),
+    false,
+    &["citadel/addons/server_stale".into()],
+  )
+  .unwrap()
+  .content;
   assert!(!updated.contains(LEGACY_START));
   assert!(!updated.contains("citadel/addons/server_stale"));
   for content in [
@@ -377,6 +455,20 @@ fn only_the_active_search_paths_block_is_changed() {
   let result = rewrite(&original, Some(&[]), false).unwrap();
   assert!(result.contains(later));
   assert_eq!(rewrite(&result, None, false).unwrap(), original);
+}
+
+#[test]
+fn inactive_linux_search_paths_before_windows_search_paths_are_untouched() {
+  let linux = "  SearchPaths\n  {\n   Game linux_base\n  } [$LINUX]\n";
+  let original = format!(
+    "GameInfo\n{{\n FileSystem\n {{\n{linux}  SearchPaths\n  {{\n   Game citadel\n   Game core\n  }} [$WIN32]\n }}\n}}"
+  );
+  let mounted = rewrite(&original, Some(&paths()), false).unwrap();
+  assert!(mounted.contains(linux));
+  let windows = mounted.find(linux).unwrap() + linux.len();
+  assert!(mounted.find(&paths()[0]).unwrap() > windows);
+  assert_eq!(mounted_paths(&mounted).unwrap(), paths());
+  assert_eq!(rewrite(&mounted, None, false).unwrap(), original);
 }
 
 #[test]

@@ -11,7 +11,9 @@ pub(crate) enum WriteError {
 }
 
 /// Commit validated text at the file's target, keeping symlinks and permissions.
-/// The last read detects intervening edits by Steam, the user, or another tool.
+/// Comparisons detect edits made while preparing the replacement. External
+/// editors do not share a lock with DMM: this is best-effort conflict detection,
+/// not a filesystem compare-and-swap guarantee.
 pub(crate) fn commit(path: &Path, expected: &str, updated: &str) -> Result<(), WriteError> {
   // Canonical paths also carry Windows' verbatim prefix for long game paths.
   let target = path.canonicalize()?;

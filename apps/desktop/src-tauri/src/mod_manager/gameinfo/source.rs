@@ -66,6 +66,33 @@ impl Document {
     let source = &text[bom..];
     let offsets = CharOffsets::new(source, bom);
     let tokens = Tokenizer::with_options(source, false, true, true).tokenize()?;
+    // The generic KV reader also accepts bare object snippets. A game file
+    // requires balanced braces; do not let its permissive document mode hide
+    // a closing brace the engine would reject.
+    let mut depth = 0usize;
+    for token in &tokens {
+      match token.token_type {
+        TokenType::OpenBrace => depth += 1,
+        TokenType::CloseBrace => {
+          depth = depth.checked_sub(1).ok_or(KvError::UnexpectedCharacter {
+            character: '}',
+            line: token.line,
+            column: token.column,
+          })?;
+        }
+        _ => {}
+      }
+    }
+    if depth != 0 {
+      let eof = tokens.last().expect("tokenizer always emits EOF");
+      return Err(
+        KvError::UnexpectedEof {
+          line: eof.line,
+          column: eof.column,
+        }
+        .into(),
+      );
+    }
     let comments = tokens
       .iter()
       .filter(|token| token.token_type == TokenType::Comment && token.raw.starts_with("//"))

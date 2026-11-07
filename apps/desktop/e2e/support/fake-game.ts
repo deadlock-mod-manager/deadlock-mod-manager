@@ -27,10 +27,14 @@ export const startFakeGame = async (world: string): Promise<ChildProcess> => {
   const {
     configuration: { roots },
   } = await assertOwnedWorld(world);
-  const game = spawn("sleep", ["600"], {
-    argv0: path.join(roots.game, GAME_FILE_NAME),
-    stdio: "ignore",
-  });
+  const game = spawn(
+    process.execPath,
+    ["-e", "setTimeout(() => {}, 600_000)"],
+    {
+      argv0: path.join(roots.game, GAME_FILE_NAME),
+      stdio: "ignore",
+    },
+  );
   await once(game, "spawn");
   try {
     await observeUntil("the app sees the game running", appSeesGame, Boolean);

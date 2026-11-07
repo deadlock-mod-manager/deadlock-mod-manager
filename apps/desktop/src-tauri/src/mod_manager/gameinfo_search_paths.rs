@@ -142,13 +142,9 @@ fn whole_line(text: &str, at: usize) -> Result<Range<usize>, Error> {
   Ok(start..line_end(text, at))
 }
 
-fn legacy_path(value: &str) -> bool {
+fn legacy_path(value: &str, claimed_paths: &[String]) -> bool {
   shard::is_valid_search_path(value)
-    && (value.split('/').count() == 2
-      || value
-        .rsplit('/')
-        .next()
-        .is_some_and(|folder| folder.starts_with("profile_") || folder.starts_with("server_")))
+    && (value.split('/').count() == 2 || claimed_paths.iter().any(|path| path == value))
 }
 
 /// Match fence names, so an unrelated comment ending in END cannot close a tool's block.
@@ -197,7 +193,11 @@ fn is_mount(text: &str, site: &Site, role: &str, path: &str) -> bool {
 }
 
 /// Recognizes tagged entries and historical DMM mounts, preserving foreign fences.
-fn owned_entries<'a>(text: &str, doc: &'a Document) -> Result<Ownership<'a>, Error> {
+fn owned_entries<'a>(
+  text: &str,
+  doc: &'a Document,
+  legacy_claims: &[String],
+) -> Result<Ownership<'a>, Error> {
   let current = doc.markers(START, END)?;
   let legacy = doc.markers(LEGACY_START, LEGACY_END)?;
   if current.is_some() && legacy.is_some() {
@@ -244,7 +244,7 @@ fn owned_entries<'a>(text: &str, doc: &'a Document) -> Result<Ownership<'a>, Err
       && tail.is_empty()
       && site.is_unconditional()
       && site.path[2] == "Game"
-      && legacy_path(value);
+      && legacy_path(value, legacy_claims);
     if tagged || old {
       result.push(site);
     }
@@ -264,13 +264,27 @@ fn owned_entries<'a>(text: &str, doc: &'a Document) -> Result<Ownership<'a>, Err
 
 pub(super) fn validate(text: &str) -> Result<(), Error> {
   let doc = Document::parse(text)?;
-  owned_entries(text, &doc)?;
+  owned_entries(text, &doc, &[])?;
   Ok(())
 }
 
-pub(super) fn inspect(text: &str) -> Result<Inspection, Error> {
+/// A reset must produce a configuration the Windows game client can mount.
+pub(super) fn validate_reset(text: &str) -> Result<(), Error> {
   let doc = Document::parse(text)?;
-  let ownership = owned_entries(text, &doc)?;
+  owned_entries(text, &doc, &[])?;
+  for site in doc.entries().filter(|site| has_role(site, "Game")) {
+    if matches!(site.kind, SiteKind::Scalar { .. })
+      && site.applies(Platform::CLIENT).map_err(fail)?
+    {
+      return Ok(());
+    }
+  }
+  Err(fail("Reset configuration has no active Game mount"))
+}
+
+pub(super) fn inspect(text: &str, legacy_claims: &[String]) -> Result<Inspection, Error> {
+  let doc = Document::parse(text)?;
+  let ownership = owned_entries(text, &doc, legacy_claims)?;
   let mod_paths = ownership
     .entries
     .iter()
@@ -289,16 +303,17 @@ pub(super) fn inspect(text: &str) -> Result<Inspection, Error> {
   })
 }
 
-pub(super) fn mounted_paths(text: &str) -> Result<Vec<String>, Error> {
-  inspect(text).map(|inspection| inspection.mod_paths)
-}
-
-pub(super) fn rewrite(text: &str, mode: MountMode<'_>, deadworks: bool) -> Result<Rewrite, Error> {
+pub(super) fn rewrite(
+  text: &str,
+  mode: MountMode<'_>,
+  deadworks: bool,
+  legacy_claims: &[String],
+) -> Result<Rewrite, Error> {
   let doc = Document::parse(text)?;
   let Ownership {
     entries: owned,
     format,
-  } = owned_entries(text, &doc)?;
+  } = owned_entries(text, &doc, legacy_claims)?;
   let saved_roles = ["Mod", "Write"].map(|role| {
     let value = owned.iter().find_map(|site| match &site.kind {
       SiteKind::Scalar { value, .. } if has_role(site, role) => Some(value.as_str()),
@@ -314,11 +329,14 @@ pub(super) fn rewrite(text: &str, mode: MountMode<'_>, deadworks: bool) -> Resul
     if [START, INLINE_START, END, LEGACY_START, LEGACY_END].contains(&comment.text.as_str()) {
       let mut range = whole_line(text, comment.start)?;
       if comment.text == INLINE_START {
-        if text[doc.body.start..range.start].trim().is_empty() {
-          range.start = doc.body.start;
+        let prefix = &text[doc.body.start..range.start];
+        if prefix.ends_with("\r\n") {
+          range.start -= 2;
+        } else if prefix.ends_with('\n') {
+          range.start -= 1;
         } else {
           return Err(fail(
-            "An inline DMM block moved away from its opening brace; the file was left unchanged",
+            "An inline DMM block has no owned line break; the file was left unchanged",
           ));
         }
       }
