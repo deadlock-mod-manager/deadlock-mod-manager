@@ -215,42 +215,68 @@ pub fn observe(processes: &[GameProcess]) {
   spawn("game-session-start", move || start_session(Some(process)));
 }
 
-/// Marks the running session as stopped by the app, so the forced kill
-/// (exit code 1) isn't taken for a crash. Called before the kill. Returns the
-/// session being stopped, for `note_dmm_stop_completed`.
-pub fn note_dmm_stop() -> Option<String> {
-  let mut tracker = tracker();
-  let sessions_dir = tracker.sessions_dir.clone()?;
-  tracker.dmm_stop_at = Some(Utc::now());
-  let current = tracker.current.as_mut()?;
-  current.dmm_stop_requested = true;
-  store::save_current(&sessions_dir, Some(&*current));
-  Some(current.session_id.clone())
+/// What one Stop attempt changed, so a failed attempt can undo only its own
+/// marks and leave an earlier confirmed Stop's attribution in place.
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
+pub struct DmmStop {
+  session_id: Option<String>,
+  /// `dmm_stop_at` before this attempt, when it set one.
+  previous_stop_at: Option<Option<DateTime<Utc>>>,
+  /// The session was already marked by an earlier Stop.
+  previously_requested: bool,
 }
 
-/// Called once the app's Stop confirmed the game is gone, with the session
+/// Marks the running session as stopped by the app, so the forced kill
+/// (exit code 1) isn't taken for a crash. Called before the kill. Returns what
+/// it marked, for `note_dmm_stop_completed` or `note_dmm_stop_failed`.
+pub fn note_dmm_stop() -> DmmStop {
+  let mut tracker = tracker();
+  let mut stop = DmmStop {
+    session_id: None,
+    previous_stop_at: None,
+    previously_requested: false,
+  };
+  let Some(sessions_dir) = tracker.sessions_dir.clone() else {
+    return stop;
+  };
+  stop.previous_stop_at = Some(tracker.dmm_stop_at.replace(Utc::now()));
+  if let Some(current) = tracker.current.as_mut() {
+    stop.previously_requested = current.dmm_stop_requested;
+    current.dmm_stop_requested = true;
+    store::save_current(&sessions_dir, Some(&*current));
+    stop.session_id = Some(current.session_id.clone());
+  }
+  stop
+}
+
+/// Called once the app's Stop confirmed the game is gone, with what
 /// `note_dmm_stop` returned. A session that started while the Stop was running
 /// isn't the one it ended.
-pub fn note_dmm_stop_completed(session_id: Option<String>) {
-  if let Some(session_id) = session_id {
+pub fn note_dmm_stop_completed(stop: DmmStop) {
+  if let Some(session_id) = stop.session_id {
     tracker().dmm_stopped_session = Some(session_id);
   }
 }
 
-/// Called when the app's Stop failed, with the session `note_dmm_stop`
-/// returned. The game may still be running, so a later exit must not be
-/// credited to this Stop.
+/// Called when the app's Stop failed, with what `note_dmm_stop` returned. The
+/// game may still be running, so a later exit must not be credited to this
+/// attempt; an earlier Stop's marks stay.
 #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
-pub fn note_dmm_stop_failed(session_id: Option<String>) {
+pub fn note_dmm_stop_failed(stop: DmmStop) {
   let mut tracker = tracker();
-  tracker.dmm_stop_at = None;
+  if let Some(previous) = stop.previous_stop_at {
+    tracker.dmm_stop_at = previous;
+  }
+  if stop.previously_requested {
+    return;
+  }
   let Some(sessions_dir) = tracker.sessions_dir.clone() else {
     return;
   };
   let Some(current) = tracker
     .current
     .as_mut()
-    .filter(|current| Some(&current.session_id) == session_id.as_ref())
+    .filter(|current| Some(&current.session_id) == stop.session_id.as_ref())
   else {
     return;
   };

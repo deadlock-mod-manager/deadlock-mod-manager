@@ -24,6 +24,7 @@ for proc in "$1"/[0-9]*; do
 done
 "#;
 
+/// A command that runs on the host, outside the sandbox.
 fn host_command() -> Command {
   let mut command = Command::new("flatpak-spawn");
   command.args(["--host", "--watch-bus"]);
@@ -47,11 +48,13 @@ struct LastScan {
 
 impl LastScan {
   /// Several pollers scan at once and can finish out of order, so only a scan
-  /// that started after the stored one may replace it.
-  fn record(&mut self, seq: u64, running: bool) {
+  /// that started after the stored one may replace it. Returns the newest
+  /// recorded answer.
+  fn record(&mut self, seq: u64, running: bool) -> bool {
     if seq > self.seq {
       *self = Self { seq, running };
     }
+    self.running
   }
 }
 
@@ -71,13 +74,21 @@ fn last_scan() -> MutexGuard<'static, LastScan> {
     .unwrap_or_else(|poisoned| poisoned.into_inner())
 }
 
-pub(crate) async fn is_game_running() -> Result<bool, Error> {
+/// Scans the host and records the answer. Returns this scan's own answer and
+/// the newest recorded one, which differ when a later scan finished first.
+async fn scan_host() -> Result<(bool, bool), Error> {
   let seq = SCAN_SEQ.fetch_add(1, Ordering::Relaxed) + 1;
   let running = !host_game_pids().await?.is_empty();
-  last_scan().record(seq, running);
-  Ok(running)
+  let newest = last_scan().record(seq, running);
+  Ok((running, newest))
 }
 
+/// Whether the game runs on the host, by the newest scan that has finished.
+pub(crate) async fn is_game_running() -> Result<bool, Error> {
+  Ok(scan_host().await?.1)
+}
+
+/// The newest recorded answer, for when the host can't be checked.
 pub(crate) fn last_known_running() -> bool {
   last_scan().running
 }
@@ -102,13 +113,15 @@ pub(crate) async fn stop_game() -> Result<(), Error> {
   }
 
   tokio::time::sleep(STOP_SETTLE).await;
-  if is_game_running().await? {
+  // This scan started after the kill, so its own answer is the one to trust.
+  if scan_host().await?.0 {
     return Err(Error::GameStopFailed);
   }
   log::info!("Stopped the game");
   Ok(())
 }
 
+/// Picks the game's PIDs out of `HOST_PROCESSES` output.
 fn game_pids(output: &[u8]) -> Vec<u32> {
   String::from_utf8_lossy(output)
     .split("\0\0")
@@ -124,6 +137,7 @@ fn game_pids(output: &[u8]) -> Vec<u32> {
     .collect()
 }
 
+/// Runs a host command within `timeout`, failing on a nonzero exit.
 async fn host_output(mut command: Command, timeout: Duration) -> Result<Vec<u8>, Error> {
   let output = tokio::time::timeout(timeout, command.kill_on_drop(true).output())
     .await
@@ -177,11 +191,9 @@ mod tests {
   #[test]
   fn an_older_scan_finishing_last_does_not_replace_a_newer_one() {
     let mut last = LastScan::default();
-    last.record(2, true);
-    last.record(1, false);
-    assert!(last.running);
-    last.record(3, false);
-    assert!(!last.running);
+    assert!(last.record(2, true));
+    assert!(last.record(1, false), "a stale scan reports the newer answer");
+    assert!(!last.record(3, false));
   }
 
   #[tokio::test]
