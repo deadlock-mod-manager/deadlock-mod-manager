@@ -37,7 +37,7 @@ describe("scenario selection", () => {
       "onboarding-telemetry-default",
       "onboarding-identified-addon",
     ]);
-    expect(selectScenarios("gamebanana")).toHaveLength(31);
+    expect(selectScenarios("gamebanana")).toHaveLength(32);
     expect(selectScenarios("gamebanana")).toContain(
       "gamebanana-switch-reinstall",
     );

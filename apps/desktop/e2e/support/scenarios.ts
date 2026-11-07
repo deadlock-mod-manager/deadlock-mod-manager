@@ -93,6 +93,7 @@ import {
 } from "./detected-mod-fixtures";
 import {
   multipakUpdateRoutes,
+  updateRoutingRoutes,
   assertMultipakUpdateNetwork,
   assertUpdateRoutingNetwork,
 } from "./multipak-update-fixtures";
@@ -467,6 +468,7 @@ const modUpdates: Definition = {
 
 export const scenarios = {
   "gamebanana-mirror-fallback": downloadFallback,
+  "gamebanana-default-fallback": downloadFallback,
   "gamebanana-crash-cause": crashAttribution,
   "library-groups-organize": libraryGroups,
   "library-groups-identification": {
@@ -1052,7 +1054,7 @@ export const scenarios = {
     ...catalog,
     spec: "gamebanana-update-routing",
     phases: ["update-auto", "restart-download-auto"],
-    routes: multipakUpdateRoutes,
+    routes: updateRoutingRoutes,
     verifyNetwork: assertUpdateRoutingNetwork,
   },
   "gamebanana-variant-names": {
