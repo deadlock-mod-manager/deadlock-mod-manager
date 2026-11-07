@@ -192,11 +192,69 @@ fn legacy_base_mounts_need_a_manifest_before_cleanup() {
       .toggle_mods(game.path(), true)
       .unwrap();
     let cleaned = fs::read_to_string(&path).unwrap();
-    for mount in ["citadel/addons", "citadel/addons2"] {
-      assert_eq!(
-        cleaned.contains(&format!("   Game {mount}\r\n")),
-        !owned,
-        "manifest present: {owned}, mount: {mount}"
+    assert_eq!(
+      cleaned.contains("   Game citadel/addons\r\n"),
+      !owned,
+      "manifest present: {owned}"
+    );
+    assert!(cleaned.contains("   Game citadel/addons2\r\n"));
+  }
+}
+
+#[test]
+fn migrated_shards_remain_owned_after_the_manifest_is_removed() {
+  use crate::mod_manager::shard::ShardIndex;
+  use crate::mod_manager::vpk_manifest::{ProfileVpkManifest, ProfileVpkManifestEntry};
+
+  for folder in [None, Some("profile_owned")] {
+    let (game, path) = game();
+    let base = path.parent().unwrap().join("addons");
+    let profile = folder.map_or_else(|| base.clone(), |folder| base.join(folder));
+    fs::create_dir_all(&profile).unwrap();
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mods.insert(
+      "previously-enabled".into(),
+      ProfileVpkManifestEntry {
+        shard: ShardIndex::new(3).unwrap(),
+        ..Default::default()
+      },
+    );
+    manifest.save(&profile).unwrap();
+    let old_paths: Vec<_> = shard::all_shards()
+      .take(4)
+      .map(|index| index.search_path(folder))
+      .collect();
+    let mounts: String = old_paths
+      .iter()
+      .map(|path| format!("   Game {path}\r\n"))
+      .collect();
+    let original = fixture()
+      .replace(
+        "  SearchPaths",
+        &format!("{MOD_MANAGER_MARKER_START}\r\n  SearchPaths"),
+      )
+      .replace(
+        "   Game citadel\r\n",
+        &format!("{mounts}   Game citadel\r\n"),
+      )
+      .replace(
+        "  }\r\n }",
+        &format!("  }}\r\n{MOD_MANAGER_MARKER_END}\r\n }}"),
+      );
+    fs::write(&path, original).unwrap();
+    let mut manager = GameConfigManager::new();
+    manager
+      .update_mod_paths(game.path(), &old_paths[..3])
+      .unwrap();
+    fs::remove_file(profile.join(".dmm.json")).unwrap();
+    manager.toggle_mods(game.path(), true).unwrap();
+    let cleaned = fs::read_to_string(&path).unwrap();
+    assert!(cleaned.contains(&format!("   Game {}\r\n", old_paths[3])));
+    for owned in &old_paths[..3] {
+      assert!(
+        !cleaned
+          .lines()
+          .any(|line| line.split_whitespace().nth(1) == Some(owned.as_str()))
       );
     }
   }

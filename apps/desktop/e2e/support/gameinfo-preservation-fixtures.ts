@@ -24,7 +24,6 @@ export const HYPERLINE_PATHS = [
   "      // HYPERLINE PANORAMA END",
   "      Game citadel/addons/user_owned // Keep this unrelated addon mount",
   "      Game citadel/addons/profile_external",
-  "      Game citadel/addons",
   "      Game citadel/addons2",
 ].join("\r\n");
 
@@ -53,7 +52,7 @@ export const LEGACY_GAMEINFO = PRESERVED_GAMEINFO.replace(
 )
   .replace(
     "      Game citadel\r\n",
-    "      Game citadel/addons/server_stale\r\n      Game citadel\r\n",
+    "      Game citadel/addons\r\n      Game citadel/addons/server_stale\r\n      Game citadel\r\n",
   )
   .replace("    }\r\n  }", "    }\r\n// Deadlock Mod Manager - End\r\n  }");
 
@@ -80,6 +79,10 @@ export const prepareGameinfoPreservationWorld = async (world: CreatedWorld) => {
   );
   const citadel = path.join(world.configuration.roots.game, "game", "citadel");
   if (world.configuration.caseId === "gameinfo-preserve-legacy-search-paths") {
+    await writeFile(
+      path.join(citadel, "addons", ".dmm.json"),
+      JSON.stringify({ version: 3, mods: {} }),
+    );
     const stale = path.join(citadel, "addons", "server_stale");
     await mkdir(stale, { recursive: true });
     await writeFile(
