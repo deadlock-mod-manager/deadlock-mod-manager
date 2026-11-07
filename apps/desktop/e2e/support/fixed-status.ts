@@ -273,6 +273,16 @@ export const closeOnceDisabled = (modId: string) =>
     `${card(modId)}//button[@role="switch"]`,
   );
 
+/** The library card's badge for a mod, as the player sees it. */
+export const badgeStatus = async (modId: string) => {
+  await navigate("my-mods");
+  await findMod(modId);
+  const badge = await $(`${card(modId)}//*[@data-testid="mod-health-badge"]`);
+  return (await badge.isExisting())
+    ? await badge.getAttribute("data-status")
+    : null;
+};
+
 const row = (modId: string) =>
   `//*[@data-testid="mod-health-row"][.//button[@title="${modId}"]]`;
 

@@ -1945,6 +1945,86 @@ Game core
   }
 
   #[test]
+  fn a_fixed_mod_blocked_by_an_unfixed_copy_of_its_file_is_not_reported_as_working() {
+    let (temp, mut manager) = manager_with_applied_repair();
+    let base = manager.get_addons_path(None).unwrap();
+    let citadel = temp.path().join("game/citadel");
+    let app_data = temp.path().join("app-data");
+    let context = manager
+      .mod_health_context_in(None, app_data.clone())
+      .unwrap();
+    let status = || {
+      context
+        .report()
+        .unwrap()
+        .mods
+        .into_iter()
+        .find(|health| health.mod_id == "fixed")
+        .map(|health| health.status)
+    };
+    let record_combined = |manager: &mut ModManager| {
+      context
+        .record_launch(&manager.analyze_localization_overlay(None, &[]).unwrap())
+        .unwrap();
+    };
+    record_combined(&mut manager);
+    assert_eq!(status(), Some(ModHealthStatus::Fixed));
+
+    // An unfixed mod ships the fixed mod's text file, so the rebuild keeps
+    // that file as shipped and leaves the repair out.
+    fs::copy(base.join("pak01_dir.vpk"), base.join("pak03_dir.vpk")).unwrap();
+    let mut manifest = ProfileVpkManifest::load(&base).unwrap();
+    manifest.mark_enabled(
+      "rival",
+      vec!["pak03_dir.vpk".into()],
+      vec!["pak03_dir.vpk".into()],
+      None,
+      ShardIndex::FIRST,
+    );
+    manifest.save(&base).unwrap();
+    let overlay = manager.localization_overlay_vpk_path(None).unwrap();
+    refresh_repairs(&mut manager, None).unwrap();
+    assert!(!overlay.exists());
+    assert!(manager.mod_compatibility_settings(None).unwrap()["fixed"]);
+
+    // A launch result saved before the flag existed: no findings at all.
+    let key = HealthKey::stamp(
+      &[base.join("pak01_dir.vpk")],
+      history::version(&citadel),
+      receipt::REPAIR_REVISION,
+    )
+    .unwrap();
+    mod_health::record(
+      &app_data,
+      &base.to_string_lossy(),
+      history::version(&citadel),
+      [(
+        "fixed".to_owned(),
+        CachedModHealth::new(key, ModFindings::with_repairs(0), ModHealthSource::Launch),
+      )],
+    )
+    .unwrap();
+    // Its key is current, so a check keeps it rather than trusting a
+    // standalone result, which can't see the rival.
+    context.check(None, false, |_| {}).unwrap();
+    assert_eq!(status(), Some(ModHealthStatus::Works));
+
+    record_combined(&mut manager);
+    assert_eq!(status(), Some(ModHealthStatus::NotCovered));
+    context.check(None, true, |_| {}).unwrap();
+    assert_eq!(status(), Some(ModHealthStatus::NotCovered));
+
+    let mut manifest = ProfileVpkManifest::load(&base).unwrap();
+    manifest.remove_mod("rival");
+    manifest.save(&base).unwrap();
+    fs::remove_file(base.join("pak03_dir.vpk")).unwrap();
+    refresh_repairs(&mut manager, None).unwrap();
+    assert!(overlay.exists());
+    record_combined(&mut manager);
+    assert_eq!(status(), Some(ModHealthStatus::Fixed));
+  }
+
+  #[test]
   fn unchanged_repairs_survive_a_fresh_manager_without_rebuilding() {
     let (temp, manager) = manager_with_applied_repair();
     let overlay = manager.localization_overlay_vpk_path(None).unwrap();

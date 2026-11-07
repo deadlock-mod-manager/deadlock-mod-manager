@@ -129,8 +129,16 @@ impl ModManager {
     profile_folder: Option<&str>,
     analysis: &LocalizationOverlayAnalysis,
   ) -> Result<(), Error> {
-    let context = self.mod_health_context(profile_folder)?;
-    let entries = context
+    self
+      .mod_health_context(profile_folder)?
+      .record_launch(analysis)
+  }
+}
+
+impl ModHealthContext {
+  /// Saves the combined analysis's findings for the opted-in mods.
+  pub(super) fn record_launch(&self, analysis: &LocalizationOverlayAnalysis) -> Result<(), Error> {
+    let entries = self
       .installed()?
       .into_iter()
       .filter(|installed| analysis.compatibility_mod_ids.contains(&installed.id))
@@ -144,15 +152,13 @@ impl ModManager {
       })
       .collect::<Result<Vec<_>, Error>>()?;
     mod_health::record(
-      &context.app_data,
-      &context.profile_key(),
-      history::version(&context.citadel),
+      &self.app_data,
+      &self.profile_key(),
+      history::version(&self.citadel),
       entries,
     )
   }
-}
 
-impl ModHealthContext {
   fn profile_key(&self) -> String {
     self.base.to_string_lossy().into_owned()
   }
