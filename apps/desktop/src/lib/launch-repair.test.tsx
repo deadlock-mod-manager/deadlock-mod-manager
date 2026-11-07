@@ -59,7 +59,6 @@ const operations = () => ({
   reinstall: mock(
     async (): Promise<ReinstallResult> => ({
       outcome: "restored",
-      missingOnDisk: true,
     }),
   ),
   disable: mock(async () => {}),
@@ -90,7 +89,7 @@ describe("launch repair", () => {
           calls.push(`start:${target.remoteId}`);
           await Promise.resolve();
           calls.push(`end:${target.remoteId}`);
-          return { outcome: "restored", missingOnDisk: true };
+          return { outcome: "restored" };
         },
         launch: async () => {
           calls.push("launch");
@@ -121,7 +120,6 @@ describe("launch repair", () => {
       reinstall: async () => ({
         outcome: "failed",
         error: "Download unavailable",
-        missingOnDisk: true,
       }),
     });
     expect(ops.launch).not.toHaveBeenCalled();
@@ -145,7 +143,7 @@ describe("launch repair", () => {
     expect(
       await repairLaunchFiles(targets([mod]), "reinstall", {
         ...ops,
-        reinstall: async () => ({ outcome, missingOnDisk: true }),
+        reinstall: async () => ({ outcome }),
       }),
     ).toEqual([{ id: mod.remoteId, error: undefined }]);
     expect(ops.launch).not.toHaveBeenCalled();
@@ -160,7 +158,7 @@ describe("launch repair", () => {
         ...ops,
         reinstall: async (target) => {
           if (target.remoteId === "42") throw new Error("Files in use");
-          return { outcome: "restored", missingOnDisk: true };
+          return { outcome: "restored" };
         },
       },
     );
@@ -212,9 +210,8 @@ describe("launch repair", () => {
             ? {
                 outcome: "failed",
                 error: "Download failed",
-                missingOnDisk: true,
               }
-            : { outcome: "restored", missingOnDisk: true },
+            : { outcome: "restored" },
       },
     );
     expect(failures).toEqual([{ id: "43", error: "Download failed" }]);

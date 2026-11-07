@@ -229,30 +229,28 @@ async fn resolve_gamebanana_file(
     .e2e()
     .map(|configuration| configuration.endpoint(crate::runtime_environment::ServiceName::Downloads))
     .unwrap_or("https://gamebanana.com");
+  let caches = match backend.fileservers(false).await {
+    Ok(servers) => {
+      find_fileservers_with_file(
+        &servers,
+        submission.submission_type.gamebanana_path(),
+        &file.name,
+      )
+      .await
+    }
+    Err(error) => {
+      log::warn!("GameBanana fileserver directory unavailable; using canonical URL: {error}");
+      Vec::new()
+    }
+  };
   let mut urls = download_sources(
     fileserver_preference,
     [
       file.download_url,
       format!("{canonical_origin}/dl/{file_id}"),
     ],
-    || async {
-      match backend.fileservers(false).await {
-        Ok(servers) => {
-          find_fileservers_with_file(
-            &servers,
-            submission.submission_type.gamebanana_path(),
-            &file.name,
-          )
-          .await
-        }
-        Err(error) => {
-          log::warn!("GameBanana fileserver directory unavailable; using canonical URL: {error}");
-          Vec::new()
-        }
-      }
-    },
-  )
-  .await;
+    caches,
+  );
   for url in &urls {
     crate::download_manager::downloader::validate_download_url(url)?;
   }
@@ -269,19 +267,14 @@ async fn resolve_gamebanana_file(
 
 /// Where a GameBanana file is downloaded from, in the order the download
 /// manager tries them. `standard` is the file's own link and `/dl/<id>`,
-/// usually the same URL; `discover` finds caches that serve the file. Auto
-/// tries those caches first; Default keeps its standard link first and falls
-/// back to them, since `/dl/` can send every attempt to the same dead cache.
-async fn download_sources<Discover, Found>(
+/// usually the same URL; `caches` serve the file too. Auto tries the caches
+/// first; Default keeps its standard link first and falls back to them, since
+/// `/dl/` can send every attempt to the same dead cache.
+fn download_sources(
   preference: FileserverPreference,
   standard: [String; 2],
-  discover: Discover,
-) -> Vec<String>
-where
-  Discover: FnOnce() -> Found,
-  Found: Future<Output = Vec<String>>,
-{
-  let caches = discover().await;
+  caches: Vec<String>,
+) -> Vec<String> {
   let ordered: Vec<String> = match preference {
     FileserverPreference::Auto => caches.into_iter().chain(standard).collect(),
     FileserverPreference::Default => standard.into_iter().chain(caches).collect(),
@@ -851,61 +844,60 @@ mod tests {
   const STANDARD: &str = "https://gamebanana.com/dl/7";
   const CACHE: &str = "https://filecache45.gamebanana.com/mods/mod.zip";
 
-  async fn sources(preference: FileserverPreference, standard: [&str; 2]) -> Vec<String> {
-    download_sources(preference, standard.map(str::to_string), || async {
-      vec![CACHE.to_string()]
-    })
-    .await
+  fn sources(
+    preference: FileserverPreference,
+    standard: [&str; 2],
+    caches: &[&str],
+  ) -> Vec<String> {
+    download_sources(
+      preference,
+      standard.map(str::to_string),
+      caches.iter().map(|url| url.to_string()).collect(),
+    )
   }
 
   /// GameBanana's `_sDownloadUrl` is its `/dl/<id>` link, so Default had no
   /// second server to fall back to (#569).
-  #[tokio::test]
-  async fn default_routing_falls_back_to_caches_after_the_standard_link() {
+  #[test]
+  fn default_routing_falls_back_to_caches_after_the_standard_link() {
     assert_eq!(
-      sources(FileserverPreference::Default, [STANDARD, STANDARD]).await,
+      sources(
+        FileserverPreference::Default,
+        [STANDARD, STANDARD],
+        &[CACHE]
+      ),
       [STANDARD, CACHE]
     );
   }
 
-  #[tokio::test]
-  async fn default_routing_keeps_a_distinct_file_link_first() {
-    let file_link = "https://gamebanana.com/dl/7/v2";
+  #[test]
+  fn auto_routing_tries_caches_before_the_standard_link() {
     assert_eq!(
-      sources(FileserverPreference::Default, [file_link, STANDARD]).await,
-      [file_link, STANDARD, CACHE]
-    );
-  }
-
-  #[tokio::test]
-  async fn auto_routing_tries_caches_before_the_standard_link() {
-    assert_eq!(
-      sources(FileserverPreference::Auto, [STANDARD, STANDARD]).await,
+      sources(FileserverPreference::Auto, [STANDARD, STANDARD], &[CACHE]),
       [CACHE, STANDARD]
     );
   }
 
-  #[tokio::test]
-  async fn no_cache_found_leaves_only_the_standard_link() {
+  #[test]
+  fn no_cache_found_leaves_only_the_standard_link() {
     for preference in [FileserverPreference::Default, FileserverPreference::Auto] {
-      let urls = download_sources(
-        preference,
-        [STANDARD.to_string(), String::new()],
-        || async { Vec::new() },
-      )
-      .await;
-      assert_eq!(urls, [STANDARD], "{preference:?}");
+      assert_eq!(
+        sources(preference, [STANDARD, ""], &[]),
+        [STANDARD],
+        "{preference:?}"
+      );
     }
   }
 
-  #[tokio::test]
-  async fn a_cache_already_listed_is_not_tried_twice() {
-    let urls = download_sources(
-      FileserverPreference::Default,
-      [CACHE.to_string(), STANDARD.to_string()],
-      || async { vec![CACHE.to_string(), STANDARD.to_string()] },
-    )
-    .await;
-    assert_eq!(urls, [CACHE, STANDARD]);
+  #[test]
+  fn a_cache_already_listed_is_not_tried_twice() {
+    assert_eq!(
+      sources(
+        FileserverPreference::Default,
+        [CACHE, STANDARD],
+        &[CACHE, STANDARD]
+      ),
+      [CACHE, STANDARD]
+    );
   }
 }

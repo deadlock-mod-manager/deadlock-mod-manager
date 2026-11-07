@@ -1,7 +1,4 @@
-import { readFile } from "node:fs/promises";
-import path from "node:path";
 import { $, browser, expect } from "@wdio/globals";
-import { z } from "zod";
 import { startApplication } from "../support/application";
 import { closeApplication } from "../support/application-exit";
 import { step } from "../support/evidence";
@@ -9,6 +6,7 @@ import {
   badgeStatus,
   checkpoint,
   fixAndConfirm,
+  readFixChosen,
   readHealth,
   readRepairState,
   waitForStatus,
@@ -17,40 +15,10 @@ import { FIXED_MOD, RIVAL_MOD, STATUS } from "../support/fixed-status-fixtures";
 import { observeUntil } from "../support/observations";
 import { findMod, setModEnabled } from "../support/shard-actions";
 import { navigate } from "../support/ui";
-import { assertOwnedWorld } from "../support/world";
 
 // An unfixed mod that ships the same text file as a fixed one keeps that file
 // as shipped, so the fixed mod's repair is left out of the package. Its status
 // must then stop claiming anything: not "fixed", and not "works" either.
-
-const manifestSchema = z.object({
-  mods: z.record(
-    z.string(),
-    z.looseObject({ compatibilityEnabled: z.boolean().optional() }),
-  ),
-});
-
-/** Whether the player's Fix choice for `modId` is still saved. */
-const fixChosen = async (world: string, modId: string) => {
-  const {
-    configuration: { roots },
-  } = await assertOwnedWorld(world);
-  const raw = await readFile(
-    path.join(
-      roots.game,
-      "game",
-      "citadel",
-      "addons",
-      STATUS.folder,
-      ".dmm.json",
-    ),
-    "utf8",
-  );
-  return (
-    manifestSchema.parse(JSON.parse(raw)).mods[modId]?.compatibilityEnabled ??
-    false
-  );
-};
 
 const OUTDATED_ALERT = `//*[@role="alert"][contains(., "hasn't been updated since")]`;
 
@@ -112,7 +80,7 @@ describe("fixed status beside an unfixed mod sharing its file", () => {
         30_000,
       );
       const health = await readHealth(STATUS.folder);
-      const chosen = await fixChosen(world, FIXED_MOD);
+      const chosen = await readFixChosen(world, STATUS.folder, FIXED_MOD);
       const badge = await badgeStatus(FIXED_MOD);
       const page = await modPage(FIXED_MOD, {
         healthAlert: null,

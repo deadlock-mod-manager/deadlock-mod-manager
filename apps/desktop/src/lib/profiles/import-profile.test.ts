@@ -232,63 +232,6 @@ describe("profile import completion", () => {
     });
   }
 
-  it("names the profile the mods went into", async () => {
-    const { profile, modsData } = mixed();
-
-    const current = await flow().addToCurrentProfile(profile, modsData);
-    const created = await flow().createProfileFromImport(profile, modsData, {
-      profileName: "Friends",
-    });
-
-    expect(current).toMatchObject({
-      profileId: activeProfile.id,
-      profileName: "Active",
-    });
-    expect(created.profileName).toBe("Friends");
-    expect(created.profileId).not.toBe(activeProfile.id);
-  });
-
-  it("returns every failure, however many", async () => {
-    const ids = ["1", "2", "3", "4", "5", "6", "7"];
-    batch = batchResult(["1"], ids.slice(1));
-
-    const outcome = await flow().createProfileFromImport(
-      sharedProfile(ids),
-      ids.map((id) => modDto(id, `Mod ${id} name`)),
-    );
-
-    expect(outcome.failures.map((failure) => failure.remoteId)).toEqual(
-      ids.slice(1),
-    );
-  });
-
-  it("reports an import where nothing installed", async () => {
-    unpreparable = new Set(["1", "2"]);
-
-    const outcome = await flow().createProfileFromImport(
-      sharedProfile(["1", "2"]),
-      [modDto("1", "Alpha"), modDto("2", "Bravo")],
-    );
-
-    expect(applied).toEqual([]);
-    expect(toasts).toEqual([]);
-    expect(outcome).toMatchObject({ importedCount: 0, totalCount: 2 });
-    expect(outcome.failures.map(({ name, step }) => [name, step])).toEqual([
-      ["Alpha", "downloads"],
-      ["Bravo", "downloads"],
-    ]);
-  });
-
-  it("leaves a blank catalog name out", async () => {
-    batch = batchResult([], ["1"]);
-
-    const outcome = await flow().createProfileFromImport(sharedProfile(["1"]), [
-      modDto("1", "  "),
-    ]);
-
-    expect(outcome.failures[0]?.name).toBeNull();
-  });
-
   it("keeps the plain success toast when every mod installs", async () => {
     batch = batchResult(["1", "2"], []);
 

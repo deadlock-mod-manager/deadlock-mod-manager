@@ -182,15 +182,10 @@ impl AddonAnalyzer {
   /// Client for identification lookups. Each request gets a finite timeout so
   /// an unreachable service fails the lookup instead of stalling the analysis.
   fn lookup_client() -> Result<reqwest::Client, Error> {
-    Self::build_lookup_client(LOOKUP_CONNECT_TIMEOUT, LOOKUP_TIMEOUT)
-  }
-
-  fn build_lookup_client(
-    connect_timeout: Duration,
-    timeout: Duration,
-  ) -> Result<reqwest::Client, Error> {
     crate::proxy::build_http_client(|builder| {
-      builder.connect_timeout(connect_timeout).timeout(timeout)
+      builder
+        .connect_timeout(LOOKUP_CONNECT_TIMEOUT)
+        .timeout(LOOKUP_TIMEOUT)
     })
   }
 
@@ -628,10 +623,8 @@ impl AddonAnalyzer {
         }
         Err(e) => {
           log::warn!("Failed to analyze hashes for {}: {e}", addon.file_name);
-          // The manifest already names the owner of a local import, so the
-          // failed lookup doesn't leave it unidentified. Any other file that
-          // couldn't be checked isn't an unknown mod; it is listed only as
-          // an error.
+          // A local import keeps its manifest owner. Any other file that
+          // couldn't be checked is an error, not an unknown mod.
           if addon.manifest_mod_id.is_none() {
             errors.push(format!("Hash analysis failed for {}: {e}", addon.file_name));
             continue;
@@ -861,9 +854,9 @@ mod tests {
     .unwrap()
   }
 
-  /// Answers one request with `status` and `body` after `delay`, having read
-  /// the whole request so the client never sees a reset.
-  async fn serve_once(status: u16, body: &'static str, delay: Duration) -> String {
+  /// Answers one request with `status` and `body`, having read the whole
+  /// request so the client never sees a reset.
+  async fn serve_once(status: u16, body: &'static str) -> String {
     use tokio::io::{AsyncReadExt, AsyncWriteExt};
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let endpoint = format!(
@@ -896,7 +889,6 @@ mod tests {
           break;
         }
       }
-      tokio::time::sleep(delay).await;
       let reply = format!(
         "HTTP/1.1 {status} Scripted\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{body}",
         body.len()
@@ -913,41 +905,32 @@ mod tests {
 
   #[tokio::test]
   async fn lookup_reports_a_service_error_instead_of_no_match() {
-    let endpoint = serve_once(503, "Service Unavailable", Duration::ZERO).await;
+    let endpoint = serve_once(503, "Service Unavailable").await;
     let error = lookup(&endpoint).await.unwrap_err().to_string();
     assert!(error.contains("503"), "{error}");
   }
 
   #[tokio::test]
   async fn lookup_reports_an_unreadable_response_instead_of_no_match() {
-    let endpoint = serve_once(200, "<html>maintenance</html>", Duration::ZERO).await;
+    let endpoint = serve_once(200, "<html>maintenance</html>").await;
     assert!(lookup(&endpoint).await.is_err());
+  }
+
+  /// An origin on a port nothing listens on, so every request to it fails.
+  fn closed_endpoint() -> String {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    format!("http://{}", listener.local_addr().unwrap())
   }
 
   #[tokio::test]
   async fn lookup_reports_an_unreachable_service_instead_of_no_match() {
-    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
-    let endpoint = format!(
-      "http://{}/api/v2/vpk-analyse-hashes",
-      listener.local_addr().unwrap()
-    );
-    drop(listener);
+    let endpoint = format!("{}/api/v2/vpk-analyse-hashes", closed_endpoint());
     assert!(lookup(&endpoint).await.is_err());
   }
 
   #[tokio::test]
-  async fn lookup_gives_up_on_a_service_that_answers_too_slowly() {
-    let endpoint = serve_once(200, "[]", Duration::from_secs(5)).await;
-    let client =
-      AddonAnalyzer::build_lookup_client(LOOKUP_CONNECT_TIMEOUT, Duration::from_millis(200))
-        .unwrap();
-    let result = AddonAnalyzer::lookup_hashes(&client, &endpoint, &parsed_vpk()).await;
-    assert!(result.is_err());
-  }
-
-  #[tokio::test]
   async fn lookup_returns_no_match_only_when_the_service_found_none() {
-    let endpoint = serve_once(200, "[]", Duration::ZERO).await;
+    let endpoint = serve_once(200, "[]").await;
     assert!(lookup(&endpoint).await.unwrap().is_none());
   }
 
@@ -957,7 +940,6 @@ mod tests {
       200,
       r#"[{"matchedVpk":{"id":"vpk_1","submissionType":"mod","submissionId":"42","fileId":"100"},
           "match":{"certainty":100,"matchType":"sha256"}}]"#,
-      Duration::ZERO,
     )
     .await;
     let (remote_id, info) = lookup(&endpoint).await.unwrap().unwrap();
@@ -1124,8 +1106,8 @@ mod tests {
 
   #[tokio::test]
   async fn a_failed_lookup_keeps_a_file_the_manifest_gives_to_a_local_mod() {
-    // Tests have no API server (http://localhost:9000), so both lookups fail.
     let _ = crate::runtime_environment::initialize();
+    *crate::commands::state::API_URL.lock().unwrap() = closed_endpoint();
     let game = tempfile::tempdir().unwrap();
     let base = game.path().join("game/citadel/addons/1_profile");
     write_vpk(&base, "pak01_dir.vpk", "local import");

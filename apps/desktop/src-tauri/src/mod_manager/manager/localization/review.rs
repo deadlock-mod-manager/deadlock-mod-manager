@@ -103,42 +103,31 @@ impl ReviewedInputs {
         )
       })
       .collect();
-    let mut involved = BTreeSet::new();
-    for conflict in &analysis.conflicts {
-      involved.extend(
-        conflict
-          .candidates
+    let text_contenders = analysis
+      .conflicts
+      .iter()
+      .flat_map(|conflict| &conflict.candidates)
+      .map(|candidate| candidate.mod_id.as_str());
+    let compiled_contenders = analysis
+      .compiled_data_conflicts
+      .iter()
+      .flat_map(|conflict| &conflict.candidates)
+      .map(|candidate| candidate.mod_id.as_str());
+    let mut involved: BTreeSet<&str> = text_contenders
+      .chain(compiled_contenders)
+      .chain(analysis.input_warnings.iter().map(|w| w.mod_id.as_str()))
+      .chain(analysis.snapshot_warnings.iter().map(|w| w.mod_id.as_str()))
+      .chain(analysis.parse_warnings.iter().map(|w| w.mod_id.as_str()))
+      .chain(model_warnings.iter().map(|w| w.mod_id.as_str()))
+      .chain(data_warnings.iter().map(|w| w.mod_id.as_str()))
+      .chain(
+        analysis
+          .baselines
           .iter()
-          .map(|candidate| candidate.mod_id.as_str()),
-      );
-    }
-    for conflict in &analysis.compiled_data_conflicts {
-      involved.extend(
-        conflict
-          .candidates
-          .iter()
-          .map(|candidate| candidate.mod_id.as_str()),
-      );
-    }
-    involved.extend(
-      analysis
-        .input_warnings
-        .iter()
-        .map(|warning| warning.mod_id.as_str()),
-    );
-    involved.extend(
-      analysis
-        .snapshot_warnings
-        .iter()
-        .map(|warning| warning.mod_id.as_str()),
-    );
-    involved.extend(
-      analysis
-        .parse_warnings
-        .iter()
-        .map(|warning| warning.mod_id.as_str()),
-    );
-    involved.extend(model_warnings.iter().map(|warning| warning.mod_id.as_str()));
+          .filter(|baseline| baseline.evidence.status != BaselineStatus::Matched)
+          .map(|baseline| baseline.mod_id.as_str()),
+      )
+      .collect();
     // An overlap names its other providers ("mod:archive") and the mods that
     // supply mixed dependencies ("mod id:") only in its detail. Matching every
     // listed mod there can only add stamps, so it never reuses a review wrongly.
@@ -151,14 +140,6 @@ impl ReviewedInputs {
           .filter(|mod_id| warning.detail.contains(&format!("{mod_id}:"))),
       );
     }
-    involved.extend(data_warnings.iter().map(|warning| warning.mod_id.as_str()));
-    involved.extend(
-      analysis
-        .baselines
-        .iter()
-        .filter(|baseline| baseline.evidence.status != BaselineStatus::Matched)
-        .map(|baseline| baseline.mod_id.as_str()),
-    );
     // Every baseline of an involved mod, matched or not: learning can change
     // how its compiled files are read without changing the findings above.
     let baselines: Vec<_> = analysis
@@ -532,5 +513,346 @@ mod tests {
     remove(&overlay).unwrap();
     remove(&overlay).unwrap();
     assert!(!path(&overlay).exists());
+  }
+}
+
+/// Saved reviews through the mod manager: applying, library changes and launch.
+#[cfg(test)]
+mod applied_review_tests {
+  use super::super::tests::{
+    fix_mods, manager_with_gameinfo, refresh_repairs, test_manager, write_test_vpk, write_vpk,
+  };
+  use super::super::*;
+  use crate::mod_manager::mod_health::FixModsStatus;
+
+  const REVIEW_LOCALE: &str = "resource/localization/custom/custom_english.txt";
+
+  fn review_text(tokens: &str) -> String {
+    format!("\"lang\"\n{{\n\"Language\" \"English\"\n\"Tokens\"\n{{\n{tokens}\n}}\n}}\n")
+  }
+
+  fn write_review_vpk(path: &Path, value: &str, extra: &str) {
+    let text = review_text(&format!("\"shared_token\" \"{value}\"\n{extra}"));
+    write_vpk(path, &[(REVIEW_LOCALE, text.as_bytes())]);
+  }
+
+  /// Two fixed mods set the same game token differently, so fixing them needs
+  /// a review. A third, plain mod is unrelated to it.
+  fn manager_with_conflict() -> (tempfile::TempDir, ModManager) {
+    let temp = tempfile::tempdir().unwrap();
+    let mut manager = manager_with_gameinfo(temp.path());
+    write_review_vpk(&temp.path().join("game/citadel/pak01_dir.vpk"), "Game", "");
+    let base = manager.get_addons_path(None).unwrap();
+    write_review_vpk(&base.join("pak01_dir.vpk"), "First", "");
+    write_review_vpk(&base.join("pak02_dir.vpk"), "Second", "");
+    write_test_vpk(&base.join("pak03_dir.vpk"));
+    let mut manifest = ProfileVpkManifest::default();
+    for (id, name) in [
+      ("first", "pak01_dir.vpk"),
+      ("second", "pak02_dir.vpk"),
+      ("plain", "pak03_dir.vpk"),
+    ] {
+      manifest.mark_enabled(
+        id,
+        vec![name.into()],
+        vec![name.into()],
+        None,
+        ShardIndex::FIRST,
+      );
+    }
+    manifest.save(&base).unwrap();
+    assert_eq!(
+      fix_mods(&mut manager, vec!["first".into(), "second".into()])
+        .unwrap()
+        .status,
+      FixModsStatus::ReviewRequired
+    );
+    (temp, manager)
+  }
+
+  /// Applies the review with `choice` (`load order`, `vanilla` or a mod ID)
+  /// and returns the value the package must hold.
+  fn apply_review(manager: &mut ModManager, choice: &str) -> String {
+    let analysis = manager.analyze_localization_overlay(None, &[]).unwrap();
+    let [conflict] = analysis.conflicts.as_slice() else {
+      panic!("expected one conflict, got {:?}", analysis.conflicts);
+    };
+    let (resolutions, expected) = match choice {
+      "load order" => (Vec::new(), conflict.candidates[0].value.clone()),
+      "vanilla" => (
+        vec![LocalizationResolution {
+          conflict_key: conflict.key.clone(),
+          winner_mod_id: None,
+          winner_value: None,
+          winner_source_vpk: None,
+          use_vanilla: true,
+        }],
+        conflict.vanilla_value.clone().unwrap(),
+      ),
+      mod_id => {
+        let candidate = conflict
+          .candidates
+          .iter()
+          .find(|candidate| candidate.mod_id == mod_id)
+          .unwrap();
+        (
+          vec![LocalizationResolution {
+            conflict_key: conflict.key.clone(),
+            winner_mod_id: Some(candidate.mod_id.clone()),
+            winner_value: Some(candidate.value.clone()),
+            winner_source_vpk: Some(candidate.source_vpk.clone()),
+            use_vanilla: false,
+          }],
+          candidate.value.clone(),
+        )
+      }
+    };
+    manager
+      .write_reviewed_localization_overlay(None, &resolutions, &analysis.review_fingerprint)
+      .unwrap();
+    assert_reviewed_package(manager, &expected);
+    expected
+  }
+
+  fn assert_reviewed_package(manager: &ModManager, expected: &str) {
+    use source2_model::vpk_extract::VpkArchive;
+    let overlay = manager.localization_overlay_vpk_path(None).unwrap();
+    let archive = VpkArchive::open(&overlay).expect("the reviewed package must be written");
+    let text = String::from_utf8(archive.extract_entry(REVIEW_LOCALE).unwrap()).unwrap();
+    assert!(
+      text.contains(&format!("\"{expected}\"")),
+      "package must keep the reviewed value {expected}: {text}"
+    );
+    let (_, _, key) = manager.localization_overlay_inputs(None).unwrap();
+    assert!(
+      receipt::load(&overlay)
+        .unwrap()
+        .unwrap()
+        .is_current(&key)
+        .unwrap()
+    );
+  }
+
+  fn assert_review_required(manager: &ModManager, change: &str) {
+    manager.invalidate_localization_overlay(None);
+    let result = manager.prepare_localization_overlay_with_progress(None, true, || {});
+    assert!(
+      matches!(result, Err(Error::ModDataReviewRequired)),
+      "{change}: {result:?}"
+    );
+    let overlay = manager.localization_overlay_vpk_path(None).unwrap();
+    assert!(!overlay.exists());
+    assert!(receipt::load(&overlay).unwrap().is_none());
+  }
+
+  #[test]
+  fn reviewed_choices_survive_unrelated_library_changes() {
+    for choice in ["load order", "second", "vanilla"] {
+      let (temp, mut manager) = manager_with_conflict();
+      let expected = apply_review(&mut manager, choice);
+
+      manager.uninstall_mod("plain".into(), vec![], None).unwrap();
+      refresh_repairs(&mut manager, None).unwrap();
+      assert_reviewed_package(&manager, &expected);
+
+      manager
+        .install_mod(
+          Mod {
+            id: "plain".into(),
+            name: "Plain mod".into(),
+            is_map: false,
+            installed_vpks: vec![],
+            original_vpk_names: vec![],
+            file_tree: None,
+            install_order: None,
+          },
+          None,
+        )
+        .unwrap();
+      refresh_repairs(&mut manager, None).unwrap();
+      assert_reviewed_package(&manager, &expected);
+
+      // The review outlives the manager, and launch reuses it like a refresh.
+      drop(manager);
+      let manager = test_manager(temp.path());
+      manager.invalidate_localization_overlay(None);
+      manager
+        .prepare_localization_overlay_with_progress(None, true, || {})
+        .unwrap();
+      assert_reviewed_package(&manager, &expected);
+    }
+  }
+
+  #[test]
+  fn a_saved_review_is_asked_again_when_what_it_covered_changes() {
+    for change in [
+      "new contender",
+      "reordered contenders",
+      "loser rewritten",
+      "game rewritten",
+      "missing mod",
+    ] {
+      let (temp, mut manager) = manager_with_conflict();
+      apply_review(&mut manager, "load order");
+      let base = manager.get_addons_path(None).unwrap();
+      match change {
+        // Only fixed mods take part in a review.
+        "new contender" => {
+          write_review_vpk(&base.join("pak04_dir.vpk"), "Third", "");
+          let mut manifest = ProfileVpkManifest::load(&base).unwrap();
+          manifest.mark_enabled(
+            "third",
+            vec!["pak04_dir.vpk".into()],
+            vec![],
+            None,
+            ShardIndex::FIRST,
+          );
+          manifest
+            .mods
+            .get_mut("third")
+            .unwrap()
+            .compatibility_enabled = true;
+          manifest.save(&base).unwrap();
+        }
+        "reordered contenders" => {
+          manager
+            .reorder_mods_by_remote_id(
+              vec![
+                ("second".into(), vec![], 0),
+                ("first".into(), vec![], 1),
+                ("plain".into(), vec![], 2),
+              ],
+              None,
+            )
+            .unwrap();
+        }
+        // Same conflicting value; only the losing mod's files changed.
+        "loser rewritten" => {
+          let analysis = manager.analyze_localization_overlay(None, &[]).unwrap();
+          let loser = &analysis.conflicts[0].candidates[1];
+          let (name, value) = if loser.mod_id == "first" {
+            ("pak01_dir.vpk", "First")
+          } else {
+            ("pak02_dir.vpk", "Second")
+          };
+          write_review_vpk(&base.join(name), value, "\"other_token\" \"Other\"");
+        }
+        "game rewritten" => {
+          write_review_vpk(
+            &temp.path().join("game/citadel/pak01_dir.vpk"),
+            "Game",
+            "\"other_token\" \"Game other\"",
+          );
+        }
+        // A new finding that pauses launch, beside the same conflict.
+        "missing mod" => {
+          let mut manifest = ProfileVpkManifest::load(&base).unwrap();
+          manifest.mark_enabled(
+            "missing",
+            vec!["pak05_dir.vpk".into()],
+            vec![],
+            None,
+            ShardIndex::FIRST,
+          );
+          manifest.save(&base).unwrap();
+        }
+        _ => unreachable!(),
+      }
+      assert_review_required(&manager, change);
+    }
+  }
+
+  #[test]
+  fn a_failed_apply_leaves_no_package_from_earlier_choices() {
+    let (_temp, mut manager) = manager_with_conflict();
+    apply_review(&mut manager, "first");
+    let overlay = manager.localization_overlay_vpk_path(None).unwrap();
+    // The earlier package stays current; make saving the new review fail.
+    fs::remove_file(review::path(&overlay)).unwrap();
+    fs::create_dir_all(review::path(&overlay)).unwrap();
+    let analysis = manager.analyze_localization_overlay(None, &[]).unwrap();
+    let second = analysis.conflicts[0]
+      .candidates
+      .iter()
+      .find(|candidate| candidate.mod_id == "second")
+      .unwrap();
+    let resolutions = [LocalizationResolution {
+      conflict_key: analysis.conflicts[0].key.clone(),
+      winner_mod_id: Some(second.mod_id.clone()),
+      winner_value: Some(second.value.clone()),
+      winner_source_vpk: Some(second.source_vpk.clone()),
+      use_vanilla: false,
+    }];
+    assert!(
+      manager
+        .write_reviewed_localization_overlay(None, &resolutions, &analysis.review_fingerprint)
+        .is_err()
+    );
+    assert!(!overlay.exists());
+    assert!(receipt::load(&overlay).unwrap().is_none());
+  }
+
+  #[test]
+  fn invalid_choices_keep_the_saved_review() {
+    let (_temp, mut manager) = manager_with_conflict();
+    let expected = apply_review(&mut manager, "second");
+    let analysis = manager.analyze_localization_overlay(None, &[]).unwrap();
+    let invalid = [LocalizationResolution {
+      conflict_key: "removed-conflict".into(),
+      winner_mod_id: None,
+      winner_value: None,
+      winner_source_vpk: None,
+      use_vanilla: true,
+    }];
+    assert!(
+      manager
+        .write_reviewed_localization_overlay(None, &invalid, &analysis.review_fingerprint)
+        .is_err()
+    );
+    manager.invalidate_localization_overlay(None);
+    manager
+      .prepare_localization_overlay_with_progress(None, true, || {})
+      .unwrap();
+    assert_reviewed_package(&manager, &expected);
+  }
+
+  #[test]
+  fn deleting_a_profile_removes_its_saved_review() {
+    let (_temp, mut manager) = manager_with_conflict();
+    apply_review(&mut manager, "load order");
+    let overlay = manager.localization_overlay_vpk_path(None).unwrap();
+    assert!(review::path(&overlay).is_file());
+    manager.invalidate_localization_overlay(None);
+    manager.delete_localization_overlay(None).unwrap();
+    assert!(
+      review::path(&overlay).is_file(),
+      "removing the package keeps the player's review"
+    );
+
+    let profile = manager.get_addons_path(Some("other")).unwrap();
+    fs::create_dir_all(&profile).unwrap();
+    let other = manager
+      .localization_overlay_vpk_path(Some("other"))
+      .unwrap();
+    fs::create_dir_all(other.parent().unwrap()).unwrap();
+    fs::write(&other, b"package").unwrap();
+    fs::write(review::path(&other), b"{}").unwrap();
+    manager
+      .delete_profile_localization_overlay("other")
+      .unwrap();
+    assert!(!other.parent().unwrap().exists());
+
+    // A review that can't be removed doesn't fail the deletion after its
+    // shards are gone; the package is still removed.
+    fs::create_dir_all(other.parent().unwrap()).unwrap();
+    fs::write(&other, b"package").unwrap();
+    fs::write(receipt::path(&other), b"{}").unwrap();
+    fs::create_dir_all(review::path(&other).join("stuck")).unwrap();
+    manager
+      .delete_profile_localization_overlay("other")
+      .unwrap();
+    assert!(!other.exists());
+    assert!(!receipt::path(&other).exists());
+    assert!(review::path(&other).is_dir());
   }
 }

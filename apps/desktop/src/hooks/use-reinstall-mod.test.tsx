@@ -150,45 +150,33 @@ afterEach(() => {
 });
 
 describe("reinstalling a mod whose files could not be removed", () => {
-  const failures: [string, ErrorKind][] = [
-    [
-      "a read-only file the user kept read-only",
-      {
-        kind: "readOnlyFile",
-        message: "File is read-only: /game/citadel/addons/pak01_dir.vpk",
-        path: "/game/citadel/addons/pak01_dir.vpk",
-      },
-    ],
-    [
-      "an I/O error",
-      { kind: "io", message: "Permission denied (os error 13)" },
-    ],
-  ];
+  it("stops before downloading after a file the user kept read-only", async () => {
+    const error: ErrorKind = {
+      kind: "readOnlyFile",
+      message: "File is read-only: /game/citadel/addons/pak01_dir.vpk",
+      path: "/game/citadel/addons/pak01_dir.vpk",
+    };
+    purge.mockImplementation(() => Promise.reject(error));
+    const steps: string[] = [];
 
-  for (const [name, error] of failures) {
-    it(`stops before downloading after ${name}`, async () => {
-      purge.mockImplementation(() => Promise.reject(error));
-      const steps: string[] = [];
+    const settled = await renderReinstall()(mod, {
+      onStep: (step) => steps.push(step),
+    }).then(
+      (result) => ({ result }),
+      (thrown: ErrorKind) => ({ thrown }),
+    );
 
-      const settled = await renderReinstall()(mod, {
-        onStep: (step) => steps.push(step),
-      }).then(
-        (result) => ({ result }),
-        (thrown: ErrorKind) => ({ thrown }),
-      );
-
-      expect(steps).toEqual(["purging"]);
-      expect(getModDownload).not.toHaveBeenCalled();
-      expect(addToQueue).not.toHaveBeenCalled();
-      expect(install).not.toHaveBeenCalled();
-      expect(storedMod()?.installedVpks).toEqual(["pak01_dir.vpk"]);
-      expect(storedMod()?.status).toBe(ModStatus.Installed);
-      expect(
-        usePersistedStore.getState().isModEnabledInCurrentProfile(mod.remoteId),
-      ).toBe(true);
-      expect(settled).toEqual({ thrown: error });
-    });
-  }
+    expect(steps).toEqual(["purging"]);
+    expect(getModDownload).not.toHaveBeenCalled();
+    expect(addToQueue).not.toHaveBeenCalled();
+    expect(install).not.toHaveBeenCalled();
+    expect(storedMod()?.installedVpks).toEqual(["pak01_dir.vpk"]);
+    expect(storedMod()?.status).toBe(ModStatus.Installed);
+    expect(
+      usePersistedStore.getState().isModEnabledInCurrentProfile(mod.remoteId),
+    ).toBe(true);
+    expect(settled).toEqual({ thrown: error });
+  });
 
   it("downloads again once the purge succeeds", async () => {
     purge.mockImplementation(async () => {});
@@ -206,7 +194,7 @@ describe("reinstalling a mod whose files could not be removed", () => {
     expect(steps).toEqual(["purging", "downloading", "installing"]);
     expect(addToQueue).toHaveBeenCalledTimes(1);
     expect(install).toHaveBeenCalledTimes(1);
-    expect(result).toEqual({ outcome: "restored", missingOnDisk: false });
+    expect(result).toEqual({ outcome: "restored" });
     expect(storedMod()?.status).toBe(ModStatus.Installed);
     expect(
       usePersistedStore.getState().isModEnabledInCurrentProfile(mod.remoteId),

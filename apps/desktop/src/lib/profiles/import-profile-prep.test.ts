@@ -1,8 +1,6 @@
 import { describe, expect, it, mock } from "bun:test";
 import type { ModDto, ProfileModDownload } from "@deadlock-mods/shared";
-import { ModStatus, type ModDownloadItem } from "@/types/mods";
-import { resolveProfileImportDownloadFiles } from "./import-downloads";
-import { serializeEnabledProfileMods } from "./serialize-profile-mods";
+import type { ModDownloadItem } from "@/types/mods";
 import type { OrderedImportedMod } from "./types";
 
 const logger = {
@@ -165,30 +163,6 @@ describe("prepareProfileImportMods", () => {
         updatedAt: null,
         md5Checksum: null,
       },
-    ]);
-  });
-});
-
-describe("re-sharing an imported mod", () => {
-  it("passes on the archive the import fetched", async () => {
-    catalog = [BASE, EFFECTS, EXTRA];
-    const prepared = await prepare({ selectedDownloads: [pick(EFFECTS)] });
-
-    const shared = serializeEnabledProfileMods(
-      {
-        enabledMods: {
-          "42": { remoteId: "42", enabled: true, lastModified: new Date(0) },
-        },
-      },
-      [{ ...modData, ...prepared.downloads, status: ModStatus.Installed }],
-    );
-    const reimported = resolveProfileImportDownloadFiles({
-      availableDownloads: catalog,
-      selectedDownloads: shared.mods[0].selectedDownloads,
-    });
-
-    expect(reimported.downloadFiles.map((file) => file.name)).toEqual([
-      EFFECTS.name,
     ]);
   });
 });

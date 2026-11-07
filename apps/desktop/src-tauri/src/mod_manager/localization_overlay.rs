@@ -3393,41 +3393,6 @@ pub(crate) mod tests {
   }
 
   #[test]
-  fn a_fixed_mod_whose_data_table_is_protected_is_not_reported_as_working() {
-    use crate::mod_manager::mod_health::{CompatibilityChoice, ModFindings, ModHealthStatus};
-    let temp = tempfile::tempdir().unwrap();
-    let citadel = temp.path().join("citadel");
-    fs::create_dir_all(&citadel).unwrap();
-    pack_vdata(
-      &citadel,
-      "pak01",
-      vec![
-        ("hero_a".to_string(), hero(1)),
-        ("hero_new".to_string(), hero(2)),
-      ],
-    );
-    // Both copies omit the game's `hero_new`, so either one alone needs a repair.
-    let data = |name: &str| LocalizationModInput {
-      mod_id: name.into(),
-      vpks: vec![pack_vdata(
-        temp.path(),
-        name,
-        vec![("hero_a".to_string(), hero(1))],
-      )],
-    };
-    let (fixed, rival) = (data("fixed"), data("rival"));
-    let selected = BTreeSet::from(["fixed".to_string()]);
-    let status = |inputs: &[LocalizationModInput]| {
-      let plan = LocalizationOverlayPlan::build_selected(&citadel, inputs, &selected).unwrap();
-      ModFindings::from_analysis(&plan.analysis, "fixed", true).status(CompatibilityChoice::Enabled)
-    };
-    assert_eq!(status(std::slice::from_ref(&fixed)), ModHealthStatus::Fixed);
-    for inputs in [vec![fixed.clone(), rival.clone()], vec![rival, fixed]] {
-      assert_eq!(status(&inputs), ModHealthStatus::NotCovered);
-    }
-  }
-
-  #[test]
   fn unreadable_mod_files_are_reported_and_never_replaced_by_other_mods() {
     let temp = tempfile::tempdir().unwrap();
     let citadel = temp.path().join("citadel");

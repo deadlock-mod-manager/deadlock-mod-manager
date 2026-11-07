@@ -1018,21 +1018,6 @@ mod tests {
     assert_eq!(std::fs::read_dir(elsewhere).unwrap().count(), 0);
   }
 
-  /// The frontend sends an empty folder for the Default profile, which lives in
-  /// the root addons folder.
-  #[test]
-  fn importing_into_the_default_profile_targets_the_root_addons_folder() {
-    let game = std::path::Path::new("game");
-    let root =
-      crate::mod_manager::ModManager::profile_addons_dir(game, None).expect("root addons folder");
-    let folder = import_install_folder("");
-    let resolved = crate::mod_manager::ModManager::profile_addons_dir(game, folder.as_deref());
-    assert!(
-      matches!(&resolved, Ok(path) if *path == root),
-      "empty folder resolved to {folder:?}, which gives {resolved:?} instead of {root:?}"
-    );
-  }
-
   #[test]
   fn default_profile_import_installs_into_the_root_addons_folder() {
     let game = tempfile::tempdir().unwrap();

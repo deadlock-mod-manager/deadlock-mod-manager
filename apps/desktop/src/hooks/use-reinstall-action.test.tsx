@@ -113,7 +113,7 @@ describe("reinstalling a mod with a stale download status", () => {
       seen.push(storedStatus());
       options.onStep?.("downloading");
       seen.push(storedStatus());
-      return { outcome: "downloadedOnly", missingOnDisk: false };
+      return { outcome: "downloadedOnly" };
     });
 
     const reinstall = await renderReinstall();
@@ -129,7 +129,7 @@ describe("reinstalling a mod with a stale download status", () => {
       // Started elsewhere while the purge waited on a prompt.
       isQueued.mockImplementation(() => true);
       options.onStep?.("downloading");
-      return { outcome: "failed", missingOnDisk: false };
+      return { outcome: "failed" };
     });
 
     const reinstall = await renderReinstall();

@@ -34,11 +34,6 @@ export type ReinstallOutcome =
 export type ReinstallResult = {
   outcome: ReinstallOutcome;
   error?: string;
-  /**
-   * Nothing was there to delete - the state was ahead of the file system.
-   * Reinstall cannot tell that apart from a normal purge, so it reports false.
-   */
-  missingOnDisk: boolean;
 };
 
 export type ReinstallOptions = {
@@ -71,7 +66,6 @@ export const useReinstallMod = () => {
       const wasInstalled =
         target.status === ModStatus.Installed ||
         (target.missingVpks?.length ?? 0) > 0;
-      const missingOnDisk = false;
 
       logger
         .withMetadata({ mod: target.remoteId, wasInstalled, profileFolder })
@@ -109,16 +103,15 @@ export const useReinstallMod = () => {
           .withMetadata({ mod: target.remoteId })
           .withError(error)
           .error("Failed to re-download mod");
-        return { outcome: "failed", error: message, missingOnDisk };
+        return { outcome: "failed", error: message };
       }
 
       if (!wasInstalled) {
-        return { outcome: "downloadedOnly", missingOnDisk };
+        return { outcome: "downloadedOnly" };
       }
 
       options.onStep?.("installing");
-      const result = await restore(target, install);
-      return { ...result, missingOnDisk };
+      return restore(target, install);
     },
     [install],
   );
@@ -233,7 +226,7 @@ const redownload = (
 const restore = async (
   snapshot: LocalMod,
   install: ReturnType<typeof useInstallWithCollection>["install"],
-): Promise<Omit<ReinstallResult, "missingOnDisk">> => {
+): Promise<ReinstallResult> => {
   const mod = usePersistedStore
     .getState()
     .localMods.find((m) => m.remoteId === snapshot.remoteId);
@@ -270,7 +263,7 @@ const restore = async (
 
   // Defaults to "manual": if install decides it needs a file selection it just
   // returns without firing a callback, and nobody renders that dialog here.
-  let result: Omit<ReinstallResult, "missingOnDisk"> = { outcome: "manual" };
+  let result: ReinstallResult = { outcome: "manual" };
 
   await install(
     mod,
