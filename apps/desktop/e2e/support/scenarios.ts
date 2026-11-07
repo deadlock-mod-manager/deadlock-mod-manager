@@ -30,7 +30,11 @@ import {
 import { shareRoutes } from "./profile-share-fixtures";
 import { prepareFileOrderWorld } from "./file-order-fixtures";
 import { prepareBrokenProfileWorld } from "./broken-profile-fixtures";
-import { prepareCompatibilityFixWorld } from "./compatibility-fix-fixtures";
+import {
+  disabledFixRoutes,
+  prepareCompatibilityFixWorld,
+  prepareDisabledFixWorld,
+} from "./compatibility-fix-fixtures";
 import { prepareIdentifiedFixWorld } from "./compatibility-fix-identification-fixtures";
 import {
   FIXED_MOD as STATUS_FIXED_MOD,
@@ -864,6 +868,14 @@ export const scenarios = {
     routes: profileRoutes,
     prepare: async (world) =>
       prepareFixedStatusWorld(world, [STATUS_FIXED_MOD, STATUS_PLAIN_MOD]),
+  },
+  "compatibility-fix-disabled": {
+    ...defaults,
+    family: "compatibility",
+    spec: "compatibility-fix-disabled",
+    phases: ["disabled-mod"],
+    routes: async () => disabledFixRoutes,
+    prepare: async (world) => prepareDisabledFixWorld(world),
   },
   "library-selection": {
     ...defaults,

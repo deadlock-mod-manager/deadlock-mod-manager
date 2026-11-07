@@ -5,6 +5,7 @@ import type { ModHealthStatus } from "@/types/generated/ModHealthStatus";
 import type { ModHealthSymptom } from "@/types/generated/ModHealthSymptom";
 import {
   canFixInBulk,
+  fixAppliesWhenEnabled,
   fixableModIds,
   gameUpdatedSinceLastCheck,
   healthAction,
@@ -86,6 +87,16 @@ describe("healthAction", () => {
     expect(healthAction("fixed")).toBe("useOriginalFiles");
     expect(healthAction("partlyFixed")).toBe("useOriginalFiles");
     expect(healthAction("needsUpdate")).toBeNull();
+  });
+});
+
+describe("fixAppliesWhenEnabled", () => {
+  it("notes a fixed mod's repair waits for the mod to be enabled", () => {
+    expect(fixAppliesWhenEnabled("fixed", false)).toBe(true);
+    expect(fixAppliesWhenEnabled("partlyFixed", false)).toBe(true);
+    expect(fixAppliesWhenEnabled("fixed", true)).toBe(false);
+    expect(fixAppliesWhenEnabled("fixable", false)).toBe(false);
+    expect(fixAppliesWhenEnabled("originalFiles", false)).toBe(false);
   });
 });
 
