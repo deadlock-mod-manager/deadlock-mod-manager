@@ -27,14 +27,20 @@ import {
   prepareRescanAfterResetWorld,
   rescanAfterResetRoutes,
 } from "./rescan-after-reset-fixtures";
+import { importFailureRoutes } from "./profile-import-failure-fixtures";
 import { shareRoutes } from "./profile-share-fixtures";
 import { prepareFileOrderWorld } from "./file-order-fixtures";
 import { prepareBrokenProfileWorld } from "./broken-profile-fixtures";
-import { prepareCompatibilityFixWorld } from "./compatibility-fix-fixtures";
+import {
+  disabledFixRoutes,
+  prepareCompatibilityFixWorld,
+  prepareDisabledFixWorld,
+} from "./compatibility-fix-fixtures";
 import { prepareIdentifiedFixWorld } from "./compatibility-fix-identification-fixtures";
 import {
   FIXED_MOD as STATUS_FIXED_MOD,
   PLAIN_MOD as STATUS_PLAIN_MOD,
+  RIVAL_MOD as STATUS_RIVAL_MOD,
   prepareFixedStatusWorld,
 } from "./fixed-status-fixtures";
 import {
@@ -82,6 +88,11 @@ import { prepareLegacyCatalog } from "./catalog-upgrade-fixtures";
 import { prepareOnboardingWorld } from "./onboarding-fixtures";
 import { onboardingIdentifiedRoutes } from "./analysis-library-status-fixtures";
 import {
+  analyzeErrorsRoutes,
+  assertAnalyzeErrorsNetwork,
+  prepareAnalyzeErrorsWorld,
+} from "./analyze-errors-fixtures";
+import {
   libraryAuthorRoutes,
   legacyLibraryAuthorRoutes,
   prepareLegacyLibraryAuthorWorld,
@@ -92,6 +103,7 @@ import {
 } from "./detected-mod-fixtures";
 import {
   multipakUpdateRoutes,
+  updateRoutingRoutes,
   assertMultipakUpdateNetwork,
   assertUpdateRoutingNetwork,
 } from "./multipak-update-fixtures";
@@ -466,6 +478,7 @@ const modUpdates: Definition = {
 
 export const scenarios = {
   "gamebanana-mirror-fallback": downloadFallback,
+  "gamebanana-default-fallback": downloadFallback,
   "gamebanana-crash-cause": crashAttribution,
   "library-groups-organize": libraryGroups,
   "library-groups-identification": {
@@ -692,6 +705,15 @@ export const scenarios = {
     verifyNetwork: assertUnknownAddonNetwork,
   },
   "onboarding-skip-analysis": onboarding,
+  "analyze-errors": {
+    ...defaults,
+    family: "analyze",
+    spec: "analyze-errors",
+    phases: ["analyze-errors"],
+    routes: analyzeErrorsRoutes,
+    prepare: prepareAnalyzeErrorsWorld,
+    verifyNetwork: assertAnalyzeErrorsNetwork,
+  },
   "onboarding-telemetry-default": {
     ...onboarding,
     prepare: (world: CreatedWorld) => prepareOnboardingWorld(world, false),
@@ -770,6 +792,17 @@ export const scenarios = {
   "local-mod-large-drop-path-vpk": localLargeOnDisk,
   "local-mod-large-drop-path-zip": localLargeOnDisk,
   "profiles-import-overlap": profileShare,
+  "profiles-reshare": {
+    ...profileShare,
+    spec: "profiles-reshare",
+    phases: ["reshare"],
+  },
+  "profiles-import-failures": {
+    ...profileShare,
+    spec: "profiles-import-failures",
+    phases: ["import-failures"],
+    routes: importFailureRoutes,
+  },
   "profiles-pointer": profiles,
   "profiles-keyboard": profiles,
   "profiles-file-order": {
@@ -838,6 +871,19 @@ export const scenarios = {
     family: "compatibility",
     routes: profileRoutes,
   }),
+  "fixed-status-reviewed": {
+    ...defaults,
+    family: "fixed-status",
+    spec: "fixed-status-reviewed",
+    phases: ["review", "restart-reviewed"],
+    routes: profileRoutes,
+    prepare: async (world) =>
+      prepareFixedStatusWorld(world, [
+        STATUS_FIXED_MOD,
+        STATUS_RIVAL_MOD,
+        STATUS_PLAIN_MOD,
+      ]),
+  },
   // The stand-in game is a Linux `sleep` (e2e/support/fake-game.ts).
   "fixed-status-game-exit": {
     ...defaults,
@@ -848,6 +894,40 @@ export const scenarios = {
     routes: profileRoutes,
     prepare: async (world) =>
       prepareFixedStatusWorld(world, [STATUS_FIXED_MOD, STATUS_PLAIN_MOD]),
+  },
+  "compatibility-fix-disabled": {
+    ...defaults,
+    family: "compatibility",
+    spec: "compatibility-fix-disabled",
+    phases: ["disabled-mod"],
+    routes: async () => disabledFixRoutes,
+    prepare: async (world) => prepareDisabledFixWorld(world),
+  },
+  "fixed-status-shared-file": {
+    ...defaults,
+    family: "fixed-status",
+    spec: "fixed-status-shared-file",
+    phases: ["share"],
+    // The case opens the fixed mod's page, which asks for its report counts.
+    routes: async () => {
+      const routes = await profileRoutes();
+      return () => [
+        ...routes(),
+        {
+          method: "GET",
+          path: `/api/v2/reports/mod/${STATUS_FIXED_MOD}/counts`,
+          status: 200,
+          body: JSON.stringify({
+            total: 0,
+            open: 0,
+            resolved: 0,
+            dismissed: 0,
+          }),
+        },
+      ];
+    },
+    prepare: async (world) =>
+      prepareFixedStatusWorld(world, [STATUS_FIXED_MOD, STATUS_RIVAL_MOD]),
   },
   "library-selection": {
     ...defaults,
@@ -1023,6 +1103,11 @@ export const scenarios = {
   "gamebanana-file-toggle": catalogLifecycle,
   "gamebanana-reinstall": catalogLifecycle,
   "gamebanana-reinstall-disabled": catalogLifecycle,
+  "gamebanana-reinstall-readonly": {
+    ...catalog,
+    spec: "gamebanana-reinstall-readonly",
+    phases: ["reinstall-readonly"],
+  },
   "gamebanana-force-update": catalogLifecycle,
   "gamebanana-delete-parked": catalogDeleteParked,
   "gamebanana-delete-parked-disabled": catalogDeleteParked,
@@ -1038,7 +1123,7 @@ export const scenarios = {
     ...catalog,
     spec: "gamebanana-update-routing",
     phases: ["update-auto", "restart-download-auto"],
-    routes: multipakUpdateRoutes,
+    routes: updateRoutingRoutes,
     verifyNetwork: assertUpdateRoutingNetwork,
   },
   "gamebanana-variant-names": {

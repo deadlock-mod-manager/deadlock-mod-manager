@@ -24,7 +24,7 @@ export const readShareState = async (world: string) =>
     })
     .parse(await readPersistedDocument(world)).state;
 
-const toastTexts = () =>
+export const toastTexts = () =>
   browser.execute(() =>
     [...document.querySelectorAll("[data-sonner-toast]")].map(
       (toast) =>
@@ -65,21 +65,26 @@ const openProfileManager = () =>
 const importDialog =
   '//*[@role="dialog"][.//*[normalize-space()="Import Profile Preview"]]';
 
+/** Enters a share code and returns the preview's Create New Profile button. */
+export const previewShareCode = async (code: string) => {
+  await openProfileManager();
+  await $("button=Import Profile").click();
+  const input = await $('input[placeholder^="Enter Profile ID"]');
+  await input.waitForDisplayed();
+  await input.setValue(code);
+  await $('button[type="submit"][form="profile-import-form"]').click();
+  const create = await $(
+    `${importDialog}//button[normalize-space()="Create New Profile"]`,
+  );
+  await create.waitForClickable({ timeout: 20_000 });
+  return create;
+};
+
 /** Imports a share code into a new profile and returns that profile. */
 export const importShareCode = (world: string, code: string) =>
   step(`import share code ${code}`, async () => {
     const before = new Set(Object.keys((await readShareState(world)).profiles));
-    await openProfileManager();
-    await $("button=Import Profile").click();
-    const input = await $('input[placeholder^="Enter Profile ID"]');
-    await input.waitForDisplayed();
-    await input.setValue(code);
-    await $('button[type="submit"][form="profile-import-form"]').click();
-    const create = await $(
-      `${importDialog}//button[normalize-space()="Create New Profile"]`,
-    );
-    await create.waitForClickable({ timeout: 20_000 });
-    await create.click();
+    await (await previewShareCode(code)).click();
     const profile = await importedProfile(world, before);
     await browser.waitUntil(async () => !(await $(importDialog).isExisting()), {
       timeout: 60_000,

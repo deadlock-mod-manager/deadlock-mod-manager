@@ -6,8 +6,8 @@ import type {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useProfileImport } from "@/hooks/use-profile-import";
 import logger from "@/lib/logger";
+import type { ProfileImportOutcome } from "@/lib/profiles/types";
 import { usePersistedStore } from "@/lib/store";
-import type { ProfileId } from "@/types/profiles";
 
 export type RestoreDestination = "new" | "replace";
 
@@ -33,17 +33,15 @@ export const useRestoreProfileBackup = () => {
       profile,
       modsData,
       destination,
-    }: RestoreProfileBackupInput): Promise<ProfileId> => {
-      let profileId: ProfileId;
-      if (destination === "new") {
-        profileId = await createProfileFromImport(profile, modsData, {
-          profileName: backup.name,
-          profileDescription: backup.payload.description,
-        });
-      } else {
-        await addToCurrentProfile(profile, modsData);
-        profileId = usePersistedStore.getState().activeProfileId;
-      }
+    }: RestoreProfileBackupInput): Promise<ProfileImportOutcome> => {
+      const outcome =
+        destination === "new"
+          ? await createProfileFromImport(profile, modsData, {
+              profileName: backup.name,
+              profileDescription: backup.payload.description,
+            })
+          : await addToCurrentProfile(profile, modsData);
+      const { profileId } = outcome;
 
       // Groups only point at mods, so drop the ones whose mods didn't install.
       const restored = usePersistedStore.getState().profiles[profileId];
@@ -65,7 +63,7 @@ export const useRestoreProfileBackup = () => {
         revision: backup.revision,
       });
       dismissWelcomeBack();
-      return profileId;
+      return outcome;
     },
     onError: (error) => {
       // The import flow already told the user what failed.

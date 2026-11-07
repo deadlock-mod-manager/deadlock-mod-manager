@@ -6,6 +6,7 @@ use crate::providers::{SubmissionProvider, SubmissionRef};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::time::Duration;
 use tauri::Emitter;
 use tokio::task;
 use vpk_parser::{VpkParseOptions, VpkParsed, VpkParser};
@@ -142,6 +143,9 @@ pub struct AddonAnalysisProgress {
 
 pub struct AddonAnalyzer;
 
+const LOOKUP_CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
+const LOOKUP_TIMEOUT: Duration = Duration::from_secs(30);
+
 impl AddonAnalyzer {
   pub fn new() -> Self {
     Self
@@ -175,14 +179,36 @@ impl AddonAnalyzer {
     }
   }
 
-  /// Call the hash analysis API to identify mods
+  /// Client for identification lookups. Each request gets a finite timeout so
+  /// an unreachable service fails the lookup instead of stalling the analysis.
+  fn lookup_client() -> Result<reqwest::Client, Error> {
+    crate::proxy::build_http_client(|builder| {
+      builder
+        .connect_timeout(LOOKUP_CONNECT_TIMEOUT)
+        .timeout(LOOKUP_TIMEOUT)
+    })
+  }
+
+  /// Ask the hash analysis API which mod a VPK belongs to. `Ok(None)` means the
+  /// service answered and found no match; a failed request is an error.
   async fn analyze_hashes(
-    &self,
+    client: &reqwest::Client,
     vpk_parsed: &VpkParsed,
   ) -> Result<Option<(String, MatchInfo)>, Error> {
     let api_url = crate::commands::state::get_api_url();
-    let endpoint = format!("{api_url}/api/v2/vpk-analyse-hashes");
+    Self::lookup_hashes(
+      client,
+      &format!("{api_url}/api/v2/vpk-analyse-hashes"),
+      vpk_parsed,
+    )
+    .await
+  }
 
+  async fn lookup_hashes(
+    client: &reqwest::Client,
+    endpoint: &str,
+    vpk_parsed: &VpkParsed,
+  ) -> Result<Option<(String, MatchInfo)>, Error> {
     let request = HashAnalysisRequest {
       sha256: Some(vpk_parsed.fingerprint.sha256.clone()),
       content_signature: vpk_parsed.fingerprint.content_signature.clone(),
@@ -190,8 +216,6 @@ impl AddonAnalyzer {
       file_size: Some(vpk_parsed.fingerprint.file_size as u64),
       merkle_root: vpk_parsed.fingerprint.merkle_root.clone(),
     };
-
-    let client = crate::proxy::build_default_http_client()?;
 
     log::debug!(
       "Calling hash analysis API for file: {} with hashes: sha256={:?}, contentSig={}, fastHash={:?}",
@@ -201,67 +225,69 @@ impl AddonAnalyzer {
       request.fast_hash
     );
 
-    match client.post(&endpoint).json(&request).send().await {
-      Ok(response) => {
-        if response.status().is_success() {
-          match response.json::<Vec<HashAnalysisResponse>>().await {
-            Ok(results) => {
-              if let Some(result) = results.first()
-                && let Some(remote_id) = result.matched_vpk.remote_id()
-              {
-                let alternative_matches =
-                  result
-                    .match_info
-                    .alternative_matches
-                    .as_ref()
-                    .map(|matches| {
-                      matches
-                        .iter()
-                        .map(|m| AlternativeMatch {
-                          id: m.id.clone(),
-                          mod_name: m.mod_info.as_ref().map_or_else(
-                            || m.remote_id().unwrap_or_default(),
-                            |info| info.name.clone(),
-                          ),
-                          mod_author: m
-                            .mod_info
-                            .as_ref()
-                            .map(|info| info.author.clone())
-                            .unwrap_or_default(),
-                        })
-                        .collect()
-                    });
-
-                let mod_info = result.matched_vpk.mod_info.as_ref();
-                let mod_name = mod_info.map_or_else(|| remote_id.clone(), |info| info.name.clone());
-                return Ok(Some((
-                  remote_id,
-                  MatchInfo {
-                    certainty: result.match_info.certainty,
-                    match_type: result.match_info.match_type.clone(),
-                    mod_name: Some(mod_name),
-                    mod_author: mod_info.map(|info| info.author.clone()),
-                    alternative_matches,
-                    file_id: result.matched_vpk.file_id.clone(),
-                    source_path: result.matched_vpk.source_path.clone(),
-                  },
-                )));
-              }
-            }
-            Err(e) => {
-              log::warn!("Failed to parse hash analysis response: {e}");
-            }
-          }
-        } else {
-          log::warn!("Hash analysis API returned status: {}", response.status());
-        }
-      }
-      Err(e) => {
-        log::warn!("Failed to call hash analysis API: {e}");
-      }
+    let response = client
+      .post(endpoint)
+      .json(&request)
+      .send()
+      .await
+      .map_err(|e| Error::Network(format!("Could not reach the identification service: {e}")))?;
+    let status = response.status();
+    if !status.is_success() {
+      return Err(Error::Network(format!(
+        "The identification service returned {status}"
+      )));
     }
+    let results = response
+      .json::<Vec<HashAnalysisResponse>>()
+      .await
+      .map_err(|e| {
+        Error::Network(format!(
+          "The identification service sent a response that could not be read: {e}"
+        ))
+      })?;
 
-    Ok(None)
+    let Some(result) = results.first() else {
+      return Ok(None);
+    };
+    let Some(remote_id) = result.matched_vpk.remote_id() else {
+      return Ok(None);
+    };
+    let alternative_matches = result
+      .match_info
+      .alternative_matches
+      .as_ref()
+      .map(|matches| {
+        matches
+          .iter()
+          .map(|m| AlternativeMatch {
+            id: m.id.clone(),
+            mod_name: m.mod_info.as_ref().map_or_else(
+              || m.remote_id().unwrap_or_default(),
+              |info| info.name.clone(),
+            ),
+            mod_author: m
+              .mod_info
+              .as_ref()
+              .map(|info| info.author.clone())
+              .unwrap_or_default(),
+          })
+          .collect()
+      });
+
+    let mod_info = result.matched_vpk.mod_info.as_ref();
+    let mod_name = mod_info.map_or_else(|| remote_id.clone(), |info| info.name.clone());
+    Ok(Some((
+      remote_id,
+      MatchInfo {
+        certainty: result.match_info.certainty,
+        match_type: result.match_info.match_type.clone(),
+        mod_name: Some(mod_name),
+        mod_author: mod_info.map(|info| info.author.clone()),
+        alternative_matches,
+        file_id: result.matched_vpk.file_id.clone(),
+        source_path: result.matched_vpk.source_path.clone(),
+      },
+    )))
   }
 
   /// Analyze all VPK files in the local addons directory
@@ -526,6 +552,8 @@ impl AddonAnalyzer {
       }
     }
 
+    let parsed_count = prefixed_addons.len() + non_prefixed_addons.len();
+
     log::info!(
       "Skipping hash analysis for {} prefixed addons (already identified), analyzing {} non-prefixed addons",
       prefixed_addons.len(),
@@ -551,6 +579,7 @@ impl AddonAnalyzer {
 
     let mut identified_addons = Vec::new();
     let total_addons = non_prefixed_addons.len();
+    let client = Self::lookup_client();
 
     for (index, mut addon) in non_prefixed_addons.into_iter().enumerate() {
       let current_addon_num = index + 1;
@@ -567,7 +596,13 @@ impl AddonAnalyzer {
         progress,
       );
 
-      match self.analyze_hashes(&addon.vpk_parsed).await {
+      let lookup = match &client {
+        Ok(client) => Self::analyze_hashes(client, &addon.vpk_parsed)
+          .await
+          .map_err(|e| e.to_string()),
+        Err(e) => Err(e.to_string()),
+      };
+      match lookup {
         Ok(Some((remote_id, match_info))) => {
           addon.remote_id = Some(remote_id.clone());
           addon.match_info = Some(match_info);
@@ -588,7 +623,12 @@ impl AddonAnalyzer {
         }
         Err(e) => {
           log::warn!("Failed to analyze hashes for {}: {e}", addon.file_name);
-          errors.push(format!("Hash analysis failed for {}: {e}", addon.file_name));
+          // A local import keeps its manifest owner. Any other file that
+          // couldn't be checked is an error, not an unknown mod.
+          if addon.manifest_mod_id.is_none() {
+            errors.push(format!("Hash analysis failed for {}: {e}", addon.file_name));
+            continue;
+          }
         }
       }
       // A local import the catalog doesn't know is still DMM's: keep the
@@ -615,14 +655,14 @@ impl AddonAnalyzer {
       &app_handle,
       "complete",
       "Analysis complete!",
-      Some(identified_addons.len()),
-      Some(identified_addons.len()),
+      Some(parsed_count),
+      Some(parsed_count),
       None,
       100,
     );
 
     Ok(AnalyzeAddonsResult {
-      total_count: identified_addons.len(),
+      total_count: parsed_count,
       addons: identified_addons,
       errors,
     })
@@ -687,7 +727,7 @@ impl AddonAnalyzer {
       .await
       .map_err(|e| Error::BackgroundTaskFailed(e.to_string()))?
       .map_err(Error::InvalidInput)?;
-    self.analyze_hashes(&info.vpk_parsed).await
+    Self::analyze_hashes(&Self::lookup_client()?, &info.vpk_parsed).await
   }
 
   /// Fast VPK parsing with minimal data extraction for identification
@@ -783,6 +823,123 @@ mod tests {
     );
     assert_eq!(result.matched_vpk.remote_id().as_deref(), Some("123"));
     assert!(result.matched_vpk.file_id.is_none());
+  }
+
+  fn parsed_vpk() -> VpkParsed {
+    serde_json::from_value(serde_json::json!({
+      "version": 2,
+      "treeLength": 0,
+      "fileDataSectionSize": null,
+      "archiveMd5SectionSize": null,
+      "otherMd5SectionSize": null,
+      "signatureSectionSize": null,
+      "entries": [],
+      "manifestSha256": "manifest",
+      "dirSha256": null,
+      "fingerprint": {
+        "filePath": "pak01_dir.vpk",
+        "fileSize": 4,
+        "lastModified": null,
+        "fastHash": "fast",
+        "sha256": "sha",
+        "contentSignature": "signature",
+        "vpkVersion": 2,
+        "fileCount": 0,
+        "hasMultiparts": false,
+        "hasInlineData": false,
+        "merkleRoot": null,
+        "merkleLeaves": null
+      }
+    }))
+    .unwrap()
+  }
+
+  /// Answers one request with `status` and `body`, having read the whole
+  /// request so the client never sees a reset.
+  async fn serve_once(status: u16, body: &'static str) -> String {
+    use tokio::io::{AsyncReadExt, AsyncWriteExt};
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let endpoint = format!(
+      "http://{}/api/v2/vpk-analyse-hashes",
+      listener.local_addr().unwrap()
+    );
+    tokio::spawn(async move {
+      let (mut socket, _) = listener.accept().await.unwrap();
+      let mut request = Vec::new();
+      let mut buffer = [0_u8; 1024];
+      loop {
+        let read = socket.read(&mut buffer).await.unwrap();
+        request.extend_from_slice(&buffer[..read]);
+        let text = String::from_utf8_lossy(&request);
+        if let Some((head, rest)) = text.split_once("\r\n\r\n") {
+          let length = head
+            .lines()
+            .find_map(|line| {
+              let (name, value) = line.split_once(':')?;
+              name
+                .eq_ignore_ascii_case("content-length")
+                .then(|| value.trim().parse::<usize>().ok())?
+            })
+            .unwrap_or(0);
+          if rest.len() >= length {
+            break;
+          }
+        }
+        if read == 0 {
+          break;
+        }
+      }
+      let reply = format!(
+        "HTTP/1.1 {status} Scripted\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{body}",
+        body.len()
+      );
+      let _ = socket.write_all(reply.as_bytes()).await;
+    });
+    endpoint
+  }
+
+  async fn lookup(endpoint: &str) -> Result<Option<(String, MatchInfo)>, Error> {
+    let client = AddonAnalyzer::lookup_client().unwrap();
+    AddonAnalyzer::lookup_hashes(&client, endpoint, &parsed_vpk()).await
+  }
+
+  #[tokio::test]
+  async fn lookup_reports_a_service_error_instead_of_no_match() {
+    let endpoint = serve_once(503, "Service Unavailable").await;
+    let error = lookup(&endpoint).await.unwrap_err().to_string();
+    assert!(error.contains("503"), "{error}");
+  }
+
+  #[tokio::test]
+  async fn lookup_reports_an_unreadable_response_instead_of_no_match() {
+    let endpoint = serve_once(200, "<html>maintenance</html>").await;
+    assert!(lookup(&endpoint).await.is_err());
+  }
+
+  /// An origin on a port nothing listens on, so every request to it fails.
+  fn closed_endpoint() -> String {
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    format!("http://{}", listener.local_addr().unwrap())
+  }
+
+  #[tokio::test]
+  async fn lookup_returns_no_match_only_when_the_service_found_none() {
+    let endpoint = serve_once(200, "[]").await;
+    assert!(lookup(&endpoint).await.unwrap().is_none());
+  }
+
+  #[tokio::test]
+  async fn lookup_returns_the_matched_mod() {
+    let endpoint = serve_once(
+      200,
+      r#"[{"matchedVpk":{"id":"vpk_1","submissionType":"mod","submissionId":"42","fileId":"100"},
+          "match":{"certainty":100,"matchType":"sha256"}}]"#,
+    )
+    .await;
+    let (remote_id, info) = lookup(&endpoint).await.unwrap().unwrap();
+    assert_eq!(remote_id, "42");
+    assert_eq!(info.certainty, 100);
+    assert_eq!(info.file_id.as_deref(), Some("100"));
   }
 
   #[tokio::test]
@@ -939,6 +1096,41 @@ mod tests {
     assert!(!AddonAnalyzer::is_catalog_id(
       "local-0f8fad5b-d9cb-469f-a165-70867728950e"
     ));
+  }
+
+  #[tokio::test]
+  async fn a_failed_lookup_keeps_a_file_the_manifest_gives_to_a_local_mod() {
+    let _ = crate::runtime_environment::initialize();
+    *crate::commands::state::API_URL.lock().unwrap() = closed_endpoint();
+    let game = tempfile::tempdir().unwrap();
+    let base = game.path().join("game/citadel/addons/1_profile");
+    write_vpk(&base, "pak01_dir.vpk", "local import");
+    write_vpk(&base, "pak02_dir.vpk", "stray file");
+    std::fs::write(
+      base.join(".dmm.json"),
+      r#"{"version":3,"mods":{
+        "local-unidentified":{"enabled":true,"order":0,"shard":1,"currentVpks":["pak01_dir.vpk"]}}}"#,
+    )
+    .unwrap();
+
+    let result = AddonAnalyzer::new()
+      .analyze_local_addons(game.path().to_path_buf(), Some("1_profile".into()), None)
+      .await
+      .unwrap();
+
+    assert_eq!(result.total_count, 2);
+    let kept: Vec<(&str, Option<&str>)> = result
+      .addons
+      .iter()
+      .map(|addon| (addon.file_name.as_str(), addon.remote_id.as_deref()))
+      .collect();
+    assert_eq!(kept, [("pak01_dir.vpk", Some("local-unidentified"))]);
+    assert_eq!(result.errors.len(), 1, "{:?}", result.errors);
+    assert!(
+      result.errors[0].starts_with("Hash analysis failed for pak02_dir.vpk"),
+      "{:?}",
+      result.errors
+    );
   }
 
   #[tokio::test]

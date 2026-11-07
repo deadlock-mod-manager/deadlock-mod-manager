@@ -13,7 +13,7 @@ const windows = process.platform === "win32";
 describe("scenario selection", () => {
   it("registers every case with explicit phases and capability requirements", () => {
     const ids = selectScenarios("all");
-    expect(ids).toHaveLength(windows ? 159 : 149);
+    expect(ids).toHaveLength(windows ? 167 : 157);
     expect(ids).toContain("downloads-segmented-range-error");
     // Some of these specs don't dispatch on their case ID, so a rename
     // wouldn't fail them.
@@ -37,9 +37,12 @@ describe("scenario selection", () => {
       "onboarding-telemetry-default",
       "onboarding-identified-addon",
     ]);
-    expect(selectScenarios("gamebanana")).toHaveLength(31);
+    expect(selectScenarios("gamebanana")).toHaveLength(33);
     expect(selectScenarios("gamebanana")).toContain(
       "gamebanana-switch-reinstall",
+    );
+    expect(selectScenarios("gamebanana")).toContain(
+      "gamebanana-reinstall-readonly",
     );
     expect(scenarioSpec("mod-files-error")).toBe(
       "./specs/mod-files-error.e2e.ts",
@@ -77,6 +80,7 @@ describe("scenario selection", () => {
     expect(scenarios.monkey.nativeInput).toBe(false);
     expect(selectScenarios("filesystem")).toHaveLength(windows ? 12 : 10);
     expect(selectScenarios("interchange")).toEqual(["grimoire-import"]);
+    expect(selectScenarios("analyze")).toEqual(["analyze-errors"]);
     expect(selectScenarios("skins")).toEqual(["hero-skins-active"]);
     expect(selectScenarios("stats")).toEqual([
       "stats-default-layout",

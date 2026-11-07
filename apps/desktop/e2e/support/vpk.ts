@@ -6,6 +6,14 @@ const VPK_VERSION = 2;
 const INLINE_ARCHIVE_INDEX = 0x7fff;
 const ENTRY_TERMINATOR = 0xffff;
 
+/** A game localization file holding `tokens`, as Source 2 writes it. */
+export const localizationText = (tokens: Record<string, string>) =>
+  `"lang"\n{\n\t"Language"\t\t"English"\n\t"Tokens"\n\t{\n${Object.entries(
+    tokens,
+  )
+    .map(([token, text]) => `\t\t"${token}"\t\t"${text}"\n`)
+    .join("")}\t}\n}\n`;
+
 export type VpkRecipeEntry = {
   path: string;
   contents: string | Uint8Array;

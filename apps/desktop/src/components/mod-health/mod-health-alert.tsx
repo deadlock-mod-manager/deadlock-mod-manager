@@ -10,13 +10,14 @@ import {
   useRestoreOriginalFiles,
 } from "@/hooks/use-mod-health";
 import {
+  fixAppliesWhenEnabled,
   healthAction,
   healthBadgeKind,
   type ModHealthBadgeKind,
 } from "@/lib/mods/mod-health";
 import type { ModHealth } from "@/types/generated/ModHealth";
 import type { ModHealthSymptom } from "@/types/generated/ModHealthSymptom";
-import type { LocalMod } from "@/types/mods";
+import { type LocalMod, ModStatus } from "@/types/mods";
 import { BADGE_ICONS, SymptomBadge } from "./mod-health-badge";
 
 const ICON_TONES = {
@@ -131,6 +132,9 @@ export const ModHealthAlert = ({
           ) : null}
           <p className='text-pretty text-muted-foreground text-xs leading-5'>
             {t(`modHealth.alert.description.${kind}`)}
+            {fixAppliesWhenEnabled(kind, mod.status === ModStatus.Installed)
+              ? ` ${t("modHealth.appliesWhenEnabled")}`
+              : null}
             {isOutdated ? ` ${t("modHealth.lastUpdatedBefore")}` : null}
           </p>
         </div>

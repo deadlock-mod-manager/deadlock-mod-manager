@@ -6,6 +6,7 @@ import type { FixtureRequest, FixtureRoute } from "./fixture-server";
 import {
   BULK_HYDRATION_FIELDS,
   BULK_UPDATE_FIELDS,
+  fileserver,
 } from "./gamebanana-fixtures";
 import { buildSyntheticVpk } from "./vpk";
 
@@ -49,7 +50,16 @@ export const multipakVpk = (
     { path: `scripts/e2e-${id}.txt`, contents: `${id}/${version}/${name}\n` },
   ]);
 
-export const multipakUpdateRoutes = async () => {
+// A GameBanana cache that serves both mods, so each download shows which
+// routing it used: Default downloads from `/dl/` and keeps the cache as a
+// fallback, Automatic downloads from the cache. The E2E app reaches caches
+// under `/fileservers/<domain>/` on the fixture origin.
+const ROUTING_CACHE = "/fileservers/filecache45.gamebanana.com/mods";
+
+export const multipakUpdateRoutes = () => buildMultipakRoutes(false);
+export const updateRoutingRoutes = () => buildMultipakRoutes(true);
+
+const buildMultipakRoutes = async (routingCache: boolean) => {
   const archives = await Promise.all(
     MULTIPAK_MODS.map(async (mod) => ({
       ...mod,
@@ -140,7 +150,28 @@ export const multipakUpdateRoutes = async () => {
           },
         ),
       ),
-      json("/apiv11/Util/Fileservers", { _aRecords: [] }),
+      json("/apiv11/Util/Fileservers", {
+        _aRecords: routingCache
+          ? [fileserver(45, "filecache45", 1_000_000)]
+          : [],
+      }),
+      // A updates from the cache to v2; B is first downloaded from it.
+      ...(routingCache
+        ? archives.flatMap((mod, index) => [
+            {
+              method: "HEAD",
+              path: `${ROUTING_CACHE}/${mod.archive}`,
+              status: 200,
+              body: "",
+            },
+            {
+              method: "GET",
+              path: `${ROUTING_CACHE}/${mod.archive}`,
+              status: 200,
+              body: mod.bodies[index === 0 ? "v2" : "v1"],
+            },
+          ])
+        : []),
       ...archives.flatMap((mod, index) =>
         [
           json(`/apiv11/Mod/${mod.id}/ProfilePage`, profiles[index]),
@@ -192,7 +223,6 @@ export const assertMultipakUpdateNetwork = (
   );
 };
 
-// Only Automatic routing fetches the fileserver directory, once per process.
 // A installs with Default routing and updates with Automatic; a fresh process
 // then downloads B with Automatic.
 export const assertUpdateRoutingNetwork = (
@@ -202,17 +232,14 @@ export const assertUpdateRoutingNetwork = (
   const [a, b] = MULTIPAK_MODS;
   assert.deepEqual(
     requests
+      .filter((request) => request.method === "GET")
       .map((request) => request.url.split("?")[0])
-      .filter(
-        (url) => url.startsWith("/dl/") || url === "/apiv11/Util/Fileservers",
-      ),
+      .filter((url) => url.startsWith("/dl/") || url.startsWith(ROUTING_CACHE)),
     [
       `/dl/${a.id}/v1`,
-      "/apiv11/Util/Fileservers",
-      `/dl/${a.id}/v2`,
-      "/apiv11/Util/Fileservers",
-      `/dl/${b.id}/v1`,
+      `${ROUTING_CACHE}/${a.archive}`,
+      `${ROUTING_CACHE}/${b.archive}`,
     ],
-    "Automatic routing must reach the update and the new download, and Default routing must not",
+    "Automatic routing must download the update and the new mod from the cache, and Default routing from /dl/",
   );
 };

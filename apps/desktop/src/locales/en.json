@@ -3661,6 +3661,7 @@
       "crashRisk": "Model data issues"
     },
     "lastUpdatedBefore": "Last updated before the Paint the Town update.",
+    "appliesWhenEnabled": "The fix applies when you enable this mod.",
     "stillNeedsUpdate": "Some parts still need an update for this patch: {{remainingSymptoms}}.",
     "fixForPatch": "Fix for this patch",
     "checkForRepairs": "Check mods for repairs",
@@ -5500,6 +5501,8 @@
     "restoreFromRecordsInterrupted": "DMM's records list this mod, but restoring it was interrupted. Run Analyze Local Addons again.",
     "foundAddons": "Found Addons",
     "noAddonsFound": "No addons found in your game directory",
+    "noIdentifiedAddons": "No mods were identified",
+    "noUnmatchedAddons": "No unmatched addons",
     "errors": "Errors",
     "errorsCount": "{{count}} error(s)",
     "fileCount": "Files",
@@ -7448,7 +7451,19 @@
     "modsProcessed": "Mods processed",
     "importedProfileDescription": "Profile imported from shared profile ID",
     "importedProfileName": "Imported Profile - {{date}}",
-    "modsImportedCount": "{{imported}}/{{total}} mods imported",
+    "importFailures": {
+      "unnamed": "Mod {{remoteId}}",
+      "lookup": "Could not get the mod's details",
+      "downloads": "Could not get its downloads",
+      "install": "Download or install failed"
+    },
+    "importResult": {
+      "title": "Import finished",
+      "summary": "{{imported}} of {{total}} mods imported into '{{profileName}}'",
+      "notImported_one": "Not imported ({{count}})",
+      "notImported_other": "Not imported ({{count}})",
+      "done": "Done"
+    },
     "activateProfileLabel": "Activate {{profileName}} profile",
     "statusActive": "Active",
     "statusInactive": "Inactive",

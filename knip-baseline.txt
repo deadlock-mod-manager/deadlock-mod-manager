@@ -281,7 +281,6 @@
 ["types","apps/desktop/src/lib/file-utils.ts",[["","DirectoryReader"]]]
 ["types","apps/desktop/src/lib/file-utils.ts",[["","FileSystemEntry"]]]
 ["types","apps/desktop/src/lib/file-utils.ts",[["","StagedSource"]]]
-["types","apps/desktop/src/lib/profiles/types.ts",[["","OrderedImportedMod"]]]
 ["types","apps/desktop/src/lib/runtime-bootstrap.ts",[["","RuntimeServiceEndpoint"]]]
 ["types","apps/desktop/src/lib/stats/api.ts",[["","SeasonInterval"]]]
 ["types","apps/desktop/src/lib/stats/derive.ts",[["","Tone"]]]

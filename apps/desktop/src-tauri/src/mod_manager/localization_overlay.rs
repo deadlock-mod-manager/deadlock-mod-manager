@@ -224,6 +224,11 @@ pub struct LocalizationOverlayAnalysis {
   pub compatibility_mod_ids: Vec<String>,
   pub excluded_mod_ids: Vec<String>,
   pub protected_resources: Vec<repair_scope::ProtectedResource>,
+  /// Selected mods with a file this analysis skipped because an unselected
+  /// mod also provides it. Their findings are incomplete, so finding nothing
+  /// doesn't mean they work.
+  #[serde(skip)]
+  pub incomplete_mod_ids: Vec<String>,
   pub scanned_vpks: usize,
   pub localization_files: usize,
   pub ignored_vanilla_tokens: usize,
@@ -677,6 +682,7 @@ impl LocalizationOverlayPlan {
     let mut mesh_sources: BTreeMap<String, Vec<CompiledDataSource>> = BTreeMap::new();
     let mut camera_sources: BTreeMap<String, Vec<CompiledDataSource>> = BTreeMap::new();
     let mut animation_inputs = animation_model_evidence::AnimationInputs::default();
+    let mut incomplete_mod_ids = BTreeSet::new();
 
     for (priority, mod_input) in mods.iter().enumerate() {
       report(RepairPlanStage::CheckingMods, priority as u32);
@@ -701,19 +707,26 @@ impl LocalizationOverlayPlan {
           if effective {
             animation_inputs.record(&entry_path, &mod_input.mod_id);
           }
-          if !repair_scope.includes_mod(&mod_input.mod_id) || repair_scope.protects(&entry_path) {
+          if !repair_scope.includes_mod(&mod_input.mod_id) {
             continue;
           }
-          if is_localization_path(&entry_path) {
-            localization_paths.push(entry_path);
+          let paths = if is_localization_path(&entry_path) {
+            &mut localization_paths
           } else if is_mergeable_compiled_data_path(&entry_path) {
-            compiled_paths.push(entry_path);
+            &mut compiled_paths
           } else if effective && animation_skeleton::is_path(&entry_path) {
-            skeleton_paths.push(entry_path);
+            &mut skeleton_paths
           } else if effective && model_camera::is_path(&entry_path) {
-            model_paths.push(entry_path);
+            &mut model_paths
           } else if effective && asset_compatibility::is_mesh_path(&entry_path) {
-            mesh_paths.push(entry_path);
+            &mut mesh_paths
+          } else {
+            continue;
+          };
+          if repair_scope.protects(&entry_path) {
+            incomplete_mod_ids.insert(mod_input.mod_id.clone());
+          } else {
+            paths.push(entry_path);
           }
         }
         localization_paths.sort();
@@ -1109,6 +1122,7 @@ impl LocalizationOverlayPlan {
           .map(|id| (*id).clone())
           .collect(),
         protected_resources: repair_scope.shared_resources(mods, resources),
+        incomplete_mod_ids: incomplete_mod_ids.into_iter().collect(),
         scanned_vpks,
         localization_files,
         ignored_vanilla_tokens,

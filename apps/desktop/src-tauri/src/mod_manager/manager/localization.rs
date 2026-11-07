@@ -14,6 +14,7 @@ mod inventory;
 mod performance;
 mod preference;
 mod receipt;
+mod review;
 use std::fs;
 use std::time::{Instant, SystemTime};
 
@@ -331,6 +332,14 @@ impl ModManager {
       ));
     }
     self.report_plan_stage(RepairPlanStage::WritingPackage);
+    // Validate first, so invalid choices never replace the saved review. The
+    // review is saved before the package because the next library change
+    // rebuilds the package from it. An earlier package for these same inputs
+    // is removed first, so a failed write can't leave it looking current.
+    plan.analyze(resolutions)?;
+    let reviewed = review::ReviewedInputs::new(&plan.analysis, &key)?;
+    receipt::remove(&key.output_path)?;
+    review::save(&key.output_path, reviewed, resolutions)?;
     receipt::write(&plan, key, resolutions)
   }
 
@@ -352,15 +361,13 @@ impl ModManager {
       return Ok(());
     }
     before_rebuild();
-    let reviewed = previous.filter(|receipt| receipt.key == key);
     receipt::remove(&key.output_path)?;
     let plan = build_overlay_plan(&citadel, &inputs, &mut key, &|_| {})?;
-    let reviewed = reviewed.filter(|receipt| receipt.key == key);
     let (_, _, current_key) = self.localization_overlay_inputs(profile_folder)?;
     if current_key != key {
       return Err(Error::ModDataReviewRequired);
     }
-    self.commit_overlay_plan(profile_folder, key, plan, reviewed)
+    self.commit_overlay_plan(profile_folder, key, plan)
   }
 
   /// Starts rebuilding the repair package after a library change. Returns
@@ -433,15 +440,13 @@ impl ModManager {
     if current_key != key {
       return Ok(false);
     }
-    let previous = receipt::load(&key.output_path)?;
-    if let Some(previous) = &previous
+    if let Some(previous) = receipt::load(&key.output_path)?
       && previous.is_current(&key)?
     {
       return Ok(true);
     }
-    let reviewed = previous.filter(|receipt| receipt.key == key);
     receipt::remove(&key.output_path)?;
-    self.commit_overlay_plan(profile_folder, key, plan, reviewed)?;
+    self.commit_overlay_plan(profile_folder, key, plan)?;
     Ok(true)
   }
 
@@ -450,23 +455,24 @@ impl ModManager {
     profile_folder: Option<&str>,
     key: LocalizationOverlayPlanKey,
     plan: LocalizationOverlayPlan,
-    reviewed: Option<receipt::OverlayReceipt>,
   ) -> Result<(), Error> {
     if let Err(error) = self.record_launch_health(profile_folder, &plan.analysis) {
       log::warn!("Could not record mod health from the launch analysis: {error}");
     }
-    if requires_review(&plan.analysis) && reviewed.is_none() {
-      // The review dialog analyzes the same inputs next; hand it this plan.
-      self
-        .localization_overlay_plan_cache
-        .lock()
-        .map_err(|_| Error::BackgroundTaskFailed("Localization plan cache poisoned".into()))?
-        .replace(CachedLocalizationOverlayPlan { key, plan });
-      return Err(Error::ModDataReviewRequired);
-    }
-    let resolutions = reviewed
-      .map(|receipt| receipt.resolutions)
-      .unwrap_or_default();
+    let resolutions = if requires_review(&plan.analysis) {
+      let Some(resolutions) = self.reviewed_resolutions(&plan, &key)? else {
+        // The review dialog analyzes the same inputs next; hand it this plan.
+        self
+          .localization_overlay_plan_cache
+          .lock()
+          .map_err(|_| Error::BackgroundTaskFailed("Localization plan cache poisoned".into()))?
+          .replace(CachedLocalizationOverlayPlan { key, plan });
+        return Err(Error::ModDataReviewRequired);
+      };
+      resolutions
+    } else {
+      Vec::new()
+    };
     let result = receipt::write(&plan, key, &resolutions)?;
     log::info!(
       "Prepared merged mod-data overlay for launch: {} localization tokens and {} compiled rows",
@@ -474,6 +480,31 @@ impl ModManager {
       result.applied_compiled_rows
     );
     Ok(())
+  }
+
+  /// The player's saved choices, when they reviewed exactly the findings and
+  /// inputs this plan pauses for. Library changes elsewhere don't discard them.
+  fn reviewed_resolutions(
+    &self,
+    plan: &LocalizationOverlayPlan,
+    key: &LocalizationOverlayPlanKey,
+  ) -> Result<Option<Vec<LocalizationResolution>>, Error> {
+    let Some(saved) = review::load(&key.output_path)? else {
+      return Ok(None);
+    };
+    let inputs = review::ReviewedInputs::new(&plan.analysis, key)?;
+    let Some(resolutions) = saved.resolutions_for(&inputs) else {
+      log::info!(
+        "Mods or game files changed since the compatibility review; it needs review again"
+      );
+      return Ok(None);
+    };
+    if let Err(error) = plan.analyze(&resolutions) {
+      log::warn!("Saved compatibility review no longer applies: {error}");
+      return Ok(None);
+    }
+    log::info!("Reusing the saved compatibility review");
+    Ok(Some(resolutions))
   }
 
   /// Sends repair plan progress to the window while the player waits on it.
@@ -519,6 +550,17 @@ impl ModManager {
       );
     }
     self.notify_compatibility_changed(profile_folder);
+  }
+
+  /// Removes a deleted profile's repair package and its saved review. Its
+  /// shards are already gone, so removing the review is best effort; a review
+  /// left behind is reused only while the inputs it covered still match.
+  pub fn delete_profile_localization_overlay(&self, profile_folder: &str) -> Result<(), Error> {
+    let overlay = self.localization_overlay_vpk_path(Some(profile_folder))?;
+    if let Err(error) = review::remove(&overlay) {
+      log::warn!("Could not remove the deleted profile's compatibility review: {error}");
+    }
+    self.delete_localization_overlay(Some(profile_folder))
   }
 
   pub fn delete_localization_overlay(&self, profile_folder: Option<&str>) -> Result<(), Error> {
@@ -948,7 +990,7 @@ mod tests {
     }
   }
 
-  fn write_test_vpk(path: &Path) {
+  pub(super) fn write_test_vpk(path: &Path) {
     let source = tempfile::tempdir().unwrap();
     fs::write(source.path().join("unrelated.txt"), b"test").unwrap();
     fs::create_dir_all(path.parent().unwrap()).unwrap();
@@ -1828,7 +1870,7 @@ Game core
     vpkmanager::pack_directory(source.path(), path).unwrap();
   }
 
-  fn manager_with_gameinfo(root: &Path) -> ModManager {
+  pub(super) fn manager_with_gameinfo(root: &Path) -> ModManager {
     let manager = test_manager(root);
     fs::write(
       root.join("game/citadel/gameinfo.gi"),
@@ -1838,7 +1880,10 @@ Game core
     manager
   }
 
-  fn fix_mods(manager: &mut ModManager, mod_ids: Vec<String>) -> Result<FixModsResult, Error> {
+  pub(super) fn fix_mods(
+    manager: &mut ModManager,
+    mod_ids: Vec<String>,
+  ) -> Result<FixModsResult, Error> {
     let manager = std::cell::RefCell::new(manager);
     ModManager::fix_mods(
       || {
@@ -1899,6 +1944,86 @@ Game core
       FixModsStatus::Applied
     );
     (temp, manager)
+  }
+
+  #[test]
+  fn a_fixed_mod_blocked_by_an_unfixed_copy_of_its_file_is_not_reported_as_working() {
+    let (temp, mut manager) = manager_with_applied_repair();
+    let base = manager.get_addons_path(None).unwrap();
+    let citadel = temp.path().join("game/citadel");
+    let app_data = temp.path().join("app-data");
+    let context = manager
+      .mod_health_context_in(None, app_data.clone())
+      .unwrap();
+    let status = || {
+      context
+        .report()
+        .unwrap()
+        .mods
+        .into_iter()
+        .find(|health| health.mod_id == "fixed")
+        .map(|health| health.status)
+    };
+    let record_combined = |manager: &mut ModManager| {
+      context
+        .record_launch(&manager.analyze_localization_overlay(None, &[]).unwrap())
+        .unwrap();
+    };
+    record_combined(&mut manager);
+    assert_eq!(status(), Some(ModHealthStatus::Fixed));
+
+    // An unfixed mod ships the fixed mod's text file, so the rebuild keeps
+    // that file as shipped and leaves the repair out.
+    fs::copy(base.join("pak01_dir.vpk"), base.join("pak03_dir.vpk")).unwrap();
+    let mut manifest = ProfileVpkManifest::load(&base).unwrap();
+    manifest.mark_enabled(
+      "rival",
+      vec!["pak03_dir.vpk".into()],
+      vec!["pak03_dir.vpk".into()],
+      None,
+      ShardIndex::FIRST,
+    );
+    manifest.save(&base).unwrap();
+    let overlay = manager.localization_overlay_vpk_path(None).unwrap();
+    refresh_repairs(&mut manager, None).unwrap();
+    assert!(!overlay.exists());
+    assert!(manager.mod_compatibility_settings(None).unwrap()["fixed"]);
+
+    // A launch result saved before the flag existed: no findings at all.
+    let key = HealthKey::stamp(
+      &[base.join("pak01_dir.vpk")],
+      history::version(&citadel),
+      receipt::REPAIR_REVISION,
+    )
+    .unwrap();
+    mod_health::record(
+      &app_data,
+      &base.to_string_lossy(),
+      history::version(&citadel),
+      [(
+        "fixed".to_owned(),
+        CachedModHealth::new(key, ModFindings::with_repairs(0), ModHealthSource::Launch),
+      )],
+    )
+    .unwrap();
+    // A check keeps this entry while its key is current: a standalone recheck
+    // can't see the rival.
+    context.check(None, false, |_| {}).unwrap();
+    assert_eq!(status(), Some(ModHealthStatus::Works));
+
+    record_combined(&mut manager);
+    assert_eq!(status(), Some(ModHealthStatus::NotCovered));
+    context.check(None, true, |_| {}).unwrap();
+    assert_eq!(status(), Some(ModHealthStatus::NotCovered));
+
+    let mut manifest = ProfileVpkManifest::load(&base).unwrap();
+    manifest.remove_mod("rival");
+    manifest.save(&base).unwrap();
+    fs::remove_file(base.join("pak03_dir.vpk")).unwrap();
+    refresh_repairs(&mut manager, None).unwrap();
+    assert!(overlay.exists());
+    record_combined(&mut manager);
+    assert_eq!(status(), Some(ModHealthStatus::Fixed));
   }
 
   #[test]
@@ -2207,6 +2332,70 @@ Game core
         .analysis
     ));
     assert!(manager.mod_compatibility_settings(None).unwrap()["fixed"]);
+  }
+
+  #[test]
+  fn a_disabled_mod_keeps_its_saved_fix_until_it_is_enabled_again() {
+    let (temp, mut manager) = manager_with_applied_repair();
+    let base = manager.get_addons_path(None).unwrap();
+    let app_data = temp.path().join("app-data");
+    let key = HealthKey::stamp(
+      &[base.join("pak01_dir.vpk")],
+      None,
+      receipt::REPAIR_REVISION,
+    )
+    .unwrap();
+    mod_health::record(
+      &app_data,
+      &base.to_string_lossy(),
+      None,
+      [(
+        "fixed".into(),
+        CachedModHealth::new(key, ModFindings::with_repairs(1), ModHealthSource::Launch),
+      )],
+    )
+    .unwrap();
+    let context = manager.mod_health_context_in(None, app_data).unwrap();
+    let status = || context.report().unwrap().mods[0].status;
+    let overlay = manager.localization_overlay_vpk_path(None).unwrap();
+    let repaired = fs::read(&overlay).unwrap();
+    let enable = |manager: &mut ModManager| {
+      manager
+        .install_mod(
+          Mod {
+            id: "fixed".into(),
+            name: "Fixed mod".into(),
+            is_map: false,
+            installed_vpks: vec![],
+            original_vpk_names: vec![],
+            file_tree: None,
+            install_order: None,
+          },
+          None,
+        )
+        .unwrap();
+      refresh_repairs(manager, None).unwrap();
+    };
+
+    manager.uninstall_mod("fixed".into(), vec![], None).unwrap();
+    assert!(!overlay.exists());
+    assert_eq!(
+      status(),
+      ModHealthStatus::Fixed,
+      "a disabled mod reports the fix saved for it"
+    );
+    enable(&mut manager);
+    assert_applied_repair(&manager, &repaired);
+    assert_eq!(status(), ModHealthStatus::Fixed);
+
+    manager.uninstall_mod("fixed".into(), vec![], None).unwrap();
+    manager
+      .set_mod_compatibility_for_mod("fixed".into(), false, None)
+      .unwrap();
+    assert_eq!(status(), ModHealthStatus::OriginalFiles);
+    enable(&mut manager);
+    assert!(!overlay.exists());
+    assert_eq!(status(), ModHealthStatus::OriginalFiles);
   }
 
   #[test]

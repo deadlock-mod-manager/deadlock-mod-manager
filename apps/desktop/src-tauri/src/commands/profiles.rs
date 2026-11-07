@@ -120,7 +120,7 @@ pub async fn delete_profile_folder(
     .join("addons")
     .join(&profile_folder);
   let removed = crate::mod_manager::shard::remove_profile_shards(&base)?;
-  mod_manager.delete_localization_overlay(Some(&profile_folder))?;
+  mod_manager.delete_profile_localization_overlay(&profile_folder)?;
 
   if removed {
     log::info!("Deleted profile shard folders for: {profile_folder}");
@@ -469,6 +469,29 @@ pub async fn show_profile_vpk_in_folder(
   crate::utils::show_in_folder(resolved.path.to_string_lossy().as_ref())
 }
 
+/// The Default profile arrives as an empty folder and lives in the root addons folder.
+fn import_install_folder(final_profile_folder: &str) -> Option<String> {
+  (!final_profile_folder.is_empty()).then(|| final_profile_folder.to_string())
+}
+
+fn install_imported_mod(
+  mod_manager: &mut crate::mod_manager::ModManager,
+  mod_data: &super::downloads::ProfileImportMod,
+  final_profile_folder: &str,
+) -> Result<Mod, Error> {
+  let deadlock_mod = Mod {
+    id: mod_data.mod_id.clone(),
+    name: mod_data.mod_name.clone(),
+    is_map: mod_data.is_map,
+    installed_vpks: Vec::new(),
+    file_tree: mod_data.file_tree.clone(),
+    install_order: None,
+    original_vpk_names: Vec::new(),
+  };
+
+  mod_manager.install_mod(deadlock_mod, import_install_folder(final_profile_folder))
+}
+
 #[tauri::command]
 pub async fn import_profile_batch(
   app_handle: AppHandle,
@@ -590,7 +613,7 @@ pub async fn import_profile_batch(
       mod_id: mod_data.mod_id.clone(),
       files: download_files,
       target_dir,
-      profile_folder: Some(final_profile_folder.clone()),
+      profile_folder: import_install_folder(&final_profile_folder),
       is_profile_import: true,
       file_tree: mod_data.file_tree.clone(),
       native_component_plan: false,
@@ -668,20 +691,11 @@ pub async fn import_profile_batch(
       continue;
     }
 
-    let install_result = {
-      let mut mod_manager = MANAGER.lock().unwrap();
-      let deadlock_mod = Mod {
-        id: mod_data.mod_id.clone(),
-        name: mod_data.mod_name.clone(),
-        is_map: mod_data.is_map,
-        installed_vpks: Vec::new(),
-        file_tree: mod_data.file_tree.clone(),
-        install_order: None,
-        original_vpk_names: Vec::new(),
-      };
-
-      mod_manager.install_mod(deadlock_mod, Some(final_profile_folder.clone()))
-    };
+    let install_result = install_imported_mod(
+      &mut MANAGER.lock().unwrap(),
+      mod_data,
+      &final_profile_folder,
+    );
 
     match install_result {
       Ok(installed_mod) => {
@@ -1002,6 +1016,36 @@ mod tests {
     ));
     assert!(source.exists());
     assert_eq!(std::fs::read_dir(elsewhere).unwrap().count(), 0);
+  }
+
+  #[test]
+  fn default_profile_import_installs_into_the_root_addons_folder() {
+    let game = tempfile::tempdir().unwrap();
+    let citadel = game.path().join("game/citadel");
+    let addons = citadel.join("addons");
+    std::fs::create_dir_all(&addons).unwrap();
+    std::fs::write(
+      citadel.join("gameinfo.gi"),
+      "\"GameInfo\"\n{\n\"FileSystem\"\n{\nSearchPaths\n{\nGame citadel\n}\n}\n}\n",
+    )
+    .unwrap();
+    std::fs::write(addons.join("42_restored.vpk"), b"downloaded").unwrap();
+    let mut manager = crate::mod_manager::ModManager::for_test_game(game.path());
+    let mod_data = super::super::downloads::ProfileImportMod {
+      mod_id: "42".into(),
+      mod_name: "Restored mod".into(),
+      download_files: Vec::new(),
+      file_tree: None,
+      is_map: false,
+    };
+
+    let installed = install_imported_mod(&mut manager, &mod_data, "").unwrap();
+
+    assert_eq!(installed.installed_vpks.len(), 1);
+    assert_eq!(
+      std::fs::read(addons.join(&installed.installed_vpks[0])).unwrap(),
+      b"downloaded"
+    );
   }
 
   /// Switching writes the folder into gameinfo.gi, which only accepts ASCII

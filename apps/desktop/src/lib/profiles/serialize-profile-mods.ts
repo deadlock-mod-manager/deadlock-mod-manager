@@ -1,5 +1,5 @@
 import type { ProfileModDownload } from "@deadlock-mods/shared";
-import type { LocalMod, ModFileTree } from "@/types/mods";
+import type { LocalMod, ModDownloadItem, ModFileTree } from "@/types/mods";
 import type { ModProfile } from "@/types/profiles";
 
 export interface SerializedProfileMod {
@@ -8,6 +8,44 @@ export interface SerializedProfileMod {
   fileTree?: ModFileTree;
   selectedDownloads?: ProfileModDownload[];
 }
+
+/**
+ * For a mod without recorded picks: the downloads its selected files came
+ * from, or undefined unless each file's archive matches exactly one download.
+ */
+const downloadsFromFileTree = (
+  localMod: LocalMod,
+): ModDownloadItem[] | undefined => {
+  const selectedFiles =
+    localMod.installedFileTree?.files.filter((file) => file.is_selected) ?? [];
+  if (
+    selectedFiles.length === 0 ||
+    selectedFiles.some((file) => !file.archive_name)
+  ) {
+    return undefined;
+  }
+
+  const picks: ModDownloadItem[] = [];
+  for (const archiveName of new Set(
+    selectedFiles.map((file) => file.archive_name),
+  )) {
+    const matches = (localMod.downloads ?? []).filter(
+      (download) => download.name === archiveName,
+    );
+    if (matches.length !== 1) {
+      return undefined;
+    }
+    picks.push(matches[0]);
+  }
+  return picks;
+};
+
+const sharedDownloads = (localMod: LocalMod): ModDownloadItem[] =>
+  localMod.selectedDownloads?.length
+    ? localMod.selectedDownloads
+    : (downloadsFromFileTree(localMod) ??
+      localMod.downloads?.slice(0, 1) ??
+      []);
 
 const serializeProfileMod = (
   remoteId: string,
@@ -34,10 +72,8 @@ const serializeProfileMod = (
         };
   }
 
-  if (localMod?.downloads && localMod.downloads.length > 0) {
-    const selected = localMod.selectedDownloads?.length
-      ? localMod.selectedDownloads
-      : [localMod.downloads[0]];
+  const selected = localMod ? sharedDownloads(localMod) : [];
+  if (selected.length > 0) {
     serialized.selectedDownloads = selected.map((d) => ({
       remoteId,
       file: d.name,

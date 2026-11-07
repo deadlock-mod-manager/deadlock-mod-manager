@@ -12,7 +12,7 @@ import {
 import { fixtureMod } from "./mod-fixtures";
 import { readPersistedDocument } from "./observations";
 import { prepareInstalledProfiles } from "./profile-fixtures";
-import { buildSyntheticVpk } from "./vpk";
+import { buildSyntheticVpk, localizationText } from "./vpk";
 import type { CreatedWorld } from "./world";
 
 export const HEALTH_PROFILE = {
@@ -30,12 +30,6 @@ const NEW_DATE = 1_790_000_000;
 
 const LOCALIZATION =
   "resource/localization/citadel_heroes/citadel_heroes_english.txt";
-const localization = (tokens: Record<string, string>) =>
-  `"lang"\n{\n\t"Language"\t\t"English"\n\t"Tokens"\n\t{\n${Object.entries(
-    tokens,
-  )
-    .map(([token, value]) => `\t\t"${token}"\t\t"${value}"\n`)
-    .join("")}\t}\n}\n`;
 // The installed version renames both heroes the game has; the update is an
 // outdated copy of the file that lacks the newer hero, which the repairs can
 // restore. So the mod works before the update and can be fixed after it.
@@ -43,21 +37,24 @@ const GAME_TOKENS = { hero_e2e: "Hero", hero_e2e_new: "New hero" };
 const ORIGINAL_PAYLOAD = buildSyntheticVpk([
   {
     path: LOCALIZATION,
-    contents: localization({
+    contents: localizationText({
       hero_e2e: "Renamed hero",
       hero_e2e_new: "Renamed new hero",
     }),
   },
 ]);
 export const UPDATED_PAYLOAD = buildSyntheticVpk([
-  { path: LOCALIZATION, contents: localization({ hero_e2e: "Renamed hero" }) },
+  {
+    path: LOCALIZATION,
+    contents: localizationText({ hero_e2e: "Renamed hero" }),
+  },
 ]);
 
 export async function prepareHealthUpdateWorld(world: CreatedWorld) {
   const { roots } = world.configuration;
   const gameText = path.join(roots.game, "game", "citadel", LOCALIZATION);
   await mkdir(path.dirname(gameText), { recursive: true });
-  await writeFile(gameText, localization(GAME_TOKENS));
+  await writeFile(gameText, localizationText(GAME_TOKENS));
   await prepareInstalledProfiles(
     world,
     [

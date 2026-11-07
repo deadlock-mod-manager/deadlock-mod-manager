@@ -27,6 +27,7 @@ struct InstalledMod {
   vpks: Vec<PathBuf>,
   key: HealthKey,
   choice: CompatibilityChoice,
+  enabled: bool,
 }
 
 impl InstalledMod {
@@ -128,8 +129,16 @@ impl ModManager {
     profile_folder: Option<&str>,
     analysis: &LocalizationOverlayAnalysis,
   ) -> Result<(), Error> {
-    let context = self.mod_health_context(profile_folder)?;
-    let entries = context
+    self
+      .mod_health_context(profile_folder)?
+      .record_launch(analysis)
+  }
+}
+
+impl ModHealthContext {
+  /// Saves the combined analysis's findings for the opted-in mods.
+  pub(super) fn record_launch(&self, analysis: &LocalizationOverlayAnalysis) -> Result<(), Error> {
+    let entries = self
       .installed()?
       .into_iter()
       .filter(|installed| analysis.compatibility_mod_ids.contains(&installed.id))
@@ -143,15 +152,13 @@ impl ModManager {
       })
       .collect::<Result<Vec<_>, Error>>()?;
     mod_health::record(
-      &context.app_data,
-      &context.profile_key(),
-      history::version(&context.citadel),
+      &self.app_data,
+      &self.profile_key(),
+      history::version(&self.citadel),
       entries,
     )
   }
-}
 
-impl ModHealthContext {
   fn profile_key(&self) -> String {
     self.base.to_string_lossy().into_owned()
   }
@@ -177,6 +184,7 @@ impl ModHealthContext {
           } else {
             CompatibilityChoice::Unset
           },
+          enabled: entry.enabled,
         }),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
         Err(error) => return Err(error.into()),
@@ -193,8 +201,11 @@ impl ModHealthContext {
     health.report(
       history::version(&self.citadel),
       installed.iter().map(|installed| {
+        // The game only loads enabled mods, so only their repairs must be in
+        // the package. A disabled mod keeps its saved choice; enabling it
+        // rebuilds the package with its repairs.
         let choice = match installed.choice {
-          CompatibilityChoice::Enabled if !applied.contains(&installed.id) => {
+          CompatibilityChoice::Enabled if installed.enabled && !applied.contains(&installed.id) => {
             CompatibilityChoice::Unset
           }
           choice => choice,

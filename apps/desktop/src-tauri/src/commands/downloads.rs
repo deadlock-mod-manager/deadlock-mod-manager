@@ -225,34 +225,32 @@ async fn resolve_gamebanana_file(
     ));
   };
   validate_download_file_name(&file.name)?;
-  let mut urls = Vec::new();
-  if fileserver_preference == FileserverPreference::Auto {
-    match backend.fileservers(false).await {
-      Ok(servers) => {
-        urls = find_fileservers_with_file(
-          &servers,
-          submission.submission_type.gamebanana_path(),
-          &file.name,
-        )
-        .await;
-      }
-      Err(error) => {
-        log::warn!("GameBanana fileserver directory unavailable; using canonical URL: {error}");
-      }
-    }
-  }
   let canonical_origin = crate::runtime_environment::current()
     .e2e()
     .map(|configuration| configuration.endpoint(crate::runtime_environment::ServiceName::Downloads))
     .unwrap_or("https://gamebanana.com");
-  for url in [
-    file.download_url,
-    format!("{canonical_origin}/dl/{file_id}"),
-  ] {
-    if !url.is_empty() && !urls.contains(&url) {
-      urls.push(url);
+  let caches = match backend.fileservers(false).await {
+    Ok(servers) => {
+      find_fileservers_with_file(
+        &servers,
+        submission.submission_type.gamebanana_path(),
+        &file.name,
+      )
+      .await
     }
-  }
+    Err(error) => {
+      log::warn!("GameBanana fileserver directory unavailable; using canonical URL: {error}");
+      Vec::new()
+    }
+  };
+  let mut urls = download_sources(
+    fileserver_preference,
+    [
+      file.download_url,
+      format!("{canonical_origin}/dl/{file_id}"),
+    ],
+    caches,
+  );
   for url in &urls {
     crate::download_manager::downloader::validate_download_url(url)?;
   }
@@ -265,6 +263,29 @@ async fn resolve_gamebanana_file(
     md5_checksum: file.md5,
     native_artifact: None,
   })
+}
+
+/// The URLs a GameBanana file can be downloaded from, deduplicated, in the
+/// order the download manager tries them. `standard` is the file's own link
+/// and its `/dl/<id>` link. Auto tries the caches first. Default tries the
+/// standard links first and then the caches, because `/dl/` can keep
+/// redirecting to the same dead cache.
+fn download_sources(
+  preference: FileserverPreference,
+  standard: [String; 2],
+  caches: Vec<String>,
+) -> Vec<String> {
+  let ordered: Vec<String> = match preference {
+    FileserverPreference::Auto => caches.into_iter().chain(standard).collect(),
+    FileserverPreference::Default => standard.into_iter().chain(caches).collect(),
+  };
+  let mut urls = Vec::new();
+  for url in ordered {
+    if !url.is_empty() && !urls.contains(&url) {
+      urls.push(url);
+    }
+  }
+  urls
 }
 
 const MAX_FILESERVER_PROBES: usize = 3;
@@ -307,11 +328,7 @@ async fn find_fileservers_with_file(
     .map(|server| {
       let client = &client;
       async move {
-        let url = format!(
-          "https://{}/{category}/{}",
-          server.domain,
-          urlencoding::encode(file_name)
-        );
+        let url = fileserver_url(&server.domain, category, file_name);
         if crate::download_manager::downloader::validate_download_url(&url).is_err() {
           return None;
         }
@@ -342,6 +359,19 @@ async fn find_fileservers_with_file(
     log::info!("No fileserver serves {file_name}; using canonical URL");
   }
   found
+}
+
+/// E2E worlds serve every cache from the fixture origin, under
+/// `/fileservers/<domain>/`.
+fn fileserver_url(domain: &str, category: &str, file_name: &str) -> String {
+  let origin = crate::runtime_environment::current()
+    .e2e()
+    .map(|configuration| {
+      let downloads = configuration.endpoint(crate::runtime_environment::ServiceName::Downloads);
+      format!("{downloads}/fileservers/{domain}")
+    })
+    .unwrap_or_else(|| format!("https://{domain}"));
+  format!("{origin}/{category}/{}", urlencoding::encode(file_name))
 }
 
 fn parse_gamebanana_file_token(
@@ -809,5 +839,53 @@ mod tests {
     assert!(parse_gamebanana_file_token("42", "gamebanana-file://snd-42/7").is_err());
     assert!(parse_gamebanana_file_token("42", "gamebanana-file://43/7").is_err());
     assert!(parse_gamebanana_file_token("42", "gamebanana-file://42/7?mirror=evil").is_err());
+  }
+
+  const STANDARD: &str = "https://gamebanana.com/dl/7";
+  const CACHE: &str = "https://filecache45.gamebanana.com/mods/mod.zip";
+
+  fn sources(
+    preference: FileserverPreference,
+    standard: [&str; 2],
+    caches: &[&str],
+  ) -> Vec<String> {
+    download_sources(
+      preference,
+      standard.map(str::to_string),
+      caches.iter().map(|url| url.to_string()).collect(),
+    )
+  }
+
+  /// GameBanana's `_sDownloadUrl` is its `/dl/<id>` link, so Default had no
+  /// second server to fall back to (#569).
+  #[test]
+  fn default_routing_falls_back_to_caches_after_the_standard_link() {
+    assert_eq!(
+      sources(
+        FileserverPreference::Default,
+        [STANDARD, STANDARD],
+        &[CACHE]
+      ),
+      [STANDARD, CACHE]
+    );
+  }
+
+  #[test]
+  fn auto_routing_tries_caches_before_the_standard_link() {
+    assert_eq!(
+      sources(FileserverPreference::Auto, [STANDARD, STANDARD], &[CACHE]),
+      [CACHE, STANDARD]
+    );
+  }
+
+  #[test]
+  fn no_cache_found_leaves_only_the_standard_link() {
+    for preference in [FileserverPreference::Default, FileserverPreference::Auto] {
+      assert_eq!(
+        sources(preference, [STANDARD, ""], &[]),
+        [STANDARD],
+        "{preference:?}"
+      );
+    }
   }
 }

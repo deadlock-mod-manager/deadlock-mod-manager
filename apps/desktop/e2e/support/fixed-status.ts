@@ -273,11 +273,30 @@ export const closeOnceDisabled = (modId: string) =>
     `${card(modId)}//button[@role="switch"]`,
   );
 
-const row = (modId: string) =>
+type Badge = { status: string | null; text: string } | null;
+
+/** The health badge on `modId`'s library card. */
+const readBadge = async (modId: string): Promise<Badge> => {
+  const badge = await $(`${card(modId)}//*[@data-testid="mod-health-badge"]`);
+  if (!(await badge.isExisting())) return null;
+  return {
+    status: await badge.getAttribute("data-status"),
+    text: await badge.getText(),
+  };
+};
+
+/** The library card's badge for a mod, as the player sees it. */
+export const badgeStatus = async (modId: string) => {
+  await navigate("my-mods");
+  await findMod(modId);
+  return (await readBadge(modId))?.status ?? null;
+};
+
+export const row = (modId: string) =>
   `//*[@data-testid="mod-health-row"][.//button[@title="${modId}"]]`;
 
 /** Opens the health dialog from the library banner. */
-const openHealthDialog = async () => {
+export const openHealthDialog = async () => {
   await navigate("my-mods");
   const details = await $('[data-testid="mod-health-banner"]').$(
     "button=See details",
@@ -289,12 +308,20 @@ const openHealthDialog = async () => {
   return dialog;
 };
 
-const closeDialogs = async () => {
+export const closeDialogs = async () => {
   for (let attempt = 0; attempt < 5; attempt++) {
     if ((await $$('[role="dialog"]').length) === 0) return;
     await browser.keys("Escape");
     await delay(300);
   }
+};
+
+/** Clicks Fix all in the health dialog. */
+export const fixAllInDialog = async () => {
+  const dialog = await openHealthDialog();
+  const fixAll = await dialog.$("button=Fix all");
+  await fixAll.waitForClickable();
+  await fixAll.click();
 };
 
 /** Clicks the row's Fix in the health dialog, as the player would. */
@@ -461,18 +488,6 @@ export const fixAndConfirm = async (
   );
 };
 
-type Badge = { status: string | null; text: string } | null;
-
-/** The health badge on `modId`'s library card, looked up again on each call. */
-const readBadge = async (modId: string): Promise<Badge> => {
-  const badge = await $(`${card(modId)}//*[@data-testid="mod-health-badge"]`);
-  if (!(await badge.isExisting())) return null;
-  return {
-    status: await badge.getAttribute("data-status"),
-    text: await badge.getText(),
-  };
-};
-
 /**
  * The library reads its own cached health report, so its badge can trail
  * `get_mod_health` until a finished rebuild invalidates that report.
@@ -534,11 +549,16 @@ export const expectStillFixed = async (
 };
 
 const manifestSchema = z.object({
-  mods: z.record(z.string(), z.object({ enabled: z.boolean() })),
+  mods: z.record(
+    z.string(),
+    z.object({
+      enabled: z.boolean(),
+      compatibilityEnabled: z.boolean().optional(),
+    }),
+  ),
 });
 
-/** The profile manifest's enabled flag, read straight from disk. */
-export const readManifestEnabled = async (
+const readManifestEntry = async (
   world: string,
   profileFolder: string,
   modId: string,
@@ -548,5 +568,21 @@ export const readManifestEnabled = async (
     path.join(citadel, "addons", profileFolder, ".dmm.json"),
     "utf8",
   );
-  return manifestSchema.parse(JSON.parse(raw)).mods[modId]?.enabled ?? null;
+  return manifestSchema.parse(JSON.parse(raw)).mods[modId];
 };
+
+/** The profile manifest's enabled flag, read straight from disk. */
+export const readManifestEnabled = async (
+  world: string,
+  profileFolder: string,
+  modId: string,
+) => (await readManifestEntry(world, profileFolder, modId))?.enabled ?? null;
+
+/** Whether the player's Fix choice for `modId` is saved in the manifest. */
+export const readFixChosen = async (
+  world: string,
+  profileFolder: string,
+  modId: string,
+) =>
+  (await readManifestEntry(world, profileFolder, modId))
+    ?.compatibilityEnabled ?? false;
