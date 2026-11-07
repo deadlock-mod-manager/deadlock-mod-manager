@@ -11,12 +11,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@deadlock-mods/ui/components/empty";
-import {
-  ChevronDown,
-  CircleCheck,
-  Loader2,
-  RotateCcw,
-} from "@deadlock-mods/ui/icons";
+import { ChevronDown, CircleCheck, Loader2 } from "@deadlock-mods/ui/icons";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -26,116 +21,9 @@ import {
 } from "@/hooks/use-profile-conflicts";
 import { getErrorMessage } from "@/lib/errors";
 import { usePersistedStore } from "@/lib/store";
-import type { ModConflict } from "@/types/generated/ModConflict";
-import type { LocalMod } from "@/types/mods";
-import { ConflictGroupRow, modDisplayName } from "./conflict-group-row";
+import { ConflictGroupRow } from "./conflict-group-row";
+import { IgnoredSection } from "./ignored-section";
 import { LoadOrderHelp } from "./load-order-help";
-
-const IgnoredRow = ({
-  label,
-  onRestore,
-  disabled,
-  testId,
-}: {
-  label: React.ReactNode;
-  onRestore?: () => void;
-  disabled: boolean;
-  testId?: string;
-}) => {
-  const { t } = useTranslation();
-  return (
-    <li
-      className='flex min-h-9 items-center gap-3 px-3 py-1'
-      data-testid={testId}>
-      <div className='min-w-0 flex-1 truncate text-sm'>{label}</div>
-      {onRestore && (
-        <Button
-          disabled={disabled}
-          icon={<RotateCcw className='h-3.5 w-3.5' />}
-          onClick={onRestore}
-          size='sm'
-          variant='ghost'>
-          {t("conflicts.restore")}
-        </Button>
-      )}
-    </li>
-  );
-};
-
-const IgnoredSection = ({
-  ignored,
-  ignoredMods,
-  modsById,
-}: {
-  ignored: ModConflict[];
-  ignoredMods: string[];
-  modsById: ReadonlyMap<string, LocalMod>;
-}) => {
-  const { t } = useTranslation();
-  const ignore = useConflictIgnore();
-  const total = ignored.length + ignoredMods.length;
-  if (total === 0) {
-    return null;
-  }
-
-  return (
-    <Collapsible className='mt-2'>
-      <div className='flex items-center justify-between'>
-        <CollapsibleTrigger className='group flex items-center gap-1.5 rounded-sm text-muted-foreground text-sm outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60'>
-          <ChevronDown
-            aria-hidden
-            className='h-4 w-4 transition-transform group-data-[state=closed]:-rotate-90'
-          />
-          {t("conflicts.markedFineSection", { count: total })}
-        </CollapsibleTrigger>
-        <Button
-          disabled={ignore.isPending}
-          onClick={() => ignore.mutate([{ type: "clearAll" }])}
-          size='sm'
-          variant='ghost'>
-          {t("conflicts.clearIgnores")}
-        </Button>
-      </div>
-      <CollapsibleContent>
-        <ul className='mt-2 divide-y rounded-lg border'>
-          {ignored.map((conflict) => (
-            <IgnoredRow
-              disabled={ignore.isPending}
-              key={`${conflict.winner}::${conflict.loser}`}
-              label={t("conflicts.ignoredPair", {
-                first: modDisplayName(modsById, conflict.winner),
-                second: modDisplayName(modsById, conflict.loser),
-              })}
-              onRestore={
-                conflict.ignoreReason === "mod"
-                  ? undefined
-                  : () =>
-                      ignore.mutate([
-                        {
-                          type: "unignorePair",
-                          modA: conflict.winner,
-                          modB: conflict.loser,
-                        },
-                      ])
-              }
-              testId='ignored-conflict'
-            />
-          ))}
-          {ignoredMods.map((modId) => (
-            <IgnoredRow
-              disabled={ignore.isPending}
-              key={modId}
-              label={t("conflicts.ignoredModRow", {
-                mod: modDisplayName(modsById, modId),
-              })}
-              onRestore={() => ignore.mutate([{ type: "unignoreMod", modId }])}
-            />
-          ))}
-        </ul>
-      </CollapsibleContent>
-    </Collapsible>
-  );
-};
 
 /**
  * `visibleModIds` holds the mods left by the library's search and filters; an

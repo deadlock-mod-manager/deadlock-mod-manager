@@ -32,6 +32,7 @@ pub async fn queue_download(
   native_sources: State<'_, crate::providers::native_sources::NativeSourceManager>,
   policy: State<'_, super::policy::PolicyState>,
   mod_id: String,
+  attempt_id: String,
   files: Vec<DownloadFileDto>,
   profile_folder: Option<String>,
   fileserver_preference: FileserverPreference,
@@ -71,6 +72,7 @@ pub async fn queue_download(
     is_profile_import: false,
     native_component_plan: component_plan.is_some(),
     file_tree: component_plan,
+    attempt_id: Some(attempt_id),
   };
 
   let manager = get_download_manager(app_handle).await;
@@ -711,6 +713,7 @@ pub async fn debug_queue_local_zip(
     is_profile_import: false,
     file_tree: None,
     native_component_plan: false,
+    attempt_id: None,
   };
 
   DownloadManager::process_local_file(task, dest, app_handle).await

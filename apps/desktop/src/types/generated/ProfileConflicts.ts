@@ -5,7 +5,8 @@ import type { ModConflict } from "./ModConflict";
 export type ProfileConflicts = {
   conflicts: Array<ModConflict>;
   /**
-   * Conflicts hidden by an ignore, so they can be restored.
+   * Conflicts hidden by an ignore, so they can be restored. A partly ignored
+   * pair is in both lists, each with its own files.
    */
   ignored: Array<ModConflict>;
   ignores: ConflictIgnores;

@@ -225,7 +225,7 @@ impl ModManager {
         ))
       })
       .collect::<Result<Vec<_>, Error>>()?;
-    let history_digest = history::digest(&citadel_dir);
+    let history_digest = history::digest(history::path(&citadel_dir).as_deref());
     Ok((
       citadel_dir,
       inputs,
@@ -548,10 +548,11 @@ fn build_overlay_plan(
   progress: &dyn Fn(RepairPlanProgress),
 ) -> Result<LocalizationOverlayPlan, Error> {
   let started = Instant::now();
+  let history_path = history::path(citadel);
   let (mut plan, observed, changed) = LocalizationOverlayPlan::build_learning_history(
     citadel,
     inputs,
-    history::load(citadel),
+    history::load(history_path.as_deref()),
     history::version(citadel),
     &key.compatibility_mod_ids,
     progress,
@@ -562,13 +563,13 @@ fn build_overlay_plan(
     key.compatibility_mod_ids.len(),
     started.elapsed().as_millis()
   );
-  if changed {
+  if changed && let Some(path) = &history_path {
     // Learning is reproducible from these stamped inputs. A cache write failure
     // must not prevent analysis; the next plan can learn the same snapshot again.
-    if let Err(error) = history::save(citadel, &observed) {
+    if let Err(error) = history::save(path, &observed) {
       log::warn!("Could not persist observed compatibility history: {error}");
     }
-    key.history_digest = history::digest(citadel);
+    key.history_digest = history::digest(history_path.as_deref());
   }
   plan.analysis.review_fingerprint = input_fingerprint(key)?;
   plan.analysis.input_warnings = key.input_warnings.clone();
@@ -1195,6 +1196,99 @@ mod tests {
         .scanned_mods,
       0
     );
+  }
+
+  #[test]
+  fn analyzed_registration_keeps_the_replaced_owner_fix_choice() {
+    for (fixed, opted_out) in [(true, false), (false, true)] {
+      let temp = tempfile::tempdir().unwrap();
+      let mut manager = test_manager(temp.path());
+      let base = manager.get_addons_path(None).unwrap();
+      let file = base.join("pak01_dir.vpk");
+      write_test_vpk(&file);
+      let mut manifest = ProfileVpkManifest::default();
+      manifest.mark_enabled(
+        "old-local-id",
+        vec!["pak01_dir.vpk".into()],
+        vec![],
+        Some(0),
+        ShardIndex::FIRST,
+      );
+      let placeholder = manifest.mods.get_mut("old-local-id").unwrap();
+      placeholder.compatibility_enabled = fixed;
+      placeholder.compatibility_opted_out = opted_out;
+      manifest.save(&base).unwrap();
+      manager
+        .register_analyzed_mod(
+          None,
+          "remote-id".into(),
+          "Identified mod".into(),
+          vec!["pak01_dir.vpk".into()],
+          Some(vec![file.display().to_string()]),
+          None,
+          false,
+        )
+        .unwrap();
+      let manifest = ProfileVpkManifest::load(&base).unwrap();
+      let identified = &manifest.mods["remote-id"];
+      assert_eq!(identified.compatibility_enabled, fixed);
+      assert_eq!(identified.compatibility_opted_out, opted_out);
+    }
+  }
+
+  #[test]
+  fn analyzed_registration_prefers_the_identity_own_fix_choice() {
+    // (identity's choice, placeholder's choice, expected), each as
+    // (compatibility_enabled, compatibility_opted_out).
+    for (identity, placeholder, expected) in [
+      ((true, false), (false, true), (true, false)),
+      ((false, true), (false, false), (false, true)),
+      ((false, false), (true, false), (true, false)),
+    ] {
+      let temp = tempfile::tempdir().unwrap();
+      let mut manager = test_manager(temp.path());
+      let base = manager.get_addons_path(None).unwrap();
+      let file = base.join("pak01_dir.vpk");
+      write_test_vpk(&file);
+      let mut manifest = ProfileVpkManifest::default();
+      // The catalog mod is already installed but disabled; a hand-added copy
+      // of its file is enabled under a placeholder id.
+      manifest.mark_disabled("remote-id", vec!["remote-id_pak01_dir.vpk".into()], vec![]);
+      manifest.mark_enabled(
+        "old-local-id",
+        vec!["pak01_dir.vpk".into()],
+        vec![],
+        Some(0),
+        ShardIndex::FIRST,
+      );
+      for (id, (fixed, opted_out)) in [("remote-id", identity), ("old-local-id", placeholder)] {
+        let entry = manifest.mods.get_mut(id).unwrap();
+        entry.compatibility_enabled = fixed;
+        entry.compatibility_opted_out = opted_out;
+      }
+      manifest.save(&base).unwrap();
+      manager
+        .register_analyzed_mod(
+          None,
+          "remote-id".into(),
+          "Identified mod".into(),
+          vec!["pak01_dir.vpk".into()],
+          Some(vec![file.display().to_string()]),
+          None,
+          false,
+        )
+        .unwrap();
+      let manifest = ProfileVpkManifest::load(&base).unwrap();
+      let identified = &manifest.mods["remote-id"];
+      assert_eq!(
+        (
+          identified.compatibility_enabled,
+          identified.compatibility_opted_out
+        ),
+        expected,
+        "identity {identity:?}, placeholder {placeholder:?}"
+      );
+    }
   }
 
   #[test]
