@@ -48,7 +48,7 @@ import { useCloudBackups } from "@/hooks/use-profile-backups";
 import type { RestoreDestination } from "@/hooks/use-restore-profile-backup";
 import { useSyncProfiles } from "@/hooks/use-sync-profiles";
 import logger from "@/lib/logger";
-import { isLocalMod } from "@/lib/mods/installed-helpers";
+import { canDownloadAgain } from "@/lib/mods/installed-helpers";
 import { usePersistedStore } from "@/lib/store";
 import type { ModProfile, ModProfileEntry, ProfileId } from "@/types/profiles";
 import { CloudBackupsPanel } from "./cloud-backup/cloud-backups-panel";
@@ -75,7 +75,8 @@ interface EnabledModsInfo {
 }
 
 const localModCount = (profile: ModProfile) =>
-  Object.values(profile.enabledMods).filter(isLocalMod).length;
+  Object.values(profile.enabledMods).filter((entry) => !canDownloadAgain(entry))
+    .length;
 
 export const ProfileManagerDialog = ({
   open,

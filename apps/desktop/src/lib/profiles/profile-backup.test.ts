@@ -13,6 +13,7 @@ import {
 } from "./profile-backup";
 
 const LOCAL_ID = "local-0f8fad5b-d9cb-469f-a165-70867728950e";
+const FOUNDRY_ID = "local-foundry-18e4addd6f0a123c";
 
 const entry = (remoteId: string, enabled = true): ModProfileEntry => ({
   remoteId,
@@ -25,12 +26,17 @@ const entries = (...items: ModProfileEntry[]) =>
 
 describe("buildProfileBackupPayload", () => {
   it("leaves local mods out of the restorable profile and counts them", () => {
-    const mods = ["10", "20", LOCAL_ID].map((remoteId, index) =>
-      Object.assign(modFor(remoteId), { installOrder: 2 - index }),
+    const mods = ["10", "20", LOCAL_ID, FOUNDRY_ID].map((remoteId, index) =>
+      Object.assign(modFor(remoteId), { installOrder: 3 - index }),
     );
     const payload = buildProfileBackupPayload(
       {
-        enabledMods: entries(entry("10"), entry("20", false), entry(LOCAL_ID)),
+        enabledMods: entries(
+          entry("10"),
+          entry("20", false),
+          entry(LOCAL_ID),
+          entry(FOUNDRY_ID),
+        ),
       },
       mods,
     );
@@ -41,7 +47,7 @@ describe("buildProfileBackupPayload", () => {
     ]);
     expect(payload.profile.payload.loadOrder).toEqual(["10"]);
     expect(payload.disabledModCount).toBe(1);
-    expect(payload.skippedLocalModCount).toBe(1);
+    expect(payload.skippedLocalModCount).toBe(2);
     expect(Object.keys(payload.modNames ?? {})).not.toContain(LOCAL_ID);
   });
 });
