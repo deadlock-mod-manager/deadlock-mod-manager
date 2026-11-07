@@ -5,6 +5,10 @@ import type { ModDto, SharedProfile } from "@deadlock-mods/shared";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import type { TFunction } from "i18next";
 import logger from "@/lib/logger";
+import {
+  collectImportFailures,
+  summarizeImportFailures,
+} from "@/lib/profiles/import-failures";
 import { prepareProfileImportMods } from "@/lib/profiles/import-profile-prep";
 import { resolveImportContext } from "@/lib/profiles/import-profile-shared";
 import type {
@@ -12,6 +16,7 @@ import type {
   ImportedModDownloads,
   PreparedProfileImportMod,
   ProfileImportOptions,
+  ProfileImportOutcome,
 } from "@/lib/profiles/types";
 import type { State } from "@/lib/store";
 import type { ProfileImportResult } from "@/types/mods";
@@ -57,7 +62,7 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
     importedProfile: SharedProfile,
     modsData: ModDto[],
     options?: ProfileImportOptions,
-  ): Promise<ProfileId> => {
+  ): Promise<ProfileImportOutcome> => {
     const {
       importedMods,
       availableImportedMods,
@@ -180,11 +185,13 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
         captureMilestone("first_install_completed");
       setImportProgress(null);
 
-      if (
-        result.failed.length > 0 ||
-        preparationFailed.length > 0 ||
-        unavailableModsCount > 0
-      ) {
+      const failures = collectImportFailures(
+        importedMods,
+        modsDataByRemoteId,
+        preparationFailed,
+        result.failed,
+      );
+      if (failures.length > 0) {
         logger
           .withMetadata({
             failed: result.failed.length,
@@ -192,18 +199,21 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
             unavailable: unavailableModsCount,
             preparationFailed: preparationFailed.length,
           })
-          .warn("Some mods failed to import");
-        const imported = result.installedMods.length;
-        toast.warning(
-          t("profiles.createSuccess", { profileName }) +
-            ` (${t("profiles.modsImportedCount", { imported, total: totalImportedMods })})`,
-        );
+          .warn(
+            `Some mods failed to import: ${summarizeImportFailures(failures)}`,
+          );
       } else {
         toast.success(t("profiles.createSuccess", { profileName }));
       }
 
       void missingCount;
-      return createdProfileId;
+      return {
+        profileId: createdProfileId,
+        profileName,
+        importedCount,
+        totalCount: totalImportedMods,
+        failures,
+      };
     } catch (error) {
       attempt.finish(
         failureOutcome(isTauriError(error) ? error.kind : undefined),
@@ -219,7 +229,7 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
     importedProfile: SharedProfile,
     modsData: ModDto[],
     _options?: ProfileImportOptions,
-  ): Promise<void> => {
+  ): Promise<ProfileImportOutcome> => {
     const activeProfile = getActiveProfile();
     if (!activeProfile) {
       throw new Error("No active profile found");
@@ -306,11 +316,13 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
         captureMilestone("first_install_completed");
       setImportProgress(null);
 
-      if (
-        result.failed.length > 0 ||
-        preparationFailed.length > 0 ||
-        unavailableModsCount > 0
-      ) {
+      const failures = collectImportFailures(
+        importedMods,
+        modsDataByRemoteId,
+        preparationFailed,
+        result.failed,
+      );
+      if (failures.length > 0) {
         logger
           .withMetadata({
             failed: result.failed.length,
@@ -318,15 +330,19 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
             unavailable: unavailableModsCount,
             preparationFailed: preparationFailed.length,
           })
-          .warn("Some mods failed to import to current profile");
-        const imported = result.installedMods.length;
-        toast.warning(
-          t("profiles.overrideSuccess") +
-            ` (${t("profiles.modsImportedCount", { imported, total: totalImportedMods })})`,
-        );
+          .warn(
+            `Some mods failed to import to current profile: ${summarizeImportFailures(failures)}`,
+          );
       } else {
         toast.success(t("profiles.overrideSuccess"));
       }
+      return {
+        profileId: activeProfile.id,
+        profileName: activeProfile.name,
+        importedCount,
+        totalCount: totalImportedMods,
+        failures,
+      };
     } catch (error) {
       attempt.finish(
         failureOutcome(isTauriError(error) ? error.kind : undefined),

@@ -27,6 +27,7 @@ import {
   prepareRescanAfterResetWorld,
   rescanAfterResetRoutes,
 } from "./rescan-after-reset-fixtures";
+import { importFailureRoutes } from "./profile-import-failure-fixtures";
 import { shareRoutes } from "./profile-share-fixtures";
 import { prepareFileOrderWorld } from "./file-order-fixtures";
 import { prepareBrokenProfileWorld } from "./broken-profile-fixtures";
@@ -795,6 +796,12 @@ export const scenarios = {
     ...profileShare,
     spec: "profiles-reshare",
     phases: ["reshare"],
+  },
+  "profiles-import-failures": {
+    ...profileShare,
+    spec: "profiles-import-failures",
+    phases: ["import-failures"],
+    routes: importFailureRoutes,
   },
   "profiles-pointer": profiles,
   "profiles-keyboard": profiles,

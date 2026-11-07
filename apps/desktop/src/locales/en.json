@@ -7451,7 +7451,19 @@
     "modsProcessed": "Mods processed",
     "importedProfileDescription": "Profile imported from shared profile ID",
     "importedProfileName": "Imported Profile - {{date}}",
-    "modsImportedCount": "{{imported}}/{{total}} mods imported",
+    "importFailures": {
+      "unnamed": "Mod {{remoteId}}",
+      "lookup": "Could not get the mod's details",
+      "downloads": "Could not get its downloads",
+      "install": "Download or install failed"
+    },
+    "importResult": {
+      "title": "Import finished",
+      "summary": "{{imported}} of {{total}} mods imported into '{{profileName}}'",
+      "notImported_one": "Not imported ({{count}})",
+      "notImported_other": "Not imported ({{count}})",
+      "done": "Done"
+    },
     "activateProfileLabel": "Activate {{profileName}} profile",
     "statusActive": "Active",
     "statusInactive": "Inactive",
