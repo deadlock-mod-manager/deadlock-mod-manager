@@ -21,9 +21,8 @@ export const IdentifiedAddonsTab = ({
     return (
       <div className='flex flex-col items-center justify-center py-12 text-center'>
         <Search className='w-12 h-12 text-muted-foreground/50 mb-4' />
-        <p className='text-muted-foreground'>No mods were identified</p>
-        <p className='text-sm text-muted-foreground/70 mt-1'>
-          These addons might be custom or not in our database
+        <p className='text-muted-foreground'>
+          {t("addons.noIdentifiedAddons")}
         </p>
       </div>
     );

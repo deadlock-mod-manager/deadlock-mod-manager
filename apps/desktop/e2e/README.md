@@ -41,6 +41,8 @@ current. Both run in the Windows and Linux E2E matrices with no host update.
 
 `onboarding-identified-addon` starts setup with an existing VPK the identification service matches to the catalog mod. Analyze Mods must list it as Not in Library, the step's text must not promise an import, and after finishing setup the saved library must not contain the mod and the VPK keeps its bytes.
 
+`analyze-errors` runs Analyze on two valid VPKs and one corrupt VPK. The identification service fails the first lookup with a 503 and finds no match for the second. The review dialog must list the 503 file and the corrupt file under Errors (2), with their names and reasons, and only the unmatched file under Unknown (1). Nothing is registered and the VPK bytes are unchanged.
+
 `analyze-known-files` starts with two hand-installed VPKs the identification service doesn't know, both named `pak01_dir.vpk`: one in `addons` and one in the `addons2` overflow shard. Analyze offers to add both; once one is added from the results list, its row shows Added to Library while the other stays addable, and a new analysis offers neither. Each file must have exactly one library mod and one manifest owner in its own shard, both right away and after a restart, Analyze must still recognize both after the restart, and both files keep their bytes.
 
 `gamebanana-detected-files` starts with a manually installed VPK and an empty DMM library. It identifies the mod through the analysis API, checks that Manage Files marks its matched archive enabled, adds an optional archive, and removes that optional archive after restart. The original VPK bytes and manifest ownership must survive, and only the optional archive may be downloaded.
