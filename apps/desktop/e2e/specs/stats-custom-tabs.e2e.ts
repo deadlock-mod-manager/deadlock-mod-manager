@@ -64,6 +64,25 @@ const closeTabSettings = () =>
     await nameField().waitForExist({ reverse: true });
   });
 
+const expectActiveTabInView = () =>
+  browser.waitUntil(
+    () =>
+      browser.execute(() => {
+        const active = document.querySelector(
+          '[data-tab-id][data-state="active"]',
+        );
+        const strip = active?.closest('[role="tablist"]')?.parentElement;
+        if (!active || !strip) return false;
+        const tabBounds = active.getBoundingClientRect();
+        const stripBounds = strip.getBoundingClientRect();
+        return (
+          tabBounds.left >= Math.max(0, stripBounds.left) - 1 &&
+          tabBounds.right <= Math.min(innerWidth, stripBounds.right) + 1
+        );
+      }),
+    { timeoutMsg: "the selected tab is clipped by the scrolling tab strip" },
+  );
+
 describe("stats dashboard tabs", () => {
   it("builds tabs from templates and by hand, and keeps them after a restart", async () => {
     const runtime = await startApplication();
@@ -81,6 +100,7 @@ describe("stats dashboard tabs", () => {
         async () => {
           await addTab("Meta");
           await expectActiveTab("Meta");
+          await expectActiveTabInView();
           await expectWidgetSources(META_TEMPLATE);
           for (const source of META_TEMPLATE)
             await waitForWidgetState(widget(source), "ready");
@@ -90,6 +110,7 @@ describe("stats dashboard tabs", () => {
       await step("an empty tab is renamed and gets an icon", async () => {
         await addTab("Empty tab");
         await expectWidgetSources([]);
+        await expectActiveTabInView();
         await openTabSettings();
         await typeOver(nameField, "My stats");
         // Closing the settings keeps the typed name.

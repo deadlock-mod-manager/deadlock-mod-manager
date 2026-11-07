@@ -38,7 +38,7 @@ import {
   Users,
   UsersRound,
 } from "@deadlock-mods/ui/icons";
-import { type ComponentType, useState } from "react";
+import { type ComponentType, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   type DashboardTab,
@@ -232,6 +232,9 @@ export const DashboardTabs = ({
   const tabTitle = useTabTitle();
   const activeIndex = tabs.findIndex((tab) => tab.id === activeTabId);
   const activeTab = tabs[activeIndex];
+  const revealActiveTab = useCallback((node: HTMLButtonElement | null) => {
+    node?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, []);
 
   return (
     // Many tabs outgrow a narrow window before anything else in the header
@@ -251,6 +254,7 @@ export const DashboardTabs = ({
                 data-broken={brokenTabIds.has(tab.id)}
                 data-tab-id={tab.id}
                 key={tab.id}
+                ref={tab.id === activeTabId ? revealActiveTab : undefined}
                 value={tab.id}>
                 <Icon className='h-[15px] w-[15px]' />
                 {tabTitle(tab)}

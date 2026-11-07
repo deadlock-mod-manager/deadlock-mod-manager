@@ -2,4 +2,4 @@
 "@deadlock-mods/desktop": patch
 ---
 
-Keep Stats tabs reachable in narrow windows
+Keep selected Stats tabs visible in narrow windows
