@@ -128,6 +128,50 @@ function updateCefLockfile(): number {
   return result.status ?? 1;
 }
 
+const CEF_METADATA_ARGS = [
+  "metadata",
+  "--format-version",
+  "1",
+  "--no-default-features",
+  "--features",
+  "cef,match-sync",
+];
+
+// Adds lock entries for dependencies the Wry lockfile gained since the last
+// sync, without bumping the pinned Tauri crates like `update-lockfile` does.
+function syncCefLockfile(): number {
+  ensureCefSetup();
+  const result = spawnSync("cargo", CEF_METADATA_ARGS, {
+    cwd: desktopDir,
+    stdio: ["ignore", "ignore", "inherit"],
+  });
+
+  if (result.status !== 0) {
+    console.error("Failed to sync Cargo.cef.lock");
+  } else {
+    copyFileSync(workspaceCargoLock, cefCargoLock);
+    console.log("Synced Cargo.cef.lock");
+  }
+  cleanupCefSetup();
+  return result.status ?? 1;
+}
+
+function checkCefLockfile(): number {
+  ensureCefSetup();
+  const result = spawnSync("cargo", [...CEF_METADATA_ARGS, "--locked"], {
+    cwd: desktopDir,
+    stdio: ["ignore", "ignore", "inherit"],
+  });
+  cleanupCefSetup();
+
+  if (result.status !== 0) {
+    console.error(
+      "Cargo.cef.lock is out of date. Run `pnpm --filter @deadlock-mods/desktop cef:sync-lockfile` and commit the result.",
+    );
+  }
+  return result.status ?? 1;
+}
+
 function injectPatch(): void {
   const workspace = readUtf8(workspaceCargoToml);
   writeUtf8(workspaceCargoToml, `${workspace.trimEnd()}${patchBlock}`);
@@ -320,6 +364,8 @@ if (subcommand === undefined) {
   console.error("  bun scripts/cef-patch.ts cleanup");
   console.error("  bun scripts/cef-patch.ts prepare");
   console.error("  bun scripts/cef-patch.ts update-lockfile");
+  console.error("  bun scripts/cef-patch.ts sync-lockfile");
+  console.error("  bun scripts/cef-patch.ts check-lockfile");
   console.error("  bun scripts/cef-patch.ts <command> [args...]");
   process.exit(1);
 }
@@ -350,6 +396,14 @@ if (subcommand === "prepare") {
 
 if (subcommand === "update-lockfile") {
   process.exit(updateCefLockfile());
+}
+
+if (subcommand === "sync-lockfile") {
+  process.exit(syncCefLockfile());
+}
+
+if (subcommand === "check-lockfile") {
+  process.exit(checkCefLockfile());
 }
 
 process.exitCode = runCommand(subcommand, rest);

@@ -173,6 +173,11 @@ jobs:
 
       - uses: pnpm/action-setup@v6
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.4"
+
       - name: Install protoc
         uses: arduino/setup-protoc@v3
         with:
@@ -209,6 +214,11 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      # Nightly CEF builds resolve against Cargo.cef.lock, so dependency changes
+      # must be synced there before merge.
+      - name: Check CEF lockfile
+        run: pnpm --filter @deadlock-mods/desktop cef:check-lockfile
 
       - name: Run plugin runtime tests
         env:

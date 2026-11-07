@@ -23,6 +23,8 @@
     "cef:setup": "bun scripts/cef-patch.ts setup",
     "cef:prepare": "bun scripts/cef-patch.ts prepare",
     "cef:update-lockfile": "bun scripts/cef-patch.ts update-lockfile",
+    "cef:sync-lockfile": "bun scripts/cef-patch.ts sync-lockfile",
+    "cef:check-lockfile": "bun scripts/cef-patch.ts check-lockfile",
     "installer:images": "bun scripts/generate-installer-images.ts",
     "cef:cleanup": "bun scripts/cef-patch.ts cleanup",
     "format:rust": "cd src-tauri && rustfmt",
