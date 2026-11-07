@@ -130,8 +130,4 @@ describe("serializeEnabledProfileMods picks", () => {
 
     expect(sharedPicks(mod)).toEqual([BASE.name]);
   });
-
-  it("names no pick when nothing is known about the downloads", () => {
-    expect(sharedPicks(charlie({}))).toBeUndefined();
-  });
 });

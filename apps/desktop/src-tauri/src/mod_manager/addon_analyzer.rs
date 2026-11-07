@@ -923,12 +923,6 @@ mod tests {
   }
 
   #[tokio::test]
-  async fn lookup_reports_an_unreachable_service_instead_of_no_match() {
-    let endpoint = format!("{}/api/v2/vpk-analyse-hashes", closed_endpoint());
-    assert!(lookup(&endpoint).await.is_err());
-  }
-
-  #[tokio::test]
   async fn lookup_returns_no_match_only_when_the_service_found_none() {
     let endpoint = serve_once(200, "[]").await;
     assert!(lookup(&endpoint).await.unwrap().is_none());

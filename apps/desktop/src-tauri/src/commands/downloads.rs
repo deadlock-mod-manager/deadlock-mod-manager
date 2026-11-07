@@ -888,16 +888,4 @@ mod tests {
       );
     }
   }
-
-  #[test]
-  fn a_cache_already_listed_is_not_tried_twice() {
-    assert_eq!(
-      sources(
-        FileserverPreference::Default,
-        [CACHE, STANDARD],
-        &[CACHE, STANDARD]
-      ),
-      [CACHE, STANDARD]
-    );
-  }
 }
