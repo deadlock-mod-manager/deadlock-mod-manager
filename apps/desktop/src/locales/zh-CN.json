@@ -3810,6 +3810,8 @@
     "ignoreFailed": "无法保存忽略设置",
     "markedFineSection": "已标记为无碍（{{count}}）",
     "ignoredPair": "{{first}} 与 {{second}}",
+    "ignoredFilesRow_one": "",
+    "ignoredFilesRow_other": "",
     "ignoredModRow": "{{mod}}，全部重叠",
     "restore": "恢复",
     "clearIgnores": "全部恢复",
