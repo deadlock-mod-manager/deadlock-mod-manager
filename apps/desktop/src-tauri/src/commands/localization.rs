@@ -4,7 +4,7 @@ use crate::mod_manager::ModManager;
 use crate::mod_manager::localization_overlay::{
   LocalizationOverlayAnalysis, LocalizationOverlayApplyResult, LocalizationResolution,
 };
-use crate::mod_manager::mod_health::{FixModsResult, ModHealthReport};
+use crate::mod_manager::mod_health::{FixModsResult, ModHealthCheck, ModHealthReport};
 use std::sync::Mutex;
 use tauri::Emitter;
 
@@ -29,7 +29,7 @@ pub async fn check_mod_health(
   profile_folder: Option<String>,
   mod_ids: Option<Vec<String>>,
   force: bool,
-) -> Result<ModHealthReport, Error> {
+) -> Result<ModHealthCheck, Error> {
   tauri::async_runtime::spawn_blocking(move || {
     let context = MANAGER
       .lock()

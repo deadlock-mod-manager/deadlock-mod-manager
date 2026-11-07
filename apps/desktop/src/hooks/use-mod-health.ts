@@ -24,6 +24,7 @@ import {
 import { usePersistedStore } from "@/lib/store";
 import { isGameRunning } from "@/lib/tauri-commands";
 import type { FixModsResult } from "@/types/generated/FixModsResult";
+import type { ModHealthCheck } from "@/types/generated/ModHealthCheck";
 import type { ModHealthProgress } from "@/types/generated/ModHealthProgress";
 import type { ModHealthReport } from "@/types/generated/ModHealthReport";
 import type { RepairPlanProgress } from "@/types/generated/RepairPlanProgress";
@@ -89,23 +90,30 @@ const queuedChecks = new Map<string | null, ModHealthCheckRequest>();
 
 export const useCheckModHealth = () => {
   const queryClient = useQueryClient();
+  const { mutate: refreshFixes } = useRefreshModFixes();
   const mutateRef = useRef<(input: ModHealthCheckRequest) => void>(() => {});
   const mutation = useMutation({
     mutationKey: MOD_HEALTH_CHECK_KEY,
     mutationFn: ({ profileFolder, modIds, force }: ModHealthCheckRequest) =>
-      invoke<ModHealthReport>("check_mod_health", {
+      invoke<ModHealthCheck>("check_mod_health", {
         profileFolder,
         modIds,
         force,
       }),
     meta: { skipGlobalErrorHandler: true },
-    onSuccess: (report, { profileFolder, force }) => {
+    onSuccess: ({ report, historyChanged }, { profileFolder, force }) => {
       queryClient.setQueryData(modHealthQueryKey(profileFolder), report);
       if (force && report.gameBuild !== null) {
         window.localStorage.setItem(
           forcedBuildStorageKey(profileFolder),
           String(report.gameBuild),
         );
+      }
+      // Every repair receipt digests the observed game data. Other profiles
+      // rebuild when they next become active.
+      if (historyChanged) {
+        const { profiles, activeProfileId } = usePersistedStore.getState();
+        refreshFixes(profiles[activeProfileId]?.folderName ?? null);
       }
     },
     onError: (error) => {

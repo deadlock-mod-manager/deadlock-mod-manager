@@ -449,6 +449,16 @@ pub fn app_config_dir(identifier: &str) -> Option<PathBuf> {
     .or_else(|| dirs::config_dir().map(|directory| directory.join(identifier)))
 }
 
+/// Unlike the other roots, this one is also read by unit tests, which never
+/// initialize the runtime environment.
+pub fn app_cache_dir(identifier: &str) -> Option<PathBuf> {
+  RUNTIME_ENVIRONMENT
+    .get()
+    .and_then(RuntimeEnvironment::e2e)
+    .map(|configuration| configuration.roots.app_cache.clone())
+    .or_else(|| dirs::cache_dir().map(|directory| directory.join(identifier)))
+}
+
 fn environment_from_process() -> Result<RuntimeEnvironment, RuntimeEnvironmentError> {
   let config_path = std::env::var_os(E2E_CONFIG_ENV).map(PathBuf::from);
   #[cfg(feature = "e2e-harness")]
