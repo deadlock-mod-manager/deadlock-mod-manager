@@ -54,7 +54,8 @@ pub enum ConflictIgnoreReason {
   Pair,
   /// One of the two mods is ignored everywhere.
   Mod,
-  /// Every shared file was ignored one by one.
+  /// These files were ignored one by one; the pair's other shared files
+  /// still count.
   Files,
 }
 
@@ -66,9 +67,10 @@ pub struct ModConflict {
   /// Mod that loads first and therefore provides every shared file in game.
   pub winner: String,
   pub loser: String,
-  /// Highest severity among the files that still count.
+  /// Highest severity among `files`.
   pub severity: ConflictSeverity,
-  /// Shared files that still count, most severe first.
+  /// Shared files this entry covers, most severe first: those that still
+  /// count, or for an ignored entry those its ignore hides.
   pub files: Vec<ConflictFile>,
   #[ts(optional)]
   #[serde(skip_serializing_if = "Option::is_none")]
@@ -133,7 +135,8 @@ pub enum ConflictIgnoreAction {
 #[serde(rename_all = "camelCase")]
 pub struct ProfileConflicts {
   pub conflicts: Vec<ModConflict>,
-  /// Conflicts hidden by an ignore, so they can be restored.
+  /// Conflicts hidden by an ignore, so they can be restored. A partly ignored
+  /// pair is in both lists, each with its own files.
   pub ignored: Vec<ModConflict>,
   pub ignores: ConflictIgnores,
 }
@@ -302,52 +305,55 @@ fn find_conflicts(mods: &[ModEntries], ignores: &ConflictIgnores) -> ProfileConf
       (&mods[index_b], &mods[index_a])
     };
     let key = pair_key(&winner.mod_id, &loser.mod_id);
-    let pair_ignored_files = ignores.pair_files.get(&key);
-
-    let is_file_ignored =
-      |path: &str| pair_ignored_files.is_some_and(|ignored| ignored.contains(path));
-
-    let ignore_reason = if ignores.pairs.contains(&key) {
-      Some(ConflictIgnoreReason::Pair)
-    } else if ignores.mods.contains(&winner.mod_id) || ignores.mods.contains(&loser.mod_id) {
-      Some(ConflictIgnoreReason::Mod)
-    } else if paths.iter().all(|path| is_file_ignored(path)) {
-      Some(ConflictIgnoreReason::Files)
-    } else {
-      None
+    let conflict = |paths: Vec<&str>, ignore_reason| {
+      let mut files: Vec<ConflictFile> = paths
+        .into_iter()
+        .map(|path| ConflictFile {
+          path: path.to_string(),
+          severity: severity_of(path),
+        })
+        .collect();
+      sort_files(&mut files);
+      ModConflict {
+        winner: winner.mod_id.clone(),
+        loser: loser.mod_id.clone(),
+        severity: files
+          .iter()
+          .map(|file| file.severity)
+          .max()
+          .unwrap_or(ConflictSeverity::Low),
+        files,
+        ignore_reason,
+      }
     };
 
     // A pair or mod ignore lists every shared file so the user knows what
-    // restoring brings back; otherwise only the files that still count.
-    let lists_every_file = matches!(
-      ignore_reason,
-      Some(ConflictIgnoreReason::Pair | ConflictIgnoreReason::Mod)
-    );
-    let mut listed: Vec<ConflictFile> = paths
-      .into_iter()
-      .filter(|path| lists_every_file || !is_file_ignored(path))
-      .map(|path| ConflictFile {
-        path: path.to_string(),
-        severity: severity_of(path),
-      })
-      .collect();
-    sort_files(&mut listed);
-
-    let conflict = ModConflict {
-      winner: winner.mod_id.clone(),
-      loser: loser.mod_id.clone(),
-      severity: listed
-        .iter()
-        .map(|file| file.severity)
-        .max()
-        .unwrap_or(ConflictSeverity::Low),
-      files: listed,
-      ignore_reason,
-    };
-    if conflict.ignore_reason.is_some() {
-      result.ignored.push(conflict);
+    // restoring brings back.
+    let pair_reason = if ignores.pairs.contains(&key) {
+      Some(ConflictIgnoreReason::Pair)
+    } else if ignores.mods.contains(&winner.mod_id) || ignores.mods.contains(&loser.mod_id) {
+      Some(ConflictIgnoreReason::Mod)
     } else {
-      result.conflicts.push(conflict);
+      None
+    };
+    if pair_reason.is_some() {
+      result.ignored.push(conflict(paths, pair_reason));
+      continue;
+    }
+
+    // Otherwise the files ignored one by one are listed apart from the ones
+    // that still count, so a partly ignored pair can be restored too.
+    let ignored_files = ignores.pair_files.get(&key);
+    let (ignored, active): (Vec<&str>, Vec<&str>) = paths
+      .into_iter()
+      .partition(|path| ignored_files.is_some_and(|files| files.contains(*path)));
+    if !active.is_empty() {
+      result.conflicts.push(conflict(active, None));
+    }
+    if !ignored.is_empty() {
+      result
+        .ignored
+        .push(conflict(ignored, Some(ConflictIgnoreReason::Files)));
     }
   }
 
@@ -726,6 +732,13 @@ mod tests {
       .find(|c| c.winner == "a" && c.loser == "c")
       .unwrap();
     assert_eq!(paths(ac), ["x.vmat_c"]);
+    assert_eq!(result.ignored.len(), 1);
+    let ignored = &result.ignored[0];
+    assert_eq!(
+      (ignored.winner.as_str(), ignored.loser.as_str()),
+      ("a", "b")
+    );
+    assert_eq!(paths(ignored), ["x.vmat_c"]);
   }
 
   #[test]
@@ -745,12 +758,98 @@ mod tests {
       result.ignored[0].ignore_reason,
       Some(ConflictIgnoreReason::Files)
     );
+    assert_eq!(paths(&result.ignored[0]), ["x.vmat_c"]);
 
     ignores.apply(ConflictIgnoreAction::UnignorePair {
       mod_a: "b".into(),
       mod_b: "a".into(),
     });
     assert_eq!(find_conflicts(&mods, &ignores).conflicts.len(), 1);
+  }
+
+  #[test]
+  fn partly_ignored_pair_lists_its_ignored_files_so_they_can_be_restored() {
+    let mods = two_mods_sharing(&["hat.vmdl_c", "notes.txt", "pants.vmat_c"]);
+    let mut ignores = ConflictIgnores::default();
+    ignores.apply(ConflictIgnoreAction::IgnorePairFile {
+      mod_a: "a".into(),
+      mod_b: "b".into(),
+      path: "hat.vmdl_c".into(),
+    });
+    // Saved for a file the pair no longer shares.
+    ignores.apply(ConflictIgnoreAction::IgnorePairFile {
+      mod_a: "a".into(),
+      mod_b: "b".into(),
+      path: "old.vmat_c".into(),
+    });
+
+    let result = find_conflicts(&mods, &ignores);
+
+    assert_eq!(result.conflicts.len(), 1);
+    assert_eq!(paths(&result.conflicts[0]), ["pants.vmat_c", "notes.txt"]);
+    // The ignored model doesn't count toward the files that still conflict.
+    assert_eq!(result.conflicts[0].severity, ConflictSeverity::Normal);
+    assert_eq!(result.ignored.len(), 1);
+    let ignored = &result.ignored[0];
+    assert_eq!(
+      (ignored.winner.as_str(), ignored.loser.as_str()),
+      ("a", "b")
+    );
+    assert_eq!(ignored.ignore_reason, Some(ConflictIgnoreReason::Files));
+    assert_eq!(paths(ignored), ["hat.vmdl_c"]);
+    assert_eq!(ignored.severity, ConflictSeverity::Critical);
+
+    ignores.apply(ConflictIgnoreAction::UnignorePair {
+      mod_a: "b".into(),
+      mod_b: "a".into(),
+    });
+    let restored = find_conflicts(&mods, &ignores);
+    assert!(restored.ignored.is_empty());
+    assert_eq!(restored.conflicts.len(), 1);
+    assert_eq!(restored.conflicts[0].files.len(), 3);
+    assert!(ignores.pair_files.is_empty());
+  }
+
+  #[test]
+  fn ignoring_a_partly_ignored_pair_lists_it_once() {
+    let mods = two_mods_sharing(&["x.vmat_c", "y.vmat_c"]);
+    let mut ignores = ConflictIgnores::default();
+    ignores.apply(ConflictIgnoreAction::IgnorePairFile {
+      mod_a: "a".into(),
+      mod_b: "b".into(),
+      path: "x.vmat_c".into(),
+    });
+    ignores.apply(ConflictIgnoreAction::IgnorePair {
+      mod_a: "a".into(),
+      mod_b: "b".into(),
+    });
+
+    let result = find_conflicts(&mods, &ignores);
+
+    assert!(result.conflicts.is_empty());
+    assert_eq!(result.ignored.len(), 1);
+    assert_eq!(
+      result.ignored[0].ignore_reason,
+      Some(ConflictIgnoreReason::Pair)
+    );
+    assert_eq!(paths(&result.ignored[0]), ["x.vmat_c", "y.vmat_c"]);
+  }
+
+  #[test]
+  fn ignores_for_files_no_longer_shared_are_not_listed() {
+    let mods = two_mods_sharing(&["x.vmat_c"]);
+    let mut ignores = ConflictIgnores::default();
+    ignores.apply(ConflictIgnoreAction::IgnorePairFile {
+      mod_a: "a".into(),
+      mod_b: "b".into(),
+      path: "old.vmat_c".into(),
+    });
+
+    let result = find_conflicts(&mods, &ignores);
+
+    assert_eq!(result.conflicts.len(), 1);
+    assert_eq!(paths(&result.conflicts[0]), ["x.vmat_c"]);
+    assert!(result.ignored.is_empty());
   }
 
   #[test]

@@ -11,6 +11,8 @@ const queues: PendingCommand[] = [];
 const cancellations: PendingCommand[] = [];
 const events: { name: string; properties: AnalyticsProperties }[] = [];
 let nextId = 0;
+/** Attempt ids in the order the queue made them. */
+const attempts: string[] = [];
 const analytics = createAnalyticsClient({
   getContext: () => ({
     enabled: true,
@@ -84,7 +86,12 @@ const request = (callbacks: string[], label: string): DownloadableMod => ({
     callbacks.push(`${label}:failed`);
   },
 });
-const completed = () => queue.complete(modData.remoteId, "fixture");
+const currentAttemptId = () => attempts.at(-1) ?? null;
+const completed = () =>
+  queue.complete(modData.remoteId, currentAttemptId(), "fixture");
+const failed = (error: string) =>
+  queue.fail(modData.remoteId, currentAttemptId(), error);
+const started = () => queue.start(modData.remoteId, currentAttemptId());
 const outcomes = () =>
   events
     .filter((event) => event.name === "mod_download_result")
@@ -96,6 +103,7 @@ beforeEach(() => {
   cancellations.length = 0;
   events.length = 0;
   nextId = 0;
+  attempts.length = 0;
   queue = new DownloadQueue({
     start: (properties) => analytics.start("mod_download", properties),
     queue: () =>
@@ -108,6 +116,10 @@ beforeEach(() => {
       }),
     duplicateMessage: () => "Duplicate download",
     onQueueError: () => {},
+    createAttemptId: () => {
+      attempts.push(`attempt-${attempts.length + 1}`);
+      return `attempt-${attempts.length}`;
+    },
   });
 });
 
@@ -174,7 +186,7 @@ describe("download ownership", () => {
     const callbacks: string[] = [];
     queue.add(request(callbacks, "first"));
     const cancelling = queue.cancel(modData.remoteId);
-    queue.fail(modData.remoteId, "Download cancelled");
+    failed("Download cancelled");
     cancellations[0]?.resolve();
     await cancelling;
     expect(callbacks).toEqual(["first:failed"]);
@@ -188,7 +200,7 @@ describe("download ownership", () => {
     expect(await acknowledged).toBe(true);
     queue.add(request(callbacks, "second"));
     const cancelling = queue.cancel(modData.remoteId, false);
-    queue.fail(modData.remoteId, "Download cancelled");
+    failed("Download cancelled");
     cancellations[1]?.resolve();
     await cancelling;
     expect(callbacks).toEqual([]);
@@ -203,7 +215,7 @@ describe("download ownership", () => {
     await expect(completing).rejects.toThrow("No active download found");
     queue.add(request(callbacks, "second"));
     const failing = queue.cancel(modData.remoteId, false);
-    queue.fail(modData.remoteId, "Network error");
+    failed("Network error");
     cancellations[1]?.resolve();
     await failing;
     expect(callbacks).toEqual([]);
@@ -216,7 +228,7 @@ describe("download ownership", () => {
     const cancelling = queue.cancel(modData.remoteId, false);
     cancellations[0]?.reject(new Error("No active download found"));
     await expect(cancelling).rejects.toThrow("No active download found");
-    queue.fail(modData.remoteId, "Download cancelled");
+    failed("Download cancelled");
     expect(callbacks).toEqual(["first:failed"]);
     expect(outcomes()).toEqual(["cancelled"]);
   });
@@ -258,7 +270,7 @@ describe("download start", () => {
     const callbacks: string[] = [];
     queue.add(request(callbacks, "first"));
     expect(queue.isStarted(modData.remoteId)).toBe(false);
-    queue.start(modData.remoteId)?.onStart();
+    started()?.onStart();
     expect(queue.isStarted(modData.remoteId)).toBe(true);
     expect(callbacks).toEqual(["first:started"]);
     completed();
@@ -266,18 +278,73 @@ describe("download start", () => {
   });
   it("waits again once resumed, until the backend runs it again", () => {
     queue.add(request([], "first"));
-    queue.start(modData.remoteId);
+    started();
     queue.requeue(modData.remoteId);
     expect(queue.isStarted(modData.remoteId)).toBe(false);
-    queue.start(modData.remoteId);
+    started();
     expect(queue.isStarted(modData.remoteId)).toBe(true);
   });
   it("does not carry the start over to the next request for the mod", () => {
     const callbacks: string[] = [];
     queue.add(request(callbacks, "first"));
-    queue.start(modData.remoteId);
-    queue.fail(modData.remoteId, "Network error");
+    started();
+    failed("Network error");
     queue.add(request(callbacks, "retry"));
     expect(queue.isStarted(modData.remoteId)).toBe(false);
+  });
+});
+
+describe("download attempts", () => {
+  it("ignores an earlier attempt's events once a retry owns the mod", async () => {
+    const callbacks: string[] = [];
+    queue.add(request(callbacks, "first"));
+    const first = currentAttemptId();
+    const cancelling = queue.cancel(modData.remoteId);
+    cancellations[0]?.resolve();
+    await cancelling;
+    queue.add(request(callbacks, "retry"));
+
+    expect(queue.start(modData.remoteId, first)).toBeUndefined();
+    queue.complete(modData.remoteId, first, "fixture");
+    queue.fail(modData.remoteId, first, "Download failed: Download cancelled");
+    expect(queue.isStarted(modData.remoteId)).toBe(false);
+    started()?.onStart();
+    completed();
+
+    expect(callbacks).toEqual([
+      "first:failed",
+      "retry:started",
+      "retry:completed",
+    ]);
+    expect(outcomes()).toEqual(["cancelled", "completed"]);
+  });
+  it("leaves a download alone for events the backend sent for no window attempt", () => {
+    const callbacks: string[] = [];
+    queue.add(request(callbacks, "first"));
+    expect(queue.start(modData.remoteId, null)).toBeUndefined();
+    queue.fail(modData.remoteId, null, "Network error");
+    queue.complete(modData.remoteId, null, "fixture");
+    expect(
+      queue.getAttempt(modData.remoteId, currentAttemptId()),
+    ).toBeDefined();
+    expect(callbacks).toEqual([]);
+  });
+  it("names each request to the backend with a new attempt", () => {
+    const named: string[] = [];
+    const naming = new DownloadQueue({
+      start: (properties) => analytics.start("mod_download", properties),
+      queue: (_mod, attemptId) => {
+        named.push(attemptId);
+        return Promise.resolve();
+      },
+      cancel: () => Promise.resolve(),
+      duplicateMessage: () => "Duplicate download",
+      onQueueError: () => {},
+      createAttemptId: () => `attempt-${named.length + 1}`,
+    });
+    naming.add(request([], "first"));
+    naming.complete(modData.remoteId, "attempt-1", "fixture");
+    naming.add(request([], "retry"));
+    expect(named).toEqual(["attempt-1", "attempt-2"]);
   });
 });
