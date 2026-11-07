@@ -150,7 +150,7 @@ describe("stats dashboard tabs", () => {
     const saved = await readSavedLayout(world);
     if (phase === "tabs") {
       const custom = saved?.tabs.at(-1);
-      assert.equal(saved?.tabs.length, 6);
+      assert.equal(saved?.tabs.length, DEFAULT_TAB_TITLES.length + 1);
       assert.deepEqual(
         { title: custom?.title, icon: custom?.icon },
         { title: "My stats", icon: "trophy" },
