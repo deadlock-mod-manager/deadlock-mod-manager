@@ -53,6 +53,7 @@ const cardEntryPoint = (
   if (author) return "author";
   if (collection === "dashboard") return "featured";
   if (collection === "library") return "library";
+  if (collection === "skins") return "skins";
   return searching ? "search" : "catalog";
 };
 

@@ -4,7 +4,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@deadlock-mods/ui/components/tooltip";
-import { Settings } from "@deadlock-mods/ui/icons";
+import { SlidersHorizontal } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
 import { ModOptionsDialog } from "@/components/mod-management/mod-options-dialog";
 import { useModOptions } from "@/hooks/use-mod-options";
@@ -23,21 +23,21 @@ export const SkinVariantControls = ({ mod }: SkinVariantControlsProps) => {
     return null;
   }
 
+  const activeNames = [...modOptions.activeArchiveNames].join(", ");
+
   return (
-    // Stop propagation so the controls never bubble a click into the card's
-    // select handler.
+    // The dialog renders in a portal but still bubbles React events through
+    // here, so stop them before they reach the card's select handler.
     <div
-      className='flex items-center justify-between gap-2 border-t px-3 py-2'
-      onClick={(e) => e.stopPropagation()}>
-      <span className='truncate text-muted-foreground text-xs'>
-        {[...modOptions.activeArchiveNames].join(", ")}
-      </span>
+      className='shrink-0'
+      onClick={(e) => e.stopPropagation()}
+      onKeyDown={(e) => e.stopPropagation()}>
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
             aria-label={t("skins.variants")}
-            className='h-8 shrink-0 gap-1 px-2'
-            icon={<Settings className='h-3 w-3' />}
+            className='h-7 shrink-0 gap-1 px-2 [&_svg]:size-3.5'
+            icon={<SlidersHorizontal />}
             onClick={modOptions.open}
             size='sm'
             variant='outline'>
@@ -52,6 +52,9 @@ export const SkinVariantControls = ({ mod }: SkinVariantControlsProps) => {
           {activeCount > 0
             ? t("skins.variantsWithCount", { count: activeCount })
             : t("skins.variants")}
+          {activeNames && (
+            <span className='block opacity-80'>{activeNames}</span>
+          )}
         </TooltipContent>
       </Tooltip>
       <ModOptionsDialog
