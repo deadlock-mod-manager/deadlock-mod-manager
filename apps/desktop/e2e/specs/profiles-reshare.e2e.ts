@@ -1,5 +1,5 @@
-// Sharing an imported profile on passes the archives the import fetched, so a
-// friend importing the re-share gets every mod with the same files.
+// Re-sharing an imported profile passes the archives the import fetched, so
+// a friend importing the re-share gets every mod with the same files.
 import { browser } from "@wdio/globals";
 import assert from "node:assert/strict";
 import { readdir, readFile, writeFile } from "node:fs/promises";

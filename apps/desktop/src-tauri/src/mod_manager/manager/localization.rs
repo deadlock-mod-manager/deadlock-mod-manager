@@ -332,11 +332,10 @@ impl ModManager {
       ));
     }
     self.report_plan_stage(RepairPlanStage::WritingPackage);
-    // Save the review before the package: a package without it couldn't be
-    // rebuilt after the next library change. Validate first so invalid choices
-    // never replace a saved review. An earlier package can still be current for
-    // these inputs (a retry after gameinfo failed, or a refresh that finished
-    // first); remove it so a failed write leaves the next build to the review.
+    // Validate first, so invalid choices never replace the saved review. The
+    // review is saved before the package because the next library change
+    // rebuilds the package from it. An earlier package for these same inputs
+    // is removed first, so a failed write can't leave it looking current.
     plan.analyze(resolutions)?;
     let reviewed = review::ReviewedInputs::new(&plan.analysis, &key)?;
     receipt::remove(&key.output_path)?;
@@ -2007,8 +2006,8 @@ Game core
       )],
     )
     .unwrap();
-    // Its key is current, so a check keeps it rather than trusting a
-    // standalone result, which can't see the rival.
+    // A check keeps this entry while its key is current: a standalone recheck
+    // can't see the rival.
     context.check(None, false, |_| {}).unwrap();
     assert_eq!(status(), Some(ModHealthStatus::Works));
 

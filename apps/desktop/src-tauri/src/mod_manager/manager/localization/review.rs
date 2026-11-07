@@ -34,8 +34,8 @@ pub(super) struct ReviewedInputs {
   /// Stamps of each mod the findings name; `None` when its files were missing.
   mods: BTreeMap<String, Option<Vec<LocalizationInputStamp>>>,
   base_game: Vec<LocalizationInputStamp>,
-  /// Compiled data is read against learned game history and the app's bundled
-  /// history, which the findings only summarise. Text reviews leave it unset.
+  /// The game history compiled data was read against. The findings don't
+  /// capture it, so a change reopens the review. Unset for text-only reviews.
   compiled_history: Option<CompiledHistory>,
 }
 
@@ -67,7 +67,8 @@ struct Subject<'a> {
 struct TextConflict<'a> {
   key: &'a str,
   vanilla_value: Option<&'a str>,
-  /// In load order, so accepting the recommended winner stays tied to it.
+  /// In load order, which picks the recommended winner, so reordering these
+  /// mods reopens the review.
   candidates: Vec<(&'a str, &'a str, &'a str)>,
 }
 
@@ -128,9 +129,9 @@ impl ReviewedInputs {
           .map(|baseline| baseline.mod_id.as_str()),
       )
       .collect();
-    // An overlap names its other providers ("mod:archive") and the mods that
-    // supply mixed dependencies ("mod id:") only in its detail. Matching every
-    // listed mod there can only add stamps, so it never reuses a review wrongly.
+    // Model warnings name their other mods only in `detail` ("mod:archive" or
+    // "mod id:"), so take every library mod it mentions. A false match only
+    // adds a stamp: the review may reopen, but is never reused wrongly.
     for warning in &model_warnings {
       involved.extend(
         key

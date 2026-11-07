@@ -275,7 +275,7 @@ export const closeOnceDisabled = (modId: string) =>
 
 type Badge = { status: string | null; text: string } | null;
 
-/** The health badge on `modId`'s library card, looked up again on each call. */
+/** The health badge on `modId`'s library card. */
 const readBadge = async (modId: string): Promise<Badge> => {
   const badge = await $(`${card(modId)}//*[@data-testid="mod-health-badge"]`);
   if (!(await badge.isExisting())) return null;

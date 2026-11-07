@@ -22,8 +22,8 @@ export interface AvailableImportedMod {
   modData: ModDto;
 }
 
-/** The mod's files and the ones the import fetched, kept on the imported mod
- *  so sharing the profile on passes the same picks. */
+/** All of the mod's downloads and the ones the import fetched, kept so
+ *  re-sharing the profile passes the same picks. */
 export interface ImportedModDownloads {
   downloads: ModDownloadItem[];
   selectedDownloads: ModDownloadItem[];

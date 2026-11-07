@@ -23,11 +23,9 @@ type TabView = {
   rows: string[];
 };
 
-// My Mods can mount more than one copy of the results dialog, stacked on top
-// of each other, so every query stays inside the first one. Inside it the
-// WebKitGTK driver never reports the tab triggers as clickable, and neither
-// its click nor focus selects them; Radix selects a tab on a primary-button
-// mousedown, so the page sends exactly that.
+// My Mods can mount stacked copies of the results dialog, so queries stay in
+// the first. WebKitGTK's driver can't click or focus its tab triggers, and
+// Radix switches tabs on a primary-button mousedown, so the page sends one.
 const selectTab = (value: string) =>
   browser.execute((tabValue: string) => {
     document

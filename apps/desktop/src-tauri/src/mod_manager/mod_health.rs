@@ -251,10 +251,9 @@ pub(crate) struct ModFindings {
   remaining_symptoms: BTreeSet<ModHealthSymptom>,
   /// Whether the mod has any resource the analysis can check.
   covered: bool,
-  /// The combined analysis skipped some of the mod's files because an unfixed
-  /// mod also provides them. Not a `HEALTH_RULES_REVISION` change: a
-  /// standalone recheck can't see the other mod, so older entries wait for
-  /// the next combined analysis.
+  /// Some of the mod's files were skipped because an unfixed mod also ships
+  /// them, so finding nothing doesn't mean it works. Only the combined
+  /// analysis can tell, so older entries read `false` until it runs again.
   #[serde(default)]
   scope_incomplete: bool,
 }

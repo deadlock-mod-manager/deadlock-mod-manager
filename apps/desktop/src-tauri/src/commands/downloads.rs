@@ -265,11 +265,11 @@ async fn resolve_gamebanana_file(
   })
 }
 
-/// Where a GameBanana file is downloaded from, in the order the download
-/// manager tries them. `standard` is the file's own link and `/dl/<id>`,
-/// usually the same URL; `caches` serve the file too. Auto tries the caches
-/// first; Default keeps its standard link first and falls back to them, since
-/// `/dl/` can send every attempt to the same dead cache.
+/// The URLs a GameBanana file can be downloaded from, deduplicated, in the
+/// order the download manager tries them. `standard` is the file's own link
+/// and its `/dl/<id>` link. Auto tries the caches first. Default tries the
+/// standard links first and then the caches, because `/dl/` can keep
+/// redirecting to the same dead cache.
 fn download_sources(
   preference: FileserverPreference,
   standard: [String; 2],

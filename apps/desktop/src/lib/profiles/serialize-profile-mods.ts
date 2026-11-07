@@ -10,9 +10,8 @@ export interface SerializedProfileMod {
 }
 
 /**
- * The downloads a mod without a recorded pick was installed from, read from
- * the archive each selected file came from. Only a complete, unambiguous match
- * counts.
+ * For a mod without recorded picks: the downloads its selected files came
+ * from, or undefined unless each file's archive matches exactly one download.
  */
 const downloadsFromFileTree = (
   localMod: LocalMod,
