@@ -17,7 +17,8 @@ pre-commit:
         - "*.ts"
         - "*.tsx"
       stage_fixed: true
-    - run: pnpm knip:check
+    - name: knip
+      run: pnpm knip:check
       glob:
         - "*.js"
         - "*.jsx"

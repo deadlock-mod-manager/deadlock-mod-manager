@@ -1,6 +1,7 @@
 import { expect, test } from "bun:test";
 import {
   compareFindings,
+  dropUntrackedFindings,
   findingKeys,
   readKnipResult,
 } from "../check-knip.mjs";
@@ -90,4 +91,21 @@ test("Knip execution errors fail even with empty or valid output", () => {
       stderr: "",
     }),
   ).toThrow();
+});
+
+test("ignores findings in untracked files but keeps tracked ones", () => {
+  const findings = findingKeys({
+    issues: [
+      {
+        file: "apps/example/draft.tsx",
+        files: [{ name: "apps/example/draft.tsx" }],
+      },
+      { file: "apps/example/index.ts", exports: [{ name: "value" }] },
+    ],
+  });
+  expect(dropUntrackedFindings(findings, ["apps/example/draft.tsx"])).toEqual(
+    findingKeys({
+      issues: [{ file: "apps/example/index.ts", exports: [{ name: "value" }] }],
+    }),
+  );
 });
