@@ -72,6 +72,8 @@ export type SettingsState = {
   linuxCanvasNSFWBlur: boolean;
   enabledPlugins: Record<string, boolean>; // pluginId -> isEnabled
   gamePresenceEnabled: boolean;
+  /** Whether Rich Presence leaves out how many players are in the party. */
+  gamePresenceHidePartySize: boolean;
   forgeInstallEnabled: boolean;
   /** Whether gameinfo.gi goes back to vanilla once Deadlock closes. */
   autoResetGameinfoOnExit: boolean;
@@ -132,6 +134,7 @@ export type SettingsState = {
   setLinuxCanvasNSFWBlur: (enabled: boolean) => void;
 
   setGamePresenceEnabled: (enabled: boolean) => void;
+  setGamePresenceHidePartySize: (hidden: boolean) => void;
   setForgeInstallEnabled: (enabled: boolean) => void;
   setAutoResetGameinfoOnExit: (enabled: boolean) => void;
   setBlockActionsWhileGameRunning: (enabled: boolean) => void;
@@ -188,6 +191,7 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   linuxCanvasNSFWBlur: true,
   enabledPlugins: {},
   gamePresenceEnabled: true,
+  gamePresenceHidePartySize: false,
   forgeInstallEnabled: false,
   autoResetGameinfoOnExit: false,
   blockActionsWhileGameRunning: true,
@@ -351,6 +355,11 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   setGamePresenceEnabled: (enabled: boolean) =>
     set(() => ({
       gamePresenceEnabled: enabled,
+    })),
+
+  setGamePresenceHidePartySize: (hidden: boolean) =>
+    set(() => ({
+      gamePresenceHidePartySize: hidden,
     })),
 
   setForgeInstallEnabled: (enabled: boolean) =>

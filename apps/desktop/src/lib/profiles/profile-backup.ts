@@ -2,7 +2,7 @@ import type {
   ProfileBackupPayload,
   ProfileBackupSummary,
 } from "@deadlock-mods/shared";
-import { isLocalMod } from "@/lib/mods/installed-helpers";
+import { canDownloadAgain } from "@/lib/mods/installed-helpers";
 import { serializeEnabledProfileMods } from "@/lib/profiles/serialize-profile-mods";
 import type { LocalMod } from "@/types/mods";
 import type { ModProfile } from "@/types/profiles";
@@ -29,7 +29,7 @@ export const buildProfileBackupPayload = (
 ): ProfileBackupPayload => {
   const serialized = serializeEnabledProfileMods(profile, mods);
   const backedUpMods = serialized.mods
-    .filter((mod) => !isLocalMod(mod))
+    .filter(canDownloadAgain)
     .sort(byRemoteId);
   const backedUpIds = new Set(backedUpMods.map((mod) => mod.remoteId));
   const entries = Object.values(profile.enabledMods);
@@ -44,7 +44,7 @@ export const buildProfileBackupPayload = (
       },
     },
     disabledModCount: entries.filter(
-      (entry) => !entry.enabled && !isLocalMod(entry),
+      (entry) => !entry.enabled && canDownloadAgain(entry),
     ).length,
     // `randomize` is left out when off, so backups saved before it existed
     // still hash the same.
@@ -61,7 +61,8 @@ export const buildProfileBackupPayload = (
         .map((mod) => [mod.remoteId, mod.name])
         .sort(([left], [right]) => left.localeCompare(right)),
     ),
-    skippedLocalModCount: entries.filter(isLocalMod).length,
+    skippedLocalModCount: entries.filter((entry) => !canDownloadAgain(entry))
+      .length,
   };
 };
 

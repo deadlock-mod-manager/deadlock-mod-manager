@@ -11,7 +11,6 @@ import { useTranslation } from "react-i18next";
 import { LOSS_COLOR, tint, WIN_COLOR } from "@/components/stats/chart-fx";
 import { ItemsSkeleton } from "@/components/stats/dashboard/panel-skeletons";
 import { ItemTile, slotColor } from "@/components/stats/match/item-tile";
-import { PATRON_URL } from "@/components/stats/patron-hint";
 import type { DeadlockItem } from "@/lib/deadlock-api";
 import type { ItemInsight } from "@/lib/stats/derive";
 import { formatClock, formatPercent } from "@/lib/stats/format";
@@ -21,6 +20,8 @@ import {
   type SlotType,
 } from "@/lib/stats/match-analysis";
 import { cn } from "@/lib/utils";
+
+const PATRON_URL = "https://deadlock-api.com/patron";
 
 type SlotFilter = SlotType | "all";
 

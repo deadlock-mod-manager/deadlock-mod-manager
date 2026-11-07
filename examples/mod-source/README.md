@@ -1,9 +1,12 @@
 # A static mod source you can copy
 
-This directory is a complete small example for DMM's native **static-source
-subset**. It needs ordinary public HTTPS file hosting, not a registry service,
-database, account integration, or DMM server registration. The wider RFC remains
-a work in progress; this example does not promise every RFC capability.
+This directory shows how to publish a small static mod catalog for DMM on
+public HTTPS file hosting. You don't need a database, account integration or
+DMM server registration. The example covers the implemented static-source
+subset; some features in the wider RFC are still proposals.
+
+For complete field tables, taxonomy, release history and an API-backed example,
+see [Build a mod registry](https://docs.deadlockmods.app/developer-docs/build-a-mod-registry).
 
 1. Copy this directory. Set a permanent `sourceId` and a display `name` in
    `dmm-source.json`. Replace `https://mods.example.org` in `networkOrigins` and
@@ -30,8 +33,8 @@ a work in progress; this example does not promise every RFC capability.
    If you copied the directory elsewhere, adjust the paths. Preflight verifies
    the static document graph, IDs, snapshots, local byte sizes and supplied
    digests. It intentionally accepts only relative document/artifact URLs in one
-   directory tree. It is **not** the full protocol validator or a VPK parser;
-   DMM's Rust boundary validates your hosted source again.
+   directory tree. It covers this static example and does not parse VPKs.
+   DMM validates your hosted source again.
 
 5. Upload the directory to your HTTPS host. Serve JSON as `application/json`,
    and artifacts as files. Do not put login pages or expiring HTML links in
@@ -72,6 +75,11 @@ mods keep their local files and provenance. Re-adding the same origin and
 source ID reconnects the identity. Moving a source to another origin is not an
 automatic migration.
 
+Changing any declared API, download or media origin set blocks refresh until
+users remove the source, review the new descriptor and add it again. This
+includes adding a CDN. URLs can change within accepted origins without this
+review.
+
 ## Implemented authoring subset
 
 - Static descriptors, complete local catalog snapshots, embedded current release,
@@ -82,8 +90,7 @@ automatic migration.
 - Native sources currently support `.vpk`, `.zip`, `.rar`, and `.7z`, with
   lowercase extensions and the existing Rust installation rules. `.dmodpkg`
   source artifacts are rejected until the package-specific choice flow is wired.
-  Sources
-  cannot provide installation scripts or arbitrary destination paths.
+  Sources cannot provide installation scripts or arbitrary destination paths.
 - Optional description (plain text, or Markdown with
   `descriptionFormat: "markdown"`), author, hero/content-type, tags, images,
   homepage, update date and `isNsfw` classification as accepted by the native
@@ -92,20 +99,26 @@ automatic migration.
   unknown classifications when the user hides adult content. No invented
   counts, comments, author enrichment, mirrors or other GameBanana-only metadata.
 
-Mapped adapters, equivalence links, dependency resolution, authentication,
-release-history browsing, automatic origin migration, and one-click source
-enrollment remain later RFC stages. Native API snapshot ingestion is available,
-but this example requires only static hosting; it does not implement an API
-service or server-side search.
+Source enrollment/install links and read-only release history are available.
+For history, declare `capabilities.releaseHistory: true` and a listing
+`releaseHistoryUrl` returning release documents in `{ items, nextCursor }` pages
+with explicit `nextCursor: null` completion. Installs still use the current
+release. This fixture does not include a history document.
+
+Mapped adapters, equivalence links, dependency resolution, authentication and
+automatic origin migration remain later RFC stages. Native API catalog ingestion
+is available in the [API example](../mod-source-api/README.md), but this static
+example does not implement an API service or server-side search.
 
 Local profile membership retains source provenance, but portable source-aware
 profile sharing/import, version holds, progressive all-source search, and the
 RFC's canonical schemas/full conformance validator are not implemented here.
 This preflight checks the copyable static subset. Conditional HTTP caching and
 retry/backoff policies also remain later work; failed requests retain cached
-results and users can retry refresh explicitly. Public enrollment uses HTTPS;
-the loopback HTTP opt-in used by the executable fixtures is currently a native
-command option, not a Settings control.
+results and users can retry refresh explicitly. Release-build Settings enrollment
+requires public HTTPS. Development builds also allow local HTTP sources in the
+Add source dialog; the executable fixtures exercise the native local-network
+option directly.
 
 ## Optional component choices
 

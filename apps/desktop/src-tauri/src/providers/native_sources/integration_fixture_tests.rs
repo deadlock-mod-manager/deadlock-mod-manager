@@ -146,15 +146,14 @@ impl SourceServer {
   }
 
   fn set_bytes(&self, path: &str, bytes: Vec<u8>) {
-    self
-      .routes
-      .lock()
-      .unwrap()
-      .insert(path.into(), Response {
+    self.routes.lock().unwrap().insert(
+      path.into(),
+      Response {
         status: 200,
         bytes,
         location: None,
-      });
+      },
+    );
   }
 
   fn redirect(&self, path: &str, location: String) {

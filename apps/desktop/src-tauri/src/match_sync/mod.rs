@@ -16,6 +16,7 @@ use deadlock_match_sync::model::{
   SyncProgress,
 };
 use deadlock_match_sync::quota;
+use deadlock_match_sync::steam_id::account_id_of;
 use deadlock_match_sync::sync::{SyncEngine, SyncPersistence};
 use deadlock_match_sync::throttle::Throttle;
 use serde::Serialize;
@@ -206,8 +207,12 @@ fn list_available_accounts() -> Result<Vec<(u64, String)>, MatchSyncError> {
   auth::list_available_accounts(&steam_dir, accounts)
 }
 
-fn recover_all() -> Result<Vec<AuthContext>, MatchSyncError> {
-  let (steam_dir, accounts) = remembered_accounts()?;
+// Sessions of every account the user hasn't turned off. Excluded accounts are dropped
+// before their saved session is decrypted.
+fn recover_included(app: &AppHandle) -> Result<Vec<AuthContext>, MatchSyncError> {
+  let (steam_dir, mut accounts) = remembered_accounts()?;
+  let excluded = settings::load_excluded_accounts(app)?;
+  accounts.retain(|(steam_id64, _)| !excluded.contains(&account_id_of(*steam_id64)));
   auth::recover_all(&steam_dir, accounts)
 }
 
@@ -335,6 +340,10 @@ pub fn status(app: &AppHandle) -> Result<MatchSyncStatusDto, MatchSyncError> {
   let now = settings::now_secs();
   // Opt-out must also prevent reads of Steam's saved-session configuration.
   let available = discover_accounts(&config, list_available_accounts, prune_resources);
+  let excluded = settings::load_excluded_accounts(app).unwrap_or_else(|e| {
+    log::warn!("match-sync: excluded accounts load failed: {e}");
+    Vec::new()
+  });
 
   let accounts = available
     .into_iter()
@@ -343,14 +352,17 @@ pub fn status(app: &AppHandle) -> Result<MatchSyncStatusDto, MatchSyncError> {
         log::warn!("match-sync: quota load failed: {e}");
         quota::QuotaWindow::new(Vec::new(), FETCH_QUOTA_LIMIT, FETCH_QUOTA_WINDOW_SECS)
       });
+      let account_id = account_id_of(steam_id64);
       AccountStatus {
         steam_id64,
+        account_id,
         account_name,
         quota_limit: FETCH_QUOTA_LIMIT as u32,
         quota_remaining: quota.remaining(now) as u32,
         quota_reset_at: quota.reset_at(now),
         full_sync_complete: settings::load_full_sync_complete(app, steam_id64),
         gc_unavailable: gc_backoff_active(settings::load_gc_backoff_until(app, steam_id64), now),
+        excluded: excluded.contains(&account_id),
       }
     })
     .collect();
@@ -390,7 +402,7 @@ pub async fn recent_local_matches(app: &AppHandle, account_id: u32) -> Vec<Local
     return Vec::new();
   }
 
-  let contexts = match recover_all() {
+  let contexts = match recover_included(app) {
     Ok(contexts) => contexts,
     Err(e) => {
       log::debug!("match-sync: no Steam session for local history: {e}");
@@ -598,7 +610,7 @@ async fn run_account_batch<F, Fut>(
 // Sequentially full-syncs every currently-decryptable account, each with its own quota
 // bucket and throttle.
 async fn run_full_sync_batch(app: &AppHandle, config: &model::MatchSyncConfig) {
-  let contexts = match recover_all() {
+  let contexts = match recover_included(app) {
     Ok(c) => c,
     Err(e) => {
       log::warn!("match-sync: full sync failed: {e}");
@@ -660,7 +672,7 @@ async fn background_pass(app: &AppHandle) {
   let Ok(_guard) = SYNC_LOCK.try_lock() else {
     return;
   };
-  let contexts = match recover_all() {
+  let contexts = match recover_included(app) {
     Ok(c) => c,
     Err(e) => {
       log::warn!("match-sync: background pass could not recover any account: {e}");

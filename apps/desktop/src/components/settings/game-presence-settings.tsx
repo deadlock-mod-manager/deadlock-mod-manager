@@ -39,6 +39,7 @@ import type { TemplateField } from "@/components/settings/game-presence/presence
 
 import { TemplateFieldEditor } from "@/components/settings/game-presence/template-field-editor";
 import { DiscordPreviewCard } from "@/components/settings/game-presence/discord-preview-card";
+import { HidePartySizeToggle } from "@/components/settings/game-presence/hide-party-size-toggle";
 
 interface GamePresenceHero {
   codename: string;
@@ -69,6 +70,9 @@ export const GamePresenceSettings = () => {
   );
   const setGamePresenceHeroOverrides = usePersistedStore(
     (state) => state.setGamePresenceHeroOverrides,
+  );
+  const gamePresenceHidePartySize = usePersistedStore(
+    (state) => state.gamePresenceHidePartySize,
   );
   const [draftTemplates, setDraftTemplates] = useState(
     gamePresenceTextTemplates,
@@ -207,6 +211,11 @@ export const GamePresenceSettings = () => {
     sampleValues,
   );
 
+  // Discord shows the party count beside the timer only while in a party.
+  const previewShowsPartySize =
+    !gamePresenceHidePartySize &&
+    (selectedRow.key === "partyHideout" || selectedRow.key === "partyMatch");
+
   const updateDraftField = (
     key: TemplateKey,
     field: TemplateField,
@@ -310,6 +319,9 @@ export const GamePresenceSettings = () => {
               htmlFor='toggle-game-presence'
             />
           </div>
+        </div>
+        <div className='mt-4 border-border/50 border-t pt-4'>
+          <HidePartySizeToggle />
         </div>
       </div>
 
@@ -523,6 +535,7 @@ export const GamePresenceSettings = () => {
                   noDetailsText={t("gamePresence.previewNoDetails")}
                   previewDetails={previewDetails}
                   previewState={previewState}
+                  showPartySize={previewShowsPartySize}
                 />
               </div>
             </div>

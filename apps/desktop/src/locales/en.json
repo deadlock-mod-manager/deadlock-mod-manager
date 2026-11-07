@@ -1389,7 +1389,7 @@
         },
         "over": {
           "ended": "Match ended",
-          "description": "The match ended at {{clock}}. This is the last board, kept until your next lobby.",
+          "description": "The match ended at {{clock}}. This is the last board, kept until you queue again.",
           "details": "Match details",
           "detailsSoon": "Available in a few minutes"
         },
@@ -1525,11 +1525,6 @@
     "unranked": "Unranked",
     "unknownPlayer": "Unknown player",
     "signedIn": "signed in",
-    "credit": {
-      "name": "Deadlock API",
-      "priorityHint": "Deadlock API patrons get their matches fetched first, with full history and accurate ranks.",
-      "priorityCta": "Learn more"
-    },
     "settings": {
       "matchSync": "Match sharing"
     },
@@ -3330,7 +3325,9 @@
     "restoreAsNew": "A new profile",
     "restoreAsNewDescription": "Adds {{name}} next to your other profiles. Nothing on this PC is removed.",
     "restoreReplace": "Replace {{name}} (active)",
-    "restoreReplaceDescription": "Replaces the mods in {{name}} with the ones in this backup.",
+    "restoreReplaceDescription": "Replaces the mods in {{name}} with the ones in this backup. Mods added from files stay.",
+    "restoreReplaceCleanupFailed_one": "{{count}} mod that isn't in the backup couldn't be removed.",
+    "restoreReplaceCleanupFailed_other": "{{count}} mods that aren't in the backup couldn't be removed.",
     "restoreAction_one": "Restore {{count}} mod",
     "restoreAction_other": "Restore {{count}} mods",
     "restoring": "Restoring",
@@ -5122,6 +5119,8 @@
       "accountsTitle": "Steam accounts",
       "left": "{{remaining}}/{{limit}} left today",
       "gcUnavailable": "Can't connect to Deadlock, retrying in 24h",
+      "syncAccount": "Sync matches for {{name}}",
+      "excluded": "Not synced",
       "reachedToday": "Daily limit reached. Come back tomorrow to fetch more."
     },
     "noAccounts": "No Steam accounts detected. Log into Steam to sync matches.",
@@ -7858,6 +7857,8 @@
     "title": "Discord Game Presence",
     "description": "Show your live Deadlock status via Discord Rich Presence, such as current hero, match mode, party size, and more.",
     "settingsDescription": "Customize how Deadlock appears on your Discord profile.",
+    "hidePartySize": "Hide party size",
+    "hidePartySizeDescription": "Leave out how many players are in your party, such as \"Party of 3\". Your custom templates still show what you wrote in them.",
     "condebugOption": "Console Debug Log",
     "condebugOptionDescription": "Lets the mod manager read game info so your Discord status stays up to date.",
     "condebugDisableWarning": "You need to disable Discord Game Presence first before turning off Console Debug Log.",
@@ -8495,6 +8496,34 @@
     "serverBrowser": {
       "title": "Play on community servers",
       "body": "Server Browser lists community servers with custom modes and maps. DMM downloads whatever a server needs before you join."
+    },
+    "performanceConfigs": {
+      "title": "Try a community performance config",
+      "body": "Apply a community config to reduce visual detail for more frames. Review its game and video settings, tweak individual values, and turn it off to undo its changes."
+    },
+    "customModSources": {
+      "title": "Browse more mod catalogs",
+      "body": "Add a mod source in Settings, then switch catalogs here to browse and install its mods alongside your GameBanana mods."
+    },
+    "randomizedGroups": {
+      "title": "Let a group pick your next mod",
+      "body": "Turn on Randomize on launch in this group's menu. Each modded launch enables one eligible member of the group, so you can rotate between alternatives."
+    },
+    "partyPlanner": {
+      "title": "Plan your party's hero picks",
+      "body": "Add your party's players and their hero picks to compare possible lineups and explore suggestions based on hero combination stats. No Steam account is needed."
+    },
+    "serverPicker": {
+      "title": "Choose which relay locations to allow",
+      "body": "Compare relay latency and block locations you want to avoid in matchmaking. Applying changes may require administrator permission; restore defaults anytime."
+    },
+    "foundry": {
+      "title": "Make your own hero mod",
+      "body": "Open a hero in Mod Foundry to hide selected model sections or edit its textures, then export your changes as a mod."
+    },
+    "analyzeLocalMods": {
+      "title": "Find mods already in your game folder",
+      "body": "Use Analyze Local Addons in this menu to identify existing addon files and review which ones to add to your Library."
     },
     "importFromManager": {
       "title": "Bring your mods over",

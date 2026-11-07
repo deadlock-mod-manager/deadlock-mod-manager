@@ -20,6 +20,7 @@ import {
   useNativeSources,
 } from "@/lib/mod-sources";
 import type { NativeSourceSummary } from "@/types/generated/NativeSourceSummary";
+import { usePersistedStore } from "@/lib/store";
 
 interface AddModSourceDialogProps {
   open: boolean;
@@ -50,6 +51,7 @@ export const AddModSourceDialog = ({
     meta: { skipGlobalErrorHandler: true },
   });
   const finish = async (source: NativeSourceSummary) => {
+    usePersistedStore.getState().markFeatureUsed("custom-mod-sources");
     await queryClient.invalidateQueries({
       queryKey: NATIVE_SOURCES_QUERY_KEY,
     });

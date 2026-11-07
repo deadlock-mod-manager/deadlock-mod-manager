@@ -544,6 +544,8 @@ pub fn run() {
       #[cfg(feature = "match-sync")]
       commands::match_sync::set_match_sync_enabled,
       #[cfg(feature = "match-sync")]
+      commands::match_sync::set_match_sync_account_excluded,
+      #[cfg(feature = "match-sync")]
       commands::match_sync::start_full_match_sync,
       #[cfg(feature = "match-sync")]
       commands::match_sync::cancel_full_match_sync,

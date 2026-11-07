@@ -12,6 +12,9 @@ export const GamePresenceRenderer = () => {
   const gamePresenceHeroOverrides = usePersistedStore(
     (s) => s.gamePresenceHeroOverrides,
   );
+  const gamePresenceHidePartySize = usePersistedStore(
+    (s) => s.gamePresenceHidePartySize,
+  );
   const watcherActiveRef = useRef(false);
 
   useEffect(() => {
@@ -35,6 +38,7 @@ export const GamePresenceRenderer = () => {
       const presenceConfig: PresenceBuildConfig = {
         templates: gamePresenceTextTemplates,
         heroOverrides: gamePresenceHeroOverrides,
+        hidePartySize: gamePresenceHidePartySize,
       };
 
       await invoke("start_game_presence_watcher", { presenceConfig });
@@ -59,6 +63,7 @@ export const GamePresenceRenderer = () => {
     gamePresenceEnabled,
     gamePresenceTextTemplates,
     gamePresenceHeroOverrides,
+    gamePresenceHidePartySize,
   ]);
 
   useEffect(() => {

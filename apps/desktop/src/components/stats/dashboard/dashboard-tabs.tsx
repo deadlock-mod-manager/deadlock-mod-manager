@@ -40,6 +40,8 @@ import {
 } from "@deadlock-mods/ui/icons";
 import { type ComponentType, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { HintAnchor } from "@/components/feature-hints/hint-anchor";
+import { usePersistedStore } from "@/lib/store";
 import {
   type DashboardTab,
   TAB_ICONS,
@@ -235,6 +237,34 @@ export const DashboardTabs = ({
   const revealActiveTab = useCallback((node: HTMLButtonElement | null) => {
     node?.scrollIntoView({ block: "nearest", inline: "nearest" });
   }, []);
+  const hasParty = usePersistedStore(
+    (state) =>
+      state.partyMembers.length > 1 ||
+      state.partyMembers.some((member) => member.length > 0) ||
+      state.partyRankRange !== null,
+  );
+  const markFeatureUsed = usePersistedStore((state) => state.markFeatureUsed);
+  const partyTabId = tabs.find((tab) =>
+    tab.widgets.some(
+      (widget) =>
+        widget.source.kind === "panel" &&
+        widget.source.panel === "partyPlanner",
+    ),
+  )?.id;
+  const selectTab = (tabId: string) => {
+    if (
+      tabs
+        .find((tab) => tab.id === tabId)
+        ?.widgets.some(
+          (widget) =>
+            widget.source.kind === "panel" &&
+            widget.source.panel === "partyPlanner",
+        )
+    ) {
+      markFeatureUsed("party-planner");
+    }
+    onSelect(tabId);
+  };
 
   return (
     // Many tabs outgrow a narrow window before anything else in the header
@@ -242,13 +272,13 @@ export const DashboardTabs = ({
     <div className='flex max-w-full items-center gap-2'>
       <Tabs
         className='min-w-0 flex-1 overflow-x-auto'
-        onValueChange={onSelect}
+        onValueChange={selectTab}
         value={activeTabId}>
         <TabsList className='h-auto w-max gap-1 bg-transparent p-0'>
           {tabs.map((tab) => {
             const panel = tabPanel(tab);
             const Icon = panel?.tab?.icon ?? ICONS[tab.icon];
-            return (
+            const trigger = (
               <TabsTrigger
                 className={cn(TAB_TRIGGER_CLASS, panel?.tab?.activeClassName)}
                 data-broken={brokenTabIds.has(tab.id)}
@@ -270,6 +300,17 @@ export const DashboardTabs = ({
                   />
                 )}
               </TabsTrigger>
+            );
+            return tab.id === partyTabId ? (
+              <HintAnchor
+                key={tab.id}
+                eligible={!editing && !hasParty && activeTabId !== tab.id}
+                hintId='party-planner'
+                onShowMe={() => selectTab(tab.id)}>
+                {trigger}
+              </HintAnchor>
+            ) : (
+              trigger
             );
           })}
         </TabsList>

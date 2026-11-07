@@ -25,6 +25,7 @@ import {
 } from "@deadlock-mods/ui/icons";
 import { useId, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { HintAnchor } from "@/components/feature-hints/hint-anchor";
 import { ModGroupForm } from "@/components/my-mods/mod-group-form";
 import { ModGroupCovers } from "@/components/my-mods/mod-group-covers";
 import { ModGroupDropZone } from "@/components/my-mods/mod-group-drop-zone";
@@ -61,6 +62,19 @@ export const ModGroupSection = ({
   const { t } = useTranslation();
   const contentId = useId();
   const [renaming, setRenaming] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const markFeatureUsed = usePersistedStore((state) => state.markFeatureUsed);
+  const hintGroupId = usePersistedStore(
+    (state) =>
+      state.profiles[profileId]?.modGroups?.find(
+        (entry) => entry.modIds.length >= 2,
+      )?.id,
+  );
+  const hasRandomizedGroup = usePersistedStore((state) =>
+    Object.values(state.profiles).some((profile) =>
+      profile.modGroups?.some((entry) => entry.randomize),
+    ),
+  );
   const toggle = usePersistedStore((state) => state.toggleModGroup);
   const remove = usePersistedStore((state) => state.deleteModGroup);
   const move = usePersistedStore((state) => state.moveModGroup);
@@ -120,16 +134,24 @@ export const ModGroupSection = ({
         </Button>
         <ModGroupEnablement group={group} actions={actions} />
         <Dialog open={renaming} onOpenChange={setRenaming}>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                size='icon'
-                variant='ghost'
-                disabled={actions.busy}
-                aria-label={t("myMods.groups.actions", { name: group.name })}>
-                <EllipsisVertical className='size-4' />
-              </Button>
-            </DropdownMenuTrigger>
+          <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+            <HintAnchor
+              align='end'
+              eligible={
+                !actions.busy && !hasRandomizedGroup && group.id === hintGroupId
+              }
+              hintId='randomized-groups'
+              onShowMe={() => setMenuOpen(true)}>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size='icon'
+                  variant='ghost'
+                  disabled={actions.busy}
+                  aria-label={t("myMods.groups.actions", { name: group.name })}>
+                  <EllipsisVertical className='size-4' />
+                </Button>
+              </DropdownMenuTrigger>
+            </HintAnchor>
             <DropdownMenuContent
               align='end'
               onCloseAutoFocus={(event) => {
@@ -153,9 +175,10 @@ export const ModGroupSection = ({
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                onSelect={() =>
-                  setRandomized(profileId, group.id, !group.randomize)
-                }>
+                onSelect={() => {
+                  setRandomized(profileId, group.id, !group.randomize);
+                  markFeatureUsed("randomized-groups");
+                }}>
                 <Shuffle className='size-4' />
                 {t("myMods.groups.randomize")}
                 {group.randomize && <Check className='ml-auto size-4' />}

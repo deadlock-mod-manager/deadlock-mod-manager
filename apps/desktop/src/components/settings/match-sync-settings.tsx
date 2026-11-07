@@ -3,6 +3,7 @@ import { Button } from "@deadlock-mods/ui/components/button";
 import { Progress } from "@deadlock-mods/ui/components/progress";
 import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
 import { toast } from "@deadlock-mods/ui/components/sonner";
+import { Switch } from "@deadlock-mods/ui/components/switch";
 import { TriangleAlert } from "@deadlock-mods/ui/icons";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
@@ -16,6 +17,7 @@ import {
   rawErrorMessage,
   useMatchSyncToggle,
 } from "@/hooks/use-match-sync-toggle";
+import { cn } from "@/lib/utils";
 
 // Mirrors the backend's FETCH_QUOTA_LIMIT; used only until `status.accounts` loads.
 const DEFAULT_QUOTA_LIMIT = 40;
@@ -32,6 +34,7 @@ export const MatchSyncSettings = () => {
     progress,
     setConsent,
     setEnabled,
+    setAccountExcluded,
     startFullSync,
     cancelFullSync,
   } = useMatchSync();
@@ -100,9 +103,8 @@ export const MatchSyncSettings = () => {
 
   const running = Boolean(status.fullSyncRunning || progress?.progress.running);
   const aboutLimit = status.accounts[0]?.quotaLimit ?? DEFAULT_QUOTA_LIMIT;
-  const allQuotaExhausted =
-    status.accounts.length === 0 ||
-    status.accounts.every((a) => a.quotaRemaining === 0);
+  const syncedAccounts = status.accounts.filter((a) => !a.excluded);
+  const allQuotaExhausted = syncedAccounts.every((a) => a.quotaRemaining === 0);
   const activeAccount = status.accounts.find(
     (a) => a.accountName === progress?.accountName,
   );
@@ -157,10 +159,32 @@ export const MatchSyncSettings = () => {
                   <li
                     className='flex min-h-9 items-center gap-3 py-1.5'
                     key={account.steamId64}>
-                    <span className='min-w-0 truncate text-foreground'>
+                    <Switch
+                      aria-label={t("matchSync.quota.syncAccount", {
+                        name: account.accountName,
+                      })}
+                      checked={!account.excluded}
+                      disabled={running || setAccountExcluded.isPending}
+                      onCheckedChange={(checked) =>
+                        setAccountExcluded.mutate(
+                          { accountId: account.accountId, excluded: !checked },
+                          {
+                            onError: (error) =>
+                              toast.error(matchSyncErrorMessage(error, t)),
+                          },
+                        )
+                      }
+                    />
+                    <span
+                      className={cn(
+                        "min-w-0 truncate",
+                        account.excluded
+                          ? "text-muted-foreground"
+                          : "text-foreground",
+                      )}>
                       {account.accountName}
                     </span>
-                    {account.gcUnavailable && (
+                    {!account.excluded && account.gcUnavailable && (
                       <Badge
                         className='border-amber-500/30 bg-amber-500/10 text-amber-500'
                         variant='outline'>
@@ -168,10 +192,12 @@ export const MatchSyncSettings = () => {
                       </Badge>
                     )}
                     <span className='ml-auto shrink-0 text-muted-foreground tabular-nums'>
-                      {t("matchSync.quota.left", {
-                        remaining: account.quotaRemaining,
-                        limit: account.quotaLimit,
-                      })}
+                      {account.excluded
+                        ? t("matchSync.quota.excluded")
+                        : t("matchSync.quota.left", {
+                            remaining: account.quotaRemaining,
+                            limit: account.quotaLimit,
+                          })}
                     </span>
                   </li>
                 ))}
@@ -223,7 +249,7 @@ export const MatchSyncSettings = () => {
                 </p>
               </div>
             )}
-            {!running && allQuotaExhausted && status.accounts.length > 0 && (
+            {!running && allQuotaExhausted && syncedAccounts.length > 0 && (
               <p className='text-amber-500/90 text-xs'>
                 {t("matchSync.quota.reachedToday")}
               </p>
