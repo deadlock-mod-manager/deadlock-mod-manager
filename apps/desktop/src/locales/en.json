@@ -1389,7 +1389,7 @@
         },
         "over": {
           "ended": "Match ended",
-          "description": "The match ended at {{clock}}. This is the last board, kept until your next lobby.",
+          "description": "The match ended at {{clock}}. This is the last board, kept until you queue again.",
           "details": "Match details",
           "detailsSoon": "Available in a few minutes"
         },
