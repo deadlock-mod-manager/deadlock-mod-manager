@@ -28,13 +28,13 @@ export const HeroSkinsEmpty = ({
 
   return (
     <>
-      <section className='flex flex-col gap-3'>
+      <section className='@container flex flex-col gap-3'>
         <HeroSectionHeader
           count={0}
           hint={t("skins.skinsHint")}
           title={t("skins.skinsSection")}
         />
-        <div className='flex items-center gap-7 rounded-xl border border-dashed p-3'>
+        <div className='flex flex-col gap-4 rounded-xl border border-dashed p-3 @xl:flex-row @xl:items-center @xl:gap-7'>
           <div className='w-[232px] shrink-0'>
             <DefaultSkinCard
               canPool={false}

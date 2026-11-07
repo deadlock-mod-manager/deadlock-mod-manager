@@ -39,7 +39,7 @@ export const HeroBanner = ({
   const worn = activeSkins[0];
 
   return (
-    <div className='relative flex h-[184px] shrink-0 overflow-hidden rounded-xl border bg-gradient-to-r from-card via-card to-background'>
+    <div className='@container relative flex h-[184px] shrink-0 overflow-hidden rounded-xl border bg-gradient-to-r from-card via-card to-background'>
       {backdrop && (
         <div
           aria-hidden='true'
@@ -111,7 +111,9 @@ export const HeroBanner = ({
           )}
         </div>
       </div>
-      <div className='relative flex shrink-0 items-start gap-2 pt-5 pr-5'>
+      {/* Stacked while the 3D preview leaves the banner narrow, so the hero
+          name keeps its room. */}
+      <div className='relative flex shrink-0 flex-col items-stretch gap-2 pt-5 pr-5 @2xl:flex-row @2xl:items-start'>
         <Button
           disabled={disabled}
           icon={<PackagePlus />}
