@@ -7,6 +7,7 @@ import { readBrokenLaunches } from "../support/broken-state-oracle";
 import { step } from "../support/evidence";
 import { observeUntil } from "../support/observations";
 import {
+  applyChanges,
   applyPreset,
   openTab,
   refocusWindow,
@@ -115,9 +116,7 @@ describe("performance configs and gameinfo.gi", () => {
           await reveal(input);
           await input.setValue(EDITED_VALUE);
           await browser.keys("Enter");
-          const apply = await $("button=Apply changes");
-          await reveal(apply);
-          await apply.click();
+          await applyChanges();
           await convarBecomes(EDITED_VALUE, "The edited value is written");
         });
         await step("Undo goes back to the preset's value", async () => {
