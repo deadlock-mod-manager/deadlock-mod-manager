@@ -21,6 +21,11 @@ const GAME_LAUNCH_POLL_INTERVAL: Duration = Duration::from_secs(2);
 /// behind, and cancelling that is a no-op.
 static LAUNCH_CANCEL: Mutex<Option<CancellationToken>> = Mutex::new(None);
 
+/// Runs one `stop_game` at a time, from marking the session through undoing
+/// the marks on failure, so an earlier Stop's rollback can't overwrite a later
+/// Stop's marks.
+static STOP_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+
 async fn await_launched_game(
   monitor: SteamUriLaunchMonitor,
   cancel: impl Future<Output = ()>,
@@ -242,6 +247,7 @@ pub async fn stop_game() -> Result<(), Error> {
   if crate::runtime_environment::records_game_launches() {
     return Ok(());
   }
+  let _stop = STOP_LOCK.lock().await;
   // Before the kill, so the session's forced exit reads as ours.
   #[cfg_attr(not(target_os = "linux"), allow(unused_variables))]
   let stopped_session = crate::game_session::note_dmm_stop();
