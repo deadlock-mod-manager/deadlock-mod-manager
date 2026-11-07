@@ -14,12 +14,12 @@ import { usePersistedStore } from "@/lib/store";
 import {
   gameinfoHasModPaths,
   isGameRunning,
-  resetToVanilla,
+  removeModSearchPaths,
 } from "@/lib/tauri-commands";
 
 /**
- * Puts gameinfo.gi back to vanilla when Deadlock closes, so a later launch
- * straight from Steam starts without mods. Opt-in through settings.
+ * Removes DMM's mounts when Deadlock closes. Other tools' mounts and custom
+ * game configuration remain in place. Opt-in through settings.
  */
 export const useGameinfoAutoReset = () => {
   const { t } = useTranslation();
@@ -47,23 +47,17 @@ export const useGameinfoAutoReset = () => {
     meta: { skipGlobalErrorHandler: true },
     mutationFn: async () => {
       if (!(await gameinfoHasModPaths())) return;
-      const source = await resetToVanilla();
+      await removeModSearchPaths();
       // Same as a vanilla launch: the missing mod paths are on purpose, so the
       // "mods detached" banner stays quiet until the next modded launch.
       await refreshGameinfoState(queryClient, setLastLaunchVanilla);
-      logger.info("Reset gameinfo.gi to vanilla after the game closed");
-      toast.info(
-        t(
-          source === "backup"
-            ? "game.resetSuccessBackup"
-            : "settings.autoResetGameinfoSuccess",
-        ),
-      );
+      logger.info("Removed DMM search paths after the game closed");
+      toast.info(t("settings.autoResetGameinfoSuccess"));
     },
     onError: (error) => {
       logger
         .withError(error)
-        .error("Failed to reset gameinfo.gi after the game closed");
+        .error("Failed to remove DMM search paths after the game closed");
       toast.error(t("settings.autoResetGameinfoFailed"));
     },
   });
