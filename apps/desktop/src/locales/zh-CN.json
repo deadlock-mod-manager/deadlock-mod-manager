@@ -1525,11 +1525,6 @@
     "unranked": "无段位",
     "unknownPlayer": "未知玩家",
     "signedIn": "已登录",
-    "credit": {
-      "name": "",
-      "priorityHint": "Deadlock API 的赞助者会优先获取比赛数据，包含完整历史与准确段位。",
-      "priorityCta": "了解详情"
-    },
     "settings": {
       "matchSync": "比赛数据共享"
     },
@@ -3331,6 +3326,8 @@
     "restoreAsNewDescription": "",
     "restoreReplace": "",
     "restoreReplaceDescription": "",
+    "restoreReplaceCleanupFailed_one": "",
+    "restoreReplaceCleanupFailed_other": "",
     "restoreAction_one": "",
     "restoreAction_other": "",
     "restoring": "",
@@ -5122,6 +5119,8 @@
       "accountsTitle": "",
       "left": "",
       "gcUnavailable": "无法连接至 Deadlock 服务器，将在24小时后重试",
+      "syncAccount": "",
+      "excluded": "",
       "reachedToday": "已达到每日获取上限。请明天再来吧。"
     },
     "noAccounts": "未检测到 Steam 帐户。登录 Steam 以同步比赛。",
@@ -7858,6 +7857,8 @@
     "title": "Discord 游戏状态",
     "description": "通过 Discord Rich Presence 展示你的 Deadlock 实时状态，例如当前英雄、比赛模式、队伍人数等。",
     "settingsDescription": "自定义 Deadlock 在你的 Discord 个人资料上的显示方式。",
+    "hidePartySize": "",
+    "hidePartySizeDescription": "",
     "condebugOption": "控制台调试日志",
     "condebugOptionDescription": "让模组管理器读取游戏信息，以便你的 Discord 状态保持最新。",
     "condebugDisableWarning": "你需要先禁用 Discord 游戏状态，再关闭控制台调试日志。",
@@ -8493,6 +8494,34 @@
     "gotIt": "",
     "turnOff": "",
     "serverBrowser": {
+      "title": "",
+      "body": ""
+    },
+    "performanceConfigs": {
+      "title": "",
+      "body": ""
+    },
+    "customModSources": {
+      "title": "",
+      "body": ""
+    },
+    "randomizedGroups": {
+      "title": "",
+      "body": ""
+    },
+    "partyPlanner": {
+      "title": "",
+      "body": ""
+    },
+    "serverPicker": {
+      "title": "",
+      "body": ""
+    },
+    "foundry": {
+      "title": "",
+      "body": ""
+    },
+    "analyzeLocalMods": {
       "title": "",
       "body": ""
     },

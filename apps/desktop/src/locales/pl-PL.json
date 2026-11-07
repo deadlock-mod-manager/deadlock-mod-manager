@@ -1525,11 +1525,6 @@
     "unranked": "",
     "unknownPlayer": "",
     "signedIn": "",
-    "credit": {
-      "name": "",
-      "priorityHint": "",
-      "priorityCta": ""
-    },
     "settings": {
       "matchSync": ""
     },
@@ -3331,6 +3326,8 @@
     "restoreAsNewDescription": "",
     "restoreReplace": "",
     "restoreReplaceDescription": "",
+    "restoreReplaceCleanupFailed_one": "",
+    "restoreReplaceCleanupFailed_other": "",
     "restoreAction_one": "",
     "restoreAction_other": "",
     "restoring": "",
@@ -5122,6 +5119,8 @@
       "accountsTitle": "",
       "left": "",
       "gcUnavailable": "",
+      "syncAccount": "",
+      "excluded": "",
       "reachedToday": ""
     },
     "noAccounts": "",
@@ -7858,6 +7857,8 @@
     "title": "Discord Rich Presence",
     "description": "Pokaż swój status Deadlock na żywo poprzez Discord Rich Presence, takie jak bieżący bohater, tryb meczu, rozmiar party i wiele więcej.",
     "settingsDescription": "Dostosuj jak Deadlock pojawia się na twoim profilu Discorda.",
+    "hidePartySize": "",
+    "hidePartySizeDescription": "",
     "condebugOption": "Dziennik debugowania konsoli",
     "condebugOptionDescription": "Pozwala menedżerowi modyfikacji odczytać informacje o grze, aby Twój status Discorda pozostawał aktualny.",
     "condebugDisableWarning": "Musisz najpierw wyłączyć Discord Rich Presence przed wyłączeniem dziennika debugowania konsoli.",
@@ -8493,6 +8494,34 @@
     "gotIt": "",
     "turnOff": "",
     "serverBrowser": {
+      "title": "",
+      "body": ""
+    },
+    "performanceConfigs": {
+      "title": "",
+      "body": ""
+    },
+    "customModSources": {
+      "title": "",
+      "body": ""
+    },
+    "randomizedGroups": {
+      "title": "",
+      "body": ""
+    },
+    "partyPlanner": {
+      "title": "",
+      "body": ""
+    },
+    "serverPicker": {
+      "title": "",
+      "body": ""
+    },
+    "foundry": {
+      "title": "",
+      "body": ""
+    },
+    "analyzeLocalMods": {
       "title": "",
       "body": ""
     },

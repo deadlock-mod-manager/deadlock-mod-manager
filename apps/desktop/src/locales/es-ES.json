@@ -1525,11 +1525,6 @@
     "unranked": "",
     "unknownPlayer": "",
     "signedIn": "",
-    "credit": {
-      "name": "",
-      "priorityHint": "",
-      "priorityCta": ""
-    },
     "settings": {
       "matchSync": ""
     },
@@ -3331,6 +3326,8 @@
     "restoreAsNewDescription": "",
     "restoreReplace": "",
     "restoreReplaceDescription": "",
+    "restoreReplaceCleanupFailed_one": "",
+    "restoreReplaceCleanupFailed_other": "",
     "restoreAction_one": "",
     "restoreAction_other": "",
     "restoring": "",
@@ -5122,6 +5119,8 @@
       "accountsTitle": "",
       "left": "",
       "gcUnavailable": "",
+      "syncAccount": "",
+      "excluded": "",
       "reachedToday": ""
     },
     "noAccounts": "",
@@ -7858,6 +7857,8 @@
     "title": "",
     "description": "",
     "settingsDescription": "",
+    "hidePartySize": "",
+    "hidePartySizeDescription": "",
     "condebugOption": "",
     "condebugOptionDescription": "",
     "condebugDisableWarning": "",
@@ -8493,6 +8494,34 @@
     "gotIt": "",
     "turnOff": "",
     "serverBrowser": {
+      "title": "",
+      "body": ""
+    },
+    "performanceConfigs": {
+      "title": "",
+      "body": ""
+    },
+    "customModSources": {
+      "title": "",
+      "body": ""
+    },
+    "randomizedGroups": {
+      "title": "",
+      "body": ""
+    },
+    "partyPlanner": {
+      "title": "",
+      "body": ""
+    },
+    "serverPicker": {
+      "title": "",
+      "body": ""
+    },
+    "foundry": {
+      "title": "",
+      "body": ""
+    },
+    "analyzeLocalMods": {
       "title": "",
       "body": ""
     },

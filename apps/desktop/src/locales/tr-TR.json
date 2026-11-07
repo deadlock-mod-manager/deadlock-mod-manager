@@ -1525,11 +1525,6 @@
     "unranked": "Derecesiz",
     "unknownPlayer": "Bilinmeyen oyuncu",
     "signedIn": "oturum açtı",
-    "credit": {
-      "name": "Deadlock API",
-      "priorityHint": "Deadlock API destekçilerinin maçları, eksiksiz geçmiş ve doğru derecelerle öncelikli olarak alınır.",
-      "priorityCta": "Daha fazla bilgi"
-    },
     "settings": {
       "matchSync": "Maç paylaşımı"
     },
@@ -3330,7 +3325,9 @@
     "restoreAsNew": "Yeni profil",
     "restoreAsNewDescription": "{{name}} diğer profillerinizin yanına eklenir. Bu bilgisayardan hiçbir şey kaldırılmaz.",
     "restoreReplace": "{{name}} (etkin) profilinin üzerine yaz",
-    "restoreReplaceDescription": "{{name}} profilindeki modları bu yedekteki modlarla değiştirir.",
+    "restoreReplaceDescription": "",
+    "restoreReplaceCleanupFailed_one": "",
+    "restoreReplaceCleanupFailed_other": "",
     "restoreAction_one": "{{count}} modu geri yükle",
     "restoreAction_other": "{{count}} modu geri yükle",
     "restoring": "Geri yükleniyor",
@@ -5122,6 +5119,8 @@
       "accountsTitle": "",
       "left": "",
       "gcUnavailable": "Deadlock'e bağlanılamıyor, 24 saat sonra yeniden denenecek",
+      "syncAccount": "",
+      "excluded": "",
       "reachedToday": "Günlük sınıra ulaşıldı. Daha fazla maç almak için yarını bekleyin."
     },
     "noAccounts": "Steam hesabı bulunamadı. Maçları eşitlemek için Steam'de oturum açın.",
@@ -7858,6 +7857,8 @@
     "title": "Discord Oyun Durumu",
     "description": "Mevcut kahramanınız, maç modu, ekip büyüklüğü ve diğer bilgileri Discord Rich Presence üzerinden canlı olarak gösterin.",
     "settingsDescription": "Deadlock’un Discord profilinizde nasıl görüneceğini özelleştirin.",
+    "hidePartySize": "",
+    "hidePartySizeDescription": "",
     "condebugOption": "Konsol Hata Ayıklama Günlüğü",
     "condebugOptionDescription": "Mod yöneticisinin oyun bilgilerini okumasını sağlayarak Discord durumunuzu güncel tutar.",
     "condebugDisableWarning": "Konsol Hata Ayıklama Günlüğü’nü kapatmadan önce Discord Oyun Durumu’nu devre dışı bırakmanız gerekir.",
@@ -8495,6 +8496,34 @@
     "serverBrowser": {
       "title": "Topluluk sunucularında oynayın",
       "body": "Sunucu Tarayıcısı, özel modlara ve haritalara sahip topluluk sunucularını listeler. DMM, katılmadan önce sunucunun ihtiyaç duyduğu her şeyi indirir."
+    },
+    "performanceConfigs": {
+      "title": "",
+      "body": ""
+    },
+    "customModSources": {
+      "title": "",
+      "body": ""
+    },
+    "randomizedGroups": {
+      "title": "",
+      "body": ""
+    },
+    "partyPlanner": {
+      "title": "",
+      "body": ""
+    },
+    "serverPicker": {
+      "title": "",
+      "body": ""
+    },
+    "foundry": {
+      "title": "",
+      "body": ""
+    },
+    "analyzeLocalMods": {
+      "title": "",
+      "body": ""
     },
     "importFromManager": {
       "title": "Modlarınızı aktarın",
