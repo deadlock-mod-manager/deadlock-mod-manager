@@ -8,7 +8,30 @@ import type {
   PrepareProfileImportEntry,
   PreparedProfileImport,
   PreparedProfileImportMod,
+  ProfileImportDownloadFile,
 } from "@/lib/profiles/types";
+import type { ModDownloadItem } from "@/types/mods";
+
+/** The catalog entry of each file the import fetches. A file only the share
+ *  still names keeps its name, URL and size, without catalog metadata. */
+const toSelectedDownloads = (
+  downloadFiles: ProfileImportDownloadFile[],
+  availableDownloads: ModDownloadItem[],
+): ModDownloadItem[] =>
+  downloadFiles.map(
+    (file) =>
+      availableDownloads.find(
+        (download) => download.url === file.url && download.name === file.name,
+      ) ?? {
+        url: file.url,
+        name: file.name,
+        size: file.size,
+        description: null,
+        createdAt: null,
+        updatedAt: null,
+        md5Checksum: null,
+      },
+  );
 
 export const fetchModsData = async (
   remoteIds: string[],
@@ -117,6 +140,13 @@ export const prepareProfileImportMods = async (
                 }
               : undefined,
             isMap: modData.isMap,
+          },
+          downloads: {
+            downloads: downloadFiles,
+            selectedDownloads: toSelectedDownloads(
+              resolvedDownloadFiles.downloadFiles,
+              downloadFiles,
+            ),
           },
         } satisfies PreparedProfileImportMod;
       } catch (error) {

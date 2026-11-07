@@ -728,3 +728,89 @@ describe("profile snapshot reconciliation", () => {
     expect(store.getState().localMods).toEqual([]);
   });
 });
+
+const archive = (name: string) => ({
+  url: `https://files.example/${name}`,
+  size: 100,
+  name,
+  description: null,
+  createdAt: null,
+  updatedAt: null,
+  md5Checksum: null,
+});
+const base = archive("charlie-base.zip");
+const effects = archive("charlie-effects.zip");
+const installed = (modId: string) => ({
+  modId,
+  modName: `Mod ${modId}`,
+  installedVpks: ["pak01_dir.vpk"],
+});
+const catalog = (...ids: string[]) =>
+  new Map<string, ModDto>(ids.map((id) => [id, modFor(id)]));
+
+describe("mods a profile import installed", () => {
+  it("keeps the archives the import fetched, in a profile the user isn't in", () => {
+    const store = createTestStore();
+    store.setState({
+      profiles: {
+        [defaultProfileId]: profileFor("default"),
+        [secondaryProfileId]: profileFor("secondary"),
+      },
+      activeProfileId: defaultProfileId,
+    });
+
+    store.getState().applyImportInstalledModsToProfile(
+      secondaryProfileId,
+      [installed("42")],
+      catalog("42", "43"),
+      new Map([
+        ["42", { downloads: [base, effects], selectedDownloads: [effects] }],
+        ["43", { downloads: [base], selectedDownloads: [base] }],
+      ]),
+    );
+
+    const { mods } = store.getState().profiles[secondaryProfileId];
+    expect(mods.map((mod) => mod.remoteId)).toEqual(["42"]);
+    expect(mods[0].downloads).toEqual([base, effects]);
+    expect(mods[0].selectedDownloads).toEqual([effects]);
+    expect(store.getState().localMods).toEqual([]);
+  });
+
+  it("replaces an earlier pick when importing into the current profile", () => {
+    const store = createTestStore();
+    const earlier = {
+      ...modFor("42"),
+      downloads: [base],
+      selectedDownloads: [base],
+      status: ModStatus.Installed,
+    };
+    store.setState({
+      profiles: {
+        [defaultProfileId]: profileFor("default"),
+        [secondaryProfileId]: profileFor("secondary", [earlier]),
+      },
+      activeProfileId: secondaryProfileId,
+      localMods: [earlier],
+    });
+
+    store
+      .getState()
+      .applyImportInstalledModsToProfile(
+        secondaryProfileId,
+        [installed("42")],
+        catalog("42"),
+        new Map([
+          ["42", { downloads: [base, effects], selectedDownloads: [effects] }],
+        ]),
+      );
+
+    const state = store.getState();
+    for (const mod of [
+      state.profiles[secondaryProfileId].mods[0],
+      state.localMods[0],
+    ]) {
+      expect(mod.downloads).toEqual([base, effects]);
+      expect(mod.selectedDownloads).toEqual([effects]);
+    }
+  });
+});

@@ -5,6 +5,7 @@ import type { StateCreator } from "zustand";
 import { getMod } from "@/lib/api-client";
 import { getErrorMessage } from "@/lib/errors";
 import logger from "@/lib/logger";
+import type { ImportedModDownloads } from "@/lib/profiles/types";
 import { isInstalledModWithVpks } from "@/lib/mods/installed-helpers";
 import { readLocalModMetadata } from "@/lib/mods/local-metadata";
 import { unresolvedNativeProvenance } from "@/lib/mods/native-provenance";
@@ -60,6 +61,7 @@ export interface ProfilesState {
     profileId: ProfileId,
     installedMods: InstalledModInfo[],
     modsDataByRemoteId: Map<string, ModDto>,
+    downloadsByRemoteId: Map<string, ImportedModDownloads>,
   ) => void;
 
   switchToProfile: (profileId: ProfileId) => Promise<ProfileSwitchResult>;
@@ -826,6 +828,7 @@ export const createProfilesSlice: StateCreator<
     profileId: ProfileId,
     installedMods: InstalledModInfo[],
     modsDataByRemoteId: Map<string, ModDto>,
+    downloadsByRemoteId: Map<string, ImportedModDownloads>,
   ) => {
     set((state) => {
       const profile = state.profiles[profileId];
@@ -873,6 +876,9 @@ export const createProfilesSlice: StateCreator<
 
         const nextMod: LocalMod = {
           ...(baseMod ?? modData),
+          // The files on disk now come from this import, so its picks replace
+          // any earlier ones; sharing the profile passes them on.
+          ...downloadsByRemoteId.get(installedMod.modId),
           downloadedAt: baseMod?.downloadedAt ?? now,
           status: ModStatus.Installed,
           installedVpks: installedMod.installedVpks,
