@@ -61,6 +61,46 @@ fn unbalanced_outer_braces_are_rejected_before_rewriting() {
 }
 
 #[test]
+fn malformed_trailing_syntax_is_rejected_for_enable_and_cleanup() {
+  for tail in [
+    " /*",
+    " { }",
+    " [",
+    " [$WIN64 ||]",
+    " #include \"other.gi\"",
+  ] {
+    let malformed = format!("{}{tail}", fixture());
+    assert!(validate(&malformed).is_err(), "accepted {tail:?}");
+    assert!(
+      rewrite(&malformed, Some(&paths()), false).is_err(),
+      "enabled {tail:?}"
+    );
+    assert!(
+      rewrite(&malformed, None, false).is_err(),
+      "cleaned {tail:?}"
+    );
+  }
+}
+
+#[test]
+fn deadworks_detects_versioned_markers_without_claiming_the_legacy_wrapper() {
+  for original in [
+    fixture(),
+    "GameInfo { FileSystem { SearchPaths { Game citadel } } }".into(),
+  ] {
+    let mounted = rewrite(&original, Some(&paths()), false).unwrap();
+    // This is Deadworks' contains-based detector, including its v0.6.4 release.
+    assert!(mounted.contains("// Deadlock Mod Manager - Start"));
+    // Older DMM must stop at its missing end marker before replacing a whole block.
+    assert!(!mounted.contains(LEGACY_END));
+    assert!(!mounted.lines().any(|line| line.trim() == LEGACY_START));
+    assert!(!mounted.lines().any(|line| line.trim() == LEGACY_END));
+    assert_eq!(rewrite(&mounted, Some(&paths()), false).unwrap(), mounted);
+    assert_eq!(rewrite(&mounted, None, false).unwrap(), original);
+  }
+}
+
+#[test]
 fn legacy_profile_names_are_not_proof_of_ownership() {
   let original = fixture()
     .replace(
@@ -328,7 +368,7 @@ fn legacy_migration_preserves_foreign_fences_and_unknown_addon_paths() {
   )
   .unwrap()
   .content;
-  assert!(!updated.contains(LEGACY_START));
+  assert!(!updated.lines().any(|line| line.trim() == LEGACY_START));
   assert!(!updated.contains("citadel/addons/server_stale"));
   for content in [
     FOREIGN,

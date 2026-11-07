@@ -114,6 +114,14 @@ describe("coexistence with other gameinfo editors", () => {
       "Keep both Hyperline blocks while enabling and reapplying DMM paths",
       async () => {
         const first = await launch(false, ALPHA.folder);
+        // Deadworks uses this historical prefix to detect DMM.
+        assert(first.includes("// Deadlock Mod Manager - Start"));
+        assert(!first.includes("// Deadlock Mod Manager - End"));
+        assert(
+          !first
+            .split(/\r?\n/)
+            .some((line) => line.trim() === "// Deadlock Mod Manager - Start"),
+        );
         const timestamp = (await stat(gameinfo)).mtimeMs;
         const revision = await browser.execute(() =>
           // oxlint-disable-next-line no-underscore-dangle -- Tauri's injected IPC global.
@@ -163,18 +171,23 @@ describe("coexistence with other gameinfo editors", () => {
         for (const broken of [
           PRESERVED_GAMEINFO.slice(0, -1),
           `${PRESERVED_GAMEINFO}}`,
+          `${PRESERVED_GAMEINFO} /*`,
+          `${PRESERVED_GAMEINFO} { }`,
+          `${PRESERVED_GAMEINFO} [$WIN64 ||]`,
         ]) {
           await writeFile(gameinfo, broken);
+          const timestamp = (await stat(gameinfo)).mtimeMs;
           await $("button*=Launch modded").click();
           await expect($("body")).toHaveText(
             expect.stringContaining("Failed to parse game configuration"),
           );
           assert.equal(await readFile(gameinfo, "utf8"), broken);
+          assert.equal((await stat(gameinfo)).mtimeMs, timestamp);
           assert.equal((await readBrokenLaunches(world)).length, count);
         }
         const malformedMarkers = PRESERVED_GAMEINFO.replace(
           "      Game core",
-          "      // Deadlock Mod Manager - SearchPaths v2 - Start\r\n      Game core",
+          "      // Deadlock Mod Manager - Start (SearchPaths v2)\r\n      Game core",
         );
         await writeFile(gameinfo, malformedMarkers);
         await $("button*=Launch modded").click();

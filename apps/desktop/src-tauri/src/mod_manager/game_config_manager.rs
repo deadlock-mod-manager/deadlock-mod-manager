@@ -797,6 +797,40 @@ mod tests {
   }
 
   #[test]
+  fn malformed_trailing_syntax_never_reaches_the_file_writer() {
+    for tail in [" /*", " { }", " [", " [$WIN64 ||]"] {
+      for mounted in [false, true] {
+        let (_dir, game_path) = setup_game_dir();
+        write_gameinfo(&game_path, &vanilla_fixture("\n"));
+        let mut manager = GameConfigManager::new();
+        if mounted {
+          manager.update_mod_paths(&game_path, &[]).unwrap();
+        }
+        let file = game_path.join("game/citadel/gameinfo.gi");
+        let malformed = format!("{}{tail}", fs::read_to_string(&file).unwrap());
+        fs::write(&file, &malformed).unwrap();
+        let timestamp = fs::metadata(&file).unwrap().modified().unwrap();
+        assert!(
+          manager.update_mod_paths(&game_path, &[]).is_err(),
+          "enabled {tail:?}"
+        );
+        assert!(
+          manager.toggle_mods(&game_path, true).is_err(),
+          "cleaned {tail:?}"
+        );
+        assert!(
+          !manager
+            .get_gameinfo_status(&game_path)
+            .unwrap()
+            .syntax_valid
+        );
+        assert_eq!(fs::read_to_string(&file).unwrap(), malformed);
+        assert_eq!(fs::metadata(&file).unwrap().modified().unwrap(), timestamp);
+      }
+    }
+  }
+
+  #[test]
   fn reset_refreshes_setup_after_a_parse_failure_without_restarting() {
     let (_dir, game_path) = setup_game_dir();
     let original = vanilla_fixture("\n");

@@ -3,7 +3,7 @@
 use std::ops::Range;
 
 use super::gameinfo::{
-  Comment, Document as SourceDocument, Platform, Site, SiteKind, line_end, line_start,
+  Comment, Document as SourceDocument, Site, SiteKind, client_symbol, line_end, line_start,
 };
 use super::shard;
 use crate::errors::Error;
@@ -14,10 +14,12 @@ mod tests;
 
 pub(super) const LEGACY_START: &str = "// Deadlock Mod Manager - Start";
 pub(super) const LEGACY_END: &str = "// Deadlock Mod Manager - End";
-const START: &str = "// Deadlock Mod Manager - SearchPaths v2 - Start";
+// Deadworks detects the legacy start prefix. Keep the end distinct so older
+// DMM refuses to treat this narrow block as its whole-SearchPaths wrapper.
+const START: &str = "// Deadlock Mod Manager - Start (SearchPaths v2)";
 // Records the line break we added when a compact block had no insertion line.
-const INLINE_START: &str = "// Deadlock Mod Manager - SearchPaths v2 - Start (inline)";
-const END: &str = "// Deadlock Mod Manager - SearchPaths v2 - End";
+const INLINE_START: &str = "// Deadlock Mod Manager - Start (SearchPaths v2, inline)";
+const END: &str = "// Deadlock Mod Manager (SearchPaths v2) - End";
 const OWNED: &str = "// dmm-search-path";
 
 struct Document {
@@ -67,7 +69,9 @@ impl Document {
     let mut body = None;
     for site in &sites {
       if is_search_paths(&site.path)
-        && site.applies(Platform::CLIENT).map_err(fail)?
+        && site
+          .applies(client_symbol)
+          .map_err(|error| fail(error.to_string()))?
         && let SiteKind::Object { open, close } = site.kind
       {
         body = Some(open + 1..close);
@@ -274,7 +278,9 @@ pub(super) fn validate_reset(text: &str) -> Result<(), Error> {
   owned_entries(text, &doc, &[])?;
   for site in doc.entries().filter(|site| has_role(site, "Game")) {
     if matches!(site.kind, SiteKind::Scalar { .. })
-      && site.applies(Platform::CLIENT).map_err(fail)?
+      && site
+        .applies(client_symbol)
+        .map_err(|error| fail(error.to_string()))?
     {
       return Ok(());
     }

@@ -86,6 +86,20 @@ fn assert_round_trip(base: &str, config: &[ConfigEntry], catalog: &Catalog, labe
 }
 
 #[test]
+fn malformed_input_cannot_receive_a_performance_overlay() {
+  let catalog = test_catalog();
+  let base = current_stock("\n");
+  let entries = applied_entries(&catalog, &base, &synthetic_config());
+  assert!(!entries.is_empty());
+  for tail in [" /*", " { }", " [", " [$WIN64 ||]"] {
+    assert!(
+      apply_overlay(&format!("{base}{tail}"), &plan(&entries, "0123456789ab")).is_err(),
+      "accepted {tail:?}"
+    );
+  }
+}
+
+#[test]
 fn apply_then_strip_is_byte_identical() {
   let catalog = test_catalog();
   let sqooky = fixture(SQOOKY);

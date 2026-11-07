@@ -41,7 +41,7 @@ pub(super) fn build(
   if matches!(mode, MountMode::Disabled) && saved_roles.iter().all(|(_, value)| value.is_none()) {
     return Ok(None);
   }
-  let entries = active_entries(doc, Platform::CLIENT)?;
+  let entries = active_entries(doc)?;
   let first_game = entries.iter().find(|entry| has_role(entry.site, "Game"));
   let Some(first_game) = first_game else {
     return match mode {
@@ -113,7 +113,7 @@ pub(super) fn build(
   }))
 }
 
-fn active_entries(doc: &Document, platform: Platform) -> Result<Vec<Entry<'_>>, Error> {
+fn active_entries(doc: &Document) -> Result<Vec<Entry<'_>>, Error> {
   let mut entries = Vec::new();
   for site in doc.entries().filter(|site| {
     ["Game", "Mod", "Write"]
@@ -121,7 +121,9 @@ fn active_entries(doc: &Document, platform: Platform) -> Result<Vec<Entry<'_>>, 
       .any(|role| has_role(site, role))
   }) {
     if let SiteKind::Scalar { value, .. } = &site.kind
-      && site.applies(platform).map_err(fail)?
+      && site
+        .applies(client_symbol)
+        .map_err(|error| fail(error.to_string()))?
     {
       entries.push(Entry { site, value });
     }

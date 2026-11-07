@@ -4,7 +4,7 @@
     ".": {
       "entry": ["scripts/*.{ts,mjs}"],
       "project": ["scripts/**/*.{ts,mjs}"],
-      "ignoreDependencies": ["node-gyp"]
+      "ignoreDependencies": ["lefthook", "node-gyp"]
     },
     "apps/desktop": {
       "entry": [

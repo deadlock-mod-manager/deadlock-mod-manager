@@ -4,6 +4,6 @@ mod conditions;
 mod source;
 mod write;
 
-pub(crate) use conditions::Platform;
+pub(crate) use conditions::client_symbol;
 pub(crate) use source::{Comment, Document, Site, SiteKind, line_end, line_start};
 pub(crate) use write::{WriteError, commit};

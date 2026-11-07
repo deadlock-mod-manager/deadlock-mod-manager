@@ -193,13 +193,13 @@ export const prepareInstalledProfiles = async (
     (await readFile(gameinfo, "utf8")).replace(
       "Game citadel",
       [
-        "// Deadlock Mod Manager - SearchPaths v2 - Start",
+        "// Deadlock Mod Manager - Start (SearchPaths v2)",
         ...Array.from(
           { length: Math.max(1, Math.ceil(active.modIds.length / 99)) },
           (_, index) =>
             `Game citadel/${index === 0 ? "addons" : `addons${index + 1}`}/${active.profile.folder} // dmm-search-path`,
         ),
-        "// Deadlock Mod Manager - SearchPaths v2 - End",
+        "// Deadlock Mod Manager (SearchPaths v2) - End",
         "Game citadel",
       ].join("\n      "),
     ),

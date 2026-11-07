@@ -9,6 +9,43 @@ mod separator_tests {
     use crate::Serializer;
 
     #[test]
+    fn strict_documents_reject_errors_and_unconsumed_syntax() {
+        let valid = "Root { Item value }";
+        for tail in [
+            " /*",
+            " { }",
+            " }",
+            " [",
+            " [$ON ||]",
+            " #include \"other.kv\"",
+        ] {
+            assert!(
+                Parser::parse_strict(&format!("{valid}{tail}"), ParseOptions::default()).is_err(),
+                "accepted {tail:?}"
+            );
+        }
+        assert!(Parser::parse_strict("Root { /*", ParseOptions::default()).is_err());
+        assert!(Parser::parse_strict("Root { { Item value } }", ParseOptions::default()).is_err());
+    }
+
+    #[test]
+    fn strict_parsing_preserves_unknown_conditions_and_formatting() {
+        let text = "Root /* separator */ { Item value [$CUSTOM && !$OTHER] } // end\n";
+        let parsed = Parser::parse_strict(text, ParseOptions::default()).unwrap();
+        assert_eq!(Serializer::serialize_ast(&parsed.ast), text);
+    }
+
+    #[test]
+    fn permissive_document_parsing_keeps_its_existing_behavior() {
+        for text in ["Root { Item value } /*", "{ Item value }", "Root {} }"] {
+            assert!(
+                Parser::parse(text, ParseOptions::default()).is_ok(),
+                "{text}"
+            );
+        }
+    }
+
+    #[test]
     fn comments_between_keys_and_values_round_trip_without_losing_duplicate_entries() {
         let source = "GameInfo /* root */ { FileSystem // game files\n{ \"SearchPaths\" // shared mounts\n { Game /* first */ citadel Game // second\n core } } }";
         let parsed = Parser::parse(source, ParseOptions::default()).unwrap();
@@ -32,11 +69,16 @@ mod separator_tests {
 pub struct Parser {
     tokens: Vec<Token>,
     pos: usize,
+    strict: bool,
 }
 
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Self {
-        Self { tokens, pos: 0 }
+        Self {
+            tokens,
+            pos: 0,
+            strict: false,
+        }
     }
 
     pub fn parse(input: &str, options: ParseOptions) -> Result<ParseResult> {
@@ -52,6 +94,47 @@ impl Parser {
         let data = parser.ast_to_data(&ast);
 
         Ok(ParseResult { data, ast })
+    }
+
+    /// Parse a complete key/value document, rejecting lexical errors and
+    /// unconsumed syntax. Directives are rejected because this parser does not
+    /// expand or represent them. Conditions are validated without evaluation.
+    /// The existing `parse` entry point retains its permissive behavior.
+    pub fn parse_strict(input: &str, options: ParseOptions) -> Result<ParseResult> {
+        let tokens = Tokenizer::with_options(
+            input,
+            options.allow_escape_sequences,
+            options.allow_conditionals,
+            options.allow_includes,
+        )
+        .tokenize()?;
+        let mut parser = Self::new(tokens);
+        let ast = parser.parse_document_strict()?;
+        let data = parser.ast_to_data(&ast);
+        Ok(ParseResult { data, ast })
+    }
+
+    /// Strict parsing for callers that already tokenized the document.
+    pub fn parse_document_strict(&mut self) -> Result<DocumentNode> {
+        self.strict = true;
+        self.parse_document()
+    }
+
+    fn unexpected_token(&self) -> KvError {
+        let token = self.current_token();
+        if token.token_type == TokenType::Error {
+            KvError::TokenError {
+                line: token.line,
+                column: token.column,
+                message: token.value.clone(),
+            }
+        } else {
+            KvError::ParseError {
+                line: token.line,
+                column: token.column,
+                message: format!("unexpected token {:?}", token.raw),
+            }
+        }
     }
 
     fn current_token(&self) -> &Token {
@@ -97,13 +180,14 @@ impl Parser {
                 TokenType::String => {
                     children.push(AstNode::KeyValue(Box::new(self.parse_keyvalue()?)));
                 }
-                TokenType::Conditional => {
+                TokenType::Conditional if !self.strict => {
                     children.push(AstNode::Conditional(self.parse_conditional()?));
                 }
-                TokenType::Include | TokenType::Base => {
+                TokenType::Include | TokenType::Base if !self.strict => {
                     // Skip includes for now
                     self.advance();
                 }
+                _ if self.strict => return Err(self.unexpected_token()),
                 _ => {
                     self.advance();
                 }
@@ -263,9 +347,10 @@ impl Parser {
                 TokenType::String => {
                     children.push(AstNode::KeyValue(Box::new(self.parse_keyvalue()?)));
                 }
-                TokenType::Conditional => {
+                TokenType::Conditional if !self.strict => {
                     children.push(AstNode::Conditional(self.parse_conditional()?));
                 }
+                _ if self.strict => return Err(self.unexpected_token()),
                 _ => {
                     self.advance();
                 }
@@ -422,6 +507,10 @@ impl Parser {
 
     fn parse_conditional(&mut self) -> Result<ConditionalNode> {
         let token = self.current_token();
+
+        if self.strict {
+            crate::evaluate_condition(&token.raw, |_| Some(false))?;
+        }
 
         if token.token_type != TokenType::Conditional {
             return Err(KvError::ExpectedToken {

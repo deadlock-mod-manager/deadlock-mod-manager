@@ -1,9 +1,11 @@
 mod ast;
+mod conditions;
 mod diff;
 mod document;
 mod error;
 mod parser;
 mod serializer;
+mod source;
 mod tokenizer;
 mod types;
 
@@ -11,11 +13,13 @@ use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 use std::slice;
 
-pub use diff::{is_patch_already_applied, DiffApplicator, DiffGenerator};
+pub use conditions::evaluate_condition;
+pub use diff::{DiffApplicator, DiffGenerator, is_patch_already_applied};
 pub use document::KvDocument;
 pub use error::{KvError, Result};
 pub use parser::Parser;
 pub use serializer::Serializer;
+pub use source::{LineComment, SourceDocument, SourceKind, SourceSite, line_end, line_start};
 pub use tokenizer::Tokenizer;
 pub use types::*;
 
@@ -164,7 +168,10 @@ pub unsafe extern "C" fn kv_serialize_data(
 /// The caller must ensure `source_json` and `target_json` are null or valid C strings.
 #[unsafe(no_mangle)]
 #[allow(clippy::missing_safety_doc)]
-pub unsafe extern "C" fn kv_diff(source_json: *const c_char, target_json: *const c_char) -> *mut c_char {
+pub unsafe extern "C" fn kv_diff(
+    source_json: *const c_char,
+    target_json: *const c_char,
+) -> *mut c_char {
     if source_json.is_null() || target_json.is_null() {
         return to_c_string(r#"{"error": "Invalid JSON"}"#.to_string());
     }

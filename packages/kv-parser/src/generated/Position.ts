@@ -5,7 +5,8 @@
  */
 export type Position = {
   /**
-   * Byte offset from start of file
+   * Unicode scalar-value offset from the start of the input, retained for
+   * compatibility. SourceDocument provides UTF-8 byte ranges for editing.
    */
   offset: number;
   /**

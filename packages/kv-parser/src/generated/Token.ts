@@ -10,6 +10,9 @@ export type Token = {
   value: string;
   line: number;
   column: number;
+  /**
+   * Unicode scalar-value offset, using the same units as Position::offset.
+   */
   offset: number;
   raw: string;
   metadata: TokenMetadata | null;
