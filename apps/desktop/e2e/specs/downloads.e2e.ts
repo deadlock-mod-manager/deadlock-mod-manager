@@ -23,6 +23,11 @@ import {
   stagedBytes,
 } from "../support/download-oracle";
 import {
+  cancellationHeld,
+  holdEventsFromCancellation,
+  releaseHeldEvents,
+} from "../support/event-hold";
+import {
   openSettings,
   readSettings,
   setSwitch,
@@ -213,6 +218,50 @@ const cancelWhileConnecting = async (world: string): Promise<void> => {
   await waitStatus(world, "downloaded");
 };
 
+// The cancelled transfer reports its end only when it next checks its token,
+// which can be after the user has already pressed Retry.
+const retryBeforeCancellationArrives = async (world: string): Promise<void> => {
+  await step("cancel while the transfer is running", async () => {
+    await waitStatus(world, "downloading");
+    await observeUntil(
+      "Download request did not reach the server",
+      () => downloadRequests(world),
+      (requests) => requests.length === 1,
+    );
+    expect(await holdEventsFromCancellation(DOWNLOAD_MOD)).toBeGreaterThan(0);
+    const button = await card().$("button=Cancel");
+    await button.waitForClickable();
+    await button.click();
+    await expect(card().$("button=Retry")).toBeDisplayed();
+    await browser.waitUntil(cancellationHeld, {
+      timeout: 10_000,
+      timeoutMsg: "The cancelled transfer never reported its end",
+    });
+  });
+  await step("retry before the cancellation reaches the window", async () => {
+    await retry();
+    await observeUntil(
+      "Retry did not reach the backend",
+      async () =>
+        z
+          .array(z.object({ modId: z.string() }))
+          .parse(
+            await browser.execute(() =>
+              window["__TAURI_INTERNALS__"].invoke("get_all_downloads"),
+            ),
+          ),
+      (downloads) => downloads.some(({ modId }) => modId === DOWNLOAD_MOD),
+    );
+    expect(await releaseHeldEvents()).toBeGreaterThan(0);
+    await browser.saveScreenshot(
+      path.join(world, "artifacts", "late-cancellation-delivered.png"),
+    );
+  });
+  await step("the retry completes", async () => {
+    await waitStatus(world, "downloaded");
+  });
+};
+
 const enableSegmentedDownloads = async (world: string): Promise<void> => {
   await openSettings("network");
   await setSwitch("#toggle-setting-segmented-downloads", true);
@@ -333,6 +382,8 @@ describe("real Rust downloads", () => {
         }
       } else if (scenario === "downloads-cancel-connecting") {
         await cancelWhileConnecting(world);
+      } else if (scenario === "downloads-cancel-late-error") {
+        await retryBeforeCancellationArrives(world);
       } else if (scenario === "downloads-cancel-queued") {
         await cancelQueued(world);
       } else if (scenario === "downloads-reload-queued") {

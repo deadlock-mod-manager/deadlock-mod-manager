@@ -13,11 +13,12 @@ export type ModConflict = {
   winner: string;
   loser: string;
   /**
-   * Highest severity among the files that still count.
+   * Highest severity among `files`.
    */
   severity: ConflictSeverity;
   /**
-   * Shared files that still count, most severe first.
+   * Shared files this entry covers, most severe first: those that still
+   * count, or for an ignored entry those its ignore hides.
    */
   files: Array<ConflictFile>;
   ignoreReason?: ConflictIgnoreReason;
