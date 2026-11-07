@@ -147,8 +147,7 @@ fn whole_line(text: &str, at: usize) -> Result<Range<usize>, Error> {
 }
 
 fn legacy_path(value: &str, claimed_paths: &[String]) -> bool {
-  shard::is_valid_search_path(value)
-    && (value.split('/').count() == 2 || claimed_paths.iter().any(|path| path == value))
+  shard::is_valid_search_path(value) && claimed_paths.iter().any(|path| path == value)
 }
 
 /// Match fence names, so an unrelated comment ending in END cannot close a tool's block.

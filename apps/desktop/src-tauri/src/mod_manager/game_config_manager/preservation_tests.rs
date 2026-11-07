@@ -163,6 +163,46 @@ fn stale_cleanup_cannot_remove_paths_reapplied_without_changing_the_file() {
 }
 
 #[test]
+fn legacy_base_mounts_need_a_manifest_before_cleanup() {
+  use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
+
+  for owned in [false, true] {
+    let (game, path) = game();
+    let addons = path.parent().unwrap().join("addons");
+    fs::create_dir_all(&addons).unwrap();
+    if owned {
+      ProfileVpkManifest::default().save(&addons).unwrap();
+    }
+    let original = fixture()
+      .replace(
+        "  SearchPaths",
+        &format!("{MOD_MANAGER_MARKER_START}\r\n  SearchPaths"),
+      )
+      .replace(
+        "   Game citadel\r\n",
+        "   Game citadel/addons\r\n   Game citadel/addons2\r\n   Game citadel\r\n",
+      )
+      .replace(
+        "  }\r\n }",
+        &format!("  }}\r\n{MOD_MANAGER_MARKER_END}\r\n }}"),
+      );
+    fs::write(&path, original).unwrap();
+
+    GameConfigManager::new()
+      .toggle_mods(game.path(), true)
+      .unwrap();
+    let cleaned = fs::read_to_string(&path).unwrap();
+    for mount in ["citadel/addons", "citadel/addons2"] {
+      assert_eq!(
+        cleaned.contains(&format!("   Game {mount}\r\n")),
+        !owned,
+        "manifest present: {owned}, mount: {mount}"
+      );
+    }
+  }
+}
+
+#[test]
 fn legacy_migration_removes_manifest_owned_paths_and_keeps_unknown_profiles() {
   use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
   let (game, path) = game();

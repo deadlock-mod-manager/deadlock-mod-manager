@@ -1,5 +1,5 @@
 //! Legacy outer markers cannot distinguish our profiles from another tool's.
-//! Only a readable DMM manifest can establish ownership of a named folder.
+//! Only a readable DMM manifest can establish ownership of a base or named folder.
 
 use super::*;
 use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
@@ -18,6 +18,9 @@ pub(super) fn claims(game_path: &Path, content: &str) -> Result<Vec<String>, Err
     Err(error) => return Err(error.into()),
   };
   let mut paths = Vec::new();
+  if ProfileVpkManifest::exists(&addons) && ProfileVpkManifest::load(&addons).is_ok() {
+    paths.extend(shard::all_shards().map(|shard| shard.search_path(None)));
+  }
   for entry in entries {
     let entry = entry?;
     if !entry.file_type()?.is_dir() {

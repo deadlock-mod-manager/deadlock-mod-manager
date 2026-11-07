@@ -24,6 +24,8 @@ export const HYPERLINE_PATHS = [
   "      // HYPERLINE PANORAMA END",
   "      Game citadel/addons/user_owned // Keep this unrelated addon mount",
   "      Game citadel/addons/profile_external",
+  "      Game citadel/addons",
+  "      Game citadel/addons2",
 ].join("\r\n");
 
 export const PRESERVED_GAMEINFO = [
