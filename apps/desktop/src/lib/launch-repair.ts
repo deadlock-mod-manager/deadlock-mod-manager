@@ -1,7 +1,10 @@
 import type { ReinstallResult } from "@/hooks/use-reinstall-mod";
 import { getErrorMessage } from "@/lib/errors";
+import { createLogger } from "@/lib/logger";
 import { isLocalMod } from "@/lib/mods/installed-helpers";
 import type { LocalMod } from "@/types/mods";
+
+const logger = createLogger("launch-repair");
 
 export type LaunchRepairMod = {
   id: string;
@@ -78,6 +81,10 @@ export async function repairLaunchFiles(
         failures.push({ id: target.id });
       }
     } catch (error) {
+      logger
+        .withMetadata({ mod: target.id, action })
+        .withError(error)
+        .warn("Launch repair failed for mod");
       failures.push({ id: target.id, error: getErrorMessage(error) });
     }
   }

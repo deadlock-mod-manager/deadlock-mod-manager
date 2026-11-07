@@ -60,17 +60,26 @@ export const useReinstallAction = (mod: LocalMod) => {
       return;
     }
 
-    if (hasDownloadStatus) {
-      // Nothing is downloading it, so the status is stale, and it would reject
-      // the move back to Downloading.
-      usePersistedStore
-        .getState()
-        .setModStatus(mod.remoteId, ModStatus.FailedToDownload);
-    }
-
     setStep("purging");
     try {
-      const result = await reinstallMod(mod, { onStep: setStep });
+      const result = await reinstallMod(mod, {
+        onStep: (next) => {
+          if (
+            next === "downloading" &&
+            hasDownloadStatus &&
+            !downloadManager.isQueued(mod.remoteId)
+          ) {
+            // Nothing is downloading it, so the status is stale, and it would
+            // reject the move back to Downloading. Cleared only once the old
+            // files are gone, so a failed purge leaves the mod as it was; the
+            // purge can wait on a prompt, so a download may have started since.
+            usePersistedStore
+              .getState()
+              .setModStatus(mod.remoteId, ModStatus.FailedToDownload);
+          }
+          setStep(next);
+        },
+      });
 
       switch (result.outcome) {
         case "restored":
@@ -92,8 +101,9 @@ export const useReinstallAction = (mod: LocalMod) => {
           break;
       }
     } catch (error) {
-      // Thrown when the reinstall was stopped before it could touch anything,
-      // a guard block being the usual reason. The mod is left as it was.
+      // Thrown when the old files could not be removed, a guard block or a
+      // file kept read-only being the usual reasons. The mod's state is left
+      // alone and nothing is downloaded.
       logger.withError(error).warn("Reinstall aborted");
       toast.error(
         t("reinstall.failedWithReason", {
