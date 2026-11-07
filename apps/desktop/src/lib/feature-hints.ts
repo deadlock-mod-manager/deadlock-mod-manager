@@ -36,8 +36,15 @@ const FEATURE_HINTS = [
     minAgeDays: 0,
     shortcut: ["Ctrl", "F"],
   },
-  // Anchored in the sidebar, so it could show on any page; kept low so
+  { id: "custom-mod-sources", i18nKey: "customModSources", minAgeDays: 0 },
+  { id: "randomized-groups", i18nKey: "randomizedGroups", minAgeDays: 1 },
+  { id: "party-planner", i18nKey: "partyPlanner", minAgeDays: 0 },
+  { id: "analyze-local-mods", i18nKey: "analyzeLocalMods", minAgeDays: 1 },
+  // Anchored in the sidebar, so they could show on any page; kept low so
   // page-specific hints win.
+  { id: "performance-configs", i18nKey: "performanceConfigs", minAgeDays: 0 },
+  { id: "server-picker", i18nKey: "serverPicker", minAgeDays: 0 },
+  { id: "foundry", i18nKey: "foundry", minAgeDays: 0 },
   { id: "server-browser", i18nKey: "serverBrowser", minAgeDays: 0 },
   { id: "skin-randomizer", i18nKey: "skinRandomizer", minAgeDays: 1 },
   { id: "stats-customize", i18nKey: "statsCustomize", minAgeDays: 0 },

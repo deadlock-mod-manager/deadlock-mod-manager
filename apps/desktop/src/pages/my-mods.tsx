@@ -261,6 +261,7 @@ const MyMods = () => {
   const [actionsMenuOpen, setActionsMenuOpen] = useState(false);
   const [showNukeDialog, setShowNukeDialog] = useState(false);
   const markFeatureUsed = usePersistedStore((state) => state.markFeatureUsed);
+  const hasGamePath = usePersistedStore((state) => state.gamePath.length > 0);
   const countFeatureHintEvent = usePersistedStore(
     (state) => state.countFeatureHintEvent,
   );
@@ -686,14 +687,20 @@ const MyMods = () => {
                     }
                     hintId='find-broken-mod'
                     onShowMe={() => setActionsMenuOpen(true)}>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        aria-label={t("myMods.moreActions")}
-                        size='icon'
-                        variant='outline'>
-                        <EllipsisVertical className='h-4 w-4' />
-                      </Button>
-                    </DropdownMenuTrigger>
+                    <HintAnchor
+                      align='end'
+                      eligible={hasGamePath && !isAnalysisPending}
+                      hintId='analyze-local-mods'
+                      onShowMe={() => setActionsMenuOpen(true)}>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          aria-label={t("myMods.moreActions")}
+                          size='icon'
+                          variant='outline'>
+                          <EllipsisVertical className='h-4 w-4' />
+                        </Button>
+                      </DropdownMenuTrigger>
+                    </HintAnchor>
                   </HintAnchor>
                 </HintAnchor>
               </HintAnchor>
@@ -762,7 +769,10 @@ const MyMods = () => {
                 {t("bisect.entry")}
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={startAnalysis}
+                onClick={() => {
+                  markFeatureUsed("analyze-local-mods");
+                  startAnalysis();
+                }}
                 disabled={isAnalysisPending}>
                 <ScanSearch className='h-4 w-4' />
                 {isAnalysisPending

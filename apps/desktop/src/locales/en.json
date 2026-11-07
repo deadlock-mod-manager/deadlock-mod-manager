@@ -8495,6 +8495,34 @@
       "title": "Play on community servers",
       "body": "Server Browser lists community servers with custom modes and maps. DMM downloads whatever a server needs before you join."
     },
+    "performanceConfigs": {
+      "title": "Try a community performance config",
+      "body": "Apply a community config to reduce visual detail for more frames. Review its game and video settings, tweak individual values, and turn it off to undo its changes."
+    },
+    "customModSources": {
+      "title": "Browse more mod catalogs",
+      "body": "Add a mod source in Settings, then switch catalogs here to browse and install its mods alongside your GameBanana mods."
+    },
+    "randomizedGroups": {
+      "title": "Let a group pick your next mod",
+      "body": "Turn on Randomize on launch in this group's menu. Each modded launch enables one eligible member of the group, so you can rotate between alternatives."
+    },
+    "partyPlanner": {
+      "title": "Plan your party's hero picks",
+      "body": "Add your party's players and their hero picks to compare possible lineups and explore suggestions based on hero combination stats. No Steam account is needed."
+    },
+    "serverPicker": {
+      "title": "Choose which relay locations to allow",
+      "body": "Compare relay latency and block locations you want to avoid in matchmaking. Applying changes may require administrator permission; restore defaults anytime."
+    },
+    "foundry": {
+      "title": "Make your own hero mod",
+      "body": "Open a hero in Mod Foundry to hide selected model sections or edit its textures, then export your changes as a mod."
+    },
+    "analyzeLocalMods": {
+      "title": "Find mods already in your game folder",
+      "body": "Use Analyze Local Addons in this menu to identify existing addon files and review which ones to add to your Library."
+    },
     "importFromManager": {
       "title": "Bring your mods over",
       "body": "Another mod manager is set up on this PC. Import its mods here instead of downloading them all again."
