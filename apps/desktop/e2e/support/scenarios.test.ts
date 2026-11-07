@@ -37,7 +37,7 @@ describe("scenario selection", () => {
       "onboarding-telemetry-default",
       "onboarding-identified-addon",
     ]);
-    expect(selectScenarios("gamebanana")).toHaveLength(32);
+    expect(selectScenarios("gamebanana")).toHaveLength(33);
     expect(selectScenarios("gamebanana")).toContain(
       "gamebanana-switch-reinstall",
     );
@@ -78,7 +78,7 @@ describe("scenario selection", () => {
       "app-update-check-failure",
     ]);
     expect(scenarios.monkey.nativeInput).toBe(false);
-    expect(selectScenarios("filesystem")).toHaveLength(windows ? 164 : 154);
+    expect(selectScenarios("filesystem")).toHaveLength(windows ? 12 : 10);
     expect(selectScenarios("interchange")).toEqual(["grimoire-import"]);
     expect(selectScenarios("skins")).toEqual(["hero-skins-active"]);
     expect(selectScenarios("stats")).toEqual([
