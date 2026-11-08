@@ -1,4 +1,7 @@
+import { YAML } from "bun";
 import { describe, expect, it } from "bun:test";
+import { readFile } from "node:fs/promises";
+import { z } from "zod";
 import {
   parseScenarioId,
   scenarioPhases,
@@ -182,6 +185,59 @@ describe("scenario selection", () => {
       if (windows) expect(parseScenarioId(id)).toBe(id);
       else expect(() => parseScenarioId(id)).toThrow("supports win32");
     }
+  });
+
+  // Pull requests skip Desktop E2E, so a case outside these lists never runs
+  // upstream.
+  it("schedules every case in a default CI job", async () => {
+    const { jobs } = z
+      .object({
+        jobs: z.object({
+          scenarios: z.object({
+            strategy: z.object({ matrix: z.object({ suite: z.string() }) }),
+          }),
+          "linux-scenarios": z.object({
+            strategy: z.object({
+              matrix: z.object({
+                suite: z.array(z.string()),
+                include: z.array(z.object({ suite: z.string().optional() })),
+              }),
+            }),
+          }),
+        }),
+      })
+      .parse(
+        YAML.parse(
+          await readFile(
+            new URL(
+              "../../../../.github/workflows/desktop-e2e.yml",
+              import.meta.url,
+            ),
+            "utf8",
+          ),
+        ),
+      );
+    // The Windows default is the fallback inside the matrix expression.
+    const windows = z
+      .array(z.string())
+      .parse(
+        JSON.parse(
+          /'(\[.*\])'/.exec(jobs.scenarios.strategy.matrix.suite)?.[1] ??
+            "null",
+        ),
+      );
+    // Debian runs every listed suite; Arch excludes only repeat it.
+    const linux = jobs["linux-scenarios"].strategy.matrix;
+    const scheduled = new Set<string>([
+      ...windows.flatMap((suite) => selectScenarios(suite, "win32")),
+      ...[
+        ...linux.suite,
+        ...linux.include.flatMap((job) => job.suite ?? []),
+      ].flatMap((suite) => selectScenarios(suite, "linux")),
+    ]);
+    expect(Object.keys(scenarios).filter((id) => !scheduled.has(id))).toEqual(
+      [],
+    );
   });
 
   it("imports Grimoire, restarts, and re-imports changed source state", () => {

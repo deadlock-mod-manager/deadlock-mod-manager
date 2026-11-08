@@ -1253,9 +1253,12 @@ export const scenarios = {
 export type ScenarioId = keyof typeof scenarios;
 const isScenario = (value: string): value is ScenarioId =>
   Object.hasOwn(scenarios, value);
-const supportsPlatform = (id: ScenarioId): boolean => {
+const supportsPlatform = (
+  id: ScenarioId,
+  platform: NodeJS.Platform = process.platform,
+): boolean => {
   const platforms: readonly NodeJS.Platform[] = scenarios[id].platforms;
-  return platforms.includes(process.platform);
+  return platforms.includes(platform);
 };
 export const parseScenarioId = (value = "about-smoke"): ScenarioId => {
   if (!isScenario(value)) throw new Error(`Unsupported E2E case '${value}'`);
@@ -1268,10 +1271,13 @@ export const parseScenarioId = (value = "about-smoke"): ScenarioId => {
 export const scenarioPhases = (id: ScenarioId) => scenarios[id].phases;
 export const scenarioSpec = (id: ScenarioId) =>
   `./specs/${scenarios[id].spec}.e2e.ts`;
-export const selectScenarios = (suite: string): ScenarioId[] => {
+export const selectScenarios = (
+  suite: string,
+  platform: NodeJS.Platform = process.platform,
+): ScenarioId[] => {
   const ids = Object.keys(scenarios)
     .filter(isScenario)
-    .filter(supportsPlatform)
+    .filter((id) => supportsPlatform(id, platform))
     .filter(
       (id) =>
         suite === "all" ||
