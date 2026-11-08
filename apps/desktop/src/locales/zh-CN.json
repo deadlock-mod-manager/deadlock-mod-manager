@@ -5892,6 +5892,10 @@
     "invalid": "无效",
     "none": "无"
   },
+  "videoEmbed": {
+    "play": "",
+    "thumbnailAlt": ""
+  },
   "whatsNew": {
     "title": "更新日志",
     "welcome": "欢迎使用 {{appName}} 的最新版本！",
@@ -5903,8 +5907,7 @@
     "skippedMore_one": "",
     "skippedMore_other": "",
     "video": {
-      "embedTitle": "发布视频",
-      "thumbnailAlt": "视频缩略图"
+      "embedTitle": "发布视频"
     },
     "categories": {
       "new": "新",
@@ -7612,6 +7615,8 @@
       "withheldBy": ""
     },
     "viewIn3d": "",
+    "videos": "",
+    "videoTitle": "",
     "updateMod": "更新模组",
     "forceUpdate": "强制更新",
     "activeVpkFiles": "启用的模组文件",
