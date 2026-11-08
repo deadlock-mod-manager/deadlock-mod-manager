@@ -941,6 +941,15 @@
         "filteredTitle": "Eşleşen yapılandırma yok",
         "filteredDescription": "Bu kademe ve kaynak için burada bir şey yok.",
         "clearFilters": "Filtreleri temizle"
+      },
+      "packs": {
+        "title": "",
+        "description": "",
+        "label": "",
+        "mods_one": "",
+        "mods_other": "",
+        "view": "",
+        "installed": ""
       }
     },
     "origins": {
@@ -7591,6 +7600,17 @@
       "none": "Ayarlanmamış"
     },
     "viewOriginalPost": "GameBanana gönderisini görüntüle",
+    "withheld": {
+      "badge": "",
+      "title": "",
+      "description": "",
+      "showReason": "",
+      "hideReason": "",
+      "rule": "",
+      "staffNote": "",
+      "withheldAt": "",
+      "withheldBy": ""
+    },
     "viewIn3d": "3D görüntüle",
     "updateMod": "Modu güncelle",
     "forceUpdate": "Güncellemeyi zorla",
