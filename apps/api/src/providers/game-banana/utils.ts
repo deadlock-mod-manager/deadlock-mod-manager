@@ -417,22 +417,20 @@ export function buildMetadata({
   isMap: boolean;
   donationMethods: GameBanana.GameBananaDonationMethod[];
   embeddedMedia?: string[];
-}): ModMetadata | null {
+}): ModMetadata {
   const mapName = isMap ? extractMapName(description) : undefined;
   const donationLinks = buildDonationLinks({
     methods: donationMethods,
     description,
   });
-  const videos = parseEmbeddedVideos(embeddedMedia);
 
-  if (!mapName && donationLinks.length === 0 && videos.length === 0) {
-    return null;
-  }
-
-  const metadata: ModMetadata = {};
+  // The upsert merges metadata keys into the stored object, so `videos` is
+  // always sent: an empty list clears videos the author has since removed.
+  const metadata: ModMetadata = {
+    videos: parseEmbeddedVideos(embeddedMedia),
+  };
   if (mapName) metadata.mapName = mapName;
   if (donationLinks.length > 0) metadata.donationLinks = donationLinks;
-  if (videos.length > 0) metadata.videos = videos;
   return metadata;
 }
 

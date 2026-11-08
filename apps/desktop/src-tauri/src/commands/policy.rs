@@ -350,6 +350,7 @@ fn apply_correction(mod_data: &mut CatalogModDto, correction: &PolicyMetadataCor
       .get_or_insert_with(|| CatalogModMetadataDto {
         map_name: None,
         donation_links: Vec::new(),
+        videos: Vec::new(),
       });
     if let Some(map_name) = &metadata.map_name {
       current.map_name = Some(map_name.clone());

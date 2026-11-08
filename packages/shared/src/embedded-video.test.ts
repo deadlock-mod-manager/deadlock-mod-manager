@@ -11,6 +11,7 @@ describe("parseEmbeddedVideo", () => {
     "https://www.youtube.com/embed/Xw0wI89x3fc",
     "https://www.youtube-nocookie.com/embed/Xw0wI89x3fc",
     "  https://www.youtube.com/live/Xw0wI89x3fc  ",
+    "https://www.youtube.com/v/Xw0wI89x3fc",
   ])("reads the YouTube id from %s", (url) => {
     expect(parseEmbeddedVideo(url)).toEqual({
       provider: "youtube",
@@ -39,6 +40,9 @@ describe("parseEmbeddedVideo", () => {
     "https://www.youtube.com/watch?v=short",
     "https://www.youtube.com/watch?v=Xw0wI89x3fc%22onload%3D",
     "https://www.youtube.com/@channel",
+    "https://youtube.com/embed//Xw0wI89x3fc",
+    "https://youtube.com//watch?v=Xw0wI89x3fc",
+    "https://youtu.be//Xw0wI89x3fc",
     "https://vimeo.com/channels/staffpicks",
     "ftp://vimeo.com/1203014251",
   ])("rejects %s", (url) => {
@@ -50,6 +54,14 @@ describe("parseEmbeddedVideo", () => {
       provider: "vimeo",
       id: "123",
     });
+  });
+
+  it("ignores empty Vimeo path segments", () => {
+    expect(
+      parseEmbeddedVideo(
+        "https://player.vimeo.com//video//1203014251?h=a1b2c3",
+      ),
+    ).toEqual({ provider: "vimeo", id: "1203014251", hash: "a1b2c3" });
   });
 });
 
@@ -66,6 +78,25 @@ describe("parseEmbeddedVideos", () => {
       { provider: "youtube", id: "Xw0wI89x3fc" },
       { provider: "vimeo", id: "1203014251" },
     ]);
+  });
+
+  it("keeps the Vimeo access hash when a later duplicate lacks it", () => {
+    expect(
+      parseEmbeddedVideos([
+        "https://vimeo.com/1203014251/a1b2c3",
+        "https://vimeo.com/1203014251",
+      ]),
+    ).toEqual([{ provider: "vimeo", id: "1203014251", hash: "a1b2c3" }]);
+    expect(
+      parseEmbeddedVideos([
+        "https://vimeo.com/1203014251",
+        "https://vimeo.com/1203014251/a1b2c3",
+      ]),
+    ).toEqual([{ provider: "vimeo", id: "1203014251", hash: "a1b2c3" }]);
+  });
+
+  it("returns nothing for a zero limit", () => {
+    expect(parseEmbeddedVideos(["https://vimeo.com/1"], 0)).toEqual([]);
   });
 
   it("caps the number of videos", () => {

@@ -628,14 +628,14 @@ describe("buildDonationLinks", () => {
 });
 
 describe("buildMetadata", () => {
-  it("returns null when no mod-specific metadata is populated", () => {
+  it("sends an empty video list when nothing else is populated", () => {
     expect(
       buildMetadata({
         description: "Nothing useful here.",
         isMap: false,
         donationMethods: [],
       }),
-    ).toBeNull();
+    ).toEqual({ videos: [] });
   });
 
   it("returns mapName when isMap is true", () => {
@@ -644,7 +644,7 @@ describe("buildMetadata", () => {
       isMap: true,
       donationMethods: [],
     });
-    expect(result).toEqual({ mapName: "my_arena" });
+    expect(result).toEqual({ mapName: "my_arena", videos: [] });
   });
 
   it("returns donationLinks when present", () => {
@@ -683,7 +683,7 @@ describe("buildMetadata", () => {
     });
   });
 
-  it("returns null when no embedded media is playable", () => {
+  it("clears stored videos when no embedded media is playable", () => {
     expect(
       buildMetadata({
         description: "",
@@ -691,7 +691,7 @@ describe("buildMetadata", () => {
         donationMethods: [],
         embeddedMedia: ["https://example.com/not-a-video"],
       }),
-    ).toBeNull();
+    ).toEqual({ videos: [] });
   });
 });
 

@@ -19,8 +19,11 @@ function playerUrl({ provider, id, hash }: EmbeddedVideo): string {
   if (provider === "youtube") {
     return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}?autoplay=1&rel=0`;
   }
-  const params = new URLSearchParams({ autoplay: "1", dnt: "1" });
+  // Vimeo expects the unlisted-video hash before any other player parameter
+  const params = new URLSearchParams();
   if (hash) params.set("h", hash);
+  params.set("autoplay", "1");
+  params.set("dnt", "1");
   return `https://player.vimeo.com/video/${encodeURIComponent(id)}?${params}`;
 }
 

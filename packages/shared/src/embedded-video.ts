@@ -61,16 +61,26 @@ export function parseEmbeddedVideo(rawUrl: string): EmbeddedVideo | null {
   return parseYouTube(url, host) ?? parseVimeo(url, host);
 }
 
-/** Parses, de-duplicates, and caps the videos a submission embeds. */
+/**
+ * Parses, de-duplicates, and caps the videos a submission embeds. A duplicate
+ * that carries a Vimeo access hash upgrades an earlier entry without one.
+ */
 export function parseEmbeddedVideos(
   urls: readonly string[],
   limit = 10,
 ): EmbeddedVideo[] {
   const videos = new Map<string, EmbeddedVideo>();
+  if (limit <= 0) return [];
   for (const url of urls) {
     const video = parseEmbeddedVideo(url);
-    if (video) videos.set(`${video.provider}:${video.id}`, video);
-    if (videos.size >= limit) break;
+    if (!video) continue;
+    const key = `${video.provider}:${video.id}`;
+    const existing = videos.get(key);
+    if (existing) {
+      if (!existing.hash && video.hash) videos.set(key, video);
+    } else if (videos.size < limit) {
+      videos.set(key, video);
+    }
   }
   return [...videos.values()];
 }

@@ -528,6 +528,11 @@ impl TryFrom<SubmissionRow> for CatalogRecord {
       profile_url: row.profile_url,
       category: row.category,
       category_path: decode_category_path(&row.category_path)?,
+      videos: row
+        .videos
+        .map(|videos| serde_json::from_str(&videos))
+        .transpose()
+        .map_err(|error| Error::Catalog(error.to_string()))?,
       hero: row.hero,
       is_audio: row.is_audio,
       is_map: row.is_map,
@@ -597,6 +602,7 @@ mod tests {
       tags: Vec::new(),
       development_state: None,
       completion_percentage: None,
+      videos: None,
     }
   }
 

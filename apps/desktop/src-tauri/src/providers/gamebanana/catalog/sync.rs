@@ -1129,6 +1129,7 @@ fn from_index(
     tags: parse_tags(&record.tags),
     development_state: record.development_state.clone(),
     completion_percentage: record.completion_percentage,
+    videos: None,
   }
 }
 

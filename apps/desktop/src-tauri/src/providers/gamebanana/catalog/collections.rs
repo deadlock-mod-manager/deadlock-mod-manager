@@ -738,6 +738,7 @@ mod tests {
       tags: Vec::new(),
       development_state: None,
       completion_percentage: None,
+      videos: None,
     };
     let records = (1..=6)
       .map(|id| {
