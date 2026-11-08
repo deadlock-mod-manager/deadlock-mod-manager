@@ -51,11 +51,6 @@
     "dashboard": "Panel",
     "avatarFallback": "Usuario"
   },
-  "v2Banner": {
-    "outNow": "",
-    "outNowLong": "",
-    "whatsNew": ""
-  },
   "footer": {
     "tagline": "Una app pequeña y de código abierto para instalar y gestionar mods de Deadlock, el juego de Valve.",
     "disclaimer": "Sin afiliación con Valve. \"Deadlock\" y las marcas relacionadas son marcas comerciales de Valve Corporation.",
@@ -69,6 +64,7 @@
       "download": "Descargar",
       "sourceCode": "Código fuente",
       "changelog": "",
+      "v2": "",
       "commissions": "",
       "documentation": "Documentación",
       "faq": "Preguntas frecuentes",
