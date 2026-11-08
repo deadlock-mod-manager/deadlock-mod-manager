@@ -100,6 +100,26 @@ HTTPS descriptors; development builds also accept local HTTP sources. Browsers
 do nothing when DMM is not installed, so keep the descriptor URL and a download
 link for DMM next to your buttons.
 
+## DMM-hosted sources
+
+Some projects only publish an archive link. For those, the DMM API publishes
+one source, "Deadlock Mod Manager", with a listing per project. Each project is
+a definition in `apps/api/src/hosted-sources/definitions/` naming the archive
+URL, the folders whose VPKs become components, optional
+`pakNN_dir.vpk  Label` label files, and choice groups. Every 15 minutes the API
+worker downloads a changed archive once to record its SHA-256, size and VPK
+list, then discards it; users download from the project's own origin.
+
+Each definition registers a feature flag (`hosted-source-<id>`, off by
+default) that makes its listing available; off marks it removed, so it stops
+showing and can no longer be installed. While any listing is available,
+`GET /api/v2/hosted-sources` lists the source and the app enrolls it once at
+startup; a source the user removed is not added again. Because the app enrolls
+this source from DMM's API, it accepts the download origins later projects add
+without a new review. Listings tagged `performance` also appear on the
+Performance page, and a bundled `gameinfo.gi` opens the config import review
+after the install.
+
 ## Documents and stable identity
 
 The example contains:
@@ -164,7 +184,9 @@ choice between blue and red. Its README shows the index item needed to publish
 it. Components reference exact artifact IDs and archive-relative VPK paths;
 required sets and bounded choice groups determine valid selections. Defaults are
 first-install suggestions. Removing a saved component in an update requires a
-new user decision, even if the author publishes a different default.
+new user decision, even if the author publishes a different default. List
+components in load order: an earlier component's VPKs load first and win over
+later ones that change the same files.
 
 The ordinary example uses manual selection instead. When saved archive/VPK file
 choices stop fitting a new manual release, DMM uses its file-selection flow and

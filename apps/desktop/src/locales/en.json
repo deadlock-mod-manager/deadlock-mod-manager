@@ -941,6 +941,15 @@
         "filteredTitle": "No configs match",
         "filteredDescription": "Nothing here for this tier and source.",
         "clearFilters": "Clear filters"
+      },
+      "packs": {
+        "title": "Mod packs",
+        "description": "These packs ship VPK mods with a config. DMM installs the mods you pick, then opens the config for review.",
+        "label": "Mod pack",
+        "mods_one": "{{count}} mod",
+        "mods_other": "{{count}} mods",
+        "view": "View pack",
+        "installed": "Installed"
       }
     },
     "origins": {

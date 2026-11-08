@@ -97,6 +97,14 @@ export const removeNativeSource = (sourceKey: string) =>
   invokeNative<void>("remove_native_source", { sourceKey });
 export const refreshNativeSource = (sourceKey: string) =>
   invokeNative<NativeSourceSummary>("refresh_native_source", { sourceKey });
+let hostedSync: Promise<void> | null = null;
+/** Once per app session; concurrent runs would race each other's enrollment. */
+export const syncHostedSources = () => {
+  hostedSync ??= invokeNative<void>("sync_hosted_native_sources", {
+    allowLocalNetwork,
+  });
+  return hostedSync;
+};
 export const queryNativeSource = (sourceKey: string, query = "") =>
   invokeNative<NativeSourceListing[]>("query_native_source", {
     sourceKey,

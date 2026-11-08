@@ -202,7 +202,18 @@ fn stage(
 ) -> Result<Option<StagedImport>, Error> {
   let (mut candidates, videos) = collect(source_dir, catalog);
   if mode == StageMode::ModDownload {
-    candidates.retain(|candidate| candidate.facts.performance_changes);
+    // Any `name value` line reads as a console command, so a pack's notes
+    // (`pak01_dir.vpk  HUD++`) would pass for a cfg without a real convar.
+    candidates.retain(|candidate| {
+      candidate.facts.performance_changes
+        && (candidate.format != ImportFormat::Cfg
+          || candidate.parsed.leaves.iter().any(|leaf| {
+            leaf
+              .path
+              .last()
+              .is_some_and(|name| catalog.convar(name).is_some())
+          }))
+    });
   }
   let video_only = candidates.is_empty();
   if video_only && (mode == StageMode::ModDownload || videos.is_empty()) {

@@ -77,6 +77,14 @@ fn mod_downloads_stage_only_real_configs() {
   write(config.path(), "Sqooky/addons/pak99_dir.vpk", "vpk");
   write(config.path(), "Sqooky/gameinfo.gi", &fixture(SQOOKY));
   write(config.path(), "Sqooky/video.txt", &fixture(OPTILOCK_VIDEO));
+  // A pack's notes on which pak is which read like console commands.
+  write(
+    config.path(),
+    "Sqooky/addons/mods.txt",
+    "pak01_dir.vpk  HUD++  (hud.vpk)
+pak02_dir.vpk  Particle Pruning  (particlepruning.vpk)
+",
+  );
   let (id, variants) = stage_from_dir(app_data.path(), config.path(), "Sqooky's fps config")
     .unwrap()
     .expect("a performance config");

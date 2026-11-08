@@ -1,5 +1,6 @@
 //! Public native source transport and complete-snapshot catalog. Installation
 //! remains owned by the existing download manager and mod manager.
+mod hosted;
 #[cfg(test)]
 mod integration_fixture_tests;
 pub mod links;

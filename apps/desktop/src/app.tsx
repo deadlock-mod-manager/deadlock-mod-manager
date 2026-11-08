@@ -54,6 +54,7 @@ import type { RuntimeBootstrap } from "./lib/runtime-bootstrap";
 import type { StorageReadyStatus } from "./lib/store/storage";
 import type { FontInfo } from "./types/mods";
 import { usePerfBackgroundSync } from "@/hooks/performance/use-perf-background-sync";
+import { useHostedSourcesSync } from "@/hooks/use-hosted-sources-sync";
 
 interface PendingFontInstall {
   modId: string;
@@ -83,6 +84,7 @@ const App = ({ runtime, storage }: AppProps) => {
   useMissingVpkDetection();
   useGameBananaCatalogSync();
   usePerfBackgroundSync();
+  useHostedSourcesSync();
   useIngestToolInit(integrations?.ingestion !== "disabled");
   const { t } = useTranslation();
   const hasReportedStorageFailure = useRef(false);

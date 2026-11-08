@@ -346,6 +346,7 @@ pub fn run() {
       commands::native_sources::set_native_source_enabled,
       commands::native_sources::remove_native_source,
       commands::native_sources::refresh_native_source,
+      commands::native_sources::sync_hosted_native_sources,
       commands::native_sources::query_native_source,
       commands::native_sources::get_native_source_detail,
       commands::native_sources::get_native_source_mod,

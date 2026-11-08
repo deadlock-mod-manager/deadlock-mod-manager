@@ -38,6 +38,7 @@ import { PresetCard } from "./configs/preset-card";
 import { ScaleLinkProvider } from "./configs/scale-link";
 import { UserConfigCard } from "./configs/user-config-card";
 import { usePerformanceUi } from "./performance-context";
+import { PerformancePacksSection } from "./performance-packs-section";
 
 const ConfigCard = ({
   item,
@@ -196,6 +197,8 @@ export const ConfigsTab = () => {
             </EmptyContent>
           </Empty>
         )}
+
+        <PerformancePacksSection />
       </div>
     </ScaleLinkProvider>
   );

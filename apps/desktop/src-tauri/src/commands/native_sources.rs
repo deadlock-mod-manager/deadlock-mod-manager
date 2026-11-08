@@ -69,6 +69,19 @@ pub async fn refresh_native_source(
 }
 
 #[tauri::command]
+pub async fn sync_hosted_native_sources(
+  state: State<'_, NativeSourceManager>,
+  allow_local_network: Option<bool>,
+) -> Result<(), Error> {
+  state
+    .sync_hosted(
+      &crate::commands::state::get_api_url(),
+      allow_local_network.unwrap_or(false),
+    )
+    .await
+}
+
+#[tauri::command]
 pub async fn query_native_source(
   state: State<'_, NativeSourceManager>,
   source_key: String,
