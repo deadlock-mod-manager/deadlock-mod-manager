@@ -5892,6 +5892,10 @@
     "invalid": "Geçersiz",
     "none": "Yok"
   },
+  "videoEmbed": {
+    "play": "",
+    "thumbnailAlt": ""
+  },
   "whatsNew": {
     "title": "Yenilikler",
     "welcome": "{{appName}} uygulamasının en son sürümüne hoş geldiniz!",
@@ -5903,8 +5907,7 @@
     "skippedMore_one": "",
     "skippedMore_other": "",
     "video": {
-      "embedTitle": "Sürüm videosu",
-      "thumbnailAlt": "Video küçük resmi"
+      "embedTitle": "Sürüm videosu"
     },
     "categories": {
       "new": "Yenilikler",
@@ -7612,6 +7615,8 @@
       "withheldBy": ""
     },
     "viewIn3d": "3D görüntüle",
+    "videos": "",
+    "videoTitle": "",
     "updateMod": "Modu güncelle",
     "forceUpdate": "Güncellemeyi zorla",
     "activeVpkFiles": "Modun etkin dosyaları",

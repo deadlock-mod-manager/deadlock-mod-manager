@@ -5892,6 +5892,10 @@
     "invalid": "",
     "none": ""
   },
+  "videoEmbed": {
+    "play": "",
+    "thumbnailAlt": ""
+  },
   "whatsNew": {
     "title": "มีอะไรใหม่",
     "welcome": "ยินดีต้อนรับสู่ {{appName}} เวอร์ชันล่าสุด!",
@@ -5903,8 +5907,7 @@
     "skippedMore_one": "",
     "skippedMore_other": "",
     "video": {
-      "embedTitle": "",
-      "thumbnailAlt": ""
+      "embedTitle": ""
     },
     "categories": {
       "new": "",
@@ -7612,6 +7615,8 @@
       "withheldBy": ""
     },
     "viewIn3d": "",
+    "videos": "",
+    "videoTitle": "",
     "updateMod": "",
     "forceUpdate": "",
     "activeVpkFiles": "",
