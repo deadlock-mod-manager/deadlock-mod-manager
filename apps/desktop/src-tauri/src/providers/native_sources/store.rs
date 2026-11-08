@@ -30,6 +30,10 @@ struct StoredSource {
   listings: Vec<NativeSourceListing>,
   #[serde(default)]
   generation: u64,
+  /// Enrolled from DMM's API without a review (`hosted.rs`), which also
+  /// vouches for the download origins it adds later.
+  #[serde(default)]
+  hosted: bool,
 }
 
 pub struct NativeSourceManager {
@@ -117,7 +121,16 @@ impl NativeSourceManager {
     allow_local_network: bool,
   ) -> Result<NativeSourceSummary, Error> {
     let summary = self.preview(descriptor_url, allow_local_network).await?;
-    self.add_preview(summary).await
+    self.add_preview(summary, false).await
+  }
+
+  pub(super) async fn add_hosted(
+    &self,
+    descriptor_url: &str,
+    allow_local_network: bool,
+  ) -> Result<NativeSourceSummary, Error> {
+    let summary = self.preview(descriptor_url, allow_local_network).await?;
+    self.add_preview(summary, true).await
   }
 
   pub async fn add_reviewed(
@@ -132,12 +145,13 @@ impl NativeSourceManager {
         "Descriptor changed after preview; review the source and its origins again",
       ));
     }
-    self.add_preview(summary).await
+    self.add_preview(summary, false).await
   }
 
   async fn add_preview(
     &self,
     mut summary: NativeSourceSummary,
+    hosted: bool,
   ) -> Result<NativeSourceSummary, Error> {
     if self
       .registry
@@ -176,11 +190,17 @@ impl NativeSourceManager {
         summary: summary.clone(),
         listings,
         generation,
+        hosted,
       },
     );
     self.save(&updated)?;
     *registry = updated;
     Ok(summary)
+  }
+
+  /// Whether the registry knows the source at all, removed ones included.
+  pub(super) async fn has_entry(&self, source_key: &str) -> bool {
+    self.registry.lock().await.sources.contains_key(source_key)
   }
 
   pub async fn list(&self) -> Result<Vec<NativeSourceSummary>, Error> {
@@ -244,9 +264,16 @@ impl NativeSourceManager {
       let mut fresh = self
         .preview(&previous.descriptor_url, previous.allow_local_network)
         .await?;
+      let fresh_origins = &fresh.descriptor.network_origins;
+      let previous_origins = &previous.descriptor.network_origins;
+      let origins_changed = if existing.hosted {
+        fresh_origins.api != previous_origins.api
+      } else {
+        fresh_origins != previous_origins
+      };
       if fresh.key != previous.key
         || fresh.accepted_origin != previous.accepted_origin
-        || fresh.descriptor.network_origins != previous.descriptor.network_origins
+        || origins_changed
       {
         return Err(invalid(
           "Source identity or network origins changed; remove and review this source again",
@@ -274,6 +301,7 @@ impl NativeSourceManager {
             summary: summary.clone(),
             listings,
             generation: existing.generation + 1,
+            hosted: existing.hosted,
           },
         );
         self.save(&updated)?;

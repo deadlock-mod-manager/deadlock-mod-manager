@@ -621,9 +621,18 @@ impl DownloadManager {
     match purpose {
       DownloadPurpose::Install => {
         if task.native_component_plan {
-          let prepared =
-            Self::prepare_downloaded_vpks(operation_id, task, &downloaded_files, &app_handle)
-              .await?;
+          // As on the archive path, profile imports skip the config prompt.
+          let config_label = (!task.is_profile_import)
+            .then(|| Self::archive_label(&downloaded_files).unwrap_or_else(|| task.mod_id.clone()));
+          let (prepared, staged_config) = Self::prepare_downloaded_vpks(
+            operation_id,
+            task,
+            &downloaded_files,
+            &app_handle,
+            config_label.as_deref(),
+          )
+          .await?;
+          let installed_vpks = prepared.vpk_paths.len();
           let result = {
             let mut manager = crate::commands::state::MANAGER.lock().unwrap();
             manager.update_mod_from_prepared(
@@ -653,6 +662,20 @@ impl DownloadManager {
               )
               .ok();
           }
+          if let (Some((staging_id, variants)), Some(mod_name)) = (staged_config, config_label) {
+            app_handle
+              .emit(
+                "download-config-found",
+                ConfigFoundEvent {
+                  mod_id: task.mod_id.clone(),
+                  mod_name,
+                  staging_id,
+                  variants,
+                  installed_vpks: u32::try_from(installed_vpks).unwrap_or(u32::MAX),
+                },
+              )
+              .ok();
+          }
           return Ok(PreparedDownload {
             vpk_paths: Vec::new(),
             file_tree: None,
@@ -670,7 +693,9 @@ impl DownloadManager {
       }
       DownloadPurpose::PrepareUpdate => {
         let prepared =
-          Self::prepare_downloaded_vpks(operation_id, task, &downloaded_files, &app_handle).await;
+          Self::prepare_downloaded_vpks(operation_id, task, &downloaded_files, &app_handle, None)
+            .await
+            .map(|(prepared, _)| prepared);
         let mut scratch_paths = downloaded_files;
         scratch_paths.push(task.target_dir.join(format!("prepared-{operation_id}")));
         match prepared {
@@ -825,12 +850,15 @@ impl DownloadManager {
     Some(Error::DownloadFailed(messages.join("; ")))
   }
 
+  /// With a `config_label`, the first archive holding a performance config
+  /// also has it staged for import, as the archive install path does.
   async fn prepare_downloaded_vpks(
     operation_id: u64,
     task: &DownloadTask,
     downloaded_files: &[PathBuf],
     app_handle: &AppHandle,
-  ) -> Result<PreparedDownload, Error> {
+    config_label: Option<&str>,
+  ) -> Result<(PreparedDownload, Option<(String, Vec<ImportVariant>)>), Error> {
     use crate::mod_manager::archive_extractor::ArchiveExtractor;
     use crate::mod_manager::file_tree::{FileTreeAnalyzer, ModFileTree};
 
@@ -840,6 +868,7 @@ impl DownloadManager {
     }
     std::fs::create_dir_all(&prepared_dir)?;
 
+    let mut staged_config = None;
     let prepare_result = async {
       let extractor = ArchiveExtractor::new();
       let analyzer = FileTreeAnalyzer::new();
@@ -985,6 +1014,12 @@ impl DownloadManager {
           prepared_files.push(file);
         }
 
+        if let Some(label) = config_label
+          && staged_config.is_none()
+        {
+          staged_config =
+            Self::stage_bundled_config(app_handle, extracted_dir.path(), label, &task.mod_id);
+        }
         extracted_dir.close()?;
       }
 
@@ -1058,7 +1093,7 @@ impl DownloadManager {
       );
     }
 
-    prepare_result
+    prepare_result.map(|prepared| (prepared, staged_config))
   }
 
   fn is_vpk_path(path: &std::path::Path) -> bool {

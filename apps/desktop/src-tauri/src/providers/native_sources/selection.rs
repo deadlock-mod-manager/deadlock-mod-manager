@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashSet};
+use std::collections::{HashMap, HashSet};
 
 use crate::errors::Error;
 use crate::mod_manager::file_tree::{ModFile, ModFileTree};
@@ -76,7 +76,10 @@ pub fn build_component_selection(
       "Selected artifacts must exactly match the selected components",
     ));
   }
-  let mut files: BTreeMap<(String, String), ModFile> = BTreeMap::new();
+  // Components are declared in load order: an earlier file gets the lower
+  // pak number and wins. A file several components share keeps its first slot.
+  let mut files: Vec<ModFile> = Vec::new();
+  let mut positions: HashMap<(&str, &str), usize> = HashMap::new();
   for component in &installation.components {
     for file in &component.files {
       let artifact = release
@@ -84,24 +87,26 @@ pub fn build_component_selection(
         .iter()
         .find(|artifact| artifact.id == file.artifact_id)
         .ok_or_else(|| invalid("Component references a missing artifact"))?;
-      let entry = files
-        .entry((artifact.id.clone(), file.path.clone()))
-        .or_insert_with(|| ModFile {
-          name: file
-            .path
-            .rsplit('/')
-            .next()
-            .unwrap_or(&file.path)
-            .to_string(),
-          path: format!("{}/{}", artifact.filename, file.path),
-          size: 0,
-          is_selected: false,
-          archive_name: artifact.filename.clone(),
+      let position = *positions
+        .entry((artifact.id.as_str(), file.path.as_str()))
+        .or_insert_with(|| {
+          files.push(ModFile {
+            name: file
+              .path
+              .rsplit('/')
+              .next()
+              .unwrap_or(&file.path)
+              .to_string(),
+            path: format!("{}/{}", artifact.filename, file.path),
+            size: 0,
+            is_selected: false,
+            archive_name: artifact.filename.clone(),
+          });
+          files.len() - 1
         });
-      entry.is_selected |= selected.contains(&component.id);
+      files[position].is_selected |= selected.contains(&component.id);
     }
   }
-  let files: Vec<_> = files.into_values().collect();
   let total_files = files.len();
   Ok(Some(ModFileTree {
     files,

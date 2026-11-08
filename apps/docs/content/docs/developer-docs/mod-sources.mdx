@@ -100,6 +100,17 @@ HTTPS descriptors; development builds also accept local HTTP sources. Browsers
 do nothing when DMM is not installed, so keep the descriptor URL and a download
 link for DMM next to your buttons.
 
+## DMM-hosted sources
+
+The DMM API publishes one source, "Deadlock Mod Manager", for projects that
+only offer an archive link. No project is hosted yet, so its catalog is empty.
+`GET /api/v2/hosted-sources` always lists the source, so the app enrolls it
+once at startup; a source the user removed is not added again. Because the app
+enrolls this source from DMM's API, it accepts the download origins later
+projects add without a new review. Listings tagged `performance` also appear
+on the Performance page, and a bundled `gameinfo.gi` opens the config import
+review after the install.
+
 ## Documents and stable identity
 
 The example contains:
@@ -164,7 +175,9 @@ choice between blue and red. Its README shows the index item needed to publish
 it. Components reference exact artifact IDs and archive-relative VPK paths;
 required sets and bounded choice groups determine valid selections. Defaults are
 first-install suggestions. Removing a saved component in an update requires a
-new user decision, even if the author publishes a different default.
+new user decision, even if the author publishes a different default. List
+components in load order: an earlier component's VPKs load first and win over
+later ones that change the same files.
 
 The ordinary example uses manual selection instead. When saved archive/VPK file
 choices stop fitting a new manual release, DMM uses its file-selection flow and

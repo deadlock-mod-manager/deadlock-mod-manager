@@ -109,6 +109,11 @@ export function MultiFileDownloadDialog({
   );
   const allSelected =
     model.rows.length > 0 && selected.size === model.rows.length;
+  // Components cut from one archive would each repeat its name and size.
+  const showRowFiles =
+    !isComponentMode ||
+    new Set(model.rows.flatMap((row) => row.files.map((file) => file.url)))
+      .size > 1;
 
   if (!isComponentMode && files.length <= 1) {
     return null;
@@ -196,12 +201,12 @@ export function MultiFileDownloadDialog({
                 </span>
               )}
             </p>
-            {description && (
+            {showRowFiles && description && (
               <p className='mt-0.5 line-clamp-2 text-muted-foreground text-xs'>
                 {description}
               </p>
             )}
-            {row.files.length > 0 && (
+            {showRowFiles && row.files.length > 0 && (
               <div className='mt-1 flex items-center gap-3 text-muted-foreground text-xs'>
                 <span className='font-medium tabular-nums'>
                   {formatSize(size)}
@@ -261,7 +266,9 @@ export function MultiFileDownloadDialog({
             ).length;
             const isRequiredSection = section.id === REQUIRED_SECTION_ID;
             return (
-              <section className='border-b last:border-b-0' key={section.id}>
+              <section
+                className='shrink-0 border-b last:border-b-0'
+                key={section.id}>
                 <div className='flex items-center justify-between gap-2 border-b px-3 py-2'>
                   {section.label === null && !isRequiredSection ? (
                     <div className='flex items-center gap-3'>
