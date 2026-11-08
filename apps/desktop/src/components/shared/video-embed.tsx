@@ -2,10 +2,12 @@ import type { EmbeddedVideo } from "@deadlock-mods/shared";
 import { PlayIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { YouTubeThumbnail } from "./youtube-thumbnail";
 
 interface VideoEmbedProps {
   video: EmbeddedVideo;
   title: string;
+  disabled?: boolean;
 }
 
 // Both players need scripts and their own origin; popups let "Watch on
@@ -27,32 +29,21 @@ function playerUrl({ provider, id, hash }: EmbeddedVideo): string {
   return `https://player.vimeo.com/video/${encodeURIComponent(id)}?${params}`;
 }
 
-const YouTubeThumbnail = ({ id, alt }: { id: string; alt: string }) => {
-  // maxresdefault only exists for HD uploads; hqdefault is always generated
-  const [quality, setQuality] = useState<"maxresdefault" | "hqdefault">(
-    "maxresdefault",
-  );
-  return (
-    <img
-      alt={alt}
-      className='size-full object-cover'
-      onError={() => setQuality("hqdefault")}
-      src={`https://img.youtube.com/vi/${encodeURIComponent(id)}/${quality}.jpg`}
-    />
-  );
-};
-
 /**
  * Click-to-play video player. The provider iframe loads only after the user
  * clicks, so viewing a page contacts YouTube for a thumbnail at most.
  */
-export const VideoEmbed = ({ video, title }: VideoEmbedProps) => {
+export const VideoEmbed = ({
+  video,
+  title,
+  disabled = false,
+}: VideoEmbedProps) => {
   const { t } = useTranslation();
   const [activated, setActivated] = useState(false);
 
   return (
     <div className='relative overflow-hidden rounded-lg border border-primary/15'>
-      {activated ? (
+      {activated && !disabled ? (
         <div className='aspect-video'>
           <iframe
             allow={PLAYER_ALLOW}
@@ -67,6 +58,7 @@ export const VideoEmbed = ({ video, title }: VideoEmbedProps) => {
         <button
           aria-label={t("videoEmbed.play", { title })}
           className='group relative block aspect-video w-full cursor-pointer bg-muted'
+          disabled={disabled}
           onClick={() => setActivated(true)}
           type='button'>
           {video.provider === "youtube" && (

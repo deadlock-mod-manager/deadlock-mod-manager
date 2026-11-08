@@ -29,7 +29,7 @@ type RetainedCategory = {
 
 // GameBanana omits the id for this root; the desktop catalog pins it.
 const MODEL_REPLACEMENT_ID = 33154;
-const CATEGORY_URL_ID = /\/cats\/(\d+)\/?$/;
+const CATEGORY_URL_ID = /\/cats\/(\d+)\/*$/;
 
 function categoryId(
   category: ProfileCategory,

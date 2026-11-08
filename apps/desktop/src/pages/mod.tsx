@@ -606,7 +606,14 @@ const Mod = () => {
               )}
 
               {mod.metadata?.videos && mod.metadata.videos.length > 0 && (
-                <ModVideos modName={mod.name} videos={mod.metadata.videos} />
+                <ModVideos
+                  key={`${mod.remoteId}:${shouldBlur}:${nsfwSettings.disableBlur}`}
+                  modName={mod.name}
+                  nsfwSettings={nsfwSettings}
+                  onNSFWToggle={handleNSFWToggle}
+                  shouldBlur={shouldBlur}
+                  videos={mod.metadata.videos}
+                />
               )}
 
               {!mod.isAudio && hasImages && (
