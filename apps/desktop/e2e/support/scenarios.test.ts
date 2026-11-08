@@ -49,6 +49,9 @@ describe("scenario selection", () => {
     );
     expect(scenarioPhases("mod-files-error")).toEqual(["files-error"]);
     expect(selectScenarios("profiles")).toContain("profiles-restore-variant");
+    expect(selectScenarios("profiles-restore-variant")).toEqual([
+      "profiles-restore-variant",
+    ]);
     expect(scenarioPhases("profiles-restore-variant")).toEqual([
       "restore-variant",
       "restart-restored-variant",

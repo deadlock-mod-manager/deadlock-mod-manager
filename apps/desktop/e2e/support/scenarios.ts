@@ -1272,6 +1272,7 @@ export const selectScenarios = (suite: string): ScenarioId[] => {
     .filter(
       (id) =>
         suite === "all" ||
+        id === suite ||
         scenarios[id].family === suite ||
         scenarios[id].coverage === suite,
     );
