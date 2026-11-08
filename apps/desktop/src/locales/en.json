@@ -4238,7 +4238,7 @@
   "warnings": {
     "outdatedDescription": "This mod hasn't been updated since the Paint the Town update (October 16, 2026) and may not work properly.",
     "obsoleteLabel": "Obsolete",
-    "obsoleteDescription": "This mod is no longer available on the mods store and may not work with the current game version.",
+    "obsoleteDescription": "The author marked this mod obsolete. It may not work with the current game version.",
     "staleModDescription": "This mod has {{count}} unresolved reports and hasn't been updated since {{date}}. It may be broken with the current game version.",
     "staleModLabel": "Stale",
     "missingFilesLabel": "Files missing",
@@ -7613,6 +7613,10 @@
       "staffNote": "Staff note",
       "withheldAt": "Withheld",
       "withheldBy": "by {{name}}"
+    },
+    "obsolete": {
+      "showNote": "Show author's note",
+      "hideNote": "Hide author's note"
     },
     "viewIn3d": "View in 3D",
     "videos": "Videos",

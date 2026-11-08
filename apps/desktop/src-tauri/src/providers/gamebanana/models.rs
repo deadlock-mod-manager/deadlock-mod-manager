@@ -496,6 +496,9 @@ pub struct Profile {
   pub completion_percentage: Option<u8>,
   #[serde(rename = "_aWithholdNotice", default, deserialize_with = "lenient")]
   pub withhold_notice: Option<WithholdNotice>,
+  /// The author's note on an obsolete submission.
+  #[serde(rename = "_sObsolescenceNotice", default)]
+  pub obsolescence_notice: Option<String>,
 }
 
 /// Why GameBanana staff withheld a submission. `_sNotes` is staff-written HTML.

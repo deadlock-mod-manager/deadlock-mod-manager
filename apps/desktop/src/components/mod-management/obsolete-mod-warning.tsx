@@ -1,4 +1,3 @@
-import { Alert, AlertDescription } from "@deadlock-mods/ui/components/alert";
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import {
   Tooltip,
@@ -7,9 +6,10 @@ import {
 } from "@deadlock-mods/ui/components/tooltip";
 import { XCircle } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
+import { cn } from "@/lib/utils";
 
 type ObsoleteModWarningProps = {
-  variant?: "indicator" | "alert";
+  variant?: "indicator" | "chip";
   className?: string;
 };
 
@@ -20,19 +20,23 @@ export const ObsoleteModWarning = ({
   const { t } = useTranslation();
   const warningText = t("warnings.obsoleteDescription");
 
-  if (variant === "alert") {
+  if (variant === "chip") {
     return (
-      <Alert className={className} variant='destructive'>
-        <XCircle className='h-4 w-4' />
-        <AlertDescription>{warningText}</AlertDescription>
-      </Alert>
+      <span
+        className={cn(
+          "inline-flex items-center gap-1.5 rounded-md border border-foreground/15 bg-foreground/5 px-2 py-0.5 font-medium text-foreground/80 text-xs",
+          className,
+        )}>
+        <XCircle className='size-3' />
+        {t("warnings.obsoleteLabel")}
+      </span>
     );
   }
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Badge className={`cursor-help ${className}`} variant='destructive'>
+        <Badge className={cn("cursor-help", className)} variant='destructive'>
           <XCircle className='mr-1 h-3 w-3' />
           {t("warnings.obsoleteLabel")}
         </Badge>

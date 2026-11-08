@@ -85,12 +85,21 @@ export const searchGameBananaCatalogAuthors = (query: CatalogQuery) =>
 
 export const getGameBananaCatalogMod = async (
   remoteId: string,
-): Promise<ModDto & { withheld: WithholdNoticeDto | null }> => {
+): Promise<
+  ModDto & {
+    withheld: WithholdNoticeDto | null;
+    obsolescenceNotice: string | null;
+  }
+> => {
   const result = await invoke<CatalogModDto>(
     "get_gamebanana_submission_detail",
     { remoteId },
   );
-  return { ...catalogModToModDto(result), withheld: result.withheld };
+  return {
+    ...catalogModToModDto(result),
+    withheld: result.withheld,
+    obsolescenceNotice: result.obsolescenceNotice,
+  };
 };
 
 export const getGameBananaCatalogDownloads = async (
