@@ -493,6 +493,14 @@ pub struct Profile {
   pub completion_percentage: Option<u8>,
 }
 
+impl Profile {
+  /// Private, withheld, and trashed submissions still serve a profile, but GameBanana
+  /// hides them from everyone except their owner.
+  pub fn is_hidden(&self) -> bool {
+    self.is_private || self.is_withheld || self.is_trashed
+  }
+}
+
 #[derive(Debug, Clone, Deserialize)]
 pub struct DownloadPage {
   #[serde(rename = "_bIsTrashed", default)]

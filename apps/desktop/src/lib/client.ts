@@ -2,12 +2,16 @@ import { toast } from "@deadlock-mods/ui/components/sonner";
 import { MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
 import { formatUserError } from "@/lib/format-error";
 import logger from "@/lib/logger";
+import { isTauriError } from "@/types/tauri";
 
 export const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error, query) => {
       const skipGlobalError = query.meta?.skipGlobalErrorHandler;
-      if (skipGlobalError) {
+      // A mod GameBanana hid is an expected state the screens render, not a failure.
+      const isHiddenMod =
+        isTauriError(error) && error.kind === "providerSubmissionUnavailable";
+      if (skipGlobalError || isHiddenMod) {
         return;
       }
       logger

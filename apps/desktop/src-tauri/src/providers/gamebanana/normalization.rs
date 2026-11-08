@@ -72,7 +72,7 @@ pub fn normalize_profile(
   profile: &Profile,
   submission_type: SubmissionType,
 ) -> Option<NormalizedSubmission> {
-  if profile.is_private || profile.is_withheld || profile.is_trashed {
+  if profile.is_hidden() {
     return None;
   }
 

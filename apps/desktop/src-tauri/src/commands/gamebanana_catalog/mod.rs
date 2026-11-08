@@ -12,8 +12,8 @@ pub use types::{
 use crate::errors::Error;
 use crate::providers::SubmissionRef;
 use crate::providers::gamebanana::catalog::{
-  CatalogAuthor, CatalogCollection, CatalogFacet, CatalogQuery, CatalogRecord, SyncOutcome,
-  current_week, weekly_featured,
+  Catalog, CatalogAuthor, CatalogCollection, CatalogFacet, CatalogQuery, CatalogRecord,
+  SyncOutcome, current_week, weekly_featured,
 };
 use crate::providers::gamebanana::{ApiResponse, UpdateSnapshot, normalize_profile};
 use activity::{CatalogChangelogDto, CatalogCommentsDto};
@@ -142,6 +142,18 @@ pub async fn get_gamebanana_collection(
   }))
 }
 
+/// GameBanana hid the submission, so the catalog stops listing it until a crawl sees it
+/// again.
+pub(crate) async fn forget_hidden_submission(
+  catalog: &Catalog,
+  submission: SubmissionRef,
+) -> Error {
+  if let Err(error) = catalog.tombstone(submission.clone()).await {
+    log::warn!("Could not drop hidden submission {submission:?} from the catalog: {error}");
+  }
+  Error::ProviderSubmissionUnavailable
+}
+
 fn uncovered_ids<'a>(collections: impl Iterator<Item = &'a CatalogCollection>) -> Vec<String> {
   collections
     .filter(|collection| collection.cover_url.is_none())
@@ -160,6 +172,9 @@ pub async fn get_gamebanana_submission_detail(
   let cancel = CancellationToken::new();
   let mut mod_data = match backend.client.profile(&submission, &cancel).await {
     Ok(profile) => {
+      if profile.is_hidden() {
+        return Err(forget_hidden_submission(&backend.catalog, submission).await);
+      }
       let mut normalized = normalize_profile(&profile, submission.submission_type)
         .ok_or(Error::ProviderSubmissionUnavailable)?;
       let root_name = profile
@@ -543,9 +558,7 @@ async fn submission_files(
     .download_page(&submission, &CancellationToken::new())
     .await?;
   if page.is_trashed || page.is_withheld {
-    return Err(Error::ProviderInvalidResponse(
-      "submission files are not publicly available".to_string(),
-    ));
+    return Err(forget_hidden_submission(&backend.catalog, submission).await);
   }
   let downloads = page
     .files

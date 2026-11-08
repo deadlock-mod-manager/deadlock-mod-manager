@@ -422,6 +422,23 @@ impl Catalog {
       .await
   }
 
+  /// Hides a submission GameBanana no longer serves publicly until a crawl sees it again.
+  pub async fn tombstone(&self, submission: SubmissionRef) -> Result<(), Error> {
+    self
+      .pool
+      .run(move |connection| {
+        diesel::update(submission::table.find((
+          provider_name(submission.provider),
+          submission_type_name(submission.submission_type),
+          submission.submission_id,
+        )))
+        .set(submission::is_tombstoned.eq(true))
+        .execute(connection)?;
+        Ok(())
+      })
+      .await
+  }
+
   pub async fn count_visible(&self) -> Result<u64, Error> {
     self
       .pool

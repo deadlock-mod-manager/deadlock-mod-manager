@@ -210,9 +210,9 @@ async fn resolve_gamebanana_file(
     .delete_cached_update(submission.clone())
     .await?;
   if page.is_trashed || page.is_withheld {
-    return Err(Error::ProviderInvalidResponse(
-      "GameBanana files are not publicly available".to_string(),
-    ));
+    return Err(
+      super::gamebanana_catalog::forget_hidden_submission(&backend.catalog, submission).await,
+    );
   }
   let Some(file) = page
     .files

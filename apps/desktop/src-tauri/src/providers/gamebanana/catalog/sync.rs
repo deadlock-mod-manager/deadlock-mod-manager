@@ -78,6 +78,16 @@ trait CatalogSource: Send + Sync {
     cancel: &'a CancellationToken,
   ) -> SourceFuture<'a, Vec<Option<BulkHydration>>>;
 
+  /// Bulk hydration serves withheld submissions like live ones; only the profile says
+  /// whether GameBanana still shows a submission publicly.
+  fn is_hidden<'a>(
+    &'a self,
+    _submission: &'a SubmissionRef,
+    _cancel: &'a CancellationToken,
+  ) -> SourceFuture<'a, bool> {
+    Box::pin(async { Ok(false) })
+  }
+
   fn collection_index<'a>(
     &'a self,
     _page: u32,
@@ -150,6 +160,14 @@ impl CatalogSource for GameBananaClient {
     cancel: &'a CancellationToken,
   ) -> SourceFuture<'a, Vec<Option<BulkHydration>>> {
     Box::pin(GameBananaClient::bulk_hydrate(self, submissions, cancel))
+  }
+
+  fn is_hidden<'a>(
+    &'a self,
+    submission: &'a SubmissionRef,
+    cancel: &'a CancellationToken,
+  ) -> SourceFuture<'a, bool> {
+    Box::pin(async move { Ok(self.profile(submission, cancel).await?.is_hidden()) })
   }
 
   fn categories<'a>(
@@ -674,12 +692,25 @@ impl CatalogSync {
             return self.mark_incomplete(snapshot_id).await;
           }
         };
-        let live = batch
-          .iter()
-          .zip(hydrated)
-          .filter(|(_, hydration)| hydration.is_some())
-          .map(|(submission, _)| submission.clone())
-          .collect::<Vec<_>>();
+        let mut live = Vec::new();
+        for (submission, hydration) in batch.iter().zip(hydrated) {
+          if hydration.is_none() {
+            continue;
+          }
+          match self
+            .patiently(cancel, || self.source.is_hidden(submission, cancel))
+            .await
+          {
+            Ok(true) => {}
+            Ok(false) => live.push(submission.clone()),
+            Err(error) => {
+              log::warn!(
+                "GameBanana could not confirm unseen {submission_type:?} records: {error}"
+              );
+              return self.mark_incomplete(snapshot_id).await;
+            }
+          }
+        }
         self
           .catalog
           .mark_seen(live, snapshot_id.to_string())
@@ -1347,6 +1378,48 @@ mod tests {
           submissions.len()
         )))
       })
+    }
+  }
+
+  /// Serves `FakeSource`, but GameBanana staff withheld the listed submissions: bulk
+  /// hydration still answers for them, only their profile says they are hidden.
+  struct WithheldSource {
+    source: FakeSource,
+    withheld: HashSet<String>,
+  }
+
+  impl CatalogSource for WithheldSource {
+    fn record_counts<'a>(&'a self, cancel: &'a CancellationToken) -> SourceFuture<'a, [u64; 3]> {
+      self.source.record_counts(cancel)
+    }
+
+    fn index<'a>(
+      &'a self,
+      submission_type: SubmissionType,
+      page: u32,
+      latest_modified: bool,
+      cancel: &'a CancellationToken,
+    ) -> SourceFuture<'a, IndexPage> {
+      self
+        .source
+        .index(submission_type, page, latest_modified, cancel)
+    }
+
+    fn bulk_hydrate<'a>(
+      &'a self,
+      submissions: &'a [SubmissionRef],
+      cancel: &'a CancellationToken,
+    ) -> SourceFuture<'a, Vec<Option<BulkHydration>>> {
+      self.source.bulk_hydrate(submissions, cancel)
+    }
+
+    fn is_hidden<'a>(
+      &'a self,
+      submission: &'a SubmissionRef,
+      _cancel: &'a CancellationToken,
+    ) -> SourceFuture<'a, bool> {
+      let hidden = self.withheld.contains(&submission.submission_id);
+      Box::pin(async move { Ok(hidden) })
     }
   }
 
@@ -2341,6 +2414,57 @@ mod tests {
       .collect::<Vec<_>>();
     slugs.sort();
     assert_eq!(slugs, ["2", "3", "snd-9"]);
+  }
+
+  #[tokio::test]
+  async fn withheld_rows_missed_by_a_crawl_are_tombstoned() {
+    let directory = tempdir().unwrap();
+    let catalog = super::Catalog::open(directory.path().join("catalog.sqlite3"), 2)
+      .await
+      .unwrap();
+    CatalogSync::with_source(
+      catalog.clone(),
+      FakeSource {
+        served: Mutex::default(),
+        pages: Mutex::new(VecDeque::from([
+          Ok(page_with_modified(&[(1, 1), (2, 1)], true)),
+          Ok(page(9, true)),
+        ])),
+      },
+    )
+    .full_sync(&CancellationToken::new())
+    .await
+    .unwrap();
+
+    // Both mods dropped out of the index and still hydrate, but staff withheld mod 2.
+    CatalogSync::with_source(
+      catalog.clone(),
+      WithheldSource {
+        source: FakeSource {
+          served: Mutex::new(HashSet::from(["1".to_string(), "2".to_string()])),
+          pages: Mutex::new(VecDeque::from([Ok(page(3, true)), Ok(page(9, true))])),
+        },
+        withheld: HashSet::from(["2".to_string()]),
+      },
+    )
+    .full_sync(&CancellationToken::new())
+    .await
+    .unwrap();
+
+    let visible = catalog
+      .query(super::super::CatalogQuery {
+        page_size: 50,
+        ..super::super::CatalogQuery::default()
+      })
+      .await
+      .unwrap();
+    let mut slugs = visible
+      .items
+      .iter()
+      .map(|item| item.submission.to_slug().unwrap())
+      .collect::<Vec<_>>();
+    slugs.sort();
+    assert_eq!(slugs, ["1", "3", "snd-9"]);
   }
 
   #[tokio::test]
