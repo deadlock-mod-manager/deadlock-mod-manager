@@ -24,7 +24,7 @@ export const hostedSourcesRouter = {
       path: "/v2/hosted-sources",
       summary: "Hosted mod sources",
       description:
-        "The mod source DMM publishes for projects that only offer an archive link, listed while it has an installable pack. The desktop app enrolls it once.",
+        "The mod source DMM publishes for projects that only offer an archive link. The desktop app enrolls it once, even while it has no packs.",
     })
     .output(
       z.object({
@@ -37,23 +37,15 @@ export const hostedSourcesRouter = {
         ),
       }),
     )
-    .handler(async () => {
-      const states = await HostedSourcesService.getInstance().listingStates();
-      const installable = states.some(
-        ({ enabled, snapshot }) => enabled && snapshot,
-      );
-      return {
-        sources: installable
-          ? [
-              {
-                id: HOSTED_SOURCE_ID,
-                name: HOSTED_SOURCE_NAME,
-                descriptorUrl: `${apiOrigin}/api/v2/hosted-sources/dmm-source.json`,
-              },
-            ]
-          : [],
-      };
-    }),
+    .handler(() => ({
+      sources: [
+        {
+          id: HOSTED_SOURCE_ID,
+          name: HOSTED_SOURCE_NAME,
+          descriptorUrl: `${apiOrigin}/api/v2/hosted-sources/dmm-source.json`,
+        },
+      ],
+    })),
 
   getHostedSourceDescriptor: publicProcedure
     .route({

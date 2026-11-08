@@ -112,9 +112,9 @@ list, then discards it; users download from the project's own origin.
 
 Each definition registers a feature flag (`hosted-source-<id>`, off by
 default) that makes its listing available; off marks it removed, so it stops
-showing and can no longer be installed. While any listing is available,
-`GET /api/v2/hosted-sources` lists the source and the app enrolls it once at
-startup; a source the user removed is not added again. Because the app enrolls
+showing and can no longer be installed. `GET /api/v2/hosted-sources` always
+lists the source, so the app enrolls it once at startup even before it has a
+pack; a source the user removed is not added again. Because the app enrolls
 this source from DMM's API, it accepts the download origins later projects add
 without a new review. Listings tagged `performance` also appear on the
 Performance page, and a bundled `gameinfo.gi` opens the config import review

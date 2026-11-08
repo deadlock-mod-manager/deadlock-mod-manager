@@ -21,6 +21,7 @@ export const hostedSourceDescriptorSchema = z.object({
   name: z.string(),
   gameId: z.literal("deadlock"),
   homepageUrl: z.string(),
+  iconUrl: z.string(),
   catalog: z.object({ kind: z.literal("static"), indexUrl: z.string() }),
   networkOrigins: z.object({
     api: z.array(z.string()),
@@ -101,10 +102,12 @@ export const HOSTED_SOURCE_ID = "deadlock-mod-manager";
 export const HOSTED_SOURCE_NAME = "Deadlock Mod Manager";
 
 const ARTIFACT_ID = "archive";
+const ICON_URL = "https://deadlockmods.app/logo192.png";
 
 /**
  * Download origins cover every definition, switched on or not, so a flag
- * flip never changes the descriptor.
+ * flip never changes the descriptor. The API's own origin keeps the list
+ * valid before any project exists.
  */
 export const buildHostedSourceDescriptor = (
   definitions: HostedSourceDefinition[],
@@ -116,15 +119,19 @@ export const buildHostedSourceDescriptor = (
   name: HOSTED_SOURCE_NAME,
   gameId: "deadlock",
   homepageUrl: "https://deadlockmods.app/",
+  iconUrl: ICON_URL,
   catalog: { kind: "static", indexUrl: "./catalog.json" },
   networkOrigins: {
     api: [apiOrigin],
     downloads: [
-      ...new Set(
-        definitions.map((definition) => new URL(definition.archiveUrl).origin),
-      ),
+      ...new Set([
+        apiOrigin,
+        ...definitions.map(
+          (definition) => new URL(definition.archiveUrl).origin,
+        ),
+      ]),
     ].sort(),
-    media: [],
+    media: [new URL(ICON_URL).origin],
   },
   capabilities: { installationChoices: true },
 });
