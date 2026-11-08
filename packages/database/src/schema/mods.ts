@@ -11,6 +11,13 @@ import {
 import { generateId, typeId } from "../extensions/typeid";
 import { timestamps } from "./shared/timestamps";
 
+/** Mirrors `ModMetadata` in @deadlock-mods/shared, which depends on this package */
+export interface ModMetadataColumn {
+  mapName?: string;
+  donationLinks?: Array<{ url: string; platform: string }>;
+  videos?: Array<{ provider: "youtube" | "vimeo"; id: string; hash?: string }>;
+}
+
 export interface ModOverrides {
   name?: string;
   description?: string;
@@ -21,10 +28,7 @@ export interface ModOverrides {
   isNSFW?: boolean;
   isObsolete?: boolean;
   tags?: string[];
-  metadata?: {
-    mapName?: string;
-    donationLinks?: Array<{ url: string; platform: string }>;
-  };
+  metadata?: ModMetadataColumn;
   downloads?: Array<{ url: string; file: string }>;
 }
 
@@ -132,10 +136,7 @@ export const mods = pgTable(
       mode: "date",
     }),
     lastSyncedAt: timestamp("last_synced_at", { mode: "date" }),
-    metadata: jsonb("metadata").$type<{
-      mapName?: string;
-      donationLinks?: Array<{ url: string; platform: string }>;
-    }>(),
+    metadata: jsonb("metadata").$type<ModMetadataColumn>(),
     overrides: jsonb("overrides").$type<ModOverrides>(),
     dependencies: jsonb("dependencies").$type<ModDependency[]>(),
     ...timestamps,

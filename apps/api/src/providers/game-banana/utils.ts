@@ -3,11 +3,12 @@ import type {
   ModDownload,
   NewModAuthor,
 } from "@deadlock-mods/database";
-import type {
-  DonationLink,
-  FileserverDto,
-  GameBanana,
-  ModMetadata,
+import {
+  type DonationLink,
+  type FileserverDto,
+  type GameBanana,
+  type ModMetadata,
+  parseEmbeddedVideos,
 } from "@deadlock-mods/shared";
 import { NSFW_CONTENT_RATINGS, NSFW_VISIBILITIES } from "./constants";
 
@@ -410,22 +411,28 @@ export function buildMetadata({
   description,
   isMap,
   donationMethods,
+  embeddedMedia = [],
 }: {
   description: string;
   isMap: boolean;
   donationMethods: GameBanana.GameBananaDonationMethod[];
+  embeddedMedia?: string[];
 }): ModMetadata | null {
   const mapName = isMap ? extractMapName(description) : undefined;
   const donationLinks = buildDonationLinks({
     methods: donationMethods,
     description,
   });
+  const videos = parseEmbeddedVideos(embeddedMedia);
 
-  if (!mapName && donationLinks.length === 0) return null;
+  if (!mapName && donationLinks.length === 0 && videos.length === 0) {
+    return null;
+  }
 
   const metadata: ModMetadata = {};
   if (mapName) metadata.mapName = mapName;
   if (donationLinks.length > 0) metadata.donationLinks = donationLinks;
+  if (videos.length > 0) metadata.videos = videos;
   return metadata;
 }
 

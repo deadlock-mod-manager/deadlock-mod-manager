@@ -14,7 +14,6 @@ import {
   FloppyDiskIcon,
   GlobeIcon,
   PaintBrushIcon,
-  PlayIcon,
   PlusIcon,
   SparkleIcon,
   WrenchIcon,
@@ -24,6 +23,7 @@ import { type ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import useAbout from "@/hooks/use-about";
 import { getLastSeenVersion } from "@/hooks/use-whats-new";
+import { VideoEmbed } from "@/components/shared/video-embed";
 import { getReleaseNotesUrl } from "@/lib/app-version-display";
 import { APP_NAME } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -175,53 +175,6 @@ const CategorySection = ({
   );
 };
 
-const YouTubeEmbed = ({ videoId }: { videoId: string }) => {
-  const { t } = useTranslation();
-  const [activated, setActivated] = useState(false);
-
-  if (!videoId) return null;
-
-  const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-
-  return (
-    <div className='wn-title-enter px-6 pt-5'>
-      <div className='relative overflow-hidden rounded-lg border border-primary/15'>
-        {activated ? (
-          <div className='aspect-video'>
-            <iframe
-              allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture'
-              allowFullScreen
-              className='size-full'
-              src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0`}
-              title={t("whatsNew.video.embedTitle")}
-            />
-          </div>
-        ) : (
-          <button
-            className='group relative block aspect-video w-full cursor-pointer'
-            onClick={() => setActivated(true)}
-            type='button'>
-            <img
-              alt={t("whatsNew.video.thumbnailAlt")}
-              className='size-full object-cover'
-              src={thumbnailUrl}
-            />
-            <div className='absolute inset-0 bg-black/30 transition-colors group-hover:bg-black/40' />
-            <div className='absolute inset-0 flex items-center justify-center'>
-              <div className='flex size-14 items-center justify-center rounded-full bg-primary/90 shadow-lg transition-transform group-hover:scale-110'>
-                <PlayIcon
-                  className='ml-0.5 size-7 text-primary-foreground'
-                  weight='fill'
-                />
-              </div>
-            </div>
-          </button>
-        )}
-      </div>
-    </div>
-  );
-};
-
 const MAX_SKIPPED_LINKS = 4;
 
 const Highlights = ({
@@ -364,7 +317,14 @@ export const WhatsNewDialog = ({ onClose }: WhatsNewDialogProps) => {
 
       {(videoId || highlights.length > 0 || categories.length > 0) && (
         <div className='min-h-0 flex-1 overflow-y-auto pr-1'>
-          {videoId && <YouTubeEmbed videoId={videoId} />}
+          {videoId && (
+            <div className='wn-title-enter px-6 pt-5'>
+              <VideoEmbed
+                title={t("whatsNew.video.embedTitle")}
+                video={{ provider: "youtube", id: videoId }}
+              />
+            </div>
+          )}
           {highlights.length > 0 && <Highlights highlights={highlights} />}
           {categories.length > 0 && (
             <div className='space-y-5 px-6 py-5'>

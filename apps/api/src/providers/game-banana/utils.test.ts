@@ -667,6 +667,32 @@ describe("buildMetadata", () => {
     expect(result?.mapName).toBe("my_arena");
     expect(result?.donationLinks).toHaveLength(1);
   });
+
+  it("keeps only embedded media it can play", () => {
+    const result = buildMetadata({
+      description: "",
+      isMap: false,
+      donationMethods: [],
+      embeddedMedia: [
+        "https://www.youtube.com/watch?v=Xw0wI89x3fc",
+        "https://example.com/not-a-video",
+      ],
+    });
+    expect(result).toEqual({
+      videos: [{ provider: "youtube", id: "Xw0wI89x3fc" }],
+    });
+  });
+
+  it("returns null when no embedded media is playable", () => {
+    expect(
+      buildMetadata({
+        description: "",
+        isMap: false,
+        donationMethods: [],
+        embeddedMedia: ["https://example.com/not-a-video"],
+      }),
+    ).toBeNull();
+  });
 });
 
 describe("buildModAuthor", () => {

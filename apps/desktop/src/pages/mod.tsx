@@ -38,6 +38,7 @@ import { ModModelPreview } from "@/components/mod-detail/mod-model-preview";
 import { ModGallery } from "@/components/mod-detail/mod-gallery";
 import { ModHero } from "@/components/mod-detail/mod-hero";
 import { ModInfo } from "@/components/mod-detail/mod-info";
+import { ModVideos } from "@/components/mod-detail/mod-videos";
 import { MapHowToPlay } from "@/components/mod-detail/map-how-to-play";
 import { SupportAuthor } from "@/components/mod-detail/support-author";
 import { VpkReplacementSection } from "@/components/mod-detail/vpk-replacement-section";
@@ -602,6 +603,10 @@ const Mod = () => {
                   audioUrl={mod.audioUrl}
                   isAudio={!!mod.isAudio}
                 />
+              )}
+
+              {mod.metadata?.videos && mod.metadata.videos.length > 0 && (
+                <ModVideos modName={mod.name} videos={mod.metadata.videos} />
               )}
 
               {!mod.isAudio && hasImages && (

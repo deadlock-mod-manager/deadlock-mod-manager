@@ -210,6 +210,8 @@ export type GameBananaModProfile = BaseSubmission & {
     _sEmbeddableImageBaseUrl: string;
     _aVariants: string[];
   };
+  /** Video page links (YouTube, Vimeo) shown on the submission page */
+  _aEmbeddedMedia?: string[];
   _bFollowLinks?: boolean;
   _aSubmitter: BaseUser & {
     _sUserTitle: string;
@@ -332,6 +334,8 @@ export type GameBananaSoundProfile = BaseSubmission & {
     _sEmbeddableImageBaseUrl: string;
     _aVariants: string[];
   };
+  /** Video page links (YouTube, Vimeo) shown on the submission page */
+  _aEmbeddedMedia?: string[];
   _aSubmitter: BaseUser & {
     _sUserTitle: string;
     _sHonoraryTitle: string;
