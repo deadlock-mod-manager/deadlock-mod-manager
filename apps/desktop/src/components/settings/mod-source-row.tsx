@@ -20,6 +20,7 @@ import { useTranslation } from "react-i18next";
 import { DateDisplay } from "@/components/date-display";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { ModSourceIcon } from "@/components/shared/mod-source-icon";
+import { isHostedSource } from "@/lib/hosted-sources";
 import {
   NATIVE_SOURCES_QUERY_KEY,
   refreshNativeSource,
@@ -88,6 +89,9 @@ export const ModSourceRow = ({ source }: { source: NativeSourceSummary }) => {
             )}>
             {name}
           </span>
+          {isHostedSource(source) && (
+            <Badge variant='secondary'>{t("modSources.builtIn")}</Badge>
+          )}
           {!source.enabled && (
             <Badge variant='outline'>{t("modSources.disabled")}</Badge>
           )}
