@@ -1,5 +1,5 @@
 use crate::app_runtime::AppHandle;
-use crate::download_manager::DownloadTask;
+use crate::download_manager::{DownloadTask, PreparedDownload};
 use crate::errors::Error;
 use crate::mod_manager::Mod;
 use crate::mod_manager::shard::{ShardIndex, ShardLocator};
@@ -492,6 +492,53 @@ fn install_imported_mod(
   mod_manager.install_mod(deadlock_mod, import_install_folder(final_profile_folder))
 }
 
+/// Mods the profile already has, enabled or not. Importing one beside its old
+/// files would keep both versions loaded, so these are replaced instead.
+fn profile_mod_ids(
+  mod_manager: &crate::mod_manager::ModManager,
+  final_profile_folder: &str,
+) -> Result<std::collections::HashSet<String>, Error> {
+  let addons_path =
+    mod_manager.get_addons_path(import_install_folder(final_profile_folder).as_deref())?;
+  Ok(
+    ProfileVpkManifest::load(&addons_path)?
+      .mods
+      .into_keys()
+      .collect(),
+  )
+}
+
+fn replace_imported_mod(
+  mod_manager: &mut crate::mod_manager::ModManager,
+  mod_data: &super::downloads::ProfileImportMod,
+  final_profile_folder: &str,
+  prepared_vpks: &[std::path::PathBuf],
+  prepared_tree: Option<crate::mod_manager::file_tree::ModFileTree>,
+) -> Result<Mod, Error> {
+  mod_manager.update_mod_from_prepared(
+    &mod_data.mod_id,
+    &mod_data.mod_name,
+    prepared_vpks,
+    prepared_tree.or_else(|| mod_data.file_tree.clone()),
+    import_install_folder(final_profile_folder),
+    true,
+  )
+}
+
+async fn prepare_replacement(
+  manager: &crate::download_manager::DownloadManager,
+  task: DownloadTask,
+) -> Result<Option<PreparedDownload>, String> {
+  match manager.queue_download_and_prepare(task).await {
+    Ok(prepared) if prepared.selection_required => {
+      prepared.remove_scratch_files();
+      Err("The saved file selection doesn't match this mod's current downloads".to_string())
+    }
+    Ok(prepared) => Ok(Some(prepared)),
+    Err(error) => Err(error.to_string()),
+  }
+}
+
 #[tauri::command]
 pub async fn import_profile_batch(
   app_handle: AppHandle,
@@ -577,8 +624,10 @@ pub async fn import_profile_batch(
 
     profile_folder
   };
+  let installed_ids = profile_mod_ids(&MANAGER.lock().unwrap(), &final_profile_folder)?;
 
-  let mut download_results: Vec<Result<(), String>> = Vec::new();
+  // `Some` holds a replacement for a mod the profile already has.
+  let mut download_results: Vec<Result<Option<PreparedDownload>, String>> = Vec::new();
 
   for (index, (mod_data, download_files)) in mods.iter().zip(resolved_downloads).enumerate() {
     // download_results stays index-aligned with mods; the install loop below zips them.
@@ -621,6 +670,10 @@ pub async fn import_profile_batch(
     };
 
     let manager = get_download_manager(app_handle.clone()).await;
+    if installed_ids.contains(&mod_data.mod_id) {
+      download_results.push(prepare_replacement(manager, task).await);
+      continue;
+    }
     if let Err(error) = manager.queue_download_and_wait(task).await {
       log::error!("Download failed for mod {}: {error}", mod_data.mod_id);
       download_results.push(Err(error.to_string()));
@@ -649,7 +702,7 @@ pub async fn import_profile_batch(
           mod_data.mod_id,
           vpks.len()
         );
-        download_results.push(Ok(()));
+        download_results.push(Ok(None));
       }
       Ok(_) => {
         log::error!(
@@ -668,8 +721,9 @@ pub async fn import_profile_batch(
   let mut succeeded = Vec::new();
   let mut failed = Vec::new();
   let mut installed_mods = Vec::new();
+  let mut replaced_any = false;
 
-  for (index, (mod_data, download_result)) in mods.iter().zip(download_results.iter()).enumerate() {
+  for (index, (mod_data, download_result)) in mods.iter().zip(download_results).enumerate() {
     app_handle
       .emit(
         "profile-import-progress",
@@ -683,19 +737,29 @@ pub async fn import_profile_batch(
       )
       .ok();
 
-    if download_result.is_err() {
-      failed.push((
-        mod_data.mod_id.clone(),
-        download_result.as_ref().unwrap_err().clone(),
-      ));
-      continue;
-    }
-
-    let install_result = install_imported_mod(
-      &mut MANAGER.lock().unwrap(),
-      mod_data,
-      &final_profile_folder,
-    );
+    let install_result = match download_result {
+      Err(reason) => {
+        failed.push((mod_data.mod_id.clone(), reason));
+        continue;
+      }
+      Ok(Some(prepared)) => {
+        let result = replace_imported_mod(
+          &mut MANAGER.lock().unwrap(),
+          mod_data,
+          &final_profile_folder,
+          &prepared.vpk_paths,
+          prepared.file_tree.clone(),
+        );
+        prepared.remove_scratch_files();
+        replaced_any |= result.is_ok();
+        result
+      }
+      Ok(None) => install_imported_mod(
+        &mut MANAGER.lock().unwrap(),
+        mod_data,
+        &final_profile_folder,
+      ),
+    };
 
     match install_result {
       Ok(installed_mod) => {
@@ -712,6 +776,25 @@ pub async fn import_profile_batch(
       Err(e) => {
         log::error!("Failed to install mod {}: {:?}", mod_data.mod_id, e);
         failed.push((mod_data.mod_id.clone(), format!("{:?}", e)));
+      }
+    }
+  }
+
+  // Replacements can land out of load order, and later installs rename files
+  // already reported, so reorder once and report the manifest's final names.
+  if replaced_any {
+    let mut mod_manager = MANAGER.lock().unwrap();
+    let folder = import_install_folder(&final_profile_folder);
+    if let Err(error) = mod_manager.reorder_all_mods_for_profile(folder.clone()) {
+      log::warn!("Post-import reorder failed: {error}");
+    }
+    if let Ok(addons_path) = mod_manager.get_addons_path(folder.as_deref())
+      && let Ok(manifest) = ProfileVpkManifest::load(&addons_path)
+    {
+      for info in &mut installed_mods {
+        if let Some(entry) = manifest.mods.get(&info.mod_id) {
+          info.installed_vpks = entry.current_vpks.clone();
+        }
       }
     }
   }
@@ -1018,8 +1101,11 @@ mod tests {
     assert_eq!(std::fs::read_dir(elsewhere).unwrap().count(), 0);
   }
 
-  #[test]
-  fn default_profile_import_installs_into_the_root_addons_folder() {
+  fn test_game() -> (
+    tempfile::TempDir,
+    std::path::PathBuf,
+    crate::mod_manager::ModManager,
+  ) {
     let game = tempfile::tempdir().unwrap();
     let citadel = game.path().join("game/citadel");
     let addons = citadel.join("addons");
@@ -1029,23 +1115,89 @@ mod tests {
       "\"GameInfo\"\n{\n\"FileSystem\"\n{\nSearchPaths\n{\nGame citadel\n}\n}\n}\n",
     )
     .unwrap();
-    std::fs::write(addons.join("42_restored.vpk"), b"downloaded").unwrap();
-    let mut manager = crate::mod_manager::ModManager::for_test_game(game.path());
-    let mod_data = super::super::downloads::ProfileImportMod {
-      mod_id: "42".into(),
+    let manager = crate::mod_manager::ModManager::for_test_game(game.path());
+    (game, addons, manager)
+  }
+
+  fn imported_mod(mod_id: &str) -> super::super::downloads::ProfileImportMod {
+    super::super::downloads::ProfileImportMod {
+      mod_id: mod_id.into(),
       mod_name: "Restored mod".into(),
       download_files: Vec::new(),
       file_tree: None,
       is_map: false,
-    };
+    }
+  }
 
-    let installed = install_imported_mod(&mut manager, &mod_data, "").unwrap();
+  fn vpks_in(folder: &std::path::Path) -> Vec<String> {
+    let mut names: Vec<String> = std::fs::read_dir(folder)
+      .unwrap()
+      .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
+      .filter(|name| name.ends_with(".vpk"))
+      .collect();
+    names.sort();
+    names
+  }
+
+  #[test]
+  fn default_profile_import_installs_into_the_root_addons_folder() {
+    let (_game, addons, mut manager) = test_game();
+    std::fs::write(addons.join("42_restored.vpk"), b"downloaded").unwrap();
+
+    let installed = install_imported_mod(&mut manager, &imported_mod("42"), "").unwrap();
 
     assert_eq!(installed.installed_vpks.len(), 1);
     assert_eq!(
       std::fs::read(addons.join(&installed.installed_vpks[0])).unwrap(),
       b"downloaded"
     );
+  }
+
+  #[test]
+  fn an_import_replaces_the_variant_a_profile_has() {
+    for enabled in [true, false] {
+      let (game, addons, mut manager) = test_game();
+      let mut manifest = ProfileVpkManifest::default();
+      if enabled {
+        std::fs::write(addons.join("pak01_dir.vpk"), b"variant-1").unwrap();
+        manifest.mark_enabled(
+          "42",
+          vec!["pak01_dir.vpk".into()],
+          vec!["variant1.vpk".into()],
+          Some(0),
+          ShardIndex::FIRST,
+        );
+      } else {
+        std::fs::write(addons.join("42_variant1.vpk"), b"variant-1").unwrap();
+        manifest.mark_disabled(
+          "42",
+          vec!["42_variant1.vpk".into()],
+          vec!["variant1.vpk".into()],
+        );
+      }
+      manifest.save(&addons).unwrap();
+      std::fs::write(addons.join("42_variant3.vpk"), b"parked").unwrap();
+      let prepared = game.path().join("variant2.vpk");
+      std::fs::write(&prepared, b"variant-2").unwrap();
+
+      let replaced =
+        replace_imported_mod(&mut manager, &imported_mod("42"), "", &[prepared], None).unwrap();
+
+      assert_eq!(
+        vpks_in(&addons),
+        replaced.installed_vpks,
+        "enabled: {enabled}"
+      );
+      assert_eq!(
+        std::fs::read(addons.join(&replaced.installed_vpks[0])).unwrap(),
+        b"variant-2"
+      );
+      let manifest = ProfileVpkManifest::load(&addons).unwrap();
+      let entry = &manifest.mods["42"];
+      assert!(entry.enabled);
+      assert_eq!(entry.current_vpks, replaced.installed_vpks);
+      assert_eq!(entry.original_vpk_names, ["variant2.vpk"]);
+    }
   }
 
   /// Switching writes the folder into gameinfo.gi, which only accepts ASCII

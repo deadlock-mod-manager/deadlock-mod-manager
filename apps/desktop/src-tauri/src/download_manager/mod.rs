@@ -880,14 +880,17 @@ impl DownloadManager {
           continue;
         }
 
-        app_handle
-          .emit(
-            "download-extracting",
-            DownloadExtractingEvent {
-              mod_id: task.mod_id.clone(),
-            },
-          )
-          .ok();
+        // As in `process_downloaded_files`: a failed import would leave it set.
+        if !task.is_profile_import {
+          app_handle
+            .emit(
+              "download-extracting",
+              DownloadExtractingEvent {
+                mod_id: task.mod_id.clone(),
+              },
+            )
+            .ok();
+        }
 
         let archive_path = downloaded_file.clone();
         let extract_target = task.target_dir.clone();
