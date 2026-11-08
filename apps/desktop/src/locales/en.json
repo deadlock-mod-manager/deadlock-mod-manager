@@ -7838,6 +7838,7 @@
     "noOptions": "This mod has no other files.",
     "variants": "Variants",
     "selectedCount": "{{selected}} of {{total}} selected",
+    "noneSelectedDisables": "Applying with nothing selected disables the mod.",
     "enabled": "Enabled",
     "needsDownload": "needs download",
     "fetchMissingNoSource": "Cannot fetch missing files: archive source URLs are unknown",
@@ -7859,8 +7860,7 @@
   "installedFiles": {
     "title": "Installed Files",
     "enabledCount": "{{selected}} of {{total}} enabled",
-    "reset": "Reset",
-    "selectAtLeastOne": "Select at least one file. To remove the mod, disable it instead."
+    "reset": "Reset"
   },
   "fileSelector": {
     "selectFilesToInstall": "Select Files to Install: {{modName}}",

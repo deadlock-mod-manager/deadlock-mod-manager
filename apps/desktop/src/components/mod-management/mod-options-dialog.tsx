@@ -102,7 +102,7 @@ export const ModOptionsDialog = ({
   );
 
   const hasChanges = initialKey !== currentKey;
-  const canApply = !isBusy && hasChanges && checkedNames.size > 0;
+  const canApply = !isBusy && hasChanges;
 
   const handleApply = () => {
     const newlySelected = downloads.filter(
@@ -147,6 +147,11 @@ export const ModOptionsDialog = ({
                   selected: checkedNames.size,
                   total: downloads.length,
                 })}
+                hint={
+                  canApply &&
+                  checkedNames.size === 0 &&
+                  t("modOptions.noneSelectedDisables")
+                }
                 canReset={hasChanges && !isBusy}
                 canApply={canApply}
                 isSaving={isSaving}
