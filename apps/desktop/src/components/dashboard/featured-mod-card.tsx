@@ -96,11 +96,12 @@ export const FeaturedModSlide = ({ mod, isActive }: Props) => {
       </div>
 
       <div className='absolute inset-0 flex flex-col justify-end gap-4 p-8 lg:p-10'>
-        <div className='flex items-center gap-2'>
-          <SparkleIcon className='size-4 text-primary' weight='duotone' />
-          <span
-            className='font-bold text-[11px] text-primary uppercase tracking-[0.4em]'
-            style={{ fontFamily: '"Forevs Demo", serif' }}>
+        <div className='flex items-center gap-1.5'>
+          <SparkleIcon
+            className='size-3.5 shrink-0 text-primary'
+            weight='fill'
+          />
+          <span className='font-semibold text-[11px] text-primary uppercase leading-none tracking-[0.2em]'>
             {t("dashboard.featuredModOfTheWeek")}
           </span>
         </div>
