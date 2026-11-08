@@ -15,6 +15,7 @@ import { VideoEmbed } from "@/components/shared/video-embed";
 interface ModVideosProps {
   modName: string;
   videos: EmbeddedVideo[];
+  isNSFW: boolean;
   shouldBlur: boolean;
   nsfwSettings: NSFWSettings;
   onNSFWToggle: (visible: boolean) => void;
@@ -23,17 +24,21 @@ interface ModVideosProps {
 export const ModVideos = ({
   modName,
   videos,
+  isNSFW,
   shouldBlur,
   nsfwSettings,
   onNSFWToggle,
 }: ModVideosProps) => {
   const { t } = useTranslation();
   const [visible, setVisible] = useState(false);
-  const hasBlurredVideos = shouldBlur && !nsfwSettings.disableBlur;
-  const isBlurred = hasBlurredVideos && !visible;
+  const hasBlurredVideos = isNSFW && !nsfwSettings.disableBlur;
+  const isVisible = nsfwSettings.rememberPerItemOverrides
+    ? !shouldBlur
+    : visible;
+  const isBlurred = hasBlurredVideos && !isVisible;
 
   const toggleVisibility = () => {
-    const nextVisible = !visible;
+    const nextVisible = !isVisible;
     setVisible(nextVisible);
     onNSFWToggle(nextVisible);
   };
@@ -48,12 +53,12 @@ export const ModVideos = ({
             onClick={toggleVisibility}
             size='sm'
             variant='secondary'>
-            {visible ? (
+            {isVisible ? (
               <EyeOff className='h-3 w-3' />
             ) : (
               <Eye className='h-3 w-3' />
             )}
-            {visible ? t("filters.hideNSFW") : t("filters.showNSFW")}
+            {isVisible ? t("filters.hideNSFW") : t("filters.showNSFW")}
           </Button>
         )}
       </CardHeader>

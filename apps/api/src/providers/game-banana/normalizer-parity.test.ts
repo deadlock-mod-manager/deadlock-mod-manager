@@ -15,4 +15,23 @@ describe("GameBanana normalizer parity", () => {
 
     expect(actual).toEqual(oracle);
   });
+
+  test.each([
+    ["+00033295//", "mod:33295"],
+    ["9007199254740993", "mod:9007199254740993"],
+    ["18446744073709551615", "mod:18446744073709551615"],
+    ["18446744073709551616", "mod:49633"],
+  ])("retains category IDs without rounding or overflow: %s", (id, key) => {
+    const actual = normalizeRetainedProfile(
+      {
+        ...nestedSkinProfile,
+        _aRootCategory: {
+          ...nestedSkinProfile._aRootCategory,
+          _sProfileUrl: `https://gamebanana.com/mods/cats/${id}`,
+        },
+      },
+      "mod",
+    );
+    expect(actual.categoryPath[0]?.key).toBe(key);
+  });
 });

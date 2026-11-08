@@ -28,17 +28,21 @@ type RetainedCategory = {
 };
 
 // GameBanana omits the id for this root; the desktop catalog pins it.
-const MODEL_REPLACEMENT_ID = 33154;
-const CATEGORY_URL_ID = /\/cats\/(\d+)\/*$/;
+const MODEL_REPLACEMENT_ID = "33154";
+const MAX_U64 = 18_446_744_073_709_551_615n;
+const CATEGORY_URL_ID = /\/cats\/(\+?\d+)\/*$/;
 
 function categoryId(
   category: ProfileCategory,
   submissionType: "mod" | "sound",
-): number | null {
+): string | null {
   if (category._idRow !== undefined && category._idRow > 0)
-    return category._idRow;
-  const fromUrl = Number(category._sProfileUrl?.match(CATEGORY_URL_ID)?.[1]);
-  if (fromUrl > 0) return fromUrl;
+    return category._idRow.toString();
+  const fromUrl = category._sProfileUrl?.match(CATEGORY_URL_ID)?.[1];
+  if (fromUrl) {
+    const id = BigInt(fromUrl);
+    if (id > 0n && id <= MAX_U64) return id.toString();
+  }
   return submissionType === "mod" &&
     category._sName.trim() === "Model Replacement"
     ? MODEL_REPLACEMENT_ID

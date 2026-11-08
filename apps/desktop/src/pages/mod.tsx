@@ -607,7 +607,8 @@ const Mod = () => {
 
               {mod.metadata?.videos && mod.metadata.videos.length > 0 && (
                 <ModVideos
-                  key={`${mod.remoteId}:${shouldBlur}:${nsfwSettings.disableBlur}`}
+                  key={`${mod.remoteId}:${shouldBlur}:${nsfwSettings.disableBlur}:${nsfwSettings.rememberPerItemOverrides}`}
+                  isNSFW={mod.isNSFW}
                   modName={mod.name}
                   nsfwSettings={nsfwSettings}
                   onNSFWToggle={handleNSFWToggle}
