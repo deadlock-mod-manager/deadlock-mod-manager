@@ -18,6 +18,7 @@ import {
   OptionSection,
 } from "@/components/mod-management/option-list";
 import type { ModOptionsProgress } from "@/hooks/use-mod-options";
+import { withUnlistedActiveArchives } from "@/lib/mods/mod-variants";
 import { cn } from "@/lib/utils";
 import type { ModDownloadItem, ModFileTree } from "@/types/mods";
 
@@ -104,11 +105,20 @@ export const ModOptionsDialog = ({
   const hasChanges = initialKey !== currentKey;
   const canApply = !isBusy && hasChanges;
 
+  const listedNames = useMemo(
+    () => new Set(downloads.map((d) => d.name)),
+    [downloads],
+  );
+  const rows = useMemo(
+    () => withUnlistedActiveArchives(downloads, activeArchiveNames),
+    [downloads, activeArchiveNames],
+  );
+
   const handleApply = () => {
-    const newlySelected = downloads.filter(
+    const newlySelected = rows.filter(
       (d) => checkedNames.has(d.name) && !activeArchiveNames.has(d.name),
     );
-    const newlyDeselected = downloads.filter(
+    const newlyDeselected = rows.filter(
       (d) => !checkedNames.has(d.name) && activeArchiveNames.has(d.name),
     );
     onApply(newlySelected, newlyDeselected, [...checkedNames]);
@@ -145,7 +155,7 @@ export const ModOptionsDialog = ({
                 title={t("modOptions.variants")}
                 summary={t("modOptions.selectedCount", {
                   selected: checkedNames.size,
-                  total: downloads.length,
+                  total: rows.length,
                 })}
                 hint={
                   canApply &&
@@ -158,11 +168,15 @@ export const ModOptionsDialog = ({
                 onReset={() => setCheckedNames(new Set(activeArchiveNames))}
                 onApply={handleApply}>
                 <div>
-                  {downloads.map((download) => {
+                  {rows.map((download) => {
                     const isChecked = checkedNames.has(download.name);
                     return (
                       <OptionRow
-                        aside={formatFileSize(download.size)}
+                        aside={
+                          listedNames.has(download.name)
+                            ? formatFileSize(download.size)
+                            : undefined
+                        }
                         checked={isChecked}
                         data-download-archive={download.name}
                         disabled={isBusy}
