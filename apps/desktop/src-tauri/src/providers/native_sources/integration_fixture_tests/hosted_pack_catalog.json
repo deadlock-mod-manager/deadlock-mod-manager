@@ -1,5 +1,5 @@
 {
-  "snapshotId": "706feab06c028060a540468506218414",
+  "snapshotId": "ed6ca28e24660569755cd890353302e1",
   "items": [
     {
       "id": "example-pack",
@@ -12,8 +12,8 @@
       "availability": "available",
       "updatedAt": "2026-11-06T05:26:32.000Z",
       "release": {
-        "id": "ca41f6f0aa02800965ae88452327083f",
-        "contentRevision": "ca41f6f0aa02800965ae88452327083f",
+        "id": "3efa1b1d4a16a523219994c4feff7966",
+        "contentRevision": "3efa1b1d4a16a523219994c4feff7966",
         "publishedAt": "2026-11-06T05:26:32.000Z",
         "artifacts": [
           {

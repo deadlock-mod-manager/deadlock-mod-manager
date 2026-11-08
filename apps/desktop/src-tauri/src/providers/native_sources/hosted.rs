@@ -1,7 +1,5 @@
-//! Sources DMM's API publishes for mod projects that only offer an archive
-//! link (`apps/api/src/hosted-sources`). The API lists the ones switched on;
-//! each is enrolled once and is then an ordinary source the user can disable
-//! or remove. A removed source stays removed: its tombstone is never re-added.
+//! Enrolls DMM's hosted mod source once. The user can disable or remove it;
+//! its tombstone prevents automatic enrollment from undoing that choice.
 
 use std::collections::HashSet;
 
