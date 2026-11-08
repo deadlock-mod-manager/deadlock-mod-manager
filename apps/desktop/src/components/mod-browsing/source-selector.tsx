@@ -67,7 +67,7 @@ export const SourceSelector = ({
           <SelectTrigger
             aria-label={t("modSources.selectSource")}
             className={cn(
-              "h-9 w-auto gap-2 border-transparent bg-transparent px-3 text-sm font-medium text-muted-foreground shadow-none hover:bg-accent/40 hover:text-foreground data-[state=open]:text-foreground",
+              "h-9 w-auto gap-2 border-transparent bg-transparent px-3 text-sm font-medium text-muted-foreground shadow-none focus:ring-0 hover:bg-accent/40 hover:text-foreground data-[state=open]:text-foreground",
               className,
             )}>
             <SelectValue />
