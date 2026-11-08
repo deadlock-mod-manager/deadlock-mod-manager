@@ -7,6 +7,8 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import ModCard from "@/components/mod-browsing/mod-card";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { LIVE_BRIDGE_NAME } from "@/hooks/use-live-bridge";
+import { isHostedSource } from "@/lib/hosted-sources";
 import {
   NATIVE_SOURCES_QUERY_KEY,
   nativeListingMatchesContentType,
@@ -18,6 +20,7 @@ import {
 } from "@/lib/mod-sources";
 import type { ContentType } from "@/lib/store/slices/ui";
 import { usePersistedStore } from "@/lib/store";
+import { LiveBridgeCard } from "./live-bridge-card";
 import { ModsPageSkeleton } from "./mods-page-skeleton";
 
 interface NativeSourceCatalogProps {
@@ -62,6 +65,13 @@ export const NativeSourceCatalog = ({
         nativeListingMatchesContentType(listing, contentType) &&
         nativeListingVisible(listing, hideAdult),
     ) ?? [];
+  const showLiveBridge =
+    !!source &&
+    isHostedSource(source) &&
+    contentType === "mod" &&
+    LIVE_BRIDGE_NAME.toLowerCase().includes(
+      debouncedSearch.trim().toLowerCase(),
+    );
   return (
     <div className='flex min-h-0 flex-1 flex-col gap-4'>
       <div className='flex flex-wrap items-center gap-2'>
@@ -109,6 +119,7 @@ export const NativeSourceCatalog = ({
       {listings.isLoading && <ModsPageSkeleton />}
       <div className='min-h-0 flex-1 overflow-y-auto pb-4'>
         <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
+          {showLiveBridge && <LiveBridgeCard />}
           {source &&
             items.map((listing) => (
               <ModCard
@@ -117,11 +128,14 @@ export const NativeSourceCatalog = ({
               />
             ))}
         </div>
-        {!listings.isLoading && !listings.error && items.length === 0 && (
-          <p className='py-12 text-center text-sm text-muted-foreground'>
-            {t("mods.noModsFound")}
-          </p>
-        )}
+        {!listings.isLoading &&
+          !listings.error &&
+          items.length === 0 &&
+          !showLiveBridge && (
+            <p className='py-12 text-center text-sm text-muted-foreground'>
+              {t("mods.noModsFound")}
+            </p>
+          )}
       </div>
     </div>
   );
