@@ -1,5 +1,16 @@
 # @deadlock-mods/shared
 
+## 2.6.0
+
+### Minor Changes
+
+- 072b9fe: Publish stable hero and content-type IDs for mod sources at /v1/taxonomy.json
+- 9fab2e1: Show YouTube and Vimeo videos from GameBanana on mod pages
+
+### Patch Changes
+
+- 0a05843: Let library groups turn on one random mod each launch
+
 ## 2.5.0
 
 ### Minor Changes

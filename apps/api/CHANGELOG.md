@@ -1,5 +1,26 @@
 # api
 
+## 3.9.0
+
+### Minor Changes
+
+- 8774679: Add the built-in Deadlock Mod Manager source and review configs bundled in packs
+- 9fab2e1: Show YouTube and Vimeo videos from GameBanana on mod pages
+
+### Patch Changes
+
+- Updated dependencies [4b641d9]
+- Updated dependencies [0a05843]
+- Updated dependencies [072b9fe]
+- Updated dependencies [4b641d9]
+- Updated dependencies [9fab2e1]
+  - @deadlock-mods/kv-parser@0.4.0
+  - @deadlock-mods/shared@2.6.0
+  - @deadlock-mods/database@2.6.1
+  - @deadlock-mods/distributed-lock@1.0.16
+  - @deadlock-mods/feature-flags@0.2.14
+  - @deadlock-mods/instrumentation@0.1.16
+
 ## 3.8.0
 
 ### Minor Changes
