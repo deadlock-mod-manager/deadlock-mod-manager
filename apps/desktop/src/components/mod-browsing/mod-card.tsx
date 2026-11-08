@@ -43,6 +43,8 @@ interface ModCardProps {
   collection?: ModsCollection;
   author?: AuthorNavigationTarget;
   curatedCollection?: CuratedCollectionNavigationTarget;
+  /** Built locally on first add; library actions use the standard mod control. */
+  builtIn?: { onAdd: () => Promise<void>; onOpen: () => void };
 }
 
 const cardEntryPoint = (
@@ -64,6 +66,7 @@ const ModCard = memo((props: ModCardProps) => {
     collection = "mods",
     author,
     curatedCollection,
+    builtIn,
   } = props;
   const { t } = useTranslation();
   const localMod = usePersistedStore((state) =>
@@ -83,7 +86,7 @@ const ModCard = memo((props: ModCardProps) => {
   const queryClient = useQueryClient();
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
   const hoverPrefetch = useModDetailHoverPrefetch(
-    readOnly ? undefined : mod?.remoteId,
+    readOnly || builtIn ? undefined : mod?.remoteId,
   );
   const configListingKind = useConfigListing(mod);
 
@@ -91,13 +94,18 @@ const ModCard = memo((props: ModCardProps) => {
     return <ModCardSkeleton />;
   }
 
-  // A config-only upload is a gameinfo.gi config, not a VPK a patch breaks.
-  const native = isNativeSourceMod(mod.remoteId);
+  // Source listings and built-in mods have no provider metrics or patch dates.
+  const native = isNativeSourceMod(mod.remoteId) || !!builtIn;
+  // Config-only uploads do not contain VPKs a game patch can break.
   const isOutdated =
     !native && isModOutdated(mod) && configListingKind !== "confirmed";
 
   const entryPoint = cardEntryPoint(props, searching);
   const openModDetail = () => {
+    if (builtIn) {
+      builtIn.onOpen();
+      return;
+    }
     analytics.track("catalog_item_opened", {
       mod_id: mod.remoteId,
       entry_point: entryPoint,
@@ -167,7 +175,7 @@ const ModCard = memo((props: ModCardProps) => {
             </div>
           </div>
         )}
-        {!readOnly && (
+        {!readOnly && !builtIn && (
           <FavoriteButton
             className='absolute top-2 right-2 z-10'
             remoteId={mod.remoteId}
@@ -260,6 +268,7 @@ const ModCard = memo((props: ModCardProps) => {
                   remoteMod={mod}
                   variant='iconOnly'
                   analyticsEntryPoint={entryPoint}
+                  onAdd={builtIn?.onAdd}
                 />
               )}
             </div>
