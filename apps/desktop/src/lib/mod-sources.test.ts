@@ -4,6 +4,7 @@ import type { ContentType } from "@/lib/store/slices/ui";
 import type { NativeSourceListing } from "@/types/generated/NativeSourceListing";
 import type { NativeSourceSummary } from "@/types/generated/NativeSourceSummary";
 import {
+  isNativeSourceIcon,
   isNativeSourceImage,
   nativeListingMatchesContentType,
   nativeListingVisible,
@@ -11,6 +12,16 @@ import {
   nativeModDownloads,
   toNativeModDto,
 } from "./mod-sources";
+
+test("source icons accept ICO and SVG without allowing them in listing images", () => {
+  for (const mime of ["x-icon", "svg+xml"]) {
+    const icon = `data:image/${mime};base64,AA==`;
+    expect(isNativeSourceIcon(icon)).toBe(true);
+    expect(isNativeSourceImage(icon)).toBe(false);
+  }
+  expect(isNativeSourceIcon("https://example.com/favicon.ico")).toBe(false);
+  expect(isNativeSourceIcon("data:text/html;base64,AA==")).toBe(false);
+});
 
 const source: NativeSourceSummary = {
   key: "a".repeat(64),
