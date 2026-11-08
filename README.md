@@ -321,6 +321,7 @@ This project was only possible thanks to the amazing open source community, espe
 - **[Jelloge/Deadlock-Rich-Presence](https://github.com/Jelloge/Deadlock-Rich-Presence)** - Discord Game Presence was only possible thanks to this project and its work mapping Deadlock console log events for rich presence.
 - **[vpkmerge](https://github.com/Slush97/vpkmerge)** - Source 2 texture, KV3 and sound codecs used by the Mod Foundry (MIT).
 - **[ValveResourceFormat](https://github.com/ValveResourceFormat/ValveResourceFormat)** - Source 2 resource format research the Foundry's codecs and model preview are adapted from (MIT).
+- **[FN-FAL113/server-picker-x](https://github.com/FN-FAL113/server-picker-x)** - Blocks Steam Datagram Relay locations with firewall rules. Our Server Picker is built on its approach.
 - **[RapidRAW](https://github.com/CyberTimon/RapidRAW/)** - A Tauri project that inspired our CI pipelines, Linux optimizations, and packaging/distribution approach. Thank you for sharing your setup and best practices.
 
 <details>
