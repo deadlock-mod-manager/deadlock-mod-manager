@@ -210,9 +210,8 @@ async fn resolve_gamebanana_file(
     .delete_cached_update(submission.clone())
     .await?;
   if page.is_trashed || page.is_withheld {
-    return Err(
-      super::gamebanana_catalog::forget_hidden_submission(&backend.catalog, submission).await,
-    );
+    super::gamebanana_catalog::drop_hidden_submission(&backend.catalog, submission).await;
+    return Err(Error::ProviderSubmissionUnavailable);
   }
   let Some(file) = page
     .files

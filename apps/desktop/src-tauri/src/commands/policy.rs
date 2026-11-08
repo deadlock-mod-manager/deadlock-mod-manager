@@ -476,6 +476,7 @@ mod tests {
       dependencies: Vec::new(),
       created_at: None,
       updated_at: None,
+      withheld: None,
     }
   }
 

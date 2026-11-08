@@ -1,7 +1,7 @@
 use crate::errors::Error;
 use crate::providers::gamebanana::catalog::{CatalogCollection, CatalogPage, CatalogRecord};
 use crate::providers::gamebanana::{
-  NormalizedSubmission, Profile, SubmissionFile, donation_links, extract_map_name,
+  NormalizedSubmission, Profile, SubmissionFile, WithholdNotice, donation_links, extract_map_name,
   parse_requirements, parse_tags,
 };
 use serde::{Deserialize, Serialize};
@@ -47,6 +47,61 @@ pub struct CatalogModDto {
   pub created_at: Option<i64>,
   #[ts(type = "number | null")]
   pub updated_at: Option<i64>,
+  /// Set when GameBanana staff withheld the submission; it can't be downloaded until then.
+  pub withheld: Option<WithholdNoticeDto>,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct WithholdNoticeDto {
+  pub rules: Vec<WithholdRuleDto>,
+  /// Staff-written GameBanana HTML.
+  pub notes: String,
+  pub withheld_by: Option<String>,
+  #[ts(type = "number | null")]
+  pub withheld_at: Option<i64>,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct WithholdRuleDto {
+  /// Like `R.17`.
+  pub code: String,
+  pub name: String,
+}
+
+impl WithholdNoticeDto {
+  /// The profile can flag a withhold without a notice GameBanana lets us parse.
+  fn new(notice: Option<&WithholdNotice>) -> Self {
+    Self {
+      rules: notice
+        .map(|notice| {
+          notice
+            .rules_violated
+            .iter()
+            .map(|rule| WithholdRuleDto {
+              code: rule
+                .code
+                .split_once(':')
+                .map_or(rule.code.as_str(), |(code, _)| code)
+                .trim()
+                .to_string(),
+              name: rule.name.clone(),
+            })
+            .collect()
+        })
+        .unwrap_or_default(),
+      notes: notice
+        .map(|notice| notice.notes.clone())
+        .unwrap_or_default(),
+      withheld_by: notice
+        .and_then(|notice| notice.withholder.as_ref())
+        .map(|withholder| withholder.name.clone()),
+      withheld_at: notice.and_then(|notice| notice.date_withheld),
+    }
+  }
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
@@ -291,6 +346,7 @@ impl CatalogModDto {
       dependencies: Vec::new(),
       created_at: None,
       updated_at: None,
+      withheld: None,
     })
   }
 
@@ -338,7 +394,7 @@ impl CatalogModDto {
         .submitter
         .as_ref()
         .and_then(|submitter| (submitter.id > 0).then(|| submitter.id.to_string())),
-      downloadable: !profile.files.is_empty(),
+      downloadable: !profile.files.is_empty() && !profile.is_withheld,
       remote_added_at: normalized.remote_added_at,
       remote_updated_at: normalized.remote_updated_at,
       tags: parse_tags(&profile.tags),
@@ -361,6 +417,9 @@ impl CatalogModDto {
       dependencies,
       created_at: None,
       updated_at: None,
+      withheld: profile
+        .is_withheld
+        .then(|| WithholdNoticeDto::new(profile.withhold_notice.as_ref())),
     }
   }
 }

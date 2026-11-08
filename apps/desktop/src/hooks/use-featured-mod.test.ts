@@ -180,25 +180,42 @@ describe("featuredCandidatesByCategory", () => {
 });
 
 describe("confirmFeaturedMod", () => {
+  const notice = {
+    rules: [{ code: "R.17", name: "Nonsense" }],
+    notes: "",
+    withheldBy: null,
+    withheldAt: null,
+  };
   const fetchMod =
-    (unavailable: string[], failing: string[] = []) =>
+    (states: Record<string, "private" | "withheld" | "offline">) =>
     async (remoteId: string) => {
-      if (unavailable.includes(remoteId))
+      const state = states[remoteId];
+      if (state === "private")
         throw { kind: "providerSubmissionUnavailable", message: "hidden" };
-      if (failing.includes(remoteId))
+      if (state === "offline")
         throw { kind: "providerUnavailable", message: "offline" };
-      return makeMod(remoteId, 1);
+      return { withheld: state === "withheld" ? notice : null };
     };
 
   it("passes over candidates GameBanana no longer serves publicly", async () => {
-    const candidates = [makeMod("withheld", 9), makeMod("live", 1)];
-    const pick = await confirmFeaturedMod(candidates, fetchMod(["withheld"]));
+    const candidates = [
+      makeMod("private", 9),
+      makeMod("withheld", 8),
+      makeMod("live", 1),
+    ];
+    const pick = await confirmFeaturedMod(
+      candidates,
+      fetchMod({ private: "private", withheld: "withheld" }),
+    );
     expect(pick?.remoteId).toBe("live");
   });
 
   it("keeps a candidate whose check failed for another reason", async () => {
     const candidates = [makeMod("a", 9), makeMod("b", 1)];
-    const pick = await confirmFeaturedMod(candidates, fetchMod([], ["a"]));
+    const pick = await confirmFeaturedMod(
+      candidates,
+      fetchMod({ a: "offline" }),
+    );
     expect(pick?.remoteId).toBe("a");
   });
 });

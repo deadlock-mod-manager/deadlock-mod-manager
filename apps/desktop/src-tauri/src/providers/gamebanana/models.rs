@@ -491,6 +491,30 @@ pub struct Profile {
     deserialize_with = "deserialize_percentage"
   )]
   pub completion_percentage: Option<u8>,
+  #[serde(rename = "_aWithholdNotice", default, deserialize_with = "lenient")]
+  pub withhold_notice: Option<WithholdNotice>,
+}
+
+/// Why GameBanana staff withheld a submission. `_sNotes` is staff-written HTML.
+#[derive(Debug, Clone, Deserialize)]
+pub struct WithholdNotice {
+  #[serde(rename = "_tsDateWithheld", default)]
+  pub date_withheld: Option<i64>,
+  #[serde(rename = "_aRulesViolated", default)]
+  pub rules_violated: Vec<WithholdRule>,
+  #[serde(rename = "_sNotes", default)]
+  pub notes: String,
+  #[serde(rename = "_aWithholder", default, deserialize_with = "lenient")]
+  pub withholder: Option<MemberProfile>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct WithholdRule {
+  /// Like `R.17: Nonsense`.
+  #[serde(rename = "_sCode", default)]
+  pub code: String,
+  #[serde(rename = "_sName", default)]
+  pub name: String,
 }
 
 impl Profile {

@@ -144,14 +144,10 @@ pub async fn get_gamebanana_collection(
 
 /// GameBanana hid the submission, so the catalog stops listing it until a crawl sees it
 /// again.
-pub(crate) async fn forget_hidden_submission(
-  catalog: &Catalog,
-  submission: SubmissionRef,
-) -> Error {
+pub(crate) async fn drop_hidden_submission(catalog: &Catalog, submission: SubmissionRef) {
   if let Err(error) = catalog.tombstone(submission.clone()).await {
     log::warn!("Could not drop hidden submission {submission:?} from the catalog: {error}");
   }
-  Error::ProviderSubmissionUnavailable
 }
 
 fn uncovered_ids<'a>(collections: impl Iterator<Item = &'a CatalogCollection>) -> Vec<String> {
@@ -172,8 +168,10 @@ pub async fn get_gamebanana_submission_detail(
   let cancel = CancellationToken::new();
   let mut mod_data = match backend.client.profile(&submission, &cancel).await {
     Ok(profile) => {
-      if profile.is_hidden() {
-        return Err(forget_hidden_submission(&backend.catalog, submission).await);
+      // Withheld submissions still render with their notice; the rest are gone for good.
+      if profile.is_private || profile.is_trashed {
+        drop_hidden_submission(&backend.catalog, submission).await;
+        return Err(Error::ProviderSubmissionUnavailable);
       }
       let mut normalized = normalize_profile(&profile, submission.submission_type)
         .ok_or(Error::ProviderSubmissionUnavailable)?;
@@ -220,8 +218,11 @@ pub async fn get_gamebanana_submission_detail(
       }
       normalized.is_map = submission.submission_type == crate::providers::SubmissionType::Mod
         && normalized.category == "Maps";
-      // Caching the profile is incidental; a busy catalog must not hide a page we already have.
-      if let Err(error) = backend
+      // Caching the profile is incidental; a busy catalog must not hide a page we already
+      // have. A withheld submission stays out of the catalog's listings.
+      if profile.is_hidden() {
+        drop_hidden_submission(&backend.catalog, submission).await;
+      } else if let Err(error) = backend
         .catalog
         .upsert_records(vec![record_from_profile(
           submission,
@@ -558,7 +559,8 @@ async fn submission_files(
     .download_page(&submission, &CancellationToken::new())
     .await?;
   if page.is_trashed || page.is_withheld {
-    return Err(forget_hidden_submission(&backend.catalog, submission).await);
+    drop_hidden_submission(&backend.catalog, submission).await;
+    return Err(Error::ProviderSubmissionUnavailable);
   }
   let downloads = page
     .files
@@ -766,6 +768,38 @@ mod tests {
       "_aCategory": { "_idRow": 44458, "_sName": "Walker" }
     }))
     .unwrap()
+  }
+
+  #[test]
+  fn withheld_profiles_carry_the_staff_notice_and_cannot_download() {
+    let profile: crate::providers::gamebanana::Profile =
+      serde_json::from_value(serde_json::json!({
+        "_idRow": 734494,
+        "_sName": "just for test do not download for now",
+        "_sProfileUrl": "https://gamebanana.com/mods/734494",
+        "_bIsWithheld": true,
+        "_aFiles": [{ "_idRow": 1870999, "_sFile": "deadlock_item2.zip", "_nFilesize": 1 }],
+        "_aWithholdNotice": {
+          "_tsDateWithheld": 1793465198,
+          "_aRulesViolated": [{ "_sCode": "R.17: Nonsense", "_sName": "Nonsense" }],
+          "_sNotes": "<p>Submission lacks context.</p>",
+          "_aWithholder": {
+            "_sName": "TheLastFriendly",
+            "_sProfileUrl": "https://gamebanana.com/members/4514086"
+          }
+        }
+      }))
+      .unwrap();
+    let normalized = normalize_profile(&profile, SubmissionType::Mod).unwrap();
+    let dto = CatalogModDto::from_profile(&profile, normalized);
+
+    assert!(!dto.downloadable);
+    let notice = dto.withheld.unwrap();
+    assert_eq!(notice.rules[0].code, "R.17");
+    assert_eq!(notice.rules[0].name, "Nonsense");
+    assert_eq!(notice.notes, "<p>Submission lacks context.</p>");
+    assert_eq!(notice.withheld_by.as_deref(), Some("TheLastFriendly"));
+    assert_eq!(notice.withheld_at, Some(1793465198));
   }
 
   #[test]

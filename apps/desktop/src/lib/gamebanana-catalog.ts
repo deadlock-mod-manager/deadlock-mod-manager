@@ -11,6 +11,7 @@ import type { CatalogQuery } from "@/types/generated/CatalogQuery";
 import type { CatalogSyncStatusDto } from "@/types/generated/CatalogSyncStatusDto";
 import type { CatalogUpdatesDto } from "@/types/generated/CatalogUpdatesDto";
 import type { InstalledSubmissionDto } from "@/types/generated/InstalledSubmissionDto";
+import type { WithholdNoticeDto } from "@/types/generated/WithholdNoticeDto";
 import type { ModDownloadItem } from "@/types/mods";
 
 export type DirectCatalogPage = {
@@ -84,12 +85,12 @@ export const searchGameBananaCatalogAuthors = (query: CatalogQuery) =>
 
 export const getGameBananaCatalogMod = async (
   remoteId: string,
-): Promise<ModDto> => {
+): Promise<ModDto & { withheld: WithholdNoticeDto | null }> => {
   const result = await invoke<CatalogModDto>(
     "get_gamebanana_submission_detail",
     { remoteId },
   );
-  return catalogModToModDto(result);
+  return { ...catalogModToModDto(result), withheld: result.withheld };
 };
 
 export const getGameBananaCatalogDownloads = async (

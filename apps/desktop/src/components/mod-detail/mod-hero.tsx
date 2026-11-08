@@ -16,6 +16,10 @@ interface ModHeroProps {
   actions?: ReactNode;
   cornerAction?: ReactNode;
   imageFit?: "cover" | "contain";
+  /** Shown beside the category, like a withheld badge. */
+  status?: ReactNode;
+  /** Desaturates the banner for mods that can't be installed. */
+  muted?: boolean;
 }
 
 export const ModHero = ({
@@ -24,6 +28,8 @@ export const ModHero = ({
   actions,
   cornerAction,
   imageFit = "cover",
+  status,
+  muted = false,
 }: ModHeroProps) => {
   const hasImages = mod.images && mod.images.length > 0;
   const native = isNativeSourceMod(mod.remoteId);
@@ -54,7 +60,10 @@ export const ModHero = ({
           <h1 className='font-bold text-3xl text-primary'>
             {mod.name} <ModUpdateBadge mod={mod} hasUpdate={hasUpdate} />
           </h1>
-          <p className='mt-2 text-primary/80'>{mod.category}</p>
+          <div className='mt-2 flex items-center gap-2.5'>
+            {status}
+            <p className='text-primary/80'>{mod.category}</p>
+          </div>
           <Badge className='mt-2' variant='secondary'>
             Audio Mod
           </Badge>
@@ -73,6 +82,7 @@ export const ModHero = ({
             "h-full w-full opacity-70",
             imageFit === "contain" ? "object-contain" : "object-cover",
             shouldBlur && "blur-lg will-change-[filter] [contain:strict]",
+            muted && "brightness-75 grayscale",
           )}
           decoding='async'
           height='256'
@@ -95,9 +105,12 @@ export const ModHero = ({
           <h1 className='font-bold text-3xl text-white'>
             {mod.name} <ModUpdateBadge mod={mod} hasUpdate={hasUpdate} />
           </h1>
-          <p className='text-muted-foreground'>
-            {getModCategoryDisplayName(mod.category)}
-          </p>
+          <div className='flex items-center gap-2.5'>
+            {status}
+            <p className='text-muted-foreground'>
+              {getModCategoryDisplayName(mod.category)}
+            </p>
+          </div>
         </div>
         {cornerAction && (
           <div className='absolute right-6 bottom-6 z-20'>{cornerAction}</div>

@@ -6,6 +6,7 @@ import { FEATURED_POOL_SIZE, MOD_CATEGORY_ORDER } from "@/lib/constants";
 import { modDetailQueryKey } from "@/lib/mods/mod-query-cache";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { isModOutdated } from "@/lib/utils";
+import type { WithholdNoticeDto } from "@/types/generated/WithholdNoticeDto";
 import { isTauriError } from "@/types/tauri";
 
 export type IsoWeekParts = { year: number; week: number };
@@ -87,8 +88,8 @@ export const featuredCandidatesByCategory = (
   ).filter((candidates) => candidates.length > 0);
 
 // GameBanana drops withheld, private and deleted mods from its index, but the
-// local catalog keeps them, and only the submission profile reports a withhold.
-// Each pick is confirmed against its profile before it is featured.
+// local catalog can still hold them, and only the submission profile reports a
+// withhold. Each pick is confirmed against its profile before it is featured.
 const MAX_FEATURED_CHECKS = 3;
 
 /**
@@ -98,12 +99,14 @@ const MAX_FEATURED_CHECKS = 3;
  */
 export const confirmFeaturedMod = async (
   candidates: ModDto[],
-  fetchMod: (remoteId: string) => Promise<ModDto>,
+  fetchMod: (
+    remoteId: string,
+  ) => Promise<{ withheld?: WithholdNoticeDto | null }>,
 ): Promise<ModDto | undefined> => {
   for (const candidate of candidates.slice(0, MAX_FEATURED_CHECKS)) {
     try {
-      await fetchMod(candidate.remoteId);
-      return candidate;
+      const { withheld } = await fetchMod(candidate.remoteId);
+      if (!withheld) return candidate;
     } catch (error) {
       if (
         !isTauriError(error) ||

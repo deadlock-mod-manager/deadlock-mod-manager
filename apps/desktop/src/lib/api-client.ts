@@ -29,6 +29,7 @@ import {
   refreshNativeSource,
 } from "./mod-sources";
 import type { NativeSourceProvenance } from "@/types/generated/NativeSourceProvenance";
+import type { WithholdNoticeDto } from "@/types/generated/WithholdNoticeDto";
 import type { ModUpdateCandidate } from "@/types/mods";
 import {
   checkDirectGameBananaUpdates,
@@ -92,7 +93,12 @@ export const getAnnouncements = async () => {
 
 export const getMod = async (
   remoteId: string,
-): Promise<ModDto & { source?: NativeSourceProvenance }> => {
+): Promise<
+  ModDto & {
+    source?: NativeSourceProvenance;
+    withheld?: WithholdNoticeDto | null;
+  }
+> => {
   if (isNativeSourceMod(remoteId))
     return (await getNativeSourceMod(remoteId)).mod;
   return getGameBananaCatalogMod(remoteId);

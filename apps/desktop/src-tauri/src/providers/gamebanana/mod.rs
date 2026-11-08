@@ -12,7 +12,7 @@ pub use client::GameBananaClient;
 pub use models::{
   BulkHydration, CategoryListing, CollectionDescription, DownloadPage, FileserverPage,
   FileserverRecord, IndexCollection, IndexPage, MemberProfile, Profile, SubmissionFile,
-  UpdateSnapshot,
+  UpdateSnapshot, WithholdNotice,
 };
 pub use normalization::{
   DonationLink, NormalizedRequirement, NormalizedSubmission, classify_nsfw, donation_links,

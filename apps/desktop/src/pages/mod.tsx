@@ -22,6 +22,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
 import FavoriteButton from "@/components/mod-browsing/favorite-button";
+import { WithheldBadge } from "@/components/mod-detail/withheld-badge";
+import { WithheldNotice } from "@/components/mod-detail/withheld-notice";
 import ModButton from "@/components/mod-browsing/mod-button";
 import { InstalledVpksSection } from "@/components/mod-detail/installed-vpks-section";
 import { ModAudioPreview } from "@/components/mod-detail/mod-audio-preview";
@@ -182,7 +184,10 @@ const Mod = () => {
   const isInstalled = localMod?.status === ModStatus.Installed;
   const hasImages = images.length > 0;
   const hasHero = hasImages || !!(mod?.isAudio && mod.audioUrl);
-  const canPreviewModel = !mod?.isAudio && !mod?.isMap && !shouldBlur;
+  // Cached and installed placeholders carry no GameBanana notice.
+  const withheld = mod && "withheld" in mod ? mod.withheld : null;
+  const canPreviewModel =
+    !mod?.isAudio && !mod?.isMap && !shouldBlur && !withheld;
   const activeTab =
     selectedTab.modId === mod?.remoteId ? selectedTab.tab : "overview";
   const selectTab = (tab: string) =>
@@ -386,8 +391,11 @@ const Mod = () => {
               mod={{ ...mod, images }}
               imageFit={thumbnail.data ? "contain" : "cover"}
               shouldBlur={shouldBlur}
+              muted={!!withheld}
+              status={withheld && <WithheldBadge />}
               actions={
-                isGameBananaMod && (
+                isGameBananaMod &&
+                !withheld && (
                   <BrokenModButton
                     mod={mod}
                     localMod={localMod}
@@ -424,87 +432,91 @@ const Mod = () => {
                   isInstalled={isInstalled}
                 />
               )}
-            <CardFooter className='z-20 flex items-center justify-between gap-2 border-t border-border/40 bg-card px-6 py-3'>
-              {mod.remoteUrl && (
-                <Button
-                  className='px-0'
-                  onClick={async () => {
-                    try {
-                      await openUrl(mod.remoteUrl);
-                    } catch (_error) {
-                      toast.error(t("notifications.failedToOpenForumPost"));
-                    }
-                  }}
-                  variant='link'>
-                  {isNativeMod
-                    ? t("modSources.viewOriginalPost", {
-                        name:
-                          nativeContext.data?.source.descriptor.name ??
-                          localMod?.source?.sourceName ??
-                          new URL(mod.remoteUrl).hostname,
-                      })
-                    : t("modDetail.viewOriginalPost")}
-                </Button>
-              )}
-              <div className='flex items-center gap-2'>
-                {modOptions.showButton && (
+            {withheld ? (
+              <WithheldNotice notice={withheld} remoteUrl={mod.remoteUrl} />
+            ) : (
+              <CardFooter className='z-20 flex items-center justify-between gap-2 border-t border-border/40 bg-card px-6 py-3'>
+                {mod.remoteUrl && (
                   <Button
-                    icon={<Settings className='h-4 w-4' />}
-                    onClick={modOptions.open}
-                    size='default'
-                    variant='outline'>
-                    {t("modOptions.openTooltip")}
+                    className='px-0'
+                    onClick={async () => {
+                      try {
+                        await openUrl(mod.remoteUrl);
+                      } catch (_error) {
+                        toast.error(t("notifications.failedToOpenForumPost"));
+                      }
+                    }}
+                    variant='link'>
+                    {isNativeMod
+                      ? t("modSources.viewOriginalPost", {
+                          name:
+                            nativeContext.data?.source.descriptor.name ??
+                            localMod?.source?.sourceName ??
+                            new URL(mod.remoteUrl).hostname,
+                        })
+                      : t("modDetail.viewOriginalPost")}
                   </Button>
                 )}
-                {mod.modAuthorId && (
-                  <ModCommissionButton authorId={mod.modAuthorId} />
-                )}
-                <FavoriteButton remoteId={mod.remoteId} variant='inline' />
-                {hasUpdate && nativeDownloadsAllowed && (
-                  <UpdateButton
-                    onClick={() => setUpdateDialogOpen(true)}
-                    size='default'
-                    updatePercent={updatePercent}
-                    variant='default'>
-                    {t("modDetail.updateMod")}
-                  </UpdateButton>
-                )}
-                {isInstalled &&
-                  !hasUpdate &&
-                  nativeDownloadsAllowed &&
-                  availableFiles?.length > 0 && (
+                <div className='flex items-center gap-2'>
+                  {modOptions.showButton && (
+                    <Button
+                      icon={<Settings className='h-4 w-4' />}
+                      onClick={modOptions.open}
+                      size='default'
+                      variant='outline'>
+                      {t("modOptions.openTooltip")}
+                    </Button>
+                  )}
+                  {mod.modAuthorId && (
+                    <ModCommissionButton authorId={mod.modAuthorId} />
+                  )}
+                  <FavoriteButton remoteId={mod.remoteId} variant='inline' />
+                  {hasUpdate && nativeDownloadsAllowed && (
                     <UpdateButton
-                      onClick={forceUpdate}
+                      onClick={() => setUpdateDialogOpen(true)}
                       size='default'
                       updatePercent={updatePercent}
-                      variant='outline'>
-                      {t("modDetail.forceUpdate")}
+                      variant='default'>
+                      {t("modDetail.updateMod")}
                     </UpdateButton>
                   )}
-                {localMod && !isLocalMod(localMod) && !isNativeMod && (
-                  <ReinstallModButton mod={localMod} variant='default' />
-                )}
-                <ModButton
-                  remoteMod={
-                    nativeDownloadsAllowed
-                      ? mod
-                      : { ...mod, downloadable: false }
-                  }
-                  variant='default'
-                  analyticsEntryPoint={analyticsEntryPoint}
-                />
-                {!!localMod?.status && (
-                  <Button
-                    icon={<Trash className='h-4 w-4' />}
-                    isLoading={deleting}
-                    onClick={deleteMod}
-                    size='default'
-                    variant='destructive'>
-                    {t("mods.deleteMod")}
-                  </Button>
-                )}
-              </div>
-            </CardFooter>
+                  {isInstalled &&
+                    !hasUpdate &&
+                    nativeDownloadsAllowed &&
+                    availableFiles?.length > 0 && (
+                      <UpdateButton
+                        onClick={forceUpdate}
+                        size='default'
+                        updatePercent={updatePercent}
+                        variant='outline'>
+                        {t("modDetail.forceUpdate")}
+                      </UpdateButton>
+                    )}
+                  {localMod && !isLocalMod(localMod) && !isNativeMod && (
+                    <ReinstallModButton mod={localMod} variant='default' />
+                  )}
+                  <ModButton
+                    remoteMod={
+                      nativeDownloadsAllowed
+                        ? mod
+                        : { ...mod, downloadable: false }
+                    }
+                    variant='default'
+                    analyticsEntryPoint={analyticsEntryPoint}
+                  />
+                  {!!localMod?.status && (
+                    <Button
+                      icon={<Trash className='h-4 w-4' />}
+                      isLoading={deleting}
+                      onClick={deleteMod}
+                      size='default'
+                      variant='destructive'>
+                      {t("mods.deleteMod")}
+                    </Button>
+                  )}
+                </div>
+              </CardFooter>
+            )}
           </Card>
           <ModDependencies
             dependencies={resolvedDependencies}

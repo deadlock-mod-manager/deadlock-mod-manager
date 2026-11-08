@@ -7600,6 +7600,17 @@
       "none": "Unset"
     },
     "viewOriginalPost": "View Post on GameBanana",
+    "withheld": {
+      "badge": "Withheld",
+      "title": "Withheld by GameBanana staff",
+      "description": "Downloads are paused until the author fixes it.",
+      "showReason": "Show reason",
+      "hideReason": "Hide reason",
+      "rule": "Rule",
+      "staffNote": "Staff note",
+      "withheldAt": "Withheld",
+      "withheldBy": "by {{name}}"
+    },
     "viewIn3d": "View in 3D",
     "updateMod": "Update Mod",
     "forceUpdate": "Force Update",

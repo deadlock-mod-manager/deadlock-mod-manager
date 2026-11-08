@@ -72,10 +72,6 @@ pub fn normalize_profile(
   profile: &Profile,
   submission_type: SubmissionType,
 ) -> Option<NormalizedSubmission> {
-  if profile.is_hidden() {
-    return None;
-  }
-
   if profile.id == 0
     || profile.name.trim().is_empty()
     || !profile.profile_url.starts_with("https://gamebanana.com/")
