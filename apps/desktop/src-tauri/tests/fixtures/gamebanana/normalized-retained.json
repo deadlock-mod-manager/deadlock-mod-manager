@@ -26,6 +26,7 @@
     "author": "Spareyote",
     "category": "Skins",
     "categoryPath": [
+      { "key": "mod:33295", "name": "Skins" },
       { "key": "mod:49633", "name": "Nurse Harrow" },
       { "key": "mod:50598", "name": "Faithful/Vanilla+" }
     ],

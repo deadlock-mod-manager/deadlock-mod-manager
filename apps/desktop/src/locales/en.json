@@ -5892,6 +5892,10 @@
     "invalid": "Invalid",
     "none": "None"
   },
+  "videoEmbed": {
+    "play": "Play {{title}}",
+    "thumbnailAlt": "Video thumbnail"
+  },
   "whatsNew": {
     "title": "What's New",
     "welcome": "Welcome to the latest version of {{appName}}!",
@@ -5903,8 +5907,7 @@
     "skippedMore_one": "and {{count}} more",
     "skippedMore_other": "and {{count}} more",
     "video": {
-      "embedTitle": "Release video",
-      "thumbnailAlt": "Video thumbnail"
+      "embedTitle": "Release video"
     },
     "categories": {
       "new": "New",
@@ -7612,6 +7615,8 @@
       "withheldBy": "by {{name}}"
     },
     "viewIn3d": "View in 3D",
+    "videos": "Videos",
+    "videoTitle": "{{name}} video {{number}}",
     "updateMod": "Update Mod",
     "forceUpdate": "Force Update",
     "activeVpkFiles": "Active Mod files",

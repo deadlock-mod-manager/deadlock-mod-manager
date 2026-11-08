@@ -1,8 +1,8 @@
 use crate::errors::Error;
 use crate::providers::gamebanana::catalog::{CatalogCollection, CatalogPage, CatalogRecord};
 use crate::providers::gamebanana::{
-  NormalizedSubmission, Profile, SubmissionFile, WithholdNotice, donation_links, extract_map_name,
-  parse_requirements, parse_tags,
+  EmbeddedVideo, NormalizedSubmission, Profile, SubmissionFile, VideoProvider, WithholdNotice,
+  donation_links, embedded_videos, extract_map_name, parse_requirements, parse_tags,
 };
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -177,6 +177,37 @@ pub struct CatalogCollectionDetailDto {
 pub struct CatalogModMetadataDto {
   pub map_name: Option<String>,
   pub donation_links: Vec<CatalogDonationLinkDto>,
+  pub videos: Vec<CatalogVideoDto>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "lowercase")]
+pub enum CatalogVideoProvider {
+  YouTube,
+  Vimeo,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct CatalogVideoDto {
+  pub provider: CatalogVideoProvider,
+  pub id: String,
+  pub hash: Option<String>,
+}
+
+impl From<EmbeddedVideo> for CatalogVideoDto {
+  fn from(video: EmbeddedVideo) -> Self {
+    Self {
+      provider: match video.provider {
+        VideoProvider::YouTube => CatalogVideoProvider::YouTube,
+        VideoProvider::Vimeo => CatalogVideoProvider::Vimeo,
+      },
+      id: video.id,
+      hash: video.hash,
+    }
+  }
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
@@ -316,6 +347,11 @@ impl CatalogModDto {
       .submission
       .to_slug()
       .map_err(|error| Error::InvalidInput(error.to_string()))?;
+    let metadata = record.videos.map(|videos| CatalogModMetadataDto {
+      map_name: extract_map_name(&record.description),
+      donation_links: Vec::new(),
+      videos: videos.into_iter().map(CatalogVideoDto::from).collect(),
+    });
     Ok(Self {
       id: slug.clone(),
       remote_id: slug,
@@ -342,7 +378,7 @@ impl CatalogModDto {
       files_updated_at: (record.files_updated_at > 0).then_some(record.files_updated_at),
       development_state: record.development_state,
       completion_percentage: record.completion_percentage,
-      metadata: None,
+      metadata,
       dependencies: Vec::new(),
       created_at: None,
       updated_at: None,
@@ -413,6 +449,10 @@ impl CatalogModDto {
       metadata: Some(CatalogModMetadataDto {
         map_name: extract_map_name(&normalized.description),
         donation_links: donations,
+        videos: embedded_videos(&profile.embedded_media)
+          .into_iter()
+          .map(CatalogVideoDto::from)
+          .collect(),
       }),
       dependencies,
       created_at: None,

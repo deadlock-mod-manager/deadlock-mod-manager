@@ -694,6 +694,9 @@ fn record_from_profile(
     tags: crate::providers::gamebanana::parse_tags(&profile.tags),
     development_state: profile.development_state.clone(),
     completion_percentage: profile.completion_percentage,
+    videos: Some(crate::providers::gamebanana::embedded_videos(
+      &profile.embedded_media,
+    )),
   }
 }
 
@@ -768,6 +771,70 @@ mod tests {
       "_aCategory": { "_idRow": 44458, "_sName": "Walker" }
     }))
     .unwrap()
+  }
+
+  #[tokio::test]
+  async fn cached_details_retain_profile_videos_and_clear_removed_videos() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("catalog.sqlite3");
+    let catalog = Catalog::open(&path, 1).await.unwrap();
+    let mut profile = world_profile();
+    profile.embedded_media = vec![
+      "https://youtube.com/watch?v=Xw0wI89x3fc".to_string(),
+      "https://vimeo.com/1203014251/a1b2c3".to_string(),
+      "https://unsupported.example/video".to_string(),
+    ];
+    let submission = SubmissionRef::parse_slug("1").unwrap();
+    let normalized = normalize_profile(&profile, SubmissionType::Mod).unwrap();
+    let fresh = CatalogModDto::from_profile(&profile, normalized.clone());
+    catalog
+      .upsert_records(vec![record_from_profile(
+        submission.clone(),
+        &profile,
+        normalized.clone(),
+      )])
+      .await
+      .unwrap();
+    drop(catalog);
+
+    let catalog = Catalog::open(&path, 1).await.unwrap();
+    let saved = catalog.get(submission.clone()).await.unwrap().unwrap();
+    let cached = CatalogModDto::from_record(saved.clone()).unwrap();
+    let expected = serde_json::to_value(fresh.metadata.unwrap().videos).unwrap();
+    assert_eq!(expected.as_array().unwrap().len(), 2);
+    assert_eq!(expected[1]["hash"], "a1b2c3");
+    assert_eq!(
+      serde_json::to_value(cached.metadata.unwrap().videos).unwrap(),
+      expected
+    );
+
+    // Index and bulk hydration responses don't fetch embedded media.
+    for hydrated in [false, true] {
+      let mut sparse = saved.clone();
+      sparse.is_hydrated = hydrated;
+      sparse.videos = None;
+      catalog.upsert_records(vec![sparse]).await.unwrap();
+      let cached =
+        CatalogModDto::from_record(catalog.get(submission.clone()).await.unwrap().unwrap())
+          .unwrap();
+      assert_eq!(
+        serde_json::to_value(cached.metadata.unwrap().videos).unwrap(),
+        expected
+      );
+    }
+
+    profile.embedded_media.clear();
+    catalog
+      .upsert_records(vec![record_from_profile(
+        submission.clone(),
+        &profile,
+        normalized,
+      )])
+      .await
+      .unwrap();
+    let cached =
+      CatalogModDto::from_record(catalog.get(submission).await.unwrap().unwrap()).unwrap();
+    assert!(cached.metadata.unwrap().videos.is_empty());
   }
 
   #[test]

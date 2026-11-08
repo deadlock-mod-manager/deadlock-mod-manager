@@ -3,11 +3,12 @@ import type {
   ModDownload,
   NewModAuthor,
 } from "@deadlock-mods/database";
-import type {
-  DonationLink,
-  FileserverDto,
-  GameBanana,
-  ModMetadata,
+import {
+  type DonationLink,
+  type FileserverDto,
+  type GameBanana,
+  type ModMetadata,
+  parseEmbeddedVideos,
 } from "@deadlock-mods/shared";
 import { NSFW_CONTENT_RATINGS, NSFW_VISIBILITIES } from "./constants";
 
@@ -410,20 +411,24 @@ export function buildMetadata({
   description,
   isMap,
   donationMethods,
+  embeddedMedia = [],
 }: {
   description: string;
   isMap: boolean;
   donationMethods: GameBanana.GameBananaDonationMethod[];
-}): ModMetadata | null {
+  embeddedMedia?: string[];
+}): ModMetadata {
   const mapName = isMap ? extractMapName(description) : undefined;
   const donationLinks = buildDonationLinks({
     methods: donationMethods,
     description,
   });
 
-  if (!mapName && donationLinks.length === 0) return null;
-
-  const metadata: ModMetadata = {};
+  // The upsert merges metadata keys into the stored object, so `videos` is
+  // always sent: an empty list clears videos the author has since removed.
+  const metadata: ModMetadata = {
+    videos: parseEmbeddedVideos(embeddedMedia),
+  };
   if (mapName) metadata.mapName = mapName;
   if (donationLinks.length > 0) metadata.donationLinks = donationLinks;
   return metadata;

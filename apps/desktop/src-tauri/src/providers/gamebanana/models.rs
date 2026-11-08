@@ -483,6 +483,9 @@ pub struct Profile {
   pub requirements: Vec<Vec<String>>,
   #[serde(rename = "_aGame", default)]
   pub game: Option<GameRef>,
+  /// Video page links (YouTube, Vimeo) shown on the submission page
+  #[serde(rename = "_aEmbeddedMedia", default)]
+  pub embedded_media: Vec<String>,
   #[serde(rename = "_sDevelopmentState", default)]
   pub development_state: Option<String>,
   #[serde(

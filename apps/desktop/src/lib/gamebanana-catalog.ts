@@ -192,6 +192,11 @@ const catalogModToModDto = (mod: CatalogModDto): ModDto => ({
     ? {
         mapName: mod.metadata.mapName ?? undefined,
         donationLinks: mod.metadata.donationLinks,
+        videos: mod.metadata.videos.map((video) => ({
+          provider: video.provider,
+          id: video.id,
+          hash: video.hash ?? undefined,
+        })),
       }
     : null,
   dependencies: mod.dependencies.map((dependency) => ({

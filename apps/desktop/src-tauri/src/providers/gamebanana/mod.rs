@@ -1,6 +1,7 @@
 mod activity;
 pub mod catalog;
 mod client;
+mod embedded_video;
 mod generated_hero_registry;
 mod hero_registry;
 mod models;
@@ -9,6 +10,7 @@ mod transport;
 
 pub use activity::{ActivityPage, SubmissionUpdate, gamebanana_url};
 pub use client::GameBananaClient;
+pub use embedded_video::{EmbeddedVideo, VideoProvider, embedded_videos};
 pub use models::{
   BulkHydration, CategoryListing, CollectionDescription, DownloadPage, FileserverPage,
   FileserverRecord, IndexCollection, IndexPage, MemberProfile, Profile, SubmissionFile,

@@ -4,6 +4,7 @@ use super::categories::{
 use super::pool::ConnectionPool;
 use super::schema::{submission, sync_cursor, sync_state};
 use crate::errors::Error;
+use crate::providers::gamebanana::EmbeddedVideo;
 use crate::providers::{SubmissionProvider, SubmissionRef, SubmissionType};
 use diesel::OptionalExtension;
 use diesel::prelude::*;
@@ -48,6 +49,9 @@ pub struct CatalogRecord {
   pub tags: Vec<String>,
   pub development_state: Option<String>,
   pub completion_percentage: Option<u8>,
+  /// None means videos were not fetched; Some(empty) clears previously cached videos.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub videos: Option<Vec<EmbeddedVideo>>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -108,6 +112,7 @@ pub(super) struct SubmissionRow {
   pub completion_percentage: Option<i32>,
   pub thumbnail_url: Option<String>,
   pub category_path: String,
+  pub videos: Option<String>,
 }
 
 #[derive(Debug, Clone, Queryable, Selectable, Identifiable, Insertable, AsChangeset)]
@@ -688,6 +693,11 @@ impl SubmissionRow {
       category: record.category,
       category_path: serde_json::to_string(&record.category_path)
         .map_err(|error| Error::Catalog(error.to_string()))?,
+      videos: record
+        .videos
+        .map(|videos| serde_json::to_string(&videos))
+        .transpose()
+        .map_err(|error| Error::Catalog(error.to_string()))?,
       hero: record.hero,
       is_audio: record.is_audio,
       is_map: record.is_map,
@@ -744,6 +754,7 @@ impl SubmissionRow {
         self.category
       },
       category_path,
+      videos: incoming.videos.or(self.videos),
       hero: if hydrated { incoming.hero } else { self.hero },
       is_audio: incoming.is_audio,
       is_map: if hydrated {
@@ -1173,6 +1184,7 @@ mod tests {
       tags: Vec::new(),
       development_state: None,
       completion_percentage: None,
+      videos: None,
     }
   }
 

@@ -90,6 +90,15 @@ export const ModDtoSchema = z.object({
           }),
         )
         .optional(),
+      videos: z
+        .array(
+          z.object({
+            provider: z.enum(["youtube", "vimeo"]),
+            id: z.string(),
+            hash: z.string().optional(),
+          }),
+        )
+        .optional(),
     })
     .nullable()
     .optional(),
