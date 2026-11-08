@@ -5,10 +5,6 @@ import oracle from "../../../../desktop/src-tauri/tests/fixtures/gamebanana/norm
 import soundProfile from "../../../../desktop/src-tauri/tests/fixtures/gamebanana/sound-profile.json";
 import { normalizeRetainedProfile } from "./normalizer-parity";
 
-// The category path drives desktop-only nested catalog filters, so the API
-// never derives it; the Rust normalizer tests cover that field.
-const expected = oracle.map(({ categoryPath: _categoryPath, ...rest }) => rest);
-
 describe("GameBanana normalizer parity", () => {
   test("the API normalizer matches the retained-field oracle", () => {
     const actual = [
@@ -17,6 +13,6 @@ describe("GameBanana normalizer parity", () => {
       normalizeRetainedProfile(soundProfile, "sound"),
     ];
 
-    expect(actual).toEqual(expected);
+    expect(actual).toEqual(oracle);
   });
 });
