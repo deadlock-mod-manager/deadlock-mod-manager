@@ -1,9 +1,68 @@
+import { createHash } from "node:crypto";
+import { createWriteStream } from "node:fs";
 import type { Readable } from "node:stream";
-import { ExtractionError } from "@deadlock-mods/common";
+import { pipeline } from "node:stream/promises";
+import { ExtractionError, ProviderError } from "@deadlock-mods/common";
 import * as yauzl from "yauzl";
+import type { HostedSourceSnapshot } from "./types";
 
-/** Label files are a few hundred bytes; anything bigger isn't one. */
 const MAX_TEXT_BYTES = 64 * 1024;
+const MAX_ARCHIVE_BYTES = 512 * 1024 * 1024;
+const DOWNLOAD_TIMEOUT_MS = 10 * 60 * 1000;
+
+/** Stream the archive to disk with bounded size and verified download origin. */
+export const downloadArchive = async ({
+  url,
+  target,
+  userAgent,
+}: {
+  url: string;
+  target: string;
+  userAgent: string;
+}): Promise<
+  Pick<HostedSourceSnapshot, "etag" | "lastModified" | "sha256" | "size">
+> => {
+  const response = await fetch(url, {
+    headers: { "User-Agent": userAgent },
+    signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS),
+  });
+  if (!response.ok || !response.body) {
+    throw new ProviderError(`${url} returned HTTP ${response.status}`);
+  }
+  // The desktop only follows redirects within the declared download origin.
+  const origin = new URL(url).origin;
+  if (new URL(response.url).origin !== origin) {
+    await response.body.cancel();
+    throw new ProviderError(`${url} redirected outside ${origin}`);
+  }
+  if (Number(response.headers.get("content-length")) > MAX_ARCHIVE_BYTES) {
+    await response.body.cancel();
+    throw new ProviderError(`${url} is too large`);
+  }
+
+  const hash = createHash("sha256");
+  let size = 0;
+  await pipeline(
+    response.body,
+    async function* (chunks: AsyncIterable<Uint8Array>) {
+      for await (const chunk of chunks) {
+        size += chunk.byteLength;
+        if (size > MAX_ARCHIVE_BYTES) {
+          throw new ProviderError(`${url} is too large`);
+        }
+        hash.update(chunk);
+        yield chunk;
+      }
+    },
+    createWriteStream(target),
+  );
+  return {
+    etag: response.headers.get("etag"),
+    lastModified: response.headers.get("last-modified"),
+    sha256: hash.digest("hex"),
+    size,
+  };
+};
 
 export interface ArchiveContents {
   vpkPaths: string[];

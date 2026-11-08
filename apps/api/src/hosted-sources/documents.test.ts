@@ -97,6 +97,26 @@ describe("hosted source documents", () => {
     expect(catalog.items[0]?.release).toBeUndefined();
   });
 
+  it("changes the revision when an archive is renamed without changing its bytes", () => {
+    const before = buildHostedSourceCatalog([
+      { definition: examplePack, snapshot, enabled: true },
+    ]);
+    const after = buildHostedSourceCatalog([
+      {
+        definition: {
+          ...examplePack,
+          archiveUrl: "https://packs.example.org/dl/renamed-pack.zip",
+        },
+        snapshot,
+        enabled: true,
+      },
+    ]);
+
+    expect(after.items[0]?.release?.contentRevision).not.toBe(
+      before.items[0]?.release?.contentRevision,
+    );
+  });
+
   it("changes the revision when only the install plan changes", () => {
     // The desktop rejects a release whose plan changes under the same revision.
     const before = buildHostedSourceCatalog([

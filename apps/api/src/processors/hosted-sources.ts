@@ -54,6 +54,14 @@ export class HostedSourcesProcessor extends BaseProcessor<CronJobData> {
       try {
         const outcomes = await HostedSourcesService.getInstance().refreshAll();
         wide.merge({ outcomes });
+        const failed = Object.keys(outcomes).filter(
+          (id) => outcomes[id] === "failed",
+        );
+        if (failed.length > 0) {
+          throw new RuntimeError(
+            `Hosted source refresh failed: ${failed.join(", ")}`,
+          );
+        }
         wide.emit();
         Sentry.captureCheckIn({
           checkInId,

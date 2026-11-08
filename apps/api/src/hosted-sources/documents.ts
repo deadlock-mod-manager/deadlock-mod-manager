@@ -2,11 +2,7 @@ import { createHash } from "node:crypto";
 import { posix } from "node:path";
 import { ValidationError } from "@deadlock-mods/common";
 import { z } from "zod";
-import type {
-  HostedSourceDefinition,
-  HostedSourceRoot,
-  HostedSourceSnapshot,
-} from "./types";
+import type { HostedSourceDefinition, HostedSourceSnapshot } from "./types";
 
 /*
  * The subset of the `dmm-source` 1.0 documents a hosted source publishes. The
@@ -184,7 +180,8 @@ export const buildInstallation = (
   }
 
   const required: string[] = [];
-  const rootGroups = new Map<HostedSourceRoot["selection"], ChoiceGroup[]>();
+  const defaultGroups: ChoiceGroup[] = [];
+  const optionalGroups: ChoiceGroup[] = [];
   for (const [index, root] of definition.roots.entries()) {
     const inRoot = paths.filter((path) => rootOf(path) === index);
     if (root.selection !== "optional" && !inRoot.length) {
@@ -196,17 +193,16 @@ export const buildInstallation = (
     if (root.selection === "required") {
       required.push(...ungrouped);
     } else if (ungrouped.length) {
-      rootGroups.set(root.selection, [
-        ...(rootGroups.get(root.selection) ?? []),
-        {
-          id: `folder:${root.path}`,
-          label: root.label,
-          minSelections: 0,
-          maxSelections: ungrouped.length,
-          componentIds: ungrouped,
-          defaultComponentIds: root.selection === "default" ? ungrouped : [],
-        },
-      ]);
+      const groups =
+        root.selection === "default" ? defaultGroups : optionalGroups;
+      groups.push({
+        id: `folder:${root.path}`,
+        label: root.label,
+        minSelections: 0,
+        maxSelections: ungrouped.length,
+        componentIds: ungrouped,
+        defaultComponentIds: root.selection === "default" ? ungrouped : [],
+      });
     }
   }
 
@@ -215,11 +211,7 @@ export const buildInstallation = (
     components,
     requiredComponents: required,
     // The picker lists the pack's defaults, then its choices, then extras.
-    choiceGroups: [
-      ...(rootGroups.get("default") ?? []),
-      ...definedGroups,
-      ...(rootGroups.get("optional") ?? []),
-    ],
+    choiceGroups: [...defaultGroups, ...definedGroups, ...optionalGroups],
   };
 };
 
@@ -261,10 +253,12 @@ const buildListing = ({
   };
   if (!snapshot || !enabled) return { ...listing, availability: "removed" };
   const installation = buildInstallation(definition, snapshot);
-  // The plan is part of the revision: the desktop rejects a release whose
-  // installation changes under an unchanged revision.
+  const filename = posix.basename(new URL(definition.archiveUrl).pathname);
+  // The desktop treats the filename and install plan as immutable per revision.
   const revision = createHash("sha256")
-    .update(JSON.stringify({ archive: snapshot.sha256, installation }))
+    .update(
+      JSON.stringify({ archive: snapshot.sha256, filename, installation }),
+    )
     .digest("hex")
     .slice(0, 32);
   const date = publishedAt(snapshot);
@@ -279,7 +273,7 @@ const buildListing = ({
       artifacts: [
         {
           id: ARTIFACT_ID,
-          filename: posix.basename(new URL(definition.archiveUrl).pathname),
+          filename,
           format: "zip",
           download: { url: definition.archiveUrl },
           size: snapshot.size,

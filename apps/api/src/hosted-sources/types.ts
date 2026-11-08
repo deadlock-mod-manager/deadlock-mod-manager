@@ -5,7 +5,7 @@ import { z } from "zod";
  * definition group claims them. `required` VPKs always install; `default` and
  * `optional` ones form a zero-or-more choice, ticked or not at first install.
  */
-export interface HostedSourceRoot {
+interface HostedSourceRoot {
   path: string;
   selection: "required" | "default" | "optional";
   label: string;
@@ -27,7 +27,7 @@ interface HostedSourceGroup {
  * project's files, users download them from the project's own origin.
  */
 export interface HostedSourceDefinition {
-  /** The source ID, listing ID and URL segment. Never reuse one for another project. */
+  /** Permanent listing ID within the DMM source. Never reuse it for another project. */
   id: string;
   name: string;
   author: string;
@@ -36,9 +36,9 @@ export interface HostedSourceDefinition {
   homepageUrl: string;
   /** Listing tags; `performance` also lists the pack on the Performance page. */
   tags: string[];
-  /** HTTPS link to a `.zip`; its origin is the source's only download origin. */
+  /** HTTPS link to a `.zip`; its origin is added to the DMM source's download origins. */
   archiveUrl: string;
-  /** Feature flag that lists the source; off marks its listing removed. */
+  /** Feature flag that makes the listing available; off marks it removed. */
   flag: string;
   roots: HostedSourceRoot[];
   /** Archive text files listing `pakNN_dir.vpk  Label  (file.vpk)` lines. */
