@@ -6,6 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@deadlock-mods/ui/components/select";
+import { Plus } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { HintAnchor } from "@/components/feature-hints/hint-anchor";
@@ -88,7 +89,12 @@ export const SourceSelector = ({
             </SelectItem>
           ))}
           <SelectSeparator />
-          <SelectItem value='add-source'>{t("modSources.add")}</SelectItem>
+          <SelectItem value='add-source'>
+            <span className='flex items-center gap-2'>
+              <Plus className='size-4 shrink-0' />
+              {t("modSources.add")}
+            </span>
+          </SelectItem>
         </SelectContent>
       </Select>
     </>
