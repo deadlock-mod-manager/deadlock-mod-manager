@@ -528,13 +528,13 @@ fn replace_imported_mod(
 async fn prepare_replacement(
   manager: &crate::download_manager::DownloadManager,
   task: DownloadTask,
-) -> Result<Option<PreparedDownload>, String> {
+) -> Result<PreparedDownload, String> {
   match manager.queue_download_and_prepare(task).await {
     Ok(prepared) if prepared.selection_required => {
       prepared.remove_scratch_files();
       Err("The saved file selection doesn't match this mod's current downloads".to_string())
     }
-    Ok(prepared) => Ok(Some(prepared)),
+    Ok(prepared) => Ok(prepared),
     Err(error) => Err(error.to_string()),
   }
 }
@@ -626,8 +626,8 @@ pub async fn import_profile_batch(
   };
   let installed_ids = profile_mod_ids(&MANAGER.lock().unwrap(), &final_profile_folder)?;
 
-  // `Some` holds a replacement for a mod the profile already has.
-  let mut download_results: Vec<Result<Option<PreparedDownload>, String>> = Vec::new();
+  // `Some` holds the result of replacing a mod the profile already has.
+  let mut download_results: Vec<Result<Option<Result<Mod, Error>>, String>> = Vec::new();
 
   for (index, (mod_data, download_files)) in mods.iter().zip(resolved_downloads).enumerate() {
     // download_results stays index-aligned with mods; the install loop below zips them.
@@ -671,7 +671,19 @@ pub async fn import_profile_batch(
 
     let manager = get_download_manager(app_handle.clone()).await;
     if installed_ids.contains(&mod_data.mod_id) {
-      download_results.push(prepare_replacement(manager, task).await);
+      // Applied right away, as a batch update does, so only one mod's
+      // prepared files exist at a time.
+      download_results.push(prepare_replacement(manager, task).await.map(|prepared| {
+        let result = replace_imported_mod(
+          &mut MANAGER.lock().unwrap(),
+          mod_data,
+          &final_profile_folder,
+          &prepared.vpk_paths,
+          prepared.file_tree.clone(),
+        );
+        prepared.remove_scratch_files();
+        Some(result)
+      }));
       continue;
     }
     if let Err(error) = manager.queue_download_and_wait(task).await {
@@ -742,17 +754,9 @@ pub async fn import_profile_batch(
         failed.push((mod_data.mod_id.clone(), reason));
         continue;
       }
-      Ok(Some(prepared)) => {
-        let result = replace_imported_mod(
-          &mut MANAGER.lock().unwrap(),
-          mod_data,
-          &final_profile_folder,
-          &prepared.vpk_paths,
-          prepared.file_tree.clone(),
-        );
-        prepared.remove_scratch_files();
-        replaced_any |= result.is_ok();
-        result
+      Ok(Some(replaced)) => {
+        replaced_any |= replaced.is_ok();
+        replaced
       }
       Ok(None) => install_imported_mod(
         &mut MANAGER.lock().unwrap(),
@@ -780,8 +784,8 @@ pub async fn import_profile_batch(
     }
   }
 
-  // Replacements can land out of load order, and later installs rename files
-  // already reported, so reorder once and report the manifest's final names.
+  // Replacements can land out of load order. Reordering renames files already
+  // reported, so report the manifest's final names.
   if replaced_any {
     let mut mod_manager = MANAGER.lock().unwrap();
     let folder = import_install_folder(&final_profile_folder);
