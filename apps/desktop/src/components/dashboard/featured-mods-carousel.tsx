@@ -1,4 +1,9 @@
 import type { ModDto } from "@deadlock-mods/shared";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@deadlock-mods/ui/components/tooltip";
 import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -133,42 +138,48 @@ export const FeaturedModsCarousel = ({ mods, isLoading }: Props) => {
           {mods.map((mod, index) => {
             const isActive = index === selected;
             return (
-              <button
-                aria-label={`${getModCategoryDisplayName(mod.category)}: ${mod.name}`}
-                aria-selected={isActive}
-                className='group/tab flex min-w-0 cursor-pointer flex-col gap-2 pt-1 text-left outline-none'
-                key={mod.remoteId}
-                onClick={() => goTo(index)}
-                role='tab'
-                type='button'>
-                <span className='relative h-0.5 w-full overflow-hidden rounded-full bg-muted-foreground/20 transition-colors group-hover/tab:bg-muted-foreground/40'>
-                  {isActive && (
+              <Tooltip key={mod.remoteId}>
+                <TooltipTrigger asChild>
+                  <button
+                    aria-label={`${getModCategoryDisplayName(mod.category)}: ${mod.name}`}
+                    aria-selected={isActive}
+                    className='group/tab flex min-w-0 cursor-pointer flex-col gap-2 pt-1 text-left outline-none'
+                    onClick={() => goTo(index)}
+                    role='tab'
+                    type='button'>
+                    <span className='relative h-0.5 w-full overflow-hidden rounded-full bg-muted-foreground/20 transition-colors group-hover/tab:bg-muted-foreground/40'>
+                      {isActive && (
+                        <span
+                          className={cn(
+                            "absolute inset-0 origin-left bg-primary",
+                            autoplay && "featured-progress",
+                          )}
+                          onAnimationEnd={() => goTo(selected + 1)}
+                          style={{
+                            animationDuration: `${AUTOPLAY_MS}ms`,
+                            ...((isPreviewing || !windowFocused) && {
+                              animationPlayState: "paused",
+                            }),
+                          }}
+                        />
+                      )}
+                    </span>
                     <span
                       className={cn(
-                        "absolute inset-0 origin-left bg-primary",
-                        autoplay && "featured-progress",
+                        "truncate font-bold text-[10px] uppercase tracking-[0.2em] transition-colors",
+                        isActive
+                          ? "text-foreground"
+                          : "text-muted-foreground/70 group-hover/tab:text-foreground/80 group-focus-visible/tab:text-foreground",
                       )}
-                      onAnimationEnd={() => goTo(selected + 1)}
-                      style={{
-                        animationDuration: `${AUTOPLAY_MS}ms`,
-                        ...((isPreviewing || !windowFocused) && {
-                          animationPlayState: "paused",
-                        }),
-                      }}
-                    />
-                  )}
-                </span>
-                <span
-                  className={cn(
-                    "truncate font-bold text-[10px] uppercase tracking-[0.2em] transition-colors",
-                    isActive
-                      ? "text-foreground"
-                      : "text-muted-foreground/70 group-hover/tab:text-foreground/80 group-focus-visible/tab:text-foreground",
-                  )}
-                  style={{ fontFamily: '"Forevs Demo", serif' }}>
+                      style={{ fontFamily: '"Forevs Demo", serif' }}>
+                      {getModCategoryDisplayName(mod.category)}
+                    </span>
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
                   {getModCategoryDisplayName(mod.category)}
-                </span>
-              </button>
+                </TooltipContent>
+              </Tooltip>
             );
           })}
         </div>
