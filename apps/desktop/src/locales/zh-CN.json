@@ -941,6 +941,15 @@
         "filteredTitle": "",
         "filteredDescription": "",
         "clearFilters": ""
+      },
+      "packs": {
+        "title": "",
+        "description": "",
+        "label": "",
+        "mods_one": "",
+        "mods_other": "",
+        "view": "",
+        "installed": ""
       }
     },
     "origins": {
@@ -7591,6 +7600,17 @@
       "none": "未设置"
     },
     "viewOriginalPost": "在 GameBanana 上查看原帖",
+    "withheld": {
+      "badge": "",
+      "title": "",
+      "description": "",
+      "showReason": "",
+      "hideReason": "",
+      "rule": "",
+      "staffNote": "",
+      "withheldAt": "",
+      "withheldBy": ""
+    },
     "viewIn3d": "",
     "updateMod": "更新模组",
     "forceUpdate": "强制更新",
