@@ -1,7 +1,12 @@
 import type { ModDto } from "@deadlock-mods/shared";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
+import { getMod } from "@/lib/api-client";
 import { FEATURED_POOL_SIZE, MOD_CATEGORY_ORDER } from "@/lib/constants";
+import { modDetailQueryKey } from "@/lib/mods/mod-query-cache";
+import { STALE_TIME_API } from "@/lib/query-constants";
 import { isModOutdated } from "@/lib/utils";
+import { isTauriError } from "@/types/tauri";
 
 export type IsoWeekParts = { year: number; week: number };
 
@@ -40,13 +45,8 @@ const deterministicShuffle = <T>(
   return arr;
 };
 
-export const pickFeaturedMod = (
-  mods: ModDto[],
-  now: Date,
-  salt = 0,
-): ModDto | undefined => {
-  if (mods.length === 0) return undefined;
-
+/** A category's eligible mods in this week's order; the first is its pick. */
+const featuredCandidates = (mods: ModDto[], now: Date, salt = 0): ModDto[] => {
   const eligible = mods
     .filter(
       (m) =>
@@ -59,29 +59,61 @@ export const pickFeaturedMod = (
     .sort((a, b) => b.downloadCount - a.downloadCount)
     .slice(0, FEATURED_POOL_SIZE);
 
-  if (eligible.length === 0) return undefined;
-
   const { year, week } = getIsoWeekParts(now);
   const seed = year * 100 + week + Math.imul(salt, 0x9e3779b1);
-  return deterministicShuffle(eligible, seed)[0];
+  return deterministicShuffle(eligible, seed);
 };
 
-/**
- * One weekly pick per category, in `MOD_CATEGORY_ORDER`. Categories without an
- * eligible mod are skipped.
- */
-export const pickFeaturedModsByCategory = (
+export const pickFeaturedMod = (
   mods: ModDto[],
   now: Date,
-): ModDto[] =>
-  MOD_CATEGORY_ORDER.flatMap((category, index) => {
-    const picked = pickFeaturedMod(
+  salt = 0,
+): ModDto | undefined => featuredCandidates(mods, now, salt)[0];
+
+/**
+ * Each category's candidates in `MOD_CATEGORY_ORDER`, leading with its weekly
+ * pick. Categories without an eligible mod are skipped.
+ */
+export const featuredCandidatesByCategory = (
+  mods: ModDto[],
+  now: Date,
+): ModDto[][] =>
+  MOD_CATEGORY_ORDER.map((category, index) =>
+    featuredCandidates(
       mods.filter((m) => m.category === category),
       now,
       index + 1,
-    );
-    return picked ? [picked] : [];
-  });
+    ),
+  ).filter((candidates) => candidates.length > 0);
+
+// GameBanana drops withheld, private and deleted mods from its index, but the
+// local catalog keeps them, and only the submission profile reports a withhold.
+// Each pick is confirmed against its profile before it is featured.
+const MAX_FEATURED_CHECKS = 3;
+
+/**
+ * The first candidate GameBanana still serves publicly. Other failures keep the
+ * candidate: the detail fetch already falls back to the cached record offline,
+ * so they don't say anything about the mod itself.
+ */
+export const confirmFeaturedMod = async (
+  candidates: ModDto[],
+  fetchMod: (remoteId: string) => Promise<ModDto>,
+): Promise<ModDto | undefined> => {
+  for (const candidate of candidates.slice(0, MAX_FEATURED_CHECKS)) {
+    try {
+      await fetchMod(candidate.remoteId);
+      return candidate;
+    } catch (error) {
+      if (
+        !isTauriError(error) ||
+        error.kind !== "providerSubmissionUnavailable"
+      )
+        return candidate;
+    }
+  }
+  return undefined;
+};
 
 /** Leads with `pinned`, replacing the weekly pick for its category. */
 export const pinFeaturedMod = (
@@ -97,8 +129,9 @@ export const pinFeaturedMod = (
 /**
  * Picks the "featured mods of the week" deterministically, one per category,
  * from each category's top downloads. Stable across reloads, identical for
- * every user, rotates weekly. A `pinned` mod leads the week instead of its
- * category's pick.
+ * every user, rotates weekly. A pick GameBanana no longer serves publicly gives
+ * way to the category's next candidate. A `pinned` mod leads the week instead
+ * of its category's pick.
  *
  * NOTE: client-side heuristic. A backend `/featured` endpoint would be a
  * better long-term solution.
@@ -106,14 +139,40 @@ export const pinFeaturedMod = (
 export const useFeaturedMods = (
   mods: ModDto[] | undefined,
   options?: { now?: Date; pinned?: ModDto },
-): ModDto[] => {
+) => {
+  const queryClient = useQueryClient();
   const pinned = options?.pinned;
-  return useMemo(() => {
-    if (!mods || mods.length === 0) return pinned ? [pinned] : [];
-    const featured = pickFeaturedModsByCategory(
-      mods,
-      options?.now ?? new Date(),
-    );
-    return pinned ? pinFeaturedMod(featured, pinned) : featured;
-  }, [mods, options?.now, pinned]);
+  const now = options?.now;
+  const candidates = useMemo(
+    () => (mods ? featuredCandidatesByCategory(mods, now ?? new Date()) : []),
+    [mods, now],
+  );
+  const confirmed = useQuery({
+    queryKey: [
+      "featured-mods",
+      candidates.map((category) =>
+        category.slice(0, MAX_FEATURED_CHECKS).map((m) => m.remoteId),
+      ),
+    ],
+    queryFn: async () => {
+      const picks = await Promise.all(
+        candidates.map((category) =>
+          confirmFeaturedMod(category, (remoteId) =>
+            queryClient.fetchQuery({
+              queryKey: modDetailQueryKey(remoteId),
+              queryFn: () => getMod(remoteId),
+              staleTime: STALE_TIME_API,
+            }),
+          ),
+        ),
+      );
+      return picks.filter((pick) => pick !== undefined);
+    },
+    staleTime: STALE_TIME_API,
+  });
+  const featured = useMemo(() => {
+    const picks = confirmed.data ?? [];
+    return pinned ? pinFeaturedMod(picks, pinned) : picks;
+  }, [confirmed.data, pinned]);
+  return { featured, isPending: confirmed.isPending };
 };

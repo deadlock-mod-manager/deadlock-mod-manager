@@ -81,6 +81,10 @@ pub enum Error {
   ProviderUnavailable(String),
   #[error("GameBanana returned an invalid response: {0}")]
   ProviderInvalidResponse(String),
+  /// The submission exists but is private, withheld by moderators, deleted, or not a
+  /// Deadlock submission.
+  #[error("This mod is not publicly available on GameBanana")]
+  ProviderSubmissionUnavailable,
   #[error("GameBanana response exceeded the {limit}-byte safety limit")]
   ProviderResponseTooLarge { limit: usize },
   #[error("GameBanana request was cancelled")]
@@ -214,6 +218,7 @@ impl serde::Serialize for Error {
       Error::ProviderRefused => "providerRefused",
       Error::ProviderUnavailable(_) => "providerUnavailable",
       Error::ProviderInvalidResponse(_) => "providerInvalidResponse",
+      Error::ProviderSubmissionUnavailable => "providerSubmissionUnavailable",
       Error::ProviderResponseTooLarge { .. } => "providerResponseTooLarge",
       Error::ProviderCancelled => "providerCancelled",
       Error::Catalog(_) => "catalogError",
@@ -356,6 +361,10 @@ mod tests {
       (
         Error::ProviderInvalidResponse("bad json".into()),
         "providerInvalidResponse",
+      ),
+      (
+        Error::ProviderSubmissionUnavailable,
+        "providerSubmissionUnavailable",
       ),
       (
         Error::ProviderResponseTooLarge { limit: 1024 },

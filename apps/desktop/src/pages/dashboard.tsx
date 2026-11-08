@@ -52,9 +52,12 @@ const Dashboard = () => {
     enabled: !!pinnedModId,
     staleTime: STALE_TIME_API,
   });
-  const featured = useFeaturedMods(visibleMods, {
-    pinned: pinnedModId ? pinnedMod.data : undefined,
-  });
+  const { featured, isPending: isFeaturedPending } = useFeaturedMods(
+    visibleMods,
+    {
+      pinned: pinnedModId ? pinnedMod.data : undefined,
+    },
+  );
   const trending = useTrendingByCategory(visibleMods);
 
   const visibleCategories = useMemo(
@@ -86,7 +89,11 @@ const Dashboard = () => {
       </div>
       <div className='flex-1 space-y-8 overflow-y-auto overflow-x-hidden px-6 pb-8 pr-2'>
         <FeaturedModsCarousel
-          isLoading={isPending || (!!pinnedModId && pinnedMod.isPending)}
+          isLoading={
+            isPending ||
+            isFeaturedPending ||
+            (!!pinnedModId && pinnedMod.isPending)
+          }
           mods={featured}
         />
 

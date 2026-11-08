@@ -160,10 +160,8 @@ pub async fn get_gamebanana_submission_detail(
   let cancel = CancellationToken::new();
   let mut mod_data = match backend.client.profile(&submission, &cancel).await {
     Ok(profile) => {
-      let mut normalized =
-        normalize_profile(&profile, submission.submission_type).ok_or_else(|| {
-          Error::ProviderInvalidResponse("submission is not publicly available".to_string())
-        })?;
+      let mut normalized = normalize_profile(&profile, submission.submission_type)
+        .ok_or(Error::ProviderSubmissionUnavailable)?;
       let root_name = profile
         .root_category
         .as_ref()
