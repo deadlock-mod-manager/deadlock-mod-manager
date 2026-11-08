@@ -33,6 +33,7 @@ export const DEFAULT_DATE_FILTER: DateFilter = {
 
 export type ModsFilters = {
   selectedCategories: string[];
+  selectedCategoryKeys: string[];
   selectedHeroes: string[];
   contentType: ContentType;
   hideNSFW: boolean;
@@ -143,6 +144,7 @@ export type UIState = {
 
 const DEFAULT_MODS_FILTERS: ModsFilters = {
   selectedCategories: [],
+  selectedCategoryKeys: [],
   selectedHeroes: [],
   contentType: "mod",
   hideNSFW: false,

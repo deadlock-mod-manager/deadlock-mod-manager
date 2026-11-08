@@ -5,6 +5,7 @@ import type { SubmissionType } from "./SubmissionType";
 export type CatalogQuery = {
   search: string;
   categories: Array<string>;
+  categoryKeys: Array<string>;
   heroes: Array<string>;
   authorRemoteId: string | null;
   excludeFilters: boolean;

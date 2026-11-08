@@ -44,7 +44,11 @@ export const BrowseByHeroRail = () => {
 
   const handleSelect = useCallback(
     (hero: string) => {
-      updateModsFilters({ selectedHeroes: [hero], selectedCategories: [] });
+      updateModsFilters({
+        selectedHeroes: [hero],
+        selectedCategories: [],
+        selectedCategoryKeys: [],
+      });
       navigate("/mods");
     },
     [navigate, updateModsFilters],

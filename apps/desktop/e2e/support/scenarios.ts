@@ -85,7 +85,10 @@ import {
   catalogRefreshRoutes,
   assertCatalogRefreshNetwork,
 } from "./catalog-refresh-fixtures";
-import { prepareLegacyCatalog } from "./catalog-upgrade-fixtures";
+import {
+  legacyCatalogRoutes,
+  prepareLegacyCatalog,
+} from "./catalog-upgrade-fixtures";
 import { prepareOnboardingWorld } from "./onboarding-fixtures";
 import { onboardingIdentifiedRoutes } from "./analysis-library-status-fixtures";
 import {
@@ -1063,7 +1066,7 @@ export const scenarios = {
     family: "gamebanana",
     spec: "catalog-upgrade",
     phases: ["upgrade-catalog", "restart-upgrade"],
-    routes: contentRoutes,
+    routes: legacyCatalogRoutes,
     prepare: prepareLegacyCatalog,
     verifyNetwork: (_id: string, requests: readonly FixtureRequest[]) => {
       if (

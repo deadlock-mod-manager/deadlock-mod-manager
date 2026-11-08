@@ -32,7 +32,10 @@ export const TrendingCategoryRail = ({ category, mods, isLoading }: Props) => {
   );
 
   const handleSeeAll = useCallback(() => {
-    updateModsFilters({ selectedCategories: [category] });
+    updateModsFilters({
+      selectedCategories: [category],
+      selectedCategoryKeys: [],
+    });
     navigate("/mods");
   }, [category, navigate, updateModsFilters]);
 

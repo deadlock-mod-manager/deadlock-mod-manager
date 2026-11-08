@@ -49,6 +49,7 @@ diesel::table! {
     development_state -> Nullable<Text>,
     completion_percentage -> Nullable<Integer>,
     thumbnail_url -> Nullable<Text>,
+    category_path -> Text,
   }
 }
 
@@ -347,7 +348,7 @@ mod tests {
     .get_result::<bool>(&mut connection)
     .unwrap();
 
-    assert_eq!(applied.len(), 9);
+    assert_eq!(applied.len(), 10);
     assert!(catalog_tables_exist);
   }
 
@@ -387,7 +388,7 @@ mod tests {
     .get_result::<bool>(&mut connection)
     .unwrap();
 
-    assert_eq!(applied.len(), 9);
+    assert_eq!(applied.len(), 10);
     assert!(retained_submission);
     assert!(author_remote_id_exists);
   }
@@ -411,7 +412,7 @@ mod tests {
       .iter()
       .map(ToString::to_string)
       .collect();
-    assert_eq!(versions.len(), 9);
+    assert_eq!(versions.len(), 10);
     assert!(versions.contains(&"20261004000000".to_string()));
     assert!(!versions.contains(&"20260916000000".to_string()));
   }
@@ -452,14 +453,14 @@ mod tests {
       migrate(&mut connection).unwrap();
       migrate(&mut connection).unwrap();
 
-      assert_eq!(connection.applied_migrations().unwrap().len(), 9);
+      assert_eq!(connection.applied_migrations().unwrap().len(), 10);
       assert!(
         super::schema_check(
           &mut connection,
           "EXISTS(SELECT 1 FROM submission WHERE slug = 'snd-1'
           AND audio_url = 'https://example.com/preview.mp3' AND author_remote_id = '42'
           AND tags = '[]' AND development_state IS NULL AND completion_percentage IS NULL
-          AND thumbnail_url IS NULL)",
+          AND thumbnail_url IS NULL AND category_path = '[]')",
         )
         .unwrap()
       );

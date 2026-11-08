@@ -717,6 +717,7 @@ mod tests {
       description: String::new(),
       profile_url: format!("https://gamebanana.com/mods/{id}"),
       category: "Skins".to_string(),
+      category_path: Vec::new(),
       hero: None,
       is_audio: false,
       is_map: false,

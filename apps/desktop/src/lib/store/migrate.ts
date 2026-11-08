@@ -760,6 +760,16 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
       }
     },
   },
+  {
+    to: 46,
+    label: "add-catalog-category-selections",
+    apply: (state) => {
+      for (const key of ["modsFilters", "mapsFilters"]) {
+        const filters = state[key];
+        if (isPlainObject(filters)) filters.selectedCategoryKeys ??= [];
+      }
+    },
+  },
 ];
 
 const LEGACY_GAMEBANANA_ID = /^[1-9]\d*$/;

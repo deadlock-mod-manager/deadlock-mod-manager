@@ -50,7 +50,12 @@ const GetMods = () => {
     isCustomMapsEnabled,
   );
   const handleContentTypeChange = useCallback(
-    (next: ContentType) => updateModsFilters({ contentType: next }),
+    (next: ContentType) =>
+      updateModsFilters({
+        contentType: next,
+        selectedCategories: [],
+        selectedCategoryKeys: [],
+      }),
     [updateModsFilters],
   );
 

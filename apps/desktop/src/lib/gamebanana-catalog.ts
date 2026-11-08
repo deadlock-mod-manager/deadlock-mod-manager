@@ -43,6 +43,7 @@ const CATALOG_MAX_PAGE_SIZE = 5_000;
 export const CATALOG_QUERY_DEFAULTS: CatalogQuery = {
   search: "",
   categories: [],
+  categoryKeys: [],
   heroes: [],
   authorRemoteId: null,
   excludeFilters: false,

@@ -1,3 +1,4 @@
+use super::categories::{CATEGORY_TAXONOMY, CatalogCategory, CategoryTaxonomy, category_path};
 use super::collections::CollectionRecord;
 use super::store::{Catalog, CatalogRecord, INCOMPLETE_SNAPSHOT, LAST_FULL_SYNC_AT};
 use crate::errors::Error;
@@ -9,10 +10,10 @@ use crate::providers::gamebanana::{
   is_nsfw_visibility, parse_tags,
 };
 use crate::providers::{SubmissionProvider, SubmissionRef, SubmissionType};
-use std::collections::HashMap;
+use std::collections::HashSet;
 use std::future::Future;
 use std::pin::Pin;
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio_util::sync::CancellationToken;
 
 // An incremental run stops at the high-water mark, so with nothing new it costs one
@@ -26,12 +27,17 @@ const PREVIEW_IMAGES_VERSION: &str = "preview_images_v1";
 const HYDRATION_VERSION: &str = "bulk_hydration_v3";
 const THUMBNAILS_VERSION: &str = "thumbnails_v1";
 const AUTHOR_REMOTE_ID_VERSION: &str = "author_remote_id_v1";
+const CATEGORY_PATH_VERSION: &str = "category_path_v2";
+const CATEGORY_REFRESH_FAILURE: &str = "category_taxonomy_failure_v2";
+const CATEGORY_REFRESH_INTERVAL: Duration = Duration::from_secs(24 * 60 * 60);
+const CATEGORY_RETRY_INTERVAL: Duration = Duration::from_secs(60 * 60);
 // Bumping any of these forces one full resync to backfill existing catalogs.
-const BACKFILL_VERSIONS: [&str; 4] = [
+const BACKFILL_VERSIONS: [&str; 5] = [
   PREVIEW_IMAGES_VERSION,
   HYDRATION_VERSION,
   THUMBNAILS_VERSION,
   AUTHOR_REMOTE_ID_VERSION,
+  CATEGORY_PATH_VERSION,
 ];
 const INCOMPLETE_RETRY_INTERVAL: Duration = Duration::from_secs(6 * 60 * 60);
 // Private or trashed submissions legitimately hydrate to nothing; more than this means
@@ -52,9 +58,6 @@ const COLLECTION_SYNC_INTERVAL: Duration = Duration::from_secs(6 * 60 * 60);
 // re-crawled once they are this old.
 const COLLECTION_ITEMS_MAX_AGE: Duration = Duration::from_secs(7 * 24 * 60 * 60);
 const COLLECTION_SYNC_PHASE: &str = "collections";
-// Walking the Skins tree costs one request per hero, so an unknown subcategory
-// refreshes it at most this often.
-const SKIN_HEROES_REFRESH_INTERVAL: Duration = Duration::from_secs(60 * 60);
 
 type SourceFuture<'a, T> = Pin<Box<dyn Future<Output = Result<T, Error>> + Send + 'a>>;
 
@@ -83,8 +86,9 @@ trait CatalogSource: Send + Sync {
     Box::pin(async { Ok(IndexPage::empty()) })
   }
 
-  fn mod_categories<'a>(
+  fn categories<'a>(
     &'a self,
+    _submission_type: SubmissionType,
     _parent_id: Option<u64>,
     _cancel: &'a CancellationToken,
   ) -> SourceFuture<'a, Vec<CategoryListing>> {
@@ -148,12 +152,18 @@ impl CatalogSource for GameBananaClient {
     Box::pin(GameBananaClient::bulk_hydrate(self, submissions, cancel))
   }
 
-  fn mod_categories<'a>(
+  fn categories<'a>(
     &'a self,
+    submission_type: SubmissionType,
     parent_id: Option<u64>,
     cancel: &'a CancellationToken,
   ) -> SourceFuture<'a, Vec<CategoryListing>> {
-    Box::pin(GameBananaClient::mod_categories(self, parent_id, cancel))
+    Box::pin(GameBananaClient::categories(
+      self,
+      submission_type,
+      parent_id,
+      cancel,
+    ))
   }
 
   fn collection_index<'a>(
@@ -198,21 +208,12 @@ pub enum SyncOutcome {
   Throttled,
 }
 
-/// The legacy hydration API names only a skin's own category, and a skin
-/// subcategory (Skins > hero > Faithful/Vanilla+) doesn't name the hero, so
-/// those categories map to the hero above them.
-#[derive(Default)]
-struct SkinHeroes {
-  by_category: HashMap<u64, String>,
-  refreshed_at: Option<Instant>,
-}
-
 pub struct CatalogSync {
   catalog: Catalog,
   source: Box<dyn CatalogSource>,
   sync_lock: tokio::sync::Mutex<()>,
   progress: tokio::sync::Mutex<(Option<String>, Option<u32>)>,
-  skin_heroes: tokio::sync::Mutex<SkinHeroes>,
+  taxonomy: tokio::sync::Mutex<Option<CategoryTaxonomy>>,
 }
 
 impl CatalogSync {
@@ -222,7 +223,7 @@ impl CatalogSync {
       source: Box::new(source),
       sync_lock: tokio::sync::Mutex::new(()),
       progress: tokio::sync::Mutex::new((None, None)),
-      skin_heroes: tokio::sync::Mutex::default(),
+      taxonomy: tokio::sync::Mutex::default(),
     }
   }
 
@@ -233,7 +234,7 @@ impl CatalogSync {
       source: Box::new(source),
       sync_lock: tokio::sync::Mutex::new(()),
       progress: tokio::sync::Mutex::new((None, None)),
-      skin_heroes: tokio::sync::Mutex::default(),
+      taxonomy: tokio::sync::Mutex::default(),
     }
   }
 
@@ -267,6 +268,8 @@ impl CatalogSync {
     force_reconcile: bool,
     cancel: &CancellationToken,
   ) -> Result<SyncOutcome, Error> {
+    // An older build's retry delay must not defer this upgrade's first backfill.
+    self.catalog.prepare_category_backfill().await?;
     let incomplete = self.catalog.state(INCOMPLETE_SNAPSHOT).await?.is_some();
     let full_sync_due = force_reconcile
       || incomplete
@@ -417,6 +420,7 @@ impl CatalogSync {
 
   pub async fn clear(&self) -> Result<(), Error> {
     let _sync_guard = self.sync_lock.lock().await;
+    *self.taxonomy.lock().await = None;
     self.catalog.clear().await
   }
 
@@ -447,6 +451,8 @@ impl CatalogSync {
   }
 
   async fn full_sync(&self, cancel: &CancellationToken) -> Result<(), Error> {
+    self.catalog.prepare_category_backfill().await?;
+    let taxonomy = self.category_taxonomy(cancel).await?;
     let counts = self
       .patiently(cancel, || self.source.record_counts(cancel))
       .await?;
@@ -523,7 +529,11 @@ impl CatalogSync {
           .await?;
         let catalog_records = index_records
           .iter()
-          .map(|record| from_index(record, submission_type, Some(snapshot_id.clone())))
+          .map(|record| {
+            let mut record = from_index(record, submission_type, Some(snapshot_id.clone()));
+            record.category_path = taxonomy.expand(submission_type, record.category_path);
+            record
+          })
           .collect();
         self
           .catalog
@@ -574,6 +584,9 @@ impl CatalogSync {
         .set_state(LAST_FULL_SYNC_AT, unix_timestamp().to_string())
         .await?;
       for version in BACKFILL_VERSIONS {
+        if version == CATEGORY_PATH_VERSION && taxonomy.refreshed_at == 0 {
+          continue;
+        }
         self.catalog.set_state(version, "1".to_string()).await?;
       }
     } else {
@@ -588,6 +601,17 @@ impl CatalogSync {
   async fn backfill_due(&self) -> Result<bool, Error> {
     for version in BACKFILL_VERSIONS {
       if self.catalog.state(version).await?.is_none() {
+        if version == CATEGORY_PATH_VERSION {
+          let attempted = self
+            .catalog
+            .state(CATEGORY_REFRESH_FAILURE)
+            .await?
+            .and_then(|value| value.parse::<u64>().ok())
+            .unwrap_or_default();
+          if unix_timestamp().saturating_sub(attempted) < CATEGORY_RETRY_INTERVAL.as_secs() {
+            continue;
+          }
+        }
         return Ok(true);
       }
     }
@@ -720,6 +744,8 @@ impl CatalogSync {
       return Ok(SyncOutcome::Throttled);
     }
 
+    let taxonomy = self.category_taxonomy(cancel).await?;
+
     for submission_type in SubmissionType::ALL {
       let high_water_mark = self.catalog.cursor(submission_type).await?.high_water_mark;
       self.report_progress(submission_type, None).await;
@@ -754,7 +780,11 @@ impl CatalogSync {
           .max(newest);
         let records = index_records
           .iter()
-          .map(|record| from_index(record, submission_type, None))
+          .map(|record| {
+            let mut record = from_index(record, submission_type, None);
+            record.category_path = taxonomy.expand(submission_type, record.category_path);
+            record
+          })
           .collect::<Vec<_>>();
         let pending = self
           .catalog
@@ -828,25 +858,7 @@ impl CatalogSync {
           continue;
         }
       };
-      let mut skin_heroes = self.skin_heroes.lock().await;
-      let unknown_subcategory = batch.iter().zip(&hydrated).any(|(index, hydration)| {
-        hydration.as_ref().is_some_and(|hydration| {
-          unresolved_skin_subcategory(index, hydration)
-            .is_some_and(|id| !skin_heroes.by_category.contains_key(&id))
-        })
-      });
-      if unknown_subcategory
-        && skin_heroes
-          .refreshed_at
-          .is_none_or(|at| at.elapsed() >= SKIN_HEROES_REFRESH_INTERVAL)
-      {
-        skin_heroes.refreshed_at = Some(Instant::now());
-        match self.fetch_skin_heroes(cancel).await {
-          Ok(by_category) => skin_heroes.by_category = by_category,
-          Err(error @ Error::ProviderCancelled) => return Err(error),
-          Err(error) => log::warn!("GameBanana skin categories could not be loaded: {error}"),
-        }
-      }
+      let taxonomy = self.category_taxonomy(cancel).await?;
       let records = batch
         .iter()
         .zip(hydrated)
@@ -855,16 +867,46 @@ impl CatalogSync {
             .sub_category
             .as_ref()
             .and_then(|category| category.id())
-            .and_then(|id| skin_heroes.by_category.get(&id))
-            .map(String::as_str);
-          hydration.map(|record| {
-            from_hydration(
+            .and_then(|id| {
+              taxonomy.path_for_leaf(
+                submission_type,
+                &format!(
+                  "{}:{id}",
+                  super::store::submission_type_name(submission_type)
+                ),
+              )
+            })
+            .filter(|path| {
+              path
+                .first()
+                .is_some_and(|category| category.name == hero_registry::SKINS_CATEGORY)
+            })
+            .and_then(|path| {
+              path
+                .iter()
+                .rev()
+                .find_map(|category| hero_registry::normalize(&category.name))
+            });
+          hydration.map(|hydration| {
+            let named_path = taxonomy.named_path(
+              submission_type,
+              &hydration.root_category,
+              &hydration.category,
+            );
+            let mut record = from_hydration(
               index,
-              record,
-              parent_hero,
+              hydration,
+              parent_hero.as_deref(),
               submission_type,
               snapshot_id.clone(),
-            )
+            );
+            record.category_path =
+              named_path.unwrap_or_else(|| taxonomy.expand(submission_type, record.category_path));
+            if let Some(root) = taxonomy.root_name(submission_type, &record.category_path) {
+              record.category = root.to_string();
+              record.is_map = submission_type == SubmissionType::Mod && root == "Maps";
+            }
+            record
           })
         })
         .collect::<Vec<_>>();
@@ -886,44 +928,94 @@ impl CatalogSync {
 }
 
 impl CatalogSync {
-  async fn fetch_skin_heroes(
+  async fn category_taxonomy(&self, cancel: &CancellationToken) -> Result<CategoryTaxonomy, Error> {
+    let mut cached = self.taxonomy.lock().await;
+    if cached.is_none() {
+      *cached = Some(
+        self
+          .catalog
+          .state(CATEGORY_TAXONOMY)
+          .await?
+          .and_then(|value| serde_json::from_str(&value).ok())
+          .unwrap_or_default(),
+      );
+    }
+    let taxonomy = cached.clone().unwrap_or_default();
+    let now = unix_timestamp();
+    if taxonomy.refreshed_at > 0
+      && now.saturating_sub(taxonomy.refreshed_at) < CATEGORY_REFRESH_INTERVAL.as_secs()
+    {
+      return Ok(taxonomy);
+    }
+    let attempted = self
+      .catalog
+      .state(CATEGORY_REFRESH_FAILURE)
+      .await?
+      .and_then(|value| value.parse::<u64>().ok())
+      .unwrap_or_default();
+    if now.saturating_sub(attempted) < CATEGORY_RETRY_INTERVAL.as_secs() {
+      return Ok(taxonomy);
+    }
+    match self.fetch_category_taxonomy(cancel).await {
+      Ok(paths) => {
+        let taxonomy = CategoryTaxonomy {
+          refreshed_at: now,
+          paths,
+        };
+        self
+          .catalog
+          .save_category_taxonomy(taxonomy.clone())
+          .await?;
+        *cached = Some(taxonomy.clone());
+        Ok(taxonomy)
+      }
+      Err(error @ Error::ProviderCancelled) => Err(error),
+      Err(error) => {
+        // A canceled or interrupted startup must retry instead of cooling down.
+        self
+          .catalog
+          .set_state(CATEGORY_REFRESH_FAILURE, now.to_string())
+          .await?;
+        log::warn!("GameBanana categories could not be refreshed: {error}");
+        Ok(taxonomy)
+      }
+    }
+  }
+
+  async fn fetch_category_taxonomy(
     &self,
     cancel: &CancellationToken,
-  ) -> Result<HashMap<u64, String>, Error> {
-    let mut by_category = HashMap::new();
-    let roots = self.source.mod_categories(None, cancel).await?;
-    let Some(skins) = roots
-      .iter()
-      .find(|category| category.name == hero_registry::SKINS_CATEGORY)
-    else {
-      return Ok(by_category);
-    };
-    for hero_category in self.source.mod_categories(Some(skins.id), cancel).await? {
-      let Some(hero) = hero_registry::normalize(&hero_category.name) else {
-        continue;
-      };
-      let mut pending = vec![hero_category];
-      while let Some(parent) = pending.pop() {
-        if parent.category_count == 0 {
-          continue;
-        }
-        for child in self.source.mod_categories(Some(parent.id), cancel).await? {
-          by_category.insert(child.id, hero.clone());
-          pending.push(child);
+  ) -> Result<Vec<Vec<CatalogCategory>>, Error> {
+    let mut paths = Vec::new();
+    for submission_type in SubmissionType::ALL {
+      let mut pending = vec![(None, Vec::new())];
+      let mut seen = HashSet::new();
+      while let Some((parent_id, parent_path)) = pending.pop() {
+        let children = self
+          .patiently(cancel, || {
+            self.source.categories(submission_type, parent_id, cancel)
+          })
+          .await?;
+        for child in children {
+          if child.id == 0 || child.name.trim().is_empty() || !seen.insert(child.id) {
+            continue;
+          }
+          if seen.len() > 5_000 {
+            return Err(Error::ProviderInvalidResponse(
+              "GameBanana category tree exceeds its size limit".to_string(),
+            ));
+          }
+          let mut path = parent_path.clone();
+          path.push(CatalogCategory::new(submission_type, child.id, &child.name));
+          paths.push(path.clone());
+          if child.category_count > 0 {
+            pending.push((Some(child.id), path));
+          }
         }
       }
     }
-    Ok(by_category)
+    Ok(paths)
   }
-}
-
-/// The id of a skin's own category when its name isn't a hero, i.e. a subcategory.
-fn unresolved_skin_subcategory(index: &IndexSubmission, hydration: &BulkHydration) -> Option<u64> {
-  let category = index.sub_category.as_ref()?;
-  (hydration.root_category.trim() == hero_registry::SKINS_CATEGORY
-    && hero_registry::normalize(&category.name).is_none())
-  .then(|| category.id())
-  .flatten()
 }
 
 fn catalog_percentage(completed: u64, total: u64) -> Option<u32> {
@@ -972,6 +1064,10 @@ fn from_index(
     description: String::new(),
     profile_url,
     category,
+    category_path: category_path(
+      submission_type,
+      &[record.root_category.as_ref(), record.sub_category.as_ref()],
+    ),
     hero: None,
     is_audio: submission_type == SubmissionType::Sound,
     is_map: false,
@@ -1013,6 +1109,21 @@ fn from_hydration(
   snapshot_id: Option<String>,
 ) -> CatalogRecord {
   let mut record = from_index(index, submission_type, snapshot_id);
+  let changed_leaf = index.sub_category.as_ref().is_some_and(|category| {
+    !hydration.category.trim().is_empty() && category.name.trim() != hydration.category.trim()
+  });
+  let changed_root = index.root_category.as_ref().is_some_and(|category| {
+    !hydration.root_category.trim().is_empty()
+      && category.name.trim() != hydration.root_category.trim()
+  });
+  if changed_leaf || changed_root {
+    // Core hydration may observe an assignment newer than the index page.
+    record.category_path = if changed_root {
+      Vec::new()
+    } else {
+      category_path(submission_type, &[index.root_category.as_ref()])
+    };
+  }
   let description = if hydration.text.is_empty() {
     hydration.description
   } else {
@@ -1106,6 +1217,43 @@ mod tests {
   use std::sync::Mutex;
   use tempfile::tempdir;
   use tokio_util::sync::CancellationToken;
+
+  #[test]
+  fn fresher_hydration_drops_stale_index_descendants() {
+    let index: IndexSubmission = serde_json::from_value(serde_json::json!({
+      "_idRow": 705648, "_sModelName": "Mod", "_sName": "Walker",
+      "_aRootCategory": { "_sName": "Model Replacement", "_sProfileUrl": "https://gamebanana.com/mods/cats/33154" },
+      "_aSubCategory": { "_sName": "Walker", "_sProfileUrl": "https://gamebanana.com/mods/cats/44458" }
+    })).unwrap();
+    let hydration = |root: &str, leaf: &str| BulkHydration {
+      name: "Reassigned mod".to_string(),
+      download_count: 1,
+      category: leaf.to_string(),
+      root_category: root.to_string(),
+      description: String::new(),
+      text: String::new(),
+      files_updated_at: None,
+    };
+    let changed_leaf = super::from_hydration(
+      &index,
+      hydration("Model Replacement", "Guardian"),
+      None,
+      SubmissionType::Mod,
+      None,
+    );
+    assert_eq!(changed_leaf.category, "Model Replacement");
+    assert_eq!(changed_leaf.category_path.len(), 1);
+    assert_eq!(changed_leaf.category_path[0].key, "mod:33154");
+    let changed_root = super::from_hydration(
+      &index,
+      hydration("HUD", "Walker"),
+      None,
+      SubmissionType::Mod,
+      None,
+    );
+    assert_eq!(changed_root.category, "HUD");
+    assert!(changed_root.category_path.is_empty());
+  }
 
   /// Only submissions served by an index page are still live on the fake GameBanana.
   struct FakeSource {
@@ -1392,11 +1540,15 @@ mod tests {
       })
     }
 
-    fn mod_categories<'a>(
+    fn categories<'a>(
       &'a self,
+      submission_type: SubmissionType,
       parent_id: Option<u64>,
       _cancel: &'a CancellationToken,
     ) -> SourceFuture<'a, Vec<CategoryListing>> {
+      if submission_type != SubmissionType::Mod {
+        return Box::pin(async { Ok(Vec::new()) });
+      }
       *self.category_requests.lock().unwrap() += 1;
       let listing = |id, name: &str, category_count| CategoryListing {
         id,
@@ -1469,6 +1621,636 @@ mod tests {
       "_aRecords": []
     }))
     .unwrap()
+  }
+
+  struct WorldCategorySource {
+    requests: std::sync::Arc<Mutex<Vec<Option<u64>>>>,
+    offline: bool,
+  }
+
+  type CategoryRequestLog = std::sync::Arc<Mutex<Vec<(SubmissionType, Option<u64>)>>>;
+
+  struct AllCategorySource {
+    requests: CategoryRequestLog,
+  }
+
+  impl AllCategorySource {
+    fn names(submission_type: SubmissionType) -> (&'static str, &'static str, &'static str) {
+      match submission_type {
+        SubmissionType::Mod => ("Maps", "Community", "Arena"),
+        SubmissionType::Sound => ("Music", "Themes", "Hero Theme"),
+        SubmissionType::Wip => ("Development", "Experiments", "Test Project"),
+      }
+    }
+  }
+
+  impl CatalogSource for AllCategorySource {
+    fn record_counts<'a>(&'a self, _cancel: &'a CancellationToken) -> SourceFuture<'a, [u64; 3]> {
+      Box::pin(async { Ok([1, 1, 1]) })
+    }
+
+    fn index<'a>(
+      &'a self,
+      submission_type: SubmissionType,
+      _page: u32,
+      _latest_modified: bool,
+      _cancel: &'a CancellationToken,
+    ) -> SourceFuture<'a, IndexPage> {
+      Box::pin(async move {
+        let (root, _, leaf) = Self::names(submission_type);
+        let model = match submission_type {
+          SubmissionType::Mod => "Mod",
+          SubmissionType::Sound => "Sound",
+          SubmissionType::Wip => "Wip",
+        };
+        serde_json::from_value(serde_json::json!({
+          "_aMetadata": {"_nRecordCount": 1, "_nPerpage": 50, "_bIsComplete": true},
+          "_aRecords": [{
+            "_idRow": 42, "_sModelName": model, "_sName": leaf, "_bHasFiles": true,
+            "_aRootCategory": {"_idRow": 10, "_sName": root},
+            "_aSubCategory": {"_idRow": 12, "_sName": leaf}
+          }]
+        }))
+        .map_err(|error| Error::ProviderInvalidResponse(error.to_string()))
+      })
+    }
+
+    fn bulk_hydrate<'a>(
+      &'a self,
+      submissions: &'a [SubmissionRef],
+      _cancel: &'a CancellationToken,
+    ) -> SourceFuture<'a, Vec<Option<BulkHydration>>> {
+      Box::pin(async move {
+        Ok(
+          submissions
+            .iter()
+            .map(|submission| {
+              let (root, _, leaf) = Self::names(submission.submission_type);
+              Some(BulkHydration {
+                name: leaf.to_string(),
+                download_count: 1,
+                category: leaf.to_string(),
+                root_category: root.to_string(),
+                description: String::new(),
+                text: String::new(),
+                files_updated_at: None,
+              })
+            })
+            .collect(),
+        )
+      })
+    }
+
+    fn categories<'a>(
+      &'a self,
+      submission_type: SubmissionType,
+      parent_id: Option<u64>,
+      _cancel: &'a CancellationToken,
+    ) -> SourceFuture<'a, Vec<CategoryListing>> {
+      self
+        .requests
+        .lock()
+        .unwrap()
+        .push((submission_type, parent_id));
+      Box::pin(async move {
+        let (root, parent, leaf) = Self::names(submission_type);
+        let category = |id, name: &str, category_count| CategoryListing {
+          id,
+          name: name.to_string(),
+          category_count,
+        };
+        Ok(match parent_id {
+          None if submission_type == SubmissionType::Mod => {
+            vec![category(10, root, 1), category(20, "HUD", 1)]
+          }
+          None => vec![category(10, root, 1)],
+          Some(10) => vec![category(11, parent, 1)],
+          Some(11) => vec![category(12, leaf, 0)],
+          Some(20) => vec![category(21, "Crosshairs", 0)],
+          _ => Vec::new(),
+        })
+      })
+    }
+  }
+
+  #[tokio::test]
+  async fn all_category_upgrade_backfills_each_type_and_preserves_scoped_category_ids() {
+    let directory = tempdir().unwrap();
+    let catalog = super::Catalog::open(directory.path().join("catalog.sqlite3"), 1)
+      .await
+      .unwrap();
+    let requests = std::sync::Arc::new(Mutex::new(Vec::new()));
+    let source = AllCategorySource {
+      requests: requests.clone(),
+    };
+    let cancel = CancellationToken::new();
+    for submission_type in SubmissionType::ALL {
+      let page = source
+        .index(submission_type, 1, false, &cancel)
+        .await
+        .unwrap();
+      let mut cached = super::from_index(&page.valid_records()[0], submission_type, None);
+      cached.category_path.clear();
+      cached.is_hydrated = true;
+      catalog.upsert_records(vec![cached]).await.unwrap();
+    }
+    let now = super::unix_timestamp().to_string();
+    for key in [
+      super::LAST_FULL_SYNC_AT,
+      super::LAST_INCREMENTAL_AT,
+      "category_path_v1",
+      "category_path_snapshot_v1",
+    ] {
+      catalog.set_state(key, now.clone()).await.unwrap();
+    }
+    catalog.set_state("category_taxonomy_v1", serde_json::json!({"refreshed_at": super::unix_timestamp(), "paths": [[{"key": "mod:33154", "name": "Model Replacement"}]]}).to_string()).await.unwrap();
+    for version in super::BACKFILL_VERSIONS {
+      if version != super::CATEGORY_PATH_VERSION {
+        catalog.set_state(version, "1".to_string()).await.unwrap();
+      }
+    }
+    let sync = CatalogSync::with_source(catalog.clone(), source);
+    assert_eq!(
+      sync.synchronize(false, false, &cancel).await.unwrap(),
+      super::SyncOutcome::Full
+    );
+    for submission_type in SubmissionType::ALL {
+      let saved = catalog
+        .get(super::submission_ref(42, submission_type))
+        .await
+        .unwrap()
+        .unwrap();
+      let prefix = super::super::store::submission_type_name(submission_type);
+      assert_eq!(
+        saved
+          .category_path
+          .iter()
+          .map(|entry| entry.key.clone())
+          .collect::<Vec<_>>(),
+        [
+          format!("{prefix}:10"),
+          format!("{prefix}:11"),
+          format!("{prefix}:12")
+        ]
+      );
+      assert_eq!(saved.category, AllCategorySource::names(submission_type).0);
+      assert_eq!(saved.is_map, submission_type == SubmissionType::Mod);
+      assert!(requests.lock().unwrap().contains(&(submission_type, None)));
+    }
+    let taxonomy = sync.category_taxonomy(&cancel).await.unwrap();
+    assert!(
+      taxonomy
+        .named_path(SubmissionType::Mod, "HUD", "Crosshairs")
+        .is_some(),
+      "Every root is traversed even without a cached listing"
+    );
+    assert_eq!(taxonomy.paths.len(), 11);
+    assert_eq!(
+      catalog
+        .state(super::CATEGORY_PATH_VERSION)
+        .await
+        .unwrap()
+        .as_deref(),
+      Some("1")
+    );
+  }
+
+  impl CatalogSource for WorldCategorySource {
+    fn record_counts<'a>(&'a self, _cancel: &'a CancellationToken) -> SourceFuture<'a, [u64; 3]> {
+      Box::pin(async { Ok([0, 0, 0]) })
+    }
+
+    fn index<'a>(
+      &'a self,
+      _submission_type: SubmissionType,
+      _page: u32,
+      _latest_modified: bool,
+      _cancel: &'a CancellationToken,
+    ) -> SourceFuture<'a, IndexPage> {
+      Box::pin(async { Ok(empty_page()) })
+    }
+
+    fn bulk_hydrate<'a>(
+      &'a self,
+      submissions: &'a [SubmissionRef],
+      _cancel: &'a CancellationToken,
+    ) -> SourceFuture<'a, Vec<Option<BulkHydration>>> {
+      Box::pin(async move {
+        Ok(
+          submissions
+            .iter()
+            .map(|_| {
+              Some(BulkHydration {
+                name: "Walker".to_string(),
+                download_count: 1,
+                category: "Walker".to_string(),
+                root_category: "Model Replacement".to_string(),
+                description: String::new(),
+                text: String::new(),
+                files_updated_at: None,
+              })
+            })
+            .collect(),
+        )
+      })
+    }
+
+    fn categories<'a>(
+      &'a self,
+      submission_type: SubmissionType,
+      parent_id: Option<u64>,
+      _cancel: &'a CancellationToken,
+    ) -> SourceFuture<'a, Vec<CategoryListing>> {
+      if submission_type != SubmissionType::Mod {
+        return Box::pin(async { Ok(Vec::new()) });
+      }
+      self.requests.lock().unwrap().push(parent_id);
+      Box::pin(async move {
+        if self.offline {
+          return Err(Error::ProviderUnavailable("offline".to_string()));
+        }
+        Ok(match parent_id {
+          None => vec![CategoryListing {
+            id: 33154,
+            name: "Model Replacement".to_string(),
+            category_count: 1,
+          }],
+          Some(33154) => vec![CategoryListing {
+            id: 44691,
+            name: "NPCs".to_string(),
+            category_count: 1,
+          }],
+          Some(44691) => vec![CategoryListing {
+            id: 44458,
+            name: "Walker".to_string(),
+            category_count: 0,
+          }],
+          _ => Vec::new(),
+        })
+      })
+    }
+  }
+
+  struct WorldBackfillSource(WorldCategorySource);
+
+  struct CancelledWorldCategorySource(WorldCategorySource);
+
+  impl CatalogSource for CancelledWorldCategorySource {
+    fn record_counts<'a>(&'a self, cancel: &'a CancellationToken) -> SourceFuture<'a, [u64; 3]> {
+      self.0.record_counts(cancel)
+    }
+
+    fn index<'a>(
+      &'a self,
+      submission_type: SubmissionType,
+      page: u32,
+      latest_modified: bool,
+      cancel: &'a CancellationToken,
+    ) -> SourceFuture<'a, IndexPage> {
+      self.0.index(submission_type, page, latest_modified, cancel)
+    }
+
+    fn bulk_hydrate<'a>(
+      &'a self,
+      submissions: &'a [SubmissionRef],
+      cancel: &'a CancellationToken,
+    ) -> SourceFuture<'a, Vec<Option<BulkHydration>>> {
+      self.0.bulk_hydrate(submissions, cancel)
+    }
+
+    fn categories<'a>(
+      &'a self,
+      _submission_type: SubmissionType,
+      parent_id: Option<u64>,
+      cancel: &'a CancellationToken,
+    ) -> SourceFuture<'a, Vec<CategoryListing>> {
+      self.0.requests.lock().unwrap().push(parent_id);
+      cancel.cancel();
+      Box::pin(async { Err(Error::ProviderCancelled) })
+    }
+  }
+
+  #[tokio::test]
+  async fn cancelled_initial_taxonomy_fetch_can_retry_immediately_after_restart() {
+    let directory = tempdir().unwrap();
+    let catalog = super::Catalog::open(directory.path().join("catalog.sqlite3"), 1)
+      .await
+      .unwrap();
+    let requests = std::sync::Arc::new(Mutex::new(Vec::new()));
+    let first = CatalogSync::with_source(
+      catalog.clone(),
+      CancelledWorldCategorySource(WorldCategorySource {
+        requests: requests.clone(),
+        offline: false,
+      }),
+    );
+    assert!(matches!(
+      first.category_taxonomy(&CancellationToken::new()).await,
+      Err(Error::ProviderCancelled)
+    ));
+    assert!(
+      catalog
+        .state(super::CATEGORY_TAXONOMY)
+        .await
+        .unwrap()
+        .is_none()
+    );
+
+    // Older builds recorded in-flight attempts before they could be canceled.
+    catalog
+      .set_state(
+        "category_taxonomy_attempt_v1",
+        super::unix_timestamp().to_string(),
+      )
+      .await
+      .unwrap();
+
+    let restarted = CatalogSync::with_source(
+      catalog.clone(),
+      WorldCategorySource {
+        requests: requests.clone(),
+        offline: false,
+      },
+    );
+    let taxonomy = restarted
+      .category_taxonomy(&CancellationToken::new())
+      .await
+      .unwrap();
+    assert_eq!(
+      taxonomy.paths.len(),
+      3,
+      "Cancellation must not impose a retry cooldown on the next launch"
+    );
+    assert_eq!(
+      *requests.lock().unwrap(),
+      [None, None, Some(33154), Some(44691)]
+    );
+    assert!(
+      catalog
+        .state(super::CATEGORY_TAXONOMY)
+        .await
+        .unwrap()
+        .is_some()
+    );
+  }
+
+  impl CatalogSource for WorldBackfillSource {
+    fn record_counts<'a>(&'a self, _cancel: &'a CancellationToken) -> SourceFuture<'a, [u64; 3]> {
+      Box::pin(async { Ok([1, 0, 0]) })
+    }
+
+    fn index<'a>(
+      &'a self,
+      submission_type: SubmissionType,
+      _page: u32,
+      _latest_modified: bool,
+      _cancel: &'a CancellationToken,
+    ) -> SourceFuture<'a, IndexPage> {
+      Box::pin(async move {
+        if submission_type != SubmissionType::Mod {
+          return Ok(empty_page());
+        }
+        serde_json::from_value(serde_json::json!({
+          "_aMetadata": { "_nRecordCount": 1, "_nPerpage": 50, "_bIsComplete": true },
+          "_aRecords": [{
+            "_idRow": 705648, "_sModelName": "Mod", "_sName": "Walker", "_bHasFiles": true,
+            "_aRootCategory": { "_sName": "Model Replacement", "_sProfileUrl": "https://gamebanana.com/mods/cats/33154" },
+            "_aSubCategory": { "_sName": "Walker", "_sProfileUrl": "https://gamebanana.com/mods/cats/44458" }
+          }]
+        })).map_err(|error| Error::ProviderInvalidResponse(error.to_string()))
+      })
+    }
+
+    fn bulk_hydrate<'a>(
+      &'a self,
+      submissions: &'a [SubmissionRef],
+      cancel: &'a CancellationToken,
+    ) -> SourceFuture<'a, Vec<Option<BulkHydration>>> {
+      self.0.bulk_hydrate(submissions, cancel)
+    }
+
+    fn categories<'a>(
+      &'a self,
+      submission_type: SubmissionType,
+      parent_id: Option<u64>,
+      cancel: &'a CancellationToken,
+    ) -> SourceFuture<'a, Vec<CategoryListing>> {
+      self.0.categories(submission_type, parent_id, cancel)
+    }
+  }
+
+  #[tokio::test]
+  async fn category_upgrade_backfills_during_a_legacy_incomplete_retry_cooldown() {
+    let directory = tempdir().unwrap();
+    let catalog = super::Catalog::open(directory.path().join("catalog.sqlite3"), 1)
+      .await
+      .unwrap();
+    let source = WorldBackfillSource(WorldCategorySource {
+      requests: std::sync::Arc::new(Mutex::new(Vec::new())),
+      offline: false,
+    });
+    let cancel = CancellationToken::new();
+    let page = source
+      .index(SubmissionType::Mod, 1, false, &cancel)
+      .await
+      .unwrap();
+    let mut legacy = super::from_index(&page.valid_records()[0], SubmissionType::Mod, None);
+    legacy.category_path.clear();
+    legacy.is_hydrated = true;
+    catalog.upsert_records(vec![legacy]).await.unwrap();
+    for version in super::BACKFILL_VERSIONS {
+      if version != super::CATEGORY_PATH_VERSION {
+        catalog.set_state(version, "1".to_string()).await.unwrap();
+      }
+    }
+    let now = super::unix_timestamp().to_string();
+    for key in [
+      super::LAST_FULL_SYNC_AT,
+      super::LAST_INCREMENTAL_AT,
+      super::LAST_INCOMPLETE_SNAPSHOT_AT,
+    ] {
+      catalog.set_state(key, now.clone()).await.unwrap();
+    }
+    catalog
+      .set_state(super::INCOMPLETE_SNAPSHOT, "legacy-snapshot".to_string())
+      .await
+      .unwrap();
+    let sync = CatalogSync::with_source(catalog.clone(), source);
+
+    assert_eq!(
+      sync.synchronize(false, false, &cancel).await.unwrap(),
+      super::SyncOutcome::Full,
+      "A new category backfill must start despite an older build's incomplete-sync cooldown"
+    );
+    let saved = catalog
+      .get(super::submission_ref(705648, SubmissionType::Mod))
+      .await
+      .unwrap()
+      .unwrap();
+    assert_eq!(
+      saved
+        .category_path
+        .iter()
+        .map(|category| category.key.as_str())
+        .collect::<Vec<_>>(),
+      ["mod:33154", "mod:44691", "mod:44458"]
+    );
+    let facets = catalog
+      .facets(super::super::CatalogQuery::default())
+      .await
+      .unwrap();
+    assert!(facets.iter().any(|facet| {
+      facet.category == "Model Replacement"
+        && facet
+          .category_path
+          .iter()
+          .any(|category| category.key == "mod:44691")
+        && facet
+          .category_path
+          .iter()
+          .any(|category| category.key == "mod:44458")
+    }));
+    assert_eq!(
+      catalog
+        .state(super::CATEGORY_PATH_VERSION)
+        .await
+        .unwrap()
+        .as_deref(),
+      Some("1")
+    );
+  }
+
+  #[tokio::test]
+  async fn world_ancestry_is_persisted_and_reused_after_restart_offline() {
+    let directory = tempdir().unwrap();
+    let catalog = super::Catalog::open(directory.path().join("catalog.sqlite3"), 1)
+      .await
+      .unwrap();
+    let requests = std::sync::Arc::new(Mutex::new(Vec::new()));
+    let sync = CatalogSync::with_source(
+      catalog.clone(),
+      WorldCategorySource {
+        requests: requests.clone(),
+        offline: false,
+      },
+    );
+    let index: Vec<IndexSubmission> = serde_json::from_value(serde_json::json!([{
+      "_idRow": 705648, "_sModelName": "Mod", "_sName": "Walker",
+      "_aRootCategory": { "_sName": "Model Replacement", "_sProfileUrl": "https://gamebanana.com/mods/cats/33154" },
+      "_aSubCategory": { "_sName": "Walker", "_sProfileUrl": "https://gamebanana.com/mods/cats/44458" }
+    }])).unwrap();
+    sync
+      .hydrate_records(&index, SubmissionType::Mod, None, &CancellationToken::new())
+      .await
+      .unwrap();
+    assert_eq!(*requests.lock().unwrap(), [None, Some(33154), Some(44691)]);
+    let saved = catalog
+      .get(super::submission_ref(705648, SubmissionType::Mod))
+      .await
+      .unwrap()
+      .unwrap();
+    assert_eq!(
+      saved
+        .category_path
+        .iter()
+        .map(|category| category.key.as_str())
+        .collect::<Vec<_>>(),
+      ["mod:33154", "mod:44691", "mod:44458"]
+    );
+
+    let restarted = CatalogSync::with_source(
+      catalog.clone(),
+      WorldCategorySource {
+        requests: requests.clone(),
+        offline: true,
+      },
+    );
+    let taxonomy = restarted
+      .category_taxonomy(&CancellationToken::new())
+      .await
+      .unwrap();
+    assert_eq!(taxonomy.paths.len(), 3);
+    assert_eq!(
+      requests.lock().unwrap().len(),
+      3,
+      "Fresh cached taxonomy avoids another network request"
+    );
+
+    let mut stale = taxonomy;
+    stale.refreshed_at = 1;
+    catalog.save_category_taxonomy(stale).await.unwrap();
+    catalog
+      .set_state(super::CATEGORY_REFRESH_FAILURE, "0".to_string())
+      .await
+      .unwrap();
+    let offline = CatalogSync::with_source(
+      catalog,
+      WorldCategorySource {
+        requests,
+        offline: true,
+      },
+    );
+    assert_eq!(
+      offline
+        .category_taxonomy(&CancellationToken::new())
+        .await
+        .unwrap()
+        .paths
+        .len(),
+      3
+    );
+  }
+
+  #[tokio::test]
+  async fn failed_initial_taxonomy_fetch_keeps_backfill_pending_without_recrawl_storms() {
+    let directory = tempdir().unwrap();
+    let catalog = super::Catalog::open(directory.path().join("catalog.sqlite3"), 1)
+      .await
+      .unwrap();
+    let requests = std::sync::Arc::new(Mutex::new(Vec::new()));
+    let sync = CatalogSync::with_source(
+      catalog.clone(),
+      WorldCategorySource {
+        requests: requests.clone(),
+        offline: true,
+      },
+    );
+    sync.full_sync(&CancellationToken::new()).await.unwrap();
+    assert!(
+      catalog
+        .state(super::CATEGORY_PATH_VERSION)
+        .await
+        .unwrap()
+        .is_none()
+    );
+    assert!(
+      !sync.backfill_due().await.unwrap(),
+      "Failed taxonomy refresh has a persisted cooldown"
+    );
+    catalog
+      .set_state(super::CATEGORY_REFRESH_FAILURE, "0".to_string())
+      .await
+      .unwrap();
+    assert!(sync.backfill_due().await.unwrap());
+    let recovered = CatalogSync::with_source(
+      catalog.clone(),
+      WorldCategorySource {
+        requests,
+        offline: false,
+      },
+    );
+    recovered
+      .full_sync(&CancellationToken::new())
+      .await
+      .unwrap();
+    assert_eq!(
+      catalog
+        .state(super::CATEGORY_PATH_VERSION)
+        .await
+        .unwrap()
+        .as_deref(),
+      Some("1")
+    );
   }
 
   #[tokio::test]

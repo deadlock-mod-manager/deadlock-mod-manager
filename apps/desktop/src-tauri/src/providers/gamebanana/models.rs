@@ -247,6 +247,8 @@ pub struct GameRef {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Category {
+  #[serde(rename = "_idRow", default)]
+  pub remote_id: u64,
   #[serde(rename = "_sName", default)]
   pub name: String,
   #[serde(rename = "_sProfileUrl", default)]
@@ -256,8 +258,11 @@ pub struct Category {
 impl Category {
   /// Index records name categories without `_idRow`; the id is in the profile URL.
   pub fn id(&self) -> Option<u64> {
+    if self.remote_id > 0 {
+      return Some(self.remote_id);
+    }
     let (_, id) = self.profile_url.rsplit_once("/cats/")?;
-    id.parse().ok()
+    id.trim_end_matches('/').parse().ok().filter(|id| *id > 0)
   }
 }
 
