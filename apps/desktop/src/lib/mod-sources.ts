@@ -23,6 +23,10 @@ export const isNativeSourceMod = (remoteId: string) =>
 export const isNativeSourceImage = (url: string) =>
   /^data:image\/(?:png|jpeg|webp|gif);base64,/.test(url);
 
+// Icons render only through <img>, so the backend may also send ICO and SVG.
+export const isNativeSourceIcon = (url: string) =>
+  /^data:image\/(?:png|jpeg|webp|gif|x-icon|svg\+xml);base64,/.test(url);
+
 export const nativeListingVisible = (
   listing: NativeSourceListing,
   hideAdult: boolean,
