@@ -6,7 +6,7 @@ import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Channel, invoke } from "@tauri-apps/api/core";
 import type { TFunction } from "i18next";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { modDownloadsQueryOptions } from "@/hooks/use-mod-downloads";
 import useUninstall from "@/hooks/use-uninstall";
@@ -603,8 +603,12 @@ export const useModOptions = (mod: LocalMod | null) => {
   });
 
   const { uninstall } = useUninstall();
+  // isPending lags a render; a repeat disable would send stale VPKs.
+  const isDisablingRef = useRef(false);
   // Keeps the stored selection, so re-enabling restores the same files.
   const disableMutation = useMutation<boolean, Error, "variants" | "files">({
+    // Local-only, so it must not pause offline.
+    networkMode: "always",
     mutationFn: async () => {
       if (!mod) {
         throw new ValidationError("No mod selected");
@@ -614,7 +618,15 @@ export const useModOptions = (mod: LocalMod | null) => {
     onSuccess: (disabled) => {
       if (disabled) setIsOpen(false);
     },
+    onSettled: () => {
+      isDisablingRef.current = false;
+    },
   });
+  const disable = (from: "variants" | "files") => {
+    if (isDisablingRef.current) return;
+    isDisablingRef.current = true;
+    disableMutation.mutate(from);
+  };
   const disablingFrom = disableMutation.isPending
     ? disableMutation.variables
     : undefined;
@@ -634,7 +646,7 @@ export const useModOptions = (mod: LocalMod | null) => {
     allCheckedArchiveNames: string[],
   ) => {
     if (allCheckedArchiveNames.length === 0) {
-      disableMutation.mutate("variants");
+      disable("variants");
       return;
     }
     applyMutation.mutate({
@@ -646,7 +658,7 @@ export const useModOptions = (mod: LocalMod | null) => {
 
   const applyFileSelection = (selectedNames: string[]) => {
     if (selectedNames.length === 0) {
-      disableMutation.mutate("files");
+      disable("files");
       return;
     }
     fileSelectionMutation.mutate(selectedNames);
