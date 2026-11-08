@@ -24,7 +24,10 @@ export const hostedSourceDescriptorSchema = z.object({
 });
 
 /** No project is hosted yet, so the catalog has no listings. */
-export const hostedSourceCatalogSchema = z.object({ items: z.tuple([]) });
+export const hostedSourceCatalogSchema = z.object({
+  snapshotId: z.string(),
+  items: z.tuple([]),
+});
 
 export type HostedSourceDescriptor = z.infer<
   typeof hostedSourceDescriptorSchema
@@ -56,4 +59,8 @@ export const buildHostedSourceDescriptor = (
   capabilities: { installationChoices: true },
 });
 
-export const hostedSourceCatalog: HostedSourceCatalog = { items: [] };
+/** Static catalogs need a nonempty `snapshotId`; desktop rejects pages without one. */
+export const hostedSourceCatalog: HostedSourceCatalog = {
+  snapshotId: "empty",
+  items: [],
+};
