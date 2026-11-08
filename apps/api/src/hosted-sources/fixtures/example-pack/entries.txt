@@ -1,0 +1,9 @@
+game/citadel/addons/pak01_dir.vpk
+game/citadel/addons/pak02_dir.vpk
+game/citadel/addons/pak03_dir.vpk
+game/citadel/addons/pak04_dir.vpk
+game/citadel/optional-addons/pak02_dir.vpk
+game/citadel/optional-addons/pak05_dir.vpk
+game/citadel/gameinfo.gi
+game/citadel/addons/mods.txt
+game/citadel/optional-addons/mods.txt

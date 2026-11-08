@@ -1,0 +1,6 @@
+Example pack load order: pak01 loads first, and a lower number wins.
+
+pak01_dir.vpk  HUD  (hud.vpk)
+pak02_dir.vpk  Effects (full)  (effects.vpk)
+pak03_dir.vpk  Outlines (DX11)  (dx11.vpk)
+pak04_dir.vpk  Outlines (Vulkan)  (vulkan.vpk)

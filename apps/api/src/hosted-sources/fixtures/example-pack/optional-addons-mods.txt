@@ -1,0 +1,4 @@
+Optional mods: one with the same number as a pak in addons replaces it.
+
+pak02_dir.vpk  Effects (reduced)  (effects-lite.vpk)
+pak05_dir.vpk  Low detail map  (map.vpk)

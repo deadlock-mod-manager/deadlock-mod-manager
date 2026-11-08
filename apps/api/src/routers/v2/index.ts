@@ -4,6 +4,7 @@ import { crosshairsRouter } from "./crosshairs";
 import { dashboardRouter } from "./dashboard";
 import { featureFlagsRouter } from "./feature-flags";
 import { fileserversRouter } from "./fileservers";
+import { hostedSourcesRouter } from "./hosted-sources";
 import { kvRouter } from "./kv";
 import { modAuthorsRouter } from "./mod-authors";
 import { modsRouter } from "./mods";
@@ -21,6 +22,7 @@ export const v2Router = {
   ...crosshairsRouter,
   ...dashboardRouter,
   ...fileserversRouter,
+  ...hostedSourcesRouter,
   ...kvRouter,
   ...modAuthorsRouter,
   ...modsRouter,

@@ -1,9 +1,19 @@
 import type { FeatureFlagDefinition } from "@deadlock-mods/feature-flags";
+import { hostedSourceDefinitions } from "@/hosted-sources/definitions";
 
 /**
  * Feature flag definitions to be registered on application startup.
  */
 export const featureFlagDefinitions: FeatureFlagDefinition[] = [
+  ...hostedSourceDefinitions.map(
+    (definition): FeatureFlagDefinition => ({
+      name: definition.flag,
+      description: `List the ${definition.name} hosted mod source in the desktop app; off marks its listing removed`,
+      type: "boolean",
+      defaultValue: false,
+      exposed: false,
+    }),
+  ),
   {
     name: "remlock-release",
     description:

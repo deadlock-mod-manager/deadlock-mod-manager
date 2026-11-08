@@ -205,6 +205,9 @@ importers:
       uuid:
         specifier: ^14.0.0
         version: 14.0.0
+      yauzl:
+        specifier: ^3.2.1
+        version: 3.2.1
       zod:
         specifier: 'catalog:'
         version: 4.6.7
@@ -221,6 +224,9 @@ importers:
       '@types/uuid':
         specifier: ^10.0.0
         version: 10.0.0
+      '@types/yauzl':
+        specifier: ^2.10.3
+        version: 2.10.3
       tsdown:
         specifier: ^0.14.2
         version: 0.14.2(oxc-resolver@11.24.2)(supports-color@10.2.2)(typescript@7.0.2)

@@ -45,6 +45,11 @@ export const envSchema = z.object({
     .string()
     .url("DEADWORKS_REGISTRY_URL must be a valid URL")
     .default("https://api.deadworks.net"),
+  /** The origin clients reach this API on; hosted sources declare it. */
+  API_PUBLIC_URL: z
+    .string()
+    .url("API_PUBLIC_URL must be a valid URL")
+    .default("https://api.deadlockmods.app"),
 });
 
 export const env = envSchema.parse(process.env);

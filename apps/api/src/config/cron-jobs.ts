@@ -1,4 +1,5 @@
 import type { CronJobDefinition } from "@deadlock-mods/queue/cron";
+import { HostedSourcesProcessor } from "@/processors/hosted-sources";
 import { ModsSyncProcessor } from "@/processors/mods-sync";
 import { RelayDiscoveryProcessor } from "@/processors/relay-discovery";
 
@@ -20,5 +21,11 @@ export const cronJobDefinitions: CronJobDefinition[] = [
     processor: RelayDiscoveryProcessor.getInstance(),
     // The server browser no longer queries relays, so their manifest goes unread.
     enabled: false,
+  },
+  {
+    name: HostedSourcesProcessor.name,
+    pattern: HostedSourcesProcessor.cronPattern,
+    processor: HostedSourcesProcessor.getInstance(),
+    enabled: true,
   },
 ];
