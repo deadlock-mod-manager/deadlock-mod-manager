@@ -86,7 +86,7 @@ fn vimeo(url: &Url, host: &str, segments: &[&str]) -> Option<EmbeddedVideo> {
 }
 
 fn embedded_video(raw: &str) -> Option<EmbeddedVideo> {
-  let url = Url::parse(raw.trim()).ok()?;
+  let url = Url::parse(raw.trim_matches(|ch: char| ch.is_whitespace() || ch == '\u{feff}')).ok()?;
   if !matches!(url.scheme(), "http" | "https") {
     return None;
   }
@@ -159,6 +159,7 @@ mod tests {
       "https://www.youtube.com/v/Xw0wI89x3fc",
       "https://www.youtube-nocookie.com/embed/Xw0wI89x3fc",
       "  https://www.youtube.com/live/Xw0wI89x3fc  ",
+      " \u{feff}https://youtu.be/Xw0wI89x3fc\u{feff} ",
     ] {
       assert_eq!(embedded_video(url), youtube("Xw0wI89x3fc"), "{url}");
     }

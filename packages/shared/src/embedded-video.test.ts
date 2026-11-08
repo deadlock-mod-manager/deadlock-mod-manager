@@ -11,6 +11,7 @@ describe("parseEmbeddedVideo", () => {
     "https://www.youtube.com/embed/Xw0wI89x3fc",
     "https://www.youtube-nocookie.com/embed/Xw0wI89x3fc",
     "  https://www.youtube.com/live/Xw0wI89x3fc  ",
+    " \uFEFFhttps://youtu.be/Xw0wI89x3fc\uFEFF ",
     "https://www.youtube.com/v/Xw0wI89x3fc",
   ])("reads the YouTube id from %s", (url) => {
     expect(parseEmbeddedVideo(url)).toEqual({

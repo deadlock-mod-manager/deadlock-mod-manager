@@ -528,11 +528,10 @@ impl TryFrom<SubmissionRow> for CatalogRecord {
       profile_url: row.profile_url,
       category: row.category,
       category_path: decode_category_path(&row.category_path)?,
+      // A rollback may encounter video providers written by a newer version.
       videos: row
         .videos
-        .map(|videos| serde_json::from_str(&videos))
-        .transpose()
-        .map_err(|error| Error::Catalog(error.to_string()))?,
+        .and_then(|videos| serde_json::from_str(&videos).ok()),
       hero: row.hero,
       is_audio: row.is_audio,
       is_map: row.is_map,
@@ -616,6 +615,50 @@ mod tests {
         })
         .collect(),
       ..record(slug, slug, category, None)
+    }
+  }
+
+  #[tokio::test]
+  async fn unreadable_video_cache_does_not_block_catalog_browsing() {
+    use diesel::RunQueryDsl;
+    use diesel::sql_types::Text;
+
+    let directory = tempdir().unwrap();
+    let catalog = Catalog::open(directory.path().join("catalog.db"), 1)
+      .await
+      .unwrap();
+    catalog
+      .upsert_records(vec![
+        record("1", "Cached video", "Skins", None),
+        record("2", "Other mod", "Skins", None),
+      ])
+      .await
+      .unwrap();
+
+    for payload in [
+      "broken JSON",
+      r#"[{"provider":"future-provider","id":"123"}]"#,
+    ] {
+      catalog
+        .pool
+        .run(move |connection| {
+          diesel::sql_query("UPDATE submission SET videos = ? WHERE slug = '1'")
+            .bind::<Text, _>(payload)
+            .execute(connection)?;
+          Ok(())
+        })
+        .await
+        .unwrap();
+      let page = catalog
+        .query(CatalogQuery {
+          page_size: 10,
+          ..CatalogQuery::default()
+        })
+        .await
+        .unwrap();
+      assert_eq!(page.total, 2);
+      assert_eq!(page.items.len(), 2);
+      assert!(page.items.iter().all(|item| item.videos.is_none()));
     }
   }
 
