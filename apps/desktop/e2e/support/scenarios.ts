@@ -30,6 +30,10 @@ import {
 } from "./rescan-after-reset-fixtures";
 import { importFailureRoutes } from "./profile-import-failure-fixtures";
 import { shareRoutes } from "./profile-share-fixtures";
+import {
+  prepareProfileRestoreWorld,
+  profileRestoreRoutes,
+} from "./profile-restore-fixtures";
 import { prepareFileOrderWorld } from "./file-order-fixtures";
 import { prepareBrokenProfileWorld } from "./broken-profile-fixtures";
 import {
@@ -828,6 +832,14 @@ export const scenarios = {
   "local-mod-large-drop-path-vpk": localLargeOnDisk,
   "local-mod-large-drop-path-zip": localLargeOnDisk,
   "profiles-import-overlap": profileShare,
+  "profiles-restore-variant": {
+    ...profileShare,
+    family: "profiles",
+    spec: "profiles-restore-variant",
+    phases: ["restore-variant", "restart-restored-variant"],
+    routes: profileRestoreRoutes,
+    prepare: prepareProfileRestoreWorld,
+  },
   "profiles-reshare": {
     ...profileShare,
     spec: "profiles-reshare",
@@ -1263,6 +1275,7 @@ export const selectScenarios = (suite: string): ScenarioId[] => {
     .filter(
       (id) =>
         suite === "all" ||
+        id === suite ||
         scenarios[id].family === suite ||
         scenarios[id].coverage === suite,
     );

@@ -13,7 +13,7 @@ const windows = process.platform === "win32";
 describe("scenario selection", () => {
   it("registers every case with explicit phases and capability requirements", () => {
     const ids = selectScenarios("all");
-    expect(ids).toHaveLength(windows ? 169 : 159);
+    expect(ids).toHaveLength(windows ? 170 : 160);
     expect(ids).toContain("downloads-segmented-range-error");
     // Some of these specs don't dispatch on their case ID, so a rename
     // wouldn't fail them.
@@ -48,6 +48,14 @@ describe("scenario selection", () => {
       "./specs/mod-files-error.e2e.ts",
     );
     expect(scenarioPhases("mod-files-error")).toEqual(["files-error"]);
+    expect(selectScenarios("profiles")).toContain("profiles-restore-variant");
+    expect(selectScenarios("profiles-restore-variant")).toEqual([
+      "profiles-restore-variant",
+    ]);
+    expect(scenarioPhases("profiles-restore-variant")).toEqual([
+      "restore-variant",
+      "restart-restored-variant",
+    ]);
     expect(selectScenarios("library-groups")).toEqual([
       "library-groups-organize",
       "library-groups-identification",
