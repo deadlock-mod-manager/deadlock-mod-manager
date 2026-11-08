@@ -96,6 +96,7 @@
     "title": "Mod sources",
     "description": "Browse mods from GameBanana and sources you add yourself.",
     "add": "Add source",
+    "installBuiltIn": "Install",
     "addTitle": "Add a mod source",
     "addDescription": "Paste a source descriptor URL. Review its name and network origins before adding it.",
     "descriptorUrl": "Descriptor URL",
