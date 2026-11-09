@@ -21,29 +21,43 @@ declare global {
 export const holdNextIpcReply = (command: string, profileFolder: string) =>
   browser.execute(
     (target: string, folder: string) => {
-      const send = window.fetch.bind(window);
-      let release = () => {};
+      const original = window.fetch;
+      const send = original.bind(window);
+      const hold: IpcHold = {
+        captured: false,
+        delivered: false,
+        release: () => {},
+      };
       const released = new Promise<void>((resolve) => {
-        release = resolve;
+        hold.release = resolve;
       });
-      const hold: IpcHold = { captured: false, delivered: false, release };
       window.e2eIpcHold = hold;
-      window.fetch = async (input, init) => {
-        const url = typeof input === "string" ? input : input.toString();
+      const holdReply = async (
+        input: RequestInfo | URL,
+        init?: RequestInit,
+      ): Promise<Response> => {
+        // Tauri posts a command's arguments as JSON to `ipc://localhost/<command>`.
         if (
           hold.captured ||
-          !url.endsWith(`/${target}`) ||
-          typeof init?.body !== "string" ||
-          !init.body.includes(JSON.stringify(folder))
+          !String(input).endsWith(`/${target}`) ||
+          !String(init?.body).includes(JSON.stringify(folder))
         )
           return send(input, init);
         hold.captured = true;
         const response = await send(input, init);
         await released;
-        window.fetch = send;
+        window.fetch = original;
         hold.delivered = true;
         return response;
       };
+      // Assigning a plain function to `window.fetch` doesn't type-check under
+      // Bun's `fetch` type, which adds `preconnect`; the webview has no such
+      // property to keep.
+      Object.defineProperty(window, "fetch", {
+        configurable: true,
+        writable: true,
+        value: holdReply,
+      });
     },
     command,
     profileFolder,

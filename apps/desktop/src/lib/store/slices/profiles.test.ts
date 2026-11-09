@@ -857,6 +857,47 @@ describe("mods a profile import installed", () => {
     ).toEqual(["42", "43"]);
   });
 
+  it("keeps the import's picks in a profile the user isn't in when its earlier sync finishes later", async () => {
+    const store = createTestStore();
+    const earlier = {
+      ...modFor("42"),
+      downloads: [base],
+      selectedDownloads: [base],
+      status: ModStatus.Installed,
+    };
+    const current = modFor("7");
+    store.setState({
+      profiles: {
+        [defaultProfileId]: profileFor("default", [current]),
+        [secondaryProfileId]: profileFor("secondary", [earlier]),
+      },
+      activeProfileId: defaultProfileId,
+      localMods: [current],
+    });
+    const snapshot = deferred<ProfileVpkSnapshot>();
+    profileTestBackend.readSnapshot = () => snapshot.promise;
+    const sync = store.getState().syncProfileEnabledMods(secondaryProfileId);
+
+    store
+      .getState()
+      .applyImportInstalledModsToProfile(
+        secondaryProfileId,
+        [installed("42")],
+        catalog("42"),
+        new Map([
+          ["42", { downloads: [base, effects], selectedDownloads: [effects] }],
+        ]),
+      );
+    snapshot.resolve(snapshotFor());
+    await sync;
+
+    const state = store.getState();
+    expect(
+      state.profiles[secondaryProfileId].mods[0].selectedDownloads,
+    ).toEqual([effects]);
+    expect(state.localMods).toEqual([current]);
+  });
+
   it("lets an earlier sync finish when the import installed nothing", async () => {
     const store = createTestStore();
     store.setState({

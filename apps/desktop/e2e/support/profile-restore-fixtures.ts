@@ -213,23 +213,26 @@ const LATE_METADATA_MS = 8_000;
  */
 export const profileRestoreDuringSyncRoutes = async () => {
   const base = await profileRestoreRoutes();
-  return (origin: string): FixtureRoute[] =>
-    base(origin).map((route) =>
-      route.path === `/apiv11/Mod/${LATE_METADATA_MOD_ID}/ProfilePage`
-        ? {
-            ...route,
-            sequence: [
-              {
-                status: route.status,
-                body: route.body,
-                headerDelayMs: LATE_METADATA_MS,
-                repeat: 1,
-              },
-              { status: route.status, body: route.body },
-            ],
-          }
-        : route,
+  return (origin: string): FixtureRoute[] => {
+    const routes = base(origin);
+    const lookup = routes.find(
+      (route) =>
+        route.path === `/apiv11/Mod/${LATE_METADATA_MOD_ID}/ProfilePage`,
     );
+    if (!lookup) throw new Error("The restore world never looks up Bravo");
+    const answer = { status: lookup.status, body: lookup.body };
+    // The server answers with the first route that matches.
+    return [
+      {
+        ...lookup,
+        sequence: [
+          { ...answer, headerDelayMs: LATE_METADATA_MS, repeat: 1 },
+          answer,
+        ],
+      },
+      ...routes,
+    ];
+  };
 };
 
 /** The restore world, with Bravo in the manifest but not in the library. */
@@ -239,11 +242,10 @@ export const prepareProfileRestoreDuringSyncWorld = async (
   await prepareProfileRestoreWorld(world);
   const statePath = path.join(world.configuration.roots.appData, "state.json");
   const stored = z
-    .object({ "local-config": z.string() })
-    .loose()
+    .looseObject({ "local-config": z.string() })
     .parse(JSON.parse(await readFile(statePath, "utf8")));
   const config = z
-    .object({
+    .looseObject({
       state: z.looseObject({
         localMods: z.array(z.looseObject({ remoteId: z.string() })),
         profiles: z.record(
@@ -254,7 +256,6 @@ export const prepareProfileRestoreDuringSyncWorld = async (
         ),
       }),
     })
-    .loose()
     .parse(JSON.parse(stored["local-config"]));
   const keep = (mod: { remoteId: string }) =>
     mod.remoteId !== LATE_METADATA_MOD_ID;
