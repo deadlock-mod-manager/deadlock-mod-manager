@@ -469,11 +469,19 @@ where
         return Ok(());
       }
       // Ids are left on this page: paging on would spend history requests on pages that
-      // can't be checked or fetched either, and the sync isn't complete.
+      // can't be checked or fetched either, and the sync isn't complete. The account's
+      // pending list below needs no check, so it still gets fetched.
       if !checked_all {
-        return Ok(());
+        break;
       }
       match page.next_cursor {
+        // With the quota spent, nothing on the next page could be fetched: don't spend a
+        // history request on it.
+        Some(_) if st.quota.remaining(self.persistence.now()) == 0 => {
+          st.progress.quota_reached = true;
+          st.progress.quota_remaining = 0;
+          return Ok(());
+        }
         Some(next) => cursor = Some(next),
         None => {
           history_complete = true;

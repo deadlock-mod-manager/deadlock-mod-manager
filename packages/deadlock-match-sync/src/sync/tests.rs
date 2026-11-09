@@ -40,6 +40,9 @@ struct SpyGc {
   forbidden: HashSet<u64>,
   persona_calls: AtomicU64,
   history: Vec<u64>,
+  // Own history split into pages, used instead of `history` when set. The cursor is the
+  // next page's index.
+  history_pages: Vec<Vec<u64>>,
   friends: HashMap<u32, Persona>,
   friend_history: Vec<u64>,
   // What the GC answers instead of `friend_history` (`MatchSyncError` isn't `Clone`).
@@ -52,7 +55,7 @@ impl GcMatchClient for SpyGc {
     &self,
     ctx: &AuthContext,
     account_id: u32,
-    _cursor: Option<u64>,
+    cursor: Option<u64>,
   ) -> Result<MatchHistoryPage, MatchSyncError> {
     self.calls.fetch_add(1, Ordering::Relaxed);
     if self.fail_history {
@@ -60,6 +63,19 @@ impl GcMatchClient for SpyGc {
     }
     if self.own_history_rate_limited && account_id == ctx.account_id() {
       return Err(MatchSyncError::GcRateLimited);
+    }
+    if account_id == ctx.account_id() && !self.history_pages.is_empty() {
+      let index = cursor.unwrap_or(0) as usize;
+      return Ok(MatchHistoryPage {
+        matches: self.history_pages[index]
+          .iter()
+          .map(|&match_id| LocalMatch {
+            match_id,
+            ..Default::default()
+          })
+          .collect(),
+        next_cursor: (index + 1 < self.history_pages.len()).then_some(index as u64 + 1),
+      });
     }
     let history = if account_id == ctx.account_id() {
       &self.history
@@ -549,6 +565,7 @@ async fn own_matches_the_server_stores_are_remembered_without_asking_the_gc() {
 #[tokio::test]
 async fn full_sync_skips_stored_own_matches_and_stops_where_checks_fail() {
   let backfill = SpyBackfill {
+    account: vec![200],
     stored_salts: HashSet::from([105]),
     check_fails_at: Some(103),
     ..Default::default()
@@ -565,14 +582,17 @@ async fn full_sync_skips_stored_own_matches_and_stops_where_checks_fail() {
     .run_full_sync_if_enabled(&active_config(), &AtomicBool::new(false))
     .await
     .unwrap();
-  // 105 is stored, 104 missing; 103 and 102 couldn't be checked, so they wait.
-  assert_eq!(*eng.sink.posted.lock().unwrap(), vec![104]);
-  assert_eq!(p.fetched, 1);
+  // 105 is stored, 104 missing; 103 and 102 couldn't be checked, so they wait. The
+  // account's pending list needs no check and is still fetched.
+  assert_eq!(*eng.sink.posted.lock().unwrap(), vec![104, 200]);
+  assert_eq!(p.fetched, 2);
   assert_eq!(p.skipped, 1);
-  assert_eq!(*eng.persistence.fetched.lock().unwrap(), vec![105, 104]);
-  // The sync isn't caught up, and the account list isn't drained past the failed check.
+  assert_eq!(
+    *eng.persistence.fetched.lock().unwrap(),
+    vec![105, 104, 200]
+  );
+  // History wasn't fully checked, so the sync isn't caught up.
   assert!(!*eng.persistence.complete.lock().unwrap());
-  assert!(eng.backfill.log.lock().unwrap().is_empty());
 }
 
 #[tokio::test]
@@ -600,6 +620,47 @@ async fn full_sync_is_not_complete_while_quota_leaves_own_matches_unchecked() {
   assert_eq!(*eng.sink.posted.lock().unwrap(), vec![103]);
   assert_eq!(p.fetched, 1);
   assert_eq!(*eng.backfill.checked.lock().unwrap(), vec![103]);
+  assert_eq!(*eng.persistence.fetched.lock().unwrap(), vec![103]);
+  assert!(!*eng.persistence.complete.lock().unwrap());
+
+  // Once the quota frees up, the next sync checks and fetches the rest and completes.
+  eng.persistence.quota_hits.lock().unwrap().clear();
+  let p = eng
+    .run_full_sync_if_enabled(&active_config(), &AtomicBool::new(false))
+    .await
+    .unwrap();
+  assert_eq!(p.fetched, 2);
+  assert_eq!(*eng.backfill.checked.lock().unwrap(), vec![103, 102, 101]);
+  assert_eq!(*eng.sink.posted.lock().unwrap(), vec![103, 102, 101]);
+  assert!(*eng.persistence.complete.lock().unwrap());
+}
+
+#[tokio::test]
+async fn full_sync_stops_paging_history_once_the_quota_is_spent() {
+  // One slot left, taken by the first page's only match.
+  let persistence = MemPersistence {
+    now: 1_000_000,
+    quota_hits: Mutex::new(vec![1_000_000; LIMIT - 1]),
+    ..Default::default()
+  };
+  let eng = engine_with_persistence(
+    SpyGc {
+      history_pages: vec![vec![103], vec![102]],
+      ..Default::default()
+    },
+    SpyBackfill::default(),
+    SpyGameCheck::default(),
+    persistence,
+  );
+
+  let p = eng
+    .run_full_sync_if_enabled(&active_config(), &AtomicBool::new(false))
+    .await
+    .unwrap();
+  assert_eq!(*eng.sink.posted.lock().unwrap(), vec![103]);
+  assert!(p.quota_reached);
+  // One history page and one salts request: the second page is never asked for.
+  assert_eq!(eng.gc.calls.load(Ordering::Relaxed), 2);
   assert!(!*eng.persistence.complete.lock().unwrap());
 }
 
