@@ -28,11 +28,12 @@ export const holdCommandReply = (command: string, modId: string) =>
         body: BodyInit | null | undefined,
       ) => {
         const url = input instanceof Request ? input.url : String(input);
-        if (!url.startsWith("ipc:") || !url.endsWith(`/${target}`))
-          return false;
-        if (typeof body !== "string") return false;
-        const payload: { modId?: string } = JSON.parse(body);
-        return payload.modId === mod;
+        // Tauri sends the command's arguments as JSON text.
+        return (
+          url.startsWith("ipc:") &&
+          url.endsWith(`/${target}`) &&
+          String(body).includes(`"modId":${JSON.stringify(mod)}`)
+        );
       };
       const held = (input: RequestInfo | URL, init?: RequestInit) => {
         const reply = deliver(input, init);
