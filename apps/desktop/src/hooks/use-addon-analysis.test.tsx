@@ -488,5 +488,8 @@ describe("parked files of a mod in the library", () => {
     expect(registrations.map((call) => call.installedVpks)).toEqual([
       ["pak05_dir.vpk"],
     ]);
+    expect(usePersistedStore.getState().localMods[0]?.installedVpks).toEqual([
+      "pak05_dir.vpk",
+    ]);
   });
 });
