@@ -12,7 +12,6 @@ import {
 } from "../support/fixed-status";
 import {
   FIXED,
-  observe,
   openModPage,
   reinstalled,
   settle,
@@ -59,7 +58,7 @@ describe("Reinstall keeps the player's choices", () => {
     // Turning another mod off and on reorders the profile by saved position.
     await setModEnabled(world, LOAD_ORDER[2], false);
     await setModEnabled(world, LOAD_ORDER[2], true);
-    record.afterReorder = await observe(world);
+    record.afterReorder = await settle(world, FIXED);
 
     await writeFile(
       path.join(world, "artifacts", "reinstall-keeps-choices.json"),

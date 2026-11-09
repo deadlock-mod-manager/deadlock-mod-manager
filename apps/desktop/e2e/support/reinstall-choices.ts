@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { setTimeout } from "node:timers/promises";
 import { isDeepStrictEqual } from "node:util";
 import { $ } from "@wdio/globals";
 import { z } from "zod";
@@ -49,7 +50,7 @@ const readManifest = async (world: string) =>
   ).mods;
 
 /** The mod's saved choices, its health and repair, and the engine's order. */
-export const observe = async (world: string) => {
+const observe = async (world: string) => {
   const manifest = await readManifest(world);
   const entry = manifest[REINSTALLED_MOD];
   // One shard and one VPK per mod: the pak number is the load order.
@@ -98,13 +99,15 @@ export const ORIGINAL_FILES: Observation = {
  * Health and the repair package catch up after an install. On a miss, returns
  * the last state for the case to record and assert.
  */
-export const settle = (world: string, expected: Observation) =>
-  observeUntil(
-    "choices settled",
-    () => observe(world),
-    (state) => isDeepStrictEqual(state, expected),
-    10_000,
-  ).catch(() => observe(world));
+export const settle = async (world: string, expected: Observation) => {
+  const deadline = Date.now() + 10_000;
+  for (;;) {
+    const state = await observe(world);
+    if (isDeepStrictEqual(state, expected) || Date.now() >= deadline)
+      return state;
+    await setTimeout(100);
+  }
+};
 
 export const openModPage = async () => {
   await navigate("mods");
