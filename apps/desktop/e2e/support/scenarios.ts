@@ -963,6 +963,14 @@ export const scenarios = {
     routes: reinstallChoicesRoutes,
     prepare: async (world) => prepareReinstallChoicesWorld(world),
   },
+  "compatibility-reinstall-disabled-keeps-choices": {
+    ...defaults,
+    family: "compatibility",
+    spec: "reinstall-disabled-keeps-choices",
+    phases: ["reinstall"],
+    routes: reinstallChoicesRoutes,
+    prepare: async (world) => prepareReinstallChoicesWorld(world),
+  },
   "compatibility-nuke-keeps-choices": {
     ...defaults,
     family: "compatibility",

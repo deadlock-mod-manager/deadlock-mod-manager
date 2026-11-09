@@ -35,6 +35,8 @@ const VPK_NAME = "choices.vpk";
 const FILE_NAME = "choices.zip";
 const FILE_ID = 910002;
 const DATE = 1_780_000_000;
+/** When the fixture says the mod was downloaded; a reinstall moves it on. */
+export const DOWNLOADED_AT = new Date(DATE * 1000);
 const PROFILE_URL = `https://gamebanana.com/mods/${REINSTALLED_MOD}`;
 const DESCRIPTION = "Synthetic reinstall choices fixture";
 
@@ -111,7 +113,7 @@ export const prepareReinstallChoicesWorld = async (
           ...mod,
           remoteUrl: PROFILE_URL,
           downloadable: true,
-          downloadedAt: new Date(DATE * 1000),
+          downloadedAt: DOWNLOADED_AT,
           downloads: [download],
           selectedDownloads: [download],
           installedFileTree: {

@@ -5,14 +5,14 @@ import { isDeepStrictEqual } from "node:util";
 import { $ } from "@wdio/globals";
 import { z } from "zod";
 import { readHealth, readRepairState } from "./fixed-status";
-import { observeUntil } from "./observations";
+import { observeUntil, readPersistedDocument } from "./observations";
 import {
   CHOICES,
+  DOWNLOADED_AT,
   LOAD_ORDER,
   REINSTALLED_MOD,
   REINSTALLED_PAYLOAD,
 } from "./reinstall-choices-fixtures";
-import { readShardStore } from "./shard-oracle";
 import { navigate } from "./ui";
 import { assertOwnedWorld } from "./world";
 
@@ -121,15 +121,31 @@ export const alertStatus = async () => {
   return alert.getAttribute("data-status");
 };
 
-/** Waits until the mod is installed and enabled again. */
-export const reinstalled = (world: string) =>
+const storeSchema = z.object({
+  state: z.object({
+    localMods: z.array(
+      z.looseObject({
+        remoteId: z.string(),
+        status: z.string(),
+        downloadedAt: z.string().nullish(),
+      }),
+    ),
+  }),
+});
+
+/**
+ * Waits until the mod was downloaded again and is back in `status`, so a check
+ * after it can't pass on the state from before the reinstall.
+ */
+export const reinstalled = (world: string, status = "installed") =>
   observeUntil(
     "reinstall settled",
-    () => readShardStore(world),
-    (state) =>
-      state.localMods.find((mod) => mod.remoteId === REINSTALLED_MOD)
-        ?.status === "installed" &&
-      state.profiles[state.activeProfileId].enabledMods[REINSTALLED_MOD]
-        ?.enabled === true,
+    async () =>
+      storeSchema
+        .parse(await readPersistedDocument(world))
+        .state.localMods.find((mod) => mod.remoteId === REINSTALLED_MOD),
+    (mod) =>
+      mod?.status === status &&
+      Date.parse(mod.downloadedAt ?? "") > DOWNLOADED_AT.getTime(),
     30_000,
   );
