@@ -23,7 +23,6 @@ describe("Nuke & Reinstall keeps the player's choices", () => {
   it("keeps the original-files choice and the load-order position", async () => {
     const runtime = await startApplication();
     const world = runtime.roots.world;
-    const record: Record<string, object | string | null> = {};
     await navigate("my-mods");
 
     await step("fix the mod, then choose its original files", async () => {
@@ -41,9 +40,9 @@ describe("Nuke & Reinstall keeps the player's choices", () => {
       await original.click();
       await waitForStatus(CHOICES.folder, REINSTALLED_MOD, "originalFiles");
     });
-    record.before = await settle(world, ORIGINAL_FILES);
+    const before = await settle(world, ORIGINAL_FILES);
 
-    await step("Nuke & Reinstall", async () => {
+    const summary = await step("Nuke & Reinstall", async () => {
       await navigate("my-mods");
       const menu = await $('button[aria-label="More actions"]');
       await menu.waitForClickable();
@@ -56,25 +55,26 @@ describe("Nuke & Reinstall keeps the player's choices", () => {
       await dialog.waitForDisplayed();
       await dialog.$("button=Continue").click();
       await dialog.$("button=Nuke it").click();
-      const summary = await dialog.$("p*=mods restored");
-      await summary.waitForDisplayed({ timeout: 30_000 });
-      record.summary = await summary.getText();
+      const restored = await dialog.$("p*=mods restored");
+      await restored.waitForDisplayed({ timeout: 30_000 });
+      const text = await restored.getText();
       await browser.keys("Escape");
       await waitForOverlaysClosed();
       await reinstalled(world);
+      return text;
     });
-    record.afterNuke = await settle(world, ORIGINAL_FILES);
-    record.alert = await alertStatus();
+    const afterNuke = await settle(world, ORIGINAL_FILES);
+    const alert = await alertStatus();
 
     await writeFile(
       path.join(world, "artifacts", "nuke-keeps-choices.json"),
-      JSON.stringify(record, null, 2),
+      JSON.stringify({ before, summary, afterNuke, alert }, null, 2),
     );
 
-    assert.deepEqual(record.before, ORIGINAL_FILES);
-    assert.equal(record.summary, "1 of 1 mods restored.");
-    assert.deepEqual(record.afterNuke, ORIGINAL_FILES);
-    assert.equal(record.alert, "originalFiles");
+    assert.deepEqual(before, ORIGINAL_FILES);
+    assert.equal(summary, "1 of 1 mods restored.");
+    assert.deepEqual(afterNuke, ORIGINAL_FILES);
+    assert.equal(alert, "originalFiles");
 
     await closeApplication(world, runtime.processId);
   });

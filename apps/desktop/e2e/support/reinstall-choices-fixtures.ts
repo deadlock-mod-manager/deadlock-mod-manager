@@ -35,6 +35,8 @@ const VPK_NAME = "choices.vpk";
 const FILE_NAME = "choices.zip";
 const FILE_ID = 910002;
 const DATE = 1_780_000_000;
+const PROFILE_URL = `https://gamebanana.com/mods/${REINSTALLED_MOD}`;
+const DESCRIPTION = "Synthetic reinstall choices fixture";
 
 // Fixable: its copy of a game text file lacks a game token.
 export const REINSTALLED_PAYLOAD = buildSyntheticVpk([
@@ -107,7 +109,7 @@ export const prepareReinstallChoicesWorld = async (
       ? mod
       : {
           ...mod,
-          remoteUrl: `https://gamebanana.com/mods/${REINSTALLED_MOD}`,
+          remoteUrl: PROFILE_URL,
           downloadable: true,
           downloadedAt: new Date(DATE * 1000),
           downloads: [download],
@@ -155,6 +157,13 @@ export const reinstallChoicesRoutes = async () => {
   return (origin: string) => routes(origin, body);
 };
 
+const json = <T>(url: string, value: T): FixtureRoute => ({
+  method: "GET",
+  path: url,
+  status: 200,
+  body: JSON.stringify(value),
+});
+
 const routes = (origin: string, body: Buffer): FixtureRoute[] => {
   const files = [
     {
@@ -170,23 +179,17 @@ const routes = (origin: string, body: Buffer): FixtureRoute[] => {
     _idRow: Number(REINSTALLED_MOD),
     _sModelName: "Mod",
     _sName: REINSTALLED_MOD,
-    _sProfileUrl: `https://gamebanana.com/mods/${REINSTALLED_MOD}`,
+    _sProfileUrl: PROFILE_URL,
     _tsDateAdded: DATE,
     _tsDateModified: DATE,
     _bHasFiles: true,
-    _sText: "Synthetic reinstall choices fixture",
+    _sText: DESCRIPTION,
     _aSubmitter: { _sName: "E2E" },
     _aRootCategory: { _sName: "Skins" },
     _aCategory: { _sName: "Skins" },
     _aFiles: files,
     _aRequirements: [],
   };
-  const json = <T>(url: string, value: T): FixtureRoute => ({
-    method: "GET",
-    path: url,
-    status: 200,
-    body: JSON.stringify(value),
-  });
   return [
     json("/apiv11/Mod/Index", {
       _aMetadata: { _nRecordCount: 1, _nPerpage: 50, _bIsComplete: true },
@@ -194,20 +197,12 @@ const routes = (origin: string, body: Buffer): FixtureRoute[] => {
     }),
     {
       ...json("/Core/Item/Data", [
-        [
-          profile._sName,
-          0,
-          "Skins",
-          "Skins",
-          profile._sText,
-          profile._sText,
-          files,
-        ],
+        [REINSTALLED_MOD, 0, "Skins", "Skins", DESCRIPTION, DESCRIPTION, files],
       ]),
       query: { "fields[]": BULK_HYDRATION_FIELDS },
     },
     {
-      ...json("/Core/Item/Data", [[profile._sProfileUrl, DATE, files]]),
+      ...json("/Core/Item/Data", [[PROFILE_URL, DATE, files]]),
       query: {
         "fields[]": [BULK_UPDATE_FIELDS],
         "itemid[]": [REINSTALLED_MOD],

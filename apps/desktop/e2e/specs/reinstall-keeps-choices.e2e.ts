@@ -28,7 +28,6 @@ describe("Reinstall keeps the player's choices", () => {
   it("keeps the fix and the load-order position", async () => {
     const runtime = await startApplication();
     const world = runtime.roots.world;
-    const record: Record<string, object | string | null> = {};
     await navigate("my-mods");
 
     await step("fix the mod", async () => {
@@ -38,7 +37,7 @@ describe("Reinstall keeps the player's choices", () => {
       await browser.keys("Escape");
       await waitForOverlaysClosed();
     });
-    record.before = await settle(world, FIXED);
+    const before = await settle(world, FIXED);
 
     await step("Reinstall the mod from its page", async () => {
       await openModPage();
@@ -52,23 +51,23 @@ describe("Reinstall keeps the player's choices", () => {
       await dialog.waitForDisplayed({ reverse: true });
       await reinstalled(world);
     });
-    record.afterReinstall = await settle(world, FIXED);
-    record.badge = await badgeStatus(REINSTALLED_MOD);
+    const afterReinstall = await settle(world, FIXED);
+    const badge = await badgeStatus(REINSTALLED_MOD);
 
     // Turning another mod off and on reorders the profile by saved position.
     await setModEnabled(world, LOAD_ORDER[2], false);
     await setModEnabled(world, LOAD_ORDER[2], true);
-    record.afterReorder = await settle(world, FIXED);
+    const afterReorder = await settle(world, FIXED);
 
     await writeFile(
       path.join(world, "artifacts", "reinstall-keeps-choices.json"),
-      JSON.stringify(record, null, 2),
+      JSON.stringify({ before, afterReinstall, badge, afterReorder }, null, 2),
     );
 
-    assert.deepEqual(record.before, FIXED);
-    assert.deepEqual(record.afterReinstall, FIXED);
-    assert.equal(record.badge, "fixed");
-    assert.deepEqual(record.afterReorder, FIXED);
+    assert.deepEqual(before, FIXED);
+    assert.deepEqual(afterReinstall, FIXED);
+    assert.equal(badge, "fixed");
+    assert.deepEqual(afterReorder, FIXED);
 
     await closeApplication(world, runtime.processId);
   });
