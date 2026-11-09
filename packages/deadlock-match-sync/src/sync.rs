@@ -576,7 +576,7 @@ where
     let Some(budget) = self.backfill_budget(control, cancel, st) else {
       return Ok(());
     };
-    let result = match self.backfill.to_fetch(FetchScope::Global).await {
+    let result = match self.backfill.to_fetch(FetchScope::Global(budget)).await {
       Ok(global) => {
         let mut picks = newest_first_fresh(global, &st.processed);
         picks.truncate(budget);

@@ -154,6 +154,8 @@ struct SpyBackfill {
   stored_salts: HashSet<u64>,
   calls: AtomicU64,
   log: Mutex<Vec<BackfillCall>>,
+  // The `limit` of each global list request.
+  global_limits: Mutex<Vec<usize>>,
   // Every id `missing_salts` checked, and the id whose check fails, ending the checks.
   checked: Mutex<Vec<u64>>,
   check_fails_at: Option<u64>,
@@ -166,8 +168,9 @@ impl BackfillSource for SpyBackfill {
         self.log.lock().unwrap().push(BackfillCall::Account);
         Ok(self.account.clone())
       }
-      FetchScope::Global => {
+      FetchScope::Global(limit) => {
         self.log.lock().unwrap().push(BackfillCall::Global);
+        self.global_limits.lock().unwrap().push(limit);
         Ok(self.global.clone())
       }
     }
@@ -489,6 +492,11 @@ async fn background_backfill_leaves_reserve_for_own_matches() {
   assert_eq!(p.fetched, 0);
   assert_eq!(p.backfilled as usize, LIMIT - BACKFILL_QUOTA_RESERVE);
   assert_eq!(p.quota_remaining as usize, BACKFILL_QUOTA_RESERVE);
+  // Asks for no more than the budget, so the server doesn't claim ids this pass won't fetch.
+  assert_eq!(
+    *eng.backfill.global_limits.lock().unwrap(),
+    [LIMIT - BACKFILL_QUOTA_RESERVE]
+  );
   // The ids past the budget stay claimed unless released.
   assert_eq!(
     *eng.backfill.log.lock().unwrap(),

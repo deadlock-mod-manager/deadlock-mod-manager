@@ -124,7 +124,9 @@ pub struct SaltsCheck {
 #[derive(Debug, Clone, Copy)]
 pub enum FetchScope {
   Account(u32),
-  Global,
+  // How many matches to ask for: the global list claims every id it hands out, so asking
+  // for no more than the pass fetches leaves the rest to other workers.
+  Global(usize),
 }
 
 /// A match as Valve's Game Coordinator reports it. The field names deliberately
