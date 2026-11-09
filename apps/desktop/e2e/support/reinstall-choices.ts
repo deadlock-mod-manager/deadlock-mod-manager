@@ -123,6 +123,7 @@ export const alertStatus = async () => {
 
 const storeSchema = z.object({
   state: z.object({
+    activeProfileId: z.string(),
     localMods: z.array(
       z.looseObject({
         remoteId: z.string(),
@@ -130,22 +131,38 @@ const storeSchema = z.object({
         downloadedAt: z.string().nullish(),
       }),
     ),
+    profiles: z.record(
+      z.string(),
+      z.looseObject({
+        enabledMods: z.record(
+          z.string(),
+          z.looseObject({ enabled: z.boolean() }),
+        ),
+      }),
+    ),
   }),
 });
 
 /**
- * Waits until the mod was downloaded again and is back in `status`, so a check
- * after it can't pass on the state from before the reinstall.
+ * Waits until the mod was downloaded again and is back to installed and
+ * enabled, or downloaded and disabled, so a check after it can't pass on the
+ * state from before the reinstall.
  */
-export const reinstalled = (world: string, status = "installed") =>
+export const reinstalled = (world: string, enabled = true) =>
   observeUntil(
     "reinstall settled",
-    async () =>
-      storeSchema
-        .parse(await readPersistedDocument(world))
-        .state.localMods.find((mod) => mod.remoteId === REINSTALLED_MOD),
-    (mod) =>
-      mod?.status === status &&
+    async () => {
+      const { state } = storeSchema.parse(await readPersistedDocument(world));
+      return {
+        mod: state.localMods.find((mod) => mod.remoteId === REINSTALLED_MOD),
+        enabled:
+          state.profiles[state.activeProfileId]?.enabledMods[REINSTALLED_MOD]
+            ?.enabled ?? false,
+      };
+    },
+    ({ mod, enabled: isEnabled }) =>
+      mod?.status === (enabled ? "installed" : "downloaded") &&
+      isEnabled === enabled &&
       Date.parse(mod.downloadedAt ?? "") > DOWNLOADED_AT.getTime(),
     30_000,
   );

@@ -45,7 +45,7 @@ describe("Reinstall keeps a disabled mod's choices", () => {
       await dialog.waitForDisplayed();
       await dialog.$("button=Reinstall").click();
       await dialog.waitForDisplayed({ reverse: true });
-      await reinstalled(world, "downloaded");
+      await reinstalled(world, false);
     });
 
     await navigate("my-mods");
