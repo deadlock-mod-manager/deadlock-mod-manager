@@ -218,7 +218,9 @@ pub(crate) fn persist_prefixed_import(
 ) -> Result<(), Error> {
   // Manifest recovery runs under this lock and removes any `.dmm.json.tmp` as
   // a crashed save, so saving without it can lose the temp file mid-save.
-  let _manager = MANAGER.lock().unwrap();
+  let _manager = MANAGER
+    .lock()
+    .map_err(|_| Error::BackgroundTaskFailed("Mod manager lock poisoned".to_string()))?;
   let mut manifest =
     crate::mod_manager::vpk_manifest::ProfileVpkManifest::open_for_write(destination_path)?;
   let original_names: Vec<String> = prefixed_vpks
@@ -314,18 +316,25 @@ mod tests {
   #[test]
   fn recording_a_placed_mod_waits_for_the_manager_lock() {
     let temp = tempfile::tempdir().unwrap();
-    let base = temp.path().join("citadel").join("addons").join("profile_test");
+    let base = temp
+      .path()
+      .join("citadel")
+      .join("addons")
+      .join("profile_test");
     std::fs::create_dir_all(&base).unwrap();
 
     let manager = MANAGER.lock().unwrap();
+    let (started, writer_started) = mpsc::channel();
     let (done, finished) = mpsc::channel();
     let writer = std::thread::spawn({
       let base = base.clone();
       move || {
+        started.send(()).unwrap();
         let result = persist_prefixed_import(&base, "123", vec!["123_mod.vpk".to_string()]);
         done.send(result).unwrap();
       }
     });
+    writer_started.recv().unwrap();
     let early = finished.recv_timeout(Duration::from_millis(300)).ok();
     let wrote_while_locked = ProfileVpkManifest::exists(&base);
     drop(manager);
@@ -335,6 +344,11 @@ mod tests {
     writer.join().unwrap();
     assert!(!finished_while_locked && !wrote_while_locked);
     result.unwrap();
-    assert!(ProfileVpkManifest::load(&base).unwrap().mods.contains_key("123"));
+    assert!(
+      ProfileVpkManifest::load(&base)
+        .unwrap()
+        .mods
+        .contains_key("123")
+    );
   }
 }
