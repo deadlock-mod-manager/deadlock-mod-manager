@@ -103,6 +103,10 @@ struct Tracker {
   launch_request: Option<LaunchRequest>,
   /// The app's last Stop, whether or not a session was tracked then.
   dmm_stop_at: Option<DateTime<Utc>>,
+  /// The session the app's last confirmed Stop ended. A PID-less session
+  /// can't see the exit itself, and a forced kill leaves no dump or shutdown
+  /// lines.
+  dmm_stopped_session: Option<String>,
   state: TrackerState,
 }
 
@@ -117,6 +121,7 @@ static TRACKER: LazyLock<Mutex<Tracker>> = LazyLock::new(|| {
     pending: Vec::new(),
     launch_request: None,
     dmm_stop_at: None,
+    dmm_stopped_session: None,
     state: TrackerState::default(),
   })
 });
@@ -210,18 +215,73 @@ pub fn observe(processes: &[GameProcess]) {
   spawn("game-session-start", move || start_session(Some(process)));
 }
 
+/// What one Stop attempt changed, so a failed attempt can undo only its own
+/// marks and leave an earlier confirmed Stop's attribution in place.
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
+pub struct DmmStop {
+  session_id: Option<String>,
+  /// `dmm_stop_at` before this attempt, when it set one.
+  previous_stop_at: Option<Option<DateTime<Utc>>>,
+  /// The session was already marked by an earlier Stop.
+  previously_requested: bool,
+}
+
 /// Marks the running session as stopped by the app, so the forced kill
-/// (exit code 1) isn't taken for a crash. Called before the kill.
-pub fn note_dmm_stop() {
+/// (exit code 1) isn't taken for a crash. Called before the kill. Returns what
+/// it marked, for `note_dmm_stop_completed` or `note_dmm_stop_failed`.
+pub fn note_dmm_stop() -> DmmStop {
   let mut tracker = tracker();
+  let mut stop = DmmStop {
+    session_id: None,
+    previous_stop_at: None,
+    previously_requested: false,
+  };
+  let Some(sessions_dir) = tracker.sessions_dir.clone() else {
+    return stop;
+  };
+  stop.previous_stop_at = Some(tracker.dmm_stop_at.replace(Utc::now()));
+  if let Some(current) = tracker.current.as_mut() {
+    stop.previously_requested = current.dmm_stop_requested;
+    current.dmm_stop_requested = true;
+    store::save_current(&sessions_dir, Some(&*current));
+    stop.session_id = Some(current.session_id.clone());
+  }
+  stop
+}
+
+/// Called once the app's Stop confirmed the game is gone, with what
+/// `note_dmm_stop` returned. A session that started while the Stop was running
+/// isn't the one it ended.
+pub fn note_dmm_stop_completed(stop: DmmStop) {
+  if let Some(session_id) = stop.session_id {
+    tracker().dmm_stopped_session = Some(session_id);
+  }
+}
+
+/// Called when the app's Stop failed, with what `note_dmm_stop` returned. The
+/// game may still be running, so a later exit must not be credited to this
+/// attempt; an earlier Stop's marks stay.
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
+pub fn note_dmm_stop_failed(stop: DmmStop) {
+  let mut tracker = tracker();
+  if let Some(previous) = stop.previous_stop_at {
+    tracker.dmm_stop_at = previous;
+  }
+  if stop.previously_requested {
+    return;
+  }
   let Some(sessions_dir) = tracker.sessions_dir.clone() else {
     return;
   };
-  tracker.dmm_stop_at = Some(Utc::now());
-  if let Some(current) = tracker.current.as_mut() {
-    current.dmm_stop_requested = true;
-    store::save_current(&sessions_dir, Some(&*current));
-  }
+  let Some(current) = tracker
+    .current
+    .as_mut()
+    .filter(|current| Some(&current.session_id) == stop.session_id.as_ref())
+  else {
+    return;
+  };
+  current.dmm_stop_requested = false;
+  store::save_current(&sessions_dir, Some(&*current));
 }
 
 pub fn pending_reports() -> Vec<SessionReport> {
@@ -477,12 +537,17 @@ fn wait_for_pidless_end(record: &SessionRecord) -> bool {
       return false;
     }
     if dumps::find_session_dump(&dumps_dir, &search).is_some()
-      || console::ended_cleanly(&console_log) == Some(true)
+      || console::run_ended_cleanly(&console_log, record.started_at)
+      || stopped_by_dmm(&record.session_id)
     {
       return true;
     }
     std::thread::sleep(PIDLESS_POLL_INTERVAL);
   }
+}
+
+fn stopped_by_dmm(session_id: &str) -> bool {
+  tracker().dmm_stopped_session.as_deref() == Some(session_id)
 }
 
 fn finalize(
