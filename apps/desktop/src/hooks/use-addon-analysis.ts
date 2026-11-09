@@ -8,7 +8,7 @@ import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { getMod, getModDownloads } from "@/lib/api-client";
 import {
   buildAnalyzedFileTree,
-  isIgnoredByGame,
+  canBelongToIdentifiedMod,
   isRecordedInManifest,
   isUnrecordedLeftover,
   needsAnalysisReview,
@@ -141,7 +141,7 @@ export const useAddonAnalysis = () => {
         if (
           addon.remoteId &&
           !isUnrecordedLeftover(addon, libraryIds) &&
-          !isIgnoredByGame(addon)
+          canBelongToIdentifiedMod(addon)
         ) {
           const existing = modGroups.get(addon.remoteId) ?? [];
           existing.push(addon);

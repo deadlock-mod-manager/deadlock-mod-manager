@@ -382,4 +382,21 @@ describe("files the game doesn't load", () => {
     expect(state.localMods).toEqual([]);
     expect(state.analysisDialogOpen).toBe(true);
   });
+
+  it("leaves a disabled local mod's file alone when it hashes to a catalog mod", async () => {
+    resetProfile(false);
+    catalog.set("900001", { ...restoredMod, remoteId: "900001" });
+    await analyze([
+      {
+        ...hashMatchedAddon(),
+        filePath: "/game/citadel/addons/reset/local-1_pak05_dir.vpk",
+        fileName: "local-1_pak05_dir.vpk",
+        locator: "local-1_pak05_dir.vpk",
+        manifestModId: "local-1",
+        hasEnabledVpkName: false,
+      },
+    ]);
+    expect(registrations).toEqual([]);
+    expect(usePersistedStore.getState().localMods).toEqual([]);
+  });
 });
