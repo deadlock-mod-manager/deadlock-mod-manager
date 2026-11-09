@@ -193,14 +193,24 @@ describe("scenario selection", () => {
     const { jobs } = z
       .object({
         jobs: z.object({
+          // Strict, so a matrix key this check doesn't read fails it.
           scenarios: z.object({
-            strategy: z.object({ matrix: z.object({ suite: z.string() }) }),
+            strategy: z.object({
+              matrix: z.strictObject({
+                suite: z.string(),
+                include: z.string(),
+              }),
+            }),
           }),
           "linux-scenarios": z.object({
             strategy: z.object({
-              matrix: z.object({
+              matrix: z.strictObject({
+                distro: z.array(z.string()),
                 suite: z.array(z.string()),
                 include: z.array(z.object({ suite: z.string().optional() })),
+                exclude: z.array(
+                  z.object({ distro: z.string(), suite: z.string() }),
+                ),
               }),
             }),
           }),
@@ -226,12 +236,18 @@ describe("scenario selection", () => {
             "null",
         ),
       );
-    // Debian runs every listed suite; Arch excludes only repeat it.
     const linux = jobs["linux-scenarios"].strategy.matrix;
     const scheduled = new Set<string>([
       ...windows.flatMap((suite) => selectScenarios(suite, "win32")),
       ...[
-        ...linux.suite,
+        ...linux.suite.filter((suite) =>
+          linux.distro.some(
+            (distro) =>
+              !linux.exclude.some(
+                (job) => job.distro === distro && job.suite === suite,
+              ),
+          ),
+        ),
         ...linux.include.flatMap((job) => job.suite ?? []),
       ].flatMap((suite) => selectScenarios(suite, "linux")),
     ]);
