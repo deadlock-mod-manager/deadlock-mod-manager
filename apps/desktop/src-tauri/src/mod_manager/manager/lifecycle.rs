@@ -488,8 +488,11 @@ impl ModManager {
     Self::ensure_safe_mod_id(mod_id)?;
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
     let prefixed_vpks = self.vpk_manager.find_prefixed_vpks(&addons_path, mod_id)?;
+    // A download with several variants keeps its VPKs in the archive until
+    // install picks one, so there is nothing to record the choices against.
     if prefixed_vpks.is_empty() {
-      return Err(Error::ModFileNotFound);
+      log::info!("No downloaded VPKs to keep the choices of disabled mod {mod_id} on");
+      return Ok(());
     }
     let prefix = format!("{mod_id}_");
     let original_vpk_names = prefixed_vpks
