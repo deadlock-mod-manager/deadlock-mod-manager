@@ -1,10 +1,10 @@
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import logger from "@/lib/logger";
 import { type BulkActionRecap, runBulkModAction } from "@/lib/mods/bulk-action";
+import { setBulkActionRecap } from "@/lib/mods/bulk-action-recaps";
 import { isInstalledModWithVpks } from "@/lib/mods/installed-helpers";
 import { usePersistedStore } from "@/lib/store";
 import { ModStatus } from "@/types/mods";
@@ -19,11 +19,10 @@ export const useDisableAllMods = () => {
   const setModEnabledInCurrentProfile = usePersistedStore(
     (state) => state.setModEnabledInCurrentProfile,
   );
-  const [recap, setRecap] = useState<BulkActionRecap | null>(null);
 
   const mutation = useMutation({
     mutationKey: ["library-bulk"],
-    onMutate: () => setRecap(null),
+    onMutate: () => setBulkActionRecap("disable", null),
     mutationFn: async (
       selectedIds?: ReadonlySet<string>,
     ): Promise<BulkActionRecap | null> => {
@@ -90,7 +89,7 @@ export const useDisableAllMods = () => {
             notAttempted: result.notAttempted.length,
           })
           .warn("Bulk disable stopped early");
-        setRecap(result);
+        setBulkActionRecap("disable", result);
         return;
       }
       toast.success(
@@ -111,7 +110,5 @@ export const useDisableAllMods = () => {
   return {
     disableAll: mutation.mutate,
     isPending: mutation.isPending,
-    recap,
-    closeRecap: () => setRecap(null),
   };
 };

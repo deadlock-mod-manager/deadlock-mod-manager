@@ -10,7 +10,11 @@ import {
 import { CheckCircle, CircleSlash, XCircle } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
 import { asItems, RecapSection } from "@/components/my-mods/recap-section";
-import type { BulkActionRecap } from "@/lib/mods/bulk-action";
+import type { BulkModAction } from "@/lib/mods/bulk-action";
+import {
+  setBulkActionRecap,
+  useBulkActionRecaps,
+} from "@/lib/mods/bulk-action-recaps";
 
 const COPY = {
   disable: {
@@ -34,17 +38,18 @@ const STOP_REASON = {
 } as const;
 
 type BulkActionRecapDialogProps = {
-  recap: BulkActionRecap | null;
-  onClose: () => void;
+  action: BulkModAction;
 };
 
 /** Shown when a bulk disable or delete stops before reaching every mod. */
 export const BulkActionRecapDialog = ({
-  recap,
-  onClose,
+  action,
 }: BulkActionRecapDialogProps) => {
   const { t } = useTranslation();
+  const recap = useBulkActionRecaps((state) => state[action]);
   if (!recap?.stoppedBy) return null;
+
+  const onClose = () => setBulkActionRecap(action, null);
 
   const copy = COPY[recap.action];
   const total =
