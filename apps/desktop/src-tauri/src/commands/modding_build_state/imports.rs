@@ -4,10 +4,25 @@ pub(super) fn canonical(bytes: &[u8]) -> Result<Vec<u8>, Error> {
   if bytes.starts_with(b"<!-- dmx encoding binary") {
     return source2_model::dmx::canonical_binary_export(bytes).map_err(invalid);
   }
-  if !bytes.starts_with(b"<!-- dmx encoding keyvalues2") {
+  if !bytes.starts_with(b"<!-- dmx encoding keyvalues2") && !bytes.starts_with(b"<!-- kv3") {
     return Ok(bytes.to_vec());
   }
   let text = std::str::from_utf8(bytes).map_err(invalid)?;
+  let quoted = regex::Regex::new(r#""([^"\r\n]+)""#).unwrap();
+  let mut normalized = text.to_owned();
+  for capture in quoted
+    .captures_iter(text)
+    .collect::<Vec<_>>()
+    .into_iter()
+    .rev()
+  {
+    let value = capture.get(1).unwrap();
+    let path = value.as_str().replace("\\\\", "/").replace('\\', "/");
+    if path.contains('/') && relative(&path, false).is_ok() {
+      normalized.replace_range(value.range(), &path);
+    }
+  }
+  let text = normalized.as_str();
   let pattern =
     regex::Regex::new(r#"(?:"id"\s+"elementid"|"element")\s+"([0-9a-fA-F-]{36})""#).unwrap();
   let mut ids = BTreeMap::new();

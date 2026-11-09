@@ -67,7 +67,13 @@ fn fixture(bone_count: usize) -> Vec<u8> {
     ]);
     let data = encoded(&object(&[
         ("m_sceneObjects", Value::Array(vec![scene])),
-        ("m_skeleton", object(&[("m_bones", Value::Array(bones))])),
+        (
+            "m_skeleton",
+            object(&[
+                ("m_bones", Value::Array(bones)),
+                ("m_nBoneWeightCount", number(4)),
+            ]),
+        ),
     ]));
     let model_data = encoded(&object(&[
         (
@@ -145,7 +151,127 @@ fn patch<'a>(vertices: &'a [PatchVertex], bone: &'a str) -> AttachedPatch<'a> {
         bone,
         vertices,
         indices: &[0, 1, 2],
+        skin: None,
     }
+}
+
+#[test]
+fn surface_sticker_vertices_blend_multiple_bones_and_keep_them_evaluated() {
+    let input = fixture(261);
+    let vertices = vertices();
+    let skin = vec![
+        PatchSkin {
+            bones: [2, 260, 0, 0],
+            weights: [0.25, 0.75, 0., 0.]
+        };
+        vertices.len()
+    ];
+    let mut attached = patch(&vertices, "bone_2");
+    attached.skin = Some(&skin);
+    let output = attach(&input, &[attached]).unwrap();
+    check_original_blocks(&input, &output);
+    let resource = Resource::parse(&output).unwrap();
+    let ctrl = kv3::decode(resource.find_block(*b"CTRL").unwrap()).unwrap();
+    let mesh = array(&ctrl, "embedded_meshes").unwrap().last().unwrap();
+    let buffer = &array(mesh, "m_vertexBuffers").unwrap()[0];
+    assert_eq!(
+        buffer.get("m_nElementSizeInBytes").and_then(Value::as_f64),
+        Some(60.)
+    );
+    let bytes = resource
+        .get_block_by_index(buffer.get("m_nBlockIndex").unwrap().as_f64().unwrap() as usize)
+        .unwrap();
+    assert_eq!(u16::from_le_bytes(bytes[48..50].try_into().unwrap()), 2);
+    assert_eq!(u16::from_le_bytes(bytes[50..52].try_into().unwrap()), 260);
+    assert_eq!(&bytes[56..60], &[64, 191, 0, 0]);
+    let original = vertices[0].position[0];
+    let moved = (original + 4.) * f32::from(bytes[56]) / 255.
+        + (original - 4.) * f32::from(bytes[57]) / 255.;
+    assert!((moved - (original - 1.9921569)).abs() < 0.00001);
+    let model = kv3::decode(resource.find_block(*b"DATA").unwrap()).unwrap();
+    let flags = array(model.get("m_modelSkeleton").unwrap(), "m_nFlag").unwrap();
+    assert_ne!((flags[260].as_f64().unwrap() as u64) & 0x80, 0);
+}
+
+#[test]
+fn surface_skinning_uses_authoritative_remaps_for_compiler_renamed_bones() {
+    let mut input = fixture(261);
+    let resource = Resource::parse(&input).unwrap();
+    let mut data = kv3::decode(resource.find_block(*b"DATA").unwrap()).unwrap();
+    if let Some(Value::Array(names)) = data
+        .get_mut("m_modelSkeleton")
+        .and_then(|s| s.get_mut("m_boneName"))
+    {
+        names[260] = Value::String("$simulated_surface".into());
+    }
+    let data_index = resource
+        .blocks()
+        .iter()
+        .position(|block| block.kind == *b"DATA")
+        .unwrap();
+    input = resource
+        .rebuild_with_block(data_index, &encoded(&data))
+        .unwrap();
+    let vertices = vertices();
+    let skin = vec![
+        PatchSkin {
+            bones: [2, 260, 0, 0],
+            weights: [0.25, 0.75, 0., 0.]
+        };
+        vertices.len()
+    ];
+    let mut attached = patch(&vertices, "$simulated_surface");
+    attached.skin = Some(&skin);
+    let output = attach(&input, &[attached]).unwrap();
+    let resource = Resource::parse(&output).unwrap();
+    let ctrl = kv3::decode(resource.find_block(*b"CTRL").unwrap()).unwrap();
+    let mesh = array(&ctrl, "embedded_meshes").unwrap().last().unwrap();
+    let buffer = &array(mesh, "m_vertexBuffers").unwrap()[0];
+    let bytes = resource
+        .get_block_by_index(buffer.get("m_nBlockIndex").unwrap().as_f64().unwrap() as usize)
+        .unwrap();
+    assert_eq!(u16::from_le_bytes(bytes[50..52].try_into().unwrap()), 260);
+    assert_eq!(&bytes[56..60], &[64, 191, 0, 0]);
+}
+
+#[test]
+fn unused_palette_aliases_do_not_shadow_usable_surface_bones() {
+    let input = fixture(3);
+    let resource = Resource::parse(&input).unwrap();
+    let mut data = kv3::decode(resource.find_block(*b"DATA").unwrap()).unwrap();
+    set(
+        &mut data,
+        "m_remappingTableStarts",
+        Value::Array(vec![number(0), number(4)]),
+    )
+    .unwrap();
+    set(
+        &mut data,
+        "m_remappingTable",
+        Value::Array([0, 1, 2, 1, 0, 1, 2, 1].map(number).to_vec()),
+    )
+    .unwrap();
+    let input = resource.rebuild_with_block(0, &encoded(&data)).unwrap();
+    let vertices = vertices();
+    let skin = vec![
+        PatchSkin {
+            bones: [1, 2, 0, 0],
+            weights: [0.5, 0.5, 0., 0.]
+        };
+        vertices.len()
+    ];
+    let mut attached = patch(&vertices, "bone_1");
+    attached.skin = Some(&skin);
+    let output = attach(&input, &[attached]).unwrap();
+    let resource = Resource::parse(&output).unwrap();
+    let ctrl = kv3::decode(resource.find_block(*b"CTRL").unwrap()).unwrap();
+    let mesh = array(&ctrl, "embedded_meshes").unwrap().last().unwrap();
+    let buffer = &array(mesh, "m_vertexBuffers").unwrap()[0];
+    let bytes = resource
+        .get_block_by_index(buffer.get("m_nBlockIndex").unwrap().as_f64().unwrap() as usize)
+        .unwrap();
+    assert_eq!(&bytes[48..52], &[1, 2, 0, 0]);
+    assert_eq!(&bytes[52..56], &[128, 127, 0, 0]);
 }
 
 fn check_original_blocks(input: &[u8], output: &[u8]) {
@@ -177,12 +303,20 @@ fn check_original_blocks(input: &[u8], output: &[u8]) {
 
 #[test]
 fn independent_sticker_mesh_keeps_original_geometry_and_covers_all_lods() {
-    for (bone, count, stride) in [("bone_2", 3, 64), ("bone_260", 261, 72)] {
+    for (bone, count, stride) in [("bone_2", 3, 56), ("bone_260", 261, 60)] {
         let input = fixture(count);
         let vertices = vertices();
         let output = attach(&input, &[patch(&vertices, bone)]).unwrap();
         check_original_blocks(&input, &output);
         let after = Resource::parse(&output).unwrap();
+        let references = crate::material_repair::references(&output).unwrap();
+        assert_eq!(
+            references,
+            vec![(
+                crate::resource_id::resource_id("materials/patch.vmat").unwrap(),
+                "materials/patch.vmat".into(),
+            )]
+        );
         let ctrl = kv3::decode(after.find_block(*b"CTRL").unwrap()).unwrap();
         let meshes = array(&ctrl, "embedded_meshes").unwrap();
         assert_eq!(meshes.len(), 3);
@@ -290,6 +424,56 @@ fn multiple_stickers_each_export_once_without_accumulating_host_buffers() {
 }
 
 #[test]
+fn sticker_weights_retain_bind_positions_in_the_declared_gpu_layout() {
+    for (bone, count) in [("bone_2", 3), ("bone_260", 261)] {
+        let input = fixture(count);
+        let vertices = vertices();
+        let output = attach(&input, &[patch(&vertices, bone)]).unwrap();
+        let resource = Resource::parse(&output).unwrap();
+        let ctrl = kv3::decode(resource.find_block(*b"CTRL").unwrap()).unwrap();
+        let mesh = array(&ctrl, "embedded_meshes").unwrap().last().unwrap();
+        let buffer = &array(mesh, "m_vertexBuffers").unwrap()[0];
+        let stride = buffer
+            .get("m_nElementSizeInBytes")
+            .unwrap()
+            .as_f64()
+            .unwrap() as usize;
+        let fields = array(buffer, "m_inputLayoutFields").unwrap();
+        let weights = fields
+            .iter()
+            .find(|field| {
+                field.get("m_pSemanticName").and_then(Value::as_str) == Some("BLENDWEIGHT")
+            })
+            .unwrap();
+        let offset = weights.get("m_nOffset").unwrap().as_f64().unwrap() as usize;
+        let format = weights.get("m_Format").unwrap().as_f64().unwrap() as u32;
+        let bytes = resource
+            .get_block_by_index(buffer.get("m_nBlockIndex").unwrap().as_f64().unwrap() as usize)
+            .unwrap();
+        // Decode the declared DirectX input format, without the preview's weight normalization.
+        for vertex in bytes.chunks_exact(stride) {
+            let total: f32 = (0..4)
+                .map(|slot| match format {
+                    28 => f32::from(vertex[offset + slot]) / 255.,
+                    11 => {
+                        f32::from(u16::from_le_bytes(
+                            vertex[offset + slot * 2..offset + slot * 2 + 2]
+                                .try_into()
+                                .unwrap(),
+                        )) / 65535.
+                    }
+                    _ => panic!("Unsupported GPU weight format {format}"),
+                })
+                .sum();
+            assert!(
+                (total - 1.).abs() < 0.00001,
+                "Sticker weights move bind-pose vertices: total {total} for {bone}"
+            );
+        }
+    }
+}
+
+#[test]
 fn rejects_invalid_geometry_or_missing_bones_without_changing_inputs() {
     let input = fixture(3);
     let mut vertices = vertices();
@@ -360,6 +544,9 @@ fn patch_material_has_independent_parameters_and_retains_shader_signature() {
     )
     .unwrap();
     let result = Resource::parse(&output).unwrap();
+    for (id, path) in crate::material_repair::references(&output).unwrap() {
+        assert_eq!(crate::resource_id::resource_id(&path).unwrap(), id);
+    }
     assert_eq!(
         result.get_block_by_index(1),
         Some(b"original shader input signature".as_slice())
@@ -370,7 +557,34 @@ fn patch_material_has_independent_parameters_and_retains_shader_signature() {
         Some("materials/patch.vmat")
     );
     assert!(array(&decoded, "m_dynamicParams").unwrap().is_empty());
-    assert_eq!(array(&decoded, "m_textureParams").unwrap().len(), 5);
+    let textures = array(&decoded, "m_textureParams").unwrap();
+    // Required samplers from a native PBR material, including the masks used by NPR lighting.
+    for (name, path) in [
+        ("g_tColor", "materials/patch.vtex"),
+        ("g_tAltColor_Reveal", "materials/patch.vtex"),
+        ("g_tAmbientOcclusion", "materials/white.vtex"),
+        ("g_tMetalness", "materials/black.vtex"),
+        ("g_tNormalRoughness", "materials/normal.vtex"),
+        ("g_tNprOutlineMask", "materials/white.vtex"),
+        ("g_tNprTransmissiveColor", "materials/black.vtex"),
+        ("g_tSelfIllumMask", "materials/white.vtex"),
+        ("g_tTintMaskRimLightMask", "materials/black.vtex"),
+    ] {
+        assert_eq!(
+            textures
+                .iter()
+                .find(|entry| entry.get("m_name").and_then(Value::as_str) == Some(name))
+                .and_then(|entry| entry.get("m_pValue"))
+                .and_then(Value::as_str),
+            Some(path),
+            "Incorrect native PBR sampler binding {name}"
+        );
+        assert!(
+            crate::material_repair::references(&output)
+                .unwrap()
+                .contains(&(crate::resource_id::resource_id(path).unwrap(), path.into()))
+        );
+    }
     for (key, expected) in [("F_ALPHA_TEST", 0.), ("F_TRANSLUCENT", 1.)] {
         let flag = array(&decoded, "m_intParams")
             .unwrap()

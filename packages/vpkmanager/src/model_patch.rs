@@ -1,6 +1,7 @@
 //! Add rigid skinned patches without rebuilding a hero's skeleton, animation or physics.
 mod attachment;
 mod material;
+mod skinning;
 use crate::{
     error::{Result, VpkManagerError},
     source2::{
@@ -19,12 +20,20 @@ pub struct PatchVertex {
     pub uv: [f32; 2],
 }
 
+#[derive(Clone, Copy, Debug)]
+pub struct PatchSkin {
+    /// Bone indices in the model skeleton, before the mesh palette remap.
+    pub bones: [u16; 4],
+    pub weights: [f32; 4],
+}
+
 pub struct AttachedPatch<'a> {
     pub host_material: &'a str,
     pub material: &'a str,
     pub bone: &'a str,
     pub vertices: &'a [PatchVertex],
     pub indices: &'a [u16],
+    pub skin: Option<&'a [PatchSkin]>,
 }
 
 fn invalid(message: impl Into<String>) -> VpkManagerError {
@@ -220,10 +229,31 @@ pub fn attach(model: &[u8], patches: &[AttachedPatch<'_>]) -> Result<Vec<u8>> {
             .clone();
         attachment::clear(&mut mesh, &mut mesh_shape, "m_vertexBuffers")?;
         attachment::clear(&mut mesh, &mut mesh_shape, "m_indexBuffers")?;
-        let wide = bone.is_some_and(|v| v > 255);
-        let stride = if wide { 72 } else { 64 };
+        let source_index = mesh
+            .get("m_nMeshIndex")
+            .and_then(Value::as_f64)
+            .ok_or_else(|| invalid("Missing host mesh index"))? as usize;
+        let skin = skinning::encode(patch, &data, &model_data, source_index, bone)?;
+        let wide = skin
+            .as_ref()
+            .is_some_and(|vertices| vertices.iter().any(|v| v.bones.iter().any(|b| *b > 255)));
+        let stride = if bone.is_none() {
+            48
+        } else if wide {
+            60
+        } else {
+            56
+        };
+        if bone.is_some() {
+            set(
+                data.get_mut("m_skeleton")
+                    .ok_or_else(|| invalid("Missing attachment skeleton"))?,
+                "m_nBoneWeightCount",
+                number(4),
+            )?;
+        }
         let mut vertex_bytes = Vec::with_capacity(patch.vertices.len() * stride);
-        for vertex in patch.vertices {
+        for (index, vertex) in patch.vertices.iter().enumerate() {
             for v in vertex
                 .position
                 .iter()
@@ -233,15 +263,18 @@ pub fn attach(model: &[u8], patches: &[AttachedPatch<'_>]) -> Result<Vec<u8>> {
             {
                 vertex_bytes.extend_from_slice(&v.to_le_bytes());
             }
-            let bone = u16::try_from(bone.unwrap_or(0))
-                .map_err(|_| invalid("Patch bone palette exceeds 16-bit indices"))?;
-            if wide {
-                vertex_bytes.extend_from_slice(&bone.to_le_bytes());
-                vertex_bytes.extend_from_slice(&[0; 14]);
-            } else {
-                vertex_bytes.extend_from_slice(&[bone as u8, 0, 0, 0, 0, 0, 0, 0]);
+            if let Some(skin) = &skin {
+                let vertex = &skin[index];
+                if wide {
+                    for bone in vertex.bones {
+                        vertex_bytes.extend_from_slice(&bone.to_le_bytes());
+                    }
+                } else {
+                    vertex_bytes.extend(vertex.bones.map(|bone| bone as u8));
+                }
+                // Four-influence shaders consume normalized bytes, not the packed eight-influence format.
+                vertex_bytes.extend_from_slice(&vertex.weights);
             }
-            vertex_bytes.extend_from_slice(&[255, 0, 0, 0, 0, 0, 0, 0]);
         }
         let mut vertices = vertex_template;
         let mut vertices_shape = vertex_shape;
@@ -263,10 +296,10 @@ pub fn attach(model: &[u8], patches: &[AttachedPatch<'_>]) -> Result<Vec<u8>> {
             (
                 "BLENDINDICES",
                 "BlendIndices",
-                if wide { 4 } else { 12 },
+                if wide { 14 } else { 30 },
                 48,
             ),
-            ("BLENDWEIGHT", "", 11, if wide { 64 } else { 56 }),
+            ("BLENDWEIGHT", "", 28, if wide { 56 } else { 52 }),
         ];
         let mut layout = Vec::new();
         let mut shapes = Vec::new();
@@ -465,7 +498,7 @@ pub fn attach(model: &[u8], patches: &[AttachedPatch<'_>]) -> Result<Vec<u8>> {
         .map(|p| {
             Ok((
                 crate::resource_id::resource_id(p.material)?,
-                format!("{}_c", p.material),
+                p.material.to_owned(),
             ))
         })
         .collect::<Result<Vec<_>>>()?;

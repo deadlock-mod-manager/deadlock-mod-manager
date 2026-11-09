@@ -44,3 +44,16 @@ test("undo and redo preserve independent material drafts and new changes discard
   expect(changed.future).toEqual([]);
   expect(modelEditHistory(initial, { type: "undo" })).toBe(initial);
 });
+
+test("discard returns to the saved recipe and clears unsaved undo history", () => {
+  const saved = [{ ...resetModelPart("body"), roughness: 0.75 }];
+  const changed = modelEditHistory(
+    { edits: saved, past: [], future: [] },
+    { type: "change", edits: [{ ...saved[0], roughness: 0.2 }] },
+  );
+  const discarded = modelEditHistory(changed, { type: "reset", edits: saved });
+  expect(discarded.edits).toBe(saved);
+  expect(discarded.past).toEqual([]);
+  expect(discarded.future).toEqual([]);
+  expect(modelEditHistory(discarded, { type: "undo" })).toBe(discarded);
+});

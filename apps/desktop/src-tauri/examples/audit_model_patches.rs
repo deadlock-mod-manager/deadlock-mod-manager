@@ -319,6 +319,7 @@ fn audit(archive: &VpkArchive, model: &str, decode: bool) -> Result<ModelReport>
         bone: &bone,
         vertices: &vertices,
         indices: &[0, 1, 2],
+        skin: None,
       }],
     );
     let output = result?;

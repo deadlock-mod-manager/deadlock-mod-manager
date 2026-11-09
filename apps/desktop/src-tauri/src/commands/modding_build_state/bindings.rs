@@ -4,6 +4,8 @@ use source2_model::nm_anim;
 pub(in crate::commands) struct AnimationBindings {
   skeletons: BTreeMap<String, Vec<String>>,
   clips: BTreeMap<String, (String, String)>,
+  preserved: BTreeMap<String, Vec<u8>>,
+  sources: Vec<PathBuf>,
 }
 
 impl AnimationBindings {
@@ -11,6 +13,8 @@ impl AnimationBindings {
     let mut result = Self {
       skeletons: BTreeMap::new(),
       clips: BTreeMap::new(),
+      preserved: BTreeMap::new(),
+      sources: Vec::new(),
     };
     if !inputs.iter().any(|path| {
       path.extension().is_some_and(|ext| {
@@ -41,6 +45,60 @@ impl AnimationBindings {
       }
     }
     Ok(result)
+  }
+
+  pub(in crate::commands) fn preserve_unchanged(
+    &mut self,
+    snapshot: &Snapshot,
+    state: &State,
+    root: &Path,
+    game: &Path,
+  ) -> Result<(), Error> {
+    for (source, previous) in &state.inputs {
+      if ![".vnmclip", ".vnmskel"]
+        .iter()
+        .any(|extension| source.ends_with(extension))
+        || previous.sources != snapshot.sources(source)
+        || previous.outputs.is_empty()
+        || previous
+          .outputs
+          .iter()
+          .any(|output| !game.join(output).is_file())
+      {
+        continue;
+      }
+      self.sources.push(contained(root, source)?);
+      for output in &previous.outputs {
+        self
+          .preserved
+          .insert(output.clone(), read(&contained(game, output)?)?);
+      }
+    }
+    Ok(())
+  }
+
+  /// ModelDoc can rebuild animation dependencies even when only the render mesh changed.
+  pub(in crate::commands) fn restore(
+    &self,
+    snapshot: &Snapshot,
+    root: &Path,
+    game: &Path,
+  ) -> Result<(), Error> {
+    snapshot.verify(root, &self.sources)?;
+    let mut edits = Vec::new();
+    for (path, original) in &self.preserved {
+      if read(&contained(game, path)?)? != *original {
+        edits.push(modding_edits::Edit {
+          from: path.clone(),
+          to: path.clone(),
+          bytes: original.clone(),
+        });
+      }
+    }
+    if !edits.is_empty() {
+      modding_edits::commit(game, edits)?;
+    }
+    Ok(())
   }
 
   pub(in crate::commands) fn verify(&self, game: &Path) -> Result<(), Error> {

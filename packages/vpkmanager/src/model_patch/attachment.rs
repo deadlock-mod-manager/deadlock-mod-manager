@@ -92,9 +92,23 @@ pub(super) fn source(
         let bone = if bones.is_empty() && patch.bone.is_empty() {
             None
         } else {
-            let Some(bone) = bones
+            let names = array(
+                model
+                    .get("m_modelSkeleton")
+                    .ok_or_else(|| invalid("Missing model skeleton"))?,
+                "m_boneName",
+            )?;
+            let global = names
                 .iter()
-                .position(|v| v.get("m_boneName").and_then(Value::as_str) == Some(patch.bone))
+                .position(|name| name.as_str() == Some(patch.bone));
+            let remap = palette(model, mesh_index)?;
+            let Some(bone) = global
+                .and_then(|global| {
+                    remap
+                        .iter()
+                        .position(|entry| uint(entry).ok() == Some(global as u64))
+                })
+                .filter(|bone| *bone < bones.len())
             else {
                 continue;
             };
@@ -138,6 +152,25 @@ fn append(data: &mut Value, shape: &mut Encoding, key: &str, value: Value) -> Re
         .cloned()
         .ok_or_else(|| invalid(format!("Missing {key} encoding template")))?;
     push(data, shape, key, value, entry)
+}
+
+pub(super) fn palette(model: &Value, mesh_index: usize) -> Result<&[Value]> {
+    let starts = array(model, "m_remappingTableStarts")?;
+    let table = array(model, "m_remappingTable")?;
+    let start = starts
+        .get(mesh_index)
+        .map(uint)
+        .transpose()?
+        .ok_or_else(|| invalid("Missing source remap start"))? as usize;
+    let end = starts
+        .get(mesh_index + 1)
+        .map(uint)
+        .transpose()?
+        .map(|end| end as usize)
+        .unwrap_or(table.len());
+    table
+        .get(start..end)
+        .ok_or_else(|| invalid("Invalid source bone remap"))
 }
 
 pub(super) fn register(
@@ -190,32 +223,47 @@ pub(super) fn register(
             .get_mut("m_modelSkeleton")
             .ok_or_else(|| invalid("Missing model skeleton"))?;
         let names = array(skeleton, "m_boneName")?;
-        let mut bone = names
+        let anchor = names
             .iter()
             .position(|b| b.as_str() == Some(patch.bone))
             .ok_or_else(|| invalid("Attachment bone is absent from the model skeleton"))?;
         let count = names.len();
-        for _ in 0..count {
-            let flag = uint(
-                array(skeleton, "m_nFlag")?
-                    .get(bone)
-                    .ok_or_else(|| invalid("Missing bone flags"))?,
-            )?;
-            let parent = array(skeleton, "m_nParent")?
-                .get(bone)
-                .cloned()
-                .ok_or_else(|| invalid("Missing bone parent"))?;
-            let Some(Value::Array(flags)) = skeleton.get_mut("m_nFlag") else {
-                unreachable!()
-            };
-            // Keep the requested bone and its ancestors evaluated where the new mesh draws.
-            flags[bone] = Value::UInt(flag | 0x80 | (lods << 10));
-            if parent == Value::Int(-1) {
-                return Ok(next);
+        let mut active = std::collections::BTreeSet::from([anchor]);
+        for vertex in patch.skin.into_iter().flatten() {
+            for (bone, weight) in vertex.bones.iter().zip(vertex.weights) {
+                if weight > 0. {
+                    active.insert(usize::from(*bone));
+                }
             }
-            bone = usize::try_from(uint(&parent)?).map_err(|_| invalid("Invalid parent index"))?;
         }
-        return Err(invalid("Attachment bone hierarchy contains a cycle"));
+        for mut bone in active {
+            let mut rooted = false;
+            for _ in 0..count {
+                let flag = uint(
+                    array(skeleton, "m_nFlag")?
+                        .get(bone)
+                        .ok_or_else(|| invalid("Missing bone flags"))?,
+                )?;
+                let parent = array(skeleton, "m_nParent")?
+                    .get(bone)
+                    .cloned()
+                    .ok_or_else(|| invalid("Missing bone parent"))?;
+                let Some(Value::Array(flags)) = skeleton.get_mut("m_nFlag") else {
+                    unreachable!()
+                };
+                // Keep the requested bone and its ancestors evaluated where the new mesh draws.
+                flags[bone] = Value::UInt(flag | 0x80 | (lods << 10));
+                if parent == Value::Int(-1) {
+                    rooted = true;
+                    break;
+                }
+                bone =
+                    usize::try_from(uint(&parent)?).map_err(|_| invalid("Invalid parent index"))?;
+            }
+            if !rooted {
+                return Err(invalid("Attachment bone hierarchy contains a cycle"));
+            }
+        }
     }
     Ok(next)
 }

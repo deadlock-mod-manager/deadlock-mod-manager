@@ -311,6 +311,25 @@ fn text_export_identity_comparison_keeps_reference_relationships() {
   );
 }
 
+#[test]
+fn native_export_path_separators_do_not_mark_animations_as_edited() {
+  let windows = br#"<!-- kv3 encoding:text -->
+{m_sourceFilename="models\\heroes\\idle.dmx" m_animationSkeletonName="models/heroes/hero.vnmskel" m_additiveType="RelativeToFrame"}"#;
+  let published = br#"<!-- kv3 encoding:text -->
+{m_sourceFilename="models/heroes/idle.dmx" m_animationSkeletonName="models/heroes/hero.vnmskel" m_additiveType="RelativeToFrame"}"#;
+  assert_eq!(
+    imports::canonical(windows).unwrap(),
+    imports::canonical(published).unwrap()
+  );
+  let edited = std::str::from_utf8(published)
+    .unwrap()
+    .replace("RelativeToFrame", "None");
+  assert_ne!(
+    imports::canonical(windows).unwrap(),
+    imports::canonical(edited.as_bytes()).unwrap()
+  );
+}
+
 fn nm_resource(fields: Vec<(&str, vpkmanager::source2::kv3::Value)>) -> Vec<u8> {
   use vpkmanager::source2::kv3::{self, Format, Value};
   let value = Value::Object(
@@ -378,6 +397,83 @@ fn a_reordered_skeleton_cannot_be_packed_with_untouched_animation_tracks() {
     error.contains("idle.vnmclip_c") && error.contains("bone order"),
     "{error}"
   );
+}
+
+#[test]
+fn geometry_rebuild_preserves_animation_bytes_but_changed_animation_sources_compile() {
+  use vpkmanager::source2::kv3::Value;
+  for (edit_clip, edit_rig) in [(false, false), (true, false), (false, true)] {
+    let project = Project::new();
+    project.write("content/hero.vmdl", b"{mesh=\"hero.dmx\"}");
+    project.write("content/hero.dmx", b"original geometry");
+    project.write("content/hero.vnmskel", b"{}");
+    project.write(
+      "content/idle.vnmclip",
+      b"{source=\"idle.dmx\" skeleton=\"hero.vnmskel\"}",
+    );
+    project.write("content/idle.dmx", b"original animation");
+    let rig = nm_resource(vec![
+      ("m_ID", Value::String("hero".into())),
+      ("m_boneIDs", Value::Array(vec![])),
+      ("m_parentIndices", Value::Array(vec![])),
+    ]);
+    let clip = |duration| {
+      nm_resource(vec![
+        ("m_skeleton", Value::String("hero.vnmskel".into())),
+        ("m_nNumFrames", Value::UInt(1)),
+        ("m_flDuration", Value::Double(duration)),
+        ("m_bIsAdditive", Value::Bool(true)),
+        (
+          "m_compressedPoseOffsets",
+          Value::Array(vec![Value::UInt(0)]),
+        ),
+        ("m_trackCompressionSettings", Value::Array(vec![])),
+        ("m_compressedPoseData", Value::Binary(vec![0; 4])),
+      ])
+    };
+    project.write("game/hero.vmdl_c", &nm_resource(vec![]));
+    project.write("game/hero.vnmskel_c", &rig);
+    project.write("game/idle.vnmclip_c", &clip(1.));
+    project.write("game/idle.vnmclip+non_additive.vnmclip_c", &clip(1.));
+    let inputs = project.inputs(&["hero.vmdl", "hero.vnmskel", "idle.vnmclip"]);
+    let before = Snapshot::capture(&project.addon, &inputs).unwrap();
+    let mut state = State {
+      version: 1,
+      ..State::default()
+    };
+    let game = Path::new(&project.addon.game_path);
+    before
+      .record(&mut state, project.root(), game, &inputs)
+      .unwrap();
+    project.write("content/hero.dmx", b"edited geometry");
+    if edit_clip {
+      project.write("content/idle.dmx", b"edited animation");
+    }
+    if edit_rig {
+      project.write("content/hero.vnmskel", b"{edited=true}");
+    }
+    let snapshot = Snapshot::capture(&project.addon, &inputs).unwrap();
+    let mut bindings = AnimationBindings::capture(game, &inputs).unwrap();
+    bindings
+      .preserve_unchanged(&snapshot, &state, project.root(), game)
+      .unwrap();
+    // Replay the compiler replacing an animation while rebuilding the model dependency tree.
+    project.write("game/hero.vmdl_c", b"new geometry");
+    project.write("game/idle.vnmclip_c", &clip(2.));
+    project.write("game/idle.vnmclip+non_additive.vnmclip_c", &clip(2.));
+    bindings.restore(&snapshot, project.root(), game).unwrap();
+    let expected = if edit_clip || edit_rig {
+      clip(2.)
+    } else {
+      clip(1.)
+    };
+    assert_eq!(read(&game.join("idle.vnmclip_c")).unwrap(), expected);
+    assert_eq!(
+      read(&game.join("idle.vnmclip+non_additive.vnmclip_c")).unwrap(),
+      expected
+    );
+    assert_eq!(read(&game.join("hero.vmdl_c")).unwrap(), b"new geometry");
+  }
 }
 
 #[test]

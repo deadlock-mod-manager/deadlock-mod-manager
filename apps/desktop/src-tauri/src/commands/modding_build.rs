@@ -350,8 +350,9 @@ pub(super) fn compile(
     )?;
     return Ok(());
   }
-  let bindings =
+  let mut bindings =
     super::modding_build_state::AnimationBindings::capture(Path::new(&addon.game_path), &inputs)?;
+  bindings.preserve_unchanged(&snapshot, &state, root, Path::new(&addon.game_path))?;
   let mut file_list = tempfile::NamedTempFile::new()?;
   let input_count = inputs.len();
   for input in &inputs {
@@ -406,6 +407,7 @@ pub(super) fn compile(
     )));
   }
   snapshot.verify(root, &inputs)?;
+  bindings.restore(&snapshot, root, Path::new(&addon.game_path))?;
   bindings.verify(Path::new(&addon.game_path))?;
   // The compiler can replace edited outputs; apply the addon's saved model recipes again.
   super::modding_model_edit::reapply_after_compile(addon)?;

@@ -1,4 +1,5 @@
 mod background;
+mod skinning;
 use super::super::modding_model_images;
 use super::*;
 use vpkmanager::{
@@ -351,6 +352,11 @@ pub(super) fn bake(
     &identity
   };
   let (vertices, indices) = geometry(patch, bind);
+  let skin = if patch.shape == ModdingPatchShape::Conform && !patch.bone.is_empty() {
+    skinning::inherit(model, host, &vertices)?
+  } else {
+    None
+  };
   let prefix = format!("materials/dmm_model_edits/patch_{}", patch.id);
   let material_path = format!("{prefix}.vmat");
   let color_path = format!("{prefix}_color.vtex");
@@ -459,6 +465,7 @@ pub(super) fn bake(
       bone: &patch.bone,
       vertices: &vertices,
       indices: &indices,
+      skin: skin.as_deref(),
     }],
   )
   .map_err(|e| invalid(e.to_string()))?;

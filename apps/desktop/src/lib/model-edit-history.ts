@@ -13,12 +13,15 @@ export interface ModelEditHistory {
 }
 export type ModelEditAction =
   | { type: "change"; edits: ModdingModelPartEdit[] }
+  | { type: "reset"; edits: ModdingModelPartEdit[] }
   | { type: "undo" }
   | { type: "redo" };
 export function modelEditHistory(
   state: ModelEditHistory,
   action: ModelEditAction,
 ): ModelEditHistory {
+  if (action.type === "reset")
+    return { edits: action.edits, past: [], future: [] };
   if (action.type === "change") {
     if (modelEditsEqual(state.edits, action.edits)) return state;
     return {

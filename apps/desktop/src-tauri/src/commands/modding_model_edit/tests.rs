@@ -453,6 +453,47 @@ fn shared_material_settings_are_inherited_and_updated_without_sharing_visibility
 }
 
 #[test]
+fn model_save_version_tracks_authored_inputs_instead_of_bake_cache_records() {
+  let (_dir, addon) = setup();
+  let mut saved = storage::load(&addon).unwrap();
+  let mut body = default_edit("materials/body.vmat".into());
+  body.roughness = Some(0.2);
+  saved.models.insert(
+    "models/test.vmdl_c".into(),
+    vec![body, default_edit("materials/head.vmat".into())],
+  );
+  bake::apply(&addon, saved, false, None).unwrap();
+  let mut saved = storage::load(&addon).unwrap();
+  let current = archive(&addon).unwrap();
+  let (before, _, _) = inspect(&addon, "models/test.vmdl_c", &saved, &current).unwrap();
+  for record in saved.resources.values_mut() {
+    record.input = Some("refreshed-bake-cache".into());
+  }
+  let (refreshed, _, _) = inspect(&addon, "models/test.vmdl_c", &saved, &current).unwrap();
+  assert_eq!(
+    before, refreshed,
+    "Internal bake bookkeeping invalidated an open draft"
+  );
+  saved.models.get_mut("models/test.vmdl_c").unwrap()[0].roughness = Some(0.3);
+  let (edited, _, _) = inspect(&addon, "models/test.vmdl_c", &saved, &current).unwrap();
+  assert_ne!(
+    refreshed, edited,
+    "Another saved edit must still invalidate the draft"
+  );
+  std::fs::create_dir_all(Path::new(&addon.content_path).join("models")).unwrap();
+  std::fs::write(
+    Path::new(&addon.content_path).join("models/test.vmdl"),
+    b"new geometry",
+  )
+  .unwrap();
+  let (geometry, _, _) = inspect(&addon, "models/test.vmdl_c", &saved, &current).unwrap();
+  assert_ne!(
+    edited, geometry,
+    "A source geometry change must still invalidate the draft"
+  );
+}
+
+#[test]
 fn pattern_and_gameplay_recipes_restore_without_touching_the_model() {
   let (_dir, addon) = setup();
   let game = Path::new(&addon.game_path);
@@ -622,6 +663,35 @@ fn transparent_gif_eye_fixture_preserves_alpha_and_exports_one_lod_safe_mesh() {
       Some(expected)
     );
   }
+  let rim_mask = tree
+    .get("m_textureParams")
+    .unwrap()
+    .as_array()
+    .unwrap()
+    .iter()
+    .find(|param| {
+      param
+        .get("m_name")
+        .and_then(vpkmanager::source2::kv3::Value::as_str)
+        == Some("g_tTintMaskRimLightMask")
+    })
+    .unwrap()
+    .get("m_pValue")
+    .and_then(vpkmanager::source2::kv3::Value::as_str)
+    .unwrap();
+  let rim_mask =
+    vpkmanager::source2::decode(output.files.get(&format!("{rim_mask}_c")).unwrap()).unwrap();
+  let vpkmanager::source2::ImageData::Rgba8(rim_pixels) = rim_mask.data else {
+    panic!("RGBA rim-light mask");
+  };
+  assert!(
+    rim_pixels
+      .as_chunks::<4>()
+      .0
+      .iter()
+      .all(|pixel| pixel[1] == 0),
+    "Stickers must not receive the hero's moving rim highlights"
+  );
   let metadata = tree
     .get("m_stringAttributes")
     .unwrap()

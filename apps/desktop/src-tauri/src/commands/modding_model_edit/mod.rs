@@ -191,14 +191,7 @@ fn inspect(
   let mut parts = Vec::new();
   let mut editable_textures = BTreeMap::new();
   let mut fingerprints = BTreeMap::new();
-  fingerprints.insert(
-    path.to_owned(),
-    fingerprint(
-      &archive
-        .extract_entry_limited(path, 256 * 1024 * 1024)
-        .map_err(|e| invalid(e.to_string()))?,
-    ),
-  );
+  fingerprints.insert(path.to_owned(), fingerprint(&model));
   let source = contained(Path::new(&addon.content_path), path.trim_end_matches("_c"))?;
   if source.is_file() {
     fingerprints.insert("source".into(), fingerprint(&storage::read(&source)?));
@@ -208,14 +201,7 @@ fn inspect(
     relative(&name, false)?;
     let compiled = format!("{name}_c");
     let bytes = storage::original(addon, saved, archive, &compiled)?;
-    fingerprints.insert(
-      compiled.clone(),
-      fingerprint(
-        &archive
-          .extract_entry_limited(&compiled, 64 * 1024 * 1024)
-          .map_err(|e| invalid(e.to_string()))?,
-      ),
-    );
+    fingerprints.insert(compiled.clone(), fingerprint(&bytes));
     let layout = material_layout(&bytes).map_err(|e| invalid(e.to_string()))?;
     let (material_tree, _, _) =
       vpkmanager::material_repair::decode(&bytes).map_err(|e| invalid(e.to_string()))?;
@@ -241,9 +227,7 @@ fn inspect(
       };
       relative(&texture, false)?;
       if !fingerprints.contains_key(&texture) {
-        let bytes = archive
-          .extract_entry_limited(&texture, 256 * 1024 * 1024)
-          .map_err(|e| invalid(e.to_string()))?;
+        let bytes = storage::original(addon, saved, archive, &texture)?;
         editable_textures.insert(
           texture.clone(),
           vpkmanager::model_edit::texture_editable(&bytes),
@@ -349,8 +333,9 @@ fn inspect(
       edit
     })
     .collect();
+  // Reapplying a recipe can refresh generated hashes and cache keys without changing its inputs.
   let serialized =
-    serde_json::to_vec(&(saved, fingerprints)).map_err(|e| invalid(e.to_string()))?;
+    serde_json::to_vec(&(&saved.models, fingerprints)).map_err(|e| invalid(e.to_string()))?;
   Ok((fingerprint(&serialized), parts, edits))
 }
 

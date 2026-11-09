@@ -7,19 +7,19 @@ import type {
   ModelPatchRuntime,
 } from "@/lib/model-patch-runtime";
 import type { ModdingModelPatch } from "@/types/generated/ModdingModelPatch";
-import {
-  createModelPatchGeometry,
-  modelPatchFrames,
-  modelPatchPose,
-} from "@/lib/model-patch-geometry";
+import { modelPatchFrames, modelPatchPose } from "@/lib/model-patch-geometry";
 import { fitModelPatchContour } from "@/lib/model-patch-contour";
 import { modelPaintFrameAt } from "@/lib/model-paint-animation";
+import {
+  createModelPatchMesh,
+  syncModelPatchBind,
+} from "@/lib/model-patch-skinning";
 
 interface PatchRecord {
   mesh: THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
   texture: THREE.DataTexture;
   entry: ModelPatchEntry;
-  shape: string;
+  geometryKey: string;
   pixels: string;
   image: ModelPatchImage | undefined;
   frames: ReturnType<typeof modelPatchFrames>;
@@ -90,7 +90,10 @@ export function installModelAttachedPatches(
   let runtime: ModelPatchRuntime | null = null,
     previous: ModelPatchRuntime | null = null,
     dragging = false;
-  const changed = () => dirty();
+  const changed = () => {
+    for (const record of records.values()) syncModelPatchBind(record.mesh);
+    dirty();
+  };
   gizmo.addEventListener("change", changed);
   const drag = () => {
     dragging = gizmo.dragging;
@@ -261,7 +264,11 @@ export function installModelAttachedPatches(
         for (const entry of entries) {
           const p = entry.patch,
             image = next?.images.get(p.image);
-          const shape = JSON.stringify([
+          const geometryKey = JSON.stringify([
+            entry.material,
+            p.bone,
+            p.position,
+            p.rotation,
             p.shape,
             p.size,
             p.curvature,
@@ -288,14 +295,19 @@ export function installModelAttachedPatches(
               emissiveMap: texture,
               emissiveIntensity: p.glow,
             });
-            const mesh = new THREE.Mesh(createModelPatchGeometry(p), material);
+            const mesh = createModelPatchMesh(
+              root,
+              entry.material,
+              p,
+              material,
+            );
             mesh.name = `dmm-patch-${p.id}`;
             mesh.userData.attachedPatch = true;
             record = {
               mesh,
               texture,
               entry,
-              shape,
+              geometryKey,
               pixels: "",
               image: undefined,
               frames: [],
@@ -304,10 +316,19 @@ export function installModelAttachedPatches(
             };
             records.set(p.id, record);
           }
-          if (record.shape !== shape) {
+          if (record.geometryKey !== geometryKey) {
+            if (gizmo.object === record.mesh) gizmo.detach();
+            record.mesh.removeFromParent();
             record.mesh.geometry.dispose();
-            record.mesh.geometry = createModelPatchGeometry(p);
-            record.shape = shape;
+            record.mesh = createModelPatchMesh(
+              root,
+              entry.material,
+              p,
+              record.mesh.material,
+            );
+            record.mesh.userData.attachedPatch = true;
+            record.mesh.name = `dmm-patch-${p.id}`;
+            record.geometryKey = geometryKey;
           }
           const parent = p.bone ? bones.get(p.bone) : root;
           record.mesh.visible = !entry.hidden && Boolean(parent);
@@ -315,6 +336,7 @@ export function installModelAttachedPatches(
           record.mesh.position.fromArray(p.position);
           record.mesh.quaternion.fromArray(p.rotation);
           record.mesh.scale.set(1, 1, 1);
+          syncModelPatchBind(record.mesh);
           record.mesh.material.roughness = p.roughness;
           record.mesh.material.emissiveIntensity = p.glow;
           if (record.image !== image || record.pixels !== pixels) {

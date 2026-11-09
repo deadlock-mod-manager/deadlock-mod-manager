@@ -510,6 +510,20 @@ export function ModelMaterialWorkspace({
           }>
           {t("modelEditor.restore")}
         </Button>
+        {dirty ? (
+          <Button
+            size='sm'
+            variant='outline'
+            disabled={
+              save.isPending || imagePlacementActive || patchManipulating
+            }
+            onClick={() => {
+              dispatch({ type: "reset", edits: document.edits });
+              save.reset();
+            }}>
+            {t("workbenchAuthoring.discard")}
+          </Button>
+        ) : null}
         <span role='status' className='ml-auto text-xs text-muted-foreground'>
           {t(
             save.isPending

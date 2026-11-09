@@ -33,12 +33,13 @@ export function ModelMaterialEditor({
       return data;
     },
     gcTime: MODEL_PREVIEW_GC_TIME,
-    staleTime: Number.POSITIVE_INFINITY,
+    staleTime: 0,
+    refetchOnMount: "always",
     refetchOnWindowFocus: false,
     retry: false,
     meta: { skipGlobalErrorHandler: true, foregroundPreview: true },
   });
-  return document.data ? (
+  return document.data && !document.isFetching ? (
     <ModelMaterialWorkspace
       key={document.data.fingerprint}
       addon={addon}
@@ -46,6 +47,10 @@ export function ModelMaterialEditor({
       document={document.data}
       onDirtyChange={onDirtyChange}
       onSaved={() => {
+        void client.invalidateQueries({
+          queryKey: ["workbench-model-editor", addon.id],
+          refetchType: "none",
+        });
         onDirtyChange?.(false);
         if (onSaved) onSaved();
         else void document.refetch();

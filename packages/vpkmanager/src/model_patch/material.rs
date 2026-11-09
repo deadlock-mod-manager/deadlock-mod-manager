@@ -47,12 +47,19 @@ pub fn material(template: &[u8], patch: PatchMaterial<'_>) -> Result<Vec<u8>> {
         ("g_flSelfIllumAlbedoFactor1", 1.),
         ("g_flSelfIllumFresnelMaskExponent", 0.),
     ];
+    // PBR binds the NPR and status-effect samplers even when their effect is disabled.
+    // Missing masks fall back to the engine's checker texture.
     let textures = [
         ("g_tColor", patch.color),
+        ("g_tAltColor_Reveal", patch.color),
+        ("g_tAmbientOcclusion", patch.white),
         ("g_tMetalness", patch.black),
         ("g_tNormalRoughness", patch.normal),
+        ("g_tNprOutlineMask", patch.white),
+        ("g_tNprTransmissiveColor", patch.black),
         ("g_tSelfIllumMask", patch.white),
-        ("g_tTintMask", patch.white),
+        // Stickers keep their image colors without the hero's moving rim highlights.
+        ("g_tTintMaskRimLightMask", patch.black),
     ];
     for (table, values) in [
         (
@@ -124,7 +131,7 @@ pub fn material(template: &[u8], patch: PatchMaterial<'_>) -> Result<Vec<u8>> {
     let output = resource.rebuild_with_data_preserving(&data)?;
     let additions = textures
         .iter()
-        .map(|(_, path)| Ok((crate::resource_id::resource_id(path)?, format!("{path}_c"))))
+        .map(|(_, path)| Ok((crate::resource_id::resource_id(path)?, (*path).to_owned())))
         .collect::<Result<Vec<_>>>()?;
     crate::material_repair::add_references(&output, &additions).map_err(|e| invalid(e.to_string()))
 }
