@@ -93,6 +93,7 @@ const recordedAddon = (): LocalAddonInfo => ({
   locator: "pak01_dir.vpk",
   remoteId: "42",
   manifestModId: "42",
+  hasEnabledVpkName: true,
   vpkParsed: {
     version: 2,
     treeLength: 0,
@@ -298,6 +299,7 @@ const parkedAddon = (): LocalAddonInfo => {
     locator: "900001_green.vpk",
     remoteId: "900001",
     manifestModId: undefined,
+    hasEnabledVpkName: false,
     vpkParsed: {
       ...addon.vpkParsed,
       fingerprint: { ...addon.vpkParsed.fingerprint, filePath },
@@ -359,5 +361,25 @@ describe("parked files whose mod left the library", () => {
     expect(registrations[0]?.installedPaths).toEqual([
       "/game/citadel/addons/reset/pak05_dir.vpk",
     ]);
+  });
+});
+
+describe("files the game doesn't load", () => {
+  it("leaves a recognised copy out of the library and asks about it", async () => {
+    resetProfile(false);
+    catalog.set("900001", { ...restoredMod, remoteId: "900001" });
+    await analyze([
+      {
+        ...hashMatchedAddon(),
+        filePath: "/game/citadel/addons/reset/coolskin.vpk",
+        fileName: "coolskin.vpk",
+        locator: "coolskin.vpk",
+        hasEnabledVpkName: false,
+      },
+    ]);
+    const state = usePersistedStore.getState();
+    expect(registrations).toEqual([]);
+    expect(state.localMods).toEqual([]);
+    expect(state.analysisDialogOpen).toBe(true);
   });
 });

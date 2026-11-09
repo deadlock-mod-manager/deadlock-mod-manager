@@ -78,6 +78,11 @@ import {
   unknownAddonRoutes,
 } from "./analyze-known-files-fixtures";
 import { prepareAnalyzeOrphansWorld } from "./analyze-orphans-fixtures";
+import {
+  matchedFileRoutes,
+  prepareNonLoadedFileWorld,
+  unknownFileRoutes,
+} from "./non-loaded-file-fixtures";
 import { createArchive } from "./archive-fixtures";
 import { randomBytes } from "node:crypto";
 import { contentRoutes, prepareContentWorld } from "./content-fixtures";
@@ -743,6 +748,22 @@ export const scenarios = {
     routes: unknownAddonRoutes,
     prepare: prepareUnknownAddonWorld,
     verifyNetwork: assertUnknownAddonNetwork,
+  },
+  "analysis-add-non-loaded-file": {
+    ...defaults,
+    family: "compatibility",
+    spec: "non-loaded-file",
+    phases: ["add-to-library"],
+    routes: unknownFileRoutes,
+    prepare: prepareNonLoadedFileWorld,
+  },
+  "analysis-match-non-loaded-file": {
+    ...defaults,
+    family: "compatibility",
+    spec: "non-loaded-file",
+    phases: ["analyze-match"],
+    routes: matchedFileRoutes,
+    prepare: prepareNonLoadedFileWorld,
   },
   "onboarding-skip-analysis": onboarding,
   "analyze-errors": {
