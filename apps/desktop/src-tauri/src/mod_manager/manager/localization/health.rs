@@ -275,10 +275,7 @@ impl ModHealthContext {
       match check_mod(&game, installed, &mut observed, game_build, &mut recorded) {
         Ok((findings, changed)) => {
           learned |= changed;
-          entries.push((
-            installed.id.clone(),
-            CachedModHealth::new(installed.key.clone(), findings, ModHealthSource::Standalone),
-          ));
+          entries.push((installed, findings));
         }
         Err(error) => log::warn!(
           "Skipped compatibility check for mod {}: {error}",
@@ -290,6 +287,31 @@ impl ModHealthContext {
         total,
       });
     }
+    // Enabling, disabling or reordering a mod renames its files, and a read of
+    // the old name mid-analysis fails as if the mod were broken. The key
+    // ignores names, so such a result would stick: save only results whose
+    // files are still where they were read. The change that moved them
+    // schedules another check.
+    let entries: Vec<_> = entries
+      .into_iter()
+      .filter(|(installed, _)| {
+        let unchanged = HealthKey::stamp(&installed.vpks, game_build, REPAIR_REVISION)
+          .is_ok_and(|key| key == installed.key);
+        if !unchanged {
+          log::info!(
+            "Mod {} changed while its compatibility was checked; it will be checked again",
+            installed.id
+          );
+        }
+        unchanged
+      })
+      .map(|(installed, findings)| {
+        (
+          installed.id.clone(),
+          CachedModHealth::new(installed.key.clone(), findings, ModHealthSource::Standalone),
+        )
+      })
+      .collect();
     // Persist the batch once instead of reading and rewriting the whole cache
     // for each mod. Progress events still describe every completed analysis.
     if !entries.is_empty() {
@@ -490,7 +512,7 @@ mod tests {
       history: Some(temp.path().join("cache/vdata-history.bin")),
     };
 
-    // Turning the mod on renames its file before the check saves its result.
+    // Progress fires after the mod's analysis and before the batch is saved.
     let report = context
       .check(None, false, |update| {
         if update.checked == 1 {
