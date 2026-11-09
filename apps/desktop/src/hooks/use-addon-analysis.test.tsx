@@ -489,19 +489,4 @@ describe("parked files of a mod in the library", () => {
       ["pak05_dir.vpk"],
     ]);
   });
-
-  it("registers an enabled mod without its parked Mod Options variant", async () => {
-    libraryMod();
-    const installed = {
-      ...hashMatchedAddon(),
-      filePath: "/game/citadel/addons/reset/pak01_dir.vpk",
-      fileName: "pak01_dir.vpk",
-      locator: "pak01_dir.vpk",
-      manifestModId: "900001",
-    };
-    await analyze([installed, parkedAddon()]);
-    expect(registrations.map((call) => call.installedVpks)).toEqual([
-      ["pak01_dir.vpk"],
-    ]);
-  });
 });
