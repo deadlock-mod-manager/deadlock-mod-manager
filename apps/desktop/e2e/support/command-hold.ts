@@ -27,11 +27,16 @@ export const holdCommandReply = (command: string, modId: string) =>
         input: RequestInfo | URL,
         body: BodyInit | null | undefined,
       ) => {
-        const url = input instanceof Request ? input.url : String(input);
-        // Tauri sends the command's arguments as JSON text.
+        const { protocol, hostname, pathname } = new URL(
+          input instanceof Request ? input.url : String(input),
+          location.href,
+        );
+        // Tauri posts commands to ipc://localhost/<command>, or to
+        // http(s)://ipc.localhost/<command> on Windows, with the arguments
+        // as JSON text.
         return (
-          url.startsWith("ipc:") &&
-          url.endsWith(`/${target}`) &&
+          (protocol === "ipc:" || hostname === "ipc.localhost") &&
+          pathname === `/${target}` &&
           String(body).includes(`"modId":${JSON.stringify(mod)}`)
         );
       };
