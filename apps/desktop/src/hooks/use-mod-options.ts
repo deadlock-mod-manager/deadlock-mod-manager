@@ -488,6 +488,8 @@ export const useModOptions = (mod: LocalMod | null) => {
 
   const archiveNames = downloads.map((d) => d.name);
   const [progress, setProgress] = useState<ModOptionsProgress | null>(null);
+  // isPending lags a render; anything sent before then would use stale VPKs.
+  const isSubmittingRef = useRef(false);
 
   const applyMutation = useMutation<
     AppliedArchiveSelection,
@@ -495,7 +497,10 @@ export const useModOptions = (mod: LocalMod | null) => {
     ApplyUnifiedPayload
   >({
     meta: { skipGlobalErrorHandler: true },
-    onSettled: () => setProgress(null),
+    onSettled: () => {
+      isSubmittingRef.current = false;
+      setProgress(null);
+    },
     mutationFn: async (payload) => {
       if (!mod) {
         throw new ValidationError("No mod selected");
@@ -600,11 +605,12 @@ export const useModOptions = (mod: LocalMod | null) => {
       logger.withError(error).error("Failed to apply per-file selection");
       toast.error(getErrorMessage(error));
     },
+    onSettled: () => {
+      isSubmittingRef.current = false;
+    },
   });
 
   const { uninstall } = useUninstall();
-  // isPending lags a render; a repeat disable would send stale VPKs.
-  const isDisablingRef = useRef(false);
   // Keeps the stored selection, so re-enabling restores the same files.
   const disableMutation = useMutation<boolean, Error, "variants" | "files">({
     // Local-only, so it must not pause offline.
@@ -619,14 +625,9 @@ export const useModOptions = (mod: LocalMod | null) => {
       if (disabled) setIsOpen(false);
     },
     onSettled: () => {
-      isDisablingRef.current = false;
+      isSubmittingRef.current = false;
     },
   });
-  const disable = (from: "variants" | "files") => {
-    if (isDisablingRef.current) return;
-    isDisablingRef.current = true;
-    disableMutation.mutate(from);
-  };
   const disablingFrom = disableMutation.isPending
     ? disableMutation.variables
     : undefined;
@@ -645,8 +646,10 @@ export const useModOptions = (mod: LocalMod | null) => {
     deselectedArchives: ModDownloadItem[],
     allCheckedArchiveNames: string[],
   ) => {
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
     if (allCheckedArchiveNames.length === 0) {
-      disable("variants");
+      disableMutation.mutate("variants");
       return;
     }
     applyMutation.mutate({
@@ -657,8 +660,10 @@ export const useModOptions = (mod: LocalMod | null) => {
   };
 
   const applyFileSelection = (selectedNames: string[]) => {
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
     if (selectedNames.length === 0) {
-      disable("files");
+      disableMutation.mutate("files");
       return;
     }
     fileSelectionMutation.mutate(selectedNames);
