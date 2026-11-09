@@ -43,6 +43,10 @@ import {
 } from "./compatibility-fix-fixtures";
 import { prepareIdentifiedFixWorld } from "./compatibility-fix-identification-fixtures";
 import {
+  prepareReinstallChoicesWorld,
+  reinstallChoicesRoutes,
+} from "./reinstall-choices-fixtures";
+import {
   FIXED_MOD as STATUS_FIXED_MOD,
   PLAIN_MOD as STATUS_PLAIN_MOD,
   RIVAL_MOD as STATUS_RIVAL_MOD,
@@ -950,6 +954,22 @@ export const scenarios = {
     phases: ["disabled-mod"],
     routes: async () => disabledFixRoutes,
     prepare: async (world) => prepareDisabledFixWorld(world),
+  },
+  "compatibility-reinstall-keeps-choices": {
+    ...defaults,
+    family: "compatibility",
+    spec: "reinstall-keeps-choices",
+    phases: ["reinstall"],
+    routes: reinstallChoicesRoutes,
+    prepare: async (world) => prepareReinstallChoicesWorld(world),
+  },
+  "compatibility-nuke-keeps-choices": {
+    ...defaults,
+    family: "compatibility",
+    spec: "nuke-keeps-choices",
+    phases: ["nuke"],
+    routes: reinstallChoicesRoutes,
+    prepare: async (world) => prepareReinstallChoicesWorld(world),
   },
   "fixed-status-shared-file": {
     ...defaults,
