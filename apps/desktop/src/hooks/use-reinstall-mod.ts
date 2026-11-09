@@ -1,4 +1,5 @@
 import { ValidationError } from "@deadlock-mods/common/client-errors";
+import { invoke } from "@tauri-apps/api/core";
 import { useCallback } from "react";
 import useInstallWithCollection from "@/hooks/use-install-with-collection";
 import { getModDownload } from "@/lib/api-client";
@@ -111,6 +112,13 @@ export const useReinstallMod = () => {
       }
 
       if (!wasInstalled) {
+        if (keptChoices) {
+          await keepDisabledModChoices(
+            target.remoteId,
+            profileFolder,
+            keptChoices,
+          );
+        }
         return { outcome: "downloadedOnly" };
       }
 
@@ -121,6 +129,30 @@ export const useReinstallMod = () => {
   );
 
   return { reinstallMod };
+};
+
+/**
+ * A disabled mod keeps its manifest entry, and with it the player's choices,
+ * until the purge. Without this, they would be gone once it is enabled again.
+ * The mod itself is downloaded either way, so a failure here is only logged.
+ */
+const keepDisabledModChoices = async (
+  modId: string,
+  profileFolder: string | null,
+  keptChoices: KeptChoices,
+) => {
+  try {
+    await invoke("keep_disabled_mod_choices", {
+      modId,
+      profileFolder,
+      keptChoices,
+    });
+  } catch (error) {
+    logger
+      .withMetadata({ mod: modId })
+      .withError(error)
+      .warn("Could not keep the choices of a disabled mod");
+  }
 };
 
 /**

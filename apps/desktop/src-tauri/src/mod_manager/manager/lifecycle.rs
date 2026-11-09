@@ -237,8 +237,7 @@ impl ModManager {
     if let Some(kept) = kept_choices
       && let Some(entry) = manifest.mods.get_mut(&deadlock_mod.id)
     {
-      entry.compatibility_enabled = kept.compatibility_enabled;
-      entry.compatibility_opted_out = kept.compatibility_opted_out;
+      kept.restore_to(entry);
     }
     if let Err(save_error) = manifest.save(&addons_path) {
       let rollback = self.vpk_manager.disable_vpks_in(
@@ -476,6 +475,36 @@ impl ModManager {
     #[cfg(feature = "plugins")]
     crate::external_plugins::events::mod_removed(&mod_id, event_profile.as_deref());
     Ok(kept_choices)
+  }
+
+  /// Records a reinstalled mod that stays disabled the way disabling it did:
+  /// its downloaded VPKs as disabled files, with the choices its purge returned.
+  pub fn keep_disabled_mod_choices(
+    &mut self,
+    mod_id: &str,
+    profile_folder: Option<String>,
+    kept_choices: KeptChoices,
+  ) -> Result<(), Error> {
+    Self::ensure_safe_mod_id(mod_id)?;
+    let addons_path = self.get_addons_path(profile_folder.as_deref())?;
+    let prefixed_vpks = self.vpk_manager.find_prefixed_vpks(&addons_path, mod_id)?;
+    if prefixed_vpks.is_empty() {
+      return Err(Error::ModFileNotFound);
+    }
+    let prefix = format!("{mod_id}_");
+    let original_vpk_names = prefixed_vpks
+      .iter()
+      .map(|name| name.strip_prefix(&prefix).unwrap_or(name).to_string())
+      .collect();
+
+    let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
+    manifest.mark_disabled(mod_id, prefixed_vpks, original_vpk_names);
+    if let Some(entry) = manifest.mods.get_mut(mod_id) {
+      kept_choices.restore_to(entry);
+    }
+    manifest.save(&addons_path)?;
+    self.invalidate_localization_overlay(profile_folder.as_deref());
+    Ok(())
   }
 
   /// Remove a mod's VPKs transactionally when the mod is purged.

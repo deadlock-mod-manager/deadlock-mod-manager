@@ -155,6 +155,16 @@ pub async fn purge_mod(
 }
 
 #[tauri::command]
+pub async fn keep_disabled_mod_choices(
+  mod_id: String,
+  profile_folder: Option<String>,
+  kept_choices: KeptChoices,
+) -> Result<(), Error> {
+  let mut mod_manager = MANAGER.lock().unwrap();
+  mod_manager.keep_disabled_mod_choices(&mod_id, profile_folder, kept_choices)
+}
+
+#[tauri::command]
 pub async fn reorder_mods(
   mod_order_data: Vec<(String, u32)>,
   profile_folder: Option<String>,

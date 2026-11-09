@@ -89,6 +89,15 @@ pub struct KeptChoices {
   pub compatibility_opted_out: bool,
 }
 
+impl KeptChoices {
+  /// Gives the mod's new entry back what the player chose for the old one.
+  pub fn restore_to(self, entry: &mut ProfileVpkManifestEntry) {
+    entry.order = self.order.or(entry.order);
+    entry.compatibility_enabled = self.compatibility_enabled;
+    entry.compatibility_opted_out = self.compatibility_opted_out;
+  }
+}
+
 impl From<&ProfileVpkManifestEntry> for KeptChoices {
   fn from(entry: &ProfileVpkManifestEntry) -> Self {
     Self {
