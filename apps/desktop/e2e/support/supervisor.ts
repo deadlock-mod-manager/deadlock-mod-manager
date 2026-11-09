@@ -117,6 +117,15 @@ const startupFixtureRoutes: readonly FixtureRoute[] = [
   },
   // A failed refresh keeps the bundled performance catalog.
   { method: "GET", path: "/api/v2/perf-catalog", status: 404, body: "" },
+  // Every full catalog sync walks the category tree first; an empty root ends the walk.
+  ...["Mod", "Sound", "Wip"].map(
+    (model): FixtureRoute => ({
+      method: "GET",
+      path: `/apiv11/${model}/Categories`,
+      status: 200,
+      body: "[]",
+    }),
+  ),
   {
     method: "GET",
     path: "/apiv11/Mod/Index",
