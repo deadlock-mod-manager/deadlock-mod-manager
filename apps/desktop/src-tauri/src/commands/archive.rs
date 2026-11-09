@@ -300,3 +300,38 @@ pub async fn copy_dropped_mod_file(file_path: String, target_dir: String) -> Res
   tokio::fs::copy(&source, &destination).await?;
   Ok(destination.to_string_lossy().into_owned())
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
+  use std::sync::mpsc;
+  use std::time::Duration;
+
+  #[test]
+  fn recording_a_placed_mod_waits_for_the_manager_lock() {
+    let temp = tempfile::tempdir().unwrap();
+    let base = temp.path().join("citadel").join("addons").join("profile_test");
+    std::fs::create_dir_all(&base).unwrap();
+
+    let manager = MANAGER.lock().unwrap();
+    let (done, finished) = mpsc::channel();
+    let writer = std::thread::spawn({
+      let base = base.clone();
+      move || {
+        let result = persist_prefixed_import(&base, "123", vec!["123_mod.vpk".to_string()]);
+        done.send(result).unwrap();
+      }
+    });
+    let early = finished.recv_timeout(Duration::from_millis(300)).ok();
+    let wrote_while_locked = ProfileVpkManifest::exists(&base);
+    drop(manager);
+
+    let finished_while_locked = early.is_some();
+    let result = early.unwrap_or_else(|| finished.recv().unwrap());
+    writer.join().unwrap();
+    assert!(!finished_while_locked && !wrote_while_locked);
+    result.unwrap();
+    assert!(ProfileVpkManifest::load(&base).unwrap().mods.contains_key("123"));
+  }
+}
