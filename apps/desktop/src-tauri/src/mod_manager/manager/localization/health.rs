@@ -450,6 +450,76 @@ mod tests {
   }
 
   #[test]
+  fn rechecks_a_mod_turned_on_while_it_was_checked() {
+    let temp = tempfile::tempdir().unwrap();
+    let citadel = temp.path().join("game/citadel");
+    let text = "resource/localization/e2e/e2e_english.txt";
+    let game_text = citadel.join(text);
+    fs::create_dir_all(game_text.parent().unwrap()).unwrap();
+    fs::write(
+      &game_text,
+      b"\"lang\"\n{\n\"Language\" \"English\"\n\"Tokens\"\n{\n\"e2e_kept\" \"Kept\"\n\"e2e_new\" \"New\"\n}\n}\n",
+    )
+    .unwrap();
+    let base = ProfileBase::new(citadel.join("addons")).unwrap();
+    // Downloaded but not turned on yet; its copy of the game text lacks a token.
+    write_vpk(
+      &base.join("text_download.vpk"),
+      &[(
+        text,
+        b"\"lang\"\n{\n\"Language\" \"English\"\n\"Tokens\"\n{\n\"e2e_kept\" \"Kept\"\n}\n}\n",
+      )],
+    );
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mods.insert(
+      "text".into(),
+      ProfileVpkManifestEntry {
+        disabled_vpks: vec!["text_download.vpk".into()],
+        ..Default::default()
+      },
+    );
+    manifest.save(&base).unwrap();
+    let context = ModHealthContext {
+      citadel,
+      base: base.clone(),
+      app_data: temp.path().join("app-data"),
+      overlay_path: temp
+        .path()
+        .join("game/citadel/dmm_localization_default")
+        .join(OVERLAY_VPK_NAME),
+      history: Some(temp.path().join("cache/vdata-history.bin")),
+    };
+
+    // Turning the mod on renames its file before the check saves its result.
+    let report = context
+      .check(None, false, |update| {
+        if update.checked == 1 {
+          fs::rename(base.join("text_download.vpk"), base.join("pak01_dir.vpk")).unwrap();
+          let mut manifest = ProfileVpkManifest::load(&base).unwrap();
+          manifest.mark_enabled(
+            "text",
+            vec!["pak01_dir.vpk".into()],
+            vec![],
+            None,
+            ShardIndex::FIRST,
+          );
+          manifest.save(&base).unwrap();
+        }
+      })
+      .unwrap()
+      .report;
+    assert_eq!(status(&report, "text"), None);
+
+    let progress = Mutex::new(Vec::new());
+    let report = context
+      .check(None, false, |update| progress.lock().unwrap().push(update))
+      .unwrap()
+      .report;
+    assert_eq!(progress.lock().unwrap()[0].total, 1);
+    assert_eq!(status(&report, "text"), Some(ModHealthStatus::Fixable));
+  }
+
+  #[test]
   fn reports_a_history_change_only_when_it_saves_newly_observed_game_data() {
     let temp = tempfile::tempdir().unwrap();
     let citadel = temp.path().join("game/citadel");
