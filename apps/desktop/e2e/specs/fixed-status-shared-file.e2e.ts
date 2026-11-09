@@ -22,7 +22,8 @@ import { navigate } from "../support/ui";
 
 /**
  * Opens the mod's own page and waits for its health alert to match
- * `expected`, returning what it last showed either way.
+ * `expected`, returning what it last showed either way (undefined if it never
+ * read the alert).
  */
 const modPage = async (modId: string, expected: string | null) => {
   await navigate("my-mods");
@@ -31,7 +32,9 @@ const modPage = async (modId: string, expected: string | null) => {
   await title.waitForClickable();
   await title.click();
   await expect(browser).toHaveUrl(expect.stringContaining(`/mods/${modId}`));
-  let shown: string | null = null;
+  // Before the page loads, a missing alert proves nothing.
+  await $("button*=Delete Mod").waitForDisplayed();
+  let shown: string | null | undefined;
   await browser
     .waitUntil(
       async () => {
