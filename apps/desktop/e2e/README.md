@@ -39,7 +39,17 @@ current. Both run in the Windows and Linux E2E matrices with no host update.
 
 `onboarding-skip-analysis` starts setup with a synthetic existing VPK. It verifies Skip for Now advances before analysis, after closing analysis results, and after navigating back; Next still advances and the VPK bytes remain intact. Saved telemetry consent starts enabled and must persist as disabled after opting out. `onboarding-telemetry-default` repeats the flow with an unseen prompt and stored consent disabled, verifying that first-run consent initially defaults to enabled.
 
+`onboarding-identified-addon` starts setup with an existing VPK the identification service matches to the catalog mod. Analyze Mods must list it as Not in Library, the step's text must not promise an import, and after finishing setup the saved library must not contain the mod and the VPK keeps its bytes.
+
+`analyze-errors` runs Analyze on two valid VPKs and one corrupt VPK. The identification service fails the first lookup with a 503 and finds no match for the second. The review dialog must list the 503 file and the corrupt file under Errors (2), with their names and reasons, and only the unmatched file under Unknown (1). Nothing is registered and the VPK bytes are unchanged.
+
+`analyze-known-files` starts with two hand-installed VPKs the identification service doesn't know, both named `pak01_dir.vpk`: one in `addons` and one in the `addons2` overflow shard. Analyze offers to add both; once one is added from the results list, its row shows Added to Library while the other stays addable, and a new analysis offers neither. Each file must have exactly one library mod and one manifest owner in its own shard, both right away and after a restart, Analyze must still recognize both after the restart, and both files keep their bytes.
+
 `gamebanana-detected-files` starts with a manually installed VPK and an empty DMM library. It identifies the mod through the analysis API, checks that Manage Files marks its matched archive enabled, adds an optional archive, and removes that optional archive after restart. The original VPK bytes and manifest ownership must survive, and only the optional archive may be downloaded.
+
+`addons-rescan-after-reset` starts with a profile DMM manages: a two-file catalog mod as `pak01`/`pak02`, a local import as `pak03` with its metadata, a disabled catalog mod parked as `900077_red.vpk` whose GameBanana page is gone, and a hand-placed `pak04` no manifest entry owns. Hash identification matches nothing. After Settings → Clear Mods State, Analyze Local Addons in the same session must restore the three mods from the manifest with their names, files, order and enabled state, ask about `pak04` only, and look up exactly two files by hash (the local import and `pak04`). Addon bytes and the manifest must not change, and a fresh process must see the same library.
+
+`analyze-orphans` starts from the `addons-rescan-after-reset` profile plus two Mod Options variants of the catalog mod parked as `900001_green.vpk` and `900001_red.vpk`, which no manifest entry lists. The catalog mod's `pak01`/`pak02` are deleted outside DMM, and the library must drop the mod. Analyze must then ask about both leftovers without adding the mod back. Quarantine moves green into the profile's `.dmm-quarantine` folder with its bytes, and Delete (after confirming) removes the unknown `pak04`. A new analysis offers neither, and Add to Library on red brings the mod back as downloaded. After that and after a restart, Analyze needs no review.
 
 `gamebanana-file-toggle` installs two of the three VPKs in a single download, then changes the selection from the Installed Files list. Apply must stay disabled with nothing checked or after Reset. Enabling the never-installed VPK extracts it from one new download and parks the one it replaces; switching back reuses the parked file without downloading. Every step checks the manifest, exact addon bytes and parked files, before and after a restart.
 
@@ -49,11 +59,27 @@ current. Both run in the Windows and Linux E2E matrices with no host update.
 
 `gamebanana-renamed-packs` installs two mods whose v2 archives are re-uploaded under a new GameBanana `_xxxxx` suffix. One has two downloads, `pack-a.zip` and `pack-b_1a2b3.zip`, with one VPK unticked after install; its `pack-a.zip` v2 transfer fails once. The other installs only `blue.vpk`, which its re-upload drops. Update All must ask for the second mod's VPKs with nothing pre-ticked, and the pick must re-run both mods: the renamed pack stays in the update, keeps its pick and leaves out the VPK it gained, and the picked pack installs only `green.vpk`. The picked pack downloads twice.
 
-`gamebanana-update-routing` installs a multipak mod with Default download routing, switches Settings → Network to Automatic, and updates it through Update All. A fresh process then downloads a second mod with Automatic routing. Only Automatic routing fetches GameBanana's fileserver directory, once per process, so the network assertion requires that fetch before the update's transfer and before the second download, and none before the first install.
+`gamebanana-update-routing` installs a multipak mod with Default download routing, switches Settings → Network to Automatic, and updates it through Update All. A fresh process then downloads a second mod with Automatic routing. The fileserver directory lists a cache that serves both mods. Default routing downloads from `/dl/` and keeps the cache as a fallback, and Automatic downloads from the cache, so the network assertion requires the first install from `/dl/` and the update and the second download from the cache.
 
 `gamebanana-update-broken-profile` adds an inactive Beta profile whose manifest has two mods claiming the same `pak01_dir.vpk`, a layout found in user installs. Update All on the two multipak mods in the default profile must still back up and update, the backup must carry Beta byte for byte, and restoring that backup from Settings must bring back the v1 addons. Beta stays byte-identical throughout and after exit.
 
 `deep-link-other-file` installs `base.zip` from a GameBanana 1-click link, then sends a link for the same mod's `effects.zip`. The second link must add `effects.vpk` beside `base.vpk` in the author's order, and a repeat link for `base.zip` must only report it as already installed. Each archive downloads exactly once. E2E builds skip the OS deep-link plugin, so the case emits `deep-link-received` through Tauri's event IPC, the event the Rust handler emits after validating a link.
+
+The `performance` family starts from Valve's stock `gameinfo.gi` (build 2026-09-29) and a player `video.txt` in the game folder's `cfg`, with CRLF line endings, a header and a setting the presets overwrite. The `gameinfo.gi` cases check one convar the first preset sets and the stock file doesn't:
+
+- `perf-gameinfo-resync`: after a game update writes Valve's file back with a line the player added by hand, window focus writes the config back and the hand-added line stays.
+- `perf-gameinfo-launch`: with the config gone from the file, Launch without mods writes it back before the launch is recorded.
+- `perf-editor-undo`: a value changed in Config settings and applied lands in the file, and Undo puts the preset's value back.
+- `perf-import-paste`: a pasted ConVars block, reviewed, named and saved with Save and apply, is written and listed under Yours.
+
+The `video.txt` cases apply presets that ship one. Every case first checks that the preset's values land, the header and the settings no config writes stay, and the saved copy matches the player's file byte for byte:
+
+- `perf-video-apply-restore`: a second preset replaces the first, settings only the first wrote go back to the player's values, and the saved copy is still the file from before the first config. Restore it writes that file back exactly and drops the copy.
+- `perf-video-changed-in-game`: a setting rewritten outside the app shows under Changed in game after a window focus. Keep yours marks it kept and leaves the file alone; Use writes the config's value back and confirms the file matches again. History lists the change, the keep and the revert, and Turn off restores the player's file exactly.
+- `perf-video-variant`: a preset with two video.txt files writes the first by default and the other once it is picked and applied; turning Write to video.txt off and applying gives the player's file back exactly.
+- `perf-video-adopt`: Make this my video.txt makes the file the config wrote the saved copy. Turn off and Restore it both leave those values in place.
+
+Each case checks the file again after a normal close.
 
 `network-diagnostics` runs Settings → Tools → Diagnose connection with every service on the fixture origin, including Cloudflare's trace probes through the `connectivity` endpoint, so every check except TCP auto-tuning must pass. On Windows the world injects a `Disabled` TCP auto-tuning level instead of reading the host's, and the row must warn and show the command to turn it back on; on Linux that row must not exist. `network-diagnostics-internet-down` cuts every trace probe off before it gets a response, and the internet row must name the host it couldn't reach.
 
@@ -67,7 +93,11 @@ current. Both run in the Windows and Linux E2E matrices with no host update.
 
 `profiles-file-order` starts with a two-file mod in `pak01`/`pak02` and a one-file mod in `pak03`. In the ordering dialog it moves the first file below the second with the keyboard and the one-file mod to the top, then saves. Every VPK must hold the bytes of the file the manifest names, the engine must load the solo mod, then the second file, then the first, and the library's VPKs and file tree must match. Disabling and re-enabling the mod, a fresh process and the reopened dialog must all keep that order.
 
+`profiles-reshare` imports a fake share code that picks one of a mod's three archives, then shares the imported profile on and imports the re-share as a friend would. E2E builds have no hardware ID, so the Share button stays disabled; the case builds the payload with the share dialog's serializer and posts it to the fixture share API, which serves it back as a new code (`support/profile-share-fixtures.ts`). The friend's import must fetch only the original picks, in load order, and install every mod from them, with nothing else in the profile's manifest.
+
 `shards-conflicts` gives the first mod in `addons` and the first in `addons2` the same model. Both are `pak01_dir.vpk`, so only the shard decides that the base mod wins. Load first on the overflow mod must move it into shard 1, push the 99th mod across the boundary, and survive a restart in both the conflicts list and the ordering dialog.
+
+`compatibility-fix-disabled` installs two text mods whose copy of a game localization file drops a game token, so the health check marks both "Can be fixed", then disables one. Fix all in the health dialog must say "Fixed 2 mods" and save both fixes; the disabled mod shows Fixed with "The fix applies when you enable this mod." in the dialog and on its page, while the repair package holds only the enabled mod's repair. Enabling it must add its repair to the package; disabling it again keeps the fix, Use original files on its page records the opt-out, and enabling it afterwards leaves it out of the package.
 
 The `stats` family pins a Stats account and serves deadlock-api from fixtures with exact values (`support/stats-dashboard-fixtures.ts`), so the cases assert what widgets compute, not only that they render:
 
@@ -180,6 +210,7 @@ M4 uses real Rust HTTP transfers against binary fixture responses. Run any case 
 | `downloads-range` | A connection cut after 65,536 bytes triggers an exact Range request and byte-correct completion |
 | `downloads-cancel` | Cancel a paused transfer through the existing Rust command, verify partial cleanup, restart, and retry through the UI |
 | `downloads-cancel-connecting` | Cancel through the UI while the server withholds response headers; the UI retry must reach the server within 10 seconds and complete |
+| `downloads-cancel-late-error` | Cancel a running transfer through the UI and press Retry before its cancellation error reaches the window (the harness holds that error and the mod's later events, then delivers them in order); the retry must not fail and completes |
 | `downloads-cancel-queued` | Cancel through the UI a second mod still queued behind a slow download; it settles as failed, never reaches the server, and the first download completes |
 | `downloads-reload-queued` | Reload the window while a second mod is queued behind a slow download; both settle as failed, the queued mod never reaches the server, and Retry completes the first |
 | `downloads-delete-queued` | Delete from My Mods a second mod queued behind a running download; no toast names it, it never reaches the server or leaves files, and the first download completes |
@@ -204,7 +235,7 @@ M4 uses real Rust HTTP transfers against binary fixture responses. Run any case 
 | `downloads-segmented-pause` / `-cancel` / `-restart` | The pause, cancel and restart flows above with segments; paused and interrupted parts are exact prefixes of their own spans |
 | `downloads-segmented-budget` | A mod with three large files on one server never has more than four requests open at once |
 
-Each world starts with a failed download record and persisted file selection, so Retry exercises the real frontend purge/queue flow without depending on the remote catalog. Variant coverage here is persisted selection and retry, not the initial catalog file chooser. `downloads-cancel` cancels its paused transfer through the real `cancel_download` IPC command; `downloads-cancel-connecting` and `downloads-cancel-queued` press the card's Cancel button. Successful transfers are checked again in a new application process. The oracle compares SHA-256 hashes, partial prefixes and metadata, exact cache contents, the empty addon manifest, and protected game/Steam files. `download-*.json` captures disk/state evidence; `network.ndjson` includes Range headers, response status, bytes sent, the client port and when each response ended, which is how the segmented cases count connections and time transfers. Every fixture response is throttled on its own, like a server limiting each connection. UI retries deliberately purge stale data; only interrupted transfers within a running process resume with Range.
+Each world starts with a failed download record and persisted file selection, so Retry exercises the real frontend purge/queue flow without depending on the remote catalog. Variant coverage here is persisted selection and retry, not the initial catalog file chooser. `downloads-cancel` cancels its paused transfer through the real `cancel_download` IPC command; `downloads-cancel-connecting`, `downloads-cancel-late-error` and `downloads-cancel-queued` press the card's Cancel button. Successful transfers are checked again in a new application process. The oracle compares SHA-256 hashes, partial prefixes and metadata, exact cache contents, the empty addon manifest, and protected game/Steam files. `download-*.json` captures disk/state evidence; `network.ndjson` includes Range headers, response status, bytes sent, the client port and when each response ended, which is how the segmented cases count connections and time transfers. Every fixture response is throttled on its own, like a server limiting each connection. UI retries deliberately purge stale data; only interrupted transfers within a running process resume with Range.
 
 `downloads-queue-error-toast` starts with an empty library and the synthetic GameBanana catalog instead. The mod page lists its single file, and GameBanana has removed it by the time Download is clicked, so `queue_download` refuses the request. Exactly one error toast must name the mod and the reason, the mod must end up failed, and its archive is never requested. `downloads-queue-error-model-tab` makes the same checks for the 3D tab's download button.
 
@@ -218,7 +249,9 @@ It verifies migration without replacing the database, catalog availability,
 syncing and displaying cached/new records, and migration history after a fresh
 app process. Run it with `pnpm --filter @deadlock-mods/desktop e2e:test -- --case gamebanana-legacy-catalog --keep`.
 
-The lifecycle cases also exercise installed archive changes, cancelled and failed changes, disable/re-enable, force update, and reinstall. `gamebanana-remembered` chooses two multi-file archives at download, and enabling installs every VPK in them without asking again. `gamebanana-unremembered` downloads a single multi-file archive, so enabling opens the per-VPK chooser, which rejects an empty selection before a subset is installed. `gamebanana-switch` adds, replaces, revisits, and removes archives while retaining exact inactive-file hashes. `gamebanana-switch-failure` requires a 503 to leave the existing installation unchanged before retry succeeds. `gamebanana-reselect` deletes and reinstalls a single archive with a different VPK selection: the current UI does not offer an installed per-VPK editor for a single download. `gamebanana-reinstall` restores an enabled selection, while `gamebanana-reinstall-disabled` remains downloaded and inactive. `gamebanana-force-update` checks that the update dialog retains the chosen downloads. Every case restarts the app and verifies its final state.
+The lifecycle cases also exercise installed archive changes, cancelled and failed changes, disable/re-enable, force update, and reinstall. `gamebanana-remembered` chooses two multi-file archives at download, and enabling installs every VPK in them without asking again. `gamebanana-unremembered` downloads a single multi-file archive, so enabling opens the per-VPK chooser, which rejects an empty selection before a subset is installed. `gamebanana-switch` adds, replaces, revisits, and removes archives while retaining exact inactive-file hashes. `gamebanana-switch-failure` requires a 503 to leave the existing installation unchanged before retry succeeds. `gamebanana-switch-reinstall` replaces blue with red in Manage Files, then reinstalls: the reinstall must install common and red only, not bring blue back. `gamebanana-reselect` deletes and reinstalls a single archive with a different VPK selection: the current UI does not offer an installed per-VPK editor for a single download. `gamebanana-reinstall` restores an enabled selection, while `gamebanana-reinstall-disabled` remains downloaded and inactive. `gamebanana-force-update` checks that the update dialog retains the chosen downloads. Every case restarts the app and verifies its final state.
+
+`gamebanana-reinstall-readonly` makes the installed VPK read-only and declines the make-writable prompt during Reinstall. The reinstall must stop with an error naming that file. The VPK and its mode, the manifest, the download cache, the persisted mod state and the archive request count must stay as they were, and after the app closes the mod is still installed and enabled with the same addon files.
 
 These cases start with an empty library and use the real catalog UI, GameBanana provider, downloader, archive extraction, and installation commands. Only HTTP responses are mocked. Run each with `pnpm --filter @deadlock-mods/desktop e2e:test -- --case <case> --keep` after `e2e:build`.
 
@@ -295,6 +328,25 @@ gameinfo to vanilla while preserving those enabled VPKs; a recorded modded launc
 must have Alpha's addons search path restored. Both launch cases check a fresh
 process again. These cases need no native input and retain `broken-state-*.json`
 observations with disk, manifest, store, gameinfo, launches and UI text.
+
+`missing-vpks-launch-partial` seeds two enabled GameBanana mods whose VPKs were
+deleted while DMM was closed; their downloaded copies remain. Launch modded →
+Reinstall and launch downloads the first again and gets a 404 for the second,
+so the dialog stays open with only the second marked as failed and nothing
+launched. Disable and launch must then disable only the second: the first stays
+enabled in the manifest, store and profile with its own bytes, and exactly one
+launch is recorded. A fresh process must see the same.
+`missing-vpks-launch-relaunch-error` serves both downloads, so Reinstall and
+launch restores both mods, but a directory in place of the E2E launch journal
+makes the launch itself fail. With the error showing, Disable and launch must
+leave both mods enabled and only retry the launch, which records once the
+journal is back.
+`missing-vpks-launch-relaunch-missing` starts the same way, but once the
+failed launch is showing it deletes the second mod's VPK again, so the retried
+launch reports that mod's files missing. The dialog must stay open with nothing
+launched and the first mod still enabled; the next Disable and launch disables
+only the second mod and records one launch. With nothing left to restore it
+from, the second mod then leaves the library.
 
 A user can delete VPKs from the addons folder behind DMM's back. A mod whose every file is gone has nothing left to enable, so it has to leave the library and its manifest entry, or startup would restore it again. A mod that lost only some files, or that DMM can restore, stays in the library flagged as broken: its `missingVpks` lists the original names of the lost files, and My Mods shows a `missing-files-warning` for it. Both cases seed the same mixed Alpha library next to Beta, which is not the active profile:
 
@@ -431,7 +483,7 @@ The surrounding `library-selection`, `conflicts-resolve`, and `bisect-conflicts`
 
 ## Download fallback
 
-`gamebanana-mirror-fallback` run in the existing `gamebanana` suite. An interrupted mirror transfer receives a failed retry before the canonical endpoint succeeds. The canonical request starts without a Range header, and the installed VPK bytes match the fixture. Each case restarts in a fresh process and checks exact VPK bytes, manifest and persisted state, and the absence of leftover partial files.
+`gamebanana-mirror-fallback` run in the existing `gamebanana` suite. An interrupted mirror transfer receives a failed retry before the canonical endpoint succeeds. The canonical request starts without a Range header, and the installed VPK bytes match the fixture. `gamebanana-default-fallback` keeps the Default routing and the real file link: `/dl/` redirects to a cache that cuts every transfer, and after the downloader's reconnects the download moves to a cache from the fileserver directory, which the app checked before downloading. That cache's request starts without a Range header. Each case restarts in a fresh process and checks exact VPK bytes, manifest and persisted state, and the absence of leftover partial files.
 
 ## Mod requirements
 

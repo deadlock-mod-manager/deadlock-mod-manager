@@ -12,7 +12,6 @@ use tauri::Emitter;
 use tokio_util::sync::CancellationToken;
 
 use super::game_process::{GAME_START_TIMEOUT, GameStartOutcome, wait_for_game_start};
-use super::gameinfo::reset_to_vanilla_internal;
 use super::state::MANAGER;
 
 const GAME_LAUNCH_POLL_INTERVAL: Duration = Duration::from_secs(2);
@@ -25,6 +24,9 @@ static LAUNCH_CANCEL: Mutex<Option<CancellationToken>> = Mutex::new(None);
 /// the marks on failure, so an earlier Stop's rollback can't overwrite a later
 /// Stop's marks.
 static STOP_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+
+/// Protect staged mounts until launch succeeds, fails, or is cancelled.
+pub(super) static GAMEINFO_LAUNCH: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
 async fn await_launched_game(
   monitor: SteamUriLaunchMonitor,
@@ -148,6 +150,7 @@ pub async fn start_game(
   additional_args: String,
   profile_folder: Option<String>,
 ) -> Result<(), Error> {
+  let _gameinfo_launch = GAMEINFO_LAUNCH.lock().await;
   log::info!(
     "Starting game with args: {:?} (vanilla: {:?}, profile: {:?})",
     additional_args,
@@ -158,24 +161,7 @@ pub async fn start_game(
   let cancel = CancellationToken::new();
   *LAUNCH_CANCEL.lock().unwrap() = Some(cancel.clone());
 
-  let first_result =
-    prepare_game_launch(vanilla, additional_args.clone(), profile_folder.clone()).await;
-
-  let request = match first_result {
-    Ok(request) => request,
-    Err(Error::GameConfigParse(msg)) => {
-      log::warn!("Game config parse failed: {msg}, attempting auto-reset to vanilla");
-
-      reset_to_vanilla_internal().await?;
-
-      let request = prepare_game_launch(vanilla, additional_args, profile_folder).await?;
-
-      app_handle.emit("gameinfo-auto-reset", ()).ok();
-      log::info!("Auto-recovery succeeded after gameinfo reset");
-      request
-    }
-    Err(error) => return Err(error),
-  };
+  let request = prepare_game_launch(vanilla, additional_args, profile_folder).await?;
 
   // Preparation can't be interrupted, but Steam must not be asked to start
   // the game once the player has cancelled.
@@ -227,6 +213,7 @@ async fn prepare_game_launch(
 /// never touches search paths, is still re-applied.
 #[tauri::command]
 pub async fn launch_game_direct(additional_args: String) -> Result<(), Error> {
+  let _gameinfo_launch = GAMEINFO_LAUNCH.lock().await;
   log::info!("Launching game without search path changes, args: {additional_args:?}");
   crate::game_session::note_launch_requested(&additional_args);
   crate::match_sync::release_for_game_launch().await;
@@ -267,9 +254,6 @@ pub async fn stop_game() -> Result<(), Error> {
 
 #[tauri::command]
 pub async fn is_game_running() -> Result<bool, Error> {
-  if crate::runtime_environment::records_game_launches() {
-    return Ok(false);
-  }
   // The sandbox hides the game. This is polled every few seconds, so a failed
   // host check is logged instead of raising an error toast on every poll, and
   // reports the last known state so it isn't taken for the game closing.
@@ -284,6 +268,7 @@ pub async fn is_game_running() -> Result<bool, Error> {
         }),
     );
   }
+  // In E2E builds the scan sees only the world's stand-in game.
   let processes = MANAGER.lock().unwrap().game_processes()?;
   crate::game_session::observe(&processes);
   Ok(!processes.is_empty())

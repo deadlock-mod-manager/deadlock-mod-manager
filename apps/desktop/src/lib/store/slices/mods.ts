@@ -1,3 +1,7 @@
+import {
+  type HeroDetectionResult,
+  resolveDetectedHeroLabel,
+} from "@deadlock-mods/hero-parser";
 import type { ModDto } from "@deadlock-mods/shared";
 import type { StateCreator } from "zustand";
 import { SortType } from "@/lib/constants";
@@ -44,6 +48,11 @@ export type IdentityMigration = {
   to: string;
 };
 
+export type AnalysisTarget = {
+  profileFolder: string | null;
+  registering: boolean;
+};
+
 export type ModsState = {
   localMods: LocalMod[];
   modProgress: Record<string, ModProgress>;
@@ -64,6 +73,8 @@ export type ModsState = {
   // Analysis dialog state
   analysisResult: AnalyzeAddonsResult | null;
   analysisDialogOpen: boolean;
+  /** The profile the analysis result describes, and whether Analyze is still registering what it found. */
+  analysisTarget: AnalysisTarget | null;
   // Hero detection state (ephemeral)
   heroDetection: HeroDetectionProgress;
 
@@ -80,6 +91,11 @@ export type ModsState = {
   ) => void;
   removeMod: (remoteId: string, profileId?: ProfileId) => void;
   setMods: (mods: LocalMod[]) => void;
+  setModSource: (
+    remoteId: string,
+    source: NonNullable<LocalMod["source"]>,
+    profileId?: ProfileId,
+  ) => void;
   setModStatus: (
     remoteId: string,
     status: ModStatus,
@@ -128,9 +144,13 @@ export type ModsState = {
     remoteId: string,
     updatedAt: number,
     profileId?: ProfileId,
+    sourceRevision?: string,
   ) => void;
   getModProgress: (remoteId: string) => ModProgress | undefined;
   setAnalysisResult: (result: AnalyzeAddonsResult | null) => void;
+  setAnalysisTarget: (target: AnalysisTarget | null) => void;
+  /** Drops a file the user deleted or quarantined from the shown result. */
+  removeAnalyzedAddon: (filePath: string) => void;
   setAnalysisDialogOpen: (open: boolean) => void;
   clearAnalysisDialog: () => void;
   setModOrder: (remoteId: string, order: number, profileId?: ProfileId) => void;
@@ -143,10 +163,10 @@ export type ModsState = {
   getOrderedMods: () => LocalMod[];
   getNextInstallOrder: () => number;
   migrateLegacyMods: () => void;
+  /** Null records a scan that failed, so the mod is not scanned again. */
   setDetectedHero: (
     remoteId: string,
-    hero: string | null,
-    usesCriticalPaths?: boolean,
+    detection: HeroDetectionResult | null,
   ) => void;
   setHeroOverride: (
     remoteId: string,
@@ -185,6 +205,7 @@ export const createModsSlice: StateCreator<
   pendingIdentityMigrations: [],
   analysisResult: null,
   analysisDialogOpen: false,
+  analysisTarget: null,
   heroDetection: { status: "idle", current: 0, total: 0, currentModName: null },
 
   completeIdentityMigrations: () => set({ pendingIdentityMigrations: [] }),
@@ -242,6 +263,18 @@ export const createModsSlice: StateCreator<
         localMods: nextMods,
       };
     });
+  },
+
+  setModSource: (remoteId, source, requestedProfileId) => {
+    const profileId = requestedProfileId ?? get().activeProfileId;
+    get().bumpProfileSyncRevision(profileId);
+    set((state) =>
+      applyToModsInProfile(state, profileId, (mods) =>
+        mods.map((mod) =>
+          mod.remoteId === remoteId ? { ...mod, source } : mod,
+        ),
+      ),
+    );
   },
 
   addIdentifiedLocalMod: (mod, filePath, markAsInstalled = true) =>
@@ -366,6 +399,12 @@ export const createModsSlice: StateCreator<
           return {
             ...mod,
             status,
+            // A completed disable must not depend on watcher reconciliation.
+            installedVpks:
+              mod.status === ModStatus.Installed &&
+              status === ModStatus.Downloaded
+                ? []
+                : mod.installedVpks,
             downloadedAt:
               (status === ModStatus.Downloaded &&
                 mod.status !== ModStatus.Installed) ||
@@ -452,6 +491,7 @@ export const createModsSlice: StateCreator<
                   id: group.id,
                   name: group.name,
                   collapsed: group.collapsed,
+                  randomize: group.randomize,
                   modIds: group.modIds.filter((id) => id !== remoteId),
                 }
               : group,
@@ -505,6 +545,7 @@ export const createModsSlice: StateCreator<
                         id: group.id,
                         name: group.name,
                         collapsed: group.collapsed,
+                        randomize: group.randomize,
                         modIds: [],
                       }
                     : group,
@@ -664,22 +705,48 @@ export const createModsSlice: StateCreator<
       );
     }),
 
-  skipModUpdate: (remoteId, updatedAt, requestedProfileId) =>
+  skipModUpdate: (remoteId, updatedAt, requestedProfileId, sourceRevision) =>
     set((state) => {
       const profileId = requestedProfileId ?? state.activeProfileId;
       return applyToModsInProfile(state, profileId, (mods) =>
         mods.map((mod) =>
           mod.remoteId === remoteId
-            ? { ...mod, skippedUpdateAt: updatedAt }
+            ? {
+                ...mod,
+                skippedUpdateAt: updatedAt,
+                skippedSourceRevision: sourceRevision,
+              }
             : mod,
         ),
       );
     }),
 
   setAnalysisResult: (result) => set({ analysisResult: result }),
+  setAnalysisTarget: (target) => set({ analysisTarget: target }),
+  // Matched by path, not by result: the file is gone whichever analysis shows it.
+  removeAnalyzedAddon: (filePath) =>
+    set((state) => {
+      const result = state.analysisResult;
+      if (!result) return state;
+      const addons = result.addons.filter(
+        (addon) => addon.filePath !== filePath,
+      );
+      return {
+        analysisResult: {
+          ...result,
+          addons,
+          totalCount:
+            result.totalCount - (result.addons.length - addons.length),
+        },
+      };
+    }),
   setAnalysisDialogOpen: (open) => set({ analysisDialogOpen: open }),
   clearAnalysisDialog: () =>
-    set({ analysisResult: null, analysisDialogOpen: false }),
+    set({
+      analysisResult: null,
+      analysisDialogOpen: false,
+      analysisTarget: null,
+    }),
 
   setModOrder: (remoteId, order, requestedProfileId) => {
     get().bumpProfileSyncRevision(requestedProfileId ?? get().activeProfileId);
@@ -862,19 +929,19 @@ export const createModsSlice: StateCreator<
     });
   },
 
-  setDetectedHero: (
-    remoteId: string,
-    hero: string | null,
-    usesCriticalPaths?: boolean,
-  ) =>
+  setDetectedHero: (remoteId, detection) =>
     set((state) => {
       const updateMods = (mods: LocalMod[]) =>
         mods.map((mod) =>
           mod.remoteId === remoteId
             ? {
                 ...mod,
-                detectedHero: hero,
-                usesCriticalPaths: usesCriticalPaths ?? mod.usesCriticalPaths,
+                detectedHero: detection
+                  ? resolveDetectedHeroLabel(detection)
+                  : null,
+                detectedContent: detection?.content ?? null,
+                usesCriticalPaths:
+                  detection?.usesCriticalPaths ?? mod.usesCriticalPaths,
               }
             : mod,
         );
@@ -909,6 +976,7 @@ export const createModsSlice: StateCreator<
         mods.map((mod) => ({
           ...mod,
           detectedHero: undefined,
+          detectedContent: undefined,
         }));
 
       return applyToModsAndAllProfiles(state, updateMods);

@@ -39,14 +39,17 @@ export type ErrorKind = {
     | "downloadPaused"
     | "launchCancelled"
     | "providerCancelled"
+    | "providerSubmissionUnavailable"
     | "fileWriteFailed"
     | "autoexecReadFailed"
     | "autoexecWriteFailed"
     | "crosshairConfigResetFailed"
     | "rollbackFailed"
     | "backgroundTaskFailed"
+    | "serverPicker"
     | "vpkInUse";
   message: string;
+  serverPickerKind?: string;
   affectedMods?: { id: string; name: string }[];
   conflictingMods?: string[];
   path?: string;

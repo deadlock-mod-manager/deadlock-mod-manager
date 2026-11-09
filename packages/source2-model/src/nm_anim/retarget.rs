@@ -31,6 +31,48 @@ fn twin_name(name: &str) -> Option<&str> {
         .then_some(stem)
 }
 
+fn lowercase_index<'a>(names: impl Iterator<Item = &'a str>) -> HashMap<String, usize> {
+    names
+        .enumerate()
+        .map(|(index, name)| (name.to_ascii_lowercase(), index))
+        .collect()
+}
+
+/// The earlier target bone a renamed copy of the rig follows.
+fn twin_index(
+    name: &str,
+    source: &HashMap<String, usize>,
+    target_index: &HashMap<String, usize>,
+    before: usize,
+) -> Option<usize> {
+    let twin = twin_name(name)?.to_ascii_lowercase();
+    // Only a bone the clip drives; `Bone_007` must not chase a helper `Bone`.
+    if !source.contains_key(&twin) {
+        return None;
+    }
+    target_index
+        .get(&twin)
+        .copied()
+        .filter(|index| *index < before)
+}
+
+/// The target bones a pose retargeted from a clip with `source_names` can move:
+/// the bones it names and their renamed twins. Every other bone keeps its bind
+/// transform under its parent.
+pub fn retargeted_bones(source_names: &[String], target: &Skeleton) -> Vec<bool> {
+    let source = lowercase_index(source_names.iter().map(String::as_str));
+    let target_index = lowercase_index(target.bones.iter().map(|bone| bone.name.as_str()));
+    target
+        .bones
+        .iter()
+        .enumerate()
+        .map(|(index, bone)| {
+            source.contains_key(&bone.name.to_ascii_lowercase())
+                || twin_index(&bone.name, &source, &target_index, index).is_some()
+        })
+        .collect()
+}
+
 /// Project a sampled NM pose onto a model skeleton in component space. NM
 /// clips can contain staging-only parents such as `root_motion`; projecting
 /// globals preserves their effect while collapsing bones absent from the model.
@@ -40,20 +82,8 @@ pub fn retarget_nm_pose(
     target: &Skeleton,
 ) -> Vec<BoneTransform> {
     let source_pose = build_model_matrices(sampled, &animation.skeleton.parent_indices);
-    let source = animation
-        .skeleton
-        .bone_names
-        .iter()
-        .enumerate()
-        .map(|(index, name)| (name.to_ascii_lowercase(), index))
-        .collect::<HashMap<_, _>>();
-
-    let target_index = target
-        .bones
-        .iter()
-        .enumerate()
-        .map(|(index, bone)| (bone.name.to_ascii_lowercase(), index))
-        .collect::<HashMap<_, _>>();
+    let source = lowercase_index(animation.skeleton.bone_names.iter().map(String::as_str));
+    let target_index = lowercase_index(target.bones.iter().map(|bone| bone.name.as_str()));
     let mut target_models: Vec<[f32; 16]> = Vec::with_capacity(target.bones.len());
     let mut target_pose = Vec::with_capacity(target.bones.len());
     let mut twinned = Vec::with_capacity(target.bones.len());
@@ -67,17 +97,12 @@ pub fn retarget_nm_pose(
         // The copy keeps its own proportions and turns as its twin does.
         let twin = own
             .is_none()
-            .then(|| twin_name(&bone.name))
+            .then(|| twin_index(&bone.name, &source, &target_index, target_models.len()))
             .flatten()
-            .map(str::to_ascii_lowercase)
-            // Only a bone the clip drives; `Bone_007` must not chase a helper `Bone`.
-            .filter(|name| source.contains_key(name))
-            .and_then(|name| target_index.get(&name))
-            .filter(|index| **index < target_models.len())
             .and_then(|index| {
-                let twin_bone = &target.bones[*index];
+                let twin_bone = &target.bones[index];
                 let delta = mat4_mul(
-                    &target_models[*index],
+                    &target_models[index],
                     &invert_affine(&twin_bone.model_bind_matrix).ok()?,
                 );
                 let rotated = mat4_mul(&delta, &bone.model_bind_matrix);
@@ -138,6 +163,35 @@ mod tests {
         assert_eq!(twin_name("Bone_007"), Some("Bone"));
         assert_eq!(twin_name("spine_1"), None);
         assert_eq!(twin_name("$cloth_m0p14"), None);
+    }
+
+    #[test]
+    fn only_clip_bones_and_their_twins_are_retargeted() {
+        let identity = mat4_from_trs([0.0; 3], [0.0, 0.0, 0.0, 1.0], [1.0; 3]);
+        let bone = |name: &str, parent: i32| crate::skeleton::Bone {
+            name: name.into(),
+            parent,
+            flags: 0,
+            bind_pos: [0.0; 3],
+            bind_rot: [0.0, 0.0, 0.0, 1.0],
+            bind_scale: [1.0; 3],
+            local_bind_matrix: identity,
+            model_bind_matrix: identity,
+        };
+        let target = Skeleton {
+            bones: vec![
+                bone("Pelvis", -1),
+                bone("$cloth_m0p14", 0),
+                bone("pelvis_001", -1),
+                bone("Bone", 0),
+                bone("Bone_007", 0),
+            ],
+            inverse_bind_matrices: vec![identity; 5],
+        };
+        assert_eq!(
+            retargeted_bones(&["pelvis".into()], &target),
+            [true, false, true, false, false]
+        );
     }
 
     #[test]

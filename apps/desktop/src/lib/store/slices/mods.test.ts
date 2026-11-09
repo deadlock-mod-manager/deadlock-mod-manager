@@ -104,6 +104,30 @@ beforeEach(() => {
 });
 
 describe("addLocalMod", () => {
+  it("updates installed source provenance only in the captured profile", () => {
+    const source: NonNullable<LocalMod["source"]> = {
+      sourceKey: "accepted",
+      sourceId: "example",
+      sourceName: "Example",
+      acceptedOrigin: "https://example.org",
+      descriptorUrl: "https://example.org/source.json",
+      listingId: "42",
+      releaseId: "release",
+      contentRevision: "2",
+      artifactIds: ["pack"],
+      componentIds: ["blue"],
+      iconUrl: null,
+    };
+    const active = store.getState().localMods;
+    const before = store.getState().profiles.secondary.mods[0];
+    store.getState().setModSource("1", source, createProfileId("secondary"));
+    expect(store.getState().localMods).toBe(active);
+    expect(store.getState().profiles.default.mods[0]?.source).toBeUndefined();
+    expect(store.getState().profiles.secondary.mods[0]).toEqual({
+      ...before,
+      source,
+    });
+  });
   it("keeps existing named mods unchanged when the same remote mod is added", () => {
     const before = store.getState().profiles.default.mods;
     store.getState().addLocalMod({
@@ -158,6 +182,7 @@ describe("removeMod", () => {
       name: "Cosmetics",
       modIds: ["1", "2"],
       collapsed: true,
+      randomize: true,
     };
     const { profiles } = store.getState();
     store.setState({
@@ -179,6 +204,7 @@ describe("removeMod", () => {
       name: "Cosmetics",
       modIds: [],
       collapsed: true,
+      randomize: true,
     });
   });
 
@@ -456,6 +482,47 @@ describe("mod recovery", () => {
 
 const broken = (mods: LocalMod[]) =>
   mods.map((mod) => ({ ...mod, missingVpks: ["gone.vpk"] }));
+
+describe("setModStatus", () => {
+  it.each(["default", "secondary"])(
+    "clears disabled VPK locators in %s without waiting for reconciliation",
+    (profileName) => {
+      const profileId = createProfileId(profileName);
+      const before = store.getState();
+
+      store.getState().setModStatus("1", ModStatus.Downloaded, profileId);
+
+      const after = store.getState();
+      expect(after.profiles[profileId].mods[0]).toEqual({
+        ...before.profiles[profileId].mods[0],
+        status: ModStatus.Downloaded,
+        installedVpks: [],
+        downloadedAt: before.profiles[profileId].mods[0].downloadedAt,
+      });
+      if (profileId === before.activeProfileId) {
+        expect(after.localMods).toEqual(after.profiles[profileId].mods);
+        expect(after.profiles.secondary).toBe(before.profiles.secondary);
+      } else {
+        expect(after.localMods).toBe(before.localMods);
+        expect(after.profiles.default).toBe(before.profiles.default);
+      }
+    },
+  );
+
+  it("keeps installed VPK locators while downloading an update", () => {
+    const before = store.getState();
+
+    store.getState().setModStatus("1", ModStatus.Downloading);
+
+    const after = store.getState();
+    expect(after.localMods[0].installedVpks).toEqual(
+      before.localMods[0].installedVpks,
+    );
+    expect(after.profiles.default.mods[0].installedVpks).toEqual(
+      before.profiles.default.mods[0].installedVpks,
+    );
+  });
+});
 
 describe("setInstalledVpks", () => {
   it("preserves unrelated mod references when installation completes", () => {

@@ -9,7 +9,11 @@ import {
 import { Alert, AlertDescription } from "@deadlock-mods/ui/components/alert";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { MagnifyingGlass, Warning } from "@phosphor-icons/react";
-import { useQuery, useSuspenseInfiniteQuery } from "@tanstack/react-query";
+import {
+  useIsMutating,
+  useQuery,
+  useSuspenseInfiniteQuery,
+} from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   useCallback,
@@ -25,7 +29,14 @@ import { CatalogRefreshButton } from "@/components/mod-browsing/catalog-refresh-
 import ModCard from "@/components/mod-browsing/mod-card";
 import { AuthorSearchResults } from "@/components/mod-browsing/author-search-results";
 import SearchBar from "@/components/mod-browsing/search-bar";
+import { type CatalogFilterSelection } from "@/components/mod-browsing/catalog-categories";
+import {
+  catalogQueryFilterSelection,
+  changeCatalogHeroes,
+  normalizeCatalogFilterSelection,
+} from "@/components/mod-browsing/catalog-hero-categories";
 import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
+import { CATALOG_SYNC_KEY } from "@/hooks/use-gamebanana-catalog-sync";
 import { useMod } from "@/hooks/use-mod";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useResponsiveColumns } from "@/hooks/use-responsive-columns";
@@ -33,12 +44,12 @@ import { useScrollPosition } from "@/hooks/use-scroll-position";
 import { useSearchQueryState } from "@/hooks/use-search";
 import {
   CATALOG_QUERY_DEFAULTS,
-  getGameBananaCatalogFacets,
   queryGameBananaCatalog,
 } from "@/lib/gamebanana-catalog";
 import { MOD_OUTDATED_CUTOFF_SECONDS, SortType } from "@/lib/constants";
 import { parseGameBananaReference } from "@/lib/mod-interchange";
 import { MODS_LIST_QUERY_KEY } from "@/lib/mods/mod-query-cache";
+import { catalogFacetQueryOptions } from "@/lib/mods/catalog-facet-query";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 import { selectStoreFilters } from "@/lib/store/selectors";
@@ -106,6 +117,7 @@ export const GetModsData = ({
   mapsOnly?: boolean;
 }) => {
   const { t } = useTranslation();
+  const catalogSyncing = useIsMutating({ mutationKey: CATALOG_SYNC_KEY }) > 0;
   const isCustomMapsEnabled = useExperimentalFeature("custom-maps");
   const nsfwSettings = usePersistedStore((state) => state.nsfwSettings);
   const filters = usePersistedStore((state) =>
@@ -124,8 +136,9 @@ export const GetModsData = ({
     mapsOnly ? state.updateMapsFilters : state.updateModsFilters,
   );
   const {
-    selectedCategories,
-    selectedHeroes,
+    selectedCategories: savedCategories,
+    selectedCategoryKeys: savedCategoryKeys,
+    selectedHeroes: savedHeroes,
     hideNSFW,
     nsfwOnly: nsfwOnlyFilter,
     hideOutdated,
@@ -145,7 +158,51 @@ export const GetModsData = ({
     modsStorePaginationEnabled ?? platform() === "linux";
   const [page, setPage] = useState(() => getPersistedPage(pageKey));
   const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
+  const isMap =
+    contentType === "map"
+      ? true
+      : contentType === "mod" && isCustomMapsEnabled
+        ? false
+        : null;
+  // Facets depend only on the tab, so saved selections can be normalized before querying.
+  const facetQuery = useMemo<CatalogQuery>(
+    () => ({
+      ...CATALOG_QUERY_DEFAULTS,
+      isMap,
+      submissionType: CONTENT_SUBMISSION_TYPE[contentType],
+    }),
+    [contentType, isMap],
+  );
+  const { data: facets } = useQuery(
+    catalogFacetQueryOptions(facetQuery, catalogSyncing),
+  );
+  const categoryPaths = useMemo(
+    () => (facets ?? []).map((facet) => facet.categoryPath),
+    [facets],
+  );
+  const categorySelection = useMemo(
+    () =>
+      normalizeCatalogFilterSelection(
+        {
+          categories: savedCategories,
+          keys: savedCategoryKeys,
+          heroes: savedHeroes,
+        },
+        categoryPaths,
+      ),
+    [categoryPaths, savedCategories, savedCategoryKeys, savedHeroes],
+  );
+  const {
+    categories: selectedCategories,
+    keys: selectedCategoryKeys,
+    heroes: selectedHeroes,
+  } = categorySelection;
   const catalogQuery = useMemo<CatalogQuery>(() => {
+    const querySelection = catalogQueryFilterSelection(
+      categorySelection,
+      categoryPaths,
+      filterMode === "exclude",
+    );
     const updatedRange = getDateRange(updatedFilter);
     const updatedAfter = hideOutdated
       ? Math.max(updatedRange.after ?? 0, MOD_OUTDATED_CUTOFF_SECONDS)
@@ -153,19 +210,15 @@ export const GetModsData = ({
     const addedRange = getDateRange(addedFilter);
     return {
       search: debouncedSearchQuery,
-      categories: selectedCategories,
-      heroes: selectedHeroes,
+      categories: querySelection.categories,
+      categoryKeys: querySelection.keys,
+      heroes: querySelection.heroes,
       authorRemoteId: null,
       excludeFilters: filterMode === "exclude",
       // Sounds are picked by submissionType; maps only by the Maps tab, and
       // Mods leaves them out once that tab exists.
       isAudio: null,
-      isMap:
-        contentType === "map"
-          ? true
-          : contentType === "mod" && isCustomMapsEnabled
-            ? false
-            : null,
+      isMap,
       hideNsfw: nsfwSettings.hideNSFW || hideNSFW,
       nsfwOnly,
       hideObsolete: hideOutdated,
@@ -189,13 +242,13 @@ export const GetModsData = ({
     filterMode,
     hideNSFW,
     hideOutdated,
-    isCustomMapsEnabled,
+    isMap,
     nsfwOnly,
     nsfwSettings.hideNSFW,
     page,
     paginationEnabled,
-    selectedCategories,
-    selectedHeroes,
+    categoryPaths,
+    categorySelection,
     showFavoritesOnly,
     updatedFilter,
   ]);
@@ -241,7 +294,9 @@ export const GetModsData = ({
       query_length: deferredCatalogQuery.search.length,
       result_count: catalogPage.total,
       has_results: catalogPage.total > 0,
-      category_filter_count: deferredCatalogQuery.categories.length,
+      category_filter_count:
+        deferredCatalogQuery.categories.length +
+        deferredCatalogQuery.categoryKeys.length,
       hero_filter_count: deferredCatalogQuery.heroes.length,
     });
   }, [catalogPage.total, contentType, deferredCatalogQuery, isUpdatingResults]);
@@ -251,27 +306,6 @@ export const GetModsData = ({
     [catalogPages.pages],
   );
   // Filter menus list every option in the current tab, not just loaded rows.
-  const facetQuery = useMemo<CatalogQuery>(
-    () => ({
-      ...CATALOG_QUERY_DEFAULTS,
-      isAudio: deferredCatalogQuery.isAudio,
-      isMap: deferredCatalogQuery.isMap,
-      includeWips: deferredCatalogQuery.includeWips,
-      submissionType: deferredCatalogQuery.submissionType,
-    }),
-    [
-      deferredCatalogQuery.isAudio,
-      deferredCatalogQuery.isMap,
-      deferredCatalogQuery.includeWips,
-      deferredCatalogQuery.submissionType,
-    ],
-  );
-  const { data: facets } = useQuery({
-    queryKey: [...MODS_LIST_QUERY_KEY, "gamebanana-facets", facetQuery],
-    queryFn: () => getGameBananaCatalogFacets(facetQuery),
-    staleTime: STALE_TIME_API,
-    placeholderData: (previous) => previous,
-  });
   const filterOptions = useMemo(
     () =>
       (facets ?? []).map((facet) => ({
@@ -384,6 +418,7 @@ export const GetModsData = ({
         nsfwOnly,
         query,
         selectedCategories,
+        selectedCategoryKeys,
         selectedHeroes,
         updatedFilter,
         showFavoritesOnly,
@@ -399,6 +434,7 @@ export const GetModsData = ({
       nsfwOnly,
       query,
       selectedCategories,
+      selectedCategoryKeys,
       selectedHeroes,
       updatedFilter,
       showFavoritesOnly,
@@ -455,17 +491,30 @@ export const GetModsData = ({
     [pageKey, setPersistedPage],
   );
 
-  const handleCategoriesChange = useCallback(
-    (cats: string[]) => updateFilters({ selectedCategories: cats }),
+  const handleCategorySelectionChange = useCallback(
+    (selection: CatalogFilterSelection) =>
+      updateFilters({
+        selectedCategories: selection.categories,
+        selectedCategoryKeys: selection.keys,
+        selectedHeroes: selection.heroes,
+      }),
     [updateFilters],
+  );
+  const handleCategoriesChange = useCallback(
+    (categories: string[]) =>
+      handleCategorySelectionChange({ ...categorySelection, categories }),
+    [categorySelection, handleCategorySelectionChange],
   );
   const handleFilterModeChange = useCallback(
     (mode: FilterMode) => updateFilters({ filterMode: mode }),
     [updateFilters],
   );
   const handleHeroesChange = useCallback(
-    (heroes: string[]) => updateFilters({ selectedHeroes: heroes }),
-    [updateFilters],
+    (heroes: string[]) =>
+      handleCategorySelectionChange(
+        changeCatalogHeroes(heroes, categorySelection, categoryPaths),
+      ),
+    [categoryPaths, categorySelection, handleCategorySelectionChange],
   );
   const handleHideNSFWChange = useCallback(
     (hideNSFW: boolean) => updateFilters({ hideNSFW }),
@@ -497,6 +546,7 @@ export const GetModsData = ({
 
   const hasActiveFilters =
     selectedCategories.length > 0 ||
+    selectedCategoryKeys.length > 0 ||
     selectedHeroes.length > 0 ||
     hideNSFW ||
     nsfwOnly ||
@@ -508,6 +558,12 @@ export const GetModsData = ({
   return (
     <div className='flex min-h-0 flex-1 flex-col gap-4'>
       <SearchBar
+        catalogCategories={{
+          paths: categoryPaths,
+          selectedKeys: selectedCategoryKeys,
+          selectedHeroes,
+          onSelectionChange: handleCategorySelectionChange,
+        }}
         trailingActions={<CatalogRefreshButton />}
         filterMode={filterMode}
         mods={filterOptions}

@@ -122,7 +122,7 @@ export const OnboardingStepAddons = ({ onSkip }: AddonsStepProps) => {
                   </p>
                 </div>
                 <p className='mt-1 pl-7 text-xs text-muted-foreground'>
-                  {t("onboarding.addons.modsFoundDescription")}
+                  {t("onboarding.addons.modsFoundAnalyzeDescription")}
                 </p>
               </div>
               <Button

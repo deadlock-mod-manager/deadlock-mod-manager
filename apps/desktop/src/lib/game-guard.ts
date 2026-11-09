@@ -23,6 +23,7 @@ export type GuardedCommand =
   | "delete_profile_folder"
   | "switch_profile"
   | "delete_profile_vpk"
+  | "quarantine_profile_vpk"
   | "import_profile_batch"
   | "restore_gameinfo_backup"
   | "reset_to_vanilla"
@@ -39,7 +40,9 @@ export type GuardedCommand =
   | "download_deadworks_content"
   | "perf_apply"
   | "perf_remove"
-  | "perf_reapply";
+  | "perf_reapply"
+  | "perf_restore_video_backup"
+  | "perf_video_use_config";
 
 export const isGameRunningError = (error: unknown): boolean =>
   isTauriError(error) && error.kind === "gameRunning";

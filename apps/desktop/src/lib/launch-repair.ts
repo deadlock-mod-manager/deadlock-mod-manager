@@ -1,7 +1,10 @@
 import type { ReinstallResult } from "@/hooks/use-reinstall-mod";
 import { getErrorMessage } from "@/lib/errors";
+import { createLogger } from "@/lib/logger";
 import { isLocalMod } from "@/lib/mods/installed-helpers";
 import type { LocalMod } from "@/types/mods";
+
+const logger = createLogger("launch-repair");
 
 export type LaunchRepairMod = {
   id: string;
@@ -36,6 +39,17 @@ export function resolveLaunchRepairMods(
   });
 }
 
+/** Before any repair pass (`failures` is `null`) every mod is a target. */
+export function launchRepairTargets(
+  mods: LaunchRepairMod[],
+  failures: LaunchRepairFailure[] | null,
+): LaunchRepairMod[] {
+  if (failures === null) return mods;
+  return mods.filter((mod) =>
+    failures.some((failure) => failure.id === mod.id),
+  );
+}
+
 export async function repairLaunchFiles(
   targets: LaunchRepairMod[],
   action: "reinstall" | "disable",
@@ -67,6 +81,10 @@ export async function repairLaunchFiles(
         failures.push({ id: target.id });
       }
     } catch (error) {
+      logger
+        .withMetadata({ mod: target.id, action })
+        .withError(error)
+        .warn("Launch repair failed for mod");
       failures.push({ id: target.id, error: getErrorMessage(error) });
     }
   }

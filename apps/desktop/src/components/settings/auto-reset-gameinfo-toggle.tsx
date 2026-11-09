@@ -14,10 +14,10 @@ export const AutoResetGameinfoToggle = () => {
   return (
     <SettingToggleRow
       checked={autoResetEnabled}
-      description={t("settings.autoResetGameinfoDescription")}
+      description={t("settings.removeDmmPathsOnExitDescription")}
       id='toggle-setting-auto-reset-gameinfo'
       onCheckedChange={setAutoResetEnabled}
-      title={t("settings.autoResetGameinfo")}
+      title={t("settings.removeDmmPathsOnExit")}
     />
   );
 };

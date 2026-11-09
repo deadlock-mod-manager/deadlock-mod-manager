@@ -23,9 +23,12 @@ type PickerSource = "installed" | "heroes";
 const heroOf = (mod: LocalMod): string | null =>
   mod.heroOverride ?? mod.detectedHero ?? null;
 
-/** A hero skin has a resolved hero and is neither a map nor an audio mod. */
+/** A hero skin has a resolved hero and is neither a map nor a sound mod. */
 const isHeroSkin = (mod: LocalMod): boolean =>
-  !mod.isMap && !mod.isAudio && Boolean(heroOf(mod));
+  !mod.isMap &&
+  !mod.isAudio &&
+  mod.detectedContent !== "sound" &&
+  Boolean(heroOf(mod));
 
 const matches = (query: string, ...fields: (string | null | undefined)[]) =>
   !query ||

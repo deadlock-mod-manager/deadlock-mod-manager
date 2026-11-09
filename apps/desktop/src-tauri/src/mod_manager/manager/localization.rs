@@ -14,6 +14,7 @@ mod inventory;
 mod performance;
 mod preference;
 mod receipt;
+mod review;
 use std::fs;
 use std::time::{Instant, SystemTime};
 
@@ -225,7 +226,7 @@ impl ModManager {
         ))
       })
       .collect::<Result<Vec<_>, Error>>()?;
-    let history_digest = history::digest(&citadel_dir);
+    let history_digest = history::digest(history::path(&citadel_dir).as_deref());
     Ok((
       citadel_dir,
       inputs,
@@ -259,7 +260,10 @@ impl ModManager {
       Some(plan) => plan,
       None => build_overlay_plan(&citadel_dir, &inputs, &mut key, &self.plan_progress())?,
     };
-    let analysis = plan.analyze(resolutions);
+    let analysis = plan.analyze(resolutions).map(|mut analysis| {
+      analysis.refresh_hud_console(&citadel_dir);
+      analysis
+    });
     self
       .localization_overlay_plan_cache
       .lock()
@@ -328,6 +332,14 @@ impl ModManager {
       ));
     }
     self.report_plan_stage(RepairPlanStage::WritingPackage);
+    // Validate first, so invalid choices never replace the saved review. The
+    // review is saved before the package because the next library change
+    // rebuilds the package from it. An earlier package for these same inputs
+    // is removed first, so a failed write can't leave it looking current.
+    plan.analyze(resolutions)?;
+    let reviewed = review::ReviewedInputs::new(&plan.analysis, &key)?;
+    receipt::remove(&key.output_path)?;
+    review::save(&key.output_path, reviewed, resolutions)?;
     receipt::write(&plan, key, resolutions)
   }
 
@@ -349,15 +361,13 @@ impl ModManager {
       return Ok(());
     }
     before_rebuild();
-    let reviewed = previous.filter(|receipt| receipt.key == key);
     receipt::remove(&key.output_path)?;
     let plan = build_overlay_plan(&citadel, &inputs, &mut key, &|_| {})?;
-    let reviewed = reviewed.filter(|receipt| receipt.key == key);
     let (_, _, current_key) = self.localization_overlay_inputs(profile_folder)?;
     if current_key != key {
       return Err(Error::ModDataReviewRequired);
     }
-    self.commit_overlay_plan(profile_folder, key, plan, reviewed)
+    self.commit_overlay_plan(profile_folder, key, plan)
   }
 
   /// Starts rebuilding the repair package after a library change. Returns
@@ -430,15 +440,13 @@ impl ModManager {
     if current_key != key {
       return Ok(false);
     }
-    let previous = receipt::load(&key.output_path)?;
-    if let Some(previous) = &previous
+    if let Some(previous) = receipt::load(&key.output_path)?
       && previous.is_current(&key)?
     {
       return Ok(true);
     }
-    let reviewed = previous.filter(|receipt| receipt.key == key);
     receipt::remove(&key.output_path)?;
-    self.commit_overlay_plan(profile_folder, key, plan, reviewed)?;
+    self.commit_overlay_plan(profile_folder, key, plan)?;
     Ok(true)
   }
 
@@ -447,23 +455,24 @@ impl ModManager {
     profile_folder: Option<&str>,
     key: LocalizationOverlayPlanKey,
     plan: LocalizationOverlayPlan,
-    reviewed: Option<receipt::OverlayReceipt>,
   ) -> Result<(), Error> {
     if let Err(error) = self.record_launch_health(profile_folder, &plan.analysis) {
       log::warn!("Could not record mod health from the launch analysis: {error}");
     }
-    if requires_review(&plan.analysis) && reviewed.is_none() {
-      // The review dialog analyzes the same inputs next; hand it this plan.
-      self
-        .localization_overlay_plan_cache
-        .lock()
-        .map_err(|_| Error::BackgroundTaskFailed("Localization plan cache poisoned".into()))?
-        .replace(CachedLocalizationOverlayPlan { key, plan });
-      return Err(Error::ModDataReviewRequired);
-    }
-    let resolutions = reviewed
-      .map(|receipt| receipt.resolutions)
-      .unwrap_or_default();
+    let resolutions = if requires_review(&plan.analysis) {
+      let Some(resolutions) = self.reviewed_resolutions(&plan, &key)? else {
+        // The review dialog analyzes the same inputs next; hand it this plan.
+        self
+          .localization_overlay_plan_cache
+          .lock()
+          .map_err(|_| Error::BackgroundTaskFailed("Localization plan cache poisoned".into()))?
+          .replace(CachedLocalizationOverlayPlan { key, plan });
+        return Err(Error::ModDataReviewRequired);
+      };
+      resolutions
+    } else {
+      Vec::new()
+    };
     let result = receipt::write(&plan, key, &resolutions)?;
     log::info!(
       "Prepared merged mod-data overlay for launch: {} localization tokens and {} compiled rows",
@@ -471,6 +480,31 @@ impl ModManager {
       result.applied_compiled_rows
     );
     Ok(())
+  }
+
+  /// The player's saved choices, when they reviewed exactly the findings and
+  /// inputs this plan pauses for. Library changes elsewhere don't discard them.
+  fn reviewed_resolutions(
+    &self,
+    plan: &LocalizationOverlayPlan,
+    key: &LocalizationOverlayPlanKey,
+  ) -> Result<Option<Vec<LocalizationResolution>>, Error> {
+    let Some(saved) = review::load(&key.output_path)? else {
+      return Ok(None);
+    };
+    let inputs = review::ReviewedInputs::new(&plan.analysis, key)?;
+    let Some(resolutions) = saved.resolutions_for(&inputs) else {
+      log::info!(
+        "Mods or game files changed since the compatibility review; it needs review again"
+      );
+      return Ok(None);
+    };
+    if let Err(error) = plan.analyze(&resolutions) {
+      log::warn!("Saved compatibility review no longer applies: {error}");
+      return Ok(None);
+    }
+    log::info!("Reusing the saved compatibility review");
+    Ok(Some(resolutions))
   }
 
   /// Sends repair plan progress to the window while the player waits on it.
@@ -518,6 +552,17 @@ impl ModManager {
     self.notify_compatibility_changed(profile_folder);
   }
 
+  /// Removes a deleted profile's repair package and its saved review. Its
+  /// shards are already gone, so removing the review is best effort; a review
+  /// left behind is reused only while the inputs it covered still match.
+  pub fn delete_profile_localization_overlay(&self, profile_folder: &str) -> Result<(), Error> {
+    let overlay = self.localization_overlay_vpk_path(Some(profile_folder))?;
+    if let Err(error) = review::remove(&overlay) {
+      log::warn!("Could not remove the deleted profile's compatibility review: {error}");
+    }
+    self.delete_localization_overlay(Some(profile_folder))
+  }
+
   pub fn delete_localization_overlay(&self, profile_folder: Option<&str>) -> Result<(), Error> {
     let path = self.localization_overlay_vpk_path(profile_folder)?;
     receipt::remove(&path)?;
@@ -528,18 +573,6 @@ impl ModManager {
       fs::remove_dir(parent)?;
     }
     Ok(())
-  }
-
-  pub(super) fn has_localization_overlay(
-    &self,
-    profile_folder: Option<&str>,
-  ) -> Result<bool, Error> {
-    Ok(
-      self.mod_compatibility_enabled(profile_folder)?
-        && self
-          .localization_overlay_vpk_path(profile_folder)?
-          .is_file(),
-    )
   }
 }
 
@@ -557,10 +590,11 @@ fn build_overlay_plan(
   progress: &dyn Fn(RepairPlanProgress),
 ) -> Result<LocalizationOverlayPlan, Error> {
   let started = Instant::now();
+  let history_path = history::path(citadel);
   let (mut plan, observed, changed) = LocalizationOverlayPlan::build_learning_history(
     citadel,
     inputs,
-    history::load(citadel),
+    history::load(history_path.as_deref()),
     history::version(citadel),
     &key.compatibility_mod_ids,
     progress,
@@ -571,13 +605,13 @@ fn build_overlay_plan(
     key.compatibility_mod_ids.len(),
     started.elapsed().as_millis()
   );
-  if changed {
+  if changed && let Some(path) = &history_path {
     // Learning is reproducible from these stamped inputs. A cache write failure
     // must not prevent analysis; the next plan can learn the same snapshot again.
-    if let Err(error) = history::save(citadel, &observed) {
+    if let Err(error) = history::save(path, &observed) {
       log::warn!("Could not persist observed compatibility history: {error}");
     }
-    key.history_digest = history::digest(citadel);
+    key.history_digest = history::digest(history_path.as_deref());
   }
   plan.analysis.review_fingerprint = input_fingerprint(key)?;
   plan.analysis.input_warnings = key.input_warnings.clone();
@@ -718,6 +752,7 @@ fn loose_resource_stamps(
   let mut visited = HashSet::new();
   let mut pending: Vec<_> = [
     "resource/localization",
+    "panorama/layout",
     "scripts",
     "models",
     "materials",
@@ -919,6 +954,21 @@ mod tests {
     );
   }
 
+  #[test]
+  fn loose_hud_layout_changes_invalidate_review_inputs() {
+    let temp = tempfile::tempdir().unwrap();
+    let path = temp.path().join("panorama/layout/hud.vxml_c");
+    fs::create_dir_all(path.parent().unwrap()).unwrap();
+    fs::write(&path, b"before").unwrap();
+    let before = loose_resource_stamps(temp.path(), &Default::default()).unwrap();
+    assert_eq!(before.len(), 1);
+    fs::write(&path, b"after").unwrap();
+    assert_ne!(
+      before,
+      loose_resource_stamps(temp.path(), &Default::default()).unwrap()
+    );
+  }
+
   pub(super) fn test_manager(root: &Path) -> ModManager {
     let citadel = root.join("game/citadel");
     fs::create_dir_all(&citadel).unwrap();
@@ -940,7 +990,7 @@ mod tests {
     }
   }
 
-  fn write_test_vpk(path: &Path) {
+  pub(super) fn write_test_vpk(path: &Path) {
     let source = tempfile::tempdir().unwrap();
     fs::write(source.path().join("unrelated.txt"), b"test").unwrap();
     fs::create_dir_all(path.parent().unwrap()).unwrap();
@@ -1162,6 +1212,7 @@ mod tests {
         vec!["pak01_dir.vpk".into()],
         Some(vec![file.display().to_string()]),
         None,
+        false,
       )
       .unwrap();
     let manifest = ProfileVpkManifest::load(&base).unwrap();
@@ -1190,6 +1241,99 @@ mod tests {
   }
 
   #[test]
+  fn analyzed_registration_keeps_the_replaced_owner_fix_choice() {
+    for (fixed, opted_out) in [(true, false), (false, true)] {
+      let temp = tempfile::tempdir().unwrap();
+      let mut manager = test_manager(temp.path());
+      let base = manager.get_addons_path(None).unwrap();
+      let file = base.join("pak01_dir.vpk");
+      write_test_vpk(&file);
+      let mut manifest = ProfileVpkManifest::default();
+      manifest.mark_enabled(
+        "old-local-id",
+        vec!["pak01_dir.vpk".into()],
+        vec![],
+        Some(0),
+        ShardIndex::FIRST,
+      );
+      let placeholder = manifest.mods.get_mut("old-local-id").unwrap();
+      placeholder.compatibility_enabled = fixed;
+      placeholder.compatibility_opted_out = opted_out;
+      manifest.save(&base).unwrap();
+      manager
+        .register_analyzed_mod(
+          None,
+          "remote-id".into(),
+          "Identified mod".into(),
+          vec!["pak01_dir.vpk".into()],
+          Some(vec![file.display().to_string()]),
+          None,
+          false,
+        )
+        .unwrap();
+      let manifest = ProfileVpkManifest::load(&base).unwrap();
+      let identified = &manifest.mods["remote-id"];
+      assert_eq!(identified.compatibility_enabled, fixed);
+      assert_eq!(identified.compatibility_opted_out, opted_out);
+    }
+  }
+
+  #[test]
+  fn analyzed_registration_prefers_the_identity_own_fix_choice() {
+    // (identity's choice, placeholder's choice, expected), each as
+    // (compatibility_enabled, compatibility_opted_out).
+    for (identity, placeholder, expected) in [
+      ((true, false), (false, true), (true, false)),
+      ((false, true), (false, false), (false, true)),
+      ((false, false), (true, false), (true, false)),
+    ] {
+      let temp = tempfile::tempdir().unwrap();
+      let mut manager = test_manager(temp.path());
+      let base = manager.get_addons_path(None).unwrap();
+      let file = base.join("pak01_dir.vpk");
+      write_test_vpk(&file);
+      let mut manifest = ProfileVpkManifest::default();
+      // The catalog mod is already installed but disabled; a hand-added copy
+      // of its file is enabled under a placeholder id.
+      manifest.mark_disabled("remote-id", vec!["remote-id_pak01_dir.vpk".into()], vec![]);
+      manifest.mark_enabled(
+        "old-local-id",
+        vec!["pak01_dir.vpk".into()],
+        vec![],
+        Some(0),
+        ShardIndex::FIRST,
+      );
+      for (id, (fixed, opted_out)) in [("remote-id", identity), ("old-local-id", placeholder)] {
+        let entry = manifest.mods.get_mut(id).unwrap();
+        entry.compatibility_enabled = fixed;
+        entry.compatibility_opted_out = opted_out;
+      }
+      manifest.save(&base).unwrap();
+      manager
+        .register_analyzed_mod(
+          None,
+          "remote-id".into(),
+          "Identified mod".into(),
+          vec!["pak01_dir.vpk".into()],
+          Some(vec![file.display().to_string()]),
+          None,
+          false,
+        )
+        .unwrap();
+      let manifest = ProfileVpkManifest::load(&base).unwrap();
+      let identified = &manifest.mods["remote-id"];
+      assert_eq!(
+        (
+          identified.compatibility_enabled,
+          identified.compatibility_opted_out
+        ),
+        expected,
+        "identity {identity:?}, placeholder {placeholder:?}"
+      );
+    }
+  }
+
+  #[test]
   fn analyzed_registration_uses_full_paths_and_rejects_ambiguous_names() {
     let temp = tempfile::tempdir().unwrap();
     let mut manager = test_manager(temp.path());
@@ -1206,7 +1350,8 @@ mod tests {
           "Ambiguous".into(),
           vec!["pak01_dir.vpk".into()],
           None,
-          None
+          None,
+          false
         )
         .is_err()
     );
@@ -1219,6 +1364,7 @@ mod tests {
         vec!["pak01_dir.vpk".into()],
         Some(vec![file.display().to_string()]),
         None,
+        false,
       )
       .unwrap();
     assert_eq!(
@@ -1252,7 +1398,15 @@ mod tests {
     ] {
       assert!(
         manager
-          .register_analyzed_mod(None, "invalid".into(), "Invalid".into(), files, None, None)
+          .register_analyzed_mod(
+            None,
+            "invalid".into(),
+            "Invalid".into(),
+            files,
+            None,
+            None,
+            false
+          )
           .is_err()
       );
       assert!(manager.mod_repository.get_mod("invalid").is_none());
@@ -1340,6 +1494,7 @@ mod tests {
         vec!["pak01_dir.vpk".into()],
         None,
         None,
+        false,
       )
       .unwrap();
     let manifest = ProfileVpkManifest::load(&base).unwrap();
@@ -1355,7 +1510,8 @@ mod tests {
           "Skin".into(),
           vec!["pak01_dir.vpk".into()],
           None,
-          None
+          None,
+          false
         )
         .is_err()
     );
@@ -1363,6 +1519,42 @@ mod tests {
       ProfileVpkManifest::load(&base).unwrap().mods["skin"].original_vpk_names,
       ["authored_skin.vpk"]
     );
+  }
+
+  #[test]
+  fn adding_a_file_by_hand_refuses_one_another_mod_already_owns() {
+    let temp = tempfile::tempdir().unwrap();
+    let mut manager = test_manager(temp.path());
+    let base = manager.get_addons_path(None).unwrap();
+    write_test_vpk(&base.join("pak01_dir.vpk"));
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mark_enabled(
+      "owner",
+      vec!["pak01_dir.vpk".into()],
+      Vec::new(),
+      Some(0),
+      ShardIndex::FIRST,
+    );
+    manifest.save(&base).unwrap();
+    let register = |manager: &mut ModManager, refuse| {
+      manager.register_analyzed_mod(
+        None,
+        "local-new".into(),
+        "New".into(),
+        vec!["pak01_dir.vpk".into()],
+        None,
+        None,
+        refuse,
+      )
+    };
+
+    assert!(register(&mut manager, true).is_err());
+    let unchanged = ProfileVpkManifest::load(&base).unwrap();
+    assert_eq!(unchanged.mods.keys().collect::<Vec<_>>(), ["owner"]);
+
+    // Without the switch, an identical file set still passes to the new mod.
+    let registration = register(&mut manager, false).unwrap();
+    assert_eq!(registration.replaced_mod_ids, ["owner"]);
   }
 
   #[test]
@@ -1388,6 +1580,7 @@ mod tests {
         vec!["pak01_dir.vpk".into()],
         None,
         None,
+        false,
       )
       .unwrap();
     let entry = ProfileVpkManifest::load(&base)
@@ -1677,7 +1870,7 @@ Game core
     vpkmanager::pack_directory(source.path(), path).unwrap();
   }
 
-  fn manager_with_gameinfo(root: &Path) -> ModManager {
+  pub(super) fn manager_with_gameinfo(root: &Path) -> ModManager {
     let manager = test_manager(root);
     fs::write(
       root.join("game/citadel/gameinfo.gi"),
@@ -1687,7 +1880,10 @@ Game core
     manager
   }
 
-  fn fix_mods(manager: &mut ModManager, mod_ids: Vec<String>) -> Result<FixModsResult, Error> {
+  pub(super) fn fix_mods(
+    manager: &mut ModManager,
+    mod_ids: Vec<String>,
+  ) -> Result<FixModsResult, Error> {
     let manager = std::cell::RefCell::new(manager);
     ModManager::fix_mods(
       || {
@@ -1748,6 +1944,86 @@ Game core
       FixModsStatus::Applied
     );
     (temp, manager)
+  }
+
+  #[test]
+  fn a_fixed_mod_blocked_by_an_unfixed_copy_of_its_file_is_not_reported_as_working() {
+    let (temp, mut manager) = manager_with_applied_repair();
+    let base = manager.get_addons_path(None).unwrap();
+    let citadel = temp.path().join("game/citadel");
+    let app_data = temp.path().join("app-data");
+    let context = manager
+      .mod_health_context_in(None, app_data.clone())
+      .unwrap();
+    let status = || {
+      context
+        .report()
+        .unwrap()
+        .mods
+        .into_iter()
+        .find(|health| health.mod_id == "fixed")
+        .map(|health| health.status)
+    };
+    let record_combined = |manager: &mut ModManager| {
+      context
+        .record_launch(&manager.analyze_localization_overlay(None, &[]).unwrap())
+        .unwrap();
+    };
+    record_combined(&mut manager);
+    assert_eq!(status(), Some(ModHealthStatus::Fixed));
+
+    // An unfixed mod ships the fixed mod's text file, so the rebuild keeps
+    // that file as shipped and leaves the repair out.
+    fs::copy(base.join("pak01_dir.vpk"), base.join("pak03_dir.vpk")).unwrap();
+    let mut manifest = ProfileVpkManifest::load(&base).unwrap();
+    manifest.mark_enabled(
+      "rival",
+      vec!["pak03_dir.vpk".into()],
+      vec!["pak03_dir.vpk".into()],
+      None,
+      ShardIndex::FIRST,
+    );
+    manifest.save(&base).unwrap();
+    let overlay = manager.localization_overlay_vpk_path(None).unwrap();
+    refresh_repairs(&mut manager, None).unwrap();
+    assert!(!overlay.exists());
+    assert!(manager.mod_compatibility_settings(None).unwrap()["fixed"]);
+
+    // A launch result saved before the flag existed: no findings at all.
+    let key = HealthKey::stamp(
+      &[base.join("pak01_dir.vpk")],
+      history::version(&citadel),
+      receipt::REPAIR_REVISION,
+    )
+    .unwrap();
+    mod_health::record(
+      &app_data,
+      &base.to_string_lossy(),
+      history::version(&citadel),
+      [(
+        "fixed".to_owned(),
+        CachedModHealth::new(key, ModFindings::with_repairs(0), ModHealthSource::Launch),
+      )],
+    )
+    .unwrap();
+    // A check keeps this entry while its key is current: a standalone recheck
+    // can't see the rival.
+    context.check(None, false, |_| {}).unwrap();
+    assert_eq!(status(), Some(ModHealthStatus::Works));
+
+    record_combined(&mut manager);
+    assert_eq!(status(), Some(ModHealthStatus::NotCovered));
+    context.check(None, true, |_| {}).unwrap();
+    assert_eq!(status(), Some(ModHealthStatus::NotCovered));
+
+    let mut manifest = ProfileVpkManifest::load(&base).unwrap();
+    manifest.remove_mod("rival");
+    manifest.save(&base).unwrap();
+    fs::remove_file(base.join("pak03_dir.vpk")).unwrap();
+    refresh_repairs(&mut manager, None).unwrap();
+    assert!(overlay.exists());
+    record_combined(&mut manager);
+    assert_eq!(status(), Some(ModHealthStatus::Fixed));
   }
 
   #[test]
@@ -2059,6 +2335,70 @@ Game core
   }
 
   #[test]
+  fn a_disabled_mod_keeps_its_saved_fix_until_it_is_enabled_again() {
+    let (temp, mut manager) = manager_with_applied_repair();
+    let base = manager.get_addons_path(None).unwrap();
+    let app_data = temp.path().join("app-data");
+    let key = HealthKey::stamp(
+      &[base.join("pak01_dir.vpk")],
+      None,
+      receipt::REPAIR_REVISION,
+    )
+    .unwrap();
+    mod_health::record(
+      &app_data,
+      &base.to_string_lossy(),
+      None,
+      [(
+        "fixed".into(),
+        CachedModHealth::new(key, ModFindings::with_repairs(1), ModHealthSource::Launch),
+      )],
+    )
+    .unwrap();
+    let context = manager.mod_health_context_in(None, app_data).unwrap();
+    let status = || context.report().unwrap().mods[0].status;
+    let overlay = manager.localization_overlay_vpk_path(None).unwrap();
+    let repaired = fs::read(&overlay).unwrap();
+    let enable = |manager: &mut ModManager| {
+      manager
+        .install_mod(
+          Mod {
+            id: "fixed".into(),
+            name: "Fixed mod".into(),
+            is_map: false,
+            installed_vpks: vec![],
+            original_vpk_names: vec![],
+            file_tree: None,
+            install_order: None,
+          },
+          None,
+        )
+        .unwrap();
+      refresh_repairs(manager, None).unwrap();
+    };
+
+    manager.uninstall_mod("fixed".into(), vec![], None).unwrap();
+    assert!(!overlay.exists());
+    assert_eq!(
+      status(),
+      ModHealthStatus::Fixed,
+      "a disabled mod reports the fix saved for it"
+    );
+    enable(&mut manager);
+    assert_applied_repair(&manager, &repaired);
+    assert_eq!(status(), ModHealthStatus::Fixed);
+
+    manager.uninstall_mod("fixed".into(), vec![], None).unwrap();
+    manager
+      .set_mod_compatibility_for_mod("fixed".into(), false, None)
+      .unwrap();
+    assert_eq!(status(), ModHealthStatus::OriginalFiles);
+    enable(&mut manager);
+    assert!(!overlay.exists());
+    assert_eq!(status(), ModHealthStatus::OriginalFiles);
+  }
+
+  #[test]
   fn missing_overlay_is_not_reported_as_fixed() {
     let (temp, mut manager) = manager_with_applied_repair();
     let base = manager.get_addons_path(None).unwrap();
@@ -2275,6 +2615,101 @@ Game core
     assert!(entry.compatibility_enabled);
     assert!(!entry.compatibility_opted_out);
     assert_eq!(status(), ModHealthStatus::Fixed);
+  }
+
+  fn gameinfo_mounts_repairs(root: &Path) -> bool {
+    let overlay = ModManager::localization_overlay_search_path(None);
+    fs::read_to_string(root.join("game/citadel/gameinfo.gi"))
+      .unwrap()
+      .lines()
+      .any(|line| {
+        line
+          .split("//")
+          .next()
+          .unwrap()
+          .split_whitespace()
+          .eq(["Game", overlay.as_str()])
+      })
+  }
+
+  fn packaged_files(manager: &ModManager) -> Vec<String> {
+    let overlay = manager.localization_overlay_vpk_path(None).unwrap();
+    let mut files: Vec<String> = vpk_parser::VpkParser::parse_directory_from_file(&overlay)
+      .unwrap()
+      .into_iter()
+      .map(|entry| entry.full_path)
+      .collect();
+    files.sort();
+    files
+  }
+
+  #[test]
+  fn choosing_original_files_keeps_the_other_fixed_mods_repairs_mounted() {
+    let temp = tempfile::tempdir().unwrap();
+    let mut manager = manager_with_gameinfo(temp.path());
+    let base = manager.get_addons_path(None).unwrap();
+    let first = "resource/localization/first/first_english.txt";
+    let second = "resource/localization/second/second_english.txt";
+    let game_text: &[u8] =
+      br#""lang" { "Language" "English" "Tokens" { "shared" "Game" "retained" "Game token" } }"#;
+    let mod_text: &[u8] = br#""lang" { "Language" "English" "Tokens" { "shared" "Mod" } }"#;
+    write_vpk(
+      &temp.path().join("game/citadel/pak01_dir.vpk"),
+      &[(first, game_text), (second, game_text)],
+    );
+    write_vpk(&base.join("pak01_dir.vpk"), &[(first, mod_text)]);
+    write_vpk(&base.join("pak02_dir.vpk"), &[(second, mod_text)]);
+    let mut manifest = ProfileVpkManifest::default();
+    for (id, name) in [("first", "pak01_dir.vpk"), ("second", "pak02_dir.vpk")] {
+      manifest.mark_enabled(
+        id,
+        vec![name.into()],
+        vec![name.into()],
+        None,
+        ShardIndex::FIRST,
+      );
+    }
+    manifest.save(&base).unwrap();
+    assert_eq!(
+      fix_mods(&mut manager, vec!["first".into(), "second".into()])
+        .unwrap()
+        .status,
+      FixModsStatus::Applied
+    );
+    assert_eq!(packaged_files(&manager), [first, second]);
+    assert!(gameinfo_mounts_repairs(temp.path()));
+
+    manager
+      .set_mod_compatibility_for_mod("second".into(), false, None)
+      .unwrap();
+    assert!(
+      !manager
+        .localization_overlay_vpk_path(None)
+        .unwrap()
+        .exists(),
+      "the package still holds the second mod's repair until it is rebuilt"
+    );
+    assert!(
+      gameinfo_mounts_repairs(temp.path()),
+      "the first mod is still fixed, so its repairs stay mounted"
+    );
+    // Any other search path rewrite before the rebuild keeps them too.
+    manager.apply_profile_gameinfo(None).unwrap();
+    assert!(gameinfo_mounts_repairs(temp.path()));
+
+    let gameinfo = fs::read(temp.path().join("game/citadel/gameinfo.gi")).unwrap();
+    refresh_repairs(&mut manager, None).unwrap();
+    assert_eq!(packaged_files(&manager), [first]);
+    assert_eq!(
+      fs::read(temp.path().join("game/citadel/gameinfo.gi")).unwrap(),
+      gameinfo,
+      "the rebuild fills the mounted folder without rewriting gameinfo.gi"
+    );
+
+    manager
+      .set_mod_compatibility_for_mod("first".into(), false, None)
+      .unwrap();
+    assert!(!gameinfo_mounts_repairs(temp.path()));
   }
 
   #[test]

@@ -39,6 +39,12 @@ export const resetToVanilla = async () => {
   return await invokeGuarded<"api" | "backup">("reset_to_vanilla");
 };
 
+export const gameinfoCleanupRevision = () =>
+  invoke<number | null>("gameinfo_cleanup_revision");
+
+export const removeModSearchPaths = (expectedRevision: number) =>
+  invoke<boolean>("remove_mod_search_paths", { expectedRevision });
+
 export const validateGameInfoPatch = async (expectedVanilla: boolean) => {
   return await invoke("validate_gameinfo_patch", { expectedVanilla });
 };
@@ -102,6 +108,13 @@ export const deleteProfileVpk = async (
 ): Promise<void> => {
   return await invokeGuarded("delete_profile_vpk", { profileFolder, vpkName });
 };
+
+/** Moves an unmanaged VPK into the profile's `.dmm-quarantine` folder; returns its new path. */
+export const quarantineProfileVpk = async (
+  vpkName: string,
+  profileFolder: string | null = null,
+): Promise<string> =>
+  await invokeGuarded("quarantine_profile_vpk", { profileFolder, vpkName });
 
 export const showProfileVpkInFolder = async (
   vpkName: string,

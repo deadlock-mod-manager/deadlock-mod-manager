@@ -1,14 +1,16 @@
-import { ExtractionError } from "@deadlock-mods/common/client-errors";
-import type { ModDto } from "@deadlock-mods/shared";
 import {
-  type HeroDetectionResult,
-  resolveDetectedHeroLabel,
-} from "@deadlock-mods/hero-parser";
+  ExtractionError,
+  ValidationError,
+} from "@deadlock-mods/common/client-errors";
+import type { ModDto } from "@deadlock-mods/shared";
+import type { HeroDetectionResult } from "@deadlock-mods/hero-parser";
 import { toast } from "@deadlock-mods/ui/components/sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { join } from "@tauri-apps/api/path";
 import { useTranslation } from "react-i18next";
 import { useProgress } from "@/components/downloads/progress-indicator";
+import { PROFILE_VPKS_QUERY_KEY } from "@/hooks/use-vpk-scan";
 import { ModCategory } from "@/lib/constants";
 import { getModsStorePath } from "@/lib/download-cache";
 import {
@@ -27,8 +29,12 @@ import {
   writeFileText,
 } from "@/lib/file-utils";
 import logger from "@/lib/logger";
+import { localModThumbnailOptions } from "@/lib/mod-thumbnails";
+import { needsLocalThumbnail } from "@/lib/mods/local-preview-image";
 import { usePersistedStore } from "@/lib/store";
-import { ModStatus, type ModFileTree } from "@/types/mods";
+import { getProfileVpkSnapshot } from "@/lib/tauri-commands";
+import { isVpkOwned } from "@/lib/vpk-scan";
+import { type LocalAddonInfo, ModStatus, type ModFileTree } from "@/types/mods";
 import { invokeGuarded } from "@/lib/game-guard";
 
 export interface ModMetadata {
@@ -80,12 +86,23 @@ const placeSource = async (
 };
 
 export const useModProcessor = () => {
+  const queryClient = useQueryClient();
   const { t } = useTranslation();
   const { setProcessing } = useProgress();
   const addMod = usePersistedStore((state) => state.addLocalMod);
   const setModStatus = usePersistedStore((state) => state.setModStatus);
   const setDetectedHero = usePersistedStore((state) => state.setDetectedHero);
   const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
+
+  const queueThumbnail = (modId: string) => {
+    const mod = usePersistedStore
+      .getState()
+      .localMods.find((candidate) => candidate.remoteId === modId);
+    if (!mod || !needsLocalThumbnail(mod)) return;
+    void queryClient.prefetchQuery(
+      localModThumbnailOptions(mod, getActiveProfile()?.folderName ?? null),
+    );
+  };
 
   // Kept beside the files folder, which receives the extracted VPKs.
   const extractArchive = async (
@@ -275,15 +292,10 @@ export const useModProcessor = () => {
       installSource: metadata.installSource,
     });
     setModStatus(modId, ModStatus.Downloaded);
+    queueThumbnail(modId);
 
     invoke<HeroDetectionResult>("detect_mod_hero", { modId })
-      .then((result) =>
-        setDetectedHero(
-          modId,
-          resolveDetectedHeroLabel(result),
-          result.usesCriticalPaths,
-        ),
-      )
+      .then((result) => setDetectedHero(modId, result))
       .catch(() => setDetectedHero(modId, null));
 
     setProcessing(true, t("addMods.modAddedSuccess"));
@@ -294,8 +306,24 @@ export const useModProcessor = () => {
   const processLocalAddon = async (
     metadata: ModMetadata,
     category: ModCategory,
-    existingPath: string,
+    addon: Pick<LocalAddonInfo, "fileName" | "filePath" | "locator">,
   ): Promise<void> => {
+    // The analysis list can be stale, so check the files on disk again. Two
+    // library mods must never own one file: disabling either moves it away
+    // from the other.
+    // Everything below targets the profile that was active at submit time.
+    const profile = getActiveProfile();
+    const profileFolder = profile?.folderName ?? null;
+    const snapshot = await getProfileVpkSnapshot(profileFolder);
+    const state = usePersistedStore.getState();
+    const libraryMods =
+      (profile && state.profiles[profile.id]?.mods) ?? state.localMods;
+    if (isVpkOwned(addon.locator, snapshot.manifest, libraryMods)) {
+      throw new ValidationError(
+        t("addons.alreadyInLibrary", { fileName: addon.fileName }),
+      );
+    }
+
     setProcessing(true, t("addMods.validatingMetadata"));
 
     const modId = `local-${crypto.randomUUID()}`;
@@ -332,6 +360,29 @@ export const useModProcessor = () => {
     );
 
     setProcessing(true, t("addMods.addingToLibrary"));
+    try {
+      // Record the file in the profile's manifest with the shard it sits in;
+      // its name alone could match a file in another shard. The backend
+      // refuses if a mod took the file since the check above.
+      await invoke("register_analyzed_mod", {
+        modId,
+        modName: modMetadata.name,
+        installedVpks: [addon.fileName],
+        installedPaths: [addon.filePath],
+        profileFolder,
+        refuseExistingOwner: true,
+      });
+    } catch (error) {
+      await invoke("remove_mod_folder", { modPath: modDir }).catch(
+        (cleanupError) =>
+          logger
+            .withError(cleanupError)
+            .warn("Failed to remove an incomplete mod folder"),
+      );
+      setProcessing(false);
+      throw error;
+    }
+
     const modDto: ModDto = {
       id: modId,
       remoteId: modId,
@@ -366,34 +417,33 @@ export const useModProcessor = () => {
       dependencies: null,
     };
 
-    const vpkFileName = existingPath.split(/[\\/]/).pop() || existingPath;
-    addMod(modDto, {
-      status: ModStatus.Installed,
-      installedVpks: [vpkFileName],
-      installedFileTree: {
-        files: [
-          {
-            name: vpkFileName,
-            path: vpkFileName,
-            size: 0,
-            is_selected: true,
-            archive_name: "",
-          },
-        ],
-        total_files: 1,
-        has_multiple_files: false,
+    addMod(
+      modDto,
+      {
+        status: ModStatus.Installed,
+        installedVpks: [addon.fileName],
+        installedFileTree: {
+          files: [
+            {
+              name: addon.fileName,
+              path: addon.fileName,
+              size: 0,
+              is_selected: true,
+              archive_name: "",
+            },
+          ],
+          total_files: 1,
+          has_multiple_files: false,
+        },
       },
-    });
-    setModStatus(modId, ModStatus.Installed);
+      profile?.id,
+    );
+    setModStatus(modId, ModStatus.Installed, profile?.id);
+    queryClient.invalidateQueries({ queryKey: PROFILE_VPKS_QUERY_KEY });
+    queueThumbnail(modId);
 
     invoke<HeroDetectionResult>("detect_mod_hero", { modId })
-      .then((result) =>
-        setDetectedHero(
-          modId,
-          resolveDetectedHeroLabel(result),
-          result.usesCriticalPaths,
-        ),
-      )
+      .then((result) => setDetectedHero(modId, result))
       .catch(() => setDetectedHero(modId, null));
 
     setProcessing(true, t("addMods.modAddedSuccess"));

@@ -206,6 +206,11 @@ fn gpu_compat_workaround_enabled(
 
 #[cfg_attr(feature = "cef", tauri_runtime_cef::cef_entry_point)]
 fn main() {
+  // Privileged helpers must exit before single-instance checks and webview startup.
+  if let Some(exit_code) = deadlock_server_picker::helper::run_if_requested() {
+    std::process::exit(exit_code);
+  }
+
   // Plugin backends run in this same executable in worker mode, before any
   // app or webview initialisation.
   #[cfg(feature = "plugins")]

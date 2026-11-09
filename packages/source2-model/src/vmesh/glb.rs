@@ -452,7 +452,17 @@ pub(crate) fn build_glb(
                     &format!("{} emissive", texture.name),
                 )
             });
-            (base, normal, orm, emissive)
+            let effect_mask = texture.effect_mask_png.as_deref().map(|png| {
+                append_png_texture(
+                    &mut bin,
+                    &mut buffer_views,
+                    &mut images,
+                    &mut texture_defs,
+                    png,
+                    &format!("{} effect mask", texture.name),
+                )
+            });
+            (base, normal, orm, emissive, effect_mask)
         })
         .collect::<Vec<_>>();
 
@@ -465,7 +475,9 @@ pub(crate) fn build_glb(
         "doubleSided": false
     })];
     let mut uses_emissive_strength = false;
-    for (texture, (base, normal, orm, emissive)) in textures.iter().zip(&texture_indices) {
+    for (texture, (base, normal, orm, emissive, effect_mask)) in
+        textures.iter().zip(&texture_indices)
+    {
         let alpha_mode = match texture.alpha_mode {
             MaterialAlphaMode::Opaque => "OPAQUE",
             MaterialAlphaMode::Mask => "MASK",
@@ -516,6 +528,12 @@ pub(crate) fn build_glb(
         }
         if let Some(outline) = texture.outline {
             material["extras"]["outline"] = json!({ "tint": outline.tint });
+        }
+        if let Some(effect) = &texture.source2_effect {
+            material["extras"]["source2Effect"] = json!(effect);
+            if let Some(index) = effect_mask {
+                material["extras"]["source2Effect"]["maskTexture"] = json!(index);
+            }
         }
         materials.push(material);
     }
@@ -710,6 +728,11 @@ pub(crate) fn decode_mesh_glb_from_resource_with_skeleton(
         .block_bytes("DATA")
         .and_then(|bytes| crate::kv3::parse(bytes).ok())
     {
+        if drawcalls_all_emptied(&mesh_data) {
+            return Err(Source2Error::Resource(
+                "every draw call of this mesh is removed".into(),
+            ));
+        }
         let mut decoded = decode_drawcall_primitives(&vbib, &mesh_data, preview_textures)?;
         apply_bone_remap_to_primitives(&mut decoded, bone_remap);
         if !decoded.is_empty() {

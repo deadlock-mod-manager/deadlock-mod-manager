@@ -24,6 +24,7 @@ import {
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import useUninstall from "@/hooks/use-uninstall";
 import {
+  fixAppliesWhenEnabled,
   healthAction,
   healthBadgeKind,
   healthByModId,
@@ -277,6 +278,12 @@ export const ModHealthDialog = ({
                     </button>
                     <p className='text-muted-foreground text-xs'>
                       {t(`modHealth.badge.${row.kind}`)}
+                      {fixAppliesWhenEnabled(
+                        row.kind,
+                        row.mod.status === ModStatus.Installed,
+                      )
+                        ? ` ${t("modHealth.appliesWhenEnabled")}`
+                        : null}
                       {isModOutdated(row.mod)
                         ? ` ${t("modHealth.lastUpdatedBefore")}`
                         : null}

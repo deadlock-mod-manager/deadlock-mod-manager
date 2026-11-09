@@ -1,13 +1,17 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, mock } from "bun:test";
 import type { ModDto } from "@deadlock-mods/shared";
 import { ModDtoSchema } from "@deadlock-mods/shared";
 import { MOD_OUTDATED_CUTOFF_SECONDS, ModCategory } from "@/lib/constants";
-import {
+
+mock.module("@/lib/api-client", () => ({ getMod: async () => null }));
+
+const {
+  confirmFeaturedMod,
+  featuredCandidatesByCategory,
   getIsoWeekParts,
   pickFeaturedMod,
-  pickFeaturedModsByCategory,
   pinFeaturedMod,
-} from "./use-featured-mod";
+} = await import("./use-featured-mod");
 
 function makeMod(
   id: string,
@@ -153,7 +157,7 @@ describe("pickFeaturedMod", () => {
   });
 });
 
-describe("pickFeaturedModsByCategory", () => {
+describe("featuredCandidatesByCategory", () => {
   it("picks one mod per category in category order, skipping empty ones", () => {
     const pool = [
       makeMod("hud-1", 50, { category: ModCategory.HUD }),
@@ -164,14 +168,55 @@ describe("pickFeaturedModsByCategory", () => {
         isObsolete: true,
       }),
     ];
-    const picks = pickFeaturedModsByCategory(
+    const picks = featuredCandidatesByCategory(
       pool,
       new Date("2025-03-01T00:00:00.000Z"),
-    );
+    ).map((candidates) => candidates[0]);
     expect(picks.map((m) => m.category)).toEqual([
       ModCategory.SKINS,
       ModCategory.HUD,
     ]);
+  });
+});
+
+describe("confirmFeaturedMod", () => {
+  const notice = {
+    rules: [{ code: "R.17", name: "Nonsense" }],
+    notes: "",
+    withheldBy: null,
+    withheldAt: null,
+  };
+  const fetchMod =
+    (states: Record<string, "private" | "withheld" | "offline">) =>
+    async (remoteId: string) => {
+      const state = states[remoteId];
+      if (state === "private")
+        throw { kind: "providerSubmissionUnavailable", message: "hidden" };
+      if (state === "offline")
+        throw { kind: "providerUnavailable", message: "offline" };
+      return { withheld: state === "withheld" ? notice : null };
+    };
+
+  it("passes over candidates GameBanana no longer serves publicly", async () => {
+    const candidates = [
+      makeMod("private", 9),
+      makeMod("withheld", 8),
+      makeMod("live", 1),
+    ];
+    const pick = await confirmFeaturedMod(
+      candidates,
+      fetchMod({ private: "private", withheld: "withheld" }),
+    );
+    expect(pick?.remoteId).toBe("live");
+  });
+
+  it("keeps a candidate whose check failed for another reason", async () => {
+    const candidates = [makeMod("a", 9), makeMod("b", 1)];
+    const pick = await confirmFeaturedMod(
+      candidates,
+      fetchMod({ a: "offline" }),
+    );
+    expect(pick?.remoteId).toBe("a");
   });
 });
 

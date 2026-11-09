@@ -6,6 +6,7 @@ use tauri_plugin_deep_link::DeepLinkExt;
 
 use crate::commands::deep_link::DeepLinkData;
 use crate::commands::remote_install::{Pairing, PendingPairing};
+use crate::providers::native_sources;
 
 pub const SCHEMES: &[&str] = &["deadlock-mod-manager:", "deadlock-modmanager:", "dlmm:"];
 
@@ -17,6 +18,7 @@ pub const EVENT_DEEP_LINK_RECEIVED: &str = "deep-link-received";
 pub const EVENT_FORGE_LAUNCH: &str = "forge-launch-requested";
 pub const EVENT_REMOTE_INSTALL_PAIR: &str = "remote-install-pair-requested";
 pub const EVENT_SOURCE_INSTALL_REQUESTED: &str = "source-install-requested";
+pub const EVENT_NATIVE_SOURCE_LINK: &str = "native-source-link-requested";
 
 pub const PATH_OIDC_CALLBACK: &str = "//auth/callback";
 pub const PATH_LEGACY_AUTH_CALLBACK: &str = "//auth-callback";
@@ -205,6 +207,23 @@ pub fn handle_deep_link_url(
         }
       }
       None => log::error!("Invalid or unknown source install link"),
+    }
+    return Ok(());
+  }
+
+  if data_part.starts_with(native_sources::links::PATH_SOURCES) {
+    match native_sources::links::parse_link(
+      data_part,
+      native_sources::links::LINKS_ALLOW_LOCAL_NETWORK,
+    ) {
+      Some(link) => {
+        if native_sources::links::queue_pending(link) {
+          emit_to_main_window(app_handle, EVENT_NATIVE_SOURCE_LINK, ())?;
+        } else {
+          log::warn!("Dropped mod source link: already waiting or queue full");
+        }
+      }
+      None => log::error!("Invalid mod source link"),
     }
     return Ok(());
   }

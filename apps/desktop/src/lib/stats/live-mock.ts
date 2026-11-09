@@ -19,6 +19,7 @@ export const LIVE_MOCK_SCENARIOS = [
   "pregame",
   "inMatch",
   "matchOver",
+  "afterMatch",
 ] as const;
 export type LiveMockScenario = (typeof LIVE_MOCK_SCENARIOS)[number];
 
@@ -211,6 +212,8 @@ const LOBBY_PHASES = {
   pregame: "pregame",
   inMatch: "inProgress",
   matchOver: "ended",
+  // Back in the hideout, the lobby closed; the backend kept the board.
+  afterMatch: null,
 } satisfies Record<LiveMockScenario, GamePhase | null>;
 
 const hoursAgo = (hours: number) =>
@@ -269,6 +272,7 @@ export const buildLiveMock = (
   );
   const lastMatch = match(heroId("Haze"), true, 0.62, [11, 2, 9, 38_200]);
   const phase = LOBBY_PHASES[scenario];
+  const finished = scenario === "matchOver" || scenario === "afterMatch";
 
   return {
     status: {
@@ -277,6 +281,10 @@ export const buildLiveMock = (
       current: phase ? { matchId: MATCH_ID, lobbyId: "1", phase } : null,
       recentMatchIds: [],
       scoreboard: phase ? board : null,
+      lastMatch:
+        scenario === "afterMatch"
+          ? { matchId: MATCH_ID, scoreboard: board }
+          : null,
     },
     gameRunning: scenario !== "closed" && scenario !== "notInstalled",
     bridgeNeedsSetup: scenario === "notInstalled",
@@ -338,7 +346,7 @@ export const buildLiveMock = (
       isPending: false,
     },
     curve,
-    trail: scenario === "inMatch" || scenario === "matchOver" ? trail : [],
+    trail: scenario === "inMatch" || finished ? trail : [],
     matches: [
       lastMatch,
       match(heroId("Haze"), false, 1, [5, 7, 8, 26_100]),
@@ -347,7 +355,7 @@ export const buildLiveMock = (
     ],
     yourAccountId: accountOf("Stormix"),
     yourBadge: 65,
-    result: scenario === "matchOver" ? "win" : null,
+    result: finished ? "win" : null,
     finalGrades: { [String(lastMatch.match_id)]: "S" },
   };
 };

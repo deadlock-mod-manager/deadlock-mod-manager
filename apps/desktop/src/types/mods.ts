@@ -1,8 +1,11 @@
+import type { HeroContent } from "@deadlock-mods/hero-parser";
 import type { ModEntryPoint } from "@/lib/analytics/schema";
 import type { ModDto } from "@deadlock-mods/shared";
 import type { z } from "zod";
 import { ModDownloadDtoSchema } from "@deadlock-mods/shared";
 import type { VpkParsed } from "@deadlock-mods/vpk-parser";
+import type { NativeSourceProvenance } from "@/types/generated/NativeSourceProvenance";
+import type { NativeSourceInstallation } from "@/types/generated/NativeSourceInstallation";
 
 // Individual download item type extracted from ModDownloadDto schema
 export type ModDownloadItem = z.infer<typeof ModDownloadDtoSchema>;
@@ -43,6 +46,8 @@ export enum ModStatus {
 }
 
 export interface LocalMod extends ModDto {
+  /** Accepted source and exact installed content, retained after source removal. */
+  source?: NativeSourceProvenance;
   metadataPending?: boolean;
   status: ModStatus;
   downloadedAt?: Date;
@@ -53,10 +58,13 @@ export interface LocalMod extends ModDto {
   installedFileTree?: ModFileTree;
   installOrder?: number;
   detectedHero?: string | null;
+  /** What the mod's VPKs change, from the same scan as `detectedHero`. */
+  detectedContent?: HeroContent | null;
   heroOverride?: string | null;
   usesCriticalPaths?: boolean;
   // Unix seconds of the update the user chose to skip.
   skippedUpdateAt?: number;
+  skippedSourceRevision?: string;
   // Original names of VPKs the manifest claims but the user deleted. A mod
   // with any is broken until it is reinstalled or removed.
   missingVpks?: string[];
@@ -108,8 +116,12 @@ export interface LocalModWithFiles extends LocalMod {
 export interface LocalAddonInfo {
   filePath: string;
   fileName: string;
+  /** The file's place in the profile: `pak01_dir.vpk` or `addons2/pak01_dir.vpk`. */
+  locator: string;
   vpkParsed: VpkParsed;
   remoteId?: string; // Will be populated by API call
+  /** The mod the profile's manifest assigns this exact file to. */
+  manifestModId?: string;
   matchInfo?: {
     fileId?: string;
     sourcePath?: string;
@@ -142,6 +154,8 @@ export interface AddonAnalysisProgress {
 }
 
 export interface ProfileImportMod {
+  installedSource?: NativeSourceProvenance;
+  sourceComponentIds?: string[];
   enabled?: boolean;
   modId: string;
   modName: string;
@@ -221,7 +235,9 @@ export interface UpdateProgress {
 }
 
 export interface UpdatableMod {
-  mod: ModDto;
+  mod: ModDto & { source?: NativeSourceProvenance };
+  nativeInstallation?: NativeSourceInstallation;
+  nativeSelectionRequired?: boolean;
   // Unix seconds of the detected update; absent for forced updates.
   updatedAt?: number;
   downloads: ModDownloadItem[];
@@ -231,5 +247,5 @@ export interface UpdatableMod {
 
 export type ModUpdateCandidate = Pick<
   UpdatableMod,
-  "mod" | "updatedAt" | "downloads"
+  "mod" | "updatedAt" | "downloads" | "nativeInstallation"
 >;

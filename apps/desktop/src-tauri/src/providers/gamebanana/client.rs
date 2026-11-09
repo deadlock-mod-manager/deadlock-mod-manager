@@ -157,14 +157,15 @@ impl GameBananaClient {
       .await
   }
 
-  /// Lists Deadlock's top-level Mod categories, or the children of `parent_id`.
-  pub async fn mod_categories(
+  /// Lists Deadlock's categories for this submission type, or a category's children.
+  pub async fn categories(
     &self,
+    submission_type: SubmissionType,
     parent_id: Option<u64>,
     cancel: &CancellationToken,
   ) -> Result<Vec<CategoryListing>, Error> {
-    let url = mod_categories_url(&self.api_base, parent_id)?;
-    self.transport.get_json("mod categories", url, cancel).await
+    let url = categories_url(&self.api_base, submission_type, parent_id)?;
+    self.transport.get_json("categories", url, cancel).await
   }
 
   pub async fn fileservers(&self, cancel: &CancellationToken) -> Result<FileserverPage, Error> {
@@ -326,9 +327,16 @@ fn index_url(
   Ok(url)
 }
 
-fn mod_categories_url(api_base: &str, parent_id: Option<u64>) -> Result<reqwest::Url, Error> {
-  let mut url = reqwest::Url::parse(&format!("{api_base}Mod/Categories"))
-    .map_err(|error| Error::ProviderInvalidResponse(error.to_string()))?;
+fn categories_url(
+  api_base: &str,
+  submission_type: SubmissionType,
+  parent_id: Option<u64>,
+) -> Result<reqwest::Url, Error> {
+  let mut url = reqwest::Url::parse(&format!(
+    "{api_base}{}/Categories",
+    model_name(submission_type)
+  ))
+  .map_err(|error| Error::ProviderInvalidResponse(error.to_string()))?;
   let scope = match parent_id {
     Some(id) => ("_idCategoryRow", id.to_string()),
     None => ("_idGameRow", DEADLOCK_GAME_ID.to_string()),
@@ -504,11 +512,35 @@ fn model_name(submission_type: SubmissionType) -> &'static str {
 mod tests {
   use super::{
     API_BASE, BULK_FIELDS, LEGACY_API_BASE, MAX_ACTIVITY_PAGE, MAX_BULK_ITEMS, MAX_BULK_URL_BYTES,
-    MAX_COLLECTION_DESCRIPTIONS, MAX_HYDRATION_ITEMS, MAX_INDEX_PAGE, activity_url,
+    MAX_COLLECTION_DESCRIPTIONS, MAX_HYDRATION_ITEMS, MAX_INDEX_PAGE, activity_url, categories_url,
     collection_description_url, collection_index_url, collection_items_url, index_url,
     item_data_url, model_name, submission_url,
   };
   use crate::providers::{SubmissionRef, SubmissionType};
+
+  #[test]
+  fn category_endpoints_scope_roots_and_children_to_the_submission_model() {
+    for (submission_type, model) in [
+      (SubmissionType::Mod, "Mod"),
+      (SubmissionType::Sound, "Sound"),
+      (SubmissionType::Wip, "Wip"),
+    ] {
+      let root = categories_url(API_BASE, submission_type, None).unwrap();
+      assert_eq!(root.path(), format!("/apiv11/{model}/Categories"));
+      assert!(
+        root
+          .query_pairs()
+          .any(|(key, value)| key == "_idGameRow" && value == "20948")
+      );
+      let child = categories_url(API_BASE, submission_type, Some(42)).unwrap();
+      assert!(
+        child
+          .query_pairs()
+          .any(|(key, value)| key == "_idCategoryRow" && value == "42")
+      );
+      assert!(!child.query_pairs().any(|(key, _)| key == "_idGameRow"));
+    }
+  }
 
   #[test]
   fn collection_endpoints_page_deadlock_collections_in_a_stable_order() {

@@ -1,6 +1,10 @@
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Button } from "@deadlock-mods/ui/components/button";
-import { GithubLogoIcon, PackageIcon } from "@phosphor-icons/react";
+import {
+  GithubLogoIcon,
+  PackageIcon,
+  SlidersHorizontalIcon,
+} from "@phosphor-icons/react";
 import { formatDistanceToNow } from "date-fns";
 import { useTranslation } from "react-i18next";
 import {
@@ -11,10 +15,11 @@ import { usePerformanceUi } from "../performance-context";
 import { ApplyConfigButton } from "./apply-config-button";
 import {
   CardFooter,
-  Chip,
+  CardHeader,
   ConfigCardShell,
+  MetaItem,
+  MetaRow,
   TierLabel,
-  TierMeter,
 } from "./card-parts";
 
 export const PresetCard = ({
@@ -34,18 +39,38 @@ export const PresetCard = ({
       : t("performance.configs.sources.bundled");
 
   return (
-    <ConfigCardShell active={active}>
-      <div className='flex items-center justify-between gap-2'>
-        <div className='flex min-w-0 items-center gap-2'>
-          <TierLabel tier={preset.tier} />
-          {preset.recommended && (
-            <Badge className='px-1.5 py-0 text-[11px]' variant='secondary'>
-              {t("performance.configs.recommended")}
-            </Badge>
-          )}
-        </div>
-        <TierMeter tier={preset.tier} />
-      </div>
+    <ConfigCardShell active={active} configId={item.configId}>
+      <CardHeader
+        label={
+          <>
+            <TierLabel tier={preset.tier} />
+            {preset.recommended && (
+              <Badge className='px-1.5 py-0 text-[11px]' variant='secondary'>
+                {t("performance.configs.recommended")}
+              </Badge>
+            )}
+          </>
+        }
+        provenance={
+          <>
+            {preset.source.kind === "github" ? (
+              <GithubLogoIcon aria-hidden />
+            ) : (
+              <PackageIcon aria-hidden />
+            )}
+            {preset.updatedAt ? (
+              <>
+                <span className='sr-only'>{sourceName}</span>
+                {formatDistanceToNow(new Date(preset.updatedAt), {
+                  addSuffix: true,
+                })}
+              </>
+            ) : (
+              sourceName
+            )}
+          </>
+        }
+      />
       <div className='min-w-0'>
         <h3 className='truncate font-semibold text-base' title={preset.name}>
           {preset.name}
@@ -57,39 +82,20 @@ export const PresetCard = ({
       <p className='line-clamp-2 text-muted-foreground text-sm'>
         {preset.blurb}
       </p>
-      <div className='flex flex-wrap gap-1.5'>
-        <Chip>
+      <MetaRow>
+        <MetaItem
+          icon={<SlidersHorizontalIcon aria-hidden />}
+          tooltip={
+            unused > 0
+              ? t("performance.configs.unusedHint", { count: unused })
+              : undefined
+          }>
           {t("performance.configs.settingsCount", {
             count: preset.counts.applies,
           })}
-        </Chip>
-        {unused > 0 && (
-          <Chip tone='quiet' tooltip={t("performance.configs.unusedHint")}>
-            {t("performance.configs.unusedCount", { count: unused })}
-          </Chip>
-        )}
-        {preset.highlights.map((highlight) => (
-          <Chip key={highlight}>{highlight}</Chip>
-        ))}
-      </div>
-      <CardFooter
-        source={
-          <>
-            {preset.source.kind === "github" ? (
-              <GithubLogoIcon aria-hidden />
-            ) : (
-              <PackageIcon aria-hidden />
-            )}
-            {preset.updatedAt
-              ? t("performance.configs.sourceWithTime", {
-                  source: sourceName,
-                  time: formatDistanceToNow(new Date(preset.updatedAt), {
-                    addSuffix: true,
-                  }),
-                })
-              : sourceName}
-          </>
-        }>
+        </MetaItem>
+      </MetaRow>
+      <CardFooter>
         <Button
           onClick={() => openDetails(item.configId)}
           size='sm'

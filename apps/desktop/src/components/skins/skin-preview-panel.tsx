@@ -7,28 +7,29 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@deadlock-mods/ui/components/empty";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@deadlock-mods/ui/components/tooltip";
-import {
-  ArrowClockwiseIcon,
-  EyeSlashIcon,
-  WarningIcon,
-} from "@phosphor-icons/react";
+import { ArrowClockwiseIcon, WarningIcon } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { AnimatedModelPreview } from "@/components/foundry/animated-model-preview";
 import { ModelLoadingStage } from "@/components/foundry/model-loading-stage";
+import { CopyPreviewDetails } from "@/components/foundry/copy-preview-details";
+import {
+  type SkinPreviewStatus,
+  SkinPreviewStatusRow,
+} from "@/components/skins/skin-preview-status";
 import { useSkinModelPreview } from "@/hooks/use-skin-model-preview";
-import { usePersistedStore } from "@/lib/store";
+import { getErrorMessage } from "@/lib/errors";
+import { previewFailureLabel } from "@/lib/preview-failures";
 import type { LocalMod } from "@/types/mods";
 
 interface SkinPreviewPanelProps {
   hero: string;
   /** The skin to show, or null for the hero's default look. */
   mod: LocalMod | null;
+  status: SkinPreviewStatus;
+  /** Wears the skin on show. Offered while the status is notEquipped. */
+  onWear: () => void;
+  wearDisabled: boolean;
 }
 
 /**
@@ -36,46 +37,41 @@ interface SkinPreviewPanelProps {
  * decoded from its VPK and rendered with the Foundry's viewer.
  *
  * This is a look, not an editor — nothing here writes to the skin. The page
- * only mounts the panel while the Foundry's preview setting is on, because it
- * is the same decode-and-render on the same GPU, and it fails in the same ways.
+ * only mounts the panel while the Foundry's preview setting is on (the 3D
+ * preview switch in the page header), because it is the same decode-and-render
+ * on the same GPU, and it fails in the same ways.
  */
-export const SkinPreviewPanel = ({ hero, mod }: SkinPreviewPanelProps) => {
+export const SkinPreviewPanel = ({
+  hero,
+  mod,
+  status,
+  onWear,
+  wearDisabled,
+}: SkinPreviewPanelProps) => {
   const { t } = useTranslation();
-  const setEnabled = usePersistedStore(
-    (state) => state.setFoundry3dPreviewEnabled,
-  );
   const preview = useSkinModelPreview(hero, mod);
   const label = mod?.name ?? t("skins.preview.defaultLabel", { hero });
+  const title = mod?.name ?? t("skins.default");
 
   return (
     // The panel scales with the window rather than holding one fixed width, so
     // it keeps its share of the page from a small window up to a maximised one.
-    <aside className='flex w-[clamp(320px,28vw,640px)] shrink-0 flex-col gap-3'>
-      <div className='flex items-start justify-between gap-2'>
-        <div className='min-w-0'>
-          <h3 className='truncate font-semibold text-sm'>
-            {t("skins.preview.title")}
-          </h3>
-          <p className='truncate text-muted-foreground text-xs' title={label}>
-            {label}
-          </p>
-        </div>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              aria-label={t("skins.preview.hide")}
-              className='h-7 w-7 shrink-0'
-              onClick={() => setEnabled(false)}
-              size='icon'
-              variant='ghost'>
-              <EyeSlashIcon className='h-4 w-4' />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>{t("skins.preview.hide")}</TooltipContent>
-        </Tooltip>
+    <aside className='flex w-[clamp(320px,28vw,640px)] shrink-0 flex-col overflow-hidden rounded-xl border bg-card'>
+      <div className='flex flex-col gap-1.5 border-b py-3 pr-2 pl-4'>
+        <span className='font-semibold text-[11px] text-muted-foreground uppercase tracking-[0.08em]'>
+          {t("skins.preview.title")}
+        </span>
+        <h3 className='truncate pr-2 font-semibold text-sm' title={title}>
+          {title}
+        </h3>
+        <SkinPreviewStatusRow
+          onWear={onWear}
+          status={status}
+          wearDisabled={wearDisabled}
+        />
       </div>
 
-      <div className='relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-lg border bg-gradient-to-b from-muted/40 to-background'>
+      <div className='relative flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-gradient-to-b from-muted/40 to-background'>
         <PreviewSurface hero={hero} label={label} preview={preview} />
       </div>
     </aside>
@@ -125,21 +121,30 @@ export const PreviewSurface = ({
     );
   }
 
-  if (preview.isError || preview.data.kind === "unsupported") {
+  if (preview.isError || (preview.data && preview.data.kind !== "model")) {
     return (
       <PanelNotice
         action={
           preview.isError ? (
-            <Button
-              icon={<ArrowClockwiseIcon className='h-4 w-4' />}
-              onClick={() => void preview.refetch()}
-              size='sm'
-              variant='outline'>
-              {t("skins.preview.retry")}
-            </Button>
+            <div className='space-y-3'>
+              <Button
+                icon={<ArrowClockwiseIcon className='h-4 w-4' />}
+                onClick={() => void preview.refetch()}
+                size='sm'
+                variant='outline'>
+                {t("skins.preview.retry")}
+              </Button>
+              <CopyPreviewDetails details={getErrorMessage(preview.error)} />
+            </div>
           ) : undefined
         }
-        description={t("skins.preview.failedHint")}
+        description={t(
+          preview.isError
+            ? previewFailureLabel(preview.error)
+            : preview.data?.kind === "missingAssets"
+              ? "modPreview.failures.previewMissingAssets"
+              : "modPreview.unsupportedHint",
+        )}
         icon={
           <WarningIcon
             className='h-12 w-12 text-amber-500 opacity-70'
@@ -155,6 +160,7 @@ export const PreviewSurface = ({
     );
   }
 
+  if (!preview.data || preview.data.kind !== "model") return null;
   return (
     <AnimatedModelPreview
       key={`${preview.data.filePath}:${preview.data.entryPath}`}
@@ -162,6 +168,16 @@ export const PreviewSurface = ({
       model={preview.data.model}
       label={label}
       source={preview.data}
+      comparisonSource={
+        preview.data.stockFilePath
+          ? {
+              filePath: preview.data.stockFilePath,
+              entryPath: preview.data.entryPath,
+            }
+          : undefined
+      }
+      comparisonRevision={preview.data.revision}
+      comparisonAvailable={!!preview.data.stockFilePath}
     />
   );
 };

@@ -247,6 +247,8 @@ pub struct GameRef {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Category {
+  #[serde(rename = "_idRow", default)]
+  pub remote_id: u64,
   #[serde(rename = "_sName", default)]
   pub name: String,
   #[serde(rename = "_sProfileUrl", default)]
@@ -256,8 +258,11 @@ pub struct Category {
 impl Category {
   /// Index records name categories without `_idRow`; the id is in the profile URL.
   pub fn id(&self) -> Option<u64> {
+    if self.remote_id > 0 {
+      return Some(self.remote_id);
+    }
     let (_, id) = self.profile_url.rsplit_once("/cats/")?;
-    id.parse().ok()
+    id.trim_end_matches('/').parse().ok().filter(|id| *id > 0)
   }
 }
 
@@ -478,6 +483,9 @@ pub struct Profile {
   pub requirements: Vec<Vec<String>>,
   #[serde(rename = "_aGame", default)]
   pub game: Option<GameRef>,
+  /// Video page links (YouTube, Vimeo) shown on the submission page
+  #[serde(rename = "_aEmbeddedMedia", default)]
+  pub embedded_media: Vec<String>,
   #[serde(rename = "_sDevelopmentState", default)]
   pub development_state: Option<String>,
   #[serde(
@@ -486,6 +494,41 @@ pub struct Profile {
     deserialize_with = "deserialize_percentage"
   )]
   pub completion_percentage: Option<u8>,
+  #[serde(rename = "_aWithholdNotice", default, deserialize_with = "lenient")]
+  pub withhold_notice: Option<WithholdNotice>,
+  /// The author's note on an obsolete submission.
+  #[serde(rename = "_sObsolescenceNotice", default)]
+  pub obsolescence_notice: Option<String>,
+}
+
+/// Why GameBanana staff withheld a submission. `_sNotes` is staff-written HTML.
+#[derive(Debug, Clone, Deserialize)]
+pub struct WithholdNotice {
+  #[serde(rename = "_tsDateWithheld", default)]
+  pub date_withheld: Option<i64>,
+  #[serde(rename = "_aRulesViolated", default)]
+  pub rules_violated: Vec<WithholdRule>,
+  #[serde(rename = "_sNotes", default)]
+  pub notes: String,
+  #[serde(rename = "_aWithholder", default, deserialize_with = "lenient")]
+  pub withholder: Option<MemberProfile>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct WithholdRule {
+  /// Like `R.17: Nonsense`.
+  #[serde(rename = "_sCode", default)]
+  pub code: String,
+  #[serde(rename = "_sName", default)]
+  pub name: String,
+}
+
+impl Profile {
+  /// Private, withheld, and trashed submissions still serve a profile, but GameBanana
+  /// hides them from everyone except their owner.
+  pub fn is_hidden(&self) -> bool {
+    self.is_private || self.is_withheld || self.is_trashed
+  }
 }
 
 #[derive(Debug, Clone, Deserialize)]

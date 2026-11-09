@@ -17,6 +17,7 @@ import { Search } from "@deadlock-mods/ui/icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { AnalyzeAddonsResult, LocalAddonInfo } from "@/types/mods";
+import type { AnalysisTarget } from "@/lib/store/slices/mods";
 import { AddonSummaryCard } from "./addon-summary-card";
 import { IdentifiedAddonsTab } from "./identified-addons-tab";
 import { UnknownAddonsTab } from "./unknown-addons-tab";
@@ -27,12 +28,15 @@ interface AnalysisResultsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   result: AnalyzeAddonsResult | null;
+  /** The analyzed profile; enables Delete and Quarantine on unplaced files. */
+  fileContext?: AnalysisTarget | null;
 }
 
 export const AnalysisResultsDialog = ({
   open,
   onOpenChange,
   result,
+  fileContext,
 }: AnalysisResultsDialogProps) => {
   const { t } = useTranslation();
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -53,9 +57,6 @@ export const AnalysisResultsDialog = ({
   const unknownAddons = result.addons.filter(
     (addon) => !addon.remoteId && addon.vpkParsed?.fingerprint,
   );
-  const errorAddons = result.addons.filter(
-    (addon) => !addon.vpkParsed?.fingerprint,
-  );
 
   return (
     <>
@@ -73,7 +74,7 @@ export const AnalysisResultsDialog = ({
               {identifiedAddons.length > 0 && (
                 <span className='text-muted-foreground ml-2'>
                   •{" "}
-                  {t("addons.identifiedAndAdded", {
+                  {t("addons.identifiedCount", {
                     count: identifiedAddons.length,
                   })}
                 </span>
@@ -93,7 +94,7 @@ export const AnalysisResultsDialog = ({
                 Unknown ({unknownAddons.length})
               </TabsTrigger>
               <TabsTrigger value='errors'>
-                Errors ({errorAddons.length})
+                Errors ({result.errors.length})
               </TabsTrigger>
             </TabsList>
 
@@ -107,6 +108,7 @@ export const AnalysisResultsDialog = ({
                       key={addon.filePath}
                       addon={addon}
                       onAddToLibrary={handleAddToLibrary}
+                      fileContext={fileContext}
                     />
                   ))}
                   {result.errors.length > 0 && (
@@ -126,6 +128,7 @@ export const AnalysisResultsDialog = ({
                 <IdentifiedAddonsTab
                   identifiedAddons={identifiedAddons}
                   onAddToLibrary={handleAddToLibrary}
+                  fileContext={fileContext}
                 />
               </ScrollArea>
             </TabsContent>
@@ -137,6 +140,7 @@ export const AnalysisResultsDialog = ({
                 <UnknownAddonsTab
                   unknownAddons={unknownAddons}
                   onAddToLibrary={handleAddToLibrary}
+                  fileContext={fileContext}
                 />
               </ScrollArea>
             </TabsContent>
@@ -145,21 +149,7 @@ export const AnalysisResultsDialog = ({
               value='errors'
               className='flex-1 mt-4 min-h-0 overflow-hidden'>
               <ScrollArea className='h-[300px] pr-4'>
-                <div className='space-y-3'>
-                  {errorAddons.map((addon) => (
-                    <AddonSummaryCard
-                      key={addon.filePath}
-                      addon={addon}
-                      onAddToLibrary={handleAddToLibrary}
-                    />
-                  ))}
-                  {result.errors.length > 0 && (
-                    <>
-                      <Separator className='my-4' />
-                      <ErrorsList errors={result.errors} />
-                    </>
-                  )}
-                </div>
+                <ErrorsList errors={result.errors} />
               </ScrollArea>
             </TabsContent>
           </Tabs>

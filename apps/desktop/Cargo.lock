@@ -1564,7 +1564,7 @@ dependencies = [
 
 [[package]]
 name = "deadlock-mod-manager"
-version = "2.3.0"
+version = "2.4.0"
 dependencies = [
  "base64 0.22.1",
  "bzip2",
@@ -1572,6 +1572,7 @@ dependencies = [
  "clap",
  "deadlock-discord-presence",
  "deadlock-match-sync",
+ "deadlock-server-picker",
  "diesel",
  "diesel_migrations",
  "dirs 6.0.0",
@@ -1600,6 +1601,7 @@ dependencies = [
  "notify",
  "regex",
  "reqwest 0.12.28",
+ "semver",
  "serde",
  "serde_json",
  "sevenz-rust2",
@@ -1639,6 +1641,23 @@ dependencies = [
  "windows-core 0.62.2",
  "zip 6.0.0",
  "zstd",
+]
+
+[[package]]
+name = "deadlock-server-picker"
+version = "0.1.0"
+dependencies = [
+ "futures",
+ "reqwest 0.12.28",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tokio",
+ "tokio-util",
+ "ts-rs",
+ "uuid 1.23.1",
+ "windows 0.58.0",
 ]
 
 [[package]]

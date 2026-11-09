@@ -127,11 +127,7 @@ mod tests {
       "\"GameInfo\"\n{\n\"FileSystem\"\n{\nSearchPaths\n{\nGame citadel\n}\n}\n}\n",
     )
     .unwrap();
-    let mut manager = super::super::tests::test_manager(game.path());
-    manager
-      .config_manager
-      .setup_game_for_mods(game.path())
-      .unwrap();
+    let mut manager = ModManager::for_test_game(game.path());
     let base = manager.get_addons_path(None).unwrap();
     pack(
       &base.join("josuke_skin.vpk"),

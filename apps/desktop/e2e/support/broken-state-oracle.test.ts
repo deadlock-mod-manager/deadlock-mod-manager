@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { writeFile } from "node:fs/promises";
+import { appendFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { it } from "bun:test";
 import {
@@ -12,9 +12,62 @@ import {
   assertEnabledBrokenPayloads,
   assertRemovedBrokenState,
   hasMissingEnabledFiles,
+  readBrokenLaunches,
   readBrokenState,
 } from "./broken-state-oracle";
 import { createWorld, removeOwnedWorld } from "./world";
+
+it("observes launches only after their newline is appended", async () => {
+  const world = await createWorld({
+    runId: "partial-launch-journal",
+    caseId: "gameinfo-reverted-launch",
+    attempt: 1,
+    fixtureOrigin: "http://127.0.0.1:43210",
+  });
+  try {
+    const journal = path.join(
+      world.directory,
+      "artifacts",
+      "game-launches.ndjson",
+    );
+    const first = {
+      program: "C:\\Steam\\steam.exe",
+      uri: "steam://run/1422450//",
+    };
+    const second = { ...first, uri: "steam://run/1422450//-condebug" };
+    const firstLine = JSON.stringify(first);
+    const secondLine = JSON.stringify(second);
+    assert.deepEqual(await readBrokenLaunches(world.directory), []);
+    await writeFile(journal, firstLine.slice(0, 41));
+    assert.deepEqual(await readBrokenLaunches(world.directory), []);
+    await appendFile(journal, firstLine.slice(41));
+    assert.deepEqual(await readBrokenLaunches(world.directory), []);
+    await appendFile(journal, "\n");
+    assert.deepEqual(await readBrokenLaunches(world.directory), [first]);
+    for (let length = 1; length <= secondLine.length; length++) {
+      await writeFile(journal, `${firstLine}\n${secondLine.slice(0, length)}`);
+      assert.deepEqual(await readBrokenLaunches(world.directory), [first]);
+    }
+    await appendFile(journal, "\n");
+    assert.deepEqual(await readBrokenLaunches(world.directory), [
+      first,
+      second,
+    ]);
+    await writeFile(journal, `${firstLine}\r\n${secondLine}\r\n`);
+    assert.deepEqual(await readBrokenLaunches(world.directory), [
+      first,
+      second,
+    ]);
+    await writeFile(journal, "{\n");
+    await assert.rejects(readBrokenLaunches(world.directory), SyntaxError);
+    await writeFile(journal, JSON.stringify({ program: first.program }) + "\n");
+    await assert.rejects(readBrokenLaunches(world.directory), {
+      name: "ZodError",
+    });
+  } finally {
+    await removeOwnedWorld(world.directory);
+  }
+});
 
 it("requires disabled store and manifest entries, empty enabled files, and exactly one launch", async () => {
   const world = await createWorld({

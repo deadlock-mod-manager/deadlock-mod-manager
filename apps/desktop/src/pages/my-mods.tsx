@@ -3,6 +3,7 @@ import { ModGroupTools } from "@/components/my-mods/mod-group-tools";
 import { NukeReinstallDialog } from "@/components/my-mods/nuke-reinstall-dialog";
 import { groupLibraryMods } from "@/lib/mods/library-groups";
 import { EMPTY_MOD_GROUPS } from "@/lib/store/slices/mod-groups";
+import { randomizedGroupModIds } from "@/lib/mods/group-randomizer";
 import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Empty,
@@ -47,10 +48,10 @@ import {
   Power,
   PowerOff,
   RefreshCw,
+  ShieldCheck,
   ScanSearch,
   SquareCheck,
   TriangleAlert,
-  Wrench,
 } from "@deadlock-mods/ui/icons";
 import { Radioactive } from "@phosphor-icons/react";
 import { MagnifyingGlass } from "@phosphor-icons/react";
@@ -60,12 +61,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { HintAnchor } from "@/components/feature-hints/hint-anchor";
 import { useThemeOverride } from "@/components/providers/theme-overrides";
+import { useCompatibilityReview } from "@/components/providers/compatibility-review";
 import SearchBar from "@/components/mod-browsing/search-bar";
 import { SortSelect } from "@/components/mod-browsing/sort-select";
 import { VpkScanAlert } from "@/components/mods/vpk-scan-alert";
 import { AnalysisProgressToast } from "@/components/my-mods/analysis-progress-toast";
 import { AnalysisResultsDialog } from "@/components/my-mods/analysis-results-dialog";
 import { BatchUpdateDialog } from "@/components/my-mods/batch-update-dialog";
+import { BulkActionRecapDialog } from "@/components/my-mods/bulk-action-recap-dialog";
 import { EnableAllRecapDialog } from "@/components/my-mods/enable-all-recap-dialog";
 import { BatchUpdateButton } from "@/components/my-mods/batch-update-button";
 import { ExportDialog } from "@/components/mod-interchange/export-dialog";
@@ -177,6 +180,7 @@ const MyMods = () => {
   } = useVpkScan();
   const healthReport = useModHealthReport(activeProfileFolder);
   const checkModHealth = useCheckModHealth();
+  const reviewCompatibility = useCompatibilityReview();
   const isCheckingModHealth = useIsCheckingModHealth();
   const healthById = useMemo(
     () => healthByModId(healthReport.data),
@@ -204,13 +208,19 @@ const MyMods = () => {
     progress: analysisProgress,
     showProgressToast,
     analysisResult,
+    analysisTarget,
     dialogOpen: analysisDialogOpen,
     setDialogOpen: setAnalysisDialogOpen,
     isPending: isAnalysisPending,
     startAnalysis,
     dismissProgressToast,
   } = useAddonAnalysis();
-  const { disableAll, isPending: isDisablingAll } = useDisableAllMods();
+  const {
+    disableAll,
+    isPending: isDisablingAll,
+    recap: disableRecap,
+    closeRecap: closeDisableRecap,
+  } = useDisableAllMods();
   const bisectActive = usePersistedStore((state) => !!state.bisectSession);
   const {
     enableAll,
@@ -219,7 +229,12 @@ const MyMods = () => {
     closeRecap: closeEnableAllRecap,
   } = useEnableAllMods();
 
-  const { deleteMods, isPending: isDeletingMods } = useDeleteMods();
+  const {
+    deleteMods,
+    isPending: isDeletingMods,
+    recap: deleteRecap,
+    closeRecap: closeDeleteRecap,
+  } = useDeleteMods();
 
   const selectionBusy =
     isDisablingAll ||
@@ -246,6 +261,7 @@ const MyMods = () => {
   const [actionsMenuOpen, setActionsMenuOpen] = useState(false);
   const [showNukeDialog, setShowNukeDialog] = useState(false);
   const markFeatureUsed = usePersistedStore((state) => state.markFeatureUsed);
+  const hasGamePath = usePersistedStore((state) => state.gamePath.length > 0);
   const countFeatureHintEvent = usePersistedStore(
     (state) => state.countFeatureHintEvent,
   );
@@ -464,27 +480,31 @@ const MyMods = () => {
 
   const {
     enabledModsCount,
-    downloadedModsCount,
+    enableAllCount,
     disabledModsCount,
     enabledVpkFileCount,
   } = useMemo(() => {
+    // Enable all leaves randomized groups to the launch roll.
+    const rolled = randomizedGroupModIds(modGroups);
     let enabled = 0;
-    let downloaded = 0;
+    let enableable = 0;
     let vpkFiles = 0;
     for (const mod of mods) {
       if (isInstalledModWithVpks(mod)) {
         enabled++;
         vpkFiles += mod.installedVpks?.length ?? 0;
       }
-      if (mod.status === ModStatus.Downloaded) downloaded++;
+      if (mod.status === ModStatus.Downloaded && !rolled.has(mod.remoteId)) {
+        enableable++;
+      }
     }
     return {
       enabledModsCount: enabled,
-      downloadedModsCount: downloaded,
+      enableAllCount: enableable,
       disabledModsCount: mods.length - enabled,
       enabledVpkFileCount: vpkFiles,
     };
-  }, [mods]);
+  }, [mods, modGroups]);
 
   const copyModList = async (
     includeDisabled: boolean,
@@ -667,14 +687,20 @@ const MyMods = () => {
                     }
                     hintId='find-broken-mod'
                     onShowMe={() => setActionsMenuOpen(true)}>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        aria-label={t("myMods.moreActions")}
-                        size='icon'
-                        variant='outline'>
-                        <EllipsisVertical className='h-4 w-4' />
-                      </Button>
-                    </DropdownMenuTrigger>
+                    <HintAnchor
+                      align='end'
+                      eligible={hasGamePath && !isAnalysisPending}
+                      hintId='analyze-local-mods'
+                      onShowMe={() => setActionsMenuOpen(true)}>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          aria-label={t("myMods.moreActions")}
+                          size='icon'
+                          variant='outline'>
+                          <EllipsisVertical className='h-4 w-4' />
+                        </Button>
+                      </DropdownMenuTrigger>
+                    </HintAnchor>
                   </HintAnchor>
                 </HintAnchor>
               </HintAnchor>
@@ -698,7 +724,7 @@ const MyMods = () => {
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => enableAll()}
-                disabled={downloadedModsCount === 0 || selectionBusy}>
+                disabled={enableAllCount === 0 || selectionBusy}>
                 <Power className='h-4 w-4' />
                 {t("myMods.enableAll")}
               </DropdownMenuItem>
@@ -725,12 +751,13 @@ const MyMods = () => {
                     profileFolder: activeProfileFolder,
                     force: true,
                   });
+                  void reviewCompatibility(activeProfileFolder, {
+                    launchAfterApply: false,
+                  });
                 }}
                 disabled={installedMods.length === 0 || isCheckingModHealth}>
-                <Wrench className='h-4 w-4' />
-                {isCheckingModHealth
-                  ? t("modHealth.checkingForRepairs")
-                  : t("modHealth.checkForRepairs")}
+                <ShieldCheck className='h-4 w-4' />
+                {t("myMods.compatibility.review")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => {
@@ -742,7 +769,10 @@ const MyMods = () => {
                 {t("bisect.entry")}
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={startAnalysis}
+                onClick={() => {
+                  markFeatureUsed("analyze-local-mods");
+                  startAnalysis();
+                }}
                 disabled={isAnalysisPending}>
                 <ScanSearch className='h-4 w-4' />
                 {isAnalysisPending
@@ -1114,10 +1144,19 @@ const MyMods = () => {
             open={analysisDialogOpen}
             onOpenChange={setAnalysisDialogOpen}
             result={analysisResult}
+            fileContext={analysisTarget}
           />
           <EnableAllRecapDialog
             recap={enableAllRecap}
             onClose={closeEnableAllRecap}
+          />
+          <BulkActionRecapDialog
+            recap={disableRecap}
+            onClose={closeDisableRecap}
+          />
+          <BulkActionRecapDialog
+            recap={deleteRecap}
+            onClose={closeDeleteRecap}
           />
         </ErrorBoundary>
       </div>

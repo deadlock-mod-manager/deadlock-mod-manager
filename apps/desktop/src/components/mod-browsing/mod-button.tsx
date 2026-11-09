@@ -43,6 +43,7 @@ import useUninstall from "@/hooks/use-uninstall";
 import logger from "@/lib/logger";
 import { resolveLocalModHero } from "@/lib/mods/hero-resolution";
 import { usePersistedStore } from "@/lib/store";
+import { nativeModDownloads } from "@/lib/mod-sources";
 import { findLocalMod } from "@/lib/store/selectors";
 import { cn } from "@/lib/utils";
 import { type LocalMod, ModStatus } from "@/types/mods";
@@ -51,6 +52,8 @@ interface ModButtonProps {
   remoteMod: ModDto | undefined;
   analyticsEntryPoint?: ModEntryPoint;
   variant: "iconOnly" | "default";
+  /** Build a local mod on first add instead of downloading a provider file. */
+  onAdd?: () => Promise<void>;
 }
 
 export const ModStatusIcon = ({
@@ -140,6 +143,7 @@ const InstallModButton = ({
   remoteMod,
   variant = "default",
   analyticsEntryPoint,
+  onAdd,
 }: ModButtonProps) => {
   const { t } = useTranslation();
   const heroConflictWarningEnabled = usePersistedStore(
@@ -161,6 +165,9 @@ const InstallModButton = ({
     closeDialog,
     localMod,
     isDialogOpen,
+    nativeSelection,
+    confirmNativeSelection,
+    cancelNativeSelection,
   } = useDownload(remoteMod, availableFiles, analyticsEntryPoint);
   const {
     performInstall,
@@ -240,8 +247,11 @@ const InstallModButton = ({
     try {
       switch (localMod?.status) {
         case undefined:
-          await download(await fetchAvailableFiles());
-
+          if (onAdd) {
+            await onAdd();
+          } else {
+            await download(await fetchAvailableFiles());
+          }
           break;
         case ModStatus.Downloaded:
         case ModStatus.FailedToInstall: {
@@ -299,6 +309,7 @@ const InstallModButton = ({
     localMod,
     heroConflictWarningEnabled,
     download,
+    onAdd,
     fetchAvailableFiles,
     retryDownload,
     uninstall,
@@ -447,7 +458,11 @@ const InstallModButton = ({
           <TooltipTrigger asChild>
             <Button
               aria-label={tooltip}
-              disabled={isActionInProgress || isAnalyzing}
+              disabled={
+                isActionInProgress ||
+                isAnalyzing ||
+                (!localMod && remoteMod?.downloadable === false && !onAdd)
+              }
               icon={
                 showProgressRing ? (
                   <DownloadProgressRing percentage={progressPercent} />
@@ -472,6 +487,22 @@ const InstallModButton = ({
       )}
 
       <div className='contents' onClick={(e) => e.stopPropagation()}>
+        {nativeSelection?.listing.release && (
+          <MultiFileDownloadDialog
+            components={{
+              installation: nativeSelection.listing.release.installation,
+              selectedComponentIds: localMod?.source?.componentIds,
+              onConfirm: confirmNativeSelection,
+            }}
+            files={nativeModDownloads(
+              nativeSelection.source,
+              nativeSelection.listing,
+            )}
+            isOpen
+            modName={nativeSelection.listing.title}
+            onClose={cancelNativeSelection}
+          />
+        )}
         {fileSelectorOpened && (
           <FileSelectorDialog
             fileTree={currentFileTree}

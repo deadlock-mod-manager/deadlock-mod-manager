@@ -1,6 +1,6 @@
 [package]
 name = "deadlock-mod-manager"
-version = "2.3.0"
+version = "2.4.0"
 description = "A mod manager for the Valve game Deadlock, built with Tauri, React, and TypeScript."
 authors = ["stormix <hello@stormix.co>"]
 license = "GPL-3.0"
@@ -53,6 +53,7 @@ tauri-plugin-opener = "2.7.2"
 tauri-plugin-http = "2.8.3"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+semver = "1"
 ts-rs = { version = "11.1.0", features = ["serde-compat"] }
 tauri-plugin-os = "2.4.0"
 tauri-plugin-store = "2.5.0"
@@ -85,6 +86,7 @@ dmp-parser = { path = "../../../packages/dmp-parser" }
 kv-parser = { path = "../../../packages/kv-parser" }
 deadlock-discord-presence = { path = "../../../packages/deadlock-discord-presence" }
 deadlock-match-sync = { path = "../../../packages/deadlock-match-sync", optional = true }
+deadlock-server-picker = { path = "../../../packages/deadlock-server-picker" }
 tokio = { version = "1.50.0", features = ["full"] }
 tokio-util = "0.7"
 # Already in the tree via reqwest; the loopback forge bridge only needs the

@@ -1,12 +1,15 @@
-import { fingerprint } from "./observations";
-export { fingerprint } from "./observations";
-import { processExists } from "./process-control";
 import assert from "node:assert/strict";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
+import { fixtureGamePaths } from "./gameinfo-mounts";
+import { fingerprint } from "./observations";
+import { processExists } from "./process-control";
 import { ALPHA, ALPHA_MODS, profilePayload } from "./profile-fixtures";
 import { assertOwnedWorld, collectFileInventory } from "./world";
+
+export { fingerprint } from "./observations";
+
 export const shardSlot = (index: number) => ({
   shard: Math.floor(index / 99) + 1,
   filename: `pak${String((index % 99) + 1).padStart(2, "0")}_dir.vpk`,
@@ -151,8 +154,8 @@ export const assertFilesystemLayout = async (
   );
   const gameinfo = await readFile(path.join(citadel, "gameinfo.gi"), "utf8");
   assert.deepEqual(
-    [...gameinfo.matchAll(/^\s*Game\s+(citadel\/addons\S*)\s*$/gm)].map(
-      (match) => match[1],
+    fixtureGamePaths(gameinfo).filter((mount) =>
+      mount.startsWith("citadel/addons"),
     ),
     Array.from(
       { length: Math.ceil(order.length / 99) },

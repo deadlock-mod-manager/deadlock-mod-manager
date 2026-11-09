@@ -22,6 +22,7 @@ import {
   FlagIcon,
   GaugeIcon,
   GearIcon,
+  GlobeHemisphereWestIcon,
   HammerIcon,
   HardDrivesIcon,
   HouseIcon,
@@ -44,6 +45,7 @@ import { useThemeOverride } from "@/components/providers/theme-overrides";
 import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { useExternalPlugins } from "@/hooks/use-external-plugins";
 import { isDownloadInProgress } from "@/lib/download/status";
+import type { FeatureHintId } from "@/lib/feature-hints";
 import { usePersistedStore } from "@/lib/store";
 import type { ExternalPluginSummary } from "@/types/generated/ExternalPluginSummary";
 import { BrandingHeader } from "./branding";
@@ -73,6 +75,7 @@ type SidebarItem = {
   group: string;
   /** Shows a "New" badge until the user opens the page. */
   isNew?: boolean;
+  hintId?: FeatureHintId;
   /** Also active on pages nested under `url`, such as a single match under Stats. */
   activeOnChildren?: boolean;
 };
@@ -161,6 +164,7 @@ const getSidebarItems = (
     },
     {
       id: "servers",
+      hintId: "server-browser",
       title: () => <span>{t("navigation.servers")}</span>,
       tooltipLabel: t("navigation.servers"),
       url: "/servers",
@@ -185,6 +189,7 @@ const getSidebarItems = (
     },
     {
       id: "foundry",
+      hintId: "foundry",
       title: () => <span>{t("navigation.foundry")}</span>,
       tooltipLabel: t("navigation.foundry"),
       url: "/foundry",
@@ -194,10 +199,21 @@ const getSidebarItems = (
     },
     {
       id: "performance",
+      hintId: "performance-configs",
       title: () => <span>{t("navigation.performance")}</span>,
       tooltipLabel: t("navigation.performance"),
       url: "/performance",
       icon: GaugeIcon,
+      group: "customization",
+      isNew: true,
+    },
+    {
+      id: "server-picker",
+      hintId: "server-picker",
+      title: () => <span>{t("serverPicker.title")}</span>,
+      tooltipLabel: t("serverPicker.title"),
+      url: "/server-picker",
+      icon: GlobeHemisphereWestIcon,
       group: "customization",
       isNew: true,
     },
@@ -415,6 +431,12 @@ export const AppSidebar = () => {
   );
   const seenNavItems = usePersistedStore((state) => state.seenNavItems);
   const markNavItemSeen = usePersistedStore((state) => state.markNavItemSeen);
+  const markFeatureUsed = usePersistedStore((state) => state.markFeatureUsed);
+  const hasPerformanceConfigs = usePersistedStore(
+    (state) =>
+      state.perfHistory.length > 0 ||
+      Object.keys(state.perfUserConfigs).length > 0,
+  );
   const developerMode = usePersistedStore((state) => state.developerMode);
   const SidebarContentExtra = useThemeOverride("sidebarContentExtra");
   const SidebarFooterExtra = useThemeOverride("sidebarFooterExtra");
@@ -474,11 +496,18 @@ export const AppSidebar = () => {
   );
 
   useEffect(() => {
-    const visited = allItems.find(
-      (item) => item.isNew && item.url === location.pathname,
-    );
-    if (visited && !seenNavItems[visited.id]) markNavItemSeen(visited.id);
-  }, [allItems, location.pathname, markNavItemSeen, seenNavItems]);
+    const visited = allItems.find((item) => item.url === location.pathname);
+    if (visited?.isNew && !seenNavItems[visited.id]) {
+      markNavItemSeen(visited.id);
+    }
+    if (visited?.hintId) markFeatureUsed(visited.hintId);
+  }, [
+    allItems,
+    location.pathname,
+    markNavItemSeen,
+    markFeatureUsed,
+    seenNavItems,
+  ]);
 
   const groupLabels = {
     general: t("navigation.general", "General"),
@@ -529,10 +558,20 @@ export const AppSidebar = () => {
                     );
                     return (
                       <SidebarMenuItem key={item.id}>
-                        {item.id === "servers" ? (
+                        {item.hintId && item.url ? (
                           <HintAnchor
-                            hintId='server-browser'
-                            onShowMe={() => navigate("/servers")}
+                            eligible={
+                              location.pathname !== item.url &&
+                              !seenNavItems[item.id] &&
+                              !(
+                                item.id === "performance" &&
+                                hasPerformanceConfigs
+                              )
+                            }
+                            hintId={item.hintId}
+                            onShowMe={() => {
+                              if (item.url) navigate(item.url);
+                            }}
                             side='right'>
                             <div>{entry}</div>
                           </HintAnchor>

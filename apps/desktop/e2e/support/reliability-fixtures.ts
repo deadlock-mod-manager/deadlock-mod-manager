@@ -10,6 +10,7 @@ import type { FixtureRequest, FixtureRoute } from "./fixture-server";
 import {
   BULK_HYDRATION_FIELDS,
   BULK_UPDATE_FIELDS,
+  fileserver,
 } from "./gamebanana-fixtures";
 import { fixtureMod } from "./mod-fixtures";
 import { fingerprint, readPersistedDocument } from "./observations";
@@ -26,6 +27,7 @@ const reliabilityCaseSchema = z.enum([
   "gamebanana-update-choice",
   "gamebanana-requirements",
   "gamebanana-mirror-fallback",
+  "gamebanana-default-fallback",
   "gamebanana-crash-cause",
 ]);
 type ReliabilityCase = z.infer<typeof reliabilityCaseSchema>;
@@ -39,6 +41,15 @@ const BASE = { id: "940002", name: "E2E Required Base" };
 const BLOCKED = { id: "940003", name: "E2E Incompatible Mod" };
 const OLD_DATE = 1_780_000_000;
 const primaryFileId = 940101;
+/**
+ * GameBanana file caches as the E2E app reaches them: the app maps
+ * `https://<domain>/<category>/<file>` to `/fileservers/<domain>/...` on the
+ * fixture origin.
+ */
+const cachePath = (domain: string) =>
+  `/fileservers/${domain}.gamebanana.com/mods/legacy.zip`;
+const DEAD_CACHE = "filecache44";
+const LIVE_CACHE = "filecache45";
 const reliabilityPayload = (id: string, version = "original") =>
   buildSyntheticVpk([
     {
@@ -103,7 +114,8 @@ export async function prepareReliabilityWorld(world: CreatedWorld) {
   const installed =
     scenario === "gamebanana-requirements"
       ? [BLOCKED]
-      : scenario === "gamebanana-mirror-fallback"
+      : scenario === "gamebanana-mirror-fallback" ||
+          scenario === "gamebanana-default-fallback"
         ? []
         : [PRIMARY];
   await prepareInstalledProfiles(
@@ -336,7 +348,16 @@ export async function reliabilityRoutes(caseId: string) {
         query: { "fields[]": BULK_HYDRATION_FIELDS },
       },
       ...updateRoutes,
-      json("/apiv11/Util/Fileservers", { _aRecords: [] }),
+      json("/apiv11/Util/Fileservers", {
+        _aRecords:
+          scenario === "gamebanana-default-fallback"
+            ? [
+                // The busiest cache is the one `/dl/` sends the download to.
+                fileserver(44, DEAD_CACHE, 9_000_000),
+                fileserver(45, LIVE_CACHE, 1_000_000),
+              ]
+            : [],
+      }),
     ];
     mods.forEach((mod, index) =>
       routes.push(
@@ -364,6 +385,8 @@ export async function reliabilityRoutes(caseId: string) {
           body: blue,
         },
       );
+    else if (scenario === "gamebanana-default-fallback")
+      routes.push(...defaultFallbackRoutes(origin, archives[0]));
     else if (scenario !== "gamebanana-archived-files")
       mods.forEach((mod, index) =>
         routes.push({
@@ -398,6 +421,39 @@ export async function reliabilityRoutes(caseId: string) {
     return routes;
   };
 }
+
+/**
+ * GameBanana's `/dl/` link sends the download to a cache that cuts every
+ * transfer short, as a cache that went down mid-download would (#569). The
+ * dead cache also fails its availability check; the other cache serves the
+ * file.
+ */
+const defaultFallbackRoutes = (
+  origin: string,
+  archive: Buffer,
+): FixtureRoute[] => [
+  {
+    method: "GET",
+    path: `/dl/${primaryFileId}`,
+    status: 302,
+    headers: { location: `${origin}${cachePath(DEAD_CACHE)}` },
+    body: "",
+  },
+  {
+    method: "GET",
+    path: cachePath(DEAD_CACHE),
+    status: 200,
+    body: archive,
+    range: true,
+    headers: { etag: '"dead-v1"' },
+    chunkBytes: 64,
+    chunkDelayMs: 25,
+    disconnectAfterBytes: 128,
+  },
+  { method: "HEAD", path: cachePath(DEAD_CACHE), status: 503, body: "" },
+  { method: "HEAD", path: cachePath(LIVE_CACHE), status: 200, body: "" },
+  { method: "GET", path: cachePath(LIVE_CACHE), status: 200, body: archive },
+];
 
 export async function assertReliabilityDisk(
   world: string,
@@ -480,9 +536,34 @@ export function assertReliabilityNetwork(
   const downloads = requests.filter(
     (request) =>
       request.method === "GET" &&
-      (request.url.startsWith("/dl/") || request.url.startsWith("/mirror/")),
+      (request.url.startsWith("/dl/") ||
+        request.url.startsWith("/mirror/") ||
+        request.url.startsWith("/fileservers/")),
   );
-  if (id === "gamebanana-mirror-fallback") {
+  if (id === "gamebanana-default-fallback") {
+    // Four attempts: the first and the downloader's three reconnects.
+    const dead = [`/dl/${primaryFileId}`, cachePath(DEAD_CACHE)];
+    assert.deepEqual(
+      downloads.map((request) => request.url),
+      [...dead, ...dead, ...dead, ...dead, cachePath(LIVE_CACHE)],
+    );
+    const cut = downloads.filter((request) =>
+      request.url.startsWith(cachePath(DEAD_CACHE)),
+    );
+    assert(cut.every((request) => (request.responseBytes ?? 0) > 0));
+    const last = downloads[downloads.length - 1];
+    assert.equal(last.responseStatus, 200);
+    assert.equal(last.headers.range, undefined);
+    const checks = requests.filter((request) => request.method === "HEAD");
+    assert.deepEqual(checks.map((request) => request.url).sort(), [
+      cachePath(DEAD_CACHE),
+      cachePath(LIVE_CACHE),
+    ]);
+    assert(
+      checks.every((request) => request.at <= downloads[0].at),
+      "caches were checked before the download started",
+    );
+  } else if (id === "gamebanana-mirror-fallback") {
     assert.deepEqual(
       downloads.map((request) => request.url),
       [

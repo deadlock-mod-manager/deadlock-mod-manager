@@ -1,3 +1,4 @@
+use super::catalog::{CatalogCategory, categories::category_path};
 use super::client::DEADLOCK_GAME_ID;
 use super::hero_registry;
 use super::models::{Category, DonationMethod, Profile, Tag};
@@ -36,6 +37,8 @@ pub struct NormalizedSubmission {
   pub description: String,
   pub author: String,
   pub category: String,
+  #[serde(default)]
+  pub category_path: Vec<CatalogCategory>,
   pub hero: Option<String>,
   pub download_count: u64,
   pub likes: u64,
@@ -69,10 +72,6 @@ pub fn normalize_profile(
   profile: &Profile,
   submission_type: SubmissionType,
 ) -> Option<NormalizedSubmission> {
-  if profile.is_private || profile.is_withheld || profile.is_trashed {
-    return None;
-  }
-
   if profile.id == 0
     || profile.name.trim().is_empty()
     || !profile.profile_url.starts_with("https://gamebanana.com/")
@@ -115,6 +114,14 @@ pub fn normalize_profile(
       .unwrap_or("Unknown")
       .to_string(),
     category,
+    category_path: category_path(
+      submission_type,
+      &[
+        profile.root_category.as_ref(),
+        profile.super_category.as_ref(),
+        profile.category.as_ref(),
+      ],
+    ),
     hero: hero_registry::resolve_from_skin_category(
       hero_registry::CategoryPath {
         root: profile
@@ -297,8 +304,8 @@ fn category(profile: &Profile) -> String {
       parent
     }
   });
-  parent
-    .or_else(|| name(profile.root_category.as_ref()))
+  name(profile.root_category.as_ref())
+    .or(parent)
     .or_else(|| name(profile.category.as_ref()))
     .unwrap_or("Other")
     .to_string()
@@ -394,6 +401,26 @@ mod tests {
     .unwrap();
 
     assert_eq!(category(&profile), "Maps");
+  }
+  #[test]
+  fn nested_world_details_keep_the_root_and_category_ids() {
+    let profile: Profile = serde_json::from_value(serde_json::json!({
+      "_idRow": 1, "_sName": "Walker", "_sProfileUrl": "https://gamebanana.com/mods/1",
+      "_aRootCategory": { "_idRow": 33154, "_sName": "Model Replacement" },
+      "_aSuperCategory": { "_idRow": 44691, "_sName": "NPCs" },
+      "_aCategory": { "_idRow": 50001, "_sName": "Walker" }
+    }))
+    .unwrap();
+    let normalized = normalize_profile(&profile, SubmissionType::Mod).unwrap();
+    assert_eq!(normalized.category, "Model Replacement");
+    assert_eq!(
+      normalized
+        .category_path
+        .iter()
+        .map(|category| category.key.as_str())
+        .collect::<Vec<_>>(),
+      ["mod:33154", "mod:44691", "mod:50001"]
+    );
   }
   #[test]
   fn keeps_requirements_that_explicitly_need_a_mod_disabled() {

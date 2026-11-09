@@ -20,6 +20,7 @@ const status = (values: Partial<LiveMatchStatus>): LiveMatchStatus => ({
   current: null,
   recentMatchIds: [],
   scoreboard: null,
+  lastMatch: null,
   ...values,
 });
 
@@ -83,6 +84,27 @@ describe("liveViewState", () => {
   it("does not take a board without a lobby for a match", () => {
     const value = status({ scoreboard: board(NOW - 2000) });
     expect(kindOf(value)).toBe("waiting");
+  });
+
+  it("keeps the last match on screen after its lobby closes", () => {
+    const value = status({
+      lastMatch: { matchId: "38201445", scoreboard: board(NOW - 600_000) },
+      scoreboard: board(NOW - 2000),
+    });
+    expect(
+      liveViewState({
+        status: value,
+        gameRunning: true,
+        needsSetup: false,
+        now: NOW,
+      }),
+    ).toEqual({
+      kind: "match",
+      board: board(NOW - 600_000),
+      matchId: "38201445",
+      isOver: true,
+    });
+    expect(kindOf(value, { gameRunning: false })).toBe("closed");
   });
 
   it("shows the queue with the backend's start time", () => {

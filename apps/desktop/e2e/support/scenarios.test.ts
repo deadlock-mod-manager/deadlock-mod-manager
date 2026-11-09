@@ -13,8 +13,20 @@ const windows = process.platform === "win32";
 describe("scenario selection", () => {
   it("registers every case with explicit phases and capability requirements", () => {
     const ids = selectScenarios("all");
-    expect(ids).toHaveLength(windows ? 131 : 120);
+    expect(ids).toHaveLength(windows ? 170 : 160);
     expect(ids).toContain("downloads-segmented-range-error");
+    // Some of these specs don't dispatch on their case ID, so a rename
+    // wouldn't fail them.
+    expect(ids).toEqual(
+      expect.arrayContaining([
+        "compatibility-rebuild-after-close",
+        "compatibility-rebuild-restart",
+        "compatibility-rebuild-steam-rewrite",
+        "compatibility-rebuild-game-update",
+        "compatibility-rebuild-app-update",
+        "compatibility-rebuild-new-data",
+      ]),
+    );
     for (const id of ids) {
       expect(parseScenarioId(id)).toBe(id);
       expect(scenarioSpec(id)).toContain("./specs/");
@@ -23,12 +35,27 @@ describe("scenario selection", () => {
     expect(selectScenarios("onboarding")).toEqual([
       "onboarding-skip-analysis",
       "onboarding-telemetry-default",
+      "onboarding-identified-addon",
     ]);
-    expect(selectScenarios("gamebanana")).toHaveLength(30);
+    expect(selectScenarios("gamebanana")).toHaveLength(33);
+    expect(selectScenarios("gamebanana")).toContain(
+      "gamebanana-switch-reinstall",
+    );
+    expect(selectScenarios("gamebanana")).toContain(
+      "gamebanana-reinstall-readonly",
+    );
     expect(scenarioSpec("mod-files-error")).toBe(
       "./specs/mod-files-error.e2e.ts",
     );
     expect(scenarioPhases("mod-files-error")).toEqual(["files-error"]);
+    expect(selectScenarios("profiles")).toContain("profiles-restore-variant");
+    expect(selectScenarios("profiles-restore-variant")).toEqual([
+      "profiles-restore-variant",
+    ]);
+    expect(scenarioPhases("profiles-restore-variant")).toEqual([
+      "restore-variant",
+      "restart-restored-variant",
+    ]);
     expect(selectScenarios("library-groups")).toEqual([
       "library-groups-organize",
       "library-groups-identification",
@@ -40,6 +67,16 @@ describe("scenario selection", () => {
     expect(scenarios["library-groups-drag"].nativeInput).toBe(true);
     expect(scenarios["library-groups-drag"].platforms).toContain("linux");
     expect(selectScenarios("monkey")).toEqual(["monkey"]);
+    expect(selectScenarios("performance")).toEqual([
+      "perf-video-apply-restore",
+      "perf-video-changed-in-game",
+      "perf-video-adopt",
+      "perf-video-variant",
+      "perf-gameinfo-resync",
+      "perf-gameinfo-launch",
+      "perf-editor-undo",
+      "perf-import-paste",
+    ]);
     expect(selectScenarios("diagnostics")).toEqual([
       "network-diagnostics",
       "network-diagnostics-internet-down",
@@ -49,8 +86,22 @@ describe("scenario selection", () => {
       "app-update-check-failure",
     ]);
     expect(scenarios.monkey.nativeInput).toBe(false);
-    expect(selectScenarios("filesystem")).toHaveLength(windows ? 12 : 10);
+    expect(selectScenarios("filesystem")).toHaveLength(windows ? 14 : 12);
+    for (const id of [
+      "gameinfo-preserve-search-paths",
+      "gameinfo-preserve-legacy-search-paths",
+    ]) {
+      const scenario = parseScenarioId(id);
+      expect(scenarioPhases(scenario)).toEqual([
+        "preserve",
+        "restart-preserve",
+      ]);
+      expect(scenarioSpec(scenario)).toBe(
+        "./specs/gameinfo-preservation.e2e.ts",
+      );
+    }
     expect(selectScenarios("interchange")).toEqual(["grimoire-import"]);
+    expect(selectScenarios("analyze")).toEqual(["analyze-errors"]);
     expect(selectScenarios("skins")).toEqual(["hero-skins-active"]);
     expect(selectScenarios("stats")).toEqual([
       "stats-default-layout",
@@ -65,6 +116,9 @@ describe("scenario selection", () => {
     ]);
     expect(selectScenarios("missing-vpks")).toEqual([
       "missing-vpks-launch",
+      "missing-vpks-launch-partial",
+      "missing-vpks-launch-relaunch-error",
+      "missing-vpks-launch-relaunch-missing",
       "missing-vpks-offline",
       "missing-vpks-live",
     ]);

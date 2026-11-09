@@ -33,13 +33,18 @@ import { ModStatus } from "@/types/mods";
 import FavoriteButton from "./favorite-button";
 import ModButton from "./mod-button";
 import { NSFWBlur } from "./nsfw-blur";
+import { isNativeSourceMod } from "@/lib/mod-sources";
+import type { NativeSourceProvenance } from "@/types/generated/NativeSourceProvenance";
+import { ModSourceIcon } from "@/components/shared/mod-source-icon";
 
 interface ModCardProps {
-  mod?: ModDto;
+  mod?: ModDto & { source?: NativeSourceProvenance };
   readOnly?: boolean;
   collection?: ModsCollection;
   author?: AuthorNavigationTarget;
   curatedCollection?: CuratedCollectionNavigationTarget;
+  /** Built locally on first add; library actions use the standard mod control. */
+  builtIn?: { onAdd: () => Promise<void>; onOpen: () => void };
 }
 
 const cardEntryPoint = (
@@ -50,6 +55,7 @@ const cardEntryPoint = (
   if (author) return "author";
   if (collection === "dashboard") return "featured";
   if (collection === "library") return "library";
+  if (collection === "skins") return "skins";
   return searching ? "search" : "catalog";
 };
 
@@ -60,6 +66,7 @@ const ModCard = memo((props: ModCardProps) => {
     collection = "mods",
     author,
     curatedCollection,
+    builtIn,
   } = props;
   const { t } = useTranslation();
   const localMod = usePersistedStore((state) =>
@@ -79,7 +86,7 @@ const ModCard = memo((props: ModCardProps) => {
   const queryClient = useQueryClient();
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
   const hoverPrefetch = useModDetailHoverPrefetch(
-    readOnly ? undefined : mod?.remoteId,
+    readOnly || builtIn ? undefined : mod?.remoteId,
   );
   const configListingKind = useConfigListing(mod);
 
@@ -87,11 +94,18 @@ const ModCard = memo((props: ModCardProps) => {
     return <ModCardSkeleton />;
   }
 
-  // A config-only upload is a gameinfo.gi config, not a VPK a patch breaks.
-  const isOutdated = isModOutdated(mod) && configListingKind !== "confirmed";
+  // Source listings and built-in mods have no provider metrics or patch dates.
+  const native = isNativeSourceMod(mod.remoteId) || !!builtIn;
+  // Config-only uploads do not contain VPKs a game patch can break.
+  const isOutdated =
+    !native && isModOutdated(mod) && configListingKind !== "confirmed";
 
   const entryPoint = cardEntryPoint(props, searching);
   const openModDetail = () => {
+    if (builtIn) {
+      builtIn.onOpen();
+      return;
+    }
     analytics.track("catalog_item_opened", {
       mod_id: mod.remoteId,
       entry_point: entryPoint,
@@ -161,7 +175,7 @@ const ModCard = memo((props: ModCardProps) => {
             </div>
           </div>
         )}
-        {!readOnly && (
+        {!readOnly && !builtIn && (
           <FavoriteButton
             className='absolute top-2 right-2 z-10'
             remoteId={mod.remoteId}
@@ -217,35 +231,44 @@ const ModCard = memo((props: ModCardProps) => {
                     {t("mods.by")} {mod.author}
                   </span>
                 )}
+                <ModSourceIcon
+                  source={mod.source ?? localMod?.source}
+                  local={mod.remoteId.startsWith("local-")}
+                />
               </div>
             </div>
 
             <div className='flex flex-row justify-between'>
               <div className='flex flex-col gap-1.5'>
-                <div className='flex items-center gap-1.5 text-muted-foreground text-xs'>
-                  <div className='flex items-center gap-1.5'>
-                    <DownloadIcon className='h-3 w-3 flex-shrink-0' />
-                    <span>{mod.downloadCount.toLocaleString()}</span>
-                  </div>
-                  {mod.likes > 0 && (
+                {!native && (
+                  <div className='flex items-center gap-1.5 text-muted-foreground text-xs'>
                     <div className='flex items-center gap-1.5'>
-                      <HeartIcon className='ml-2 h-3 w-3 flex-shrink-0' />
-                      <span>{mod.likes.toLocaleString()}</span>
+                      <DownloadIcon className='h-3 w-3 flex-shrink-0' />
+                      <span>{mod.downloadCount.toLocaleString()}</span>
                     </div>
-                  )}
-                </div>
-                <div className='flex items-center gap-1.5 text-muted-foreground text-xs'>
-                  <CalendarIcon className='h-3 w-3 flex-shrink-0' />
-                  <span title={format(new Date(mod.remoteUpdatedAt), "PPP")}>
-                    {format(new Date(mod.remoteUpdatedAt), "MMM d, yyyy")}
-                  </span>
-                </div>
+                    {mod.likes > 0 && (
+                      <div className='flex items-center gap-1.5'>
+                        <HeartIcon className='ml-2 h-3 w-3 flex-shrink-0' />
+                        <span>{mod.likes.toLocaleString()}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {(!native || mod.remoteUpdatedAt.getTime() !== 0) && (
+                  <div className='flex items-center gap-1.5 text-muted-foreground text-xs'>
+                    <CalendarIcon className='h-3 w-3 flex-shrink-0' />
+                    <span title={format(new Date(mod.remoteUpdatedAt), "PPP")}>
+                      {format(new Date(mod.remoteUpdatedAt), "MMM d, yyyy")}
+                    </span>
+                  </div>
+                )}
               </div>
               {!readOnly && (
                 <ModButton
                   remoteMod={mod}
                   variant='iconOnly'
                   analyticsEntryPoint={entryPoint}
+                  onAdd={builtIn?.onAdd}
                 />
               )}
             </div>

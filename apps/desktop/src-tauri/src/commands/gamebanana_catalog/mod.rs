@@ -12,8 +12,8 @@ pub use types::{
 use crate::errors::Error;
 use crate::providers::SubmissionRef;
 use crate::providers::gamebanana::catalog::{
-  CatalogAuthor, CatalogCollection, CatalogFacet, CatalogQuery, CatalogRecord, SyncOutcome,
-  current_week, weekly_featured,
+  Catalog, CatalogAuthor, CatalogCollection, CatalogFacet, CatalogQuery, CatalogRecord,
+  SyncOutcome, current_week, weekly_featured,
 };
 use crate::providers::gamebanana::{ApiResponse, UpdateSnapshot, normalize_profile};
 use activity::{CatalogChangelogDto, CatalogCommentsDto};
@@ -142,6 +142,14 @@ pub async fn get_gamebanana_collection(
   }))
 }
 
+/// GameBanana hid the submission, so the catalog stops listing it until a crawl sees it
+/// again.
+pub(crate) async fn drop_hidden_submission(catalog: &Catalog, submission: SubmissionRef) {
+  if let Err(error) = catalog.tombstone(submission.clone()).await {
+    log::warn!("Could not drop hidden submission {submission:?} from the catalog: {error}");
+  }
+}
+
 fn uncovered_ids<'a>(collections: impl Iterator<Item = &'a CatalogCollection>) -> Vec<String> {
   collections
     .filter(|collection| collection.cover_url.is_none())
@@ -160,20 +168,61 @@ pub async fn get_gamebanana_submission_detail(
   let cancel = CancellationToken::new();
   let mut mod_data = match backend.client.profile(&submission, &cancel).await {
     Ok(profile) => {
-      let mut normalized =
-        normalize_profile(&profile, submission.submission_type).ok_or_else(|| {
-          Error::ProviderInvalidResponse("submission is not publicly available".to_string())
-        })?;
-      // A profile names only its category and that category's parent, which is not the
-      // root in deeper trees (Model Replacement > NPCs > Troopers). The sync stored the
-      // index root category.
+      // Withheld submissions still render with their notice; the rest are gone for good.
+      if profile.is_private || profile.is_trashed {
+        drop_hidden_submission(&backend.catalog, submission).await;
+        return Err(Error::ProviderSubmissionUnavailable);
+      }
+      let mut normalized = normalize_profile(&profile, submission.submission_type)
+        .ok_or(Error::ProviderSubmissionUnavailable)?;
+      let root_name = profile
+        .root_category
+        .as_ref()
+        .map(|category| category.name.trim())
+        .filter(|name| !name.is_empty());
+      match backend
+        .catalog
+        .resolve_category_path(
+          submission.submission_type,
+          normalized.category_path.clone(),
+          root_name,
+        )
+        .await
+      {
+        Ok(path) => normalized.category_path = path,
+        Err(error) => log::warn!("Could not resolve categories for {remote_id}: {error}"),
+      }
+      let resolved_root = if root_name.is_none() {
+        match backend
+          .catalog
+          .category_root(submission.submission_type, &normalized.category_path)
+          .await
+        {
+          Ok(root) => root,
+          Err(error) => {
+            log::warn!("Could not resolve the category root for {remote_id}: {error}");
+            None
+          }
+        }
+      } else {
+        None
+      };
+      let has_root = root_name.is_some() || resolved_root.is_some();
+      if let Some(root) = resolved_root {
+        normalized.category = root;
+      }
       match backend.catalog.get(submission.clone()).await {
-        Ok(Some(cached)) => normalized.category = cached.category,
+        Ok(Some(cached)) => retain_cached_category(&mut normalized, &cached, has_root),
         Ok(None) => {}
         Err(error) => log::warn!("Could not read the cached record for {remote_id}: {error}"),
       }
-      // Caching the profile is incidental; a busy catalog must not hide a page we already have.
-      if let Err(error) = backend
+      normalized.is_map = submission.submission_type == crate::providers::SubmissionType::Mod
+        && normalized.category == "Maps";
+      // Caching the profile is incidental; a busy catalog must not hide a page we already
+      // have. A withheld submission stays out of the catalog's listings.
+      if profile.is_hidden() {
+        drop_hidden_submission(&backend.catalog, submission).await;
+      } else if let Err(error) = backend
         .catalog
         .upsert_records(vec![record_from_profile(
           submission,
@@ -510,9 +559,8 @@ async fn submission_files(
     .download_page(&submission, &CancellationToken::new())
     .await?;
   if page.is_trashed || page.is_withheld {
-    return Err(Error::ProviderInvalidResponse(
-      "submission files are not publicly available".to_string(),
-    ));
+    drop_hidden_submission(&backend.catalog, submission).await;
+    return Err(Error::ProviderSubmissionUnavailable);
   }
   let downloads = page
     .files
@@ -620,6 +668,7 @@ fn record_from_profile(
     description: normalized.description,
     profile_url: profile.profile_url.clone(),
     category: normalized.category,
+    category_path: normalized.category_path,
     hero: normalized.hero,
     is_audio: normalized.is_audio,
     is_map: normalized.is_map,
@@ -645,6 +694,56 @@ fn record_from_profile(
     tags: crate::providers::gamebanana::parse_tags(&profile.tags),
     development_state: profile.development_state.clone(),
     completion_percentage: profile.completion_percentage,
+    videos: Some(crate::providers::gamebanana::embedded_videos(
+      &profile.embedded_media,
+    )),
+  }
+}
+
+fn retain_cached_category(
+  normalized: &mut crate::providers::gamebanana::NormalizedSubmission,
+  cached: &CatalogRecord,
+  has_root: bool,
+) {
+  if has_root {
+    return;
+  }
+  let Some(first) = normalized.category_path.first() else {
+    normalized.category = cached.category.clone();
+    normalized.category_path = cached.category_path.clone();
+    return;
+  };
+  let same_leaf = normalized
+    .category_path
+    .last()
+    .zip(cached.category_path.last())
+    .is_some_and(|(incoming, existing)| incoming.key == existing.key);
+  let mut ancestors = cached.category_path.iter();
+  let compatible = normalized.category_path.iter().all(|incoming| {
+    ancestors
+      .by_ref()
+      .any(|existing| existing.key == incoming.key)
+  });
+  if same_leaf && compatible {
+    normalized.category = cached.category.clone();
+    normalized.category_path = cached.category_path.clone();
+    return;
+  }
+  // A shared parent proves the missing prefix even when the leaf changed.
+  // Descendants after that parent come entirely from the new profile.
+  if let Some(position) = cached
+    .category_path
+    .iter()
+    .position(|existing| existing.key == first.key)
+    && cached
+      .category_path
+      .first()
+      .is_some_and(|root| root.name == cached.category)
+  {
+    let mut path = cached.category_path[..position].to_vec();
+    path.append(&mut normalized.category_path);
+    normalized.category_path = path;
+    normalized.category = cached.category.clone();
   }
 }
 
@@ -659,7 +758,238 @@ fn sync_outcome_name(outcome: SyncOutcome) -> &'static str {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::providers::SubmissionType;
   use crate::providers::gamebanana::SubmissionFile;
+  use crate::providers::gamebanana::catalog::CatalogCategory;
+
+  fn world_profile() -> crate::providers::gamebanana::Profile {
+    serde_json::from_value(serde_json::json!({
+      "_idRow": 1,
+      "_sName": "World mod",
+      "_sProfileUrl": "https://gamebanana.com/mods/1",
+      "_aSuperCategory": { "_idRow": 44691, "_sName": "NPCs" },
+      "_aCategory": { "_idRow": 44458, "_sName": "Walker" }
+    }))
+    .unwrap()
+  }
+
+  #[tokio::test]
+  async fn cached_details_retain_profile_videos_and_clear_removed_videos() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("catalog.sqlite3");
+    let catalog = Catalog::open(&path, 1).await.unwrap();
+    let mut profile = world_profile();
+    profile.embedded_media = vec![
+      "https://youtube.com/watch?v=Xw0wI89x3fc".to_string(),
+      "https://vimeo.com/1203014251/a1b2c3".to_string(),
+      "https://unsupported.example/video".to_string(),
+    ];
+    let submission = SubmissionRef::parse_slug("1").unwrap();
+    let normalized = normalize_profile(&profile, SubmissionType::Mod).unwrap();
+    let fresh = CatalogModDto::from_profile(&profile, normalized.clone());
+    catalog
+      .upsert_records(vec![record_from_profile(
+        submission.clone(),
+        &profile,
+        normalized.clone(),
+      )])
+      .await
+      .unwrap();
+    drop(catalog);
+
+    let catalog = Catalog::open(&path, 1).await.unwrap();
+    let saved = catalog.get(submission.clone()).await.unwrap().unwrap();
+    let cached = CatalogModDto::from_record(saved.clone()).unwrap();
+    let expected = serde_json::to_value(fresh.metadata.unwrap().videos).unwrap();
+    assert_eq!(expected.as_array().unwrap().len(), 2);
+    assert_eq!(expected[1]["hash"], "a1b2c3");
+    assert_eq!(
+      serde_json::to_value(cached.metadata.unwrap().videos).unwrap(),
+      expected
+    );
+
+    // Index and bulk hydration responses don't fetch embedded media.
+    for hydrated in [false, true] {
+      let mut sparse = saved.clone();
+      sparse.is_hydrated = hydrated;
+      sparse.videos = None;
+      catalog.upsert_records(vec![sparse]).await.unwrap();
+      let cached =
+        CatalogModDto::from_record(catalog.get(submission.clone()).await.unwrap().unwrap())
+          .unwrap();
+      assert_eq!(
+        serde_json::to_value(cached.metadata.unwrap().videos).unwrap(),
+        expected
+      );
+    }
+
+    profile.embedded_media.clear();
+    catalog
+      .upsert_records(vec![record_from_profile(
+        submission.clone(),
+        &profile,
+        normalized,
+      )])
+      .await
+      .unwrap();
+    let cached =
+      CatalogModDto::from_record(catalog.get(submission).await.unwrap().unwrap()).unwrap();
+    assert!(cached.metadata.unwrap().videos.is_empty());
+  }
+
+  #[test]
+  fn withheld_profiles_carry_the_staff_notice_and_cannot_download() {
+    let profile: crate::providers::gamebanana::Profile =
+      serde_json::from_value(serde_json::json!({
+        "_idRow": 734494,
+        "_sName": "just for test do not download for now",
+        "_sProfileUrl": "https://gamebanana.com/mods/734494",
+        "_bIsWithheld": true,
+        "_aFiles": [{ "_idRow": 1870999, "_sFile": "deadlock_item2.zip", "_nFilesize": 1 }],
+        "_aWithholdNotice": {
+          "_tsDateWithheld": 1793465198,
+          "_aRulesViolated": [{ "_sCode": "R.17: Nonsense", "_sName": "Nonsense" }],
+          "_sNotes": "<p>Submission lacks context.</p>",
+          "_aWithholder": {
+            "_sName": "TheLastFriendly",
+            "_sProfileUrl": "https://gamebanana.com/members/4514086"
+          }
+        }
+      }))
+      .unwrap();
+    let normalized = normalize_profile(&profile, SubmissionType::Mod).unwrap();
+    let dto = CatalogModDto::from_profile(&profile, normalized);
+
+    assert!(!dto.downloadable);
+    let notice = dto.withheld.unwrap();
+    assert_eq!(notice.rules[0].code, "R.17");
+    assert_eq!(notice.rules[0].name, "Nonsense");
+    assert_eq!(notice.notes, "<p>Submission lacks context.</p>");
+    assert_eq!(notice.withheld_by.as_deref(), Some("TheLastFriendly"));
+    assert_eq!(notice.withheld_at, Some(1793465198));
+  }
+
+  #[test]
+  fn sparse_details_keep_cached_world_ancestors_for_the_same_leaf() {
+    let profile = world_profile();
+    let mut normalized = normalize_profile(&profile, SubmissionType::Mod).unwrap();
+    let mut cached = record_from_profile(
+      SubmissionRef::parse_slug("1").unwrap(),
+      &profile,
+      normalized.clone(),
+    );
+    cached.category = "Model Replacement".to_string();
+    cached.category_path.insert(
+      0,
+      CatalogCategory {
+        key: "mod:33154".to_string(),
+        name: "Model Replacement".to_string(),
+      },
+    );
+    retain_cached_category(&mut normalized, &cached, false);
+    assert_eq!(normalized.category, "Model Replacement");
+    assert_eq!(normalized.category_path, cached.category_path);
+
+    normalized.category_path.clear();
+    normalized.category = "Other/Misc".to_string();
+    retain_cached_category(&mut normalized, &cached, false);
+    assert_eq!(normalized.category_path, cached.category_path);
+    assert_eq!(normalized.category, "Model Replacement");
+  }
+
+  #[test]
+  fn reassigned_details_replace_cached_category_metadata() {
+    let profile = world_profile();
+    let mut normalized = normalize_profile(&profile, SubmissionType::Mod).unwrap();
+    let cached = record_from_profile(
+      SubmissionRef::parse_slug("1").unwrap(),
+      &profile,
+      normalized.clone(),
+    );
+    normalized.category = "HUD".to_string();
+    normalized.category_path = vec![CatalogCategory {
+      key: "mod:999".to_string(),
+      name: "HUD".to_string(),
+    }];
+    let reassigned = normalized.clone();
+    retain_cached_category(&mut normalized, &cached, false);
+    assert_eq!(normalized, reassigned);
+
+    normalized.category = "Model Replacement".to_string();
+    let authoritative = normalized.clone();
+    retain_cached_category(&mut normalized, &cached, true);
+    assert_eq!(normalized, authoritative);
+  }
+
+  #[test]
+  fn details_reuse_proven_ancestors_when_the_leaf_changes() {
+    let profile = world_profile();
+    let mut normalized = normalize_profile(&profile, SubmissionType::Mod).unwrap();
+    let mut cached = record_from_profile(
+      SubmissionRef::parse_slug("1").unwrap(),
+      &profile,
+      normalized.clone(),
+    );
+    cached.category = "Model Replacement".to_string();
+    cached.category_path.insert(
+      0,
+      CatalogCategory {
+        key: "mod:33154".to_string(),
+        name: "Model Replacement".to_string(),
+      },
+    );
+    let leaf = normalized.category_path.last_mut().unwrap();
+    leaf.key = "mod:44688".to_string();
+    leaf.name = "Guardian".to_string();
+
+    retain_cached_category(&mut normalized, &cached, false);
+
+    assert_eq!(normalized.category, "Model Replacement");
+    let keys = normalized
+      .category_path
+      .iter()
+      .map(|category| category.key.as_str())
+      .collect::<Vec<_>>();
+    assert_eq!(keys, ["mod:33154", "mod:44691", "mod:44688"]);
+    assert_eq!(normalized.category_path.last().unwrap().name, "Guardian");
+  }
+
+  #[test]
+  fn details_keep_new_ancestry_and_trust_conflicting_parents() {
+    let profile = world_profile();
+    let mut normalized = normalize_profile(&profile, SubmissionType::Mod).unwrap();
+    let mut cached = record_from_profile(
+      SubmissionRef::parse_slug("1").unwrap(),
+      &profile,
+      normalized.clone(),
+    );
+    cached.category = "Model Replacement".to_string();
+    cached.category_path[0] = CatalogCategory {
+      key: "mod:33154".to_string(),
+      name: "Model Replacement".to_string(),
+    };
+    let source = normalized.clone();
+    retain_cached_category(&mut normalized, &cached, false);
+    assert_eq!(
+      normalized, source,
+      "Equal-length cached paths must not erase incoming parents"
+    );
+
+    cached
+      .category_path
+      .insert(1, source.category_path[0].clone());
+    normalized.category = "HUD".to_string();
+    normalized.category_path[0] = CatalogCategory {
+      key: "mod:999".to_string(),
+      name: "HUD".to_string(),
+    };
+    let reassigned = normalized.clone();
+    retain_cached_category(&mut normalized, &cached, false);
+    assert_eq!(
+      normalized, reassigned,
+      "A shared leaf must not preserve a conflicting old parent"
+    );
+  }
 
   fn file(id: u64, date_added: i64) -> SubmissionFile {
     SubmissionFile {

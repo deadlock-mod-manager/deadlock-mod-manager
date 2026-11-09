@@ -9,20 +9,16 @@ import { Button } from "@deadlock-mods/ui/components/button";
 import { ArrowCounterClockwiseIcon } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 
-export const UndoButton = ({
-  currentConfigId,
-}: {
-  currentConfigId: string | null;
-}) => {
-  const { t } = useTranslation();
+/** Goes back to the state before the newest History entry, when History allows it. */
+const useUndoLastChange = (currentConfigId: string | null) => {
   const history = usePersistedStore((state) => state.perfHistory);
   const userConfigs = usePersistedStore((state) => state.perfUserConfigs);
   const applyMutation = useApplyPerfConfig();
   const removeMutation = useRemovePerfConfig();
   const target = undoTarget(history, currentConfigId, userConfigs);
-  if (!target) return null;
 
   const undo = () => {
+    if (!target) return;
     if (target.kind === "remove") {
       removeMutation.mutate({ entryPoint: "undo" });
       return;
@@ -34,14 +30,35 @@ export const UndoButton = ({
     });
   };
 
+  return {
+    available: target !== null,
+    undo,
+    isPending: applyMutation.isPending || removeMutation.isPending,
+  };
+};
+
+export const UndoButton = ({
+  currentConfigId,
+  compact = false,
+}: {
+  currentConfigId: string | null;
+  /** "Undo" instead of "Undo last change", for rows that already hold other actions. */
+  compact?: boolean;
+}) => {
+  const { t } = useTranslation();
+  const { available, undo, isPending } = useUndoLastChange(currentConfigId);
+  if (!available) return null;
+
   return (
     <Button
       icon={<ArrowCounterClockwiseIcon aria-hidden />}
-      isLoading={applyMutation.isPending || removeMutation.isPending}
+      isLoading={isPending}
       onClick={undo}
       size='sm'
       variant='ghost'>
-      {t("performance.activeStatus.undo")}
+      {compact
+        ? t("performance.activeStatus.undoShort")
+        : t("performance.activeStatus.undo")}
     </Button>
   );
 };

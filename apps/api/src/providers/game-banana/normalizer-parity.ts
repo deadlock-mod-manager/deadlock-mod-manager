@@ -11,12 +11,69 @@ type Profile =
   | GameBanana.GameBananaModProfile
   | GameBanana.GameBananaSoundProfile;
 
+type ProfileCategory = Pick<
+  GameBanana.GameBananaModProfile["_aCategory"],
+  "_sName"
+> &
+  Partial<
+    Pick<
+      GameBanana.GameBananaModProfile["_aCategory"],
+      "_idRow" | "_sProfileUrl"
+    >
+  >;
+
+type RetainedCategory = {
+  key: string;
+  name: string;
+};
+
+// GameBanana omits the id for this root; the desktop catalog pins it.
+const MODEL_REPLACEMENT_ID = "33154";
+const MAX_U64 = 18_446_744_073_709_551_615n;
+const CATEGORY_URL_ID = /\/cats\/(\+?\d+)\/*$/;
+
+function categoryId(
+  category: ProfileCategory,
+  submissionType: "mod" | "sound",
+): string | null {
+  if (category._idRow !== undefined && category._idRow > 0)
+    return category._idRow.toString();
+  const fromUrl = category._sProfileUrl?.match(CATEGORY_URL_ID)?.[1];
+  if (fromUrl) {
+    const id = BigInt(fromUrl);
+    if (id > 0n && id <= MAX_U64) return id.toString();
+  }
+  return submissionType === "mod" &&
+    category._sName.trim() === "Model Replacement"
+    ? MODEL_REPLACEMENT_ID
+    : null;
+}
+
+/** Mirrors `category_path` in the desktop GameBanana catalog. */
+function retainedCategoryPath(
+  categories: Array<ProfileCategory | undefined>,
+  submissionType: "mod" | "sound",
+): RetainedCategory[] {
+  const path: RetainedCategory[] = [];
+  for (const category of categories) {
+    if (!category) continue;
+    const id = categoryId(category, submissionType);
+    const name = category._sName.trim();
+    const key = `${submissionType}:${id}`;
+    if (id !== null && name && !path.some((entry) => entry.key === key)) {
+      path.push({ key, name });
+    }
+  }
+  return path;
+}
+
 export type RetainedNormalizedSubmission = {
   slug: string;
   name: string;
   description: string;
   author: string;
   category: string;
+  categoryPath: RetainedCategory[];
   hero: DeadlockHeroes | null;
   downloadCount: number;
   likes: number;
@@ -50,6 +107,10 @@ export function normalizeRetainedProfile(
     description: profile._sText || profile._sDescription || "",
     author: submitterDisplayName(profile),
     category,
+    categoryPath: retainedCategoryPath(
+      [profile._aRootCategory, profile._aSuperCategory, profile._aCategory],
+      submissionType,
+    ),
     hero: heroFromGameBananaProfile(profile),
     downloadCount: profile._nDownloadCount ?? 0,
     likes: profile._nLikeCount ?? 0,

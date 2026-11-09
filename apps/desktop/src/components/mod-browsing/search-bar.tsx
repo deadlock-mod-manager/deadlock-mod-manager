@@ -8,7 +8,7 @@ import { useTranslation } from "react-i18next";
 import { HeroIcon } from "@/components/heroes/hero-icon";
 import { usePersistedStore } from "@/lib/store";
 import { cn, formatFilterDate, isDateFilterActive } from "@/lib/utils";
-import { getModCategoryDisplayName, SortType } from "@/lib/constants";
+import { SortType } from "@/lib/constants";
 import {
   type AudioQuickFilter,
   type DateFilter,
@@ -17,6 +17,16 @@ import {
   type MapQuickFilter,
 } from "@/lib/store/slices/ui";
 import CategoryFilter from "./category-filter";
+import {
+  heroCategoryForKey,
+  toggleCatalogFilterCategory,
+} from "./catalog-hero-categories";
+import {
+  broadCategoryLabel,
+  type CatalogCategorySelection,
+  selectedCategoryLabel,
+  selectedCategoryPathLabel,
+} from "./catalog-categories";
 import FiltersDropdown from "./filters-dropdown";
 import HeroFilter from "./hero-filter";
 import { SortSelect } from "./sort-select";
@@ -40,6 +50,7 @@ type SearchBarProps = {
   >;
   selectedCategories: string[];
   onCategoriesChange: (categories: string[]) => void;
+  catalogCategories?: CatalogCategorySelection;
   selectedHeroes: string[];
   onHeroesChange: (heroes: string[]) => void;
   hideNSFW: boolean;
@@ -66,6 +77,9 @@ type SearchBarProps = {
   onAddedFilterChange?: (value: DateFilter) => void;
 };
 
+const getHeroDisplayName = (hero: string) =>
+  hero === "None" ? "General/Other" : hero;
+
 const SearchBar = ({
   trailingActions,
   className,
@@ -79,6 +93,7 @@ const SearchBar = ({
   mods,
   selectedCategories,
   onCategoriesChange,
+  catalogCategories,
   selectedHeroes,
   onHeroesChange,
   hideNSFW,
@@ -110,13 +125,6 @@ const SearchBar = ({
   const addedActive = addedFilter ? isDateFilterActive(addedFilter) : false;
   const favoritesCount = usePersistedStore((state) => state.favorites.length);
 
-  const getHeroDisplayName = (hero: string) => {
-    if (hero === "None") {
-      return "General/Other";
-    }
-    return hero;
-  };
-
   const removeCategory = (categoryToRemove: string) => {
     onCategoriesChange(
       selectedCategories.filter((cat) => cat !== categoryToRemove),
@@ -128,8 +136,16 @@ const SearchBar = ({
   };
 
   const clearAllFilters = () => {
-    onCategoriesChange([]);
-    onHeroesChange([]);
+    if (catalogCategories)
+      catalogCategories.onSelectionChange({
+        categories: [],
+        keys: [],
+        heroes: [],
+      });
+    else {
+      onCategoriesChange([]);
+      onHeroesChange([]);
+    }
     onHideNSFWChange(false);
     onNSFWOnlyChange?.(false);
     onAudioQuickFilterChange?.("off");
@@ -155,6 +171,7 @@ const SearchBar = ({
 
   const hasActiveFilters =
     selectedCategories.length > 0 ||
+    (catalogCategories?.selectedKeys.length ?? 0) > 0 ||
     selectedHeroes.length > 0 ||
     hideNSFW ||
     nsfwOnly ||
@@ -196,6 +213,7 @@ const SearchBar = ({
           selectedHeroes={selectedHeroes}
         />
         <CategoryFilter
+          catalogCategories={catalogCategories}
           mods={mods}
           onCategoriesChange={onCategoriesChange}
           selectedCategories={selectedCategories}
@@ -273,8 +291,12 @@ const SearchBar = ({
               className='flex items-center gap-1'
               key={`category-${category}`}
               variant='secondary'>
-              {t("filters.categoryLabel")} {getModCategoryDisplayName(category)}
+              {t("filters.categoryLabel")}{" "}
+              {broadCategoryLabel(category, !!catalogCategories, t)}
               <button
+                aria-label={t("filters.removeCategory", {
+                  name: broadCategoryLabel(category, !!catalogCategories, t),
+                })}
                 className='ml-1 rounded-full p-0.5 hover:bg-muted'
                 onClick={() => removeCategory(category)}
                 type='button'>
@@ -282,6 +304,47 @@ const SearchBar = ({
               </button>
             </Badge>
           ))}
+
+          {catalogCategories?.selectedKeys
+            .filter(
+              (key) =>
+                heroCategoryForKey(key, catalogCategories.paths)?.category
+                  .key !== key,
+            )
+            .map((key) => (
+              <Badge
+                className='flex items-center gap-1'
+                key={`category-key-${key}`}
+                variant='secondary'>
+                {t("filters.categoryLabel")}{" "}
+                {selectedCategoryPathLabel(key, catalogCategories.paths, t)}
+                <button
+                  aria-label={t("filters.removeCategory", {
+                    name: selectedCategoryLabel(
+                      key,
+                      catalogCategories.paths,
+                      t,
+                    ),
+                  })}
+                  className='ml-1 rounded-full p-0.5 hover:bg-muted'
+                  onClick={() =>
+                    catalogCategories.onSelectionChange(
+                      toggleCatalogFilterCategory(
+                        key,
+                        {
+                          categories: selectedCategories,
+                          heroes: selectedHeroes,
+                          keys: catalogCategories.selectedKeys,
+                        },
+                        catalogCategories.paths,
+                      ),
+                    )
+                  }
+                  type='button'>
+                  <X className='h-3 w-3' />
+                </button>
+              </Badge>
+            ))}
 
           {/* Hero badges */}
           {selectedHeroes.map((hero) => (
@@ -293,6 +356,9 @@ const SearchBar = ({
               {hero !== "None" && <HeroIcon className='h-4 w-4' hero={hero} />}
               {getHeroDisplayName(hero)}
               <button
+                aria-label={t("filters.removeHero", {
+                  name: getHeroDisplayName(hero),
+                })}
                 className='ml-1 rounded-full p-0.5 hover:bg-muted'
                 onClick={() => removeHero(hero)}
                 type='button'>

@@ -1,6 +1,10 @@
+use super::categories::{
+  CATEGORY_TAXONOMY, CatalogCategory, CategoryTaxonomy, decode_category_path,
+};
 use super::pool::ConnectionPool;
 use super::schema::{submission, sync_cursor, sync_state};
 use crate::errors::Error;
+use crate::providers::gamebanana::EmbeddedVideo;
 use crate::providers::{SubmissionProvider, SubmissionRef, SubmissionType};
 use diesel::OptionalExtension;
 use diesel::prelude::*;
@@ -11,6 +15,7 @@ use std::path::Path;
 
 pub(super) const INCOMPLETE_SNAPSHOT: &str = "snapshot_with_invalid_records";
 pub(super) const LAST_FULL_SYNC_AT: &str = "last_full_sync_at";
+const CATEGORY_SNAPSHOT_VERSION: &str = "category_path_snapshot_v2";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -22,6 +27,8 @@ pub struct CatalogRecord {
   pub description: String,
   pub profile_url: String,
   pub category: String,
+  #[serde(default)]
+  pub category_path: Vec<CatalogCategory>,
   pub hero: Option<String>,
   pub is_audio: bool,
   pub is_map: bool,
@@ -42,6 +49,9 @@ pub struct CatalogRecord {
   pub tags: Vec<String>,
   pub development_state: Option<String>,
   pub completion_percentage: Option<u8>,
+  /// None means videos were not fetched; Some(empty) clears previously cached videos.
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub videos: Option<Vec<EmbeddedVideo>>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -101,6 +111,8 @@ pub(super) struct SubmissionRow {
   pub development_state: Option<String>,
   pub completion_percentage: Option<i32>,
   pub thumbnail_url: Option<String>,
+  pub category_path: String,
+  pub videos: Option<String>,
 }
 
 #[derive(Debug, Clone, Queryable, Selectable, Identifiable, Insertable, AsChangeset)]
@@ -128,6 +140,104 @@ struct SlugRow {
 }
 
 impl Catalog {
+  pub(super) async fn prepare_category_backfill(&self) -> Result<(), Error> {
+    self
+      .pool
+      .run(|connection| {
+        connection.immediate_transaction::<_, Error, _>(|connection| {
+          if sync_state::table
+            .find(CATEGORY_SNAPSHOT_VERSION)
+            .count()
+            .get_result::<i64>(connection)?
+            > 0
+          {
+            return Ok(());
+          }
+          // An older snapshot may have completed a submission kind before full
+          // category paths existed. Restart once, then resume committed pages.
+          diesel::update(sync_cursor::table)
+            .set((
+              sync_cursor::next_page.eq(1_i64),
+              sync_cursor::snapshot_id.eq(Option::<String>::None),
+              sync_cursor::snapshot_complete.eq(false),
+            ))
+            .execute(connection)?;
+          diesel::delete(sync_state::table.find(INCOMPLETE_SNAPSHOT)).execute(connection)?;
+          diesel::insert_into(sync_state::table)
+            .values(SyncStateRow {
+              key: CATEGORY_SNAPSHOT_VERSION.to_string(),
+              value: "1".to_string(),
+            })
+            .execute(connection)?;
+          Ok(())
+        })
+      })
+      .await
+  }
+
+  pub(super) async fn save_category_taxonomy(
+    &self,
+    taxonomy: CategoryTaxonomy,
+  ) -> Result<(), Error> {
+    self
+      .pool
+      .run(move |connection| {
+        connection.immediate_transaction::<_, Error, _>(|connection| {
+          for submission_type in SubmissionType::ALL {
+            let kind = submission_type_name(submission_type);
+            let rows = submission::table
+              .filter(submission::provider.eq("gamebanana"))
+              .filter(submission::submission_type.eq(kind))
+              .select((
+                submission::submission_id,
+                submission::category_path,
+                submission::category,
+                submission::is_map,
+              ))
+              .load::<(String, String, String, bool)>(connection)?;
+            for (id, encoded, category, is_map) in rows {
+              let original = decode_category_path(&encoded)?;
+              let Some(expanded) = original
+                .last()
+                .and_then(|leaf| taxonomy.path_for_leaf(submission_type, &leaf.key))
+              else {
+                continue;
+              };
+              let Some(root) = expanded.first() else {
+                continue;
+              };
+              let updated_is_map = submission_type == SubmissionType::Mod && root.name == "Maps";
+              // A fresh taxonomy also repairs the broad category after reparenting.
+              if expanded != original || category != root.name || is_map != updated_is_map {
+                let encoded = serde_json::to_string(expanded)
+                  .map_err(|error| Error::Catalog(error.to_string()))?;
+                diesel::update(submission::table.find(("gamebanana", kind, id)))
+                  .set((
+                    submission::category_path.eq(encoded),
+                    submission::category.eq(&root.name),
+                    submission::is_map.eq(updated_is_map),
+                  ))
+                  .execute(connection)?;
+              }
+            }
+          }
+          let state = SyncStateRow {
+            key: CATEGORY_TAXONOMY.to_string(),
+            value: serde_json::to_string(&taxonomy)
+              .map_err(|error| Error::Catalog(error.to_string()))?,
+          };
+          diesel::insert_into(sync_state::table)
+            .values(&state)
+            .on_conflict(sync_state::key)
+            .do_update()
+            .set(sync_state::value.eq(&state.value))
+            .execute(connection)?;
+          Ok(())
+        })
+      })
+      .await
+  }
+
   pub async fn open(path: impl AsRef<Path>, pool_size: usize) -> Result<Self, Error> {
     Ok(Self {
       pool: ConnectionPool::open(path, pool_size).await?,
@@ -313,6 +423,23 @@ impl Catalog {
           }
           Ok(())
         })
+      })
+      .await
+  }
+
+  /// Hides a submission GameBanana no longer serves publicly until a crawl sees it again.
+  pub async fn tombstone(&self, submission: SubmissionRef) -> Result<(), Error> {
+    self
+      .pool
+      .run(move |connection| {
+        diesel::update(submission::table.find((
+          provider_name(submission.provider),
+          submission_type_name(submission.submission_type),
+          submission.submission_id,
+        )))
+        .set(submission::is_tombstoned.eq(true))
+        .execute(connection)?;
+        Ok(())
       })
       .await
   }
@@ -564,6 +691,13 @@ impl SubmissionRow {
       description: record.description,
       profile_url: record.profile_url,
       category: record.category,
+      category_path: serde_json::to_string(&record.category_path)
+        .map_err(|error| Error::Catalog(error.to_string()))?,
+      videos: record
+        .videos
+        .map(|videos| serde_json::to_string(&videos))
+        .transpose()
+        .map_err(|error| Error::Catalog(error.to_string()))?,
       hero: record.hero,
       is_audio: record.is_audio,
       is_map: record.is_map,
@@ -594,6 +728,12 @@ impl SubmissionRow {
   fn merge(self, incoming: Self) -> Self {
     let hydrated = incoming.is_hydrated;
     let keeps_media = incoming.images == "[]";
+    let category_path =
+      if hydrated && incoming.category != "Other" && incoming.category != self.category {
+        incoming.category_path
+      } else {
+        merge_category_paths(&self.category_path, &incoming.category_path, hydrated)
+      };
     Self {
       provider: incoming.provider,
       submission_type: incoming.submission_type,
@@ -613,6 +753,8 @@ impl SubmissionRow {
       } else {
         self.category
       },
+      category_path,
+      videos: incoming.videos.or(self.videos),
       hero: if hydrated { incoming.hero } else { self.hero },
       is_audio: incoming.is_audio,
       is_map: if hydrated {
@@ -657,6 +799,29 @@ impl SubmissionRow {
       },
     }
   }
+}
+
+fn merge_category_paths(saved: &str, incoming: &str, authoritative: bool) -> String {
+  let saved_path = decode_category_path(saved).unwrap_or_default();
+  let incoming_path = decode_category_path(incoming).unwrap_or_default();
+  if incoming_path.is_empty() {
+    return saved.to_string();
+  }
+  if saved_path.is_empty() {
+    return incoming.to_string();
+  }
+  let same_leaf = saved_path.last().map(|category| &category.key)
+    == incoming_path.last().map(|category| &category.key);
+  let mut ancestors = saved_path.iter();
+  let compatible = incoming_path
+    .iter()
+    .all(|incoming| ancestors.by_ref().any(|saved| saved.key == incoming.key));
+  if (same_leaf && compatible && incoming_path.len() < saved_path.len())
+    || (!authoritative && !same_leaf)
+  {
+    return saved.to_string();
+  }
+  incoming.to_string()
 }
 
 impl TryFrom<SyncCursorRow> for SyncCursor {
@@ -768,6 +933,227 @@ mod tests {
   use crate::providers::SubmissionRef;
   use tempfile::tempdir;
 
+  #[tokio::test]
+  async fn sparse_category_updates_keep_ancestry_and_details_can_reassign() {
+    let directory = tempdir().unwrap();
+    let catalog = Catalog::open(directory.path().join("catalog.sqlite3"), 1)
+      .await
+      .unwrap();
+    let category = |id, name: &str| super::CatalogCategory {
+      key: format!("mod:{id}"),
+      name: name.to_string(),
+    };
+    let mut entry = record("1", "Walker", "snapshot-a");
+    entry.category = "Model Replacement".to_string();
+    entry.category_path = vec![
+      category(33154, "Model Replacement"),
+      category(44691, "NPCs"),
+      category(44458, "Walker"),
+    ];
+    catalog.upsert_records(vec![entry.clone()]).await.unwrap();
+
+    let mut sparse = entry.clone();
+    sparse.is_hydrated = false;
+    sparse.category_path = vec![
+      entry.category_path[0].clone(),
+      entry.category_path[2].clone(),
+    ];
+    catalog.upsert_records(vec![sparse]).await.unwrap();
+    let saved = catalog
+      .get(entry.submission.clone())
+      .await
+      .unwrap()
+      .unwrap();
+    assert_eq!(saved.category_path, entry.category_path);
+
+    let mut missing = entry.clone();
+    missing.category_path.clear();
+    catalog.upsert_records(vec![missing]).await.unwrap();
+    let saved = catalog
+      .get(entry.submission.clone())
+      .await
+      .unwrap()
+      .unwrap();
+    assert_eq!(saved.category_path, entry.category_path);
+
+    entry.category_path.truncate(1);
+    catalog.upsert_records(vec![entry.clone()]).await.unwrap();
+    let saved = catalog
+      .get(entry.submission.clone())
+      .await
+      .unwrap()
+      .unwrap();
+    assert_eq!(
+      saved.category_path, entry.category_path,
+      "Authoritative root-only reassignment must remove old descendants"
+    );
+
+    entry.category_path.push(category(44457, "Troopers"));
+    catalog.upsert_records(vec![entry.clone()]).await.unwrap();
+    let saved = catalog.get(entry.submission).await.unwrap().unwrap();
+    assert_eq!(saved.category_path, entry.category_path);
+  }
+
+  #[tokio::test]
+  async fn authoritative_root_changes_replace_or_clear_previous_category_keys() {
+    for with_path in [true, false] {
+      let directory = tempdir().unwrap();
+      let catalog = Catalog::open(directory.path().join("catalog.sqlite3"), 1)
+        .await
+        .unwrap();
+      let category = |id, name: &str| super::CatalogCategory {
+        key: format!("mod:{id}"),
+        name: name.to_string(),
+      };
+      let mut entry = record("1", "Walker", "snapshot-a");
+      entry.category = "Model Replacement".to_string();
+      entry.category_path = vec![
+        category(33154, "Model Replacement"),
+        category(44691, "NPCs"),
+        category(44458, "Walker"),
+      ];
+      catalog.upsert_records(vec![entry.clone()]).await.unwrap();
+      entry.category = "HUD".to_string();
+      entry.category_path = if with_path {
+        vec![category(123, "HUD"), category(44458, "Walker")]
+      } else {
+        Vec::new()
+      };
+      catalog.upsert_records(vec![entry.clone()]).await.unwrap();
+      let saved = catalog.get(entry.submission).await.unwrap().unwrap();
+      assert_eq!(saved.category, "HUD");
+      assert_eq!(saved.category_path, entry.category_path);
+    }
+  }
+
+  #[tokio::test]
+  async fn category_backfill_restarts_legacy_snapshot_once_then_preserves_resumes() {
+    let directory = tempdir().unwrap();
+    let catalog = Catalog::open(directory.path().join("catalog.sqlite3"), 1)
+      .await
+      .unwrap();
+    catalog
+      .upsert_page(
+        vec![record("1", "Old Mod", "old-snapshot")],
+        crate::providers::SubmissionType::Mod,
+        200,
+        Some("old-snapshot".to_string()),
+        true,
+      )
+      .await
+      .unwrap();
+    catalog
+      .upsert_page(
+        Vec::new(),
+        crate::providers::SubmissionType::Sound,
+        3,
+        Some("old-snapshot".to_string()),
+        false,
+      )
+      .await
+      .unwrap();
+    catalog
+      .set_state(super::INCOMPLETE_SNAPSHOT, "old-snapshot".to_string())
+      .await
+      .unwrap();
+    catalog
+      .set_state("category_path_snapshot_v1", "1".to_string())
+      .await
+      .unwrap();
+    catalog.prepare_category_backfill().await.unwrap();
+    let cursor = catalog
+      .cursor(crate::providers::SubmissionType::Mod)
+      .await
+      .unwrap();
+    assert_eq!(cursor.next_page, 1);
+    assert!(!cursor.snapshot_complete);
+    assert!(cursor.snapshot_id.is_none());
+    assert_eq!(
+      catalog.count_visible().await.unwrap(),
+      1,
+      "Restarting metadata backfill keeps cached browsing available"
+    );
+    assert!(
+      catalog
+        .state(super::INCOMPLETE_SNAPSHOT)
+        .await
+        .unwrap()
+        .is_none()
+    );
+
+    catalog
+      .upsert_page(
+        Vec::new(),
+        crate::providers::SubmissionType::Mod,
+        5,
+        Some("new-snapshot".to_string()),
+        false,
+      )
+      .await
+      .unwrap();
+    catalog.prepare_category_backfill().await.unwrap();
+    let cursor = catalog
+      .cursor(crate::providers::SubmissionType::Mod)
+      .await
+      .unwrap();
+    assert_eq!(cursor.next_page, 5);
+    assert_eq!(cursor.snapshot_id.as_deref(), Some("new-snapshot"));
+  }
+
+  #[tokio::test]
+  async fn taxonomy_refresh_repairs_all_submission_kinds_and_keeps_numeric_ids_scoped() {
+    let directory = tempdir().unwrap();
+    let catalog = Catalog::open(directory.path().join("catalog.sqlite3"), 1)
+      .await
+      .unwrap();
+    let mut paths = Vec::new();
+    let mut entries = Vec::new();
+    for (submission_type, slug, root) in [
+      (crate::providers::SubmissionType::Mod, "1", "Maps"),
+      (
+        crate::providers::SubmissionType::Sound,
+        "snd-1",
+        "Abilities",
+      ),
+      (crate::providers::SubmissionType::Wip, "wip-1", "Skins"),
+    ] {
+      let path = vec![
+        super::CatalogCategory::new(submission_type, 100, root),
+        super::CatalogCategory::new(submission_type, 200, "Parent"),
+        super::CatalogCategory::new(submission_type, 300, "Leaf"),
+      ];
+      let mut entry = record(slug, "Nested mod", "snapshot");
+      entry.category = "Old root".to_string();
+      entry.category_path = vec![path[2].clone()];
+      entry.is_audio = submission_type == crate::providers::SubmissionType::Sound;
+      entry.is_map = submission_type != crate::providers::SubmissionType::Mod;
+      paths.push(path);
+      entries.push(entry);
+    }
+    catalog.upsert_records(entries.clone()).await.unwrap();
+    catalog
+      .save_category_taxonomy(super::CategoryTaxonomy {
+        refreshed_at: 1,
+        paths: paths.clone(),
+      })
+      .await
+      .unwrap();
+    for (entry, expected) in entries.into_iter().zip(paths) {
+      let saved = catalog
+        .get(entry.submission.clone())
+        .await
+        .unwrap()
+        .unwrap();
+      assert_eq!(saved.category, expected[0].name);
+      assert_eq!(saved.category_path, expected);
+      assert_eq!(
+        saved.is_map,
+        entry.submission.submission_type == crate::providers::SubmissionType::Mod
+      );
+      assert_eq!(saved.is_audio, entry.is_audio);
+    }
+  }
+
   fn record(slug: &str, name: &str, snapshot: &str) -> CatalogRecord {
     CatalogRecord {
       submission: SubmissionRef::parse_slug(slug).unwrap(),
@@ -777,6 +1163,7 @@ mod tests {
       description: "searchable catalog text".to_string(),
       profile_url: format!("https://gamebanana.com/mods/{slug}"),
       category: "Skins".to_string(),
+      category_path: Vec::new(),
       hero: None,
       is_audio: false,
       is_map: false,
@@ -797,6 +1184,7 @@ mod tests {
       tags: Vec::new(),
       development_state: None,
       completion_percentage: None,
+      videos: None,
     }
   }
 

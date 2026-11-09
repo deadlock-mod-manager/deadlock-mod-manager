@@ -1,3 +1,4 @@
+use crate::mod_manager::perf_config::types::ForeignTool;
 use std::path::Path;
 
 use super::test_support::*;
@@ -82,6 +83,20 @@ fn assert_round_trip(base: &str, config: &[ConfigEntry], catalog: &Catalog, labe
     "{label}: reapply differs"
   );
   assert!(detect_foreign(&patched).is_empty(), "{label}");
+}
+
+#[test]
+fn malformed_input_cannot_receive_a_performance_overlay() {
+  let catalog = test_catalog();
+  let base = current_stock("\n");
+  let entries = applied_entries(&catalog, &base, &synthetic_config());
+  assert!(!entries.is_empty());
+  for tail in [" /*", " { }", " [", " [$WIN64 ||]"] {
+    assert!(
+      apply_overlay(&format!("{base}{tail}"), &plan(&entries, "0123456789ab")).is_err(),
+      "accepted {tail:?}"
+    );
+  }
 }
 
 #[test]

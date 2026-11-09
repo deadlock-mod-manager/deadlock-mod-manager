@@ -24,14 +24,17 @@ const confirm = async (label: string) => {
 };
 const waitDisabled = (world: string, ids: string[]) =>
   observeUntil(
-    "group mod statuses persisted",
+    "group mod statuses and enablement persisted",
     () => readLibraryGroups(world),
     (state) =>
-      state.localMods.every(
-        (mod) =>
-          mod.status ===
-          (ids.includes(mod.remoteId) ? "downloaded" : "installed"),
-      ),
+      state.localMods.every((mod) => {
+        const enabled = !ids.includes(mod.remoteId);
+        return (
+          mod.status === (enabled ? "installed" : "downloaded") &&
+          (state.profiles[state.activeProfileId].enabledMods[mod.remoteId]
+            ?.enabled ?? false) === enabled
+        );
+      }),
   );
 
 describe("group enablement", () => {

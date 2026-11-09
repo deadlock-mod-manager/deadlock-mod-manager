@@ -26,6 +26,7 @@ struct ArchiveKey {
   overlay: Option<PathBuf>,
   len: u64,
   modified_nanos: u128,
+  staged_revision: Option<String>,
 }
 
 /// Bounded so a long session that opens many skins cannot grow without limit.
@@ -52,6 +53,7 @@ fn key_for(path: &Path, overlay: Option<&Path>) -> Result<ArchiveKey, Error> {
     overlay: overlay.map(Path::to_path_buf),
     len: metadata.len(),
     modified_nanos,
+    staged_revision: std::fs::read_to_string(path.with_extension("stamp")).ok(),
   })
 }
 
@@ -104,5 +106,26 @@ pub(crate) fn open_archive(path: &Path, overlay: Option<&Path>) -> Result<Arc<Vp
 pub(crate) fn clear_archive_cache() {
   if let Ok(mut cached) = cache().lock() {
     cached.clear();
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn a_new_staging_revision_invalidates_an_equal_size_equal_time_archive() {
+    let root = tempfile::tempdir().unwrap();
+    let path = root.path().join("pak01_dir.vpk");
+    let mut bytes = 0x55aa1234u32.to_le_bytes().to_vec();
+    bytes.extend_from_slice(&1u32.to_le_bytes());
+    bytes.extend_from_slice(&1u32.to_le_bytes());
+    bytes.push(0);
+    std::fs::write(&path, bytes).unwrap();
+    std::fs::write(path.with_extension("stamp"), "game-revision-one").unwrap();
+    let first = open_archive(&path, None).unwrap();
+    assert!(Arc::ptr_eq(&first, &open_archive(&path, None).unwrap()));
+    std::fs::write(path.with_extension("stamp"), "game-revision-two").unwrap();
+    assert!(!Arc::ptr_eq(&first, &open_archive(&path, None).unwrap()));
   }
 }

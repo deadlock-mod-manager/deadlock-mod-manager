@@ -17,8 +17,8 @@ import { usePersistedStore } from "@/lib/store";
 import type { BridgeStatus } from "@/types/generated/BridgeStatus";
 import { type LocalMod, ModStatus } from "@/types/mods";
 
-const LIVE_BRIDGE_NAME = "Live Scoreboard Bridge";
-const LIVE_BRIDGE_AUTHOR = "Okaza";
+export const LIVE_BRIDGE_NAME = "Live Scoreboard Bridge";
+export const LIVE_BRIDGE_AUTHOR = "Okaza";
 
 // Shared by every caller, so the renderer's automatic update and the notice's
 // button see one update in flight rather than starting a second.

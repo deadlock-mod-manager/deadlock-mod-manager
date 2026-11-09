@@ -21,6 +21,8 @@ struct UpdateBackupIndex {
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct BackedUpMod {
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  source: Option<crate::providers::native_sources::NativeSourceProvenance>,
   mod_id: String,
   mod_name: String,
   enabled: bool,
@@ -34,6 +36,7 @@ struct BackedUpMod {
 
 /// A mod about to be updated, with the file tree its installed version uses.
 pub struct UpdateBackupTarget {
+  pub source: Option<crate::providers::native_sources::NativeSourceProvenance>,
   pub mod_id: String,
   pub mod_name: String,
   pub file_tree: Option<ModFileTree>,
@@ -52,6 +55,27 @@ pub fn update_backup_mod_names(backup: &Path) -> Vec<String> {
     .and_then(|bytes| serde_json::from_slice::<UpdateBackupIndex>(&bytes).ok())
     .map(|index| index.mods.into_iter().map(|m| m.mod_name).collect())
     .unwrap_or_default()
+}
+
+pub fn update_backup_source_provenance(
+  backup: &Path,
+) -> Result<Vec<crate::providers::native_sources::NativeSourceBackupEntry>, Error> {
+  let index: UpdateBackupIndex = serde_json::from_slice(&fs::read(backup.join(INDEX_FILE))?)
+    .map_err(|error| Error::BackupRestoreFailed(error.to_string()))?;
+  Ok(
+    index
+      .mods
+      .into_iter()
+      .filter_map(|entry| {
+        entry.source.map(
+          |source| crate::providers::native_sources::NativeSourceBackupEntry {
+            mod_id: entry.mod_id,
+            source,
+          },
+        )
+      })
+      .collect(),
+  )
 }
 
 fn is_plain_file_name(name: &str) -> bool {
@@ -177,6 +201,7 @@ impl ModManager {
         parked.push(name.to_string_lossy().into_owned());
       }
       index.mods.push(BackedUpMod {
+        source: target.source.clone(),
         mod_id: mod_id.clone(),
         mod_name: target.mod_name.clone(),
         enabled: files.enabled,
@@ -295,6 +320,7 @@ mod tests {
 
   fn target() -> UpdateBackupTarget {
     UpdateBackupTarget {
+      source: None,
       mod_id: "target".into(),
       mod_name: "Target".into(),
       file_tree: None,
@@ -360,6 +386,7 @@ mod tests {
         None,
         &[UpdateBackupTarget {
           mod_id: "missing".into(),
+          source: None,
           mod_name: "Missing".into(),
           file_tree: None,
         }],
@@ -368,6 +395,44 @@ mod tests {
       )
       .unwrap();
     assert!(none.is_none());
+  }
+
+  #[test]
+  fn update_backups_keep_the_installed_source_revision_and_choices() {
+    let game = game_dir();
+    installed_profile(game.path());
+    let manager = test_manager(game.path());
+    let source = crate::providers::native_sources::NativeSourceProvenance {
+      source_key: "accepted".into(),
+      source_id: "community".into(),
+      source_name: "Community".into(),
+      accepted_origin: "https://example.org".into(),
+      descriptor_url: "https://example.org/source.json".into(),
+      listing_id: "42".into(),
+      release_id: "old-release".into(),
+      content_revision: "old-revision".into(),
+      artifact_ids: vec!["pack".into()],
+      component_ids: vec!["blue".into()],
+      icon_url: None,
+    };
+    let backup = manager
+      .create_update_backup(
+        None,
+        &[UpdateBackupTarget {
+          source: Some(source),
+          ..target()
+        }],
+        &game.path().join("backups"),
+        "addons-backup-update-source",
+      )
+      .unwrap()
+      .unwrap();
+    let saved = update_backup_source_provenance(Path::new(&backup.file_path)).unwrap();
+    assert_eq!(saved.len(), 1);
+    assert_eq!(saved[0].mod_id, "target");
+    assert_eq!(saved[0].source.release_id, "old-release");
+    assert_eq!(saved[0].source.content_revision, "old-revision");
+    assert_eq!(saved[0].source.component_ids, ["blue"]);
   }
 
   #[test]

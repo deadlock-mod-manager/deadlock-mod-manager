@@ -28,6 +28,46 @@ const { LATEST_VERSION, MIGRATION_STEPS, safeMigrate } =
   await import("./migrate");
 
 describe("safeMigrate", () => {
+  it("adds taxonomy selections while preserving category, hero, and content filters", () => {
+    const state = {
+      modsFilters: {
+        selectedCategories: ["Model Replacement"],
+        selectedHeroes: ["Ivy"],
+        contentType: "sound",
+      },
+      mapsFilters: { selectedCategories: ["Maps"] },
+    };
+    const expected = {
+      modsFilters: { ...state.modsFilters, selectedCategoryKeys: [] },
+      mapsFilters: { ...state.mapsFilters, selectedCategoryKeys: [] },
+    };
+    expect(safeMigrate(state, 45)).toEqual(expected);
+    expect(safeMigrate(state, 45)).toEqual(expected);
+  });
+
+  it("preserves saved taxonomy selections when migration repeats", () => {
+    const state = { modsFilters: { selectedCategoryKeys: ["mod:44458"] } };
+    expect(safeMigrate(structuredClone(state), 45)).toEqual(state);
+  });
+
+  it("preserves legacy files and source provenance in every profile", () => {
+    const source = {
+      sourceKey: "accepted-origin-and-id",
+      listingId: "42",
+      releaseId: "r1",
+      contentRevision: "1",
+    };
+    const mods = [
+      { remoteId: "42", installedVpks: ["pak01_dir.vpk"] },
+      { remoteId: "snd-42", installedVpks: ["snd-42_audio.vpk"] },
+      { remoteId: "source-custom", source, installedVpks: ["pak02_dir.vpk"] },
+    ];
+    const state = {
+      localMods: mods,
+      profiles: { default: { mods }, second: { mods } },
+    };
+    expect(safeMigrate(structuredClone(state), 42)).toEqual(state);
+  });
   it("preserves background coverage when splitting the switches", () => {
     for (const includeSidebar of [true, false]) {
       expect(safeMigrate({ appBackground: { includeSidebar } }, 41)).toEqual({
@@ -287,7 +327,7 @@ describe("safeMigrate", () => {
   it("LATEST_VERSION matches the highest step target", () => {
     const max = Math.max(...MIGRATION_STEPS.map((s) => s.to));
     expect(LATEST_VERSION).toBe(max);
-    expect(LATEST_VERSION).toBe(42);
+    expect(LATEST_VERSION).toBe(46);
   });
 
   it("v25 (themes switch): drops the leftover enabledPlugins.themes entry", () => {
@@ -434,7 +474,10 @@ describe("safeMigrate", () => {
         { modsFilters: { audioQuickFilter: "off", mapQuickFilter: "only" } },
         26,
       ) as Record<string, unknown>;
-      expect(mapsOnly.modsFilters).toEqual({ contentType: "map" });
+      expect(mapsOnly.modsFilters).toEqual({
+        contentType: "map",
+        selectedCategoryKeys: [],
+      });
 
       const alreadySet = safeMigrate(
         {
@@ -445,7 +488,10 @@ describe("safeMigrate", () => {
         },
         26,
       ) as Record<string, unknown>;
-      expect(alreadySet.modsFilters).toEqual({ contentType: "wip" });
+      expect(alreadySet.modsFilters).toEqual({
+        contentType: "wip",
+        selectedCategoryKeys: [],
+      });
     });
 
     it("v36 (rolling date filters): maps the old presets to rolling windows", () => {
@@ -461,6 +507,7 @@ describe("safeMigrate", () => {
       expect(result.modsFilters).toEqual({
         updatedFilter: { period: "1y", from: "", to: "" },
         addedFilter: { period: "7d", from: "", to: "" },
+        selectedCategoryKeys: [],
       });
     });
 
@@ -469,7 +516,10 @@ describe("safeMigrate", () => {
         { modsFilters: { contentType: "album" } },
         28,
       ) as Record<string, unknown>;
-      expect(result.modsFilters).toEqual({ contentType: "collection" });
+      expect(result.modsFilters).toEqual({
+        contentType: "collection",
+        selectedCategoryKeys: [],
+      });
     });
 
     it("v23 (telemetry settings): adds default telemetrySettings when missing", () => {

@@ -91,6 +91,16 @@ pub struct ModHealthReport {
   pub mods: Vec<ModHealth>,
 }
 
+#[derive(Debug, Clone, PartialEq, Serialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct ModHealthCheck {
+  pub report: ModHealthReport,
+  /// The check saved newly observed game data. Every repair receipt on this
+  /// install digests that data, so the active profile's repairs need a rebuild.
+  pub history_changed: bool,
+}
+
 /// Sent as `mod-health-progress` while `check_mod_health` runs.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, TS)]
 #[ts(export, rename_all = "camelCase")]
@@ -241,6 +251,11 @@ pub(crate) struct ModFindings {
   remaining_symptoms: BTreeSet<ModHealthSymptom>,
   /// Whether the mod has any resource the analysis can check.
   covered: bool,
+  /// Some of the mod's files were skipped because an unfixed mod also ships
+  /// them, so finding nothing doesn't mean it works. Only the combined
+  /// analysis can tell, so older entries read `false` until it runs again.
+  #[serde(default)]
+  scope_incomplete: bool,
 }
 
 impl ModFindings {
@@ -317,6 +332,7 @@ impl ModFindings {
       fix_symptoms: repairs.into_iter().map(symptom).collect(),
       remaining_symptoms,
       covered,
+      scope_incomplete: analysis.incomplete_mod_ids.iter().any(|id| id == mod_id),
     }
   }
 
@@ -330,7 +346,7 @@ impl ModFindings {
       }
     } else if self.needs_update {
       ModHealthStatus::NeedsUpdate
-    } else if !self.covered {
+    } else if !self.covered || self.scope_incomplete {
       ModHealthStatus::NotCovered
     } else {
       ModHealthStatus::Works
@@ -548,6 +564,7 @@ mod tests {
       fix_symptoms: BTreeSet::new(),
       remaining_symptoms: BTreeSet::new(),
       covered,
+      scope_incomplete: false,
     }
   }
 
@@ -970,6 +987,18 @@ mod tests {
     assert_eq!(report.previous_game_build, Some(100));
     health.record(Some(101), "other".into(), entry(101));
     assert_eq!(health.report(Some(101), []).previous_game_build, Some(100));
+  }
+
+  #[test]
+  fn findings_saved_before_scope_tracking_keep_their_status() {
+    let saved: ModFindings = serde_json::from_str(
+      r#"{"repairs":0,"warnings":0,"needsUpdate":false,"fixSymptoms":[],"remainingSymptoms":[],"covered":true}"#,
+    )
+    .unwrap();
+    assert_eq!(
+      saved.status(CompatibilityChoice::Enabled),
+      ModHealthStatus::Works
+    );
   }
 
   #[test]

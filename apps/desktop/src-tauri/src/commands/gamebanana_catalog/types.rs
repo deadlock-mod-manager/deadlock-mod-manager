@@ -1,8 +1,8 @@
 use crate::errors::Error;
 use crate::providers::gamebanana::catalog::{CatalogCollection, CatalogPage, CatalogRecord};
 use crate::providers::gamebanana::{
-  NormalizedSubmission, Profile, SubmissionFile, donation_links, extract_map_name,
-  parse_requirements, parse_tags,
+  EmbeddedVideo, NormalizedSubmission, Profile, SubmissionFile, VideoProvider, WithholdNotice,
+  donation_links, embedded_videos, extract_map_name, parse_requirements, parse_tags,
 };
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -47,6 +47,63 @@ pub struct CatalogModDto {
   pub created_at: Option<i64>,
   #[ts(type = "number | null")]
   pub updated_at: Option<i64>,
+  /// Set when GameBanana staff withheld the submission; it can't be downloaded until then.
+  pub withheld: Option<WithholdNoticeDto>,
+  /// The author's GameBanana HTML note on an obsolete submission, when they wrote one.
+  pub obsolescence_notice: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct WithholdNoticeDto {
+  pub rules: Vec<WithholdRuleDto>,
+  /// Staff-written GameBanana HTML.
+  pub notes: String,
+  pub withheld_by: Option<String>,
+  #[ts(type = "number | null")]
+  pub withheld_at: Option<i64>,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct WithholdRuleDto {
+  /// Like `R.17`.
+  pub code: String,
+  pub name: String,
+}
+
+impl WithholdNoticeDto {
+  /// The profile can flag a withhold without a notice GameBanana lets us parse.
+  fn new(notice: Option<&WithholdNotice>) -> Self {
+    Self {
+      rules: notice
+        .map(|notice| {
+          notice
+            .rules_violated
+            .iter()
+            .map(|rule| WithholdRuleDto {
+              code: rule
+                .code
+                .split_once(':')
+                .map_or(rule.code.as_str(), |(code, _)| code)
+                .trim()
+                .to_string(),
+              name: rule.name.clone(),
+            })
+            .collect()
+        })
+        .unwrap_or_default(),
+      notes: notice
+        .map(|notice| notice.notes.clone())
+        .unwrap_or_default(),
+      withheld_by: notice
+        .and_then(|notice| notice.withholder.as_ref())
+        .map(|withholder| withholder.name.clone()),
+      withheld_at: notice.and_then(|notice| notice.date_withheld),
+    }
+  }
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
@@ -122,6 +179,37 @@ pub struct CatalogCollectionDetailDto {
 pub struct CatalogModMetadataDto {
   pub map_name: Option<String>,
   pub donation_links: Vec<CatalogDonationLinkDto>,
+  pub videos: Vec<CatalogVideoDto>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, TS)]
+#[ts(export)]
+#[serde(rename_all = "lowercase")]
+pub enum CatalogVideoProvider {
+  YouTube,
+  Vimeo,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct CatalogVideoDto {
+  pub provider: CatalogVideoProvider,
+  pub id: String,
+  pub hash: Option<String>,
+}
+
+impl From<EmbeddedVideo> for CatalogVideoDto {
+  fn from(video: EmbeddedVideo) -> Self {
+    Self {
+      provider: match video.provider {
+        VideoProvider::YouTube => CatalogVideoProvider::YouTube,
+        VideoProvider::Vimeo => CatalogVideoProvider::Vimeo,
+      },
+      id: video.id,
+      hash: video.hash,
+    }
+  }
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
@@ -261,6 +349,11 @@ impl CatalogModDto {
       .submission
       .to_slug()
       .map_err(|error| Error::InvalidInput(error.to_string()))?;
+    let metadata = record.videos.map(|videos| CatalogModMetadataDto {
+      map_name: extract_map_name(&record.description),
+      donation_links: Vec::new(),
+      videos: videos.into_iter().map(CatalogVideoDto::from).collect(),
+    });
     Ok(Self {
       id: slug.clone(),
       remote_id: slug,
@@ -287,10 +380,12 @@ impl CatalogModDto {
       files_updated_at: (record.files_updated_at > 0).then_some(record.files_updated_at),
       development_state: record.development_state,
       completion_percentage: record.completion_percentage,
-      metadata: None,
+      metadata,
       dependencies: Vec::new(),
       created_at: None,
       updated_at: None,
+      withheld: None,
+      obsolescence_notice: None,
     })
   }
 
@@ -338,7 +433,7 @@ impl CatalogModDto {
         .submitter
         .as_ref()
         .and_then(|submitter| (submitter.id > 0).then(|| submitter.id.to_string())),
-      downloadable: !profile.files.is_empty(),
+      downloadable: !profile.files.is_empty() && !profile.is_withheld,
       remote_added_at: normalized.remote_added_at,
       remote_updated_at: normalized.remote_updated_at,
       tags: parse_tags(&profile.tags),
@@ -357,10 +452,21 @@ impl CatalogModDto {
       metadata: Some(CatalogModMetadataDto {
         map_name: extract_map_name(&normalized.description),
         donation_links: donations,
+        videos: embedded_videos(&profile.embedded_media)
+          .into_iter()
+          .map(CatalogVideoDto::from)
+          .collect(),
       }),
       dependencies,
       created_at: None,
       updated_at: None,
+      withheld: profile
+        .is_withheld
+        .then(|| WithholdNoticeDto::new(profile.withhold_notice.as_ref())),
+      obsolescence_notice: profile
+        .obsolescence_notice
+        .clone()
+        .filter(|notice| profile.is_obsolete && !notice.trim().is_empty()),
     }
   }
 }

@@ -146,6 +146,7 @@ const seededState = {
     | "addedFilter"
     | "showFavoritesOnly"
     | "nsfwOnly"
+    | "selectedCategoryKeys"
   > & {
     audioQuickFilter: AudioQuickFilter;
     mapQuickFilter: MapQuickFilter;
@@ -275,6 +276,7 @@ describe("persisted store integration with real production fixture", () => {
     } = seededState.modsFilters;
     expect(s.modsFilters).toEqual({
       ...seededModsFilters,
+      selectedCategoryKeys: [],
       contentType: "mod",
       showFavoritesOnly: false,
       nsfwOnly: false,

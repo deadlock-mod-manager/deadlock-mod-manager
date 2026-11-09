@@ -9,6 +9,11 @@ pub struct AnalyzedModRegistration {
 }
 
 impl ModManager {
+  /// Record `installed_vpks` as `mod_id`'s enabled files. Another mod owning
+  /// exactly the same files is replaced (an identified mod taking over its
+  /// placeholder) unless `refuse_existing_owner` is set, as it is when the
+  /// user adds a file by hand.
+  #[allow(clippy::too_many_arguments)]
   pub fn register_analyzed_mod(
     &mut self,
     original_vpk_names: Option<Vec<String>>,
@@ -17,6 +22,7 @@ impl ModManager {
     installed_vpks: Vec<String>,
     installed_paths: Option<Vec<String>>,
     profile_folder: Option<String>,
+    refuse_existing_owner: bool,
   ) -> Result<AnalyzedModRegistration, Error> {
     Self::ensure_safe_mod_id(&mod_id)?;
     if installed_vpks.is_empty() {
@@ -62,6 +68,10 @@ impl ModManager {
         .unwrap_or_default()
     });
     let mut order = manifest.mods.get(&mod_id).and_then(|entry| entry.order);
+    // The player's compatibility choice (Fix or original files) moves with the
+    // files, with the same precedence as the install order: the identity's own
+    // choice first, then the first replaced owner that made one.
+    let mut compatibility = manifest.mods.get(&mod_id).and_then(compatibility_choice);
     let mut aliases = Vec::new();
     for (owner, entry) in &manifest.mods {
       if owner == &mod_id || !entry.enabled || entry.shard != shard {
@@ -74,6 +84,12 @@ impl ModManager {
       {
         continue;
       }
+      if refuse_existing_owner {
+        return Err(Error::ModInvalid(format!(
+          "{mod_name} was not added: its file already belongs to {owner} in {}",
+          base.shard_dir(shard).display()
+        )));
+      }
       let previous: HashSet<_> = entry.current_vpks.iter().cloned().collect();
       if previous != filenames {
         return Err(Error::ModInvalid(format!(
@@ -82,6 +98,7 @@ impl ModManager {
         )));
       }
       order = order.or(entry.order);
+      compatibility = compatibility.or_else(|| compatibility_choice(entry));
       aliases.push(owner.clone());
     }
     for alias in &aliases {
@@ -90,6 +107,10 @@ impl ModManager {
     manifest.mark_enabled(&mod_id, installed_vpks.clone(), Vec::new(), order, shard);
     if let Some(entry) = manifest.mods.get_mut(&mod_id) {
       entry.original_vpk_names = original_names.clone();
+      if let Some((enabled, opted_out)) = compatibility {
+        entry.compatibility_enabled = enabled;
+        entry.compatibility_opted_out = opted_out;
+      }
     }
     manifest.save(&base).map_err(|error| {
       Error::FileWriteFailed(format!(
@@ -192,6 +213,13 @@ fn analyzed_shard(
       filenames.join(", ")
     ))),
   }
+}
+
+/// An entry's (`compatibility_enabled`, `compatibility_opted_out`) pair, or
+/// `None` when the player never chose.
+fn compatibility_choice(entry: &ProfileVpkManifestEntry) -> Option<(bool, bool)> {
+  (entry.compatibility_enabled || entry.compatibility_opted_out)
+    .then_some((entry.compatibility_enabled, entry.compatibility_opted_out))
 }
 
 fn is_plain_vpk_filename(name: &str) -> bool {

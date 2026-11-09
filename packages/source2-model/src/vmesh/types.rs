@@ -72,6 +72,20 @@ pub struct PreviewTexture {
     pub emissive_strength: f32,
     /// The NPR silhouette outline, when the material draws one.
     pub outline: Option<MaterialOutline>,
+    /// Authored shader parameters retained for the clock-driven desktop preview.
+    pub source2_effect: Option<Source2Effect>,
+    pub effect_mask_png: Option<Vec<u8>>,
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Source2Effect {
+    pub shader: String,
+    pub material: String,
+    pub floats: std::collections::BTreeMap<String, f32>,
+    pub vectors: std::collections::BTreeMap<String, [f32; 4]>,
+    pub flags: std::collections::BTreeMap<String, i64>,
+    pub textures: std::collections::BTreeMap<String, String>,
 }
 
 /// Deadlock's toon outline around NPR-lit materials.

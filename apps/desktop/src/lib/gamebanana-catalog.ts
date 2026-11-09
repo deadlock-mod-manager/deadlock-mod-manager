@@ -11,6 +11,7 @@ import type { CatalogQuery } from "@/types/generated/CatalogQuery";
 import type { CatalogSyncStatusDto } from "@/types/generated/CatalogSyncStatusDto";
 import type { CatalogUpdatesDto } from "@/types/generated/CatalogUpdatesDto";
 import type { InstalledSubmissionDto } from "@/types/generated/InstalledSubmissionDto";
+import type { WithholdNoticeDto } from "@/types/generated/WithholdNoticeDto";
 import type { ModDownloadItem } from "@/types/mods";
 
 export type DirectCatalogPage = {
@@ -43,6 +44,7 @@ const CATALOG_MAX_PAGE_SIZE = 5_000;
 export const CATALOG_QUERY_DEFAULTS: CatalogQuery = {
   search: "",
   categories: [],
+  categoryKeys: [],
   heroes: [],
   authorRemoteId: null,
   excludeFilters: false,
@@ -83,12 +85,21 @@ export const searchGameBananaCatalogAuthors = (query: CatalogQuery) =>
 
 export const getGameBananaCatalogMod = async (
   remoteId: string,
-): Promise<ModDto> => {
+): Promise<
+  ModDto & {
+    withheld: WithholdNoticeDto | null;
+    obsolescenceNotice: string | null;
+  }
+> => {
   const result = await invoke<CatalogModDto>(
     "get_gamebanana_submission_detail",
     { remoteId },
   );
-  return catalogModToModDto(result);
+  return {
+    ...catalogModToModDto(result),
+    withheld: result.withheld,
+    obsolescenceNotice: result.obsolescenceNotice,
+  };
 };
 
 export const getGameBananaCatalogDownloads = async (
@@ -190,6 +201,11 @@ const catalogModToModDto = (mod: CatalogModDto): ModDto => ({
     ? {
         mapName: mod.metadata.mapName ?? undefined,
         donationLinks: mod.metadata.donationLinks,
+        videos: mod.metadata.videos.map((video) => ({
+          provider: video.provider,
+          id: video.id,
+          hash: video.hash ?? undefined,
+        })),
       }
     : null,
   dependencies: mod.dependencies.map((dependency) => ({

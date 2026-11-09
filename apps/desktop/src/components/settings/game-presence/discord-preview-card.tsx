@@ -5,12 +5,14 @@ interface DiscordPreviewCardProps {
   previewDetails: string;
   previewState: string;
   noDetailsText: string;
+  showPartySize: boolean;
 }
 
 export const DiscordPreviewCard = ({
   previewDetails,
   previewState,
   noDetailsText,
+  showPartySize,
 }: DiscordPreviewCardProps) => (
   <div className='rounded-xl bg-[#1e1f24] p-4 text-white shadow-sm'>
     <div className='mb-3 flex items-center justify-between gap-3'>
@@ -36,7 +38,7 @@ export const DiscordPreviewCard = ({
           <p className='truncate text-sm text-white/90'>{previewState}</p>
         )}
         <p className='mt-1 text-emerald-300 text-sm tabular-nums'>
-          3 of 6, 01:24
+          {showPartySize ? "3 of 6, 01:24" : "01:24"}
         </p>
       </div>
     </div>

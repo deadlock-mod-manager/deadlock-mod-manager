@@ -1,3 +1,4 @@
+use super::categories::{CatalogCategory, decode_category_path};
 use super::schema::{submission, submission_fts};
 use super::store::{
   Catalog, CatalogRecord, SubmissionRow, decode_images, decode_strings, provider_name,
@@ -35,6 +36,7 @@ pub enum CatalogSort {
 pub struct CatalogQuery {
   pub search: String,
   pub categories: Vec<String>,
+  pub category_keys: Vec<String>,
   pub heroes: Vec<String>,
   pub author_remote_id: Option<String>,
   pub exclude_filters: bool,
@@ -63,14 +65,15 @@ pub struct CatalogQuery {
   pub page_size: u32,
 }
 
-/// One distinct category/hero pairing within a browse scope, so filter menus
+/// One distinct category path/hero pairing within a browse scope, so filter menus
 /// can list their options without the whole result set being loaded.
-#[derive(Debug, Clone, PartialEq, Eq, Queryable, Serialize, TS)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
 #[ts(export, rename_all = "camelCase")]
 #[serde(rename_all = "camelCase")]
 pub struct CatalogFacet {
   pub category: String,
   pub hero: Option<String>,
+  pub category_path: Vec<CatalogCategory>,
 }
 
 /// A submitter whose name matches a search, totalled over their submissions in
@@ -149,12 +152,29 @@ impl Catalog {
     self
       .pool
       .run(move |connection| {
-        filtered_query(&scope, None)
-          .select((submission::category, submission::hero))
+        let rows = filtered_query(&scope, None)
+          .select((
+            submission::category,
+            submission::hero,
+            submission::category_path,
+          ))
           .distinct()
-          .order_by((submission::category.asc(), submission::hero.asc()))
-          .load::<CatalogFacet>(connection)
-          .map_err(Error::from)
+          .order_by((
+            submission::category.asc(),
+            submission::hero.asc(),
+            submission::category_path.asc(),
+          ))
+          .load::<(String, Option<String>, String)>(connection)?;
+        rows
+          .into_iter()
+          .map(|(category, hero, category_path)| {
+            Ok(CatalogFacet {
+              category,
+              hero,
+              category_path: decode_category_path(&category_path)?,
+            })
+          })
+          .collect()
       })
       .await
   }
@@ -251,7 +271,12 @@ fn filtered_query<'a>(
   if let Some(author_remote_id) = &query.author_remote_id {
     statement = statement.filter(submission::author_remote_id.eq(author_remote_id));
   }
-  statement = filter_categories(statement, &query.categories, query.exclude_filters);
+  statement = filter_categories(
+    statement,
+    &query.categories,
+    &query.category_keys,
+    query.exclude_filters,
+  );
   statement = filter_heroes(statement, &query.heroes, query.exclude_filters);
   if let Some(is_audio) = query.is_audio {
     statement = statement.filter(submission::is_audio.eq(is_audio));
@@ -423,8 +448,9 @@ fn load_ranked_search(
 }
 
 fn filter_categories<'a>(
-  mut statement: submission::BoxedQuery<'a, Sqlite>,
+  statement: submission::BoxedQuery<'a, Sqlite>,
   categories: &'a [String],
+  category_keys: &'a [String],
   exclude: bool,
 ) -> submission::BoxedQuery<'a, Sqlite> {
   const PREDEFINED: &[&str] = &[
@@ -440,7 +466,7 @@ fn filter_categories<'a>(
     "Killsounds",
     "Killstreak Music",
   ];
-  if categories.is_empty() {
+  if categories.is_empty() && category_keys.is_empty() {
     return statement;
   }
   let includes_other = categories.iter().any(|category| category == "Other/Misc");
@@ -448,24 +474,30 @@ fn filter_categories<'a>(
     .iter()
     .filter(|category| category.as_str() != "Other/Misc")
     .collect::<Vec<_>>();
-  statement = match (exclude, includes_other, named.is_empty()) {
-    (false, true, false) => statement.filter(
-      submission::category
-        .ne_all(PREDEFINED)
-        .or(submission::category.eq_any(named)),
-    ),
-    (false, true, true) => statement.filter(submission::category.ne_all(PREDEFINED)),
-    (false, false, false) => statement.filter(submission::category.eq_any(named)),
-    (true, true, false) => statement.filter(
-      submission::category
-        .eq_any(PREDEFINED)
-        .and(submission::category.ne_all(named)),
-    ),
-    (true, true, true) => statement.filter(submission::category.eq_any(PREDEFINED)),
-    (true, false, false) => statement.filter(submission::category.ne_all(named)),
-    (_, _, true) => statement,
-  };
-  statement
+  let mut matches: Box<dyn BoxableExpression<submission::table, Sqlite, SqlType = Bool> + 'a> =
+    Box::new(submission::category.eq_any(named));
+  if includes_other {
+    matches = Box::new(matches.or(submission::category.ne_all(PREDEFINED)));
+  }
+  // Every ancestor is stored in the path, so selecting a parent matches its
+  // descendants without loading them before counting and pagination.
+  for key in category_keys {
+    matches = Box::new(
+      matches.or(
+        sql::<Bool>(
+          "EXISTS (SELECT 1 FROM json_each(submission.category_path) AS catalog_category
+         WHERE json_extract(catalog_category.value, '$.key') = ",
+        )
+        .bind::<Text, _>(key)
+        .sql(")"),
+      ),
+    );
+  }
+  if exclude {
+    statement.filter(diesel::dsl::not(matches))
+  } else {
+    statement.filter(matches)
+  }
 }
 
 impl TryFrom<SubmissionRow> for CatalogRecord {
@@ -495,6 +527,11 @@ impl TryFrom<SubmissionRow> for CatalogRecord {
       description: row.description,
       profile_url: row.profile_url,
       category: row.category,
+      category_path: decode_category_path(&row.category_path)?,
+      // A rollback may encounter video providers written by a newer version.
+      videos: row
+        .videos
+        .and_then(|videos| serde_json::from_str(&videos).ok()),
       hero: row.hero,
       is_audio: row.is_audio,
       is_map: row.is_map,
@@ -528,7 +565,9 @@ impl TryFrom<SubmissionRow> for CatalogRecord {
 #[cfg(test)]
 mod tests {
   use super::{CatalogAuthor, CatalogQuery, CatalogSort};
-  use crate::providers::gamebanana::catalog::{Catalog, CatalogFacet, CatalogRecord};
+  use crate::providers::gamebanana::catalog::{
+    Catalog, CatalogCategory, CatalogFacet, CatalogRecord,
+  };
   use crate::providers::{SubmissionRef, SubmissionType};
   use tempfile::tempdir;
 
@@ -541,6 +580,7 @@ mod tests {
       description: "searchable description".to_string(),
       profile_url: format!("https://gamebanana.com/mods/{slug}"),
       category: category.to_string(),
+      category_path: Vec::new(),
       hero: hero.map(str::to_string),
       is_audio: slug.starts_with("snd-"),
       is_map: category == "Maps",
@@ -561,7 +601,405 @@ mod tests {
       tags: Vec::new(),
       development_state: None,
       completion_percentage: None,
+      videos: None,
     }
+  }
+
+  fn categorized(slug: &str, category: &str, path: &[(&str, &str)]) -> CatalogRecord {
+    CatalogRecord {
+      category_path: path
+        .iter()
+        .map(|(key, name)| CatalogCategory {
+          key: (*key).to_string(),
+          name: (*name).to_string(),
+        })
+        .collect(),
+      ..record(slug, slug, category, None)
+    }
+  }
+
+  #[tokio::test]
+  async fn unreadable_video_cache_does_not_block_catalog_browsing() {
+    use diesel::RunQueryDsl;
+    use diesel::sql_types::Text;
+
+    let directory = tempdir().unwrap();
+    let catalog = Catalog::open(directory.path().join("catalog.db"), 1)
+      .await
+      .unwrap();
+    catalog
+      .upsert_records(vec![
+        record("1", "Cached video", "Skins", None),
+        record("2", "Other mod", "Skins", None),
+      ])
+      .await
+      .unwrap();
+
+    for payload in [
+      "broken JSON",
+      r#"[{"provider":"future-provider","id":"123"}]"#,
+    ] {
+      catalog
+        .pool
+        .run(move |connection| {
+          diesel::sql_query("UPDATE submission SET videos = ? WHERE slug = '1'")
+            .bind::<Text, _>(payload)
+            .execute(connection)?;
+          Ok(())
+        })
+        .await
+        .unwrap();
+      let page = catalog
+        .query(CatalogQuery {
+          page_size: 10,
+          ..CatalogQuery::default()
+        })
+        .await
+        .unwrap();
+      assert_eq!(page.total, 2);
+      assert_eq!(page.items.len(), 2);
+      assert!(page.items.iter().all(|item| item.videos.is_none()));
+    }
+  }
+
+  const WALKER_PATH: &[(&str, &str)] = &[
+    ("mod:33154", "Model Replacement"),
+    ("mod:44691", "NPCs"),
+    ("mod:44458", "Walker"),
+  ];
+
+  #[tokio::test]
+  async fn ancestor_and_leaf_filters_apply_before_counting_and_pagination() {
+    let directory = tempdir().unwrap();
+    let catalog = Catalog::open(directory.path().join("catalog.db"), 1)
+      .await
+      .unwrap();
+    let guardian_path = [
+      ("mod:33154", "Model Replacement"),
+      ("mod:44691", "NPCs"),
+      ("mod:44459", "Guardian"),
+    ];
+    catalog
+      .upsert_records(vec![
+        categorized("10", "Model Replacement", WALKER_PATH),
+        categorized("11", "Model Replacement", &guardian_path),
+        categorized(
+          "12",
+          "Model Replacement",
+          &[("mod:33154", "Model Replacement"), ("mod:44460", "Urn")],
+        ),
+        record("13", "Unclassified world mod", "Model Replacement", None),
+      ])
+      .await
+      .unwrap();
+
+    let page = catalog
+      .query(CatalogQuery {
+        category_keys: vec!["mod:44691".to_string()],
+        page: 1,
+        page_size: 1,
+        ..CatalogQuery::default()
+      })
+      .await
+      .unwrap();
+    assert_eq!(page.total, 2);
+    assert_eq!(page.items.len(), 1);
+    assert_eq!(page.items[0].submission.to_slug().unwrap(), "11");
+    assert_eq!(page.items[0].category_path.last().unwrap().name, "Guardian");
+
+    let leaf = catalog
+      .query(CatalogQuery {
+        category_keys: vec!["mod:44458".to_string()],
+        page_size: 10,
+        ..CatalogQuery::default()
+      })
+      .await
+      .unwrap();
+    assert_eq!(leaf.total, 1);
+    assert_eq!(leaf.items[0].submission.to_slug().unwrap(), "10");
+
+    let broad = catalog
+      .query(CatalogQuery {
+        categories: vec!["Model Replacement".to_string()],
+        page_size: 10,
+        ..CatalogQuery::default()
+      })
+      .await
+      .unwrap();
+    assert_eq!(broad.total, 4);
+  }
+
+  #[tokio::test]
+  async fn broad_and_hierarchical_categories_form_a_union_in_both_modes() {
+    let directory = tempdir().unwrap();
+    let catalog = Catalog::open(directory.path().join("catalog.db"), 1)
+      .await
+      .unwrap();
+    catalog
+      .upsert_records(vec![
+        categorized("10", "Model Replacement", WALKER_PATH),
+        record("11", "Hero", "Skins", Some("Abrams")),
+        record("12", "Unclassified world mod", "Model Replacement", None),
+        record("13", "Unlisted root", "Unlisted root", None),
+      ])
+      .await
+      .unwrap();
+
+    for exclude in [false, true] {
+      let page = catalog
+        .query(CatalogQuery {
+          categories: vec!["Skins".to_string()],
+          category_keys: vec!["mod:44458".to_string(), "mod:44691".to_string()],
+          exclude_filters: exclude,
+          page_size: 10,
+          ..CatalogQuery::default()
+        })
+        .await
+        .unwrap();
+      let slugs = page
+        .items
+        .iter()
+        .map(|record| record.submission.to_slug().unwrap())
+        .collect::<Vec<_>>();
+      assert_eq!(page.total, 2);
+      assert_eq!(slugs, if exclude { ["12", "13"] } else { ["10", "11"] });
+
+      let other = catalog
+        .query(CatalogQuery {
+          categories: vec!["Other/Misc".to_string()],
+          category_keys: vec!["mod:44458".to_string()],
+          exclude_filters: exclude,
+          page_size: 10,
+          ..CatalogQuery::default()
+        })
+        .await
+        .unwrap();
+      let slugs = other
+        .items
+        .iter()
+        .map(|record| record.submission.to_slug().unwrap())
+        .collect::<Vec<_>>();
+      assert_eq!(slugs, if exclude { ["11", "12"] } else { ["10", "13"] });
+    }
+  }
+
+  #[tokio::test]
+  async fn category_keys_are_bound_and_scoped_by_submission_type() {
+    let directory = tempdir().unwrap();
+    let catalog = Catalog::open(directory.path().join("catalog.db"), 1)
+      .await
+      .unwrap();
+    let escaped_key = "mod:44458' OR 1=1 -- \"\\";
+    catalog
+      .upsert_records(vec![
+        categorized("10", "Model Replacement", WALKER_PATH),
+        categorized("snd-10", "VOs", &[("sound:44458", "Walker")]),
+        categorized("wip-10", "Model Replacement", &[("wip:44458", "Walker")]),
+        categorized("11", "Model Replacement", &[(escaped_key, "Escaped")]),
+      ])
+      .await
+      .unwrap();
+
+    for (key, slug) in [
+      ("mod:44458", "10"),
+      ("sound:44458", "snd-10"),
+      ("wip:44458", "wip-10"),
+      (escaped_key, "11"),
+    ] {
+      let page = catalog
+        .query(CatalogQuery {
+          category_keys: vec![key.to_string()],
+          include_wips: true,
+          page_size: 10,
+          ..CatalogQuery::default()
+        })
+        .await
+        .unwrap();
+      assert_eq!(page.total, 1, "{key}");
+      assert_eq!(page.items[0].submission.to_slug().unwrap(), slug);
+    }
+    let wrong_scope = catalog
+      .query(CatalogQuery {
+        category_keys: vec!["mod:44458".to_string()],
+        submission_type: Some(SubmissionType::Sound),
+        ..CatalogQuery::default()
+      })
+      .await
+      .unwrap();
+    assert_eq!(wrong_scope.total, 0);
+  }
+
+  #[tokio::test]
+  async fn non_world_category_ancestors_and_broad_unions_work_for_every_submission_type() {
+    let directory = tempdir().unwrap();
+    let catalog = Catalog::open(directory.path().join("catalog.db"), 1)
+      .await
+      .unwrap();
+    for (submission_type, prefix, slug_prefix, root) in [
+      (SubmissionType::Mod, "mod", "", "HUD"),
+      (SubmissionType::Sound, "sound", "snd-", "VOs"),
+      (SubmissionType::Wip, "wip", "wip-", "Skins"),
+    ] {
+      let root_key = format!("{prefix}:100");
+      let parent_key = format!("{prefix}:200");
+      let first_key = format!("{prefix}:300");
+      let second_key = format!("{prefix}:301");
+      catalog
+        .upsert_records(vec![
+          categorized(
+            &format!("{slug_prefix}10"),
+            root,
+            &[
+              (&root_key, root),
+              (&parent_key, "Nested parent"),
+              (&first_key, "First leaf"),
+            ],
+          ),
+          categorized(
+            &format!("{slug_prefix}11"),
+            root,
+            &[
+              (&root_key, root),
+              (&parent_key, "Nested parent"),
+              (&second_key, "Second leaf"),
+            ],
+          ),
+          record(&format!("{slug_prefix}12"), "Map", "Maps", None),
+          record(&format!("{slug_prefix}13"), "Music", "Music", None),
+        ])
+        .await
+        .unwrap();
+      let scoped = CatalogQuery {
+        submission_type: Some(submission_type),
+        page_size: 10,
+        ..CatalogQuery::default()
+      };
+      let page = catalog
+        .query(CatalogQuery {
+          category_keys: vec![parent_key.clone()],
+          page: 1,
+          page_size: 1,
+          ..scoped.clone()
+        })
+        .await
+        .unwrap();
+      assert_eq!(page.total, 2, "{prefix}");
+      assert_eq!(
+        page.items[0].submission.to_slug().unwrap(),
+        format!("{slug_prefix}11")
+      );
+
+      for exclude_filters in [false, true] {
+        let page = catalog
+          .query(CatalogQuery {
+            categories: vec!["Maps".to_string()],
+            category_keys: vec![parent_key.clone()],
+            exclude_filters,
+            ..scoped.clone()
+          })
+          .await
+          .unwrap();
+        assert_eq!(page.total, if exclude_filters { 1 } else { 3 }, "{prefix}");
+        assert!(
+          page
+            .items
+            .iter()
+            .all(|entry| entry.submission.submission_type == submission_type)
+        );
+        assert_eq!(
+          page.items.iter().any(|entry| entry.category == "Music"),
+          exclude_filters
+        );
+      }
+      let wrong_key = if prefix == "mod" {
+        "sound:200"
+      } else {
+        "mod:200"
+      };
+      let wrong_scope = catalog
+        .query(CatalogQuery {
+          category_keys: vec![wrong_key.to_string()],
+          ..scoped.clone()
+        })
+        .await
+        .unwrap();
+      assert_eq!(wrong_scope.total, 0, "{prefix}");
+      let facets = catalog.facets(scoped).await.unwrap();
+      assert_eq!(facets.len(), 4);
+      assert!(
+        facets
+          .iter()
+          .flat_map(|facet| &facet.category_path)
+          .all(|entry| entry.key.starts_with(&format!("{prefix}:")))
+      );
+    }
+  }
+
+  #[tokio::test]
+  async fn ranked_search_keeps_category_and_hero_filters() {
+    let directory = tempdir().unwrap();
+    let catalog = Catalog::open(directory.path().join("catalog.db"), 1)
+      .await
+      .unwrap();
+    let mut walker = categorized("10", "Model Replacement", WALKER_PATH);
+    walker.name = "Amber Walker".to_string();
+    let mut hero = walker.clone();
+    hero.submission = SubmissionRef::parse_slug("11").unwrap();
+    hero.hero = Some("Abrams".to_string());
+    catalog
+      .upsert_records(vec![
+        walker,
+        hero,
+        record("12", "Amber skin", "Skins", None),
+      ])
+      .await
+      .unwrap();
+    let page = catalog
+      .query(CatalogQuery {
+        search: "Amber".to_string(),
+        category_keys: vec!["mod:44691".to_string()],
+        heroes: vec!["None".to_string()],
+        page_size: 10,
+        ..CatalogQuery::default()
+      })
+      .await
+      .unwrap();
+    assert_eq!(page.total, 1);
+    assert_eq!(page.items[0].submission.to_slug().unwrap(), "10");
+  }
+
+  #[tokio::test]
+  async fn facets_preserve_distinct_paths_and_ignore_selected_category_keys() {
+    let directory = tempdir().unwrap();
+    let catalog = Catalog::open(directory.path().join("catalog.db"), 1)
+      .await
+      .unwrap();
+    catalog
+      .upsert_records(vec![
+        categorized("10", "Model Replacement", WALKER_PATH),
+        categorized("11", "Model Replacement", WALKER_PATH),
+        record("12", "Unclassified", "Model Replacement", None),
+        categorized("snd-10", "VOs", &[("sound:44458", "Walker")]),
+      ])
+      .await
+      .unwrap();
+    let facets = catalog
+      .facets(CatalogQuery {
+        category_keys: vec!["mod:44458".to_string()],
+        submission_type: Some(SubmissionType::Mod),
+        ..CatalogQuery::default()
+      })
+      .await
+      .unwrap();
+    assert_eq!(facets.len(), 2);
+    assert!(facets.iter().any(|facet| facet.category_path.is_empty()));
+    let walker = facets
+      .iter()
+      .find(|facet| !facet.category_path.is_empty())
+      .unwrap();
+    assert_eq!(walker.category, "Model Replacement");
+    assert_eq!(walker.category_path.len(), 3);
+    assert_eq!(walker.category_path.last().unwrap().key, "mod:44458");
   }
 
   #[tokio::test]
@@ -664,10 +1102,12 @@ mod tests {
         CatalogFacet {
           category: "HUD".to_string(),
           hero: None,
+          category_path: Vec::new(),
         },
         CatalogFacet {
           category: "Skins".to_string(),
           hero: Some("Abrams".to_string()),
+          category_path: Vec::new(),
         },
       ]
     );

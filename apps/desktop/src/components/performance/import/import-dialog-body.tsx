@@ -12,6 +12,7 @@ import {
 } from "@/lib/performance/import/save";
 import {
   newUserConfigId,
+  DEFAULT_APPLY_OPTIONS,
   presetApplyRequest,
   presetConfigId,
   userConfigApplyRequest,
@@ -97,11 +98,16 @@ const previewRequest = (
   report.presetId
     ? presetApplyRequest(
         { id: report.presetId, name: presetName ?? report.presetId },
-        { overrides, includeEngineSections },
+        { ...DEFAULT_APPLY_OPTIONS, overrides, includeEngineSections },
       )
     : userConfigApplyRequest(
-        { id: PREVIEW_CONFIG_ID, name: "", entries: report.entries },
-        { overrides, includeEngineSections },
+        {
+          id: PREVIEW_CONFIG_ID,
+          name: "",
+          entries: report.entries,
+          videoSettings: report.videoSettings,
+        },
+        { ...DEFAULT_APPLY_OPTIONS, overrides, includeEngineSections },
       );
 
 type ImportDialogBodyProps = {
@@ -130,7 +136,11 @@ export const ImportDialogBody = ({
   const setPerfIncludeEngineSections = usePersistedStore(
     (state) => state.setPerfIncludeEngineSections,
   );
+  const setPerfVideoChoice = usePersistedStore(
+    (state) => state.setPerfVideoChoice,
+  );
   const perfOverrides = usePersistedStore((state) => state.perfOverrides);
+  const perfVideoChoices = usePersistedStore((state) => state.perfVideoChoices);
 
   const [root, setRoot] = useState<ImportRoot | null>(
     initialSource ? { source: initialSource, context } : null,
@@ -143,6 +153,7 @@ export const ImportDialogBody = ({
   );
   const [cameraIncluded, setCameraIncluded] = useState(true);
   const [includeEngineSections, setIncludeEngineSections] = useState(true);
+  const [writeVideo, setWriteVideo] = useState(true);
   const [name, setName] = useState("");
   const nameEdited = useRef(false);
   // Kept through a failed re-analysis so the variant picker stays usable.
@@ -183,6 +194,7 @@ export const ImportDialogBody = ({
     setLastReport(null);
     setCameraIncluded(true);
     setIncludeEngineSections(true);
+    setWriteVideo(true);
     setName("");
     nameEdited.current = false;
   };
@@ -266,6 +278,9 @@ export const ImportDialogBody = ({
     addUserPerfConfig(config);
     if (overrides.length > 0) setPerfOverrides(config.id, overrides);
     if (!includeEngineSections) setPerfIncludeEngineSections(config.id, false);
+    if (!writeVideo) {
+      setPerfVideoChoice(config.id, { write: false, variant: null });
+    }
     session.current.keptStagingId = report.stagingId;
 
     if (apply) {
@@ -273,6 +288,8 @@ export const ImportDialogBody = ({
         request: userConfigApplyRequest(config, {
           overrides,
           includeEngineSections,
+          writeVideo,
+          videoVariant: null,
         }),
         source: root.source.kind === "gameBanana" ? "community" : "imported",
         entryPoint: "import",
@@ -290,11 +307,13 @@ export const ImportDialogBody = ({
     const configId = presetConfigId(report.presetId);
     setPerfOverrides(configId, overrides);
     setPerfIncludeEngineSections(configId, includeEngineSections);
+    const videoVariant = perfVideoChoices[configId]?.variant ?? null;
+    setPerfVideoChoice(configId, { write: writeVideo, variant: videoVariant });
     if (apply) {
       applyConfig.mutate({
         request: presetApplyRequest(
           { id: report.presetId, name: presetName },
-          { overrides, includeEngineSections },
+          { overrides, includeEngineSections, writeVideo, videoVariant },
         ),
         source: "imported",
         entryPoint: "import",
@@ -388,8 +407,10 @@ export const ImportDialogBody = ({
                     includeEngineSections={includeEngineSections}
                     onCameraIncludedChange={setCameraIncluded}
                     onIncludeEngineSectionsChange={setIncludeEngineSections}
+                    onWriteVideoChange={setWriteVideo}
                     report={report}
                     resolved={resolved}
+                    writeVideo={writeVideo}
                   />
                 </div>
               )

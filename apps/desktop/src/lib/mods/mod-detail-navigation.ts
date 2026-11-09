@@ -5,6 +5,7 @@ const COLLECTION_NAVIGATION = {
   library: { path: "/my-mods", labelKey: "modDetail.backToLibrary" },
   favorites: { path: "/favorites", labelKey: "modDetail.backToFavorites" },
   dashboard: { path: "/", labelKey: "modDetail.backToDashboard" },
+  skins: { path: "/skins", labelKey: "modDetail.backToSkins" },
 };
 
 export type ModsCollection = keyof typeof COLLECTION_NAVIGATION;

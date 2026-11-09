@@ -45,6 +45,7 @@ import { LiveBridgeRenderer } from "./components/live-bridge-renderer";
 import { useGameBananaCatalogSync } from "./hooks/use-gamebanana-catalog-sync";
 import { useRemoteInstallPoll } from "./hooks/use-remote-install";
 import { useSourceInstall } from "./hooks/use-source-install";
+import { NativeSourceLinkHandler } from "./components/mod-sources/native-source-link-handler";
 import { Layout } from "./layout";
 import { queryClient } from "./lib/client";
 import { downloadManager } from "./lib/download/manager";
@@ -53,6 +54,7 @@ import type { RuntimeBootstrap } from "./lib/runtime-bootstrap";
 import type { StorageReadyStatus } from "./lib/store/storage";
 import type { FontInfo } from "./types/mods";
 import { usePerfBackgroundSync } from "@/hooks/performance/use-perf-background-sync";
+import { useHostedSourcesSync } from "@/hooks/use-hosted-sources-sync";
 
 interface PendingFontInstall {
   modId: string;
@@ -82,6 +84,7 @@ const App = ({ runtime, storage }: AppProps) => {
   useMissingVpkDetection();
   useGameBananaCatalogSync();
   usePerfBackgroundSync();
+  useHostedSourcesSync();
   useIngestToolInit(integrations?.ingestion !== "disabled");
   const { t } = useTranslation();
   const hasReportedStorageFailure = useRef(false);
@@ -220,6 +223,7 @@ const App = ({ runtime, storage }: AppProps) => {
                           <LiveBridgeRenderer />
                           <GameGuardRenderer />
                           <DeepLinkListener />
+                          <NativeSourceLinkHandler />
                           <RemoteInstallPairDialog />
                           <FilePermissionsRenderer />
                           <PerformanceRenderer />

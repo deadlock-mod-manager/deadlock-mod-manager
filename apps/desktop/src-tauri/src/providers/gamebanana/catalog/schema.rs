@@ -49,6 +49,8 @@ diesel::table! {
     development_state -> Nullable<Text>,
     completion_percentage -> Nullable<Integer>,
     thumbnail_url -> Nullable<Text>,
+    category_path -> Text,
+    videos -> Nullable<Text>,
   }
 }
 
@@ -347,8 +349,28 @@ mod tests {
     .get_result::<bool>(&mut connection)
     .unwrap();
 
-    assert_eq!(applied.len(), 9);
+    assert_eq!(applied.len(), 11);
     assert!(catalog_tables_exist);
+  }
+
+  #[test]
+  fn videos_migration_preserves_existing_records_and_starts_unfetched() {
+    let mut connection = SqliteConnection::establish(":memory:").unwrap();
+    migrate(&mut connection).unwrap();
+    connection.revert_last_migration(super::MIGRATIONS).unwrap();
+    connection
+      .batch_execute(
+        "INSERT INTO submission (provider, submission_type, submission_id, slug, name, profile_url)
+       VALUES ('gamebanana', 'mod', '1', '1', 'Kept Mod', 'https://gamebanana.com/mods/1');",
+      )
+      .unwrap();
+
+    migrate(&mut connection).unwrap();
+    migrate(&mut connection).unwrap();
+    assert!(super::schema_check(
+      &mut connection,
+      "EXISTS(SELECT 1 FROM submission WHERE slug = '1' AND name = 'Kept Mod' AND videos IS NULL)",
+    ).unwrap());
   }
 
   #[test]
@@ -387,7 +409,7 @@ mod tests {
     .get_result::<bool>(&mut connection)
     .unwrap();
 
-    assert_eq!(applied.len(), 9);
+    assert_eq!(applied.len(), 11);
     assert!(retained_submission);
     assert!(author_remote_id_exists);
   }
@@ -411,7 +433,7 @@ mod tests {
       .iter()
       .map(ToString::to_string)
       .collect();
-    assert_eq!(versions.len(), 9);
+    assert_eq!(versions.len(), 11);
     assert!(versions.contains(&"20261004000000".to_string()));
     assert!(!versions.contains(&"20260916000000".to_string()));
   }
@@ -452,14 +474,14 @@ mod tests {
       migrate(&mut connection).unwrap();
       migrate(&mut connection).unwrap();
 
-      assert_eq!(connection.applied_migrations().unwrap().len(), 9);
+      assert_eq!(connection.applied_migrations().unwrap().len(), 11);
       assert!(
         super::schema_check(
           &mut connection,
           "EXISTS(SELECT 1 FROM submission WHERE slug = 'snd-1'
           AND audio_url = 'https://example.com/preview.mp3' AND author_remote_id = '42'
           AND tags = '[]' AND development_state IS NULL AND completion_percentage IS NULL
-          AND thumbnail_url IS NULL)",
+          AND thumbnail_url IS NULL AND category_path = '[]' AND videos IS NULL)",
         )
         .unwrap()
       );

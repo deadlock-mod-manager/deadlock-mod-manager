@@ -52,6 +52,20 @@ pub async fn set_match_sync_enabled(app_handle: AppHandle, enabled: bool) -> Res
   Ok(())
 }
 
+/// Turns match sync off (or back on) for one remembered Steam account.
+#[tauri::command]
+pub async fn set_match_sync_account_excluded(
+  app_handle: AppHandle,
+  account_id: u32,
+  excluded: bool,
+) -> Result<(), Error> {
+  if crate::runtime_environment::is_e2e_active() {
+    return Ok(());
+  }
+  match_sync::settings::set_account_excluded(&app_handle, account_id, excluded)?;
+  Ok(())
+}
+
 #[cfg(debug_assertions)]
 #[tauri::command]
 pub async fn debug_reset_match_sync_config(app_handle: AppHandle) -> Result<(), Error> {

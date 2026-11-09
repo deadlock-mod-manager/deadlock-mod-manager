@@ -1,19 +1,27 @@
 import { analytics, captureMilestone } from "@/lib/analytics";
 import { failureOutcome } from "@/lib/analytics/client";
+import type { AnalyticsAttempt } from "@/lib/analytics/schema";
 import { isTauriError } from "@/types/tauri";
 import type { ModDto, SharedProfile } from "@deadlock-mods/shared";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import type { TFunction } from "i18next";
 import logger from "@/lib/logger";
+import {
+  collectImportFailures,
+  summarizeImportFailures,
+} from "@/lib/profiles/import-failures";
 import { prepareProfileImportMods } from "@/lib/profiles/import-profile-prep";
 import { resolveImportContext } from "@/lib/profiles/import-profile-shared";
 import type {
   ImportProgress,
+  ImportedModDownloads,
+  PreparedProfileImportMod,
   ProfileImportOptions,
+  ProfileImportOutcome,
 } from "@/lib/profiles/types";
 import type { State } from "@/lib/store";
 import type { ProfileImportResult } from "@/types/mods";
-import type { ModProfile, ProfileId } from "@/types/profiles";
+import type { ModProfile } from "@/types/profiles";
 import { createProfileId } from "@/types/profiles";
 import { invokeGuarded } from "@/lib/game-guard";
 
@@ -29,6 +37,16 @@ export interface ProfileImportFlowDeps {
   fileserverPreference: State["fileserverPreference"];
 }
 
+const downloadsByRemoteId = (
+  preparedMods: PreparedProfileImportMod[],
+): Map<string, ImportedModDownloads> =>
+  new Map(
+    preparedMods.map((entry) => [
+      entry.profileImportMod.modId,
+      entry.downloads,
+    ]),
+  );
+
 export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
   const {
     setImportProgress,
@@ -41,19 +59,62 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
     fileserverPreference,
   } = deps;
 
+  /** Records the attempt and reports which mods didn't make it in. */
+  const finishImport = (
+    context: ReturnType<typeof resolveImportContext>,
+    attempt: AnalyticsAttempt<"profile_import">,
+    preparationFailed: [string, string][],
+    result: ProfileImportResult,
+    messages: { failure: string; success: string },
+  ) => {
+    const totalCount = context.importedMods.length;
+    const importedCount = result.installedMods.length;
+    const recorded = attempt.finish(
+      importedCount === totalCount
+        ? "completed"
+        : importedCount > 0
+          ? "partial"
+          : "failed",
+      {
+        imported_mod_count: importedCount,
+        unavailable_mod_count: context.unavailableModsCount,
+      },
+    );
+    if (recorded && importedCount > 0)
+      captureMilestone("first_install_completed");
+    setImportProgress(null);
+
+    const failures = collectImportFailures(
+      context.importedMods,
+      context.modsDataByRemoteId,
+      preparationFailed,
+      result.failed,
+    );
+    if (failures.length > 0) {
+      logger
+        .withMetadata({
+          failed: result.failed.length,
+          succeeded: result.succeeded.length,
+          unavailable: context.unavailableModsCount,
+          preparationFailed: preparationFailed.length,
+        })
+        .warn(`${messages.failure}: ${summarizeImportFailures(failures)}`);
+    } else {
+      toast.success(messages.success);
+    }
+    return { importedCount, totalCount, failures };
+  };
+
   const createProfileFromImport = async (
     importedProfile: SharedProfile,
     modsData: ModDto[],
     options?: ProfileImportOptions,
-  ): Promise<ProfileId> => {
-    const {
-      importedMods,
-      availableImportedMods,
-      modsDataByRemoteId,
-      unavailableModsCount,
-    } = resolveImportContext(importedProfile, modsData);
+  ): Promise<ProfileImportOutcome> => {
+    const context = resolveImportContext(importedProfile, modsData);
+    const { availableImportedMods, modsDataByRemoteId, unavailableModsCount } =
+      context;
 
-    const totalImportedMods = importedMods.length;
+    const totalImportedMods = context.importedMods.length;
     if (totalImportedMods === 0) {
       throw new Error("No mods available in imported profile");
     }
@@ -70,8 +131,6 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
       destination: "new_profile",
       mod_count: totalImportedMods,
     });
-    let newProfileId: ProfileId | null = null;
-
     try {
       setImportProgress({
         currentStep: t("profiles.creatingProfile"),
@@ -83,7 +142,6 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
 
       const profileId = `profile_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
       const createdProfileId = createProfileId(profileId);
-      newProfileId = createdProfileId;
       const profileName =
         options?.profileName ??
         t("profiles.importedProfileName", {
@@ -134,63 +192,27 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
         );
 
         if (result.profileFolder && result.profileFolder !== folderName) {
-          setProfileFolderName(newProfileId, result.profileFolder);
+          setProfileFolderName(createdProfileId, result.profileFolder);
         }
       }
 
       if (result.installedMods.length > 0) {
         applyImportInstalledModsToProfile(
-          newProfileId,
+          createdProfileId,
           result.installedMods,
           modsDataByRemoteId,
+          downloadsByRemoteId(preparedMods),
         );
       }
 
-      const missingCount =
-        totalImportedMods -
-        result.installedMods.length -
-        (totalImportedMods - preparedMods.length - unavailableModsCount);
-
-      const importedCount = result.installedMods.length;
-      const recorded = attempt.finish(
-        importedCount === totalImportedMods
-          ? "completed"
-          : importedCount > 0
-            ? "partial"
-            : "failed",
-        {
-          imported_mod_count: importedCount,
-          unavailable_mod_count: unavailableModsCount,
-        },
-      );
-      if (recorded && importedCount > 0)
-        captureMilestone("first_install_completed");
-      setImportProgress(null);
-
-      if (
-        result.failed.length > 0 ||
-        preparationFailed.length > 0 ||
-        unavailableModsCount > 0
-      ) {
-        logger
-          .withMetadata({
-            failed: result.failed.length,
-            succeeded: result.succeeded.length,
-            unavailable: unavailableModsCount,
-            preparationFailed: preparationFailed.length,
-          })
-          .warn("Some mods failed to import");
-        const imported = result.installedMods.length;
-        toast.warning(
-          t("profiles.createSuccess", { profileName }) +
-            ` (${t("profiles.modsImportedCount", { imported, total: totalImportedMods })})`,
-        );
-      } else {
-        toast.success(t("profiles.createSuccess", { profileName }));
-      }
-
-      void missingCount;
-      return createdProfileId;
+      return {
+        profileId: createdProfileId,
+        profileName,
+        ...finishImport(context, attempt, preparationFailed, result, {
+          failure: "Some mods failed to import",
+          success: t("profiles.createSuccess", { profileName }),
+        }),
+      };
     } catch (error) {
       attempt.finish(
         failureOutcome(isTauriError(error) ? error.kind : undefined),
@@ -206,20 +228,17 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
     importedProfile: SharedProfile,
     modsData: ModDto[],
     _options?: ProfileImportOptions,
-  ): Promise<void> => {
+  ): Promise<ProfileImportOutcome> => {
     const activeProfile = getActiveProfile();
     if (!activeProfile) {
       throw new Error("No active profile found");
     }
 
-    const {
-      importedMods,
-      availableImportedMods,
-      modsDataByRemoteId,
-      unavailableModsCount,
-    } = resolveImportContext(importedProfile, modsData);
+    const context = resolveImportContext(importedProfile, modsData);
+    const { availableImportedMods, modsDataByRemoteId, unavailableModsCount } =
+      context;
 
-    const totalImportedMods = importedMods.length;
+    const totalImportedMods = context.importedMods.length;
     if (totalImportedMods === 0) {
       throw new Error("No mods available in imported profile");
     }
@@ -273,46 +292,18 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
           activeProfile.id,
           result.installedMods,
           modsDataByRemoteId,
+          downloadsByRemoteId(preparedMods),
         );
       }
 
-      const importedCount = result.installedMods.length;
-      const recorded = attempt.finish(
-        importedCount === totalImportedMods
-          ? "completed"
-          : importedCount > 0
-            ? "partial"
-            : "failed",
-        {
-          imported_mod_count: importedCount,
-          unavailable_mod_count: unavailableModsCount,
-        },
-      );
-      if (recorded && importedCount > 0)
-        captureMilestone("first_install_completed");
-      setImportProgress(null);
-
-      if (
-        result.failed.length > 0 ||
-        preparationFailed.length > 0 ||
-        unavailableModsCount > 0
-      ) {
-        logger
-          .withMetadata({
-            failed: result.failed.length,
-            succeeded: result.succeeded.length,
-            unavailable: unavailableModsCount,
-            preparationFailed: preparationFailed.length,
-          })
-          .warn("Some mods failed to import to current profile");
-        const imported = result.installedMods.length;
-        toast.warning(
-          t("profiles.overrideSuccess") +
-            ` (${t("profiles.modsImportedCount", { imported, total: totalImportedMods })})`,
-        );
-      } else {
-        toast.success(t("profiles.overrideSuccess"));
-      }
+      return {
+        profileId: activeProfile.id,
+        profileName: activeProfile.name,
+        ...finishImport(context, attempt, preparationFailed, result, {
+          failure: "Some mods failed to import to current profile",
+          success: t("profiles.overrideSuccess"),
+        }),
+      };
     } catch (error) {
       attempt.finish(
         failureOutcome(isTauriError(error) ? error.kind : undefined),

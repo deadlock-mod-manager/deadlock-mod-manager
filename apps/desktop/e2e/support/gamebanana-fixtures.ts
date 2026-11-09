@@ -24,6 +24,14 @@ export const UPDATE_SKIP_DATES = {
 } as const;
 export const OPTIONAL_FILE_ID = 910002;
 
+/** A healthy `/apiv11/Util/Fileservers` record. */
+export const fileserver = (id: number, domain: string, rate: number) => ({
+  _idRow: id,
+  _sDomain: domain,
+  _sState: "up",
+  _aStats: { _a1hr: { _fRate: rate, _nRequests: 100 } },
+});
+
 type CatalogArchive = {
   id: number;
   name: string;
@@ -95,6 +103,7 @@ export const catalogRecipe = (scenario: string): CatalogArchive[] => {
     return catalogRecipe("gamebanana-variants");
   if (
     scenario === "gamebanana-update-skip" ||
+    scenario === "gamebanana-reinstall-readonly" ||
     scenario.startsWith("downloads-queue-error-")
   )
     return catalogRecipe("gamebanana-single");
@@ -341,6 +350,14 @@ export const assertCatalogNetwork = (
     expected.push(
       { path: "/dl/910003", status: 200 },
       { path: "/dl/910004", status: 200 },
+    );
+  // Reinstall re-fetches every download in selectedDownloads, blue.zip included.
+  if (scenario === "gamebanana-switch-reinstall")
+    expected.push(
+      { path: "/dl/910003", status: 200 },
+      { path: "/dl/910001", status: 200 },
+      { path: "/dl/910002", status: 200 },
+      { path: "/dl/910003", status: 200 },
     );
   if (scenario === "gamebanana-switch-failure")
     expected.push(

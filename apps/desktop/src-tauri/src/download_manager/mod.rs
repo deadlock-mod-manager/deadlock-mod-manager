@@ -10,6 +10,7 @@ mod test_server;
 
 use crate::app_runtime::AppHandle;
 use crate::errors::Error;
+use crate::mod_manager::ModFileTree;
 use crate::mod_manager::filesystem_helper::FileSystemHelper;
 use crate::mod_manager::perf_config::staging as perf_staging;
 use crate::mod_manager::perf_config::types::{ConfigFoundEvent, ImportVariant};
@@ -39,6 +40,9 @@ pub struct DownloadFileDto {
   pub size: u64,
   #[serde(default, rename = "md5Checksum")]
   pub md5_checksum: Option<String>,
+  /// Set only by Rust source resolution; IPC callers cannot grant network access.
+  #[serde(skip)]
+  pub native_artifact: Option<crate::providers::native_sources::ResolvedNativeArtifact>,
 }
 
 #[derive(Clone, Debug)]
@@ -49,18 +53,25 @@ pub struct DownloadTask {
   pub profile_folder: Option<String>,
   pub is_profile_import: bool,
   pub file_tree: Option<crate::mod_manager::file_tree::ModFileTree>,
+  pub native_component_plan: bool,
+  /// The window's id for this attempt, echoed on the events that settle it, so
+  /// a late event from an earlier attempt for the same mod isn't taken for this
+  /// one. `None` for downloads the backend queues itself.
+  pub attempt_id: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DownloadStartedEvent {
   pub mod_id: String,
+  pub attempt_id: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DownloadProgressEvent {
   pub mod_id: String,
+  pub attempt_id: Option<String>,
   pub file_index: usize,
   pub total_files: usize,
   pub progress: u64,
@@ -76,12 +87,14 @@ impl DownloadProgressEvent {
   fn from_accepted(
     accepted: AcceptedProgress,
     mod_id: &str,
+    attempt_id: Option<&str>,
     file_index: usize,
     total_files: usize,
     source: Option<DownloadSource>,
   ) -> Self {
     Self {
       mod_id: mod_id.to_string(),
+      attempt_id: attempt_id.map(str::to_string),
       file_index,
       total_files,
       progress: accepted.file_downloaded,
@@ -98,6 +111,7 @@ impl DownloadProgressEvent {
 #[serde(rename_all = "camelCase")]
 pub struct DownloadCompletedEvent {
   pub mod_id: String,
+  pub attempt_id: Option<String>,
   pub path: String,
 }
 
@@ -105,6 +119,7 @@ pub struct DownloadCompletedEvent {
 #[serde(rename_all = "camelCase")]
 pub struct DownloadFileTreeEvent {
   pub mod_id: String,
+  pub attempt_id: Option<String>,
   pub file_tree: crate::mod_manager::file_tree::ModFileTree,
 }
 
@@ -125,6 +140,7 @@ pub struct DownloadFontsFoundEvent {
 #[serde(rename_all = "camelCase")]
 pub struct DownloadErrorEvent {
   pub mod_id: String,
+  pub attempt_id: Option<String>,
   pub error: String,
   /// Set when the failure is on the download server's side rather than the app's.
   pub reason: Option<DownloadFailureReason>,
@@ -141,7 +157,7 @@ pub enum DownloadFailureReason {
 }
 
 impl DownloadErrorEvent {
-  fn new(mod_id: String, error: &Error) -> Self {
+  fn new(task: &DownloadTask, error: &Error) -> Self {
     let (reason, retry_after_secs) = match error {
       Error::DownloadSourceBusy {
         retry_after_secs, ..
@@ -150,7 +166,8 @@ impl DownloadErrorEvent {
       _ => (None, None),
     };
     Self {
-      mod_id,
+      mod_id: task.mod_id.clone(),
+      attempt_id: task.attempt_id.clone(),
       error: error.to_string(),
       reason,
       retry_after_secs,
@@ -399,6 +416,7 @@ impl DownloadManager {
                     "download-completed",
                     DownloadCompletedEvent {
                       mod_id: mod_id.clone(),
+                      attempt_id: queued.task.attempt_id.clone(),
                       path: task_path,
                     },
                   )
@@ -415,7 +433,7 @@ impl DownloadManager {
                 app_handle
                   .emit(
                     "download-error",
-                    DownloadErrorEvent::new(mod_id.clone(), error),
+                    DownloadErrorEvent::new(&queued.task, error),
                   )
                   .ok();
               }
@@ -459,6 +477,7 @@ impl DownloadManager {
         "download-started",
         DownloadStartedEvent {
           mod_id: mod_id.clone(),
+          attempt_id: task.attempt_id.clone(),
         },
       )
       .ok();
@@ -482,6 +501,7 @@ impl DownloadManager {
           Self::publish_progress(
             accepted,
             &mod_id,
+            task.attempt_id.as_deref(),
             file_index,
             total_files,
             None,
@@ -494,7 +514,9 @@ impl DownloadManager {
         .collect::<Vec<_>>();
       let file_size = file.size;
       let md5_checksum = file.md5_checksum.clone();
+      let native_artifact = file.native_artifact.clone();
       let mod_id_clone = mod_id.clone();
+      let attempt_id = task.attempt_id.clone();
       let app_handle_clone = app_handle.clone();
       let cancel_token_clone = cancel_token.clone();
       let pause_clone = pause.clone();
@@ -508,6 +530,7 @@ impl DownloadManager {
           {
             let app_handle = app_handle_clone.clone();
             let mod_id = mod_id_clone.clone();
+            let attempt_id = attempt_id.clone();
             let aggregator = Arc::clone(&aggregator_shared);
 
             move |progress: FileProgress| {
@@ -520,6 +543,7 @@ impl DownloadManager {
                   Self::publish_progress(
                     accepted,
                     &mod_id,
+                    attempt_id.as_deref(),
                     file_index,
                     total_files,
                     Some(progress.source),
@@ -537,6 +561,7 @@ impl DownloadManager {
             file_size.min(2 * 1024 * 1024 * 1024)
           }),
           md5_checksum.as_deref(),
+          native_artifact.as_ref(),
         )
         .await;
 
@@ -546,6 +571,7 @@ impl DownloadManager {
           Self::publish_progress(
             accepted,
             &mod_id_clone,
+            attempt_id.as_deref(),
             file_index,
             total_files,
             None,
@@ -594,6 +620,69 @@ impl DownloadManager {
 
     match purpose {
       DownloadPurpose::Install => {
+        if task.native_component_plan {
+          // As on the archive path, profile imports skip the config prompt.
+          let config_label = (!task.is_profile_import)
+            .then(|| Self::archive_label(&downloaded_files).unwrap_or_else(|| task.mod_id.clone()));
+          let (prepared, staged_config) = Self::prepare_downloaded_vpks(
+            operation_id,
+            task,
+            &downloaded_files,
+            &app_handle,
+            config_label.as_deref(),
+          )
+          .await?;
+          let installed_vpks = prepared.vpk_paths.len();
+          let result = {
+            let mut manager = crate::commands::state::MANAGER.lock().unwrap();
+            manager.update_mod_from_prepared(
+              &task.mod_id,
+              &task.mod_id,
+              &prepared.vpk_paths,
+              prepared.file_tree.clone(),
+              task.profile_folder.clone(),
+              false,
+            )
+          };
+          let cleanup = PreparedDownload {
+            scratch_paths: vec![task.target_dir.join(format!("prepared-{operation_id}"))],
+            ..prepared
+          };
+          cleanup.remove_scratch_files();
+          result?;
+          if let Some(tree) = cleanup.file_tree {
+            app_handle
+              .emit(
+                "download-file-tree",
+                DownloadFileTreeEvent {
+                  mod_id: task.mod_id.clone(),
+                  attempt_id: task.attempt_id.clone(),
+                  file_tree: tree,
+                },
+              )
+              .ok();
+          }
+          if let (Some((staging_id, variants)), Some(mod_name)) = (staged_config, config_label) {
+            app_handle
+              .emit(
+                "download-config-found",
+                ConfigFoundEvent {
+                  mod_id: task.mod_id.clone(),
+                  mod_name,
+                  staging_id,
+                  variants,
+                  installed_vpks: u32::try_from(installed_vpks).unwrap_or(u32::MAX),
+                },
+              )
+              .ok();
+          }
+          return Ok(PreparedDownload {
+            vpk_paths: Vec::new(),
+            file_tree: None,
+            selection_required: false,
+            scratch_paths: Vec::new(),
+          });
+        }
         Self::process_downloaded_files(task, &downloaded_files, &app_handle).await?;
         Ok(PreparedDownload {
           vpk_paths: Vec::new(),
@@ -604,7 +693,9 @@ impl DownloadManager {
       }
       DownloadPurpose::PrepareUpdate => {
         let prepared =
-          Self::prepare_downloaded_vpks(operation_id, task, &downloaded_files, &app_handle).await;
+          Self::prepare_downloaded_vpks(operation_id, task, &downloaded_files, &app_handle, None)
+            .await
+            .map(|(prepared, _)| prepared);
         let mut scratch_paths = downloaded_files;
         scratch_paths.push(task.target_dir.join(format!("prepared-{operation_id}")));
         match prepared {
@@ -659,10 +750,21 @@ impl DownloadManager {
     pause: PauseHandle,
     max_bytes: Option<u64>,
     md5_checksum: Option<&str>,
+    native_artifact: Option<&crate::providers::native_sources::ResolvedNativeArtifact>,
   ) -> Result<(), Error>
   where
     F: Fn(FileProgress) + Send + Sync + 'static,
   {
+    if let Some(artifact) = native_artifact {
+      return downloader::download_native_artifact(
+        artifact,
+        target_path,
+        on_progress,
+        cancel_token,
+        pause,
+      )
+      .await;
+    }
     let on_progress = Arc::new(on_progress);
     sources::download_from_sources(urls, target_path, |url| {
       let on_progress = Arc::clone(&on_progress);
@@ -748,12 +850,15 @@ impl DownloadManager {
     Some(Error::DownloadFailed(messages.join("; ")))
   }
 
+  /// With a `config_label`, the first archive holding a performance config
+  /// also has it staged for import, as the archive install path does.
   async fn prepare_downloaded_vpks(
     operation_id: u64,
     task: &DownloadTask,
     downloaded_files: &[PathBuf],
     app_handle: &AppHandle,
-  ) -> Result<PreparedDownload, Error> {
+    config_label: Option<&str>,
+  ) -> Result<(PreparedDownload, Option<(String, Vec<ImportVariant>)>), Error> {
     use crate::mod_manager::archive_extractor::ArchiveExtractor;
     use crate::mod_manager::file_tree::{FileTreeAnalyzer, ModFileTree};
 
@@ -763,6 +868,7 @@ impl DownloadManager {
     }
     std::fs::create_dir_all(&prepared_dir)?;
 
+    let mut staged_config = None;
     let prepare_result = async {
       let extractor = ArchiveExtractor::new();
       let analyzer = FileTreeAnalyzer::new();
@@ -803,14 +909,17 @@ impl DownloadManager {
           continue;
         }
 
-        app_handle
-          .emit(
-            "download-extracting",
-            DownloadExtractingEvent {
-              mod_id: task.mod_id.clone(),
-            },
-          )
-          .ok();
+        // As in `process_downloaded_files`: a failed import would leave it set.
+        if !task.is_profile_import {
+          app_handle
+            .emit(
+              "download-extracting",
+              DownloadExtractingEvent {
+                mod_id: task.mod_id.clone(),
+              },
+            )
+            .ok();
+        }
 
         let archive_path = downloaded_file.clone();
         let extract_target = task.target_dir.clone();
@@ -845,8 +954,11 @@ impl DownloadManager {
           .file_name()
           .and_then(|name| name.to_str())
           .unwrap_or_default();
-        let extracted_tree =
+        let mut extracted_tree =
           analyzer.get_file_tree_from_extracted(extracted_dir.path(), archive_name)?;
+        if task.native_component_plan {
+          Self::apply_component_plan(&mut extracted_tree, task.file_tree.as_ref())?;
+        }
         let carried = (extracted_tree.has_multiple_files
           && !Self::selection_covers_archive(task.file_tree.as_ref(), archive_name))
         .then(|| {
@@ -856,20 +968,40 @@ impl DownloadManager {
             &downloaded_names,
           )
         });
-        let selected_paths = match &carried {
-          Some(None) => {
-            selection_required = true;
-            Vec::new()
+        let missing_native_choice =
+          crate::providers::native_sources::validate_source_listing_slug(&task.mod_id)
+            && !task.native_component_plan
+            && Self::native_manual_choice_missing(
+              &extracted_tree,
+              task.file_tree.as_ref(),
+              archive_name,
+            );
+        let selected_paths = if missing_native_choice {
+          selection_required = true;
+          Vec::new()
+        } else if task.native_component_plan {
+          extracted_tree
+            .files
+            .iter()
+            .filter(|file| file.is_selected)
+            .map(|file| extracted_dir.path().join(&file.path))
+            .collect()
+        } else {
+          match &carried {
+            Some(None) => {
+              selection_required = true;
+              Vec::new()
+            }
+            Some(Some((carried, replaced))) => {
+              replaced_archives.insert(archive_name.to_string(), replaced);
+              Self::selected_extracted_vpks(extracted_dir.path(), &extracted_tree, Some(carried))
+            }
+            None => Self::selected_extracted_vpks(
+              extracted_dir.path(),
+              &extracted_tree,
+              task.file_tree.as_ref(),
+            ),
           }
-          Some(Some((carried, replaced))) => {
-            replaced_archives.insert(archive_name.to_string(), replaced);
-            Self::selected_extracted_vpks(extracted_dir.path(), &extracted_tree, Some(carried))
-          }
-          None => Self::selected_extracted_vpks(
-            extracted_dir.path(),
-            &extracted_tree,
-            task.file_tree.as_ref(),
-          ),
         };
 
         // Each archive's temp dir is gone before the names are known, so
@@ -885,10 +1017,19 @@ impl DownloadManager {
           prepared_files.push(file);
         }
 
+        if let Some(label) = config_label
+          && staged_config.is_none()
+        {
+          staged_config =
+            Self::stage_bundled_config(app_handle, extracted_dir.path(), label, &task.mod_id);
+        }
         extracted_dir.close()?;
       }
 
       let mut tree = ModFileTree::from_extracted(prepared_files);
+      if task.native_component_plan {
+        Self::validate_component_plan_complete(&tree, task.file_tree.as_ref())?;
+      }
       if selection_required {
         Self::keep_saved_order(
           &mut tree,
@@ -955,7 +1096,7 @@ impl DownloadManager {
       );
     }
 
-    prepare_result
+    prepare_result.map(|prepared| (prepared, staged_config))
   }
 
   fn is_vpk_path(path: &std::path::Path) -> bool {
@@ -963,6 +1104,26 @@ impl DownloadManager {
       .extension()
       .and_then(|extension| extension.to_str())
       .is_some_and(|extension| extension.eq_ignore_ascii_case("vpk"))
+  }
+
+  fn stage_downloaded_vpk(
+    downloaded_file: &std::path::Path,
+    extraction_root: &std::path::Path,
+  ) -> Result<crate::mod_manager::file_tree::ModFile, Error> {
+    let filename = downloaded_file
+      .file_name()
+      .and_then(|name| name.to_str())
+      .ok_or_else(|| Error::InvalidInput("VPK filename is invalid".into()))?;
+    let directory = extraction_root.join(filename);
+    std::fs::create_dir_all(&directory)?;
+    std::fs::copy(downloaded_file, directory.join(filename))?;
+    Ok(crate::mod_manager::file_tree::ModFile {
+      name: filename.to_string(),
+      path: format!("{filename}/{filename}"),
+      size: downloaded_file.metadata()?.len(),
+      is_selected: true,
+      archive_name: filename.to_string(),
+    })
   }
 
   // The blocking worker owns cleanup until extraction finishes, including when
@@ -976,6 +1137,81 @@ impl DownloadManager {
     crate::mod_manager::archive_extractor::ArchiveExtractor::new()
       .extract_archive(archive, directory.path())?;
     Ok(directory)
+  }
+
+  fn apply_component_plan(
+    tree: &mut ModFileTree,
+    selection: Option<&ModFileTree>,
+  ) -> Result<(), Error> {
+    let selection =
+      selection.ok_or_else(|| Error::InvalidInput("Missing native component selection".into()))?;
+    for requested in selection.files.iter().filter(|file| file.is_selected) {
+      if tree
+        .files
+        .first()
+        .is_some_and(|file| file.archive_name == requested.archive_name)
+        && !tree
+          .files
+          .iter()
+          .any(|file| Self::lists_by_path(requested, file))
+      {
+        return Err(Error::InvalidInput(
+          "A selected source component is missing from its artifact".into(),
+        ));
+      }
+    }
+    for file in &mut tree.files {
+      file.is_selected = selection
+        .files
+        .iter()
+        .any(|requested| requested.is_selected && Self::lists_by_path(requested, file));
+    }
+    Ok(())
+  }
+
+  fn validate_component_plan_complete(
+    tree: &ModFileTree,
+    selection: Option<&ModFileTree>,
+  ) -> Result<(), Error> {
+    let selection =
+      selection.ok_or_else(|| Error::InvalidInput("Missing native component selection".into()))?;
+    if selection
+      .files
+      .iter()
+      .filter(|file| file.is_selected)
+      .any(|requested| {
+        !tree
+          .files
+          .iter()
+          .any(|file| file.is_selected && Self::lists_by_path(requested, file))
+      })
+    {
+      return Err(Error::InvalidInput(
+        "A selected source component is missing from its artifact".into(),
+      ));
+    }
+    Ok(())
+  }
+
+  fn native_manual_choice_missing(
+    tree: &ModFileTree,
+    selection: Option<&ModFileTree>,
+    archive: &str,
+  ) -> bool {
+    selection.is_some_and(|selection| {
+      let selected: Vec<_> = selection
+        .files
+        .iter()
+        .filter(|file| file.is_selected && file.archive_name == archive)
+        .collect();
+      selected.is_empty()
+        || selected.iter().any(|requested| {
+          !tree
+            .files
+            .iter()
+            .any(|file| Self::lists_by_path(requested, file))
+        })
+    })
   }
 
   fn selected_extracted_vpks(
@@ -1324,6 +1560,7 @@ impl DownloadManager {
   fn publish_progress(
     accepted: AcceptedProgress,
     mod_id: &str,
+    attempt_id: Option<&str>,
     file_index: usize,
     total_files: usize,
     source: Option<DownloadSource>,
@@ -1338,7 +1575,14 @@ impl DownloadManager {
     app_handle
       .emit(
         "download-progress",
-        DownloadProgressEvent::from_accepted(accepted, mod_id, file_index, total_files, source),
+        DownloadProgressEvent::from_accepted(
+          accepted,
+          mod_id,
+          attempt_id,
+          file_index,
+          total_files,
+          source,
+        ),
       )
       .ok();
   }
@@ -1422,18 +1666,29 @@ impl DownloadManager {
     };
 
     for file_path in downloaded_files {
+      if Self::is_vpk_path(file_path)
+        && crate::providers::native_sources::validate_source_listing_slug(&task.mod_id)
+      {
+        collected_files.push(Self::stage_downloaded_vpk(file_path, &extraction_root)?);
+        continue;
+      }
       if !ArchiveExtractor::new().is_supported_archive(file_path) {
         continue;
       }
 
-      app_handle
-        .emit(
-          "download-extracting",
-          DownloadExtractingEvent {
-            mod_id: task.mod_id.clone(),
-          },
-        )
-        .ok();
+      // A profile import reports its own progress and stores what it installed
+      // when it ends. This event would mark the mod with the same ID in the
+      // active profile as extracting, and nothing would set it back.
+      if !task.is_profile_import {
+        app_handle
+          .emit(
+            "download-extracting",
+            DownloadExtractingEvent {
+              mod_id: task.mod_id.clone(),
+            },
+          )
+          .ok();
+      }
 
       log::info!("Extracting archive: {file_path:?}");
 
@@ -1633,6 +1888,7 @@ impl DownloadManager {
             "download-file-tree",
             DownloadFileTreeEvent {
               mod_id: task.mod_id.clone(),
+              attempt_id: task.attempt_id.clone(),
               file_tree: aggregated_tree,
             },
           )
@@ -1750,7 +2006,7 @@ impl DownloadManager {
         .app_handle
         .emit(
           "download-error",
-          DownloadErrorEvent::new(queued.task.mod_id.clone(), &Error::DownloadCancelled),
+          DownloadErrorEvent::new(&queued.task, &Error::DownloadCancelled),
         )
         .ok();
     }
@@ -1838,7 +2094,7 @@ impl DownloadManager {
         .app_handle
         .emit(
           "download-error",
-          DownloadErrorEvent::new(queued.task.mod_id.clone(), &Error::DownloadCancelled),
+          DownloadErrorEvent::new(&queued.task, &Error::DownloadCancelled),
         )
         .ok();
     }
@@ -2060,6 +2316,32 @@ mod tests {
   use crate::mod_manager::file_tree::{ModFile, ModFileTree};
 
   #[test]
+  fn loose_download_is_staged_for_installation_with_manifest() {
+    let directory = tempfile::tempdir().unwrap();
+    let downloaded = directory.path().join("example.vpk");
+    let staging = directory.path().join("extracted");
+    let addons = directory.path().join("addons");
+    let bytes = include_bytes!("../../../../../examples/mod-source/files/example.vpk");
+    std::fs::write(&downloaded, bytes).unwrap();
+    let file = DownloadManager::stage_downloaded_vpk(&downloaded, &staging).unwrap();
+    let tree = ModFileTree::from_extracted(vec![file]);
+    let mod_id = format!("source-{}", "a".repeat(64));
+    let placed = crate::mod_manager::vpk_manager::VpkManager::new()
+      .place_selected_vpks_with_prefix(&staging, &addons, &mod_id, &tree)
+      .unwrap();
+    crate::commands::archive::persist_prefixed_import(&addons, &mod_id, placed).unwrap();
+
+    let filename = format!("{mod_id}_example.vpk");
+    assert_eq!(std::fs::read(addons.join(&filename)).unwrap(), bytes);
+    let manifest = crate::mod_manager::vpk_manifest::ProfileVpkManifest::load(&addons).unwrap();
+    let entry = manifest.mods.get(&mod_id).unwrap();
+    assert!(!entry.enabled);
+    assert_eq!(entry.disabled_vpks, vec![filename]);
+    assert_eq!(entry.original_vpk_names, vec!["example.vpk"]);
+    assert_eq!(std::fs::read(downloaded).unwrap(), bytes);
+  }
+
+  #[test]
   fn config_label_names_the_first_archive() {
     let files = vec![
       PathBuf::from("downloads/pak01_dir.vpk"),
@@ -2086,6 +2368,8 @@ mod tests {
         profile_folder: None,
         is_profile_import: false,
         file_tree: None,
+        native_component_plan: false,
+        attempt_id: None,
       },
       purpose: DownloadPurpose::Install,
       completion: None,
@@ -2117,6 +2401,7 @@ mod tests {
       name: "mod.vpk".to_string(),
       size: 1024,
       md5_checksum: None,
+      native_artifact: None,
     });
 
     DownloadManager::remove_partials(&download.task).await;
@@ -2399,6 +2684,59 @@ mod tests {
     drop(directory);
     assert!(!path.exists());
   }
+  #[test]
+  fn native_manual_update_requires_choice_when_the_selected_file_disappears() {
+    let saved = tree(vec![file("pack.zip", "pack.zip/red.vpk", true)]);
+    let changed = tree(vec![file("pack.zip", "blue.vpk", true)]);
+    assert!(DownloadManager::native_manual_choice_missing(
+      &changed,
+      Some(&saved),
+      "pack.zip"
+    ));
+    let same = tree(vec![file("pack.zip", "red.vpk", true)]);
+    assert!(!DownloadManager::native_manual_choice_missing(
+      &same,
+      Some(&saved),
+      "pack.zip"
+    ));
+  }
+
+  #[test]
+  fn native_component_plan_never_installs_undeclared_files_or_ignores_missing_required_files() {
+    let plan = tree(vec![
+      file("pack.zip", "pack.zip/base.vpk", true),
+      file("pack.zip", "pack.zip/red.vpk", false),
+    ]);
+    let mut extracted = tree(vec![
+      file("pack.zip", "base.vpk", true),
+      file("pack.zip", "red.vpk", true),
+      file("pack.zip", "extra.vpk", true),
+    ]);
+    DownloadManager::apply_component_plan(&mut extracted, Some(&plan)).unwrap();
+    assert_eq!(
+      extracted
+        .files
+        .iter()
+        .filter(|file| file.is_selected)
+        .map(|file| file.path.as_str())
+        .collect::<Vec<_>>(),
+      ["base.vpk"]
+    );
+    DownloadManager::validate_component_plan_complete(&extracted, Some(&plan)).unwrap();
+    assert!(
+      DownloadManager::validate_component_plan_complete(&tree(Vec::new()), Some(&plan)).is_err()
+    );
+    let incomplete = tree(vec![file("pack.zip", "base.vpk", true)]);
+    let missing_companion = tree(vec![
+      file("pack.zip", "pack.zip/base.vpk", true),
+      file("other.zip", "other.zip/required.vpk", true),
+    ]);
+    assert!(
+      DownloadManager::validate_component_plan_complete(&incomplete, Some(&missing_companion))
+        .is_err()
+    );
+  }
+
   fn tree(files: Vec<ModFile>) -> ModFileTree {
     let total_files = files.len();
     ModFileTree {
@@ -2998,12 +3336,14 @@ mod tests {
         percentage: 5.0,
       },
       "mod-7",
+      Some("attempt-1"),
       8,
       9,
       None,
     );
 
     assert_eq!(event.mod_id, "mod-7");
+    assert_eq!(event.attempt_id.as_deref(), Some("attempt-1"));
     assert_eq!(event.file_index, 8);
     assert_eq!(event.total_files, 9);
     assert_eq!(

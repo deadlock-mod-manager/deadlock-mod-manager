@@ -38,6 +38,7 @@ import {
 } from "@/lib/profiles/import-profile-shared";
 import { disabledModCountOf } from "@/lib/profiles/profile-backup";
 import { usePersistedStore } from "@/lib/store";
+import { ImportResultView } from "@/components/profiles/import-result-view";
 import { RestoreProgress, type RestoreProgressMod } from "./restore-progress";
 
 interface RestoreBackupDialogProps {
@@ -111,6 +112,8 @@ export const RestoreBackupDialog = ({
     full?.payload.modNames?.[remoteId] ?? remoteId;
 
   const isRestoring = restore.isPending;
+  const outcome = restore.data;
+  const result = outcome?.failures.length ? outcome : null;
   const canRestore =
     !!profile && !modsLoading && availableCount > 0 && !isRestoring;
 
@@ -123,9 +126,25 @@ export const RestoreBackupDialog = ({
         modsData,
         destination,
       },
-      { onSuccess: () => onOpenChange(false) },
+      {
+        onSuccess: ({ failures }) => {
+          if (failures.length === 0) onOpenChange(false);
+        },
+      },
     );
   };
+
+  if (result)
+    return (
+      <Dialog open onOpenChange={() => onOpenChange(false)}>
+        <DialogContent className='sm:max-w-[520px]'>
+          <ImportResultView
+            outcome={result}
+            onDone={() => onOpenChange(false)}
+          />
+        </DialogContent>
+      </Dialog>
+    );
 
   return (
     <Dialog

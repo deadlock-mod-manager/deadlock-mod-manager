@@ -30,7 +30,8 @@ jobs:
 
       - name: Download DepotDownloader
         run: |
-          curl -L -o DepotDownloader.zip https://github.com/SteamRE/DepotDownloader/releases/download/DepotDownloader_3.4.0/DepotDownloader-linux-x64.zip
+          curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 -o DepotDownloader.zip \
+            https://github.com/SteamRE/DepotDownloader/releases/download/DepotDownloader_3.4.0/DepotDownloader-linux-x64.zip
           unzip DepotDownloader.zip -d DepotDownloader
           chmod +x DepotDownloader/DepotDownloader
 

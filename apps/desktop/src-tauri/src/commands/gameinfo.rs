@@ -46,7 +46,7 @@ pub async fn reset_to_vanilla_internal() -> Result<GameInfoResetSource, Error> {
     .get_config_manager_mut()
     .reset_gameinfo(&game_path, vanilla_content)?;
 
-  log::info!("Successfully reset to vanilla state using {source:?}");
+  log::info!("Applied gameinfo recovery using {source:?}");
   Ok(source)
 }
 
@@ -79,6 +79,48 @@ pub async fn restore_gameinfo_backup(guard_permit: Option<String>) -> Result<(),
 pub async fn reset_to_vanilla(guard_permit: Option<String>) -> Result<GameInfoResetSource, Error> {
   crate::game_guard::ensure_game_idle_locked("reset_to_vanilla", guard_permit.as_deref())?;
   reset_to_vanilla_internal().await
+}
+
+#[tauri::command]
+/// None means there are no DMM mounts for an exit cleanup to remove.
+pub async fn gameinfo_cleanup_revision() -> Result<Option<u64>, Error> {
+  let manager = MANAGER.lock().unwrap();
+  let game_path = manager
+    .get_steam_manager()
+    .get_game_path()
+    .ok_or(Error::GamePathNotSet)?;
+  manager.get_config_manager().cleanup_revision(game_path)
+}
+
+/// Skip stale observations and active launches, including when the manual guard is off.
+#[tauri::command]
+pub async fn remove_mod_search_paths(expected_revision: u64) -> Result<bool, Error> {
+  let Ok(_launch_guard) = super::game::GAMEINFO_LAUNCH.try_lock() else {
+    return Ok(false);
+  };
+  let mut manager = MANAGER.lock().unwrap();
+  if manager.is_game_running()? {
+    return Ok(false);
+  }
+  let game_path = manager
+    .get_steam_manager()
+    .get_game_path()
+    .cloned()
+    .ok_or(Error::GamePathNotSet)?;
+  manager
+    .get_config_manager_mut()
+    .remove_mod_paths_at_revision(&game_path, expected_revision)
+}
+
+#[cfg(test)]
+mod cleanup_tests {
+  use super::*;
+
+  #[tokio::test]
+  async fn cleanup_skips_a_launch_instead_of_removing_its_staged_paths() {
+    let _launch = crate::commands::game::GAMEINFO_LAUNCH.lock().await;
+    assert!(matches!(remove_mod_search_paths(0).await, Ok(false)));
+  }
 }
 
 #[tauri::command]
@@ -116,7 +158,9 @@ pub async fn gameinfo_has_mod_paths() -> Result<bool, Error> {
     .ok_or(Error::GamePathNotSet)?;
   let content =
     std::fs::read_to_string(game_path.join("game").join("citadel").join("gameinfo.gi"))?;
-  Ok(content.contains("citadel/addons"))
+  crate::mod_manager::game_config_manager::GameConfigManager::has_mod_search_paths(
+    &game_path, &content,
+  )
 }
 
 #[tauri::command]

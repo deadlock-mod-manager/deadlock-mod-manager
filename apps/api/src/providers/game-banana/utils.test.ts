@@ -628,14 +628,14 @@ describe("buildDonationLinks", () => {
 });
 
 describe("buildMetadata", () => {
-  it("returns null when no mod-specific metadata is populated", () => {
+  it("sends an empty video list when nothing else is populated", () => {
     expect(
       buildMetadata({
         description: "Nothing useful here.",
         isMap: false,
         donationMethods: [],
       }),
-    ).toBeNull();
+    ).toEqual({ videos: [] });
   });
 
   it("returns mapName when isMap is true", () => {
@@ -644,7 +644,7 @@ describe("buildMetadata", () => {
       isMap: true,
       donationMethods: [],
     });
-    expect(result).toEqual({ mapName: "my_arena" });
+    expect(result).toEqual({ mapName: "my_arena", videos: [] });
   });
 
   it("returns donationLinks when present", () => {
@@ -666,6 +666,32 @@ describe("buildMetadata", () => {
     });
     expect(result?.mapName).toBe("my_arena");
     expect(result?.donationLinks).toHaveLength(1);
+  });
+
+  it("keeps only embedded media it can play", () => {
+    const result = buildMetadata({
+      description: "",
+      isMap: false,
+      donationMethods: [],
+      embeddedMedia: [
+        "https://www.youtube.com/watch?v=Xw0wI89x3fc",
+        "https://example.com/not-a-video",
+      ],
+    });
+    expect(result).toEqual({
+      videos: [{ provider: "youtube", id: "Xw0wI89x3fc" }],
+    });
+  });
+
+  it("clears stored videos when no embedded media is playable", () => {
+    expect(
+      buildMetadata({
+        description: "",
+        isMap: false,
+        donationMethods: [],
+        embeddedMedia: ["https://example.com/not-a-video"],
+      }),
+    ).toEqual({ videos: [] });
   });
 });
 

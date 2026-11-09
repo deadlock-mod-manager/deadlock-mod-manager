@@ -27,6 +27,15 @@ pub struct Bone {
     pub model_bind_matrix: [f32; 16],
 }
 
+impl Bone {
+    /// A root `pin_procedural_cloth_roots` moves with the body.
+    pub fn is_procedural_cloth_root(&self) -> bool {
+        self.parent < 0
+            && self.flags & (BONE_FLAG_CLOTH | BONE_FLAG_PROCEDURAL)
+                == (BONE_FLAG_CLOTH | BONE_FLAG_PROCEDURAL)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Skeleton {
     pub bones: Vec<Bone>,
@@ -131,10 +140,7 @@ impl Skeleton {
             &self.inverse_bind_matrices[anchor_index],
         );
         for (index, bone) in self.bones.iter().enumerate() {
-            if bone.parent < 0
-                && bone.flags & (BONE_FLAG_CLOTH | BONE_FLAG_PROCEDURAL)
-                    == (BONE_FLAG_CLOTH | BONE_FLAG_PROCEDURAL)
-            {
+            if bone.is_procedural_cloth_root() {
                 let pinned = mat4_mul(&cloth_skinning, &bone.model_bind_matrix);
                 pose[index] = decompose_trs(&pinned);
             }

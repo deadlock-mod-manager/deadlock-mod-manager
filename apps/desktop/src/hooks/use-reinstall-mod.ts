@@ -16,7 +16,7 @@ import {
   type ModFileTree,
   ModStatus,
 } from "@/types/mods";
-import { invokeGuarded, isGameRunningError } from "@/lib/game-guard";
+import { invokeGuarded } from "@/lib/game-guard";
 
 const logger = createLogger("reinstall-mod");
 
@@ -34,8 +34,6 @@ export type ReinstallOutcome =
 export type ReinstallResult = {
   outcome: ReinstallOutcome;
   error?: string;
-  /** Nothing was there to delete - the state was ahead of the file system. */
-  missingOnDisk: boolean;
 };
 
 export type ReinstallOptions = {
@@ -50,7 +48,8 @@ export type ReinstallOptions = {
  * with fresh URLs and puts it back into the state it was in before.
  *
  * A purge that finds nothing is not a failure - that is precisely the drift
- * this is meant to repair.
+ * this is meant to repair. A purge that fails stops the reinstall before the
+ * state is touched.
  */
 export const useReinstallMod = () => {
   const { install } = useInstallWithCollection();
@@ -67,7 +66,6 @@ export const useReinstallMod = () => {
       const wasInstalled =
         target.status === ModStatus.Installed ||
         (target.missingVpks?.length ?? 0) > 0;
-      let missingOnDisk = false;
 
       logger
         .withMetadata({ mod: target.remoteId, wasInstalled, profileFolder })
@@ -75,24 +73,14 @@ export const useReinstallMod = () => {
 
       if (!options.skipPurge) {
         options.onStep?.("purging");
-        try {
-          // Removes both the installed VPKs and the cached download, so the
-          // mod really is fetched again instead of restored from cache.
-          await invokeGuarded("purge_mod", {
-            modId: target.remoteId,
-            vpks: target.installedVpks ?? [],
-            profileFolder,
-          });
-        } catch (error) {
-          // A guard block means the files are still there and still in use;
-          // wiping the state and downloading again would only lose track.
-          if (isGameRunningError(error)) throw error;
-          missingOnDisk = true;
-          logger
-            .withMetadata({ mod: target.remoteId })
-            .withError(error)
-            .warn("Purge failed during reinstall (files likely already gone)");
-        }
+        // Removes both the installed VPKs and the cached download, so the mod
+        // really is fetched again instead of restored from cache. Missing files
+        // are not an error here, so a rejection means cleanup did not finish.
+        await invokeGuarded("purge_mod", {
+          modId: target.remoteId,
+          vpks: target.installedVpks ?? [],
+          profileFolder,
+        });
 
         const store = usePersistedStore.getState();
         store.setInstalledVpks(target.remoteId, []);
@@ -115,16 +103,15 @@ export const useReinstallMod = () => {
           .withMetadata({ mod: target.remoteId })
           .withError(error)
           .error("Failed to re-download mod");
-        return { outcome: "failed", error: message, missingOnDisk };
+        return { outcome: "failed", error: message };
       }
 
       if (!wasInstalled) {
-        return { outcome: "downloadedOnly", missingOnDisk };
+        return { outcome: "downloadedOnly" };
       }
 
       options.onStep?.("installing");
-      const result = await restore(target, install);
-      return { ...result, missingOnDisk };
+      return restore(target, install);
     },
     [install],
   );
@@ -239,7 +226,7 @@ const redownload = (
 const restore = async (
   snapshot: LocalMod,
   install: ReturnType<typeof useInstallWithCollection>["install"],
-): Promise<Omit<ReinstallResult, "missingOnDisk">> => {
+): Promise<ReinstallResult> => {
   const mod = usePersistedStore
     .getState()
     .localMods.find((m) => m.remoteId === snapshot.remoteId);
@@ -263,18 +250,20 @@ const restore = async (
     }
   }
 
-  // One VPK per selected download is not a choice: install takes them all.
-  if (fileTree && requiresFileSelection(fileTree)) {
+  if (fileTree) {
+    // Manage files keeps deselected archives in selectedDownloads, so the
+    // saved selection applies even when each download holds one VPK.
     const selection = restoreSelection(fileTree, snapshot);
-    if (!selection) {
+    if (selection) {
+      fileTree = selection;
+    } else if (requiresFileSelection(fileTree)) {
       return { outcome: "manual" };
     }
-    fileTree = selection;
   }
 
   // Defaults to "manual": if install decides it needs a file selection it just
   // returns without firing a callback, and nobody renders that dialog here.
-  let result: Omit<ReinstallResult, "missingOnDisk"> = { outcome: "manual" };
+  let result: ReinstallResult = { outcome: "manual" };
 
   await install(
     mod,

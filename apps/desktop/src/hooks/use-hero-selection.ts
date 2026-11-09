@@ -108,10 +108,14 @@ export const useHeroSelection = (): {
           hidden: new Set(Object.keys(state.hiddenHeroMods)),
         }).get(hero);
 
-        // Extras stack on top of a skin rather than replacing it, so the two
-        // kinds never take each other's place.
-        const active =
-          (kind === "skin" ? group?.activeSkins : group?.activeExtras) ?? [];
+        // Sounds and extras stack on top of a skin rather than replacing it,
+        // so the kinds never take each other's place.
+        const activeByKind = {
+          skin: group?.activeSkins,
+          sound: group?.activeSounds,
+          extra: group?.activeExtras,
+        };
+        const active = activeByKind[kind] ?? [];
         const mode =
           kind === "skin" && !state.multipleSkinsEnabled
             ? "exclusive"

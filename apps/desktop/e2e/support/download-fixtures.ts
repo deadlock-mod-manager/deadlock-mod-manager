@@ -219,6 +219,11 @@ export const downloadRoutes = (scenario: string): FixtureRoute[] => {
     case "downloads-delete-queued":
       sequence = [{ ...slow, chunkDelayMs: 1_000 }];
       break;
+    case "downloads-cancel-late-error":
+      // The retry is slow too, so the backend still holds it when the window
+      // gets the cancelled transfer's error.
+      sequence = [slow, slow];
+      break;
     default:
       sequence = [slow];
   }
@@ -616,6 +621,7 @@ export const assertDownloadNetwork = (
       "downloads-variants",
       "downloads-cancel",
       "downloads-cancel-connecting",
+      "downloads-cancel-late-error",
       "downloads-reload-queued",
       "downloads-restart",
       "downloads-redirect",

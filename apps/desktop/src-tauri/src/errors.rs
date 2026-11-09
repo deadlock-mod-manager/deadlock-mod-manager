@@ -25,9 +25,7 @@ pub enum Error {
   GamePathNotSet,
   #[error("App handle not initialized")]
   AppHandleNotInitialized,
-  #[error(
-    "Failed to parse game configuration. Reset gameinfo.gi to Vanilla in Settings → Game, then try again."
-  )]
+  #[error("Failed to parse game configuration: {0}")]
   GameConfigParse(String),
   #[error("Mod file not found at path")]
   ModFileNotFound,
@@ -66,6 +64,8 @@ pub enum Error {
   ModExtractionFailed(String),
   #[error("Invalid input: {0}")]
   InvalidInput(String),
+  #[error("{message}")]
+  Preview { kind: &'static str, message: String },
   #[error("Unauthorized path access attempted: {0}")]
   UnauthorizedPath(String),
   /// A plugin call refused because the plugin is disabled, revoked or updated.
@@ -81,6 +81,10 @@ pub enum Error {
   ProviderUnavailable(String),
   #[error("GameBanana returned an invalid response: {0}")]
   ProviderInvalidResponse(String),
+  /// The submission exists but is private, withheld by moderators, deleted, or not a
+  /// Deadlock submission.
+  #[error("This mod is not publicly available on GameBanana")]
+  ProviderSubmissionUnavailable,
   #[error("GameBanana response exceeded the {limit}-byte safety limit")]
   ProviderResponseTooLarge { limit: usize },
   #[error("GameBanana request was cancelled")]
@@ -89,6 +93,11 @@ pub enum Error {
   Catalog(String),
   #[error("Performance config error: {0}")]
   PerformanceConfig(String),
+  #[error("Server picker: {message}")]
+  ServerPicker {
+    subcode: &'static str,
+    message: String,
+  },
   #[error("Tauri error: {0}")]
   Tauri(#[from] tauri::Error),
   #[error("Failed to create backup: {0}")]
@@ -167,6 +176,7 @@ impl serde::Serialize for Error {
         | Error::MissingEnabledModFiles(_)
         | Error::ReadOnlyFile(_)
         | Error::MakeWritableFailed { .. }
+        | Error::ServerPicker { .. }
     ) {
       4
     } else {
@@ -200,6 +210,7 @@ impl serde::Serialize for Error {
       Error::MissingEnabledModFiles(_) => "missingEnabledModFiles",
       Error::ModExtractionFailed(_) => "modExtractionFailed",
       Error::InvalidInput(_) => "invalidInput",
+      Error::Preview { kind, .. } => kind,
       Error::UnauthorizedPath(_) => "unauthorizedPath",
       Error::ExternalPluginSession(_) => "externalPluginSession",
       Error::Network(_) => "networkError",
@@ -207,10 +218,12 @@ impl serde::Serialize for Error {
       Error::ProviderRefused => "providerRefused",
       Error::ProviderUnavailable(_) => "providerUnavailable",
       Error::ProviderInvalidResponse(_) => "providerInvalidResponse",
+      Error::ProviderSubmissionUnavailable => "providerSubmissionUnavailable",
       Error::ProviderResponseTooLarge { .. } => "providerResponseTooLarge",
       Error::ProviderCancelled => "providerCancelled",
       Error::Catalog(_) => "catalogError",
       Error::PerformanceConfig(_) => "performanceConfig",
+      Error::ServerPicker { .. } => "serverPicker",
       Error::Tauri(_) => "tauri",
       Error::BackupCreationFailed(_) => "backupCreationFailed",
       Error::BackupRestoreFailed(_) => "backupRestoreFailed",
@@ -238,6 +251,9 @@ impl serde::Serialize for Error {
     state.serialize_field("kind", kind)?;
     state.serialize_field("message", &self.to_string())?;
     state.serialize_field("matchSyncKind", &match_sync_kind)?;
+    if let Error::ServerPicker { subcode, .. } = self {
+      state.serialize_field("serverPickerKind", subcode)?;
+    }
     if let Error::DuplicateVpkOwnership {
       mod_ids,
       path,
@@ -345,6 +361,10 @@ mod tests {
       (
         Error::ProviderInvalidResponse("bad json".into()),
         "providerInvalidResponse",
+      ),
+      (
+        Error::ProviderSubmissionUnavailable,
+        "providerSubmissionUnavailable",
       ),
       (
         Error::ProviderResponseTooLarge { limit: 1024 },

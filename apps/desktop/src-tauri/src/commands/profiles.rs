@@ -1,5 +1,5 @@
 use crate::app_runtime::AppHandle;
-use crate::download_manager::DownloadTask;
+use crate::download_manager::{DownloadTask, PreparedDownload};
 use crate::errors::Error;
 use crate::mod_manager::Mod;
 use crate::mod_manager::shard::{ShardIndex, ShardLocator};
@@ -120,7 +120,7 @@ pub async fn delete_profile_folder(
     .join("addons")
     .join(&profile_folder);
   let removed = crate::mod_manager::shard::remove_profile_shards(&base)?;
-  mod_manager.delete_localization_overlay(Some(&profile_folder))?;
+  mod_manager.delete_profile_localization_overlay(&profile_folder)?;
 
   if removed {
     log::info!("Deleted profile shard folders for: {profile_folder}");
@@ -254,10 +254,23 @@ struct ResolvedProfileVpk {
   profile_base: crate::mod_manager::shard::ProfileBase,
   shard: ShardIndex,
   filename: String,
+  /// The listed name is a link; `path` is its target.
+  linked: bool,
 }
 
 fn resolve_profile_vpk_path(
   profile_folder: Option<String>,
+  vpk_name: &str,
+) -> Result<ResolvedProfileVpk, Error> {
+  let base = MANAGER
+    .lock()
+    .unwrap()
+    .get_addons_path(profile_folder.as_deref())?;
+  resolve_profile_vpk_in(base, vpk_name)
+}
+
+fn resolve_profile_vpk_in(
+  base: crate::mod_manager::shard::ProfileBase,
   vpk_name: &str,
 ) -> Result<ResolvedProfileVpk, Error> {
   if vpk_name.is_empty() || vpk_name.contains('\\') || vpk_name.contains("..") {
@@ -266,8 +279,6 @@ fn resolve_profile_vpk_path(
     )));
   }
 
-  let mod_manager = MANAGER.lock().unwrap();
-  let base = mod_manager.get_addons_path(profile_folder.as_deref())?;
   let locator = ShardLocator::parse(vpk_name)?;
   let shard_index = locator.shard;
   let filename = locator.filename;
@@ -279,6 +290,9 @@ fn resolve_profile_vpk_path(
 
   let target_dir = base.shard_dir(shard_index);
   let vpk_path = target_dir.join(&filename);
+  let linked = vpk_path
+    .symlink_metadata()
+    .is_ok_and(|metadata| metadata.file_type().is_symlink());
   let target_canonical = target_dir
     .canonicalize()
     .map_err(|_| Error::UnauthorizedPath("Unable to resolve addon shard directory".to_string()))?;
@@ -300,6 +314,7 @@ fn resolve_profile_vpk_path(
     profile_base: base,
     shard: shard_index,
     filename,
+    linked,
   })
 }
 
@@ -311,16 +326,14 @@ pub async fn delete_profile_vpk(
 ) -> Result<(), Error> {
   crate::game_guard::ensure_game_idle_locked("delete_profile_vpk", guard_permit.as_deref())?;
   log::info!("Deleting VPK {vpk_name} from profile {profile_folder:?}");
-  let resolved = resolve_profile_vpk_path(profile_folder, &vpk_name)?;
+  // Held through the removal, so an install can't put a mod's file at this
+  // path after the ownership check.
+  let manager = MANAGER.lock().unwrap();
+  let base = manager.get_addons_path(profile_folder.as_deref())?;
+  let resolved = resolve_profile_vpk_in(base, &vpk_name)?;
+  ensure_unlinked(&resolved)?;
   let manifest = ProfileVpkManifest::open_for_write(&resolved.profile_base)?;
-  let is_managed = manifest.mods.values().any(|entry| {
-    if entry.enabled {
-      entry.shard == resolved.shard && entry.current_vpks.contains(&resolved.filename)
-    } else {
-      resolved.shard == ShardIndex::FIRST && entry.disabled_vpks.contains(&resolved.filename)
-    }
-  });
-  if is_managed {
+  if is_managed(&resolved, &manifest) {
     return Err(Error::ModInvalid(format!(
       "Cannot delete managed VPK {} as an unmatched file; refresh the VPK scan",
       resolved.filename
@@ -330,6 +343,120 @@ pub async fn delete_profile_vpk(
   std::fs::remove_file(&resolved.path)?;
   log::info!("Deleted unmanaged VPK file: {:?}", resolved.path);
   Ok(())
+}
+
+/// Deleting or moving a link would act on its target, which may be a file a
+/// mod owns under another name.
+fn ensure_unlinked(resolved: &ResolvedProfileVpk) -> Result<(), Error> {
+  if resolved.linked {
+    return Err(Error::UnauthorizedPath(format!(
+      "{} is a link; remove it outside DMM",
+      resolved.filename
+    )));
+  }
+  Ok(())
+}
+
+fn is_managed(resolved: &ResolvedProfileVpk, manifest: &ProfileVpkManifest) -> bool {
+  manifest.mods.values().any(|entry| {
+    if entry.enabled {
+      entry.shard == resolved.shard && entry.current_vpks.contains(&resolved.filename)
+    } else {
+      resolved.shard == ShardIndex::FIRST && entry.disabled_vpks.contains(&resolved.filename)
+    }
+  })
+}
+
+/// Folder inside a profile where Analyze sets aside files the user chose to
+/// quarantine. The game only loads VPKs at the top of each search path, and
+/// Analyze and the VPK scan read only that level, so nothing here is loaded or
+/// offered again until the user moves it back.
+const QUARANTINE_DIR: &str = ".dmm-quarantine";
+
+/// Move an unmanaged VPK into the profile's quarantine folder and return where
+/// it went. The manager lock is held throughout, so no mod can take the file
+/// between the ownership check and the move.
+#[tauri::command]
+pub async fn quarantine_profile_vpk(
+  profile_folder: Option<String>,
+  vpk_name: String,
+  guard_permit: Option<String>,
+) -> Result<String, Error> {
+  crate::game_guard::ensure_game_idle_locked("quarantine_profile_vpk", guard_permit.as_deref())?;
+  log::info!("Quarantining VPK {vpk_name} from profile {profile_folder:?}");
+  let manager = MANAGER.lock().unwrap();
+  let base = manager.get_addons_path(profile_folder.as_deref())?;
+  let destination = quarantine_unmanaged_vpk(base, &vpk_name)?;
+  Ok(destination.to_string_lossy().into_owned())
+}
+
+fn quarantine_unmanaged_vpk(
+  base: crate::mod_manager::shard::ProfileBase,
+  vpk_name: &str,
+) -> Result<std::path::PathBuf, Error> {
+  let resolved = resolve_profile_vpk_in(base, vpk_name)?;
+  ensure_unlinked(&resolved)?;
+  let manifest = ProfileVpkManifest::open_for_write(&resolved.profile_base)?;
+  if is_managed(&resolved, &manifest) {
+    return Err(Error::ModInvalid(format!(
+      "Cannot quarantine managed VPK {}; run Analyze again",
+      resolved.filename
+    )));
+  }
+
+  let folder = resolved.profile_base.join(QUARANTINE_DIR);
+  match std::fs::symlink_metadata(&folder) {
+    Ok(metadata) if metadata.is_dir() => {}
+    Ok(_) => {
+      return Err(Error::UnauthorizedPath(format!(
+        "{} is not a folder",
+        folder.display()
+      )));
+    }
+    Err(error) if error.kind() == std::io::ErrorKind::NotFound => std::fs::create_dir(&folder)?,
+    Err(error) => return Err(error.into()),
+  }
+
+  // Overflow shards reuse the base folder's pakNN names, so their files keep
+  // the shard in front to stay distinguishable.
+  let name = if resolved.shard == ShardIndex::FIRST {
+    resolved.filename.clone()
+  } else {
+    format!("{}-{}", resolved.shard.root_name(), resolved.filename)
+  };
+  let destination = free_path(&folder, &name);
+  std::fs::rename(&resolved.path, &destination)?;
+  log::info!(
+    "Quarantined unmanaged VPK {:?} to {:?}",
+    resolved.path,
+    destination
+  );
+  Ok(destination)
+}
+
+/// `name` in `folder`, or `name (2)`, `name (3)`... when it is taken. Any
+/// entry counts as taken, a dangling link too, which `rename` would replace.
+fn free_path(folder: &std::path::Path, name: &str) -> std::path::PathBuf {
+  let taken = |path: &std::path::Path| path.symlink_metadata().is_ok();
+  let candidate = folder.join(name);
+  if !taken(&candidate) {
+    return candidate;
+  }
+  let path = std::path::Path::new(name);
+  let stem = path
+    .file_stem()
+    .map(|s| s.to_string_lossy().into_owned())
+    .unwrap_or_default();
+  let extension = path.extension().map(|e| e.to_string_lossy().into_owned());
+  (2..)
+    .map(|n| {
+      folder.join(match &extension {
+        Some(extension) => format!("{stem} ({n}).{extension}"),
+        None => format!("{stem} ({n})"),
+      })
+    })
+    .find(|candidate| !taken(candidate))
+    .expect("an unused name exists")
 }
 
 #[tauri::command]
@@ -342,10 +469,81 @@ pub async fn show_profile_vpk_in_folder(
   crate::utils::show_in_folder(resolved.path.to_string_lossy().as_ref())
 }
 
+/// The Default profile arrives as an empty folder and lives in the root addons folder.
+fn import_install_folder(final_profile_folder: &str) -> Option<String> {
+  (!final_profile_folder.is_empty()).then(|| final_profile_folder.to_string())
+}
+
+fn install_imported_mod(
+  mod_manager: &mut crate::mod_manager::ModManager,
+  mod_data: &super::downloads::ProfileImportMod,
+  final_profile_folder: &str,
+) -> Result<Mod, Error> {
+  let deadlock_mod = Mod {
+    id: mod_data.mod_id.clone(),
+    name: mod_data.mod_name.clone(),
+    is_map: mod_data.is_map,
+    installed_vpks: Vec::new(),
+    file_tree: mod_data.file_tree.clone(),
+    install_order: None,
+    original_vpk_names: Vec::new(),
+  };
+
+  mod_manager.install_mod(deadlock_mod, import_install_folder(final_profile_folder))
+}
+
+/// Mods the profile already has, enabled or not. Importing one beside its old
+/// files would keep both versions loaded, so these are replaced instead.
+fn profile_mod_ids(
+  mod_manager: &crate::mod_manager::ModManager,
+  final_profile_folder: &str,
+) -> Result<std::collections::HashSet<String>, Error> {
+  let addons_path =
+    mod_manager.get_addons_path(import_install_folder(final_profile_folder).as_deref())?;
+  Ok(
+    ProfileVpkManifest::load(&addons_path)?
+      .mods
+      .into_keys()
+      .collect(),
+  )
+}
+
+fn replace_imported_mod(
+  mod_manager: &mut crate::mod_manager::ModManager,
+  mod_data: &super::downloads::ProfileImportMod,
+  final_profile_folder: &str,
+  prepared_vpks: &[std::path::PathBuf],
+  prepared_tree: Option<crate::mod_manager::file_tree::ModFileTree>,
+) -> Result<Mod, Error> {
+  mod_manager.update_mod_from_prepared(
+    &mod_data.mod_id,
+    &mod_data.mod_name,
+    prepared_vpks,
+    prepared_tree.or_else(|| mod_data.file_tree.clone()),
+    import_install_folder(final_profile_folder),
+    true,
+  )
+}
+
+async fn prepare_replacement(
+  manager: &crate::download_manager::DownloadManager,
+  task: DownloadTask,
+) -> Result<PreparedDownload, String> {
+  match manager.queue_download_and_prepare(task).await {
+    Ok(prepared) if prepared.selection_required => {
+      prepared.remove_scratch_files();
+      Err("The saved file selection doesn't match this mod's current downloads".to_string())
+    }
+    Ok(prepared) => Ok(prepared),
+    Err(error) => Err(error.to_string()),
+  }
+}
+
 #[tauri::command]
 pub async fn import_profile_batch(
   app_handle: AppHandle,
   catalog_state: State<'_, super::gamebanana_catalog::GameBananaCatalogState>,
+  native_sources: State<'_, crate::providers::native_sources::NativeSourceManager>,
   policy: State<'_, super::policy::PolicyState>,
   profile_name: String,
   _profile_description: String,
@@ -385,6 +583,7 @@ pub async fn import_profile_batch(
   for mod_data in &mods {
     resolved_downloads.push(
       resolve_download_files(
+        &native_sources,
         &catalog_state,
         &policy,
         &mod_data.mod_id,
@@ -425,8 +624,10 @@ pub async fn import_profile_batch(
 
     profile_folder
   };
+  let installed_ids = profile_mod_ids(&MANAGER.lock().unwrap(), &final_profile_folder)?;
 
-  let mut download_results: Vec<Result<(), String>> = Vec::new();
+  // `Some` holds the result of replacing a mod the profile already has.
+  let mut download_results: Vec<Result<Option<Result<Mod, Error>>, String>> = Vec::new();
 
   for (index, (mod_data, download_files)) in mods.iter().zip(resolved_downloads).enumerate() {
     // download_results stays index-aligned with mods; the install loop below zips them.
@@ -461,12 +662,30 @@ pub async fn import_profile_batch(
       mod_id: mod_data.mod_id.clone(),
       files: download_files,
       target_dir,
-      profile_folder: Some(final_profile_folder.clone()),
+      profile_folder: import_install_folder(&final_profile_folder),
       is_profile_import: true,
       file_tree: mod_data.file_tree.clone(),
+      native_component_plan: false,
+      attempt_id: None,
     };
 
     let manager = get_download_manager(app_handle.clone()).await;
+    if installed_ids.contains(&mod_data.mod_id) {
+      // Applied right away, as a batch update does, so only one mod's
+      // prepared files exist at a time.
+      download_results.push(prepare_replacement(manager, task).await.map(|prepared| {
+        let result = replace_imported_mod(
+          &mut MANAGER.lock().unwrap(),
+          mod_data,
+          &final_profile_folder,
+          &prepared.vpk_paths,
+          prepared.file_tree.clone(),
+        );
+        prepared.remove_scratch_files();
+        Some(result)
+      }));
+      continue;
+    }
     if let Err(error) = manager.queue_download_and_wait(task).await {
       log::error!("Download failed for mod {}: {error}", mod_data.mod_id);
       download_results.push(Err(error.to_string()));
@@ -495,7 +714,7 @@ pub async fn import_profile_batch(
           mod_data.mod_id,
           vpks.len()
         );
-        download_results.push(Ok(()));
+        download_results.push(Ok(None));
       }
       Ok(_) => {
         log::error!(
@@ -514,8 +733,9 @@ pub async fn import_profile_batch(
   let mut succeeded = Vec::new();
   let mut failed = Vec::new();
   let mut installed_mods = Vec::new();
+  let mut replaced_any = false;
 
-  for (index, (mod_data, download_result)) in mods.iter().zip(download_results.iter()).enumerate() {
+  for (index, (mod_data, download_result)) in mods.iter().zip(download_results).enumerate() {
     app_handle
       .emit(
         "profile-import-progress",
@@ -529,27 +749,20 @@ pub async fn import_profile_batch(
       )
       .ok();
 
-    if download_result.is_err() {
-      failed.push((
-        mod_data.mod_id.clone(),
-        download_result.as_ref().unwrap_err().clone(),
-      ));
-      continue;
-    }
-
-    let install_result = {
-      let mut mod_manager = MANAGER.lock().unwrap();
-      let deadlock_mod = Mod {
-        id: mod_data.mod_id.clone(),
-        name: mod_data.mod_name.clone(),
-        is_map: mod_data.is_map,
-        installed_vpks: Vec::new(),
-        file_tree: mod_data.file_tree.clone(),
-        install_order: None,
-        original_vpk_names: Vec::new(),
-      };
-
-      mod_manager.install_mod(deadlock_mod, Some(final_profile_folder.clone()))
+    let install_result = match download_result {
+      Err(reason) => {
+        failed.push((mod_data.mod_id.clone(), reason));
+        continue;
+      }
+      Ok(Some(replaced)) => {
+        replaced_any |= replaced.is_ok();
+        replaced
+      }
+      Ok(None) => install_imported_mod(
+        &mut MANAGER.lock().unwrap(),
+        mod_data,
+        &final_profile_folder,
+      ),
     };
 
     match install_result {
@@ -567,6 +780,25 @@ pub async fn import_profile_batch(
       Err(e) => {
         log::error!("Failed to install mod {}: {:?}", mod_data.mod_id, e);
         failed.push((mod_data.mod_id.clone(), format!("{:?}", e)));
+      }
+    }
+  }
+
+  // Replacements can land out of load order. Reordering renames files already
+  // reported, so report the manifest's final names.
+  if replaced_any {
+    let mut mod_manager = MANAGER.lock().unwrap();
+    let folder = import_install_folder(&final_profile_folder);
+    if let Err(error) = mod_manager.reorder_all_mods_for_profile(folder.clone()) {
+      log::warn!("Post-import reorder failed: {error}");
+    }
+    if let Ok(addons_path) = mod_manager.get_addons_path(folder.as_deref())
+      && let Ok(manifest) = ProfileVpkManifest::load(&addons_path)
+    {
+      for info in &mut installed_mods {
+        if let Some(entry) = manifest.mods.get(&info.mod_id) {
+          info.installed_vpks = entry.current_vpks.clone();
+        }
       }
     }
   }
@@ -700,6 +932,277 @@ pub async fn seed_profile_vpk_manifest_entries(
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::mod_manager::shard::ProfileBase;
+  use crate::mod_manager::vpk_manifest::ProfileVpkManifestEntry;
+
+  fn profile() -> (tempfile::TempDir, ProfileBase) {
+    let temp = tempfile::tempdir().unwrap();
+    let base = ProfileBase::new(temp.path().join("citadel/addons/profile_1")).unwrap();
+    std::fs::create_dir_all(base.path()).unwrap();
+    (temp, base)
+  }
+
+  fn write(base: &ProfileBase, shard: ShardIndex, name: &str, bytes: &[u8]) -> std::path::PathBuf {
+    let dir = base.shard_dir(shard);
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join(name);
+    std::fs::write(&path, bytes).unwrap();
+    path
+  }
+
+  fn quarantine_folder(base: &ProfileBase) -> std::path::PathBuf {
+    base.path().join(QUARANTINE_DIR)
+  }
+
+  #[test]
+  fn quarantine_keeps_the_shard_and_never_overwrites() {
+    let (_temp, base) = profile();
+    let second = ShardIndex::new(2).unwrap();
+    write(&base, ShardIndex::FIRST, "pak01_dir.vpk", b"base");
+    write(&base, second, "pak01_dir.vpk", b"overflow");
+    std::fs::create_dir_all(quarantine_folder(&base)).unwrap();
+    std::fs::write(quarantine_folder(&base).join("pak01_dir.vpk"), b"earlier").unwrap();
+
+    let base_file = quarantine_unmanaged_vpk(base.clone(), "pak01_dir.vpk").unwrap();
+    let overflow_file = quarantine_unmanaged_vpk(base.clone(), "addons2/pak01_dir.vpk").unwrap();
+
+    assert_eq!(
+      base_file,
+      quarantine_folder(&base).join("pak01_dir (2).vpk")
+    );
+    assert_eq!(std::fs::read(&base_file).unwrap(), b"base");
+    assert_eq!(
+      overflow_file,
+      quarantine_folder(&base).join("addons2-pak01_dir.vpk")
+    );
+    assert_eq!(std::fs::read(&overflow_file).unwrap(), b"overflow");
+    assert_eq!(
+      std::fs::read(quarantine_folder(&base).join("pak01_dir.vpk")).unwrap(),
+      b"earlier"
+    );
+  }
+
+  /// The analysis the user acted on can be stale: a mod may have taken the
+  /// file since.
+  #[test]
+  fn quarantine_refuses_files_a_mod_owns() {
+    let (_temp, base) = profile();
+    let enabled = write(&base, ShardIndex::FIRST, "pak01_dir.vpk", b"enabled");
+    let parked = write(&base, ShardIndex::FIRST, "900077_red.vpk", b"parked");
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mods.insert(
+      "900001".to_string(),
+      ProfileVpkManifestEntry {
+        enabled: true,
+        current_vpks: vec!["pak01_dir.vpk".to_string()],
+        ..Default::default()
+      },
+    );
+    manifest.mods.insert(
+      "900077".to_string(),
+      ProfileVpkManifestEntry {
+        enabled: false,
+        disabled_vpks: vec!["900077_red.vpk".to_string()],
+        ..Default::default()
+      },
+    );
+    manifest.save(base.path()).unwrap();
+
+    for name in ["pak01_dir.vpk", "900077_red.vpk"] {
+      assert!(matches!(
+        quarantine_unmanaged_vpk(base.clone(), name),
+        Err(Error::ModInvalid(_))
+      ));
+    }
+    assert_eq!(std::fs::read(enabled).unwrap(), b"enabled");
+    assert_eq!(std::fs::read(parked).unwrap(), b"parked");
+  }
+
+  #[test]
+  fn quarantine_refuses_paths_outside_the_profile() {
+    let (_temp, base) = profile();
+    write(&base, ShardIndex::FIRST, "notes.txt", b"text");
+    for name in [
+      "../pak01_dir.vpk",
+      "",
+      "notes.txt",
+      "sub/pak01_dir.vpk",
+      "missing.vpk",
+    ] {
+      assert!(
+        quarantine_unmanaged_vpk(base.clone(), name).is_err(),
+        "{name:?} was accepted"
+      );
+    }
+  }
+
+  /// A link named like a leftover would otherwise move the file it points
+  /// to, which may be one a mod owns.
+  #[cfg(unix)]
+  #[test]
+  fn quarantine_refuses_a_linked_file() {
+    let (_temp, base) = profile();
+    let owned = write(&base, ShardIndex::FIRST, "pak01_dir.vpk", b"owned");
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mods.insert(
+      "900001".to_string(),
+      ProfileVpkManifestEntry {
+        enabled: true,
+        current_vpks: vec!["pak01_dir.vpk".to_string()],
+        ..Default::default()
+      },
+    );
+    manifest.save(base.path()).unwrap();
+    let alias = base.path().join("900999_alias.vpk");
+    std::os::unix::fs::symlink(&owned, &alias).unwrap();
+
+    assert!(matches!(
+      quarantine_unmanaged_vpk(base.clone(), "900999_alias.vpk"),
+      Err(Error::UnauthorizedPath(_))
+    ));
+    assert_eq!(std::fs::read(&owned).unwrap(), b"owned");
+    assert!(alias.symlink_metadata().unwrap().file_type().is_symlink());
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn quarantine_treats_a_dangling_link_as_taken() {
+    let (temp, base) = profile();
+    write(&base, ShardIndex::FIRST, "pak04_dir.vpk", b"stray");
+    std::fs::create_dir_all(quarantine_folder(&base)).unwrap();
+    let dangling = quarantine_folder(&base).join("pak04_dir.vpk");
+    std::os::unix::fs::symlink(temp.path().join("gone"), &dangling).unwrap();
+
+    let destination = quarantine_unmanaged_vpk(base.clone(), "pak04_dir.vpk").unwrap();
+
+    assert_eq!(
+      destination,
+      quarantine_folder(&base).join("pak04_dir (2).vpk")
+    );
+    assert!(
+      dangling
+        .symlink_metadata()
+        .unwrap()
+        .file_type()
+        .is_symlink()
+    );
+  }
+
+  #[cfg(unix)]
+  #[test]
+  fn quarantine_refuses_a_linked_quarantine_folder() {
+    let (temp, base) = profile();
+    let source = write(&base, ShardIndex::FIRST, "pak04_dir.vpk", b"stray");
+    let elsewhere = temp.path().join("elsewhere");
+    std::fs::create_dir_all(&elsewhere).unwrap();
+    std::os::unix::fs::symlink(&elsewhere, quarantine_folder(&base)).unwrap();
+
+    assert!(matches!(
+      quarantine_unmanaged_vpk(base.clone(), "pak04_dir.vpk"),
+      Err(Error::UnauthorizedPath(_))
+    ));
+    assert!(source.exists());
+    assert_eq!(std::fs::read_dir(elsewhere).unwrap().count(), 0);
+  }
+
+  fn test_game() -> (
+    tempfile::TempDir,
+    std::path::PathBuf,
+    crate::mod_manager::ModManager,
+  ) {
+    let game = tempfile::tempdir().unwrap();
+    let citadel = game.path().join("game/citadel");
+    let addons = citadel.join("addons");
+    std::fs::create_dir_all(&addons).unwrap();
+    std::fs::write(
+      citadel.join("gameinfo.gi"),
+      "\"GameInfo\"\n{\n\"FileSystem\"\n{\nSearchPaths\n{\nGame citadel\n}\n}\n}\n",
+    )
+    .unwrap();
+    let manager = crate::mod_manager::ModManager::for_test_game(game.path());
+    (game, addons, manager)
+  }
+
+  fn imported_mod(mod_id: &str) -> super::super::downloads::ProfileImportMod {
+    super::super::downloads::ProfileImportMod {
+      mod_id: mod_id.into(),
+      mod_name: "Restored mod".into(),
+      download_files: Vec::new(),
+      file_tree: None,
+      is_map: false,
+    }
+  }
+
+  fn vpks_in(folder: &std::path::Path) -> Vec<String> {
+    let mut names: Vec<String> = std::fs::read_dir(folder)
+      .unwrap()
+      .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
+      .filter(|name| name.ends_with(".vpk"))
+      .collect();
+    names.sort();
+    names
+  }
+
+  #[test]
+  fn default_profile_import_installs_into_the_root_addons_folder() {
+    let (_game, addons, mut manager) = test_game();
+    std::fs::write(addons.join("42_restored.vpk"), b"downloaded").unwrap();
+
+    let installed = install_imported_mod(&mut manager, &imported_mod("42"), "").unwrap();
+
+    assert_eq!(installed.installed_vpks.len(), 1);
+    assert_eq!(
+      std::fs::read(addons.join(&installed.installed_vpks[0])).unwrap(),
+      b"downloaded"
+    );
+  }
+
+  #[test]
+  fn an_import_replaces_the_variant_a_profile_has() {
+    for enabled in [true, false] {
+      let (game, addons, mut manager) = test_game();
+      let mut manifest = ProfileVpkManifest::default();
+      if enabled {
+        std::fs::write(addons.join("pak01_dir.vpk"), b"variant-1").unwrap();
+        manifest.mark_enabled(
+          "42",
+          vec!["pak01_dir.vpk".into()],
+          vec!["variant1.vpk".into()],
+          Some(0),
+          ShardIndex::FIRST,
+        );
+      } else {
+        std::fs::write(addons.join("42_variant1.vpk"), b"variant-1").unwrap();
+        manifest.mark_disabled(
+          "42",
+          vec!["42_variant1.vpk".into()],
+          vec!["variant1.vpk".into()],
+        );
+      }
+      manifest.save(&addons).unwrap();
+      std::fs::write(addons.join("42_variant3.vpk"), b"parked").unwrap();
+      let prepared = game.path().join("variant2.vpk");
+      std::fs::write(&prepared, b"variant-2").unwrap();
+
+      let replaced =
+        replace_imported_mod(&mut manager, &imported_mod("42"), "", &[prepared], None).unwrap();
+
+      assert_eq!(
+        vpks_in(&addons),
+        replaced.installed_vpks,
+        "enabled: {enabled}"
+      );
+      assert_eq!(
+        std::fs::read(addons.join(&replaced.installed_vpks[0])).unwrap(),
+        b"variant-2"
+      );
+      let manifest = ProfileVpkManifest::load(&addons).unwrap();
+      let entry = &manifest.mods["42"];
+      assert!(entry.enabled);
+      assert_eq!(entry.current_vpks, replaced.installed_vpks);
+      assert_eq!(entry.original_vpk_names, ["variant2.vpk"]);
+    }
+  }
 
   /// Switching writes the folder into gameinfo.gi, which only accepts ASCII
   /// names. A folder that fails that check can never be switched to.

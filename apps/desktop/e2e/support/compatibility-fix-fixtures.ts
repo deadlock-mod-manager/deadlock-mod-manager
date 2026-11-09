@@ -1,7 +1,12 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import type { FixtureRoute } from "./fixture-server";
 import { prepareInstalledProfiles } from "./profile-fixtures";
-import { buildSyntheticVpk, type VpkRecipeEntry } from "./vpk";
+import {
+  buildSyntheticVpk,
+  localizationText,
+  type VpkRecipeEntry,
+} from "./vpk";
 import type { CreatedWorld } from "./world";
 
 export const FIXES = {
@@ -11,13 +16,15 @@ export const FIXES = {
 };
 
 export const FIXED_MOD = "local-fix-hero-names";
+export const SECOND_FIXED_MOD = "local-fix-item-names";
 export const UNRELATED_MOD = "local-fix-unrelated-skin";
 export const OTHER_MOD = "local-fix-other-skin";
 export const NEW_MOD_FILE = "local-fix-new-skin.vpk";
-const FIX_MODS = [FIXED_MOD, UNRELATED_MOD, OTHER_MOD];
+const FIX_MODS = [FIXED_MOD, SECOND_FIXED_MOD, UNRELATED_MOD, OTHER_MOD];
 
 // Fixing a mod that changes localization tokens always produces a repair
 // package, so this mod stands in for any mod whose fix writes the overlay.
+// The second one edits its own text file, so both can be fixed together.
 // The other two share no files with it, only a material with each other, so
 // the Conflicts tab can reorder them.
 const RECIPES = new Map<string, readonly VpkRecipeEntry[]>([
@@ -26,8 +33,16 @@ const RECIPES = new Map<string, readonly VpkRecipeEntry[]>([
     [
       {
         path: "resource/localization/citadel_heroes/citadel_heroes_english.txt",
-        contents:
-          '"lang"\n{\n\t"Language"\t\t"English"\n\t"Tokens"\n\t{\n\t\t"hero_e2e"\t\t"Fixed hero name"\n\t}\n}\n',
+        contents: localizationText({ hero_e2e: "Fixed hero name" }),
+      },
+    ],
+  ],
+  [
+    SECOND_FIXED_MOD,
+    [
+      {
+        path: "resource/localization/citadel_mods/citadel_mods_english.txt",
+        contents: localizationText({ item_e2e: "Fixed item name" }),
       },
     ],
   ],
@@ -71,3 +86,54 @@ export const prepareCompatibilityFixWorld = async (
     ]),
   );
 };
+
+export const ENABLED_FIX_MOD = "local-fix-enabled-text";
+export const DISABLED_FIX_MOD = "local-fix-disabled-text";
+const DISABLED_FIX_MODS = [ENABLED_FIX_MOD, DISABLED_FIX_MOD];
+
+const textFile = (modId: string) =>
+  `resource/localization/${modId}/${modId}_english.txt`;
+
+// A mod's copy of a game text file that lacks a game token gets the token
+// restored, so the health check reports each of these mods as fixable.
+export const prepareDisabledFixWorld = async (
+  world: CreatedWorld,
+): Promise<void> => {
+  const citadel = path.join(world.configuration.roots.game, "game", "citadel");
+  for (const modId of DISABLED_FIX_MODS) {
+    const file = path.join(citadel, textFile(modId));
+    await mkdir(path.dirname(file), { recursive: true });
+    await writeFile(
+      file,
+      localizationText({ e2e_kept: "Kept", e2e_new: "New game text" }),
+    );
+  }
+  await prepareInstalledProfiles(
+    world,
+    [
+      {
+        profile: FIXES,
+        modIds: DISABLED_FIX_MODS,
+        payload: (modId) =>
+          buildSyntheticVpk([
+            {
+              path: textFile(modId),
+              contents: localizationText({ e2e_kept: "Kept" }),
+            },
+          ]),
+      },
+    ],
+    FIXES.id,
+  );
+};
+
+// The spec opens the disabled mod's page, which asks for its report counts.
+export const disabledFixRoutes = (): FixtureRoute[] => [
+  { method: "GET", path: "/api/v2/feature-flags", status: 200, body: "[]" },
+  {
+    method: "GET",
+    path: `/api/v2/reports/mod/${DISABLED_FIX_MOD}/counts`,
+    status: 200,
+    body: JSON.stringify({ total: 0, open: 0, resolved: 0, dismissed: 0 }),
+  },
+];

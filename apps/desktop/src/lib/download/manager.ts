@@ -21,12 +21,20 @@ import type { ConfigFoundEvent } from "@/types/generated/ConfigFoundEvent";
 
 const logger = createLogger("download-manager");
 
+/**
+ * The window's id for the download, on the events that settle one. `null` for
+ * downloads the backend queued itself, which no window download owns.
+ */
+type AttemptId = string | null;
+
 interface DownloadStartedEvent {
   modId: string;
+  attemptId: AttemptId;
 }
 
 export interface DownloadProgressEvent {
   modId: string;
+  attemptId: AttemptId;
   fileIndex: number;
   totalFiles: number;
   progress: number;
@@ -39,11 +47,13 @@ export interface DownloadProgressEvent {
 
 interface DownloadCompletedEvent {
   modId: string;
+  attemptId: AttemptId;
   path: string;
 }
 
 interface DownloadFileTreeEvent {
   modId: string;
+  attemptId: AttemptId;
   fileTree: ModFileTree;
 }
 
@@ -58,6 +68,7 @@ interface DownloadFontsFoundEvent {
 
 interface DownloadErrorEvent {
   modId: string;
+  attemptId: AttemptId;
   error: string;
   reason: DownloadFailureReason | null;
   retryAfterSecs: number | null;
@@ -80,13 +91,14 @@ interface DownloadResumedEvent {
 class DownloadManager {
   private downloads = new DownloadQueue({
     start: (properties) => analytics.start("mod_download", properties),
-    queue: (mod) => this.queueDownload(mod),
+    queue: (mod, attemptId) => this.queueDownload(mod, attemptId),
     cancel: (modId) => invoke<void>("cancel_download", { modId }),
     duplicateMessage: () => i18n.t("downloads.alreadyQueued"),
     // The mod's onError gets the same failure, and its caller tells the user.
     onQueueError: (error) => {
       logger.withError(error).error("Failed to queue download");
     },
+    createAttemptId: () => crypto.randomUUID(),
   });
   private unlistenFns: UnlistenFn[] = [];
   private onFontsFoundHandler?: (
@@ -104,7 +116,10 @@ class DownloadManager {
       (event) => {
         // Marked before the progress patch below, which runs the selectors
         // that read it.
-        const mod = this.downloads.start(event.payload.modId);
+        const mod = this.downloads.start(
+          event.payload.modId,
+          event.payload.attemptId,
+        );
         if (mod) {
           logger
             .withMetadata({ mod: event.payload.modId })
@@ -126,7 +141,10 @@ class DownloadManager {
       (event) => {
         // Progress means it is running: one resumed before its pause stopped it
         // carries on without starting again.
-        const mod = this.downloads.start(event.payload.modId);
+        const mod = this.downloads.start(
+          event.payload.modId,
+          event.payload.attemptId,
+        );
         if (mod) {
           const progress: Progress = {
             progress: event.payload.progress,
@@ -144,15 +162,10 @@ class DownloadManager {
     const unlistenCompleted = await listen<DownloadCompletedEvent>(
       "download-completed",
       (event) => {
-        const mod = this.downloads.getMod(event.payload.modId);
-        if (mod) {
-          logger
-            .withMetadata({
-              mod: event.payload.modId,
-              path: event.payload.path,
-            })
-            .info("Download complete");
-          this.downloads.complete(event.payload.modId, event.payload.path);
+        const { modId, attemptId, path } = event.payload;
+        if (this.downloads.getAttempt(modId, attemptId)) {
+          logger.withMetadata({ mod: modId, path }).info("Download complete");
+          this.downloads.complete(modId, attemptId, path);
         }
       },
     );
@@ -160,9 +173,9 @@ class DownloadManager {
     const unlistenError = await listen<DownloadErrorEvent>(
       "download-error",
       (event) => {
-        const mod = this.downloads.getMod(event.payload.modId);
-        if (mod) {
-          const { modId, error, reason, retryAfterSecs } = event.payload;
+        const { modId, attemptId, error, reason, retryAfterSecs } =
+          event.payload;
+        if (this.downloads.getAttempt(modId, attemptId)) {
           logger
             .withMetadata({ mod: modId, reason })
             .withError(new Error(error))
@@ -170,9 +183,9 @@ class DownloadManager {
           if (reason) {
             const failure = { reason, retryAfterSecs };
             usePersistedStore.getState().patchModProgress(modId, { failure });
-            this.downloads.fail(modId, describeFailure(failure));
+            this.downloads.fail(modId, attemptId, describeFailure(failure));
           } else {
-            this.downloads.fail(modId, error);
+            this.downloads.fail(modId, attemptId, error);
           }
         }
       },
@@ -193,7 +206,10 @@ class DownloadManager {
     const unlistenFileTree = await listen<DownloadFileTreeEvent>(
       "download-file-tree",
       (event) => {
-        const mod = this.downloads.getMod(event.payload.modId);
+        const mod = this.downloads.getAttempt(
+          event.payload.modId,
+          event.payload.attemptId,
+        );
         if (mod) {
           logger
             .withMetadata({
@@ -408,7 +424,7 @@ class DownloadManager {
     this.downloads.add(mod);
   }
 
-  private async queueDownload(mod: DownloadableMod) {
+  private async queueDownload(mod: DownloadableMod, attemptId: string) {
     if (!mod.downloads || mod.downloads.length === 0) {
       throw new Error("No downloads available for this mod");
     }
@@ -444,10 +460,12 @@ class DownloadManager {
 
     await invoke("queue_download", {
       modId: mod.remoteId,
+      attemptId,
       files,
       profileFolder,
       fileserverPreference,
       isMap: mod.isMap,
+      sourceComponentIds: mod.source?.componentIds,
     });
   }
 

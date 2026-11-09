@@ -1,0 +1,141 @@
+{
+  "snapshotId": "ed6ca28e24660569755cd890353302e1",
+  "items": [
+    {
+      "id": "example-pack",
+      "title": "Example pack",
+      "isNsfw": false,
+      "description": "A pack with a config, a variant pak and extras.",
+      "author": "Example authors",
+      "homepageUrl": "https://packs.example.org/",
+      "tags": ["performance"],
+      "availability": "available",
+      "updatedAt": "2026-11-06T05:26:32.000Z",
+      "release": {
+        "id": "3efa1b1d4a16a523219994c4feff7966",
+        "contentRevision": "3efa1b1d4a16a523219994c4feff7966",
+        "publishedAt": "2026-11-06T05:26:32.000Z",
+        "artifacts": [
+          {
+            "id": "archive",
+            "filename": "example-pack.zip",
+            "format": "zip",
+            "download": {
+              "url": "https://packs.example.org/dl/example-pack.zip"
+            },
+            "size": 4096,
+            "hashes": {
+              "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            }
+          }
+        ],
+        "installation": {
+          "mode": "components",
+          "components": [
+            {
+              "id": "game/citadel/addons/pak01_dir.vpk",
+              "label": "HUD",
+              "files": [
+                {
+                  "artifactId": "archive",
+                  "path": "game/citadel/addons/pak01_dir.vpk"
+                }
+              ]
+            },
+            {
+              "id": "game/citadel/addons/pak02_dir.vpk",
+              "label": "Effects (full)",
+              "files": [
+                {
+                  "artifactId": "archive",
+                  "path": "game/citadel/addons/pak02_dir.vpk"
+                }
+              ]
+            },
+            {
+              "id": "game/citadel/optional-addons/pak02_dir.vpk",
+              "label": "Effects (reduced)",
+              "files": [
+                {
+                  "artifactId": "archive",
+                  "path": "game/citadel/optional-addons/pak02_dir.vpk"
+                }
+              ]
+            },
+            {
+              "id": "game/citadel/addons/pak03_dir.vpk",
+              "label": "Outlines (DX11)",
+              "files": [
+                {
+                  "artifactId": "archive",
+                  "path": "game/citadel/addons/pak03_dir.vpk"
+                }
+              ]
+            },
+            {
+              "id": "game/citadel/addons/pak04_dir.vpk",
+              "label": "Outlines (Vulkan)",
+              "files": [
+                {
+                  "artifactId": "archive",
+                  "path": "game/citadel/addons/pak04_dir.vpk"
+                }
+              ]
+            },
+            {
+              "id": "game/citadel/optional-addons/pak05_dir.vpk",
+              "label": "Low detail map",
+              "files": [
+                {
+                  "artifactId": "archive",
+                  "path": "game/citadel/optional-addons/pak05_dir.vpk"
+                }
+              ]
+            }
+          ],
+          "requiredComponents": [],
+          "choiceGroups": [
+            {
+              "id": "folder:game/citadel/addons",
+              "label": "Pack mods",
+              "minSelections": 0,
+              "maxSelections": 1,
+              "componentIds": ["game/citadel/addons/pak01_dir.vpk"],
+              "defaultComponentIds": ["game/citadel/addons/pak01_dir.vpk"]
+            },
+            {
+              "id": "effects",
+              "label": "Effects",
+              "minSelections": 0,
+              "maxSelections": 1,
+              "componentIds": [
+                "game/citadel/addons/pak02_dir.vpk",
+                "game/citadel/optional-addons/pak02_dir.vpk"
+              ],
+              "defaultComponentIds": ["game/citadel/addons/pak02_dir.vpk"]
+            },
+            {
+              "id": "outlines",
+              "label": "Outlines",
+              "minSelections": 0,
+              "maxSelections": 1,
+              "componentIds": [
+                "game/citadel/addons/pak03_dir.vpk",
+                "game/citadel/addons/pak04_dir.vpk"
+              ],
+              "defaultComponentIds": ["game/citadel/addons/pak03_dir.vpk"]
+            },
+            {
+              "id": "folder:game/citadel/optional-addons",
+              "label": "Extras",
+              "minSelections": 0,
+              "maxSelections": 1,
+              "componentIds": ["game/citadel/optional-addons/pak05_dir.vpk"],
+              "defaultComponentIds": []
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

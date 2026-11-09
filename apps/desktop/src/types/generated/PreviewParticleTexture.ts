@@ -4,5 +4,7 @@ import type { PreviewSpriteSequence } from "./PreviewSpriteSequence";
 export type PreviewParticleTexture = {
   path: string;
   dataUrl: string;
+  width: number;
+  height: number;
   sequences: Array<PreviewSpriteSequence>;
 };

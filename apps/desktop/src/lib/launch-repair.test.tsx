@@ -9,7 +9,11 @@ import type {
 } from "@/hooks/use-reinstall-mod";
 import en from "@/locales/en.json";
 import { type LocalMod, ModStatus } from "@/types/mods";
-import { repairLaunchFiles, resolveLaunchRepairMods } from "./launch-repair";
+import {
+  launchRepairTargets,
+  repairLaunchFiles,
+  resolveLaunchRepairMods,
+} from "./launch-repair";
 
 const mod: LocalMod = {
   id: "fixture",
@@ -55,7 +59,6 @@ const operations = () => ({
   reinstall: mock(
     async (): Promise<ReinstallResult> => ({
       outcome: "restored",
-      missingOnDisk: true,
     }),
   ),
   disable: mock(async () => {}),
@@ -86,7 +89,7 @@ describe("launch repair", () => {
           calls.push(`start:${target.remoteId}`);
           await Promise.resolve();
           calls.push(`end:${target.remoteId}`);
-          return { outcome: "restored", missingOnDisk: true };
+          return { outcome: "restored" };
         },
         launch: async () => {
           calls.push("launch");
@@ -117,7 +120,6 @@ describe("launch repair", () => {
       reinstall: async () => ({
         outcome: "failed",
         error: "Download unavailable",
-        missingOnDisk: true,
       }),
     });
     expect(ops.launch).not.toHaveBeenCalled();
@@ -141,7 +143,7 @@ describe("launch repair", () => {
     expect(
       await repairLaunchFiles(targets([mod]), "reinstall", {
         ...ops,
-        reinstall: async () => ({ outcome, missingOnDisk: true }),
+        reinstall: async () => ({ outcome }),
       }),
     ).toEqual([{ id: mod.remoteId, error: undefined }]);
     expect(ops.launch).not.toHaveBeenCalled();
@@ -156,7 +158,7 @@ describe("launch repair", () => {
         ...ops,
         reinstall: async (target) => {
           if (target.remoteId === "42") throw new Error("Files in use");
-          return { outcome: "restored", missingOnDisk: true };
+          return { outcome: "restored" };
         },
       },
     );
@@ -193,6 +195,43 @@ describe("launch repair", () => {
       },
     });
     expect(ops.launch).not.toHaveBeenCalled();
+  });
+
+  it("disables only the mods a partial reinstall left unrepaired", async () => {
+    const ops = operations();
+    const mods = targets([mod, { ...mod, remoteId: "43" }]);
+    const failures = await repairLaunchFiles(
+      launchRepairTargets(mods, null),
+      "reinstall",
+      {
+        ...ops,
+        reinstall: async (target) =>
+          target.remoteId === "43"
+            ? {
+                outcome: "failed",
+                error: "Download failed",
+              }
+            : { outcome: "restored" },
+      },
+    );
+    expect(failures).toEqual([{ id: "43", error: "Download failed" }]);
+    expect(
+      await repairLaunchFiles(
+        launchRepairTargets(mods, failures),
+        "disable",
+        ops,
+      ),
+    ).toEqual([]);
+    expect(ops.disable).toHaveBeenCalledTimes(1);
+    expect(ops.disable).toHaveBeenCalledWith(mods[1]);
+    expect(ops.launch).toHaveBeenCalledTimes(1);
+  });
+
+  it("targets every mod before a pass and none once all were repaired", () => {
+    const mods = targets([mod, { ...mod, remoteId: "43" }]);
+    expect(launchRepairTargets(mods, null)).toEqual(mods);
+    expect(launchRepairTargets(mods, [{ id: "42" }])).toEqual([mods[0]]);
+    expect(launchRepairTargets(mods, [])).toEqual([]);
   });
 
   it("resolves library names with backend fallbacks and recognizes imports without a source", () => {

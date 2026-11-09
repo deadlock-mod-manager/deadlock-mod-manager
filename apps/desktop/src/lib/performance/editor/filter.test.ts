@@ -104,7 +104,8 @@ describe("differsFromGame", () => {
 
 describe("isInert", () => {
   test("covers entries that are never written", () => {
-    expect(isInert({ status: "blocked" })).toBe(true);
+    expect(isInert({ status: "denied" })).toBe(true);
+    expect(isInert({ status: "blocked" })).toBe(false);
     expect(isInert({ status: "excluded" })).toBe(true);
     expect(isInert({ status: "omitted" })).toBe(false);
     expect(isInert({ status: "engineSection" })).toBe(false);
@@ -159,7 +160,7 @@ describe("matchesSearch", () => {
 
 describe("groupEntries", () => {
   const entries = [
-    entry("r_shadows", { status: "blocked" }),
+    entry("r_shadows", { status: "denied" }),
     entry("r_ssao"),
     entry("r_rendersun", { status: "unchanged" }),
     entry("lb_enable_stationary_lights", {

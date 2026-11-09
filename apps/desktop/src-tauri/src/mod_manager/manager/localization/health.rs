@@ -3,7 +3,7 @@ use super::*;
 use crate::mod_manager::localization_overlay::{self, GameIndex};
 use crate::mod_manager::mod_health::{
   self, CachedModHealth, CompatibilityChoice, FixModsResult, FixModsStatus, HealthKey, ModFindings,
-  ModHealthProgress, ModHealthReport, ModHealthSource, ProfileHealth,
+  ModHealthCheck, ModHealthProgress, ModHealthReport, ModHealthSource, ProfileHealth,
 };
 use crate::mod_manager::vdata_history::VdataHistoryIndex;
 use std::collections::BTreeSet;
@@ -18,6 +18,8 @@ pub struct ModHealthContext {
   base: ProfileBase,
   app_data: PathBuf,
   overlay_path: PathBuf,
+  /// The install's observed game data, which every repair receipt digests.
+  history: Option<PathBuf>,
 }
 
 struct InstalledMod {
@@ -25,6 +27,7 @@ struct InstalledMod {
   vpks: Vec<PathBuf>,
   key: HealthKey,
   choice: CompatibilityChoice,
+  enabled: bool,
 }
 
 impl InstalledMod {
@@ -49,8 +52,10 @@ impl ModManager {
     profile_folder: Option<&str>,
     app_data: PathBuf,
   ) -> Result<ModHealthContext, Error> {
+    let citadel = self.citadel_path()?;
     Ok(ModHealthContext {
-      citadel: self.citadel_path()?,
+      history: history::path(&citadel),
+      citadel,
       base: self.get_addons_path(profile_folder)?,
       app_data,
       overlay_path: self.localization_overlay_vpk_path(profile_folder)?,
@@ -124,8 +129,16 @@ impl ModManager {
     profile_folder: Option<&str>,
     analysis: &LocalizationOverlayAnalysis,
   ) -> Result<(), Error> {
-    let context = self.mod_health_context(profile_folder)?;
-    let entries = context
+    self
+      .mod_health_context(profile_folder)?
+      .record_launch(analysis)
+  }
+}
+
+impl ModHealthContext {
+  /// Saves the combined analysis's findings for the opted-in mods.
+  pub(super) fn record_launch(&self, analysis: &LocalizationOverlayAnalysis) -> Result<(), Error> {
+    let entries = self
       .installed()?
       .into_iter()
       .filter(|installed| analysis.compatibility_mod_ids.contains(&installed.id))
@@ -139,15 +152,13 @@ impl ModManager {
       })
       .collect::<Result<Vec<_>, Error>>()?;
     mod_health::record(
-      &context.app_data,
-      &context.profile_key(),
-      history::version(&context.citadel),
+      &self.app_data,
+      &self.profile_key(),
+      history::version(&self.citadel),
       entries,
     )
   }
-}
 
-impl ModHealthContext {
   fn profile_key(&self) -> String {
     self.base.to_string_lossy().into_owned()
   }
@@ -173,6 +184,7 @@ impl ModHealthContext {
           } else {
             CompatibilityChoice::Unset
           },
+          enabled: entry.enabled,
         }),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
         Err(error) => return Err(error.into()),
@@ -189,8 +201,11 @@ impl ModHealthContext {
     health.report(
       history::version(&self.citadel),
       installed.iter().map(|installed| {
+        // The game only loads enabled mods, so only their repairs must be in
+        // the package. A disabled mod keeps its saved choice; enabling it
+        // rebuilds the package with its repairs.
         let choice = match installed.choice {
-          CompatibilityChoice::Enabled if !applied.contains(&installed.id) => {
+          CompatibilityChoice::Enabled if installed.enabled && !applied.contains(&installed.id) => {
             CompatibilityChoice::Unset
           }
           choice => choice,
@@ -232,7 +247,7 @@ impl ModHealthContext {
     mod_ids: Option<&[String]>,
     force: bool,
     progress: impl Fn(ModHealthProgress),
-  ) -> Result<ModHealthReport, Error> {
+  ) -> Result<ModHealthCheck, Error> {
     let _running = CHECK_LOCK.lock().unwrap_or_else(|error| error.into_inner());
     let profile = self.profile_key();
     let installed = self.installed()?;
@@ -245,11 +260,14 @@ impl ModHealthContext {
     let total = pending.len() as u32;
     progress(ModHealthProgress { checked: 0, total });
     if pending.is_empty() {
-      return Ok(self.report_for(&cached, &installed));
+      return Ok(ModHealthCheck {
+        report: self.report_for(&cached, &installed),
+        history_changed: false,
+      });
     }
     let game_build = history::version(&self.citadel);
     let game = Arc::new(GameIndex::open(&self.citadel)?);
-    let mut observed = history::load(&self.citadel);
+    let mut observed = history::load(self.history.as_deref());
     let mut recorded = BTreeSet::new();
     let mut learned = false;
     let mut entries = Vec::with_capacity(pending.len());
@@ -277,10 +295,17 @@ impl ModHealthContext {
     if !entries.is_empty() {
       mod_health::record(&self.app_data, &profile, game_build, entries)?;
     }
-    if learned && let Err(error) = history::save(&self.citadel, &observed) {
-      log::warn!("Could not persist observed compatibility history: {error}");
+    let mut history_changed = false;
+    if learned && let Some(path) = &self.history {
+      match history::save(path, &observed) {
+        Ok(()) => history_changed = true,
+        Err(error) => log::warn!("Could not persist observed compatibility history: {error}"),
+      }
     }
-    self.report()
+    Ok(ModHealthCheck {
+      report: self.report()?,
+      history_changed,
+    })
   }
 }
 
@@ -307,8 +332,10 @@ fn check_mod(
 mod tests {
   use super::super::tests::write_vpk;
   use super::*;
+  use crate::mod_manager::localization_overlay::tests::compiled_resource;
   use crate::mod_manager::mod_health::ModHealthStatus;
   use crate::mod_manager::vpk_manifest::ProfileVpkManifestEntry;
+  use vpkmanager::source2::kv3::Value as Kv3Value;
 
   fn status(report: &ModHealthReport, mod_id: &str) -> Option<ModHealthStatus> {
     report
@@ -367,12 +394,13 @@ mod tests {
         .path()
         .join("game/citadel/dmm_localization_default")
         .join(OVERLAY_VPK_NAME),
+      history: Some(temp.path().join("cache/vdata-history.bin")),
     };
     assert!(context.report().unwrap().mods.is_empty());
 
     let progress = Mutex::new(Vec::new());
     let record = |update: ModHealthProgress| progress.lock().unwrap().push(update);
-    let report = context.check(None, false, record).unwrap();
+    let report = context.check(None, false, record).unwrap().report;
     assert_eq!(report.game_build, Some(100));
     assert_eq!(status(&report, "sounds"), Some(ModHealthStatus::NotCovered));
     assert_eq!(status(&report, "text"), Some(ModHealthStatus::Works));
@@ -415,11 +443,65 @@ mod tests {
     let report = context.report().unwrap();
     assert!(report.mods.is_empty());
     assert_eq!(report.previous_game_build, Some(100));
-    let report = context.check(None, false, |_| {}).unwrap();
+    let report = context.check(None, false, |_| {}).unwrap().report;
     assert_eq!(report.mods.len(), 2);
     assert_eq!(report.game_build, Some(101));
     assert_eq!(report.previous_game_build, Some(100));
   }
+
+  #[test]
+  fn reports_a_history_change_only_when_it_saves_newly_observed_game_data() {
+    let temp = tempfile::tempdir().unwrap();
+    let citadel = temp.path().join("game/citadel");
+    fs::create_dir_all(&citadel).unwrap();
+    fs::write(citadel.join("steam.inf"), b"ClientVersion=100\n").unwrap();
+    let table = compiled_resource(
+      (0..4)
+        .map(|row| {
+          (
+            format!("e2e_row_{row}"),
+            Kv3Value::Object(vec![("value".into(), Kv3Value::Int(row))]),
+          )
+        })
+        .collect(),
+    );
+    let table_path = "scripts/e2e_status.vdata_c";
+    write_vpk(&citadel.join("pak01_dir.vpk"), &[(table_path, &table)]);
+    let base = ProfileBase::new(citadel.join("addons")).unwrap();
+    write_vpk(&base.join("pak01_dir.vpk"), &[(table_path, &table)]);
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mark_enabled(
+      "data",
+      vec!["pak01_dir.vpk".into()],
+      vec![],
+      None,
+      ShardIndex::FIRST,
+    );
+    manifest.save(&base).unwrap();
+    let history = temp.path().join("cache/vdata-history.bin");
+    let context = ModHealthContext {
+      citadel,
+      base,
+      app_data: temp.path().join("app-data"),
+      overlay_path: temp
+        .path()
+        .join("game/citadel/dmm_localization_default")
+        .join(OVERLAY_VPK_NAME),
+      history: Some(history.clone()),
+    };
+    let check = || context.check(None, true, |_| {}).unwrap().history_changed;
+
+    assert!(check(), "learning the game's table saves history");
+    assert!(history.is_file());
+    assert!(!check(), "the same table is already known");
+
+    // History can't be saved over a directory, so the check must not report a
+    // change it didn't persist.
+    fs::remove_file(&history).unwrap();
+    fs::create_dir(&history).unwrap();
+    assert!(!check(), "a failed save is not a history change");
+  }
+
   #[test]
   fn a_failed_mod_does_not_discard_successful_batch_results() {
     let temp = tempfile::tempdir().unwrap();
@@ -447,11 +529,13 @@ mod tests {
         .path()
         .join("dmm_localization_default")
         .join(OVERLAY_VPK_NAME),
+      history: Some(temp.path().join("cache/vdata-history.bin")),
     };
     let progress = Mutex::new(Vec::new());
     let report = context
       .check(None, false, |event| progress.lock().unwrap().push(event))
-      .unwrap();
+      .unwrap()
+      .report;
     assert_eq!(status(&report, "good"), Some(ModHealthStatus::NotCovered));
     assert_eq!(status(&report, "bad"), None);
     assert_eq!(context.report().unwrap(), report);

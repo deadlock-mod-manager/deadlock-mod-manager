@@ -40,7 +40,7 @@ const RegionSelect = ({
         <SelectValue placeholder={t("servers.filters.anyRegion")}>
           {value ? (
             <span className='inline-flex items-center gap-2'>
-              <FlagGlyph className='size-3.5' region={value} />
+              <FlagGlyph className='!size-3.5' region={value} />
               <span>{value.toUpperCase()}</span>
             </span>
           ) : (
@@ -71,7 +71,7 @@ const RegionSelect = ({
             {regions.map((region) => (
               <SelectItem key={region} value={region}>
                 <span className='inline-flex items-center gap-2'>
-                  <FlagGlyph className='size-3.5' region={region} />
+                  <FlagGlyph className='!size-3.5' region={region} />
                   <span className='text-xs font-medium'>
                     {region.toUpperCase()}
                   </span>

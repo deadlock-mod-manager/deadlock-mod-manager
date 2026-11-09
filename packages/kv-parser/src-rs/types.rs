@@ -21,7 +21,8 @@ pub type KeyValuesObject = HashMap<String, KeyValuesValue>;
 #[ts(export, export_to = "../src/generated/", rename_all = "camelCase")]
 #[serde(rename_all = "camelCase")]
 pub struct Position {
-    /// Byte offset from start of file
+    /// Unicode scalar-value offset from the start of the input, retained for
+    /// compatibility. SourceDocument provides UTF-8 byte ranges for editing.
     pub offset: usize,
     /// Line number (1-indexed)
     pub line: usize,
@@ -55,6 +56,7 @@ pub struct Token {
     pub value: String,
     pub line: usize,
     pub column: usize,
+    /// Unicode scalar-value offset, using the same units as Position::offset.
     pub offset: usize,
     pub raw: String,
     #[serde(skip_serializing_if = "Option::is_none")]

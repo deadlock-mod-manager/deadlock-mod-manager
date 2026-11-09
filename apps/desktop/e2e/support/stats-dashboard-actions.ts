@@ -3,14 +3,22 @@ import type { ChainablePromiseElement } from "webdriverio";
 import { z } from "zod";
 import { step } from "./evidence";
 import { readPersistedDocument } from "./observations";
-import { navigate, waitForDisplayed } from "./ui";
+import { navigate, reveal, waitForDisplayed } from "./ui";
 
-export const DEFAULT_TAB_IDS = ["overview", "heroes", "items", "squad", "live"];
+export const DEFAULT_TAB_IDS = [
+  "overview",
+  "heroes",
+  "items",
+  "squad",
+  "party",
+  "live",
+];
 export const DEFAULT_TAB_TITLES = [
   "Overview",
   "Heroes",
   "Items",
   "Squad",
+  "Party",
   "Live",
 ];
 export const DEFAULT_OVERVIEW = [
@@ -107,6 +115,7 @@ export const tabTitles = () => readTabTitles("[data-tab-id]");
 export const selectTab = (title: string) =>
   step(`select the ${title} tab`, async () => {
     const tab = await tabByTitle(title);
+    await reveal(tab);
     await tab.waitForClickable();
     await tab.click();
     // Radix tabs switch on mousedown, which the WebView driver does not always

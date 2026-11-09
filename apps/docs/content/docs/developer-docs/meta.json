@@ -8,6 +8,8 @@
     "project-structure",
     "architecture",
     "domain-model",
+    "mod-sources",
+    "build-a-mod-registry",
     "mod-interchange",
     "performance-catalog",
     "mod-compatibility",

@@ -59,6 +59,16 @@ pub struct LiveMatch {
   pub phase: GamePhase,
 }
 
+/// A match whose lobby has closed, with the board the bridge last showed for
+/// it. The hideout runs the same top bar, so the live board cannot hold it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct FinishedMatch {
+  pub match_id: String,
+  pub scoreboard: LiveScoreboard,
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, TS)]
 #[ts(export, rename_all = "camelCase")]
 #[serde(rename_all = "camelCase")]
@@ -76,6 +86,8 @@ pub struct LiveMatchStatus {
   /// What the live bridge mod last reported. `None` until it reports, so the
   /// UI can tell a missing mod from a match that has not started.
   pub scoreboard: Option<LiveScoreboard>,
+  /// The match played last, until matchmaking starts again.
+  pub last_match: Option<FinishedMatch>,
 }
 
 fn console_log_path(game_path: &Path) -> PathBuf {
@@ -115,9 +127,11 @@ pub struct LivePhase {
   pub current: Option<LiveMatch>,
   /// Every match id seen this session, newest last, capped at `RECENT_LIMIT`.
   pub recent_match_ids: Vec<String>,
-  /// What the bridge reported. Kept after the lobby closes so the last match
-  /// stays readable, and dropped when the next lobby is created.
+  /// What the bridge reported, dropped when the next lobby is created.
   bridge: Option<BridgeState>,
+  /// Taken from the bridge when a started match's lobby closes, and dropped
+  /// once the player queues or joins another lobby.
+  last_match: Option<FinishedMatch>,
 }
 
 #[cfg(feature = "plugins")]
@@ -228,7 +242,10 @@ fn fold_observing(
           live.phase = GamePhase::from_state(name);
         }
       }
-      LogEvent::QueueStarted(at) => phase.queued_since = Some(at),
+      LogEvent::QueueStarted(at) => {
+        phase.queued_since = Some(at);
+        phase.last_match = None;
+      }
       LogEvent::QueueStopped => phase.queued_since = None,
       LogEvent::LobbyCreated { lobby_id, match_id } => {
         if !phase.recent_match_ids.iter().any(|id| id == match_id) {
@@ -244,16 +261,19 @@ fn fold_observing(
           phase: GamePhase::Pregame,
         });
         phase.bridge = None;
+        phase.last_match = None;
       }
       // Only clear when the teardown belongs to the lobby we are tracking; an
       // unrelated line must not hide a running match.
       LogEvent::LobbyDestroyed { lobby_id } => {
-        if phase
-          .current
-          .as_ref()
-          .is_some_and(|live| live.lobby_id == lobby_id)
-        {
-          phase.current = None;
+        if let Some(live) = phase.current.take_if(|live| live.lobby_id == lobby_id) {
+          // A lobby left during hero selection never became a match.
+          if live.phase != GamePhase::Pregame {
+            phase.last_match = phase.bridge.as_ref().map(|bridge| FinishedMatch {
+              match_id: live.match_id,
+              scoreboard: bridge.board(),
+            });
+          }
         }
       }
     }
@@ -306,6 +326,7 @@ pub fn status(game_path: &Path) -> LiveMatchStatus {
     current: phase.current,
     recent_match_ids: phase.recent_match_ids,
     scoreboard: phase.bridge.as_ref().map(BridgeState::board),
+    last_match: phase.last_match,
   }
 }
 
@@ -588,6 +609,35 @@ mod tests {
 
     let next = fold_phase("Lobby 2 for Match 333 created\n", played);
     assert!(next.bridge.is_none());
+  }
+
+  #[test]
+  fn keeps_the_last_match_past_the_hideout_until_the_next_queue() {
+    let started = "10/28 04:34:43 OnGameStateChanged: GameInProgress (7)";
+    let hideout = r#"10/28 00:50:00 [PanoramaScript] [DMM-LIVE] {"v":2,"side":"friendly","clock":"0:05","players":[{"n":"Okaza","hid":1,"hn":"Infernus","s":"0","l":1,"k":0,"d":0,"a":0,"o":0,"me":true,"dead":false}]}"#;
+    let back_home = fold_phase(
+      &format!("{CREATED}\n{started}\n{FRIENDLY}\n{DESTROYED}\n{hideout}\n"),
+      LivePhase::default(),
+    );
+
+    let last = back_home.last_match.as_ref().expect("the last match");
+    assert_eq!(last.match_id, "96996563");
+    assert_eq!(
+      last.scoreboard.friendly[0].hero_name.as_deref(),
+      Some("Haze")
+    );
+
+    assert!(fold_phase(QUEUED, back_home).last_match.is_none());
+  }
+
+  #[test]
+  fn a_lobby_left_before_the_match_started_is_not_kept() {
+    let dodged = fold_phase(
+      &format!("{CREATED}\n{FRIENDLY}\n{DESTROYED}\n"),
+      LivePhase::default(),
+    );
+
+    assert!(dodged.last_match.is_none());
   }
 
   #[test]

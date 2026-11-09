@@ -39,6 +39,7 @@ Work through the list in order; each item is a file you open and edit.
 
 **Shared hero identity** (`@deadlock-mods/shared`)
 - `packages/shared/src/constants.ts` - add the enum member to `DeadlockHeroes`, alphabetical.
+- `packages/shared/src/taxonomy.ts` - add the hero's `HERO_IDS` entry: kebab-case display name, `&` as `and`. Mod sources store it, so never rename it later. It is published at `https://deadlockmods.app/v1/taxonomy.json`.
 - `packages/shared/src/heroes/constants.ts` - add a `HERO_DEFINITIONS` entry: codenames as `aliases`, multi-word names as `phrases`. A codename that is a common English word (`nurse`, `artist`) is **not** an alias - it would steal mod titles; leave a comment saying so.
 - `packages/shared/src/tests/heroes.spec.ts` - cover `normalizeHero` for the codename/alias and `guessHero` for a realistic mod title, plus a negative case for any common-word codename.
 - Check that the API `name` resolves through `normalizeHero` (API says "The Doorman", the enum says "Doorman"); add an alias when it does not, or the hero catalog lookup misses.
@@ -47,6 +48,7 @@ Work through the list in order; each item is a file you open and edit.
 - `packages/hero-parser/src/mapping.ts` - `HERO_MAP`: `<model dir>: { enumKey, displayName }`.
 - `packages/hero-parser/src-rs/mapping.rs` - the same row as `("<model dir>", "<EnumKey>", "<Display>")`.
 - Add `_v2`-style variants of the model dir when the VPK ships them.
+- `packages/hero-parser/src-rs/mapping.rs` `HERO_SOUND_CODENAMES` - `("<sound codename>", "<Display>")`. Sound-only mods take their hero from it, and the Foundry reads it too. A legacy sound dir goes in `LEGACY_SOUND_CODENAMES`.
 
 **GameBanana registry** (desktop Rust)
 - Regenerate, never hand-edit: `pnpm --filter @deadlock-mods/desktop generate:gamebanana-heroes` rewrites `providers/gamebanana/generated_hero_registry.rs` from `HERO_DEFINITIONS`.
@@ -55,7 +57,6 @@ Work through the list in order; each item is a file you open and edit.
 **Mod Foundry** (`apps/desktop/src-tauri/src/commands/foundry/`)
 - `hero.rs` `panorama_codenames` - `"<Display>" => vec!["<panorama codename>", ...legacy]`.
 - `hero.rs` `default_model_codenames` - only when the model dir does not fall out of the display name.
-- `hero.rs` `HERO_SOUND_CODENAMES` - `("<sound codename>", "<Display>")`.
 - `hero-ability-slots.json` - `slots.<sound codename>.1..4` with `token` = ability `class_name` minus `ability_<codename>_` (keep underscores) and `display` = ability `name`; slot 4 is the ultimate. Write it with 2-space JSON, keys sorted, so the diff stays additive.
 - `apps/desktop/public/foundry/default-skins/cards/<snake_name>.png` - 280×380 card. Use `icon_hero_card`; if the API has none yet, crop the release-vote poster (what `2f18d23e` did).
 - `apps/desktop/src/lib/foundry-default-skins.ts` - `{ hero: "<Display>", image: cardPath("<snake_name>") }`, alphabetical.

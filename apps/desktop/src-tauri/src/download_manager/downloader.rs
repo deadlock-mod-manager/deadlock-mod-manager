@@ -351,6 +351,84 @@ pub async fn download_file_resumable<F>(
 where
   F: Fn(DownloadProgress) + Send + 'static,
 {
+  if trusted_hosts_only {
+    validate_download_url(url)?;
+  }
+  let client = download_client(trusted_hosts_only, true, false)?;
+  download_file_resumable_with_client(
+    url,
+    target_path,
+    expected_size,
+    on_progress,
+    cancel_token,
+    pause,
+    max_bytes,
+    expected_md5,
+    client,
+  )
+  .await
+}
+
+/// Uses the source's validated, DNS-pinned transport with existing staging.
+pub async fn download_native_artifact<F>(
+  artifact: &crate::providers::native_sources::ResolvedNativeArtifact,
+  target_path: &Path,
+  on_progress: F,
+  cancel_token: CancellationToken,
+  pause: PauseHandle,
+) -> Result<(), Error>
+where
+  F: Fn(DownloadProgress) + Send + 'static,
+{
+  let client = crate::providers::native_sources::artifact_download_client(artifact).await?;
+  download_file_resumable_with_client(
+    &artifact.url,
+    target_path,
+    artifact.size.unwrap_or(0),
+    on_progress,
+    cancel_token,
+    pause,
+    Some(2 * 1024 * 1024 * 1024),
+    artifact
+      .hashes
+      .as_ref()
+      .and_then(|hashes| hashes.md5.as_deref()),
+    client,
+  )
+  .await?;
+  let downloaded_size = tokio::fs::metadata(target_path).await?.len();
+  if artifact.size.is_some_and(|size| size != downloaded_size) {
+    let _ = tokio::fs::remove_file(target_path).await;
+    return Err(Error::DownloadFailed(
+      "Source artifact byte size did not match its declaration".into(),
+    ));
+  }
+  if let Some(hashes) = &artifact.hashes
+    && let Err(error) = crate::providers::native_sources::verify_artifact(target_path, hashes).await
+  {
+    let _ = tokio::fs::remove_file(target_path).await;
+    return Err(error);
+  }
+  Ok(())
+}
+
+/// Keeps trusted GameBanana downloads and native source downloads on the same
+/// cancellation, transfer limit, resume, and staging implementation.
+#[allow(clippy::too_many_arguments)]
+pub(crate) async fn download_file_resumable_with_client<F>(
+  url: &str,
+  target_path: &Path,
+  expected_size: u64,
+  on_progress: F,
+  cancel_token: CancellationToken,
+  pause: PauseHandle,
+  max_bytes: Option<u64>,
+  expected_md5: Option<&str>,
+  client: reqwest::Client,
+) -> Result<(), Error>
+where
+  F: Fn(DownloadProgress) + Send + 'static,
+{
   log::info!(
     "Starting resumable download to {target_path:?} (expected_size={expected_size}, max_bytes={max_bytes:?})"
   );
@@ -362,10 +440,6 @@ where
     tokio::fs::create_dir_all(parent).await.map_err(Error::Io)?;
   }
 
-  if trusted_hosts_only {
-    validate_download_url(url)?;
-  }
-  let client = download_client(trusted_hosts_only, true, false)?;
   let budget = app_budget();
   // Where the next request's connection is counted; becomes the server the
   // redirects reached once that's known.

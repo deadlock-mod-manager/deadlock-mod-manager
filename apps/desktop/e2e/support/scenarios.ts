@@ -22,10 +22,39 @@ import {
   prepareGroupedIdentificationWorld,
 } from "./library-groups-fixtures";
 import { prepareProfileWorld } from "./profile-fixtures";
+import { prepareGameinfoPreservationWorld } from "./gameinfo-preservation-fixtures";
+import {
+  hashRequests,
+  prepareRescanAfterResetWorld,
+  rescanAfterResetRoutes,
+} from "./rescan-after-reset-fixtures";
+import { importFailureRoutes } from "./profile-import-failure-fixtures";
+import { shareRoutes } from "./profile-share-fixtures";
+import {
+  prepareProfileRestoreWorld,
+  profileRestoreRoutes,
+} from "./profile-restore-fixtures";
 import { prepareFileOrderWorld } from "./file-order-fixtures";
 import { prepareBrokenProfileWorld } from "./broken-profile-fixtures";
-import { prepareCompatibilityFixWorld } from "./compatibility-fix-fixtures";
+import {
+  disabledFixRoutes,
+  prepareCompatibilityFixWorld,
+  prepareDisabledFixWorld,
+} from "./compatibility-fix-fixtures";
+import { prepareIdentifiedFixWorld } from "./compatibility-fix-identification-fixtures";
+import {
+  FIXED_MOD as STATUS_FIXED_MOD,
+  PLAIN_MOD as STATUS_PLAIN_MOD,
+  RIVAL_MOD as STATUS_RIVAL_MOD,
+  prepareFixedStatusWorld,
+} from "./fixed-status-fixtures";
+import {
+  assertHealthUpdateNetwork,
+  healthUpdateRoutes,
+  prepareHealthUpdateWorld,
+} from "./health-update-fixtures";
 import { prepareConflictWorld } from "./conflict-fixtures";
+import { repairRebuildScenarios } from "./repair-rebuild-scenarios";
 import { prepareFilesystemWorld } from "./filesystem-fixtures";
 import { prepareManifestRepairWorld } from "./manifest-repair-fixtures";
 import { prepareModFolderRepairWorld } from "./mod-folder-repair-fixtures";
@@ -35,10 +64,20 @@ import {
 } from "./gameinfo-recovery-fixtures";
 import { prepareMissingVpkWorld } from "./missing-vpk-fixtures";
 import { prepareBrokenStateWorld } from "./broken-state-fixtures";
+import {
+  launchRepairRoutes,
+  prepareLaunchRepairWorld,
+} from "./launch-repair-fixtures";
 import { prepareShardWorld } from "./shard-fixtures";
 import { assertCrashEvidence } from "./filesystem-oracle";
 import { assertNormalExit, assertInterruptedExit } from "./phase-evidence";
 import { buildSyntheticVpk, writeSyntheticVpk } from "./vpk";
+import {
+  assertUnknownAddonNetwork,
+  prepareUnknownAddonWorld,
+  unknownAddonRoutes,
+} from "./analyze-known-files-fixtures";
+import { prepareAnalyzeOrphansWorld } from "./analyze-orphans-fixtures";
 import { createArchive } from "./archive-fixtures";
 import { randomBytes } from "node:crypto";
 import { contentRoutes, prepareContentWorld } from "./content-fixtures";
@@ -50,8 +89,17 @@ import {
   catalogRefreshRoutes,
   assertCatalogRefreshNetwork,
 } from "./catalog-refresh-fixtures";
-import { prepareLegacyCatalog } from "./catalog-upgrade-fixtures";
+import {
+  legacyCatalogRoutes,
+  prepareLegacyCatalog,
+} from "./catalog-upgrade-fixtures";
 import { prepareOnboardingWorld } from "./onboarding-fixtures";
+import { onboardingIdentifiedRoutes } from "./analysis-library-status-fixtures";
+import {
+  analyzeErrorsRoutes,
+  assertAnalyzeErrorsNetwork,
+  prepareAnalyzeErrorsWorld,
+} from "./analyze-errors-fixtures";
 import {
   libraryAuthorRoutes,
   legacyLibraryAuthorRoutes,
@@ -63,6 +111,7 @@ import {
 } from "./detected-mod-fixtures";
 import {
   multipakUpdateRoutes,
+  updateRoutingRoutes,
   assertMultipakUpdateNetwork,
   assertUpdateRoutingNetwork,
 } from "./multipak-update-fixtures";
@@ -89,6 +138,7 @@ import {
   networkDiagnosticsRoutes,
   prepareNetworkDiagnosticsWorld,
 } from "./network-diagnostics-fixtures";
+import { preparePerformanceWorld } from "./performance-fixtures";
 
 import {
   reliabilityRoutes,
@@ -96,7 +146,7 @@ import {
   assertReliabilityNetwork,
 } from "./reliability-fixtures";
 
-type Definition = {
+export type Definition = {
   family: string;
   spec: string;
   phases: readonly string[];
@@ -209,6 +259,13 @@ const profiles: Definition = {
   platforms: ["win32"],
   routes: profileRoutes,
   prepare: async (world) => prepareProfileWorld(world),
+};
+const profileShare: Definition = {
+  ...defaults,
+  family: "profile-share",
+  spec: "profiles-import-overlap",
+  phases: ["import-overlap"],
+  routes: shareRoutes,
 };
 const libraryGroups: Definition = {
   ...defaults,
@@ -370,6 +427,13 @@ const stats: Definition = {
   prepare: prepareStatsDashboardWorld,
   verifyNetwork: assertStatsDashboardNetwork,
 };
+const performance: Definition = {
+  ...defaults,
+  family: "performance",
+  spec: "performance-video",
+  phases: ["video"],
+  prepare: preparePerformanceWorld,
+};
 const onboarding: Definition = {
   ...defaults,
   family: "onboarding",
@@ -422,6 +486,7 @@ const modUpdates: Definition = {
 
 export const scenarios = {
   "gamebanana-mirror-fallback": downloadFallback,
+  "gamebanana-default-fallback": downloadFallback,
   "gamebanana-crash-cause": crashAttribution,
   "library-groups-organize": libraryGroups,
   "library-groups-identification": {
@@ -430,6 +495,23 @@ export const scenarios = {
     phases: ["identify", "restart-identify"],
     routes: detectedModRoutes,
     prepare: prepareGroupedIdentificationWorld,
+  },
+  "addons-rescan-after-reset": {
+    ...defaults,
+    family: "addons-analysis",
+    spec: "rescan-after-reset",
+    phases: ["reset-rescan", "restart-rescan"],
+    routes: rescanAfterResetRoutes,
+    prepare: prepareRescanAfterResetWorld,
+    verifyNetwork: (_id: string, requests: readonly FixtureRequest[]) => {
+      // Only the hand-placed pak04 and the local import's pak03 may be looked
+      // up: the catalog mods' files are already accounted for by the manifest.
+      const lookups = hashRequests(requests).length;
+      if (lookups !== 2)
+        throw new Error(
+          `Analyze looked up ${lookups} files by hash; expected exactly 2`,
+        );
+    },
   },
   "library-groups-pagination": {
     ...libraryGroups,
@@ -469,6 +551,38 @@ export const scenarios = {
     platforms: ["win32"],
     routes: profileRoutes,
     prepare: prepareGameinfoRecoveryWorld,
+  },
+  "gameinfo-preserve-search-paths": {
+    ...defaults,
+    family: "filesystem",
+    spec: "gameinfo-preservation",
+    phases: ["preserve", "restart-preserve"],
+    prepare: prepareGameinfoPreservationWorld,
+    routes: async () => () => [
+      { method: "GET", path: "/api/v2/feature-flags", status: 200, body: "[]" },
+      {
+        method: "GET",
+        path: "/artifacts/deadlock/gameinfo.gi",
+        status: 200,
+        body: VANILLA_GAMEINFO,
+      },
+    ],
+  },
+  "gameinfo-preserve-legacy-search-paths": {
+    ...defaults,
+    family: "filesystem",
+    spec: "gameinfo-preservation",
+    phases: ["preserve", "restart-preserve"],
+    prepare: prepareGameinfoPreservationWorld,
+    routes: async () => () => [
+      { method: "GET", path: "/api/v2/feature-flags", status: 200, body: "[]" },
+      {
+        method: "GET",
+        path: "/artifacts/deadlock/gameinfo.gi",
+        status: 200,
+        body: VANILLA_GAMEINFO,
+      },
+    ],
   },
   "addons-missing-enable": {
     ...defaults,
@@ -514,6 +628,30 @@ export const scenarios = {
     spec: "launch-broken-state",
     phases: ["seed-launch", "launch-damaged", "restart-launch-damaged"],
     prepare: prepareBrokenStateWorld,
+  },
+  "missing-vpks-launch-partial": {
+    ...defaults,
+    family: "missing-vpks",
+    spec: "launch-repair-partial",
+    phases: ["repair-partial", "restart-repair-partial"],
+    routes: launchRepairRoutes,
+    prepare: prepareLaunchRepairWorld,
+  },
+  "missing-vpks-launch-relaunch-error": {
+    ...defaults,
+    family: "missing-vpks",
+    spec: "launch-repair-partial",
+    phases: ["relaunch-error"],
+    routes: launchRepairRoutes,
+    prepare: prepareLaunchRepairWorld,
+  },
+  "missing-vpks-launch-relaunch-missing": {
+    ...defaults,
+    family: "missing-vpks",
+    spec: "launch-repair-partial",
+    phases: ["relaunch-missing"],
+    routes: launchRepairRoutes,
+    prepare: prepareLaunchRepairWorld,
   },
   "gameinfo-reverted-launch": {
     ...defaults,
@@ -589,10 +727,42 @@ export const scenarios = {
         );
     },
   },
+  "analyze-orphans": {
+    ...defaults,
+    family: "analysis",
+    spec: "analyze-orphans",
+    phases: ["orphans", "restart-orphans"],
+    routes: rescanAfterResetRoutes,
+    prepare: prepareAnalyzeOrphansWorld,
+  },
+  "analyze-known-files": {
+    ...defaults,
+    family: "analysis",
+    spec: "analyze-known-files",
+    phases: ["add-files", "restart-known"],
+    routes: unknownAddonRoutes,
+    prepare: prepareUnknownAddonWorld,
+    verifyNetwork: assertUnknownAddonNetwork,
+  },
   "onboarding-skip-analysis": onboarding,
+  "analyze-errors": {
+    ...defaults,
+    family: "analyze",
+    spec: "analyze-errors",
+    phases: ["analyze-errors"],
+    routes: analyzeErrorsRoutes,
+    prepare: prepareAnalyzeErrorsWorld,
+    verifyNetwork: assertAnalyzeErrorsNetwork,
+  },
   "onboarding-telemetry-default": {
     ...onboarding,
     prepare: (world: CreatedWorld) => prepareOnboardingWorld(world, false),
+  },
+  "onboarding-identified-addon": {
+    ...onboarding,
+    spec: "onboarding-identified",
+    phases: ["identified-analysis"],
+    routes: onboardingIdentifiedRoutes,
   },
   "content-blur": {
     ...settings,
@@ -661,6 +831,26 @@ export const scenarios = {
   "local-mod-large-drop-zip": localLargeInPage,
   "local-mod-large-drop-path-vpk": localLargeOnDisk,
   "local-mod-large-drop-path-zip": localLargeOnDisk,
+  "profiles-import-overlap": profileShare,
+  "profiles-restore-variant": {
+    ...profileShare,
+    family: "profiles",
+    spec: "profiles-restore-variant",
+    phases: ["restore-variant", "restart-restored-variant"],
+    routes: profileRestoreRoutes,
+    prepare: prepareProfileRestoreWorld,
+  },
+  "profiles-reshare": {
+    ...profileShare,
+    spec: "profiles-reshare",
+    phases: ["reshare"],
+  },
+  "profiles-import-failures": {
+    ...profileShare,
+    spec: "profiles-import-failures",
+    phases: ["import-failures"],
+    routes: importFailureRoutes,
+  },
   "profiles-pointer": profiles,
   "profiles-keyboard": profiles,
   "profiles-file-order": {
@@ -696,11 +886,118 @@ export const scenarios = {
     routes: profileRoutes,
     prepare: async (world) => prepareCompatibilityFixWorld(world),
   },
+  "compatibility-fix-identification": {
+    ...defaults,
+    family: "compatibility",
+    spec: "compatibility-fix-identification",
+    phases: ["identify-fixed"],
+    routes: detectedModRoutes,
+    prepare: async (world) => prepareIdentifiedFixWorld(world),
+    verifyNetwork: (_id: string, requests: readonly FixtureRequest[]) => {
+      if (
+        !requests.some(
+          (request) =>
+            request.method === "POST" &&
+            request.url.includes("/api/v2/vpk-analyse-hashes") &&
+            request.responseStatus === 200,
+        )
+      )
+        throw new Error("The fixed mod was never identified through analysis");
+    },
+  },
+  "compatibility-health-update": {
+    ...defaults,
+    family: "compatibility",
+    spec: "compatibility-health-update",
+    phases: ["update"],
+    routes: healthUpdateRoutes,
+    prepare: prepareHealthUpdateWorld,
+    verifyNetwork: assertHealthUpdateNetwork,
+  },
+  ...repairRebuildScenarios({
+    ...defaults,
+    family: "compatibility",
+    routes: profileRoutes,
+  }),
+  "fixed-status-reviewed": {
+    ...defaults,
+    family: "fixed-status",
+    spec: "fixed-status-reviewed",
+    phases: ["review", "restart-reviewed"],
+    routes: profileRoutes,
+    prepare: async (world) =>
+      prepareFixedStatusWorld(world, [
+        STATUS_FIXED_MOD,
+        STATUS_RIVAL_MOD,
+        STATUS_PLAIN_MOD,
+      ]),
+  },
+  // The stand-in game is a Linux `sleep` (e2e/support/fake-game.ts).
+  "fixed-status-game-exit": {
+    ...defaults,
+    family: "fixed-status",
+    spec: "fixed-status-game-exit",
+    phases: ["play"],
+    platforms: ["linux"],
+    routes: profileRoutes,
+    prepare: async (world) =>
+      prepareFixedStatusWorld(world, [STATUS_FIXED_MOD, STATUS_PLAIN_MOD]),
+  },
+  "compatibility-fix-disabled": {
+    ...defaults,
+    family: "compatibility",
+    spec: "compatibility-fix-disabled",
+    phases: ["disabled-mod"],
+    routes: async () => disabledFixRoutes,
+    prepare: async (world) => prepareDisabledFixWorld(world),
+  },
+  "fixed-status-shared-file": {
+    ...defaults,
+    family: "fixed-status",
+    spec: "fixed-status-shared-file",
+    phases: ["share"],
+    // The case opens the fixed mod's page, which asks for its report counts.
+    routes: async () => {
+      const routes = await profileRoutes();
+      return () => [
+        ...routes(),
+        {
+          method: "GET",
+          path: `/api/v2/reports/mod/${STATUS_FIXED_MOD}/counts`,
+          status: 200,
+          body: JSON.stringify({
+            total: 0,
+            open: 0,
+            resolved: 0,
+            dismissed: 0,
+          }),
+        },
+      ];
+    },
+    prepare: async (world) =>
+      prepareFixedStatusWorld(world, [STATUS_FIXED_MOD, STATUS_RIVAL_MOD]),
+  },
   "library-selection": {
     ...defaults,
     family: "profiles",
     spec: "library-selection",
     phases: ["select", "restart-selection"],
+    routes: profileRoutes,
+    prepare: async (world: CreatedWorld) => prepareProfileWorld(world),
+  },
+  "library-bulk-disable-failure": {
+    ...defaults,
+    family: "profiles",
+    spec: "library-bulk-failure",
+    phases: ["fail", "restart"],
+    routes: profileRoutes,
+    prepare: async (world: CreatedWorld) => prepareProfileWorld(world),
+  },
+  "library-bulk-delete-failure": {
+    ...defaults,
+    family: "profiles",
+    spec: "library-bulk-failure",
+    phases: ["fail", "restart"],
     routes: profileRoutes,
     prepare: async (world: CreatedWorld) => prepareProfileWorld(world),
   },
@@ -710,6 +1007,7 @@ export const scenarios = {
   "downloads-deleted-default": downloads,
   "downloads-cancel": { ...downloads, coverage: "ipc-recovery" },
   "downloads-cancel-connecting": downloads,
+  "downloads-cancel-late-error": downloads,
   "downloads-cancel-queued": downloads,
   "downloads-reload-queued": downloads,
   "downloads-delete-queued": downloads,
@@ -780,7 +1078,7 @@ export const scenarios = {
     family: "gamebanana",
     spec: "catalog-upgrade",
     phases: ["upgrade-catalog", "restart-upgrade"],
-    routes: contentRoutes,
+    routes: legacyCatalogRoutes,
     prepare: prepareLegacyCatalog,
     verifyNetwork: (_id: string, requests: readonly FixtureRequest[]) => {
       if (
@@ -848,10 +1146,16 @@ export const scenarios = {
   "gamebanana-unremembered": catalogLifecycle,
   "gamebanana-switch": catalogLifecycle,
   "gamebanana-switch-failure": catalogLifecycle,
+  "gamebanana-switch-reinstall": catalogLifecycle,
   "gamebanana-reselect": catalogLifecycle,
   "gamebanana-file-toggle": catalogLifecycle,
   "gamebanana-reinstall": catalogLifecycle,
   "gamebanana-reinstall-disabled": catalogLifecycle,
+  "gamebanana-reinstall-readonly": {
+    ...catalog,
+    spec: "gamebanana-reinstall-readonly",
+    phases: ["reinstall-readonly"],
+  },
   "gamebanana-force-update": catalogLifecycle,
   "gamebanana-delete-parked": catalogDeleteParked,
   "gamebanana-delete-parked-disabled": catalogDeleteParked,
@@ -867,7 +1171,7 @@ export const scenarios = {
     ...catalog,
     spec: "gamebanana-update-routing",
     phases: ["update-auto", "restart-download-auto"],
-    routes: multipakUpdateRoutes,
+    routes: updateRoutingRoutes,
     verifyNetwork: assertUpdateRoutingNetwork,
   },
   "gamebanana-variant-names": {
@@ -932,6 +1236,14 @@ export const scenarios = {
     spec: "stats-broken-endpoints",
     phases: ["broken"],
   },
+  "perf-video-apply-restore": performance,
+  "perf-video-changed-in-game": performance,
+  "perf-video-adopt": performance,
+  "perf-video-variant": performance,
+  "perf-gameinfo-resync": { ...performance, spec: "performance-configs" },
+  "perf-gameinfo-launch": { ...performance, spec: "performance-configs" },
+  "perf-editor-undo": { ...performance, spec: "performance-configs" },
+  "perf-import-paste": { ...performance, spec: "performance-configs" },
   "network-diagnostics": networkDiagnostics,
   "network-diagnostics-internet-down": {
     ...networkDiagnostics,
@@ -963,6 +1275,7 @@ export const selectScenarios = (suite: string): ScenarioId[] => {
     .filter(
       (id) =>
         suite === "all" ||
+        id === suite ||
         scenarios[id].family === suite ||
         scenarios[id].coverage === suite,
     );

@@ -2,26 +2,40 @@ import { DeadlockHeroes } from "@deadlock-mods/shared";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { FileSelectorDialog } from "@/components/downloads/file-selector-dialog";
 import PageTitle from "@/components/shared/page-title";
 import { AssignModDialog } from "@/components/skins/assign-mod-dialog";
-import { HeroList, type HeroListEntry } from "@/components/skins/hero-list";
+import { HeroList } from "@/components/skins/hero-list";
+import type { HeroListEntry } from "@/components/skins/hero-list-row";
 import { HeroModGrid } from "@/components/skins/hero-mod-grid";
 import { SkinPreviewPanel } from "@/components/skins/skin-preview-panel";
+import type { SkinPreviewStatus } from "@/components/skins/skin-preview-status";
+import { SkinPreviewSwitch } from "@/components/skins/skin-preview-switch";
+import { SkinRandomizerSwitch } from "@/components/skins/skin-randomizer-switch";
 import { useHeroSelection } from "@/hooks/use-hero-selection";
 import { useIsHeroAvailable } from "@/hooks/use-player-stats";
 import useUninstall from "@/hooks/use-uninstall";
-import { groupModsByHero, type HeroModGroup } from "@/lib/mods/hero-mods";
-import { isRandomizedPool, randomizerPool } from "@/lib/mods/skin-randomizer";
+import {
+  groupModsByHero,
+  type HeroModGroup,
+  type HeroModKind,
+} from "@/lib/mods/hero-mods";
+import {
+  canRandomizeMod,
+  isRandomizedPool,
+  randomizerPool,
+} from "@/lib/mods/skin-randomizer";
 import { filterHiddenNSFWItems } from "@/lib/mods/nsfw-visibility";
 import { usePersistedStore } from "@/lib/store";
 import type { LocalMod } from "@/types/mods";
 
 const EMPTY_GROUP: HeroModGroup<LocalMod> = {
   skins: [],
+  sounds: [],
   extras: [],
   activeSkins: [],
+  activeSounds: [],
   activeExtras: [],
 };
 
@@ -46,9 +60,6 @@ const Skins = () => {
   );
   const previewEnabled = usePersistedStore(
     (state) => state.foundry3dPreviewEnabled,
-  );
-  const setPreviewEnabled = usePersistedStore(
-    (state) => state.setFoundry3dPreviewEnabled,
   );
   const randomizerEnabled = usePersistedStore(
     (state) => state.skinRandomizerEnabled,
@@ -117,11 +128,9 @@ const Skins = () => {
       const randomized = randomizerEnabled && randomizedHeroes.has(hero);
       return {
         hero,
-        modCount: group.skins.length + group.extras.length,
-        activeNames: [
-          ...(randomized ? [] : group.activeSkins),
-          ...group.activeExtras,
-        ].map((mod) => mod.name),
+        modCount:
+          group.skins.length + group.sounds.length + group.extras.length,
+        wearing: randomized ? [] : group.activeSkins.map((mod) => mod.name),
         randomized,
         // Several skins at once is only a conflict while the user expects one.
         // Several archives of one mod are not: authors often split a skin
@@ -162,6 +171,22 @@ const Skins = () => {
         : (selectedGroup.activeSkins[0]?.remoteId ?? null);
   const previewedMod =
     selectedGroup.skins.find((skin) => skin.remoteId === previewedId) ?? null;
+  const previewedInPool = previewedMod
+    ? randomizerSkins[previewedMod.remoteId] === true &&
+      canRandomizeMod(previewedMod)
+    : randomizerDefaultHeroes[effectiveHero ?? ""] === true;
+  const previewedWorn = previewedMod
+    ? selectedGroup.activeSkins.some(
+        (skin) => skin.remoteId === previewedMod.remoteId,
+      )
+    : selectedGroup.activeSkins.length === 0;
+  const previewStatus: SkinPreviewStatus = hideWornSkin
+    ? previewedInPool
+      ? "inPool"
+      : "notInPool"
+    : previewedWorn
+      ? "equipped"
+      : "notEquipped";
 
   const handlePreview = (mod: LocalMod | null) => {
     if (effectiveHero) {
@@ -171,13 +196,7 @@ const Skins = () => {
     }
   };
 
-  // Asking to see a skin in 3D is reason enough to bring the panel back.
-  const handleShowInPreview = (mod: LocalMod | null) => {
-    handlePreview(mod);
-    setPreviewEnabled(true);
-  };
-
-  const handleSelect = (mod: LocalMod | null, kind: "skin" | "extra") => {
+  const handleSelect = (mod: LocalMod | null, kind: HeroModKind) => {
     if (effectiveHero) {
       if (kind === "skin") {
         handlePreview(mod);
@@ -218,11 +237,18 @@ const Skins = () => {
   };
 
   return (
-    <div className='flex h-full w-full flex-col overflow-hidden pl-4 pr-2'>
-      <div className='mb-6'>
+    <div className='flex h-full w-full flex-col overflow-hidden pr-2 pb-4 pl-4'>
+      <div className='mb-5 flex items-end justify-between gap-4'>
         <PageTitle subtitle={t("skins.subtitle")} title={t("skins.title")} />
+        <div className='flex shrink-0 items-center gap-2'>
+          <SkinPreviewSwitch />
+          <SkinRandomizerSwitch
+            groups={groups}
+            randomizedHeroCount={randomizedHeroes.size}
+          />
+        </div>
       </div>
-      <div className='flex min-h-0 flex-1 gap-4'>
+      <div className='flex min-h-0 flex-1 gap-5'>
         <HeroList
           entries={entries}
           onSelect={setSelectedHero}
@@ -231,32 +257,26 @@ const Skins = () => {
         {effectiveHero && (
           <HeroModGrid
             disabled={busyHero !== null}
-            group={groups.get(effectiveHero) ?? EMPTY_GROUP}
-            groups={groups}
+            group={selectedGroup}
             hero={effectiveHero}
+            key={effectiveHero}
             onAssignMod={() => setAssigning(true)}
             onBrowseSkins={handleBrowseSkins}
             onDelete={handleDelete}
-            onPreview={handleShowInPreview}
             onRemove={(mod) => void remove(effectiveHero, mod)}
             onSelect={handleSelect}
-            onShowPreview={
-              previewEnabled ? undefined : () => setPreviewEnabled(true)
-            }
-            previewedId={previewedId}
-            randomizedHeroCount={randomizedHeroes.size}
           />
         )}
         {effectiveHero && previewEnabled && (
-          <SkinPreviewPanel hero={effectiveHero} mod={previewedMod} />
+          <SkinPreviewPanel
+            hero={effectiveHero}
+            mod={previewedMod}
+            onWear={() => handleSelect(previewedMod, "skin")}
+            status={previewStatus}
+            wearDisabled={busyHero !== null}
+          />
         )}
       </div>
-      <p className='shrink-0 py-3 text-muted-foreground text-xs'>
-        {t("skins.overrideFooter")}{" "}
-        <Link className='underline' to='/my-mods'>
-          {t("skins.overrideFooterLink")}
-        </Link>
-      </p>
 
       {effectiveHero && (
         <AssignModDialog

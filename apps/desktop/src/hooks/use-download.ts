@@ -1,5 +1,4 @@
 import type { ModDto } from "@deadlock-mods/shared";
-import { resolveDetectedHeroLabel } from "@deadlock-mods/hero-parser";
 import type { z } from "zod";
 import { ModDownloadDtoSchema } from "@deadlock-mods/shared";
 import { toast } from "@deadlock-mods/ui/components/sonner";
@@ -18,6 +17,16 @@ import { usePersistedStore } from "@/lib/store";
 import { findLocalMod, selectStoreFilters } from "@/lib/store/selectors";
 import { type ModDownloadItem, ModStatus } from "@/types/mods";
 import { invokeGuarded } from "@/lib/game-guard";
+import {
+  getNativeSourceMod,
+  getNativeSourceRecord,
+  isNativeSourceMod,
+  nativeModDownloads,
+  nativeSourceProvenance,
+} from "@/lib/mod-sources";
+import type { NativeSourceMod } from "@/types/generated/NativeSourceMod";
+import type { NativeSourceProvenance } from "@/types/generated/NativeSourceProvenance";
+import { nativeComponentDownloads } from "@/lib/mods/native-update-selection";
 
 type ModDownloadDto = z.infer<typeof ModDownloadDtoSchema>;
 
@@ -37,7 +46,7 @@ type QueueModDownloadOptions = {
  * own feedback.
  */
 export const queueModDownload = (
-  mod: ModDto,
+  mod: ModDto & { source?: NativeSourceProvenance },
   selectedFiles: ModDownloadItem[],
   {
     allFiles,
@@ -51,7 +60,20 @@ export const queueModDownload = (
   const { addLocalMod, setModStatus, setModProgress, setDetectedHero } =
     usePersistedStore.getState();
 
-  addLocalMod(mod, { downloads: allFiles, selectedDownloads: selectedFiles });
+  const source = mod.source
+    ? {
+        ...mod.source,
+        artifactIds: selectedFiles.flatMap((file) => {
+          const artifactId = file.url.split("/").pop();
+          return artifactId ? [decodeURIComponent(artifactId)] : [];
+        }),
+      }
+    : undefined;
+  addLocalMod(mod, {
+    downloads: allFiles,
+    selectedDownloads: selectedFiles,
+    source,
+  });
 
   // Archives install in the mod's download order, which sets the default
   // load order of their VPKs.
@@ -62,6 +84,7 @@ export const queueModDownload = (
 
   return downloadManager.addToQueue({
     ...mod,
+    source,
     downloads: orderedFiles,
     profileFolder,
     analyticsEntryPoint,
@@ -82,11 +105,7 @@ export const queueModDownload = (
 
       detectHeroForMod(mod.remoteId)
         .then((result) => {
-          setDetectedHero(
-            mod.remoteId,
-            resolveDetectedHeroLabel(result),
-            result.usesCriticalPaths,
-          );
+          setDetectedHero(mod.remoteId, result);
         })
         .catch((err) => {
           logger
@@ -112,6 +131,8 @@ export const useDownload = (
   const { t } = useTranslation();
   const { pathname } = useLocation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [nativeSelection, setNativeSelection] =
+    useState<NativeSourceMod | null>(null);
   const setModStatus = usePersistedStore((state) => state.setModStatus);
   const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
 
@@ -129,6 +150,7 @@ export const useDownload = (
     pinnedProfileFolder?: string | null,
     allFiles: ModDownloadDto[] = availableFiles,
     operationKind: "download" | "retry" = "download",
+    selectedSource?: NativeSourceProvenance,
   ) => {
     if (!mod || selectedFiles.length === 0) {
       return;
@@ -139,7 +161,15 @@ export const useDownload = (
         ? (getActiveProfile()?.folderName ?? null)
         : pinnedProfileFolder;
 
-    return queueModDownload(mod, selectedFiles, {
+    const resolvedMod = isNativeSourceMod(mod.remoteId)
+      ? (await getNativeSourceMod(mod.remoteId)).mod
+      : mod;
+    const downloadMod = selectedSource
+      ? { ...resolvedMod, source: selectedSource }
+      : localMod?.source
+        ? { ...resolvedMod, source: localMod.source }
+        : resolvedMod;
+    return queueModDownload(downloadMod, selectedFiles, {
       allFiles,
       profileFolder,
       analyticsOperationKind: operationKind,
@@ -172,7 +202,7 @@ export const useDownload = (
    * `files` lets callers that fetch the file list on click pass it straight
    * through, since the hook's `availableFiles` only catches up on the next render.
    */
-  const initiateDownload = (files: ModDownloadDto[] = availableFiles) => {
+  const initiateDownload = async (files: ModDownloadDto[] = availableFiles) => {
     if (!mod) {
       toast.error(t("downloads.retryFetchError"));
       return;
@@ -183,6 +213,14 @@ export const useDownload = (
       return;
     }
 
+    if (isNativeSourceMod(mod.remoteId)) {
+      const record = await getNativeSourceRecord(mod.remoteId);
+      if (record.listing.release?.installation.mode === "components") {
+        setNativeSelection(record);
+        return;
+      }
+    }
+
     // If only one file, download directly without showing dialog
     if (files.length === 1) {
       return downloadSelectedFiles(files, undefined, files);
@@ -190,6 +228,23 @@ export const useDownload = (
 
     // Multiple files - show selection dialog
     setIsDialogOpen(true);
+  };
+
+  const confirmNativeSelection = async (componentIds: string[]) => {
+    if (!nativeSelection?.listing.release) return;
+    const { source, listing } = nativeSelection;
+    const release = nativeSelection.listing.release;
+    const files = nativeModDownloads(source, listing);
+    const selectedFiles = nativeComponentDownloads(
+      release.installation,
+      componentIds,
+      files,
+    );
+    await downloadSelectedFiles(selectedFiles, undefined, files, "download", {
+      ...nativeSourceProvenance(source, listing),
+      componentIds,
+    });
+    setNativeSelection(null);
   };
 
   const pauseDownload = () => {
@@ -278,5 +333,8 @@ export const useDownload = (
     closeDialog: () => setIsDialogOpen(false),
     localMod,
     isDialogOpen,
+    nativeSelection,
+    confirmNativeSelection,
+    cancelNativeSelection: () => setNativeSelection(null),
   };
 };

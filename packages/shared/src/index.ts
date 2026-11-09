@@ -1,5 +1,6 @@
 export * from "./auth";
 export * from "./author-contacts";
+export * from "./embedded-video";
 export * from "./constants";
 export * from "./deadworks-registry";
 export * from "./dto/announcement.dto";
@@ -25,5 +26,6 @@ export * from "./schemas/profile.schemas";
 export * from "./schemas/profile-backup.schemas";
 export * from "./schemas/report.schemas";
 export * from "./schemas/server-browser.schemas";
+export * from "./taxonomy";
 export * from "./types/crosshair";
 export * from "./types/mod-metadata";

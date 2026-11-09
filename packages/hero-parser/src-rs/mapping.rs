@@ -111,3 +111,105 @@ pub fn lookup_hero(internal_name: &str) -> Option<&'static HeroMapping> {
     let lower = internal_name.to_lowercase();
     HERO_MAP.get(lower.as_str())
 }
+
+/// Deadlock's sound-path codename per hero. Sound mods organize their payloads
+/// under `sounds/abilities/<sound_codename>/`, and that namespace diverges from
+/// both the panorama namespace and the model folders above.
+const HERO_SOUND_CODENAMES: &[(&str, &str)] = &[
+    ("abrams", "Abrams"),
+    ("artist", "Violet"),
+    ("astro", "Holliday"),
+    ("baba", "Baba"),
+    ("bebop", "Bebop"),
+    ("bookworm", "Paige"),
+    ("chessmaster", "Solomon"),
+    ("chrono", "Paradox"),
+    ("deadpack", "Deadman Danny"),
+    ("doorman", "Doorman"),
+    ("drifter", "Drifter"),
+    ("dynamo", "Dynamo"),
+    ("familiar", "Rem"),
+    ("fathom", "Fathom"),
+    ("fencer", "Apollo"),
+    ("forge", "McGinnis"),
+    ("frank", "Victor"),
+    ("ghost", "Lady Geist"),
+    ("gigawatt", "Seven"),
+    ("haze", "Haze"),
+    ("hornet", "Vindicta"),
+    ("inferno", "Infernus"),
+    ("kali", "Kali"),
+    ("kelvin", "Kelvin"),
+    ("lash", "Lash"),
+    ("magician", "Sinclair"),
+    ("mirage", "Mirage"),
+    ("mokrill", "Mo & Krill"),
+    ("nano", "Calico"),
+    ("necro", "Graves"),
+    ("nurse", "Nurse Harrow"),
+    ("orion", "Grey Talon"),
+    ("priest", "Venator"),
+    ("punkgoat", "Billy"),
+    ("ratking", "Rat King"),
+    ("shiv", "Shiv"),
+    ("synth", "Pocket"),
+    ("tengu", "Ivy"),
+    ("tokamak", "Tokamak"),
+    ("trapper", "Trapper"),
+    ("unicorn", "Celeste"),
+    ("vampirebat", "Mina"),
+    ("viper", "Vyper"),
+    ("viscous", "Viscous"),
+    ("warden", "Warden"),
+    ("werewolf", "Silver"),
+    ("wraith", "Wraith"),
+    ("wrecker", "Wrecker"),
+    ("yamato", "Yamato"),
+];
+
+/// Legacy sound directories that still ship files, folded into the codename
+/// they ship under today (Grey Talon ships under both `orion` and `archer`).
+const LEGACY_SOUND_CODENAMES: [(&str, &str); 3] =
+    [("archer", "orion"), ("geist", "ghost"), ("pocket", "synth")];
+
+pub fn canonical_sound_codename(raw: &str) -> String {
+    let lower = raw.to_ascii_lowercase();
+    LEGACY_SOUND_CODENAMES
+        .iter()
+        .find(|(legacy, _)| *legacy == lower)
+        .map_or(lower, |(_, current)| (*current).to_string())
+}
+
+pub fn sound_codename_for_hero(hero_name: &str) -> Option<&'static str> {
+    let trimmed = hero_name.trim();
+    HERO_SOUND_CODENAMES
+        .iter()
+        .find(|(_, name)| name.eq_ignore_ascii_case(trimmed))
+        .map(|(key, _)| *key)
+}
+
+/// The hero display name behind a `sounds/abilities/<codename>/` folder.
+pub fn lookup_sound_hero(codename: &str) -> Option<&'static str> {
+    let canonical = canonical_sound_codename(codename);
+    HERO_SOUND_CODENAMES
+        .iter()
+        .find(|(key, _)| *key == canonical)
+        .map(|(_, name)| *name)
+}
+
+/// The enum key for a display name. Heroes the model table does not know yet
+/// fall back to the display name without spaces or punctuation.
+pub fn enum_key_for_display(display_name: &str) -> String {
+    HERO_MAP
+        .values()
+        .find(|hero| hero.display_name == display_name)
+        .map_or_else(
+            || {
+                display_name
+                    .chars()
+                    .filter(char::is_ascii_alphanumeric)
+                    .collect()
+            },
+            |hero| hero.enum_key.to_string(),
+        )
+}

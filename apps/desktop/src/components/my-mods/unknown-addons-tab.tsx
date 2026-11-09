@@ -1,21 +1,26 @@
 import { CheckCircle } from "@deadlock-mods/ui/icons";
+import { useTranslation } from "react-i18next";
 import type { LocalAddonInfo } from "@/types/mods";
+import type { AnalysisTarget } from "@/lib/store/slices/mods";
 import { AddonSummaryCard } from "./addon-summary-card";
 
 interface UnknownAddonsTabProps {
   unknownAddons: LocalAddonInfo[];
   onAddToLibrary: (addon: LocalAddonInfo) => void;
+  fileContext?: AnalysisTarget | null;
 }
 
 export const UnknownAddonsTab = ({
   unknownAddons,
   onAddToLibrary,
+  fileContext,
 }: UnknownAddonsTabProps) => {
+  const { t } = useTranslation();
   if (unknownAddons.length === 0) {
     return (
       <div className='flex flex-col items-center justify-center py-12 text-center'>
         <CheckCircle className='w-12 h-12 text-muted-foreground/50 mb-4' />
-        <p className='text-muted-foreground'>All addons were identified!</p>
+        <p className='text-muted-foreground'>{t("addons.noUnmatchedAddons")}</p>
       </div>
     );
   }
@@ -27,6 +32,7 @@ export const UnknownAddonsTab = ({
           key={addon.filePath}
           addon={addon}
           onAddToLibrary={onAddToLibrary}
+          fileContext={fileContext}
         />
       ))}
     </div>

@@ -55,18 +55,32 @@ describe("groupModsByHero", () => {
   });
 
   it("leaves detected extras out until they are asked for", () => {
-    const voiceLines = makeMod({
-      category: ModCategory.VOICE_LINES,
+    const weaponSounds = makeMod({
+      category: ModCategory.WEAPON_SOUNDS,
       detectedHero: "Haze",
     });
-    expect(groupModsByHero([voiceLines], options()).size).toBe(0);
+    expect(groupModsByHero([weaponSounds], options()).size).toBe(0);
 
     const group = groupModsByHero(
-      [voiceLines],
+      [weaponSounds],
       options({ includeExtras: true }),
     ).get("Haze");
-    expect(group?.extras).toEqual([voiceLines]);
+    expect(group?.extras).toEqual([weaponSounds]);
     expect(group?.skins).toEqual([]);
+  });
+
+  it("lists a sound-only mod filed under Skins as a hero sound", () => {
+    const sounds = makeMod({
+      name: "Infernus Sounds",
+      detectedHero: "Infernus",
+      detectedContent: "sound",
+      status: ModStatus.Installed,
+    });
+    const group = groupModsByHero([sounds], options()).get("Infernus");
+    expect(group?.sounds).toEqual([sounds]);
+    expect(group?.activeSounds).toEqual([sounds]);
+    expect(group?.skins).toEqual([]);
+    expect(group?.activeSkins).toEqual([]);
   });
 
   it("keeps hand-assigned extras listed with the setting off", () => {
@@ -157,7 +171,7 @@ describe("heroAssignCandidates", () => {
   });
 
   it("offers extras regardless of the grouping setting", () => {
-    const sound = makeMod({ category: ModCategory.ABILITY_SOUNDS });
+    const sound = makeMod({ category: ModCategory.WEAPON_SOUNDS });
     const candidates = heroAssignCandidates([sound], "Haze", new Set());
     expect(candidates).toHaveLength(1);
     expect(candidates[0]?.kind).toBe("extra");

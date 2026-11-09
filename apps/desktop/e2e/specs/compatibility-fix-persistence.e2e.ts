@@ -11,9 +11,11 @@ import {
   FIXES,
   NEW_MOD_FILE,
   OTHER_MOD,
+  SECOND_FIXED_MOD,
   UNRELATED_MOD,
 } from "../support/compatibility-fix-fixtures";
 import { step } from "../support/evidence";
+import { fixtureGamePaths } from "../support/gameinfo-mounts";
 import { readLifecycleState } from "../support/lifecycle-oracle";
 import { observeUntil } from "../support/observations";
 import { searchLibrary, setModEnabled } from "../support/shard-actions";
@@ -62,11 +64,7 @@ const readRepairPackage = async (world: string): Promise<RepairPackage> => {
   return {
     searchPath,
     packageExists,
-    inGameinfo: gameinfo
-      .split("\n")
-      .some(
-        (line) => line.trim().split(/\s+/).join(" ") === `Game ${searchPath}`,
-      ),
+    inGameinfo: fixtureGamePaths(gameinfo).includes(searchPath),
   };
 };
 
@@ -187,6 +185,36 @@ const loadOtherModFirst = async (world: string) => {
   );
 };
 
+// Fixes a second mod, then switches it back to its original files as the
+// health dialog's "Use original files" does, which deletes the package and
+// rebuilds it for the first mod alone.
+const fixThenRestoreSecondMod = async (world: string) => {
+  const result = await browser.execute(
+    (folder, modId) =>
+      // oxlint-disable-next-line no-underscore-dangle -- Tauri's injected IPC global.
+      window.__TAURI_INTERNALS__.invoke<FixModsResult>("fix_mods", {
+        profileFolder: folder,
+        modIds: [modId],
+      }),
+    FIXES.folder,
+    SECOND_FIXED_MOD,
+  );
+  assert.equal(result.status, "applied");
+  await browser.execute(
+    (folder, modId) =>
+      // oxlint-disable-next-line no-underscore-dangle -- Tauri's injected IPC global.
+      window.__TAURI_INTERNALS__.invoke<void>("set_mod_compatibility_for_mod", {
+        modId,
+        enabled: false,
+        profileFolder: folder,
+      }),
+    FIXES.folder,
+    SECOND_FIXED_MOD,
+  );
+  const manifest = await readManifest(world);
+  assert.equal(manifest.mods[SECOND_FIXED_MOD].compatibilityEnabled, false);
+};
+
 describe("compatibility fix persistence", () => {
   it("keeps a fixed mod's repairs through library changes", async () => {
     const runtime = await startApplication();
@@ -234,6 +262,10 @@ describe("compatibility fix persistence", () => {
     await expectRepairsKept("uninstalling a mod");
     await step("reorder unrelated mods", () => loadOtherModFirst(world));
     await expectRepairsKept("reordering unrelated mods");
+    await step("fix a second mod, then use its original files", () =>
+      fixThenRestoreSecondMod(world),
+    );
+    await expectRepairsKept("another mod going back to its original files");
 
     await closeApplication(world, runtime.processId);
   });

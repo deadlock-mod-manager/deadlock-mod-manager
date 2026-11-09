@@ -17,7 +17,8 @@ pre-commit:
         - "*.ts"
         - "*.tsx"
       stage_fixed: true
-    - run: pnpm knip:check
+    - name: knip
+      run: pnpm knip:check
       glob:
         - "*.js"
         - "*.jsx"
@@ -50,3 +51,8 @@ pre-commit:
         - "**/*.rs"
         - "**/Cargo.toml"
       root: packages/deadlock-match-sync
+    - run: cargo clippy --all-targets
+      glob:
+        - "**/*.rs"
+        - "**/Cargo.toml"
+      root: packages/deadlock-server-picker

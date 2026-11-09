@@ -1,80 +1,13 @@
 import { Input } from "@deadlock-mods/ui/components/input";
-import { TriangleAlert } from "@deadlock-mods/ui/icons";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { HeroIcon } from "@/components/heroes/hero-icon";
-import { cn } from "@/lib/utils";
-
-export interface HeroListEntry {
-  hero: string;
-  /** Skins and extras together - everything listed under the hero. */
-  modCount: number;
-  activeNames: string[];
-  /** The skin is rolled on launch, so the row names no skin. */
-  randomized: boolean;
-  conflicted: boolean;
-}
-
-interface HeroListRowProps {
-  entry: HeroListEntry;
-  isSelected: boolean;
-  onSelect: (hero: string) => void;
-}
-
-const HeroListRow = ({ entry, isSelected, onSelect }: HeroListRowProps) => {
-  const { t } = useTranslation();
-
-  const subtitle = entry.conflicted
-    ? t("skins.conflict")
-    : entry.randomized
-      ? t("skins.randomizer.listSubtitle")
-      : entry.activeNames.length > 0
-        ? entry.activeNames.join(", ")
-        : t("skins.default");
-
-  return (
-    <button
-      className={cn(
-        "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-accent",
-        isSelected && "bg-accent",
-      )}
-      onClick={() => onSelect(entry.hero)}
-      type='button'>
-      <HeroIcon
-        className={cn(
-          "h-9 w-9 rounded-full",
-          // Dim only the portrait so heroes without skins still read as
-          // selectable rows.
-          entry.modCount === 0 && "opacity-50 grayscale",
-        )}
-        hero={entry.hero}
-      />
-      <div className='min-w-0 flex-1'>
-        <div className='truncate font-medium text-sm'>{entry.hero}</div>
-        <div
-          className={cn(
-            "flex items-center gap-1 text-muted-foreground text-xs",
-            entry.conflicted && "text-destructive",
-          )}>
-          {entry.conflicted && <TriangleAlert className='h-3 w-3 shrink-0' />}
-          <span className='truncate'>
-            {entry.modCount === 0 ? t("skins.noSkins") : subtitle}
-          </span>
-        </div>
-      </div>
-      {entry.modCount > 0 && (
-        <span className='shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-muted-foreground text-xs tabular-nums'>
-          <span className='sr-only'>
-            {t("skins.modCount", { count: entry.modCount })}
-          </span>
-          <span aria-hidden='true'>{entry.modCount}</span>
-        </span>
-      )}
-    </button>
-  );
-};
+import {
+  type HeroListEntry,
+  HeroListRow,
+} from "@/components/skins/hero-list-row";
 
 interface HeroListProps {
+  /** Heroes with mods first, then the rest. */
   entries: HeroListEntry[];
   selectedHero: string | null;
   onSelect: (hero: string) => void;
@@ -91,22 +24,29 @@ export const HeroList = ({
   const visible = entries.filter((entry) =>
     entry.hero.toLowerCase().includes(query.trim().toLowerCase()),
   );
+  const firstUnmodded = visible.findIndex((entry) => entry.modCount === 0);
 
   return (
-    <div className='flex h-full w-64 shrink-0 flex-col gap-2'>
+    <div className='flex h-full w-64 shrink-0 flex-col gap-2.5 rounded-xl border bg-card p-2.5'>
       <Input
         onChange={(e) => setQuery(e.target.value)}
         placeholder={t("skins.searchPlaceholder")}
         value={query}
       />
-      <div className='flex-1 overflow-y-auto'>
-        {visible.map((entry) => (
-          <HeroListRow
-            entry={entry}
-            isSelected={entry.hero === selectedHero}
-            key={entry.hero}
-            onSelect={onSelect}
-          />
+      <div className='flex flex-1 flex-col gap-0.5 overflow-y-auto'>
+        {visible.map((entry, index) => (
+          <Fragment key={entry.hero}>
+            {index === firstUnmodded && index > 0 && (
+              <div className='shrink-0 px-2.5 pt-3.5 pb-1.5 font-semibold text-[11px] text-muted-foreground/80 uppercase tracking-[0.07em]'>
+                {t("skins.noModsGroup")}
+              </div>
+            )}
+            <HeroListRow
+              entry={entry}
+              isSelected={entry.hero === selectedHero}
+              onSelect={onSelect}
+            />
+          </Fragment>
         ))}
       </div>
     </div>

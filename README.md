@@ -243,21 +243,21 @@ We're actively working to make Deadlock Mod Manager accessible to users worldwid
 | 🇺🇸 **English** (Default) | English | ✅ Complete | - |
 | 🇧🇬 **Bulgarian** | Български | 🚧 3% | [macchiako](https://discordapp.com/users/macchiako./) |
 | 🇧🇾 **Belarusian** | Беларуская | 🚧 In Progress | [drodn](https://discordapp.com/users/drodn/) |
-| 🇩🇪 **German** | Deutsch | 🚧 26% | [skeptic](https://github.com/Skeptic-systems) |
-| 🇫🇷 **French** | Français | 🚧 24% | [stormix](https://github.com/stormix) |
-| 🇷🇺 **Russian** | Русский | 🚧 19% | [awkward_akio](https://discordapp.com/users/awkward_akio/), [Thyron](https://github.com/baka-thyron) |
+| 🇩🇪 **German** | Deutsch | 🚧 24% | [skeptic](https://github.com/Skeptic-systems) |
+| 🇫🇷 **French** | Français | 🚧 22% | [stormix](https://github.com/stormix) |
+| 🇷🇺 **Russian** | Русский | 🚧 18% | [awkward_akio](https://discordapp.com/users/awkward_akio/), [Thyron](https://github.com/baka-thyron) |
 | 🇸🇦 **Arabic** | العربية | 🚧 7% | [archeroflegend](https://discordapp.com/users/archeroflegend/) |
-| 🇵🇱 **Polish** | Polski | 🚧 35% | [_manio](https://discordapp.com/users/_manio/) |
+| 🇵🇱 **Polish** | Polski | 🚧 33% | [_manio](https://discordapp.com/users/_manio/) |
 | 🇨🇭 **Swiss German** | Schwiizerdütsch | 🚧 3% | [degoods_deedos](https://discordapp.com/users/degoods_deedos/) |
 | 🇹🇭 **Thai** | ไทย | 🚧 5% | [altqx](https://discordapp.com/users/altq/) |
-| 🇹🇷 **Turkish** | Türkçe | 🚧 89% | [hollmmes](https://discordapp.com/users/hollmmes/), [kenanala](https://discordapp.com/users/kenanala/) |
-| 🇨🇳 **Chinese (Simplified)** | 简体中文 | 🚧 30% | [待到春深方挽柳](mailto:sfk_04@qq.com) |
+| 🇹🇷 **Turkish** | Türkçe | 🚧 81% | [hollmmes](https://discordapp.com/users/hollmmes/), [kenanala](https://discordapp.com/users/kenanala/) |
+| 🇨🇳 **Chinese (Simplified)** | 简体中文 | 🚧 27% | [待到春深方挽柳](mailto:sfk_04@qq.com) |
 | 🇹🇼 **Chinese (Traditional)** | 繁體中文 | ✅ Complete | [白雲](https://github.com/phillychi3) |
 | 🇪🇸 **Spanish** | Español | ✅ Complete | [chikencio](https://discordapp.com/users/chikencio/) |
-| 🇧🇷 **Portuguese (Brazil)** | Português (Brasil) | 🚧 25% | [meneee](https://discordapp.com/users/meneee/) |
-| 🇮🇹 **Italian** | Italiano | 🚧 5% | [Constrat](https://github.com/Constrat) |
-| 🇯🇵 **Japanese** | 日本語 | 🚧 7% | [hiropiki](https://discordapp.com/users/hiropiki/) |
-| 🇰🇷 **Korean** | 한국어 | 🚧 11% | [Quinnly_IRL](https://discordapp.com/users/Quinnly_IRL/) |
+| 🇧🇷 **Portuguese (Brazil)** | Português (Brasil) | 🚧 24% | [meneee](https://discordapp.com/users/meneee/) |
+| 🇮🇹 **Italian** | Italiano | 🚧 4% | [Constrat](https://github.com/Constrat) |
+| 🇯🇵 **Japanese** | 日本語 | 🚧 6% | [hiropiki](https://discordapp.com/users/hiropiki/) |
+| 🇰🇷 **Korean** | 한국어 | 🚧 10% | [Quinnly_IRL](https://discordapp.com/users/Quinnly_IRL/) |
 
 <!-- LANGUAGE_TABLE_END -->
 </details>
@@ -321,6 +321,7 @@ This project was only possible thanks to the amazing open source community, espe
 - **[Jelloge/Deadlock-Rich-Presence](https://github.com/Jelloge/Deadlock-Rich-Presence)** - Discord Game Presence was only possible thanks to this project and its work mapping Deadlock console log events for rich presence.
 - **[vpkmerge](https://github.com/Slush97/vpkmerge)** - Source 2 texture, KV3 and sound codecs used by the Mod Foundry (MIT).
 - **[ValveResourceFormat](https://github.com/ValveResourceFormat/ValveResourceFormat)** - Source 2 resource format research the Foundry's codecs and model preview are adapted from (MIT).
+- **[FN-FAL113/server-picker-x](https://github.com/FN-FAL113/server-picker-x)** - Blocks Steam Datagram Relay locations with firewall rules. Our Server Picker is built on its approach.
 - **[RapidRAW](https://github.com/CyberTimon/RapidRAW/)** - A Tauri project that inspired our CI pipelines, Linux optimizations, and packaging/distribution approach. Thank you for sharing your setup and best practices.
 
 <details>

@@ -55,6 +55,22 @@ export type SettingsSearchResult = {
 
 export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
   {
+    id: "mod-sources",
+    tab: "mods",
+    titleKey: "modSources.title",
+    descriptionKey: "modSources.description",
+    settings: [
+      {
+        titleKey: "modSources.add",
+        descriptionKey: "modSources.addDescription",
+      },
+      {
+        titleKey: "modSources.remove",
+        descriptionKey: "modSources.removeDescription",
+      },
+    ],
+  },
+  {
     tab: "launch-options",
     titleKey: "settings.launchOptions",
     descriptionKey: "settings.launchOptionsDescription",
@@ -87,8 +103,8 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
       { titleKey: "game.restoreBackup" },
       { titleKey: "game.resetToVanilla" },
       {
-        titleKey: "settings.autoResetGameinfo",
-        descriptionKey: "settings.autoResetGameinfoDescription",
+        titleKey: "settings.removeDmmPathsOnExit",
+        descriptionKey: "settings.removeDmmPathsOnExitDescription",
       },
       { titleKey: "game.validateConfiguration" },
     ],
@@ -357,6 +373,10 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
       {
         titleKey: "gamePresence.title",
         descriptionKey: "gamePresence.description",
+      },
+      {
+        titleKey: "gamePresence.hidePartySize",
+        descriptionKey: "gamePresence.hidePartySizeDescription",
       },
       {
         titleKey: "gamePresence.templatesTitle",

@@ -47,6 +47,16 @@ export function compareFindings(findings, baseline) {
   };
 }
 
+/**
+ * Parallel sessions share one checkout, so another task's untracked files
+ * would otherwise fail every commit. Findings in tracked files still count.
+ * @param {string[]} findings @param {string[]} untrackedFiles
+ */
+export function dropUntrackedFindings(findings, untrackedFiles) {
+  const untracked = new Set(untrackedFiles);
+  return findings.filter((key) => !untracked.has(JSON.parse(key)[1]));
+}
+
 /** @param {import("node:child_process").SpawnSyncReturns<string>} result */
 export function readKnipResult(result) {
   if (result.error) throw result.error;
@@ -61,7 +71,14 @@ async function main() {
   const args = process.argv.slice(2);
   if (args.some((arg) => arg !== "--update-baseline") || args.length > 1)
     throw new Error("Usage: node scripts/check-knip.mjs [--update-baseline]");
-  const findings = readKnipResult(
+  const untracked = spawnSync(
+    "git",
+    ["ls-files", "--others", "--exclude-standard"],
+    { cwd: root, encoding: "utf8", maxBuffer: 32 * 1024 * 1024 },
+  );
+  if (untracked.status !== 0)
+    throw new Error(`git ls-files failed: ${untracked.stderr}`);
+  const allFindings = readKnipResult(
     spawnSync(
       process.execPath,
       [
@@ -74,6 +91,10 @@ async function main() {
       ],
       { cwd: root, encoding: "utf8", maxBuffer: 32 * 1024 * 1024 },
     ),
+  );
+  const findings = dropUntrackedFindings(
+    allFindings,
+    untracked.stdout.split("\n").filter(Boolean),
   );
   if (args.includes("--update-baseline")) {
     await writeFile(baselinePath, findings.join("\n") + "\n");

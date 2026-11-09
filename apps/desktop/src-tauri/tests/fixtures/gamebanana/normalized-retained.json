@@ -5,6 +5,10 @@
     "description": "Gives drifter a pink retexture and pink vfx",
     "author": "Seaotterdawn",
     "category": "Skins",
+    "categoryPath": [
+      { "key": "mod:33295", "name": "Skins" },
+      { "key": "mod:41492", "name": "Drifter" }
+    ],
     "hero": "Drifter",
     "downloadCount": 2,
     "likes": 0,
@@ -21,6 +25,11 @@
     "description": "A Nurse Harrow skin filed under the Faithful/Vanilla+ skin subcategory",
     "author": "Spareyote",
     "category": "Skins",
+    "categoryPath": [
+      { "key": "mod:33295", "name": "Skins" },
+      { "key": "mod:49633", "name": "Nurse Harrow" },
+      { "key": "mod:50598", "name": "Faithful/Vanilla+" }
+    ],
     "hero": "Nurse Harrow",
     "downloadCount": 1295,
     "likes": 27,
@@ -37,6 +46,7 @@
     "description": "redone for the intro edit",
     "author": "suckiez",
     "category": "Abilities",
+    "categoryPath": [{ "key": "sound:6270", "name": "Abilities" }],
     "hero": null,
     "downloadCount": 0,
     "likes": 0,

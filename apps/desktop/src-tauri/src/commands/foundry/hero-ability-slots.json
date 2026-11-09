@@ -919,11 +919,6 @@
       }
     }
   },
-  "legacy": {
-    "archer": "orion",
-    "geist": "ghost",
-    "pocket": "synth"
-  },
   "curation": {
     "magician": {
       "animalcurse": 3

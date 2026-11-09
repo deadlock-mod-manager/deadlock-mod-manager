@@ -1,4 +1,5 @@
 use super::normalize_compiled_path;
+use crate::preview_report::PreviewIssueKind;
 use crate::vpk_extract::VpkArchive;
 use crate::{
     DecodedTexture, PreviewTexture, Resource, VtexFormat, VtexHeader, encode_png_bytes, vmesh,
@@ -6,18 +7,65 @@ use crate::{
 
 const PREVIEW_TEXTURE_SIDE: u32 = 1024;
 
+pub(super) fn report_texture_failure(archive: &VpkArchive, path: &str, resource: &Resource) {
+    let count = resource
+        .block_bytes("DATA")
+        .and_then(|data| data.get(36..40))
+        .map(|bytes| u32::from_le_bytes(bytes.try_into().unwrap()));
+    if count.is_none_or(|count| count as usize > resource.data.len() / 12) {
+        archive.record_preview_error(
+            path,
+            &crate::Source2Error::Resource("Invalid texture metadata".into()),
+        );
+        return;
+    }
+    match VtexHeader::parse(resource) {
+        Err(error) => archive.record_preview_error(path, &error),
+        Ok(header) if preview_dimensions(&header).is_some() => {
+            // A supported layout that failed decoding has invalid pixel or mip data.
+            let detail = crate::Source2Error::Decode(
+                "Texture pixel payload or mip metadata could not be decoded".into(),
+            );
+            archive.record_preview_error(path, &detail);
+        }
+        Ok(_) => archive.record_preview_issue(
+            path,
+            PreviewIssueKind::Unsupported,
+            "Texture layout or encoding is not supported by the preview",
+        ),
+    }
+}
+
+pub(super) fn load_preview_resource(archive: &VpkArchive, path: &str) -> Option<Resource> {
+    let bytes = archive
+        .extract_entry_limited(path, 128 * 1024 * 1024)
+        .ok()?;
+    let resource = preview_resource(bytes);
+    if resource.is_none() {
+        archive.record_preview_error(
+            path,
+            &crate::Source2Error::Resource("Invalid resource header or block table".into()),
+        );
+    }
+    resource
+}
+
 pub(super) fn decode_texture_preview(
     archive: &VpkArchive,
     texture_path: &str,
     material_path: Option<&str>,
 ) -> Option<PreviewTexture> {
-    let resource = preview_resource(archive.extract_entry(texture_path).ok()?)?;
-    decode_texture_preview_resource(
+    let resource = load_preview_resource(archive, texture_path)?;
+    let texture = decode_texture_preview_resource(
         texture_path.to_string(),
         material_path.map(str::to_string),
         &resource,
         true,
-    )
+    );
+    if texture.is_none() {
+        report_texture_failure(archive, texture_path, &resource);
+    }
+    texture
 }
 
 pub(super) fn decode_texture_preview_resource(
@@ -51,6 +99,8 @@ pub(super) fn decode_texture_preview_resource(
         emissive_factor: None,
         emissive_strength: 1.0,
         outline: None,
+        source2_effect: None,
+        effect_mask_png: None,
     })
 }
 
@@ -92,13 +142,15 @@ pub(super) fn preview_resource(bytes: Vec<u8>) -> Option<Resource> {
 
 pub(super) fn preview_dimensions(header: &VtexHeader) -> Option<(u32, u32)> {
     // Embedded images and non-2D layouts need their own preview decoding path.
-    if matches!(
-        header.format,
-        VtexFormat::PngRgba8888
-            | VtexFormat::JpegRgba8888
-            | VtexFormat::PngDxt5
-            | VtexFormat::JpegDxt5
-    ) || header.num_mip_levels == 0
+    if header.format.mip_byte_size(1, 1).is_err()
+        || matches!(
+            header.format,
+            VtexFormat::PngRgba8888
+                | VtexFormat::JpegRgba8888
+                | VtexFormat::PngDxt5
+                | VtexFormat::JpegDxt5
+        )
+        || header.num_mip_levels == 0
         || header.num_mip_levels > 16
         || header.width == 0
         || header.height == 0

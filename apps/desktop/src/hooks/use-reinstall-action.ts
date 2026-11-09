@@ -8,6 +8,7 @@ import { isDownloadInProgress } from "@/lib/download/status";
 import { getErrorMessage } from "@/lib/errors";
 import { createLogger } from "@/lib/logger";
 import { isLocalMod } from "@/lib/mods/installed-helpers";
+import { isNativeSourceMod } from "@/lib/mod-sources";
 import { usePersistedStore } from "@/lib/store";
 import { type LocalMod, ModStatus } from "@/types/mods";
 
@@ -36,7 +37,7 @@ export const useReinstallAction = (mod: LocalMod) => {
   const isBusy = isReinstalling || BUSY_STATUSES.has(mod.status);
   // A local mod has no source to download from, so a reinstall would only
   // delete it.
-  const canReinstall = !isLocalMod(mod);
+  const canReinstall = !isLocalMod(mod) && !isNativeSourceMod(mod.remoteId);
 
   const reinstall = useCallback(async () => {
     if (isBusy || !canReinstall) {
@@ -59,17 +60,26 @@ export const useReinstallAction = (mod: LocalMod) => {
       return;
     }
 
-    if (hasDownloadStatus) {
-      // Nothing is downloading it, so the status is stale, and it would reject
-      // the move back to Downloading.
-      usePersistedStore
-        .getState()
-        .setModStatus(mod.remoteId, ModStatus.FailedToDownload);
-    }
-
     setStep("purging");
     try {
-      const result = await reinstallMod(mod, { onStep: setStep });
+      const result = await reinstallMod(mod, {
+        onStep: (next) => {
+          if (
+            next === "downloading" &&
+            hasDownloadStatus &&
+            !downloadManager.isQueued(mod.remoteId)
+          ) {
+            // A download status with no download behind it is stale and blocks
+            // the move back to Downloading. It's cleared here rather than up
+            // front because the purge can fail, or wait on a prompt while a
+            // download starts.
+            usePersistedStore
+              .getState()
+              .setModStatus(mod.remoteId, ModStatus.FailedToDownload);
+          }
+          setStep(next);
+        },
+      });
 
       switch (result.outcome) {
         case "restored":
@@ -91,8 +101,8 @@ export const useReinstallAction = (mod: LocalMod) => {
           break;
       }
     } catch (error) {
-      // Thrown when the reinstall was stopped before it could touch anything,
-      // a guard block being the usual reason. The mod is left as it was.
+      // The old files couldn't be removed, usually because the game guard
+      // blocked it or a file is read-only. The mod is left as it was.
       logger.withError(error).warn("Reinstall aborted");
       toast.error(
         t("reinstall.failedWithReason", {

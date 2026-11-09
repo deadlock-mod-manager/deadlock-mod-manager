@@ -1,10 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { MatchSyncEnabledNote } from "@/components/stats/match-sync-enabled-note";
 import { MatchSyncHint } from "@/components/stats/match-sync-hint";
-import { PatronHint } from "@/components/stats/patron-hint";
 import { useMissingLocalMatches } from "@/hooks/use-live-match";
 import { useMatchSync } from "@/hooks/use-match-sync";
-import { usePersistedStore } from "@/lib/store";
 
 /** Long enough to read the confirmation, short enough not to linger. */
 const ENABLED_NOTE_MS = 5000;
@@ -15,20 +13,13 @@ interface StatsHintsProps {
 }
 
 /**
- * Which nudge the Stats page shows, if any. One at a time and the free,
- * actionable one first. Owning the decision here keeps the page itself from knowing
- * anything about match sync or Patreon.
+ * Which nudge the Stats page shows, if any. One at a time. Owning the decision here
+ * keeps the page itself from knowing anything about match sync.
  */
 export const StatsHints = ({ apiMatchIds }: StatsHintsProps) => {
   const [syncHintDismissed, setSyncHintDismissed] = useState(false);
   const [justEnabled, setJustEnabled] = useState(false);
   const wasDisabled = useRef(false);
-  const patronHintDismissed = usePersistedStore(
-    (state) => state.patronHintDismissed,
-  );
-  const dismissPatronHint = usePersistedStore(
-    (state) => state.dismissPatronHint,
-  );
 
   const { status } = useMatchSync();
   const enabled = status?.enabled;
@@ -71,10 +62,6 @@ export const StatsHints = ({ apiMatchIds }: StatsHintsProps) => {
 
   if (justEnabled) {
     return <MatchSyncEnabledNote />;
-  }
-
-  if (!patronHintDismissed) {
-    return <PatronHint onDismiss={dismissPatronHint} />;
   }
 
   return null;

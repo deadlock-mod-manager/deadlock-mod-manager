@@ -12,8 +12,12 @@ import { MOD_PATHS_KEY } from "@/hooks/use-game-config-alert";
 import { useCompatibilityReview } from "@/components/providers/compatibility-review";
 import { stopHeroDetection } from "@/hooks/use-hero-detection";
 import { useLaunchFixes } from "@/hooks/use-launch-fixes";
-import { useSkinRandomizer } from "@/hooks/use-skin-randomizer";
+import {
+  launchRandomizerStep,
+  useLaunchRandomizer,
+} from "@/hooks/use-launch-randomizer";
 import { restoreProfileGameinfo } from "@/lib/gameinfo";
+import { pauseGameinfoAutoReset } from "@/lib/gameinfo-auto-reset";
 import { getLaunchErrorMessage } from "@/lib/launch-error";
 import { type LaunchStep, useLaunchProgress } from "@/lib/launch-progress";
 import { launchWithCompatibilityReview } from "@/lib/launch-with-compatibility-review";
@@ -50,12 +54,13 @@ export const useLaunch = () => {
   const queryClient = useQueryClient();
   const confirm = useConfirm();
   const startGame = useStartGame();
-  const { randomizeSkins } = useSkinRandomizer();
+  const { randomize } = useLaunchRandomizer();
   const reviewCompatibility = useCompatibilityReview();
   const prepareModFixes = useLaunchFixes();
   const {
     begin: beginLaunch,
     start: startProgress,
+    setModCount,
     advance,
     clear: clearProgress,
   } = useLaunchProgress();
@@ -124,10 +129,11 @@ export const useLaunch = () => {
       launch_mode: vanilla ? "vanilla" : "modded",
     });
     beginLaunch();
+    const resumeAutoReset = pauseGameinfoAutoReset();
     try {
       await checkMapCommandInAutoexec();
       await disableInstalledMapMods();
-      const modCount = vanilla
+      let modCount = vanilla
         ? 0
         : usePersistedStore.getState().getEnabledModsCount();
       const backendSteps: LaunchStep[] = vanilla
@@ -138,15 +144,18 @@ export const useLaunch = () => {
             "writingSearchPaths",
             ...BACKEND_TAIL,
           ];
-      const randomizesSkins =
-        !vanilla && usePersistedStore.getState().skinRandomizerEnabled;
+      // A vanilla launch loads no mods, so there is nothing to roll.
+      const randomizerStep = vanilla
+        ? null
+        : launchRandomizerStep(usePersistedStore.getState());
       startProgress(
-        randomizesSkins ? ["randomizingSkins", ...backendSteps] : backendSteps,
+        randomizerStep ? [randomizerStep, ...backendSteps] : backendSteps,
         modCount,
       );
-      // A vanilla launch loads no mods, so there is nothing to dress up.
-      if (!vanilla) {
-        await randomizeSkins();
+      if (randomizerStep) {
+        await randomize();
+        modCount = usePersistedStore.getState().getEnabledModsCount();
+        setModCount(modCount);
       }
 
       const activeProfile = getActiveProfile();
@@ -168,9 +177,6 @@ export const useLaunch = () => {
 
       stopHeroDetection();
 
-      const unlistenReset = await listen("gameinfo-auto-reset", () => {
-        toast.info(t("common.gameinfoAutoReset"));
-      });
       const unlistenProgress = await listen<LaunchStep>(
         "launch-progress",
         (event) => advance(event.payload),
@@ -201,7 +207,6 @@ export const useLaunch = () => {
           vanilla,
         );
       } finally {
-        unlistenReset();
         unlistenProgress();
       }
       if (!launched) {
@@ -256,6 +261,8 @@ export const useLaunch = () => {
           t("errors.genericMessage"),
         ),
       );
+    } finally {
+      resumeAutoReset();
     }
   };
 

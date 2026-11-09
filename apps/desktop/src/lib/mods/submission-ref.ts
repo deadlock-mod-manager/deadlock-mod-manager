@@ -14,6 +14,11 @@ const SLUG_PREFIX: Record<SubmissionType, string> = {
   wip: "wip-",
 };
 const PREFIXED_TYPES = ["sound", "wip"] as const;
+const GAMEBANANA_SECTION = {
+  mod: "mods",
+  sound: "sounds",
+  wip: "wips",
+} satisfies Record<SubmissionType, string>;
 
 /** Parses numeric Mod IDs, snd- Sound IDs, wip- WIP IDs, or local- UUIDs; returns null for invalid slugs. */
 export function parseSubmissionSlug(slug: string): SubmissionRef | null {
@@ -84,6 +89,14 @@ export function extractSubmissionSlugFromFilename(
   if (separatorIndex < 1) return null;
 
   const slug = basename.slice(0, separatorIndex);
+  if (/^source-[a-f0-9]{64}$/.test(slug)) return slug;
   const submission = parseSubmissionSlug(slug);
   return submission ? serializeSubmissionRef(submission) : null;
+}
+
+/** Returns the GameBanana page for a slug, or null for local mods and invalid slugs, which have none. */
+export function gameBananaPageUrl(slug: string): string | null {
+  const submission = parseSubmissionSlug(slug);
+  if (submission?.provider !== "gamebanana") return null;
+  return `https://gamebanana.com/${GAMEBANANA_SECTION[submission.submissionType]}/${submission.submissionId}`;
 }

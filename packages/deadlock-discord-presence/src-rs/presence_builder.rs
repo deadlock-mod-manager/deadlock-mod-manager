@@ -34,9 +34,8 @@ pub fn build_presence(
     let mut start_timestamp: Option<i64> = None;
     let party_max = state.match_mode.max_party_size();
     let party_count = state.party_size.min(party_max);
-    let party_size = state
-        .in_party()
-        .then_some([party_count as i32, party_max as i32]);
+    let show_party_size = state.in_party() && !config.hide_party_size;
+    let party_size = show_party_size.then_some([party_count as i32, party_max as i32]);
 
     if hero_display.is_some() {
         small_image_key = Some(LOGO_ASSET.to_string());
@@ -69,7 +68,7 @@ pub fn build_presence(
 
         GamePhase::PartyHideout => {
             details = Some(hero_presence());
-            state_text = Some(format!("Party of {party_count}"));
+            state_text = show_party_size.then(|| format!("Party of {party_count}"));
             small_image_key = None;
             small_image_text = None;
             &config.templates.party_hideout
@@ -77,7 +76,7 @@ pub fn build_presence(
 
         GamePhase::InQueue => {
             details = Some("Looking for Match...".to_string());
-            if state.in_party() {
+            if show_party_size {
                 state_text = Some(format!("In Queue {party_count}"));
             }
             &config.templates.in_queue
@@ -85,7 +84,7 @@ pub fn build_presence(
 
         GamePhase::MatchIntro | GamePhase::InMatch => {
             let mode_str = state.match_mode.display_text();
-            if state.in_party() {
+            if show_party_size {
                 details = if let Some(ref hero) = hero_display {
                     Some(format!(" {mode_str} \u{00b7} {hero}"))
                 } else {
@@ -317,6 +316,25 @@ mod tests {
 
         assert_eq!(presence.party_size, Some([4, 4]));
         assert_eq!(presence.state.as_deref(), Some("Party of 4"));
+    }
+
+    #[test]
+    fn hides_party_size_in_a_party_match_when_asked() {
+        let hero_store = HeroDataStore::new(Path::new("."));
+        let config = PresenceBuildConfig {
+            hide_party_size: true,
+            ..Default::default()
+        };
+        let mut state = GameState::new();
+        state.set_hero("abrams");
+        state.set_party_size(3);
+        state.start_match(MatchMode::Ranked);
+
+        let presence =
+            build_presence(&state, &hero_store, &config).expect("presence should be built");
+
+        assert_eq!(presence.party_size, None);
+        assert_eq!(presence.state.as_deref(), Some("Playing as Abrams"));
     }
 
     #[test]

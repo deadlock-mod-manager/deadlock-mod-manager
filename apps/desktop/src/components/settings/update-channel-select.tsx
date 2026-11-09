@@ -8,14 +8,17 @@ import {
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
+import { platform } from "@tauri-apps/plugin-os";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { HintAnchor } from "@/components/feature-hints/hint-anchor";
 import { SettingRow } from "@/components/settings/setting-row";
+import { UpdateChannelNotes } from "@/components/settings/update-channel-notes";
 import { usePersistedStore } from "@/lib/store";
 
 const UPDATE_CHANNEL_QUERY_KEY = ["update-channel"] as const;
 const DESCRIPTION_ID = "settings-update-channel-description";
+const NOTES_ID = "settings-update-channel-notes";
 
 export const UpdateChannelSelect = () => {
   const { t } = useTranslation();
@@ -45,6 +48,9 @@ export const UpdateChannelSelect = () => {
     <SettingRow
       description={t("settings.updateChannelDescription")}
       descriptionId={DESCRIPTION_ID}
+      notes={
+        <UpdateChannelNotes id={NOTES_ID} windows={platform() === "windows"} />
+      }
       title={t("settings.updateChannel")}>
       <Select
         onOpenChange={(nextOpen) => {
@@ -60,9 +66,9 @@ export const UpdateChannelSelect = () => {
           hintId='nightly-channel'
           onShowMe={() => setOpen(true)}>
           <SelectTrigger
-            aria-describedby={DESCRIPTION_ID}
+            aria-describedby={`${DESCRIPTION_ID} ${NOTES_ID}`}
             aria-label={t("settings.updateChannel")}
-            className='w-36'>
+            className='w-40 normal-case'>
             <SelectValue />
           </SelectTrigger>
         </HintAnchor>

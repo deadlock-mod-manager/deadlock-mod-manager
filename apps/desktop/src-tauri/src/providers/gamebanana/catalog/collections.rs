@@ -717,6 +717,7 @@ mod tests {
       description: String::new(),
       profile_url: format!("https://gamebanana.com/mods/{id}"),
       category: "Skins".to_string(),
+      category_path: Vec::new(),
       hero: None,
       is_audio: false,
       is_map: false,
@@ -737,6 +738,7 @@ mod tests {
       tags: Vec::new(),
       development_state: None,
       completion_percentage: None,
+      videos: None,
     };
     let records = (1..=6)
       .map(|id| {

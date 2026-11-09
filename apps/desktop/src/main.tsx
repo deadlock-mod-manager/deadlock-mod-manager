@@ -27,6 +27,7 @@ import ExternalPluginPage from "./pages/external-plugin";
 import PluginEntry from "./pages/plugin";
 import ManagePlugins from "./pages/plugins-manage";
 import Servers from "./pages/servers";
+import ServerPicker from "./pages/server-picker";
 import CustomSettings from "./pages/settings";
 import Skins from "./pages/skins";
 import Splash from "./pages/splash";
@@ -110,6 +111,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
               <Route element={<AddMods />} path='/add-mods' />
               <Route element={<Downloads />} path='/downloads' />
               <Route element={<Servers />} path='/servers' />
+              <Route element={<ServerPicker />} path='/server-picker' />
               <Route element={<CustomSettings />} path='/settings' />
               <Route element={<Contributors />} path='/contributors' />
               <Route element={<Developer />} path='/developer' />

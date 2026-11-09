@@ -1,19 +1,18 @@
-import { tierInfo } from "@/lib/performance/scale";
 import { usePersistedStore } from "@/lib/store";
 import type { DesiredOverlay } from "@/types/generated/DesiredOverlay";
 import type { PerfStatus } from "@/types/generated/PerfStatus";
 import type { PerfTier } from "@/types/generated/PerfTier";
 import { Button } from "@deadlock-mods/ui/components/button";
 import {
-  CheckCircleIcon,
   GaugeIcon,
   SlidersHorizontalIcon,
   WarningIcon,
 } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import { Chip } from "./configs/card-parts";
-import { OpenInEditorButton } from "./open-in-editor-button";
+import { justApplied } from "./just-applied";
 import { usePerformanceUi } from "./performance-context";
+import { TierIcon } from "./tier-icon";
 import { TurnOffButton } from "./turn-off-button";
 import { UndoButton } from "./undo-button";
 
@@ -30,62 +29,66 @@ export const ActiveStrip = ({
 }) => {
   const { t } = useTranslation();
   const { openEditor } = usePerformanceUi();
+  const configId = desired.request.configId;
   const tweakCount = usePersistedStore(
-    (state) => state.perfOverrides[desired.request.configId]?.length ?? 0,
+    (state) => state.perfOverrides[configId]?.length ?? 0,
   );
-  const summary = status.inSync
-    ? t("performance.activeStatus.inFile", { count: desired.counts.applies })
-    : t("performance.activeStatus.settings", { count: desired.counts.applies });
+  const summary = [
+    tier && t(`performance.tiers.${tier}.label`),
+    status.inSync
+      ? t("performance.activeStatus.inFile", { count: desired.counts.applies })
+      : t("performance.activeStatus.settings", {
+          count: desired.counts.applies,
+        }),
+    status.video.inEffect > 0 &&
+      t("performance.activeStatus.videoInFile", {
+        count: status.video.inEffect,
+      }),
+    tweakCount > 0 &&
+      t("performance.activeStatus.tweaks", { count: tweakCount }),
+  ]
+    .filter(Boolean)
+    .join(", ");
 
   return (
     <section
       aria-label={t("performance.activeStatus.label")}
-      className='flex flex-wrap items-center gap-x-4 gap-y-3 rounded-lg border bg-card p-3 pl-4'>
-      <div className='flex size-9 shrink-0 items-center justify-center rounded-md bg-muted'>
-        <GaugeIcon
-          aria-hidden
-          className='size-5 text-primary'
-          weight='duotone'
-        />
+      className='flex flex-wrap items-center gap-x-4 gap-y-3 rounded-lg border bg-card px-4 py-3.5'>
+      <div className='flex size-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary'>
+        {tier ? (
+          <TierIcon
+            className='size-5'
+            draw={justApplied(desired.appliedAt)}
+            key={desired.appliedAt}
+            tier={tier}
+          />
+        ) : (
+          <GaugeIcon aria-hidden className='size-5' weight='duotone' />
+        )}
       </div>
       <div className='min-w-0 flex-1'>
+        <p className='text-muted-foreground text-xs'>
+          {t("performance.activeStatus.current")}
+        </p>
         <div className='flex flex-wrap items-center gap-2'>
-          <h2 className='truncate font-semibold'>{name}</h2>
-          {tier && (
-            <span className='text-muted-foreground text-sm'>
-              <span aria-hidden>{tierInfo(tier).emoji}</span>{" "}
-              {t(`performance.tiers.${tier}.label`)}
-            </span>
-          )}
-          {status.inSync ? (
-            <Chip icon={<CheckCircleIcon aria-hidden />} tone='success'>
-              {t("performance.activeStatus.active")}
-            </Chip>
-          ) : (
+          <h2 className='truncate font-semibold text-base'>{name}</h2>
+          {!status.inSync && (
             <Chip icon={<WarningIcon aria-hidden />} tone='warning'>
               {t("performance.activeStatus.notWritten")}
             </Chip>
           )}
-          {tweakCount > 0 && (
-            <Chip icon={<SlidersHorizontalIcon aria-hidden />}>
-              {t("performance.activeStatus.tweaks", { count: tweakCount })}
-            </Chip>
-          )}
         </div>
-        <p className='mt-0.5 text-muted-foreground text-xs'>
-          {summary}. {t("performance.activeStatus.takesEffect")}
-        </p>
+        <p className='mt-0.5 text-muted-foreground text-sm'>{summary}</p>
       </div>
       <div className='flex items-center gap-1.5'>
+        <UndoButton compact currentConfigId={configId} />
         <Button
           icon={<SlidersHorizontalIcon aria-hidden />}
-          onClick={() => openEditor(desired.request.configId)}
+          onClick={() => openEditor(configId)}
           size='sm'
           variant='outline'>
           {t("performance.activeStatus.editSettings")}
         </Button>
-        <OpenInEditorButton />
-        <UndoButton currentConfigId={desired.request.configId} />
         <TurnOffButton name={name} />
       </div>
     </section>

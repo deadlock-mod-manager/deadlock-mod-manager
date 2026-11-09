@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { $, expect } from "@wdio/globals";
+import { $, browser, expect } from "@wdio/globals";
 import { startApplication } from "../support/application";
 import { closeApplication } from "../support/application-exit";
 import { step } from "../support/evidence";
@@ -64,9 +64,29 @@ const closeTabSettings = () =>
     await nameField().waitForExist({ reverse: true });
   });
 
+const expectActiveTabInView = () =>
+  browser.waitUntil(
+    () =>
+      browser.execute(() => {
+        const active = document.querySelector(
+          '[data-tab-id][data-state="active"]',
+        );
+        const strip = active?.closest('[role="tablist"]')?.parentElement;
+        if (!active || !strip) return false;
+        const tabBounds = active.getBoundingClientRect();
+        const stripBounds = strip.getBoundingClientRect();
+        return (
+          tabBounds.left >= Math.max(0, stripBounds.left) - 1 &&
+          tabBounds.right <= Math.min(innerWidth, stripBounds.right) + 1
+        );
+      }),
+    { timeoutMsg: "the selected tab is clipped by the scrolling tab strip" },
+  );
+
 describe("stats dashboard tabs", () => {
   it("builds tabs from templates and by hand, and keeps them after a restart", async () => {
     const runtime = await startApplication();
+    await browser.setWindowSize(1024, 800);
     const world = runtime.roots.world;
     const phase = process.env.DMM_E2E_PHASE;
     assert(phase === "tabs" || phase === "restart-tabs");
@@ -78,8 +98,12 @@ describe("stats dashboard tabs", () => {
       await step(
         "the Meta template brings its widgets, all loaded",
         async () => {
+          await browser.setWindowSize(1600, 800);
           await addTab("Meta");
           await expectActiveTab("Meta");
+          await expectActiveTabInView();
+          await browser.setWindowSize(1024, 800);
+          await expectActiveTabInView();
           await expectWidgetSources(META_TEMPLATE);
           for (const source of META_TEMPLATE)
             await waitForWidgetState(widget(source), "ready");
@@ -89,6 +113,7 @@ describe("stats dashboard tabs", () => {
       await step("an empty tab is renamed and gets an icon", async () => {
         await addTab("Empty tab");
         await expectWidgetSources([]);
+        await expectActiveTabInView();
         await openTabSettings();
         await typeOver(nameField, "My stats");
         // Closing the settings keeps the typed name.
@@ -150,7 +175,7 @@ describe("stats dashboard tabs", () => {
     const saved = await readSavedLayout(world);
     if (phase === "tabs") {
       const custom = saved?.tabs.at(-1);
-      assert.equal(saved?.tabs.length, 6);
+      assert.equal(saved?.tabs.length, DEFAULT_TAB_TITLES.length + 1);
       assert.deepEqual(
         { title: custom?.title, icon: custom?.icon },
         { title: "My stats", icon: "trophy" },

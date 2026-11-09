@@ -31,6 +31,7 @@ mod compiled_resource;
 mod enum_compatibility;
 mod enum_maps;
 mod hero_rebase;
+mod hud_compatibility;
 mod material_compatibility;
 mod model_animation;
 mod model_camera;
@@ -99,6 +100,7 @@ pub(crate) fn has_checkable_resources(input: &LocalizationModInput) -> Result<bo
         || animation_skeleton::is_path(path)
         || asset_compatibility::is_mesh_path(path)
         || normalize_path(path).ends_with(".vmat_c")
+        || normalize_path(path).ends_with(".vxml_c")
     }) {
       return Ok(true);
     }
@@ -115,6 +117,7 @@ pub(crate) fn reads_compiled_baseline(path: &str) -> bool {
     ".vnmgraph_c",
     ".vmat_c",
     ".vtex_c",
+    ".vxml_c",
   ]
   .iter()
   .any(|suffix| path.ends_with(suffix))
@@ -213,6 +216,7 @@ pub struct CompiledDataBaseline {
 #[derive(Debug, Clone, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LocalizationOverlayAnalysis {
+  pub hud_checks: Vec<hud_compatibility::HudCheck>,
   pub review_fingerprint: String,
   pub input_warnings: Vec<LocalizationInputWarning>,
   pub unmanaged_vpks: Vec<UnmanagedVpk>,
@@ -220,6 +224,11 @@ pub struct LocalizationOverlayAnalysis {
   pub compatibility_mod_ids: Vec<String>,
   pub excluded_mod_ids: Vec<String>,
   pub protected_resources: Vec<repair_scope::ProtectedResource>,
+  /// Selected mods with a file this analysis skipped because an unselected
+  /// mod also provides it. Their findings are incomplete, so finding nothing
+  /// doesn't mean they work.
+  #[serde(skip)]
+  pub incomplete_mod_ids: Vec<String>,
   pub scanned_vpks: usize,
   pub localization_files: usize,
   pub ignored_vanilla_tokens: usize,
@@ -248,6 +257,12 @@ pub struct LocalizationOverlayAnalysis {
   pub data_repairs: Vec<vdata_compatibility::DataRepair>,
   pub data_warnings: Vec<vdata_compatibility::DataWarning>,
   pub baselines: Vec<CompiledDataBaseline>,
+}
+
+impl LocalizationOverlayAnalysis {
+  pub(crate) fn refresh_hud_console(&mut self, citadel: &Path) {
+    hud_compatibility::refresh_console(&mut self.hud_checks, &citadel.join("console.log"));
+  }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -667,6 +682,7 @@ impl LocalizationOverlayPlan {
     let mut mesh_sources: BTreeMap<String, Vec<CompiledDataSource>> = BTreeMap::new();
     let mut camera_sources: BTreeMap<String, Vec<CompiledDataSource>> = BTreeMap::new();
     let mut animation_inputs = animation_model_evidence::AnimationInputs::default();
+    let mut incomplete_mod_ids = BTreeSet::new();
 
     for (priority, mod_input) in mods.iter().enumerate() {
       report(RepairPlanStage::CheckingMods, priority as u32);
@@ -691,19 +707,26 @@ impl LocalizationOverlayPlan {
           if effective {
             animation_inputs.record(&entry_path, &mod_input.mod_id);
           }
-          if !repair_scope.includes_mod(&mod_input.mod_id) || repair_scope.protects(&entry_path) {
+          if !repair_scope.includes_mod(&mod_input.mod_id) {
             continue;
           }
-          if is_localization_path(&entry_path) {
-            localization_paths.push(entry_path);
+          let paths = if is_localization_path(&entry_path) {
+            &mut localization_paths
           } else if is_mergeable_compiled_data_path(&entry_path) {
-            compiled_paths.push(entry_path);
+            &mut compiled_paths
           } else if effective && animation_skeleton::is_path(&entry_path) {
-            skeleton_paths.push(entry_path);
+            &mut skeleton_paths
           } else if effective && model_camera::is_path(&entry_path) {
-            model_paths.push(entry_path);
+            &mut model_paths
           } else if effective && asset_compatibility::is_mesh_path(&entry_path) {
-            mesh_paths.push(entry_path);
+            &mut mesh_paths
+          } else {
+            continue;
+          };
+          if repair_scope.protects(&entry_path) {
+            incomplete_mod_ids.insert(mod_input.mod_id.clone());
+          } else {
+            paths.push(entry_path);
           }
         }
         localization_paths.sort();
@@ -1083,6 +1106,7 @@ impl LocalizationOverlayPlan {
       .collect();
     Ok(Self {
       analysis: LocalizationOverlayAnalysis {
+        hud_checks: hud_compatibility::analyze(resources),
         review_fingerprint: String::new(),
         input_warnings: Vec::new(),
         unmanaged_vpks: Vec::new(),
@@ -1098,6 +1122,7 @@ impl LocalizationOverlayPlan {
           .map(|id| (*id).clone())
           .collect(),
         protected_resources: repair_scope.shared_resources(mods, resources),
+        incomplete_mod_ids: incomplete_mod_ids.into_iter().collect(),
         scanned_vpks,
         localization_files,
         ignored_vanilla_tokens,
@@ -2980,7 +3005,7 @@ fn infer_language(path: &str) -> String {
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
   use super::*;
 
   #[test]
@@ -3183,7 +3208,7 @@ mod tests {
     }
   }
 
-  pub(super) fn compiled_resource(rows: Vec<(String, Kv3Value)>) -> Vec<u8> {
+  pub(crate) fn compiled_resource(rows: Vec<(String, Kv3Value)>) -> Vec<u8> {
     let payload = kv3::encode(&Kv3Value::Object(rows), &kv3::Format([0; 16]));
     let payload_offset = 32usize;
     let total_len = payload_offset + payload.len();

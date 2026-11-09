@@ -1,8 +1,8 @@
 import type { AnalyticsOperations } from "@/lib/analytics/schema";
+import type { EditorDraft } from "@/lib/performance/editor/draft";
 import type { UserPerfConfig } from "@/lib/store/slices/performance";
 import type { CatalogSummary } from "@/types/generated/CatalogSummary";
 import type { CommunityConfigSummary } from "@/types/generated/CommunityConfigSummary";
-import type { EntryOverride } from "@/types/generated/EntryOverride";
 import type { ImportSource } from "@/types/generated/ImportSource";
 import type { PerfApplyRequest } from "@/types/generated/PerfApplyRequest";
 import type { PerfTier } from "@/types/generated/PerfTier";
@@ -317,7 +317,7 @@ export const applicableConfigId = (config: ApplicableConfig) =>
 
 export const applyRequestFor = (
   config: ApplicableConfig,
-  options: { overrides: EntryOverride[]; includeEngineSections: boolean },
+  options: EditorDraft,
 ): PerfApplyRequest =>
   config.kind === "preset"
     ? presetApplyRequest(config.preset, options)
