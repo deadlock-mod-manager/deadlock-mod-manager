@@ -461,3 +461,47 @@ describe("files the game doesn't load", () => {
     expect(usePersistedStore.getState().localMods).toEqual([]);
   });
 });
+
+describe("parked files of a mod in the library", () => {
+  const libraryMod = () => {
+    resetProfile(false);
+    const installed = { ...restoredMod, remoteId: "900001" };
+    usePersistedStore.setState((state) => ({
+      localMods: [installed],
+      profiles: {
+        [PROFILE]: { ...state.profiles[PROFILE], mods: [installed] },
+      },
+    }));
+    catalog.set("900001", installed);
+  };
+
+  it("registers a fresh copy of a disabled mod without its parked copy", async () => {
+    libraryMod();
+    const parkedCopy = {
+      ...parkedAddon(),
+      filePath: "/game/citadel/addons/reset/900001_common.vpk",
+      fileName: "900001_common.vpk",
+      locator: "900001_common.vpk",
+      manifestModId: "900001",
+    };
+    await analyze([parkedCopy, hashMatchedAddon()]);
+    expect(registrations.map((call) => call.installedVpks)).toEqual([
+      ["pak05_dir.vpk"],
+    ]);
+  });
+
+  it("registers an enabled mod without its parked Mod Options variant", async () => {
+    libraryMod();
+    const installed = {
+      ...hashMatchedAddon(),
+      filePath: "/game/citadel/addons/reset/pak01_dir.vpk",
+      fileName: "pak01_dir.vpk",
+      locator: "pak01_dir.vpk",
+      manifestModId: "900001",
+    };
+    await analyze([installed, parkedAddon()]);
+    expect(registrations.map((call) => call.installedVpks)).toEqual([
+      ["pak01_dir.vpk"],
+    ]);
+  });
+});

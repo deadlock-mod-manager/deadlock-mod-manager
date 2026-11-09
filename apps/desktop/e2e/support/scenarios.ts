@@ -48,6 +48,7 @@ import {
   prepareDisabledFixWorld,
 } from "./compatibility-fix-fixtures";
 import { prepareIdentifiedFixWorld } from "./compatibility-fix-identification-fixtures";
+import { prepareParkedCopyWorld } from "./analyze-parked-copy-fixtures";
 import {
   prepareReenabledFixWorld,
   reenabledFixRoutes,
@@ -1000,6 +1001,14 @@ export const scenarios = {
     phases: ["reenable-fixed"],
     routes: reenabledFixRoutes,
     prepare: async (world) => prepareReenabledFixWorld(world),
+  },
+  "compatibility-analyze-parked-copy": {
+    ...defaults,
+    family: "compatibility",
+    spec: "analyze-parked-copy",
+    phases: ["analyze-parked"],
+    routes: detectedModRoutes,
+    prepare: async (world) => prepareParkedCopyWorld(world),
   },
   "compatibility-fix-disabled": {
     ...defaults,
