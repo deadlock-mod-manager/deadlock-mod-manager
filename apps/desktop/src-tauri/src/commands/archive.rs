@@ -216,6 +216,9 @@ pub(crate) fn persist_prefixed_import(
   mod_id: &str,
   prefixed_vpks: Vec<String>,
 ) -> Result<(), Error> {
+  // Manifest recovery runs under this lock and removes any `.dmm.json.tmp` as
+  // a crashed save, so saving without it can lose the temp file mid-save.
+  let _manager = MANAGER.lock().unwrap();
   let mut manifest =
     crate::mod_manager::vpk_manifest::ProfileVpkManifest::open_for_write(destination_path)?;
   let original_names: Vec<String> = prefixed_vpks
