@@ -7,19 +7,23 @@ impl ModManager {
     deadlock_mod: Mod,
     profile_folder: Option<String>,
   ) -> Result<Mod, Error> {
-    self.install_mod_resolving_conflicts(deadlock_mod, profile_folder, &[])
+    self.install_mod_resolving_conflicts(deadlock_mod, profile_folder, &[], None)
   }
 
+  /// `kept_choices` are what purging the mod returned, when this install
+  /// reinstalls it.
   pub fn install_mod_resolving_conflicts(
     &mut self,
     deadlock_mod: Mod,
     profile_folder: Option<String>,
     confirmed_conflicts: &[String],
+    kept_choices: Option<KeptChoices>,
   ) -> Result<Mod, Error> {
     self.install_mod_with_conflict_policy(
       deadlock_mod,
       profile_folder,
       ConflictPolicy::Replace(confirmed_conflicts),
+      kept_choices,
     )
   }
 
@@ -28,11 +32,13 @@ impl ModManager {
     deadlock_mod: Mod,
     profile_folder: Option<String>,
     allowed_conflicts: &[String],
+    kept_choices: Option<KeptChoices>,
   ) -> Result<Mod, Error> {
     self.install_mod_with_conflict_policy(
       deadlock_mod,
       profile_folder,
       ConflictPolicy::Allow(allowed_conflicts),
+      kept_choices,
     )
   }
 
@@ -46,6 +52,7 @@ impl ModManager {
       deadlock_mod,
       profile_folder,
       ConflictPolicy::RestoreBisect(original_enabled),
+      None,
     )
   }
 
@@ -54,6 +61,7 @@ impl ModManager {
     mut deadlock_mod: Mod,
     profile_folder: Option<String>,
     conflict_policy: ConflictPolicy<'_>,
+    kept_choices: Option<KeptChoices>,
   ) -> Result<Mod, Error> {
     #[cfg(feature = "plugins")]
     let observation = crate::external_plugins::events::ModInstallObservation::start(
@@ -147,14 +155,16 @@ impl ModManager {
           .unwrap_or(usize::MAX)
       });
     }
-    // A re-enabled mod returns to its recorded place in the load order. Without
-    // it, the mod would stay in the last shard until an unrelated reorder moved
-    // it back and shifted every mod after it.
+    // A re-enabled or reinstalled mod returns to its recorded place in the load
+    // order. Without it, the mod would stay in the last shard until an
+    // unrelated reorder moved it back and shifted every mod after it.
     if deadlock_mod.install_order.is_none() {
-      deadlock_mod.install_order = manifest
-        .mods
-        .get(&deadlock_mod.id)
-        .and_then(|entry| entry.order);
+      deadlock_mod.install_order = kept_choices.and_then(|kept| kept.order).or_else(|| {
+        manifest
+          .mods
+          .get(&deadlock_mod.id)
+          .and_then(|entry| entry.order)
+      });
     }
     let conflicts = crate::mod_manager::conflicts::activation_model_conflicts(
       &addons_path,
@@ -224,6 +234,12 @@ impl ModManager {
       deadlock_mod.install_order,
       target_shard,
     );
+    if let Some(kept) = kept_choices
+      && let Some(entry) = manifest.mods.get_mut(&deadlock_mod.id)
+    {
+      entry.compatibility_enabled = kept.compatibility_enabled;
+      entry.compatibility_opted_out = kept.compatibility_opted_out;
+    }
     if let Err(save_error) = manifest.save(&addons_path) {
       let rollback = self.vpk_manager.disable_vpks_in(
         &enabled_dir,
@@ -397,12 +413,14 @@ impl ModManager {
     Ok(())
   }
 
+  /// Returns the choices the player made for the mod in this profile, for a
+  /// reinstall to give back, or `None` when the profile had no entry for it.
   pub fn purge_mod(
     &mut self,
     mod_id: String,
     vpks: Vec<String>,
     profile_folder: Option<String>,
-  ) -> Result<(), Error> {
+  ) -> Result<Option<KeptChoices>, Error> {
     let mods_path = self.get_mods_store_path()?;
     self.purge_mod_from(mod_id, vpks, profile_folder, &mods_path)
   }
@@ -413,7 +431,7 @@ impl ModManager {
     vpks: Vec<String>,
     profile_folder: Option<String>,
     mods_path: &Path,
-  ) -> Result<(), Error> {
+  ) -> Result<Option<KeptChoices>, Error> {
     #[cfg(feature = "plugins")]
     let event_profile = profile_folder.clone();
     log::info!("Purging mod: {mod_id} (profile: {profile_folder:?})");
@@ -426,8 +444,13 @@ impl ModManager {
     // may not exist at all yet - and without a game path there is no addons
     // directory to speak of. Nothing was installed in either case, but the
     // downloaded files still have to go, so neither may fail the purge.
+    let mut kept_choices = None;
     match self.get_addons_path(profile_folder.as_deref()) {
       Ok(addons_path) if addons_path.path().exists() => {
+        kept_choices = ProfileVpkManifest::load(&addons_path)?
+          .mods
+          .get(&mod_id)
+          .map(KeptChoices::from);
         self.remove_mod_vpks(&mod_id, &vpks, profile_folder)?;
       }
       Ok(addons_path) => {
@@ -452,7 +475,7 @@ impl ModManager {
 
     #[cfg(feature = "plugins")]
     crate::external_plugins::events::mod_removed(&mod_id, event_profile.as_deref());
-    Ok(())
+    Ok(kept_choices)
   }
 
   /// Remove a mod's VPKs transactionally when the mod is purged.

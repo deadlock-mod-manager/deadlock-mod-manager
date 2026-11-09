@@ -16,6 +16,7 @@ import {
   type ModFileTree,
   ModStatus,
 } from "@/types/mods";
+import type { KeptChoices } from "@/types/generated/KeptChoices";
 import { invokeGuarded } from "@/lib/game-guard";
 
 const logger = createLogger("reinstall-mod");
@@ -41,6 +42,8 @@ export type ReinstallOptions = {
   onDownloadProgress?: (fraction: number) => void;
   /** Set when the caller already wiped the files itself (nuke & reinstall). */
   skipPurge?: boolean;
+  /** What the caller's own purge returned, with `skipPurge`. */
+  keptChoices?: KeptChoices | null;
 };
 
 /**
@@ -71,12 +74,13 @@ export const useReinstallMod = () => {
         .withMetadata({ mod: target.remoteId, wasInstalled, profileFolder })
         .info("Reinstalling mod");
 
+      let keptChoices = options.keptChoices ?? null;
       if (!options.skipPurge) {
         options.onStep?.("purging");
         // Removes both the installed VPKs and the cached download, so the mod
         // really is fetched again instead of restored from cache. Missing files
         // are not an error here, so a rejection means cleanup did not finish.
-        await invokeGuarded("purge_mod", {
+        keptChoices = await invokeGuarded<KeptChoices | null>("purge_mod", {
           modId: target.remoteId,
           vpks: target.installedVpks ?? [],
           profileFolder,
@@ -111,7 +115,7 @@ export const useReinstallMod = () => {
       }
 
       options.onStep?.("installing");
-      return restore(target, install);
+      return restore(target, install, keptChoices);
     },
     [install],
   );
@@ -226,6 +230,7 @@ const redownload = (
 const restore = async (
   snapshot: LocalMod,
   install: ReturnType<typeof useInstallWithCollection>["install"],
+  keptChoices: KeptChoices | null,
 ): Promise<ReinstallResult> => {
   const mod = usePersistedStore
     .getState()
@@ -270,6 +275,7 @@ const restore = async (
     {
       analyticsEntryPoint: "reinstall",
       analyticsOperationKind: "reinstall",
+      keptChoices,
       onStart: (m) => {
         usePersistedStore
           .getState()

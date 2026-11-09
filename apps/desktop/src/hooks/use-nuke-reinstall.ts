@@ -9,6 +9,7 @@ import { createLogger } from "@/lib/logger";
 import { isLocalMod } from "@/lib/mods/installed-helpers";
 import { usePersistedStore } from "@/lib/store";
 import { type LocalMod, ModStatus } from "@/types/mods";
+import type { KeptChoices } from "@/types/generated/KeptChoices";
 import { invokeGuarded, isGameRunningError } from "@/lib/game-guard";
 
 const logger = createLogger("nuke-reinstall");
@@ -80,6 +81,8 @@ export const useNukeReinstall = () => {
   const cancelRef = useRef(false);
   /** The pre-nuke records, kept so failed mods can be retried after the run. */
   const targetsRef = useRef<LocalMod[]>([]);
+  /** Each mod's fix choice and load-order place, from its purge. */
+  const keptChoicesRef = useRef(new Map<string, KeptChoices>());
   const { reinstallMod } = useReinstallMod();
 
   const patchMod = useCallback(
@@ -102,6 +105,7 @@ export const useNukeReinstall = () => {
   const reset = useCallback(() => {
     cancelRef.current = false;
     targetsRef.current = [];
+    keptChoicesRef.current = new Map();
     setState(INITIAL_STATE);
   }, []);
 
@@ -132,6 +136,7 @@ export const useNukeReinstall = () => {
         const result = await reinstallMod(mod, {
           // Files were wiped by the purge phase, or never landed on a retry.
           skipPurge: true,
+          keptChoices: keptChoicesRef.current.get(mod.remoteId),
           onStep: (step) => {
             if (step === "purging") {
               return;
@@ -171,6 +176,7 @@ export const useNukeReinstall = () => {
         .filter((mod) => !isLocalMod(mod))
         .sort((a, b) => (a.installOrder ?? 0) - (b.installOrder ?? 0));
       targetsRef.current = targets;
+      keptChoicesRef.current = new Map();
 
       cancelRef.current = false;
       setState({
@@ -231,11 +237,12 @@ export const useNukeReinstall = () => {
       for (const mod of targets) {
         setState((current) => ({ ...current, currentMod: mod.name }));
         try {
-          await invokeGuarded("purge_mod", {
+          const kept = await invokeGuarded<KeptChoices | null>("purge_mod", {
             modId: mod.remoteId,
             vpks: mod.installedVpks ?? [],
             profileFolder,
           });
+          if (kept) keptChoicesRef.current.set(mod.remoteId, kept);
         } catch (error) {
           // A guard block is not drift: the files are in use. Aborting here
           // leaves the state intact instead of nuking it for nothing.
