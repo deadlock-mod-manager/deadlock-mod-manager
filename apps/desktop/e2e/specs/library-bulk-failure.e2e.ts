@@ -6,6 +6,11 @@ import { $, $$, browser, expect } from "@wdio/globals";
 import { z } from "zod";
 import { startApplication } from "../support/application";
 import { closeApplication } from "../support/application-exit";
+import {
+  commandReplyHeld,
+  holdCommandReply,
+  releaseCommandReply,
+} from "../support/command-hold";
 import { selectMods } from "../support/library-groups-actions";
 import {
   fingerprint,
@@ -247,9 +252,13 @@ const recordOutcome = async (world: string) => {
 describe("bulk library actions stopped by a failure", () => {
   it("say which mods changed, which failed and which were not attempted", async () => {
     const caseId = z
-      .enum(["library-bulk-disable-failure", "library-bulk-delete-failure"])
+      .enum([
+        "library-bulk-disable-failure",
+        "library-bulk-delete-failure",
+        "library-bulk-disable-away",
+      ])
       .parse(process.env.DMM_E2E_CASE_ID);
-    const disabling = caseId === "library-bulk-disable-failure";
+    const disabling = caseId !== "library-bulk-delete-failure";
     const runtime = await startApplication();
     const world = runtime.roots.world;
     const alpha = await addonsDirectory(world, ALPHA.folder);
@@ -286,6 +295,28 @@ describe("bulk library actions stopped by a failure", () => {
           { failed: "Failed to delete", completed: "Deleted" },
           `stale staging exists at`,
         );
+    }
+
+    if (process.env.DMM_E2E_PHASE === "away") {
+      await selectMods(ALPHA_MODS);
+      await $("button=Disable 3").click();
+      await confirmWhileOpen("Disable selected", async () => {
+        await breakSecondDisable(alpha);
+        await holdCommandReply("uninstall_mod", second);
+      });
+      // The run is waiting on the second mod when the library page goes away.
+      await observeUntil("second disable held", commandReplyHeld, Boolean);
+      await navigate("settings");
+      await releaseCommandReply();
+      await verifyDisableOutcome(world);
+      await recordOutcome(world);
+      await expectRecap(
+        world,
+        { failed: "Failed to disable", completed: "Disabled" },
+        "original VPK name count (2) does not match installed VPK count (1)",
+      );
+      // A closed recap stays closed when the library opens again.
+      await navigate("my-mods");
     }
 
     if (disabling) await verifyDisableOutcome(world);
