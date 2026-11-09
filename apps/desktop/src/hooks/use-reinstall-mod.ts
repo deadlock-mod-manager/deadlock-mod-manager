@@ -112,12 +112,22 @@ export const useReinstallMod = () => {
       }
 
       if (!wasInstalled) {
+        // A disabled mod's manifest entry, and the choices in it, outlived
+        // disabling it; give them back for when it is enabled again.
         if (keptChoices) {
-          await keepDisabledModChoices(
-            target.remoteId,
-            profileFolder,
-            keptChoices,
-          );
+          try {
+            await invoke("keep_disabled_mod_choices", {
+              modId: target.remoteId,
+              profileFolder,
+              keptChoices,
+            });
+          } catch (error) {
+            logger
+              .withMetadata({ mod: target.remoteId })
+              .withError(error)
+              .error("Failed to keep the choices of a disabled mod");
+            return { outcome: "failed", error: getErrorMessage(error) };
+          }
         }
         return { outcome: "downloadedOnly" };
       }
@@ -129,30 +139,6 @@ export const useReinstallMod = () => {
   );
 
   return { reinstallMod };
-};
-
-/**
- * A disabled mod keeps its manifest entry, and with it the player's choices,
- * until the purge. Without this, they would be gone once it is enabled again.
- * The mod itself is downloaded either way, so a failure here is only logged.
- */
-const keepDisabledModChoices = async (
-  modId: string,
-  profileFolder: string | null,
-  keptChoices: KeptChoices,
-) => {
-  try {
-    await invoke("keep_disabled_mod_choices", {
-      modId,
-      profileFolder,
-      keptChoices,
-    });
-  } catch (error) {
-    logger
-      .withMetadata({ mod: modId })
-      .withError(error)
-      .warn("Could not keep the choices of a disabled mod");
-  }
 };
 
 /**
