@@ -18,7 +18,7 @@ use super::game_check::GameRunningCheck;
 use super::gc_client::GcMatchClient;
 use super::model::{
   AuthContext, BACKFILL_QUOTA_RESERVE, FetchScope, MatchHistoryPage, MatchSyncConfig, QuotaKind,
-  SaltPayload, SyncProgress,
+  SaltPayload, SaltsCheck, SyncProgress,
 };
 use super::quota::QuotaWindow;
 use super::throttle::Throttle;
@@ -292,6 +292,53 @@ where
     self.persistence.persist_fetched(&st.fetched_order);
   }
 
+  // Ids the server already stores salts for: remembered like fetched ones, so no later pass
+  // checks them again.
+  fn remember_stored(&self, ids: &[u64], st: &mut RunState) {
+    let new: Vec<u64> = ids
+      .iter()
+      .copied()
+      .filter(|&id| st.fetched_set.insert(id))
+      .collect();
+    if new.is_empty() {
+      return;
+    }
+    st.processed.extend(&new);
+    st.fetched_order.extend(&new);
+    st.progress.skipped += new.len() as u32;
+    self.persistence.persist_fetched(&st.fetched_order);
+    self.persistence.emit_progress(&st.progress);
+  }
+
+  // Of the user's own history ids, the ones deadlock-api has no salts for, newest first.
+  // Other players in the same match sync it too, and other tools upload salts, so asking the
+  // GC for every own match spends about half the quota on salts the server already has.
+  // The flag is false if a check failed or the pass was cancelled: the ids left unchecked
+  // wait for a later pass.
+  async fn unstored_own_matches(
+    &self,
+    ids: Vec<u64>,
+    cancel: &AtomicBool,
+    st: &mut RunState,
+  ) -> (Vec<u64>, bool) {
+    let candidates: Vec<u64> = newest_first_fresh(ids, &st.processed)
+      .into_iter()
+      .filter(|id| !st.fetched_set.contains(id))
+      .collect();
+    let limit = st.quota.remaining(self.persistence.now());
+    // Without quota there's nothing to check for: `fetch_one` reports the quota as reached.
+    if candidates.is_empty() || limit == 0 {
+      return (candidates, true);
+    }
+    let SaltsCheck { missing, stored } = self
+      .backfill
+      .missing_salts(&candidates, limit, cancel)
+      .await;
+    let checked_all = missing.len() == limit || missing.len() + stored.len() == candidates.len();
+    self.remember_stored(&stored, st);
+    (missing, checked_all)
+  }
+
   async fn process_ids(
     &self,
     ctx: &AuthContext,
@@ -412,11 +459,17 @@ where
       let Some(page) = self.own_history_page(&ctx, cursor).await? else {
         break;
       };
-      let fresh = newest_first_fresh(page.match_ids(), &st.processed);
+      let (fresh, checked_all) = self
+        .unstored_own_matches(page.match_ids(), cancel, st)
+        .await;
       if let LoopControl::Stop = self
         .process_ids(&ctx, fresh, false, Some(cancel), st)
         .await?
       {
+        return Ok(());
+      }
+      // Paging on would spend history requests on pages that can't be checked either.
+      if !checked_all {
         return Ok(());
       }
       match page.next_cursor {
@@ -493,13 +546,15 @@ where
     let ctx = self.auth.recover()?;
     let account_id = ctx.account_id();
 
-    // Own matches = the newest GC history page ∪ deadlock-api's missing-for-account
-    // list, newest first. Both best-effort so one being down still syncs the other.
-    let mut own_ids = self
+    // Own matches = the newest GC history page's matches deadlock-api has no salts for ∪
+    // its missing-for-account list (pending, so without salts), newest first. Both
+    // best-effort so one being down still syncs the other.
+    let history = self
       .own_history_page(&ctx, None)
       .await?
       .map(|page| page.match_ids())
       .unwrap_or_default();
+    let (mut own_ids, _) = self.unstored_own_matches(history, cancel, st).await;
     let account_list = self
       .backfill
       .to_fetch(FetchScope::Account(account_id))

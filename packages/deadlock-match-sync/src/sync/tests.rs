@@ -154,6 +154,9 @@ struct SpyBackfill {
   stored_salts: HashSet<u64>,
   calls: AtomicU64,
   log: Mutex<Vec<BackfillCall>>,
+  // Every id `missing_salts` checked, and the id whose check fails, ending the checks.
+  checked: Mutex<Vec<u64>>,
+  check_fails_at: Option<u64>,
 }
 impl BackfillSource for SpyBackfill {
   async fn to_fetch(&self, scope: FetchScope) -> Result<Vec<u64>, MatchSyncError> {
@@ -190,9 +193,10 @@ impl BackfillSource for SpyBackfill {
   ) -> SaltsCheck {
     let mut check = SaltsCheck::default();
     for &id in match_ids {
-      if check.missing.len() == limit {
+      if check.missing.len() == limit || self.check_fails_at == Some(id) {
         break;
       }
+      self.checked.lock().unwrap().push(id);
       if self.stored_salts.contains(&id) {
         check.stored.push(id);
       } else {
@@ -494,6 +498,99 @@ async fn background_backfill_leaves_reserve_for_own_matches() {
       BackfillCall::Release
     ]
   );
+}
+
+#[tokio::test]
+async fn own_matches_the_server_stores_are_remembered_without_asking_the_gc() {
+  let backfill = SpyBackfill {
+    stored_salts: HashSet::from([102]),
+    ..Default::default()
+  };
+  let eng = engine(
+    SpyGc {
+      history: vec![101, 102, 103],
+      ..Default::default()
+    },
+    backfill,
+  );
+  let cancel = AtomicBool::new(false);
+
+  let p = eng
+    .run_background_pass(&active_config(), &cancel)
+    .await
+    .unwrap()
+    .unwrap();
+  assert_eq!(p.fetched, 2);
+  assert_eq!(p.skipped, 1);
+  assert_eq!(*eng.sink.posted.lock().unwrap(), vec![103, 101]);
+  assert_eq!(p.quota_remaining as usize, LIMIT - 2);
+  assert!(eng.persistence.fetched.lock().unwrap().contains(&102));
+
+  // The next pass neither checks nor fetches any of them again.
+  eng.backfill.checked.lock().unwrap().clear();
+  let p = eng
+    .run_background_pass(&active_config(), &cancel)
+    .await
+    .unwrap()
+    .unwrap();
+  assert_eq!(p.fetched, 0);
+  assert!(eng.backfill.checked.lock().unwrap().is_empty());
+  assert_eq!(eng.sink.posted.lock().unwrap().len(), 2);
+}
+
+#[tokio::test]
+async fn full_sync_skips_stored_own_matches_and_stops_where_checks_fail() {
+  let backfill = SpyBackfill {
+    stored_salts: HashSet::from([105]),
+    check_fails_at: Some(103),
+    ..Default::default()
+  };
+  let eng = engine(
+    SpyGc {
+      history: vec![102, 103, 104, 105],
+      ..Default::default()
+    },
+    backfill,
+  );
+
+  let p = eng
+    .run_full_sync_if_enabled(&active_config(), &AtomicBool::new(false))
+    .await
+    .unwrap();
+  // 105 is stored, 104 missing; 103 and 102 couldn't be checked, so they wait.
+  assert_eq!(*eng.sink.posted.lock().unwrap(), vec![104]);
+  assert_eq!(p.fetched, 1);
+  assert_eq!(p.skipped, 1);
+  assert_eq!(*eng.persistence.fetched.lock().unwrap(), vec![105, 104]);
+  // The sync isn't caught up, and the account list isn't drained past the failed check.
+  assert!(!*eng.persistence.complete.lock().unwrap());
+  assert!(eng.backfill.log.lock().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn own_matches_without_quota_left_are_not_checked() {
+  let persistence = MemPersistence {
+    now: 1_000_000,
+    quota_hits: Mutex::new(vec![1_000_000; LIMIT]),
+    ..Default::default()
+  };
+  let eng = engine_with_persistence(
+    SpyGc {
+      history: vec![101],
+      ..Default::default()
+    },
+    SpyBackfill::default(),
+    SpyGameCheck::default(),
+    persistence,
+  );
+
+  let p = eng
+    .run_full_sync_if_enabled(&active_config(), &AtomicBool::new(false))
+    .await
+    .unwrap();
+  assert!(p.quota_reached);
+  assert!(eng.backfill.checked.lock().unwrap().is_empty());
+  assert_eq!(eng.counter.load(Ordering::Relaxed), 0);
 }
 
 #[tokio::test]
