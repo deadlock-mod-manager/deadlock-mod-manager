@@ -313,8 +313,8 @@ where
   // Of the user's own history ids, the ones deadlock-api has no salts for, newest first.
   // Other players in the same match sync it too, and other tools upload salts, so asking the
   // GC for every own match spends about half the quota on salts the server already has.
-  // The flag is false if a check failed or the pass was cancelled: the ids left unchecked
-  // wait for a later pass.
+  // The flag is false if some ids were left unchecked: a check failed, the pass was
+  // cancelled, or the missing ones already fill the quota. They wait for a later pass.
   async fn unstored_own_matches(
     &self,
     ids: Vec<u64>,
@@ -334,7 +334,7 @@ where
       .backfill
       .missing_salts(&candidates, limit, cancel)
       .await;
-    let checked_all = missing.len() == limit || missing.len() + stored.len() == candidates.len();
+    let checked_all = missing.len() + stored.len() == candidates.len();
     self.remember_stored(&stored, st);
     (missing, checked_all)
   }
@@ -468,7 +468,8 @@ where
       {
         return Ok(());
       }
-      // Paging on would spend history requests on pages that can't be checked either.
+      // Ids are left on this page: paging on would spend history requests on pages that
+      // can't be checked or fetched either, and the sync isn't complete.
       if !checked_all {
         return Ok(());
       }

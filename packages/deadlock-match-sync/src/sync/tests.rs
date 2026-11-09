@@ -576,6 +576,34 @@ async fn full_sync_skips_stored_own_matches_and_stops_where_checks_fail() {
 }
 
 #[tokio::test]
+async fn full_sync_is_not_complete_while_quota_leaves_own_matches_unchecked() {
+  // One slot left: 103 is fetched, 102 and 101 are never checked.
+  let persistence = MemPersistence {
+    now: 1_000_000,
+    quota_hits: Mutex::new(vec![1_000_000; LIMIT - 1]),
+    ..Default::default()
+  };
+  let eng = engine_with_persistence(
+    SpyGc {
+      history: vec![101, 102, 103],
+      ..Default::default()
+    },
+    SpyBackfill::default(),
+    SpyGameCheck::default(),
+    persistence,
+  );
+
+  let p = eng
+    .run_full_sync_if_enabled(&active_config(), &AtomicBool::new(false))
+    .await
+    .unwrap();
+  assert_eq!(*eng.sink.posted.lock().unwrap(), vec![103]);
+  assert_eq!(p.fetched, 1);
+  assert_eq!(*eng.backfill.checked.lock().unwrap(), vec![103]);
+  assert!(!*eng.persistence.complete.lock().unwrap());
+}
+
+#[tokio::test]
 async fn own_matches_without_quota_left_are_not_checked() {
   let persistence = MemPersistence {
     now: 1_000_000,
