@@ -1,7 +1,6 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { detectedModRoutes } from "./detected-mod-fixtures";
-import type { FixtureRoute } from "./fixture-server";
 import { CATALOG_MOD_ID, createCatalogRoutes } from "./gamebanana-fixtures";
 import { prepareInstalledProfiles } from "./profile-fixtures";
 import { buildSyntheticVpk, localizationText } from "./vpk";
@@ -63,22 +62,11 @@ export const prepareNonLoadedFileWorld = async (
   );
 };
 
-// The catalog refreshes its categories on start; no case here needs any.
-const noCategories = ["Mod", "Sound", "Wip"].map(
-  (kind): FixtureRoute => ({
-    method: "GET",
-    path: `/apiv11/${kind}/Categories`,
-    status: 200,
-    body: "[]",
-  }),
-);
-
 /** The hash service knows no file, so the hand-placed one is unknown. */
 export const unknownFileRoutes = async () => {
   const catalogRoutes = await createCatalogRoutes("gamebanana-switch-detected");
-  return (origin: string): FixtureRoute[] => [
+  return (origin: string) => [
     ...catalogRoutes(origin),
-    ...noCategories,
     {
       method: "POST",
       path: "/api/v2/vpk-analyse-hashes",
@@ -89,10 +77,4 @@ export const unknownFileRoutes = async () => {
 };
 
 /** The hash service identifies every file as the fixable mod. */
-export const matchedFileRoutes = async () => {
-  const routes = await detectedModRoutes();
-  return (origin: string): FixtureRoute[] => [
-    ...routes(origin),
-    ...noCategories,
-  ];
-};
+export const matchedFileRoutes = detectedModRoutes;
