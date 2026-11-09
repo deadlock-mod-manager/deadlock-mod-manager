@@ -8,6 +8,7 @@ import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { getMod, getModDownloads } from "@/lib/api-client";
 import {
   buildAnalyzedFileTree,
+  isIgnoredByGame,
   isRecordedInManifest,
   isUnrecordedLeftover,
   needsAnalysisReview,
@@ -137,7 +138,11 @@ export const useAddonAnalysis = () => {
 
       const modGroups = new Map<string, typeof data.addons>();
       for (const addon of data.addons) {
-        if (addon.remoteId && !isUnrecordedLeftover(addon, libraryIds)) {
+        if (
+          addon.remoteId &&
+          !isUnrecordedLeftover(addon, libraryIds) &&
+          !isIgnoredByGame(addon)
+        ) {
           const existing = modGroups.get(addon.remoteId) ?? [];
           existing.push(addon);
           modGroups.set(addon.remoteId, existing);
@@ -170,14 +175,20 @@ export const useAddonAnalysis = () => {
           });
           continue;
         }
+        // Only files the game loads become the mod's enabled files; its
+        // disabled `<id>_` files (parked copies, unselected variants) stay
+        // out.
+        const activeAddons = groupAddons.filter(
+          (addon) => addon.hasEnabledVpkName,
+        );
         try {
           const modDetails = await getMod(remoteId);
-          const hasMatchInfo = groupAddons.some((a) => a.matchInfo);
-          const vpkFileNames = groupAddons.map((a) => a.fileName);
+          const hasMatchInfo = activeAddons.some((a) => a.matchInfo);
+          const vpkFileNames = activeAddons.map((a) => a.fileName);
 
           if (hasMatchInfo) {
             let downloads: ModDownloadItem[] = [];
-            if (groupAddons.some((addon) => addon.matchInfo?.fileId)) {
+            if (activeAddons.some((addon) => addon.matchInfo?.fileId)) {
               try {
                 downloads = (await getModDownloads(remoteId)).downloads;
               } catch (error) {
@@ -192,7 +203,7 @@ export const useAddonAnalysis = () => {
               .localMods.find((mod) => mod.remoteId === remoteId);
             const fileTree = buildAnalyzedFileTree(
               remoteId,
-              groupAddons.map((addon) => ({
+              activeAddons.map((addon) => ({
                 fileName: addon.fileName,
                 matchInfo: addon.matchInfo,
                 size: addon.vpkParsed.fingerprint.fileSize,
@@ -210,7 +221,7 @@ export const useAddonAnalysis = () => {
               originalVpkNames: fileTree.files
                 .filter((file) => file.is_selected)
                 .map((file) => file.name),
-              installedPaths: groupAddons.map((addon) => addon.filePath),
+              installedPaths: activeAddons.map((addon) => addon.filePath),
               profileFolder,
             });
             const store = usePersistedStore.getState();
@@ -228,7 +239,7 @@ export const useAddonAnalysis = () => {
               store.removeMod(alias, profileId);
             }
             if ((getActiveProfile()?.folderName ?? null) === profileFolder) {
-              addIdentifiedLocalMod(modDetails, groupAddons[0].filePath);
+              addIdentifiedLocalMod(modDetails, activeAddons[0].filePath);
               setInstalledVpks(remoteId, vpkFileNames, fileTree);
               if (downloads.length > 0)
                 store.setModDownloads(remoteId, downloads);

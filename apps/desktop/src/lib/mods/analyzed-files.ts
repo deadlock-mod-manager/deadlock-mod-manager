@@ -59,6 +59,19 @@ type IdentifiedFile = Pick<
 >;
 
 /**
+ * A file the game doesn't load that isn't DMM's either: not a disabled mod's
+ * `<id>_` file, and not one the profile's manifest records. A hand-placed
+ * `coolskin.vpk`, even when its contents match a mod, is never one of that
+ * mod's enabled files.
+ */
+export const isIgnoredByGame = (
+  addon: IdentifiedFile & Pick<LocalAddonInfo, "hasEnabledVpkName">,
+): boolean =>
+  !addon.hasEnabledVpkName &&
+  addon.manifestModId == null &&
+  !(addon.remoteId && addon.fileName.startsWith(`${addon.remoteId}_`));
+
+/**
  * True when only the file's `<id>_` name prefix identifies it: no hash match,
  * and no manifest entry records the file. Such a parked copy is DMM's only when
  * its mod is still in the library; a mod whose installed files were deleted
@@ -90,7 +103,8 @@ export const needsAnalysisReview = (
     (addon) =>
       !addon.remoteId ||
       !addon.vpkParsed?.fingerprint ||
-      isUnrecordedLeftover(addon, libraryIds),
+      isUnrecordedLeftover(addon, libraryIds) ||
+      isIgnoredByGame(addon),
   );
 
 /**

@@ -3,6 +3,7 @@ import type { ModDownloadItem, ModFileTree } from "@/types/mods";
 import {
   buildAnalyzedFileTree,
   isRecordedInManifest,
+  isIgnoredByGame,
   isUnrecordedLeftover,
   needsAnalysisReview,
 } from "./analyzed-files";
@@ -169,6 +170,20 @@ describe("parked files nothing records", () => {
     expect(isUnrecordedLeftover({ fileName: "pak04_dir.vpk" }, library)).toBe(
       false,
     );
+  });
+});
+
+describe("files the game doesn't load", () => {
+  it("leaves a file the manifest records to DMM even when it hashes to another mod", () => {
+    // A disabled local mod's file whose contents match a catalog mod.
+    expect(
+      isIgnoredByGame({
+        fileName: "local-1_pak05_dir.vpk",
+        remoteId: "900002",
+        manifestModId: "local-1",
+        hasEnabledVpkName: false,
+      }),
+    ).toBe(false);
   });
 });
 

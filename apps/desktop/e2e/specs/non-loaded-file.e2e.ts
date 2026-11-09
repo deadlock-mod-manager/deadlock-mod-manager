@@ -125,6 +125,9 @@ describe("A hand-placed file the game doesn't load", () => {
       const file = card(HAND_PLACED);
       await file.waitForDisplayed();
       await file.$("p=Not loaded by Deadlock").waitForDisplayed();
+      // The copy is recognised as the mod, yet still isn't recorded as its file.
+      if (process.env.DMM_E2E_PHASE === "analyze-match")
+        await file.$("p*=100% match").waitForDisplayed();
       // Its actions unlock once Analyze has registered what it found.
       await file.$("button=Quarantine").waitForEnabled();
       assert.equal(await file.$("button=Add to Library").isExisting(), false);

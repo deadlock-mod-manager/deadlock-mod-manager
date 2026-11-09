@@ -96,6 +96,7 @@ const addon: LocalAddonInfo = {
   fileName: "pak01_dir.vpk",
   // An overflow shard, so the locator differs from the file name.
   locator: "addons2/pak01_dir.vpk",
+  hasEnabledVpkName: true,
   vpkParsed: {
     version: 2,
     treeLength: 0,
@@ -162,6 +163,7 @@ const parked: LocalAddonInfo = {
   fileName: "900001_green.vpk",
   locator: "900001_green.vpk",
   remoteId: "900001",
+  hasEnabledVpkName: false,
 };
 const context = (registering = false): AnalysisTarget => ({
   profileFolder: "alpha",

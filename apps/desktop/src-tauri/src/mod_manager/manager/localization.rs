@@ -1242,22 +1242,22 @@ mod tests {
 
   #[test]
   fn analyzed_registration_refuses_a_file_the_game_does_not_load() {
-    let temp = tempfile::tempdir().unwrap();
-    let mut manager = test_manager(temp.path());
+    let (_temp, mut manager) = manager_with_applied_repair();
     let base = manager.get_addons_path(None).unwrap();
-    let loaded = base.join("pak01_dir.vpk");
+    let package = manager.localization_overlay_vpk_path(None).unwrap();
+    let loaded = base.join("pak03_dir.vpk");
     let ignored = base.join("coolskin.vpk");
     write_test_vpk(&loaded);
     write_test_vpk(&ignored);
-    ProfileVpkManifest::default().save(&base).unwrap();
     let before = fs::read(base.join(".dmm.json")).unwrap();
+    let package_before = fs::read(&package).unwrap();
 
     let error = manager
       .register_analyzed_mod(
         None,
         "remote-id".into(),
         "Identified mod".into(),
-        vec!["pak01_dir.vpk".into(), "coolskin.vpk".into()],
+        vec!["pak03_dir.vpk".into(), "coolskin.vpk".into()],
         Some(vec![
           loaded.display().to_string(),
           ignored.display().to_string(),
@@ -1270,6 +1270,7 @@ mod tests {
 
     assert!(error.to_string().contains("coolskin.vpk"), "{error}");
     assert_eq!(fs::read(base.join(".dmm.json")).unwrap(), before);
+    assert_eq!(fs::read(&package).unwrap(), package_before);
     assert!(manager.mod_repository.get_mod("remote-id").is_none());
   }
 
