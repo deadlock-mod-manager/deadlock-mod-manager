@@ -31,7 +31,9 @@ import {
 import { importFailureRoutes } from "./profile-import-failure-fixtures";
 import { shareRoutes } from "./profile-share-fixtures";
 import {
+  prepareProfileRestoreDuringSyncWorld,
   prepareProfileRestoreWorld,
+  profileRestoreDuringSyncRoutes,
   profileRestoreRoutes,
 } from "./profile-restore-fixtures";
 import { prepareFileOrderWorld } from "./file-order-fixtures";
@@ -839,6 +841,14 @@ export const scenarios = {
     phases: ["restore-variant", "restart-restored-variant"],
     routes: profileRestoreRoutes,
     prepare: prepareProfileRestoreWorld,
+  },
+  "profiles-restore-during-sync": {
+    ...profileShare,
+    family: "profiles",
+    spec: "profiles-restore-during-sync",
+    phases: ["restore-during-sync"],
+    routes: profileRestoreDuringSyncRoutes,
+    prepare: prepareProfileRestoreDuringSyncWorld,
   },
   "profiles-reshare": {
     ...profileShare,
