@@ -34,7 +34,7 @@ export const getWhatsNewContent = (
   };
 };
 
-export const WHATS_NEW_RIBBON_VERSION_COUNT = 3;
+const WHATS_NEW_RIBBON_VERSION_COUNT = 3;
 
 const versionEntries: Record<
   string,
