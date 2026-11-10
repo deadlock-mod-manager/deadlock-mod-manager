@@ -17,6 +17,7 @@ import {
 } from "@/components/server-picker/picker-toolbar";
 import PageTitle from "@/components/shared/page-title";
 import { useGameRunning } from "@/hooks/use-mod-health";
+import { useRecentServerMatches } from "@/hooks/use-recent-server-matches";
 import { useServerPicker } from "@/hooks/use-server-picker";
 import { getErrorMessage } from "@/lib/errors";
 import {
@@ -67,6 +68,17 @@ const ServerPickerPage = () => {
   const regions = useMemo(
     () => [...new Set(locations.map((location) => location.region))].sort(),
     [locations],
+  );
+  const recentMatches = useRecentServerMatches(locations);
+  const playedPreset = useMemo(
+    () =>
+      recentMatches?.size
+        ? locations
+            .filter((location) => !recentMatches.has(location.id))
+            .map((location) => location.id)
+            .sort()
+        : null,
+    [locations, recentMatches],
   );
   const blocked = useMemo(() => new Set(selected), [selected]);
   const original = useMemo(() => new Set(baseline), [baseline]);
@@ -178,6 +190,7 @@ const ServerPickerPage = () => {
           appliedLocations={
             state?.observationKnown && state.rulesMatch ? baseline : null
           }
+          playedPreset={playedPreset}
           disabled={
             !state ||
             picker.savePreset.isPending ||
@@ -300,6 +313,7 @@ const ServerPickerPage = () => {
               baseline={original}
               observed={observed}
               latencies={timings}
+              matches={recentMatches}
               disabled={disabled}
               onChange={changeLocations}
               onToggle={toggleLocation}

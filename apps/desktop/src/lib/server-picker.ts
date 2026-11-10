@@ -1,6 +1,7 @@
 import type { ServerPickerLatency } from "@/types/generated/ServerPickerLatency";
 import type { ServerPickerLocation } from "@/types/generated/ServerPickerLocation";
 import type { ServerPickerState } from "@/types/generated/ServerPickerState";
+import type { RegionHistoryEntry } from "@/lib/stats/api";
 
 export type ServerPickerSort = "name" | "latency";
 
@@ -135,4 +136,58 @@ export const pickerLocationRange = (
   const to = order.indexOf(target);
   if (from === -1 || to === -1) return [target];
   return order.slice(Math.min(from, to), Math.max(from, to) + 1);
+};
+
+// deadlock-api names partner-hosted datacenters "<site>-<host>"; Valve's SDR
+// config lists the same POPs as "d<site>" (dpkt) or the bare site (Hetzner).
+const DATACENTER_HOST_PREFIXES = new Map([
+  ["dpkt", "d"],
+  ["hetz", ""],
+]);
+
+/**
+ * The picker location a deadlock-api datacenter code ("fra2", "hel-hetz",
+ * "fra-dpkt") belongs to. Numbered codes name a building inside a POP, so the
+ * digits are dropped unless the catalog lists the numbered POP itself (sto2).
+ */
+export const datacenterLocation = (
+  code: string,
+  locationIds: ReadonlySet<string>,
+): string | null => {
+  for (const part of code.split(",")) {
+    const [site, host] = part.trim().toLowerCase().split("-");
+    const id =
+      host === undefined
+        ? site
+        : `${DATACENTER_HOST_PREFIXES.get(host) ?? ""}${site}`;
+    if (locationIds.has(id)) return id;
+    const pop = id.replace(/\d+$/, "");
+    if (locationIds.has(pop)) return pop;
+  }
+  return null;
+};
+
+/** Months of match history the picker counts, including the current one. */
+export const RECENT_MATCH_MONTHS = 3;
+
+/** Matches per picker location over the last few calendar months (UTC). */
+export const recentMatchesByLocation = (
+  history: readonly RegionHistoryEntry[],
+  locations: readonly ServerPickerLocation[],
+  now: Date,
+): Map<string, number> => {
+  const ids = new Set(locations.map((location) => location.id));
+  const since =
+    Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth() - (RECENT_MATCH_MONTHS - 1),
+      1,
+    ) / 1000;
+  const counts = new Map<string, number>();
+  for (const entry of history) {
+    if (entry.month < since || !entry.datacenter) continue;
+    const id = datacenterLocation(entry.datacenter, ids);
+    if (id) counts.set(id, (counts.get(id) ?? 0) + entry.matches);
+  }
+  return counts;
 };
