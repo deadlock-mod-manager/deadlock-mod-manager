@@ -135,6 +135,70 @@ describe("storage write gate", () => {
     expect(memory.get("local-config")).toBe("installed");
   });
 
+  it("writes only the newest snapshot queued behind a save in progress", async () => {
+    storageModule.markStorageReady();
+    const backend = await getStoreImpl();
+    const firstLookup = Promise.withResolvers<void>();
+    const written: string[] = [];
+    let lookups = 0;
+    getStoreImpl = async () => {
+      if (++lookups === 1) await firstLookup.promise;
+      return {
+        ...backend,
+        set: async (k, v) => {
+          written.push(v);
+          await backend.set(k, v);
+        },
+      };
+    };
+    const saves = ["hero-1", "hero-2", "hero-3", "hero-4"].map((snapshot) =>
+      storage.setItem("local-config", snapshot),
+    );
+    await setImmediate();
+    firstLookup.resolve();
+    await Promise.all(saves);
+    expect(written).toEqual(["hero-1", "hero-4"]);
+    expect(memory.get("local-config")).toBe("hero-4");
+  });
+
+  it("keeps a snapshot queued after a deletion behind that deletion", async () => {
+    storageModule.markStorageReady();
+    const backend = await getStoreImpl();
+    const firstLookup = Promise.withResolvers<void>();
+    let lookups = 0;
+    getStoreImpl = async () => {
+      if (++lookups === 1) await firstLookup.promise;
+      return backend;
+    };
+    const pending = [
+      storage.setItem("local-config", "installed"),
+      storage.setItem("local-config", "enabled"),
+      storage.removeItem("local-config"),
+      storage.setItem("local-config", "reinstalled"),
+    ];
+    await setImmediate();
+    firstLookup.resolve();
+    await Promise.all(pending);
+    expect(memory.get("local-config")).toBe("reinstalled");
+  });
+
+  it("retries the newest snapshot after a merged save failed", async () => {
+    storageModule.markStorageReady();
+    const backend = await getStoreImpl();
+    let lookups = 0;
+    getStoreImpl = async () => {
+      if (++lookups === 2) throw new Error("write rejected");
+      return backend;
+    };
+    await Promise.all([
+      storage.setItem("local-config", "installed"),
+      storage.setItem("local-config", "enabled"),
+      storage.setItem("local-config", "reordered"),
+    ]);
+    await storage.setItem("local-config", "reordered");
+    expect(memory.get("local-config")).toBe("reordered");
+  });
+
   it("retries an identical snapshot after its write failed", async () => {
     storageModule.markStorageReady();
     const backend = await getStoreImpl();
