@@ -24,6 +24,15 @@ describe("steamBbcodeToHtml", () => {
     );
   });
 
+  it("reads images written with a src attribute", () => {
+    const html = steamBbcodeToHtml(
+      '[img src="{STEAM_CLAN_LOC_IMAGE}/1/a.png"][/img]Beta Season 2',
+    );
+    expect(html).toBe(
+      '<img src="https://clan.akamai.steamstatic.com/images/1/a.png" alt="" loading="lazy">Beta Season 2',
+    );
+  });
+
   it("turns lists into list items without stray line breaks", () => {
     expect(steamBbcodeToHtml("[list]\n[*]One\n[*]Two\n[/list]")).toBe(
       "<ul><li>One<li>Two</ul>",
@@ -49,6 +58,12 @@ describe("steamBbcodeFirstImage", () => {
     ).toBe("https://clan.akamai.steamstatic.com/images/2/b.jpg");
   });
 
+  it("reads the src attribute form", () => {
+    expect(
+      steamBbcodeFirstImage('[img src="{STEAM_CLAN_LOC_IMAGE}/3/c.png"][/img]'),
+    ).toBe("https://clan.akamai.steamstatic.com/images/3/c.png");
+  });
+
   it("returns null without images", () => {
     expect(steamBbcodeFirstImage("[p]hi[/p]")).toBeNull();
   });
@@ -57,7 +72,9 @@ describe("steamBbcodeFirstImage", () => {
 describe("steamBbcodeExcerpt", () => {
   it("strips markup and images", () => {
     expect(
-      steamBbcodeExcerpt("[img]x[/img]\n[p][i]Rat King[/i] is here.[/p]"),
+      steamBbcodeExcerpt(
+        '[img]x[/img][img src="y"][/img]\n[p][i]Rat King[/i] is here.[/p]',
+      ),
     ).toBe("Rat King is here.");
   });
 
