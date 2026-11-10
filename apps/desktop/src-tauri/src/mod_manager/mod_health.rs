@@ -532,12 +532,42 @@ pub(crate) fn record(
   game_build: Option<u32>,
   entries: impl IntoIterator<Item = (String, CachedModHealth)>,
 ) -> Result<(), Error> {
+  update(app_data, profile, |health| {
+    for (mod_id, entry) in entries {
+      health.record(game_build, mod_id, entry);
+    }
+  })
+}
+
+/// Drops each mod's entry while it is still the one in `seen`, so a result
+/// saved since then stays.
+pub(crate) fn forget(
+  app_data: &Path,
+  profile: &str,
+  seen: &ProfileHealth,
+  mod_ids: &[String],
+) -> Result<(), Error> {
+  update(app_data, profile, |health| {
+    for mod_id in mod_ids {
+      if seen
+        .mods
+        .get(mod_id)
+        .is_some_and(|entry| health.mods.get(mod_id) == Some(entry))
+      {
+        health.mods.remove(mod_id);
+      }
+    }
+  })
+}
+
+fn update(
+  app_data: &Path,
+  profile: &str,
+  change: impl FnOnce(&mut ProfileHealth),
+) -> Result<(), Error> {
   let _guard = CACHE_LOCK.lock().unwrap_or_else(|error| error.into_inner());
   let mut cache = read_cache(app_data);
-  let health = cache.profiles.entry(profile.to_owned()).or_default();
-  for (mod_id, entry) in entries {
-    health.record(game_build, mod_id, entry);
-  }
+  change(cache.profiles.entry(profile.to_owned()).or_default());
   std::fs::create_dir_all(app_data)?;
   let mut staged = tempfile::NamedTempFile::new_in(app_data)?;
   serde_json::to_writer(staged.as_file_mut(), &cache)
