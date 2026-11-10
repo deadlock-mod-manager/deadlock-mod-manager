@@ -4,6 +4,7 @@
 
 ### Minor Changes
 
+- 5d38b7c: Show recent match counts in the server picker and add a Where I play preset
 - cba597f: Show why GameBanana staff withheld a mod on its page instead of an error
 - b8f0b24: Let you turn match data sharing off for individual Steam accounts
 - 34fd9ca: Improve 3D previews of animated materials and particle effects
@@ -29,6 +30,7 @@
 
 ### Patch Changes
 
+- e02703c: Fix false crash reports, Live tab, and Stop for the running game on Flatpak
 - 014a0bb: Ask before Analyze re-adds leftover files and offer to remove ones it can't place
 - fdd81c8: Stop calling a fixed mod working when another mod blocks its repair
 - fdd81c8: Keep an imported profile's file picks when you share it again
