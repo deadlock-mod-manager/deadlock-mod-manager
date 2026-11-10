@@ -1071,6 +1071,31 @@ mod tests {
   }
 
   #[test]
+  fn forgetting_a_moved_mod_keeps_a_result_saved_since() {
+    let temp = tempfile::tempdir().unwrap();
+    let current = key(1, Some(100));
+    let stale = CachedModHealth::new(
+      current.clone(),
+      findings(0, true, true),
+      ModHealthSource::Standalone,
+    );
+    record(temp.path(), "profile", Some(100), [("mod".into(), stale)]).unwrap();
+    let seen = load(temp.path(), "profile");
+    // A rename keeps the key, so only the whole entry tells a newer result apart.
+    let launch = CachedModHealth::new(current, findings(1, false, true), ModHealthSource::Launch);
+    record(
+      temp.path(),
+      "profile",
+      Some(100),
+      [("mod".into(), launch.clone())],
+    )
+    .unwrap();
+
+    forget(temp.path(), "profile", &seen, &["mod".into()]).unwrap();
+    assert_eq!(load(temp.path(), "profile").mods.get("mod"), Some(&launch));
+  }
+
+  #[test]
   fn cache_round_trips_per_profile_and_survives_corruption() {
     let temp = tempfile::tempdir().unwrap();
     let current = key(1, Some(100));
