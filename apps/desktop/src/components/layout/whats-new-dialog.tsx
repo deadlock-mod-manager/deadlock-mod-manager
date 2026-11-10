@@ -28,6 +28,7 @@ import { getReleaseNotesUrl } from "@/lib/app-version-display";
 import { APP_NAME } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import {
+  getReleaseVersion,
   getSkippedWhatsNewVersions,
   getWhatsNewContent,
   getWhatsNewVideoId,
@@ -265,7 +266,10 @@ export const WhatsNewDialog = ({ onClose }: WhatsNewDialogProps) => {
   const videoId = getWhatsNewVideoId(version);
   // Read once: closing the dialog marks this version as seen.
   const [lastSeen] = useState(getLastSeenVersion);
-  const from = lastSeen && lastSeen !== version ? lastSeen : null;
+  const from =
+    lastSeen && getReleaseVersion(lastSeen) !== getReleaseVersion(version)
+      ? lastSeen
+      : null;
   const skipped = from ? getSkippedWhatsNewVersions(from, version) : [];
 
   const { title, categories, highlights } = useMemo(() => {

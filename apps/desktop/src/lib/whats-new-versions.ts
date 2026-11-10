@@ -7,10 +7,15 @@ const highlightsSchema = z
   .array(z.object({ image: z.string(), caption: z.string() }))
   .catch([]);
 
+/** Nightly builds (2.4.0-nightly.20261110.e02703ce) show the notes of the release they lead up to. */
+export const getReleaseVersion = (version: string): string =>
+  version.split("-")[0];
+
 export const getWhatsNewContent = (
   translations: Pick<i18n, "t" | "exists">,
-  version: string,
+  appVersion: string,
 ) => {
+  const version = getReleaseVersion(appVersion);
   const titleKey = `whatsNew.versions.${version}.title`;
   const featuresKey = `whatsNew.versions.${version}.features`;
   const features = translations.exists(featuresKey, { fallbackLng: false })
@@ -37,7 +42,7 @@ const versionEntries: Record<
 > = enTranslation.whatsNew.versions;
 
 export const getWhatsNewVideoId = (version: string): string =>
-  versionEntries[version]?.videoId ?? "";
+  versionEntries[getReleaseVersion(version)]?.videoId ?? "";
 
 /** Releases with notes between two versions, newest first, both ends excluded. */
 export const getSkippedWhatsNewVersions = (
@@ -45,8 +50,8 @@ export const getSkippedWhatsNewVersions = (
   to: string,
 ): string[] => {
   const versions = Object.keys(versionEntries);
-  const start = versions.indexOf(to);
-  const end = versions.indexOf(from);
+  const start = versions.indexOf(getReleaseVersion(to));
+  const end = versions.indexOf(getReleaseVersion(from));
   if (start === -1 || end <= start) return [];
   return versions.slice(start + 1, end);
 };
