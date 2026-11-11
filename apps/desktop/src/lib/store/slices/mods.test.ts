@@ -1,9 +1,10 @@
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import type { LogLayerMetadata } from "loglayer";
 import { create } from "zustand";
 
 const noop = () => {};
 const loggerMock = {
-  withMetadata() {
+  withMetadata(_metadata?: LogLayerMetadata) {
     return this;
   },
   withError() {
@@ -562,6 +563,60 @@ describe("setInstalledVpks", () => {
   it("keeps missing files while nothing is installed", () => {
     store.getState().setInstalledVpks("1", []);
     expect(missing("1")).toEqual(["gone.vpk"]);
+  });
+});
+
+describe("updateModVpksAfterReorder", () => {
+  it("logs one record naming only the renamed mod and keeps the others' objects", () => {
+    store.setState({
+      profiles: { default: profileFor("default", ["1", "2", "3"]) },
+    });
+    const before = store.getState().profiles.default.mods;
+    const withMetadata = spyOn(loggerMock, "withMetadata");
+    const info = spyOn(loggerMock, "info");
+
+    store.getState().updateModVpksAfterReorder([
+      ["1", ["pak01_dir.vpk"]],
+      ["2", ["pak04_dir.vpk"]],
+      ["3", ["pak03_dir.vpk"]],
+    ]);
+
+    expect(info).toHaveBeenCalledTimes(1);
+    expect(withMetadata.mock.calls[0]?.[0]).toMatchObject({
+      changed: [
+        {
+          remoteId: "2",
+          oldVpks: ["pak02_dir.vpk"],
+          newVpks: ["pak04_dir.vpk"],
+        },
+      ],
+    });
+    const after = store.getState().profiles.default.mods;
+    expect(after[0]).toBe(before[0]);
+    expect(after[1]).not.toBe(before[1]);
+    expect(after[1]?.installedVpks).toEqual(["pak04_dir.vpk"]);
+    expect(after[2]).toBe(before[2]);
+    withMetadata.mockRestore();
+    info.mockRestore();
+  });
+});
+
+describe("reorderMods", () => {
+  it("replaces only the mods whose position changes", () => {
+    store.setState({
+      profiles: { default: profileFor("default", ["1", "2", "3", "4"]) },
+    });
+    store.getState().reorderMods(["1", "2", "3"]);
+    const before = store.getState().profiles.default.mods;
+
+    store.getState().reorderMods(["2", "1", "3"]);
+
+    const after = store.getState().profiles.default.mods;
+    expect(after.map((mod) => mod.installOrder)).toEqual([1, 0, 2, undefined]);
+    expect(after[0]).not.toBe(before[0]);
+    expect(after[1]).not.toBe(before[1]);
+    expect(after[2]).toBe(before[2]);
+    expect(after[3]).toBe(before[3]);
   });
 });
 

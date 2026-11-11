@@ -55,7 +55,7 @@ fn abilities(retired: Vec<(String, Kv3Value)>) -> CompiledDataTable {
     ABILITIES_PATH,
     compiled_resource(current),
     vec![source("ability-mod", 0, historical)],
-    Some(&history),
+    Some((&history).into()),
   )
   .unwrap()
 }
@@ -443,7 +443,7 @@ fn inherited_table(extra_sources: Vec<CompiledDataSource>, ambiguous: bool) -> C
     ABILITIES_PATH,
     compiled_resource(current),
     sources,
-    Some(&history),
+    Some((&history).into()),
   )
   .unwrap()
 }

@@ -6,7 +6,7 @@ import { Remling } from "./remling";
 
 const artworkUrl = getPluginAssetUrl(
   "themes",
-  "public/pre-defined/remlock/artwork.png",
+  "public/pre-defined/remlock/artwork.webp",
 );
 
 function SidebarContentExtra() {

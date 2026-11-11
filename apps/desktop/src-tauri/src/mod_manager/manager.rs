@@ -13,7 +13,7 @@ use crate::mod_manager::{
   steam_manager::SteamManager,
   vpk_manager::staging::{PendingVpkOperation, VpkStaging},
   vpk_manager::{MissingVpkPolicy, ShardAssignment, ShardPlacement, SwapRequest, VpkManager},
-  vpk_manifest::{ProfileVpkManifest, ProfileVpkManifestEntry},
+  vpk_manifest::{KeptChoices, ProfileVpkManifest, ProfileVpkManifestEntry},
 };
 use log;
 use std::{
@@ -1604,6 +1604,49 @@ mod tests {
 
     assert!(!mod_dir.exists());
     assert!(!addons_path.join("pak01_dir.vpk").exists());
+  }
+
+  /// Delete drops the returned choices; Reinstall hands them to the install.
+  #[test]
+  fn purge_forgets_the_entry_and_returns_its_choices() {
+    let game = game_dir();
+    let addons_path = game.path().join("game").join("citadel").join("addons");
+    fs::create_dir_all(&addons_path).unwrap();
+    let base = crate::mod_manager::shard::ProfileBase::new(&addons_path).unwrap();
+    let mut manifest = ProfileVpkManifest::default();
+    write_owned_mod(
+      &base,
+      &mut manifest,
+      "650634",
+      ShardIndex::FIRST,
+      "pak01_dir.vpk",
+      b"mod",
+    );
+    let entry = manifest.mods.get_mut("650634").unwrap();
+    entry.order = Some(3);
+    entry.compatibility_opted_out = true;
+    manifest.save(&base).unwrap();
+    let mods_store = tempfile::tempdir().unwrap();
+    let mut manager = test_manager(game.path());
+
+    let kept = manager
+      .purge_mod_from("650634".to_string(), Vec::new(), None, mods_store.path())
+      .unwrap();
+
+    assert_eq!(
+      kept,
+      Some(KeptChoices {
+        order: Some(3),
+        compatibility_enabled: false,
+        compatibility_opted_out: true,
+      })
+    );
+    assert!(
+      !ProfileVpkManifest::load(&base)
+        .unwrap()
+        .mods
+        .contains_key("650634")
+    );
   }
 
   #[test]

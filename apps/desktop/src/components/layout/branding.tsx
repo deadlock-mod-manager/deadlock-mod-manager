@@ -28,7 +28,7 @@ import Logo from "./logo";
 const predefinedThemeIcons = {
   nightshift: getPluginAssetUrl(
     "themes",
-    "public/pre-defined/nightshift/icon.png",
+    "public/pre-defined/nightshift/icon.webp",
   ),
   bloodmoon: getPluginAssetUrl(
     "themes",
@@ -36,7 +36,7 @@ const predefinedThemeIcons = {
   ),
   tea: getPluginAssetUrl("themes", "public/pre-defined/tea/logo.png"),
   lovelock: getPluginAssetUrl("themes", "public/pre-defined/lovelock/icon.png"),
-  remlock: getPluginAssetUrl("themes", "public/pre-defined/remlock/icon.png"),
+  remlock: getPluginAssetUrl("themes", "public/pre-defined/remlock/icon.webp"),
   drututt: getPluginAssetUrl("themes", "public/pre-defined/drututt/icon.png"),
 } as const;
 

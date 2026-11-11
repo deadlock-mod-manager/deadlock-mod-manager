@@ -153,7 +153,7 @@ mod tests {
     assert!(matches!(error, Error::ModelConflict(ref ids) if ids == &["josuke"]));
     assert_eq!(fs::read(base.join(".dmm.json")).unwrap(), before);
     let installed = manager
-      .install_mod_resolving_conflicts(skin("suit"), None, &["josuke".into()])
+      .install_mod_resolving_conflicts(skin("suit"), None, &["josuke".into()], None)
       .unwrap();
     let manifest = ProfileVpkManifest::load(&base).unwrap();
     assert!(!manifest.mods["josuke"].enabled);
@@ -163,7 +163,7 @@ mod tests {
     assert!(base.join(&installed.installed_vpks[0]).is_file());
     // The reverse choice works too, independent of hero names or load order.
     manager
-      .install_mod_resolving_conflicts(skin("josuke"), None, &["suit".into()])
+      .install_mod_resolving_conflicts(skin("josuke"), None, &["suit".into()], None)
       .unwrap();
     let manifest = ProfileVpkManifest::load(&base).unwrap();
     assert!(manifest.mods["josuke"].enabled);
@@ -188,7 +188,7 @@ mod tests {
     fs::create_dir(base.join(".dmm.json.tmp")).unwrap();
     assert!(
       manager
-        .install_mod_resolving_conflicts(skin("suit"), None, &["josuke".into()])
+        .install_mod_resolving_conflicts(skin("suit"), None, &["josuke".into()], None)
         .is_err()
     );
     assert_eq!(fs::read(base.join(".dmm.json")).unwrap(), before);
@@ -203,7 +203,7 @@ mod tests {
   fn keeping_both_leaves_the_conflicting_skin_enabled() {
     let (_game, mut manager, base) = world();
     manager
-      .install_mod_allowing_conflicts(skin("suit"), None, &["josuke".into()])
+      .install_mod_allowing_conflicts(skin("suit"), None, &["josuke".into()], None)
       .unwrap();
     let manifest = ProfileVpkManifest::load(&base).unwrap();
     for id in ["josuke", "suit", "other"] {
@@ -211,7 +211,7 @@ mod tests {
     }
     pack(&base.join("third_skin.vpk"), "models/shiv.vmdl_c", b"third");
     assert!(matches!(
-      manager.install_mod_allowing_conflicts(skin("third"), None, &["josuke".into()]),
+      manager.install_mod_allowing_conflicts(skin("third"), None, &["josuke".into()], None),
       Err(Error::ModelConflict(ref ids)) if ids == &["josuke", "suit"]
     ));
   }
@@ -221,7 +221,7 @@ mod tests {
     let (_game, mut manager, base) = world();
     let before = fs::read(base.join(".dmm.json")).unwrap();
     assert!(matches!(
-      manager.install_mod_resolving_conflicts(skin("suit"), None, &["other".into()]),
+      manager.install_mod_resolving_conflicts(skin("suit"), None, &["other".into()], None),
       Err(Error::ModelConflict(_))
     ));
     assert_eq!(fs::read(base.join(".dmm.json")).unwrap(), before);
@@ -354,14 +354,14 @@ mod tests {
       Err(Error::ModelConflict(_))
     ));
     manager
-      .install_mod_resolving_conflicts(skin("suit"), None, &["josuke".into()])
+      .install_mod_resolving_conflicts(skin("suit"), None, &["josuke".into()], None)
       .unwrap();
     assert!(matches!(
       manager.install_mod(skin("josuke"), None),
       Err(Error::ModelConflict(_))
     ));
     manager
-      .install_mod_resolving_conflicts(skin("josuke"), None, &["suit".into()])
+      .install_mod_resolving_conflicts(skin("josuke"), None, &["suit".into()], None)
       .unwrap();
     let manifest = ProfileVpkManifest::load(&base).unwrap();
     assert!(manifest.mods["josuke"].enabled);

@@ -10,6 +10,7 @@ use std::{
   io::{ErrorKind, Write},
   path::Path,
 };
+use ts_rs::TS;
 
 mod legacy_reorder;
 
@@ -72,6 +73,37 @@ impl Default for ProfileVpkManifestEntry {
       current_vpks: Vec::new(),
       disabled_vpks: Vec::new(),
       original_vpk_names: Vec::new(),
+    }
+  }
+}
+
+/// What the player chose for a mod: its place in the load order and its fix
+/// choice. Reinstall carries these from the removed entry to the new one;
+/// Delete forgets them with the entry.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct KeptChoices {
+  pub order: Option<u32>,
+  pub compatibility_enabled: bool,
+  pub compatibility_opted_out: bool,
+}
+
+impl KeptChoices {
+  /// Gives the mod's new entry back what the player chose for the old one.
+  pub fn restore_to(self, entry: &mut ProfileVpkManifestEntry) {
+    entry.order = self.order.or(entry.order);
+    entry.compatibility_enabled = self.compatibility_enabled;
+    entry.compatibility_opted_out = self.compatibility_opted_out;
+  }
+}
+
+impl From<&ProfileVpkManifestEntry> for KeptChoices {
+  fn from(entry: &ProfileVpkManifestEntry) -> Self {
+    Self {
+      order: entry.order,
+      compatibility_enabled: entry.compatibility_enabled,
+      compatibility_opted_out: entry.compatibility_opted_out,
     }
   }
 }

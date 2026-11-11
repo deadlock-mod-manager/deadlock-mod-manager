@@ -38,6 +38,7 @@ import type {
   FoundryPreviewTint,
   FoundryTextureRefresh,
 } from "./foundry-model-viewer";
+import { createTexturePreviewCache } from "./texture-preview-cache";
 import type {
   FoundryCardPreview,
   FoundryExportRequest,
@@ -402,7 +403,9 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
     }
     setEditRevision((revision) => revision + 1);
   }, []);
-  const texturePreviewCacheRef = useRef<Map<string, TexturePreview>>(new Map());
+  const texturePreviewCacheRef = useRef(
+    createTexturePreviewCache<TexturePreview>(),
+  );
   const soundCacheRef = useRef<Map<string, string>>(new Map());
 
   const clearCaches = useCallback(() => {
@@ -460,6 +463,10 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
   const workspaceRoot = workspace?.root ?? null;
 
   useEffect(() => {
+    texturePreviewCacheRef.current.setRevision(editRevision);
+  }, [editRevision]);
+
+  useEffect(() => {
     const entryPath = selectedEntryPath;
     if (selectedTextureSource === "preloadedCard") {
       return;
@@ -468,8 +475,8 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       setTexturePreview(IDLE_TEXTURE);
       return;
     }
-    const cacheKey = `${filePath}\n${entryPath}\n${editRevision}`;
-    const cached = texturePreviewCacheRef.current.get(cacheKey);
+    const cacheKey = `${filePath}\n${entryPath}`;
+    const cached = texturePreviewCacheRef.current.get(cacheKey, editRevision);
     if (cached) {
       setTexturePreview(cached);
       return;
@@ -485,7 +492,7 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
           width: tex.width,
           height: tex.height,
         };
-        texturePreviewCacheRef.current.set(cacheKey, preview);
+        texturePreviewCacheRef.current.set(cacheKey, editRevision, preview);
         setTexturePreview(preview);
       })
       .catch((err) => {
@@ -563,17 +570,6 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
         if (cancelled) return;
         const modCards = cards.filter((card) => card.source === "mod");
         const defaultCards = cards.filter((card) => card.source === "default");
-        for (const card of modCards) {
-          texturePreviewCacheRef.current.set(
-            `${manifest.filePath}\n${card.path}`,
-            {
-              status: "ready",
-              dataUrl: card.dataUrl,
-              width: card.width,
-              height: card.height,
-            },
-          );
-        }
         setCardPreviews({ status: "ready", modCards, defaultCards });
       })
       .catch((err) => {
@@ -800,13 +796,11 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
     [loadManifest],
   );
 
-  /** Drop every cached decode of one entry so the next read sees the edit. */
+  /** Drop the cached sound of one entry so the next read hears the edit. */
   const invalidateEntry = useCallback(
     (entryPath: string) => {
       if (!filePath) return;
-      const cacheKey = `${filePath}\n${entryPath}`;
-      texturePreviewCacheRef.current.delete(cacheKey);
-      soundCacheRef.current.delete(cacheKey);
+      soundCacheRef.current.delete(`${filePath}\n${entryPath}`);
     },
     [filePath],
   );

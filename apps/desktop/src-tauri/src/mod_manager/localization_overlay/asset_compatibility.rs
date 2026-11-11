@@ -1,7 +1,7 @@
 use super::resources::{ResourceSnapshot, resource_path};
 use super::{CompiledDataSource, Kv3Value, Resource, compiled_resource, kv3, normalize_path};
 use crate::errors::Error;
-use crate::mod_manager::vdata_history::VdataHistoryIndex;
+use crate::mod_manager::vdata_history::VdataHistory;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -142,7 +142,7 @@ pub(super) fn model_overlaps(
 /// through resource references.
 pub(super) fn unloaded_models<'a>(
   resources: &ResourceSnapshot,
-  history: &VdataHistoryIndex,
+  history: VdataHistory<'_>,
   paths: impl IntoIterator<Item = &'a str>,
 ) -> Result<Vec<String>, Error> {
   let mod_models: BTreeSet<&str> = resources
@@ -650,6 +650,7 @@ mod tests {
   fn models_are_unloaded_until_a_loaded_file_references_them() {
     use super::super::resources::tests::pack;
     use super::super::tests::compiled_resource;
+    use crate::mod_manager::vdata_history::VdataHistoryIndex;
     let root = tempfile::tempdir().unwrap();
     let citadel = root.path().join("citadel");
     std::fs::create_dir_all(&citadel).unwrap();
@@ -688,7 +689,7 @@ mod tests {
       let resources = ResourceSnapshot::open(&citadel, &mods).unwrap();
       unloaded_models(
         &resources,
-        VdataHistoryIndex::embedded(),
+        VdataHistoryIndex::embedded().into(),
         warnings.iter().map(|warning| warning.file_path.as_str()),
       )
       .unwrap()

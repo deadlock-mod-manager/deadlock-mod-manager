@@ -7,7 +7,7 @@ use super::{
   repair_scope::RepairScope,
   resources::{ResourceSnapshot, resource_path},
 };
-use crate::{errors::Error, mod_manager::vdata_history::VdataHistoryIndex};
+use crate::{errors::Error, mod_manager::vdata_history::VdataHistory};
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::OnceLock;
 
@@ -16,7 +16,7 @@ struct ArchivedBindings {
   bindings: BTreeMap<String, Vec<String>>,
 }
 
-fn observed_binding(history: &VdataHistoryIndex, row: &str, model: &str) -> bool {
+fn observed_binding(history: VdataHistory<'_>, row: &str, model: &str) -> bool {
   static ARCHIVE: OnceLock<ArchivedBindings> = OnceLock::new();
   history.observed_string_field(HEROES_VDATA_PATH, row, "m_strModelName", model)
     || ARCHIVE
@@ -38,7 +38,7 @@ fn observed_binding(history: &VdataHistoryIndex, row: &str, model: &str) -> bool
 /// the current model is loaded from there, so its old copy is never moved.
 pub(super) fn historical_hero_models<'a>(
   resources: &ResourceSnapshot,
-  history: &VdataHistoryIndex,
+  history: VdataHistory<'_>,
   paths: impl IntoIterator<Item = &'a str>,
 ) -> Result<BTreeSet<String>, Error> {
   let paths: Vec<_> = paths.into_iter().collect();
@@ -87,7 +87,7 @@ pub(super) fn historical_hero_models<'a>(
 /// camera and animation interfaces do not apply to them.
 pub(super) fn prop_models(
   resources: &ResourceSnapshot,
-  history: &VdataHistoryIndex,
+  history: VdataHistory<'_>,
   warnings: &[AssetWarning],
 ) -> Result<Vec<String>, Error> {
   let warned_models: BTreeSet<&str> = warnings
@@ -137,7 +137,7 @@ pub(super) fn prop_models(
 pub(super) fn prepare(
   resources: &ResourceSnapshot,
   sources: &BTreeMap<String, Vec<CompiledDataSource>>,
-  history: &VdataHistoryIndex,
+  history: VdataHistory<'_>,
   inputs: &AnimationInputs,
   scope: &RepairScope,
   repairs: &mut Vec<AssetRepair>,

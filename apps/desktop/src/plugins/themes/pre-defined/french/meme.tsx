@@ -11,7 +11,7 @@ import { FrenchTaxReceipt } from "./tax-receipt";
 
 const memeUrl = getPluginAssetUrl(
   "themes",
-  "public/pre-defined/french/meme.png",
+  "public/pre-defined/french/meme.webp",
 );
 
 export function FrenchMeme() {

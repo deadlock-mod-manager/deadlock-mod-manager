@@ -1,6 +1,7 @@
 import { afterEach, expect, it } from "bun:test";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import type { ScenarioId } from "./scenarios";
 import { runE2eWorld } from "./supervisor";
 import { removeOwnedWorld } from "./world";
 
@@ -85,4 +86,37 @@ it("serves hero assets used after installs and launch preparation without unexpe
   worlds.push(result.worldDirectory);
   expect(result.unexpectedRequests).toEqual([]);
   expect(checked).toBe(true);
+});
+
+it("answers catalog sync's category requests, after a case's own", async () => {
+  const categories = async (caseId: ScenarioId) => {
+    const bodies: unknown[] = [];
+    const result = await runE2eWorld({
+      provider: "embedded",
+      runId: "categories",
+      caseId,
+      attempt: 1,
+      runPhase: async (environment) => {
+        for (const type of ["Mod", "Sound", "Wip"]) {
+          const response = await fetch(
+            `${environment.HTTP_PROXY}/apiv11/${type}/Categories?_idGameRow=20948&_sSort=a_to_z&_bShowEmpty=true`,
+          );
+          expect(response.status).toBe(200);
+          bodies.push(await response.json());
+        }
+        return {
+          exitCode: 1,
+          output: "fixture contract checked without launching the app",
+        };
+      },
+    });
+    worlds.push(result.worldDirectory);
+    expect(result.unexpectedRequests).toEqual([]);
+    // runE2eWorld catches the phase's failures, so check it got every answer.
+    expect(bodies).toHaveLength(3);
+    return bodies;
+  };
+  expect(await categories("about-smoke")).toEqual([[], [], []]);
+  // catalog-upgrade serves its own Mod tree.
+  expect((await categories("gamebanana-legacy-catalog"))[0]).not.toEqual([]);
 });
