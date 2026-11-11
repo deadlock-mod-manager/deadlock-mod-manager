@@ -124,8 +124,7 @@ pub struct SaltsCheck {
 #[derive(Debug, Clone, Copy)]
 pub enum FetchScope {
   Account(u32),
-  // How many matches to ask for: the global list claims every id it hands out, so asking
-  // for no more than the pass fetches leaves the rest to other workers.
+  // How many ids to ask for: the server claims every id it hands out.
   Global(usize),
 }
 

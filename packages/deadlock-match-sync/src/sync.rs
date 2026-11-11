@@ -292,29 +292,24 @@ where
     self.persistence.persist_fetched(&st.fetched_order);
   }
 
-  // Ids the server already stores salts for: remembered like fetched ones, so no later pass
-  // checks them again.
+  // Ids deadlock-api already stores salts for: remembered like fetched ones, so no later
+  // pass checks them again.
   fn remember_stored(&self, ids: &[u64], st: &mut RunState) {
-    let new: Vec<u64> = ids
-      .iter()
-      .copied()
-      .filter(|&id| st.fetched_set.insert(id))
-      .collect();
-    if new.is_empty() {
+    if ids.is_empty() {
       return;
     }
-    st.processed.extend(&new);
-    st.fetched_order.extend(&new);
-    st.progress.skipped += new.len() as u32;
+    st.fetched_set.extend(ids);
+    st.processed.extend(ids);
+    st.fetched_order.extend(ids);
+    st.progress.skipped += ids.len() as u32;
     self.persistence.persist_fetched(&st.fetched_order);
     self.persistence.emit_progress(&st.progress);
   }
 
-  // Of the user's own history ids, the ones deadlock-api has no salts for, newest first.
-  // Other players in the same match sync it too, and other tools upload salts, so asking the
-  // GC for every own match spends about half the quota on salts the server already has.
-  // The flag is false if some ids were left unchecked: a check failed, the pass was
-  // cancelled, or the missing ones already fill the quota. They wait for a later pass.
+  // Of the user's own history ids, the ones deadlock-api has no salts for, newest first:
+  // other players in the same match and other tools upload salts too. The flag is false if
+  // some ids were left unchecked (a check failed, the pass was cancelled, or the missing
+  // ones already fill the quota); they wait for a later pass.
   async fn unstored_own_matches(
     &self,
     ids: Vec<u64>,
@@ -468,15 +463,13 @@ where
       {
         return Ok(());
       }
-      // Ids are left on this page: paging on would spend history requests on pages that
-      // can't be checked or fetched either, and the sync isn't complete. The account's
-      // pending list below needs no check, so it still gets fetched.
+      // Later pages couldn't be checked either. The account's pending list needs no check,
+      // so it still gets fetched.
       if !checked_all {
         break;
       }
       match page.next_cursor {
-        // With the quota spent, nothing on the next page could be fetched: don't spend a
-        // history request on it.
+        // Nothing on the next page could be fetched: don't spend a history request on it.
         Some(_) if st.quota.remaining(self.persistence.now()) == 0 => {
           st.progress.quota_reached = true;
           st.progress.quota_remaining = 0;
