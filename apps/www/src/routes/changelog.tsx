@@ -232,7 +232,7 @@ function ChangelogPage() {
     <div className='overflow-x-clip'>
       <section className='relative isolate overflow-hidden'>
         <div aria-hidden='true' className='-z-10 absolute inset-0'>
-          <div className='absolute inset-0 bg-[url(/backgrounds/bg-1.jpg)] bg-cover bg-[center_30%] opacity-20 [mask-image:radial-gradient(110%_90%_at_80%_20%,black_15%,transparent_70%)]' />
+          <div className='absolute inset-0 bg-[url(/backgrounds/bg-1.webp)] bg-cover bg-[center_30%] opacity-20 [mask-image:radial-gradient(110%_90%_at_80%_20%,black_15%,transparent_70%)]' />
           <div className='absolute inset-0 bg-[linear-gradient(180deg,transparent_55%,var(--color-background)_100%)]' />
         </div>
         <div className='mx-auto max-w-7xl px-6 pt-16 pb-10 lg:pt-24'>

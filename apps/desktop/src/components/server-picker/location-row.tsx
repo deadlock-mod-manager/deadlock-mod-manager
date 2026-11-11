@@ -1,6 +1,6 @@
 import { CheckIcon, GlobeIcon, ProhibitIcon } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
-import { pickerPingTone } from "@/lib/server-picker";
+import { pickerPingTone, RECENT_MATCH_MONTHS } from "@/lib/server-picker";
 import { cn } from "@/lib/utils";
 import type { ServerPickerLatency } from "@/types/generated/ServerPickerLatency";
 import type { ServerPickerLocation } from "@/types/generated/ServerPickerLocation";
@@ -11,6 +11,7 @@ interface LocationRowProps {
   pending: boolean;
   observed: boolean | null;
   latency?: ServerPickerLatency;
+  matches?: number;
   disabled: boolean;
   onChange: (id: string, blocked: boolean, extend: boolean) => void;
 }
@@ -21,6 +22,7 @@ export const LocationRow = ({
   pending,
   observed,
   latency,
+  matches,
   disabled,
   onChange,
 }: LocationRowProps) => {
@@ -82,6 +84,15 @@ export const LocationRow = ({
             <span className='font-mono uppercase tracking-wide'>
               {location.id}
             </span>
+            {matches ? (
+              <span
+                className='tabular-nums'
+                title={t("serverPicker.recentMatchesHint", {
+                  months: RECENT_MATCH_MONTHS,
+                })}>
+                {t("serverPicker.recentMatches", { count: matches })}
+              </span>
+            ) : null}
             {note && (
               <span
                 className={cn(

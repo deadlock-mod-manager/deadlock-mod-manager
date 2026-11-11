@@ -162,7 +162,6 @@
 ["exports","apps/desktop/src/lib/validation/stats-api.ts",[["","matchMetadataPlayerSchema"]]]
 ["exports","apps/desktop/src/lib/validation/stats-api.ts",[["","matchMetadataStatSchema"]]]
 ["exports","apps/desktop/src/lib/validation/stats-api.ts",[["","seasonIntervalSchema"]]]
-["exports","apps/desktop/src/lib/whats-new-versions.ts",[["","WHATS_NEW_RIBBON_VERSION_COUNT"]]]
 ["exports","apps/desktop/src/plugins/themes/custom/index.ts",[["","ThemeColorPicker"]]]
 ["exports","apps/desktop/src/plugins/themes/custom/theme-color-utils.ts",[["","hslToRgbComponents"]]]
 ["exports","apps/desktop/src/plugins/themes/custom/theme-color-utils.ts",[["","hslTripletStringToHex"]]]

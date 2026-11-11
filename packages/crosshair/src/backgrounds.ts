@@ -1,5 +1,5 @@
 export const BACKGROUND_PATHS = {
-  bg1: "/backgrounds/bg-1.jpg",
+  bg1: "/backgrounds/bg-1.webp",
   bg2: "/backgrounds/bg-2.jpg",
 } as const;
 

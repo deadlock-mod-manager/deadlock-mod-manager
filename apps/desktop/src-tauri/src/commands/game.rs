@@ -20,6 +20,11 @@ const GAME_LAUNCH_POLL_INTERVAL: Duration = Duration::from_secs(2);
 /// behind, and cancelling that is a no-op.
 static LAUNCH_CANCEL: Mutex<Option<CancellationToken>> = Mutex::new(None);
 
+/// Runs one `stop_game` at a time, from marking the session through undoing
+/// the marks on failure, so an earlier Stop's rollback can't overwrite a later
+/// Stop's marks.
+static STOP_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+
 /// Protect staged mounts until launch succeeds, fails, or is cancelled.
 pub(super) static GAMEINFO_LAUNCH: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
@@ -229,14 +234,40 @@ pub async fn stop_game() -> Result<(), Error> {
   if crate::runtime_environment::records_game_launches() {
     return Ok(());
   }
+  let _stop = STOP_LOCK.lock().await;
   // Before the kill, so the session's forced exit reads as ours.
-  crate::game_session::note_dmm_stop();
+  #[cfg_attr(not(target_os = "linux"), allow(unused_variables))]
+  let stopped_session = crate::game_session::note_dmm_stop();
+  #[cfg(target_os = "linux")]
+  if crate::flatpak::running_in_flatpak() {
+    if let Err(error) = crate::flatpak::game_process::stop_game().await {
+      crate::game_session::note_dmm_stop_failed(stopped_session);
+      return Err(error);
+    }
+    // Without a PID, the session can't see the game exit on its own.
+    crate::game_session::note_dmm_stop_completed(stopped_session);
+    return Ok(());
+  }
   let mut mod_manager = MANAGER.lock().unwrap();
   mod_manager.stop_game()
 }
 
 #[tauri::command]
 pub async fn is_game_running() -> Result<bool, Error> {
+  // The sandbox hides the game. This is polled every few seconds, so a failed
+  // host check is logged instead of raising an error toast on every poll, and
+  // reports the last known state so it isn't taken for the game closing.
+  #[cfg(target_os = "linux")]
+  if crate::flatpak::running_in_flatpak() {
+    return Ok(
+      crate::flatpak::game_process::is_game_running()
+        .await
+        .unwrap_or_else(|error| {
+          log::warn!("Could not check for the game on the host: {error}");
+          crate::flatpak::game_process::last_known_running()
+        }),
+    );
+  }
   // In E2E builds the scan sees only the world's stand-in game.
   let processes = MANAGER.lock().unwrap().game_processes()?;
   crate::game_session::observe(&processes);

@@ -14,6 +14,7 @@ import { useIsHeroAvailable } from "@/hooks/use-player-stats";
 import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { RailScrollArea } from "./rail-scroll-area";
 
 const SCROLL_AMOUNT = 600;
 // Long enough to see where the roll landed, short enough not to feel like a wait.
@@ -121,10 +122,7 @@ export const BrowseByHeroRail = () => {
           </Button>
         </div>
       </header>
-      <div
-        className='-mx-1 flex gap-3 overflow-x-auto px-1 pt-1 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
-        ref={scrollerRef}
-        style={{ scrollSnapType: "x proximity" }}>
+      <RailScrollArea className='gap-3 pt-1' scrollerRef={scrollerRef}>
         {heroes.map((hero) => {
           const isRolled = hero === rolledHero;
           return (
@@ -139,7 +137,6 @@ export const BrowseByHeroRail = () => {
                 if (node) tileRefs.current.set(hero, node);
                 else tileRefs.current.delete(hero);
               }}
-              style={{ scrollSnapAlign: "start" }}
               type='button'>
               <HeroIcon
                 className={cn(
@@ -160,7 +157,7 @@ export const BrowseByHeroRail = () => {
             </button>
           );
         })}
-      </div>
+      </RailScrollArea>
     </section>
   );
 };

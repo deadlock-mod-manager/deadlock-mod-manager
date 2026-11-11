@@ -4,6 +4,7 @@ use crate::mod_manager::shard::{ProfileBase, ShardIndex, ShardLocator};
 use crate::mod_manager::vpk_manager::VpkManager;
 use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
 use crate::providers::{SubmissionProvider, SubmissionRef};
+use futures::{Stream, StreamExt, stream};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
@@ -149,6 +150,9 @@ pub struct AddonAnalyzer;
 
 const LOOKUP_CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
 const LOOKUP_TIMEOUT: Duration = Duration::from_secs(30);
+/// Lookups Analyze keeps in flight at once, the same 4 as its parse batches
+/// and DMM's other API clients.
+const LOOKUP_CONCURRENCY: usize = 4;
 
 impl AddonAnalyzer {
   pub fn new() -> Self {
@@ -193,19 +197,39 @@ impl AddonAnalyzer {
     })
   }
 
+  fn lookup_endpoint() -> String {
+    let api_url = crate::commands::state::get_api_url();
+    format!("{api_url}/api/v2/vpk-analyse-hashes")
+  }
+
   /// Ask the hash analysis API which mod a VPK belongs to. `Ok(None)` means the
   /// service answered and found no match; a failed request is an error.
   async fn analyze_hashes(
     client: &reqwest::Client,
     vpk_parsed: &VpkParsed,
   ) -> Result<Option<(String, MatchInfo)>, Error> {
-    let api_url = crate::commands::state::get_api_url();
-    Self::lookup_hashes(
-      client,
-      &format!("{api_url}/api/v2/vpk-analyse-hashes"),
-      vpk_parsed,
-    )
-    .await
+    Self::lookup_hashes(client, &Self::lookup_endpoint(), vpk_parsed).await
+  }
+
+  /// Looks up each addon, `LOOKUP_CONCURRENCY` at a time, and yields each with
+  /// its result in the order given, whichever answer arrives first. A failed
+  /// lookup is that addon's result and never stops the others.
+  fn lookup_each<'a>(
+    client: &'a Result<reqwest::Client, Error>,
+    endpoint: &'a str,
+    addons: impl IntoIterator<Item = LocalAddonInfo> + 'a,
+  ) -> impl Stream<Item = (LocalAddonInfo, Result<Option<(String, MatchInfo)>, String>)> + 'a {
+    stream::iter(addons)
+      .map(move |addon| async move {
+        let lookup = match client {
+          Ok(client) => Self::lookup_hashes(client, endpoint, &addon.vpk_parsed)
+            .await
+            .map_err(|e| e.to_string()),
+          Err(e) => Err(e.to_string()),
+        };
+        (addon, lookup)
+      })
+      .buffered(LOOKUP_CONCURRENCY)
   }
 
   async fn lookup_hashes(
@@ -584,28 +608,28 @@ impl AddonAnalyzer {
     let mut identified_addons = Vec::new();
     let total_addons = non_prefixed_addons.len();
     let client = Self::lookup_client();
+    let endpoint = Self::lookup_endpoint();
+    // Progress for each addon goes out as its lookup is about to start.
+    let queued = non_prefixed_addons
+      .into_iter()
+      .enumerate()
+      .map(|(index, addon)| {
+        let current_addon_num = index + 1;
+        let progress = 50 + ((current_addon_num as f32 / total_addons as f32) * 45.0) as u8; // 50-95%
+        self.emit_progress(
+          &app_handle,
+          "analyzing_hashes",
+          "Identifying mods using hash analysis...",
+          Some(total_addons),
+          Some(current_addon_num),
+          Some(addon.file_name.clone()),
+          progress,
+        );
+        addon
+      });
+    let mut lookups = std::pin::pin!(Self::lookup_each(&client, &endpoint, queued));
 
-    for (index, mut addon) in non_prefixed_addons.into_iter().enumerate() {
-      let current_addon_num = index + 1;
-      let progress = 50 + ((current_addon_num as f32 / total_addons as f32) * 45.0) as u8; // 50-95%
-
-      // Emit progress for current addon being analyzed
-      self.emit_progress(
-        &app_handle,
-        "analyzing_hashes",
-        "Identifying mods using hash analysis...",
-        Some(total_addons),
-        Some(current_addon_num),
-        Some(addon.file_name.clone()),
-        progress,
-      );
-
-      let lookup = match &client {
-        Ok(client) => Self::analyze_hashes(client, &addon.vpk_parsed)
-          .await
-          .map_err(|e| e.to_string()),
-        Err(e) => Err(e.to_string()),
-      };
+    while let Some((mut addon, lookup)) = lookups.next().await {
       match lookup {
         Ok(Some((remote_id, match_info))) => {
           addon.remote_id = Some(remote_id.clone());
@@ -858,10 +882,46 @@ mod tests {
     .unwrap()
   }
 
-  /// Answers one request with `status` and `body`, having read the whole
-  /// request so the client never sees a reset.
+  /// Reads a whole request, so the client never sees a reset, and returns
+  /// its body.
+  async fn read_request(socket: &mut tokio::net::TcpStream) -> String {
+    use tokio::io::AsyncReadExt;
+    let mut request = Vec::new();
+    let mut buffer = [0_u8; 1024];
+    loop {
+      let read = socket.read(&mut buffer).await.unwrap();
+      request.extend_from_slice(&buffer[..read]);
+      let text = String::from_utf8_lossy(&request);
+      if let Some((head, rest)) = text.split_once("\r\n\r\n") {
+        let length = head
+          .lines()
+          .find_map(|line| {
+            let (name, value) = line.split_once(':')?;
+            name
+              .eq_ignore_ascii_case("content-length")
+              .then(|| value.trim().parse::<usize>().ok())?
+          })
+          .unwrap_or(0);
+        if rest.len() >= length {
+          return rest.to_string();
+        }
+      }
+      if read == 0 {
+        return String::new();
+      }
+    }
+  }
+
+  async fn reply(socket: &mut tokio::net::TcpStream, status: u16, body: &str) {
+    use tokio::io::AsyncWriteExt;
+    let reply = format!(
+      "HTTP/1.1 {status} Scripted\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{body}",
+      body.len()
+    );
+    let _ = socket.write_all(reply.as_bytes()).await;
+  }
+
   async fn serve_once(status: u16, body: &'static str) -> String {
-    use tokio::io::{AsyncReadExt, AsyncWriteExt};
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let endpoint = format!(
       "http://{}/api/v2/vpk-analyse-hashes",
@@ -869,35 +929,8 @@ mod tests {
     );
     tokio::spawn(async move {
       let (mut socket, _) = listener.accept().await.unwrap();
-      let mut request = Vec::new();
-      let mut buffer = [0_u8; 1024];
-      loop {
-        let read = socket.read(&mut buffer).await.unwrap();
-        request.extend_from_slice(&buffer[..read]);
-        let text = String::from_utf8_lossy(&request);
-        if let Some((head, rest)) = text.split_once("\r\n\r\n") {
-          let length = head
-            .lines()
-            .find_map(|line| {
-              let (name, value) = line.split_once(':')?;
-              name
-                .eq_ignore_ascii_case("content-length")
-                .then(|| value.trim().parse::<usize>().ok())?
-            })
-            .unwrap_or(0);
-          if rest.len() >= length {
-            break;
-          }
-        }
-        if read == 0 {
-          break;
-        }
-      }
-      let reply = format!(
-        "HTTP/1.1 {status} Scripted\r\ncontent-type: application/json\r\ncontent-length: {}\r\nconnection: close\r\n\r\n{body}",
-        body.len()
-      );
-      let _ = socket.write_all(reply.as_bytes()).await;
+      read_request(&mut socket).await;
+      reply(&mut socket, status, body).await;
     });
     endpoint
   }
@@ -948,6 +981,7 @@ mod tests {
 
   #[tokio::test]
   async fn profile_scan_skips_vpks_in_subfolders_the_game_does_not_load() {
+    let _ = crate::runtime_environment::initialize();
     let game = tempfile::tempdir().unwrap();
     let profile = game.path().join("game/citadel/addons/1_profile");
     let staged = profile.join(".dmm-clear");
@@ -965,6 +999,7 @@ mod tests {
 
   #[tokio::test]
   async fn reports_which_shard_each_file_sits_in() {
+    let _ = crate::runtime_environment::initialize();
     let game = tempfile::tempdir().unwrap();
     let citadel = game.path().join("game/citadel");
     // Prefixed names skip the hash lookup, so the test stays offline.
@@ -1139,6 +1174,7 @@ mod tests {
 
   #[tokio::test]
   async fn an_unreadable_manifest_is_reported_and_analysis_continues() {
+    let _ = crate::runtime_environment::initialize();
     let game = tempfile::tempdir().unwrap();
     let base = game.path().join("game/citadel/addons/1_profile");
     write_vpk(&base, "900003_red.vpk", "disabled mod");
@@ -1154,5 +1190,99 @@ mod tests {
     assert_eq!(result.addons[0].manifest_mod_id, None);
     assert_eq!(result.errors.len(), 1, "{:?}", result.errors);
     assert!(result.errors[0].contains("Could not read which files DMM installed"));
+  }
+
+  #[tokio::test]
+  async fn lookups_overlap_up_to_the_bound_and_keep_the_scan_order() {
+    use std::sync::{Arc, Mutex};
+
+    #[derive(Default)]
+    struct Journal {
+      in_flight: usize,
+      max_in_flight: usize,
+      asked: Vec<String>,
+      answered: Vec<String>,
+    }
+
+    let count = LOOKUP_CONCURRENCY * 2;
+    let dir = tempfile::tempdir().unwrap();
+    let addons: Vec<LocalAddonInfo> = (1..=count)
+      .map(|index| {
+        let name = format!("pak{index:02}_dir.vpk");
+        write_vpk(dir.path(), &name, &format!("unknown file {index}"));
+        AddonAnalyzer::parse_vpk_file_fast(&dir.path().join(name), ShardIndex::FIRST).unwrap()
+      })
+      .collect();
+    let hashes: Vec<String> = addons
+      .iter()
+      .map(|addon| addon.vpk_parsed.fingerprint.sha256.clone())
+      .collect();
+
+    // Each lookup is answered with its own hash as the submission ID, and
+    // later files wait less, so answers go out in a different order.
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let endpoint = format!(
+      "http://{}/api/v2/vpk-analyse-hashes",
+      listener.local_addr().unwrap()
+    );
+    let journal = Arc::new(Mutex::new(Journal::default()));
+    let server_journal = journal.clone();
+    let scan_order = hashes.clone();
+    tokio::spawn(async move {
+      loop {
+        let (mut socket, _) = listener.accept().await.unwrap();
+        let journal = server_journal.clone();
+        let scan_order = scan_order.clone();
+        tokio::spawn(async move {
+          let body = read_request(&mut socket).await;
+          let request: HashAnalysisRequest = serde_json::from_str(&body).unwrap();
+          let sha256 = request.sha256.unwrap();
+          let position = scan_order.iter().position(|hash| *hash == sha256).unwrap();
+          {
+            let mut journal = journal.lock().unwrap();
+            journal.asked.push(sha256.clone());
+            journal.in_flight += 1;
+            journal.max_in_flight = journal.max_in_flight.max(journal.in_flight);
+          }
+          tokio::time::sleep(Duration::from_millis(100 + 50 * (count - position) as u64)).await;
+          journal.lock().unwrap().in_flight -= 1;
+          let answer = format!(
+            r#"[{{"matchedVpk":{{"id":"vpk","submissionType":"mod","submissionId":"{sha256}"}},"match":{{"certainty":100,"matchType":"sha256"}}}}]"#
+          );
+          reply(&mut socket, 200, &answer).await;
+          journal.lock().unwrap().answered.push(sha256);
+        });
+      }
+    });
+
+    let client = AddonAnalyzer::lookup_client();
+    let results: Vec<_> = tokio::time::timeout(
+      Duration::from_secs(10),
+      AddonAnalyzer::lookup_each(&client, &endpoint, addons).collect::<Vec<_>>(),
+    )
+    .await
+    .expect("lookups should finish");
+
+    let identified: Vec<String> = results
+      .into_iter()
+      .map(|(addon, lookup)| {
+        let (remote_id, _) = lookup.unwrap().unwrap();
+        assert_eq!(remote_id, addon.vpk_parsed.fingerprint.sha256);
+        remote_id
+      })
+      .collect();
+    assert_eq!(identified, hashes, "results should keep the scan order");
+
+    let journal = journal.lock().unwrap();
+    assert_eq!(journal.max_in_flight, LOOKUP_CONCURRENCY);
+    let mut asked = journal.asked.clone();
+    asked.sort();
+    let mut expected = hashes.clone();
+    expected.sort();
+    assert_eq!(asked, expected, "each file should be looked up once");
+    assert_ne!(
+      journal.answered, hashes,
+      "answers should have gone out in a different order from the scan"
+    );
   }
 }

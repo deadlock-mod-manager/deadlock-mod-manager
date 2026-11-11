@@ -1318,41 +1318,61 @@
     "title": "更新日誌",
     "versions": {
       "2.4.0": {
-        "title": "Custom mod sources, a Party tab in Stats, and a new Hero Skins page",
+        "title": "A Party tab in Stats, a server picker, and better category filters for mods",
+        "highlights": [
+          {
+            "image": "/whats-new/2.4.0-1-party-tab.webp",
+            "caption": "Party tab in Stats"
+          },
+          {
+            "image": "/whats-new/2.4.0-2-category-filters.webp",
+            "caption": "Category filters"
+          },
+          {
+            "image": "/whats-new/2.4.0-3-server-picker.webp",
+            "caption": "Server picker"
+          },
+          {
+            "image": "/whats-new/2.4.0-4-remove-hero-parts.webp",
+            "caption": "Removing hero parts in the Mod Foundry"
+          }
+        ],
         "features": [
-          "✨ Add mod sites other than GameBanana as sources, and install their mods in the app or from links on their websites",
-          "✨ Mods, Sounds, Maps and WiPs have category trees that work together with the hero filter",
-          "✨ Mod pages show YouTube and Vimeo videos from GameBanana, and videos on NSFW mods follow your blur settings",
-          "🎨 Redesigned Hero Skins page with hero banners, sound rows and a shuffle pool mode",
+          "✨ The new Party tab in Stats rates every lineup your party can get in queue",
+          "✨ Mods, Sounds, Maps and WiPs can be filtered by category and subcategory, and the categories work with the hero filter",
+          "✨ Mod pages show YouTube and Vimeo videos from GameBanana, blurred on NSFW mods if you blur NSFW content",
+          "✨ A server picker for blocking Deadlock matchmaking servers, with your recent match counts and a Where I play preset",
           "✨ Library groups can turn on one random mod each time you launch",
-          "📊 New Party tab in Stats rates every lineup your party can get in queue",
-          "✨ New server picker to choose which Deadlock matchmaking servers to block",
           "✨ Remove hero parts like hats or capes in the Mod Foundry",
-          "✨ 3D previews handle animated materials, particle effects and cloth-heavy skins better, and can switch to the original model to compare",
+          "✨ 3D previews handle animated materials, particle effects and cloth-heavy skins better, and can switch to the original model for comparison",
           "✨ Local mods get rendered preview covers in the library and on their page",
-          "⚡ Performance configs apply all of their video settings and back up yours first, and video settings you changed in game are shown",
-          "✨ Turn match data sharing off for individual Steam accounts",
+          "✨ Match data sharing can be turned off for each Steam account",
           "✨ Discord Rich Presence can hide your party size",
-          "🎨 New Le Deadlock theme, with a custom crest and tax-themed jokes",
-          "✨ Obsolete GameBanana mods show the author's note, and withheld mods say why staff withheld them",
-          "✨ Compatibility reports are easier to read, check HUD mods against the game's layouts, and can be copied for support",
-          "✨ Analyze asks before re-adding leftover files, offers to remove files it can't place, and no longer says it added mods it didn't",
-          "✨ Tips introduce new mod, performance and matchmaking features",
-          "🔧 Fixed mods now stay fixed after game or app updates, mod changes, and closing the game",
-          "📁 Profile imports and backup restores keep each mod's chosen variant, and list any mods they couldn't install",
-          "📥 Your download routing setting now applies to updates and imports, and Default falls back to other GameBanana servers",
+          "✨ Obsolete GameBanana mods show the author's note, and withheld mods show why staff withheld them",
+          "✨ Compatibility reports check HUD mods against the game's current layouts and can be copied for support",
+          "✨ Analyze asks before re-adding leftover files and offers to remove files it can't place",
+          "✨ Tips point out new mod, performance and matchmaking features",
+          "✨ You can add more mod sources and install from them in the app or through links on their websites",
+          "🎨 The Hero Skins page has hero banners, sound rows and a shuffle pool mode",
+          "🎨 New Le Deadlock theme",
+          "📦 Performance configs back up your video settings before applying all of theirs, and show which settings you changed in game",
+          "🔧 Fixed mods stay fixed after game or app updates, mod changes, and closing the game",
+          "📁 Profile imports and backup restores keep each mod's chosen variant and list any mods they couldn't install",
+          "📥 Your download routing setting applies to updates and imports, and Default falls back to other GameBanana servers",
+          "📥 Retried downloads are no longer marked as failed",
           "🔧 Disabling or deleting several mods shows which ones failed or were skipped",
           "🔧 Custom game search paths are kept when launching or disabling mods",
-          "🔧 Game settings are backed up before a restore or reset, and broken config files are left untouched",
-          "🔧 Withheld and hidden GameBanana mods no longer appear in the store or on the dashboard",
+          "🔧 Game settings are backed up before a restore or reset, and broken config files are left alone",
+          "🔧 Withheld and hidden GameBanana mods no longer show up in the store or on the dashboard",
           "🔧 Re-scanning after Clear Mods State brings back your installed mods",
-          "🔧 Sound-only hero mods are listed under Hero Sounds instead of with that hero's skins",
+          "🔧 Sound-only hero mods are listed under Hero Sounds, not with that hero's skins",
+          "🔧 Analyze no longer says it added mods to your library when it didn't",
           "🔧 The Live tab keeps your last match until you search for the next one",
-          "🔧 Fixed launching Deadlock on NixOS and silent audio previews in the Flatpak build",
-          "🔧 Fixed Reinstall re-enabling variants you had disabled",
-          "🔧 Fixed a game stuck while closing being treated as still running",
-          "📥 Fixed retried downloads being marked as failed",
-          "🔧 Settings explains nightly and rollback builds, and no longer offers older nightlies"
+          "🔧 Reinstall no longer re-enables variants you had disabled",
+          "🔧 A game stuck while closing is no longer treated as still running",
+          "🔧 Fixed launching Deadlock on NixOS",
+          "🔧 Flatpak: fixed false crash reports, silent audio previews, and the Live tab and Stop not detecting the running game",
+          "🔧 Settings explains nightly and rollback builds and no longer offers older nightlies"
         ]
       },
       "2.3.0": {
