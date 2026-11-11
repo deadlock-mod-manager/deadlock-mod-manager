@@ -13,6 +13,9 @@ let pendingWrite: Promise<void> = Promise.resolve();
 // repeat backs up the queue, and closing the window then saves whatever reached
 // the store, which can be several state changes old.
 const lastQueued = new Map<string, string>();
+// A newer snapshot of the same key replaces a write that is still waiting at the
+// end of the queue instead of queuing another whole-state write.
+let waitingWrite: { key: string; value: string } | undefined;
 
 export const setStateStorePath = (path: string): void => {
   stateStorePath = path;
@@ -120,20 +123,28 @@ const storage: StateStorage = {
       return;
     }
     lastQueued.set(key, value);
-    pendingWrite = pendingWrite.then(async () => {
-      try {
-        const store = await getStore(stateStorePath);
-        await store?.set(key, value);
-        await store?.save();
-      } catch (error) {
-        // Let the next identical snapshot retry the write.
-        if (lastQueued.get(key) === value) lastQueued.delete(key);
-        logger
-          .withError(error)
-          .withMetadata({ key })
-          .error("Persist setItem failed");
-      }
-    });
+    if (waitingWrite?.key === key) {
+      waitingWrite.value = value;
+    } else {
+      const write = { key, value };
+      waitingWrite = write;
+      pendingWrite = pendingWrite.then(async () => {
+        // Snapshots arriving from here on queue behind this write.
+        if (waitingWrite === write) waitingWrite = undefined;
+        try {
+          const store = await getStore(stateStorePath);
+          await store?.set(key, write.value);
+          await store?.save();
+        } catch (error) {
+          // Let the next identical snapshot retry the write.
+          if (lastQueued.get(key) === write.value) lastQueued.delete(key);
+          logger
+            .withError(error)
+            .withMetadata({ key })
+            .error("Persist setItem failed");
+        }
+      });
+    }
     await pendingWrite;
   },
 
@@ -147,6 +158,8 @@ const storage: StateStorage = {
       return;
     }
     lastQueued.delete(key);
+    // A snapshot after the deletion must not be written before it.
+    waitingWrite = undefined;
     pendingWrite = pendingWrite.then(async () => {
       try {
         const store = await getStore(stateStorePath);
@@ -176,6 +189,7 @@ export const __resetForTests = (): void => {
   stateStorePath = STORE_NAME;
   pendingWrite = Promise.resolve();
   lastQueued.clear();
+  waitingWrite = undefined;
   firstReadDone = false;
   writeGateLocked = false;
   storageReadyPromise = new Promise<StorageReadyStatus>((resolve) => {

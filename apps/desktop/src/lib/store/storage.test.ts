@@ -75,8 +75,8 @@ describe("storage write gate", () => {
       return backend;
     };
     const older = storage.setItem("local-config", "installed");
-    const newer = storage.setItem("local-config", "installed-and-enabled");
     await setImmediate();
+    const newer = storage.setItem("local-config", "installed-and-enabled");
     firstLookup.resolve();
     await Promise.all([older, newer]);
     expect(memory.get("local-config")).toBe("installed-and-enabled");
@@ -102,15 +102,20 @@ describe("storage write gate", () => {
   it("continues saving after a queued write fails", async () => {
     storageModule.markStorageReady();
     const backend = await getStoreImpl();
+    const firstLookup = Promise.withResolvers<void>();
     let lookups = 0;
     getStoreImpl = async () => {
-      if (++lookups === 1) throw new Error("write rejected");
+      if (++lookups === 1) {
+        await firstLookup.promise;
+        throw new Error("write rejected");
+      }
       return backend;
     };
-    await Promise.all([
-      storage.setItem("local-config", "failed"),
-      storage.setItem("local-config", "latest"),
-    ]);
+    const failed = storage.setItem("local-config", "failed");
+    await setImmediate();
+    const latest = storage.setItem("local-config", "latest");
+    firstLookup.resolve();
+    await Promise.all([failed, latest]);
     expect(memory.get("local-config")).toBe("latest");
   });
 
@@ -125,12 +130,14 @@ describe("storage write gate", () => {
         await backend.set(k, v);
       },
     });
-    await Promise.all([
-      storage.setItem("local-config", "downloading"),
+    const pending = [storage.setItem("local-config", "downloading")];
+    await setImmediate();
+    pending.push(
       storage.setItem("local-config", "downloading"),
       storage.setItem("local-config", "downloading"),
       storage.setItem("local-config", "installed"),
-    ]);
+    );
+    await Promise.all(pending);
     expect(writes).toBe(2);
     expect(memory.get("local-config")).toBe("installed");
   });
@@ -151,14 +158,48 @@ describe("storage write gate", () => {
         },
       };
     };
-    const saves = ["hero-1", "hero-2", "hero-3", "hero-4"].map((snapshot) =>
-      storage.setItem("local-config", snapshot),
-    );
+    const saves = [storage.setItem("local-config", "hero-1")];
     await setImmediate();
+    for (const snapshot of ["hero-2", "hero-3", "hero-4"]) {
+      saves.push(storage.setItem("local-config", snapshot));
+    }
     firstLookup.resolve();
     await Promise.all(saves);
     expect(written).toEqual(["hero-1", "hero-4"]);
     expect(memory.get("local-config")).toBe("hero-4");
+  });
+
+  it("writes a snapshot that arrives while a merged save is running", async () => {
+    storageModule.markStorageReady();
+    const backend = await getStoreImpl();
+    const firstLookup = Promise.withResolvers<void>();
+    const mergedSave = Promise.withResolvers<void>();
+    const saving = Promise.withResolvers<void>();
+    let lookups = 0;
+    let saves = 0;
+    getStoreImpl = async () => {
+      if (++lookups === 1) await firstLookup.promise;
+      return {
+        ...backend,
+        save: async () => {
+          if (++saves !== 2) return;
+          saving.resolve();
+          await mergedSave.promise;
+        },
+      };
+    };
+    const pending = [storage.setItem("local-config", "installed")];
+    await setImmediate();
+    pending.push(
+      storage.setItem("local-config", "enabled"),
+      storage.setItem("local-config", "reordered"),
+    );
+    firstLookup.resolve();
+    await saving.promise;
+    pending.push(storage.setItem("local-config", "disabled"));
+    mergedSave.resolve();
+    await Promise.all(pending);
+    expect(memory.get("local-config")).toBe("disabled");
   });
 
   it("keeps a snapshot queued after a deletion behind that deletion", async () => {
@@ -190,8 +231,8 @@ describe("storage write gate", () => {
       if (++lookups === 2) throw new Error("write rejected");
       return backend;
     };
+    await storage.setItem("local-config", "installed");
     await Promise.all([
-      storage.setItem("local-config", "installed"),
       storage.setItem("local-config", "enabled"),
       storage.setItem("local-config", "reordered"),
     ]);
