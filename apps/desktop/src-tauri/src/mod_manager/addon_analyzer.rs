@@ -1275,7 +1275,7 @@ mod tests {
       .map(|index| {
         let name = format!("pak{index:02}_dir.vpk");
         write_vpk(dir.path(), &name, &format!("unknown file {index}"));
-        AddonAnalyzer::parse_vpk_file_fast(&dir.path().join(name), ShardIndex::FIRST).unwrap()
+        AddonAnalyzer::parse_vpk_file_fast(&dir.path().join(name), ShardIndex::FIRST, true).unwrap()
       })
       .collect();
     let hashes: Vec<String> = addons
