@@ -5,6 +5,7 @@ import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";
 import enTranslation from "@/locales/en.json" with { type: "json" };
 import { localeLoaders } from "@/lib/locale-loaders";
+import logger from "@/lib/logger";
 
 const LANGUAGE_STORAGE_KEY = "i18nextLng";
 
@@ -45,15 +46,19 @@ const localeBackend: BackendModule = {
   type: "backend",
   init: () => {},
   read: (language, _namespace, callback) => {
+    const fail = (error: Error) => {
+      logger
+        .withMetadata({ language })
+        .withError(error)
+        .warn("Translations failed to load, showing English");
+      callback(error, false);
+    };
     const load = localeLoaders.get(language);
     if (!load) {
-      callback(new NotFoundError(`No translations for ${language}`), false);
+      fail(new NotFoundError(`No translations for ${language}`));
       return;
     }
-    load().then(
-      (module) => callback(null, module.default),
-      (error: Error) => callback(error, false),
-    );
+    load().then((module) => callback(null, module.default), fail);
   },
 };
 
