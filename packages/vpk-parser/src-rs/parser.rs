@@ -97,8 +97,12 @@ impl VpkParser {
         let mut probe = Self::new(bytes);
         if let Ok(header) = probe.parse_header() {
             let directory_end = probe.cursor as u64 + u64::from(header.tree_length);
-            let missing = directory_end.saturating_sub(probe.buffer.len() as u64);
-            file.by_ref().take(missing).read_to_end(&mut probe.buffer)?;
+            // A directory past the end of the file is rejected from the header
+            // alone, without buffering the file.
+            if directory_end <= file.metadata()?.len() {
+                let missing = directory_end.saturating_sub(probe.buffer.len() as u64);
+                file.by_ref().take(missing).read_to_end(&mut probe.buffer)?;
+            }
         }
         Ok(probe.buffer)
     }
