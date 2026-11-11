@@ -579,22 +579,6 @@ pub async fn import_profile_batch(
     })
     .collect();
 
-  let mut resolved_downloads = Vec::with_capacity(total_mods);
-  for mod_data in &mods {
-    resolved_downloads.push(
-      resolve_download_files(
-        &native_sources,
-        &catalog_state,
-        &policy,
-        &mod_data.mod_id,
-        &mod_data.download_files,
-        fileserver_preference,
-      )
-      .await
-      .map_err(|error| format!("Failed to resolve download files: {error:?}")),
-    );
-  }
-
   let final_profile_folder = if import_type == "create" {
     let now = std::time::SystemTime::now()
       .duration_since(std::time::UNIX_EPOCH)
@@ -629,9 +613,35 @@ pub async fn import_profile_batch(
   // `Some` holds the result of replacing a mod the profile already has.
   let mut download_results: Vec<Result<Option<Result<Mod, Error>>, String>> = Vec::new();
 
-  for (index, (mod_data, download_files)) in mods.iter().zip(resolved_downloads).enumerate() {
+  let native_sources = native_sources.inner();
+  let catalog_state = catalog_state.inner();
+  let policy = policy.inner();
+  let resolve = |index: usize| {
+    let mod_data = &mods[index];
+    async move {
+      resolve_download_files(
+        native_sources,
+        catalog_state,
+        policy,
+        &mod_data.mod_id,
+        &mod_data.download_files,
+        fileserver_preference,
+      )
+      .await
+      .map_err(|error| format!("Failed to resolve download files: {error:?}"))
+    }
+  };
+  // The next mod's files are looked up while this one downloads, so the first
+  // download doesn't wait for every lookup.
+  let mut next_download_files = None;
+
+  for (index, mod_data) in mods.iter().enumerate() {
     // download_results stays index-aligned with mods; the install loop below zips them.
-    let download_files = match download_files {
+    let resolved = match next_download_files.take() {
+      Some(resolved) => resolved,
+      None => resolve(index).await,
+    };
+    let download_files = match resolved {
       Ok(files) => files,
       Err(reason) => {
         log::error!(
@@ -670,10 +680,14 @@ pub async fn import_profile_batch(
     };
 
     let manager = get_download_manager(app_handle.clone()).await;
+    let resolve_next =
+      futures::future::OptionFuture::from((index + 1 < total_mods).then(|| resolve(index + 1)));
     if installed_ids.contains(&mod_data.mod_id) {
       // Applied right away, as a batch update does, so only one mod's
       // prepared files exist at a time.
-      download_results.push(prepare_replacement(manager, task).await.map(|prepared| {
+      let (prepared, next) = tokio::join!(prepare_replacement(manager, task), resolve_next);
+      next_download_files = next;
+      download_results.push(prepared.map(|prepared| {
         let result = replace_imported_mod(
           &mut MANAGER.lock().unwrap(),
           mod_data,
@@ -686,7 +700,9 @@ pub async fn import_profile_batch(
       }));
       continue;
     }
-    if let Err(error) = manager.queue_download_and_wait(task).await {
+    let (downloaded, next) = tokio::join!(manager.queue_download_and_wait(task), resolve_next);
+    next_download_files = next;
+    if let Err(error) = downloaded {
       log::error!("Download failed for mod {}: {error}", mod_data.mod_id);
       download_results.push(Err(error.to_string()));
       continue;
