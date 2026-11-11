@@ -1,6 +1,6 @@
 use crate::errors::Error;
 use crate::mod_manager::{
-  archive_extractor::ArchiveExtractor, filesystem_helper::FileSystemHelper,
+  archive_extractor::ArchiveExtractor, archive_listing, filesystem_helper::FileSystemHelper,
 };
 use log;
 use serde::{Deserialize, Serialize};
@@ -300,18 +300,15 @@ impl FileTreeAnalyzer {
         .unwrap_or("unknown")
         .to_string();
 
-      let vpk_files = match self.archive_extractor.list_files(&archive_path)? {
-        Some(files) => {
-          let mut vpk_files: Vec<_> = files
-            .into_iter()
-            .filter(|(path, _)| path.extension().is_some_and(|ext| ext == "vpk"))
-            .collect();
-          // The order an extraction's walk gives, which is the mod's load order.
-          vpk_files.sort();
-          vpk_files
-        }
+      let mut vpk_files = match archive_listing::list_files(&archive_path)? {
+        Some(files) => files
+          .into_iter()
+          .filter(|(path, _)| path.extension().is_some_and(|ext| ext == "vpk"))
+          .collect(),
         None => self.extract_vpk_files(&archive_path)?,
       };
+      // Path order within an archive is the mod's load order.
+      vpk_files.sort();
 
       log::info!(
         "Found {} VPK files in archive: {archive_name:?}",
@@ -530,10 +527,7 @@ mod tests {
   }
 
   fn is_listed(archive_path: &Path) -> bool {
-    ArchiveExtractor::new()
-      .list_files(archive_path)
-      .unwrap()
-      .is_some()
+    archive_listing::list_files(archive_path).unwrap().is_some()
   }
 
   /// The tree must be the one read off a real extraction of `archive_name`.
@@ -576,17 +570,16 @@ mod tests {
   #[test]
   fn names_the_filesystem_decides_match_extraction() {
     let long_path = format!("{}pak01_dir.vpk", "deep/".repeat(110));
-    let cases: [&[Entry]; 6] = [
+    let cases: [&[Entry]; 5] = [
       &[
         ("Pak/x.vpk", Some(b"first")),
         ("pak/X.vpk", Some(b"second!")),
       ],
       &[
-        ("caf\u{e9}/pak01_dir.vpk", Some(b"composed")),
-        ("cafe\u{301}/pak01_dir.vpk", Some(b"decomposed")),
+        ("\u{c9}t\u{e9}/pak01_dir.vpk", Some(b"upper")),
+        ("\u{e9}t\u{e9}/pak01_dir.vpk", Some(b"lower!")),
       ],
       &[("a/x.vpk", Some(b"first")), ("a\\x.vpk", Some(b"second!"))],
-      &[("Variant 1 /pak01_dir.vpk", Some(b"vpk"))],
       &[
         ("Pak/readme.txt", Some(b"read me")),
         ("pak/skin.vpk", Some(b"skin")),
@@ -601,9 +594,14 @@ mod tests {
       assert_tree_matches_extraction(mod_dir.path(), "mod.zip");
     }
 
-    // On Windows these names open a device, so whether extraction succeeds
-    // depends on the machine; the listing only has to leave them to extraction.
-    for name in ["con.vpk", "CONIN$/pak01_dir.vpk"] {
+    // On Windows a device name opens the device and a trailing space fails to
+    // extract, so whether extraction succeeds depends on the OS; the listing
+    // only has to leave them to extraction.
+    for name in [
+      "con.vpk",
+      "CONIN$/pak01_dir.vpk",
+      "Variant 1 /pak01_dir.vpk",
+    ] {
       let mod_dir = tempfile::tempdir().unwrap();
       write_zip(&mod_dir.path().join("mod.zip"), &[(name, Some(b"vpk"))]);
       assert!(!is_listed(&mod_dir.path().join("mod.zip")), "{name}");
@@ -631,26 +629,16 @@ mod tests {
     }
   }
 
-  /// One solid block holding two files with an empty file between them: the
-  /// reader counts entries, not streams, as it walks the block, so only an
-  /// extraction knows what it writes.
+  /// A hand-built 7z: one solid block holding two files with an empty file
+  /// between them. The reader counts entries, not streams, as it walks the
+  /// block, so only an extraction knows what it writes.
   #[test]
   fn seven_zip_empty_entry_inside_a_block_matches_extraction() {
     let mod_dir = tempfile::tempdir().unwrap();
     let archive_path = mod_dir.path().join("mod.7z");
     std::fs::write(
       &archive_path,
-      [
-        0x37, 0x7a, 0xbc, 0xaf, 0x27, 0x1c, 0x00, 0x04, 0xc4, 0xa8, 0x96, 0x51, 0x09, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x52, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf4, 0xff,
-        0x29, 0x52, 0x66, 0x69, 0x72, 0x73, 0x74, 0x6c, 0x61, 0x73, 0x74, 0x01, 0x04, 0x06, 0x00,
-        0x01, 0x09, 0x09, 0x00, 0x07, 0x0b, 0x01, 0x00, 0x01, 0x01, 0x00, 0x0c, 0x09, 0x00, 0x08,
-        0x0d, 0x02, 0x09, 0x05, 0x00, 0x00, 0x05, 0x03, 0x0e, 0x01, 0x40, 0x0f, 0x01, 0x80, 0x11,
-        0x2d, 0x00, 0x61, 0x00, 0x2e, 0x00, 0x76, 0x00, 0x70, 0x00, 0x6b, 0x00, 0x00, 0x00, 0x65,
-        0x00, 0x6d, 0x00, 0x70, 0x00, 0x74, 0x00, 0x79, 0x00, 0x2e, 0x00, 0x76, 0x00, 0x70, 0x00,
-        0x6b, 0x00, 0x00, 0x00, 0x7a, 0x00, 0x2e, 0x00, 0x76, 0x00, 0x70, 0x00, 0x6b, 0x00, 0x00,
-        0x00, 0x00, 0x00,
-      ],
+      include_bytes!("../../tests/fixtures/archives/empty-entry-in-block.7z"),
     )
     .unwrap();
 

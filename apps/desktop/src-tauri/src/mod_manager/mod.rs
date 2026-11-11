@@ -1,6 +1,7 @@
 pub mod addon_analyzer;
 pub mod addons_backup_manager;
 pub mod archive_extractor;
+mod archive_listing;
 pub mod autoexec_manager;
 pub mod conflicts;
 pub mod console_log_watcher;
