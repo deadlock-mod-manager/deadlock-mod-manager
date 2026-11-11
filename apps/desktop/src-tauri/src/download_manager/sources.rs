@@ -1,23 +1,75 @@
-use super::downloader::remove_partial_download;
+use super::downloader::{PauseHandle, remove_partial_download};
 use super::segment_staging::discard_staging;
 use crate::errors::Error;
+use futures::future::BoxFuture;
 use std::future::Future;
 use std::path::Path;
+use std::sync::Arc;
+use tokio_util::sync::CancellationToken;
 
-pub(super) async fn download_from_sources<F, Attempt>(
+/// Download URLs looked up only once every known one has failed, such as the
+/// GameBanana caches Default routing falls back to. Each call looks them up
+/// again, so a download resumed after a pause doesn't reuse a stale list.
+#[derive(Clone)]
+pub struct LateSources(Arc<dyn Fn() -> BoxFuture<'static, Vec<String>> + Send + Sync>);
+
+impl LateSources {
+  pub fn new<F, Lookup>(find: F) -> Self
+  where
+    F: Fn() -> Lookup + Send + Sync + 'static,
+    Lookup: Future<Output = Vec<String>> + Send + 'static,
+  {
+    Self(Arc::new(move || Box::pin(find())))
+  }
+}
+
+impl std::fmt::Debug for LateSources {
+  fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    formatter.write_str("LateSources")
+  }
+}
+
+/// The lookup stops as soon as the download is cancelled or paused, even when
+/// its list is ready at the same moment.
+pub(super) async fn late_urls(
+  late: Option<&LateSources>,
+  cancel: &CancellationToken,
+  pause: &PauseHandle,
+) -> Result<Vec<String>, Error> {
+  let Some(late) = late else {
+    return Ok(Vec::new());
+  };
+  tokio::select! {
+    biased;
+    () = cancel.cancelled() => Err(Error::DownloadCancelled),
+    () = pause.paused() => Err(Error::DownloadPaused),
+    urls = (late.0)() => Ok(urls),
+  }
+}
+
+/// Tries each URL in turn. `late` is awaited only when the last known URL has
+/// failed in a way another server could fix; its URLs join the end of the
+/// list. A source with a URL after it has its partial removed before the next
+/// is tried; the last one's error is returned with its partial kept.
+pub(super) async fn download_from_sources<F, Attempt, Late>(
   urls: &[String],
+  late: Late,
   target: &Path,
   mut download: F,
 ) -> Result<(), Error>
 where
   F: FnMut(String) -> Attempt,
   Attempt: Future<Output = Result<(), Error>>,
+  Late: Future<Output = Result<Vec<String>, Error>>,
 {
-  let (last, alternatives) = urls
-    .split_last()
-    .ok_or_else(|| Error::InvalidInput("No download URLs provided".to_string()))?;
-  for url in alternatives {
-    match download(url.clone()).await {
+  if urls.is_empty() {
+    return Err(Error::InvalidInput("No download URLs provided".to_string()));
+  }
+  let mut urls = urls.to_vec();
+  let mut late = Some(late);
+  let mut next = 0;
+  loop {
+    let error = match download(urls[next].clone()).await {
       Ok(()) => return Ok(()),
       Err(error)
         if matches!(
@@ -28,27 +80,47 @@ where
             | Error::DownloadStalled
         ) =>
       {
-        log::warn!("Download source failed; trying the next server: {error}");
-        remove_partial_download(target).await;
-        discard_staging(target).await?;
+        error
       }
       Err(error) => return Err(error),
+    };
+    next += 1;
+    if next == urls.len()
+      && let Some(late) = late.take()
+    {
+      for url in late.await? {
+        if !url.is_empty() && !urls.contains(&url) {
+          urls.push(url);
+        }
+      }
     }
+    if next == urls.len() {
+      return Err(error);
+    }
+    log::warn!("Download source failed; trying the next server: {error}");
+    remove_partial_download(target).await;
+    discard_staging(target).await?;
   }
-  download(last.clone()).await
 }
 
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::download_manager::downloader::{
-    PauseHandle, download_file_resumable, partial_download_len,
-  };
+  use crate::download_manager::downloader::{download_file_resumable, partial_download_len};
   use crate::download_manager::test_server::{Reply, TestServer};
-  use tokio_util::sync::CancellationToken;
+  use std::sync::atomic::{AtomicBool, Ordering};
 
   async fn transfer(urls: &[String], target: &Path, pause: PauseHandle) -> Result<(), Error> {
-    download_from_sources(urls, target, |url| {
+    transfer_late(urls, async { Ok(Vec::new()) }, target, pause).await
+  }
+
+  async fn transfer_late(
+    urls: &[String],
+    late: impl Future<Output = Result<Vec<String>, Error>>,
+    target: &Path,
+    pause: PauseHandle,
+  ) -> Result<(), Error> {
+    download_from_sources(urls, late, target, |url| {
       let target = target.to_path_buf();
       let pause = pause.clone();
       async move {
@@ -212,6 +284,7 @@ mod tests {
 
     download_from_sources(
       &[mirror.url("/mod.zip"), fallback.url("/mod.zip")],
+      async { Ok(Vec::new()) },
       &target,
       |url| {
         let target = target.clone();
@@ -263,5 +336,127 @@ mod tests {
       "the mirror wasn't asked once without Range before the fallback"
     );
     assert!(!staging_dir(&target).exists());
+  }
+
+  /// A server that cuts its first transfer after 3 bytes, leaving a partial,
+  /// and refuses every request after it.
+  async fn dying_server() -> TestServer {
+    TestServer::start(|_, index| {
+      if index > 0 {
+        return Reply::new(503, Vec::new());
+      }
+      let mut reply = Reply::new(200, b"xxxxx".to_vec()).header("etag", "\"v1\"");
+      reply.disconnect_after = Some(3);
+      reply.chunk = 1;
+      reply
+    })
+    .await
+  }
+
+  #[tokio::test]
+  async fn late_sources_are_looked_up_only_once_the_known_ones_fail() {
+    let dir = tempfile::tempdir().unwrap();
+    let target = dir.path().join("mod.zip");
+    let late_server = TestServer::start(|_, _| Reply::new(200, b"hello".to_vec())).await;
+    let looked_up = AtomicBool::new(false);
+    let late = |urls: Vec<String>| {
+      let looked_up = &looked_up;
+      async move {
+        looked_up.store(true, Ordering::SeqCst);
+        Ok(urls)
+      }
+    };
+
+    let working = TestServer::start(|_, _| Reply::new(200, b"hello".to_vec())).await;
+    transfer_late(
+      &[working.url("/mod.zip")],
+      late(vec![late_server.url("/mod.zip")]),
+      &target,
+      PauseHandle::new(),
+    )
+    .await
+    .unwrap();
+    assert!(!looked_up.load(Ordering::SeqCst));
+    assert!(late_server.requests().is_empty());
+
+    tokio::fs::remove_file(&target).await.unwrap();
+    let dying = dying_server().await;
+    transfer_late(
+      &[dying.url("/mod.zip")],
+      late(vec![dying.url("/mod.zip"), late_server.url("/mod.zip")]),
+      &target,
+      PauseHandle::new(),
+    )
+    .await
+    .unwrap();
+    assert!(looked_up.load(Ordering::SeqCst));
+    assert_eq!(tokio::fs::read(&target).await.unwrap(), b"hello");
+    assert_eq!(dying.requests().len(), 2, "a known URL was tried again");
+    assert_eq!(late_server.requests().len(), 1);
+    assert!(late_server.requests()[0].range.is_none());
+  }
+
+  #[tokio::test]
+  async fn no_late_source_keeps_the_last_partial() {
+    let dir = tempfile::tempdir().unwrap();
+    let target = dir.path().join("mod.zip");
+    let dying = dying_server().await;
+    assert!(
+      transfer_late(
+        &[dying.url("/mod.zip")],
+        async { Ok(Vec::new()) },
+        &target,
+        PauseHandle::new()
+      )
+      .await
+      .is_err()
+    );
+    assert_eq!(partial_download_len(&target).await, 3);
+  }
+
+  #[tokio::test]
+  async fn pause_or_cancel_during_the_lookup_tries_no_late_source() {
+    for cancelled in [false, true] {
+      let dir = tempfile::tempdir().unwrap();
+      let target = dir.path().join("mod.zip");
+      let dying = dying_server().await;
+      let late_server = TestServer::start(|_, _| Reply::new(200, b"hello".to_vec())).await;
+      let (cancel, pause) = (CancellationToken::new(), PauseHandle::new());
+      let late_url = late_server.url("/mod.zip");
+      // The lookup is under way when the user acts, and never finishes on its own.
+      let late = LateSources::new({
+        let (cancel, pause) = (cancel.clone(), pause.clone());
+        move || {
+          let (cancel, pause, late_url) = (cancel.clone(), pause.clone(), late_url.clone());
+          async move {
+            if cancelled {
+              cancel.cancel();
+            } else {
+              pause.pause();
+            }
+            std::future::pending::<()>().await;
+            vec![late_url]
+          }
+        }
+      });
+      let result = tokio::time::timeout(
+        std::time::Duration::from_secs(10),
+        transfer_late(
+          &[dying.url("/mod.zip")],
+          late_urls(Some(&late), &cancel, &pause),
+          &target,
+          PauseHandle::new(),
+        ),
+      )
+      .await
+      .expect("the lookup kept running after the user acted");
+      if cancelled {
+        assert!(matches!(result, Err(Error::DownloadCancelled)), "{result:?}");
+      } else {
+        assert!(matches!(result, Err(Error::DownloadPaused)), "{result:?}");
+      }
+      assert!(late_server.requests().is_empty());
+      assert_eq!(partial_download_len(&target).await, 3);
+    }
   }
 }

@@ -1,8 +1,11 @@
 use crate::app_runtime::AppHandle;
-use crate::download_manager::{DownloadFileDto, DownloadManager, DownloadStatus, DownloadTask};
+use crate::download_manager::{
+  DownloadFileDto, DownloadManager, DownloadStatus, DownloadTask, LateSources,
+};
 use crate::errors::Error;
 use crate::mod_manager::{ModFileTree, mods_store};
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 use tauri::State;
 use ts_rs::TS;
 
@@ -140,6 +143,9 @@ pub(crate) async fn resolve_download_files(
     ));
   }
 
+  // One cache lookup at a time among this mod's files, as when each file
+  // looked its caches up while resolving.
+  let lookup_turn = Arc::new(tokio::sync::Mutex::new(()));
   let mut resolved_files = Vec::with_capacity(files.len());
   for file in files {
     let resolved = if file.url.starts_with("dmm-source-file://") {
@@ -173,13 +179,21 @@ pub(crate) async fn resolve_download_files(
           .as_ref()
           .and_then(|hashes| hashes.md5.clone()),
         native_artifact: Some(artifact),
+        late_sources: None,
       }
     } else if crate::providers::native_sources::validate_source_listing_slug(mod_id) {
       return Err(Error::InvalidInput(
         "Native downloads require a stable source artifact reference".into(),
       ));
     } else if file.url.starts_with("gamebanana-file://") {
-      resolve_gamebanana_file(catalog_state, mod_id, &file.url, fileserver_preference).await?
+      resolve_gamebanana_file(
+        catalog_state,
+        mod_id,
+        &file.url,
+        fileserver_preference,
+        &lookup_turn,
+      )
+      .await?
     } else {
       validate_download_file_name(&file.name)?;
       crate::download_manager::downloader::validate_download_url(&file.url)?;
@@ -196,6 +210,7 @@ async fn resolve_gamebanana_file(
   mod_id: &str,
   token: &str,
   fileserver_preference: FileserverPreference,
+  lookup_turn: &Arc<tokio::sync::Mutex<()>>,
 ) -> Result<DownloadFileDto, Error> {
   let (submission, file_id) = parse_gamebanana_file_token(mod_id, token)?;
   let backend = state.backend()?;
@@ -228,18 +243,25 @@ async fn resolve_gamebanana_file(
     .e2e()
     .map(|configuration| configuration.endpoint(crate::runtime_environment::ServiceName::Downloads))
     .unwrap_or("https://gamebanana.com");
-  let caches = match backend.fileservers(false).await {
-    Ok(servers) => {
-      find_fileservers_with_file(
-        &servers,
-        submission.submission_type.gamebanana_path(),
-        &file.name,
-      )
-      .await
+  let category = submission.submission_type.gamebanana_path();
+  // Default uses the caches only once its standard links have failed, so it
+  // looks them up then instead of delaying every download.
+  let (caches, late_sources) = match fileserver_preference {
+    FileserverPreference::Auto => {
+      let servers = backend.fileservers(false).await;
+      (online_caches(servers, category, &file.name).await, None)
     }
-    Err(error) => {
-      log::warn!("GameBanana fileserver directory unavailable; using canonical URL: {error}");
-      Vec::new()
+    FileserverPreference::Default => {
+      let (file_name, lookup_turn) = (file.name.clone(), Arc::clone(lookup_turn));
+      let lookup = LateSources::new(move || {
+        let (backend, file_name) = (Arc::clone(&backend), file_name.clone());
+        let lookup_turn = Arc::clone(&lookup_turn);
+        async move {
+          let _turn = lookup_turn.lock().await;
+          online_caches(backend.fileservers(false).await, category, &file_name).await
+        }
+      });
+      (Vec::new(), Some(lookup))
     }
   };
   let mut urls = download_sources(
@@ -261,14 +283,29 @@ async fn resolve_gamebanana_file(
     size: file.size,
     md5_checksum: file.md5,
     native_artifact: None,
+    late_sources,
   })
+}
+
+async fn online_caches(
+  servers: Result<Vec<super::gamebanana_catalog::GameBananaFileserverDto>, Error>,
+  category: &str,
+  file_name: &str,
+) -> Vec<String> {
+  match servers {
+    Ok(servers) => find_fileservers_with_file(&servers, category, file_name).await,
+    Err(error) => {
+      log::warn!("GameBanana fileserver directory unavailable; using canonical URL: {error}");
+      Vec::new()
+    }
+  }
 }
 
 /// The URLs a GameBanana file can be downloaded from, deduplicated, in the
 /// order the download manager tries them. `standard` is the file's own link
-/// and its `/dl/<id>` link. Auto tries the caches first. Default tries the
-/// standard links first and then the caches, because `/dl/` can keep
-/// redirecting to the same dead cache.
+/// and its `/dl/<id>` link. Auto tries the caches first. Default tries only
+/// the standard links here; its caches are `LateSources`, tried after them
+/// because `/dl/` can keep redirecting to the same dead cache.
 fn download_sources(
   preference: FileserverPreference,
   standard: [String; 2],
@@ -276,7 +313,7 @@ fn download_sources(
 ) -> Vec<String> {
   let ordered: Vec<String> = match preference {
     FileserverPreference::Auto => caches.into_iter().chain(standard).collect(),
-    FileserverPreference::Default => standard.into_iter().chain(caches).collect(),
+    FileserverPreference::Default => standard.into(),
   };
   let mut urls = Vec::new();
   for url in ordered {
@@ -736,6 +773,7 @@ pub async fn debug_queue_local_zip(
       size,
       md5_checksum: None,
       native_artifact: None,
+      late_sources: None,
     }],
     target_dir,
     profile_folder: None,
@@ -853,20 +891,6 @@ mod tests {
       standard.map(str::to_string),
       caches.iter().map(|url| url.to_string()).collect(),
     )
-  }
-
-  /// GameBanana's `_sDownloadUrl` is its `/dl/<id>` link, so Default had no
-  /// second server to fall back to (#569).
-  #[test]
-  fn default_routing_falls_back_to_caches_after_the_standard_link() {
-    assert_eq!(
-      sources(
-        FileserverPreference::Default,
-        [STANDARD, STANDARD],
-        &[CACHE]
-      ),
-      [STANDARD, CACHE]
-    );
   }
 
   #[test]
