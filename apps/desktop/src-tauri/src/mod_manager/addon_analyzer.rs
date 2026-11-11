@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 use tauri::Emitter;
 use tokio::task;
-use vpk_parser::{VpkParseOptions, VpkParsed, VpkParser};
+use vpk_parser::{VpkError, VpkParseOptions, VpkParsed, VpkParser};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -21,6 +21,8 @@ pub struct LocalAddonInfo {
   /// Where the file sits in the profile, in the `ShardLocator` wire format
   /// (`pak01_dir.vpk`, or `addons2/pak01_dir.vpk` in an overflow shard).
   pub locator: String,
+  /// Its `sha256` and `fast_hash` are empty for a file identified without a
+  /// hash lookup (by its name prefix or a catalog owner in the manifest).
   pub vpk_parsed: VpkParsed,
   pub remote_id: Option<String>, // Will be populated by API call
   pub match_info: Option<MatchInfo>,
@@ -438,7 +440,8 @@ impl AddonAnalyzer {
 
       for (shard, file_path) in batch {
         let (shard, file_path) = (*shard, file_path.clone());
-        let handle = task::spawn_blocking(move || Self::parse_vpk_file_fast(&file_path, shard));
+        let handle =
+          task::spawn_blocking(move || Self::parse_vpk_file_fast(&file_path, shard, false));
         handles.push(handle);
       }
 
@@ -501,25 +504,27 @@ impl AddonAnalyzer {
 
       for (shard, file_path) in batch {
         let (shard, file_path) = (*shard, file_path.clone());
-        let handle = task::spawn_blocking(move || Self::parse_vpk_file_fast(&file_path, shard));
-        handles.push(handle);
+        let owner = Self::owner_of(&owners, &file_path.to_string_lossy());
+        // DMM's own record of a catalog mod is as good as a hash match, and
+        // keeps working when the hash service doesn't know the file, so its
+        // contents aren't hashed.
+        let catalog_owner = owner.clone().filter(|id| Self::is_catalog_id(id));
+        let needs_content_hashes = catalog_owner.is_none();
+        let handle = task::spawn_blocking(move || {
+          Self::parse_vpk_file_fast(&file_path, shard, needs_content_hashes)
+        });
+        handles.push((handle, owner, catalog_owner));
       }
 
       // Wait for all tasks in this batch to complete
-      for handle in handles {
+      for (handle, owner, catalog_owner) in handles {
         processed_files += 1;
         let progress = 15 + ((processed_files as f32 / total_files as f32) * 35.0) as u8; // 15-50%
 
         match handle.await {
           Ok(Ok(mut addon_info)) => {
-            addon_info.manifest_mod_id = Self::owner_of(&owners, &addon_info.file_path);
-            // DMM's own record of a catalog mod is as good as a hash match, and
-            // keeps working when the hash service doesn't know the file.
-            if let Some(owner) = &addon_info.manifest_mod_id
-              && Self::is_catalog_id(owner)
-            {
-              addon_info.remote_id = Some(owner.clone());
-            }
+            addon_info.manifest_mod_id = owner;
+            addon_info.remote_id = catalog_owner;
             // Emit progress with current file info
             self.emit_progress(
               &app_handle,
@@ -750,15 +755,22 @@ impl AddonAnalyzer {
   ) -> Result<Option<(String, MatchInfo)>, Error> {
     let owned = path.to_path_buf();
     // Only the fingerprint is used here, so the file's shard doesn't matter.
-    let info = task::spawn_blocking(move || Self::parse_vpk_file_fast(&owned, ShardIndex::FIRST))
-      .await
-      .map_err(|e| Error::BackgroundTaskFailed(e.to_string()))?
-      .map_err(Error::InvalidInput)?;
+    let info =
+      task::spawn_blocking(move || Self::parse_vpk_file_fast(&owned, ShardIndex::FIRST, true))
+        .await
+        .map_err(|e| Error::BackgroundTaskFailed(e.to_string()))?
+        .map_err(Error::InvalidInput)?;
     Self::analyze_hashes(&Self::lookup_client()?, &info.vpk_parsed).await
   }
 
-  /// Fast VPK parsing with minimal data extraction for identification
-  fn parse_vpk_file_fast(file_path: &PathBuf, shard: ShardIndex) -> Result<LocalAddonInfo, String> {
+  /// Fast VPK parsing with minimal data extraction for identification. Only
+  /// the hash lookup uses the whole-file hashes, so the file's contents are
+  /// read past its directory only when `needs_content_hashes`.
+  fn parse_vpk_file_fast(
+    file_path: &PathBuf,
+    shard: ShardIndex,
+    needs_content_hashes: bool,
+  ) -> Result<LocalAddonInfo, String> {
     let file_name = file_path
       .file_name()
       .unwrap_or_default()
@@ -788,21 +800,24 @@ impl AddonAnalyzer {
       ));
     }
 
-    // Read the VPK file
-    let vpk_data =
-      std::fs::read(file_path).map_err(|e| format!("Failed to read {}: {}", file_name, e))?;
-
     // Use minimal parsing options for speed
     let options = VpkParseOptions {
-      include_full_file_hash: false, // Skip expensive full file hash
+      include_full_file_hash: false,
       file_path: file_path_str.clone(),
       last_modified,
       include_merkle: false, // Skip merkle tree calculation for now
       include_entries: true, // Include entries for unidentified mod analysis
     };
 
-    let parsed = VpkParser::parse(vpk_data, options)
-      .map_err(|e| format!("Failed to parse {}: {}", file_name, e))?;
+    let parsed = if needs_content_hashes {
+      VpkParser::parse_file(file_path, options)
+    } else {
+      VpkParser::parse_file_without_content_hashes(file_path, options)
+    }
+    .map_err(|e| match e {
+      VpkError::Io(e) => format!("Failed to read {file_name}: {e}"),
+      e => format!("Failed to parse {file_name}: {e}"),
+    })?;
 
     Ok(LocalAddonInfo {
       has_enabled_vpk_name: VpkManager::enabled_vpk_number(&file_name).is_some(),
@@ -1170,6 +1185,56 @@ mod tests {
       "{:?}",
       result.errors
     );
+  }
+
+  #[tokio::test]
+  async fn hashes_only_the_files_that_need_a_lookup() {
+    use sha2::{Digest, Sha256};
+    let _ = crate::runtime_environment::initialize();
+    *crate::commands::state::API_URL.lock().unwrap() = closed_endpoint();
+    let game = tempfile::tempdir().unwrap();
+    let base = game.path().join("game/citadel/addons/1_profile");
+    write_vpk(&base, "900003_red.vpk", "disabled mod");
+    write_vpk(&base, "pak01_dir.vpk", "catalog mod");
+    write_vpk(&base, "pak02_dir.vpk", "local import");
+    std::fs::write(
+      base.join(".dmm.json"),
+      r#"{"version":3,"mods":{
+        "900001":{"enabled":true,"order":0,"shard":1,"currentVpks":["pak01_dir.vpk"]},
+        "local-unidentified":{"enabled":true,"order":1,"shard":1,"currentVpks":["pak02_dir.vpk"]}}}"#,
+    )
+    .unwrap();
+
+    let result = AddonAnalyzer::new()
+      .analyze_local_addons(game.path().to_path_buf(), Some("1_profile".into()), None)
+      .await
+      .unwrap();
+
+    let mut hashes: Vec<(&str, &str, &str)> = result
+      .addons
+      .iter()
+      .map(|addon| {
+        let fingerprint = &addon.vpk_parsed.fingerprint;
+        (
+          addon.file_name.as_str(),
+          fingerprint.sha256.as_str(),
+          fingerprint.fast_hash.as_str(),
+        )
+      })
+      .collect();
+    hashes.sort_unstable();
+    let local_sha = format!(
+      "{:x}",
+      Sha256::digest(std::fs::read(base.join("pak02_dir.vpk")).unwrap())
+    );
+    assert_eq!(hashes.len(), 3, "{:?}", result.errors);
+    assert_eq!(hashes[0], ("900003_red.vpk", "", ""));
+    assert_eq!(hashes[1], ("pak01_dir.vpk", "", ""));
+    assert_eq!(
+      (hashes[2].0, hashes[2].1),
+      ("pak02_dir.vpk", local_sha.as_str())
+    );
+    assert!(!hashes[2].2.is_empty());
   }
 
   #[tokio::test]
