@@ -601,14 +601,13 @@ mod tests {
       assert_tree_matches_extraction(mod_dir.path(), "mod.zip");
     }
 
-    // On Windows `con.vpk` opens a device, so whether extraction succeeds
-    // depends on the machine; the listing only has to leave it to extraction.
-    let mod_dir = tempfile::tempdir().unwrap();
-    write_zip(
-      &mod_dir.path().join("mod.zip"),
-      &[("con.vpk", Some(b"vpk"))],
-    );
-    assert!(!is_listed(&mod_dir.path().join("mod.zip")));
+    // On Windows these names open a device, so whether extraction succeeds
+    // depends on the machine; the listing only has to leave them to extraction.
+    for name in ["con.vpk", "CONIN$/pak01_dir.vpk"] {
+      let mod_dir = tempfile::tempdir().unwrap();
+      write_zip(&mod_dir.path().join("mod.zip"), &[(name, Some(b"vpk"))]);
+      assert!(!is_listed(&mod_dir.path().join("mod.zip")), "{name}");
+    }
   }
 
   /// A path that is both a file and a folder, and a name too long for any

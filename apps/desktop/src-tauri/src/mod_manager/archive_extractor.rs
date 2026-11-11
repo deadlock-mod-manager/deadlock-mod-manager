@@ -473,7 +473,7 @@ fn is_plain_name(name: &str) -> bool {
   }
 
   let stem = name.split('.').next().unwrap_or(name).trim_end_matches(' ');
-  let is_device_name = ["CON", "PRN", "AUX", "NUL"]
+  let is_device_name = ["CON", "PRN", "AUX", "NUL", "CONIN$", "CONOUT$"]
     .iter()
     .any(|device| stem.eq_ignore_ascii_case(device))
     || (stem.len() == 4
