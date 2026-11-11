@@ -258,8 +258,10 @@ fn decode_body(
   body: Vec<u8>,
   max_bytes: usize,
 ) -> Result<Vec<u8>, Error> {
-  if !content_encoding
-    .is_some_and(|value| value.as_bytes().trim_ascii().eq_ignore_ascii_case(b"gzip"))
+  // An empty body is not valid gzip; passing it through lets the empty-200 retry handle it.
+  if body.is_empty()
+    || !content_encoding
+      .is_some_and(|value| value.as_bytes().trim_ascii().eq_ignore_ascii_case(b"gzip"))
   {
     return Ok(body);
   }
@@ -548,6 +550,16 @@ mod tests {
 
     let empty = serve_once("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n").await;
     let result = transport.get_json::<Value>("profile", empty, &cancel).await;
+    assert!(
+      matches!(result, Err(Error::ProviderUnavailable(_))),
+      "{result:?}"
+    );
+
+    let empty_gzip =
+      serve_once("HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Length: 0\r\n\r\n").await;
+    let result = transport
+      .get_json::<Value>("profile", empty_gzip, &cancel)
+      .await;
     assert!(
       matches!(result, Err(Error::ProviderUnavailable(_))),
       "{result:?}"
