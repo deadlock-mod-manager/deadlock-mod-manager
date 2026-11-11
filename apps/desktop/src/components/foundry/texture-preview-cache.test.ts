@@ -19,11 +19,12 @@ test("each edit drops the previews of earlier revisions and rejects their late d
   for (let revision = 1; revision <= 100; revision++) {
     cache.setRevision(revision);
     leftovers.push(...stored(revision));
-    // Decodes started before the edit, finishing before and after the new one.
+    // Decodes started one and several edits back, finishing before and after
+    // the new one.
     cache.set(KEY, revision - 1, "stale");
     leftovers.push(...stored(revision));
     cache.set(KEY, revision, preview(revision));
-    cache.set(KEY, revision - 1, "stale");
+    cache.set(KEY, 0, "stale");
     if (CHECKPOINTS.includes(revision)) {
       const previews = stored(revision);
       retained.push([previews.length, previews.join("").length]);
@@ -33,4 +34,5 @@ test("each edit drops the previews of earlier revisions and rejects their late d
     CHECKPOINTS.map((revision) => [1, preview(revision).length]),
   );
   expect(leftovers).toEqual([]);
+  expect(cache.get(KEY, 100)).toBe(preview(100));
 });
