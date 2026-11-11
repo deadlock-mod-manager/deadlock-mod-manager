@@ -1,6 +1,6 @@
 use crate::errors::Error;
 use log;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::fs::File;
 use std::io::Read;
@@ -14,6 +14,9 @@ const MAX_EXPANSION_RATIO: u64 = 100;
 /// never trips the ratio.
 const MIN_EXTRACTED_BYTES: u64 = 256 * 1024 * 1024;
 const MAX_EXTRACTED_BYTES: u64 = 16 * 1024 * 1024 * 1024;
+/// macOS refuses paths past 1024 bytes, counting the folder an archive is
+/// extracted into, so a listing leaves anything near that to an extraction.
+const MAX_LISTED_PATH_BYTES: usize = 512;
 
 fn extraction_budget(archive_size: u64) -> u64 {
   archive_size
@@ -74,6 +77,48 @@ impl ArchiveExtractor {
     }?;
 
     self.validate_extracted_files(output_dir)
+  }
+
+  /// The files an archive would extract and their sizes, read from its index
+  /// without writing anything. Refuses what extraction refuses: unsafe names,
+  /// and declared sizes past the extraction budget.
+  ///
+  /// `None` means only an extraction can tell which files land on disk: RAR,
+  /// whose links `unrar` can't tell apart from files, and names a filesystem
+  /// may merge or rewrite (see `is_plain_listing`).
+  pub fn list_files(&self, archive_path: &Path) -> Result<Option<Vec<(PathBuf, u64)>>, Error> {
+    let entries = match archive_path.extension().and_then(|e| e.to_str()) {
+      Some("zip") => list_zip(archive_path)?,
+      Some("7z") => match list_7z(archive_path)? {
+        Some(entries) => entries,
+        None => return Ok(None),
+      },
+      _ => return Ok(None),
+    };
+
+    let mut files = Vec::new();
+    let mut folders = Vec::new();
+    for entry in entries {
+      let path = relative_entry_path(&entry.name)?;
+      if entry.is_dir {
+        folders.push(path);
+      } else {
+        files.push((path, entry.size));
+      }
+    }
+    if !is_plain_listing(&files, &folders) {
+      return Ok(None);
+    }
+
+    let budget = extraction_budget(fs::metadata(archive_path)?.len());
+    let declared = files
+      .iter()
+      .try_fold(0u64, |total, (_, size)| total.checked_add(*size));
+    if declared.is_none_or(|total| total > budget) {
+      return Err(too_large().into());
+    }
+
+    Ok(Some(files))
   }
 
   /// Resolve an archive entry name into a path inside `output_dir`.
@@ -308,6 +353,135 @@ fn relative_entry_path(entry_name: &str) -> Result<PathBuf, Error> {
   }
 
   Ok(relative)
+}
+
+/// An entry as an archive's index declares it.
+struct ListedEntry {
+  name: String,
+  is_dir: bool,
+  size: u64,
+}
+
+fn list_zip(archive_path: &Path) -> Result<Vec<ListedEntry>, Error> {
+  let mut archive = zip::ZipArchive::new(File::open(archive_path)?)?;
+  (0..archive.len())
+    .map(|i| {
+      let file = archive.by_index(i)?;
+      Ok(ListedEntry {
+        name: file.name().to_string(),
+        // The same test `extract_zip` uses to skip writing an entry.
+        is_dir: file.name().ends_with('/'),
+        size: file.size(),
+      })
+    })
+    .collect()
+}
+
+fn list_7z(archive_path: &Path) -> Result<Option<Vec<ListedEntry>>, Error> {
+  let reader = sevenz_rust2::ArchiveReader::open(archive_path, sevenz_rust2::Password::empty())
+    .map_err(|e| Error::ModExtractionFailed(e.to_string()))?;
+  let archive = reader.archive();
+
+  // The reader walks a block by counting its streams, so an entry without data
+  // stored inside a block changes which entries it writes.
+  let has_empty_entry_in_block = archive
+    .files
+    .iter()
+    .zip(&archive.stream_map.file_block_index)
+    .any(|(entry, block)| !entry.has_stream() && block.is_some());
+  if has_empty_entry_in_block {
+    return Ok(None);
+  }
+
+  Ok(Some(
+    archive
+      .files
+      .iter()
+      .map(|entry| ListedEntry {
+        name: entry.name().to_string(),
+        is_dir: entry.is_directory(),
+        size: entry.size(),
+      })
+      .collect(),
+  ))
+}
+
+/// Whether every listed path lands on disk exactly as named, on every
+/// filesystem the app runs on. Case-insensitive filesystems keep one file for
+/// names that differ only in case, APFS merges Unicode normalization forms, and
+/// Windows rewrites trailing dots and spaces, device names and `:` streams.
+/// Instead of reproducing those rules, an archive that could meet one is
+/// extracted, so the disk decides as before.
+fn is_plain_listing(files: &[(PathBuf, u64)], folders: &[PathBuf]) -> bool {
+  // Keyed by (parent folder id, lowercase name), the root being 0. Names are
+  // ASCII by then, so that is all the case folding a filesystem can do, and
+  // the keys grow with the names' length, not with their depth squared.
+  let mut folders_by_name: HashMap<(usize, String), (usize, &str)> = HashMap::new();
+  let mut file_names = HashSet::new();
+
+  let paths = files
+    .iter()
+    .map(|(path, _)| (path, false))
+    .chain(folders.iter().map(|path| (path, true)));
+  for (path, is_dir) in paths {
+    if path.as_os_str().len() > MAX_LISTED_PATH_BYTES {
+      return false;
+    }
+    let Some(names) = path
+      .iter()
+      .map(|name| name.to_str().filter(|name| is_plain_name(name)))
+      .collect::<Option<Vec<_>>>()
+    else {
+      return false;
+    };
+
+    let folder_depth = if is_dir { names.len() } else { names.len() - 1 };
+    let mut parent = 0;
+    for &name in &names[..folder_depth] {
+      let next_id = folders_by_name.len() + 1;
+      let (id, first_spelling) = *folders_by_name
+        .entry((parent, name.to_ascii_lowercase()))
+        .or_insert((next_id, name));
+      if first_spelling != name {
+        return false;
+      }
+      parent = id;
+    }
+
+    if !is_dir && !file_names.insert((parent, names[folder_depth].to_ascii_lowercase())) {
+      return false;
+    }
+  }
+
+  file_names
+    .iter()
+    .all(|file| !folders_by_name.contains_key(file))
+}
+
+/// A name every supported filesystem stores as written: none takes more than
+/// 255 bytes, and `~` is out because Windows short names (`PAK01_~1.VPK`) can
+/// alias another file.
+fn is_plain_name(name: &str) -> bool {
+  if name.len() > 255
+    || !name.is_ascii()
+    || name.ends_with(['.', ' '])
+    || name
+      .bytes()
+      .any(|b| b.is_ascii_control() || br#"<>:"|?*~"#.contains(&b))
+  {
+    return false;
+  }
+
+  let stem = name.split('.').next().unwrap_or(name).trim_end_matches(' ');
+  let is_device_name = ["CON", "PRN", "AUX", "NUL"]
+    .iter()
+    .any(|device| stem.eq_ignore_ascii_case(device))
+    || (stem.len() == 4
+      && ["COM", "LPT"]
+        .iter()
+        .any(|device| stem[..3].eq_ignore_ascii_case(device))
+      && stem.as_bytes()[3].is_ascii_digit());
+  !is_device_name
 }
 
 /// Whether `component` starts with a Windows drive specifier such as `C:`.

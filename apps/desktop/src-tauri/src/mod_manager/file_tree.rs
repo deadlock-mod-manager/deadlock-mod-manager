@@ -300,18 +300,18 @@ impl FileTreeAnalyzer {
         .unwrap_or("unknown")
         .to_string();
 
-      let temp_dir = tempfile::tempdir()?;
-      log::info!("Extracting archive for analysis: {archive_path:?}");
-
-      // Extract archive to temporary location
-      self
-        .archive_extractor
-        .extract_archive(&archive_path, temp_dir.path())?;
-
-      // Find all VPK files recursively
-      let vpk_files = self
-        .filesystem
-        .find_files_recursive(temp_dir.path(), "vpk")?;
+      let vpk_files = match self.archive_extractor.list_files(&archive_path)? {
+        Some(files) => {
+          let mut vpk_files: Vec<_> = files
+            .into_iter()
+            .filter(|(path, _)| path.extension().is_some_and(|ext| ext == "vpk"))
+            .collect();
+          // The order an extraction's walk gives, which is the mod's load order.
+          vpk_files.sort();
+          vpk_files
+        }
+        None => self.extract_vpk_files(&archive_path)?,
+      };
 
       log::info!(
         "Found {} VPK files in archive: {archive_name:?}",
@@ -326,15 +326,9 @@ impl FileTreeAnalyzer {
           .unwrap_or("unknown.vpk")
           .to_string();
 
-        let relative_path = path
-          .strip_prefix(temp_dir.path())
-          .unwrap_or(&path)
-          .to_string_lossy()
-          .to_string();
-
         all_files.push(ModFile {
           name: file_name,
-          path: relative_path,
+          path: path.to_string_lossy().to_string(),
           size,
           is_selected: true, // Default to selected
           archive_name: archive_name.clone(),
@@ -349,6 +343,32 @@ impl FileTreeAnalyzer {
       tree.has_multiple_files
     );
     Ok(tree)
+  }
+
+  /// The archive's VPKs, relative to its root, as an extraction lays them out.
+  fn extract_vpk_files(&self, archive_path: &Path) -> Result<Vec<(PathBuf, u64)>, Error> {
+    let temp_dir = tempfile::tempdir()?;
+    log::info!("Extracting archive for analysis: {archive_path:?}");
+
+    self
+      .archive_extractor
+      .extract_archive(archive_path, temp_dir.path())?;
+
+    let vpk_files = self
+      .filesystem
+      .find_files_recursive(temp_dir.path(), "vpk")?;
+    Ok(
+      vpk_files
+        .into_iter()
+        .map(|(path, size)| {
+          let relative = path
+            .strip_prefix(temp_dir.path())
+            .map(Path::to_path_buf)
+            .unwrap_or(path);
+          (relative, size)
+        })
+        .collect(),
+    )
   }
 }
 
@@ -462,8 +482,6 @@ mod tests {
   /// An archive entry: a file with its contents, or a directory.
   type Entry<'a> = (&'a str, Option<&'a [u8]>);
 
-  /// Covers what the tree depends on: nested and backslash-separated paths, a
-  /// directory entry, an upper-case extension, an empty VPK and a non-VPK file.
   const MOD_ENTRIES: &[Entry] = &[
     ("Variant B/", None),
     ("Variant B/pak01_dir.vpk", Some(b"variant vpk!")),
@@ -507,25 +525,31 @@ mod tests {
     writer.finish().unwrap();
   }
 
-  /// The tree today's code reads off a real extraction of `archive_name`.
-  fn tree_from_extraction(mod_dir: &Path, archive_name: &str) -> serde_json::Value {
-    let extracted = tempfile::tempdir().unwrap();
-    ArchiveExtractor::new()
-      .extract_archive(&mod_dir.join(archive_name), extracted.path())
-      .unwrap();
-    let tree = FileTreeAnalyzer::new()
-      .get_file_tree_from_extracted(extracted.path(), archive_name)
-      .unwrap();
-    serde_json::to_value(tree).unwrap()
-  }
-
   fn mod_file_tree(mod_dir: &Path) -> Result<ModFileTree, Error> {
     FileTreeAnalyzer::new().get_mod_file_tree(&mod_dir.to_path_buf())
   }
 
+  fn is_listed(archive_path: &Path) -> bool {
+    ArchiveExtractor::new()
+      .list_files(archive_path)
+      .unwrap()
+      .is_some()
+  }
+
+  /// The tree must be the one read off a real extraction of `archive_name`.
   fn assert_tree_matches_extraction(mod_dir: &Path, archive_name: &str) {
-    let tree = serde_json::to_value(mod_file_tree(mod_dir).unwrap()).unwrap();
-    assert_eq!(tree, tree_from_extraction(mod_dir, archive_name));
+    let tree = mod_file_tree(mod_dir).unwrap();
+    let extracted = tempfile::tempdir().unwrap();
+    ArchiveExtractor::new()
+      .extract_archive(&mod_dir.join(archive_name), extracted.path())
+      .unwrap();
+    let expected = FileTreeAnalyzer::new()
+      .get_file_tree_from_extracted(extracted.path(), archive_name)
+      .unwrap();
+    assert_eq!(
+      serde_json::to_value(tree).unwrap(),
+      serde_json::to_value(expected).unwrap()
+    );
   }
 
   #[test]
@@ -533,6 +557,7 @@ mod tests {
     let mod_dir = tempfile::tempdir().unwrap();
     write_zip(&mod_dir.path().join("mod.zip"), MOD_ENTRIES);
 
+    assert!(is_listed(&mod_dir.path().join("mod.zip")));
     assert_tree_matches_extraction(mod_dir.path(), "mod.zip");
   }
 
@@ -541,14 +566,17 @@ mod tests {
     let mod_dir = tempfile::tempdir().unwrap();
     write_seven_zip(&mod_dir.path().join("mod.7z"), MOD_ENTRIES);
 
+    assert!(is_listed(&mod_dir.path().join("mod.7z")));
     assert_tree_matches_extraction(mod_dir.path(), "mod.7z");
   }
 
-  /// Names a filesystem may merge or rewrite on disk, and a repeated entry
-  /// whose last copy wins.
+  /// Names a filesystem may merge or rewrite on disk, a repeated entry whose
+  /// last copy wins, and a path near the OS length limits are left to an
+  /// extraction.
   #[test]
   fn names_the_filesystem_decides_match_extraction() {
-    let cases: [&[Entry]; 3] = [
+    let long_path = format!("{}pak01_dir.vpk", "deep/".repeat(110));
+    let cases: [&[Entry]; 6] = [
       &[
         ("Pak/x.vpk", Some(b"first")),
         ("pak/X.vpk", Some(b"second!")),
@@ -558,13 +586,77 @@ mod tests {
         ("cafe\u{301}/pak01_dir.vpk", Some(b"decomposed")),
       ],
       &[("a/x.vpk", Some(b"first")), ("a\\x.vpk", Some(b"second!"))],
+      &[("Variant 1 /pak01_dir.vpk", Some(b"vpk"))],
+      &[
+        ("Pak/readme.txt", Some(b"read me")),
+        ("pak/skin.vpk", Some(b"skin")),
+      ],
+      &[(&long_path, Some(b"vpk"))],
     ];
     for entries in cases {
       let mod_dir = tempfile::tempdir().unwrap();
       write_zip(&mod_dir.path().join("mod.zip"), entries);
 
+      assert!(!is_listed(&mod_dir.path().join("mod.zip")), "{entries:?}");
       assert_tree_matches_extraction(mod_dir.path(), "mod.zip");
     }
+
+    // On Windows `con.vpk` opens a device, so whether extraction succeeds
+    // depends on the machine; the listing only has to leave it to extraction.
+    let mod_dir = tempfile::tempdir().unwrap();
+    write_zip(
+      &mod_dir.path().join("mod.zip"),
+      &[("con.vpk", Some(b"vpk"))],
+    );
+    assert!(!is_listed(&mod_dir.path().join("mod.zip")));
+  }
+
+  /// A path that is both a file and a folder, and a name too long for any
+  /// filesystem, fail extraction, so they are still refused.
+  #[test]
+  fn entries_extraction_cannot_write_are_refused() {
+    let long_name = format!("{}.vpk", "a".repeat(256));
+    let cases: [&[Entry]; 2] = [
+      &[
+        ("a.vpk", Some(b"file")),
+        ("a.vpk/child.vpk", Some(b"child")),
+      ],
+      &[(&long_name, Some(b"vpk"))],
+    ];
+    for entries in cases {
+      let mod_dir = tempfile::tempdir().unwrap();
+      write_zip(&mod_dir.path().join("mod.zip"), entries);
+
+      let result = mod_file_tree(mod_dir.path());
+      assert!(result.is_err(), "{entries:?}: got {result:?}");
+    }
+  }
+
+  /// One solid block holding two files with an empty file between them: the
+  /// reader counts entries, not streams, as it walks the block, so only an
+  /// extraction knows what it writes.
+  #[test]
+  fn seven_zip_empty_entry_inside_a_block_matches_extraction() {
+    let mod_dir = tempfile::tempdir().unwrap();
+    let archive_path = mod_dir.path().join("mod.7z");
+    std::fs::write(
+      &archive_path,
+      [
+        0x37, 0x7a, 0xbc, 0xaf, 0x27, 0x1c, 0x00, 0x04, 0xc4, 0xa8, 0x96, 0x51, 0x09, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x52, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf4, 0xff,
+        0x29, 0x52, 0x66, 0x69, 0x72, 0x73, 0x74, 0x6c, 0x61, 0x73, 0x74, 0x01, 0x04, 0x06, 0x00,
+        0x01, 0x09, 0x09, 0x00, 0x07, 0x0b, 0x01, 0x00, 0x01, 0x01, 0x00, 0x0c, 0x09, 0x00, 0x08,
+        0x0d, 0x02, 0x09, 0x05, 0x00, 0x00, 0x05, 0x03, 0x0e, 0x01, 0x40, 0x0f, 0x01, 0x80, 0x11,
+        0x2d, 0x00, 0x61, 0x00, 0x2e, 0x00, 0x76, 0x00, 0x70, 0x00, 0x6b, 0x00, 0x00, 0x00, 0x65,
+        0x00, 0x6d, 0x00, 0x70, 0x00, 0x74, 0x00, 0x79, 0x00, 0x2e, 0x00, 0x76, 0x00, 0x70, 0x00,
+        0x6b, 0x00, 0x00, 0x00, 0x7a, 0x00, 0x2e, 0x00, 0x76, 0x00, 0x70, 0x00, 0x6b, 0x00, 0x00,
+        0x00, 0x00, 0x00,
+      ],
+    )
+    .unwrap();
+
+    assert!(!is_listed(&archive_path));
+    assert_tree_matches_extraction(mod_dir.path(), "mod.7z");
   }
 
   /// A hand-built RAR 4 archive with stored entries: a `Variant B` directory,
