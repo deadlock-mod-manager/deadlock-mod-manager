@@ -1176,6 +1176,36 @@ mod tests {
   }
 
   #[test]
+  fn combined_history_answers_string_bindings_from_either_history() {
+    let path = "scripts/heroes.vdata_c";
+    let hero = |model: &str| {
+      Kv3Value::Object(vec![(
+        "hero_copper".into(),
+        Kv3Value::Object(vec![(
+          "m_strModelName".into(),
+          Kv3Value::String(model.into()),
+        )]),
+      )])
+    };
+    let mut shipped = VdataHistoryIndex::default();
+    shipped.record(path, 1, &hero("models/shipped.vmdl")).unwrap();
+    let mut learned = VdataHistoryIndex::default();
+    learned.record(path, 2, &hero("models/learned.vmdl")).unwrap();
+    let combined = shipped.with_observed(&learned);
+    for (model, observed) in [
+      ("models/shipped.vmdl", true),
+      ("models/learned.vmdl", true),
+      ("models/unseen.vmdl", false),
+    ] {
+      assert_eq!(
+        combined.observed_string_field(path, "hero_copper", "m_strModelName", model),
+        observed,
+        "{model}"
+      );
+    }
+  }
+
+  #[test]
   fn observed_and_embedded_candidates_cannot_disagree_silently() {
     let path = "scripts/example.vdata_c";
     let mut older = VdataHistoryIndex::default();
@@ -1187,10 +1217,17 @@ mod tests {
     assert!(baseline.is_none());
     assert_eq!(evidence.status, BaselineStatus::Ambiguous);
     assert_eq!(evidence.build_versions, vec![1, 2]);
-    let combined = older.with_observed(&VdataHistoryIndex::default());
+    // When both agree, the learned build is the one returned.
+    let (baseline, evidence) = combined.match_with_evidence(path, &with_padding(1.003));
+    assert_eq!(baseline.unwrap().build_version, 2);
+    assert_eq!(evidence.status, BaselineStatus::Matched);
+    assert_eq!(evidence.build_versions, vec![1, 2]);
+    let empty = VdataHistoryIndex::default();
+    let combined = older.with_observed(&empty);
     assert_eq!(
       combined
-        .match_baseline(path, &with_padding(1.001))
+        .match_with_evidence(path, &with_padding(1.001))
+        .0
         .unwrap()
         .build_version,
       1
