@@ -2,13 +2,24 @@ import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { ErrorKind } from "@/types/tauri";
 import { type LocalMod, ModStatus } from "@/types/mods";
+import type { KeptChoices } from "@/types/generated/KeptChoices";
 
 type PurgeArgs = {
   modId: string;
   vpks: string[];
   profileFolder: string | null;
 };
-const purge = mock(async (_args?: PurgeArgs): Promise<void> => {});
+const purge = mock(
+  async (_args?: PurgeArgs): Promise<KeptChoices | void> => {},
+);
+type KeepChoicesArgs = {
+  modId: string;
+  profileFolder: string | null;
+  keptChoices: KeptChoices;
+};
+const keepChoices = mock(
+  async (_command: string, _args?: KeepChoicesArgs): Promise<void> => {},
+);
 const getModDownload = mock(async () => []);
 const addToQueue = mock((item: { onComplete: () => void }) => {
   item.onComplete();
@@ -28,6 +39,11 @@ const install = mock(async (target: LocalMod, callbacks: InstallCallbacks) => {
 
 mock.module("@/lib/analytics", () => ({ analytics: {} }));
 mock.module("@/lib/plugins", () => ({ getPlugins: () => [] }));
+const tauriCore = await import("@tauri-apps/api/core");
+mock.module("@tauri-apps/api/core", () => ({
+  ...tauriCore,
+  invoke: keepChoices,
+}));
 const actualApi = await import("@/lib/api-client");
 const actualGuard = await import("@/lib/game-guard");
 const actualDownloads = await import("@/lib/download/manager");
@@ -133,6 +149,7 @@ const seedMods = (mods: LocalMod[]) => {
 
 beforeEach(() => {
   purge.mockReset();
+  keepChoices.mockReset();
   getModDownload.mockClear();
   addToQueue.mockClear();
   install.mockClear();
@@ -199,5 +216,33 @@ describe("reinstalling a mod whose files could not be removed", () => {
     expect(
       usePersistedStore.getState().isModEnabledInCurrentProfile(mod.remoteId),
     ).toBe(true);
+  });
+});
+
+describe("reinstalling a disabled mod", () => {
+  it("fails when its choices could not be saved", async () => {
+    const choices: KeptChoices = {
+      order: 3,
+      compatibilityEnabled: true,
+      compatibilityOptedOut: false,
+    };
+    purge.mockImplementation(async () => choices);
+    keepChoices.mockImplementation(() =>
+      Promise.reject(new Error("Disk is full")),
+    );
+
+    const result = await renderReinstall()({
+      ...mod,
+      status: ModStatus.Downloaded,
+      installedVpks: [],
+    });
+
+    expect(keepChoices).toHaveBeenCalledWith("keep_disabled_mod_choices", {
+      modId: mod.remoteId,
+      profileFolder: null,
+      keptChoices: choices,
+    });
+    expect(install).not.toHaveBeenCalled();
+    expect(result).toEqual({ outcome: "failed", error: "Disk is full" });
   });
 });

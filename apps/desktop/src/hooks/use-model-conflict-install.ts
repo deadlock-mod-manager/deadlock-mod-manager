@@ -12,6 +12,7 @@ import { STALE_TIME_API } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 import { getProfileVpkSnapshot } from "@/lib/tauri-commands";
 import type { ModDependency } from "@/types/dependencies";
+import type { KeptChoices } from "@/types/generated/KeptChoices";
 import {
   type InstallableMod,
   type LocalMod,
@@ -62,12 +63,14 @@ export function useModelConflictInstall() {
       bisectOriginalEnabled,
       keepBothWith,
       unattended,
+      keptChoices,
     }: {
       mod: LocalModWithFiles;
       profileFolder: string | null;
       bisectOriginalEnabled?: string[];
       keepBothWith?: string[];
       unattended?: boolean;
+      keptChoices?: KeptChoices | null;
     }) => {
       const profileId = usePersistedStore.getState().activeProfileId;
       const isCurrentProfile = () =>
@@ -122,6 +125,7 @@ export function useModelConflictInstall() {
             replaceConflictingMods,
             allowConflictingMods: [...allow, ...protectedRequirements],
             bisectOriginalEnabled,
+            keptChoices,
           });
           if (replaceConflictingMods.length > 0) {
             try {

@@ -7,19 +7,23 @@ impl ModManager {
     deadlock_mod: Mod,
     profile_folder: Option<String>,
   ) -> Result<Mod, Error> {
-    self.install_mod_resolving_conflicts(deadlock_mod, profile_folder, &[])
+    self.install_mod_resolving_conflicts(deadlock_mod, profile_folder, &[], None)
   }
 
+  /// `kept_choices` are what purging the mod returned, when this install
+  /// reinstalls it.
   pub fn install_mod_resolving_conflicts(
     &mut self,
     deadlock_mod: Mod,
     profile_folder: Option<String>,
     confirmed_conflicts: &[String],
+    kept_choices: Option<KeptChoices>,
   ) -> Result<Mod, Error> {
     self.install_mod_with_conflict_policy(
       deadlock_mod,
       profile_folder,
       ConflictPolicy::Replace(confirmed_conflicts),
+      kept_choices,
     )
   }
 
@@ -28,11 +32,13 @@ impl ModManager {
     deadlock_mod: Mod,
     profile_folder: Option<String>,
     allowed_conflicts: &[String],
+    kept_choices: Option<KeptChoices>,
   ) -> Result<Mod, Error> {
     self.install_mod_with_conflict_policy(
       deadlock_mod,
       profile_folder,
       ConflictPolicy::Allow(allowed_conflicts),
+      kept_choices,
     )
   }
 
@@ -46,6 +52,7 @@ impl ModManager {
       deadlock_mod,
       profile_folder,
       ConflictPolicy::RestoreBisect(original_enabled),
+      None,
     )
   }
 
@@ -54,6 +61,7 @@ impl ModManager {
     mut deadlock_mod: Mod,
     profile_folder: Option<String>,
     conflict_policy: ConflictPolicy<'_>,
+    kept_choices: Option<KeptChoices>,
   ) -> Result<Mod, Error> {
     #[cfg(feature = "plugins")]
     let observation = crate::external_plugins::events::ModInstallObservation::start(
@@ -147,14 +155,16 @@ impl ModManager {
           .unwrap_or(usize::MAX)
       });
     }
-    // A re-enabled mod returns to its recorded place in the load order. Without
-    // it, the mod would stay in the last shard until an unrelated reorder moved
-    // it back and shifted every mod after it.
+    // A re-enabled or reinstalled mod returns to its recorded place in the load
+    // order. Without it, the mod would stay in the last shard until an
+    // unrelated reorder moved it back and shifted every mod after it.
     if deadlock_mod.install_order.is_none() {
-      deadlock_mod.install_order = manifest
-        .mods
-        .get(&deadlock_mod.id)
-        .and_then(|entry| entry.order);
+      deadlock_mod.install_order = kept_choices.and_then(|kept| kept.order).or_else(|| {
+        manifest
+          .mods
+          .get(&deadlock_mod.id)
+          .and_then(|entry| entry.order)
+      });
     }
     let conflicts = crate::mod_manager::conflicts::activation_model_conflicts(
       &addons_path,
@@ -224,6 +234,11 @@ impl ModManager {
       deadlock_mod.install_order,
       target_shard,
     );
+    if let Some(kept) = kept_choices
+      && let Some(entry) = manifest.mods.get_mut(&deadlock_mod.id)
+    {
+      kept.restore_to(entry);
+    }
     if let Err(save_error) = manifest.save(&addons_path) {
       let rollback = self.vpk_manager.disable_vpks_in(
         &enabled_dir,
@@ -397,12 +412,14 @@ impl ModManager {
     Ok(())
   }
 
+  /// Returns the choices the player made for the mod in this profile, for a
+  /// reinstall to give back, or `None` when the profile had no entry for it.
   pub fn purge_mod(
     &mut self,
     mod_id: String,
     vpks: Vec<String>,
     profile_folder: Option<String>,
-  ) -> Result<(), Error> {
+  ) -> Result<Option<KeptChoices>, Error> {
     let mods_path = self.get_mods_store_path()?;
     self.purge_mod_from(mod_id, vpks, profile_folder, &mods_path)
   }
@@ -413,7 +430,7 @@ impl ModManager {
     vpks: Vec<String>,
     profile_folder: Option<String>,
     mods_path: &Path,
-  ) -> Result<(), Error> {
+  ) -> Result<Option<KeptChoices>, Error> {
     #[cfg(feature = "plugins")]
     let event_profile = profile_folder.clone();
     log::info!("Purging mod: {mod_id} (profile: {profile_folder:?})");
@@ -426,8 +443,13 @@ impl ModManager {
     // may not exist at all yet - and without a game path there is no addons
     // directory to speak of. Nothing was installed in either case, but the
     // downloaded files still have to go, so neither may fail the purge.
+    let mut kept_choices = None;
     match self.get_addons_path(profile_folder.as_deref()) {
       Ok(addons_path) if addons_path.path().exists() => {
+        kept_choices = ProfileVpkManifest::load(&addons_path)?
+          .mods
+          .get(&mod_id)
+          .map(KeptChoices::from);
         self.remove_mod_vpks(&mod_id, &vpks, profile_folder)?;
       }
       Ok(addons_path) => {
@@ -452,6 +474,39 @@ impl ModManager {
 
     #[cfg(feature = "plugins")]
     crate::external_plugins::events::mod_removed(&mod_id, event_profile.as_deref());
+    Ok(kept_choices)
+  }
+
+  /// Records a reinstalled mod that stays disabled the way disabling it did:
+  /// its downloaded VPKs as disabled files, with the choices its purge returned.
+  pub fn keep_disabled_mod_choices(
+    &mut self,
+    mod_id: &str,
+    profile_folder: Option<String>,
+    kept_choices: KeptChoices,
+  ) -> Result<(), Error> {
+    Self::ensure_safe_mod_id(mod_id)?;
+    let addons_path = self.get_addons_path(profile_folder.as_deref())?;
+    let prefixed_vpks = self.vpk_manager.find_prefixed_vpks(&addons_path, mod_id)?;
+    // A download with several variants keeps its VPKs in the archive until
+    // install picks one, so there is nothing to record the choices against.
+    if prefixed_vpks.is_empty() {
+      log::info!("No downloaded VPKs to keep the choices of disabled mod {mod_id} on");
+      return Ok(());
+    }
+    let prefix = format!("{mod_id}_");
+    let original_vpk_names = prefixed_vpks
+      .iter()
+      .map(|name| name.strip_prefix(&prefix).unwrap_or(name).to_string())
+      .collect();
+
+    let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
+    manifest.mark_disabled(mod_id, prefixed_vpks, original_vpk_names);
+    if let Some(entry) = manifest.mods.get_mut(mod_id) {
+      kept_choices.restore_to(entry);
+    }
+    manifest.save(&addons_path)?;
+    self.invalidate_localization_overlay(profile_folder.as_deref());
     Ok(())
   }
 

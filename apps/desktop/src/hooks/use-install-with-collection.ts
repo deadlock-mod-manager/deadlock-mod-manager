@@ -12,6 +12,7 @@ import type { InstallAnalyticsOptions } from "@/lib/analytics/install";
 import { getErrorMessage } from "@/lib/errors";
 import { syncInstalledVpksFromManifest } from "@/lib/mods/sync-installed-vpks";
 import { getProfileVpkSnapshot } from "@/lib/tauri-commands";
+import type { KeptChoices } from "@/types/generated/KeptChoices";
 import { isTauriError } from "@/types/tauri";
 import { usePersistedStore } from "@/lib/store";
 import type {
@@ -38,6 +39,8 @@ export type InstallWithCollectionOptions = InstallAnalyticsOptions & {
    * missing requirement or a model conflict.
    */
   unattended?: boolean;
+  /** What purging the mod returned, when this install reinstalls it. */
+  keptChoices?: KeptChoices | null;
 };
 
 export type InstallWithCollectionFunction = (
@@ -129,6 +132,7 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
         bisectOriginalEnabled: options.bisectOriginalEnabled,
         keepBothWith: options.keepBothWith,
         unattended: options.unattended,
+        keptChoices: options.keptChoices,
       });
       if (!result) {
         options.onCancel?.(mod, "modelConflict");
