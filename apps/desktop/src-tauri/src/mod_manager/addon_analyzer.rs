@@ -917,7 +917,6 @@ mod tests {
     let _ = socket.write_all(reply.as_bytes()).await;
   }
 
-  /// Answers one request with `status` and `body`.
   async fn serve_once(status: u16, body: &'static str) -> String {
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let endpoint = format!(
@@ -978,6 +977,7 @@ mod tests {
 
   #[tokio::test]
   async fn profile_scan_skips_vpks_in_subfolders_the_game_does_not_load() {
+    let _ = crate::runtime_environment::initialize();
     let game = tempfile::tempdir().unwrap();
     let profile = game.path().join("game/citadel/addons/1_profile");
     let staged = profile.join(".dmm-clear");
@@ -995,6 +995,7 @@ mod tests {
 
   #[tokio::test]
   async fn reports_which_shard_each_file_sits_in() {
+    let _ = crate::runtime_environment::initialize();
     let game = tempfile::tempdir().unwrap();
     let citadel = game.path().join("game/citadel");
     // Prefixed names skip the hash lookup, so the test stays offline.
@@ -1169,6 +1170,7 @@ mod tests {
 
   #[tokio::test]
   async fn an_unreadable_manifest_is_reported_and_analysis_continues() {
+    let _ = crate::runtime_environment::initialize();
     let game = tempfile::tempdir().unwrap();
     let base = game.path().join("game/citadel/addons/1_profile");
     write_vpk(&base, "900003_red.vpk", "disabled mod");
@@ -1198,8 +1200,9 @@ mod tests {
       answered: Vec<String>,
     }
 
+    let count = LOOKUP_CONCURRENCY * 2;
     let dir = tempfile::tempdir().unwrap();
-    let addons: Vec<LocalAddonInfo> = (1..=8)
+    let addons: Vec<LocalAddonInfo> = (1..=count)
       .map(|index| {
         let name = format!("pak{index:02}_dir.vpk");
         write_vpk(dir.path(), &name, &format!("unknown file {index}"));
@@ -1212,7 +1215,7 @@ mod tests {
       .collect();
 
     // Each lookup is answered with its own hash as the submission ID, and
-    // later requests wait less, so answers arrive out of order.
+    // later files wait less, so answers go out in a different order.
     let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
     let endpoint = format!(
       "http://{}/api/v2/vpk-analyse-hashes",
@@ -1220,31 +1223,30 @@ mod tests {
     );
     let journal = Arc::new(Mutex::new(Journal::default()));
     let server_journal = journal.clone();
+    let scan_order = hashes.clone();
     tokio::spawn(async move {
       loop {
         let (mut socket, _) = listener.accept().await.unwrap();
         let journal = server_journal.clone();
+        let scan_order = scan_order.clone();
         tokio::spawn(async move {
           let body = read_request(&mut socket).await;
           let request: HashAnalysisRequest = serde_json::from_str(&body).unwrap();
           let sha256 = request.sha256.unwrap();
-          let hold = {
+          let position = scan_order.iter().position(|hash| *hash == sha256).unwrap();
+          {
             let mut journal = journal.lock().unwrap();
             journal.asked.push(sha256.clone());
             journal.in_flight += 1;
             journal.max_in_flight = journal.max_in_flight.max(journal.in_flight);
-            Duration::from_millis(100 + 50 * (8 - journal.asked.len() as u64))
-          };
-          tokio::time::sleep(hold).await;
-          {
-            let mut journal = journal.lock().unwrap();
-            journal.in_flight -= 1;
-            journal.answered.push(sha256.clone());
           }
+          tokio::time::sleep(Duration::from_millis(100 + 50 * (count - position) as u64)).await;
+          journal.lock().unwrap().in_flight -= 1;
           let answer = format!(
             r#"[{{"matchedVpk":{{"id":"vpk","submissionType":"mod","submissionId":"{sha256}"}},"match":{{"certainty":100,"matchType":"sha256"}}}}]"#
           );
           reply(&mut socket, 200, &answer).await;
+          journal.lock().unwrap().answered.push(sha256);
         });
       }
     });
@@ -1275,8 +1277,8 @@ mod tests {
     expected.sort();
     assert_eq!(asked, expected, "each file should be looked up once");
     assert_ne!(
-      journal.answered, journal.asked,
-      "answers should have arrived out of order"
+      journal.answered, hashes,
+      "answers should have gone out in a different order from the scan"
     );
   }
 }
