@@ -608,7 +608,7 @@ pub async fn import_profile_batch(
 
     profile_folder
   };
-  let installed_ids = profile_mod_ids(&MANAGER.lock().unwrap(), &final_profile_folder)?;
+  let mut installed_ids = profile_mod_ids(&MANAGER.lock().unwrap(), &final_profile_folder)?;
 
   // `Some` holds the result of replacing a mod the profile already has.
   let mut download_results: Vec<Result<Option<Result<Mod, Error>>, String>> = Vec::new();
@@ -634,6 +634,7 @@ pub async fn import_profile_batch(
   // The next mod's files are looked up while this one downloads, so the first
   // download doesn't wait for every lookup.
   let mut next_download_files = None;
+  let mut handled_ids = std::collections::HashSet::new();
 
   for (index, mod_data) in mods.iter().enumerate() {
     // download_results stays index-aligned with mods; the install loop below zips them.
@@ -682,6 +683,18 @@ pub async fn import_profile_batch(
     let manager = get_download_manager(app_handle.clone()).await;
     let resolve_next =
       futures::future::OptionFuture::from((index + 1 < total_mods).then(|| resolve(index + 1)));
+    // A reinstall can add a mod to the profile after the snapshot, while
+    // earlier mods download or this one is looked up, so check again the
+    // first time this import reaches the mod. Later occurrences keep that
+    // answer, because a plain download writes the mod into the manifest
+    // itself. A failed read keeps the snapshot's answer.
+    if !installed_ids.contains(&mod_data.mod_id)
+      && handled_ids.insert(mod_data.mod_id.as_str())
+      && profile_mod_ids(&MANAGER.lock().unwrap(), &final_profile_folder)
+        .is_ok_and(|ids| ids.contains(&mod_data.mod_id))
+    {
+      installed_ids.insert(mod_data.mod_id.clone());
+    }
     if installed_ids.contains(&mod_data.mod_id) {
       // Applied right away, as a batch update does, so only one mod's
       // prepared files exist at a time.
