@@ -1,6 +1,7 @@
 use crate::app_runtime::AppHandle;
 use crate::errors::Error;
 use crate::mod_manager::shard::{ProfileBase, ShardIndex, ShardLocator};
+use crate::mod_manager::vpk_manager::VpkManager;
 use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
 use crate::providers::{SubmissionProvider, SubmissionRef};
 use futures::{Stream, StreamExt, stream};
@@ -28,6 +29,9 @@ pub struct LocalAddonInfo {
   /// frontend restores it from the manifest instead of re-identifying it.
   #[serde(default, skip_serializing_if = "Option::is_none")]
   pub manifest_mod_id: Option<String>,
+  /// Whether the name is one the game loads (`pak##_dir.vpk`). Only such a
+  /// file can be recorded as a mod's enabled file.
+  pub has_enabled_vpk_name: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -735,7 +739,6 @@ impl AddonAnalyzer {
 
   /// Check if a VPK filename has a mod ID prefix and extract it
   fn extract_mod_id_from_filename(filename: &str) -> Option<String> {
-    use crate::mod_manager::vpk_manager::VpkManager;
     VpkManager::extract_mod_id_from_prefix(filename)
   }
 
@@ -802,6 +805,7 @@ impl AddonAnalyzer {
       .map_err(|e| format!("Failed to parse {}: {}", file_name, e))?;
 
     Ok(LocalAddonInfo {
+      has_enabled_vpk_name: VpkManager::enabled_vpk_number(&file_name).is_some(),
       file_path: file_path_str,
       locator: ShardLocator::new(shard, file_name.clone()).to_wire(),
       file_name,

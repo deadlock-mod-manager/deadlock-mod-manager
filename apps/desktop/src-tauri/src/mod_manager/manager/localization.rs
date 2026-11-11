@@ -1241,6 +1241,40 @@ mod tests {
   }
 
   #[test]
+  fn analyzed_registration_refuses_a_file_the_game_does_not_load() {
+    let (_temp, mut manager) = manager_with_applied_repair();
+    let base = manager.get_addons_path(None).unwrap();
+    let package = manager.localization_overlay_vpk_path(None).unwrap();
+    let loaded = base.join("pak03_dir.vpk");
+    let ignored = base.join("coolskin.vpk");
+    write_test_vpk(&loaded);
+    write_test_vpk(&ignored);
+    let before = fs::read(base.join(".dmm.json")).unwrap();
+    let package_before = fs::read(&package).unwrap();
+
+    let error = manager
+      .register_analyzed_mod(
+        None,
+        "remote-id".into(),
+        "Identified mod".into(),
+        vec!["pak03_dir.vpk".into(), "coolskin.vpk".into()],
+        Some(vec![
+          loaded.display().to_string(),
+          ignored.display().to_string(),
+        ]),
+        None,
+        false,
+      )
+      .err()
+      .expect("a file the game doesn't load must not be registered");
+
+    assert!(error.to_string().contains("coolskin.vpk"), "{error}");
+    assert_eq!(fs::read(base.join(".dmm.json")).unwrap(), before);
+    assert_eq!(fs::read(&package).unwrap(), package_before);
+    assert!(manager.mod_repository.get_mod("remote-id").is_none());
+  }
+
+  #[test]
   fn analyzed_registration_keeps_the_replaced_owner_fix_choice() {
     for (fixed, opted_out) in [(true, false), (false, true)] {
       let temp = tempfile::tempdir().unwrap();
