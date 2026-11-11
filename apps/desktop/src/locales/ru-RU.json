@@ -5927,7 +5927,27 @@
     "versions": {
       "2.4.0": {
         "title": "",
+        "highlights": [
+          {
+            "image": "",
+            "caption": ""
+          },
+          {
+            "image": "",
+            "caption": ""
+          },
+          {
+            "image": "",
+            "caption": ""
+          },
+          {
+            "image": "",
+            "caption": ""
+          }
+        ],
         "features": [
+          "",
+          "",
           "",
           "",
           "",
@@ -7885,6 +7905,7 @@
     "noOptions": "",
     "variants": "",
     "selectedCount": "",
+    "noneSelectedDisables": "",
     "enabled": "",
     "needsDownload": "",
     "fetchMissingNoSource": "",
@@ -7906,8 +7927,7 @@
   "installedFiles": {
     "title": "",
     "enabledCount": "",
-    "reset": "",
-    "selectAtLeastOne": ""
+    "reset": ""
   },
   "fileSelector": {
     "selectFilesToInstall": "",
