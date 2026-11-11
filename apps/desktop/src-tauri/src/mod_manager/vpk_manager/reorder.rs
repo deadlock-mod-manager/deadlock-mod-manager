@@ -85,8 +85,14 @@ impl VpkManager {
       .filter(|vpk| !owned_vpks.contains(*vpk))
       .cloned()
       .collect();
-    orphan_sources
-      .sort_by_key(|(shard_index, filename)| (*shard_index, Self::enabled_vpk_number(filename)));
+    // The name breaks ties such as `pak1` and `pak01`, which share a number.
+    orphan_sources.sort_by_key(|(shard_index, filename)| {
+      (
+        *shard_index,
+        Self::enabled_vpk_number(filename),
+        filename.clone(),
+      )
+    });
     Self::validate_reorder_capacity(ordered_mods, orphan_sources.len() as u32)?;
 
     let mut staging = VpkStaging::claim(&base, shard::REORDER_STAGING_DIR)?;
