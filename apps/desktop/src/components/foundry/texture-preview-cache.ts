@@ -8,7 +8,6 @@ export const createTexturePreviewCache = <Preview>() => {
   let current = 0;
   return {
     setRevision(revision: number) {
-      if (revision === current) return;
       current = revision;
       previews.clear();
     },

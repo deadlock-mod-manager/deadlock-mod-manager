@@ -8,23 +8,29 @@ const preview = (revision: number) =>
 
 test("each edit drops the previews of earlier revisions and rejects their late decodes", () => {
   const cache = createTexturePreviewCache<string>();
+  const stored = (latest: number) =>
+    Array.from({ length: latest + 1 }, (_, revision) =>
+      cache.get(KEY, revision),
+    ).filter((dataUrl) => dataUrl !== undefined);
   const retained: [entries: number, characters: number][] = [];
+  // Anything still stored after an edit, before its own preview is decoded.
+  const leftovers: string[] = [];
   cache.set(KEY, 0, preview(0));
   for (let revision = 1; revision <= 100; revision++) {
     cache.setRevision(revision);
+    leftovers.push(...stored(revision));
     // Decodes started before the edit, finishing before and after the new one.
     cache.set(KEY, revision - 1, "stale");
+    leftovers.push(...stored(revision));
     cache.set(KEY, revision, preview(revision));
     cache.set(KEY, revision - 1, "stale");
     if (CHECKPOINTS.includes(revision)) {
-      const stored = Array.from({ length: revision + 1 }, (_, written) =>
-        cache.get(KEY, written),
-      ).filter((dataUrl) => dataUrl !== undefined);
-      retained.push([stored.length, stored.join("").length]);
+      const previews = stored(revision);
+      retained.push([previews.length, previews.join("").length]);
     }
   }
   expect(retained).toEqual(
     CHECKPOINTS.map((revision) => [1, preview(revision).length]),
   );
-  expect(cache.get(KEY, 100)).toBe(preview(100));
+  expect(leftovers).toEqual([]);
 });
