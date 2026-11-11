@@ -275,10 +275,7 @@ impl ModHealthContext {
       match check_mod(&game, installed, &mut observed, game_build, &mut recorded) {
         Ok((findings, changed)) => {
           learned |= changed;
-          entries.push((
-            installed.id.clone(),
-            CachedModHealth::new(installed.key.clone(), findings, ModHealthSource::Standalone),
-          ));
+          entries.push((installed, findings));
         }
         Err(error) => log::warn!(
           "Skipped compatibility check for mod {}: {error}",
@@ -290,10 +287,37 @@ impl ModHealthContext {
         total,
       });
     }
+    // Enabling, disabling or reordering a mod renames its files, and a read of
+    // the old name mid-analysis fails as if the mod were broken. The key
+    // ignores names, so such a result would stick: save only results whose
+    // files are still where they were read, and drop what was cached for the
+    // rest. The change that moved them schedules another check.
+    let (entries, moved): (Vec<_>, Vec<_>) = entries.into_iter().partition(|(installed, _)| {
+      HealthKey::stamp(&installed.vpks, game_build, REPAIR_REVISION)
+        .is_ok_and(|key| key == installed.key)
+    });
     // Persist the batch once instead of reading and rewriting the whole cache
     // for each mod. Progress events still describe every completed analysis.
     if !entries.is_empty() {
-      mod_health::record(&self.app_data, &profile, game_build, entries)?;
+      mod_health::record(
+        &self.app_data,
+        &profile,
+        game_build,
+        entries.into_iter().map(|(installed, findings)| {
+          (
+            installed.id.clone(),
+            CachedModHealth::new(installed.key.clone(), findings, ModHealthSource::Standalone),
+          )
+        }),
+      )?;
+    }
+    if !moved.is_empty() {
+      let moved: Vec<_> = moved
+        .into_iter()
+        .map(|(installed, _)| installed.id.clone())
+        .collect();
+      log::info!("Mods changed while their compatibility was checked, checking again: {moved:?}");
+      mod_health::forget(&self.app_data, &profile, &cached, &moved)?;
     }
     let mut history_changed = false;
     if learned && let Some(path) = &self.history {
@@ -447,6 +471,88 @@ mod tests {
     assert_eq!(report.mods.len(), 2);
     assert_eq!(report.game_build, Some(101));
     assert_eq!(report.previous_game_build, Some(100));
+  }
+
+  #[test]
+  fn rechecks_a_mod_turned_on_while_it_was_checked() {
+    let temp = tempfile::tempdir().unwrap();
+    let citadel = temp.path().join("game/citadel");
+    let text = "resource/localization/e2e/e2e_english.txt";
+    let game_text = citadel.join(text);
+    fs::create_dir_all(game_text.parent().unwrap()).unwrap();
+    fs::write(
+      &game_text,
+      b"\"lang\"\n{\n\"Language\" \"English\"\n\"Tokens\"\n{\n\"e2e_kept\" \"Kept\"\n\"e2e_new\" \"New\"\n}\n}\n",
+    )
+    .unwrap();
+    let base = ProfileBase::new(citadel.join("addons")).unwrap();
+    // Downloaded but not turned on yet; its copy of the game text lacks a token.
+    write_vpk(
+      &base.join("text_download.vpk"),
+      &[(
+        text,
+        b"\"lang\"\n{\n\"Language\" \"English\"\n\"Tokens\"\n{\n\"e2e_kept\" \"Kept\"\n}\n}\n",
+      )],
+    );
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mods.insert(
+      "text".into(),
+      ProfileVpkManifestEntry {
+        disabled_vpks: vec!["text_download.vpk".into()],
+        ..Default::default()
+      },
+    );
+    manifest.save(&base).unwrap();
+    let context = ModHealthContext {
+      citadel,
+      base: base.clone(),
+      app_data: temp.path().join("app-data"),
+      overlay_path: temp
+        .path()
+        .join("game/citadel/dmm_localization_default")
+        .join(OVERLAY_VPK_NAME),
+      history: Some(temp.path().join("cache/vdata-history.bin")),
+    };
+    // A wrong verdict an earlier check saved for these files.
+    let key = HealthKey::stamp(&[base.join("text_download.vpk")], None, REPAIR_REVISION).unwrap();
+    mod_health::record(
+      &context.app_data,
+      &context.profile_key(),
+      None,
+      [(
+        "text".to_string(),
+        CachedModHealth::new(key, ModFindings::uncovered(), ModHealthSource::Standalone),
+      )],
+    )
+    .unwrap();
+
+    // Progress fires after the mod's analysis and before the batch is saved.
+    let report = context
+      .check(None, true, |update| {
+        if update.checked == 1 {
+          fs::rename(base.join("text_download.vpk"), base.join("pak01_dir.vpk")).unwrap();
+          let mut manifest = ProfileVpkManifest::load(&base).unwrap();
+          manifest.mark_enabled(
+            "text",
+            vec!["pak01_dir.vpk".into()],
+            vec![],
+            None,
+            ShardIndex::FIRST,
+          );
+          manifest.save(&base).unwrap();
+        }
+      })
+      .unwrap()
+      .report;
+    assert_eq!(status(&report, "text"), None);
+
+    let progress = Mutex::new(Vec::new());
+    let report = context
+      .check(None, false, |update| progress.lock().unwrap().push(update))
+      .unwrap()
+      .report;
+    assert_eq!(progress.lock().unwrap()[0].total, 1);
+    assert_eq!(status(&report, "text"), Some(ModHealthStatus::Fixable));
   }
 
   #[test]

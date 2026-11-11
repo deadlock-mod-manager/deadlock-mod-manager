@@ -5588,6 +5588,8 @@
     "alreadyInLibrary": "{{fileName}} is already in your library.",
     "addToLibraryTitle": "Add to Library",
     "addToLibraryDescription": "Add \"{{fileName}}\" to your mod library",
+    "notLoadedByGame": "Not loaded by Deadlock",
+    "notLoadedByGameDescription": "Deadlock only loads files named like pak01_dir.vpk. To install this file, import it with Add Mods.",
     "addToLibrarySuccess": "Added \"{{name}}\" to library",
     "adding": "Adding...",
     "show": "Show details",
@@ -7905,6 +7907,7 @@
     "noOptions": "This mod has no other files.",
     "variants": "Variants",
     "selectedCount": "{{selected}} of {{total}} selected",
+    "noneSelectedDisables": "Applying with nothing selected disables the mod.",
     "enabled": "Enabled",
     "needsDownload": "needs download",
     "fetchMissingNoSource": "Cannot fetch missing files: archive source URLs are unknown",
@@ -7926,8 +7929,7 @@
   "installedFiles": {
     "title": "Installed Files",
     "enabledCount": "{{selected}} of {{total}} enabled",
-    "reset": "Reset",
-    "selectAtLeastOne": "Select at least one file. To remove the mod, disable it instead."
+    "reset": "Reset"
   },
   "fileSelector": {
     "selectFilesToInstall": "Select Files to Install: {{modName}}",

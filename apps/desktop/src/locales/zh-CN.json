@@ -5927,7 +5927,27 @@
     "versions": {
       "2.4.0": {
         "title": "",
+        "highlights": [
+          {
+            "image": "",
+            "caption": ""
+          },
+          {
+            "image": "",
+            "caption": ""
+          },
+          {
+            "image": "",
+            "caption": ""
+          },
+          {
+            "image": "",
+            "caption": ""
+          }
+        ],
         "features": [
+          "",
+          "",
           "",
           "",
           "",
@@ -7885,6 +7905,7 @@
     "noOptions": "此模组没有其他文件。",
     "variants": "",
     "selectedCount": "已选择 {{selected}}/{{total}}",
+    "noneSelectedDisables": "",
     "enabled": "已启用",
     "needsDownload": "需要下载",
     "fetchMissingNoSource": "无法获取缺失文件：存档源 URL 未知",
@@ -7906,8 +7927,7 @@
   "installedFiles": {
     "title": "",
     "enabledCount": "",
-    "reset": "",
-    "selectAtLeastOne": ""
+    "reset": ""
   },
   "fileSelector": {
     "selectFilesToInstall": "选择要安装的文件：{{modName}}",

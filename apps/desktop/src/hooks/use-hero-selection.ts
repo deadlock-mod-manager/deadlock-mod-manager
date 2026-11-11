@@ -17,25 +17,13 @@ import { usePersistedStore } from "@/lib/store";
 import { isGameRunning } from "@/lib/tauri-commands";
 import { type LocalMod, ModStatus } from "@/types/mods";
 
-const isStillInstalled = (remoteId: string): boolean =>
-  usePersistedStore
-    .getState()
-    .localMods.find((mod) => mod.remoteId === remoteId)?.status ===
-  ModStatus.Installed;
-
-/**
- * Both hooks below report back whether the install or uninstall actually landed:
- * the underlying actions swallow their own failures into a toast, so the store
- * is the only honest answer.
- */
+// performInstall only toasts its failures, so install reads the outcome from
+// the store.
 const selectionDeps = (
-  uninstall: (mod: LocalMod, remove: boolean) => Promise<void>,
+  uninstall: (mod: LocalMod, remove: boolean) => Promise<boolean>,
   performInstall: (mod: LocalMod) => Promise<void>,
 ): HeroSelectionDeps<LocalMod> => ({
-  uninstall: async (mod) => {
-    await uninstall(mod, false);
-    return !isStillInstalled(mod.remoteId);
-  },
+  uninstall: (mod) => uninstall(mod, false),
   install: async (mod) => {
     await performInstall(mod);
 

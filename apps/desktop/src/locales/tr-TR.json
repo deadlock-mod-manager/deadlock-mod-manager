@@ -5927,7 +5927,27 @@
     "versions": {
       "2.4.0": {
         "title": "",
+        "highlights": [
+          {
+            "image": "",
+            "caption": ""
+          },
+          {
+            "image": "",
+            "caption": ""
+          },
+          {
+            "image": "",
+            "caption": ""
+          },
+          {
+            "image": "",
+            "caption": ""
+          }
+        ],
         "features": [
+          "",
+          "",
           "",
           "",
           "",
@@ -7885,6 +7905,7 @@
     "noOptions": "Bu modda başka dosya yok.",
     "variants": "Varyantlar",
     "selectedCount": "{{total}} öğeden {{selected}} tanesi seçildi",
+    "noneSelectedDisables": "",
     "enabled": "Etkin",
     "needsDownload": "indirilmesi gerekiyor",
     "fetchMissingNoSource": "Eksik dosyalar alınamıyor: arşiv kaynak URL'leri bilinmiyor",
@@ -7906,8 +7927,7 @@
   "installedFiles": {
     "title": "Yüklenen Dosyalar",
     "enabledCount": "{{total}} öğeden {{selected}} tanesi etkin",
-    "reset": "Sıfırla",
-    "selectAtLeastOne": "En az bir dosya seçin. Modu kaldırmak için modu devre dışı bırakın."
+    "reset": "Sıfırla"
   },
   "fileSelector": {
     "selectFilesToInstall": "Yüklenecek dosyaları seçin: {{modName}}",

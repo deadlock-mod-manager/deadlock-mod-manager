@@ -26,7 +26,11 @@ const useUninstall = () => {
   // subscription would scan the addons folder on mount.
   const queryClient = useQueryClient();
 
-  const uninstall = async (mod: LocalMod, remove: boolean) => {
+  /** Toasts its own errors; resolves false if cancelled or failed. */
+  const uninstall = async (
+    mod: LocalMod,
+    remove: boolean,
+  ): Promise<boolean> => {
     const attempt = analytics.start("library_mod_state", {
       action: remove ? "delete" : "disable",
       mod_id: mod.remoteId,
@@ -43,7 +47,7 @@ const useUninstall = () => {
         }));
         if (!shouldUninstall) {
           attempt.finish("cancelled");
-          return;
+          return false;
         }
       }
 
@@ -95,6 +99,7 @@ const useUninstall = () => {
       toast.success(
         remove ? t("mods.deleteSuccess") : t("mods.disableSuccess"),
       );
+      return true;
     } catch (error) {
       attempt.finish(
         failureOutcome(isTauriError(error) ? error.kind : undefined),
@@ -109,10 +114,11 @@ const useUninstall = () => {
         toast.error(remove ? t("mods.deleteError") : t("mods.disableError"), {
           description: t("mods.deleteErrorVpkInUse"),
         });
-        return;
+        return false;
       }
 
       toast.error(remove ? t("mods.deleteError") : t("mods.disableError"));
+      return false;
     }
   };
 

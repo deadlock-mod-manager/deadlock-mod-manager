@@ -110,6 +110,7 @@ const recordedAddon = (): LocalAddonInfo => ({
   locator: "pak01_dir.vpk",
   remoteId: "42",
   manifestModId: "42",
+  hasEnabledVpkName: true,
   vpkParsed: {
     version: 2,
     treeLength: 0,
@@ -316,6 +317,7 @@ const parkedAddon = (): LocalAddonInfo => {
     locator: "900001_green.vpk",
     remoteId: "900001",
     manifestModId: undefined,
+    hasEnabledVpkName: false,
     vpkParsed: {
       ...addon.vpkParsed,
       fingerprint: { ...addon.vpkParsed.fingerprint, filePath },
@@ -420,5 +422,42 @@ describe("registering identified mods", () => {
     expect(usePersistedStore.getState().analysisResult?.errors).toEqual([
       "Could not register Mod 900001: catalog unavailable",
     ]);
+  });
+});
+
+describe("files the game doesn't load", () => {
+  it("leaves a recognised copy out of the library and asks about it", async () => {
+    resetProfile(false);
+    catalog.set("900001", { ...restoredMod, remoteId: "900001" });
+    await analyze([
+      {
+        ...hashMatchedAddon(),
+        filePath: "/game/citadel/addons/reset/coolskin.vpk",
+        fileName: "coolskin.vpk",
+        locator: "coolskin.vpk",
+        hasEnabledVpkName: false,
+      },
+    ]);
+    const state = usePersistedStore.getState();
+    expect(registrations).toEqual([]);
+    expect(state.localMods).toEqual([]);
+    expect(state.analysisDialogOpen).toBe(true);
+  });
+
+  it("leaves a disabled local mod's file alone when it hashes to a catalog mod", async () => {
+    resetProfile(false);
+    catalog.set("900001", { ...restoredMod, remoteId: "900001" });
+    await analyze([
+      {
+        ...hashMatchedAddon(),
+        filePath: "/game/citadel/addons/reset/local-1_pak05_dir.vpk",
+        fileName: "local-1_pak05_dir.vpk",
+        locator: "local-1_pak05_dir.vpk",
+        manifestModId: "local-1",
+        hasEnabledVpkName: false,
+      },
+    ]);
+    expect(registrations).toEqual([]);
+    expect(usePersistedStore.getState().localMods).toEqual([]);
   });
 });

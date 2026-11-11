@@ -31,6 +31,7 @@ import {
   installCatalog,
   openCatalogOptions,
   closeCatalogOptions,
+  disableCatalogFromOptions,
   reinstallCatalog,
   toggleCatalog,
   waitCatalogStatus,
@@ -67,7 +68,7 @@ describe("catalog installation lifecycle", () => {
         let dialog = await openCatalogOptions();
         await expect(dialog.$("button=Apply")).toBeDisabled();
         await chooseArchives([]);
-        await expect(dialog.$("button=Apply")).toBeDisabled();
+        await expect(dialog.$("button=Apply")).toBeEnabled();
         await chooseArchives(["common.zip", "red.zip"]);
         await closeCatalogOptions();
         await checkCatalog(
@@ -142,13 +143,15 @@ describe("catalog installation lifecycle", () => {
             downloads,
             dormant,
           );
+          await disableCatalogFromOptions(world, "variants");
+          await toggleCatalog(world, true);
         } else if (scenario === "gamebanana-switch-reinstall") {
           await reinstallCatalog(world, true);
         }
       } else if (scenario === "gamebanana-file-toggle") {
         await openCatalogOptions();
         let installed = await chooseInstalledFiles([]);
-        await expect(installed.$("button=Apply")).toBeDisabled();
+        await expect(installed.$("button=Apply")).toBeEnabled();
         await chooseInstalledFiles(["common.vpk", "red.vpk"]);
         await installed.$("button=Reset").click();
         await expect(installed.$("button=Apply")).toBeDisabled();
@@ -169,6 +172,8 @@ describe("catalog installation lifecycle", () => {
         await applyInstalledFiles(["common.vpk", "blue.vpk"]);
         files = ["common.vpk", "blue.vpk"];
         dormant = ["red.vpk"];
+        await disableCatalogFromOptions(world, "files");
+        await toggleCatalog(world, true);
       } else if (scenario === "gamebanana-reselect") {
         const dialog = await openCatalogOptions();
         await expect(dialog.$("[data-download-archive]")).not.toBeExisting();
