@@ -1,25 +1,11 @@
 /** biome-ignore-all lint/style/noExportedImports: Allowed for i18n */
-import i18n from "i18next";
+import { NotFoundError } from "@deadlock-mods/common/client-errors";
+import i18n, { type BackendModule } from "i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";
-import arSATranslation from "@/locales/ar-SA.json" with { type: "json" };
-import beBYTranslation from "@/locales/be-BY.json" with { type: "json" };
-import bgBGTranslation from "@/locales/bg-BG.json" with { type: "json" };
-import deDETranslation from "@/locales/de-DE.json" with { type: "json" };
 import enTranslation from "@/locales/en.json" with { type: "json" };
-import esESTranslation from "@/locales/es-ES.json" with { type: "json" };
-import frFRTranslation from "@/locales/fr-FR.json" with { type: "json" };
-import deCHTranslation from "@/locales/de-CH.json" with { type: "json" };
-import itITTranslation from "@/locales/it-IT.json" with { type: "json" };
-import jaJPTranslation from "@/locales/ja-JP.json" with { type: "json" };
-import koKRTranslation from "@/locales/ko-KR.json" with { type: "json" };
-import plPLTranslation from "@/locales/pl-PL.json" with { type: "json" };
-import ptBRTranslation from "@/locales/pt-BR.json" with { type: "json" };
-import ruRUTranslation from "@/locales/ru-RU.json" with { type: "json" };
-import thTHTranslation from "@/locales/th-TH.json" with { type: "json" };
-import trTRTranslation from "@/locales/tr-TR.json" with { type: "json" };
-import zhCNTranslation from "@/locales/zh-CN.json" with { type: "json" };
-import zhTWTranslation from "@/locales/zh-TW.json" with { type: "json" };
+import { localeLoaders } from "@/lib/locale-loaders";
+import logger from "@/lib/logger";
 
 const LANGUAGE_STORAGE_KEY = "i18nextLng";
 
@@ -54,91 +40,40 @@ if (typeof localStorage !== "undefined") {
   }
 }
 
-const resources = {
-  en: {
-    translation: enTranslation,
-  },
-  "de-DE": {
-    translation: deDETranslation,
-  },
-  "fr-FR": {
-    translation: frFRTranslation,
-  },
-  "ar-SA": {
-    translation: arSATranslation,
-  },
-  "de-CH": {
-    translation: deCHTranslation,
-  },
-  "pl-PL": {
-    translation: plPLTranslation,
-  },
-  "th-TH": {
-    translation: thTHTranslation,
-  },
-  "tr-TR": {
-    translation: trTRTranslation,
-  },
-  "ru-RU": {
-    translation: ruRUTranslation,
-  },
-  "zh-CN": {
-    translation: zhCNTranslation,
-  },
-  "zh-TW": {
-    translation: zhTWTranslation,
-  },
-  "es-ES": {
-    translation: esESTranslation,
-  },
-  "pt-BR": {
-    translation: ptBRTranslation,
-  },
-  "it-IT": {
-    translation: itITTranslation,
-  },
-  "ja-JP": {
-    translation: jaJPTranslation,
-  },
-  "ko-KR": {
-    translation: koKRTranslation,
-  },
-  "bg-BG": {
-    translation: bgBGTranslation,
-  },
-  "be-BY": {
-    translation: beBYTranslation,
+// English is the fallback for every missing key, so it ships in the entry
+// chunk; i18next asks this backend for any other language before switching.
+const localeBackend: BackendModule = {
+  type: "backend",
+  init: () => {},
+  read: (language, _namespace, callback) => {
+    const fail = (error: Error) => {
+      logger
+        .withMetadata({ language })
+        .withError(error)
+        .warn("Translations failed to load, showing English");
+      callback(error, false);
+    };
+    const load = localeLoaders.get(language);
+    if (!load) {
+      fail(new NotFoundError(`No translations for ${language}`));
+      return;
+    }
+    load().then((module) => callback(null, module.default), fail);
   },
 };
 
+// Rendering waits for the detected language, so it shows from the first frame.
 // eslint-disable-next-line import/no-named-as-default-member
-i18n
+await i18n
   .use(LanguageDetector)
+  .use(localeBackend)
   .use(initReactI18next)
   .init({
-    resources,
+    resources: { en: { translation: enTranslation } },
+    partialBundledLanguages: true,
     fallbackLng: "en",
     returnEmptyString: false,
-    supportedLngs: [
-      "en",
-      "de-DE",
-      "fr-FR",
-      "ar-SA",
-      "pl-PL",
-      "de-CH",
-      "th-TH",
-      "tr-TR",
-      "ru-RU",
-      "zh-CN",
-      "zh-TW",
-      "es-ES",
-      "pt-BR",
-      "it-IT",
-      "ja-JP",
-      "ko-KR",
-      "bg-BG",
-      "be-BY",
-    ],
+    supportedLngs: ["en", ...localeLoaders.keys()],
     interpolation: {
       escapeValue: false, // not needed for react as it escapes by default
     },
