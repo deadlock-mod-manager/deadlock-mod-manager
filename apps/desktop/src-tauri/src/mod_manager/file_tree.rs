@@ -361,6 +361,7 @@ impl Default for FileTreeAnalyzer {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use std::io::Write;
 
   fn file(archive_name: &str, path: &str) -> ModFile {
     ModFile {
@@ -455,6 +456,199 @@ mod tests {
     assert_eq!(
       variant_vpk_name(&file("Red Skin.zip", "Red Skin.zip/hd/model.vpk")),
       "model-red-skin-hd.vpk"
+    );
+  }
+
+  /// An archive entry: a file with its contents, or a directory.
+  type Entry<'a> = (&'a str, Option<&'a [u8]>);
+
+  /// Covers what the tree depends on: nested and backslash-separated paths, a
+  /// directory entry, an upper-case extension, an empty VPK and a non-VPK file.
+  const MOD_ENTRIES: &[Entry] = &[
+    ("Variant B/", None),
+    ("Variant B/pak01_dir.vpk", Some(b"variant vpk!")),
+    ("pak01_dir.vpk", Some(b"top-level vpk")),
+    ("extras\\pak02_dir.vpk", Some(b"extra")),
+    ("extras/LOUD.VPK", Some(b"loud")),
+    ("empty_dir.vpk", Some(b"")),
+    ("readme.txt", Some(b"read me")),
+  ];
+
+  fn write_zip(archive_path: &Path, entries: &[Entry]) {
+    let mut writer = zip::ZipWriter::new(std::fs::File::create(archive_path).unwrap());
+    let options = zip::write::SimpleFileOptions::default();
+    for (name, contents) in entries {
+      match contents {
+        Some(contents) => {
+          writer.start_file(*name, options).unwrap();
+          writer.write_all(contents).unwrap();
+        }
+        None => writer.add_directory(*name, options).unwrap(),
+      }
+    }
+    writer.finish().unwrap();
+  }
+
+  fn write_seven_zip(archive_path: &Path, entries: &[Entry]) {
+    let mut writer = sevenz_rust2::ArchiveWriter::create(archive_path).unwrap();
+    for (name, contents) in entries {
+      match contents {
+        Some(contents) => writer.push_archive_entry(
+          sevenz_rust2::ArchiveEntry::new_file(name),
+          Some(std::io::Cursor::new(contents.to_vec())),
+        ),
+        None => writer.push_archive_entry::<&[u8]>(
+          sevenz_rust2::ArchiveEntry::new_directory(name.trim_end_matches('/')),
+          None,
+        ),
+      }
+      .unwrap();
+    }
+    writer.finish().unwrap();
+  }
+
+  /// The tree today's code reads off a real extraction of `archive_name`.
+  fn tree_from_extraction(mod_dir: &Path, archive_name: &str) -> serde_json::Value {
+    let extracted = tempfile::tempdir().unwrap();
+    ArchiveExtractor::new()
+      .extract_archive(&mod_dir.join(archive_name), extracted.path())
+      .unwrap();
+    let tree = FileTreeAnalyzer::new()
+      .get_file_tree_from_extracted(extracted.path(), archive_name)
+      .unwrap();
+    serde_json::to_value(tree).unwrap()
+  }
+
+  fn mod_file_tree(mod_dir: &Path) -> Result<ModFileTree, Error> {
+    FileTreeAnalyzer::new().get_mod_file_tree(&mod_dir.to_path_buf())
+  }
+
+  fn assert_tree_matches_extraction(mod_dir: &Path, archive_name: &str) {
+    let tree = serde_json::to_value(mod_file_tree(mod_dir).unwrap()).unwrap();
+    assert_eq!(tree, tree_from_extraction(mod_dir, archive_name));
+  }
+
+  #[test]
+  fn zip_tree_matches_extraction() {
+    let mod_dir = tempfile::tempdir().unwrap();
+    write_zip(&mod_dir.path().join("mod.zip"), MOD_ENTRIES);
+
+    assert_tree_matches_extraction(mod_dir.path(), "mod.zip");
+  }
+
+  #[test]
+  fn seven_zip_tree_matches_extraction() {
+    let mod_dir = tempfile::tempdir().unwrap();
+    write_seven_zip(&mod_dir.path().join("mod.7z"), MOD_ENTRIES);
+
+    assert_tree_matches_extraction(mod_dir.path(), "mod.7z");
+  }
+
+  /// Names a filesystem may merge or rewrite on disk, and a repeated entry
+  /// whose last copy wins.
+  #[test]
+  fn names_the_filesystem_decides_match_extraction() {
+    let cases: [&[Entry]; 3] = [
+      &[
+        ("Pak/x.vpk", Some(b"first")),
+        ("pak/X.vpk", Some(b"second!")),
+      ],
+      &[
+        ("caf\u{e9}/pak01_dir.vpk", Some(b"composed")),
+        ("cafe\u{301}/pak01_dir.vpk", Some(b"decomposed")),
+      ],
+      &[("a/x.vpk", Some(b"first")), ("a\\x.vpk", Some(b"second!"))],
+    ];
+    for entries in cases {
+      let mod_dir = tempfile::tempdir().unwrap();
+      write_zip(&mod_dir.path().join("mod.zip"), entries);
+
+      assert_tree_matches_extraction(mod_dir.path(), "mod.zip");
+    }
+  }
+
+  /// A hand-built RAR 4 archive with stored entries: a `Variant B` directory,
+  /// `pak01_dir.vpk`, `Variant B\pak01_dir.vpk`, `readme.txt` and
+  /// `extras\pak02_dir.vpk`.
+  #[test]
+  fn rar_tree_lists_its_vpks() {
+    let mod_dir = tempfile::tempdir().unwrap();
+    std::fs::write(
+      mod_dir.path().join("variants.rar"),
+      include_bytes!("../../tests/fixtures/archives/variants.rar"),
+    )
+    .unwrap();
+
+    let tree = mod_file_tree(mod_dir.path()).unwrap();
+
+    let path = |parts: &[&str]| {
+      parts
+        .iter()
+        .collect::<PathBuf>()
+        .to_string_lossy()
+        .to_string()
+    };
+    let listed: Vec<(&str, String, u64)> = tree
+      .files
+      .iter()
+      .map(|file| (file.name.as_str(), file.path.clone(), file.size))
+      .collect();
+    assert_eq!(
+      listed,
+      [
+        (
+          "pak01-variants-variant-b_dir.vpk",
+          path(&["Variant B", "pak01_dir.vpk"]),
+          12
+        ),
+        ("pak02_dir.vpk", path(&["extras", "pak02_dir.vpk"]), 5),
+        ("pak01-variants_dir.vpk", path(&["pak01_dir.vpk"]), 13),
+      ]
+    );
+    assert!(
+      tree
+        .files
+        .iter()
+        .all(|file| file.is_selected && file.archive_name == "variants.rar")
+    );
+    assert_eq!(tree.total_files, 3);
+    assert!(tree.has_multiple_files);
+  }
+
+  #[test]
+  fn unsafe_entry_is_refused() {
+    let mod_dir = tempfile::tempdir().unwrap();
+    write_zip(
+      &mod_dir.path().join("mod.zip"),
+      &[
+        ("pak01_dir.vpk", Some(b"vpk")),
+        ("../escaped.txt", Some(b"payload")),
+      ],
+    );
+
+    let result = mod_file_tree(mod_dir.path());
+
+    assert!(
+      matches!(result, Err(Error::UnauthorizedPath(_))),
+      "expected an unauthorized path error, got {result:?}"
+    );
+  }
+
+  /// A few hundred KB of zeros that expand past what the archive may unpack.
+  #[test]
+  fn archive_past_its_budget_is_refused() {
+    let mod_dir = tempfile::tempdir().unwrap();
+    let zeros = vec![0; 256 * 1024 * 1024 + 1];
+    write_zip(
+      &mod_dir.path().join("bomb.zip"),
+      &[("bomb.vpk", Some(&zeros))],
+    );
+
+    let result = mod_file_tree(mod_dir.path());
+
+    assert!(
+      matches!(result, Err(Error::Io(_))),
+      "expected the archive to be refused, got {result:?}"
     );
   }
 }
