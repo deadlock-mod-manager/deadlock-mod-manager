@@ -22,6 +22,7 @@ import {
 } from "@/types/mods";
 import type { ProfileId } from "@/types/profiles";
 import type { State } from "..";
+import { sameVpkList } from "../utils/manifest-install-state";
 import {
   applyToModsAndAllProfiles,
   applyToModsInProfile,
@@ -767,10 +768,9 @@ export const createModsSlice: StateCreator<
       return applyToModsInProfile(state, profileId, (mods) =>
         mods.map((mod) => {
           const newOrder = orderedRemoteIds.indexOf(mod.remoteId);
-          return {
-            ...mod,
-            installOrder: newOrder >= 0 ? newOrder : mod.installOrder,
-          };
+          return newOrder < 0 || newOrder === mod.installOrder
+            ? mod
+            : { ...mod, installOrder: newOrder };
         }),
       );
     });
@@ -780,6 +780,33 @@ export const createModsSlice: StateCreator<
     get().bumpProfileSyncRevision(requestedProfileId ?? get().activeProfileId);
     set((state) => {
       const profileId = requestedProfileId ?? state.activeProfileId;
+      const vpkMap = new Map(vpkMappings);
+      const changed: {
+        remoteId: string;
+        oldVpks: string[] | undefined;
+        newVpks: string[];
+      }[] = [];
+      // Callers pass every enabled mod. Keep the objects of mods whose files
+      // kept their names, so their cards don't re-render, and log only the
+      // renamed ones.
+      const updateMods = (mods: typeof state.localMods) =>
+        mods.map((mod) => {
+          const newVpks = vpkMap.get(mod.remoteId);
+          if (
+            !newVpks ||
+            (mod.installedVpks && sameVpkList(mod.installedVpks, newVpks))
+          ) {
+            return mod;
+          }
+          changed.push({
+            remoteId: mod.remoteId,
+            oldVpks: mod.installedVpks,
+            newVpks,
+          });
+          return { ...mod, installedVpks: newVpks };
+        });
+
+      const next = applyToModsInProfile(state, profileId, updateMods);
       logger
         .withMetadata({
           mappingsCount: vpkMappings.length,
@@ -787,30 +814,10 @@ export const createModsSlice: StateCreator<
             remoteId,
             vpkCount: vpks.length,
           })),
+          changed,
         })
         .info("Updating mod VPK mappings after reorder");
-
-      const vpkMap = new Map(vpkMappings);
-      const updateMods = (mods: typeof state.localMods) =>
-        mods.map((mod) => {
-          const newVpks = vpkMap.get(mod.remoteId);
-          if (newVpks) {
-            logger
-              .withMetadata({
-                remoteId: mod.remoteId,
-                oldVpks: mod.installedVpks,
-                newVpks,
-              })
-              .info("Updating VPKs for mod");
-            return {
-              ...mod,
-              installedVpks: newVpks,
-            };
-          }
-          return mod;
-        });
-
-      return applyToModsInProfile(state, profileId, updateMods);
+      return next;
     });
   },
 
