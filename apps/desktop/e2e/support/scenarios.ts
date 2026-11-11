@@ -43,6 +43,10 @@ import {
 } from "./compatibility-fix-fixtures";
 import { prepareIdentifiedFixWorld } from "./compatibility-fix-identification-fixtures";
 import {
+  prepareReenabledFixWorld,
+  reenabledFixRoutes,
+} from "./compatibility-fix-reenabled-fixtures";
+import {
   FIXED_MOD as STATUS_FIXED_MOD,
   PLAIN_MOD as STATUS_PLAIN_MOD,
   RIVAL_MOD as STATUS_RIVAL_MOD,
@@ -963,6 +967,14 @@ export const scenarios = {
     routes: profileRoutes,
     prepare: async (world) =>
       prepareFixedStatusWorld(world, [STATUS_FIXED_MOD, STATUS_PLAIN_MOD]),
+  },
+  "compatibility-fix-reenabled": {
+    ...defaults,
+    family: "compatibility",
+    spec: "compatibility-fix-reenabled",
+    phases: ["reenable-fixed"],
+    routes: reenabledFixRoutes,
+    prepare: async (world) => prepareReenabledFixWorld(world),
   },
   "compatibility-fix-disabled": {
     ...defaults,
