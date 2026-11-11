@@ -45,6 +45,13 @@ impl ModManager {
           "Invalid or duplicate analyzed VPK filename: {filename}"
         )));
       }
+      // The repair builder refuses an enabled mod that claims a file the game
+      // never loads, so recording one would break the profile's repairs.
+      if VpkManager::enabled_vpk_number(filename).is_none() {
+        return Err(Error::InvalidInput(format!(
+          "Deadlock doesn't load {filename}: only files named like pak01_dir.vpk load. It was not added"
+        )));
+      }
     }
     if let Some(names) = &original_vpk_names
       && (names.len() != installed_vpks.len()
