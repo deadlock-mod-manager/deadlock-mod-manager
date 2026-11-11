@@ -48,6 +48,14 @@ const escapeHtml = (value: string): string =>
 
 const isHttpUrl = (value: string): boolean => /^https?:\/\//i.test(value);
 
+// Steam writes images as `[img]url[/img]` or, in newer posts,
+// `[img src="url"][/img]`. Quotes may already be HTML-escaped.
+const IMAGE_TAG =
+  /\[img(?:\s+src=(?:"|&quot;)?(.*?)(?:"|&quot;)?)?\](.*?)\[\/img\]/gi;
+
+const imageSource = (attribute: string | undefined, inner: string): string =>
+  (attribute ?? inner).trim();
+
 const resolveImageTokens = (value: string): string =>
   value
     .replaceAll("{STEAM_CLAN_LOC_IMAGE}", CLAN_IMAGE_BASE)
@@ -68,9 +76,10 @@ export const steamBbcodeToHtml = (input: string): string => {
     .replace(/\[\*\]/g, "<li>")
     .replace(/\[\/\*\]/g, "</li>")
     .replace(/\[hr\](?:\[\/hr\])?/gi, "<hr>")
-    .replace(/\[img\](.*?)\[\/img\]/gi, (_, src: string) =>
-      isHttpUrl(src) ? `<img src="${src}" alt="" loading="lazy">` : "",
-    )
+    .replace(IMAGE_TAG, (_, attribute: string | undefined, inner: string) => {
+      const src = imageSource(attribute, inner);
+      return isHttpUrl(src) ? `<img src="${src}" alt="" loading="lazy">` : "";
+    })
     .replace(/\[url\](.*?)\[\/url\]/gi, (_, href: string) =>
       isHttpUrl(href) ? `<a href="${href}">${href}</a>` : href,
     )
@@ -85,7 +94,7 @@ export const steamBbcodeToHtml = (input: string): string => {
     )
     // Anything we don't understand (tables, spoilers, video) is dropped,
     // keeping its inner text.
-    .replace(/\[\/?[\w-]+(?:=[^\]]*)?\]/gi, "")
+    .replace(/\[\/?[\w-]+(?:[=\s][^\]]*)?\]/gi, "")
     .replaceAll(OPEN_BRACKET, "[")
     .replaceAll(CLOSE_BRACKET, "]")
     .replace(/\r?\n/g, "<br>")
@@ -98,18 +107,22 @@ export const steamBbcodeToHtml = (input: string): string => {
 
 /** First `[img]` in a post, used as its cover. */
 export const steamBbcodeFirstImage = (input: string): string | null => {
-  const match = /\[img\](.*?)\[\/img\]/i.exec(resolveImageTokens(input));
-  return match && isHttpUrl(match[1]) ? match[1] : null;
+  const match = new RegExp(IMAGE_TAG.source, "i").exec(
+    resolveImageTokens(input),
+  );
+  if (!match) return null;
+  const src = imageSource(match[1], match[2]);
+  return isHttpUrl(src) ? src : null;
 };
 
 /** Plain-text preview of a post, without images or markup. */
 export const steamBbcodeExcerpt = (input: string, maxLength = 180): string => {
   const text = input
-    .replace(/\[img\].*?\[\/img\]/gi, "")
+    .replace(IMAGE_TAG, "")
     .replace(/\[previewyoutube=[^\]]*\](?:\[\/previewyoutube\])?/gi, "")
     .replace(/\\\[/g, "[")
     .replace(/\\\]/g, "]")
-    .replace(/\[\/?[a-z0-9*]+(?:=[^\]]*)?\]/gi, " ")
+    .replace(/\[\/?[a-z0-9*]+(?:[=\s][^\]]*)?\]/gi, " ")
     .replace(/\s+/g, " ")
     .trim();
 

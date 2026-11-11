@@ -1128,6 +1128,14 @@ export const scenarios = {
     verifyNetwork: (_id: string, requests: readonly FixtureRequest[]) =>
       assertCatalogNetwork("gamebanana-multifile", requests),
   },
+  "deep-link-enabled": {
+    ...catalog,
+    spec: "deep-link-enabled",
+    phases: ["enabled"],
+    routes: () => createCatalogRoutes("gamebanana-single"),
+    verifyNetwork: (_id: string, requests: readonly FixtureRequest[]) =>
+      assertCatalogNetwork("gamebanana-single", requests),
+  },
   "mod-files-error": {
     ...catalog,
     spec: "mod-files-error",

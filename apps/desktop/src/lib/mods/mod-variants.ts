@@ -66,6 +66,28 @@ export const deriveActiveArchiveNames = (mod: LocalMod | null): Set<string> => {
   return names;
 };
 
+// Active archives the live list dropped still need a row to be unchecked;
+// deselecting reads only the name.
+export const withUnlistedActiveArchives = (
+  downloads: ModDownloadItem[],
+  activeArchiveNames: Set<string>,
+): ModDownloadItem[] => {
+  const listed = new Set(downloads.map((d) => d.name));
+  const unlisted = [...activeArchiveNames]
+    .filter((name) => !listed.has(name))
+    .map(
+      (name): ModDownloadItem => ({
+        name,
+        url: "",
+        size: 0,
+        createdAt: null,
+        updatedAt: null,
+        md5Checksum: null,
+      }),
+    );
+  return [...downloads, ...unlisted];
+};
+
 /**
  * How many variants are currently active. Prefers archive-level counting, but
  * mods installed before variant tracking existed carry no archive names, so we

@@ -44,6 +44,12 @@ describe("What's New release content", () => {
     });
   });
 
+  it("shows a nightly the notes of the release it leads up to", () => {
+    expect(
+      getWhatsNewContent(translations, "1.1.0-nightly.20260825.db775912"),
+    ).toEqual(getWhatsNewContent(translations, "1.1.0"));
+  });
+
   for (const version of ["1.2.0-nightly.20260825.db775912", "99.0.0"]) {
     it(`uses the localized generic heading for missing release ${version}`, () => {
       expect(getWhatsNewContent(translations, version)).toEqual({

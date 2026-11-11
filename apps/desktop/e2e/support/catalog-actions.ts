@@ -271,6 +271,28 @@ export const applyInstalledFiles = (
     await expect(dialog).not.toBeDisplayed();
   });
 
+export const disableCatalogFromOptions = (
+  world: string,
+  section: "variants" | "files",
+) =>
+  step(`disable by applying no ${section}`, async () => {
+    const dialog = await openCatalogOptions();
+    const panel = section === "files" ? await chooseInstalledFiles([]) : dialog;
+    if (section === "variants") await chooseArchives([]);
+    await expect(panel).toHaveText(
+      expect.stringContaining(
+        "Applying with nothing selected disables the mod.",
+      ),
+    );
+    await panel.$("button=Apply").click();
+    await waitForDisplayed(
+      '//*[@data-sonner-toast and contains(., "Mod disabled")]',
+    );
+    await expect(dialog).not.toBeDisplayed();
+    await expect($('[role="switch"]')).toHaveAttribute("aria-checked", "false");
+    await waitCatalogStatus(world, "downloaded");
+  });
+
 export const toggleCatalog = async (world: string, enabled: boolean) => {
   const toggle = await $('[role="switch"]');
   await reveal(toggle);

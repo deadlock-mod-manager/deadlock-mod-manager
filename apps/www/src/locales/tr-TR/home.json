@@ -5,6 +5,7 @@
     "descriptionLatest": "Windows ve Linux’ta Valve’ın Deadlock oyunu için ücretsiz, açık kaynaklı mod yöneticisi. GameBanana modlarını, görünümleri ve sesleri tek tıklamayla yükleyin. Son sürüm: v{{version}}."
   },
   "hero": {
+    "latestUpdate": "",
     "title": "Deadlock modları,<br/><accent>uğraştırmadan.</accent>",
     "subtitle": "Modları birkaç tıklamayla bulun, yükleyin ve güncelleyin. Aynı uygulamayla kahraman görünümlerini, nişangâhları ve temaları da yönetin.",
     "allDownloads": "Tüm indirmeler",
