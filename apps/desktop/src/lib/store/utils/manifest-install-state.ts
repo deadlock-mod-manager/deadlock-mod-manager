@@ -84,7 +84,7 @@ const ACTIVE_OPERATION_STATUSES: ReadonlySet<ModStatus> = new Set([
   ModStatus.Removing,
 ]);
 
-const sameVpkList = (
+export const sameVpkList = (
   left: readonly string[],
   right: readonly string[],
 ): boolean =>
