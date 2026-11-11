@@ -5,6 +5,7 @@ mod range;
 mod segment_staging;
 mod segmented;
 mod sources;
+pub use sources::LateSources;
 #[cfg(test)]
 mod test_server;
 
@@ -43,6 +44,9 @@ pub struct DownloadFileDto {
   /// Set only by Rust source resolution; IPC callers cannot grant network access.
   #[serde(skip)]
   pub native_artifact: Option<crate::providers::native_sources::ResolvedNativeArtifact>,
+  /// Set only by Rust source resolution, like `native_artifact`.
+  #[serde(skip)]
+  pub late_sources: Option<LateSources>,
 }
 
 #[derive(Clone, Debug)]
@@ -515,6 +519,7 @@ impl DownloadManager {
       let file_size = file.size;
       let md5_checksum = file.md5_checksum.clone();
       let native_artifact = file.native_artifact.clone();
+      let late_sources = file.late_sources.clone();
       let mod_id_clone = mod_id.clone();
       let attempt_id = task.attempt_id.clone();
       let app_handle_clone = app_handle.clone();
@@ -562,6 +567,7 @@ impl DownloadManager {
           }),
           md5_checksum.as_deref(),
           native_artifact.as_ref(),
+          late_sources.as_ref(),
         )
         .await;
 
@@ -751,6 +757,7 @@ impl DownloadManager {
     max_bytes: Option<u64>,
     md5_checksum: Option<&str>,
     native_artifact: Option<&crate::providers::native_sources::ResolvedNativeArtifact>,
+    late_sources: Option<&LateSources>,
   ) -> Result<(), Error>
   where
     F: Fn(FileProgress) + Send + Sync + 'static,
@@ -766,7 +773,8 @@ impl DownloadManager {
       .await;
     }
     let on_progress = Arc::new(on_progress);
-    sources::download_from_sources(urls, target_path, |url| {
+    let late_urls = sources::late_urls(late_sources, &cancel_token, &pause);
+    sources::download_from_sources(urls, late_urls, target_path, |url| {
       let on_progress = Arc::clone(&on_progress);
       let cancel_token = cancel_token.clone();
       let pause = pause.clone();
@@ -2402,6 +2410,7 @@ mod tests {
       size: 1024,
       md5_checksum: None,
       native_artifact: None,
+      late_sources: None,
     });
 
     DownloadManager::remove_partials(&download.task).await;

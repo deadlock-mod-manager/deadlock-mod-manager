@@ -866,6 +866,7 @@ pub async fn fetch_missing_mod_variants(
         size: 0,
         md5_checksum: None,
         native_artifact: None,
+        late_sources: None,
       }],
       fileserver_preference,
     )
@@ -1073,6 +1074,7 @@ pub async fn stage_download_archive(
       size: 0,
       md5_checksum: None,
       native_artifact: None,
+      late_sources: None,
     }],
     fileserver_preference,
   )

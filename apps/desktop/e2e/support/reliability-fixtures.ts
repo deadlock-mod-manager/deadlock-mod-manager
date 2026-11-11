@@ -559,9 +559,12 @@ export function assertReliabilityNetwork(
       cachePath(DEAD_CACHE),
       cachePath(LIVE_CACHE),
     ]);
+    // Default looks the caches up only once its standard link has given up.
+    const gaveUp = downloads[downloads.length - 2].endedAt;
+    assert(gaveUp);
     assert(
-      checks.every((request) => request.at <= downloads[0].at),
-      "caches were checked before the download started",
+      checks.every((request) => gaveUp <= request.at && request.at <= last.at),
+      "caches weren't checked between the standard link failing and the fallback",
     );
   } else if (id === "gamebanana-mirror-fallback") {
     assert.deepEqual(
