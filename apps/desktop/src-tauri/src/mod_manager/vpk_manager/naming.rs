@@ -11,11 +11,11 @@ impl VpkManager {
       .flatten()
       .filter(|entry| {
         let path = entry.path();
-        path.is_file()
-          && path
-            .file_name()
-            .and_then(|n| n.to_str())
-            .is_some_and(Self::is_enabled_vpk_name)
+        path
+          .file_name()
+          .and_then(|n| n.to_str())
+          .is_some_and(Self::is_enabled_vpk_name)
+          && path.is_file()
       })
       .count() as u32
   }
@@ -124,9 +124,9 @@ pub(super) fn next_free_enabled_vpk_name(dir: &Path) -> Result<String, Error> {
   let mut used = std::collections::HashSet::new();
   for entry in fs::read_dir(dir)? {
     let path = entry?.path();
-    if path.is_file()
-      && let Some(name) = path.file_name().and_then(|n| n.to_str())
+    if let Some(name) = path.file_name().and_then(|n| n.to_str())
       && let Some(number) = VpkManager::enabled_vpk_number(name)
+      && path.is_file()
     {
       used.insert(number);
     }
