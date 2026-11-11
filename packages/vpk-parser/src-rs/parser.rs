@@ -607,6 +607,25 @@ mod tests {
     }
 
     #[test]
+    fn a_malformed_file_fails_from_disk_as_it_does_in_memory() {
+        let mut short_v2_header = VPK_SIGNATURE.to_le_bytes().to_vec();
+        short_v2_header.extend_from_slice(&2u32.to_le_bytes());
+        short_v2_header.extend_from_slice(&0u32.to_le_bytes());
+        let mut directory_past_end = short_v2_header.clone();
+        directory_past_end[8..12].copy_from_slice(&64u32.to_le_bytes());
+        directory_past_end.extend_from_slice(&[0u8; 20]);
+
+        let path = std::env::temp_dir().join(format!("vpk-parser-malformed-{}", std::process::id()));
+        for bytes in [b"not a vpk\n".to_vec(), short_v2_header, directory_past_end] {
+            std::fs::write(&path, &bytes).unwrap();
+            let from_disk = VpkParser::parse_file(&path, options()).unwrap_err();
+            let in_memory = VpkParser::parse(bytes, options()).unwrap_err();
+            assert_eq!(from_disk.to_string(), in_memory.to_string());
+        }
+        std::fs::remove_file(&path).unwrap();
+    }
+
+    #[test]
     fn chunked_hashes_match_single_pass() {
         let bytes: Vec<u8> = (0..HASH_CHUNK_SIZE * 2 + 17)
             .map(|i| (i % 251) as u8)

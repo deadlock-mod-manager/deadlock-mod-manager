@@ -1134,6 +1134,53 @@ mod tests {
   }
 
   #[tokio::test]
+  async fn hashes_only_the_files_that_need_a_lookup() {
+    use sha2::{Digest, Sha256};
+    let _ = crate::runtime_environment::initialize();
+    *crate::commands::state::API_URL.lock().unwrap() = closed_endpoint();
+    let game = tempfile::tempdir().unwrap();
+    let base = game.path().join("game/citadel/addons/1_profile");
+    write_vpk(&base, "900003_red.vpk", "disabled mod");
+    write_vpk(&base, "pak01_dir.vpk", "catalog mod");
+    write_vpk(&base, "pak02_dir.vpk", "local import");
+    std::fs::write(
+      base.join(".dmm.json"),
+      r#"{"version":3,"mods":{
+        "900001":{"enabled":true,"order":0,"shard":1,"currentVpks":["pak01_dir.vpk"]},
+        "local-unidentified":{"enabled":true,"order":1,"shard":1,"currentVpks":["pak02_dir.vpk"]}}}"#,
+    )
+    .unwrap();
+
+    let result = AddonAnalyzer::new()
+      .analyze_local_addons(game.path().to_path_buf(), Some("1_profile".into()), None)
+      .await
+      .unwrap();
+
+    let mut hashes: Vec<(&str, &str, &str)> = result
+      .addons
+      .iter()
+      .map(|addon| {
+        let fingerprint = &addon.vpk_parsed.fingerprint;
+        (
+          addon.file_name.as_str(),
+          fingerprint.sha256.as_str(),
+          fingerprint.fast_hash.as_str(),
+        )
+      })
+      .collect();
+    hashes.sort_unstable();
+    let local_sha = format!(
+      "{:x}",
+      Sha256::digest(std::fs::read(base.join("pak02_dir.vpk")).unwrap())
+    );
+    assert_eq!(hashes.len(), 3, "{:?}", result.errors);
+    assert_eq!(hashes[0], ("900003_red.vpk", "", ""));
+    assert_eq!(hashes[1], ("pak01_dir.vpk", "", ""));
+    assert_eq!((hashes[2].0, hashes[2].1), ("pak02_dir.vpk", local_sha.as_str()));
+    assert!(!hashes[2].2.is_empty());
+  }
+
+  #[tokio::test]
   async fn an_unreadable_manifest_is_reported_and_analysis_continues() {
     let game = tempfile::tempdir().unwrap();
     let base = game.path().join("game/citadel/addons/1_profile");
