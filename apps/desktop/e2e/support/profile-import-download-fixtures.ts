@@ -12,7 +12,7 @@ export const slowShareRoutes = async () => {
   return (origin: string): FixtureRoute[] =>
     base(origin).map((route) =>
       isLookup(route.path) || isArchive(route.path)
-        ? { ...route, headerDelayMs: SLOW_MS }
+        ? Object.assign(route, { headerDelayMs: SLOW_MS })
         : route,
     );
 };
