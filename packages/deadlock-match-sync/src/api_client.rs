@@ -21,8 +21,8 @@ use super::model::{ActiveFriend, FetchScope, SaltPayload, SaltsCheck};
 const DEFAULT_BASE_URL: &str = "https://api.deadlock-api.com";
 const POST_MAX_RETRIES: u32 = 5;
 const POST_RETRY_DELAY: Duration = Duration::from_secs(3);
-// The global to-fetch list claims its ids for 15 min so other workers skip them; this
-// cookie identifies that list so it can be released once we're done with it.
+// The global to-fetch list claims its ids so other workers skip them; this cookie
+// identifies that list so it can be released once we're done with it.
 const CLAIM_COOKIE: &str = "to_fetch_claim";
 // The release runs inline at the end of a pass; an unresponsive API mustn't hold it up.
 const RELEASE_TIMEOUT: Duration = Duration::from_secs(15);
@@ -321,7 +321,8 @@ impl BackfillSource for ApiClient {
     match scope {
       FetchScope::Account(account_id) => req = req.query(&[("account_id", account_id)]),
       // Sending the previous list's claim releases it before the new list is claimed.
-      FetchScope::Global => {
+      FetchScope::Global(limit) => {
+        req = req.query(&[("limit", limit)]);
         if let Some(claim) = self.held_claim() {
           req = req.header(COOKIE, format!("{CLAIM_COOKIE}={claim}"));
         }
@@ -330,7 +331,7 @@ impl BackfillSource for ApiClient {
     let resp = req.send().await.and_then(|r| r.error_for_status())?;
     // A failed request keeps the held claim, so a later release still covers it. A
     // response without the cookie claimed nothing (or comes from an older API).
-    if let FetchScope::Global = scope {
+    if let FetchScope::Global(_) = scope {
       self.set_claim(claim_from_headers(resp.headers()));
     }
     resp

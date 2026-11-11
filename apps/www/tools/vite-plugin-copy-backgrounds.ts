@@ -20,7 +20,7 @@ export const copyCrosshairBackgrounds = (): Plugin => {
         mkdirSync(targetDir, { recursive: true });
       }
 
-      const files = ["bg-1.jpg", "bg-2.jpg"];
+      const files = ["bg-1.webp", "bg-2.jpg"];
 
       for (const file of files) {
         const sourcePath = join(sourceDir, file);

@@ -51,11 +51,6 @@
     "dashboard": "Kontrol paneli",
     "avatarFallback": "Kullanıcı"
   },
-  "v2Banner": {
-    "outNow": "Şimdi yayında: Baştan sona yeniden geliştirildi.",
-    "outNowLong": "Şimdi yayında: Oyun güncellemelerinden etkilenmeyen modlar, daha hızlı mağaza ve çakışma tespiti.",
-    "whatsNew": "Yeniliklere göz atın"
-  },
   "footer": {
     "tagline": "Valve’ın Deadlock oyunu için mod yüklemeye ve yönetmeye yarayan küçük, açık kaynaklı bir uygulama.",
     "disclaimer": "Valve ile bağlantılı değildir. “Deadlock” ve ilgili işaretler Valve Corporation’ın ticari markalarıdır.",
@@ -69,6 +64,7 @@
       "download": "İndir",
       "sourceCode": "Kaynak kodu",
       "changelog": "Değişiklik günlüğü",
+      "v2": "",
       "commissions": "Mod Yaptırma",
       "documentation": "Belgeler",
       "faq": "Sık sorulan sorular",

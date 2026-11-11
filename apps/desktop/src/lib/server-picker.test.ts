@@ -3,9 +3,11 @@ import type { ServerPickerLocation } from "@/types/generated/ServerPickerLocatio
 import {
   changeBlockedLocations,
   countPickerChanges,
+  datacenterLocation,
   fastestAllowedLocation,
   groupPickerLocations,
   pickerRoutingStatus,
+  recentMatchesByLocation,
 } from "./server-picker";
 
 const LOCATIONS: ServerPickerLocation[] = [
@@ -160,5 +162,38 @@ describe("server picker fastest allowed location", () => {
         latencies,
       ),
     ).toBeNull();
+  });
+});
+
+describe("datacenterLocation", () => {
+  const ids = new Set(["fra", "dfra", "hel", "sto", "sto2", "ord"]);
+
+  test("maps deadlock-api datacenter codes to SDR POP ids", () => {
+    expect(datacenterLocation("fra2", ids)).toBe("fra");
+    expect(datacenterLocation("fra-dpkt", ids)).toBe("dfra");
+    expect(datacenterLocation("hel-hetz", ids)).toBe("hel");
+    expect(datacenterLocation("sto1", ids)).toBe("sto");
+    expect(datacenterLocation("sto2", ids)).toBe("sto2");
+    expect(datacenterLocation("ord1,ord2", ids)).toBe("ord");
+    expect(datacenterLocation("xyz9", ids)).toBeNull();
+  });
+});
+
+const month = (m: number) => Date.UTC(2026, m, 1) / 1000;
+
+describe("recentMatchesByLocation", () => {
+  test("sums matches per location within the recent months only", () => {
+    const counts = recentMatchesByLocation(
+      [
+        { month: month(10), datacenter: "fra2", matches: 3 },
+        { month: month(9), datacenter: "fra-dpkt", matches: 2 },
+        { month: month(8), datacenter: "fra1", matches: 4 },
+        { month: month(7), datacenter: "fra2", matches: 50 },
+        { month: month(10), datacenter: null, matches: 9 },
+      ],
+      LOCATIONS,
+      new Date(Date.UTC(2026, 10, 10)),
+    );
+    expect([...counts]).toEqual([["fra", 7]]);
   });
 });

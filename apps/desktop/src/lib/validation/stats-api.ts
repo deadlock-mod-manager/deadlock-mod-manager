@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { jsonValueSchema } from "@/lib/validation/json";
 
 /**
  * Schemas for everything api.deadlock-api.com sends the Stats page.
@@ -216,6 +217,18 @@ export const playerRankSchema = z.object({
   last_match: lastRankedMatchSchema.nullish().default(null).catch(null),
 });
 
+/** One month of `/players/{id}/region`: the account's matches on one cluster. */
+export const regionHistoryEntrySchema = z.object({
+  month: z.number(),
+  datacenter: z.string().nullish().default(null).catch(null),
+  matches: count,
+});
+
+/** Rows are validated one by one, so a single odd month does not drop the rest. */
+export const playerRegionSchema = z.object({
+  history: z.array(jsonValueSchema).optional().default([]).catch([]),
+});
+
 export const itemStatsSchema = z.object({
   item_id: z.number(),
   matches: count,
@@ -327,6 +340,7 @@ export type SteamProfile = z.infer<typeof steamProfileSchema>;
 export type LastRankedMatch = z.infer<typeof lastRankedMatchSchema>;
 export type PlayerRank = z.infer<typeof playerRankSchema>;
 export type ItemStats = z.infer<typeof itemStatsSchema>;
+export type RegionHistoryEntry = z.infer<typeof regionHistoryEntrySchema>;
 export type BadgeDistributionEntry = z.infer<
   typeof badgeDistributionEntrySchema
 >;

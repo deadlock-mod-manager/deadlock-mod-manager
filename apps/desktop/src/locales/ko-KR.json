@@ -46,6 +46,11 @@
     "savePreset": "",
     "deletePreset": "",
     "presetHint": "",
+    "playedPreset": "",
+    "playedPresetHint": "",
+    "recentMatches_one": "",
+    "recentMatches_other": "",
+    "recentMatchesHint": "",
     "cancel": "",
     "locationCount_one": "",
     "locationCount_other": "",
@@ -4238,7 +4243,7 @@
   "warnings": {
     "outdatedDescription": "",
     "obsoleteLabel": "더 이상 사용되지 않음",
-    "obsoleteDescription": "이 모드는 더 이상 모드 스토어에서 사용할 수 없으며 현재 게임 버전에서는 작동하지 않을 수 있습니다.",
+    "obsoleteDescription": "",
     "staleModDescription": "이 모드에는 {{count}}개의 해결되지 않은 보고서가 있으며 {{date}} 이후 업데이트되지 않았습니다. 현재 게임 버전에서는 깨질 수 있습니다.",
     "staleModLabel": "탁한",
     "missingFilesLabel": "",
@@ -5920,6 +5925,64 @@
       "other": ""
     },
     "versions": {
+      "2.4.0": {
+        "title": "",
+        "highlights": [
+          {
+            "image": "",
+            "caption": ""
+          },
+          {
+            "image": "",
+            "caption": ""
+          },
+          {
+            "image": "",
+            "caption": ""
+          },
+          {
+            "image": "",
+            "caption": ""
+          }
+        ],
+        "features": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ]
+      },
       "2.3.0": {
         "title": "",
         "highlights": [
@@ -7614,6 +7677,10 @@
       "withheldAt": "",
       "withheldBy": ""
     },
+    "obsolete": {
+      "showNote": "",
+      "hideNote": ""
+    },
     "viewIn3d": "",
     "videos": "",
     "videoTitle": "",
@@ -7838,6 +7905,7 @@
     "noOptions": "",
     "variants": "",
     "selectedCount": "",
+    "noneSelectedDisables": "",
     "enabled": "",
     "needsDownload": "",
     "fetchMissingNoSource": "",
@@ -7859,8 +7927,7 @@
   "installedFiles": {
     "title": "",
     "enabledCount": "",
-    "reset": "",
-    "selectAtLeastOne": ""
+    "reset": ""
   },
   "fileSelector": {
     "selectFilesToInstall": "설치할 파일 선택: {{modName}}",

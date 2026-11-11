@@ -478,6 +478,7 @@ mod tests {
       created_at: None,
       updated_at: None,
       withheld: None,
+      obsolescence_notice: None,
     }
   }
 

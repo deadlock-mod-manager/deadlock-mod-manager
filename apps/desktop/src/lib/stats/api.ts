@@ -22,7 +22,9 @@ import {
   performancePointSchema,
   playerHeroStatsSchema,
   playerRankSchema,
+  playerRegionSchema,
   rankedSeasonSchema,
+  regionHistoryEntrySchema,
   steamProfileSchema,
 } from "@/lib/validation/stats-api";
 import { runtimeServiceOrigin } from "@/lib/runtime-bootstrap";
@@ -57,6 +59,7 @@ export type {
   PlayerHeroStats,
   PlayerRank,
   RankedSeason,
+  RegionHistoryEntry,
   SeasonInterval,
   SteamProfile,
 } from "@/lib/validation/stats-api";
@@ -139,6 +142,13 @@ export const getPlayerHeroStats = (
 
 export const getPlayerRank = (accountId: number) =>
   getOne(`/v1/players/${accountId}/rank`, playerRankSchema);
+
+/** Matches per month and game server cluster, newest month first. */
+export const getPlayerRegionHistory = async (accountId: number) => {
+  const path = `/v1/players/${accountId}/region`;
+  const region = await getOne(path, playerRegionSchema);
+  return parseList(regionHistoryEntrySchema, region.history, path);
+};
 
 /** `sameParty` restricts the result to premades instead of any shared match. */
 export const getMateStats = (accountId: number, sameParty = false) =>

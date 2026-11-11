@@ -46,6 +46,11 @@
     "savePreset": "",
     "deletePreset": "",
     "presetHint": "",
+    "playedPreset": "",
+    "playedPresetHint": "",
+    "recentMatches_one": "",
+    "recentMatches_other": "",
+    "recentMatchesHint": "",
     "cancel": "",
     "locationCount_one": "",
     "locationCount_other": "",
@@ -5920,6 +5925,64 @@
       "other": ""
     },
     "versions": {
+      "2.4.0": {
+        "title": "",
+        "highlights": [
+          {
+            "image": "",
+            "caption": ""
+          },
+          {
+            "image": "",
+            "caption": ""
+          },
+          {
+            "image": "",
+            "caption": ""
+          },
+          {
+            "image": "",
+            "caption": ""
+          }
+        ],
+        "features": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ]
+      },
       "2.3.0": {
         "title": "",
         "highlights": [
@@ -7614,6 +7677,10 @@
       "withheldAt": "",
       "withheldBy": ""
     },
+    "obsolete": {
+      "showNote": "",
+      "hideNote": ""
+    },
     "viewIn3d": "",
     "videos": "",
     "videoTitle": "",
@@ -7838,6 +7905,7 @@
     "noOptions": "",
     "variants": "",
     "selectedCount": "",
+    "noneSelectedDisables": "",
     "enabled": "",
     "needsDownload": "",
     "fetchMissingNoSource": "",
@@ -7859,8 +7927,7 @@
   "installedFiles": {
     "title": "",
     "enabledCount": "",
-    "reset": "",
-    "selectAtLeastOne": ""
+    "reset": ""
   },
   "fileSelector": {
     "selectFilesToInstall": "",

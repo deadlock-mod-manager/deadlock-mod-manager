@@ -103,7 +103,7 @@ export const BrandingHeader = ({
     <div
       className={cn(
         "flex items-center transition-[padding,gap] duration-300 ease-dmm-smooth",
-        collapsed ? "justify-center gap-0 px-0 py-0" : "gap-2.5 pl-1.5 py-3",
+        collapsed ? "justify-center gap-0 px-0 py-2" : "gap-2.5 pl-1.5 py-3",
         className,
       )}
       data-sidebar-header='true'>
@@ -112,10 +112,10 @@ export const BrandingHeader = ({
       </div>
       <div
         className={cn(
-          "flex min-w-0 flex-col gap-1 overflow-hidden transition-[opacity,max-width,transform] duration-200 ease-dmm-smooth",
+          "flex min-w-0 flex-col gap-1 overflow-hidden transition-[opacity,max-width,max-height,transform] duration-200 ease-dmm-smooth",
           collapsed
-            ? "pointer-events-none max-w-0 -translate-x-1 opacity-0"
-            : "max-w-[12rem] translate-x-0 opacity-100 delay-100",
+            ? "pointer-events-none max-h-0 max-w-0 -translate-x-1 opacity-0"
+            : "max-h-24 max-w-[12rem] translate-x-0 opacity-100 delay-100",
         )}>
         <span className='font-primary text-xl leading-none tracking-tight'>
           {brandName ?? "Deadlock Mod Manager"}

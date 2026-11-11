@@ -1,5 +1,11 @@
 # @deadlock-mods/database
 
+## 2.6.1
+
+### Patch Changes
+
+- 9fab2e1: Show YouTube and Vimeo videos from GameBanana on mod pages
+
 ## 2.6.0
 
 ### Minor Changes

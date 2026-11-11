@@ -15,13 +15,13 @@ const MAX_EXPANSION_RATIO: u64 = 100;
 const MIN_EXTRACTED_BYTES: u64 = 256 * 1024 * 1024;
 const MAX_EXTRACTED_BYTES: u64 = 16 * 1024 * 1024 * 1024;
 
-fn extraction_budget(archive_size: u64) -> u64 {
+pub(super) fn extraction_budget(archive_size: u64) -> u64 {
   archive_size
     .saturating_mul(MAX_EXPANSION_RATIO)
     .clamp(MIN_EXTRACTED_BYTES, MAX_EXTRACTED_BYTES)
 }
 
-fn too_large() -> std::io::Error {
+pub(super) fn too_large() -> std::io::Error {
   std::io::Error::other("Archive expands beyond the extraction size limit")
 }
 
@@ -135,7 +135,7 @@ impl ArchiveExtractor {
         fs::create_dir_all(parent)?;
       }
 
-      if !file.name().ends_with('/') {
+      if !is_zip_directory(file.name()) {
         let mut outfile = fs::File::create(&outpath)?;
         let mut budgeted = Budgeted {
           inner: &mut file,
@@ -278,7 +278,7 @@ impl ArchiveExtractor {
 /// Interpret an archive entry name as a relative path built only from plain file and
 /// directory names. Backslashes count as separators on every platform, so a Windows-authored
 /// archive is validated the same way on Linux and macOS.
-fn relative_entry_path(entry_name: &str) -> Result<PathBuf, Error> {
+pub(super) fn relative_entry_path(entry_name: &str) -> Result<PathBuf, Error> {
   let normalized = entry_name.replace('\\', "/");
   let mut relative = PathBuf::new();
 
@@ -308,6 +308,11 @@ fn relative_entry_path(entry_name: &str) -> Result<PathBuf, Error> {
   }
 
   Ok(relative)
+}
+
+/// Zip marks a directory entry only by its trailing slash.
+pub(super) fn is_zip_directory(entry_name: &str) -> bool {
+  entry_name.ends_with('/')
 }
 
 /// Whether `component` starts with a Windows drive specifier such as `C:`.

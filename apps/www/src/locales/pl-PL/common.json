@@ -1,6 +1,6 @@
 {
   "privacy": {
-    "updated": "",
+    "updated": "Ostatnia aktualizacja: 21 października 2026",
     "scope": "",
     "desktopCollection": "",
     "serverStorage": "",
@@ -51,11 +51,6 @@
     "dashboard": "Panel",
     "avatarFallback": "Użytkownik"
   },
-  "v2Banner": {
-    "outNow": "",
-    "outNowLong": "",
-    "whatsNew": ""
-  },
   "footer": {
     "tagline": "Mała aplikacja open source do instalowania modów i zarządzania nimi w Deadlock, grze od Valve.",
     "disclaimer": "Niepowiązane z Valve. „Deadlock” i powiązane oznaczenia są znakami towarowymi Valve Corporation.",
@@ -69,6 +64,7 @@
       "download": "Pobierz",
       "sourceCode": "Kod źródłowy",
       "changelog": "",
+      "v2": "",
       "commissions": "",
       "documentation": "Dokumentacja",
       "faq": "",

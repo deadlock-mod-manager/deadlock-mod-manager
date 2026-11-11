@@ -8,6 +8,8 @@ import type { LocalAddonInfo } from "@/types/mods";
 interface AddonActionsProps {
   addon: LocalAddonInfo;
   isIdentified: boolean;
+  /** A file the game doesn't load: it can't be adopted as installed. */
+  ignoredByGame: boolean;
   isAlreadyInLibrary: boolean;
   isCheckingLibrary: boolean;
   onAddToLibrary?: (addon: LocalAddonInfo) => void;
@@ -19,6 +21,7 @@ interface AddonActionsProps {
 export const AddonActions = ({
   addon,
   isIdentified,
+  ignoredByGame,
   isAlreadyInLibrary,
   isCheckingLibrary,
   onAddToLibrary,
@@ -30,15 +33,16 @@ export const AddonActions = ({
   if (isIdentified) {
     return (
       <>
-        {fileActions ?? (
-          <Badge
-            variant={isAlreadyInLibrary ? "secondary" : "outline"}
-            className='h-7 text-xs'>
-            {isAlreadyInLibrary
-              ? t("addons.inLibrary")
-              : t("addons.notInLibrary")}
-          </Badge>
-        )}
+        {fileActions ??
+          (!ignoredByGame && (
+            <Badge
+              variant={isAlreadyInLibrary ? "secondary" : "outline"}
+              className='h-7 text-xs'>
+              {isAlreadyInLibrary
+                ? t("addons.inLibrary")
+                : t("addons.notInLibrary")}
+            </Badge>
+          ))}
         {onExternalLinkClick && (
           <ExternalLink
             className='w-4 h-4 text-muted-foreground hover:text-foreground cursor-pointer'
@@ -48,6 +52,8 @@ export const AddonActions = ({
       </>
     );
   }
+
+  if (ignoredByGame) return <>{fileActions}</>;
 
   if (isAlreadyInLibrary) {
     return (

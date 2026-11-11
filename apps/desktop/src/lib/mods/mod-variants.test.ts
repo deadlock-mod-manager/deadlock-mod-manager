@@ -6,6 +6,7 @@ import {
   deriveReusableFilesForArchive,
   getQueuedDownloads,
   requiresFileSelection,
+  withUnlistedActiveArchives,
 } from "@/lib/mods/mod-variants";
 import type { LocalMod, ModDownloadItem, ModFile } from "@/types/mods";
 
@@ -194,6 +195,20 @@ const downloads = (...names: string[]): ModDownloadItem[] =>
     updatedAt: null,
     md5Checksum: null,
   }));
+
+describe("withUnlistedActiveArchives", () => {
+  it("adds a row for an active archive the live list no longer has", () => {
+    const rows = withUnlistedActiveArchives(
+      downloads("common.zip", "pack_4c5d6.zip"),
+      new Set(["common.zip", "pack_1a2b3.zip"]),
+    );
+    expect(rows.map((d) => d.name)).toEqual([
+      "common.zip",
+      "pack_4c5d6.zip",
+      "pack_1a2b3.zip",
+    ]);
+  });
+});
 
 describe("getQueuedDownloads", () => {
   it("returns the picked variants rather than every file offered", () => {

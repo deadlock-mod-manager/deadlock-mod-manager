@@ -10,6 +10,7 @@ import { Link } from "@tanstack/react-router";
 import { Trans, useTranslation } from "react-i18next";
 import { usePlatformDownload } from "@/components/downloads/platform-download-button";
 import { COMMISSIONS_URL } from "@/lib/constants";
+import { DESKTOP_RELEASES, NEXT_VERSION } from "@/lib/desktop-changelog";
 import { orpc } from "@/utils/orpc";
 import { CtaArrow, DownloadCta, secondaryCta } from "./cta";
 
@@ -64,15 +65,19 @@ const CommissionsLink = () => {
   );
 };
 
+const latestRelease = DESKTOP_RELEASES.find(
+  (release) => release.version !== NEXT_VERSION,
+);
+
 export const HeroSection = () => {
   const { t } = useTranslation("home");
 
   return (
     <section
       id='top'
-      className='relative isolate overflow-hidden lg:flex lg:min-h-[calc(100dvh-6.5rem)] lg:items-center'>
+      className='relative isolate overflow-hidden lg:flex lg:min-h-[calc(100dvh-4rem)] lg:items-center'>
       <div aria-hidden='true' className='-z-10 absolute inset-0'>
-        <div className='absolute inset-0 bg-[url(/backgrounds/bg-1.jpg)] bg-cover bg-[center_30%] opacity-40 [mask-image:radial-gradient(120%_95%_at_72%_35%,black_20%,transparent_78%)]' />
+        <div className='absolute inset-0 bg-[url(/backgrounds/bg-1.webp)] bg-cover bg-[center_30%] opacity-40 [mask-image:radial-gradient(120%_95%_at_72%_35%,black_20%,transparent_78%)]' />
         <div className='absolute inset-0 bg-[radial-gradient(60%_55%_at_74%_48%,rgba(239,224,190,0.10),transparent_70%)]' />
         <div className='absolute inset-0 bg-[linear-gradient(90deg,var(--color-background)_8%,rgba(17,15,14,0.55)_45%,transparent_75%),linear-gradient(180deg,rgba(17,15,14,0.35)_0%,transparent_30%,transparent_70%,var(--color-background)_100%)]' />
       </div>
@@ -80,12 +85,13 @@ export const HeroSection = () => {
       <div className='mx-auto grid w-full max-w-7xl items-center gap-16 px-6 pt-16 pb-24 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1.1fr)] lg:gap-14 lg:py-28 xl:gap-20'>
         <div className='relative z-10'>
           <Link
-            to='/v2'
+            to='/changelog'
+            hash={latestRelease ? `v${latestRelease.version}` : undefined}
             className='group inline-flex items-center gap-2.5 rounded-full border border-border-strong bg-surface/80 py-1.5 pr-3.5 pl-2 text-[13px] text-foreground-soft backdrop-blur-sm transition-colors hover:border-border-hover hover:text-foreground'>
             <span className='rounded-full bg-primary px-2 py-0.5 font-semibold text-primary-foreground text-xs'>
-              V2
+              v{latestRelease?.version}
             </span>
-            {t("hero.v2OutNow")}
+            {t("hero.latestUpdate")}
             <ArrowRightIcon
               aria-hidden='true'
               className='size-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5'

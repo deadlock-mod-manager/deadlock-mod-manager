@@ -51,11 +51,6 @@
     "dashboard": "Painel",
     "avatarFallback": "Usuário"
   },
-  "v2Banner": {
-    "outNow": "Disponível agora: Refeito do zero.",
-    "outNowLong": "Disponível agora: mods que sobrevivem às atualizações do jogo, uma loja mais rápida e detecção de conflitos.",
-    "whatsNew": "Veja as novidades"
-  },
   "footer": {
     "tagline": "Um app pequeno e open source para instalar e gerenciar mods do Deadlock, o jogo da Valve.",
     "disclaimer": "Sem afiliação com a Valve. \"Deadlock\" e marcas relacionadas são marcas registradas da Valve Corporation.",
@@ -69,6 +64,7 @@
       "download": "Baixar",
       "sourceCode": "Código-fonte",
       "changelog": "Registro de alterações",
+      "v2": "",
       "commissions": "",
       "documentation": "Documentação",
       "faq": "Perguntas frequentes",

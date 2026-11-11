@@ -37,4 +37,8 @@ export type CatalogModDto = {
    * Set when GameBanana staff withheld the submission; it can't be downloaded until then.
    */
   withheld: WithholdNoticeDto | null;
+  /**
+   * The author's GameBanana HTML note on an obsolete submission, when they wrote one.
+   */
+  obsolescenceNotice: string | null;
 };

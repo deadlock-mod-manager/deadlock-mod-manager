@@ -61,6 +61,8 @@ export const InstalledFilesDisplay = ({
     selection.size !== initialSelection.size ||
     [...selection].some((name) => !initialSelection.has(name));
 
+  const canApply = hasChanges && !isBusy;
+
   const toggleFile = (name: string) => {
     setSelection((prev) => {
       const next = new Set(prev);
@@ -86,9 +88,11 @@ export const InstalledFilesDisplay = ({
         selected: selection.size,
         total: fileTree.files.length,
       })}
-      hint={selection.size === 0 && t("installedFiles.selectAtLeastOne")}
+      hint={
+        canApply && selection.size === 0 && t("modOptions.noneSelectedDisables")
+      }
       canReset={hasChanges && !isBusy}
-      canApply={hasChanges && !isBusy && selection.size > 0}
+      canApply={canApply}
       isSaving={isSaving}
       onReset={() => setSelection(initialSelection)}
       onApply={() => onApplySelection([...selection])}>

@@ -13,6 +13,7 @@ interface LocationGroupProps {
   baseline: Set<string>;
   observed: Set<string> | null;
   latencies: Map<string, ServerPickerLatency>;
+  matches: Map<string, number> | null;
   disabled: boolean;
   onChange: (ids: string[], blocked: boolean) => void;
   onToggle: (id: string, blocked: boolean, extend: boolean) => void;
@@ -25,6 +26,7 @@ export const LocationGroup = ({
   baseline,
   observed,
   latencies,
+  matches,
   disabled,
   onChange,
   onToggle,
@@ -96,6 +98,7 @@ export const LocationGroup = ({
             pending={blocked.has(location.id) !== baseline.has(location.id)}
             observed={observed ? observed.has(location.id) : null}
             latency={latencies.get(location.id)}
+            matches={matches?.get(location.id)}
             disabled={disabled}
             onChange={onToggle}
           />

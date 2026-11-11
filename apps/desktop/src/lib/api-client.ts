@@ -97,6 +97,7 @@ export const getMod = async (
   ModDto & {
     source?: NativeSourceProvenance;
     withheld?: WithholdNoticeDto | null;
+    obsolescenceNotice?: string | null;
   }
 > => {
   if (isNativeSourceMod(remoteId))

@@ -122,6 +122,8 @@ export interface LocalAddonInfo {
   remoteId?: string; // Will be populated by API call
   /** The mod the profile's manifest assigns this exact file to. */
   manifestModId?: string;
+  /** Named `pak##_dir.vpk`, the only files the game loads. */
+  hasEnabledVpkName: boolean;
   matchInfo?: {
     fileId?: string;
     sourcePath?: string;
