@@ -619,6 +619,7 @@ async fn full_sync_is_not_complete_while_quota_leaves_own_matches_unchecked() {
     .unwrap();
   assert_eq!(*eng.sink.posted.lock().unwrap(), vec![103]);
   assert_eq!(p.fetched, 1);
+  assert!(p.quota_reached);
   assert_eq!(*eng.backfill.checked.lock().unwrap(), vec![103]);
   assert_eq!(*eng.persistence.fetched.lock().unwrap(), vec![103]);
   assert!(!*eng.persistence.complete.lock().unwrap());

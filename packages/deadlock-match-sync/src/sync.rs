@@ -463,18 +463,20 @@ where
       {
         return Ok(());
       }
+      // With the quota spent, ids left on this page or the next can't be fetched: report it
+      // instead of spending a history request.
+      let quota_spent = st.quota.remaining(self.persistence.now()) == 0;
+      if quota_spent && (!checked_all || page.next_cursor.is_some()) {
+        st.progress.quota_reached = true;
+        st.progress.quota_remaining = 0;
+        return Ok(());
+      }
       // Later pages couldn't be checked either. The account's pending list needs no check,
       // so it still gets fetched.
       if !checked_all {
         break;
       }
       match page.next_cursor {
-        // Nothing on the next page could be fetched: don't spend a history request on it.
-        Some(_) if st.quota.remaining(self.persistence.now()) == 0 => {
-          st.progress.quota_reached = true;
-          st.progress.quota_remaining = 0;
-          return Ok(());
-        }
         Some(next) => cursor = Some(next),
         None => {
           history_complete = true;
