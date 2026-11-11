@@ -5588,6 +5588,8 @@
     "alreadyInLibrary": "",
     "addToLibraryTitle": "添加到库",
     "addToLibraryDescription": "将 \"{{fileName}}\" 添加到你的模组库",
+    "notLoadedByGame": "",
+    "notLoadedByGameDescription": "",
     "addToLibrarySuccess": "已将 \"{{name}}\" 添加到库",
     "adding": "添加中…",
     "show": "显示详情",

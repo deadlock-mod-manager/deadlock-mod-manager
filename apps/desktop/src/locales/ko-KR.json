@@ -5588,6 +5588,8 @@
     "alreadyInLibrary": "",
     "addToLibraryTitle": "라이브러리에 추가",
     "addToLibraryDescription": "모드 라이브러리에 \"{{fileName}}\"을 추가하세요",
+    "notLoadedByGame": "",
+    "notLoadedByGameDescription": "",
     "addToLibrarySuccess": "라이브러리에 \"{{name}}\"을(를) 추가했습니다",
     "adding": "첨가...",
     "show": "세부정보 표시",

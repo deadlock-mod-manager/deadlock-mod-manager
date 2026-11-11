@@ -1,5 +1,5 @@
 use crate::errors::Error;
-use crate::mod_manager::vdata_history::{BaselineEvidence, VdataHistoryIndex};
+use crate::mod_manager::vdata_history::{BaselineEvidence, VdataHistory, VdataHistoryIndex};
 use keyvalues_parser::Value;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -515,7 +515,7 @@ impl LocalizationOverlayPlan {
     Self::build_snapshot(
       mods,
       HistoricalLocalizationIndex::embedded(),
-      VdataHistoryIndex::embedded(),
+      VdataHistoryIndex::embedded().into(),
       &resources,
       enabled_mod_ids,
       &|_| {},
@@ -620,7 +620,7 @@ impl LocalizationOverlayPlan {
     let plan = Self::build_snapshot(
       mods,
       HistoricalLocalizationIndex::embedded(),
-      &history,
+      history,
       resources,
       enabled_mod_ids,
       progress,
@@ -639,7 +639,7 @@ impl LocalizationOverlayPlan {
     Self::build_snapshot(
       mods,
       historical_localization,
-      history,
+      history.into(),
       &resources,
       &mods.iter().map(|input| input.mod_id.clone()).collect(),
       &|_| {},
@@ -649,7 +649,7 @@ impl LocalizationOverlayPlan {
   fn build_snapshot(
     mods: &[LocalizationModInput],
     historical_localization: &HistoricalLocalizationIndex,
-    history: &VdataHistoryIndex,
+    history: VdataHistory<'_>,
     resources: &resources::ResourceSnapshot,
     enabled_mod_ids: &BTreeSet<String>,
     progress: &dyn Fn(RepairPlanProgress),
@@ -1403,7 +1403,7 @@ fn verify_packed_overlay(workspace: &Path, output_path: &Path) -> Result<(), Err
 fn build_compiled_data(
   resources: &resources::ResourceSnapshot,
   sources_by_path: BTreeMap<String, Vec<CompiledDataSource>>,
-  history: &VdataHistoryIndex,
+  history: VdataHistory<'_>,
   files: &mut FileFindings,
 ) -> Result<Vec<CompiledDataTable>, Error> {
   if sources_by_path.is_empty() {
@@ -1443,7 +1443,7 @@ fn build_compiled_table(
   file_path: &str,
   base_bytes: Vec<u8>,
   sources: Vec<CompiledDataSource>,
-  history: Option<&VdataHistoryIndex>,
+  history: Option<VdataHistory<'_>>,
 ) -> Result<CompiledDataTable, Error> {
   let (format, base_root, base_encoding) =
     decode_compiled_data(&base_bytes, &format!("base game:{file_path}"))?;
@@ -1533,7 +1533,7 @@ fn compile_source(
   base_rows: &[(String, Kv3Value)],
   base_row_encodings: &[(String, Kv3Encoding)],
   enum_maps: &enum_maps::EnumMapCompatibility,
-  history: Option<&VdataHistoryIndex>,
+  history: Option<VdataHistory<'_>>,
   source: CompiledDataSource,
 ) -> Result<TableSources, Error> {
   let CompiledDataSource {
@@ -1562,7 +1562,7 @@ fn compile_source(
   }
   let fallback = VdataHistoryIndex::default();
   let (baseline, evidence) = history
-    .unwrap_or(&fallback)
+    .unwrap_or(VdataHistory::from(&fallback))
     .match_with_evidence(file_path, &mod_root);
   if !runtime_values_equal(&mod_root, base_root) {
     contribution.baselines.push(CompiledDataBaseline {
@@ -4045,7 +4045,7 @@ pub(crate) mod tests {
         priority: 0,
         bytes: compiled_resource(stale_snapshot_rows(32, 100)),
       }],
-      Some(&history),
+      Some((&history).into()),
     )
     .unwrap();
 
@@ -4096,7 +4096,7 @@ pub(crate) mod tests {
         priority: 0,
         bytes: compiled_resource(mod_rows),
       }],
-      Some(&history),
+      Some((&history).into()),
     )
     .unwrap();
     let temp = tempfile::tempdir().unwrap();
@@ -4136,7 +4136,7 @@ pub(crate) mod tests {
         priority: 0,
         bytes: compiled_resource(old),
       }],
-      Some(&history),
+      Some((&history).into()),
     )
     .unwrap();
     let custom_hero = Kv3Value::Object(vec![
@@ -4467,7 +4467,7 @@ pub(crate) mod tests {
         priority: 0,
         bytes: compiled_resource(mod_rows),
       }],
-      Some(&history),
+      Some((&history).into()),
     )
     .unwrap();
     let temp = tempfile::tempdir().unwrap();
@@ -4525,7 +4525,7 @@ pub(crate) mod tests {
         priority: 0,
         bytes: compiled_resource(mod_rows),
       }],
-      Some(&history),
+      Some((&history).into()),
     )
     .unwrap();
 
@@ -4679,7 +4679,7 @@ pub(crate) mod tests {
     let resources = resources::ResourceSnapshot::open(&citadel, &mods).unwrap();
     println!("resource index in {:?}", started.elapsed());
     let started = std::time::Instant::now();
-    let history = VdataHistoryIndex::embedded();
+    let history = VdataHistory::from(VdataHistoryIndex::embedded());
     let localization = HistoricalLocalizationIndex::embedded();
     println!("history index in {:?}", started.elapsed());
     let started = std::time::Instant::now();

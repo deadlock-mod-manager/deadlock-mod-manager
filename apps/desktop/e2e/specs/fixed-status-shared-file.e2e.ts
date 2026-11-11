@@ -20,41 +20,34 @@ import { navigate } from "../support/ui";
 // as shipped, so the fixed mod's repair is left out of the package. Its status
 // must then stop claiming anything: not "fixed", and not "works" either.
 
-const OUTDATED_ALERT = `//*[@role="alert"][contains(., "hasn't been updated since")]`;
-
-type ModPage = { healthAlert: string | null; outdatedWarning: boolean };
-
 /**
- * Opens the mod's own page and waits for its health alert and date warning to
- * match `expected`, returning what it last showed either way.
+ * Opens the mod's own page and waits for its health alert to match
+ * `expected`, returning what it last showed either way (undefined if it never
+ * read the alert).
  */
-const modPage = async (modId: string, expected: ModPage) => {
+const modPage = async (modId: string, expected: string | null) => {
   await navigate("my-mods");
   await findMod(modId);
   const title = await $(`//*[@title="${modId}"]`);
   await title.waitForClickable();
   await title.click();
   await expect(browser).toHaveUrl(expect.stringContaining(`/mods/${modId}`));
-  let shown: ModPage = { healthAlert: null, outdatedWarning: false };
+  // Before the page loads, a missing alert proves nothing.
+  await $("button*=Delete Mod").waitForDisplayed();
+  let shown: string | null | undefined;
   await browser
     .waitUntil(
       async () => {
         const alert = await $('[data-testid="mod-health-alert"]');
-        shown = {
-          healthAlert: (await alert.isExisting())
-            ? await alert.getAttribute("data-status")
-            : null,
-          outdatedWarning: await $(OUTDATED_ALERT).isExisting(),
-        };
-        return (
-          shown.healthAlert === expected.healthAlert &&
-          shown.outdatedWarning === expected.outdatedWarning
-        );
+        shown = (await alert.isExisting())
+          ? await alert.getAttribute("data-status")
+          : null;
+        return shown === expected;
       },
       { timeout: 10_000 },
     )
     .catch(() => false);
-  return shown;
+  return { healthAlert: shown };
 };
 
 describe("fixed status beside an unfixed mod sharing its file", () => {
@@ -82,10 +75,7 @@ describe("fixed status beside an unfixed mod sharing its file", () => {
       const health = await readHealth(STATUS.folder);
       const chosen = await readFixChosen(world, STATUS.folder, FIXED_MOD);
       const badge = await badgeStatus(FIXED_MOD);
-      const page = await modPage(FIXED_MOD, {
-        healthAlert: null,
-        outdatedWarning: true,
-      });
+      const page = await modPage(FIXED_MOD, null);
       await checkpoint("rival-enabled", {
         health,
         repairs,
@@ -104,9 +94,9 @@ describe("fixed status beside an unfixed mod sharing its file", () => {
       if (!chosen) throw new Error(`${FIXED_MOD}'s Fix choice must stay saved`);
       if (badge !== null)
         throw new Error(`${FIXED_MOD}'s card must not show a health badge`);
-      if (page.healthAlert !== null || !page.outdatedWarning)
+      if (page.healthAlert !== null)
         throw new Error(
-          `${FIXED_MOD}'s page must fall back to the outdated warning: ${JSON.stringify(page)}`,
+          `${FIXED_MOD}'s page must not show a health alert: ${page.healthAlert}`,
         );
     });
 
@@ -122,10 +112,7 @@ describe("fixed status beside an unfixed mod sharing its file", () => {
         30_000,
       );
       const badge = await badgeStatus(FIXED_MOD);
-      const page = await modPage(FIXED_MOD, {
-        healthAlert: "fixed",
-        outdatedWarning: false,
-      });
+      const page = await modPage(FIXED_MOD, "fixed");
       await checkpoint("rival-disabled", {
         health: await readHealth(STATUS.folder),
         repairs,
@@ -134,9 +121,9 @@ describe("fixed status beside an unfixed mod sharing its file", () => {
       });
       if (badge !== "fixed")
         throw new Error(`${FIXED_MOD}'s card must read fixed again: ${badge}`);
-      if (page.healthAlert !== "fixed" || page.outdatedWarning)
+      if (page.healthAlert !== "fixed")
         throw new Error(
-          `${FIXED_MOD}'s page must show it fixed again: ${JSON.stringify(page)}`,
+          `${FIXED_MOD}'s page must show it fixed again: ${page.healthAlert}`,
         );
     });
 

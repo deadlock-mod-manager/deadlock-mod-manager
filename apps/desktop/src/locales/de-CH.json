@@ -5588,6 +5588,8 @@
     "alreadyInLibrary": "",
     "addToLibraryTitle": "Zur Bibliothek hinzuefüege",
     "addToLibraryDescription": "Füeg \"{{fileName}}\" zu dinere Mod-Bibliothek hinzue",
+    "notLoadedByGame": "",
+    "notLoadedByGameDescription": "",
     "addToLibrarySuccess": "\"{{name}}\" zur Bibliothek hinzuegfüegt",
     "adding": "Wird hinzuegfüegt...",
     "show": "Details aazeige",

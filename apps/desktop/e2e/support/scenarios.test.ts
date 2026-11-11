@@ -1,4 +1,7 @@
+import { YAML } from "bun";
 import { describe, expect, it } from "bun:test";
+import { readFile } from "node:fs/promises";
+import { z } from "zod";
 import {
   parseScenarioId,
   scenarioPhases,
@@ -13,7 +16,7 @@ const windows = process.platform === "win32";
 describe("scenario selection", () => {
   it("registers every case with explicit phases and capability requirements", () => {
     const ids = selectScenarios("all");
-    expect(ids).toHaveLength(windows ? 174 : 164);
+    expect(ids).toHaveLength(windows ? 178 : 168);
     expect(ids).toContain("downloads-segmented-range-error");
     // Some of these specs don't dispatch on their case ID, so a rename
     // wouldn't fail them.
@@ -182,6 +185,75 @@ describe("scenario selection", () => {
       if (windows) expect(parseScenarioId(id)).toBe(id);
       else expect(() => parseScenarioId(id)).toThrow("supports win32");
     }
+  });
+
+  // Pull requests skip Desktop E2E, so a case outside these lists never runs
+  // upstream.
+  it("schedules every case in a default CI job", async () => {
+    const { jobs } = z
+      .object({
+        jobs: z.object({
+          // Strict, so a matrix key this check doesn't read fails it.
+          scenarios: z.object({
+            strategy: z.object({
+              matrix: z.strictObject({
+                suite: z.string(),
+                include: z.string(),
+              }),
+            }),
+          }),
+          "linux-scenarios": z.object({
+            strategy: z.object({
+              matrix: z.strictObject({
+                distro: z.array(z.string()),
+                suite: z.array(z.string()),
+                include: z.array(z.object({ suite: z.string().optional() })),
+                exclude: z.array(
+                  z.object({ distro: z.string(), suite: z.string() }),
+                ),
+              }),
+            }),
+          }),
+        }),
+      })
+      .parse(
+        YAML.parse(
+          await readFile(
+            new URL(
+              "../../../../.github/workflows/desktop-e2e.yml",
+              import.meta.url,
+            ),
+            "utf8",
+          ),
+        ),
+      );
+    // The Windows default is the fallback inside the matrix expression.
+    const windows = z
+      .array(z.string())
+      .parse(
+        JSON.parse(
+          /'(\[.*\])'/.exec(jobs.scenarios.strategy.matrix.suite)?.[1] ??
+            "null",
+        ),
+      );
+    const linux = jobs["linux-scenarios"].strategy.matrix;
+    const scheduled = new Set<string>([
+      ...windows.flatMap((suite) => selectScenarios(suite, "win32")),
+      ...[
+        ...linux.suite.filter((suite) =>
+          linux.distro.some(
+            (distro) =>
+              !linux.exclude.some(
+                (job) => job.distro === distro && job.suite === suite,
+              ),
+          ),
+        ),
+        ...linux.include.flatMap((job) => job.suite ?? []),
+      ].flatMap((suite) => selectScenarios(suite, "linux")),
+    ]);
+    expect(Object.keys(scenarios).filter((id) => !scheduled.has(id))).toEqual(
+      [],
+    );
   });
 
   it("imports Grimoire, restarts, and re-imports changed source state", () => {

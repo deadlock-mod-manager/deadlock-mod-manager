@@ -198,10 +198,10 @@ impl VpkManager {
       let entry = entry?;
       let path = entry.path();
 
-      if path.is_file()
-        && path.extension().is_some_and(|ext| ext == "vpk")
+      if path.extension().is_some_and(|ext| ext == "vpk")
         && let Some(file_name) = path.file_name().and_then(|n| n.to_str())
         && file_name.starts_with(&prefix)
+        && path.is_file()
       {
         prefixed_vpks.push(file_name.to_string());
       }

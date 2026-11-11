@@ -5588,6 +5588,8 @@
     "alreadyInLibrary": "",
     "addToLibraryTitle": "Adicionar à Biblioteca",
     "addToLibraryDescription": "Adicionar \"{{fileName}}\" à sua biblioteca de mods",
+    "notLoadedByGame": "",
+    "notLoadedByGameDescription": "",
     "addToLibrarySuccess": "\"{{name}}\" adicionado à biblioteca",
     "adding": "Adicionando...",
     "show": "Mostrar detalhes",

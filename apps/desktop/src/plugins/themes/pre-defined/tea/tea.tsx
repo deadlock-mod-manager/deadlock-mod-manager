@@ -3,7 +3,7 @@ import { ThemeBackdrop } from "../../components/theme-backdrop";
 
 const teaBackground = getPluginAssetUrl(
   "themes",
-  "public/pre-defined/tea/background/chowder_pattern.png",
+  "public/pre-defined/tea/background/chowder_pattern.webp",
 );
 
 const backdropStyle = {

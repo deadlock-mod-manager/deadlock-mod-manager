@@ -45,6 +45,14 @@ import {
 } from "./compatibility-fix-fixtures";
 import { prepareIdentifiedFixWorld } from "./compatibility-fix-identification-fixtures";
 import {
+  prepareReenabledFixWorld,
+  reenabledFixRoutes,
+} from "./compatibility-fix-reenabled-fixtures";
+import {
+  prepareReinstallChoicesWorld,
+  reinstallChoicesRoutes,
+} from "./reinstall-choices-fixtures";
+import {
   FIXED_MOD as STATUS_FIXED_MOD,
   PLAIN_MOD as STATUS_PLAIN_MOD,
   RIVAL_MOD as STATUS_RIVAL_MOD,
@@ -974,6 +982,14 @@ export const scenarios = {
     prepare: async (world) =>
       prepareFixedStatusWorld(world, [STATUS_FIXED_MOD, STATUS_PLAIN_MOD]),
   },
+  "compatibility-fix-reenabled": {
+    ...defaults,
+    family: "compatibility",
+    spec: "compatibility-fix-reenabled",
+    phases: ["reenable-fixed"],
+    routes: reenabledFixRoutes,
+    prepare: async (world) => prepareReenabledFixWorld(world),
+  },
   "compatibility-fix-disabled": {
     ...defaults,
     family: "compatibility",
@@ -981,6 +997,30 @@ export const scenarios = {
     phases: ["disabled-mod"],
     routes: async () => disabledFixRoutes,
     prepare: async (world) => prepareDisabledFixWorld(world),
+  },
+  "compatibility-reinstall-keeps-choices": {
+    ...defaults,
+    family: "compatibility",
+    spec: "reinstall-keeps-choices",
+    phases: ["reinstall"],
+    routes: reinstallChoicesRoutes,
+    prepare: async (world) => prepareReinstallChoicesWorld(world),
+  },
+  "compatibility-reinstall-disabled-keeps-choices": {
+    ...defaults,
+    family: "compatibility",
+    spec: "reinstall-disabled-keeps-choices",
+    phases: ["reinstall"],
+    routes: reinstallChoicesRoutes,
+    prepare: async (world) => prepareReinstallChoicesWorld(world),
+  },
+  "compatibility-nuke-keeps-choices": {
+    ...defaults,
+    family: "compatibility",
+    spec: "nuke-keeps-choices",
+    phases: ["nuke"],
+    routes: reinstallChoicesRoutes,
+    prepare: async (world) => prepareReinstallChoicesWorld(world),
   },
   "fixed-status-shared-file": {
     ...defaults,
@@ -1292,9 +1332,12 @@ export const scenarios = {
 export type ScenarioId = keyof typeof scenarios;
 const isScenario = (value: string): value is ScenarioId =>
   Object.hasOwn(scenarios, value);
-const supportsPlatform = (id: ScenarioId): boolean => {
+const supportsPlatform = (
+  id: ScenarioId,
+  platform: NodeJS.Platform = process.platform,
+): boolean => {
   const platforms: readonly NodeJS.Platform[] = scenarios[id].platforms;
-  return platforms.includes(process.platform);
+  return platforms.includes(platform);
 };
 export const parseScenarioId = (value = "about-smoke"): ScenarioId => {
   if (!isScenario(value)) throw new Error(`Unsupported E2E case '${value}'`);
@@ -1307,10 +1350,13 @@ export const parseScenarioId = (value = "about-smoke"): ScenarioId => {
 export const scenarioPhases = (id: ScenarioId) => scenarios[id].phases;
 export const scenarioSpec = (id: ScenarioId) =>
   `./specs/${scenarios[id].spec}.e2e.ts`;
-export const selectScenarios = (suite: string): ScenarioId[] => {
+export const selectScenarios = (
+  suite: string,
+  platform: NodeJS.Platform = process.platform,
+): ScenarioId[] => {
   const ids = Object.keys(scenarios)
     .filter(isScenario)
-    .filter(supportsPlatform)
+    .filter((id) => supportsPlatform(id, platform))
     .filter(
       (id) =>
         suite === "all" ||
