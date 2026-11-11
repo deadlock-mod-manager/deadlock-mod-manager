@@ -140,6 +140,8 @@ libc = { version = "0.2", optional = true }
 
 [target.'cfg(windows)'.dependencies]
 junction = "1"
+# Same version steamlocate uses; reads the per-user Steam path it ignores
+winreg = "0.56"
 windows = { version = "0.58", features = [
   "Win32_Security_Cryptography",
   "Win32_Foundation",

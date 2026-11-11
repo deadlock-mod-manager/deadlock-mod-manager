@@ -162,6 +162,48 @@ fn linux_fallback_steam_dirs(home_dir: &Path, snap_dir: &Path) -> Vec<steamlocat
   steam_dirs
 }
 
+/// steamlocate only reads `InstallPath` under HKLM, which a moved or restored
+/// Steam can leave missing or pointing at an old folder. Steam rewrites the
+/// per-user `SteamPath` on every start, and most installs use the default folder.
+#[cfg(target_os = "windows")]
+fn windows_fallback_steam_dirs() -> Vec<steamlocate::SteamDir> {
+  let mut candidates = Vec::new();
+  if let Ok(steam_path) = winreg::RegKey::predef(winreg::enums::HKEY_CURRENT_USER)
+    .open_subkey("Software\\Valve\\Steam")
+    .and_then(|key| key.get_value::<String, _>("SteamPath"))
+  {
+    candidates.push(PathBuf::from(steam_path));
+  }
+  if let Some(program_files) = std::env::var_os("ProgramFiles(x86)") {
+    candidates.push(PathBuf::from(program_files).join("Steam"));
+  }
+
+  let mut steam_dirs = Vec::new();
+  for candidate in candidates {
+    if let Ok(steam_dir) = steamlocate::SteamDir::from_dir(&candidate) {
+      log::info!(
+        "Steam fallback candidate path found: {:?}",
+        steam_dir.path()
+      );
+      push_unique_steam_dir(&mut steam_dirs, steam_dir);
+    }
+  }
+  steam_dirs
+}
+
+fn steam_executable(steam_dir: &steamlocate::SteamDir) -> PathBuf {
+  #[cfg(target_os = "windows")]
+  let steam_exe = steam_dir.path().join("steam.exe");
+
+  #[cfg(target_os = "linux")]
+  let steam_exe = steam_dir.path().join("steam.sh");
+
+  #[cfg(target_os = "macos")]
+  let steam_exe = steam_dir.path().join("steam");
+
+  steam_exe
+}
+
 fn resolve_game_from_steam_dirs(
   steam_dirs: Vec<steamlocate::SteamDir>,
 ) -> Option<(steamlocate::SteamDir, PathBuf)> {
@@ -306,29 +348,16 @@ impl SteamManager {
     Ok(())
   }
 
-  /// Get the current Steam directory if available
-  pub fn get_steam_dir(&self) -> Option<&steamlocate::SteamDir> {
-    self.steam_dir.as_ref()
-  }
-
-  /// Get the Steam executable path for launching games
+  /// Get the Steam executable path for launching games. Falls back to
+  /// detection when the cached Steam directory has no client, or when a
+  /// manually set game path meant detection never ran.
   pub fn get_steam_executable(&self) -> Result<PathBuf, Error> {
-    let steam_dir = self.get_steam_dir().ok_or(Error::SteamNotFound)?;
-
-    #[cfg(target_os = "windows")]
-    let steam_exe = steam_dir.path().join("steam.exe");
-
-    #[cfg(target_os = "linux")]
-    let steam_exe = steam_dir.path().join("steam.sh");
-
-    #[cfg(target_os = "macos")]
-    let steam_exe = steam_dir.path().join("steam");
-
-    if steam_exe.exists() {
-      Ok(steam_exe)
-    } else {
-      Err(Error::SteamNotFound)
-    }
+    self
+      .candidate_steam_dirs()
+      .iter()
+      .map(steam_executable)
+      .find(|steam_exe| steam_exe.exists())
+      .ok_or(Error::SteamNotFound)
   }
 
   #[cfg(target_os = "linux")]
@@ -431,6 +460,19 @@ impl SteamManager {
       for steam_dir in linux_fallback_steam_dirs(&home_dir, &snap_dir) {
         push_unique_steam_dir(&mut steam_dirs, steam_dir);
       }
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+      for steam_dir in windows_fallback_steam_dirs() {
+        push_unique_steam_dir(&mut steam_dirs, steam_dir);
+      }
+      // A stale registry path can still hold an old steamapps folder. Without
+      // steam.exe it would win game detection and then fail every launch.
+      let cached = self.get_steam_path();
+      steam_dirs.retain(|steam_dir| {
+        cached.as_deref() == Some(steam_dir.path()) || steam_executable(steam_dir).exists()
+      });
     }
 
     steam_dirs
