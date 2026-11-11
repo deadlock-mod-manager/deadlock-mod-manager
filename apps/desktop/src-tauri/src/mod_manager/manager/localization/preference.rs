@@ -29,6 +29,20 @@ impl ModManager {
     )
   }
 
+  /// Whether any mod in the profile has a saved fix, enabled or not.
+  pub fn mod_fix_saved(&self, profile_folder: Option<&str>) -> Result<bool, Error> {
+    if self.steam_manager.get_game_path().is_none() {
+      return Ok(false);
+    }
+    let base = self.get_addons_path(profile_folder)?;
+    Ok(
+      ProfileVpkManifest::load(&base)?
+        .mods
+        .values()
+        .any(|entry| entry.compatibility_enabled),
+    )
+  }
+
   pub fn set_mod_compatibility_for_mod(
     &mut self,
     mod_id: String,
