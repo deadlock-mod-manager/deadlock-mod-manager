@@ -3,7 +3,7 @@ use super::super::{
   kv3, resources::tests::pack,
 };
 use super::*;
-use crate::mod_manager::vdata_history::encode_history_index;
+use crate::mod_manager::vdata_history::{VdataHistoryIndex, encode_history_index};
 use source2_model::vpk_extract::VpkArchive;
 use std::{fs, path::Path};
 
@@ -295,7 +295,7 @@ fn old_models_are_not_relocatable_when_the_mod_ships_the_current_model() {
       vpks: vec![pack(root.path(), name, entries)],
     }];
     let resources = ResourceSnapshot::open(&citadel, &mods).unwrap();
-    historical_hero_models(&resources, &history, [OLD]).unwrap()
+    historical_hero_models(&resources, (&history).into(), [OLD]).unwrap()
   };
   assert_eq!(
     relocatable("old_only", &[(OLD, b"old model")]),
@@ -342,7 +342,7 @@ fn only_hero_models_and_their_relocatable_old_copies_are_not_props() {
       vpks: vec![pack(root.path(), name, entries)],
     }];
     let resources = ResourceSnapshot::open(&citadel, &mods).unwrap();
-    prop_models(&resources, &history, &warnings).unwrap()
+    prop_models(&resources, (&history).into(), &warnings).unwrap()
   };
   assert_eq!(props("old_only", &[(OLD, b"old model")]), [PROP]);
   assert_eq!(
@@ -379,7 +379,7 @@ fn existing_current_models_block_relocation_for_selected_and_opted_out_mods_in_b
       let plan = LocalizationOverlayPlan::build_snapshot(
         &inputs,
         HistoricalLocalizationIndex::embedded(),
-        &history,
+        (&history).into(),
         &resources,
         &selected,
         &|_| {},
@@ -411,7 +411,7 @@ fn already_active_models_unknown_history_and_opted_out_sources_do_not_relocate()
   let disabled = LocalizationOverlayPlan::build_snapshot(
     std::slice::from_ref(&input),
     HistoricalLocalizationIndex::embedded(),
-    &history,
+    (&history).into(),
     &resources,
     &BTreeSet::new(),
     &|_| {},

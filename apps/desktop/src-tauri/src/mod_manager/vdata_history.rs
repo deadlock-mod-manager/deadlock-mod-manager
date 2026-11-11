@@ -84,8 +84,24 @@ impl CandidateIntent {
 #[derive(Debug, Clone, Default)]
 pub struct VdataHistoryIndex {
   tables: BTreeMap<String, TableHistory>,
-  fallback: BTreeMap<String, TableHistory>,
   observed_strings: BTreeMap<Fingerprint, BTreeSet<Fingerprint>>,
+}
+
+/// The learned history consulted before the shipped one. It borrows both, so
+/// each mod check reads the shipped history without copying it.
+#[derive(Debug, Clone, Copy)]
+pub struct VdataHistory<'a> {
+  learned: &'a VdataHistoryIndex,
+  shipped: Option<&'a VdataHistoryIndex>,
+}
+
+impl<'a> From<&'a VdataHistoryIndex> for VdataHistory<'a> {
+  fn from(learned: &'a VdataHistoryIndex) -> Self {
+    Self {
+      learned,
+      shipped: None,
+    }
+  }
 }
 
 /// Immutable fingerprints of one observed game table. Keeping these separate
@@ -242,7 +258,6 @@ impl VdataHistoryIndex {
     }
     Ok(Self {
       tables,
-      fallback: BTreeMap::new(),
       observed_strings,
     })
   }
@@ -262,39 +277,7 @@ impl VdataHistoryIndex {
     file_path: &str,
     candidate_root: &Kv3Value,
   ) -> (Option<VdataBaselineMatch>, BaselineEvidence) {
-    let mut primary = self.match_table(self.tables.get(&normalize_path(file_path)), candidate_root);
-    let fallback = self.match_table(
-      self.fallback.get(&normalize_path(file_path)),
-      candidate_root,
-    );
-    if primary.1.status == BaselineStatus::Unavailable {
-      return fallback;
-    }
-    if fallback.1.status == BaselineStatus::Unavailable {
-      return primary;
-    }
-    let quality = (primary.1.changed_rows * fallback.1.comparable_rows)
-      .cmp(&(fallback.1.changed_rows * primary.1.comparable_rows))
-      .then_with(|| fallback.1.comparable_rows.cmp(&primary.1.comparable_rows));
-    match quality {
-      std::cmp::Ordering::Less => return primary,
-      std::cmp::Ordering::Greater => return fallback,
-      std::cmp::Ordering::Equal => {}
-    }
-    let same_intent = if let (Some(current), Some(old)) = (&primary.0, &fallback.0) {
-      let intent = CandidateIntent::new(candidate_root);
-      current.intent(&intent) == old.intent(&intent)
-    } else {
-      false
-    };
-    primary.1.build_versions.extend(fallback.1.build_versions);
-    primary.1.build_versions.sort_unstable();
-    primary.1.build_versions.dedup();
-    if !same_intent {
-      primary.0 = None;
-      primary.1.status = BaselineStatus::Ambiguous;
-    }
-    primary
+    self.match_table(self.tables.get(&normalize_path(file_path)), candidate_root)
   }
 
   fn match_table(
@@ -413,17 +396,11 @@ impl VdataHistoryIndex {
     (selected, evidence)
   }
 
-  pub fn with_observed(&self, observed: &Self) -> Self {
-    let mut history = observed.clone();
-    history.fallback = self.tables.clone();
-    for (key, values) in &self.observed_strings {
-      history
-        .observed_strings
-        .entry(*key)
-        .or_default()
-        .extend(values);
+  pub fn with_observed<'a>(&'a self, observed: &'a Self) -> VdataHistory<'a> {
+    VdataHistory {
+      learned: observed,
+      shipped: Some(self),
     }
-    history
   }
 
   #[cfg(test)]
@@ -509,6 +486,63 @@ impl VdataHistoryIndex {
     }
     write_string_bindings(&mut output, &self.observed_strings)?;
     Ok(output)
+  }
+}
+
+impl VdataHistory<'_> {
+  pub fn observed_string_field(
+    self,
+    file_path: &str,
+    row_name: &str,
+    field_name: &str,
+    value: &str,
+  ) -> bool {
+    self
+      .learned
+      .observed_string_field(file_path, row_name, field_name, value)
+      || self
+        .shipped
+        .is_some_and(|shipped| shipped.observed_string_field(file_path, row_name, field_name, value))
+  }
+
+  pub fn match_with_evidence(
+    self,
+    file_path: &str,
+    candidate_root: &Kv3Value,
+  ) -> (Option<VdataBaselineMatch>, BaselineEvidence) {
+    let mut primary = self.learned.match_with_evidence(file_path, candidate_root);
+    let Some(shipped) = self.shipped else {
+      return primary;
+    };
+    let fallback = shipped.match_with_evidence(file_path, candidate_root);
+    if primary.1.status == BaselineStatus::Unavailable {
+      return fallback;
+    }
+    if fallback.1.status == BaselineStatus::Unavailable {
+      return primary;
+    }
+    let quality = (primary.1.changed_rows * fallback.1.comparable_rows)
+      .cmp(&(fallback.1.changed_rows * primary.1.comparable_rows))
+      .then_with(|| fallback.1.comparable_rows.cmp(&primary.1.comparable_rows));
+    match quality {
+      std::cmp::Ordering::Less => return primary,
+      std::cmp::Ordering::Greater => return fallback,
+      std::cmp::Ordering::Equal => {}
+    }
+    let same_intent = if let (Some(current), Some(old)) = (&primary.0, &fallback.0) {
+      let intent = CandidateIntent::new(candidate_root);
+      current.intent(&intent) == old.intent(&intent)
+    } else {
+      false
+    };
+    primary.1.build_versions.extend(fallback.1.build_versions);
+    primary.1.build_versions.sort_unstable();
+    primary.1.build_versions.dedup();
+    if !same_intent {
+      primary.0 = None;
+      primary.1.status = BaselineStatus::Ambiguous;
+    }
+    primary
   }
 }
 
