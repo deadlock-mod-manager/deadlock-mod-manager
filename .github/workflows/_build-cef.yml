@@ -349,6 +349,13 @@ jobs:
           restore-keys: |
             cef-target-windows-v1-${{ steps.rust-toolchain.outputs.cachekey }}-${{ env.TAURI_CEF_TAG }}-lto-${{ env.CARGO_PROFILE_RELEASE_LTO }}-${{ env.CARGO_PROFILE_RELEASE_CODEGEN_UNITS }}-${{ hashFiles('apps/desktop/Cargo.toml', 'apps/desktop/.cargo/config.toml') }}-
 
+      # actions/cache only warns when extraction fails partway and keeps what it
+      # extracted; cargo would trust those files, so build from scratch instead.
+      - name: Discard partial Windows CEF target (nightly only)
+        if: inputs.nightly == true && matrix.os == 'windows' && steps.cef-target.outputs.cache-matched-key == ''
+        shell: pwsh
+        run: if (Test-Path C:/t) { Remove-Item -Recurse -Force C:/t }
+
       - name: Build CEF (Windows)
         if: matrix.os == 'windows'
         env:
