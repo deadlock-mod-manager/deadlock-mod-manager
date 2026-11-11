@@ -69,6 +69,40 @@ export const holdEventsFromCancellation = (modId: string) =>
     return hold.wrappedCallbacks;
   }, modId);
 
+/**
+ * Holds back every `event` the backend sends from now on, in the order they
+ * arrive, until `releaseHeldEvents`. Returns how many listener callbacks it
+ * wrapped.
+ */
+export const holdEvents = (event: string) =>
+  browser.execute((name: string) => {
+    const listeners =
+      window["__internal_unstable_listeners_object_id__"]?.[name] ?? {};
+    const { callbacks } = window["__TAURI_INTERNALS__"];
+    const hold: EventHold = {
+      wrappedCallbacks: 0,
+      captured: false,
+      released: false,
+      held: [],
+    };
+    for (const id of Object.getOwnPropertyNames(listeners)) {
+      const { handlerId } = listeners[id];
+      const deliver = callbacks.get(handlerId);
+      if (!deliver) continue;
+      hold.wrappedCallbacks++;
+      callbacks.set(handlerId, (data) => {
+        if (hold.released) {
+          deliver(data);
+          return;
+        }
+        hold.captured = true;
+        hold.held.push(() => deliver(data));
+      });
+    }
+    window.e2eEventHold = hold;
+    return hold.wrappedCallbacks;
+  }, event);
+
 /** Whether the hold has caught the cancellation error yet. */
 export const cancellationHeld = () =>
   browser.execute(() => window.e2eEventHold?.captured === true);

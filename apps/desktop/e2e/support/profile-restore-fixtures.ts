@@ -201,3 +201,69 @@ export const prepareProfileRestoreWorld = async (world: CreatedWorld) => {
     ),
   );
 };
+
+/** The mod startup looks up before it syncs the active profile. */
+export const LATE_METADATA_MOD_ID = "920002";
+const LATE_METADATA_MS = 8_000;
+
+/**
+ * Startup reconciles the active profile before it syncs it, and looks up a mod
+ * the library lost. That lookup answers late once, so a test can act between
+ * the reconciliation's read of the profile and the sync's.
+ */
+export const profileRestoreDuringSyncRoutes = async () => {
+  const base = await profileRestoreRoutes();
+  return (origin: string): FixtureRoute[] => {
+    const routes = base(origin);
+    const lookup = routes.find(
+      (route) =>
+        route.path === `/apiv11/Mod/${LATE_METADATA_MOD_ID}/ProfilePage`,
+    );
+    if (!lookup) throw new Error("The restore world never looks up Bravo");
+    const answer = { status: lookup.status, body: lookup.body };
+    // The server answers with the first route that matches.
+    return [
+      {
+        ...lookup,
+        sequence: [
+          { ...answer, headerDelayMs: LATE_METADATA_MS, repeat: 1 },
+          answer,
+        ],
+      },
+      ...routes,
+    ];
+  };
+};
+
+/** The restore world, with Bravo in the manifest but not in the library. */
+export const prepareProfileRestoreDuringSyncWorld = async (
+  world: CreatedWorld,
+) => {
+  await prepareProfileRestoreWorld(world);
+  const statePath = path.join(world.configuration.roots.appData, "state.json");
+  const stored = z
+    .looseObject({ "local-config": z.string() })
+    .parse(JSON.parse(await readFile(statePath, "utf8")));
+  const config = z
+    .looseObject({
+      state: z.looseObject({
+        localMods: z.array(z.looseObject({ remoteId: z.string() })),
+        profiles: z.record(
+          z.string(),
+          z.looseObject({
+            mods: z.array(z.looseObject({ remoteId: z.string() })),
+          }),
+        ),
+      }),
+    })
+    .parse(JSON.parse(stored["local-config"]));
+  const keep = (mod: { remoteId: string }) =>
+    mod.remoteId !== LATE_METADATA_MOD_ID;
+  config.state.localMods = config.state.localMods.filter(keep);
+  const alpha = config.state.profiles[ALPHA.id];
+  alpha.mods = alpha.mods.filter(keep);
+  await writeFile(
+    statePath,
+    JSON.stringify({ ...stored, "local-config": JSON.stringify(config) }),
+  );
+};
