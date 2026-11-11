@@ -5588,6 +5588,8 @@
     "alreadyInLibrary": "",
     "addToLibraryTitle": "إضافة إلى المكتبة",
     "addToLibraryDescription": "أضف \"{{fileName}}\" إلى مكتبة التعديلات الخاصة بك",
+    "notLoadedByGame": "",
+    "notLoadedByGameDescription": "",
     "addToLibrarySuccess": "تمت إضافة \"{{name}}\" إلى المكتبة",
     "adding": "جاري الإضافة...",
     "show": "إظهار التفاصيل",

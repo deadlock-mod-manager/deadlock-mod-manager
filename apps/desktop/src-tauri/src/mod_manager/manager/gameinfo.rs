@@ -48,10 +48,12 @@ impl ModManager {
     // one must fail loudly rather than silently emit truncated search paths.
     let manifest = ProfileVpkManifest::load(&base)?;
     let mut paths = search_paths_for(&base, &manifest, profile_folder.as_deref());
-    // Mounted while any enabled mod is fixed, even when the package is missing:
+    // Mounted while any mod has a saved fix, even when the package is missing:
     // library and fix changes delete it and rebuild it in the background, and
-    // a rewrite in between would otherwise leave the rebuilt package unmounted.
-    if self.mod_compatibility_enabled(profile_folder.as_deref())? {
+    // library changes leave gameinfo.gi as is, so a rewrite while the package
+    // is gone, or while the fixed mod is disabled, would otherwise leave the
+    // rebuilt package unmounted.
+    if self.mod_fix_saved(profile_folder.as_deref())? {
       paths.insert(
         0,
         Self::localization_overlay_search_path(profile_folder.as_deref()),

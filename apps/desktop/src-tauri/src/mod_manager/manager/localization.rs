@@ -2296,17 +2296,12 @@ Game core
   fn removing_the_fixed_mod_does_not_keep_its_replacements_mounted() {
     let (_temp, mut manager) = manager_with_applied_repair();
     manager.uninstall_mod("fixed".into(), vec![], None).unwrap();
+    // The search path stays for the saved fix; the package it points at is gone.
     assert!(
       !manager
         .localization_overlay_vpk_path(None)
         .unwrap()
         .exists()
-    );
-    assert!(
-      !manager
-        .profile_gameinfo_paths(None)
-        .unwrap()
-        .contains(&ModManager::localization_overlay_search_path(None))
     );
     assert!(manager.mod_compatibility_settings(None).unwrap()["fixed"]);
   }
@@ -2418,9 +2413,19 @@ Game core
       ModHealthStatus::Fixed,
       "a disabled mod reports the fix saved for it"
     );
+    // A gameinfo.gi write while the fixed mod is disabled, as fixing it does.
+    manager.apply_profile_gameinfo(None).unwrap();
     enable(&mut manager);
     assert_applied_repair(&manager, &repaired);
     assert_eq!(status(), ModHealthStatus::Fixed);
+    assert!(
+      manager
+        .get_config_manager()
+        .marker_addons_paths(temp.path())
+        .unwrap()
+        .contains(&ModManager::localization_overlay_search_path(None)),
+      "enabling the fixed mod again leaves its rebuilt repair mounted"
+    );
 
     manager.uninstall_mod("fixed".into(), vec![], None).unwrap();
     manager

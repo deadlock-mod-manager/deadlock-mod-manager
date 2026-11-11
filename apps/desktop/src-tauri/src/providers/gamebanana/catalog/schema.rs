@@ -349,7 +349,7 @@ mod tests {
     .get_result::<bool>(&mut connection)
     .unwrap();
 
-    assert_eq!(applied.len(), 11);
+    assert_eq!(applied.len(), 12);
     assert!(catalog_tables_exist);
   }
 
@@ -358,6 +358,8 @@ mod tests {
     let mut connection = SqliteConnection::establish(":memory:").unwrap();
     migrate(&mut connection).unwrap();
     connection.revert_last_migration(super::MIGRATIONS).unwrap();
+    let reverted = connection.revert_last_migration(super::MIGRATIONS).unwrap();
+    assert_eq!(reverted.to_string(), "20261108000000");
     connection
       .batch_execute(
         "INSERT INTO submission (provider, submission_type, submission_id, slug, name, profile_url)
@@ -409,7 +411,7 @@ mod tests {
     .get_result::<bool>(&mut connection)
     .unwrap();
 
-    assert_eq!(applied.len(), 11);
+    assert_eq!(applied.len(), 12);
     assert!(retained_submission);
     assert!(author_remote_id_exists);
   }
@@ -433,7 +435,7 @@ mod tests {
       .iter()
       .map(ToString::to_string)
       .collect();
-    assert_eq!(versions.len(), 11);
+    assert_eq!(versions.len(), 12);
     assert!(versions.contains(&"20261004000000".to_string()));
     assert!(!versions.contains(&"20260916000000".to_string()));
   }
@@ -474,7 +476,7 @@ mod tests {
       migrate(&mut connection).unwrap();
       migrate(&mut connection).unwrap();
 
-      assert_eq!(connection.applied_migrations().unwrap().len(), 11);
+      assert_eq!(connection.applied_migrations().unwrap().len(), 12);
       assert!(
         super::schema_check(
           &mut connection,
