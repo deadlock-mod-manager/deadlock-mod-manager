@@ -29,8 +29,7 @@ impl std::fmt::Debug for LateSources {
   }
 }
 
-/// The lookup stops as soon as the download is cancelled or paused, even when
-/// its list is ready at the same moment.
+/// The lookup stops as soon as the download is cancelled or paused.
 pub(super) async fn late_urls(
   late: Option<&LateSources>,
   cancel: &CancellationToken,
@@ -39,12 +38,20 @@ pub(super) async fn late_urls(
   let Some(late) = late else {
     return Ok(Vec::new());
   };
-  tokio::select! {
+  let urls = tokio::select! {
     biased;
     () = cancel.cancelled() => Err(Error::DownloadCancelled),
     () = pause.paused() => Err(Error::DownloadPaused),
     urls = (late.0)() => Ok(urls),
+  }?;
+  // A cancel or pause that lands as the lookup finishes still wins over its list.
+  if cancel.is_cancelled() {
+    return Err(Error::DownloadCancelled);
   }
+  if pause.is_paused() {
+    return Err(Error::DownloadPaused);
+  }
+  Ok(urls)
 }
 
 /// Tries each URL in turn. `late` is awaited only when the last known URL has
@@ -376,10 +383,22 @@ mod tests {
     )
     .await
     .unwrap();
+    tokio::fs::remove_file(&target).await.unwrap();
+    let paused = PauseHandle::new();
+    paused.pause();
+    assert!(matches!(
+      transfer_late(
+        &[working.url("/mod.zip")],
+        late(vec![late_server.url("/mod.zip")]),
+        &target,
+        paused,
+      )
+      .await,
+      Err(Error::DownloadPaused)
+    ));
     assert!(!looked_up.load(Ordering::SeqCst));
     assert!(late_server.requests().is_empty());
 
-    tokio::fs::remove_file(&target).await.unwrap();
     let dying = dying_server().await;
     transfer_late(
       &[dying.url("/mod.zip")],
@@ -416,14 +435,15 @@ mod tests {
 
   #[tokio::test]
   async fn pause_or_cancel_during_the_lookup_tries_no_late_source() {
-    for cancelled in [false, true] {
+    for (cancelled, finishes) in [(false, false), (true, false), (false, true), (true, true)] {
       let dir = tempfile::tempdir().unwrap();
       let target = dir.path().join("mod.zip");
       let dying = dying_server().await;
       let late_server = TestServer::start(|_, _| Reply::new(200, b"hello".to_vec())).await;
       let (cancel, pause) = (CancellationToken::new(), PauseHandle::new());
       let late_url = late_server.url("/mod.zip");
-      // The lookup is under way when the user acts, and never finishes on its own.
+      // The user acts while the lookup is under way. It then either never
+      // finishes, or finishes with nothing at the same moment.
       let late = LateSources::new({
         let (cancel, pause) = (cancel.clone(), pause.clone());
         move || {
@@ -433,6 +453,9 @@ mod tests {
               cancel.cancel();
             } else {
               pause.pause();
+            }
+            if finishes {
+              return Vec::new();
             }
             std::future::pending::<()>().await;
             vec![late_url]
