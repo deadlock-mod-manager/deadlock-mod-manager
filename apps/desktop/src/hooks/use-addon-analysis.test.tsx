@@ -16,7 +16,14 @@ const captured: Options[] = [];
 const catalogLookups: string[] = [];
 const calls: string[] = [];
 const catalog = new Map<string, ModDto>();
-type Registration = { installedVpks: string[]; installedPaths: string[] };
+/** Each catalog request's start and settle, and each registration, in order. */
+const requests: string[] = [];
+const nextTask = () => new Promise((done) => setTimeout(done, 0));
+type Registration = {
+  modId: string;
+  installedVpks: string[];
+  installedPaths: string[];
+};
 const registrations: Registration[] = [];
 const reactQuery = await import("@tanstack/react-query");
 mock.module("@tanstack/react-query", () => ({
@@ -42,9 +49,18 @@ mock.module("@/lib/api-client", () => ({
   ...apiClient,
   getMod: async (remoteId: string) => {
     catalogLookups.push(remoteId);
+    requests.push(`details ${remoteId}`);
+    await nextTask();
+    requests.push(`details ${remoteId} settled`);
     const mod = catalog.get(remoteId);
     if (!mod) throw new Error("catalog unavailable");
     return mod;
+  },
+  getModDownloads: async (remoteId: string) => {
+    requests.push(`downloads ${remoteId}`);
+    await nextTask();
+    requests.push(`downloads ${remoteId} settled`);
+    return { downloads: [], count: 0 };
   },
 }));
 const tauriCore = await import("@tauri-apps/api/core");
@@ -54,6 +70,7 @@ mock.module("@tauri-apps/api/core", () => ({
     if (command !== "register_analyzed_mod")
       throw new Error(`unexpected ${command}`);
     registrations.push(args);
+    requests.push(`register ${args.modId}`);
     return { replacedModIds: [], installOrder: null };
   },
 }));
@@ -202,6 +219,7 @@ afterEach(() => {
   calls.length = 0;
   catalog.clear();
   registrations.length = 0;
+  requests.length = 0;
   usePersistedStore.setState({ localMods: [], profiles: {} });
 });
 
@@ -347,7 +365,7 @@ describe("parked files whose mod left the library", () => {
     }));
     catalog.set("900001", installed);
     await analyze([parkedAddon()]);
-    expect(catalogLookups).toEqual(["900001"]);
+    expect(catalogLookups).toEqual([]);
     expect(usePersistedStore.getState().localMods).toEqual([installed]);
     expect(usePersistedStore.getState().analysisDialogOpen).toBe(false);
   });
@@ -360,6 +378,49 @@ describe("parked files whose mod left the library", () => {
     expect(registrations[0]?.installedVpks).toEqual(["pak05_dir.vpk"]);
     expect(registrations[0]?.installedPaths).toEqual([
       "/game/citadel/addons/reset/pak05_dir.vpk",
+    ]);
+  });
+});
+
+/** A hash match that names the archive it came from, so registration reads the mod's files. */
+const archiveMatch = (remoteId: string, fileName: string): LocalAddonInfo => {
+  const addon = hashMatchedAddon();
+  return {
+    ...addon,
+    filePath: `/game/citadel/addons/reset/${fileName}`,
+    fileName,
+    locator: fileName,
+    remoteId,
+    matchInfo: {
+      certainty: 100,
+      matchType: "sha256",
+      modName: `Mod ${remoteId}`,
+      fileId: "7",
+    },
+  };
+};
+
+describe("registering identified mods", () => {
+  it("fetches each mod's files alongside its details, one mod at a time", async () => {
+    resetProfile(false);
+    catalog.set("900002", { ...restoredMod, remoteId: "900002" });
+    await analyze([
+      archiveMatch("900001", "pak05_dir.vpk"),
+      archiveMatch("900002", "pak06_dir.vpk"),
+    ]);
+    expect(requests).toEqual([
+      "details 900001",
+      "downloads 900001",
+      "details 900001 settled",
+      "downloads 900001 settled",
+      "details 900002",
+      "downloads 900002",
+      "details 900002 settled",
+      "downloads 900002 settled",
+      "register 900002",
+    ]);
+    expect(usePersistedStore.getState().analysisResult?.errors).toEqual([
+      "Could not register Mod 900001: catalog unavailable",
     ]);
   });
 });

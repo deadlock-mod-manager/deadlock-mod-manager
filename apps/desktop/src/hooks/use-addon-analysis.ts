@@ -181,22 +181,32 @@ export const useAddonAnalysis = () => {
         const activeAddons = groupAddons.filter(
           (addon) => addon.hasEnabledVpkName,
         );
+        const hasMatchInfo = activeAddons.some((a) => a.matchInfo);
+        // A name-only match registers nothing, and the library already has
+        // the mod, so its details would be discarded.
+        if (!hasMatchInfo && inLibrary(remoteId)) continue;
         try {
-          const modDetails = await getMod(remoteId);
-          const hasMatchInfo = activeAddons.some((a) => a.matchInfo);
+          // Neither page needs the other, so both load at once; mods are
+          // still registered one at a time.
+          const [details, files] = await Promise.allSettled([
+            getMod(remoteId),
+            activeAddons.some((addon) => addon.matchInfo?.fileId)
+              ? getModDownloads(remoteId)
+              : undefined,
+          ]);
+          if (details.status === "rejected") throw details.reason;
+          const modDetails = details.value;
           const vpkFileNames = activeAddons.map((a) => a.fileName);
 
           if (hasMatchInfo) {
             let downloads: ModDownloadItem[] = [];
-            if (activeAddons.some((addon) => addon.matchInfo?.fileId)) {
-              try {
-                downloads = (await getModDownloads(remoteId)).downloads;
-              } catch (error) {
-                logger
-                  .withMetadata({ remoteId })
-                  .withError(error)
-                  .warn("Unable to resolve detected addon archives");
-              }
+            if (files.status === "fulfilled") {
+              downloads = files.value?.downloads ?? [];
+            } else {
+              logger
+                .withMetadata({ remoteId })
+                .withError(files.reason)
+                .warn("Unable to resolve detected addon archives");
             }
             const previous = usePersistedStore
               .getState()
