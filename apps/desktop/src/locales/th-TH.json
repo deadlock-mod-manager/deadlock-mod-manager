@@ -5588,6 +5588,8 @@
     "alreadyInLibrary": "",
     "addToLibraryTitle": "เพิ่มไปยังคลัง",
     "addToLibraryDescription": "เพิ่ม \"{{fileName}}\" ไปยังคลังม็อดของคุณ",
+    "notLoadedByGame": "",
+    "notLoadedByGameDescription": "",
     "addToLibrarySuccess": "เพิ่ม \"{{name}}\" ไปยังคลังแล้ว",
     "adding": "กำลังเพิ่ม...",
     "show": "แสดงรายละเอียด",

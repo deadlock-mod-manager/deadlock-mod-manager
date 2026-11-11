@@ -5588,6 +5588,8 @@
     "alreadyInLibrary": "",
     "addToLibraryTitle": "Kütüphaneye Ekle",
     "addToLibraryDescription": "\"{{fileName}}\" mod kütüphanenize ekleyin",
+    "notLoadedByGame": "",
+    "notLoadedByGameDescription": "",
     "addToLibrarySuccess": "\"{{name}}\" kütüphaneye eklendi",
     "adding": "Ekleniyor...",
     "show": "Detayları göster",

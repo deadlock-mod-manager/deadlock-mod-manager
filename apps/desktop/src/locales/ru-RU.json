@@ -5588,6 +5588,8 @@
     "alreadyInLibrary": "",
     "addToLibraryTitle": "",
     "addToLibraryDescription": "",
+    "notLoadedByGame": "",
+    "notLoadedByGameDescription": "",
     "addToLibrarySuccess": "",
     "adding": "",
     "show": "",
