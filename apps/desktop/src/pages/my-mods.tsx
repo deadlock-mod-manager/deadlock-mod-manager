@@ -68,7 +68,6 @@ import { VpkScanAlert } from "@/components/mods/vpk-scan-alert";
 import { AnalysisProgressToast } from "@/components/my-mods/analysis-progress-toast";
 import { AnalysisResultsDialog } from "@/components/my-mods/analysis-results-dialog";
 import { BatchUpdateDialog } from "@/components/my-mods/batch-update-dialog";
-import { BulkActionRecapDialog } from "@/components/my-mods/bulk-action-recap-dialog";
 import { EnableAllRecapDialog } from "@/components/my-mods/enable-all-recap-dialog";
 import { BatchUpdateButton } from "@/components/my-mods/batch-update-button";
 import { ExportDialog } from "@/components/mod-interchange/export-dialog";
@@ -215,12 +214,7 @@ const MyMods = () => {
     startAnalysis,
     dismissProgressToast,
   } = useAddonAnalysis();
-  const {
-    disableAll,
-    isPending: isDisablingAll,
-    recap: disableRecap,
-    closeRecap: closeDisableRecap,
-  } = useDisableAllMods();
+  const { disableAll, isPending: isDisablingAll } = useDisableAllMods();
   const bisectActive = usePersistedStore((state) => !!state.bisectSession);
   const {
     enableAll,
@@ -229,12 +223,7 @@ const MyMods = () => {
     closeRecap: closeEnableAllRecap,
   } = useEnableAllMods();
 
-  const {
-    deleteMods,
-    isPending: isDeletingMods,
-    recap: deleteRecap,
-    closeRecap: closeDeleteRecap,
-  } = useDeleteMods();
+  const { deleteMods, isPending: isDeletingMods } = useDeleteMods();
 
   const selectionBusy =
     isDisablingAll ||
@@ -1149,14 +1138,6 @@ const MyMods = () => {
           <EnableAllRecapDialog
             recap={enableAllRecap}
             onClose={closeEnableAllRecap}
-          />
-          <BulkActionRecapDialog
-            recap={disableRecap}
-            onClose={closeDisableRecap}
-          />
-          <BulkActionRecapDialog
-            recap={deleteRecap}
-            onClose={closeDeleteRecap}
           />
         </ErrorBoundary>
       </div>

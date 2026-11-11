@@ -3,7 +3,7 @@ import logger from "@/lib/logger";
 import type { LocalMod } from "@/types/mods";
 import { type ErrorKind, isTauriError } from "@/types/tauri";
 
-type BulkModAction = "disable" | "delete";
+export type BulkModAction = "disable" | "delete";
 
 /** What a bulk disable or delete did before it finished or stopped. */
 export type BulkActionRecap = {

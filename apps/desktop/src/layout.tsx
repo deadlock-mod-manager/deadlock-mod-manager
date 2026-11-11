@@ -5,6 +5,7 @@ import {
 } from "@deadlock-mods/ui/components/sidebar";
 import { Toaster } from "@deadlock-mods/ui/components/sonner";
 import { BisectRenderer } from "./components/bisect/bisect-renderer";
+import { BulkActionRecapDialog } from "./components/my-mods/bulk-action-recap-dialog";
 import { FeatureHintsRenderer } from "./components/feature-hints/feature-hints-renderer";
 import { AppSidebar } from "./components/layout/app-sidebar";
 import { BottomBar } from "./components/layout/bottom-bar";
@@ -57,6 +58,8 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
       <GlobalAudioPlayer />
       <FeatureHintsRenderer />
       <GlobalFileDrop />
+      <BulkActionRecapDialog action='disable' />
+      <BulkActionRecapDialog action='delete' />
 
       <Dialog
         onOpenChange={(open) => !open && markVersionAsSeen()}

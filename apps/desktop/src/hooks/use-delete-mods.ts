@@ -1,13 +1,13 @@
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { TrashIcon } from "@phosphor-icons/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { downloadManager } from "@/lib/download/manager";
 import { invokeGuarded } from "@/lib/game-guard";
 import logger from "@/lib/logger";
 import { type BulkActionRecap, runBulkModAction } from "@/lib/mods/bulk-action";
+import { setBulkActionRecap } from "@/lib/mods/bulk-action-recaps";
 import { usePersistedStore } from "@/lib/store";
 import { ModStatus } from "@/types/mods";
 import { PROFILE_VPKS_QUERY_KEY } from "./use-vpk-scan";
@@ -19,11 +19,10 @@ export const useDeleteMods = () => {
   const mods = usePersistedStore((state) => state.localMods);
   const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
   const removeMod = usePersistedStore((state) => state.removeMod);
-  const [recap, setRecap] = useState<BulkActionRecap | null>(null);
 
   const mutation = useMutation({
     mutationKey: ["library-bulk"],
-    onMutate: () => setRecap(null),
+    onMutate: () => setBulkActionRecap("delete", null),
     mutationFn: async (
       selectedIds: ReadonlySet<string>,
     ): Promise<BulkActionRecap | null> => {
@@ -76,7 +75,7 @@ export const useDeleteMods = () => {
             notAttempted: result.notAttempted.length,
           })
           .warn("Bulk delete stopped early");
-        setRecap(result);
+        setBulkActionRecap("delete", result);
         return;
       }
       toast.success(
@@ -92,7 +91,5 @@ export const useDeleteMods = () => {
   return {
     deleteMods: mutation.mutate,
     isPending: mutation.isPending,
-    recap,
-    closeRecap: () => setRecap(null),
   };
 };
