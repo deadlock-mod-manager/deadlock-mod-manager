@@ -449,6 +449,59 @@ mod tests {
     assert!(!temp.path().join("pak01_dir.vpk").exists());
   }
 
+  /// Every journaled move costs a disk flush, so a reorder leaves files that
+  /// keep their slot alone: swapping the last two mods moves only those two,
+  /// and a crash before the commit still recovers the original layout.
+  #[test]
+  fn reorder_moves_only_vpks_whose_slot_changes() {
+    let temp = tempfile::tempdir().unwrap();
+    let addons_path = addons_base(&temp);
+    let mods = ["a", "b", "c", "d"];
+    let read_slots = || {
+      (1..=4)
+        .map(|slot| fs::read_to_string(addons_path.join(format!("pak0{slot}_dir.vpk"))).unwrap())
+        .collect::<Vec<_>>()
+    };
+    for (index, id) in mods.iter().enumerate() {
+      fs::write(addons_path.join(format!("pak0{}_dir.vpk", index + 1)), id).unwrap();
+    }
+    let ordered: Vec<_> = [0, 1, 3, 2]
+      .map(|index| assignment(mods[index], format!("pak0{}_dir.vpk", index + 1)))
+      .into();
+
+    let pending = VpkManager::new()
+      .stage_reorder_vpks_sharded(&ordered, &addons_path)
+      .unwrap();
+    let staging_dir = addons_path.join(shard::REORDER_STAGING_DIR);
+    let journal = fs::read_to_string(staging_dir.join(".transaction.jsonl")).unwrap();
+    let staged: Vec<_> = journal
+      .lines()
+      .filter(|line| line.contains(r#""event":"stage""#))
+      .collect();
+    assert_eq!(
+      staged,
+      [
+        r#"{"event":"stage","original":"pak04_dir.vpk"}"#,
+        r#"{"event":"stage","original":"pak03_dir.vpk"}"#,
+      ]
+    );
+    assert_eq!(read_slots(), ["a", "b", "d", "c"]);
+
+    // Crash before the manifest commit: nothing rolls back in process, and the
+    // next start recovers from the journal alone.
+    std::mem::forget(pending);
+    let base = ProfileBase::new(&addons_path).unwrap();
+    recover_staging_directory(
+      &base,
+      &staging_dir,
+      RecoveryMode::AvoidEnabledCollisions,
+      &crate::mod_manager::vpk_manifest::ProfileVpkManifest::default(),
+    )
+    .unwrap();
+    assert_eq!(read_slots(), ["a", "b", "c", "d"]);
+    assert!(!staging_dir.exists());
+  }
+
   /// The core feature: more than 99 enabled VPKs are spread across sibling
   /// `addons`/`addons2` folders, bypassing the engine's 99-file-per-directory
   /// limit while preserving global load order.
