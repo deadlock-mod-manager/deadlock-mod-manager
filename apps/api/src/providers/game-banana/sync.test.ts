@@ -11,7 +11,7 @@ if (process.env.DMM_SYNC_TEST_CHILD !== "1") {
       stdout: "pipe",
       stderr: "pipe",
     });
-    expect(new TextDecoder().decode(result.stderr)).toContain("2 pass");
+    expect(new TextDecoder().decode(result.stderr)).toContain("3 pass");
     expect(result.exitCode).toBe(0);
   });
 } else {
@@ -119,6 +119,28 @@ if (process.env.DMM_SYNC_TEST_CHILD !== "1") {
 
       expect(markSynced).not.toHaveBeenCalled();
       expect(emit).toHaveBeenCalledWith("error", expect.any(Error));
+    });
+    it("reports a 200 error envelope as a provider error instead of crashing", async () => {
+      spyOn(globalThis, "fetch")
+        .mockResolvedValueOnce(
+          Response.json({
+            ...modIndex,
+            _aMetadata: { ...modIndex._aMetadata, _bIsComplete: true },
+          }),
+        )
+        .mockResolvedValueOnce(
+          Response.json({ _sErrorCode: "ERR_TEST", _sErrorMessage: "Nope" }),
+        )
+        .mockResolvedValueOnce(
+          Response.json({ _aRecords: [], _aMetadata: { _bIsComplete: true } }),
+        );
+
+      await new GameBananaProvider().synchronize();
+
+      expect(markSynced).not.toHaveBeenCalled();
+      const [, error] =
+        emit.mock.calls.find(([outcome]) => outcome === "error") ?? [];
+      expect(error?.message).toContain("ERR_TEST (Nope)");
     });
   });
 }

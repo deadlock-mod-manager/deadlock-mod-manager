@@ -150,6 +150,28 @@ const startupFixtureRoutes: readonly FixtureRoute[] = [
     status: 200,
     body: '{"_aMetadata":{"_nRecordCount":0,"_nPerpage":50,"_bIsComplete":true},"_aRecords":[]}',
   },
+  // Catalog sync also fetches each submission type's category tree.
+  {
+    method: "GET",
+    path: "/apiv11/Mod/Categories",
+    query: { _idGameRow: "20948" },
+    status: 200,
+    body: "[]",
+  },
+  {
+    method: "GET",
+    path: "/apiv11/Sound/Categories",
+    query: { _idGameRow: "20948" },
+    status: 200,
+    body: "[]",
+  },
+  {
+    method: "GET",
+    path: "/apiv11/Wip/Categories",
+    query: { _idGameRow: "20948" },
+    status: 200,
+    body: "[]",
+  },
   {
     method: "GET",
     path: "/apiv11/Collection/Index",

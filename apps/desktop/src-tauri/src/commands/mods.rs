@@ -10,7 +10,7 @@ use crate::mod_manager::file_tree::{
 use crate::mod_manager::filesystem_helper::FileSystemHelper;
 use crate::mod_manager::vpk_manager::VpkManager;
 use crate::mod_manager::vpk_manager::staging::VpkSnapshot;
-use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
+use crate::mod_manager::vpk_manifest::{KeptChoices, ProfileVpkManifest};
 use serde::{Deserialize, Serialize};
 use tauri::{Emitter, State};
 use ts_rs::TS;
@@ -79,6 +79,7 @@ pub async fn install_mod(
   replace_conflicting_mods: Option<Vec<String>>,
   allow_conflicting_mods: Option<Vec<String>>,
   bisect_original_enabled: Option<Vec<String>>,
+  kept_choices: Option<KeptChoices>,
   guard_permit: Option<String>,
 ) -> Result<Mod, Error> {
   crate::game_guard::ensure_game_idle_locked("install_mod", guard_permit.as_deref())?;
@@ -99,9 +100,14 @@ pub async fn install_mod(
         "Cannot both replace and keep conflicting mods".into(),
       ));
     }
-    return mod_manager.install_mod_allowing_conflicts(deadlock_mod, profile_folder, &allow);
+    return mod_manager.install_mod_allowing_conflicts(
+      deadlock_mod,
+      profile_folder,
+      &allow,
+      kept_choices,
+    );
   }
-  mod_manager.install_mod_resolving_conflicts(deadlock_mod, profile_folder, &replace)
+  mod_manager.install_mod_resolving_conflicts(deadlock_mod, profile_folder, &replace, kept_choices)
 }
 
 #[tauri::command]
@@ -122,7 +128,7 @@ pub async fn purge_mod(
   vpks: Vec<String>,
   profile_folder: Option<String>,
   guard_permit: Option<String>,
-) -> Result<(), Error> {
+) -> Result<Option<KeptChoices>, Error> {
   crate::game_guard::ensure_game_idle_locked("purge_mod", guard_permit.as_deref())?;
   let game_path = {
     let mod_manager = MANAGER.lock().unwrap();
@@ -136,16 +142,26 @@ pub async fn purge_mod(
     None
   };
 
-  {
+  let kept_choices = {
     let mut mod_manager = MANAGER.lock().unwrap();
-    mod_manager.purge_mod(mod_id.clone(), vpks, profile_folder)?;
-  }
+    mod_manager.purge_mod(mod_id.clone(), vpks, profile_folder)?
+  };
 
   if let Some(cleanup) = prepared_font_cleanup {
     apply_font_cleanup(cleanup)?;
   }
 
-  Ok(())
+  Ok(kept_choices)
+}
+
+#[tauri::command]
+pub async fn keep_disabled_mod_choices(
+  mod_id: String,
+  profile_folder: Option<String>,
+  kept_choices: KeptChoices,
+) -> Result<(), Error> {
+  let mut mod_manager = MANAGER.lock().unwrap();
+  mod_manager.keep_disabled_mod_choices(&mod_id, profile_folder, kept_choices)
 }
 
 #[tauri::command]

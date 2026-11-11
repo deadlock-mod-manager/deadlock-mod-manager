@@ -404,6 +404,7 @@ pub fn run() {
       commands::vpk::clear_all_mods_data,
       commands::mods::uninstall_mod,
       commands::mods::purge_mod,
+      commands::mods::keep_disabled_mod_choices,
       commands::mods::reorder_mods,
       commands::mods::reorder_mods_by_remote_id,
       commands::mods::get_enabled_mod_vpk_files,

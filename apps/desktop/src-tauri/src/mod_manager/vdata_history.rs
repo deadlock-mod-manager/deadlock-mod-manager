@@ -84,8 +84,24 @@ impl CandidateIntent {
 #[derive(Debug, Clone, Default)]
 pub struct VdataHistoryIndex {
   tables: BTreeMap<String, TableHistory>,
-  fallback: BTreeMap<String, TableHistory>,
   observed_strings: BTreeMap<Fingerprint, BTreeSet<Fingerprint>>,
+}
+
+/// The learned history consulted before the shipped one. It borrows both, so
+/// each mod check reads the shipped history without copying it.
+#[derive(Debug, Clone, Copy)]
+pub struct VdataHistory<'a> {
+  learned: &'a VdataHistoryIndex,
+  shipped: Option<&'a VdataHistoryIndex>,
+}
+
+impl<'a> From<&'a VdataHistoryIndex> for VdataHistory<'a> {
+  fn from(learned: &'a VdataHistoryIndex) -> Self {
+    Self {
+      learned,
+      shipped: None,
+    }
+  }
 }
 
 /// Immutable fingerprints of one observed game table. Keeping these separate
@@ -242,7 +258,6 @@ impl VdataHistoryIndex {
     }
     Ok(Self {
       tables,
-      fallback: BTreeMap::new(),
       observed_strings,
     })
   }
@@ -262,39 +277,7 @@ impl VdataHistoryIndex {
     file_path: &str,
     candidate_root: &Kv3Value,
   ) -> (Option<VdataBaselineMatch>, BaselineEvidence) {
-    let mut primary = self.match_table(self.tables.get(&normalize_path(file_path)), candidate_root);
-    let fallback = self.match_table(
-      self.fallback.get(&normalize_path(file_path)),
-      candidate_root,
-    );
-    if primary.1.status == BaselineStatus::Unavailable {
-      return fallback;
-    }
-    if fallback.1.status == BaselineStatus::Unavailable {
-      return primary;
-    }
-    let quality = (primary.1.changed_rows * fallback.1.comparable_rows)
-      .cmp(&(fallback.1.changed_rows * primary.1.comparable_rows))
-      .then_with(|| fallback.1.comparable_rows.cmp(&primary.1.comparable_rows));
-    match quality {
-      std::cmp::Ordering::Less => return primary,
-      std::cmp::Ordering::Greater => return fallback,
-      std::cmp::Ordering::Equal => {}
-    }
-    let same_intent = if let (Some(current), Some(old)) = (&primary.0, &fallback.0) {
-      let intent = CandidateIntent::new(candidate_root);
-      current.intent(&intent) == old.intent(&intent)
-    } else {
-      false
-    };
-    primary.1.build_versions.extend(fallback.1.build_versions);
-    primary.1.build_versions.sort_unstable();
-    primary.1.build_versions.dedup();
-    if !same_intent {
-      primary.0 = None;
-      primary.1.status = BaselineStatus::Ambiguous;
-    }
-    primary
+    self.match_table(self.tables.get(&normalize_path(file_path)), candidate_root)
   }
 
   fn match_table(
@@ -413,17 +396,11 @@ impl VdataHistoryIndex {
     (selected, evidence)
   }
 
-  pub fn with_observed(&self, observed: &Self) -> Self {
-    let mut history = observed.clone();
-    history.fallback = self.tables.clone();
-    for (key, values) in &self.observed_strings {
-      history
-        .observed_strings
-        .entry(*key)
-        .or_default()
-        .extend(values);
+  pub fn with_observed<'a>(&'a self, observed: &'a Self) -> VdataHistory<'a> {
+    VdataHistory {
+      learned: observed,
+      shipped: Some(self),
     }
-    history
   }
 
   #[cfg(test)]
@@ -509,6 +486,63 @@ impl VdataHistoryIndex {
     }
     write_string_bindings(&mut output, &self.observed_strings)?;
     Ok(output)
+  }
+}
+
+impl VdataHistory<'_> {
+  pub fn observed_string_field(
+    self,
+    file_path: &str,
+    row_name: &str,
+    field_name: &str,
+    value: &str,
+  ) -> bool {
+    self
+      .learned
+      .observed_string_field(file_path, row_name, field_name, value)
+      || self
+        .shipped
+        .is_some_and(|shipped| shipped.observed_string_field(file_path, row_name, field_name, value))
+  }
+
+  pub fn match_with_evidence(
+    self,
+    file_path: &str,
+    candidate_root: &Kv3Value,
+  ) -> (Option<VdataBaselineMatch>, BaselineEvidence) {
+    let mut primary = self.learned.match_with_evidence(file_path, candidate_root);
+    let Some(shipped) = self.shipped else {
+      return primary;
+    };
+    let fallback = shipped.match_with_evidence(file_path, candidate_root);
+    if primary.1.status == BaselineStatus::Unavailable {
+      return fallback;
+    }
+    if fallback.1.status == BaselineStatus::Unavailable {
+      return primary;
+    }
+    let quality = (primary.1.changed_rows * fallback.1.comparable_rows)
+      .cmp(&(fallback.1.changed_rows * primary.1.comparable_rows))
+      .then_with(|| fallback.1.comparable_rows.cmp(&primary.1.comparable_rows));
+    match quality {
+      std::cmp::Ordering::Less => return primary,
+      std::cmp::Ordering::Greater => return fallback,
+      std::cmp::Ordering::Equal => {}
+    }
+    let same_intent = if let (Some(current), Some(old)) = (&primary.0, &fallback.0) {
+      let intent = CandidateIntent::new(candidate_root);
+      current.intent(&intent) == old.intent(&intent)
+    } else {
+      false
+    };
+    primary.1.build_versions.extend(fallback.1.build_versions);
+    primary.1.build_versions.sort_unstable();
+    primary.1.build_versions.dedup();
+    if !same_intent {
+      primary.0 = None;
+      primary.1.status = BaselineStatus::Ambiguous;
+    }
+    primary
   }
 }
 
@@ -1176,6 +1210,36 @@ mod tests {
   }
 
   #[test]
+  fn combined_history_answers_string_bindings_from_either_history() {
+    let path = "scripts/heroes.vdata_c";
+    let hero = |model: &str| {
+      Kv3Value::Object(vec![(
+        "hero_copper".into(),
+        Kv3Value::Object(vec![(
+          "m_strModelName".into(),
+          Kv3Value::String(model.into()),
+        )]),
+      )])
+    };
+    let mut shipped = VdataHistoryIndex::default();
+    shipped.record(path, 1, &hero("models/shipped.vmdl")).unwrap();
+    let mut learned = VdataHistoryIndex::default();
+    learned.record(path, 2, &hero("models/learned.vmdl")).unwrap();
+    let combined = shipped.with_observed(&learned);
+    for (model, observed) in [
+      ("models/shipped.vmdl", true),
+      ("models/learned.vmdl", true),
+      ("models/unseen.vmdl", false),
+    ] {
+      assert_eq!(
+        combined.observed_string_field(path, "hero_copper", "m_strModelName", model),
+        observed,
+        "{model}"
+      );
+    }
+  }
+
+  #[test]
   fn observed_and_embedded_candidates_cannot_disagree_silently() {
     let path = "scripts/example.vdata_c";
     let mut older = VdataHistoryIndex::default();
@@ -1187,10 +1251,17 @@ mod tests {
     assert!(baseline.is_none());
     assert_eq!(evidence.status, BaselineStatus::Ambiguous);
     assert_eq!(evidence.build_versions, vec![1, 2]);
-    let combined = older.with_observed(&VdataHistoryIndex::default());
+    // When both agree, the learned build is the one returned.
+    let (baseline, evidence) = combined.match_with_evidence(path, &with_padding(1.003));
+    assert_eq!(baseline.unwrap().build_version, 2);
+    assert_eq!(evidence.status, BaselineStatus::Matched);
+    assert_eq!(evidence.build_versions, vec![1, 2]);
+    let empty = VdataHistoryIndex::default();
+    let combined = older.with_observed(&empty);
     assert_eq!(
       combined
-        .match_baseline(path, &with_padding(1.001))
+        .match_with_evidence(path, &with_padding(1.001))
+        .0
         .unwrap()
         .build_version,
       1

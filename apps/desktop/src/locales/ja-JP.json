@@ -5588,6 +5588,8 @@
     "alreadyInLibrary": "",
     "addToLibraryTitle": "ライブラリに追加",
     "addToLibraryDescription": "「{{fileName}}」をModライブラリに追加",
+    "notLoadedByGame": "",
+    "notLoadedByGameDescription": "",
     "addToLibrarySuccess": "「{{name}}」をライブラリに追加しました",
     "adding": "追加中...",
     "show": "詳細を表示",

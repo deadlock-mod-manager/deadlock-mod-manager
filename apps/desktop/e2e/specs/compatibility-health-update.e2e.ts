@@ -30,6 +30,17 @@ const readHealth = async () => {
   return report.mods.find((health) => health.modId === HEALTH_MOD.id)?.status;
 };
 
+// An update replaces the VPK, so it can be missing for a moment.
+const readVpk = async (directory: string) => {
+  try {
+    return await readFile(path.join(directory, "pak01_dir.vpk"));
+  } catch (error) {
+    if (error instanceof Error && "code" in error && error.code === "ENOENT")
+      return null;
+    throw error;
+  }
+};
+
 const readAddon = async (world: string) => {
   const {
     configuration: { roots },
@@ -53,7 +64,7 @@ const readAddon = async (world: string) => {
     );
   return {
     vpks: manifest.mods[HEALTH_MOD.id]?.currentVpks,
-    bytes: await readFile(path.join(directory, "pak01_dir.vpk")),
+    bytes: await readVpk(directory),
   };
 };
 
@@ -105,7 +116,7 @@ describe("mod health after a mod update", () => {
       const addon = await observeUntil(
         "updated files installed",
         () => readAddon(world),
-        ({ bytes }) => bytes.equals(UPDATED_PAYLOAD),
+        ({ bytes }) => bytes?.equals(UPDATED_PAYLOAD) ?? false,
         30_000,
       );
       // The update kept the VPK name, so only the files' contents changed.
