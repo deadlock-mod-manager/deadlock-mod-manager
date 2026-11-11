@@ -122,7 +122,7 @@ impl VpkManager {
     base: &ProfileBase,
     staging: &mut VpkStaging,
   ) -> Result<ShardReorderOutcome, Error> {
-    let mut slots = SlotCursor::default();
+    let mut slots = SlotCursor { shard: 1, used: 0 };
     let mut moves: Vec<(PathBuf, PathBuf)> = Vec::new();
     let mut placements = Vec::new();
 
@@ -273,12 +273,6 @@ impl VpkManager {
 struct SlotCursor {
   shard: u32,
   used: u32,
-}
-
-impl Default for SlotCursor {
-  fn default() -> Self {
-    Self { shard: 1, used: 0 }
-  }
 }
 
 impl SlotCursor {
