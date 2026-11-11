@@ -54,7 +54,7 @@
       hsl(236 27% 13% / var(--remlock-pattern-dim, 0.7)),
       hsl(236 27% 13% / var(--remlock-pattern-dim, 0.7))
     ),
-    url("../../public/pre-defined/remlock/background.png");
+    url("../../public/pre-defined/remlock/background.webp");
   background-size: 1224px 1224px;
   background-position: center;
   background-repeat: repeat;

@@ -54,51 +54,51 @@ import CodingTheme from "./pre-defined/coding/coding.tsx";
 
 const arcanePreview = getPluginAssetUrl(
   "themes",
-  "public/pre-defined/arcane/preview.png",
+  "public/pre-defined/arcane/preview.webp",
 );
 const deadlockApiPreview = getPluginAssetUrl(
   "themes",
-  "public/pre-defined/deadlock-api/preview.png",
+  "public/pre-defined/deadlock-api/preview.webp",
 );
 const nightshiftPreview = getPluginAssetUrl(
   "themes",
-  "public/pre-defined/nightshift/preview.png",
+  "public/pre-defined/nightshift/preview.webp",
 );
 const bloodmoonPreview = getPluginAssetUrl(
   "themes",
-  "public/pre-defined/bloodmoon/preview.png",
+  "public/pre-defined/bloodmoon/preview.webp",
 );
 const lovelockPreview = getPluginAssetUrl(
   "themes",
-  "public/pre-defined/lovelock/preview.png",
+  "public/pre-defined/lovelock/preview.webp",
 );
 const teaPreview = getPluginAssetUrl(
   "themes",
-  "public/pre-defined/tea/preview.png",
+  "public/pre-defined/tea/preview.webp",
 );
 const remlockPreview = getPluginAssetUrl(
   "themes",
-  "public/pre-defined/remlock/artwork.png",
+  "public/pre-defined/remlock/artwork.webp",
 );
 const oledPreview = getPluginAssetUrl(
   "themes",
-  "public/pre-defined/oled/preview.png",
+  "public/pre-defined/oled/preview.webp",
 );
 const gridlinePreview = getPluginAssetUrl(
   "themes",
-  "public/pre-defined/gridline/preview.png",
+  "public/pre-defined/gridline/preview.webp",
 );
 const codingPreview = getPluginAssetUrl(
   "themes",
-  "public/pre-defined/coding/preview.png",
+  "public/pre-defined/coding/preview.webp",
 );
 const drututtPreview = getPluginAssetUrl(
   "themes",
-  "public/pre-defined/drututt/preview.png",
+  "public/pre-defined/drututt/preview.webp",
 );
 const frenchPreview = getPluginAssetUrl(
   "themes",
-  "public/pre-defined/french/preview.png",
+  "public/pre-defined/french/preview.webp",
 );
 
 export const manifest = {

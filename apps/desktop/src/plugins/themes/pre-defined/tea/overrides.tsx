@@ -4,7 +4,7 @@ import { getPluginAssetUrl } from "@/lib/plugins";
 
 const teaMascotUrl = getPluginAssetUrl(
   "themes",
-  "public/pre-defined/tea/fumo_dog.png",
+  "public/pre-defined/tea/fumo_dog.webp",
 );
 
 const SidebarContentExtra = () => {
