@@ -483,7 +483,7 @@ The surrounding `library-selection`, `conflicts-resolve`, and `bisect-conflicts`
 
 ## Download fallback
 
-`gamebanana-mirror-fallback` run in the existing `gamebanana` suite. An interrupted mirror transfer receives a failed retry before the canonical endpoint succeeds. The canonical request starts without a Range header, and the installed VPK bytes match the fixture. `gamebanana-default-fallback` keeps the Default routing and the real file link: `/dl/` redirects to a cache that cuts every transfer, and after the downloader's reconnects the download moves to a cache from the fileserver directory, which the app checked before downloading. That cache's request starts without a Range header. Each case restarts in a fresh process and checks exact VPK bytes, manifest and persisted state, and the absence of leftover partial files.
+`gamebanana-mirror-fallback` run in the existing `gamebanana` suite. An interrupted mirror transfer receives a failed retry before the canonical endpoint succeeds. The canonical request starts without a Range header, and the installed VPK bytes match the fixture. `gamebanana-default-fallback` keeps the Default routing and the real file link: `/dl/` redirects to a cache that cuts every transfer, and after the downloader's reconnects the download moves to a cache from the fileserver directory, which the app checks only once the standard link has failed. That cache's request starts without a Range header. Each case restarts in a fresh process and checks exact VPK bytes, manifest and persisted state, and the absence of leftover partial files.
 
 ## Mod requirements
 
