@@ -51,63 +51,56 @@ impl VpkParser {
     /// stays at the size of the directory tree instead of the whole file.
     pub fn parse_file(path: &Path, options: VpkParseOptions) -> Result<VpkParsed> {
         let mut file = File::open(path)?;
-        let mut parser = Self::new(Self::read_directory_bytes(&mut file)?);
-        let header = parser.parse_header()?;
-        let tree_start = parser.cursor;
-        let entries = parser.parse_directory_tree(tree_start, header.tree_length as usize)?;
+        let (parser, header, entries) = Self::parse_directory_of(&mut file)?;
 
         file.seek(SeekFrom::Start(0))?;
         let hashes = ContentHashes::of_reader(&mut file)?;
         parser.build_parsed(header, entries, hashes, options)
     }
 
-    /// Reads the header and directory tree, the only part of a VPK the parser walks.
-    fn read_directory_bytes(file: &mut File) -> Result<Vec<u8>> {
-        let mut header_buf = [0u8; 28];
-        file.read_exact(&mut header_buf[..12])?;
-
-        let signature =
-            u32::from_le_bytes([header_buf[0], header_buf[1], header_buf[2], header_buf[3]]);
-        if signature != VPK_SIGNATURE {
-            return Err(VpkError::InvalidSignature {
-                expected: VPK_SIGNATURE,
-                actual: signature,
-            });
-        }
-
-        let version =
-            u32::from_le_bytes([header_buf[4], header_buf[5], header_buf[6], header_buf[7]]);
-        if version != 1 && version != 2 {
-            return Err(VpkError::Validation {
-                message: format!("Unsupported VPK version {version}"),
-            });
-        }
-        let tree_length =
-            u32::from_le_bytes([header_buf[8], header_buf[9], header_buf[10], header_buf[11]]);
-
-        let header_size: usize = if version >= 2 {
-            file.seek(SeekFrom::Start(0))?;
-            file.read_exact(&mut header_buf)?;
-            28
-        } else {
-            12
+    /// Parses a VPK on disk from its header and directory tree alone, for
+    /// callers that never use the whole-file hashes. Matches `parse_file`
+    /// except that `fingerprint.sha256` and `fingerprint.fast_hash` are empty
+    /// and `dir_sha256` is `None`.
+    pub fn parse_file_without_content_hashes(
+        path: &Path,
+        options: VpkParseOptions,
+    ) -> Result<VpkParsed> {
+        let mut file = File::open(path)?;
+        let (parser, header, entries) = Self::parse_directory_of(&mut file)?;
+        let hashes = ContentHashes {
+            size: file.metadata()?.len() as usize,
+            fast_hash: String::new(),
+            sha256: String::new(),
         };
+        let options = VpkParseOptions {
+            include_full_file_hash: false,
+            ..options
+        };
+        parser.build_parsed(header, entries, hashes, options)
+    }
 
-        let bytes_to_read = tree_length as usize;
-        let total = header_size
-            .checked_add(bytes_to_read)
-            .ok_or_else(|| VpkError::Validation {
-                message: "VPK directory extent overflow".into(),
-            })?;
-        if total as u64 > file.metadata()?.len() {
-            return Err(VpkError::Validation {
-                message: "VPK directory exceeds the file length".into(),
-            });
+    fn parse_directory_of(file: &mut File) -> Result<(Self, VpkHeader, Vec<VpkEntry>)> {
+        let mut parser = Self::new(Self::read_directory_bytes(file)?);
+        let header = parser.parse_header()?;
+        let tree_start = parser.cursor;
+        let entries = parser.parse_directory_tree(tree_start, header.tree_length as usize)?;
+        Ok((parser, header, entries))
+    }
+
+    /// Reads the header and directory tree, the only part of a VPK the parser
+    /// walks. A file too short to hold them yields what it has, so the parser
+    /// rejects it with the same error as the whole file in memory.
+    fn read_directory_bytes(file: &mut File) -> Result<Vec<u8>> {
+        let mut bytes = Vec::new();
+        file.by_ref().take(28).read_to_end(&mut bytes)?;
+        let mut probe = Self::new(bytes);
+        if let Ok(header) = probe.parse_header() {
+            let directory_end = probe.cursor as u64 + u64::from(header.tree_length);
+            let missing = directory_end.saturating_sub(probe.buffer.len() as u64);
+            file.by_ref().take(missing).read_to_end(&mut probe.buffer)?;
         }
-        let mut tree_buf = vec![0u8; total];
-        file.seek(SeekFrom::Start(0))?;
-        file.read_exact(&mut tree_buf)?;
-        Ok(tree_buf)
+        Ok(probe.buffer)
     }
 
     fn parse_internal(&mut self, options: VpkParseOptions) -> Result<VpkParsed> {
@@ -607,6 +600,19 @@ mod tests {
     }
 
     #[test]
+    fn parse_without_content_hashes_leaves_only_those_hashes_out() {
+        let hashed = VpkParser::parse_file(Path::new(FIXTURE), options()).unwrap();
+        let unhashed =
+            VpkParser::parse_file_without_content_hashes(Path::new(FIXTURE), options()).unwrap();
+
+        let mut expected = serde_json::to_value(&hashed).unwrap();
+        expected["dirSha256"] = serde_json::Value::Null;
+        expected["fingerprint"]["sha256"] = "".into();
+        expected["fingerprint"]["fastHash"] = "".into();
+        assert_eq!(serde_json::to_value(&unhashed).unwrap(), expected);
+    }
+
+    #[test]
     fn a_malformed_file_fails_from_disk_as_it_does_in_memory() {
         let mut short_v2_header = VPK_SIGNATURE.to_le_bytes().to_vec();
         short_v2_header.extend_from_slice(&2u32.to_le_bytes());
@@ -615,7 +621,8 @@ mod tests {
         directory_past_end[8..12].copy_from_slice(&64u32.to_le_bytes());
         directory_past_end.extend_from_slice(&[0u8; 20]);
 
-        let path = std::env::temp_dir().join(format!("vpk-parser-malformed-{}", std::process::id()));
+        let path =
+            std::env::temp_dir().join(format!("vpk-parser-malformed-{}", std::process::id()));
         for bytes in [b"not a vpk\n".to_vec(), short_v2_header, directory_past_end] {
             std::fs::write(&path, &bytes).unwrap();
             let from_disk = VpkParser::parse_file(&path, options()).unwrap_err();
