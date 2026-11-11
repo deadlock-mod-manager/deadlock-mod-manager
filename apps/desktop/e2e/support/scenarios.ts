@@ -29,6 +29,10 @@ import {
   rescanAfterResetRoutes,
 } from "./rescan-after-reset-fixtures";
 import { importFailureRoutes } from "./profile-import-failure-fixtures";
+import {
+  assertDownloadOverlapsLookup,
+  slowShareRoutes,
+} from "./profile-import-download-fixtures";
 import { shareRoutes } from "./profile-share-fixtures";
 import {
   prepareProfileRestoreWorld,
@@ -879,6 +883,13 @@ export const scenarios = {
     spec: "profiles-import-failures",
     phases: ["import-failures"],
     routes: importFailureRoutes,
+  },
+  "profiles-import-early-download": {
+    ...profileShare,
+    spec: "profiles-import-early-download",
+    phases: ["import-early-download"],
+    routes: slowShareRoutes,
+    verifyNetwork: assertDownloadOverlapsLookup,
   },
   "profiles-pointer": profiles,
   "profiles-keyboard": profiles,
