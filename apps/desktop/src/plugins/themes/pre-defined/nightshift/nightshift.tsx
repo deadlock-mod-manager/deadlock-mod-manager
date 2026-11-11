@@ -3,7 +3,7 @@ import { ThemeBackdrop } from "../../components/theme-backdrop";
 
 const nightshiftBg = getPluginAssetUrl(
   "themes",
-  "public/pre-defined/nightshift/background/nightshift_bg_1080p.png",
+  "public/pre-defined/nightshift/background/nightshift_bg_1080p.webp",
 );
 
 const backdropStyle = {
