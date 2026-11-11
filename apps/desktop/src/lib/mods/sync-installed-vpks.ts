@@ -1,6 +1,7 @@
+import { invoke } from "@tauri-apps/api/core";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
-import { getProfileVpkSnapshot } from "@/lib/tauri-commands";
+import type { ModVpkFiles } from "@/types/generated/ModVpkFiles";
 
 /**
  * Re-enabling a mod puts it back in its place in the load order, which
@@ -11,12 +12,12 @@ export const syncInstalledVpksFromManifest = async (
   profileFolder: string | null,
 ) => {
   try {
-    const { manifest } = await getProfileVpkSnapshot(profileFolder);
-    usePersistedStore.getState().updateModVpksAfterReorder(
-      Object.entries(manifest.mods)
-        .filter(([, entry]) => entry.enabled)
-        .map(([remoteId, entry]) => [remoteId, entry.currentVpks]),
-    );
+    const mods = await invoke<ModVpkFiles[]>("get_enabled_mod_vpk_files", {
+      profileFolder,
+    });
+    usePersistedStore
+      .getState()
+      .updateModVpksAfterReorder(mods.map(({ modId, vpks }) => [modId, vpks]));
   } catch (error) {
     logger
       .withError(error)
