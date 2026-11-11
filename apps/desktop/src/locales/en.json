@@ -5588,6 +5588,8 @@
     "alreadyInLibrary": "{{fileName}} is already in your library.",
     "addToLibraryTitle": "Add to Library",
     "addToLibraryDescription": "Add \"{{fileName}}\" to your mod library",
+    "notLoadedByGame": "Not loaded by Deadlock",
+    "notLoadedByGameDescription": "Deadlock only loads files named like pak01_dir.vpk. To install this file, import it with Add Mods.",
     "addToLibrarySuccess": "Added \"{{name}}\" to library",
     "adding": "Adding...",
     "show": "Show details",

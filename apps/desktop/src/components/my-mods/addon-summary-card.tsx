@@ -1,8 +1,12 @@
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { XCircle } from "@deadlock-mods/ui/icons";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { useTranslation } from "react-i18next";
 import { useVpkScan } from "@/hooks/use-vpk-scan";
-import { isIdentifiedByNameOnly } from "@/lib/mods/analyzed-files";
+import {
+  isIdentifiedByNameOnly,
+  isIgnoredByGame,
+} from "@/lib/mods/analyzed-files";
 import { usePersistedStore } from "@/lib/store";
 import logger from "@/lib/logger";
 import { gameBananaPageUrl } from "@/lib/mods/submission-ref";
@@ -30,8 +34,10 @@ export const AddonSummaryCard = ({
   /** Without it (onboarding), the card offers no file actions. */
   fileContext?: AnalysisTarget | null;
 }) => {
+  const { t } = useTranslation();
   const { isLibraryVpk, isLoading: isLoadingSnapshot } = useVpkScan();
   const isIdentified = !!addon.remoteId;
+  const ignoredByGame = isIgnoredByGame(addon);
   // An identified file counts as added once its mod is in the library, even
   // when the file isn't one of the mod's installed files (a parked VPK).
   const isModInLibrary = usePersistedStore((state) =>
@@ -59,7 +65,9 @@ export const AddonSummaryCard = ({
       : undefined;
   // Only offered once the ownership snapshot says no library mod has the file.
   const fileActions =
-    fileContext && owned === false && (leftoverOf || !isIdentified) ? (
+    fileContext &&
+    owned === false &&
+    (leftoverOf || !isIdentified || ignoredByGame) ? (
       <AddonFileActions
         addon={addon}
         leftoverOf={leftoverOf}
@@ -98,12 +106,23 @@ export const AddonSummaryCard = ({
         <div className='min-w-0 flex-1'>
           <p className='font-medium text-sm truncate'>{addon.fileName}</p>
           <AddonInfo addon={addon} isIdentified={isIdentified} />
+          {ignoredByGame && (
+            <div className='mt-1 space-y-0.5'>
+              <p className='text-xs font-medium text-amber-600 dark:text-amber-400'>
+                {t("addons.notLoadedByGame")}
+              </p>
+              <p className='text-xs text-muted-foreground'>
+                {t("addons.notLoadedByGameDescription")}
+              </p>
+            </div>
+          )}
         </div>
       </div>
       <div className='flex items-start gap-2 shrink-0 mt-0.5'>
         <AddonActions
           addon={addon}
           isIdentified={isIdentified}
+          ignoredByGame={ignoredByGame}
           isAlreadyInLibrary={isIdentified ? isModInLibrary : owned === true}
           isCheckingLibrary={isCheckingLibrary || locked}
           onAddToLibrary={onAddToLibrary}

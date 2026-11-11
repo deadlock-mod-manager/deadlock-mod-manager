@@ -40,6 +40,9 @@ struct SpyGc {
   forbidden: HashSet<u64>,
   persona_calls: AtomicU64,
   history: Vec<u64>,
+  // Own history split into pages, used instead of `history` when set. The cursor is the
+  // next page's index.
+  history_pages: Vec<Vec<u64>>,
   friends: HashMap<u32, Persona>,
   friend_history: Vec<u64>,
   // What the GC answers instead of `friend_history` (`MatchSyncError` isn't `Clone`).
@@ -52,7 +55,7 @@ impl GcMatchClient for SpyGc {
     &self,
     ctx: &AuthContext,
     account_id: u32,
-    _cursor: Option<u64>,
+    cursor: Option<u64>,
   ) -> Result<MatchHistoryPage, MatchSyncError> {
     self.calls.fetch_add(1, Ordering::Relaxed);
     if self.fail_history {
@@ -60,6 +63,19 @@ impl GcMatchClient for SpyGc {
     }
     if self.own_history_rate_limited && account_id == ctx.account_id() {
       return Err(MatchSyncError::GcRateLimited);
+    }
+    if account_id == ctx.account_id() && !self.history_pages.is_empty() {
+      let index = cursor.unwrap_or(0) as usize;
+      return Ok(MatchHistoryPage {
+        matches: self.history_pages[index]
+          .iter()
+          .map(|&match_id| LocalMatch {
+            match_id,
+            ..Default::default()
+          })
+          .collect(),
+        next_cursor: (index + 1 < self.history_pages.len()).then_some(index as u64 + 1),
+      });
     }
     let history = if account_id == ctx.account_id() {
       &self.history
@@ -154,6 +170,11 @@ struct SpyBackfill {
   stored_salts: HashSet<u64>,
   calls: AtomicU64,
   log: Mutex<Vec<BackfillCall>>,
+  // The `limit` of each global list request.
+  global_limits: Mutex<Vec<usize>>,
+  // Every id `missing_salts` checked, and the id whose check fails, ending the checks.
+  checked: Mutex<Vec<u64>>,
+  check_fails_at: Option<u64>,
 }
 impl BackfillSource for SpyBackfill {
   async fn to_fetch(&self, scope: FetchScope) -> Result<Vec<u64>, MatchSyncError> {
@@ -163,8 +184,9 @@ impl BackfillSource for SpyBackfill {
         self.log.lock().unwrap().push(BackfillCall::Account);
         Ok(self.account.clone())
       }
-      FetchScope::Global => {
+      FetchScope::Global(limit) => {
         self.log.lock().unwrap().push(BackfillCall::Global);
+        self.global_limits.lock().unwrap().push(limit);
         Ok(self.global.clone())
       }
     }
@@ -190,9 +212,10 @@ impl BackfillSource for SpyBackfill {
   ) -> SaltsCheck {
     let mut check = SaltsCheck::default();
     for &id in match_ids {
-      if check.missing.len() == limit {
+      if check.missing.len() == limit || self.check_fails_at == Some(id) {
         break;
       }
+      self.checked.lock().unwrap().push(id);
       if self.stored_salts.contains(&id) {
         check.stored.push(id);
       } else {
@@ -485,6 +508,11 @@ async fn background_backfill_leaves_reserve_for_own_matches() {
   assert_eq!(p.fetched, 0);
   assert_eq!(p.backfilled as usize, LIMIT - BACKFILL_QUOTA_RESERVE);
   assert_eq!(p.quota_remaining as usize, BACKFILL_QUOTA_RESERVE);
+  // Asks for no more than the budget, so the server doesn't claim ids this pass won't fetch.
+  assert_eq!(
+    *eng.backfill.global_limits.lock().unwrap(),
+    [LIMIT - BACKFILL_QUOTA_RESERVE]
+  );
   // The ids past the budget stay claimed unless released.
   assert_eq!(
     *eng.backfill.log.lock().unwrap(),
@@ -494,6 +522,173 @@ async fn background_backfill_leaves_reserve_for_own_matches() {
       BackfillCall::Release
     ]
   );
+}
+
+#[tokio::test]
+async fn own_matches_the_server_stores_are_remembered_without_asking_the_gc() {
+  let backfill = SpyBackfill {
+    stored_salts: HashSet::from([102]),
+    ..Default::default()
+  };
+  let eng = engine(
+    SpyGc {
+      history: vec![101, 102, 103],
+      ..Default::default()
+    },
+    backfill,
+  );
+  let cancel = AtomicBool::new(false);
+
+  let p = eng
+    .run_background_pass(&active_config(), &cancel)
+    .await
+    .unwrap()
+    .unwrap();
+  assert_eq!(p.fetched, 2);
+  assert_eq!(p.skipped, 1);
+  assert_eq!(*eng.sink.posted.lock().unwrap(), vec![103, 101]);
+  assert_eq!(p.quota_remaining as usize, LIMIT - 2);
+  assert!(eng.persistence.fetched.lock().unwrap().contains(&102));
+
+  // The next pass neither checks nor fetches any of them again.
+  eng.backfill.checked.lock().unwrap().clear();
+  let p = eng
+    .run_background_pass(&active_config(), &cancel)
+    .await
+    .unwrap()
+    .unwrap();
+  assert_eq!(p.fetched, 0);
+  assert!(eng.backfill.checked.lock().unwrap().is_empty());
+  assert_eq!(eng.sink.posted.lock().unwrap().len(), 2);
+}
+
+#[tokio::test]
+async fn full_sync_skips_stored_own_matches_and_stops_where_checks_fail() {
+  let backfill = SpyBackfill {
+    account: vec![200],
+    stored_salts: HashSet::from([105]),
+    check_fails_at: Some(103),
+    ..Default::default()
+  };
+  let eng = engine(
+    SpyGc {
+      history: vec![102, 103, 104, 105],
+      ..Default::default()
+    },
+    backfill,
+  );
+
+  let p = eng
+    .run_full_sync_if_enabled(&active_config(), &AtomicBool::new(false))
+    .await
+    .unwrap();
+  // 105 is stored, 104 missing; 103 and 102 couldn't be checked, so they wait. The
+  // account's pending list needs no check and is still fetched.
+  assert_eq!(*eng.sink.posted.lock().unwrap(), vec![104, 200]);
+  assert_eq!(p.fetched, 2);
+  assert_eq!(p.skipped, 1);
+  assert_eq!(
+    *eng.persistence.fetched.lock().unwrap(),
+    vec![105, 104, 200]
+  );
+  // History wasn't fully checked, so the sync isn't caught up.
+  assert!(!*eng.persistence.complete.lock().unwrap());
+}
+
+#[tokio::test]
+async fn full_sync_is_not_complete_while_quota_leaves_own_matches_unchecked() {
+  // One slot left: 103 is fetched, 102 and 101 are never checked.
+  let persistence = MemPersistence {
+    now: 1_000_000,
+    quota_hits: Mutex::new(vec![1_000_000; LIMIT - 1]),
+    ..Default::default()
+  };
+  let eng = engine_with_persistence(
+    SpyGc {
+      history: vec![101, 102, 103],
+      ..Default::default()
+    },
+    SpyBackfill::default(),
+    SpyGameCheck::default(),
+    persistence,
+  );
+
+  let p = eng
+    .run_full_sync_if_enabled(&active_config(), &AtomicBool::new(false))
+    .await
+    .unwrap();
+  assert_eq!(*eng.sink.posted.lock().unwrap(), vec![103]);
+  assert_eq!(p.fetched, 1);
+  assert!(p.quota_reached);
+  assert_eq!(*eng.backfill.checked.lock().unwrap(), vec![103]);
+  assert_eq!(*eng.persistence.fetched.lock().unwrap(), vec![103]);
+  assert!(!*eng.persistence.complete.lock().unwrap());
+
+  // Once the quota frees up, the next sync checks and fetches the rest and completes.
+  eng.persistence.quota_hits.lock().unwrap().clear();
+  let p = eng
+    .run_full_sync_if_enabled(&active_config(), &AtomicBool::new(false))
+    .await
+    .unwrap();
+  assert_eq!(p.fetched, 2);
+  assert_eq!(*eng.backfill.checked.lock().unwrap(), vec![103, 102, 101]);
+  assert_eq!(*eng.sink.posted.lock().unwrap(), vec![103, 102, 101]);
+  assert!(*eng.persistence.complete.lock().unwrap());
+}
+
+#[tokio::test]
+async fn full_sync_stops_paging_history_once_the_quota_is_spent() {
+  // One slot left, taken by the first page's only match.
+  let persistence = MemPersistence {
+    now: 1_000_000,
+    quota_hits: Mutex::new(vec![1_000_000; LIMIT - 1]),
+    ..Default::default()
+  };
+  let eng = engine_with_persistence(
+    SpyGc {
+      history_pages: vec![vec![103], vec![102]],
+      ..Default::default()
+    },
+    SpyBackfill::default(),
+    SpyGameCheck::default(),
+    persistence,
+  );
+
+  let p = eng
+    .run_full_sync_if_enabled(&active_config(), &AtomicBool::new(false))
+    .await
+    .unwrap();
+  assert_eq!(*eng.sink.posted.lock().unwrap(), vec![103]);
+  assert!(p.quota_reached);
+  // One history page and one salts request: the second page is never asked for.
+  assert_eq!(eng.gc.calls.load(Ordering::Relaxed), 2);
+  assert!(!*eng.persistence.complete.lock().unwrap());
+}
+
+#[tokio::test]
+async fn own_matches_without_quota_left_are_not_checked() {
+  let persistence = MemPersistence {
+    now: 1_000_000,
+    quota_hits: Mutex::new(vec![1_000_000; LIMIT]),
+    ..Default::default()
+  };
+  let eng = engine_with_persistence(
+    SpyGc {
+      history: vec![101],
+      ..Default::default()
+    },
+    SpyBackfill::default(),
+    SpyGameCheck::default(),
+    persistence,
+  );
+
+  let p = eng
+    .run_full_sync_if_enabled(&active_config(), &AtomicBool::new(false))
+    .await
+    .unwrap();
+  assert!(p.quota_reached);
+  assert!(eng.backfill.checked.lock().unwrap().is_empty());
+  assert_eq!(eng.counter.load(Ordering::Relaxed), 0);
 }
 
 #[tokio::test]
