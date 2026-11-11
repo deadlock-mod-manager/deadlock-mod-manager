@@ -1,6 +1,4 @@
 name: Deploy Services
-env:
-  NODE_VERSION: "24.22.1"
 
 on:
   workflow_dispatch:
@@ -88,7 +86,6 @@ jobs:
           service-name: api
           docker-username: ${{ secrets.DOCKER_USERNAME }}
           docker-password: ${{ secrets.DOCKER_PASSWORD }}
-          node-version: ${{ env.NODE_VERSION }}
 
       - name: Restart Kubernetes deployment
         uses: ./.github/actions/k8s-restart-deployment
@@ -128,7 +125,6 @@ jobs:
           service-name: auth
           docker-username: ${{ secrets.DOCKER_USERNAME }}
           docker-password: ${{ secrets.DOCKER_PASSWORD }}
-          node-version: ${{ env.NODE_VERSION }}
 
       - name: Restart Kubernetes deployment
         uses: ./.github/actions/k8s-restart-deployment
@@ -160,7 +156,6 @@ jobs:
           service-name: bot
           docker-username: ${{ secrets.DOCKER_USERNAME }}
           docker-password: ${{ secrets.DOCKER_PASSWORD }}
-          node-version: ${{ env.NODE_VERSION }}
 
       - name: Restart Kubernetes deployment
         uses: ./.github/actions/k8s-restart-deployment
@@ -192,7 +187,6 @@ jobs:
           service-name: lockdex
           docker-username: ${{ secrets.DOCKER_USERNAME }}
           docker-password: ${{ secrets.DOCKER_PASSWORD }}
-          node-version: ${{ env.NODE_VERSION }}
 
       - name: Restart Kubernetes deployment
         uses: ./.github/actions/k8s-restart-deployment
@@ -224,7 +218,6 @@ jobs:
           service-name: mirror-service
           docker-username: ${{ secrets.DOCKER_USERNAME }}
           docker-password: ${{ secrets.DOCKER_PASSWORD }}
-          node-version: ${{ env.NODE_VERSION }}
 
       - name: Restart Kubernetes deployment
         uses: ./.github/actions/k8s-restart-deployment
@@ -257,7 +250,6 @@ jobs:
           service-name: www
           docker-username: ${{ secrets.DOCKER_USERNAME }}
           docker-password: ${{ secrets.DOCKER_PASSWORD }}
-          node-version: ${{ env.NODE_VERSION }}
           build-args: |
             VITE_AUTH_URL=https://auth.deadlockmods.app
 

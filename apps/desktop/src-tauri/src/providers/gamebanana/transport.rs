@@ -1,10 +1,12 @@
 use crate::errors::Error;
 use crate::proxy;
 use chrono::{DateTime, Utc};
+use flate2::read::MultiGzDecoder;
 use futures::StreamExt;
-use reqwest::header::RETRY_AFTER;
+use reqwest::header::{ACCEPT_ENCODING, CONTENT_ENCODING, HeaderValue, RETRY_AFTER};
 use serde::de::DeserializeOwned;
 use std::collections::VecDeque;
+use std::io::Read;
 use std::sync::Arc;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tokio::sync::{Mutex, Semaphore};
@@ -136,7 +138,9 @@ impl GameBananaTransport {
 
       let response = tokio::select! {
         _ = cancel.cancelled() => return Err(Error::ProviderCancelled),
-        response = self.client.get(url.clone()).send() => {
+        // reqwest is built without its compression features, which would also apply to
+        // archive downloads, so this client asks for gzip and decodes it itself.
+        response = self.client.get(url.clone()).header(ACCEPT_ENCODING, "gzip").send() => {
           response.map_err(|error| Error::ProviderUnavailable(error_without_url(&error)))?
         }
       };
@@ -189,6 +193,7 @@ impl GameBananaTransport {
         });
       }
 
+      let content_encoding = response.headers().get(CONTENT_ENCODING).cloned();
       let mut body = Vec::new();
       let mut stream = response.bytes_stream();
       while let Some(chunk) = tokio::select! {
@@ -204,6 +209,12 @@ impl GameBananaTransport {
         body.extend_from_slice(&chunk);
       }
       drop(permit);
+      let body = decode_body(
+        operation,
+        content_encoding.as_ref(),
+        body,
+        self.config.max_response_bytes,
+      )?;
 
       // GameBanana occasionally answers 200 with an empty body; a retry gets the payload.
       if status.is_success() && body.trim_ascii().is_empty() {
@@ -239,6 +250,31 @@ struct FetchedBody {
 struct ApiErrorBody {
   #[serde(rename = "_sErrorCode", default)]
   code: Option<String>,
+}
+
+fn decode_body(
+  operation: &str,
+  content_encoding: Option<&HeaderValue>,
+  body: Vec<u8>,
+  max_bytes: usize,
+) -> Result<Vec<u8>, Error> {
+  // An empty body is not valid gzip; passing it through lets the empty-200 retry handle it.
+  if body.is_empty()
+    || !content_encoding
+      .is_some_and(|value| value.as_bytes().trim_ascii().eq_ignore_ascii_case(b"gzip"))
+  {
+    return Ok(body);
+  }
+  let mut decoded = Vec::new();
+  // Reading one byte past the limit tells a body at the limit from one over it.
+  MultiGzDecoder::new(body.as_slice())
+    .take(max_bytes as u64 + 1)
+    .read_to_end(&mut decoded)
+    .map_err(|_| Error::ProviderInvalidResponse(format!("{operation} response decoding failed")))?;
+  if decoded.len() > max_bytes {
+    return Err(Error::ProviderResponseTooLarge { limit: max_bytes });
+  }
+  Ok(decoded)
 }
 
 fn parse_json_body<T: DeserializeOwned>(body: &[u8]) -> Result<T, Error> {
@@ -351,11 +387,15 @@ mod tests {
     parse_retry_after, retry_delay,
   };
   use crate::errors::Error;
-  use serde_json::Value;
+  use flate2::Compression;
+  use flate2::write::GzEncoder;
+  use serde_json::{Value, json};
+  use std::io::Write;
   use std::sync::Arc;
   use std::time::Duration;
   use tokio::io::{AsyncReadExt, AsyncWriteExt};
   use tokio::net::TcpListener;
+  use tokio::task::JoinHandle;
   use tokio_util::sync::CancellationToken;
 
   #[test]
@@ -484,6 +524,24 @@ mod tests {
       "{result:?}"
     );
 
+    // The limit also applies to the decoded body.
+    let decoded_limit = GameBananaTransport::new(TransportConfig {
+      max_retries: 0,
+      max_response_bytes: 64,
+      ..TransportConfig::default()
+    })
+    .unwrap();
+    let expands = gzip(format!("\"{}\"", "a".repeat(1_000)).as_bytes());
+    assert!(expands.len() <= 64);
+    let (expanding, _) = serve_once_with(move |_| http_ok(Some("gzip"), &expands)).await;
+    let result = decoded_limit
+      .get_json::<Value>("profile", expanding, &cancel)
+      .await;
+    assert!(
+      matches!(result, Err(Error::ProviderResponseTooLarge { limit: 64 })),
+      "{result:?}"
+    );
+
     let invalid = serve_once("HTTP/1.1 200 OK\r\nContent-Length: 4\r\n\r\nnope").await;
     let result = transport
       .get_json::<Value>("profile", invalid, &cancel)
@@ -495,6 +553,52 @@ mod tests {
     assert!(
       matches!(result, Err(Error::ProviderUnavailable(_))),
       "{result:?}"
+    );
+
+    let empty_gzip =
+      serve_once("HTTP/1.1 200 OK\r\nContent-Encoding: gzip\r\nContent-Length: 0\r\n\r\n").await;
+    let result = transport
+      .get_json::<Value>("profile", empty_gzip, &cancel)
+      .await;
+    assert!(
+      matches!(result, Err(Error::ProviderUnavailable(_))),
+      "{result:?}"
+    );
+  }
+
+  #[tokio::test]
+  async fn asks_for_gzip_and_decodes_it() {
+    let transport = GameBananaTransport::new(TransportConfig::default()).unwrap();
+    let cancel = CancellationToken::new();
+    let record =
+      json!({ "_sName": "Example mod", "_sProfileUrl": "https://gamebanana.com/mods/1" });
+    let plain = serde_json::to_vec(&json!({ "_aRecords": vec![record; 50] })).unwrap();
+    let plain_len = plain.len();
+    // Like GameBanana: gzip only for a client that asks for it, plain JSON otherwise.
+    let (url, sent) = serve_once_with(move |request| {
+      let accepts_gzip = request.lines().any(|line| {
+        line.split_once(':').is_some_and(|(name, value)| {
+          name.eq_ignore_ascii_case("accept-encoding") && value.contains("gzip")
+        })
+      });
+      if accepts_gzip {
+        http_ok(Some("gzip"), &gzip(&plain))
+      } else {
+        http_ok(None, &plain)
+      }
+    })
+    .await;
+
+    let value = transport
+      .get_json::<Value>("index", url, &cancel)
+      .await
+      .unwrap();
+
+    assert_eq!(value["_aRecords"].as_array().map(Vec::len), Some(50));
+    let sent = sent.await.unwrap();
+    assert!(
+      sent < plain_len / 4,
+      "sent {sent} bytes for {plain_len} bytes of JSON"
     );
   }
 
@@ -542,9 +646,19 @@ mod tests {
   }
 
   async fn serve_once(response: &'static str) -> reqwest::Url {
+    serve_once_with(move |_| response.as_bytes().to_vec())
+      .await
+      .0
+  }
+
+  /// Answers one request with whatever `respond` builds from the request head, and reports
+  /// how many bytes went over the wire.
+  async fn serve_once_with(
+    respond: impl FnOnce(&str) -> Vec<u8> + Send + 'static,
+  ) -> (reqwest::Url, JoinHandle<usize>) {
     let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
     let address = listener.local_addr().unwrap();
-    tokio::spawn(async move {
+    let sent = tokio::spawn(async move {
       let (mut stream, _) = listener.accept().await.unwrap();
       let mut request = Vec::new();
       while !request.windows(4).any(|window| window == b"\r\n\r\n") {
@@ -555,10 +669,34 @@ mod tests {
         }
         request.extend_from_slice(&chunk[..read]);
       }
-      stream.write_all(response.as_bytes()).await.unwrap();
+      let response = respond(&String::from_utf8_lossy(&request));
+      stream.write_all(&response).await.unwrap();
       stream.shutdown().await.unwrap();
+      response.len()
     });
 
-    reqwest::Url::parse(&format!("http://{address}/fixture")).unwrap()
+    (
+      reqwest::Url::parse(&format!("http://{address}/fixture")).unwrap(),
+      sent,
+    )
+  }
+
+  fn gzip(body: &[u8]) -> Vec<u8> {
+    let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+    encoder.write_all(body).unwrap();
+    encoder.finish().unwrap()
+  }
+
+  fn http_ok(content_encoding: Option<&str>, body: &[u8]) -> Vec<u8> {
+    let encoding = content_encoding
+      .map(|encoding| format!("Content-Encoding: {encoding}\r\n"))
+      .unwrap_or_default();
+    let mut response = format!(
+      "HTTP/1.1 200 OK\r\n{encoding}Content-Length: {}\r\n\r\n",
+      body.len()
+    )
+    .into_bytes();
+    response.extend_from_slice(body);
+    response
   }
 }

@@ -82,6 +82,11 @@ import {
   unknownAddonRoutes,
 } from "./analyze-known-files-fixtures";
 import { prepareAnalyzeOrphansWorld } from "./analyze-orphans-fixtures";
+import {
+  matchedFileRoutes,
+  prepareNonLoadedFileWorld,
+  unknownFileRoutes,
+} from "./non-loaded-file-fixtures";
 import { createArchive } from "./archive-fixtures";
 import { randomBytes } from "node:crypto";
 import { contentRoutes, prepareContentWorld } from "./content-fixtures";
@@ -748,6 +753,22 @@ export const scenarios = {
     prepare: prepareUnknownAddonWorld,
     verifyNetwork: assertUnknownAddonNetwork,
   },
+  "analysis-add-non-loaded-file": {
+    ...defaults,
+    family: "compatibility",
+    spec: "non-loaded-file",
+    phases: ["add-to-library"],
+    routes: unknownFileRoutes,
+    prepare: prepareNonLoadedFileWorld,
+  },
+  "analysis-match-non-loaded-file": {
+    ...defaults,
+    family: "compatibility",
+    spec: "non-loaded-file",
+    phases: ["analyze-match"],
+    routes: matchedFileRoutes,
+    prepare: prepareNonLoadedFileWorld,
+  },
   "onboarding-skip-analysis": onboarding,
   "analyze-errors": {
     ...defaults,
@@ -1110,6 +1131,14 @@ export const scenarios = {
     routes: () => createCatalogRoutes("gamebanana-multifile"),
     verifyNetwork: (_id: string, requests: readonly FixtureRequest[]) =>
       assertCatalogNetwork("gamebanana-multifile", requests),
+  },
+  "deep-link-enabled": {
+    ...catalog,
+    spec: "deep-link-enabled",
+    phases: ["enabled"],
+    routes: () => createCatalogRoutes("gamebanana-single"),
+    verifyNetwork: (_id: string, requests: readonly FixtureRequest[]) =>
+      assertCatalogNetwork("gamebanana-single", requests),
   },
   "mod-files-error": {
     ...catalog,

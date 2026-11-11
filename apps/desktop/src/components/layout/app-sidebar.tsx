@@ -526,7 +526,7 @@ export const AppSidebar = () => {
       <SidebarHeader className='py-2 pl-2 group-data-[collapsible=icon]:p-0'>
         <BrandingHeader />
       </SidebarHeader>
-      <SidebarContent className='flex-grow'>
+      <SidebarContent className='group-data-[collapsible=icon]:[scrollbar-color:auto] group-data-[collapsible=icon]:[scrollbar-width:auto]'>
         {GROUP_ORDER.map((group) => {
           const groupItems = allItems.filter((item) => item.group === group);
           if (groupItems.length === 0) return null;

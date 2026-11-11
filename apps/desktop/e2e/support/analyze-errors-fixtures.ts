@@ -59,8 +59,12 @@ export const assertAnalyzeErrorsNetwork = (
     (request) =>
       request.method === "POST" && request.url.includes(ANALYSE_PATH),
   );
-  const statuses = lookups.map((request) => request.responseStatus);
-  if (statuses.length !== 2 || statuses[0] !== 503 || statuses[1] !== 200)
+  // Lookups overlap, so the journal (by arrival) needn't match the order the
+  // sequence answered them in.
+  const statuses = lookups
+    .map((request) => request.responseStatus ?? 0)
+    .sort((a, b) => a - b);
+  if (statuses.length !== 2 || statuses[0] !== 200 || statuses[1] !== 503)
     throw new Error(
       `Expected one failed and one empty lookup, got ${JSON.stringify(statuses)}`,
     );

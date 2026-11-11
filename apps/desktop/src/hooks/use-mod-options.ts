@@ -6,9 +6,10 @@ import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Channel, invoke } from "@tauri-apps/api/core";
 import type { TFunction } from "i18next";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { modDownloadsQueryOptions } from "@/hooks/use-mod-downloads";
+import useUninstall from "@/hooks/use-uninstall";
 import { getErrorMessage } from "@/lib/errors";
 import { createLogger } from "@/lib/logger";
 import { isLocalMod } from "@/lib/mods/installed-helpers";
@@ -487,6 +488,8 @@ export const useModOptions = (mod: LocalMod | null) => {
 
   const archiveNames = downloads.map((d) => d.name);
   const [progress, setProgress] = useState<ModOptionsProgress | null>(null);
+  // isPending lags a render; anything sent before then would use stale VPKs.
+  const isSubmittingRef = useRef(false);
 
   const applyMutation = useMutation<
     AppliedArchiveSelection,
@@ -494,7 +497,10 @@ export const useModOptions = (mod: LocalMod | null) => {
     ApplyUnifiedPayload
   >({
     meta: { skipGlobalErrorHandler: true },
-    onSettled: () => setProgress(null),
+    onSettled: () => {
+      isSubmittingRef.current = false;
+      setProgress(null);
+    },
     mutationFn: async (payload) => {
       if (!mod) {
         throw new ValidationError("No mod selected");
@@ -599,7 +605,32 @@ export const useModOptions = (mod: LocalMod | null) => {
       logger.withError(error).error("Failed to apply per-file selection");
       toast.error(getErrorMessage(error));
     },
+    onSettled: () => {
+      isSubmittingRef.current = false;
+    },
   });
+
+  const { uninstall } = useUninstall();
+  // Keeps the stored selection, so re-enabling restores the same files.
+  const disableMutation = useMutation<boolean, Error, "variants" | "files">({
+    // Local-only, so it must not pause offline.
+    networkMode: "always",
+    mutationFn: async () => {
+      if (!mod) {
+        throw new ValidationError("No mod selected");
+      }
+      return uninstall(mod, false);
+    },
+    onSuccess: (disabled) => {
+      if (disabled) setIsOpen(false);
+    },
+    onSettled: () => {
+      isSubmittingRef.current = false;
+    },
+  });
+  const disablingFrom = disableMutation.isPending
+    ? disableMutation.variables
+    : undefined;
 
   const open = () => setIsOpen(true);
   const close = () => setIsOpen(false);
@@ -615,6 +646,12 @@ export const useModOptions = (mod: LocalMod | null) => {
     deselectedArchives: ModDownloadItem[],
     allCheckedArchiveNames: string[],
   ) => {
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+    if (allCheckedArchiveNames.length === 0) {
+      disableMutation.mutate("variants");
+      return;
+    }
     applyMutation.mutate({
       selectedArchives,
       deselectedArchives,
@@ -622,16 +659,26 @@ export const useModOptions = (mod: LocalMod | null) => {
     });
   };
 
+  const applyFileSelection = (selectedNames: string[]) => {
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+    if (selectedNames.length === 0) {
+      disableMutation.mutate("files");
+      return;
+    }
+    fileSelectionMutation.mutate(selectedNames);
+  };
+
   return {
     isOpen,
     open,
     close,
     apply,
-    isSaving: applyMutation.isPending,
+    isSaving: applyMutation.isPending || disablingFrom === "variants",
     progress,
     cancelApply,
-    applyFileSelection: fileSelectionMutation.mutate,
-    isSavingFiles: fileSelectionMutation.isPending,
+    applyFileSelection,
+    isSavingFiles: fileSelectionMutation.isPending || disablingFrom === "files",
     showButton,
     fileTree,
     downloads,

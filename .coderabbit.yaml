@@ -19,7 +19,7 @@ reviews:
   auto_title_placeholder: "@coderabbitai"
   auto_title_instructions: >-
     Use conventional commit format: type(scope): description.
-    Types: feat, fix, docs, style, refactor, test, chore, ci.
+    Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert.
     Scopes: desktop, api, bot, www, docs, database, shared, ui, common, queue,
     logging, vpk-parser, kv-parser, dmodpkg, infra, ci, deps.
   review_status: true
@@ -277,7 +277,7 @@ reviews:
       mode: warning
       requirements: >-
         Must follow conventional commit format: type(scope): description.
-        Valid types: feat, fix, docs, style, refactor, test, chore, ci.
+        Valid types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert.
     description:
       mode: warning
     issue_assessment:

@@ -18,7 +18,7 @@ use super::game_check::GameRunningCheck;
 use super::gc_client::GcMatchClient;
 use super::model::{
   AuthContext, BACKFILL_QUOTA_RESERVE, FetchScope, MatchHistoryPage, MatchSyncConfig, QuotaKind,
-  SaltPayload, SyncProgress,
+  SaltPayload, SaltsCheck, SyncProgress,
 };
 use super::quota::QuotaWindow;
 use super::throttle::Throttle;
@@ -292,6 +292,48 @@ where
     self.persistence.persist_fetched(&st.fetched_order);
   }
 
+  // Ids deadlock-api already stores salts for: remembered like fetched ones, so no later
+  // pass checks them again.
+  fn remember_stored(&self, ids: &[u64], st: &mut RunState) {
+    if ids.is_empty() {
+      return;
+    }
+    st.fetched_set.extend(ids);
+    st.processed.extend(ids);
+    st.fetched_order.extend(ids);
+    st.progress.skipped += ids.len() as u32;
+    self.persistence.persist_fetched(&st.fetched_order);
+    self.persistence.emit_progress(&st.progress);
+  }
+
+  // Of the user's own history ids, the ones deadlock-api has no salts for, newest first:
+  // other players in the same match and other tools upload salts too. The flag is false if
+  // some ids were left unchecked (a check failed, the pass was cancelled, or the missing
+  // ones already fill the quota); they wait for a later pass.
+  async fn unstored_own_matches(
+    &self,
+    ids: Vec<u64>,
+    cancel: &AtomicBool,
+    st: &mut RunState,
+  ) -> (Vec<u64>, bool) {
+    let candidates: Vec<u64> = newest_first_fresh(ids, &st.processed)
+      .into_iter()
+      .filter(|id| !st.fetched_set.contains(id))
+      .collect();
+    let limit = st.quota.remaining(self.persistence.now());
+    // Without quota there's nothing to check for: `fetch_one` reports the quota as reached.
+    if candidates.is_empty() || limit == 0 {
+      return (candidates, true);
+    }
+    let SaltsCheck { missing, stored } = self
+      .backfill
+      .missing_salts(&candidates, limit, cancel)
+      .await;
+    let checked_all = missing.len() + stored.len() == candidates.len();
+    self.remember_stored(&stored, st);
+    (missing, checked_all)
+  }
+
   async fn process_ids(
     &self,
     ctx: &AuthContext,
@@ -412,12 +454,27 @@ where
       let Some(page) = self.own_history_page(&ctx, cursor).await? else {
         break;
       };
-      let fresh = newest_first_fresh(page.match_ids(), &st.processed);
+      let (fresh, checked_all) = self
+        .unstored_own_matches(page.match_ids(), cancel, st)
+        .await;
       if let LoopControl::Stop = self
         .process_ids(&ctx, fresh, false, Some(cancel), st)
         .await?
       {
         return Ok(());
+      }
+      // With the quota spent, ids left on this page or the next can't be fetched: report it
+      // instead of spending a history request.
+      let quota_spent = st.quota.remaining(self.persistence.now()) == 0;
+      if quota_spent && (!checked_all || page.next_cursor.is_some()) {
+        st.progress.quota_reached = true;
+        st.progress.quota_remaining = 0;
+        return Ok(());
+      }
+      // Later pages couldn't be checked either. The account's pending list needs no check,
+      // so it still gets fetched.
+      if !checked_all {
+        break;
       }
       match page.next_cursor {
         Some(next) => cursor = Some(next),
@@ -493,13 +550,15 @@ where
     let ctx = self.auth.recover()?;
     let account_id = ctx.account_id();
 
-    // Own matches = the newest GC history page ∪ deadlock-api's missing-for-account
-    // list, newest first. Both best-effort so one being down still syncs the other.
-    let mut own_ids = self
+    // Own matches = the newest GC history page's matches deadlock-api has no salts for ∪
+    // its missing-for-account list (pending, so without salts), newest first. Both
+    // best-effort so one being down still syncs the other.
+    let history = self
       .own_history_page(&ctx, None)
       .await?
       .map(|page| page.match_ids())
       .unwrap_or_default();
+    let (mut own_ids, _) = self.unstored_own_matches(history, cancel, st).await;
     let account_list = self
       .backfill
       .to_fetch(FetchScope::Account(account_id))
@@ -521,7 +580,7 @@ where
     let Some(budget) = self.backfill_budget(control, cancel, st) else {
       return Ok(());
     };
-    let result = match self.backfill.to_fetch(FetchScope::Global).await {
+    let result = match self.backfill.to_fetch(FetchScope::Global(budget)).await {
       Ok(global) => {
         let mut picks = newest_first_fresh(global, &st.processed);
         picks.truncate(budget);
