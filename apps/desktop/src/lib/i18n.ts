@@ -1,4 +1,5 @@
 /** biome-ignore-all lint/style/noExportedImports: Allowed for i18n */
+import { NotFoundError } from "@deadlock-mods/common/client-errors";
 import i18n, { type BackendModule } from "i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";
@@ -44,7 +45,12 @@ const localeBackend: BackendModule = {
   type: "backend",
   init: () => {},
   read: (language, _namespace, callback) => {
-    localeLoaders[language]().then(
+    const load = localeLoaders.get(language);
+    if (!load) {
+      callback(new NotFoundError(`No translations for ${language}`), false);
+      return;
+    }
+    load().then(
       (module) => callback(null, module.default),
       (error: Error) => callback(error, false),
     );
@@ -62,7 +68,7 @@ await i18n
     partialBundledLanguages: true,
     fallbackLng: "en",
     returnEmptyString: false,
-    supportedLngs: ["en", ...Object.keys(localeLoaders)],
+    supportedLngs: ["en", ...localeLoaders.keys()],
     interpolation: {
       escapeValue: false, // not needed for react as it escapes by default
     },
