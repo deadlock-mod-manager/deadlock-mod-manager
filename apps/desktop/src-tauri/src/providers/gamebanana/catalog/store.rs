@@ -622,6 +622,8 @@ impl Catalog {
       .pool
       .run(|connection| {
         connection.immediate_transaction::<_, Error, _>(|connection| {
+          // Empty the index first: the delete trigger scans it once per submission.
+          diesel::delete(super::schema::submission_fts::table).execute(connection)?;
           diesel::delete(submission::table).execute(connection)?;
           diesel::delete(super::schema::collection::table).execute(connection)?;
           diesel::delete(super::schema::update_cache::table).execute(connection)?;
