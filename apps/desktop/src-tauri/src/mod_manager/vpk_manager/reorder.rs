@@ -1,4 +1,5 @@
 use super::*;
+use std::collections::HashSet;
 
 impl VpkManager {
   /// Reorder enabled VPKs across shard directories.
@@ -69,7 +70,7 @@ impl VpkManager {
       )));
     }
 
-    let owned_vpks: std::collections::HashSet<(ShardIndex, String)> = ordered_mods
+    let owned_vpks: HashSet<(ShardIndex, String)> = ordered_mods
       .iter()
       .flat_map(|assignment| {
         assignment
@@ -78,11 +79,30 @@ impl VpkManager {
           .map(|vpk| (assignment.shard, Self::vpk_filename(vpk)))
       })
       .collect();
-    let orphan_sources = Self::find_orphaned_enabled_vpks(&base, &owned_vpks)?;
+    let on_disk = Self::enabled_vpks_on_disk(&base)?;
+    let mut orphan_sources: Vec<(ShardIndex, String)> = on_disk
+      .iter()
+      .filter(|vpk| !owned_vpks.contains(*vpk))
+      .cloned()
+      .collect();
+    // The name breaks ties such as `pak1` and `pak01`, which share a number.
+    orphan_sources.sort_by_key(|(shard_index, filename)| {
+      (
+        *shard_index,
+        Self::enabled_vpk_number(filename),
+        filename.clone(),
+      )
+    });
     Self::validate_reorder_capacity(ordered_mods, orphan_sources.len() as u32)?;
 
     let mut staging = VpkStaging::claim(&base, shard::REORDER_STAGING_DIR)?;
-    let result = Self::reorder_sharded_inner(ordered_mods, orphan_sources, &base, &mut staging);
+    let result = Self::reorder_sharded_inner(
+      ordered_mods,
+      orphan_sources,
+      &on_disk,
+      &base,
+      &mut staging,
+    );
 
     match result {
       Ok(outcome) => {
@@ -97,57 +117,66 @@ impl VpkManager {
     }
   }
 
-  /// Stage every enabled VPK (grouped by mod, orphans last), then place them
-  /// back sequentially across shards.
+  /// Give every enabled VPK its slot (grouped by mod, orphans last), then move
+  /// only the files whose slot changes. Each move is journaled and flushed to
+  /// disk, so leaving files that keep their slot alone is what keeps a small
+  /// change to a long load order cheap.
   fn reorder_sharded_inner(
     ordered_mods: &[ShardAssignment],
-    orphan_sources: Vec<(ShardIndex, PathBuf)>,
+    orphan_sources: Vec<(ShardIndex, String)>,
+    on_disk: &HashSet<(ShardIndex, String)>,
     base: &ProfileBase,
     staging: &mut VpkStaging,
   ) -> Result<ShardReorderOutcome, Error> {
-    let mut staged_by_mod: Vec<(String, Vec<PathBuf>)> = Vec::new();
-    let mut orphan_staged: Vec<((ShardIndex, String), PathBuf)> = Vec::new();
+    let mut slots = SlotCursor { shard: 1, used: 0 };
+    let mut moves: Vec<(PathBuf, PathBuf)> = Vec::new();
+    let mut placements = Vec::new();
 
     for assignment in ordered_mods {
-      let dir = base.shard_dir(assignment.shard);
-      let mut staged = Vec::new();
-      for vpk in &assignment.vpks {
-        staged.push(staging.stage(base, &dir.join(Self::vpk_filename(vpk)))?);
+      let (shard_used, names) = slots.next_group(assignment.vpks.len() as u32)?;
+      for (vpk, name) in assignment.vpks.iter().zip(&names) {
+        let filename = Self::vpk_filename(vpk);
+        // A case-insensitive disk resolves `PAK01_DIR.VPK` as `pak01_dir.vpk`,
+        // but slot allocation reads names case-sensitively, so a file stays
+        // only when its directory entry already has the exact slot name.
+        let stays = (assignment.shard, &filename) == (shard_used, name)
+          && on_disk.contains(&(shard_used, filename.clone()));
+        if !stays {
+          moves.push((
+            base.shard_dir(assignment.shard).join(filename),
+            base.shard_dir(shard_used).join(name),
+          ));
+        }
       }
-      staged_by_mod.push((assignment.mod_id.clone(), staged));
-    }
-
-    for (shard_index, source) in orphan_sources {
-      let filename = Self::vpk_filename(&source.to_string_lossy());
-      orphan_staged.push(((shard_index, filename), staging.stage(base, &source)?));
-    }
-
-    let mut placements = Vec::new();
-    let mut current_shard = 1u32;
-    let mut used = 0u32;
-
-    for (mod_id, staged) in &staged_by_mod {
-      let (shard_used, names) =
-        Self::place_staged_group(base, staging, &mut current_shard, &mut used, staged)?;
       placements.push(ShardPlacement {
-        mod_id: mod_id.clone(),
+        mod_id: assignment.mod_id.clone(),
         shard: shard_used,
         vpks: names,
       });
     }
 
     let mut orphan_renames = BTreeMap::new();
-    for (origin, staged) in &orphan_staged {
-      let (shard_used, names) = Self::place_staged_group(
-        base,
-        staging,
-        &mut current_shard,
-        &mut used,
-        std::slice::from_ref(staged),
-      )?;
-      if let Some(new_name) = names.into_iter().next() {
-        orphan_renames.insert(origin.clone(), (shard_used, new_name));
+    for (shard_index, filename) in orphan_sources {
+      let (shard_used, mut names) = slots.next_group(1)?;
+      let new_name = names.remove(0);
+      if (shard_index, &filename) != (shard_used, &new_name) {
+        moves.push((
+          base.shard_dir(shard_index).join(&filename),
+          base.shard_dir(shard_used).join(&new_name),
+        ));
       }
+      orphan_renames.insert((shard_index, filename), (shard_used, new_name));
+    }
+
+    // Park every mover before placing any, so a destination another mover
+    // still occupies is free by the time it is filled. A file that keeps its
+    // slot is never a destination, because no two files share a slot.
+    let mut staged = Vec::with_capacity(moves.len());
+    for (source, _) in &moves {
+      staged.push(staging.stage(base, source)?);
+    }
+    for (staged_vpk, (_, destination)) in staged.iter().zip(&moves) {
+      staging.place(staged_vpk, destination)?;
     }
 
     Ok(ShardReorderOutcome {
@@ -156,73 +185,22 @@ impl VpkManager {
     })
   }
 
-  /// Move a group of staged files into the current shard, opening a new shard
-  /// first if the group would overflow `SHARD_CAPACITY`. The whole group always
-  /// lands in one shard so a mod's VPKs stay together. Returns the shard used
-  /// and the new pak filenames.
-  fn place_staged_group(
-    base: &ProfileBase,
-    staging: &mut VpkStaging,
-    current_shard: &mut u32,
-    used: &mut u32,
-    staged: &[PathBuf],
-  ) -> Result<(ShardIndex, Vec<String>), Error> {
-    let count = staged.len() as u32;
-    if count > 0 && *used + count > shard::SHARD_CAPACITY {
-      *current_shard += 1;
-      *used = 0;
-      if *current_shard > shard::MAX_SHARDS {
-        return Err(Error::ModInvalid(format!(
-          "Cannot enable this many VPK files: all {} addon shard folders are full ({} files each, ~{} total). Disable some mods first.",
-          shard::MAX_SHARDS,
-          shard::SHARD_CAPACITY,
-          shard::MAX_SHARDS * shard::SHARD_CAPACITY
-        )));
-      }
-    }
-    let dir = base.shard_dir(ShardIndex::new(*current_shard)?);
-    fs::create_dir_all(&dir)?;
-    let mut names = Vec::new();
-    for staged_vpk in staged {
-      *used += 1;
-      let new_name = naming::enabled_vpk_name(*used);
-      let destination = dir.join(&new_name);
-      staging.place(staged_vpk, &destination)?;
-      names.push(new_name);
-    }
-    Ok((ShardIndex::new(*current_shard)?, names))
-  }
-
-  fn find_orphaned_enabled_vpks(
-    base: &ProfileBase,
-    owned_vpks: &std::collections::HashSet<(ShardIndex, String)>,
-  ) -> Result<Vec<(ShardIndex, PathBuf)>, Error> {
-    let mut orphans = Vec::new();
+  /// Every enabled-named VPK file in the profile's shards, spelled exactly as
+  /// its directory entry is.
+  fn enabled_vpks_on_disk(base: &ProfileBase) -> Result<HashSet<(ShardIndex, String)>, Error> {
+    let mut vpks = HashSet::new();
     for (shard_index, dir) in base.existing_shards() {
       for entry in fs::read_dir(&dir)? {
         let path = entry?.path();
         let Some(filename) = path.file_name().and_then(|name| name.to_str()) else {
           continue;
         };
-        if path.is_file()
-          && Self::is_enabled_vpk_name(filename)
-          && !owned_vpks.contains(&(shard_index, filename.to_string()))
-        {
-          orphans.push((shard_index, path));
+        if Self::is_enabled_vpk_name(filename) && path.is_file() {
+          vpks.insert((shard_index, filename.to_string()));
         }
       }
     }
-    orphans.sort_by_key(|(shard_index, path)| {
-      (
-        *shard_index,
-        path
-          .file_name()
-          .and_then(|name| name.to_str())
-          .and_then(Self::enabled_vpk_number)
-          .unwrap_or(u32::MAX),
-      )
-    });
-    Ok(orphans)
+    Ok(vpks)
   }
 
   fn validate_reorder_capacity(
@@ -292,5 +270,35 @@ impl VpkManager {
         }
       })
       .collect()
+  }
+}
+
+/// Hands out `pak##_dir.vpk` slots in load order, opening the next shard when a
+/// group would overflow `SHARD_CAPACITY`. A group always lands in one shard so a
+/// mod's VPKs stay together.
+struct SlotCursor {
+  shard: u32,
+  used: u32,
+}
+
+impl SlotCursor {
+  fn next_group(&mut self, count: u32) -> Result<(ShardIndex, Vec<String>), Error> {
+    if count > 0 && self.used + count > shard::SHARD_CAPACITY {
+      self.shard += 1;
+      self.used = 0;
+      if self.shard > shard::MAX_SHARDS {
+        return Err(Error::ModInvalid(format!(
+          "Cannot enable this many VPK files: all {} addon shard folders are full ({} files each, ~{} total). Disable some mods first.",
+          shard::MAX_SHARDS,
+          shard::SHARD_CAPACITY,
+          shard::MAX_SHARDS * shard::SHARD_CAPACITY
+        )));
+      }
+    }
+    let names = (self.used + 1..=self.used + count)
+      .map(naming::enabled_vpk_name)
+      .collect();
+    self.used += count;
+    Ok((ShardIndex::new(self.shard)?, names))
   }
 }
