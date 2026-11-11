@@ -1,5 +1,11 @@
 # @deadlock-mods/hero-parser
 
+## 1.1.3
+
+### Patch Changes
+
+- e5d22b1: Recognize texture-only hero skins and preview them on the full character
+
 ## 1.1.2
 
 ### Patch Changes

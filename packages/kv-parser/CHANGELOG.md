@@ -1,5 +1,15 @@
 # @deadlock-mods/kv-parser
 
+## 0.4.0
+
+### Minor Changes
+
+- 4b641d9: Refuse to edit malformed game config files instead of rewriting them
+
+### Patch Changes
+
+- 4b641d9: Keep custom game search paths when launching or disabling mods
+
 ## 0.3.2
 
 ### Patch Changes

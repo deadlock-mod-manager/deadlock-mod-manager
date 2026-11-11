@@ -48,6 +48,11 @@ export const Footer = () => {
                 to='/changelog'>
                 {t("footer.links.changelog")}
               </Link>
+              <Link
+                className='text-sm opacity-60 hover:opacity-100 transition-opacity'
+                to='/v2'>
+                {t("footer.links.v2")}
+              </Link>
               <a
                 className='text-sm opacity-60 hover:opacity-100 transition-opacity'
                 href={COMMISSIONS_URL}

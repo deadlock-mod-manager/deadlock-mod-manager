@@ -1,5 +1,19 @@
 # web
 
+## 0.7.0
+
+### Minor Changes
+
+- 072b9fe: Publish stable hero and content-type IDs for mod sources at /v1/taxonomy.json
+
+### Patch Changes
+
+- Updated dependencies [0a05843]
+- Updated dependencies [072b9fe]
+- Updated dependencies [9fab2e1]
+  - @deadlock-mods/shared@2.6.0
+  - @deadlock-mods/crosshair@0.2.10
+
 ## 0.6.5
 
 ### Patch Changes

@@ -30,6 +30,7 @@ import { cn } from "@deadlock-mods/ui/lib/utils";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import type { ConflictGroup } from "@/lib/mods/conflicts";
+import { getModCoverImage } from "@/lib/mods/mod-images";
 import type { ConflictIgnoreAction } from "@/types/generated/ConflictIgnoreAction";
 import type { ConflictSeverity } from "@/types/generated/ConflictSeverity";
 import type { LocalMod } from "@/types/mods";
@@ -73,6 +74,7 @@ const ProviderRow = ({
 }) => {
   const { t } = useTranslation();
   const isUsed = position === 0;
+  const cover = mod && getModCoverImage(mod);
   return (
     <li
       className='flex items-center gap-3 py-1.5'
@@ -87,11 +89,13 @@ const ProviderRow = ({
         title={name}
         to={`/mods/${modId}`}>
         <div className='h-7 w-7 shrink-0 overflow-hidden rounded bg-secondary'>
-          {mod?.images?.[0] && (
+          {cover && (
             <img
               alt=''
               className='h-full w-full object-cover'
-              src={mod.images[0]}
+              decoding='async'
+              loading='lazy'
+              src={cover}
             />
           )}
         </div>

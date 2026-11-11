@@ -95,6 +95,39 @@
         # Development libraries for linking (reuse tauriLibraries)
         libraries = tauriLibraries;
 
+        # The nightly's store path follows its source. Leave out repository docs
+        # and maintenance files the build doesn't read, so a commit touching only
+        # those can reuse a nightly CI already pushed to Cachix. Keep the whole
+        # pnpm workspace, lockfiles and scripts: the dependency hashes depend on them.
+        nightlySrc = pkgs.lib.fileset.toSource {
+          root = ./.;
+          fileset = pkgs.lib.fileset.difference ./. (
+            pkgs.lib.fileset.unions (
+              map pkgs.lib.fileset.maybeMissing [
+                ./.agents
+                ./.changeset
+                ./.coderabbit.yaml
+                ./.cursor
+                ./.dockerignore
+                ./.github
+                ./distribution
+                ./docs
+                ./infrastructure
+                ./rfcs
+                ./skills-lock.json
+                ./AGENTS.md
+                ./AI_POLICY.md
+                ./CLAUDE.md
+                ./CODE_OF_CONDUCT.md
+                ./CONTRIBUTING.md
+                ./README.md
+                ./SECURITY.md
+                ./THIRD-PARTY-NOTICES.md
+              ]
+            )
+          );
+        };
+
       in
       {
         # Packages only available on Linux (Tauri with GTK/WebKit)
@@ -102,7 +135,7 @@
           # Desktop application (main mod manager)
           # cargoHash is managed by CI workflow
           default = pkgs.callPackage ./package.nix {
-            src = self;
+            src = nightlySrc;
           };
 
           nightly = self.packages.${system}.default;

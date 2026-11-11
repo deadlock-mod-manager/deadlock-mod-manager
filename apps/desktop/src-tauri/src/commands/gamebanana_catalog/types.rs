@@ -49,6 +49,8 @@ pub struct CatalogModDto {
   pub updated_at: Option<i64>,
   /// Set when GameBanana staff withheld the submission; it can't be downloaded until then.
   pub withheld: Option<WithholdNoticeDto>,
+  /// The author's GameBanana HTML note on an obsolete submission, when they wrote one.
+  pub obsolescence_notice: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
@@ -383,6 +385,7 @@ impl CatalogModDto {
       created_at: None,
       updated_at: None,
       withheld: None,
+      obsolescence_notice: None,
     })
   }
 
@@ -460,6 +463,10 @@ impl CatalogModDto {
       withheld: profile
         .is_withheld
         .then(|| WithholdNoticeDto::new(profile.withhold_notice.as_ref())),
+      obsolescence_notice: profile
+        .obsolescence_notice
+        .clone()
+        .filter(|notice| profile.is_obsolete && !notice.trim().is_empty()),
     }
   }
 }

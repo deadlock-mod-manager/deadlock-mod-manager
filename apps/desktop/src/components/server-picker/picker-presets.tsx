@@ -3,6 +3,7 @@ import { Input } from "@deadlock-mods/ui/components/input";
 import { PlusIcon, XIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { PlayedPresetChip } from "@/components/server-picker/played-preset-chip";
 import { PresetChip } from "@/components/server-picker/preset-chip";
 import { countPickerChanges } from "@/lib/server-picker";
 import type { ServerPickerPreset } from "@/types/generated/ServerPickerPreset";
@@ -11,6 +12,8 @@ interface PickerPresetsProps {
   presets: ServerPickerPreset[];
   blockedLocations: string[];
   appliedLocations: string[] | null;
+  /** Blocks every location without recent matches; null without history. */
+  playedPreset: string[] | null;
   disabled: boolean;
   loadDisabled: boolean;
   saving: boolean;
@@ -23,6 +26,7 @@ export const PickerPresets = ({
   presets,
   blockedLocations,
   appliedLocations,
+  playedPreset,
   disabled,
   loadDisabled,
   saving,
@@ -45,6 +49,14 @@ export const PickerPresets = ({
       <span className='mr-1 text-xs font-medium text-muted-foreground'>
         {t("serverPicker.presets")}
       </span>
+      {playedPreset && (
+        <PlayedPresetChip
+          blockedLocations={playedPreset}
+          selected={countPickerChanges(playedPreset, blockedLocations) === 0}
+          disabled={disabled || loadDisabled}
+          onLoad={() => onLoad(playedPreset)}
+        />
+      )}
       {presets.map((preset) => {
         const selected =
           countPickerChanges(preset.blockedLocations, blockedLocations) === 0;

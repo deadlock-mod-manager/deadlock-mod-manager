@@ -51,7 +51,7 @@
   },
   "match": {
     "title": "Найденный мод",
-    "heading": "",
+    "heading": "GameBanana {{type}} {{id}}",
     "file": "Файл {{id}}",
     "certainty": "Совпадение {{certainty}}% ({{type}})",
     "view": "Открыть на GameBanana"

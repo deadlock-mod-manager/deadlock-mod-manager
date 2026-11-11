@@ -1,5 +1,92 @@
 # desktop
 
+## 2.4.0
+
+### Minor Changes
+
+- 5d38b7c: Show recent match counts in the server picker and add a Where I play preset
+- cba597f: Show why GameBanana staff withheld a mod on its page instead of an error
+- b8f0b24: Let you turn match data sharing off for individual Steam accounts
+- 34fd9ca: Improve 3D previews of animated materials and particle effects
+- 02a1482: Add the Le Deadlock French theme with a custom crest and tax-themed jokes
+- f173624: Check HUD mods against the game's current layouts and show related log errors
+- e5d22b1: Recognize texture-only hero skins and preview them on the full character
+- cd622cb: Add category trees with linked hero filters across Mods, Sounds, Maps, and WiPs
+- 0a05843: Let library groups turn on one random mod each launch
+- c203203: Add website links that add a mod source or install one of its mods
+- e6dd365: Show video.txt settings changed in game and let you keep a config's video.txt
+- e5d22b1: Show rendered previews as covers for local mods in the library and mod details
+- 2a5c1fc: Add contextual tips for new mod, performance, and matchmaking features
+- 8774679: Add the built-in Deadlock Mod Manager source and review configs bundled in packs
+- 97c0754: Add a Discord Rich Presence setting to hide your party size
+- 9068f5f: Add a standalone server picker to manage Deadlock matchmaking relay blocks
+- 6cf08ef: Remove hero sections like hats or capes from the game in the Mod Foundry
+- ef8af43: Add custom mod sources you can browse and install from alongside GameBanana
+- e5d22b1: Improve previews of partial mods and compare them with the original model
+- 0544a01: Write performance configs in full, including their video.txt, with a backup
+- 3e8248a: Add a Party tab to Stats that rates every lineup your party can get in queue
+- 1733766: Redesign Hero Skins with hero banners, sound rows, and a shuffle pool mode
+- 9fab2e1: Show YouTube and Vimeo videos from GameBanana on mod pages
+
+### Patch Changes
+
+- e02703c: Fix false crash reports, Live tab, and Stop for the running game on Flatpak
+- 014a0bb: Ask before Analyze re-adds leftover files and offer to remove ones it can't place
+- fdd81c8: Stop calling a fixed mod working when another mod blocks its repair
+- fdd81c8: Keep an imported profile's file picks when you share it again
+- 9a070af: Fix launching Deadlock on NixOS
+- b692e28: Restore GameBanana variant selection and downloads from the 3D preview tab
+- 8b0df1d: Show which mods failed or were skipped when a bulk disable or delete stops early
+- 4b641d9: Keep custom game search paths when launching or disabling mods
+- 6b0dfba: Fix restored or imported profiles keeping the variant a mod had before
+- fdd81c8: Fall back to other GameBanana servers with Default download routing
+- 0c411a0: Rebuild fixed mods' repairs after Deadlock closes if a mod changed while it ran
+- 6ab16d4: Recheck a mod's health after it updates instead of waiting for a restart
+- 304c1dd: Show obsolete GameBanana mods with a status row and the author's note
+- 933a8bc: Fix overlapping layout on Hero Skins for heroes without skins
+- ad912c0: Stop Analyze from saying it added recognized mods to your library when it didn't
+- 55932c9: Keep a mod's compatibility fix choice when Analyze identifies it on GameBanana
+- fdd81c8: List the mods a profile import or backup restore couldn't install
+- fdd81c8: Stop Reinstall when the old mod files can't be removed
+- fdd81c8: Keep compatibility review choices when other mods change
+- 24cc0e2: Stop a cancelled download attempt from marking its retry as failed
+- 43c7a15: Fix GameBanana links in Analyze results for local mods, sounds, and WiPs
+- 1366dda: Keep other mods' repairs loaded after switching one mod to its original files
+- ab1963c: Let Restore bring back files ignored from only part of a conflict
+- fdd81c8: List addons Analyze couldn't check as errors instead of unknown mods
+- fdd81c8: Fix mods not installing when restoring a cloud backup into the Default profile
+- 66424d2: List sound-only hero mods under Hero Sounds instead of with that hero's skins
+- 6bdb297: Stop featuring mods GameBanana staff have withheld or hidden on the dashboard
+- de7727d: Show which files blocked a mod removal and stop scans undoing your mod order
+- 274cc1e: Animate 3D previews of skins with thousands of cloth bones
+- 75e4fe8: Explain nightly and rollback in Settings, and stop offering older nightlies
+- 90756e3: Stop treating a Deadlock process stuck while closing as a running game
+- 78b92e1: Fix shared mods getting stuck extracting when importing a profile
+- f173624: Show clearer compatibility reports with copyable diagnostics
+- 5180b3f: Remove the profile's other mods when a backup restore replaces it
+- 4b641d9: Keep selected Stats tabs visible when adding tabs or resizing the window
+- 08c971a: Re-scan after Clear Mods State now restores your mods instead of unknown files
+- fdd81c8: Show a disabled mod's saved compatibility fix as fixed
+- ac42377: Fix audio mod previews playing no sound in the Flatpak build
+- 18ff7f2: Keep mods a launch repair reinstalled when you choose Disable and launch
+- cae8f28: Rebuild outdated compatibility fixes automatically so fixed mods stay fixed
+- 4b641d9: Back up game settings before a restore or reset changes them
+- e53308e: Fix inconsistent mod lists saved while switching profiles
+- 7c5922a: Use the Download routing setting for updates, profile imports and file changes
+- 03c0d62: Keep the last match on the Live tab until you start searching for the next one
+- 6f49788: Keep Foundry exports and files found on disk out of cloud backups
+- 208df74: Remove withheld GameBanana mods from the store and stop their error toasts
+- 9a5de5f: Stop reinstalling a mod from re-enabling variants disabled in Manage files
+- 4b641d9: Refuse to edit malformed game config files instead of rewriting them
+- 42b7203: Show files already added from Analyze as in your library and stop duplicate adds
+- Updated dependencies [e5d22b1]
+- Updated dependencies [0a05843]
+- Updated dependencies [072b9fe]
+- Updated dependencies [9fab2e1]
+  - @deadlock-mods/hero-parser@1.1.3
+  - @deadlock-mods/shared@2.6.0
+  - @deadlock-mods/crosshair@0.2.10
+
 ## 2.3.0
 
 ### Minor Changes

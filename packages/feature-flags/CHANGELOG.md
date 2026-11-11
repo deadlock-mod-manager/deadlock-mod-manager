@@ -1,5 +1,12 @@
 # @deadlock-mods/feature-flags
 
+## 0.2.14
+
+### Patch Changes
+
+- Updated dependencies [9fab2e1]
+  - @deadlock-mods/database@2.6.1
+
 ## 0.2.13
 
 ### Patch Changes
