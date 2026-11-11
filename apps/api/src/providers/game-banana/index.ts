@@ -199,7 +199,15 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         `HTTP ${response.status} fetching ${modType} ${remoteId}`,
       );
     }
-    const data = (await response.json()) as D | null;
+    const data = (await response.json()) as
+      | (D & { _idRow?: number; _sErrorCode?: string; _sErrorMessage?: string })
+      | null;
+    // GameBanana sometimes answers 200 with an error envelope instead of a profile
+    if (data && typeof data._idRow !== "number") {
+      throw new ProviderError(
+        `Invalid ${modType} ${remoteId} profile: ${data._sErrorCode ?? "missing _idRow"}${data._sErrorMessage ? ` (${data._sErrorMessage})` : ""}`,
+      );
+    }
     return data;
   }
 
