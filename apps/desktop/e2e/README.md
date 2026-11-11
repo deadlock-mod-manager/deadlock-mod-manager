@@ -65,6 +65,8 @@ current. Both run in the Windows and Linux E2E matrices with no host update.
 
 `deep-link-other-file` installs `base.zip` from a GameBanana 1-click link, then sends a link for the same mod's `effects.zip`. The second link must add `effects.vpk` beside `base.vpk` in the author's order, and a repeat link for `base.zip` must only report it as already installed. Each archive downloads exactly once. E2E builds skip the OS deep-link plugin, so the case emits `deep-link-received` through Tauri's event IPC, the event the Rust handler emits after validating a link.
 
+`deep-link-enabled` installs `base.zip` from a GameBanana 1-click link, then opens Find a broken mod, which must offer the mod, ticked. It lists only the mods the profile counts as enabled, so it fails when a 1-click install leaves the mod out of its profile.
+
 The `performance` family starts from Valve's stock `gameinfo.gi` (build 2026-09-29) and a player `video.txt` in the game folder's `cfg`, with CRLF line endings, a header and a setting the presets overwrite. The `gameinfo.gi` cases check one convar the first preset sets and the stock file doesn't:
 
 - `perf-gameinfo-resync`: after a game update writes Valve's file back with a line the player added by hand, window focus writes the config back and the hand-added line stays.

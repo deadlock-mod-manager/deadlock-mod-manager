@@ -19,6 +19,9 @@ const useInstall = () => {
   const { mutateAsync: installWithConflictResolution } =
     useModelConflictInstall();
   const getActiveProfile = usePersistedStore((s) => s.getActiveProfile);
+  const setModEnabledInProfile = usePersistedStore(
+    (s) => s.setModEnabledInProfile,
+  );
 
   const install: InstallFunction = useCallback(
     async (mod, originalOptions) => {
@@ -42,6 +45,11 @@ const useInstall = () => {
           return null;
         }
         await syncInstalledVpksFromManifest(profileFolder);
+        // The files went into this profile's folder, so it counts the mod as
+        // enabled even if the user has switched profiles since.
+        if (activeProfile) {
+          setModEnabledInProfile(activeProfile.id, mod.remoteId, true);
+        }
 
         options.onComplete(mod, result);
 
@@ -56,7 +64,7 @@ const useInstall = () => {
         return null;
       }
     },
-    [getActiveProfile, installWithConflictResolution],
+    [getActiveProfile, installWithConflictResolution, setModEnabledInProfile],
   );
 
   return { install };
