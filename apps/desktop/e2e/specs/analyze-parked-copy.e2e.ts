@@ -2,11 +2,11 @@ import assert from "node:assert/strict";
 import { copyFile, readFile } from "node:fs/promises";
 import path from "node:path";
 import { $, browser } from "@wdio/globals";
-import { z } from "zod";
 import { startApplication } from "../support/application";
 import { closeApplication } from "../support/application-exit";
 import { PARKED, PARKED_MOD } from "../support/analyze-parked-copy-fixtures";
 import { step } from "../support/evidence";
+import { filesystemManifestSchema } from "../support/filesystem-oracle";
 import {
   badgeStatus,
   fixAllInDialog,
@@ -27,25 +27,14 @@ const profileDirectory = async (world: string) => {
 };
 
 const readEntry = async (world: string) =>
-  z
-    .object({
-      mods: z.record(
-        z.string(),
-        z.object({
-          enabled: z.boolean(),
-          currentVpks: z.array(z.string()),
-          disabledVpks: z.array(z.string()),
-        }),
+  filesystemManifestSchema.parse(
+    JSON.parse(
+      await readFile(
+        path.join(await profileDirectory(world), ".dmm.json"),
+        "utf8",
       ),
-    })
-    .parse(
-      JSON.parse(
-        await readFile(
-          path.join(await profileDirectory(world), ".dmm.json"),
-          "utf8",
-        ),
-      ),
-    ).mods[PARKED_MOD];
+    ),
+  ).mods[PARKED_MOD];
 
 const observe = async (world: string) => {
   const repairs = await readRepairState(world, PARKED.folder);
