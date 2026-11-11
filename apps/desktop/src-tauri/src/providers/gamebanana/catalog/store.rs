@@ -1508,4 +1508,66 @@ mod tests {
     );
     assert_eq!(stored.likes, 4);
   }
+
+  #[tokio::test]
+  async fn upserts_reindex_search_only_when_its_text_changes() {
+    let directory = tempdir().unwrap();
+    let catalog = Catalog::open(directory.path().join("catalog.sqlite3"), 1)
+      .await
+      .unwrap();
+    let entry = record("1", "Pink Drifter", "snapshot-a");
+    catalog
+      .upsert_records(vec![entry.clone(), record("2", "Blue Haze", "snapshot-a")])
+      .await
+      .unwrap();
+    // Rewriting an index entry deletes it and inserts it again under a new rowid.
+    let indexed = fts_rowid(&catalog, "1").await;
+
+    // Every sync upserts the index page again: unhydrated, with no description.
+    let mut listed = entry.clone();
+    listed.is_hydrated = false;
+    listed.description = String::new();
+    listed.last_seen_snapshot = Some("snapshot-b".to_string());
+    catalog.upsert_records(vec![listed.clone()]).await.unwrap();
+    assert_eq!(fts_rowid(&catalog, "1").await, indexed);
+
+    let mut renamed = listed.clone();
+    renamed.name = "Crimson Drifter".to_string();
+    let mut reauthored = renamed.clone();
+    reauthored.author = "Hazel".to_string();
+    let mut redescribed = reauthored.clone();
+    redescribed.is_hydrated = true;
+    redescribed.description = "glowing trail".to_string();
+    for (changed, found, gone) in [
+      (renamed, "Crimson", "Pink"),
+      (reauthored, "Hazel", "DMM"),
+      (redescribed, "glowing", "searchable"),
+    ] {
+      catalog.upsert_records(vec![changed]).await.unwrap();
+      assert_eq!(catalog.search_slugs(found.to_string()).await.unwrap(), ["1"]);
+      assert!(
+        !catalog
+          .search_slugs(gone.to_string())
+          .await
+          .unwrap()
+          .contains(&"1".to_string())
+      );
+    }
+  }
+
+  async fn fts_rowid(catalog: &Catalog, submission_id: &'static str) -> i64 {
+    use crate::providers::gamebanana::catalog::schema::submission_fts;
+    use diesel::prelude::*;
+    catalog
+      .pool
+      .run(move |connection| {
+        submission_fts::table
+          .filter(submission_fts::submission_id.eq(submission_id))
+          .select(submission_fts::rowid)
+          .first::<i64>(connection)
+          .map_err(super::Error::from)
+      })
+      .await
+      .unwrap()
+  }
 }
