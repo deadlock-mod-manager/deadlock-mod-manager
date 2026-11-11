@@ -92,6 +92,17 @@ fn list_7z(archive_path: &Path) -> Result<Option<Vec<ListedEntry>>, Error> {
     return Ok(None);
   }
 
+  // A readable index can still front encrypted data, which extraction has no
+  // password for, so the extraction reports that failure as before.
+  let is_encrypted = archive
+    .blocks
+    .iter()
+    .flat_map(|block| &block.coders)
+    .any(|coder| coder.encoder_method_id() == sevenz_rust2::EncoderMethod::ID_AES256_SHA256);
+  if is_encrypted {
+    return Ok(None);
+  }
+
   Ok(Some(
     archive
       .files

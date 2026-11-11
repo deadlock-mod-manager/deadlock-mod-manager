@@ -646,6 +646,34 @@ mod tests {
     assert_tree_matches_extraction(mod_dir.path(), "mod.7z");
   }
 
+  /// The index is readable but the data needs a password, which extraction
+  /// doesn't have.
+  #[test]
+  fn seven_zip_with_encrypted_data_fails_as_extraction_does() {
+    let mod_dir = tempfile::tempdir().unwrap();
+    let archive_path = mod_dir.path().join("mod.7z");
+    let mut writer = sevenz_rust2::ArchiveWriter::create(&archive_path).unwrap();
+    writer.set_content_methods(vec![
+      sevenz_rust2::encoder_options::AesEncoderOptions::new("secret".into()).into(),
+      sevenz_rust2::EncoderMethod::LZMA2.into(),
+    ]);
+    writer.set_encrypt_header(false);
+    writer
+      .push_archive_entry(
+        sevenz_rust2::ArchiveEntry::new_file("pak01_dir.vpk"),
+        Some(std::io::Cursor::new(b"vpk".to_vec())),
+      )
+      .unwrap();
+    writer.finish().unwrap();
+
+    assert!(!is_listed(&archive_path));
+    let result = mod_file_tree(mod_dir.path());
+    assert!(
+      matches!(result, Err(Error::ModExtractionFailed(_))),
+      "expected the extraction to fail, got {result:?}"
+    );
+  }
+
   /// A hand-built RAR 4 archive with stored entries: a `Variant B` directory,
   /// `pak01_dir.vpk`, `Variant B\pak01_dir.vpk`, `readme.txt` and
   /// `extras\pak02_dir.vpk`.
