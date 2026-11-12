@@ -44,7 +44,7 @@ pub async fn query_gamebanana_catalog(
 ) -> Result<CatalogPageDto, Error> {
   let backend = state.backend()?;
   let stale = catalog_is_stale(&backend.catalog).await?;
-  query.excluded_slugs = policy.unavailable_slugs()?;
+  policy.scope_query(&mut query)?;
   let mut page = CatalogPageDto::from_page(backend.catalog.query(query).await?, stale)?;
   policy.apply_to_mods(&mut page.items)?;
   Ok(page)
@@ -57,7 +57,7 @@ pub async fn get_gamebanana_catalog_facets(
   mut query: CatalogQuery,
 ) -> Result<Vec<CatalogFacet>, Error> {
   let backend = state.backend()?;
-  query.excluded_slugs = policy.unavailable_slugs()?;
+  policy.scope_query(&mut query)?;
   backend.catalog.facets(query).await
 }
 
@@ -68,7 +68,7 @@ pub async fn search_gamebanana_catalog_authors(
   mut query: CatalogQuery,
 ) -> Result<Vec<CatalogAuthor>, Error> {
   let backend = state.backend()?;
-  query.excluded_slugs = policy.unavailable_slugs()?;
+  policy.scope_query(&mut query)?;
   backend.catalog.authors(query).await
 }
 

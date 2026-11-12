@@ -1,0 +1,116 @@
+[
+  {
+    "submission": 634638,
+    "name": "Mindscape",
+    "mapName": "ns_mindscape",
+    "description": "Mindscape is a Deadlock no-stam map similar to that of a KZ map in CS. This map is incredibly difficult so don't feel discouraged if you can't make many of the jumps.<br><br>f7 to open the console and type map ns_mindscape <br>select any hero"
+  },
+  {
+    "submission": 636058,
+    "name": "AIO Deadlock Movement Practice (beta)",
+    "mapName": "queue",
+    "description": "queue friendly map, no additional restrictions.<br><br>distances are displayed on the landing block<br><br>map queue<br><br>leave suggestions"
+  },
+  {
+    "submission": 658096,
+    "name": "LOCK-FORTRESS: COAL TOWN",
+    "mapName": null,
+    "description": "To accommodate Deadlock's gameplay, this map has:</b><br><ul><li>2 ziplines, which form one large lane"
+  },
+  {
+    "submission": 660392,
+    "name": "Street ball",
+    "mapName": "streetball",
+    "description": "<h1>Competitive map</h1>Kill the enemy team and score 4 goals against them. Stay in the center of the field to collect souls<br><br>Recommended to play with a maximum of 3 players per team. Torment Pulse interacts with the ball, so agree before the game whether everyone buys it or no one does.<br><br><h1>How to host and join</h1>1) Enable Dev Console in Settings<br>2.1) Join the map using the command: <u>map streetball</u>"
+  },
+  {
+    "submission": 660852,
+    "name": "NightLock",
+    "mapName": null,
+    "description": "Since the original map has a more night‑time view than before."
+  },
+  {
+    "submission": 669198,
+    "name": "Beginnings",
+    "mapName": null,
+    "description": "Beginnings is a movement map that features,<br>- No abilities<br>- Limited stamina at certain points<br>- A timer<br>- Checkpoints<br><br>Length: Medium<br>Difficulty: Intermediate<br><br>Supports Map List Mod"
+  },
+  {
+    "submission": 669521,
+    "name": "Jump Control",
+    "mapName": "jump_control",
+    "description": "In game, with console, load the map twice by typing \"<b>map jump_control</b>\"<br>- Select your hero."
+  },
+  {
+    "submission": 670124,
+    "name": "Green Screen Map",
+    "mapName": null,
+    "description": "A map that allows you to take videos/pictures on a green/blue/magenta screen!<br><br><b>!!! READ THIS !!!</b><br>This map DOES NOT have baked lights, meaning that if you have a gameinfo that disables real time lights, it will be pitch black!!!"
+  },
+  {
+    "submission": 672064,
+    "name": "Shiv-Kart",
+    "mapName": null,
+    "description": "to host the map in multiplayer fallow the above steps and when the host is ready type \"status\" into the console and give your steam id to your friend and they will type \"connect\" into the console fallowed by your steam id to connect to the map then run citadel_allow_duplicate_heroes so both of you can play shiv."
+  },
+  {
+    "submission": 676373,
+    "name": "VG Tower",
+    "mapName": "vg_tower1",
+    "description": "To play, type <code>map vg_tower1</code> in the console. <br><span class=\"RedColor\">Map should automati"
+  },
+  {
+    "submission": 688083,
+    "name": "Lost lobby | Parkour",
+    "mapName": "lost_lobby",
+    "description": "Load the map using the console command:</strong> <br><code data-start=\"169\" data-end=\"185\">map lost_lobby</code>"
+  },
+  {
+    "submission": 708855,
+    "name": "1v1_test revived",
+    "mapName": null,
+    "description": "This mod returns the old caldera 1v1_test map with some modifications<br><br>If the player is not spawning and the console is spammed with \"prediction time is less than sim time\" errors, try:<br><br>1. Reopening the map"
+  },
+  {
+    "submission": 710973,
+    "name": "Caldera_trooper revived",
+    "mapName": null,
+    "description": "Brings back the old caldera trooper map which was deleted back in may of 2024 to the new version of deadlock with some additions (such as the base guardians and the shatter)<br><br>If the player is not spawning and the console is spammed with \"prediction time is less than sim time\" errors, follow these steps:<br><br>1. Reopen the map"
+  },
+  {
+    "submission": 715655,
+    "name": "bb_bearpit",
+    "mapName": "dl_bearpit",
+    "description": "After loading into the map the host should type citadel_hero_testing_enabled true into your command console. Then reload the map by typing map_dl_bearpit."
+  },
+  {
+    "submission": 722538,
+    "name": "The DeCursed Apple",
+    "mapName": null,
+    "description": "These packages contain a replacement Midtown map archive, which accounts for their size. Other map-replacement addons can conflict"
+  },
+  {
+    "submission": 723869,
+    "name": "Basics 01",
+    "mapName": null,
+    "description": "Basics 01 is the first of the Basics map lineup, helping with the basics of movement. Not a tutorial, just a easy map.<br><br>Recommended to use Haze but any character should be able to finish the map.<br><br>Use my <a href=\"https://gamebanana.com/mods/667277\">Map List </a>mod to make it easier to play."
+  },
+  {
+    "submission": 729005,
+    "name": "Flat 16k by 16k",
+    "mapName": null,
+    "description": "Just a big flat map for your convenience"
+  },
+  {
+    "submission": 731689,
+    "name": "dl_bridge",
+    "mapName": "dl_1v1_b6",
+    "description": "As the map is still being updated, please use the command <span class=\"RedColor\">map dl_1v1_b6</span>"
+  },
+  {
+    "submission": 736994,
+    "name": "pkfr_cobbletowers",
+    "mapName": null,
+    "description": "Lil' ol map I made for Deadlock movement. \"pkfr\" stands for ParKour Fast Regen, reflecting how it's designed for one air jump, one air dash, etc. to always be available for each time you hop into the air.<br><br>Map has lots of wall jumps. Remember that when you air dash or air jump, your wall jump will be refreshed and you can get full height with it again. Many jumps in this map utilize this."
+  }
+]

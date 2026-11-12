@@ -19,13 +19,28 @@ static GAMEBANANA_MOD_URL: LazyLock<Regex> = LazyLock::new(|| {
   Regex::new(r"(?i)^https?://(?:www\.)?gamebanana\.com/mods/(\d+)")
     .expect("GameBanana mod URL regex must be valid")
 });
-static QUOTED_MAP: LazyLock<Regex> = LazyLock::new(|| {
-  Regex::new(r#"(?i)(?:["'`>]|&quot;)\s*map\s+([a-z][a-z0-9_]{2,})\b"#)
-    .expect("quoted map regex must be valid")
+// Block tags end a line, so "<br>map queue<br>" reads as a command on its own line while
+// "<br>Map has lots of jumps" stays prose.
+static BLOCK_TAG: LazyLock<Regex> = LazyLock::new(|| {
+  Regex::new(r"(?i)</?(?:br|p|li|ol|ul|div|h[1-6])\b[^>]*>").expect("block tag regex must be valid")
 });
-static BARE_MAP: LazyLock<Regex> = LazyLock::new(|| {
-  Regex::new(r"(?i)\bmap\s+([a-z][a-z0-9_]{2,})\b").expect("bare map regex must be valid")
+static INLINE_TAG: LazyLock<Regex> =
+  LazyLock::new(|| Regex::new(r"<[^>]*>").expect("inline tag regex must be valid"));
+// "map_" also matches, because authors write "map_dl_bearpit" for "map dl_bearpit".
+static MAP_COMMAND: LazyLock<Regex> = LazyLock::new(|| {
+  Regex::new(r"(?i)\bmap([^\S\n]+|_)([a-z][a-z0-9_]{2,})\b")
+    .expect("map command regex must be valid")
 });
+static QUOTED_PREFIX: LazyLock<Regex> =
+  LazyLock::new(|| Regex::new(r#"["'`‘’“”]\s*$"#).expect("quoted prefix regex must be valid"));
+static INSTRUCTION_PREFIX: LazyLock<Regex> = LazyLock::new(|| {
+  Regex::new(r"(?i)\b(?:type|typing|command|run)\b\W*(?:\w+\W+)?$")
+    .expect("instruction prefix regex must be valid")
+});
+static OWN_LINE_PREFIX: LazyLock<Regex> =
+  LazyLock::new(|| Regex::new(r"^[\W\d]*$").expect("own line prefix regex must be valid"));
+static OWN_LINE_SUFFIX: LazyLock<Regex> =
+  LazyLock::new(|| Regex::new(r"^\W*$").expect("own line suffix regex must be valid"));
 static URL_PATTERN: LazyLock<Regex> =
   LazyLock::new(|| Regex::new(r#"(?i)https?://[^\s"'<>]+"#).expect("URL regex must be valid"));
 
@@ -238,32 +253,60 @@ pub fn is_nsfw_visibility(initial_visibility: &str) -> bool {
   matches!(initial_visibility, "hide" | "warn")
 }
 
+fn description_to_text(description: &str) -> String {
+  let text = BLOCK_TAG.replace_all(description, "\n");
+  INLINE_TAG
+    .replace_all(&text, " ")
+    .replace("&quot;", "\"")
+    .replace("&#39;", "'")
+    .replace("&apos;", "'")
+    .replace("&nbsp;", " ")
+    .replace("&lt;", "<")
+    .replace("&gt;", ">")
+    .replace("&amp;", "&")
+}
+
+/// Finds the console map name in a GameBanana description. Every "map <name>" is a
+/// candidate. A candidate written as a command (quoted, after "type" or "command", or alone
+/// on its line) wins over one that only looks like a map identifier (has an underscore or
+/// digit). Prose such as "this map features" is neither, so it never matches. Keep in sync
+/// with `extractMapName` in the API; both run the shared `map-names.json` fixture.
 pub fn extract_map_name(description: &str) -> Option<String> {
-  if let Some(captures) = QUOTED_MAP.captures(description) {
-    return captures.get(1).map(|value| value.as_str().to_lowercase());
+  let text = description_to_text(description);
+  let mut identifier = None;
+
+  for captures in MAP_COMMAND.captures_iter(&text) {
+    let (Some(command), Some(separator), Some(name)) =
+      (captures.get(0), captures.get(1), captures.get(2))
+    else {
+      continue;
+    };
+    let name = name.as_str().to_lowercase();
+    if separator.as_str() == "_" && !name.contains('_') {
+      continue;
+    }
+
+    let line_start = text[..command.start()]
+      .rfind('\n')
+      .map_or(0, |index| index + 1);
+    let line_end = text[command.end()..]
+      .find('\n')
+      .map_or(text.len(), |index| command.end() + index);
+    let prefix = &text[line_start..command.start()];
+    let suffix = &text[command.end()..line_end];
+
+    let is_command = QUOTED_PREFIX.is_match(prefix)
+      || INSTRUCTION_PREFIX.is_match(prefix)
+      || (OWN_LINE_PREFIX.is_match(prefix) && OWN_LINE_SUFFIX.is_match(suffix));
+    if is_command {
+      return Some(name);
+    }
+    if identifier.is_none() && name.contains(|c: char| c == '_' || c.is_ascii_digit()) {
+      identifier = Some(name);
+    }
   }
 
-  let excluded = [
-    "features",
-    "includes",
-    "currently",
-    "loading",
-    "created",
-    "queue",
-    "using",
-    "look",
-    "making",
-    "overrides",
-    "works",
-    "featuring",
-    "breaking",
-    "correctly",
-    "again",
-  ];
-  BARE_MAP.captures_iter(description).find_map(|captures| {
-    let value = captures.get(1)?.as_str().to_lowercase();
-    (!excluded.contains(&value.as_str())).then_some(value)
-  })
+  identifier
 }
 
 pub fn donation_links(methods: &[DonationMethod], description: &str) -> Vec<DonationLink> {
@@ -447,5 +490,29 @@ mod tests {
     assert!(!requirements[0].must_be_disabled);
     assert!(requirements[1].must_be_disabled);
     assert!(requirements[2].must_be_disabled);
+  }
+
+  #[test]
+  fn map_names_match_the_shared_fixture() {
+    #[derive(serde::Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    struct MapNameCase {
+      name: String,
+      description: String,
+      map_name: Option<String>,
+    }
+
+    let cases: Vec<MapNameCase> = serde_json::from_str(include_str!(
+      "../../../tests/fixtures/gamebanana/map-names.json"
+    ))
+    .unwrap();
+    for case in cases {
+      assert_eq!(
+        super::extract_map_name(&case.description),
+        case.map_name,
+        "{}",
+        case.name
+      );
+    }
   }
 }

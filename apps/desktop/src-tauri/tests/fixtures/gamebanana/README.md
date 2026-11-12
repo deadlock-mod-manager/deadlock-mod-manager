@@ -11,6 +11,12 @@ medals, and aggregate fileserver traffic counters were removed.
 to capture reliably from live records: null fields, malformed values, private,
 trashed, and withheld submissions.
 
+`map-names.json` holds description excerpts from live Maps submissions,
+captured 2026-11-12, with the console map name each should yield (`null` when
+the description never names it). Every expected name was checked against the
+`maps/<name>.vpk` entry in the submission's archive. Both map name extractors
+run it.
+
 `normalized-retained.json` is the language-neutral parity oracle. The current
 TypeScript normalizer and the Rust provider must produce those fields from the
 same profile fixtures.

@@ -218,47 +218,70 @@ export const buildDownloadSignatureFromPayload = (
     .join(";");
 };
 
-// Matches "map <identifier>" in a quoted or code context (high confidence)
-const QUOTED_MAP_RE = /(?:["'`>]|&quot;)\s*map\s+([a-z][a-z0-9_]{2,})\b/gi;
+// Block tags end a line, so "<br>map queue<br>" reads as a command on its own
+// line while "<br>Map has lots of jumps" stays prose.
+const BLOCK_TAG_RE = /<\/?(?:br|p|li|ol|ul|div|h[1-6])\b[^>]*>/gi;
+const INLINE_TAG_RE = /<[^>]*>/g;
+const HTML_ENTITIES: Record<string, string> = {
+  "&quot;": '"',
+  "&#39;": "'",
+  "&apos;": "'",
+  "&nbsp;": " ",
+  "&lt;": "<",
+  "&gt;": ">",
+  "&amp;": "&",
+};
+const HTML_ENTITY_RE = /&(?:quot|#39|apos|nbsp|lt|gt|amp);/g;
 
-// Matches bare "map <identifier>" (lower confidence)
-const BARE_MAP_RE = /\bmap\s+([a-z][a-z0-9_]{2,})\b/gi;
+// "map_" also matches, because authors write "map_dl_bearpit" for "map dl_bearpit".
+const MAP_COMMAND_RE = /\bmap([^\S\n]+|_)([a-z][a-z0-9_]{2,})\b/gi;
+const QUOTED_PREFIX_RE = /["'`‘’“”]\s*$/;
+const INSTRUCTION_PREFIX_RE = /\b(?:type|typing|command|run)\b\W*(?:\w+\W+)?$/i;
+const OWN_LINE_PREFIX_RE = /^[\W\d]*$/;
+const OWN_LINE_SUFFIX_RE = /^\W*$/;
 
-// Only words that actually appear after "map" in real GameBanana descriptions
-// and are clearly not map names. Kept minimal on purpose.
-const BARE_EXCLUDE = new Set([
-  "features",
-  "includes",
-  "currently",
-  "loading",
-  "created",
-  "queue",
-  "using",
-  "look",
-  "making",
-  "overrides",
-  "works",
-  "featuring",
-  "breaking",
-  "correctly",
-  "again",
-]);
+function descriptionToText(description: string): string {
+  return description
+    .replace(BLOCK_TAG_RE, "\n")
+    .replace(INLINE_TAG_RE, " ")
+    .replace(HTML_ENTITY_RE, (entity) => HTML_ENTITIES[entity]);
+}
 
+/**
+ * Finds the console map name in a GameBanana description. Every "map <name>"
+ * is a candidate. A candidate written as a command (quoted, after "type" or
+ * "command", or alone on its line) wins over one that only looks like a map
+ * identifier (has an underscore or digit). Prose such as "this map features"
+ * is neither, so it never matches. Keep in sync with `extract_map_name` in the
+ * desktop GameBanana normalizer; both run the shared `map-names.json` fixture.
+ */
 export function extractMapName(description: string): string | undefined {
   if (!description) return undefined;
 
-  for (const match of description.matchAll(QUOTED_MAP_RE)) {
-    return match[1].toLowerCase();
+  const text = descriptionToText(description);
+  let identifier: string | undefined;
+
+  for (const match of text.matchAll(MAP_COMMAND_RE)) {
+    const [command, separator, rawName] = match;
+    const name = rawName.toLowerCase();
+    if (separator === "_" && !name.includes("_")) continue;
+
+    const start = match.index;
+    const end = start + command.length;
+    const lineStart = text.lastIndexOf("\n", start) + 1;
+    const lineEnd = text.indexOf("\n", end);
+    const prefix = text.slice(lineStart, start);
+    const suffix = text.slice(end, lineEnd === -1 ? undefined : lineEnd);
+
+    const isCommand =
+      QUOTED_PREFIX_RE.test(prefix) ||
+      INSTRUCTION_PREFIX_RE.test(prefix) ||
+      (OWN_LINE_PREFIX_RE.test(prefix) && OWN_LINE_SUFFIX_RE.test(suffix));
+    if (isCommand) return name;
+    if (/[_\d]/.test(name)) identifier ??= name;
   }
 
-  for (const match of description.matchAll(BARE_MAP_RE)) {
-    const name = match[1].toLowerCase();
-    if (!BARE_EXCLUDE.has(name)) {
-      return name;
-    }
-  }
-
-  return undefined;
+  return identifier;
 }
 
 export const mapGameBananaFileserverState = (

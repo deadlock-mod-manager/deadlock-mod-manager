@@ -60,6 +60,13 @@ pub struct CatalogQuery {
   pub submission_type: Option<SubmissionType>,
   #[ts(skip)]
   pub excluded_slugs: Vec<String>,
+  /// Slugs a policy correction marks as maps, overriding the stored `is_map` filter.
+  #[ts(skip)]
+  pub corrected_map_slugs: Vec<String>,
+  /// Slugs a policy correction marks as not maps, such as base-map replacements
+  /// uploaded to the Maps category.
+  #[ts(skip)]
+  pub corrected_non_map_slugs: Vec<String>,
   pub sort: CatalogSort,
   pub page: u32,
   pub page_size: u32,
@@ -147,6 +154,8 @@ impl Catalog {
       include_wips: query.include_wips,
       submission_type: query.submission_type,
       excluded_slugs: query.excluded_slugs,
+      corrected_map_slugs: query.corrected_map_slugs,
+      corrected_non_map_slugs: query.corrected_non_map_slugs,
       ..CatalogQuery::default()
     };
     self
@@ -193,6 +202,8 @@ impl Catalog {
       include_wips: query.include_wips,
       submission_type: query.submission_type,
       excluded_slugs: query.excluded_slugs,
+      corrected_map_slugs: query.corrected_map_slugs,
+      corrected_non_map_slugs: query.corrected_non_map_slugs,
       ..CatalogQuery::default()
     };
     self
@@ -282,7 +293,17 @@ fn filtered_query<'a>(
     statement = statement.filter(submission::is_audio.eq(is_audio));
   }
   if let Some(is_map) = query.is_map {
-    statement = statement.filter(submission::is_map.eq(is_map));
+    let (joining, leaving) = if is_map {
+      (&query.corrected_map_slugs, &query.corrected_non_map_slugs)
+    } else {
+      (&query.corrected_non_map_slugs, &query.corrected_map_slugs)
+    };
+    statement = statement.filter(
+      submission::is_map
+        .eq(is_map)
+        .and(submission::slug.ne_all(leaving))
+        .or(submission::slug.eq_any(joining)),
+    );
   }
   if query.hide_nsfw {
     statement = statement.filter(submission::is_nsfw.eq(false));
@@ -1319,6 +1340,45 @@ mod tests {
     assert_eq!(page.total, 1);
     assert_eq!(page.items.len(), 1);
     assert_eq!(page.items[0].submission.to_slug().unwrap(), "10");
+  }
+
+  #[tokio::test]
+  async fn map_corrections_move_submissions_between_the_maps_and_mods_tabs() {
+    let directory = tempdir().unwrap();
+    let catalog = Catalog::open(directory.path().join("catalog.db"), 1)
+      .await
+      .unwrap();
+    catalog
+      .upsert_records(vec![
+        record("10", "Custom map", "Maps", None),
+        record("11", "Base map replacement", "Maps", None),
+        record("12", "Skin", "Skins", None),
+        record("13", "Map in the wrong category", "Other", None),
+      ])
+      .await
+      .unwrap();
+    async fn tab(catalog: &Catalog, is_map: bool) -> Vec<String> {
+      let page = catalog
+        .query(CatalogQuery {
+          is_map: Some(is_map),
+          corrected_map_slugs: vec!["13".to_string()],
+          corrected_non_map_slugs: vec!["11".to_string()],
+          page_size: 10,
+          ..CatalogQuery::default()
+        })
+        .await
+        .unwrap();
+      let mut slugs = page
+        .items
+        .iter()
+        .map(|record| record.submission.to_slug().unwrap())
+        .collect::<Vec<_>>();
+      slugs.sort();
+      slugs
+    }
+
+    assert_eq!(tab(&catalog, true).await, ["10", "13"]);
+    assert_eq!(tab(&catalog, false).await, ["11", "12"]);
   }
 
   fn authored(slug: &str, name: &str, author: &str, author_remote_id: &str) -> CatalogRecord {

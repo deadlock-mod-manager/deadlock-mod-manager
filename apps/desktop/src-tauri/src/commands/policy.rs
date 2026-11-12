@@ -1,5 +1,6 @@
 use super::gamebanana_catalog::{CatalogDonationLinkDto, CatalogModDto, CatalogModMetadataDto};
 use crate::errors::Error;
+use crate::providers::gamebanana::catalog::CatalogQuery;
 use crate::providers::{SubmissionProvider, SubmissionRef, SubmissionType};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeSet, HashMap};
@@ -143,6 +144,35 @@ impl PolicyState {
           .map_err(|error| Error::InvalidInput(error.to_string()))
       })
       .collect::<Result<Vec<_>, _>>()
+  }
+
+  /// Applies policy to a catalog query before it runs, so counts and pages already exclude
+  /// unavailable submissions and list `isMap` corrections on the right tab.
+  pub fn scope_query(&self, query: &mut CatalogQuery) -> Result<(), Error> {
+    query.excluded_slugs = self.unavailable_slugs()?;
+    let manifest = self
+      .manifest
+      .read()
+      .map_err(|_| Error::BackgroundTaskFailed("Policy lock poisoned".to_string()))?;
+    for rule in &manifest.rules {
+      let Some(is_map) = rule
+        .correction
+        .as_ref()
+        .and_then(|correction| correction.is_map)
+      else {
+        continue;
+      };
+      let slug = rule
+        .submission()
+        .to_slug()
+        .map_err(|error| Error::InvalidInput(error.to_string()))?;
+      if is_map {
+        query.corrected_map_slugs.push(slug);
+      } else {
+        query.corrected_non_map_slugs.push(slug);
+      }
+    }
+    Ok(())
   }
 
   pub fn apply_to_mod(&self, mod_data: &mut CatalogModDto) -> Result<bool, Error> {
@@ -497,6 +527,38 @@ mod tests {
         updated_at: "2026-08-30T12:00:00Z".to_string(),
       }],
     }
+  }
+
+  #[test]
+  fn scoped_queries_carry_is_map_corrections() {
+    let correction = |submission_id: &str, is_map| PolicyRule {
+      provider: SubmissionProvider::Gamebanana,
+      submission_type: SubmissionType::Mod,
+      submission_id: submission_id.to_string(),
+      kind: PolicyRuleKind::MetadataCorrection,
+      reason: None,
+      correction: Some(PolicyMetadataCorrection {
+        is_map,
+        ..PolicyMetadataCorrection::default()
+      }),
+      updated_at: "2026-11-12T12:00:00Z".to_string(),
+    };
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("policy.json");
+    let mut policy = manifest(1, PolicyRuleKind::Hidden);
+    policy.rules.extend([
+      correction("722538", Some(false)),
+      correction("13", Some(true)),
+      correction("14", None),
+    ]);
+    write_manifest(&path, &policy).unwrap();
+
+    let mut query = CatalogQuery::default();
+    PolicyState::open(path).scope_query(&mut query).unwrap();
+
+    assert_eq!(query.excluded_slugs, ["snd-42"]);
+    assert_eq!(query.corrected_map_slugs, ["13"]);
+    assert_eq!(query.corrected_non_map_slugs, ["722538"]);
   }
 
   #[test]

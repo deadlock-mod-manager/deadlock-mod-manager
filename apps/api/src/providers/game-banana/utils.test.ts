@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { DeadlockHeroes, type GameBanana } from "@deadlock-mods/shared";
+import mapNameCases from "../../../../desktop/src-tauri/tests/fixtures/gamebanana/map-names.json";
 import {
   buildDonationLinks,
   buildMetadata,
@@ -397,10 +398,15 @@ describe("extractMapName", () => {
     expect(extractMapName("map loading times improved")).toBeUndefined();
   });
 
-  it("filters out 'map queue' (common false positive)", () => {
-    expect(
-      extractMapName("map queue<br><br>leave suggestions"),
-    ).toBeUndefined();
+  it.each(mapNameCases)(
+    "matches the shared fixture for $name",
+    ({ description, mapName }) => {
+      expect(extractMapName(description) ?? null).toBe(mapName);
+    },
+  );
+
+  it("reads a command on its own line as the map name", () => {
+    expect(extractMapName("map queue<br><br>leave suggestions")).toBe("queue");
   });
 
   it("ignores map names shorter than 3 characters", () => {
