@@ -4260,7 +4260,8 @@
       "title": "",
       "body": "",
       "disableAndLaunch": "",
-      "launchAnyway": ""
+      "launchAnyway": "",
+      "dontShowAgain": ""
     }
   },
   "launch": {
@@ -4580,6 +4581,8 @@
     "modsStorePaginationDescription": "",
     "heroConflictWarning": "",
     "heroConflictWarningDescription": "",
+    "mapModsLaunchWarning": "",
+    "mapModsLaunchWarningDescription": "",
     "createCustomSetting": "Crea un'impostazione personalizzata",
     "createCustomSettingDescription": "Aggiungi un'impostazione personalizzata al gioco. Queste verranno aggiunte al gioco come opzioni di avvio.",
     "key": "Chiave",

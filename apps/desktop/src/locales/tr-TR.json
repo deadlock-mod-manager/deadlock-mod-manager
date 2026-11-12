@@ -4260,7 +4260,8 @@
       "title": "Harita modları yüklü",
       "body": "Harita modu (veya modları) yüklü: {{modNames}}. Normal oyun haritasını yüklemeye veya eşleştirmeye çalışmak ya da eşleştirmeye katılmak sorunlara yol açabilir.",
       "disableAndLaunch": "Harita Modlarını Devre Dışı Bırak ve Başlat",
-      "launchAnyway": "Yine de Başlat"
+      "launchAnyway": "Yine de Başlat",
+      "dontShowAgain": ""
     }
   },
   "launch": {
@@ -4580,6 +4581,8 @@
     "modsStorePaginationDescription": "Mod Mağazası ve Kütüphanesi'ni kesintisiz kaydırılan tek bir liste yerine sayfalar hâlinde gösterin.",
     "heroConflictWarning": "Kahraman Çakışması Uyarısı",
     "heroConflictWarningDescription": "Etkin bir modu olan kahraman için ikinci bir mod etkinleştirilirken uyarı göster.",
+    "mapModsLaunchWarning": "",
+    "mapModsLaunchWarningDescription": "",
     "createCustomSetting": "Özel ayar oluştur",
     "createCustomSettingDescription": "Oyuna özel bir ayar ekleyin. Bunlar başlatma seçeneklerine eklenir.",
     "key": "Anahtar",

@@ -4260,7 +4260,8 @@
       "title": "",
       "body": "",
       "disableAndLaunch": "",
-      "launchAnyway": ""
+      "launchAnyway": "",
+      "dontShowAgain": ""
     }
   },
   "launch": {
@@ -4580,6 +4581,8 @@
     "modsStorePaginationDescription": "",
     "heroConflictWarning": "",
     "heroConflictWarningDescription": "",
+    "mapModsLaunchWarning": "",
+    "mapModsLaunchWarningDescription": "",
     "createCustomSetting": "Benutzerdefinierti Istellung erstelle",
     "createCustomSettingDescription": "Füged Sie ei benutzerdefinierti Istellung zum Spiel hinzue. Die werded als Startoptione zum Spiel hinzuegfüegt.",
     "key": "Schlüssl",
