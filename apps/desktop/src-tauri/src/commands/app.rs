@@ -1,5 +1,6 @@
 use crate::app_runtime::AppHandle;
 use crate::errors::Error;
+use crate::mod_manager::fs_retry::is_transient_file_lock_error;
 use serde::Serialize;
 use tauri::{Emitter, Manager};
 
@@ -155,6 +156,8 @@ pub async fn check_filesystem_writable() -> Result<FilesystemWritableStatus, Err
   };
   drop(mod_manager);
 
+  // A running Deadlock holds these files open without write sharing. That
+  // lock clears when the game exits, so it is not a permission problem.
   let addons_path = game_path.join("game").join("citadel").join("addons");
   let gameinfo_path = game_path.join("game").join("citadel").join("gameinfo.gi");
 
@@ -170,15 +173,16 @@ pub async fn check_filesystem_writable() -> Result<FilesystemWritableStatus, Err
         let _ = std::fs::remove_file(&test_file);
         true
       }
-      Err(_) => false,
+      Err(error) => is_transient_file_lock_error(&error),
     }
   };
 
-  let gameinfo_writable = {
-    std::fs::OpenOptions::new()
-      .append(true)
-      .open(&gameinfo_path)
-      .is_ok()
+  let gameinfo_writable = match std::fs::OpenOptions::new()
+    .append(true)
+    .open(&gameinfo_path)
+  {
+    Ok(_) => true,
+    Err(error) => is_transient_file_lock_error(&error),
   };
 
   Ok(FilesystemWritableStatus {
