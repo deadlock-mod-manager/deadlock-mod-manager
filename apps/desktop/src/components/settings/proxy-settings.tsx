@@ -17,7 +17,7 @@ import {
   EyeOff,
   RotateCcw,
   Save,
-  ShieldCheck,
+  Waypoints,
 } from "@deadlock-mods/ui/icons";
 import { useMutation } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
@@ -130,7 +130,7 @@ export const ProxySettings = () => {
     <div className='flex flex-col gap-4'>
       <div className='flex items-start justify-between gap-4 rounded-lg border bg-card/40 p-4'>
         <div className='flex items-start gap-3'>
-          <ShieldCheck
+          <Waypoints
             className={cn(
               "mt-0.5 h-5 w-5 shrink-0",
               draft.enabled ? "text-primary" : "text-muted-foreground",
