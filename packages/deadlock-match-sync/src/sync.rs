@@ -62,7 +62,6 @@ enum LoopControl {
 }
 
 // What this run did with a match id.
-#[derive(Clone, Copy)]
 enum Outcome {
   // Not asked about: the quota ran out, or the game, the session or the pass ended first.
   Untried,
