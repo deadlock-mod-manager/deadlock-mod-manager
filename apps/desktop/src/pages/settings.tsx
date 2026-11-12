@@ -719,7 +719,11 @@ const CustomSettings = ({ value }: { value?: string }) => {
               title={t("settings.modInstallingSectionTitle")}>
               <div className='grid grid-cols-1 gap-4'>
                 <SystemSettings
-                  ids={["auto-reapply-mods", "hero-conflict-warning"]}
+                  ids={[
+                    "auto-reapply-mods",
+                    "hero-conflict-warning",
+                    "map-mods-launch-warning",
+                  ]}
                 />
               </div>
             </Section>

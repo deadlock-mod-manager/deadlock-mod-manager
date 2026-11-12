@@ -4260,7 +4260,8 @@
       "title": "Map mods are installed",
       "body": "You have map mod(s) installed: {{modNames}}. These may cause issues if you try to load the normal game map or join matchmaking.",
       "disableAndLaunch": "Disable Map Mods & Launch",
-      "launchAnyway": "Launch Anyway"
+      "launchAnyway": "Launch Anyway",
+      "dontShowAgain": "Don't show this again"
     }
   },
   "launch": {
@@ -4580,6 +4581,8 @@
     "modsStorePaginationDescription": "Show the Mods Store and Library as pages instead of one continuous scrolling list.",
     "heroConflictWarning": "Hero Conflict Warning",
     "heroConflictWarningDescription": "Show a warning when enabling a second mod for a hero that already has an active mod.",
+    "mapModsLaunchWarning": "Map Mod Launch Warning",
+    "mapModsLaunchWarningDescription": "Ask whether to disable enabled map mods each time you launch the game.",
     "createCustomSetting": "Create a custom setting",
     "createCustomSettingDescription": "Add a custom setting to the game. These will be added to the game as launch options.",
     "key": "Key",

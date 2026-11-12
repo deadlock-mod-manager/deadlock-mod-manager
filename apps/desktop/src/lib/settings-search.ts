@@ -145,6 +145,10 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
         titleKey: "settings.heroConflictWarning",
         descriptionKey: "settings.heroConflictWarningDescription",
       },
+      {
+        titleKey: "settings.mapModsLaunchWarning",
+        descriptionKey: "settings.mapModsLaunchWarningDescription",
+      },
     ],
   },
   {

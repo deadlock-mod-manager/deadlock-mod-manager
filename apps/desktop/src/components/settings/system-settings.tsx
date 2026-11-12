@@ -38,6 +38,12 @@ const getSystemSettings = (
     description: t("settings.heroConflictWarningDescription"),
     defaultEnabled: true,
   },
+  {
+    id: "map-mods-launch-warning",
+    label: t("settings.mapModsLaunchWarning"),
+    description: t("settings.mapModsLaunchWarningDescription"),
+    defaultEnabled: true,
+  },
 ];
 
 const SystemSettings = ({ ids }: { ids: readonly string[] }) => {

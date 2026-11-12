@@ -7,6 +7,7 @@ import {
   AlertDialogTitle,
 } from "@deadlock-mods/ui/components/alert-dialog";
 import { Button } from "@deadlock-mods/ui/components/button";
+import { Checkbox } from "@deadlock-mods/ui/components/checkbox";
 import { Input } from "@deadlock-mods/ui/components/input";
 import { cn } from "@deadlock-mods/ui/lib/utils";
 import {
@@ -39,6 +40,12 @@ const defaultActionButtonText: string = "Okay";
 
 export type DialogTone = "default" | "destructive";
 
+/** Adds an opt-out checkbox; `onChecked` runs when the dialog closes checked. */
+type DontShowAgain = {
+  label: string;
+  onChecked: () => void;
+};
+
 export type AlertAction =
   | {
       type: "alert";
@@ -60,6 +67,7 @@ export type AlertAction =
       actionButtonIcon?: Icon;
       cancelButtonVariant?: ButtonVariant;
       actionButtonVariant?: ButtonVariant;
+      dontShowAgain?: DontShowAgain;
     }
   | {
       type: "prompt";
@@ -90,6 +98,7 @@ type AlertDialogState = {
   actionButtonIcon?: Icon;
   cancelButtonVariant: ButtonVariant;
   actionButtonVariant: ButtonVariant;
+  dontShowAgain?: DontShowAgain;
   defaultValue?: string;
   inputProps?: React.PropsWithoutRef<
     React.DetailedHTMLProps<
@@ -114,6 +123,7 @@ export function alertDialogReducer(
         body: "",
         icon: undefined,
         actionButtonIcon: undefined,
+        dontShowAgain: undefined,
         open: true,
         ...action,
         tone: ("tone" in action && action.tone) || "default",
@@ -167,19 +177,23 @@ export const AlertDialogProvider = ({
     },
   );
 
+  const [dontShowAgainChecked, setDontShowAgainChecked] = React.useState(false);
+  const dontShowAgainId = React.useId();
+
   const ActionIcon = actionIcon(state);
 
-  const close = () => {
+  const resolve = (value: boolean | string) => {
+    if (dontShowAgainChecked) state.dontShowAgain?.onChecked();
     dispatch({ type: "close" });
-    resolveRef.current?.(false);
+    resolveRef.current?.(value);
   };
 
-  const confirm = (value?: string) => {
-    dispatch({ type: "close" });
-    resolveRef.current?.(value ?? true);
-  };
+  const close = () => resolve(false);
+
+  const confirm = (value?: string) => resolve(value ?? true);
 
   const dialog = React.useCallback(async <T extends AlertAction>(params: T) => {
+    setDontShowAgainChecked(false);
     dispatch(params);
 
     return new Promise<
@@ -232,6 +246,20 @@ export const AlertDialogProvider = ({
                     {...state.inputProps}
                   />
                 )}
+                {state.dontShowAgain ? (
+                  <label
+                    className='flex cursor-pointer items-center gap-2 pt-2 text-muted-foreground text-sm'
+                    htmlFor={dontShowAgainId}>
+                    <Checkbox
+                      checked={dontShowAgainChecked}
+                      id={dontShowAgainId}
+                      onCheckedChange={(checked) =>
+                        setDontShowAgainChecked(checked === true)
+                      }
+                    />
+                    {state.dontShowAgain.label}
+                  </label>
+                ) : null}
               </AlertDialogHeader>
             </div>
             <AlertDialogFooter className='gap-2 border-t bg-muted/30 px-6 py-3 sm:space-x-0'>

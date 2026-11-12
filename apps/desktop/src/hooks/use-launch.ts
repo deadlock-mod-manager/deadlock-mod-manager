@@ -51,6 +51,7 @@ export const useLaunch = () => {
   );
   const clearLastJoin = usePersistedStore((s) => s.clearLastJoin);
   const setLastLaunchVanilla = usePersistedStore((s) => s.setLastLaunchVanilla);
+  const toggleSetting = usePersistedStore((s) => s.toggleSetting);
   const queryClient = useQueryClient();
   const confirm = useConfirm();
   const startGame = useStartGame();
@@ -66,6 +67,8 @@ export const useLaunch = () => {
   } = useLaunchProgress();
   const launchVanillaNoArgs =
     settings?.["launch-vanilla-no-args"]?.enabled ?? false;
+  const mapModsLaunchWarning =
+    settings?.["map-mods-launch-warning"]?.enabled ?? true;
 
   const checkMapCommandInAutoexec = async () => {
     try {
@@ -106,6 +109,24 @@ export const useLaunch = () => {
       body: t("warnings.mapModsInstalled.body", { modNames }),
       actionButton: t("warnings.mapModsInstalled.disableAndLaunch"),
       cancelButton: t("warnings.mapModsInstalled.launchAnyway"),
+      dontShowAgain: {
+        label: t("warnings.mapModsInstalled.dontShowAgain"),
+        onChecked: () =>
+          toggleSetting(
+            "map-mods-launch-warning",
+            {
+              id: "map-mods-launch-warning",
+              key: "",
+              value: "",
+              type: "boolean",
+              description: t("settings.mapModsLaunchWarningDescription"),
+              enabled: true,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+            false,
+          ),
+      },
     });
 
     if (shouldDisable) {
@@ -132,7 +153,9 @@ export const useLaunch = () => {
     const resumeAutoReset = pauseGameinfoAutoReset();
     try {
       await checkMapCommandInAutoexec();
-      await disableInstalledMapMods();
+      if (mapModsLaunchWarning) {
+        await disableInstalledMapMods();
+      }
       let modCount = vanilla
         ? 0
         : usePersistedStore.getState().getEnabledModsCount();
