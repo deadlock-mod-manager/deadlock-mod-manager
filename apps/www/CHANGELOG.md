@@ -8,6 +8,7 @@
 
 ### Patch Changes
 
+- a0e4473d8: Serve the hero background as WebP, cutting its download from 447 KB to 181 KB
 - Updated dependencies [0a05843]
 - Updated dependencies [072b9fe]
 - Updated dependencies [9fab2e1]

@@ -4,6 +4,8 @@
 
 ### Patch Changes
 
+- 3f429161f: Show a pointer cursor over menu items and sliders, and dim disabled sliders
+- e34c1dc9e: Fix the Collapse menu button and collapsed sidebar items being cut off
 - 19e8ec5: Keep popovers and tooltips visible when a model preview is fullscreen.
 
 ## 0.3.1

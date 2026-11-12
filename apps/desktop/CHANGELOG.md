@@ -4,6 +4,8 @@
 
 ### Minor Changes
 
+- 08ccbaacb: Disable a mod by unchecking all its variants or files in Manage files
+- 0bf068843: Add a way to turn off the map mod launch warning from the dialog or Settings
 - 5d38b7c: Show recent match counts in the server picker and add a Where I play preset
 - cba597f: Show why GameBanana staff withheld a mod on its page instead of an error
 - b8f0b24: Let you turn match data sharing off for individual Steam accounts
@@ -30,6 +32,41 @@
 
 ### Patch Changes
 
+- Remove the warning banner below the 3D model preview setting
+- 7a7b75ba6: Detect updates for single-file GameBanana mods whose file name changes
+- 3f429161f: Show a pointer cursor over menu items and sliders, and dim disabled sliders
+- abe009035: Speed up zip and 7z mod imports by reading their file list instead of unpacking
+- 7f10dd36a: Speed up Analyze adding identified mods by loading both catalog pages at once
+- aa6878ea2: Start downloading imported or restored profiles before every mod is looked up
+- 264b44fb4: Shrink installer and update downloads by storing theme art as lossless WebP
+- 4061643c2: Download GameBanana catalog and mod data compressed, using far less bandwidth
+- 65c32aacd: Load only the language in use at startup instead of all 18 translations
+- 8a35d1150: Speed up compatibility checks by not copying the shipped VData history per mod
+- d7cfaf58b: Match sync skips your own matches deadlock-api already has salts for, leaving more of the daily quota for missing ones
+- 2d8ba4475: Add draggable scrollbars and drag scrolling to dashboard hero and trending rows
+- 81a7862ae: Reduce match sync requests to deadlock-api and requeue untried matches sooner
+- 96fd5a889: Speed up Analyze and cut its memory use by not reading mods DMM already knows
+- 9c762f01e: Fix 1-click installs leaving the mod out of Find a broken mod and profile shares
+- bf45b1c8e: Load small mod covers for Conflicts tab icons instead of full screenshots
+- 7fd605443: Fix mods turned on during a compatibility check sticking at "Needs an update"
+- 40873f9cf: Keep a mod's fix choice and load-order place when it is reinstalled
+- 7f10dd36a: Skip reloading catalog details for library mods Analyze matches only by name
+- ee0bf0e3c: Fix "Steam installation not found" on Windows when its registry path is stale
+- cb68e8eef: Log one line per load-order update and skip redrawing mods that did not change
+- 89b96690f: Mount the repair of a mod fixed while disabled as soon as it is enabled
+- eb3c14a25: Free old texture previews in the Foundry after each edit instead of on close
+- ccdd83ad3: Keep file order when re-enabling multi-file mods whose archives were removed
+- 2327a15c6: Check fewer files in the profile folder when enabling a mod
+- aec641c4a: Speed up catalog syncs and clearing or wiping the local mod catalog
+- 9252ec65f: Fix profile imports and downloads sometimes failing a mod with a missing file
+- 0e48a3d54: Fix a profile sync putting back the mod files a restore or import replaced
+- 6d36008bc: Show the bulk disable or delete summary even after you leave the library
+- 77939b2a9: Skip redundant state saves when changes queue up behind a save in progress
+- 29db4ca73: Reordering mods moves only the VPK files whose load-order slot changes
+- fe2152d6f: Stop Analyze and Add to Library recording files Deadlock never loads as enabled
+- dc570da0a: Start Default-routing downloads without waiting for file server checks
+- 4541257a2: Speed up Analyze by identifying up to 4 unknown files at once
+- e34c1dc9e: Fix the Collapse menu button and collapsed sidebar items being cut off
 - e02703c: Fix false crash reports, Live tab, and Stop for the running game on Flatpak
 - 014a0bb: Ask before Analyze re-adds leftover files and offer to remove ones it can't place
 - fdd81c8: Stop calling a fixed mod working when another mod blocks its repair
