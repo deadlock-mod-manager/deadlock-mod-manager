@@ -64,7 +64,6 @@ export function BottomBarVolume() {
           </span>
           <Slider
             aria-label={t("settings.audioVolume")}
-            className='cursor-pointer'
             max={100}
             min={0}
             onValueChange={(value) => setLocalVolume(value[0])}

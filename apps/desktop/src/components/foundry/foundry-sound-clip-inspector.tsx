@@ -217,7 +217,7 @@ export const ClipInspector = ({
         </button>
         <Slider
           aria-label={t("foundry.sounds.volume")}
-          className='flex-1 cursor-pointer'
+          className='flex-1'
           max={1}
           min={0}
           onValueChange={([next]) => setVolume(next)}

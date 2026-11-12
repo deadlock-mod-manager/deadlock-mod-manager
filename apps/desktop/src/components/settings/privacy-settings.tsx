@@ -96,7 +96,7 @@ const PrivacySettings = () => {
             <Slider
               aria-describedby={BLUR_STRENGTH_DESCRIPTION_ID}
               aria-label={t("privacy.blurStrength")}
-              className='w-full cursor-pointer'
+              className='w-full'
               max={32}
               min={4}
               onValueChange={([value]) =>

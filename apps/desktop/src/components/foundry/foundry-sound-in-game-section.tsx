@@ -3,7 +3,6 @@ import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import logger from "@/lib/logger";
-import { cn } from "@/lib/utils";
 import {
   type FoundrySoundAdjust,
   NO_SOUND_ADJUST,
@@ -60,10 +59,7 @@ export const InGameSection = ({
         <div className='relative'>
           <Slider
             aria-label={t("foundry.sounds.gain")}
-            className={cn(
-              "cursor-pointer data-[disabled]:cursor-default",
-              saved.mute && "opacity-30",
-            )}
+            className={saved.mute ? "opacity-30" : undefined}
             disabled={disabled || saved.mute}
             max={GAIN_MAX_DB}
             min={GAIN_MIN_DB}

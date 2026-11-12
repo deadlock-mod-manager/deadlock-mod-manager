@@ -447,7 +447,7 @@ export const WidgetEditor = ({
                   })}>
                   <div className='flex items-center gap-3'>
                     <Slider
-                      className='flex-1 cursor-pointer'
+                      className='flex-1'
                       max={MAX_ROWS}
                       min={MIN_ROWS}
                       onValueChange={([value]) =>

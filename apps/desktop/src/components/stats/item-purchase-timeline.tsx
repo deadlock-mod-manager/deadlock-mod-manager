@@ -211,7 +211,7 @@ export const ItemPurchaseTimeline = ({
           <div className='relative flex h-8 items-center'>
             <Slider
               aria-label={t("stats.player.matchTimeline")}
-              className='cursor-pointer [&>span:first-child]:h-2 [&>span:last-child]:h-5 [&>span:last-child]:w-5'
+              className='[&>span:first-child]:h-2 [&>span:last-child]:h-5 [&>span:last-child]:w-5'
               max={Math.max(duration, 1)}
               onValueChange={([value]) => {
                 setIsPlaying(false);

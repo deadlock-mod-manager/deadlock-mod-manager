@@ -24,7 +24,6 @@ export const ScaleSlider = ({
       </span>
     </div>
     <Slider
-      className='cursor-pointer'
       max={max}
       min={min}
       onValueChange={([next]) => onChange(next)}

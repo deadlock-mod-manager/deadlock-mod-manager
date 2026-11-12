@@ -190,7 +190,7 @@ export function ViewerParticlePicker({
                 </div>
                 <Slider
                   aria-label={t("modelPreview.charge")}
-                  className='cursor-pointer group-disabled:cursor-default'
+                  className='group-disabled:cursor-default'
                   min={0}
                   max={1}
                   step={0.01}

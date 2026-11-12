@@ -71,7 +71,6 @@ export const ModAudioPreview = ({
               {formatTime(currentTime)}
             </span>
             <Slider
-              className='cursor-pointer'
               max={duration || 100}
               min={0}
               onValueChange={handleSeek}

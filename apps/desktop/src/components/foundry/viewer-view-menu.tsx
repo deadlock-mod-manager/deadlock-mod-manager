@@ -103,7 +103,6 @@ export const ViewerViewMenu = ({
             </div>
             <Slider
               aria-label={t("modelPreview.exposure")}
-              className='cursor-pointer'
               min={0.25}
               max={2}
               step={0.05}

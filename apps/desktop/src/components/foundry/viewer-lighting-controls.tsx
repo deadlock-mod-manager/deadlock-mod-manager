@@ -52,7 +52,6 @@ export function ViewerLightingControls({
       </div>
       <Slider
         aria-label={t("modelPreview.lightIntensity")}
-        className='cursor-pointer'
         min={0}
         max={2}
         step={0.05}
@@ -67,7 +66,7 @@ export function ViewerLightingControls({
       </div>
       <Slider
         aria-label={t("modelPreview.bloomStrength")}
-        className='cursor-pointer data-[disabled]:cursor-default data-[disabled]:opacity-30'
+        className='data-[disabled]:opacity-30'
         disabled={!look.bloom}
         min={0}
         max={1.5}
