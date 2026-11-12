@@ -4260,7 +4260,8 @@
       "title": "",
       "body": "",
       "disableAndLaunch": "",
-      "launchAnyway": ""
+      "launchAnyway": "",
+      "dontShowAgain": ""
     }
   },
   "launch": {
@@ -4580,6 +4581,8 @@
     "modsStorePaginationDescription": "",
     "heroConflictWarning": "",
     "heroConflictWarningDescription": "",
+    "mapModsLaunchWarning": "",
+    "mapModsLaunchWarningDescription": "",
     "createCustomSetting": "カスタム設定を作成",
     "createCustomSettingDescription": "ゲームにカスタム設定を追加する。これらは起動オプションとしてゲームに適用される。",
     "key": "キー",

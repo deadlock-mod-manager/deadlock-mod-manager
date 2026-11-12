@@ -4260,7 +4260,8 @@
       "title": "지도 모드가 설치되어 있습니다",
       "body": "지도 모드가 설치되어 있습니다: {{modNames}}. 일반 게임 맵을 로드하거나 매치메이킹에 참여하려고 하면 문제가 발생할 수 있습니다.",
       "disableAndLaunch": "지도 모드 비활성화 및 실행",
-      "launchAnyway": "어쨌든 실행"
+      "launchAnyway": "어쨌든 실행",
+      "dontShowAgain": ""
     }
   },
   "launch": {
@@ -4580,6 +4581,8 @@
     "modsStorePaginationDescription": "Mods Store와 Library를 하나의 연속 스크롤 목록 대신 페이지로 표시합니다.",
     "heroConflictWarning": "",
     "heroConflictWarningDescription": "",
+    "mapModsLaunchWarning": "",
+    "mapModsLaunchWarningDescription": "",
     "createCustomSetting": "사용자 정의 설정 만들기",
     "createCustomSettingDescription": "게임에 사용자 정의 설정을 추가합니다. 이는 게임 실행 옵션으로 추가됩니다.",
     "key": "열쇠",

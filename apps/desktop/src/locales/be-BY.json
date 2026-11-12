@@ -4260,7 +4260,8 @@
       "title": "Моды карт усталяваны",
       "body": "У вас усталяваны мод(ы) карт: {{modNames}}. Яны могуць выклікаць праблемы, калі вы паспрабуеце загрузіць звычайную карту гульні або далучыцца да мэтчмэйкінгу.",
       "disableAndLaunch": "Адключыць моды карт і запусціць",
-      "launchAnyway": "Запусціць усё роўна"
+      "launchAnyway": "Запусціць усё роўна",
+      "dontShowAgain": ""
     }
   },
   "launch": {
@@ -4580,6 +4581,8 @@
     "modsStorePaginationDescription": "",
     "heroConflictWarning": "",
     "heroConflictWarningDescription": "",
+    "mapModsLaunchWarning": "",
+    "mapModsLaunchWarningDescription": "",
     "createCustomSetting": "",
     "createCustomSettingDescription": "",
     "key": "",

@@ -4260,7 +4260,8 @@
       "title": "Modyfikacje mapy są zainstalowane",
       "body": "Masz zainstalowane modyfikacje mapy: {{modNames}}. Mogą one spowodować problemy, gdy będziesz próbował uruchomić normalną mapę lub dołączyć do kolejki.",
       "disableAndLaunch": "Wyłącz modyfikacje mapy i uruchom",
-      "launchAnyway": "Uruchom mimo to"
+      "launchAnyway": "Uruchom mimo to",
+      "dontShowAgain": ""
     }
   },
   "launch": {
@@ -4580,6 +4581,8 @@
     "modsStorePaginationDescription": "Pokaż sklep modów i bibliotekę jako strony zamiast jednej ciągłej przewijanej listy.",
     "heroConflictWarning": "",
     "heroConflictWarningDescription": "",
+    "mapModsLaunchWarning": "",
+    "mapModsLaunchWarningDescription": "",
     "createCustomSetting": "Stwórz własne ustawienie",
     "createCustomSettingDescription": "Dodaj własne ustawienie do gry. Zostanie ono dodane jako opcja uruchamiania.",
     "key": "Klucz",

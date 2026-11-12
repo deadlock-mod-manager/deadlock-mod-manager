@@ -4260,7 +4260,8 @@
       "title": "",
       "body": "",
       "disableAndLaunch": "",
-      "launchAnyway": ""
+      "launchAnyway": "",
+      "dontShowAgain": ""
     }
   },
   "launch": {
@@ -4580,6 +4581,8 @@
     "modsStorePaginationDescription": "",
     "heroConflictWarning": "",
     "heroConflictWarningDescription": "",
+    "mapModsLaunchWarning": "",
+    "mapModsLaunchWarningDescription": "",
     "createCustomSetting": "إنشاء إعداد مخصص",
     "createCustomSettingDescription": "أضف إعدادًا مخصصًا إلى اللعبة. سيتم إضافة هذه إلى اللعبة كخيارات تشغيل.",
     "key": "المفتاح",

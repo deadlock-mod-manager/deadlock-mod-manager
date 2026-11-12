@@ -4260,7 +4260,8 @@
       "title": "地图模组已安装",
       "body": "你安装了地图模组：{{modNames}}。如果你尝试加载标准游戏地图或加入匹配，可能会导致问题。",
       "disableAndLaunch": "禁用地图模组并启动",
-      "launchAnyway": "仍然启动"
+      "launchAnyway": "仍然启动",
+      "dontShowAgain": ""
     }
   },
   "launch": {
@@ -4580,6 +4581,8 @@
     "modsStorePaginationDescription": "将 Mods Store 和 Library 分页显示，而非连续滚动列表。",
     "heroConflictWarning": "角色模组冲突",
     "heroConflictWarningDescription": "当为一个已经激活模组的角色启用新的模组时，显示警告。",
+    "mapModsLaunchWarning": "",
+    "mapModsLaunchWarningDescription": "",
     "createCustomSetting": "创建自定义设置",
     "createCustomSettingDescription": "为游戏添加自定义设置。这些将作为启动选项添加到游戏中。",
     "key": "键",
