@@ -4976,18 +4976,6 @@
         "title": "Mod Atölyesi",
         "description": "Kendi modlarınızı oluşturun ve paketleyin."
       },
-      "profile-management": {
-        "title": "Profil Yönetimi",
-        "description": "Mod profilleri oluşturun ve aralarında geçiş yapın."
-      },
-      "profile-sharing": {
-        "title": "Profil Paylaşımı",
-        "description": "Mod profillerini başkalarıyla paylaşın ve paylaşılan profilleri içe aktarın."
-      },
-      "conflict-detection": {
-        "title": "Çakışma Algılama",
-        "description": "Aynı dosyaları değiştiren etkin modları işaretler ve Modlarım sayfasındaki Çakışmalar sekmesinde gösterir."
-      },
       "performance-configs": {
         "title": "Performans Yapılandırmaları",
         "description": "Performans sayfasından, görsel ayrıntıdan ödün vererek kare hızını artıran topluluk gameinfo.gi yapılandırmalarını uygulayın."
@@ -8599,42 +8587,6 @@
     "staging_applied_other": "{{count}} tamamlanmamış mod değişikliği temizlendi.",
     "quarantinedStaging": "Bazı tamamlanmamış değişiklikler tamamlanamadı, bu yüzden burada beklemeye alındı:",
     "failed": "Mod klasörü onarılamadı: {{reason}}"
-  },
-  "experimentalTour": {
-    "tryMe": "Dene",
-    "invitation": "Deneysel özellikler",
-    "title": "Yeni bir şey denemek ister misiniz?",
-    "description": "Özel haritalara kısaca göz atın.",
-    "duration": "Tur yaklaşık bir dakika sürer. Hangi özellikleri etkinleştireceğinize siz karar verirsiniz.",
-    "start": "Tura katıl",
-    "dismiss": "Şimdi değil",
-    "skip": "Turu atla",
-    "next": "İleri",
-    "back": "Geri",
-    "finish": "Turu bitir",
-    "done": "Tamam",
-    "progress": "{{current}} / {{total}}",
-    "experimental": "Deneysel",
-    "preview": "Özellik önizlemesi",
-    "enable": "Bitirdiğimde {{feature}} özelliğini etkinleştir",
-    "alreadyEnabled": "Zaten etkin",
-    "pending": "Tur tamamlanana kadar hiçbir şey değişmez.",
-    "warning": "Bu özellikler hâlâ geliştirme aşamasında ve hatalar içerebilir. Ayarlar → Deneysel bölümünden kapatabilirsiniz.",
-    "complete": "Denemeye hazır",
-    "completeEmpty": "Değişiklik yapılmadı",
-    "completeDescription": "Aşağıdan bir özellik açın veya daha sonra kenar çubuğunda bulun.",
-    "emptyDescription": "Tura Ayarlar → Deneysel bölümünden yeniden katılabilirsiniz.",
-    "open": "{{feature}} özelliğini aç",
-    "enabled": "Etkin",
-    "features": {
-      "custom-maps": {
-        "title": "Topluluk haritasını dene",
-        "description": "Diğer oyuncuların yaptığı haritalara göz atın.",
-        "hint": "Haritalar'ı kenar çubuğunuza ekler.",
-        "previewTitle": "Oynamak için yeni bir yer",
-        "previewDetail": "Topluluğun neler yaptığına göz atın."
-      }
-    }
   },
   "featureHints": {
     "didYouKnow": "Biliyor muydunuz?",

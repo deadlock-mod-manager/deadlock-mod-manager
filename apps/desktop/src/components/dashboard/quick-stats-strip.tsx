@@ -11,7 +11,6 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { ProfileManagerDialog } from "@/components/profiles/profile-manager-dialog";
 import { useCheckUpdates } from "@/hooks/use-check-updates";
-import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { ModStatus } from "@/types/mods";
@@ -21,8 +20,6 @@ export const QuickStatsStrip = () => {
   const navigate = useNavigate();
   const localMods = usePersistedStore((state) => state.localMods);
   const { updatableCount } = useCheckUpdates();
-  const isProfileManagementEnabled =
-    useExperimentalFeature("profile-management");
   const [showProfileManager, setShowProfileManager] = useState(false);
 
   const installedCount = localMods.filter(
@@ -53,16 +50,14 @@ export const QuickStatsStrip = () => {
           value={downloadingCount}
         />
         <div className='flex flex-1 flex-wrap items-center justify-end gap-2'>
-          {isProfileManagementEnabled && (
-            <Button
-              className='gap-2'
-              onClick={() => setShowProfileManager(true)}
-              size='sm'
-              variant='outline'>
-              <UsersThreeIcon className='size-4' weight='duotone' />
-              {t("profiles.manage")}
-            </Button>
-          )}
+          <Button
+            className='gap-2'
+            onClick={() => setShowProfileManager(true)}
+            size='sm'
+            variant='outline'>
+            <UsersThreeIcon className='size-4' weight='duotone' />
+            {t("profiles.manage")}
+          </Button>
           <Button className='gap-2' onClick={() => navigate("/mods")} size='sm'>
             {t("dashboard.browseStore")}
             <ArrowRightIcon className='size-4' weight='bold' />
@@ -70,12 +65,10 @@ export const QuickStatsStrip = () => {
         </div>
       </div>
 
-      {isProfileManagementEnabled && (
-        <ProfileManagerDialog
-          onOpenChange={setShowProfileManager}
-          open={showProfileManager}
-        />
-      )}
+      <ProfileManagerDialog
+        onOpenChange={setShowProfileManager}
+        open={showProfileManager}
+      />
     </>
   );
 };

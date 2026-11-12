@@ -75,25 +75,27 @@ export const refreshPerfCatalogInBackground = async (
 };
 
 /** The catalog with counts computed against the user's gameinfo.gi. */
-export const usePerfCatalog = () => {
+export const usePerfCatalog = (enabled = true) => {
   const queryClient = useQueryClient();
   useEffect(() => {
-    refreshPerfCatalogInBackground(queryClient);
-  }, [queryClient]);
+    if (enabled) refreshPerfCatalogInBackground(queryClient);
+  }, [enabled, queryClient]);
 
   return useQuery({
     queryKey: perfQueryKeys.catalog(),
     queryFn: getPerfCatalog,
     staleTime: STALE_TIME_API,
+    enabled,
     meta: { skipGlobalErrorHandler: true },
   });
 };
 
 /** What the file holds versus what the user chose. Re-read on window focus. */
-export const usePerfStatus = () =>
+export const usePerfStatus = (enabled = true) =>
   useQuery({
     queryKey: perfQueryKeys.status(),
     queryFn: getPerfStatus,
+    enabled,
     refetchOnWindowFocus: true,
     meta: { skipGlobalErrorHandler: true },
   });

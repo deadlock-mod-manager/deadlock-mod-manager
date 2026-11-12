@@ -1,4 +1,6 @@
 import { convertFileSrc, invoke } from "@tauri-apps/api/core";
+import type { QueryClient } from "@tanstack/react-query";
+import { type FeatureState, isFeatureEnabled } from "@/lib/features";
 import { isPluginsBuilt } from "@/lib/runtime-bootstrap";
 import type { ExternalPluginActivity } from "@/types/generated/ExternalPluginActivity";
 import type { ExternalPluginSummary } from "@/types/generated/ExternalPluginSummary";
@@ -21,6 +23,18 @@ export const setPluginRuntimeEnabled = async (
   if (isPluginsBuilt()) {
     await invoke<void>("external_plugins_set_enabled", { enabled });
   }
+};
+
+/** Starts or stops the plugin runtime when a settings change flips whether plugins run. */
+export const syncPluginRuntime = async (
+  queryClient: QueryClient,
+  before: FeatureState,
+  after: FeatureState,
+): Promise<void> => {
+  const enabled = isFeatureEnabled(after, "plugins");
+  if (enabled === isFeatureEnabled(before, "plugins")) return;
+  await setPluginRuntimeEnabled(enabled);
+  queryClient.removeQueries({ queryKey: EXTERNAL_PLUGINS_QUERY_KEY });
 };
 
 export const installExternalPlugin = (archivePath: string) =>

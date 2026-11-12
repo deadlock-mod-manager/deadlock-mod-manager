@@ -129,11 +129,23 @@ export const MOD_OUTDATED_CUTOFF_SECONDS = Math.floor(
 export const EXPERIMENTAL_FEATURES = [
   "custom-maps",
   "mod-foundry",
-  "profile-management",
-  "profile-sharing",
-  "conflict-detection",
   "performance-configs",
   "cloud-backup",
+  "plugins",
+] as const;
+
+// Features outside mod management that users can turn off from Settings to
+// keep the app lean. A feature that also has an experimental flag needs both
+// switches on; see lib/features.ts.
+export const OPTIONAL_FEATURES = [
+  "stats",
+  "server-browser",
+  "server-picker",
+  "crosshairs",
+  "skins",
+  "autoexec",
+  "performance",
+  "foundry",
   "plugins",
 ] as const;
 

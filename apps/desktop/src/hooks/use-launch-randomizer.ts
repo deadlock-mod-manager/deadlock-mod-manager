@@ -25,6 +25,7 @@ import {
   type RandomizerOutcome,
   randomizerPool,
 } from "@/lib/mods/skin-randomizer";
+import { isFeatureEnabled } from "@/lib/features";
 import { type State, usePersistedStore } from "@/lib/store";
 import { EMPTY_MOD_GROUPS } from "@/lib/store/slices/mod-groups";
 import { getProfileVpkSnapshot } from "@/lib/tauri-commands";
@@ -38,12 +39,16 @@ const randomizedGroups = (state: State) =>
     (group) => group.randomize,
   );
 
+// Turning Hero Skins off hides the randomizer switch, so it stops rolling too.
+const skinRandomizerActive = (state: State) =>
+  state.skinRandomizerEnabled && isFeatureEnabled(state, "skins");
+
 /** The checklist step for what the next launch rolls, or null when nothing. */
 export const launchRandomizerStep = (state: State): LaunchStep | null => {
   if (randomizedGroups(state).length > 0) {
     return "randomizingMods";
   }
-  return state.skinRandomizerEnabled ? "randomizingSkins" : null;
+  return skinRandomizerActive(state) ? "randomizingSkins" : null;
 };
 
 /** The profile a launch started on; a roll never touches another one. */
@@ -294,7 +299,7 @@ export const useLaunchRandomizer = () => {
     }
 
     const state = usePersistedStore.getState();
-    if (state.skinRandomizerEnabled) {
+    if (skinRandomizerActive(state)) {
       // A hero with a skin in a randomized group already got its roll there,
       // and a second roll would take that skin straight back off. Hidden skins
       // count too: the hero list leaves them out but they still get installed.

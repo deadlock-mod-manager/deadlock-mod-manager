@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
+import { useFeatureEnabled } from "@/hooks/use-feature-enabled";
 import logger from "@/lib/logger";
 import { syncPerfConfig } from "@/lib/performance/api";
 import { perfQueryKeys } from "@/lib/performance/query-keys";
@@ -20,7 +20,7 @@ const MIN_SYNC_INTERVAL_MS = 10_000;
 export const usePerfBackgroundSync = () => {
   const queryClient = useQueryClient();
   const gamePath = usePersistedStore((state) => state.gamePath);
-  const enabled = useExperimentalFeature("performance-configs");
+  const enabled = useFeatureEnabled("performance");
 
   useEffect(() => {
     if (!enabled || !gamePath) return;

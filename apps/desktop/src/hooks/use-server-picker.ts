@@ -1,4 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  queryOptions,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useRef } from "react";
 import type { ServerPickerLatency } from "@/types/generated/ServerPickerLatency";
@@ -7,15 +12,17 @@ import type { ServerPickerState } from "@/types/generated/ServerPickerState";
 
 const STATE_KEY = ["server-picker", "state"];
 
+export const serverPickerStateQuery = queryOptions({
+  queryKey: STATE_KEY,
+  queryFn: () => invoke<ServerPickerState>("get_server_picker_state"),
+  staleTime: 30_000,
+  retry: false,
+  meta: { skipGlobalErrorHandler: true },
+});
+
 export const useServerPicker = () => {
   const queryClient = useQueryClient();
-  const query = useQuery({
-    queryKey: STATE_KEY,
-    queryFn: () => invoke<ServerPickerState>("get_server_picker_state"),
-    staleTime: 30_000,
-    retry: false,
-    meta: { skipGlobalErrorHandler: true },
-  });
+  const query = useQuery(serverPickerStateQuery);
   const acceptState = (state: ServerPickerState) => {
     queryClient.setQueryData(STATE_KEY, state);
   };

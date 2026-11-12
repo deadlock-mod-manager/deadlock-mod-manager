@@ -4976,18 +4976,6 @@
         "title": "",
         "description": "创建并打包你自己的模组。"
       },
-      "profile-management": {
-        "title": "配置文件管理",
-        "description": "创建并切换不同的模组配置文件。"
-      },
-      "profile-sharing": {
-        "title": "配置文件分享",
-        "description": "与他人分享模组配置文件，并导入他人分享的配置。"
-      },
-      "conflict-detection": {
-        "title": "冲突检测",
-        "description": "标记修改了相同文件的已启用模组，并在「我的模组」的冲突标签页中显示。"
-      },
       "performance-configs": {
         "title": "",
         "description": ""
@@ -8599,42 +8587,6 @@
     "staging_applied_other": "",
     "quarantinedStaging": "",
     "failed": ""
-  },
-  "experimentalTour": {
-    "tryMe": "",
-    "invitation": "",
-    "title": "",
-    "description": "",
-    "duration": "",
-    "start": "",
-    "dismiss": "",
-    "skip": "",
-    "next": "",
-    "back": "",
-    "finish": "",
-    "done": "",
-    "progress": "",
-    "experimental": "",
-    "preview": "",
-    "enable": "",
-    "alreadyEnabled": "",
-    "pending": "",
-    "warning": "",
-    "complete": "",
-    "completeEmpty": "",
-    "completeDescription": "",
-    "emptyDescription": "",
-    "open": "",
-    "enabled": "",
-    "features": {
-      "custom-maps": {
-        "title": "",
-        "description": "",
-        "hint": "",
-        "previewTitle": "",
-        "previewDetail": ""
-      }
-    }
   },
   "featureHints": {
     "didYouKnow": "",

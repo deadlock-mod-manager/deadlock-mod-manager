@@ -778,6 +778,34 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
       delete state.animateOccultGeometry;
     },
   },
+  {
+    to: 48,
+    label: "player-stats-to-optional-feature",
+    apply: (state) => {
+      // The Player Stats switch became the Stats entry in the optional
+      // features; a user who turned it off stays opted out.
+      if (state.playerStatsEnabled === false) {
+        const features = isPlainObject(state.features) ? state.features : {};
+        features.stats = false;
+        state.features = features;
+      }
+      delete state.playerStatsEnabled;
+    },
+  },
+  {
+    to: 49,
+    label: "graduate-flags-drop-tour",
+    apply: (state) => {
+      // Profiles, profile sharing and conflict detection are always on, and
+      // the experimental tour is gone.
+      delete state.experimentalTourDismissed;
+      const features = state.experimentalFeatures;
+      if (!isPlainObject(features)) return;
+      delete features["profile-management"];
+      delete features["profile-sharing"];
+      delete features["conflict-detection"];
+    },
+  },
 ];
 
 const LEGACY_GAMEBANANA_ID = /^[1-9]\d*$/;

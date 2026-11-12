@@ -4976,18 +4976,6 @@
         "title": "",
         "description": ""
       },
-      "profile-management": {
-        "title": "",
-        "description": ""
-      },
-      "profile-sharing": {
-        "title": "",
-        "description": ""
-      },
-      "conflict-detection": {
-        "title": "",
-        "description": ""
-      },
       "performance-configs": {
         "title": "",
         "description": ""
@@ -8599,42 +8587,6 @@
     "staging_applied_other": "",
     "quarantinedStaging": "",
     "failed": ""
-  },
-  "experimentalTour": {
-    "tryMe": "",
-    "invitation": "",
-    "title": "",
-    "description": "",
-    "duration": "",
-    "start": "",
-    "dismiss": "",
-    "skip": "",
-    "next": "",
-    "back": "",
-    "finish": "",
-    "done": "",
-    "progress": "",
-    "experimental": "",
-    "preview": "",
-    "enable": "",
-    "alreadyEnabled": "",
-    "pending": "",
-    "warning": "",
-    "complete": "",
-    "completeEmpty": "",
-    "completeDescription": "",
-    "emptyDescription": "",
-    "open": "",
-    "enabled": "",
-    "features": {
-      "custom-maps": {
-        "title": "",
-        "description": "",
-        "hint": "",
-        "previewTitle": "",
-        "previewDetail": ""
-      }
-    }
   },
   "featureHints": {
     "didYouKnow": "",

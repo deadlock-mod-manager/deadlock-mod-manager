@@ -10,7 +10,7 @@ import {
   searchSettings,
 } from "@/lib/settings-search";
 import { usePersistedStore } from "@/lib/store";
-import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
+import { useFeatureEnabled } from "@/hooks/use-feature-enabled";
 
 const SEARCH_HINT_MIN_VISITS = 3;
 
@@ -21,7 +21,9 @@ type SettingsSearchProps = {
 };
 
 export const SettingsSearch = ({ children, onSelect }: SettingsSearchProps) => {
-  const pluginsEnabled = useExperimentalFeature("plugins");
+  const pluginsEnabled = useFeatureEnabled("plugins");
+  const autoexecEnabled = useFeatureEnabled("autoexec");
+  const skinsEnabled = useFeatureEnabled("skins");
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
@@ -39,10 +41,12 @@ export const SettingsSearch = ({ children, onSelect }: SettingsSearchProps) => {
     const sections = SETTINGS_SEARCH_INDEX.filter(
       (section) =>
         (section.id !== "match-sync" || isMatchSyncBuilt()) &&
-        (section.tab !== "plugin" || pluginsEnabled),
+        (section.tab !== "plugin" || pluginsEnabled) &&
+        (section.tab !== "autoexec" || autoexecEnabled) &&
+        (section.id !== "hero-skins" || skinsEnabled),
     );
     return searchSettings(query, (key) => t(key), sections, platform());
-  }, [query, t, pluginsEnabled]);
+  }, [query, t, pluginsEnabled, autoexecEnabled, skinsEnabled]);
 
   useEffect(() => {
     const focusOnFind = (event: KeyboardEvent) => {

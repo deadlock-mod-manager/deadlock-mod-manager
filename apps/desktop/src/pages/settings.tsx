@@ -37,6 +37,7 @@ import {
   Settings,
   Share2Icon,
   ShieldIcon,
+  ToggleRight,
   TrashIcon,
   WrenchIcon,
 } from "@deadlock-mods/ui/icons";
@@ -55,6 +56,8 @@ import { AutoUpdateToggle } from "@/components/settings/auto-update-toggle";
 import { AutoexecSettings } from "@/components/settings/autoexec-settings";
 import { DeveloperModeToggle } from "@/components/settings/developer-mode-toggle";
 import { FeatureFlagsSettings } from "@/components/settings/feature-flags-settings";
+import { FeaturesSettings } from "@/components/settings/features-settings";
+import { useFeatureEnabled } from "@/hooks/use-feature-enabled";
 import { FileserverSettings } from "@/components/settings/fileserver-settings";
 import { SegmentedDownloadsToggle } from "@/components/settings/segmented-downloads-toggle";
 import { CrashCheckToggle } from "@/components/settings/crash-check-toggle";
@@ -412,6 +415,14 @@ const CustomSettings = ({ value }: { value?: string }) => {
     (location.state as { activeTab?: string } | null)?.activeTab ??
     "launch-options";
   const [activeTab, setActiveTab] = useState(initialTab);
+  const isAutoexecEnabled = useFeatureEnabled("autoexec");
+  const isSkinsEnabled = useFeatureEnabled("skins");
+  const minimalMode = usePersistedStore((s) => s.minimalMode);
+  // A link or search can still point at the autoexec tab after it was hidden.
+  const visibleTab =
+    activeTab === "autoexec" && !isAutoexecEnabled
+      ? "launch-options"
+      : activeTab;
   const contentRef = useRef<HTMLDivElement>(null);
   const { data: remoteInstallStatus } = useRemoteInstallStatus();
 
@@ -514,7 +525,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
         className='flex min-h-0 flex-1 gap-6 overflow-hidden'
         defaultValue='launch-options'
         onValueChange={setActiveTab}
-        value={activeTab}>
+        value={visibleTab}>
         <div className='w-52 shrink-0 min-h-0 overflow-y-auto pr-1'>
           <SettingsSearch onSelect={goToSearchResult}>
             <TabsList className='h-fit w-full flex-col items-stretch gap-1 bg-transparent p-2'>
@@ -524,11 +535,13 @@ const CustomSettings = ({ value }: { value?: string }) => {
                   label={t("settings.launchOptions")}
                   value='launch-options'
                 />
-                <SettingsNavItem
-                  icon={FileCog}
-                  label={t("settings.autoexec")}
-                  value='autoexec'
-                />
+                {isAutoexecEnabled && (
+                  <SettingsNavItem
+                    icon={FileCog}
+                    label={t("settings.autoexec")}
+                    value='autoexec'
+                  />
+                )}
                 <SettingsNavItem
                   icon={GamepadIcon}
                   label={t("settings.game")}
@@ -547,6 +560,19 @@ const CustomSettings = ({ value }: { value?: string }) => {
                   label={t("settings.application")}
                   value='application'
                 />
+                <HintAnchor
+                  eligible={!minimalMode && visibleTab !== "features"}
+                  hintId='minimal-mode'
+                  onShowMe={() => setActiveTab("features")}
+                  side='right'>
+                  <div>
+                    <SettingsNavItem
+                      icon={ToggleRight}
+                      label={t("settings.features")}
+                      value='features'
+                    />
+                  </div>
+                </HintAnchor>
                 <SettingsNavItem
                   icon={PaletteIcon}
                   label={t("settings.themes")}
@@ -734,12 +760,14 @@ const CustomSettings = ({ value }: { value?: string }) => {
               <AutoFixModsToggle />
             </Section>
 
-            <Section
-              description={t("settings.heroSkinsDescription")}
-              searchId='hero-skins'
-              title={t("settings.heroSkins")}>
-              <HeroSkinsSettings />
-            </Section>
+            {isSkinsEnabled && (
+              <Section
+                description={t("settings.heroSkinsDescription")}
+                searchId='hero-skins'
+                title={t("settings.heroSkins")}>
+                <HeroSkinsSettings />
+              </Section>
+            )}
 
             <Section
               description={t("settings.modBrowsingSectionDescription")}
@@ -1012,11 +1040,23 @@ const CustomSettings = ({ value }: { value?: string }) => {
             </Section>
           </TabsContent>
 
+          <TabsContent className='mt-0 space-y-4' value='features'>
+            <Section
+              description={t("optionalFeatures.description")}
+              title={t("optionalFeatures.title")}>
+              <FeaturesSettings
+                onOpenExperimental={() => setActiveTab("experimental")}
+              />
+            </Section>
+          </TabsContent>
+
           <TabsContent className='mt-0 space-y-4' value='experimental'>
             <Section
               description={t("featureFlags.description")}
               title={t("featureFlags.title")}>
-              <FeatureFlagsSettings />
+              <FeatureFlagsSettings
+                onOpenFeatures={() => setActiveTab("features")}
+              />
             </Section>
           </TabsContent>
 
@@ -1204,11 +1244,13 @@ const CustomSettings = ({ value }: { value?: string }) => {
               </div>
             </Section>
           </TabsContent>
-          <TabsContent className='mt-0 xl:h-full' value='autoexec'>
-            <ErrorBoundary>
-              <AutoexecSettings />
-            </ErrorBoundary>
-          </TabsContent>
+          {isAutoexecEnabled && (
+            <TabsContent className='mt-0 xl:h-full' value='autoexec'>
+              <ErrorBoundary>
+                <AutoexecSettings />
+              </ErrorBoundary>
+            </TabsContent>
+          )}
         </div>
       </Tabs>
     </div>

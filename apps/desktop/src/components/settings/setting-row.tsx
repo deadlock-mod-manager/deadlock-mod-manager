@@ -74,6 +74,7 @@ type SettingToggleRowProps = {
   onCheckedChange: (checked: boolean) => void;
   disabled?: boolean;
   extra?: ReactNode;
+  notes?: ReactNode;
 };
 
 export const SettingToggleRow = ({
@@ -84,6 +85,7 @@ export const SettingToggleRow = ({
   onCheckedChange,
   disabled,
   extra,
+  notes,
 }: SettingToggleRowProps) => {
   const descriptionId = description ? `${id}-description` : undefined;
 
@@ -92,6 +94,7 @@ export const SettingToggleRow = ({
       description={description}
       descriptionId={descriptionId}
       extra={extra}
+      notes={notes}
       title={title}>
       <Switch
         aria-describedby={descriptionId}

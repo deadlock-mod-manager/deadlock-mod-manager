@@ -3,7 +3,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { useActiveProfileFolder } from "@/hooks/use-mod-health";
 import { getErrorMessage } from "@/lib/errors";
 import {
@@ -19,7 +18,6 @@ import type { ProfileConflicts } from "@/types/generated/ProfileConflicts";
 const PROFILE_CONFLICTS_QUERY_KEY = ["profile-conflicts"] as const;
 
 export const useProfileConflicts = () => {
-  const enabled = useExperimentalFeature("conflict-detection");
   const profileFolder = useActiveProfileFolder();
   const localMods = usePersistedStore((state) => state.localMods);
   const signature = useMemo(() => enabledModsSignature(localMods), [localMods]);
@@ -30,10 +28,9 @@ export const useProfileConflicts = () => {
       invoke<ProfileConflicts>("get_profile_conflicts", { profileFolder }),
     placeholderData: (previous) => previous,
     refetchOnWindowFocus: false,
-    enabled,
   });
 
-  const conflicts = enabled ? query.data?.conflicts : undefined;
+  const conflicts = query.data?.conflicts;
   const groups = useMemo(() => groupConflicts(conflicts ?? []), [conflicts]);
   const statusByMod = useMemo(() => conflictStatusByMod(groups), [groups]);
 

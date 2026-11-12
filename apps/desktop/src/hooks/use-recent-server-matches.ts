@@ -1,22 +1,22 @@
 import { skipToken, useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
+import { useFeatureEnabled } from "@/hooks/use-feature-enabled";
 import { useSelectedSteamAccount } from "@/hooks/use-steam-accounts";
 import { STALE_TIME_API } from "@/lib/query-constants";
-import { usePersistedStore } from "@/lib/store";
 import { recentMatchesByLocation } from "@/lib/server-picker";
 import { getPlayerRegionHistory } from "@/lib/stats/api";
 import type { ServerPickerLocation } from "@/types/generated/ServerPickerLocation";
 
 /**
  * Where the Stats account's recent matches were played, per picker location.
- * Follows the Player Stats privacy switch, which promises that turning it off
+ * Follows the Stats feature switch, which promises that turning it off
  * stops sending account ids to deadlock-api.
  */
 export const useRecentServerMatches = (
   locations: readonly ServerPickerLocation[],
 ): Map<string, number> | null => {
   const { accountId } = useSelectedSteamAccount();
-  const enabled = usePersistedStore((state) => state.playerStatsEnabled);
+  const enabled = useFeatureEnabled("stats");
   const { data: history } = useQuery({
     queryKey: ["player-region-history", accountId],
     queryFn:

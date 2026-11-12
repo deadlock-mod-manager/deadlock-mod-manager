@@ -4606,6 +4606,7 @@
     "developerMode": "Developer Mode",
     "developerModeDescription": "Enable developer mode to access advanced tools and debugging features",
     "experimental": "Experimental",
+    "features": "Features",
     "ingestTool": {
       "title": "Share matches from Steam's cache",
       "description": "Watches Steam's download cache for Deadlock match data and sends it to deadlock-api.",
@@ -4967,6 +4968,11 @@
   "featureFlags": {
     "title": "Experimental Features",
     "description": "Opt in to experimental features and try new functionality before it's released to everyone.",
+    "blockedBy": {
+      "feature": "Turned off in Features, so this has no effect.",
+      "minimal": "Minimal DMM is on, so this has no effect."
+    },
+    "openFeatures": "Open Features",
     "features": {
       "custom-maps": {
         "title": "Custom Maps",
@@ -4975,18 +4981,6 @@
       "mod-foundry": {
         "title": "Mod Foundry",
         "description": "Create and package your own mods."
-      },
-      "profile-management": {
-        "title": "Profile Management",
-        "description": "Create and switch between mod profiles."
-      },
-      "profile-sharing": {
-        "title": "Profile Sharing",
-        "description": "Share mod profiles with others and import shared ones."
-      },
-      "conflict-detection": {
-        "title": "Conflict Detection",
-        "description": "Flag enabled mods that change the same files and show them in a Conflicts tab in My Mods."
       },
       "performance-configs": {
         "title": "Performance Configs",
@@ -4999,6 +4993,70 @@
       "plugins": {
         "title": "Plugins",
         "description": "Install plugins that add tools to DMM. You choose which files and profiles they can access."
+      }
+    }
+  },
+  "optionalFeatures": {
+    "title": "Features",
+    "description": "Turn off the features you don't use. Mod management is always on. A feature you turn off disappears from the app, but anything it already changed in your game stays.",
+    "leftovers": {
+      "performance": "Your performance config is still applied. Remove it on the Performance page.",
+      "serverPicker_one": "{{count}} relay location is still blocked. Unblock it in Server Picker.",
+      "serverPicker_other": "{{count}} relay locations are still blocked. Unblock them in Server Picker.",
+      "crosshairs": "Your custom crosshair is still applied. Turn it off on the Crosshairs page."
+    },
+    "minimal": {
+      "title": "Minimal DMM",
+      "description": "Turn off every feature below and keep only mod management. Your choices come back when you turn this off.",
+      "enabledCount": "{{count}} of {{total}} features on",
+      "paused_one": "{{count}} feature paused",
+      "paused_other": "{{count}} features paused",
+      "nothingPaused": "Every feature was already off"
+    },
+    "groups": {
+      "matches": "Matches and servers",
+      "customization": "Customization",
+      "tools": "Tools"
+    },
+    "pausedBadge": "Paused",
+    "experimentalBadge": "Experimental",
+    "turnOnExperimental": "Turn on in Experimental",
+    "features": {
+      "stats": {
+        "title": "Stats",
+        "description": "Player stats, match history and the Live tab. Sends the Steam account IDs you look up to deadlock-api."
+      },
+      "server-browser": {
+        "title": "Server Browser",
+        "description": "Browse and join custom Deadlock servers."
+      },
+      "server-picker": {
+        "title": "Server Picker",
+        "description": "Block relay locations so matchmaking only uses the ones you allow."
+      },
+      "crosshairs": {
+        "title": "Crosshairs",
+        "description": "Design custom crosshairs and browse community ones."
+      },
+      "skins": {
+        "title": "Hero Skins",
+        "description": "Pick a skin per hero and shuffle skins on each launch. Turning it off also stops the shuffle."
+      },
+      "autoexec": {
+        "title": "Autoexec Editor",
+        "description": "Edit autoexec.cfg from Settings."
+      },
+      "performance": {
+        "title": "Performance",
+        "description": "Apply community configs that trade visual detail for frame rate."
+      },
+      "foundry": {
+        "title": "Mod Foundry",
+        "description": "Create and package your own mods."
+      },
+      "plugins": {
+        "title": "Plugins",
+        "description": "Run the plugins you installed and show them in the sidebar. Turning it off stops all of them without uninstalling anything."
       }
     }
   },
@@ -8620,42 +8678,6 @@
     "quarantinedStaging": "Some unfinished changes couldn't be completed, so they were set aside here:",
     "failed": "Couldn't repair the mod folder: {{reason}}"
   },
-  "experimentalTour": {
-    "tryMe": "Try me",
-    "invitation": "Experimental features",
-    "title": "Want to try something new?",
-    "description": "Take a quick look at custom maps.",
-    "duration": "The tour takes about a minute. You decide which features to enable.",
-    "start": "Take the tour",
-    "dismiss": "Not now",
-    "skip": "Skip tour",
-    "next": "Next",
-    "back": "Back",
-    "finish": "Finish tour",
-    "done": "Done",
-    "progress": "{{current}} of {{total}}",
-    "experimental": "Experimental",
-    "preview": "Feature preview",
-    "enable": "Enable {{feature}} when I finish",
-    "alreadyEnabled": "Already enabled",
-    "pending": "Nothing changes until you finish the tour.",
-    "warning": "These features are still in development and may have bugs. You can turn them off in Settings → Experimental.",
-    "complete": "Ready to try",
-    "completeEmpty": "No changes made",
-    "completeDescription": "Open a feature below, or find it later in the sidebar.",
-    "emptyDescription": "You can take the tour again from Settings → Experimental.",
-    "open": "Open {{feature}}",
-    "enabled": "Enabled",
-    "features": {
-      "custom-maps": {
-        "title": "Try a community map",
-        "description": "Browse maps made by other players.",
-        "hint": "Adds Maps to your sidebar.",
-        "previewTitle": "Somewhere new to play",
-        "previewDetail": "See what the community has been building."
-      }
-    }
-  },
   "featureHints": {
     "didYouKnow": "Did you know?",
     "showMe": "Show me",
@@ -8728,6 +8750,10 @@
     "remoteInstall": {
       "title": "Install mods from your phone",
       "body": "Link your GameBanana account and any mod you queue with Remote Install downloads and installs here, even while you're away."
+    },
+    "minimalMode": {
+      "title": "Tired of all the bloat?",
+      "body": "Switch DMM to minimal mode and keep only mod management, like the good ol' v0.10.0. Your features come back when you switch it off."
     },
     "settingsSearch": {
       "title": "Search every setting",

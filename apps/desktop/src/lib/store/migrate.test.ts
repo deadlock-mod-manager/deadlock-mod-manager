@@ -321,16 +321,7 @@ describe("safeMigrate", () => {
   it("LATEST_VERSION matches the highest step target", () => {
     const max = Math.max(...MIGRATION_STEPS.map((s) => s.to));
     expect(LATEST_VERSION).toBe(max);
-    expect(LATEST_VERSION).toBe(47);
-  });
-
-  it("v47 (remove occult geometry): drops both toggles", () => {
-    expect(
-      safeMigrate(
-        { showOccultGeometry: false, animateOccultGeometry: true },
-        46,
-      ),
-    ).toStrictEqual({});
+    expect(LATEST_VERSION).toBe(49);
   });
 
   it("v25 (themes switch): drops the leftover enabledPlugins.themes entry", () => {
@@ -338,14 +329,11 @@ describe("safeMigrate", () => {
 
     expect(safeMigrate(state, 24)).toStrictEqual({
       enabledPlugins: { discord: true },
-      experimentalTourDismissed: false,
     });
   });
 
   it("v25 (themes switch): tolerates a missing enabledPlugins map", () => {
-    expect(safeMigrate({}, 24)).toStrictEqual({
-      experimentalTourDismissed: false,
-    });
+    expect(safeMigrate({}, 24)).toStrictEqual({});
   });
 
   it("v39 (background setting): keeps an enabled plugin's image and drops the plugins", () => {
@@ -401,8 +389,44 @@ describe("safeMigrate", () => {
 
     expect(safeMigrate(state, 39)).toStrictEqual({
       experimentalFeatures: { "custom-maps": true, plugins: false },
-      playerStatsEnabled: false,
+      features: { stats: false },
     });
+  });
+
+  it("v47 (remove occult geometry): drops both toggles", () => {
+    expect(
+      safeMigrate(
+        { showOccultGeometry: false, animateOccultGeometry: true },
+        46,
+      ),
+    ).toStrictEqual({});
+  });
+
+  it("v48 (optional features): moves Player Stats into the Stats feature", () => {
+    expect(
+      safeMigrate(
+        { playerStatsEnabled: false, features: { crosshairs: false } },
+        47,
+      ),
+    ).toStrictEqual({ features: { crosshairs: false, stats: false } });
+    expect(safeMigrate({ playerStatsEnabled: true }, 47)).toStrictEqual({});
+  });
+
+  it("v49 (graduate flags): drops the graduated flags and the tour dismissal", () => {
+    expect(
+      safeMigrate(
+        {
+          experimentalTourDismissed: true,
+          experimentalFeatures: {
+            "profile-management": false,
+            "profile-sharing": false,
+            "conflict-detection": false,
+            plugins: true,
+          },
+        },
+        48,
+      ),
+    ).toStrictEqual({ experimentalFeatures: { plugins: true } });
   });
 
   describe("specific step idempotency", () => {
@@ -547,15 +571,6 @@ describe("safeMigrate", () => {
         hasSeenTelemetryPrompt: true,
       });
     });
-  });
-});
-
-it("initializes tour dismissal without resetting an existing choice", () => {
-  expect(safeMigrate({}, 29)).toMatchObject({
-    experimentalTourDismissed: false,
-  });
-  expect(safeMigrate({ experimentalTourDismissed: true }, 29)).toMatchObject({
-    experimentalTourDismissed: true,
   });
 });
 

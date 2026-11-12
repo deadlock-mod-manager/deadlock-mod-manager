@@ -143,8 +143,6 @@ const MyMods = () => {
   const { t } = useTranslation();
   const LibraryBanner = useThemeOverride("libraryBanner");
   const isCustomMapsEnabled = useExperimentalFeature("custom-maps");
-  const isConflictDetectionEnabled =
-    useExperimentalFeature("conflict-detection");
   const mods = usePersistedStore((state) => state.localMods);
   const activeProfileId = usePersistedStore((state) => state.activeProfileId);
   const modGroups = usePersistedStore(
@@ -651,11 +649,7 @@ const MyMods = () => {
             open={actionsMenuOpen}>
             <HintAnchor
               align='end'
-              eligible={
-                isConflictDetectionEnabled &&
-                conflictCount > 0 &&
-                installedMods.length > 1
-              }
+              eligible={conflictCount > 0 && installedMods.length > 1}
               hintId='load-order'
               onShowMe={openModOrdering}>
               <HintAnchor
@@ -897,19 +891,17 @@ const MyMods = () => {
                           ({disabledModsCount})
                         </span>
                       </TabsTrigger>
-                      {isConflictDetectionEnabled && (
-                        <TabsTrigger value={CONFLICTS_TAB}>
-                          {hiddenModelCount > 0 ? (
-                            <TriangleAlert className='mr-2 h-4 w-4 text-amber-400' />
-                          ) : (
-                            <Layers className='mr-2 h-4 w-4' />
-                          )}
-                          {t("myMods.tabs.conflicts")}
-                          <span className='ml-2 text-muted-foreground text-xs'>
-                            ({conflictCount})
-                          </span>
-                        </TabsTrigger>
-                      )}
+                      <TabsTrigger value={CONFLICTS_TAB}>
+                        {hiddenModelCount > 0 ? (
+                          <TriangleAlert className='mr-2 h-4 w-4 text-amber-400' />
+                        ) : (
+                          <Layers className='mr-2 h-4 w-4' />
+                        )}
+                        {t("myMods.tabs.conflicts")}
+                        <span className='ml-2 text-muted-foreground text-xs'>
+                          ({conflictCount})
+                        </span>
+                      </TabsTrigger>
                     </TabsList>
                     <div className='ml-auto flex h-9 items-center gap-0.5 rounded-lg border border-border/50 bg-secondary/40 p-0.5'>
                       <SortSelect
@@ -1077,11 +1069,9 @@ const MyMods = () => {
                   </TabsContent>
                 )}
 
-                {isConflictDetectionEnabled && (
-                  <TabsContent className='mt-0' value={CONFLICTS_TAB}>
-                    <ConflictsPanel visibleModIds={visibleModIds} />
-                  </TabsContent>
-                )}
+                <TabsContent className='mt-0' value={CONFLICTS_TAB}>
+                  <ConflictsPanel visibleModIds={visibleModIds} />
+                </TabsContent>
 
                 {!isConflictsTab &&
                   displayMods.length > 0 &&

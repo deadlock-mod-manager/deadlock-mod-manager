@@ -1917,7 +1917,6 @@
   }
 }
 
-.experimental-tour-nudge,
 .commission-nudge {
   font-family: "Segoe Print", "Bradley Hand", "Chalkboard SE", cursive;
   font-size: 0.875rem;
@@ -1926,19 +1925,12 @@
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  .experimental-tour-nudge,
   .commission-nudge {
     animation: tour-note-appear 350ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
 
-  .experimental-tour-nudge-arrow,
   .commission-nudge-arrow {
     transition: transform 180ms ease-out;
-  }
-
-  a:hover .experimental-tour-nudge-arrow,
-  a:focus-visible .experimental-tour-nudge-arrow {
-    transform: translateX(-3px) rotate(-5deg);
   }
 
   .commission-nudge-wrap:hover .commission-nudge-arrow,

@@ -15,7 +15,6 @@ import { invoke } from "@tauri-apps/api/core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useScrollBackButtonContext } from "@/contexts/scroll-back-button-context";
-import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { useLaunch } from "@/hooks/use-launch";
 import { useLaunchProgress } from "@/lib/launch-progress";
 import { isGameRunning } from "@/lib/tauri-commands";
@@ -38,7 +37,6 @@ export const Toolbar = () => {
   const [moddedAnimating, setModdedAnimating] = useState(false);
   const [launching, setLaunching] = useState(false);
   const { showBackButton, onBackClick } = useScrollBackButtonContext();
-  const isProfileSharingEnabled = useExperimentalFeature("profile-sharing");
 
   // useHeroDetection already polls this key every 5s; a second interval here
   // would drift out of phase and double the process scans.
@@ -70,15 +68,11 @@ export const Toolbar = () => {
           <div className='min-w-0 max-w-52'>
             <Profile />
           </div>
-          {isProfileSharingEnabled && (
-            <>
-              <span
-                aria-hidden='true'
-                className='my-1.5 w-px shrink-0 bg-gradient-to-b from-transparent via-primary/30 to-transparent'
-              />
-              <ProfileShareDialog />
-            </>
-          )}
+          <span
+            aria-hidden='true'
+            className='my-1.5 w-px shrink-0 bg-gradient-to-b from-transparent via-primary/30 to-transparent'
+          />
+          <ProfileShareDialog />
         </div>
       </div>
 

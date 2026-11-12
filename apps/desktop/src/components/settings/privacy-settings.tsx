@@ -31,8 +31,9 @@ const PrivacySettings = () => {
     updateTelemetrySettings,
     linuxCanvasNSFWBlur,
     setLinuxCanvasNSFWBlur,
-    playerStatsEnabled,
-    setPlayerStatsEnabled,
+    features,
+    minimalMode,
+    setFeatureEnabled,
   } = usePersistedStore();
   const isLinux = platform() === "linux";
 
@@ -155,10 +156,11 @@ const PrivacySettings = () => {
         </h3>
 
         <SettingToggleRow
-          checked={playerStatsEnabled}
+          checked={features.stats && !minimalMode}
           description={t("privacy.playerStatsDescription")}
+          disabled={minimalMode}
           id='toggle-privacy-player-stats'
-          onCheckedChange={setPlayerStatsEnabled}
+          onCheckedChange={(checked) => setFeatureEnabled("stats", checked)}
           title={t("privacy.playerStats")}
         />
       </div>

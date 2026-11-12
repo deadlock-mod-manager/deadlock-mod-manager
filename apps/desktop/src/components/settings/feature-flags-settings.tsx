@@ -1,24 +1,42 @@
-import { useLocation } from "react-router";
-import { ExperimentalTour } from "@/components/experimental-tour/experimental-tour";
+import { Button } from "@deadlock-mods/ui/components/button";
+import { WarningCircleIcon } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import { SettingToggleRow } from "@/components/settings/setting-row";
 import { usePersistedStore } from "@/lib/store";
 import { EXPERIMENTAL_FEATURES } from "@/lib/constants";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  EXTERNAL_PLUGINS_QUERY_KEY,
-  setPluginRuntimeEnabled,
-} from "@/lib/external-plugins";
+import { syncPluginRuntime } from "@/lib/external-plugins";
+import { featureForFlag, type OptionalFeature } from "@/lib/features";
 import { isPluginsBuilt } from "@/lib/runtime-bootstrap";
 import type { ExperimentalFeature } from "@/lib/store/slices/ui";
 
-export const FeatureFlagsSettings = () => {
+/**
+ * Why an opted-in experiment does nothing: the Features tab keeps the feature
+ * it belongs to off.
+ */
+const blockedReason = (
+  flag: ExperimentalFeature,
+  flagOn: boolean,
+  features: Record<OptionalFeature, boolean>,
+  minimalMode: boolean,
+): "minimal" | "feature" | null => {
+  const optional = featureForFlag(flag);
+  if (!flagOn || optional === null) return null;
+  if (minimalMode) return "minimal";
+  return features[optional] ? null : "feature";
+};
+
+export const FeatureFlagsSettings = ({
+  onOpenFeatures,
+}: {
+  onOpenFeatures: () => void;
+}) => {
   const { t } = useTranslation();
-  const location = useLocation();
-  const openTour = new URLSearchParams(location.search).get("tour") === "1";
   const experimentalFeatures = usePersistedStore(
     (state) => state.experimentalFeatures,
   );
+  const features = usePersistedStore((state) => state.features);
+  const minimalMode = usePersistedStore((state) => state.minimalMode);
   const setExperimentalFeature = usePersistedStore(
     (state) => state.setExperimentalFeature,
   );
@@ -31,35 +49,65 @@ export const FeatureFlagsSettings = () => {
       feature: ExperimentalFeature;
       enabled: boolean;
     }) => {
-      if (feature === "plugins") {
-        await setPluginRuntimeEnabled(enabled);
-        queryClient.removeQueries({ queryKey: EXTERNAL_PLUGINS_QUERY_KEY });
-      }
+      const state = usePersistedStore.getState();
+      await syncPluginRuntime(queryClient, state, {
+        ...state,
+        experimentalFeatures: {
+          ...state.experimentalFeatures,
+          [feature]: enabled,
+        },
+      });
       setExperimentalFeature(feature, enabled);
     },
   });
 
   return (
     <div className='space-y-4'>
-      <ExperimentalTour key={location.key} replay startOpen={openTour} />
       {EXPERIMENTAL_FEATURES.filter(
         (feature) => feature !== "plugins" || isPluginsBuilt(),
-      ).map((feature) => (
-        <div
-          className='rounded-lg border border-border bg-card p-4'
-          key={feature}>
-          <SettingToggleRow
-            checked={experimentalFeatures[feature]}
-            disabled={updateFeature.isPending}
-            description={t(`featureFlags.features.${feature}.description`)}
-            id={`experimental-${feature}`}
-            onCheckedChange={(checked) =>
-              updateFeature.mutate({ feature, enabled: checked })
-            }
-            title={t(`featureFlags.features.${feature}.title`)}
-          />
-        </div>
-      ))}
+      ).map((feature) => {
+        const blockedBy = blockedReason(
+          feature,
+          experimentalFeatures[feature],
+          features,
+          minimalMode,
+        );
+        return (
+          <div
+            className='rounded-lg border border-border bg-card p-4'
+            key={feature}>
+            <SettingToggleRow
+              checked={experimentalFeatures[feature]}
+              disabled={updateFeature.isPending}
+              description={t(`featureFlags.features.${feature}.description`)}
+              id={`experimental-${feature}`}
+              notes={
+                blockedBy && (
+                  <p className='flex flex-wrap items-center gap-x-1.5 gap-y-1 pt-1 text-amber-400 text-xs'>
+                    <WarningCircleIcon
+                      aria-hidden='true'
+                      className='size-3.5 shrink-0'
+                      weight='bold'
+                    />
+                    {t(`featureFlags.blockedBy.${blockedBy}`)}
+                    <Button
+                      className='h-auto p-0 text-xs'
+                      onClick={onOpenFeatures}
+                      size='sm'
+                      variant='link'>
+                      {t("featureFlags.openFeatures")}
+                    </Button>
+                  </p>
+                )
+              }
+              onCheckedChange={(checked) =>
+                updateFeature.mutate({ feature, enabled: checked })
+              }
+              title={t(`featureFlags.features.${feature}.title`)}
+            />
+          </div>
+        );
+      })}
     </div>
   );
 };

@@ -1,9 +1,9 @@
-import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
+import { useFeatureEnabled } from "@/hooks/use-feature-enabled";
 import { ConfigFoundListener } from "./global/config-found-listener";
 import { ReapplyFailedListener } from "./global/reapply-failed-listener";
 
 export const PerformanceRenderer = () => {
-  const isEnabled = useExperimentalFeature("performance-configs");
+  const isEnabled = useFeatureEnabled("performance");
   return (
     <>
       <ConfigFoundListener />

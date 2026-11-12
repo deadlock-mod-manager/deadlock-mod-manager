@@ -36,6 +36,7 @@ const FEATURE_HINTS = [
     minAgeDays: 0,
     shortcut: ["Ctrl", "F"],
   },
+  { id: "minimal-mode", i18nKey: "minimalMode", minAgeDays: 1 },
   { id: "custom-mod-sources", i18nKey: "customModSources", minAgeDays: 0 },
   { id: "randomized-groups", i18nKey: "randomizedGroups", minAgeDays: 1 },
   { id: "party-planner", i18nKey: "partyPlanner", minAgeDays: 0 },

@@ -1,5 +1,6 @@
 import type { StateCreator } from "zustand";
 import { EXPERIMENTAL_FEATURES, SortType } from "@/lib/constants";
+import type { OptionalFeature } from "@/lib/features";
 import type { State } from "..";
 import {
   applyPluginSettings,
@@ -52,13 +53,22 @@ export type ExperimentalFeature = (typeof EXPERIMENTAL_FEATURES)[number];
 const DEFAULT_EXPERIMENTAL_FEATURES = {
   "custom-maps": false,
   "mod-foundry": true,
-  "profile-management": true,
-  "profile-sharing": true,
-  "conflict-detection": true,
   "performance-configs": true,
   "cloud-backup": true,
   plugins: false,
 } satisfies Record<ExperimentalFeature, boolean>;
+
+const DEFAULT_FEATURES = {
+  stats: true,
+  "server-browser": true,
+  "server-picker": true,
+  crosshairs: true,
+  skins: true,
+  autoexec: true,
+  performance: true,
+  foundry: true,
+  plugins: true,
+} satisfies Record<OptionalFeature, boolean>;
 
 export type CrosshairFilters = {
   selectedHeroes: string[];
@@ -90,8 +100,6 @@ const DEFAULT_APP_BACKGROUND: AppBackground = {
 };
 
 export type UIState = {
-  experimentalTourDismissed: boolean;
-  dismissExperimentalTour: () => void;
   // Set once the user has answered the match sync opt-in, either in onboarding
   // or in the one-time prompt shown to existing users.
   matchSyncPromptDismissed: boolean;
@@ -107,8 +115,10 @@ export type UIState = {
   seenNavItems: Record<string, true>;
   experimentalFeatures: Record<ExperimentalFeature, boolean>;
   autoFixMods: boolean;
-  /** Shows the Stats page, which looks players up on deadlock-api. */
-  playerStatsEnabled: boolean;
+  /** Optional features the user kept on. Read through `isFeatureEnabled`. */
+  features: Record<OptionalFeature, boolean>;
+  /** Turns every optional feature off without changing `features`. */
+  minimalMode: boolean;
   appBackground: AppBackground;
 
   // Plugins
@@ -132,7 +142,8 @@ export type UIState = {
     enabled: boolean,
   ) => void;
   setAutoFixMods: (enabled: boolean) => void;
-  setPlayerStatsEnabled: (enabled: boolean) => void;
+  setFeatureEnabled: (feature: OptionalFeature, enabled: boolean) => void;
+  setMinimalMode: (enabled: boolean) => void;
   updateAppBackground: (background: Partial<AppBackground>) => void;
   setEnabledPlugin: (id: string, enabled: boolean) => void;
   setPluginSettings: (id: string, value: unknown) => void;
@@ -167,12 +178,11 @@ export const uiDeepMergeKeys = [
   "mapsFilters",
   "crosshairFilters",
   "experimentalFeatures",
+  "features",
   "appBackground",
 ] as const satisfies readonly (keyof UIState)[];
 
 export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
-  experimentalTourDismissed: false,
-  dismissExperimentalTour: () => set({ experimentalTourDismissed: true }),
   matchSyncPromptDismissed: false,
   dismissMatchSyncPrompt: () => set({ matchSyncPromptDismissed: true }),
   showWhatsNew: false,
@@ -185,7 +195,8 @@ export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
   seenNavItems: {},
   experimentalFeatures: DEFAULT_EXPERIMENTAL_FEATURES,
   autoFixMods: true,
-  playerStatsEnabled: true,
+  features: DEFAULT_FEATURES,
+  minimalMode: false,
   appBackground: DEFAULT_APP_BACKGROUND,
   enabledPlugins: {},
   pluginSettings: {},
@@ -266,10 +277,12 @@ export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
       autoFixMods: enabled,
     })),
 
-  setPlayerStatsEnabled: (enabled: boolean) =>
-    set(() => ({
-      playerStatsEnabled: enabled,
+  setFeatureEnabled: (feature: OptionalFeature, enabled: boolean) =>
+    set((state) => ({
+      features: { ...state.features, [feature]: enabled },
     })),
+
+  setMinimalMode: (enabled: boolean) => set({ minimalMode: enabled }),
 
   updateAppBackground: (background: Partial<AppBackground>) =>
     set((state) => ({

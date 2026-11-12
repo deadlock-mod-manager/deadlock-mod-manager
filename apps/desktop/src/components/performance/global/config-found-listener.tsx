@@ -137,7 +137,14 @@ export const ConfigFoundListener = () => {
 
   useEffect(() => {
     downloadManager.setConfigFoundHandler((found) => {
-      if (usePersistedStore.getState().perfDismissedModConfigs[found.modId]) {
+      // Asking still works while Performance is experimental (reviewing opts
+      // in), but not once the user turned the feature off.
+      const state = usePersistedStore.getState();
+      if (
+        !state.features.performance ||
+        state.minimalMode ||
+        state.perfDismissedModConfigs[found.modId]
+      ) {
         discardStaging(found.stagingId);
         return;
       }

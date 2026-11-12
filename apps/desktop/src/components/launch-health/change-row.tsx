@@ -12,6 +12,7 @@ import {
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { CrashCheck } from "@/hooks/use-crash-check";
+import { useFeatureEnabled } from "@/hooks/use-feature-enabled";
 import type { SessionChange } from "@/lib/launch-health/types";
 import { usePersistedStore } from "@/lib/store";
 import {
@@ -64,6 +65,7 @@ export const ChangeRow = ({
 }: ChangeRowProps) => {
   const { t, i18n } = useTranslation();
   const userConfigs = usePersistedStore((state) => state.perfUserConfigs);
+  const isAutoexecEnabled = useFeatureEnabled("autoexec");
 
   switch (change.kind) {
     case "perfConfig": {
@@ -150,12 +152,14 @@ export const ChangeRow = ({
       return (
         <Row
           action={
-            <Button
-              onClick={() => onOpenSettings("autoexec")}
-              size='sm'
-              variant='ghost'>
-              {t("launchHealth.actions.open")}
-            </Button>
+            isAutoexecEnabled ? (
+              <Button
+                onClick={() => onOpenSettings("autoexec")}
+                size='sm'
+                variant='ghost'>
+                {t("launchHealth.actions.open")}
+              </Button>
+            ) : null
           }
           icon={TerminalWindowIcon}
           title={t("launchHealth.changes.autoexec")}

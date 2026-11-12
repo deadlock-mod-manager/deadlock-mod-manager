@@ -5,6 +5,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
+import { useFeatureEnabled } from "@/hooks/use-feature-enabled";
 import { getErrorMessage } from "@/lib/errors";
 import { gameBananaImportSource } from "@/lib/performance/config-list";
 import { configListing } from "@/lib/performance/config-listing";
@@ -17,9 +18,13 @@ import { usePerfCatalog } from "./use-perf-queries";
 
 type ListedMod = Pick<ModDto, "remoteId" | "category" | "name" | "tags">;
 
-/** Whether a GameBanana listing is a performance config rather than a mod. */
+/**
+ * Whether a GameBanana listing is a performance config rather than a mod.
+ * With Performance turned off every listing installs as a mod.
+ */
 export const useConfigListing = (mod: ListedMod | undefined) => {
-  const { data: catalog } = usePerfCatalog();
+  const enabled = useFeatureEnabled("performance");
+  const { data: catalog } = usePerfCatalog(enabled);
   const catalogConfigs = useMemo(
     () =>
       new Map(
@@ -30,7 +35,7 @@ export const useConfigListing = (mod: ListedMod | undefined) => {
       ),
     [catalog],
   );
-  return mod ? configListing(mod, catalogConfigs) : null;
+  return mod && enabled ? configListing(mod, catalogConfigs) : null;
 };
 
 /**

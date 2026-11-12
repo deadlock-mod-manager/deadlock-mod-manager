@@ -4,6 +4,7 @@ import { load } from "@tauri-apps/plugin-store";
 import { downloadManager } from "./download/manager";
 import { applySegmentedDownloadsSetting } from "./download/segmented-downloads";
 import { setPluginRuntimeEnabled } from "./external-plugins";
+import { isFeatureEnabled } from "./features";
 import logger from "./logger";
 import {
   initializeRuntimeBootstrap,
@@ -42,7 +43,7 @@ const bootstrapApplication = async (): Promise<ApplicationBootstrap> => {
   await usePersistedStore.persist.rehydrate();
   const storage = await storageReady();
   await setPluginRuntimeEnabled(
-    storage.ok && usePersistedStore.getState().experimentalFeatures.plugins,
+    storage.ok && isFeatureEnabled(usePersistedStore.getState(), "plugins"),
   );
 
   logger

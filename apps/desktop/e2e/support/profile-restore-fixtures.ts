@@ -183,7 +183,6 @@ export const prepareProfileRestoreWorld = async (world: CreatedWorld) => {
           ...persisted.state,
           localMods: profile.mods,
           experimentalFeatures: { "cloud-backup": true },
-          experimentalTourDismissed: true,
         },
       }),
     }),

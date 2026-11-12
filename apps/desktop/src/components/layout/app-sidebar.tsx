@@ -36,6 +36,7 @@ import {
 } from "@phosphor-icons/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useEffect, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation, useNavigate } from "react-router";
 import { HintAnchor } from "@/components/feature-hints/hint-anchor";
@@ -43,6 +44,8 @@ import { PluginTile, pluginGlyph } from "@/components/plugins/plugin-identity";
 import { TONE_COLOR } from "@/components/plugins/plugin-status";
 import { useThemeOverride } from "@/components/providers/theme-overrides";
 import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
+import { OPTIONAL_FEATURES } from "@/lib/constants";
+import { isFeatureEnabled, type OptionalFeature } from "@/lib/features";
 import { useExternalPlugins } from "@/hooks/use-external-plugins";
 import { isDownloadInProgress } from "@/lib/download/status";
 import type { FeatureHintId } from "@/lib/feature-hints";
@@ -78,6 +81,8 @@ type SidebarItem = {
   hintId?: FeatureHintId;
   /** Also active on pages nested under `url`, such as a single match under Stats. */
   activeOnChildren?: boolean;
+  /** Hidden while this optional feature is off. */
+  feature?: OptionalFeature;
 };
 
 const GROUP_ORDER = [
@@ -164,6 +169,7 @@ const getSidebarItems = (
     },
     {
       id: "servers",
+      feature: "server-browser",
       hintId: "server-browser",
       title: () => <span>{t("navigation.servers")}</span>,
       tooltipLabel: t("navigation.servers"),
@@ -173,6 +179,7 @@ const getSidebarItems = (
     },
     {
       id: "crosshairs",
+      feature: "crosshairs",
       title: () => <span>{t("navigation.crosshairs")}</span>,
       tooltipLabel: t("navigation.crosshairs"),
       url: "/crosshairs",
@@ -181,6 +188,7 @@ const getSidebarItems = (
     },
     {
       id: "skins",
+      feature: "skins",
       title: () => <span>{t("navigation.skins")}</span>,
       tooltipLabel: t("navigation.skins"),
       url: "/skins",
@@ -189,6 +197,7 @@ const getSidebarItems = (
     },
     {
       id: "foundry",
+      feature: "foundry",
       hintId: "foundry",
       title: () => <span>{t("navigation.foundry")}</span>,
       tooltipLabel: t("navigation.foundry"),
@@ -199,6 +208,7 @@ const getSidebarItems = (
     },
     {
       id: "performance",
+      feature: "performance",
       hintId: "performance-configs",
       title: () => <span>{t("navigation.performance")}</span>,
       tooltipLabel: t("navigation.performance"),
@@ -209,6 +219,7 @@ const getSidebarItems = (
     },
     {
       id: "server-picker",
+      feature: "server-picker",
       hintId: "server-picker",
       title: () => <span>{t("serverPicker.title")}</span>,
       tooltipLabel: t("serverPicker.title"),
@@ -219,6 +230,7 @@ const getSidebarItems = (
     },
     {
       id: "stats",
+      feature: "stats",
       title: () => <span>{t("navigation.stats")}</span>,
       tooltipLabel: t("navigation.stats"),
       url: "/stats",
@@ -261,27 +273,7 @@ const getSidebarItems = (
     },
     {
       id: "experimental",
-      title: () => (
-        <span className='flex min-w-0 flex-1 items-center gap-3'>
-          <span>{t("settings.experimental")}</span>
-          <span className='experimental-tour-nudge ml-auto flex shrink-0 items-center gap-1 text-primary group-data-[collapsible=icon]:hidden'>
-            <svg
-              aria-hidden
-              viewBox='0 0 30 18'
-              className='experimental-tour-nudge-arrow h-4 w-6'
-              fill='none'>
-              <path
-                d='M27 5C20 13 12 13 3 9M3 9l6-5M3 9l7 5'
-                stroke='currentColor'
-                strokeWidth='1.5'
-                strokeLinecap='round'
-                strokeLinejoin='round'
-              />
-            </svg>
-            {t("experimentalTour.tryMe")}
-          </span>
-        </span>
-      ),
+      title: () => <span>{t("settings.experimental")}</span>,
       tooltipLabel: t("settings.experimental"),
       url: "/settings/experimental",
       icon: FlagIcon,
@@ -405,13 +397,7 @@ const SidebarItemComponent = ({
       className={item.className}
       isActive={titleProps.isActive}
       tooltip={item.tooltipLabel}>
-      <Link
-        draggable='false'
-        to={
-          item.id === "experimental"
-            ? "/settings/experimental?tour=1"
-            : (item.url ?? "/")
-        }>
+      <Link draggable='false' to={item.url ?? "/"}>
         {renderIcon(item, titleProps.isActive)}
         {item.title(titleProps)}
         {showNewBadge && <NewBadge />}
@@ -441,12 +427,12 @@ export const AppSidebar = () => {
   const SidebarContentExtra = useThemeOverride("sidebarContentExtra");
   const SidebarFooterExtra = useThemeOverride("sidebarFooterExtra");
   const isCustomMapsEnabled = useExperimentalFeature("custom-maps");
-  const isPlayerStatsEnabled = usePersistedStore(
-    (state) => state.playerStatsEnabled,
+  const enabledFeatures = usePersistedStore(
+    useShallow((state) =>
+      OPTIONAL_FEATURES.filter((feature) => isFeatureEnabled(state, feature)),
+    ),
   );
-  const isModFoundryEnabled = useExperimentalFeature("mod-foundry");
-  const isPerformanceEnabled = useExperimentalFeature("performance-configs");
-  const isPluginsEnabled = useExperimentalFeature("plugins");
+  const isPluginsEnabled = enabledFeatures.includes("plugins");
 
   const externalPlugins = useExternalPlugins();
   const pluginItems: SidebarItem[] = [
@@ -490,9 +476,7 @@ export const AppSidebar = () => {
   ].filter(
     (item) =>
       (item.id !== "maps" || isCustomMapsEnabled) &&
-      (item.id !== "stats" || isPlayerStatsEnabled) &&
-      (item.id !== "foundry" || isModFoundryEnabled) &&
-      (item.id !== "performance" || isPerformanceEnabled),
+      (!item.feature || enabledFeatures.includes(item.feature)),
   );
 
   useEffect(() => {

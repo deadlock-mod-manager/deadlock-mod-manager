@@ -11,13 +11,13 @@ import {
 } from "@/lib/external-plugins";
 import type { ExternalPluginNotificationEvent } from "@/types/generated/ExternalPluginNotificationEvent";
 import type { ExternalPluginSummary } from "@/types/generated/ExternalPluginSummary";
-import { useExperimentalFeature } from "./use-experimental-feature";
+import { useFeatureEnabled } from "./use-feature-enabled";
 
 /** Installed external plugins, refetched whenever the backend disables,
  * revokes, updates, removes or stops one. */
 export const useExternalPlugins = () => {
   const queryClient = useQueryClient();
-  const enabled = useExperimentalFeature("plugins");
+  const enabled = useFeatureEnabled("plugins");
 
   useEffect(() => {
     if (!enabled) return;
@@ -42,7 +42,7 @@ export const useExternalPlugins = () => {
 export const useExternalPluginNotifications = () => {
   const queryClient = useQueryClient();
   const { t } = useTranslation();
-  const enabled = useExperimentalFeature("plugins");
+  const enabled = useFeatureEnabled("plugins");
 
   useEffect(() => {
     if (!enabled) return;

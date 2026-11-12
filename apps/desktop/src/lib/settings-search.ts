@@ -1,5 +1,5 @@
 import type { Platform } from "@tauri-apps/plugin-os";
-import { EXPERIMENTAL_FEATURES } from "@/lib/constants";
+import { EXPERIMENTAL_FEATURES, OPTIONAL_FEATURES } from "@/lib/constants";
 
 export const SETTINGS_TAB_LABEL_KEYS = {
   "launch-options": "settings.launchOptions",
@@ -7,6 +7,7 @@ export const SETTINGS_TAB_LABEL_KEYS = {
   game: "settings.game",
   mods: "settings.mods",
   application: "settings.application",
+  features: "settings.features",
   themes: "settings.themes",
   background: "settings.background",
   network: "settings.network",
@@ -463,6 +464,21 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
         titleKey: "settings.askAi",
         descriptionKey: "settings.askAiDescription",
       },
+    ],
+  },
+  {
+    tab: "features",
+    titleKey: "optionalFeatures.title",
+    descriptionKey: "optionalFeatures.description",
+    settings: [
+      {
+        titleKey: "optionalFeatures.minimal.title",
+        descriptionKey: "optionalFeatures.minimal.description",
+      },
+      ...OPTIONAL_FEATURES.map((feature) => ({
+        titleKey: `optionalFeatures.features.${feature}.title`,
+        descriptionKey: `optionalFeatures.features.${feature}.description`,
+      })),
     ],
   },
   {

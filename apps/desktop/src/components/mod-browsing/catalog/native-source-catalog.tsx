@@ -7,6 +7,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import ModCard from "@/components/mod-browsing/mod-card";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { useFeatureEnabled } from "@/hooks/use-feature-enabled";
 import { LIVE_BRIDGE_NAME } from "@/hooks/use-live-bridge";
 import { isHostedSource } from "@/lib/hosted-sources";
 import {
@@ -43,6 +44,7 @@ export const NativeSourceCatalog = ({
     (state) => state.nsfwSettings.hideNSFW || state.modsFilters.hideNSFW,
   );
   const debouncedSearch = useDebouncedValue(search, 250);
+  const isStatsEnabled = useFeatureEnabled("stats");
   const listings = useQuery({
     queryKey: [
       ...NATIVE_SOURCES_QUERY_KEY,
@@ -65,7 +67,9 @@ export const NativeSourceCatalog = ({
         nativeListingMatchesContentType(listing, contentType) &&
         nativeListingVisible(listing, hideAdult),
     ) ?? [];
+  // The bridge only feeds the Stats Live tab.
   const showLiveBridge =
+    isStatsEnabled &&
     !!source &&
     isHostedSource(source) &&
     contentType === "mod" &&

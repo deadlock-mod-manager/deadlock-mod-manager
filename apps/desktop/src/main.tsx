@@ -5,8 +5,9 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import App from "./app";
 import { useExperimentalFeature } from "./hooks/use-experimental-feature";
+import { useFeatureEnabled } from "./hooks/use-feature-enabled";
 import { queryClient } from "./lib/client";
-import { usePersistedStore } from "./lib/store";
+import type { OptionalFeature } from "./lib/features";
 import AddMods from "./pages/add-mods";
 import Author from "./pages/author";
 import Collection from "./pages/collection";
@@ -52,34 +53,16 @@ const MapsRouteGate = () => {
   return <GetMaps />;
 };
 
-const StatsRouteGate = ({ page: Page }: { page: typeof Stats }) => {
-  const isEnabled = usePersistedStore((state) => state.playerStatsEnabled);
+const FeatureRouteGate = ({
+  feature,
+  children,
+}: {
+  feature: OptionalFeature;
+  children: ReactNode;
+}) => {
+  const isEnabled = useFeatureEnabled(feature);
   if (!isEnabled) {
     return <Navigate replace to='/' />;
-  }
-  return <Page />;
-};
-
-const PerformanceRouteGate = () => {
-  const isEnabled = useExperimentalFeature("performance-configs");
-  if (!isEnabled) {
-    return <Navigate replace to='/' />;
-  }
-  return <Performance />;
-};
-
-const FoundryRouteGate = () => {
-  const isEnabled = useExperimentalFeature("mod-foundry");
-  if (!isEnabled) {
-    return <Navigate replace to='/' />;
-  }
-  return <Foundry />;
-};
-
-const PluginsRouteGate = ({ children }: { children: ReactNode }) => {
-  const isEnabled = useExperimentalFeature("plugins");
-  if (!isEnabled) {
-    return <Navigate replace to='/settings/experimental' />;
   }
   return children;
 };
@@ -110,45 +93,98 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
               <Route element={<Collection />} path='/collections/:id' />
               <Route element={<AddMods />} path='/add-mods' />
               <Route element={<Downloads />} path='/downloads' />
-              <Route element={<Servers />} path='/servers' />
-              <Route element={<ServerPicker />} path='/server-picker' />
+              <Route
+                element={
+                  <FeatureRouteGate feature='server-browser'>
+                    <Servers />
+                  </FeatureRouteGate>
+                }
+                path='/servers'
+              />
+              <Route
+                element={
+                  <FeatureRouteGate feature='server-picker'>
+                    <ServerPicker />
+                  </FeatureRouteGate>
+                }
+                path='/server-picker'
+              />
               <Route element={<CustomSettings />} path='/settings' />
               <Route element={<Contributors />} path='/contributors' />
               <Route element={<Developer />} path='/developer' />
               <Route
                 element={
-                  <PluginsRouteGate>
+                  <FeatureRouteGate feature='plugins'>
                     <ManagePlugins />
-                  </PluginsRouteGate>
+                  </FeatureRouteGate>
                 }
                 path='/plugins/manage'
               />
               <Route
                 element={
-                  <PluginsRouteGate>
+                  <FeatureRouteGate feature='plugins'>
                     <PluginEntry />
-                  </PluginsRouteGate>
+                  </FeatureRouteGate>
                 }
                 path='/plugins/:id'
               />
               <Route
                 element={
-                  <PluginsRouteGate>
+                  <FeatureRouteGate feature='plugins'>
                     <ExternalPluginPage />
-                  </PluginsRouteGate>
+                  </FeatureRouteGate>
                 }
                 path='/ext/:pluginId'
               />
               <Route element={<Debug />} path='/debug' />
-              <Route element={<Crosshairs />} path='/crosshairs' />
-              <Route element={<Skins />} path='/skins' />
-              <Route element={<StatsRouteGate page={Stats} />} path='/stats' />
               <Route
-                element={<StatsRouteGate page={StatsMatch} />}
+                element={
+                  <FeatureRouteGate feature='crosshairs'>
+                    <Crosshairs />
+                  </FeatureRouteGate>
+                }
+                path='/crosshairs'
+              />
+              <Route
+                element={
+                  <FeatureRouteGate feature='skins'>
+                    <Skins />
+                  </FeatureRouteGate>
+                }
+                path='/skins'
+              />
+              <Route
+                element={
+                  <FeatureRouteGate feature='stats'>
+                    <Stats />
+                  </FeatureRouteGate>
+                }
+                path='/stats'
+              />
+              <Route
+                element={
+                  <FeatureRouteGate feature='stats'>
+                    <StatsMatch />
+                  </FeatureRouteGate>
+                }
                 path='/stats/matches/:matchId'
               />
-              <Route element={<FoundryRouteGate />} path='/foundry' />
-              <Route element={<PerformanceRouteGate />} path='/performance' />
+              <Route
+                element={
+                  <FeatureRouteGate feature='foundry'>
+                    <Foundry />
+                  </FeatureRouteGate>
+                }
+                path='/foundry'
+              />
+              <Route
+                element={
+                  <FeatureRouteGate feature='performance'>
+                    <Performance />
+                  </FeatureRouteGate>
+                }
+                path='/performance'
+              />
               <Route
                 element={<CustomSettings value='autoexec' />}
                 path='/settings/autoexec'
