@@ -9,7 +9,7 @@ import { observeUntil } from "../support/observations";
 import { readSettings } from "../support/settings-actions";
 import { navigate, reveal } from "../support/ui";
 
-const CONFLICT = "Multiple skins active";
+const CONFLICT = "skins on at once";
 
 const heroRow = (hero: string) =>
   $(`//button[.//div[normalize-space()="${hero}"]]`);
