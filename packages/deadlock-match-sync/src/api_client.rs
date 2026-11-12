@@ -188,42 +188,22 @@ impl ApiClient {
       .map_err(MatchSyncError::from)
   }
 
-  // The newest stored matches of each of `account_ids` (at most `IDS_PER_REQUEST`), only
-  // from what deadlock-api stores: it never asks Steam here. Players without stored matches
-  // come back with none; protected ones are left out.
-  async fn recent_matches(
+  // GETs one of the batch routes with `ids` (at most `IDS_PER_REQUEST`) in its `param`,
+  // plus the `extra` query pairs, and reads the list it answers.
+  async fn get_batch<I: ToString, T: serde::de::DeserializeOwned>(
     &self,
     client: &reqwest::Client,
-    account_ids: &[u32],
-  ) -> Result<Vec<RecentMatches>, MatchSyncError> {
-    let ids = account_ids
-      .iter()
-      .map(u32::to_string)
-      .collect::<Vec<_>>()
-      .join(",");
+    path: &str,
+    param: &str,
+    ids: &[I],
+    extra: &[(&str, String)],
+  ) -> Result<Vec<T>, MatchSyncError> {
+    let ids = ids.iter().map(I::to_string).collect::<Vec<_>>().join(",");
     let req = client
-      .get(format!("{}/v1/players/recent-matches", self.base_url))
-      .query(&[("account_ids", ids), ("limit", GAP_SAMPLE.to_string())]);
+      .get(format!("{}{path}", self.base_url))
+      .query(&[(param, ids)])
+      .query(extra);
     get_list(req).await
-  }
-
-  // Of `match_ids` (at most `IDS_PER_REQUEST`), the ones deadlock-api stores salts for,
-  // without letting it ask Steam.
-  async fn stored_salts(
-    &self,
-    client: &reqwest::Client,
-    match_ids: &[u64],
-  ) -> Result<HashSet<u64>, MatchSyncError> {
-    let ids = match_ids
-      .iter()
-      .map(u64::to_string)
-      .collect::<Vec<_>>()
-      .join(",");
-    let req = client
-      .get(format!("{}/v1/matches/salts/stored", self.base_url))
-      .query(&[("match_ids", ids)]);
-    let stored: Vec<u64> = get_list(req).await?;
-    Ok(stored.into_iter().collect())
   }
 }
 
@@ -338,7 +318,17 @@ impl BackfillSource for ApiClient {
       for chunk in uncached.chunks(IDS_PER_REQUEST) {
         // A failed batch skips the friend step for this pass instead of picking from a
         // partial set. Batches read before it stay cached.
-        let players = self.recent_matches(&client, chunk).await?;
+        // Only what deadlock-api stores: it never asks Steam here. Players without stored
+        // matches come back with none; protected ones are left out.
+        let players: Vec<RecentMatches> = self
+          .get_batch(
+            &client,
+            "/v1/players/recent-matches",
+            "account_ids",
+            chunk,
+            &[("limit", GAP_SAMPLE.to_string())],
+          )
+          .await?;
         // Every friend of the chunk is cached, so one without stored matches (or a
         // protected one, left out of the answer) isn't asked about again every pass.
         let mut read: HashMap<u32, Option<ActiveFriend>> =
@@ -383,8 +373,12 @@ impl BackfillSource for ApiClient {
       if check.missing.len() >= limit || cancel.load(Ordering::Relaxed) {
         break;
       }
-      let stored = match self.stored_salts(&client, chunk).await {
-        Ok(stored) => stored,
+      // Of the chunk, the ids deadlock-api stores salts for, without letting it ask Steam.
+      let stored = self
+        .get_batch(&client, "/v1/matches/salts/stored", "match_ids", chunk, &[])
+        .await;
+      let stored: HashSet<u64> = match stored {
+        Ok(stored) => stored.into_iter().collect(),
         Err(e) => {
           log::warn!("match-sync: stored salts unavailable: {e}");
           break;
