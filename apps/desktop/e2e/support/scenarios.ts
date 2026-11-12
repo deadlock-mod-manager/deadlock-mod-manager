@@ -1290,6 +1290,7 @@ export const scenarios = {
   },
   "gamebanana-archived-files": modUpdates,
   "gamebanana-update-choice": modUpdates,
+  "gamebanana-renamed-single-file": modUpdates,
   "gamebanana-renamed-packs": {
     ...catalog,
     spec: "gamebanana-renamed-packs",

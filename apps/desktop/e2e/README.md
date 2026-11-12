@@ -481,7 +481,7 @@ The surrounding `library-selection`, `conflicts-resolve`, and `bisect-conflicts`
 
 ## Mod updates
 
-`gamebanana-archived-files`, `gamebanana-update-choice` run in the existing `gamebanana` suite. Archived files do not trigger an update or any download. Ambiguous updates require an explicit variant choice and never download the unchosen archive. Each case restarts in a fresh process and checks exact VPK bytes, manifest and persisted state, and the absence of leftover partial files.
+`gamebanana-archived-files`, `gamebanana-update-choice`, `gamebanana-renamed-single-file` run in the existing `gamebanana` suite. Archived files do not trigger an update or any download. Ambiguous updates require an explicit variant choice and never download the unchosen archive. A single-file mod whose only file is replaced by an upload under a new name (`legacy.zip` to `legacy_6861.zip`) is flagged, updates without a choice, and reads as up to date after the restart. Each case restarts in a fresh process and checks exact VPK bytes, manifest and persisted state, and the absence of leftover partial files.
 
 ## Download fallback
 

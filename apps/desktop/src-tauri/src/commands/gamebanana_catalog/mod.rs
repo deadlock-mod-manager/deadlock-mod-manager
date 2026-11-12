@@ -349,7 +349,9 @@ fn detect_update(snapshot: &UpdateSnapshot, installed: &InstalledSubmissionDto) 
 
 /// Archived files drop out of the snapshot and GameBanana doesn't link a file
 /// to its newer version, so a missing selected file only counts as replaced
-/// when a newer upload clearly takes its place.
+/// when a newer upload clearly takes its place. A single-file mod whose only
+/// file was swapped counts whatever the new name, since authors often version
+/// it (`mod_6860.zip` to `mod_6861.zip`). Matches `selectUpdateDownloads`.
 fn replacement_added_at(
   snapshot: &UpdateSnapshot,
   installed: &InstalledSubmissionDto,
@@ -361,7 +363,7 @@ fn replacement_added_at(
         .date_added
         .is_some_and(|added| added > installed.installed_at)
   });
-  if installed.selected_file_names.is_empty() && selected.len() == 1 && snapshot.files.len() == 1 {
+  if selected.len() == 1 && snapshot.files.len() == 1 {
     return newer.filter_map(|file| file.date_added).max();
   }
   let missing = installed
@@ -1038,9 +1040,11 @@ mod tests {
   }
 
   #[test]
-  fn an_unrelated_lone_file_is_not_a_replacement() {
-    let snapshot = snapshot(250, vec![file(2, 300)]);
-    assert_eq!(detect_update(&snapshot, &installed(200, &["1"])), None);
+  fn renamed_lone_file_flags_update() {
+    let mut installed = installed(200, &["1"]);
+    installed.selected_file_names = vec!["unstoppable_6860.zip".into()];
+    let snapshot = snapshot(300, vec![renamed(file(2, 300), "unstoppable_6861.zip")]);
+    assert_eq!(detect_update(&snapshot, &installed), Some(300));
   }
 
   #[test]

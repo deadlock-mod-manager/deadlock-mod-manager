@@ -25,6 +25,7 @@ import {
 const reliabilityCaseSchema = z.enum([
   "gamebanana-archived-files",
   "gamebanana-update-choice",
+  "gamebanana-renamed-single-file",
   "gamebanana-requirements",
   "gamebanana-mirror-fallback",
   "gamebanana-default-fallback",
@@ -41,6 +42,13 @@ const BASE = { id: "940002", name: "E2E Required Base" };
 const BLOCKED = { id: "940003", name: "E2E Incompatible Mod" };
 const OLD_DATE = 1_780_000_000;
 const primaryFileId = 940101;
+/** Before the real clock, so the update reads as installed once applied. */
+const RENAMED_DATE = 1_785_000_000;
+/**
+ * Authors version a lone file's name (`unstoppable_6860.zip` to
+ * `unstoppable_6861.zip`), so it shares no base name with the installed one.
+ */
+const RENAMED_FILE = "legacy_6861.zip";
 /**
  * GameBanana file caches as the E2E app reaches them: the app maps
  * `https://<domain>/<category>/<file>` to `/fileservers/<domain>/...` on the
@@ -242,6 +250,9 @@ export async function reliabilityRoutes(caseId: string) {
   const blue = await createArchive({
     [`${PRIMARY.id}.vpk`]: reliabilityPayload(PRIMARY.id, "blue"),
   });
+  const renamed = await createArchive({
+    [`${PRIMARY.id}.vpk`]: reliabilityPayload(PRIMARY.id, "renamed"),
+  });
   return (origin: string): FixtureRoute[] => {
     const file = (id: number, name: string, body: Buffer, date = OLD_DATE) => ({
       _idRow: id,
@@ -262,6 +273,8 @@ export async function reliabilityRoutes(caseId: string) {
           file(primaryFileId, "red.zip", red, 4_100_000_000),
           file(primaryFileId + 1, "blue.zip", blue),
         ];
+      if (scenario === "gamebanana-renamed-single-file")
+        return [file(primaryFileId + 3, RENAMED_FILE, renamed, RENAMED_DATE)];
       const selected = file(
         mod === PRIMARY ? primaryFileId : Number(mod.id) + 100,
         "legacy.zip",
@@ -385,6 +398,13 @@ export async function reliabilityRoutes(caseId: string) {
           body: blue,
         },
       );
+    else if (scenario === "gamebanana-renamed-single-file")
+      routes.push({
+        method: "GET",
+        path: `/dl/${primaryFileId + 3}`,
+        status: 200,
+        body: renamed,
+      });
     else if (scenario === "gamebanana-default-fallback")
       routes.push(...defaultFallbackRoutes(origin, archives[0]));
     else if (scenario !== "gamebanana-archived-files")
@@ -584,6 +604,11 @@ export function assertReliabilityNetwork(
       downloads.map((request) => request.url),
       [`/dl/${primaryFileId}`],
     );
+  else if (id === "gamebanana-renamed-single-file")
+    assert.deepEqual(
+      downloads.map((request) => request.url),
+      [`/dl/${primaryFileId + 3}`],
+    );
   else if (
     id === "gamebanana-archived-files" ||
     id === "gamebanana-crash-cause"
@@ -598,6 +623,7 @@ export function assertReliabilityNetwork(
 
 export const reliabilityFixture = {
   PRIMARY,
+  RENAMED_FILE,
   BASE,
   BLOCKED,
   RELIABILITY_PROFILE,

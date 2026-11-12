@@ -13,7 +13,7 @@ import {
 } from "../support/reliability-fixtures";
 import { navigate, waitForClickable } from "../support/ui";
 
-const { PRIMARY, readReliabilityState } = reliabilityFixture;
+const { PRIMARY, RENAMED_FILE, readReliabilityState } = reliabilityFixture;
 const toast = (text: string) =>
   $(`//*[@data-sonner-toast and contains(., "${text}")]`);
 const modCard = () => $(`[data-library-mod="${PRIMARY.id}"]`);
@@ -62,10 +62,30 @@ async function exerciseUpdateChoice(world: string) {
   await assertReliabilityDisk(world, { [PRIMARY.id]: "red" }, "chosen-update");
 }
 
+// The lone installed file is gone and the only upload has a different name.
+async function exerciseRenamedFile(world: string) {
+  await checkUpdates(1);
+  await $("button=1 update available").click();
+  const update = await $('[role="dialog"]').$("button*=Update");
+  await expect(update).toBeEnabled({ wait: 30_000 });
+  await update.click();
+  await observeUntil(
+    "The renamed upload replaces the installed file",
+    () => readReliabilityState(world),
+    (state) =>
+      state.localMods.find((mod) => mod.remoteId === PRIMARY.id)
+        ?.selectedDownloads[0]?.name === RENAMED_FILE,
+  );
+}
+
 describe("mod-updates regressions", () => {
   it("preserves the intended files through the UI and a fresh process", async () => {
     const scenario = z
-      .enum(["gamebanana-archived-files", "gamebanana-update-choice"])
+      .enum([
+        "gamebanana-archived-files",
+        "gamebanana-update-choice",
+        "gamebanana-renamed-single-file",
+      ])
       .parse(process.env.DMM_E2E_CASE_ID);
     const phase = z
       .enum(["exercise", "restart"])
@@ -88,16 +108,24 @@ describe("mod-updates regressions", () => {
       await openPrimary();
       await expect($("button=Update Mod")).not.toBeDisplayed();
       await expect($("button=Force Update")).toBeExisting();
+    } else if (scenario === "gamebanana-renamed-single-file") {
+      if (phase === "exercise")
+        await step("update to the renamed file", () =>
+          exerciseRenamedFile(world),
+        );
+      else await checkUpdates(0);
     } else if (phase === "exercise") {
       await step("choose an update variant", () => exerciseUpdateChoice(world));
     } else {
       await navigate("my-mods");
       await modCard().waitForDisplayed();
     }
-    const expected = {
-      [PRIMARY.id]:
-        scenario === "gamebanana-update-choice" ? "red" : "original",
+    const versions = {
+      "gamebanana-archived-files": "original",
+      "gamebanana-update-choice": "red",
+      "gamebanana-renamed-single-file": "renamed",
     };
+    const expected = { [PRIMARY.id]: versions[scenario] };
     await assertReliabilityDisk(world, expected, `${phase}-reliability`);
     await writeFile(
       checkpoint,

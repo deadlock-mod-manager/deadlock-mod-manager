@@ -16,7 +16,7 @@ const windows = process.platform === "win32";
 describe("scenario selection", () => {
   it("registers every case with explicit phases and capability requirements", () => {
     const ids = selectScenarios("all");
-    expect(ids).toHaveLength(windows ? 181 : 171);
+    expect(ids).toHaveLength(windows ? 182 : 172);
     expect(ids).toContain("downloads-segmented-range-error");
     // Some of these specs don't dispatch on their case ID, so a rename
     // wouldn't fail them.
@@ -40,7 +40,7 @@ describe("scenario selection", () => {
       "onboarding-telemetry-default",
       "onboarding-identified-addon",
     ]);
-    expect(selectScenarios("gamebanana")).toHaveLength(34);
+    expect(selectScenarios("gamebanana")).toHaveLength(35);
     expect(selectScenarios("gamebanana")).toContain(
       "gamebanana-switch-reinstall",
     );
