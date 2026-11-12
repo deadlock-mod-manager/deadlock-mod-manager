@@ -1,5 +1,3 @@
-import { Alert, AlertDescription } from "@deadlock-mods/ui/components/alert";
-import { Warning } from "@phosphor-icons/react";
 import { Suspense, useCallback } from "react";
 import { useSearchParams } from "react-router";
 import { SourceSelector } from "@/components/mod-browsing/source-selector";
@@ -107,21 +105,6 @@ export const GetMaps = () => {
         subtitle={t("mods.mapsSubtitle")}
         title={t("navigation.maps")}
       />
-      <Alert
-        className='mb-5 items-start gap-2.5 border-amber-500/20 bg-amber-500/[0.04] py-2.5 pr-4 pl-3'
-        role='note'
-        variant='warning'>
-        <Warning
-          className='mt-px size-4 shrink-0 text-amber-400'
-          weight='fill'
-        />
-        <AlertDescription className='min-w-0 text-[13px] leading-snug text-muted-foreground'>
-          <span className='mr-1.5 font-medium text-amber-300'>
-            {t("mods.mapsWarningTitle")}
-          </span>
-          {t("mods.mapsWarning")}
-        </AlertDescription>
-      </Alert>
       <Suspense fallback={<ModsPageSkeleton />}>
         <ErrorBoundary>
           <GetModsData contentType='map' mapsOnly />
