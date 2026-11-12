@@ -51,6 +51,7 @@ export function ViewerParticlePicker({
 }: Props) {
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
+  const inputsDisabled = !controls.inputsEnabled || selected === null;
   const matchingChoices = choices.filter(
     (choice) =>
       choice.path === selected ||
@@ -182,15 +183,15 @@ export function ViewerParticlePicker({
                 />
               </label>
               <fieldset
-                disabled={!controls.inputsEnabled || selected === null}
-                className='group space-y-3 disabled:opacity-50'>
+                disabled={inputsDisabled}
+                className='space-y-3 disabled:opacity-50'>
                 <div className='flex items-center justify-between'>
                   <span>{t("modelPreview.charge")}</span>
                   <output>{Math.round(controls.charge * 100)}%</output>
                 </div>
                 <Slider
                   aria-label={t("modelPreview.charge")}
-                  className='group-disabled:cursor-default'
+                  disabled={inputsDisabled}
                   min={0}
                   max={1}
                   step={0.01}
