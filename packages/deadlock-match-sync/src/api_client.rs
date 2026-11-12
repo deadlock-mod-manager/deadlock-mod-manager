@@ -461,6 +461,45 @@ mod tests {
     assert!(!MatchSyncError::from(e).to_string().contains("12345678"));
   }
 
+  // Answers the first request on a local port with `status` and `body`, and returns the
+  // URL to send it to.
+  fn serve_once(status: &'static str, body: &'static str) -> String {
+    use std::io::{Read as _, Write as _};
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let addr = listener.local_addr().unwrap();
+    std::thread::spawn(move || {
+      let (mut stream, _) = listener.accept().unwrap();
+      let _ = stream.read(&mut [0; 4096]);
+      let response = format!(
+        "HTTP/1.1 {status}\r\ncontent-type: application/json\r\ncontent-length: {}\r\n\
+         connection: close\r\n\r\n{body}",
+        body.len()
+      );
+      stream.write_all(response.as_bytes()).unwrap();
+    });
+    format!("http://{addr}/v1/matches/salts/stored")
+  }
+
+  #[tokio::test]
+  async fn batch_lists_fail_on_a_missing_route() {
+    let client = reqwest::Client::builder().no_proxy().build().unwrap();
+    // A body that parses as an empty list, so only the status can fail it.
+    let url = serve_once("404 Not Found", "[]");
+    assert!(get_list::<u64>(client.get(url)).await.is_err());
+  }
+
+  #[tokio::test]
+  async fn batch_lists_read_empty_and_full_answers() {
+    let client = reqwest::Client::builder().no_proxy().build().unwrap();
+    let empty = serve_once("200 OK", "[]");
+    assert_eq!(
+      get_list::<u64>(client.get(empty)).await.unwrap(),
+      Vec::<u64>::new()
+    );
+    let full = serve_once("200 OK", "[3,1]");
+    assert_eq!(get_list::<u64>(client.get(full)).await.unwrap(), vec![3, 1]);
+  }
+
   #[test]
   fn parses_the_claim_cookie_up_to_the_first_attribute() {
     assert_eq!(
