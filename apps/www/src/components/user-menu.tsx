@@ -107,7 +107,7 @@ export default function UserMenu({
         <DropdownMenuSeparator />
         {isAdmin && (
           <>
-            <DropdownMenuItem asChild className='cursor-pointer gap-2 py-2.5'>
+            <DropdownMenuItem asChild className='gap-2 py-2.5'>
               <Link to='/dashboard'>
                 <LayoutDashboard className='size-4' />
                 <span>{t("userMenu.dashboard")}</span>
@@ -117,7 +117,7 @@ export default function UserMenu({
           </>
         )}
         <DropdownMenuItem
-          className='cursor-pointer gap-2 py-2.5'
+          className='gap-2 py-2.5'
           onClick={() => {
             signOut();
             navigate({ to: "/" });

@@ -27,9 +27,7 @@ const TopbarMenuItemComponent = ({ item }: { item: TopbarMenuItemType }) => {
     return (
       <Dialog onOpenChange={setDialogOpen} open={dialogOpen}>
         <DialogTrigger asChild>
-          <DropdownMenuItem
-            className='cursor-pointer'
-            onSelect={(e) => e.preventDefault()}>
+          <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
             <item.icon className='size-4' weight='duotone' />
             <span>{item.title}</span>
           </DropdownMenuItem>

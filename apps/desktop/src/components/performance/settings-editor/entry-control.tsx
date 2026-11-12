@@ -126,7 +126,7 @@ const NumberControl = ({
         {withSlider && meta.min !== null && meta.max !== null && (
           <Slider
             aria-label={label}
-            className='min-w-0 flex-1'
+            className='min-w-0 flex-1 cursor-pointer data-[disabled]:cursor-default'
             disabled={disabled}
             max={meta.max}
             min={meta.min}

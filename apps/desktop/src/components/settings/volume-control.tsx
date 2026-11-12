@@ -36,7 +36,7 @@ const VolumeControl = () => {
           <Slider
             aria-describedby={DESCRIPTION_ID}
             aria-label={t("settings.audioVolume")}
-            className='w-full'
+            className='w-full cursor-pointer'
             max={100}
             min={0}
             onValueChange={handleVolumeChange}

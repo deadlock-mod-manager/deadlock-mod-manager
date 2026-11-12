@@ -123,6 +123,7 @@ export function ThemeSettingsPanel({
           </span>
           <Slider
             aria-label={t("plugins.themes.sidebarOpacity")}
+            className='cursor-pointer'
             max={100}
             min={0}
             onValueChange={(value) =>
@@ -161,6 +162,7 @@ export function ThemeSettingsPanel({
             </span>
             <Slider
               aria-label={t("plugins.themes.ambientIntensity")}
+              className='cursor-pointer data-[disabled]:cursor-default data-[disabled]:opacity-30'
               disabled={!palette.ambientBackgroundEnabled}
               max={36}
               min={0}
@@ -177,6 +179,7 @@ export function ThemeSettingsPanel({
             </span>
             <Slider
               aria-label={t("plugins.themes.ambientSpread")}
+              className='cursor-pointer data-[disabled]:cursor-default data-[disabled]:opacity-30'
               disabled={!palette.ambientBackgroundEnabled}
               max={20}
               min={0}
@@ -195,6 +198,7 @@ export function ThemeSettingsPanel({
           </span>
           <Slider
             aria-label={t("plugins.themes.cornerRadius")}
+            className='cursor-pointer'
             max={16}
             min={4}
             onValueChange={(value) =>

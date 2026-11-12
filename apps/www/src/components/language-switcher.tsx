@@ -62,7 +62,7 @@ export const LanguageSwitcher = ({ className }: { className?: string }) => {
               key={entry.id}
               asChild
               className={cn(
-                "cursor-pointer gap-3 rounded-md px-2.5 py-2 text-[14px] focus:bg-surface-hover",
+                "gap-3 rounded-md px-2.5 py-2 text-[14px] focus:bg-surface-hover",
                 active && "bg-surface-hover",
               )}>
               <a

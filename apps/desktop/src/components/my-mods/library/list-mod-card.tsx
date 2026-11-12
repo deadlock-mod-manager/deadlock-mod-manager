@@ -89,7 +89,7 @@ export const ListModCard = memo(function ListModCard({
         <Card className='group/row flex items-center gap-4 overflow-hidden pr-3 shadow transition-colors hover:bg-muted/40'>
           <div
             className={cn(
-              "relative h-16 w-28 shrink-0 transition-[filter] duration-300 ease-out",
+              "relative h-16 w-28 shrink-0 cursor-pointer transition-[filter] duration-300 ease-out",
               isDisabled && "grayscale",
             )}
             onClick={openModDetail}>
@@ -111,7 +111,7 @@ export const ListModCard = memo(function ListModCard({
             ) : mod.images && mod.images.length > 0 ? (
               <NSFWBlur
                 blurStrength={nsfwSettings.blurStrength}
-                className='h-full w-full cursor-pointer overflow-hidden'
+                className='h-full w-full overflow-hidden'
                 disableBlur={nsfwSettings.disableBlur}
                 isNSFW={shouldBlur}
                 onToggleVisibility={handleNSFWToggle}>
@@ -126,7 +126,7 @@ export const ListModCard = memo(function ListModCard({
                 />
               </NSFWBlur>
             ) : (
-              <div className='h-full w-full cursor-pointer bg-secondary' />
+              <div className='h-full w-full bg-secondary' />
             )}
             {mod.status === ModStatus.Installing && (
               <div className='absolute inset-0 flex items-center justify-center bg-black/50'>

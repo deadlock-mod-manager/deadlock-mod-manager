@@ -58,6 +58,7 @@ export function CrosshairControls({
             />
           </div>
           <Slider
+            className='cursor-pointer'
             id='gap-slider'
             min={-20}
             max={50}
@@ -83,6 +84,7 @@ export function CrosshairControls({
             />
           </div>
           <Slider
+            className='cursor-pointer'
             id='width-slider'
             min={0}
             max={100}
@@ -108,6 +110,7 @@ export function CrosshairControls({
             />
           </div>
           <Slider
+            className='cursor-pointer'
             id='height-slider'
             min={0}
             max={100}
@@ -135,6 +138,7 @@ export function CrosshairControls({
             />
           </div>
           <Slider
+            className='cursor-pointer'
             id='pip-opacity-slider'
             min={0}
             max={1}
@@ -162,6 +166,7 @@ export function CrosshairControls({
             />
           </div>
           <Slider
+            className='cursor-pointer'
             id='dot-opacity-slider'
             min={0}
             max={1}
@@ -191,6 +196,7 @@ export function CrosshairControls({
             />
           </div>
           <Slider
+            className='cursor-pointer'
             id='dot-outline-opacity-slider'
             min={0}
             max={1}
