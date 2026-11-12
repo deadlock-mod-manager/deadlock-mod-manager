@@ -4604,6 +4604,7 @@
     "developerMode": "개발자 모드",
     "developerModeDescription": "고급 도구 및 디버깅 기능에 액세스하려면 개발자 모드를 활성화하세요.",
     "experimental": "실험적",
+    "features": "",
     "ingestTool": {
       "title": "",
       "description": "",
@@ -4965,6 +4966,11 @@
   "featureFlags": {
     "title": "실험적 기능",
     "description": "실험적 기능을 선택하고 새로운 기능이 모든 사람에게 출시되기 전에 사용해 보세요.",
+    "blockedBy": {
+      "feature": "",
+      "minimal": ""
+    },
+    "openFeatures": "",
     "features": {
       "custom-maps": {
         "title": "",
@@ -4979,6 +4985,70 @@
         "description": ""
       },
       "cloud-backup": {
+        "title": "",
+        "description": ""
+      },
+      "plugins": {
+        "title": "",
+        "description": ""
+      }
+    }
+  },
+  "optionalFeatures": {
+    "title": "",
+    "description": "",
+    "leftovers": {
+      "performance": "",
+      "serverPicker_one": "",
+      "serverPicker_other": "",
+      "crosshairs": ""
+    },
+    "minimal": {
+      "title": "",
+      "description": "",
+      "enabledCount": "",
+      "paused_one": "",
+      "paused_other": "",
+      "nothingPaused": ""
+    },
+    "groups": {
+      "matches": "",
+      "customization": "",
+      "tools": ""
+    },
+    "pausedBadge": "",
+    "experimentalBadge": "",
+    "turnOnExperimental": "",
+    "features": {
+      "stats": {
+        "title": "",
+        "description": ""
+      },
+      "server-browser": {
+        "title": "",
+        "description": ""
+      },
+      "server-picker": {
+        "title": "",
+        "description": ""
+      },
+      "crosshairs": {
+        "title": "",
+        "description": ""
+      },
+      "skins": {
+        "title": "",
+        "description": ""
+      },
+      "autoexec": {
+        "title": "",
+        "description": ""
+      },
+      "performance": {
+        "title": "",
+        "description": ""
+      },
+      "foundry": {
         "title": "",
         "description": ""
       },
@@ -5928,6 +5998,26 @@
           }
         ],
         "features": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
           "",
           "",
           "",
@@ -8656,6 +8746,10 @@
       "body": ""
     },
     "remoteInstall": {
+      "title": "",
+      "body": ""
+    },
+    "minimalMode": {
       "title": "",
       "body": ""
     },

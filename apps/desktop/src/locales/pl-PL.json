@@ -4604,6 +4604,7 @@
     "developerMode": "Tryb deweloperski",
     "developerModeDescription": "Włącz tryb dewelopera, aby uzyskać dostęp do zaawansowanych narzędzi i funkcji debugowania",
     "experimental": "Eksperymentalny",
+    "features": "",
     "ingestTool": {
       "title": "",
       "description": "",
@@ -4965,6 +4966,11 @@
   "featureFlags": {
     "title": "Funkcje eksperymentalne",
     "description": "Wybieraj funkcje eksperymentalne i spróbuj nowej funkcjonalności zanim zostanie ona udostępniona wszystkim.",
+    "blockedBy": {
+      "feature": "",
+      "minimal": ""
+    },
+    "openFeatures": "",
     "features": {
       "custom-maps": {
         "title": "",
@@ -4979,6 +4985,70 @@
         "description": ""
       },
       "cloud-backup": {
+        "title": "",
+        "description": ""
+      },
+      "plugins": {
+        "title": "",
+        "description": ""
+      }
+    }
+  },
+  "optionalFeatures": {
+    "title": "",
+    "description": "",
+    "leftovers": {
+      "performance": "",
+      "serverPicker_one": "",
+      "serverPicker_other": "",
+      "crosshairs": ""
+    },
+    "minimal": {
+      "title": "",
+      "description": "",
+      "enabledCount": "",
+      "paused_one": "",
+      "paused_other": "",
+      "nothingPaused": ""
+    },
+    "groups": {
+      "matches": "",
+      "customization": "",
+      "tools": ""
+    },
+    "pausedBadge": "",
+    "experimentalBadge": "",
+    "turnOnExperimental": "",
+    "features": {
+      "stats": {
+        "title": "",
+        "description": ""
+      },
+      "server-browser": {
+        "title": "",
+        "description": ""
+      },
+      "server-picker": {
+        "title": "",
+        "description": ""
+      },
+      "crosshairs": {
+        "title": "",
+        "description": ""
+      },
+      "skins": {
+        "title": "",
+        "description": ""
+      },
+      "autoexec": {
+        "title": "",
+        "description": ""
+      },
+      "performance": {
+        "title": "",
+        "description": ""
+      },
+      "foundry": {
         "title": "",
         "description": ""
       },
@@ -5928,6 +5998,26 @@
           }
         ],
         "features": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
           "",
           "",
           "",
@@ -8656,6 +8746,10 @@
       "body": ""
     },
     "remoteInstall": {
+      "title": "",
+      "body": ""
+    },
+    "minimalMode": {
       "title": "",
       "body": ""
     },
