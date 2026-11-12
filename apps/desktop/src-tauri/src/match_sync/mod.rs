@@ -152,6 +152,14 @@ impl SyncPersistence for AppPersistence {
       log::error!("match-sync: failed to persist full-sync completion: {e}");
     }
   }
+  fn account_list_drained_at(&self) -> Option<i64> {
+    settings::load_account_list_drained_at(&self.app, self.steam_id64)
+  }
+  fn set_account_list_drained_at(&self, at: i64) {
+    if let Err(e) = settings::set_account_list_drained_at(&self.app, self.steam_id64, at) {
+      log::error!("match-sync: failed to persist the account list check: {e}");
+    }
+  }
   fn emit_progress(&self, progress: &SyncProgress) {
     let _ = self.app.emit(
       PROGRESS_EVENT,

@@ -17,8 +17,8 @@ use super::error::{GcRefusal, MatchSyncError};
 use super::game_check::GameRunningCheck;
 use super::gc_client::GcMatchClient;
 use super::model::{
-  AuthContext, BACKFILL_QUOTA_RESERVE, FetchScope, MatchHistoryPage, MatchSyncConfig, QuotaKind,
-  SaltPayload, SaltsCheck, SyncProgress,
+  ACCOUNT_LIST_INTERVAL_SECS, Attempt, AttemptResult, AuthContext, BACKFILL_QUOTA_RESERVE,
+  FetchScope, MatchHistoryPage, MatchSyncConfig, QuotaKind, SaltPayload, SaltsCheck, SyncProgress,
 };
 use super::quota::QuotaWindow;
 use super::throttle::Throttle;
@@ -33,6 +33,13 @@ pub trait SyncPersistence: Send + Sync {
   fn load_fetched(&self) -> Vec<u64>;
   fn persist_fetched(&self, ids: &[u64]);
   fn set_full_sync_complete(&self, complete: bool);
+  // When deadlock-api's to-fetch list for this account last came back empty, if ever. The
+  // background pass skips the list for `ACCOUNT_LIST_INTERVAL_SECS` after that. Defaults to
+  // never, which asks every pass.
+  fn account_list_drained_at(&self) -> Option<i64> {
+    None
+  }
+  fn set_account_list_drained_at(&self, _at: i64) {}
   fn emit_progress(&self, progress: &SyncProgress);
   // Observability hook for GC failures that the engine deliberately swallows as
   // best-effort resilience (so one dead source doesn't block the other). Lets the
@@ -67,6 +74,9 @@ struct RunState {
   // Ids no salts fetch can get this run: deadlock-api already stores their salts, or they
   // are still in progress.
   settled: HashSet<u64>,
+  // How each GC request this run ended, by match id, for the global list's release report.
+  // Ids missing here weren't asked about.
+  attempts: HashMap<u64, AttemptResult>,
   quota: QuotaWindow,
   progress: SyncProgress,
 }
@@ -94,6 +104,20 @@ fn best_effort<T>(
       log::warn!("match-sync: {what} unavailable: {e}");
       Ok(None)
     }
+  }
+}
+
+// How a GC salts request ended, for the release report; `None` if it was never sent (the
+// game started, the session or the pass ended first). A success only counts as fetched once
+// its salts are posted.
+fn attempt_result<T>(result: &Result<T, MatchSyncError>) -> Option<AttemptResult> {
+  match result {
+    Ok(_) => None,
+    Err(MatchSyncError::GcRefused(GcRefusal::InvalidMatch)) => Some(AttemptResult::Invalid),
+    Err(MatchSyncError::GcRefused(GcRefusal::NoPermission)) => Some(AttemptResult::NoPermission),
+    Err(MatchSyncError::GcRefused(GcRefusal::InFlight)) => Some(AttemptResult::InFlight),
+    Err(e) if e.ends_pass() => None,
+    Err(_) => Some(AttemptResult::Failed),
   }
 }
 
@@ -149,6 +173,7 @@ where
       processed: HashSet::new(),
       fetched_order,
       settled: HashSet::new(),
+      attempts: HashMap::new(),
       quota,
       progress: SyncProgress {
         fetched: 0,
@@ -172,6 +197,9 @@ where
     st.processed.insert(match_id);
 
     if st.fetched_set.contains(&match_id) {
+      // Posted (or refused for good) on an earlier pass: nothing deadlock-api can still hand
+      // out.
+      st.attempts.insert(match_id, AttemptResult::Fetched);
       st.progress.skipped += 1;
       return Ok(FetchStep::Done);
     }
@@ -189,7 +217,11 @@ where
       self.gc.fetch_match_salts(ctx, match_id).await
     });
 
-    let salts = match fetched.await {
+    let result = fetched.await;
+    if let Some(attempt) = attempt_result(&result) {
+      st.attempts.insert(match_id, attempt);
+    }
+    let salts = match result {
       Ok(salts) => salts,
       Err(e) if e.ends_pass() => return Err(e),
       // Steam itself is rate-limiting this account: treat the 24h bucket as fully
@@ -234,7 +266,10 @@ where
     };
     self.count_salts_request(now, st)?;
 
+    // Fetched only once deadlock-api has the salts.
+    st.attempts.insert(match_id, AttemptResult::Failed);
     self.sink.post_salts(&[SaltPayload::from(&salts)]).await?;
+    st.attempts.insert(match_id, AttemptResult::Fetched);
     self.remember_fetched(match_id, st);
 
     if is_backfill {
@@ -401,6 +436,27 @@ where
     (budget > 0).then_some(budget)
   }
 
+  // Whether the background pass should ask for the account's own to-fetch list: always until
+  // it first came back empty, then once every `ACCOUNT_LIST_INTERVAL_SECS`.
+  fn account_list_due(&self) -> bool {
+    let now = self.persistence.now();
+    self
+      .persistence
+      .account_list_drained_at()
+      .is_none_or(|at| now.saturating_sub(at) >= ACCOUNT_LIST_INTERVAL_SECS)
+  }
+
+  // An account list with nothing new for this client (empty, or only ids it already posted
+  // or the GC refused for good) starts the interval; any other is asked for again next pass,
+  // until it's drained.
+  fn note_account_list(&self, ids: &[u64], st: &RunState) {
+    if ids.iter().all(|id| st.fetched_set.contains(id)) {
+      self
+        .persistence
+        .set_account_list_drained_at(self.persistence.now());
+    }
+  }
+
   fn finish(&self, mut st: RunState) -> SyncProgress {
     st.progress.running = false;
     self.persistence.emit_progress(&st.progress);
@@ -494,6 +550,7 @@ where
         .backfill
         .to_fetch(FetchScope::Account(account_id))
         .await?;
+      self.note_account_list(&ids, st);
       let fresh = newest_first_fresh(ids, &st.processed);
       if fresh.is_empty() {
         // Only the account's own matches were walked here; the Steam history walk
@@ -559,12 +616,15 @@ where
       .map(|page| page.match_ids())
       .unwrap_or_default();
     let (mut own_ids, _) = self.unstored_own_matches(history, cancel, st).await;
-    let account_list = self
-      .backfill
-      .to_fetch(FetchScope::Account(account_id))
-      .await;
-    if let Some(ids) = best_effort(account_list, "account to-fetch")? {
-      own_ids.extend(ids);
+    if self.account_list_due() {
+      let account_list = self
+        .backfill
+        .to_fetch(FetchScope::Account(account_id))
+        .await;
+      if let Some(ids) = best_effort(account_list, "account to-fetch")? {
+        self.note_account_list(&ids, st);
+        own_ids.extend(ids);
+      }
     }
     let own = newest_first_fresh(own_ids, &st.processed);
     let control = self.process_ids(&ctx, own, false, Some(cancel), st).await?;
@@ -580,8 +640,10 @@ where
     let Some(budget) = self.backfill_budget(control, cancel, st) else {
       return Ok(());
     };
+    let mut handed_out = Vec::new();
     let result = match self.backfill.to_fetch(FetchScope::Global(budget)).await {
       Ok(global) => {
+        handed_out.clone_from(&global);
         let mut picks = newest_first_fresh(global, &st.processed);
         picks.truncate(budget);
         self
@@ -594,11 +656,19 @@ where
         Ok(())
       }
     };
-    // The global list claims every id it hands out, but the budget, a quota or GC
-    // stop, cancellation or an error usually leaves most of it unfetched. However the
-    // backfill ended, hand the rest back to other workers now rather than when the
-    // claims expire.
-    self.backfill.release_claim().await;
+    // The global list claims every id it hands out, but a quota or GC stop,
+    // cancellation or an error can leave some of it unfetched. However the backfill
+    // ended, hand the rest back to other workers now rather than when the claims expire,
+    // saying how each attempt went: deadlock-api only holds Steam's refusals against a
+    // match, so one this pass didn't get to is handed out again as if never handed out.
+    let attempts: Vec<Attempt> = handed_out
+      .iter()
+      .filter_map(|&match_id| {
+        let result = *st.attempts.get(&match_id)?;
+        Some(Attempt { match_id, result })
+      })
+      .collect();
+    self.backfill.release_claim(&attempts).await;
     result
   }
 }

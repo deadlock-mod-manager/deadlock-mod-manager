@@ -1,8 +1,9 @@
 use super::*;
 use crate::friends::Persona;
 use crate::model::{
-  ActiveFriend, FRIEND_COOLDOWN_SECS, FRIEND_HISTORY_QUOTA_LIMIT, LocalMatch, MatchSalts,
-  PRIVATE_FRIEND_COOLDOWN_SECS, QuotaKind, SaltsCheck, UNFINISHED_FRIEND_COOLDOWN_SECS,
+  ACCOUNT_LIST_INTERVAL_SECS, ActiveFriend, Attempt, AttemptResult, FRIEND_COOLDOWN_SECS,
+  FRIEND_HISTORY_QUOTA_LIMIT, LocalMatch, MatchSalts, PRIVATE_FRIEND_COOLDOWN_SECS, QuotaKind,
+  SaltsCheck, UNFINISHED_FRIEND_COOLDOWN_SECS,
 };
 use crate::quota::QuotaWindow;
 use std::sync::Mutex;
@@ -172,6 +173,8 @@ struct SpyBackfill {
   log: Mutex<Vec<BackfillCall>>,
   // The `limit` of each global list request.
   global_limits: Mutex<Vec<usize>>,
+  // The attempts reported with each release.
+  reports: Mutex<Vec<Vec<Attempt>>>,
   // Every id `missing_salts` checked, and the id whose check fails, ending the checks.
   checked: Mutex<Vec<u64>>,
   check_fails_at: Option<u64>,
@@ -191,8 +194,9 @@ impl BackfillSource for SpyBackfill {
       }
     }
   }
-  async fn release_claim(&self) {
+  async fn release_claim(&self, attempts: &[Attempt]) {
     self.log.lock().unwrap().push(BackfillCall::Release);
+    self.reports.lock().unwrap().push(attempts.to_vec());
   }
   async fn active_friends(&self, account_ids: &[u32]) -> Result<Vec<ActiveFriend>, MatchSyncError> {
     Ok(
@@ -239,6 +243,7 @@ struct MemPersistence {
   fail_load_quota: bool,
   fail_save_quota: bool,
   last_progress_running: Mutex<Option<bool>>,
+  account_list_drained_at: Mutex<Option<i64>>,
 }
 impl MemPersistence {
   fn hits(&self, kind: QuotaKind) -> &Mutex<Vec<i64>> {
@@ -291,6 +296,12 @@ impl SyncPersistence for MemPersistence {
   }
   fn set_full_sync_complete(&self, complete: bool) {
     *self.complete.lock().unwrap() = complete;
+  }
+  fn account_list_drained_at(&self) -> Option<i64> {
+    *self.account_list_drained_at.lock().unwrap()
+  }
+  fn set_account_list_drained_at(&self, at: i64) {
+    *self.account_list_drained_at.lock().unwrap() = Some(at);
   }
   fn emit_progress(&self, progress: &SyncProgress) {
     self.progress_events.fetch_add(1, Ordering::Relaxed);
@@ -742,6 +753,230 @@ async fn background_pass_releases_the_global_claim_when_backfill_aborts() {
   assert_eq!(
     eng.backfill.log.lock().unwrap().last(),
     Some(&BackfillCall::Release)
+  );
+}
+
+#[tokio::test]
+async fn background_pass_reports_how_each_global_attempt_went() {
+  // Four fetches of budget left: the two oldest ids aren't tried.
+  let persistence = MemPersistence {
+    now: 1_000_000,
+    quota_hits: Mutex::new(vec![1_000_000; LIMIT - BACKFILL_QUOTA_RESERVE - 4]),
+    ..Default::default()
+  };
+  let eng = engine_with_persistence(
+    SpyGc {
+      refused: HashSet::from([204]),
+      forbidden: HashSet::from([203]),
+      in_flight: HashSet::from([202]),
+      ..Default::default()
+    },
+    SpyBackfill {
+      global: vec![200, 201, 202, 203, 204, 205],
+      ..Default::default()
+    },
+    SpyGameCheck::default(),
+    persistence,
+  );
+
+  eng
+    .run_background_pass(&active_config(), &AtomicBool::new(false))
+    .await
+    .unwrap();
+  assert_eq!(*eng.sink.posted.lock().unwrap(), vec![205]);
+  let attempt = |match_id, result| Attempt { match_id, result };
+  // In the order the list was handed out; untried ids are left out.
+  assert_eq!(
+    *eng.backfill.reports.lock().unwrap(),
+    [vec![
+      attempt(202, AttemptResult::InFlight),
+      attempt(203, AttemptResult::NoPermission),
+      attempt(204, AttemptResult::Invalid),
+      attempt(205, AttemptResult::Fetched),
+    ]]
+  );
+}
+
+#[tokio::test]
+async fn background_pass_reports_failed_and_already_fetched_global_ids() {
+  // Newest first: 301 was posted on an earlier pass, 300's request fails, which ends the
+  // backfill before 299.
+  let persistence = MemPersistence {
+    now: 1_000_000,
+    fetched: Mutex::new(vec![301]),
+    ..Default::default()
+  };
+  let eng = engine_with_persistence(
+    SpyGc {
+      fail: true,
+      ..Default::default()
+    },
+    SpyBackfill {
+      global: vec![299, 300, 301],
+      ..Default::default()
+    },
+    SpyGameCheck::default(),
+    persistence,
+  );
+
+  eng
+    .run_background_pass(&active_config(), &AtomicBool::new(false))
+    .await
+    .unwrap();
+  assert_eq!(
+    *eng.backfill.reports.lock().unwrap(),
+    [vec![
+      Attempt {
+        match_id: 300,
+        result: AttemptResult::Failed
+      },
+      Attempt {
+        match_id: 301,
+        result: AttemptResult::Fetched
+      },
+    ]]
+  );
+}
+
+#[tokio::test]
+async fn background_pass_reports_nothing_for_a_fetch_the_game_cut_off() {
+  let eng = engine_with_game_check(
+    SpyGc::default(),
+    SpyBackfill {
+      global: vec![200, 201],
+      ..Default::default()
+    },
+    SpyGameCheck {
+      trip_after_calls: 4,
+      ..Default::default()
+    },
+  );
+
+  let p = eng
+    .run_background_pass(&active_config(), &AtomicBool::new(false))
+    .await;
+  assert!(matches!(p, Err(MatchSyncError::GameRunning)));
+  assert_eq!(*eng.backfill.reports.lock().unwrap(), [vec![]]);
+}
+
+#[tokio::test]
+async fn background_pass_asks_for_a_drained_account_list_once_a_day() {
+  let mut eng = engine(SpyGc::default(), SpyBackfill::default());
+  let config = active_config();
+  let cancel = AtomicBool::new(false);
+  let account_calls = |eng: &SyncEngine<_, _, _, SpyBackfill, _, _>| {
+    eng
+      .backfill
+      .log
+      .lock()
+      .unwrap()
+      .iter()
+      .filter(|c| **c == BackfillCall::Account)
+      .count()
+  };
+
+  eng.run_background_pass(&config, &cancel).await.unwrap();
+  assert_eq!(account_calls(&eng), 1);
+  assert_eq!(
+    *eng.persistence.account_list_drained_at.lock().unwrap(),
+    Some(1_000_000)
+  );
+
+  // It came back empty, so later passes that day skip it.
+  eng.persistence.now += ACCOUNT_LIST_INTERVAL_SECS - 1;
+  eng.run_background_pass(&config, &cancel).await.unwrap();
+  assert_eq!(account_calls(&eng), 1);
+
+  eng.persistence.now += 1;
+  eng.run_background_pass(&config, &cancel).await.unwrap();
+  assert_eq!(account_calls(&eng), 2);
+}
+
+#[tokio::test]
+async fn background_pass_keeps_asking_for_an_account_list_until_it_is_drained() {
+  // The GC keeps failing, so 100 stays new to this client.
+  let backfill = SpyBackfill {
+    account: vec![100],
+    ..Default::default()
+  };
+  let eng = engine(
+    SpyGc {
+      fail: true,
+      ..Default::default()
+    },
+    backfill,
+  );
+  let cancel = AtomicBool::new(false);
+
+  eng
+    .run_background_pass(&active_config(), &cancel)
+    .await
+    .unwrap();
+  eng
+    .run_background_pass(&active_config(), &cancel)
+    .await
+    .unwrap();
+  let log = eng.backfill.log.lock().unwrap();
+  assert_eq!(
+    log.iter().filter(|c| **c == BackfillCall::Account).count(),
+    2
+  );
+  assert_eq!(
+    *eng.persistence.account_list_drained_at.lock().unwrap(),
+    None
+  );
+}
+
+#[tokio::test]
+async fn an_account_list_of_already_fetched_ids_counts_as_drained() {
+  // The server still lists 100, but this client posted it on an earlier pass.
+  let persistence = MemPersistence {
+    now: 1_000_000,
+    fetched: Mutex::new(vec![100]),
+    ..Default::default()
+  };
+  let eng = engine_with_persistence(
+    SpyGc::default(),
+    SpyBackfill {
+      account: vec![100],
+      ..Default::default()
+    },
+    SpyGameCheck::default(),
+    persistence,
+  );
+
+  eng
+    .run_background_pass(&active_config(), &AtomicBool::new(false))
+    .await
+    .unwrap();
+  assert_eq!(
+    eng.gc.calls.load(Ordering::Relaxed),
+    1,
+    "only the history page"
+  );
+  assert_eq!(
+    *eng.persistence.account_list_drained_at.lock().unwrap(),
+    Some(1_000_000)
+  );
+}
+
+#[tokio::test]
+async fn full_sync_marks_a_drained_account_list() {
+  let eng = engine(
+    SpyGc::default(),
+    SpyBackfill {
+      account: vec![],
+      ..Default::default()
+    },
+  );
+
+  eng
+    .run_full_sync_if_enabled(&active_config(), &AtomicBool::new(false))
+    .await
+    .unwrap();
+  assert_eq!(
+    *eng.persistence.account_list_drained_at.lock().unwrap(),
+    Some(1_000_000)
   );
 }
 

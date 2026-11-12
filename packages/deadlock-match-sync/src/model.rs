@@ -41,6 +41,11 @@ pub const PRIVATE_FRIEND_COOLDOWN_SECS: i64 = 7 * 24 * 60 * 60;
 // back soon, but not every pass: each lookup spends the friend history quota.
 pub const UNFINISHED_FRIEND_COOLDOWN_SECS: i64 = 60 * 60;
 
+// The background pass asks for the account's own to-fetch list at most this often once it
+// came back empty: the newest history page already covers the user's new matches, so the list
+// only ever holds older ones, which the server's global list hands out too.
+pub const ACCOUNT_LIST_INTERVAL_SECS: i64 = 24 * 60 * 60;
+
 // Matches the httpcache scraper so both ingest sources look identical server-side.
 pub const INGEST_USERNAME: &str = "Mod Manager";
 
@@ -119,6 +124,31 @@ pub struct SaltsCheck {
   pub missing: Vec<u64>,
   /// Ids it already has salts for.
   pub stored: Vec<u64>,
+}
+
+/// How an attempt at a match from the global to-fetch list ended, as reported when the
+/// list is released. deadlock-api only counts Steam's refusals against a match, so a match
+/// that wasn't tried, or got no answer, is handed out again.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AttemptResult {
+  /// The GC answered with salts, and they were posted.
+  Fetched,
+  /// The GC doesn't know the match.
+  Invalid,
+  /// The GC won't show the match to this account.
+  NoPermission,
+  /// The GC says the match is still in progress.
+  InFlight,
+  /// No answer about the match: a timeout, a rate limit, a failed post.
+  Failed,
+}
+
+/// One element of the release report's `attempts`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+pub struct Attempt {
+  pub match_id: u64,
+  pub result: AttemptResult,
 }
 
 #[derive(Debug, Clone, Copy)]
