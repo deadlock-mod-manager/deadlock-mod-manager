@@ -161,7 +161,7 @@ enum BackfillCall {
 }
 
 // Sticky, like the real endpoint: it keeps listing the same ids until they are
-// ingested, so run termination must come from the run-local `processed` set.
+// ingested, so run termination must come from what the run already did with each id.
 #[derive(Default)]
 struct SpyBackfill {
   account: Vec<u64>,
@@ -1416,6 +1416,27 @@ async fn friends_new_matches_are_backfilled_before_the_global_list() {
   assert_eq!(
     eng.persistence.cooldowns.lock().unwrap().get(&FRIEND),
     Some(&(NOW + FRIEND_COOLDOWN_SECS))
+  );
+}
+
+#[tokio::test]
+async fn global_ids_the_friend_check_found_stored_are_not_fetched_again() {
+  // 500 is one of the friend's matches deadlock-api already has salts for.
+  let (gc, backfill) = friend_scenario(vec![600, 500]);
+  let eng = engine(gc, backfill);
+
+  eng
+    .run_background_pass(&active_config(), &AtomicBool::new(false))
+    .await
+    .unwrap();
+  assert_eq!(*eng.sink.posted.lock().unwrap(), vec![502, 501, 600]);
+  let attempt = |match_id| Attempt {
+    match_id,
+    result: AttemptResult::Fetched,
+  };
+  assert_eq!(
+    *eng.backfill.reports.lock().unwrap(),
+    [vec![attempt(600), attempt(500)]]
   );
 }
 
