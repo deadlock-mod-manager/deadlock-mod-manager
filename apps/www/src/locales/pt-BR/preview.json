@@ -99,8 +99,8 @@
     },
     "running": {
       "title": "Deadlock em execução",
-      "modded": "Divirta-se. Seus mods estão ativos.",
-      "vanilla": "Divirta-se. Desta vez, sem mods."
+      "modded": "",
+      "vanilla": ""
     },
     "closed": {
       "title": "Deadlock fechado",

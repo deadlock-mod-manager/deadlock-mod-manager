@@ -99,8 +99,8 @@
     },
     "running": {
       "title": "Deadlock est lancé",
-      "modded": "Bon jeu ! Vos mods sont actifs.",
-      "vanilla": "Bon jeu ! Partie vanilla cette fois."
+      "modded": "",
+      "vanilla": ""
     },
     "closed": {
       "title": "Deadlock fermé",

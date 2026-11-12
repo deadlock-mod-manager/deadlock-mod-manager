@@ -99,8 +99,8 @@
     },
     "running": {
       "title": "Deadlock запущен",
-      "modded": "Удачной игры. Моды работают.",
-      "vanilla": "Удачной игры. На этот раз без модов."
+      "modded": "",
+      "vanilla": ""
     },
     "closed": {
       "title": "Deadlock закрыт",

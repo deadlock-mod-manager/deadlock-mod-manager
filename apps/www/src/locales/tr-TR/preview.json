@@ -99,8 +99,8 @@
     },
     "running": {
       "title": "Deadlock çalışıyor",
-      "modded": "İyi eğlenceler! Modlarınız etkin.",
-      "vanilla": "İyi eğlenceler! Bu kez modsuz oynuyorsunuz."
+      "modded": "",
+      "vanilla": ""
     },
     "closed": {
       "title": "Deadlock kapandı",
