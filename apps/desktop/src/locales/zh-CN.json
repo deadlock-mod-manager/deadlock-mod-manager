@@ -4075,8 +4075,6 @@
     "catalogRefresh": "",
     "catalogRefreshing": "",
     "mapsSubtitle": "浏览 Deadlock 的自定义地图",
-    "mapsWarningTitle": "实验性功能。",
-    "mapsWarning": "地图能否运行取决于作者的打包方式，因此有些地图无法开箱即用。",
     "catalogSyncing": "本地 GameBanana 目录仍在同步。随着页面被保存，结果会逐步出现。",
     "catalogSyncTitle": "正在同步 GameBanana 目录…",
     "catalogSyncPercentage": "",

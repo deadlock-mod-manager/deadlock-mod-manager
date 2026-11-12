@@ -4075,8 +4075,6 @@
     "catalogRefresh": "Kataloğu Yenile",
     "catalogRefreshing": "Katalog yenileniyor…",
     "mapsSubtitle": "Deadlock için özel haritalara göz atın",
-    "mapsWarningTitle": "Deneysel.",
-    "mapsWarning": "Bir haritanın çalışması, yapımcısının onu nasıl paketlediğine bağlıdır; bu nedenle bazı haritalar ek işlem yapmadan çalışmayabilir.",
     "catalogSyncing": "Yerel GameBanana kataloğu hâlâ eşitleniyor. Sonuçlar sayfalar kaydedildikçe görüntülenir.",
     "catalogSyncTitle": "GameBanana kataloğu eşitleniyor…",
     "catalogSyncPercentage": "{{percentage}}%",

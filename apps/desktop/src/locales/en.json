@@ -4075,8 +4075,6 @@
     "catalogRefresh": "Refresh catalog",
     "catalogRefreshing": "Refreshing catalog…",
     "mapsSubtitle": "Browse custom maps for Deadlock",
-    "mapsWarningTitle": "Experimental.",
-    "mapsWarning": "Whether a map works depends on how its author packaged it, so some won't run out of the box.",
     "catalogSyncing": "The local GameBanana catalog is still syncing. Results will appear as pages are saved.",
     "catalogSyncTitle": "Syncing GameBanana catalog…",
     "catalogSyncPercentage": "{{percentage}}%",
