@@ -336,24 +336,19 @@
     },
     "tiers": {
       "pretty": {
-        "label": "Pretty",
-        "quip": "Barely touched. Still gorgeous."
+        "label": "Pretty"
       },
       "balanced": {
-        "label": "Balanced",
-        "quip": "Shadows off, sanity on."
+        "label": "Balanced"
       },
       "lean": {
-        "label": "Lean",
-        "quip": "Less sparkle, more frames."
+        "label": "Lean"
       },
       "sweaty": {
-        "label": "Sweaty",
-        "quip": "Every frame counts."
+        "label": "Sweaty"
       },
       "potato": {
-        "label": "Potato",
-        "quip": "It runs. That's the review."
+        "label": "Potato"
       }
     },
     "scale": {
@@ -8421,7 +8416,7 @@
       "crashed": "Deadlock crashed. Counting that as still broken…",
       "questionBaseline": "With those mods off, is the problem still there?",
       "question": "Is the problem still there?",
-      "result": "Done. Your result is ready.",
+      "result": "Your result is ready.",
       "seeResult": "See result",
       "restoring": "Putting your mods back…",
       "restoreInterrupted": "Your mods aren't all back yet.",

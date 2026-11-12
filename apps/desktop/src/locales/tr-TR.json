@@ -336,24 +336,19 @@
     },
     "tiers": {
       "pretty": {
-        "label": "Görsel",
-        "quip": "Neredeyse hiç değiştirilmedi. Hâlâ göz alıcı."
+        "label": "Görsel"
       },
       "balanced": {
-        "label": "Dengeli",
-        "quip": "Gölgeler kapalı, denge yerinde."
+        "label": "Dengeli"
       },
       "lean": {
-        "label": "Hafif",
-        "quip": "Daha az görsel efekt, daha yüksek kare hızı."
+        "label": "Hafif"
       },
       "sweaty": {
-        "label": "Rekabetçi",
-        "quip": "Her kare önemli."
+        "label": "Rekabetçi"
       },
       "potato": {
-        "label": "En düşük",
-        "quip": "Çalışıyor. Hepsi bu."
+        "label": "En düşük"
       }
     },
     "scale": {

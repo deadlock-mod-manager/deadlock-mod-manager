@@ -16,7 +16,7 @@ const steps = [
   {
     icon: LuPlay,
     title: "Play",
-    description: "We handle the install. You jump back into the game.",
+    description: "The app installs your mods. Launch Deadlock and play.",
   },
 ];
 

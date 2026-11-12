@@ -336,24 +336,19 @@
     },
     "tiers": {
       "pretty": {
-        "label": "Даволі добра",
-        "quip": "Амаль без змен. Усё яшчэ цудоўна выглядае."
+        "label": "Даволі добра"
       },
       "balanced": {
-        "label": "Збалансаваны",
-        "quip": ""
+        "label": "Збалансаваны"
       },
       "lean": {
-        "label": "",
-        "quip": ""
+        "label": ""
       },
       "sweaty": {
-        "label": "",
-        "quip": ""
+        "label": ""
       },
       "potato": {
-        "label": "",
-        "quip": ""
+        "label": ""
       }
     },
     "scale": {

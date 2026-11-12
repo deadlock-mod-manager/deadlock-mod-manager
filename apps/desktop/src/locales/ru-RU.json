@@ -336,24 +336,19 @@
     },
     "tiers": {
       "pretty": {
-        "label": "",
-        "quip": ""
+        "label": ""
       },
       "balanced": {
-        "label": "",
-        "quip": ""
+        "label": ""
       },
       "lean": {
-        "label": "",
-        "quip": ""
+        "label": ""
       },
       "sweaty": {
-        "label": "",
-        "quip": ""
+        "label": ""
       },
       "potato": {
-        "label": "Картошка",
-        "quip": ""
+        "label": "Картошка"
       }
     },
     "scale": {

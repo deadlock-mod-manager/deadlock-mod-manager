@@ -217,13 +217,8 @@ export const LooksFramesScale = ({
                 key={selected ? "picked" : "idle"}
                 tier={info.id}
               />
-              <span className='min-w-0'>
-                <span className='block truncate font-medium text-sm'>
-                  {t(`performance.tiers.${info.id}.label`)}
-                </span>
-                <span className='hidden truncate text-muted-foreground text-xs lg:block'>
-                  {t(`performance.tiers.${info.id}.quip`)}
-                </span>
+              <span className='min-w-0 truncate font-medium text-sm'>
+                {t(`performance.tiers.${info.id}.label`)}
               </span>
             </button>
           );
