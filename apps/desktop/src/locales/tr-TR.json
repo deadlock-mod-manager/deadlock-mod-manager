@@ -8416,7 +8416,7 @@
       "crashed": "Deadlock çöktü. Sorun hâlâ var olarak sayılıyor…",
       "questionBaseline": "Bu modlar kapalıyken sorun hâlâ devam ediyor mu?",
       "question": "Sorun hâlâ devam ediyor mu?",
-      "result": "Tamamlandı. Sonucunuz hazır.",
+      "result": "",
       "seeResult": "Sonucu gör",
       "restoring": "Modlarınız geri yükleniyor…",
       "restoreInterrupted": "Modlarınızın tümü henüz geri yüklenmedi.",
