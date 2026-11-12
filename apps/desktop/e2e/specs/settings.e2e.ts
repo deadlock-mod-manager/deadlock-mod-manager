@@ -101,7 +101,10 @@ describe("settings persistence", () => {
         for (const control of applicationToggles)
           await setSwitch(`#${control.id}`, control.value);
         await moveSlider('[role="slider"][aria-label="Audio Volume"]', 37);
-        await selectSetting('[aria-label="Update Channel"]', "Nightly");
+        await selectSetting(
+          '[aria-label="Update Channel"]',
+          "Nightly (testing)",
+        );
         const theme = await $('button[aria-label="Theme"]');
         await reveal(theme);
         await theme.click();
@@ -126,7 +129,9 @@ describe("settings persistence", () => {
       await expect(
         $('[role="slider"][aria-label="Audio Volume"]'),
       ).toHaveAttribute("aria-valuenow", "37");
-      await expect($('[aria-label="Update Channel"]')).toHaveText("Nightly");
+      await expect($('[aria-label="Update Channel"]')).toHaveText(
+        "Nightly (testing)",
+      );
       await openSettings("match-data");
       if (editing)
         for (const control of matchDataToggles)
