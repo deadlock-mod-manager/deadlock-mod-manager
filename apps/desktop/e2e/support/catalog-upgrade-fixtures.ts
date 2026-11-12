@@ -244,6 +244,8 @@ export const assertUpgradedCatalog = (appData: string) => {
       "20261007000000",
       "20261010000000",
       "20261107000000",
+      "20261108000000",
+      "20261111000000",
     ]);
     const marker = z
       .object({ value: z.string() })
