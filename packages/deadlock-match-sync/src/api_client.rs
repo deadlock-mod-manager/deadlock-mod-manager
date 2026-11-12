@@ -1,18 +1,19 @@
 //! The deadlock-api calls this subsystem makes: read the to-fetch list (and release
 //! the global list's claims once done with it, reporting how the attempts went), the
 //! newest stored matches of the user's Steam friends and which matches already have
-//! salts, and POST recovered salts to the same route the httpcache scraper uses. Split into traits so [`super::sync`] can be tested
-//! with spies.
+//! salts, and POST recovered salts to the same route the httpcache scraper uses. Split
+//! into traits so [`super::sync`] can be tested with spies.
 
 use std::collections::{HashMap, HashSet};
 use std::future::Future;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant};
 
 use reqwest::header::{COOKIE, HeaderMap, SET_COOKIE};
 use serde::{Deserialize, Serialize};
 
+use super::auth::now_secs;
 use super::error::MatchSyncError;
 use super::friends::GAP_SAMPLE;
 use super::model::{ActiveFriend, Attempt, FetchScope, SaltPayload, SaltsCheck};
@@ -158,13 +159,6 @@ struct StoredMatch {
 #[derive(Serialize)]
 struct ReleaseReport<'a> {
   attempts: &'a [Attempt],
-}
-
-fn unix_now() -> i64 {
-  SystemTime::now()
-    .duration_since(UNIX_EPOCH)
-    .map(|d| d.as_secs() as i64)
-    .unwrap_or_default()
 }
 
 impl ApiClient {
@@ -364,7 +358,7 @@ impl BackfillSource for ApiClient {
       }
     }
 
-    let cutoff = unix_now().saturating_sub(ACTIVE_WINDOW_SECS);
+    let cutoff = now_secs().saturating_sub(ACTIVE_WINDOW_SECS);
     Ok(known.into_iter().filter(|f| f.last_end >= cutoff).collect())
   }
 
