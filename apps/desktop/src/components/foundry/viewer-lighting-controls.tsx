@@ -66,6 +66,7 @@ export function ViewerLightingControls({
       </div>
       <Slider
         aria-label={t("modelPreview.bloomStrength")}
+        className='data-[disabled]:opacity-30'
         disabled={!look.bloom}
         min={0}
         max={1.5}

@@ -59,6 +59,7 @@ export const InGameSection = ({
         <div className='relative'>
           <Slider
             aria-label={t("foundry.sounds.gain")}
+            className={saved.mute ? "opacity-30" : undefined}
             disabled={disabled || saved.mute}
             max={GAIN_MAX_DB}
             min={GAIN_MIN_DB}

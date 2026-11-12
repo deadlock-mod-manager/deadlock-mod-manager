@@ -29,7 +29,7 @@ export const CategoryFilterItem = (props: CategoryFilterItemProps) => {
             })
       }
       className={cn(
-        "min-h-10 cursor-pointer gap-3 px-3 py-2",
+        "min-h-10 gap-3 px-3 py-2",
         checked && "bg-primary/10 text-primary",
       )}
       data-checked={props.kind === "select" ? checked : undefined}

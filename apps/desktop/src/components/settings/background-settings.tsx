@@ -118,7 +118,7 @@ const BackgroundSettings = () => {
             <div className='flex min-w-48 items-center gap-4'>
               <Slider
                 aria-label={t("settings.backgroundOpacity")}
-                className='flex-1'
+                className='flex-1 data-[disabled]:opacity-30'
                 disabled={!hasImage}
                 max={100}
                 min={0}
@@ -136,7 +136,7 @@ const BackgroundSettings = () => {
             <div className='flex min-w-48 items-center gap-4'>
               <Slider
                 aria-label={t("settings.backgroundBlur")}
-                className='flex-1'
+                className='flex-1 data-[disabled]:opacity-30'
                 disabled={!hasImage}
                 max={20}
                 min={0}

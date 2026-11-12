@@ -161,6 +161,7 @@ export function ThemeSettingsPanel({
             </span>
             <Slider
               aria-label={t("plugins.themes.ambientIntensity")}
+              className='data-[disabled]:opacity-30'
               disabled={!palette.ambientBackgroundEnabled}
               max={36}
               min={0}
@@ -177,6 +178,7 @@ export function ThemeSettingsPanel({
             </span>
             <Slider
               aria-label={t("plugins.themes.ambientSpread")}
+              className='data-[disabled]:opacity-30'
               disabled={!palette.ambientBackgroundEnabled}
               max={20}
               min={0}
