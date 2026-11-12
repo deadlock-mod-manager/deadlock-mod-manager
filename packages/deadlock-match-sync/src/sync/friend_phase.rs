@@ -5,7 +5,7 @@
 
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use super::{LoopControl, RunState, SyncEngine, best_effort, newest_first_fresh};
+use super::{LoopControl, Outcome, RunState, SyncEngine, best_effort};
 use crate::api_client::{BackfillSource, SaltsSink};
 use crate::auth::SteamAuthProvider;
 use crate::error::{GcRefusal, MatchSyncError};
@@ -188,12 +188,13 @@ where
       .copied()
       .filter(|id| !st.fetched_set.contains(id))
       .collect();
-    let candidates = newest_first_fresh(found, &st.processed);
+    let candidates = st.newest_first_fresh(found);
     let SaltsCheck { missing, stored } = self
       .backfill
       .missing_salts(&candidates, budget, cancel)
       .await;
-    st.settled.extend(stored);
+    st.outcomes
+      .extend(stored.into_iter().map(|id| (id, Outcome::Done)));
     let result = self.process_ids(ctx, missing, true, Some(cancel), st).await;
 
     // Dealt with means fetched or settled; a fetch that failed or never ran is not.
@@ -201,10 +202,7 @@ where
     let cooldowns: Vec<(u32, i64)> = lookups
       .iter()
       .map(|lookup| {
-        let dealt_with = lookup
-          .match_ids
-          .iter()
-          .all(|id| st.fetched_set.contains(id) || st.settled.contains(id));
+        let dealt_with = lookup.match_ids.iter().all(|&id| st.settled(id));
         let cooldown = if dealt_with {
           lookup.cooldown_secs
         } else {

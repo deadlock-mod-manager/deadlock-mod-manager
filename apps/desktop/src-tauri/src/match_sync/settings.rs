@@ -21,6 +21,7 @@ const KEY_CONSENT_VERSION: &str = "consent_version";
 const KEY_FETCHED_IDS: &str = "fetched_ids";
 const KEY_QUOTA_HITS: &str = "quota_hits";
 const KEY_FULL_SYNC_COMPLETE: &str = "full_sync_complete";
+const KEY_ACCOUNT_LIST_DRAINED: &str = "account_list_drained_at";
 const KEY_GC_BACKOFF: &str = "gc_backoff_until";
 const KEY_HISTORY_HITS: &str = "history_hits";
 // Global, not per account: a friend shared by several accounts is looked up once.
@@ -124,6 +125,29 @@ pub fn set_full_sync_complete(
 ) -> Result<(), MatchSyncError> {
   let store = store(app)?;
   store.set(format!("{KEY_FULL_SYNC_COMPLETE}::{steam_id64}"), complete);
+  save(&store)
+}
+
+pub fn load_account_list_drained_at(app: &AppHandle, steam_id64: u64) -> Option<i64> {
+  store(app)
+    .ok()?
+    .get(format!("{KEY_ACCOUNT_LIST_DRAINED}::{steam_id64}"))
+    .and_then(|v| v.as_i64())
+}
+
+pub fn set_account_list_drained_at(
+  app: &AppHandle,
+  steam_id64: u64,
+  at: Option<i64>,
+) -> Result<(), MatchSyncError> {
+  let store = store(app)?;
+  let key = format!("{KEY_ACCOUNT_LIST_DRAINED}::{steam_id64}");
+  match at {
+    Some(at) => store.set(key, at),
+    None => {
+      store.delete(key);
+    }
+  }
   save(&store)
 }
 
@@ -285,6 +309,7 @@ pub fn prune_forgotten_accounts(
     KEY_QUOTA_HITS,
     KEY_FETCHED_IDS,
     KEY_FULL_SYNC_COMPLETE,
+    KEY_ACCOUNT_LIST_DRAINED,
     KEY_GC_BACKOFF,
     KEY_HISTORY_HITS,
   ];
