@@ -4604,6 +4604,7 @@
     "developerMode": "开发者模式",
     "developerModeDescription": "启用开发者模式以访问高级工具和调试功能",
     "experimental": "实验性",
+    "features": "",
     "ingestTool": {
       "title": "",
       "description": "",
@@ -4965,6 +4966,11 @@
   "featureFlags": {
     "title": "实验性功能",
     "description": "选择加入实验性功能，在功能面向所有人发布之前抢先体验。",
+    "blockedBy": {
+      "feature": "",
+      "minimal": ""
+    },
+    "openFeatures": "",
     "features": {
       "custom-maps": {
         "title": "自定义地图",
@@ -4979,6 +4985,70 @@
         "description": ""
       },
       "cloud-backup": {
+        "title": "",
+        "description": ""
+      },
+      "plugins": {
+        "title": "",
+        "description": ""
+      }
+    }
+  },
+  "optionalFeatures": {
+    "title": "",
+    "description": "",
+    "leftovers": {
+      "performance": "",
+      "serverPicker_one": "",
+      "serverPicker_other": "",
+      "crosshairs": ""
+    },
+    "minimal": {
+      "title": "",
+      "description": "",
+      "enabledCount": "",
+      "paused_one": "",
+      "paused_other": "",
+      "nothingPaused": ""
+    },
+    "groups": {
+      "matches": "",
+      "customization": "",
+      "tools": ""
+    },
+    "pausedBadge": "",
+    "experimentalBadge": "",
+    "turnOnExperimental": "",
+    "features": {
+      "stats": {
+        "title": "",
+        "description": ""
+      },
+      "server-browser": {
+        "title": "",
+        "description": ""
+      },
+      "server-picker": {
+        "title": "",
+        "description": ""
+      },
+      "crosshairs": {
+        "title": "",
+        "description": ""
+      },
+      "skins": {
+        "title": "",
+        "description": ""
+      },
+      "autoexec": {
+        "title": "",
+        "description": ""
+      },
+      "performance": {
+        "title": "",
+        "description": ""
+      },
+      "foundry": {
         "title": "",
         "description": ""
       },
@@ -5928,6 +5998,26 @@
           }
         ],
         "features": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
           "",
           "",
           "",
@@ -8656,6 +8746,10 @@
       "body": ""
     },
     "remoteInstall": {
+      "title": "",
+      "body": ""
+    },
+    "minimalMode": {
       "title": "",
       "body": ""
     },

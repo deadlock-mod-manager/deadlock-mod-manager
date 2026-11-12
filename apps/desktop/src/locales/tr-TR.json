@@ -4604,6 +4604,7 @@
     "developerMode": "Geliştirici Modu",
     "developerModeDescription": "Gelişmiş araçlara ve hata ayıklama özelliklerine erişmek için geliştirici modunu etkinleştirin",
     "experimental": "Deneysel",
+    "features": "",
     "ingestTool": {
       "title": "",
       "description": "",
@@ -4965,6 +4966,11 @@
   "featureFlags": {
     "title": "Deneysel Özellikler",
     "description": "Deneysel özellikleri etkinleştirerek herkese sunulmadan önce yeni işlevleri deneyin.",
+    "blockedBy": {
+      "feature": "",
+      "minimal": ""
+    },
+    "openFeatures": "",
     "features": {
       "custom-maps": {
         "title": "Özel Haritalar",
@@ -4981,6 +4987,70 @@
       "cloud-backup": {
         "title": "Bulut Yedeklemesi",
         "description": "Mod profillerinizi hesabınıza yedekleyin ve başka bir bilgisayarda geri yükleyin. Oturum açmanız gerekir."
+      },
+      "plugins": {
+        "title": "",
+        "description": ""
+      }
+    }
+  },
+  "optionalFeatures": {
+    "title": "",
+    "description": "",
+    "leftovers": {
+      "performance": "",
+      "serverPicker_one": "",
+      "serverPicker_other": "",
+      "crosshairs": ""
+    },
+    "minimal": {
+      "title": "",
+      "description": "",
+      "enabledCount": "",
+      "paused_one": "",
+      "paused_other": "",
+      "nothingPaused": ""
+    },
+    "groups": {
+      "matches": "",
+      "customization": "",
+      "tools": ""
+    },
+    "pausedBadge": "",
+    "experimentalBadge": "",
+    "turnOnExperimental": "",
+    "features": {
+      "stats": {
+        "title": "",
+        "description": ""
+      },
+      "server-browser": {
+        "title": "",
+        "description": ""
+      },
+      "server-picker": {
+        "title": "",
+        "description": ""
+      },
+      "crosshairs": {
+        "title": "",
+        "description": ""
+      },
+      "skins": {
+        "title": "",
+        "description": ""
+      },
+      "autoexec": {
+        "title": "",
+        "description": ""
+      },
+      "performance": {
+        "title": "",
+        "description": ""
+      },
+      "foundry": {
+        "title": "",
+        "description": ""
       },
       "plugins": {
         "title": "",
@@ -5928,6 +5998,26 @@
           }
         ],
         "features": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
           "",
           "",
           "",
@@ -8658,6 +8748,10 @@
     "remoteInstall": {
       "title": "Telefonunuzdan mod yükleyin",
       "body": "GameBanana hesabınızı bağlayın. Remote Install ile sıraya eklediğiniz modlar, siz uzaktayken bile buraya indirilip yüklenir."
+    },
+    "minimalMode": {
+      "title": "",
+      "body": ""
     },
     "settingsSearch": {
       "title": "Tüm ayarlarda arama yapın",

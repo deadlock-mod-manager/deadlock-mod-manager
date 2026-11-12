@@ -4604,6 +4604,7 @@
     "developerMode": "開発者モード",
     "developerModeDescription": "開発者モードを有効にして、高度なツールとデバッグ機能にアクセスする",
     "experimental": "実験的機能",
+    "features": "",
     "ingestTool": {
       "title": "",
       "description": "",
@@ -4965,6 +4966,11 @@
   "featureFlags": {
     "title": "実験的機能",
     "description": "実験的機能に参加して、全員にリリースされる前に新機能を試す。",
+    "blockedBy": {
+      "feature": "",
+      "minimal": ""
+    },
+    "openFeatures": "",
     "features": {
       "custom-maps": {
         "title": "",
@@ -4979,6 +4985,70 @@
         "description": ""
       },
       "cloud-backup": {
+        "title": "",
+        "description": ""
+      },
+      "plugins": {
+        "title": "",
+        "description": ""
+      }
+    }
+  },
+  "optionalFeatures": {
+    "title": "",
+    "description": "",
+    "leftovers": {
+      "performance": "",
+      "serverPicker_one": "",
+      "serverPicker_other": "",
+      "crosshairs": ""
+    },
+    "minimal": {
+      "title": "",
+      "description": "",
+      "enabledCount": "",
+      "paused_one": "",
+      "paused_other": "",
+      "nothingPaused": ""
+    },
+    "groups": {
+      "matches": "",
+      "customization": "",
+      "tools": ""
+    },
+    "pausedBadge": "",
+    "experimentalBadge": "",
+    "turnOnExperimental": "",
+    "features": {
+      "stats": {
+        "title": "",
+        "description": ""
+      },
+      "server-browser": {
+        "title": "",
+        "description": ""
+      },
+      "server-picker": {
+        "title": "",
+        "description": ""
+      },
+      "crosshairs": {
+        "title": "",
+        "description": ""
+      },
+      "skins": {
+        "title": "",
+        "description": ""
+      },
+      "autoexec": {
+        "title": "",
+        "description": ""
+      },
+      "performance": {
+        "title": "",
+        "description": ""
+      },
+      "foundry": {
         "title": "",
         "description": ""
       },
@@ -5928,6 +5998,26 @@
           }
         ],
         "features": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
           "",
           "",
           "",
@@ -8656,6 +8746,10 @@
       "body": ""
     },
     "remoteInstall": {
+      "title": "",
+      "body": ""
+    },
+    "minimalMode": {
       "title": "",
       "body": ""
     },
