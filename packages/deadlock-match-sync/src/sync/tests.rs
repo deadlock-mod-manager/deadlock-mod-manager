@@ -300,8 +300,8 @@ impl SyncPersistence for MemPersistence {
   fn account_list_drained_at(&self) -> Option<i64> {
     *self.account_list_drained_at.lock().unwrap()
   }
-  fn set_account_list_drained_at(&self, at: i64) {
-    *self.account_list_drained_at.lock().unwrap() = Some(at);
+  fn set_account_list_drained_at(&self, at: Option<i64>) {
+    *self.account_list_drained_at.lock().unwrap() = at;
   }
   fn emit_progress(&self, progress: &SyncProgress) {
     self.progress_events.fetch_add(1, Ordering::Relaxed);
@@ -957,6 +957,52 @@ async fn an_account_list_of_already_fetched_ids_counts_as_drained() {
   assert_eq!(
     *eng.persistence.account_list_drained_at.lock().unwrap(),
     Some(1_000_000)
+  );
+}
+
+#[tokio::test]
+async fn full_sync_clears_a_recent_drain_when_the_account_list_has_new_ids() {
+  // Drained an hour ago; the full sync now finds 100 pending but has no quota for it.
+  let persistence = MemPersistence {
+    now: 1_000_000,
+    quota_hits: Mutex::new(vec![1_000_000; LIMIT]),
+    account_list_drained_at: Mutex::new(Some(1_000_000 - 3_600)),
+    ..Default::default()
+  };
+  let eng = engine_with_persistence(
+    SpyGc::default(),
+    SpyBackfill {
+      account: vec![100],
+      ..Default::default()
+    },
+    SpyGameCheck::default(),
+    persistence,
+  );
+
+  eng
+    .run_full_sync_if_enabled(&active_config(), &AtomicBool::new(false))
+    .await
+    .unwrap();
+  assert!(eng.sink.posted.lock().unwrap().is_empty());
+  assert_eq!(
+    *eng.persistence.account_list_drained_at.lock().unwrap(),
+    None
+  );
+  // So the next background pass asks for it again.
+  eng
+    .run_background_pass(&active_config(), &AtomicBool::new(false))
+    .await
+    .unwrap();
+  assert_eq!(
+    eng
+      .backfill
+      .log
+      .lock()
+      .unwrap()
+      .iter()
+      .filter(|c| **c == BackfillCall::Account)
+      .count(),
+    2
   );
 }
 

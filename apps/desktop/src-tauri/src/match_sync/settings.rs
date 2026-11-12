@@ -138,10 +138,16 @@ pub fn load_account_list_drained_at(app: &AppHandle, steam_id64: u64) -> Option<
 pub fn set_account_list_drained_at(
   app: &AppHandle,
   steam_id64: u64,
-  at: i64,
+  at: Option<i64>,
 ) -> Result<(), MatchSyncError> {
   let store = store(app)?;
-  store.set(format!("{KEY_ACCOUNT_LIST_DRAINED}::{steam_id64}"), at);
+  let key = format!("{KEY_ACCOUNT_LIST_DRAINED}::{steam_id64}");
+  match at {
+    Some(at) => store.set(key, at),
+    None => {
+      store.delete(key);
+    }
+  }
   save(&store)
 }
 

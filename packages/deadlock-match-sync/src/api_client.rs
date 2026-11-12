@@ -233,31 +233,14 @@ impl ApiClient {
   }
 }
 
-// Sends `req`; `None` for the 404 deadlock-api answers when it has nothing stored.
-async fn send_found(
-  req: reqwest::RequestBuilder,
-) -> Result<Option<reqwest::Response>, MatchSyncError> {
-  let resp = req.send().await?;
-  if resp.status() == reqwest::StatusCode::NOT_FOUND {
-    drain(resp).await;
-    return Ok(None);
-  }
-  Ok(Some(resp.error_for_status()?))
-}
-
-// Reads an answered response to the end so its connection can serve the next request.
-// The status already said what was needed, so a failed read changes nothing.
-async fn drain(resp: reqwest::Response) {
-  let _ = resp.bytes().await;
-}
-
+// Sends `req` and reads the list it answers. Both batch routes answer an empty list when
+// nothing is stored, so any error status, a 404 included, means the route can't be used
+// (an API without it, a proxy in the way). Reading that as "nothing stored" would send
+// stored matches to the GC, or cache friends as having no matches.
 async fn get_list<T: serde::de::DeserializeOwned>(
   req: reqwest::RequestBuilder,
 ) -> Result<Vec<T>, MatchSyncError> {
-  match send_found(req).await? {
-    Some(resp) => read_list(resp).await,
-    None => Ok(Vec::new()),
-  }
+  read_list(req.send().await?.error_for_status()?).await
 }
 
 async fn read_list<T: serde::de::DeserializeOwned>(
@@ -359,16 +342,9 @@ impl BackfillSource for ApiClient {
       // One client for the whole batch, so the requests share a connection.
       let client = self.client()?;
       for chunk in uncached.chunks(IDS_PER_REQUEST) {
-        let players = match self.recent_matches(&client, chunk).await {
-          Ok(players) => players,
-          // A failing or stalled API would most likely fail the rest too. The friends left
-          // unread are read on a later pass.
-          Err(e) if known.is_empty() => return Err(e),
-          Err(e) => {
-            log::warn!("match-sync: friends' stored matches unavailable: {e}");
-            break;
-          }
-        };
+        // A failed batch skips the friend step for this pass instead of picking from a
+        // partial set. Batches read before it stay cached.
+        let players = self.recent_matches(&client, chunk).await?;
         // Every friend of the chunk is cached, so one without stored matches (or a
         // protected one, left out of the answer) isn't asked about again every pass.
         let mut read: HashMap<u32, Option<ActiveFriend>> =

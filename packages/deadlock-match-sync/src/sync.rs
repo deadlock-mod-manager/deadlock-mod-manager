@@ -33,13 +33,13 @@ pub trait SyncPersistence: Send + Sync {
   fn load_fetched(&self) -> Vec<u64>;
   fn persist_fetched(&self, ids: &[u64]);
   fn set_full_sync_complete(&self, complete: bool);
-  // When deadlock-api's to-fetch list for this account last came back empty, if ever. The
-  // background pass skips the list for `ACCOUNT_LIST_INTERVAL_SECS` after that. Defaults to
-  // never, which asks every pass.
+  // When deadlock-api's to-fetch list for this account last had nothing new, if since then
+  // it hasn't had anything new either. The background pass skips the list for
+  // `ACCOUNT_LIST_INTERVAL_SECS` after that. Defaults to never, which asks every pass.
   fn account_list_drained_at(&self) -> Option<i64> {
     None
   }
-  fn set_account_list_drained_at(&self, _at: i64) {}
+  fn set_account_list_drained_at(&self, _at: Option<i64>) {}
   fn emit_progress(&self, progress: &SyncProgress);
   // Observability hook for GC failures that the engine deliberately swallows as
   // best-effort resilience (so one dead source doesn't block the other). Lets the
@@ -447,14 +447,14 @@ where
   }
 
   // An account list with nothing new for this client (empty, or only ids it already posted
-  // or the GC refused for good) starts the interval; any other is asked for again next pass,
-  // until it's drained.
+  // or the GC refused for good) starts the interval. Any other clears it, so the list is
+  // asked for again every pass until it's drained, even if a full sync saw it within the
+  // interval.
   fn note_account_list(&self, ids: &[u64], st: &RunState) {
-    if ids.iter().all(|id| st.fetched_set.contains(id)) {
-      self
-        .persistence
-        .set_account_list_drained_at(self.persistence.now());
-    }
+    let drained = ids.iter().all(|id| st.fetched_set.contains(id));
+    self
+      .persistence
+      .set_account_list_drained_at(drained.then(|| self.persistence.now()));
   }
 
   fn finish(&self, mut st: RunState) -> SyncProgress {
