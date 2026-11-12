@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readdirSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
@@ -7,6 +8,11 @@ import { contentMods, contentRoutes } from "./content-fixtures";
 import type { FixtureRoute } from "./fixture-server";
 import { readPersistedDocument } from "./observations";
 import { REPOSITORY_ROOT, type CreatedWorld } from "./world";
+
+const CATALOG_MIGRATIONS = path.join(
+  REPOSITORY_ROOT,
+  "apps/desktop/src-tauri/migrations/gamebanana_catalog",
+);
 
 export const legacyCatalogRoutes = async () => {
   const base = await contentRoutes();
@@ -134,12 +140,7 @@ export const prepareLegacyCatalog = async (world: CreatedWorld) => {
     ]) {
       database.exec(
         await readFile(
-          path.join(
-            REPOSITORY_ROOT,
-            "apps/desktop/src-tauri/migrations/gamebanana_catalog",
-            migration,
-            "up.sql",
-          ),
+          path.join(CATALOG_MIGRATIONS, migration, "up.sql"),
           "utf8",
         ),
       );
@@ -233,20 +234,13 @@ export const assertUpgradedCatalog = (appData: string) => {
           .all(),
       )
       .map((row) => row.version);
-    assert.deepEqual(versions, [
-      "20260830000000",
-      "20260830000100",
-      "20260910000000",
-      "20261003000000",
-      "20261004000000",
-      "20261005000000",
-      "20261005000100",
-      "20261007000000",
-      "20261010000000",
-      "20261107000000",
-      "20261108000000",
-      "20261111000000",
-    ]);
+    // Every shipped migration ran, and the legacy-only 20260916000000 row is gone.
+    assert.deepEqual(
+      versions,
+      readdirSync(CATALOG_MIGRATIONS)
+        .map((name) => name.split("_")[0])
+        .sort(),
+    );
     const marker = z
       .object({ value: z.string() })
       .parse(
