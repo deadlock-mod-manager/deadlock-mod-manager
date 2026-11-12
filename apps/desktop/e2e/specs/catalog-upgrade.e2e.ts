@@ -116,7 +116,7 @@ describe("legacy catalog upgrade", () => {
         await $('[cmdk-item][data-value="browse:mod:33295"]').click();
         await $('[cmdk-item][data-value="browse:mod:920010"]').click();
         await expect($('button[aria-label="Hero"] .truncate')).toHaveText(
-          "All heroes",
+          "All Heroes",
         );
         await $('[cmdk-item][data-value="mod:920010"]').click();
         const skinsChip =
@@ -137,7 +137,7 @@ describe("legacy catalog upgrade", () => {
         await $('button[aria-label="Remove Infernus hero filter"]').click();
         await expect($(heroChip)).not.toExist();
         await expect($('button[aria-label="Hero"] .truncate')).toHaveText(
-          "All heroes",
+          "All Heroes",
         );
         await expect($(skinsChip)).toBeDisplayed();
         await expect($(`[title="${contentMods[0].name}"]`)).not.toExist();
@@ -161,7 +161,7 @@ describe("legacy catalog upgrade", () => {
         ).not.toExist();
         await expect($(heroChip)).not.toExist();
         await expect($('button[aria-label="Hero"] .truncate')).toHaveText(
-          "All heroes",
+          "All Heroes",
         );
         await expect($(skinsChip)).toBeDisplayed();
         await waitForDisplayed(`[title="${contentMods[1].name}"]`);
