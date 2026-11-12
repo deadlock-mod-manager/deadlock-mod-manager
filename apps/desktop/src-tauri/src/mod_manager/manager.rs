@@ -1029,6 +1029,18 @@ mod tests {
 
   #[test]
   fn reenable_without_file_tree_keeps_the_disabled_file_order() {
+    // An empty tree is what a mod folder with no archives left reads as.
+    let empty = ModFileTree {
+      files: Vec::new(),
+      total_files: 0,
+      has_multiple_files: false,
+    };
+    for (case, file_tree) in [("no tree", None), ("empty tree", Some(empty))] {
+      reenable_keeps_the_disabled_file_order(case, file_tree);
+    }
+  }
+
+  fn reenable_keeps_the_disabled_file_order(case: &str, file_tree: Option<ModFileTree>) {
     let game = game_dir();
     let citadel = game.path().join("game/citadel");
     fs::write(
@@ -1061,7 +1073,7 @@ mod tests {
           name: "Ordered fixture".into(),
           is_map: false,
           installed_vpks: Vec::new(),
-          file_tree: None,
+          file_tree,
           install_order: None,
           original_vpk_names: Vec::new(),
         },
@@ -1069,11 +1081,26 @@ mod tests {
       )
       .unwrap();
 
-    assert_eq!(installed.original_vpk_names, vec!["red.vpk", "blue.vpk"]);
+    assert_eq!(
+      installed.original_vpk_names,
+      vec!["red.vpk", "blue.vpk"],
+      "{case}"
+    );
     assert_eq!(
       fs::read(addons.join(&installed.installed_vpks[0])).unwrap(),
-      b"red bytes"
+      b"red bytes",
+      "{case}"
     );
+    // The library stores this tree, so it has to list the files that went in.
+    let names: Vec<&str> = installed
+      .file_tree
+      .as_ref()
+      .unwrap()
+      .files
+      .iter()
+      .map(|file| file.name.as_str())
+      .collect();
+    assert_eq!(names, vec!["red.vpk", "blue.vpk"], "{case}");
   }
 
   #[test]

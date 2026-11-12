@@ -81,6 +81,11 @@ impl ModManager {
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
     crate::mod_manager::file_permissions::prepare_profile_for_write(&addons_path)?;
 
+    // A mod folder whose archives were cleaned up reads as an empty tree. It
+    // selects nothing, so it counts as no tree: the mod keeps its disabled file
+    // order and gets a tree rebuilt from the VPKs it re-enables.
+    deadlock_mod.file_tree.take_if(|tree| tree.files.is_empty());
+
     // Find prefixed VPKs in addons (mod is downloaded but not enabled)
     let mut prefixed_vpks = self
       .vpk_manager
@@ -109,11 +114,7 @@ impl ModManager {
       }
     }
 
-    if let Some(tree) = deadlock_mod
-      .file_tree
-      .as_ref()
-      .filter(|tree| !tree.files.is_empty())
-    {
+    if let Some(tree) = deadlock_mod.file_tree.as_ref() {
       let selected: HashSet<&str> = tree
         .files
         .iter()
