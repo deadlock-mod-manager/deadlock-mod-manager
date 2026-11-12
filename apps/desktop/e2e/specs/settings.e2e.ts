@@ -28,16 +28,6 @@ const applicationToggles = [
     key: "foundry3dPreviewEnabled",
     value: false,
   },
-  {
-    id: "toggle-animate-occult-geometry",
-    key: "animateOccultGeometry",
-    value: false,
-  },
-  {
-    id: "toggle-show-occult-geometry",
-    key: "showOccultGeometry",
-    value: false,
-  },
 ];
 const matchDataToggles = [
   { id: "toggle-setting-ingest-tool", key: "ingestToolEnabled", value: true },
@@ -96,8 +86,6 @@ describe("settings persistence", () => {
       if (editing) {
         for (const control of applicationSystemToggles)
           await setSwitch(`#toggle-setting-${control.id}`, control.value);
-        // Change animation before disabling the parent option.
-        await setSwitch("#toggle-show-occult-geometry", true);
         for (const control of applicationToggles)
           await setSwitch(`#${control.id}`, control.value);
         await moveSlider('[role="slider"][aria-label="Audio Volume"]', 37);
@@ -121,7 +109,6 @@ describe("settings persistence", () => {
           "aria-checked",
           String(control.value),
         );
-      await expect($("#toggle-animate-occult-geometry")).toBeDisabled();
       await expect($("html")).toHaveAttribute(
         "class",
         expect.stringContaining("light"),

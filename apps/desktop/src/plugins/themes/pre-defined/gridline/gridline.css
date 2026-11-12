@@ -129,10 +129,6 @@
   background-color: transparent;
 }
 
-.gridline-theme-active .occult-geometry-container {
-  display: none;
-}
-
 /* Geist everywhere, with tight display tracking on headings. */
 .gridline-theme-active .font-primary {
   font-family: "Geist Variable", sans-serif;

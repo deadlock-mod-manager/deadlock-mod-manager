@@ -69,10 +69,6 @@
   filter: blur(2px);
 }
 
-.remlock-theme-active .occult-geometry-container {
-  display: none;
-}
-
 .remlock-theme-active [data-sidebar="menu-button"][data-active="true"] {
   background-color: hsl(var(--sidebar-accent));
   color: hsl(var(--sidebar-accent-foreground));

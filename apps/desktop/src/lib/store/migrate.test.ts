@@ -136,8 +136,6 @@ describe("safeMigrate", () => {
       port: 8080,
       protocol: "http",
     });
-    expect(result.showOccultGeometry).toBe(true);
-    expect(result.animateOccultGeometry).toBe(true);
     expect(result.heroParserIntervalSeconds).toBe(30);
   });
 
@@ -170,8 +168,6 @@ describe("safeMigrate", () => {
         password: "p",
         noProxy: "localhost",
       },
-      showOccultGeometry: false,
-      animateOccultGeometry: false,
       backupEnabled: false,
       maxBackupCount: 99,
       fileserverPreference: "auto",
@@ -181,8 +177,6 @@ describe("safeMigrate", () => {
     };
     const result = safeMigrate(state, 15) as Record<string, unknown>;
     expect(result.proxyConfig).toEqual(state.proxyConfig);
-    expect(result.showOccultGeometry).toBe(false);
-    expect(result.animateOccultGeometry).toBe(false);
     expect(result.backupMode).toBe("off");
     expect(result.maxBackupCount).toBe(99);
     expect(result.fileserverPreference).toBe("auto");
@@ -327,7 +321,16 @@ describe("safeMigrate", () => {
   it("LATEST_VERSION matches the highest step target", () => {
     const max = Math.max(...MIGRATION_STEPS.map((s) => s.to));
     expect(LATEST_VERSION).toBe(max);
-    expect(LATEST_VERSION).toBe(46);
+    expect(LATEST_VERSION).toBe(47);
+  });
+
+  it("v47 (remove occult geometry): drops both toggles", () => {
+    expect(
+      safeMigrate(
+        { showOccultGeometry: false, animateOccultGeometry: true },
+        46,
+      ),
+    ).toStrictEqual({});
   });
 
   it("v25 (themes switch): drops the leftover enabledPlugins.themes entry", () => {

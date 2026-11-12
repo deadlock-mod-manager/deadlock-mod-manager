@@ -51,10 +51,6 @@
   background-color: transparent;
 }
 
-.coding-theme-active .occult-geometry-container {
-  display: none;
-}
-
 /* Monospace headings and code; body text and the brand wordmark keep their fonts,
    since the sidebar is too narrow for the app name in a monospace face. */
 .coding-theme-active :is(h1, h2, h3, kbd, code, pre) {

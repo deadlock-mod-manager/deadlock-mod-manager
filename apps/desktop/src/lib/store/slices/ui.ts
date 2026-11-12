@@ -105,8 +105,6 @@ export type UIState = {
   hasCompletedOnboarding: boolean;
   // Sidebar entries marked "New" that the user has opened at least once.
   seenNavItems: Record<string, true>;
-  showOccultGeometry: boolean;
-  animateOccultGeometry: boolean;
   experimentalFeatures: Record<ExperimentalFeature, boolean>;
   autoFixMods: boolean;
   /** Shows the Stats page, which looks players up on deadlock-api. */
@@ -129,8 +127,6 @@ export type UIState = {
   resetCrosshairFilters: () => void;
   setHasCompletedOnboarding: (completed: boolean) => void;
   markNavItemSeen: (id: string) => void;
-  setShowOccultGeometry: (value: boolean) => void;
-  setAnimateOccultGeometry: (value: boolean) => void;
   setExperimentalFeature: (
     feature: ExperimentalFeature,
     enabled: boolean,
@@ -187,8 +183,6 @@ export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
   crosshairFilters: DEFAULT_CROSSHAIR_FILTERS,
   hasCompletedOnboarding: false,
   seenNavItems: {},
-  showOccultGeometry: true,
-  animateOccultGeometry: true,
   experimentalFeatures: DEFAULT_EXPERIMENTAL_FEATURES,
   autoFixMods: true,
   playerStatsEnabled: true,
@@ -258,16 +252,6 @@ export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
         ? state
         : { seenNavItems: { ...state.seenNavItems, [id]: true } },
     ),
-
-  setShowOccultGeometry: (value: boolean) =>
-    set(() => ({
-      showOccultGeometry: value,
-    })),
-
-  setAnimateOccultGeometry: (value: boolean) =>
-    set(() => ({
-      animateOccultGeometry: value,
-    })),
 
   setExperimentalFeature: (feature: ExperimentalFeature, enabled: boolean) =>
     set((state) => ({

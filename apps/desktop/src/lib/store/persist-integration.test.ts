@@ -176,8 +176,6 @@ const seededState = {
     password: "",
     noProxy: "",
   } satisfies ProxyConfig,
-  showOccultGeometry: true,
-  animateOccultGeometry: true,
 };
 
 const seedFromVersion = (version: number, state: unknown) => {
@@ -287,8 +285,6 @@ describe("persisted store integration with real production fixture", () => {
     expect(s.linuxGpuOptimization).toBe("auto");
     expect(s.backupMode).toBe(seededState.backupMode);
     expect(s.maxBackupCount).toBe(seededState.maxBackupCount);
-    expect(s.showOccultGeometry).toBe(seededState.showOccultGeometry);
-    expect(s.animateOccultGeometry).toBe(seededState.animateOccultGeometry);
     expect(s.gamePath).toBe(seededState.gamePath);
 
     // Local mod and profile mod arrays survive the migration with their length.

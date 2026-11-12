@@ -13,7 +13,6 @@ import { CatalogSyncProgress } from "./components/layout/catalog-sync-progress";
 import { GameConfigBanner } from "./components/layout/game-config-banner";
 import { GlobalFileDrop } from "./components/layout/global-file-drop";
 import { LaunchOverlay } from "./components/layout/launch-overlay";
-import { OccultGeometry } from "./components/layout/occult-geometry";
 import { Titlebar } from "./components/layout/titlebar";
 import { WhatsNewDialog } from "./components/layout/whats-new-dialog";
 import { GlobalAudioPlayer } from "./components/global-audio-player";
@@ -29,7 +28,6 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <>
-      <OccultGeometry />
       <div className='flex h-screen w-screen flex-col overflow-hidden'>
         <ScrollBackButtonProvider>
           <SidebarProvider className='flex min-h-0 flex-1 flex-col overflow-hidden'>

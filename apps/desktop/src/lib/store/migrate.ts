@@ -770,6 +770,14 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
       }
     },
   },
+  {
+    to: 47,
+    label: "remove-occult-geometry",
+    apply: (state) => {
+      delete state.showOccultGeometry;
+      delete state.animateOccultGeometry;
+    },
+  },
 ];
 
 const LEGACY_GAMEBANANA_ID = /^[1-9]\d*$/;

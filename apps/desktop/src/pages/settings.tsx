@@ -74,7 +74,6 @@ import { MatchDataOverview } from "@/components/settings/match-data-overview";
 import { LanguageSettings } from "@/components/settings/language-settings";
 import { LinuxGpuToggle } from "@/components/settings/linux-gpu-toggle";
 import { LoggingSettings } from "@/components/settings/logging-settings";
-import OccultGeometrySettings from "@/components/settings/occult-geometry-settings";
 import { MatchSyncSettings } from "@/components/settings/match-sync-settings";
 import { FeatureTipsToggle } from "@/components/settings/feature-tips-toggle";
 import { ModUpdateBadgesToggle } from "@/components/settings/mod-update-badges-toggle";
@@ -830,8 +829,6 @@ const CustomSettings = ({ value }: { value?: string }) => {
                 <FeatureTipsToggle />
 
                 <ModelPreviewToggle />
-
-                <OccultGeometrySettings />
               </div>
             </Section>
 

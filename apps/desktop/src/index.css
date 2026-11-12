@@ -686,74 +686,6 @@
   }
 }
 
-/* Occult Geometry Animations */
-@keyframes occult-rotate {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes occult-rotate-reverse {
-  from {
-    transform: rotate(360deg);
-  }
-  to {
-    transform: rotate(0deg);
-  }
-}
-
-@keyframes occult-pulse-a {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.4;
-  }
-}
-
-@keyframes occult-pulse-b {
-  0%,
-  100% {
-    opacity: 0.5;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
-/* Stepped to about 10 updates a second: the motion is too slow to see the steps, and a smooth
-   animation makes the compositor redraw the whole window on every display refresh. */
-.occult-rotate-slow {
-  animation: occult-rotate 240s steps(2400) infinite;
-}
-
-.occult-rotate-reverse {
-  animation: occult-rotate-reverse 300s steps(3000) infinite;
-}
-
-.occult-pulse-a {
-  animation: occult-pulse-a 12s steps(60) infinite;
-}
-
-.occult-pulse-b {
-  animation: occult-pulse-b 16s steps(80) infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .occult-rotate-slow,
-  .occult-rotate-reverse {
-    animation: none;
-  }
-  .occult-pulse-a,
-  .occult-pulse-b {
-    animation: none;
-  }
-}
-
 /* Announcements Ticker */
 @keyframes ticker-scroll {
   from {
@@ -959,11 +891,6 @@
     [data-titlebar="true"]
   ) {
   background-color: transparent;
-}
-
-:is(.nightshift-theme-active, .bloodmoon-theme-active, .drututt-theme-active)
-  .occult-geometry-container {
-  display: none;
 }
 
 /* Tea Theme Styles */

@@ -32,10 +32,6 @@
   --sidebar-ring: 227 78% 70%;
 }
 
-.french-theme-active .occult-geometry-container {
-  display: none;
-}
-
 .french-theme-active [data-titlebar="true"] {
   border-top: 3px solid transparent;
   background-image: linear-gradient(

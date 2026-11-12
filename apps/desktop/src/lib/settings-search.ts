@@ -267,14 +267,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
         titleKey: "settings.modelPreview",
         descriptionKey: "settings.modelPreviewDescription",
       },
-      {
-        titleKey: "settings.occultGeometry",
-        descriptionKey: "settings.occultGeometryDescription",
-      },
-      {
-        titleKey: "settings.animateOccultGeometry",
-        descriptionKey: "settings.animateOccultGeometryDescription",
-      },
     ],
   },
   {
