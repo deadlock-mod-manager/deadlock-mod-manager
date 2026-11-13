@@ -1,25 +1,23 @@
 # @deadlock-mods/dmodpkg
 
-Library for creating, parsing, and manipulating Deadlock mod packages (`.dmodpkg`) using native Rust implementation via Bun FFI.
+Rust library for the draft .dmodpkg format. The TypeScript/Bun FFI interface is not implemented. The TypeScript entry point exports only `VERSION`.
 
-## Overview
+## Rust API
 
-This package provides the core library for working with the Deadlock Mod Packaging format (.dmodpkg), a standardized binary format for creating, distributing, and installing Deadlock game modifications.
+The Rust crate provides:
 
-## Features
+- `ModConfig` and `BundleConfig` with JSON parsing and serialization, plus configuration validation
+- `PackageHeader` and `BundleHeader` with constructors and magic-byte checks; `PackageHeader` also converts to and from bytes
+- Metadata types for layers, variants, file entries, and bundles
+- Format constants and chunk-size limits
+- Error types
 
-- **Package Creation**: Build `.dmodpkg` files from mod projects
-- **Package Parsing**: Read and validate existing packages
-- **Layer System**: Support for modular content with priority-based overrides
-- **Variant Groups**: Handle mutually exclusive mod variants
-- **Compression**: Efficient Zstd compression with chunked data
-- **Integrity Verification**: SHA256 checksums and CRC validation
-- **Bundle Support**: Work with mod bundles (`.dmodbundle`)
+Package creation and extraction are not implemented. Compression and checksum fields are defined, but compression and integrity verification are not implemented.
 
 ## Requirements
 
-- **Bun >= 1.3.0** (uses Bun's native FFI capabilities)
-- **Rust toolchain** (for building the native library)
+- Bun >= 1.3.0 for the TypeScript entry point and planned FFI interface
+- Rust toolchain for building the Rust library
 
 ## Installation
 
@@ -29,7 +27,7 @@ pnpm add @deadlock-mods/dmodpkg
 
 ## Building
 
-Before using the package, you need to build the native Rust library:
+To build the Rust library:
 
 ```bash
 # Build the native library
@@ -39,9 +37,9 @@ pnpm run build
 pnpm run build:debug
 ```
 
-## Usage
+## Planned TypeScript/FFI interface
 
-> **Note**: TypeScript/FFI integration is not yet implemented. This package currently provides the Rust library foundation.
+The API is not defined yet. The following placeholder does not provide package operations.
 
 ```typescript
 import {} from /* API to be defined */ "@deadlock-mods/dmodpkg";
@@ -79,9 +77,9 @@ pnpm test
 ```text
 packages/dmodpkg/
 ├── src/              # TypeScript source files
-│   └── index.ts      # Main exports (FFI bindings - to be implemented)
+│   └── index.ts      # VERSION export; FFI bindings not implemented
 ├── src-rs/           # Rust source files
-│   ├── lib.rs        # FFI interface
+│   ├── lib.rs        # Rust exports; FFI not implemented
 │   ├── config.rs     # Configuration parsing
 │   ├── format.rs     # Binary format structures
 │   ├── types.rs      # Type definitions

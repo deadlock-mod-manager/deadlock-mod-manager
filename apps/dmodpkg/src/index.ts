@@ -7,7 +7,9 @@ const program = new Command();
 
 program
   .name("dmodpkg")
-  .description("CLI tool for creating and managing Deadlock mod packages")
+  .description(
+    "Deadlock mod package CLI scaffold; commands are not implemented",
+  )
   .version(VERSION);
 
 // TODO: Import and register commands
@@ -21,7 +23,7 @@ program
 // Placeholder commands - to be implemented
 program
   .command("init [project-name]")
-  .description("Initialize a new mod project")
+  .description("Initialize a new mod project (not implemented)")
   .option(
     "--template <name>",
     "Use project template (basic, advanced, multilayer)",
@@ -35,7 +37,7 @@ program
 
 program
   .command("pack")
-  .description("Package a mod project into .dmodpkg")
+  .description("Package a mod project into .dmodpkg (not implemented)")
   .option("--config <path>", "Path to mod.config.json", "./mod.config.json")
   .option("--output <path>", "Output directory", "./build")
   .option("--compression <n>", "Zstd compression level 1-22", "9")
@@ -48,7 +50,7 @@ program
 
 program
   .command("extract <package>")
-  .description("Extract a .dmodpkg package")
+  .description("Extract a .dmodpkg package (not implemented)")
   .option("--output <path>", "Output directory")
   .option("--layers <names>", "Extract specific layers (comma-separated)")
   .option("--verify", "Verify checksums during extraction")
@@ -59,7 +61,7 @@ program
 
 program
   .command("info <package>")
-  .description("Display package information")
+  .description("Display package information (not implemented)")
   .option("--json", "Output as JSON")
   .option("-v, --verbose", "Show detailed information")
   .action(() => {
@@ -68,7 +70,7 @@ program
 
 program
   .command("validate [target]")
-  .description("Validate a mod project or package")
+  .description("Validate a mod project or package (not implemented)")
   .option("--strict", "Enable strict validation mode")
   .option("--schema <version>", "Schema version to validate against")
   .action(() => {
@@ -77,7 +79,7 @@ program
 
 program
   .command("migrate <archive>")
-  .description("Migrate from legacy archive formats")
+  .description("Migrate from legacy archive formats (not implemented)")
   .option("--output <path>", "Output project directory")
   .option("--auto-detect", "Attempt to auto-detect variants")
   .option("--template <name>", "Use migration template")
@@ -86,11 +88,13 @@ program
   });
 
 // Bundle commands
-const bundle = program.command("bundle").description("Manage mod bundles");
+const bundle = program
+  .command("bundle")
+  .description("Manage mod bundles (not implemented)");
 
 bundle
   .command("pack")
-  .description("Create a bundle from multiple mod packages")
+  .description("Create a bundle from multiple mod packages (not implemented)")
   .option(
     "--config <path>",
     "Path to bundle.config.json",
@@ -104,7 +108,9 @@ bundle
 
 bundle
   .command("extract <bundle>")
-  .description("Extract individual mod packages from a bundle")
+  .description(
+    "Extract individual mod packages from a bundle (not implemented)",
+  )
   .option("--output <path>", "Output directory")
   .option("--packages <names>", "Extract specific packages (comma-separated)")
   .option("--all", "Extract all packages (default)")
@@ -114,7 +120,7 @@ bundle
 
 bundle
   .command("info <bundle>")
-  .description("Display bundle information")
+  .description("Display bundle information (not implemented)")
   .option("--json", "Output as JSON")
   .option("-v, --verbose", "Show detailed information")
   .action(() => {
@@ -123,7 +129,7 @@ bundle
 
 bundle
   .command("validate [target]")
-  .description("Validate a bundle project or package")
+  .description("Validate a bundle project or package (not implemented)")
   .option("--strict", "Enable strict validation mode")
   .action(() => {
     console.log("bundle validate command - not yet implemented");

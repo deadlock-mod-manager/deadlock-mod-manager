@@ -1,16 +1,6 @@
 # dmodpkg CLI
 
-Command-line interface for creating and managing Deadlock mod packages (.dmodpkg).
-
-## Overview
-
-The `dmodpkg` CLI tool provides commands for working with the Deadlock Mod Packaging format, including:
-
-- Creating new mod projects
-- Packing mods into `.dmodpkg` files
-- Extracting and inspecting packages
-- Validating mod configurations
-- Creating and managing mod bundles
+This CLI is a scaffold. Registered commands currently print placeholders and do not create, inspect, or extract packages.
 
 ## Installation
 
@@ -23,7 +13,9 @@ pnpm install
 pnpm run build
 ```
 
-## Usage
+## Planned interface
+
+The following examples describe the planned command interface. These operations are not implemented.
 
 ### Initialize a New Mod Project
 
@@ -71,9 +63,9 @@ dmodpkg bundle extract my-bundle-1.0.0.dmodbundle
 dmodpkg bundle validate ./my-bundle-project
 ```
 
-## Commands
+## Planned commands
 
-> **Note**: Command implementations are not yet complete. This is a scaffolded structure.
+These commands are registered, but their handlers only print placeholders.
 
 - `init` - Initialize a new mod project
 - `pack` - Package a mod project into .dmodpkg
