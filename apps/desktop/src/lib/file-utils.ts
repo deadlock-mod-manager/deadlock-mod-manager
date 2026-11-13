@@ -25,13 +25,15 @@ export type DataTransferItemWithEntry = DataTransferItem & {
   webkitGetAsEntry?: () => FileSystemEntry | null;
 };
 
-export type FileWithPath = File & {
+type FileWithPath = File & {
   webkitRelativePath?: string;
 };
 
 export type DetectedSource =
   | { kind: "archive"; file: File }
-  | { kind: "vpk"; file: File };
+  | { kind: "vpk"; file: File }
+  // Loose VPKs imported as one mod, each a part Manage files can turn off.
+  | { kind: "vpks"; files: File[] };
 
 // A VPK or archive Rust staged, from DeadlockForge or a mod site, placed
 // natively rather than read through the renderer.
@@ -45,7 +47,7 @@ export type ModSource = DetectedSource | StagedSource | LiveBridgeSource;
 /**
  * File utility functions
  */
-export const getFileName = (file: File): string =>
+const getFileName = (file: File): string =>
   (file as FileWithPath).webkitRelativePath || file.name;
 
 export const getFileBaseName = (file: File): string => {
@@ -128,20 +130,29 @@ export const discardStagedDrops = async (): Promise<void> => {
 };
 
 /**
- * Flushes a dropped file to disk as soon as it is dropped, so the rest of the
- * import handles it by path, like a file chosen in the picker. Only the latest
+ * Flushes dropped files to disk as soon as they are dropped, so the rest of the
+ * import handles them by path, like files chosen in the picker. Only the latest
  * drop is kept.
  */
-export const stageDroppedFile = async (
-  file: File,
+export const stageDroppedFiles = async (
+  files: File[],
   onProgress?: (written: number, total: number) => void,
-): Promise<File> => {
+): Promise<File[]> => {
   await discardStagedDrops();
   const directory = await stagedDropsDirectory();
   await ensureDirectory(directory);
-  const stagedPath = await join(directory, getFileBaseName(file));
-  await writeFileInChunks(stagedPath, file, onProgress);
-  return createPathBackedFile(stagedPath);
+  const total = files.reduce((sum, file) => sum + file.size, 0);
+  let written = 0;
+  const staged: File[] = [];
+  for (const file of files) {
+    const stagedPath = await join(directory, getFileBaseName(file));
+    await writeFileInChunks(stagedPath, file, (done) =>
+      onProgress?.(written + done, total),
+    );
+    written += file.size;
+    staged.push(createPathBackedFile(stagedPath));
+  }
+  return staged;
 };
 
 export const writeFileText = async (
@@ -169,12 +180,23 @@ export const detectSource = (files: File[]): DetectedSource | null => {
   }
 
   const validFiles = files.filter(Boolean);
-  const vpkFile = validFiles.find((file) =>
-    VPK_PATTERN.test(getFileBaseName(file)),
-  );
+  // The parts share one folder, so a second file with the same name (Windows
+  // ignores case) would overwrite the first.
+  const seenNames = new Set<string>();
+  const vpkFiles = validFiles.filter((file) => {
+    const name = getFileBaseName(file);
+    if (!VPK_PATTERN.test(name) || seenNames.has(name.toLowerCase())) {
+      return false;
+    }
+    seenNames.add(name.toLowerCase());
+    return true;
+  });
 
-  if (vpkFile) {
-    return { kind: "vpk", file: vpkFile };
+  if (vpkFiles.length > 1) {
+    return { kind: "vpks", files: vpkFiles };
+  }
+  if (vpkFiles.length === 1) {
+    return { kind: "vpk", file: vpkFiles[0] };
   }
 
   const archiveFile = validFiles.find((file) =>
@@ -186,6 +208,9 @@ export const detectSource = (files: File[]): DetectedSource | null => {
 
   return null;
 };
+
+export const sourceFiles = (source: DetectedSource): File[] =>
+  source.kind === "vpks" ? source.files : [source.file];
 
 /**
  * Recursively reads files from DataTransfer items

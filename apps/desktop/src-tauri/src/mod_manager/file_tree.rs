@@ -546,6 +546,23 @@ mod tests {
     );
   }
 
+  // Swapping parts matches tree names against the `{mod_id}_{name}` files
+  // `copy_vpks_with_prefix` installs, so loose files must keep their own names.
+  #[test]
+  fn loose_vpks_keep_their_names_in_install_order() {
+    let files_dir = tempfile::tempdir().unwrap();
+    for name in ["hair_alt.vpk", "base.vpk", "readme.txt", "sounds.vpk"] {
+      std::fs::write(files_dir.path().join(name), b"vpk").unwrap();
+    }
+
+    let tree = FileTreeAnalyzer::new()
+      .get_file_tree_from_extracted(files_dir.path(), "")
+      .unwrap();
+
+    assert_eq!(names(&tree), ["base.vpk", "hair_alt.vpk", "sounds.vpk"]);
+    assert!(tree.files.iter().all(|file| file.path == file.name));
+  }
+
   #[test]
   fn zip_tree_matches_extraction() {
     let mod_dir = tempfile::tempdir().unwrap();
