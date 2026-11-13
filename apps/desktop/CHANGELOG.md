@@ -1003,7 +1003,6 @@
   - Render rich text in mod descriptions with Interweave
   - Update the logo
   - Keep the scroll position on the mods page
-  - Improve search result sorting
   - Animate the launch button
 
 ### Patch Changes
