@@ -106,6 +106,7 @@ export const PlayerCareerOverview = ({
     };
   }, [heroStats]);
   const recentForm = summarize(recent);
+  const hasScoredRecent = recentForm.wins + recentForm.losses > 0;
 
   return (
     <div className='flex flex-col gap-4 p-5'>
@@ -160,15 +161,18 @@ export const PlayerCareerOverview = ({
                 <span
                   className='font-mono font-semibold text-[11px]'
                   style={{
-                    color:
-                      recentForm.winrate >= totals.winrate
+                    color: !hasScoredRecent
+                      ? MUTED_COLOR
+                      : recentForm.winrate >= totals.winrate
                         ? WIN_COLOR
                         : LOSS_COLOR,
                   }}>
                   {t("stats.player.recentRecord", {
                     wins: recentForm.wins,
                     losses: recentForm.losses,
-                    winrate: formatPercent(recentForm.winrate, 0),
+                    winrate: hasScoredRecent
+                      ? formatPercent(recentForm.winrate, 0)
+                      : t("stats.recent.notScoredShort"),
                   })}
                 </span>
               )}
