@@ -10,8 +10,7 @@ This skill teaches the **wide events** pattern (also known as canonical log line
 
 - **Wide Events**: One comprehensive event per request, emitted at completion
 - **High Cardinality**: Support fields with millions of unique values (user_id, request_id)
-- **High Dimensionality**: Include many fields (20+) per event
-- **Business Context**: Always include user subscription, cart value, feature flags
+- **Diagnostic Context**: Include the context needed to diagnose the operation, such as request ID, source, mod identity, outcome and elapsed time where they apply
 - **Environment Context**: Always include commit hash, version, region, instance ID
 - **Single Logger**: One logger instance configured at startup, used everywhere
 - **Middleware Pattern**: Handle logging infrastructure in middleware, business context in handlers

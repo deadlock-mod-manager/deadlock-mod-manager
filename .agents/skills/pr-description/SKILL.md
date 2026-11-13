@@ -24,7 +24,7 @@ Start from the row that matches the change, then add a section only when its tri
 | Single concern, a handful of files | Ticket line, 1–3 sentence summary, test plan. |
 | Several independent changes, or non-obvious reasoning | One numbered section per change. A diagram only where it beats a sentence. |
 
-Add, at any size: a callstack when call flow changed, a before/after table when data outcomes changed, the artifact you looked at when you verified by looking, a follow-up ticket when something is left undone.
+Add, at any size: a callstack when the [calldiff](../calldiff/SKILL.md) inclusion test passes, a before/after table when data outcomes changed, the artifact you looked at when you verified by looking, a follow-up ticket when something is left undone.
 
 ## How to write it
 
@@ -38,7 +38,7 @@ Add, at any size: a callstack when call flow changed, a before/after table when 
 
 **Number sections when there are several**, and reference them from the test plan (`§3`) so each test defends a claim.
 
-**Callstack** when who-calls-whom changed. Paste `npx calldiff@latest diff` output (see the [calldiff](../calldiff/SKILL.md) skill) and narrate the `+` / `-` lines. Skip for copy, translations, CSS, config, and schema-only changes. A heading that only reports the tool found nothing is worse than no heading.
+**Callstack** only when the [calldiff](../calldiff/SKILL.md) skill's inclusion test passes. Paste `npx calldiff@latest diff` output and narrate the `+` / `-` lines.
 
 **The test plan proves the change.** Name each new test, map it to the section it defends, and say it failed without the change. List updated assertions as from/to. Name the suites that ran, and pre-existing failures that also fail on the base.
 
