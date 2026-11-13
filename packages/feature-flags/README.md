@@ -7,7 +7,7 @@ Feature flags with user segments, ranked overrides and cached evaluation.
 - Create, update and delete boolean feature flags
 - Group users into segments and override flag values per segment
 - When a user belongs to several segments, the segment with the lowest rank wins
-- Cache flag evaluations for 15 minutes (see [Caching](#caching))
+- Cache flag evaluations for one hour (see [Caching](#caching))
 - Return errors as neverthrow `Result` values with structured error types
 - Store flags in PostgreSQL through Drizzle ORM
 - Register flags when the application starts
@@ -264,11 +264,15 @@ await featureFlagsService.setSegmentOverride("segment-id", "flag-id", true);
 
 ## Caching
 
-Feature flag evaluations are automatically cached for 15 minutes to improve performance:
+Evaluations are cached for one hour (`FEATURE_FLAG_CACHE_TTL` from `@deadlock-mods/common`). Cache keys include the user ID when one is provided, so each user's evaluations are cached separately from global ones.
 
-- Cache keys include both feature flag ID and user ID (if provided)
-- User-specific evaluations are cached separately from global evaluations
-- Cache invalidation: Wait up to 15 minutes or restart the service
+Successful mutations invalidate the cache:
+
+- Creating, updating or deleting a flag clears the cache.
+- Setting or deleting a user override removes that user's cached entries for the flag. If the flag can't be looked up afterwards, the whole cache is cleared instead.
+- Adding or removing segment members and creating segment overrides clear the cache only when `SegmentService` was constructed with a cache. The API passes one; services created without a cache leave existing entries until they expire.
+
+If invalidation fails, cached values remain until they expire. `FeatureFlagService` logs a warning in that case; `SegmentService` ignores the error.
 
 ```typescript
 // First call - queries database
@@ -393,7 +397,7 @@ const result = await featureFlagService.isFeatureFlagEnabled(
 
 ### 6. Consider Cache TTL
 
-Remember that feature flag changes may take up to 15 minutes to propagate due to caching. For immediate updates, restart the service.
+Changes made through the service invalidate the cache, as described in [Caching](#caching). Changes made directly in the database, or segment changes made through a `SegmentService` without a cache, can take up to an hour to appear.
 
 ### 7. Clean Up Old Flags
 
