@@ -1,5 +1,11 @@
 import type { MatchHistoryEntry } from "@/lib/stats/api";
-import { chronological, isWin, sessionPositions } from "@/lib/stats/derive";
+import {
+  chronological,
+  isUnscored,
+  isWin,
+  matchOutcome,
+  sessionPositions,
+} from "@/lib/stats/derive";
 import type { Dataset, DatasetField, DatasetRow, FieldFormat } from "./dataset";
 import type {
   MatchAggregate,
@@ -61,9 +67,9 @@ const perMatch = (match: MatchHistoryEntry, metric: MatchMetric) => {
       return 1;
     case "wins":
     case "winrate":
-      return isWin(match) ? 1 : 0;
+      return isUnscored(match) ? null : isWin(match) ? 1 : 0;
     case "losses":
-      return isWin(match) ? 0 : 1;
+      return isUnscored(match) ? null : isWin(match) ? 0 : 1;
     case "kills":
       return match.player_kills;
     case "deaths":
@@ -136,16 +142,17 @@ const aggregateMetric = (
   metric: MatchMetric,
   aggregate: MatchAggregate,
 ): number | null => {
-  const wins = matches.filter(isWin).length;
+  const scored = matches.filter((match) => !isUnscored(match));
+  const wins = scored.filter(isWin).length;
   switch (metric) {
     case "matches":
       return matches.length;
     case "wins":
       return wins;
     case "losses":
-      return matches.length - wins;
+      return scored.length - wins;
     case "winrate":
-      return wins / matches.length;
+      return scored.length > 0 ? wins / scored.length : null;
   }
 
   if (aggregate === "avg") {
@@ -214,7 +221,7 @@ const groupKey = (
     case "hour":
       return new Date(match.start_time * 1000).getHours();
     case "result":
-      return isWin(match) ? 1 : 0;
+      return matchOutcome(match) === "notScored" ? 2 : isWin(match) ? 1 : 0;
     case "duration":
       return (
         Math.floor(minutesOf(match) / DURATION_BUCKET_MIN) * DURATION_BUCKET_MIN
@@ -247,7 +254,9 @@ const filterMatches = (
   }
   if (query.result !== "all") {
     const wanted = query.result === "wins";
-    filtered = filtered.filter((match) => isWin(match) === wanted);
+    filtered = filtered.filter(
+      (match) => !isUnscored(match) && isWin(match) === wanted,
+    );
   }
   return filtered;
 };

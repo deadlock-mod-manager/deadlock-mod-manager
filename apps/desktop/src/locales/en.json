@@ -1552,6 +1552,7 @@
     },
     "win": "Win",
     "loss": "Loss",
+    "notScored": "Not scored",
     "unranked": "Unranked",
     "unknownPlayer": "Unknown player",
     "signedIn": "signed in",
@@ -2490,6 +2491,7 @@
       "rankDown_other": "-{{count}} subranks",
       "winShort": "W",
       "lossShort": "L",
+      "notScoredShort": "–",
       "kda": "KDA {{value}}",
       "souls": "Souls",
       "lastHits": "Last hits"

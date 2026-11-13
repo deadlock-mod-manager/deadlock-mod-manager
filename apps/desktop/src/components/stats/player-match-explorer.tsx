@@ -6,7 +6,7 @@ import { HeroAvatar } from "@/components/stats/hero-avatar";
 import { MatchDetailView } from "@/components/stats/match-detail-view";
 import type { DeadlockHero } from "@/lib/deadlock-api";
 import type { MatchHistoryEntry } from "@/lib/stats/api";
-import { isWin, summarize } from "@/lib/stats/derive";
+import { matchOutcome, summarize } from "@/lib/stats/derive";
 import {
   formatCompact,
   formatDateTime,
@@ -134,7 +134,7 @@ export const PlayerMatchExplorer = ({
           <div className='p-1.5'>
             {recent.map((match) => {
               const matchHero = heroesById.get(match.hero_id);
-              const matchWon = isWin(match);
+              const outcome = matchOutcome(match);
               const isSelected = match.match_id === selected.match_id;
               return (
                 <button
@@ -149,9 +149,11 @@ export const PlayerMatchExplorer = ({
                   <div
                     className={cn(
                       "rounded-md border-2",
-                      matchWon
+                      outcome === "win"
                         ? "border-emerald-500/60"
-                        : "border-destructive/60",
+                        : outcome === "loss"
+                          ? "border-destructive/60"
+                          : "border-muted-foreground/60",
                     )}>
                     <HeroAvatar
                       className='h-9 w-9'
@@ -167,9 +169,13 @@ export const PlayerMatchExplorer = ({
                       <span
                         className={cn(
                           "text-[10px]",
-                          matchWon ? "text-emerald-500" : "text-destructive",
+                          outcome === "win"
+                            ? "text-emerald-500"
+                            : outcome === "loss"
+                              ? "text-destructive"
+                              : "text-muted-foreground",
                         )}>
-                        {matchWon ? t("stats.win") : t("stats.loss")}
+                        {t(`stats.${outcome}`)}
                       </span>
                     </div>
                     <div className='truncate text-[10px] text-muted-foreground'>
