@@ -197,7 +197,7 @@
     "plugins": "Plugins",
     "myMods": "Mods Library",
     "getMods": "Mods Store",
-    "addMods": "Add Local Mod",
+    "addMods": "Add local mod",
     "downloads": "Downloads",
     "settings": "Settings",
     "developer": "Developer",
@@ -1642,14 +1642,14 @@
         "longGames": "Closing games out"
       },
       "form": "Last 30 selected matches: {{recent}} winrate against {{career}} across the selection.",
-      "winStreak_one": "{{count}} win in a row. Keep the picks that got you here.",
-      "winStreak_other": "{{count}} wins in a row. Keep the picks that got you here.",
-      "lossStreak_one": "{{count}} loss in a row. A break tends to reset this faster than one more queue.",
-      "lossStreak_other": "{{count}} losses in a row. A break tends to reset this faster than one more queue.",
-      "session": "On match {{position}} of a session you win {{winrate}} instead of your usual {{baseline}}. That is a good place to stop.",
+      "winStreak_one": "{{count}} win in a row.",
+      "winStreak_other": "{{count}} wins in a row.",
+      "lossStreak_one": "{{count}} loss in a row.",
+      "lossStreak_other": "{{count}} losses in a row.",
+      "session": "Your winrate on match {{position}} of a session is {{winrate}}, compared with {{baseline}} overall.",
       "hours": "Between {{range}} you win {{winrate}} instead of {{baseline}}.",
-      "comfortHero": "{{winrate}} winrate across {{matches}} matches, clearly above your average.",
-      "trapHero": "Only {{winrate}} winrate across {{matches}} matches. Worth dropping or practising deliberately.",
+      "comfortHero": "{{winrate}} winrate across {{matches}} matches, above your average.",
+      "trapHero": "{{winrate}} winrate across {{matches}} matches.",
       "topHero": "Most played by far: {{matches}} matches at {{winrate}} winrate.",
       "longGames": "In matches past {{minutes}} minutes you win {{winrate}} against {{baseline}} overall.",
       "panelTitle": "What stands out",
@@ -2496,8 +2496,8 @@
     },
     "pool": {
       "title": "Hero pool",
-      "gem_one": "{{hero}} wins {{winrate}} in {{count}} game. Worth more time.",
-      "gem_other": "{{hero}} wins {{winrate}} in {{count}} games. Worth more time.",
+      "gem_one": "{{hero}}: {{winrate}} winrate in {{count}} game.",
+      "gem_other": "{{hero}}: {{winrate}} winrate in {{count}} games.",
       "description": "Bars show games played",
       "games_one": "{{count}} game",
       "games_other": "{{count}} games",
@@ -2657,7 +2657,7 @@
       "forgeDescription": "The community's skin workshop and asset browser. Opens in your browser.",
       "forgeAction": "Open deadlockforge.net",
       "commissionsTitle": "DMM Commissions",
-      "commissionsDescription": "Want something you can't build yourself? Pay a mod author to make a custom skin, sound pack or other mod just for you. Opens in your browser.",
+      "commissionsDescription": "Pay a mod author to make a custom skin, sound pack or other mod for you. Opens in your browser.",
       "commissionsAction": "Browse commissions",
       "hint": "Map mods aren't supported here. The Foundry is for hero skins."
     },
@@ -3905,7 +3905,7 @@
       "dropped": "{{name}} dropped at position {{position}}",
       "cancelled": "Stopped moving {{name}}"
     },
-    "orderSaved": "Mod order saved successfully",
+    "orderSaved": "Mod order saved",
     "orderSaveFailed": "Failed to save mod order",
     "manageOrder": "Change Mods Order",
     "compatibility": {
@@ -4049,7 +4049,7 @@
     "deepLinkPreparing": "Preparing 1-click mod download...",
     "deepLinkStarting": "Starting 1-click mod install...",
     "deepLinkDownloaded": "{{name}} downloaded! Installing automatically...",
-    "deepLinkInstalled": "{{name}} installed successfully via 1-click!",
+    "deepLinkInstalled": "{{name}} installed",
     "deepLinkInstallError": "Failed to install {{name}}: {{message}}",
     "deepLinkInstallStartError": "Downloaded but failed to install {{name}}. You can install it manually.",
     "deepLinkError": "Failed to process 1-click download. The mod may not exist or be unavailable.",
@@ -4095,8 +4095,8 @@
     "deleteConfirmBody": "This will remove it from your mods list and delete all associated files. This action cannot be undone. Make sure Deadlock is closed before deleting.",
     "deleteConfirmAction": "Delete",
     "deleteConfirmCancel": "Cancel",
-    "deleteSuccess": "Mod deleted successfully",
-    "disableSuccess": "Mod disabled successfully",
+    "deleteSuccess": "Mod deleted",
+    "disableSuccess": "Mod disabled",
     "deleteError": "Failed to delete mod",
     "deleteErrorVpkInUse": "Some mod files are currently in use by the game. Please close Deadlock and try again.",
     "disableError": "Failed to disable mod",
@@ -4185,7 +4185,7 @@
     "noDownloadsFound": "No downloads found",
     "noDownloadsMatchFilter": "There are no downloads matching your current filter.",
     "viewAllDownloads": "View all downloads",
-    "selectFilesToDownload": "Select Files to Download",
+    "selectFilesToDownload": "Select files to download",
     "selectAll": "Select All",
     "selectNone": "Select None",
     "total": "Total",
@@ -4226,7 +4226,7 @@
     }
   },
   "notifications": {
-    "modInstalledSuccessfully": "Mod installed successfully",
+    "modInstalledSuccessfully": "Mod installed",
     "failedToInstallMod": "Failed to install mod",
     "installationCanceled": "Installation canceled",
     "modContainsFiles": "{{modName}} contains {{fileCount}} files. Select which ones to install.",
@@ -4329,7 +4329,7 @@
     "apiHealthy": "API Online",
     "apiDegraded": "API Issues",
     "apiOffline": "API Offline",
-    "apiUnknown": "API Status Unknown",
+    "apiUnknown": "API status unknown",
     "authOnline": "Auth Server Online",
     "authOffline": "Auth Server Offline",
     "authUnknown": "Auth Unknown",
@@ -4354,10 +4354,10 @@
     "searchNoResults": "No matching settings",
     "language": "Language",
     "languageDescription": "Choose your preferred language for the application interface",
-    "languageSettings": "Language Settings",
+    "languageSettings": "Language settings",
     "languageSettingsDescription": "Choose your preferred language for the application interface",
     "appearance": "Appearance",
-    "appearanceDescription": "Customize the appearance of the application.",
+    "appearanceDescription": "Choose a theme and adjust sound volume, feature tips and model previews.",
     "theme": "Theme",
     "themeDescription": "Choose between light, dark, or system theme",
     "audioVolume": "Audio Volume",
@@ -4440,15 +4440,15 @@
     "about": "About",
     "systemSettings": "System Settings",
     "systemSettingsDescription": "Mod Manager Settings. These do not affect the game.",
-    "gameConfigManagement": "Game Configuration Management",
+    "gameConfigManagement": "Game configuration management",
     "gameConfigDescription": "Manage gameinfo.gi file backup, restoration, and validation for safe modding.",
     "gamePath": "Game Path",
     "gamePathDescription": "The path to your Deadlock game installation. The mod manager will auto-detect this, but you can manually set it if needed.",
     "currentGamePath": "Current Game Path",
     "browseGamePath": "Browse",
     "autoDetectGamePath": "Auto-Detect",
-    "gamePathSet": "Game path set successfully",
-    "gamePathAutoDetected": "Game path auto-detected successfully",
+    "gamePathSet": "Game path set",
+    "gamePathAutoDetected": "Game path auto-detected",
     "invalidGamePath": "Invalid game path. Please select a valid Deadlock installation folder.",
     "steamPath": "Steam Path",
     "steamPathSectionDescription": "Configure how the mod manager locates your Steam installation for launching the game and related features.",
@@ -4456,10 +4456,10 @@
     "steamPathAutoDetected": "Using auto-detected Steam installation",
     "currentSteamPath": "Custom Steam Path",
     "browseSteamPath": "Browse for Steam folder",
-    "steamPathSet": "Steam path set successfully",
+    "steamPathSet": "Steam path set",
     "invalidSteamPath": "Invalid Steam path. Please select a valid Steam installation folder.",
     "steamPathToggleFailed": "Failed to update Steam path settings",
-    "downloadCacheLocation": "Download Cache Location",
+    "downloadCacheLocation": "Download cache location",
     "downloadCacheLocationDescription": "Where downloaded and imported mods are stored. Pick a folder on another drive to save space on your system drive. The cache goes in a DeadlockModManager folder inside the folder you pick.",
     "currentDownloadCacheLocation": "Current location",
     "browseDownloadCacheLocation": "Choose a folder for the download cache",
@@ -4476,7 +4476,7 @@
     "selectDefaultSort": "Select default sort",
     "tools": "Tools",
     "backups": "Backups",
-    "toolsDescription": "Utility functions for managing your mods",
+    "toolsDescription": "Folders, troubleshooting and reset actions.",
     "gameGuard": "Block changes while Deadlock runs",
     "gameGuardDescription": "Refuses to install, remove or reorder mods while the game is open, because Deadlock holds those files and a half-applied change can break your load order. You can still override a single action when the warning appears.",
     "gameGuardSectionTitle": "Protection while playing",
@@ -4526,17 +4526,17 @@
     "addonsBackupDescription": "Create and restore backups of your installed mods.",
     "createBackup": "Create Backup",
     "creatingBackup": "Creating backup...",
-    "backupCreated": "Backup created successfully",
+    "backupCreated": "Backup created",
     "backupCreationFailed": "Failed to create backup",
     "restoreBackup": "Restore",
     "restoringBackup": "Restoring backup...",
     "restoring": "Restoring:",
-    "backupRestored": "Backup restored successfully",
+    "backupRestored": "Backup restored",
     "backupRestoreFailed": "Failed to restore backup",
     "deleteBackup": "Delete",
     "deleteBackupConfirm": "Are you sure you want to delete this backup?",
     "deleteBackupConfirmAction": "Delete",
-    "backupDeleted": "Backup deleted successfully",
+    "backupDeleted": "Backup deleted",
     "backupDeleteFailed": "Failed to delete backup",
     "openBackupsFolder": "Open Backups Folder",
     "noBackupsFound": "No backups found",
@@ -4632,7 +4632,7 @@
     "confirmClearModsState": "Clear Mods State?",
     "confirmClearModsStateBody": "This will remove all mods from the application but will NOT delete them from your game folder. You can restart the app to restore mods recorded in the ownership manifest.",
     "confirmClearModsStateAction": "Clear Mods State",
-    "modsStateCleared": "Mods state cleared successfully",
+    "modsStateCleared": "Mods state cleared",
     "autoexec": "Autoexec.cfg",
     "autoexecDescription": "Manage your autoexec.cfg file. Changes require game restart.",
     "autoexecContent": "Config File Content",
@@ -4891,7 +4891,7 @@
     "openInFolder": "Open in Folder",
     "openInEditor": "Open in Editor",
     "saveChanges": "Save Changes",
-    "autoexecSaved": "Autoexec config saved successfully! Restart game for changes to take effect.",
+    "autoexecSaved": "Autoexec config saved; restart Deadlock for changes to take effect.",
     "autoexecLoadError": "Failed to load autoexec config",
     "autoexecSaveError": "Failed to save autoexec config",
     "autoexecOpenFolderError": "Failed to open autoexec folder",
@@ -5071,8 +5071,8 @@
     "resetToVanilla": "Reset to Vanilla",
     "validateConfiguration": "Validate Configuration",
     "openInEditor": "Open in Editor",
-    "backupCreatedSuccess": "gameinfo.gi backup created successfully",
-    "restoreSuccess": "gameinfo.gi restored from backup successfully",
+    "backupCreatedSuccess": "gameinfo.gi backup created",
+    "restoreSuccess": "gameinfo.gi restored from backup",
     "resetSuccess": "gameinfo.gi reset to vanilla using the downloaded file",
     "resetBackupRestored": "The vanilla download was unavailable. Restored your local backup and removed DMM mod paths. Other custom paths were kept.",
     "resetFailed": "Failed to reset gameinfo.gi to vanilla",
@@ -5321,15 +5321,15 @@
     "thirdPartyDisclaimerTitle": "Third-Party Content Disclaimer",
     "thirdPartyDisclaimerDescription": "All mods available through this application are third-party content created by community members. Mods are not created, reviewed, verified, or endorsed by the Deadlock Mod Manager project. Install mods at your own discretion.",
     "thirdPartyDisclaimerShort": "Mods are third-party content not created, reviewed, or endorsed by Deadlock Mod Manager.",
-    "gamebananaDescription": "Our primary mod source and the backbone of this application. GameBanana provides the comprehensive mod database and API that makes browsing, discovering, and downloading Deadlock mods possible.",
+    "gamebananaDescription": "GameBanana provides the mod catalog and API used to browse and download Deadlock mods.",
     "visitGamebanana": "Visit GameBanana",
     "deadlockRichPresenceDescription": "Discord Game Presence was only possible thanks to Jelloge's Deadlock Rich Presence project and its work mapping Deadlock console log events for rich presence.",
     "visitDeadlockRichPresence": "Visit Deadlock Rich Presence",
-    "tauriDescription": "The powerful framework that enables this cross-platform desktop application. Tauri combines the best of web technologies with native performance and security.",
+    "tauriDescription": "Tauri is the framework used to build this desktop app with web technologies.",
     "visitTauri": "Visit Tauri",
-    "shadcnDescription": "Beautiful and accessible React components that provide the foundation for our modern user interface. Copy, paste, and customize to perfection.",
+    "shadcnDescription": "shadcn/ui provides React components used in the app.",
     "visitShadcn": "Visit shadcn/ui",
-    "tailwindDescription": "The utility-first CSS framework that powers our responsive design and consistent styling throughout the application.",
+    "tailwindDescription": "Tailwind CSS provides the utilities used to style the app.",
     "visitTailwind": "Visit Tailwind CSS",
     "vpkmergeDescription": "Source 2 texture, KV3 and sound codecs used by the Mod Foundry. Vendored from the morphic crate (MIT).",
     "visitVpkmerge": "Visit vpkmerge",
@@ -5339,7 +5339,7 @@
     "thirdPartyNoticesDescription": "Full license texts for vendored and copied-in third-party code shipped with this application.",
     "viewThirdPartyNotices": "View third-party notices",
     "openSourceCommunity": "Open Source Community",
-    "openSourceDescription": "Built with amazing open source technologies including React, TypeScript, and many other libraries that make modern applications possible. Thank you to all contributors and maintainers.",
+    "openSourceDescription": "Built with React, TypeScript and other open source libraries. Thank you to their contributors and maintainers.",
     "meetContributors": "Meet the contributors",
     "releaseNotes": "release notes",
     "poweredBy": "Powered by",
@@ -5382,7 +5382,7 @@
     "newVersionAvailable": "A new version ({{version}}) is available. You are currently on version {{currentVersion}}.",
     "releaseNotes": "Release Notes",
     "downloading": "Downloading update",
-    "downloadAndInstall": "Download and Install",
+    "downloadAndInstall": "Download and install",
     "later": "Later",
     "installing": "Installing...",
     "failedWithMessage": "Update failed: {{message}}. You may need to manually update the app."
@@ -5531,7 +5531,7 @@
     "savingMetadata": "Saving mod metadata...",
     "processingImage": "Processing mod image...",
     "addingToLibrary": "Adding mod to library...",
-    "modAddedSuccess": "Mod added successfully!",
+    "modAddedSuccess": "Mod added",
     "unsupportedSelection": "Unsupported selection.",
     "unsupportedFiles": "Unsupported file(s).",
     "failedToReadDroppedFiles": "Failed to read dropped files.",
@@ -5681,7 +5681,7 @@
   },
   "onboarding": {
     "title": "Welcome to Deadlock Mod Manager",
-    "welcome": "Let's get you set up with {{appName}}! This quick setup will help you get started.",
+    "welcome": "Set up {{appName}}.",
     "stepIndicator": "Step {{current}} of {{total}}",
     "skip": "Skip Setup",
     "back": "Back",
@@ -5697,7 +5697,7 @@
       "title": "Game Path Detection",
       "description": "We'll automatically detect your Deadlock installation path.",
       "detecting": "Detecting game path...",
-      "success": "Game path detected successfully!",
+      "success": "Game path detected",
       "error": "Could not detect game path",
       "errorDescription": "Please manually browse to your Deadlock installation folder.",
       "retry": "Retry Detection",
@@ -5708,7 +5708,7 @@
       "title": "API Connection",
       "description": "Checking connection to the mod database server.",
       "checking": "Connecting to API...",
-      "success": "Connected successfully!",
+      "success": "Connected",
       "error": "Failed to connect to API",
       "errorDescription": "Please check your internet connection and try again.",
       "retry": "Retry Connection",
@@ -5733,8 +5733,8 @@
   },
   "telemetryConsent": {
     "title": "Help Us Improve",
-    "description": "We would really appreciate it if you keep usage analytics enabled. It helps us understand which features matter and where to focus improvements.",
-    "dialogDescription": "Usage analytics is currently off. You can turn it on anytime in Settings, but enabling it now helps us improve the app for everyone.",
+    "description": "Usage analytics helps us see which features people use and decide what to improve.",
+    "dialogDescription": "Usage analytics is off. You can turn it on here or in Settings.",
     "whatWeCollectTitle": "What we collect",
     "whatWeCollectHwid": "An ID for this PC, so installs can be told apart. It is not linked to your name or accounts",
     "whatWeCollectFeatures": "Which pages and features you use, and which mods you open or install",
@@ -5955,7 +5955,7 @@
   },
   "whatsNew": {
     "title": "What's New",
-    "welcome": "Welcome to the latest version of {{appName}}!",
+    "welcome": "Changes in the latest version of {{appName}}.",
     "fullReleaseNotes": "Full Release Notes",
     "gotIt": "Got it!",
     "highlightAlt": "Screenshot: {{caption}}",
@@ -6409,8 +6409,7 @@
         "title": "Crosshair UX Improvements & Japanese Support",
         "features": [
           "🎨 Custom crosshair UX improvements - option to disable and delete crosshairs from history",
-          "🌐 Japanese language support added to the application",
-          "🔧 Minor bug fixes and stability improvements"
+          "🌐 Japanese language support added to the application"
         ]
       },
       "0.11.0": {
@@ -6464,10 +6463,7 @@
       },
       "0.8.2": {
         "title": "Bug Fixes & Improvements",
-        "features": [
-          "🐛 Fixed various bugs and improved stability",
-          "⚡ Performance improvements and optimizations"
-        ]
+        "features": []
       },
       "0.8.1": {
         "title": "Technical Improvements",
@@ -6510,8 +6506,7 @@
         "features": [
           "🎵 Added support for audio mods - customize your Deadlock sounds",
           "🚀 Improved launch options handling - no longer assumes \"+\" prefix requirement",
-          "🔧 Enhanced mod compatibility and installation process",
-          "⚡ Various performance optimizations and stability improvements"
+          "🔧 Enhanced mod compatibility and installation process"
         ]
       },
       "0.5.1": {
@@ -6524,8 +6519,7 @@
           "🔍 Improved filtering and searching functionality on the mods page",
           "🐳 Resolved Docker compatibility issues",
           "🎨 Enhanced mod card layout and styling",
-          "📖 Updated UI to acknowledge GameBanana as data source",
-          "⚡ Various performance optimizations and stability improvements"
+          "📖 Updated UI to acknowledge GameBanana as data source"
         ]
       },
       "0.5.0": {
@@ -6536,8 +6530,7 @@
           "⚠️ New outdated mod warning system for better mod management",
           "🎮 Updated champion roster with latest Deadlock heroes",
           "🔧 Fixed Custom Launch Options not respecting enabled/disabled status",
-          "🎨 Enhanced UI components and layout improvements",
-          "🔧 Various stability improvements and bug fixes"
+          "🎨 Enhanced UI components and layout improvements"
         ]
       },
       "0.4.0": {
@@ -6554,7 +6547,6 @@
         "features": [
           "🎨 Complete UI overhaul for better user experience",
           "📦 Improved download management",
-          "⚡ Performance optimizations",
           "🔄 Updated core dependencies"
         ]
       },
@@ -6606,7 +6598,7 @@
       "settingsDescription": "Adjust appearance options and choose between curated presets or custom styles.",
       "preDefinedThemes": "Pre-defined Themes",
       "customThemes": "Custom Themes",
-      "preDefinedDescription": "Choose from carefully crafted themes designed to enhance your experience.",
+      "preDefinedDescription": "Choose a preset theme.",
       "customDescription": "Create your own custom theme with your preferred colors and style.",
       "customThemeBuilder": "Custom Theme Builder",
       "customThemeBuilderDescription": "Build your own theme by selecting colors and styles.",
@@ -6754,7 +6746,7 @@
       "customColorDescription": "Choose an accent color. Button text contrast adjusts automatically."
     },
     "nightshift": {
-      "description": "A teal-accented cyberpunk theme designed for clarity and long gaming sessions.",
+      "description": "A dark cyberpunk theme with teal accents.",
       "visit": "Visit Nightshift:",
       "twitter": "Twitter",
       "discord": "Discord"
@@ -6764,7 +6756,7 @@
       "visit": "Theme by Skeptic"
     },
     "arcane": {
-      "description": "A sleek dark theme with elegant pink-red glow effects inspired by the Arcane aesthetic.",
+      "description": "A dark theme with pink-red glow effects inspired by the Arcane aesthetic.",
       "visit": "Theme by Skeptic",
       "customColor": "Custom Color",
       "customColorDescription": "Choose a custom accent color for the Arcane theme."
@@ -7431,7 +7423,7 @@
     "latestMods": "Latest Mods",
     "popularMods": "Popular Mods",
     "noAnnouncementsTitle": "No Announcements",
-    "noAnnouncementsDescription": "There are currently no announcements. Check back later for updates and news.",
+    "noAnnouncementsDescription": "Check back later for news.",
     "checkBackLater": "Check back later for updates",
     "noModsAvailable": "No mods available",
     "learnMore": "Learn More",
@@ -7504,7 +7496,7 @@
     "catalogWiped": "Local catalog wiped",
     "wipeCatalogFailed": "Couldn't wipe the local catalog",
     "confirmClearModsState": "Are you sure you want to clear the mods state? This will remove all mods from the application but will NOT delete them from your game folder. You can re-scan your mods folder to restore them.",
-    "modsStateCleared": "Mods state cleared successfully",
+    "modsStateCleared": "Mods state cleared",
     "triggerOnboarding": "Trigger Onboarding",
     "resetTelemetryConsent": "Reset Telemetry Consent",
     "triggerMatchSyncConsent": "Trigger Match Data Consent",
@@ -7514,7 +7506,7 @@
   },
   "developer": {
     "title": "Developer Tools",
-    "description": "Advanced tools and features for developers",
+    "description": "Inspect mod shards and their game search paths.",
     "shards": {
       "navLabel": "Shards",
       "title": "Shard status",
@@ -7581,12 +7573,12 @@
     "inactive": "Inactive",
     "switching": "Switching profile…",
     "manageDescription": "Create, edit, and switch between different mod profiles. Each profile remembers which mods you have enabled.",
-    "createNew": "Create New Profile",
+    "createNew": "Create new profile",
     "create": "Create",
     "creating": "Creating...",
     "createDescription": "Create a new profile to organize your mods. Each profile can have different mods enabled.",
     "editProfile": "Edit Profile",
-    "editDescription": "Edit the profile '{{profileName}}'",
+    "editDescription": "{{profileName}}",
     "update": "Update",
     "updating": "Updating...",
     "name": "Name",
@@ -7611,16 +7603,16 @@
     "switchDetails": "{{enabled}} enabled, {{disabled}} disabled",
     "switchError": "Failed to switch profiles: {{errors}}",
     "switchUnexpectedError": "An unexpected error occurred while switching profiles",
-    "createSuccess": "Profile '{{profileName}}' created successfully",
+    "createSuccess": "Profile '{{profileName}}' created",
     "createError": "Failed to create profile",
-    "updateSuccess": "Profile '{{profileName}}' updated successfully",
+    "updateSuccess": "Profile '{{profileName}}' updated",
     "updateError": "Failed to update profile",
-    "deleteSuccess": "Profile '{{profileName}}' deleted successfully",
+    "deleteSuccess": "Profile '{{profileName}}' deleted",
     "deleteError": "Failed to delete profile",
     "sync": "Sync Profiles",
-    "syncSuccess": "Profiles synced successfully",
+    "syncSuccess": "Profiles synced",
     "syncError": "Failed to sync profiles",
-    "shareSuccess": "Profile shared successfully!",
+    "shareSuccess": "Profile shared",
     "shareError": "Failed to share profile",
     "shareNoMods": "Cannot share profile: no mods are enabled",
     "noHardwareIdOrVersion": "Cannot share profile: hardware ID or version information is missing",
@@ -7641,7 +7633,7 @@
     "submissionTypeSound": "Sound",
     "profileIdPlaceholder": "Enter Profile ID (e.g., abc123def456)",
     "profileIdRequired": "Profile ID is required",
-    "importSuccess": "Profile imported successfully!",
+    "importSuccess": "Profile imported",
     "importError": "Failed to import profile. Please check the Profile ID and try again.",
     "includedMods": "Included Mods",
     "noModsIncluded": "No mods are included in this profile",
@@ -7649,7 +7641,7 @@
     "importOptionsDescription": "Choose how to save this imported profile:",
     "createNewProfile": "Create New Profile",
     "overrideExisting": "Override Active Profile",
-    "overrideSuccess": "Active profile updated successfully!",
+    "overrideSuccess": "Active profile updated",
     "creatingProfile": "Creating new profile...",
     "updatingProfile": "Updating current profile...",
     "processingMods": "Processing mods...",
@@ -7765,14 +7757,14 @@
     "noUpdateAvailable": "No update available",
     "checkUpdateError": "Failed to check for updates",
     "vpkReplacement": {
-      "title": "Replace VPK Files",
+      "title": "Replace VPK files",
       "description": "Replace mod files for quick iteration during development",
       "dragAndDrop": "Drag and drop VPK files here",
       "selectFiles": "Select Files",
       "currentFiles": "Current VPK Files",
       "replaceAll": "Replace All Files",
       "selectToReplace": "Select {{count}} file(s) to replace",
-      "success": "VPK files replaced successfully",
+      "success": "VPK files replaced",
       "error": "Failed to replace VPK files",
       "countMismatch": "Expected {{expected}} file(s), got {{actual}}"
     },
@@ -7831,7 +7823,7 @@
     "loadFirst": "Load this mod before its requirement"
   },
   "reports": {
-    "reportSubmitted": "Report submitted successfully",
+    "reportSubmitted": "Report submitted",
     "reportFailed": "Failed to submit report",
     "thankYou": "Thank You!",
     "thankYouDescription": "Thank you for letting the community know!",
@@ -7917,9 +7909,9 @@
       "apply": "Apply",
       "publish": "Publish",
       "publishing": "Publishing...",
-      "applied": "Crosshair applied successfully",
+      "applied": "Crosshair applied",
       "applyError": "Failed to apply crosshair",
-      "published": "Crosshair published successfully",
+      "published": "Crosshair published",
       "loginRequired": "You must be logged in to publish crosshairs",
       "nameValidation": "Name must be between 3 and 50 characters",
       "descriptionValidation": "Description must be less than 500 characters",
@@ -7931,7 +7923,7 @@
         "title": "Import Crosshair Settings",
         "description": "Paste your citadel crosshair format settings below to import them into the form.",
         "placeholder": "citadel_crosshair_color_r 255; citadel_crosshair_color_g 255; citadel_crosshair_color_b 255; citadel_crosshair_pip_border true; ...",
-        "success": "Crosshair settings imported successfully",
+        "success": "Crosshair settings imported",
         "emptyError": "Please paste crosshair settings to import",
         "parseError": "Failed to parse crosshair settings. Please check the format and try again."
       }
@@ -8035,7 +8027,7 @@
     "byAuthor": "by {{author}}"
   },
   "criticalPaths": {
-    "title": "Critical Game Files Warning",
+    "title": "Critical game files warning",
     "body": "This mod overwrites critical game files (abilities, heroes, or generic data). Enabling it may cause game instability or crashes. Do you want to enable this mod anyway?",
     "cancel": "No",
     "confirm": "Yes, enable anyway"
@@ -8750,7 +8742,7 @@
       "body": "Link your GameBanana account and any mod you queue with Remote Install downloads and installs here, even while you're away."
     },
     "minimalMode": {
-      "title": "Tired of all the bloat?",
+      "title": "Keep only mod management",
       "body": "Switch DMM to minimal mode and keep only mod management, like the good ol' v0.10.0. Your features come back when you switch it off."
     },
     "settingsSearch": {
@@ -8766,7 +8758,7 @@
       "body": "Add, remove, resize, and rearrange widgets, or create new tabs from templates."
     },
     "nightlyChannel": {
-      "title": "Like living on the edge?",
+      "title": "Try nightly testing builds",
       "body": "Switch to the nightly testing channel for daily builds with the newest features. They can be unstable."
     }
   },
@@ -8782,7 +8774,7 @@
     "title": "3D preview",
     "disclaimerTitle": "Work in progress",
     "wipBadge": "WIP",
-    "disclaimer": "This preview is very much a work in progress. It is limited and may not match everything you see in game, including models, materials, animations and effects.",
+    "disclaimer": "Models, materials, animations and effects in this preview may differ from the game.",
     "downloadFirstHint": "Download this mod to preview it here.",
     "download": "Download for preview",
     "chooseFile": "Choose a variant",
