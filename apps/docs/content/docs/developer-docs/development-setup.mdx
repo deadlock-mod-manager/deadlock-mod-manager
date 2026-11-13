@@ -275,7 +275,7 @@ pnpm build
 
 | Command                  | Description                                         |
 | ------------------------ | --------------------------------------------------- |
-| `pnpm dev`               | Start desktop app development (default)             |
+| `pnpm dev`               | Run every workspace's dev task through Turborepo    |
 | `pnpm desktop:dev`       | Start desktop app development                       |
 | `pnpm api:dev`           | Start API server development                        |
 | `pnpm www:dev`           | Start web app development                           |
@@ -285,12 +285,13 @@ pnpm build
 
 ### Quality Assurance
 
-| Command            | Description                      |
-| ------------------ | -------------------------------- |
-| `pnpm lint`        | Run linting with Biome           |
-| `pnpm lint:fix`    | Fix linting issues automatically |
-| `pnpm format`      | Format code with Biome           |
-| `pnpm check-types` | Run TypeScript type checking     |
+| Command             | Description                      |
+| ------------------- | -------------------------------- |
+| `pnpm lint`         | Run oxlint                       |
+| `pnpm lint:fix`     | Fix linting issues automatically |
+| `pnpm format:check` | Check formatting with oxfmt      |
+| `pnpm format:fix`   | Format files with oxfmt          |
+| `pnpm check-types`  | Run TypeScript type checking     |
 
 ### Database Commands
 
@@ -350,13 +351,13 @@ pnpm docs:dev
    git checkout -b feature/your-feature-name
    ```
 
-2. **Make your changes** following the [coding style guidelines](/tech-guide/contributing)
+2. **Make your changes** following the [coding style guidelines](/developer-docs/contributing)
 
 3. **Test your changes**:
 
    ```bash
-   pnpm lint:Fix
-   pnpm format:Fix
+   pnpm lint:fix
+   pnpm format:fix
    pnpm check-types
    pnpm test  # If tests exist for your changes
    ```
@@ -399,7 +400,7 @@ The project includes VS Code configuration with recommended extensions:
 - Tauri
 - TypeScript and JavaScript Language Features
 - Tailwind CSS IntelliSense
-- Biome (for linting/formatting)
+- oxc (`oxc.oxc-vscode`, for oxlint and oxfmt)
 
 ### Other IDEs
 
@@ -408,7 +409,7 @@ The project should work with any IDE that supports:
 - TypeScript/JavaScript
 - Rust
 - EditorConfig
-- Biome
+- oxlint and oxfmt
 
 ## CEF (Chromium Embedded Framework) Development
 
@@ -579,17 +580,17 @@ Once your development environment is set up:
   <Card
     title='Project Structure'
     description='Understand how the codebase is organized'
-    href='/tech-guide/project-structure'
+    href='/developer-docs/project-structure'
   />
   <Card
     title='Architecture Overview'
     description='Learn about the system architecture'
-    href='/tech-guide/architecture'
+    href='/developer-docs/architecture'
   />
   <Card
     title='Contributing Guidelines'
     description='Learn how to contribute effectively'
-    href='/tech-guide/contributing'
+    href='/developer-docs/contributing'
   />
 </Cards>
 

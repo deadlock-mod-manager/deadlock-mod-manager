@@ -34,7 +34,8 @@ Before you begin, ensure you have the following installed:
 
 **Option 1: Traditional Setup**
 
-- **Node.js** (>= 24.8.0) - [Download here](https://nodejs.org/) or use nvm
+- **Node.js** (>= 24.22.1) - [Download here](https://nodejs.org/) or use nvm
+- **Bun** (>= 1.4.4) - [Install here](https://bun.sh/)
 - **pnpm** (>= 11.2) - Use [Corepack](https://nodejs.org/api/corepack.html): `corepack enable` (version is pinned in `package.json`)
 - **Docker** - For local database development
 - **Rust** - For desktop app development (install via [rustup](https://rustup.rs/))
@@ -331,32 +332,7 @@ nix run .#nightly
 
 ## Project Structure
 
-This is a monorepo organized as follows:
-
-```
-deadlock-mod-manager/
-├── apps/
-│   ├── api/          # Backend API (Bun + Hono)
-│   ├── desktop/      # Main desktop app (Tauri + React)
-│   ├── web/          # Next.js web application
-│   └── www/          # Marketing website
-├── packages/
-│   ├── database/     # Database schema and client (Drizzle ORM)
-│   ├── shared/       # Shared utilities and types
-│   ├── logging/      # Structured logging package
-│   └── config-*/     # Shared configurations
-├── .agents/          # Shared agent reference material and skills
-└── .cursor/          # Cursor MCP and editor settings
-```
-
-### Key Technologies
-
-- **Frontend**: React, TypeScript, Tailwind CSS v4
-- **Desktop**: Tauri v2 (Rust + Web technologies)
-- **Backend**: Bun, Hono framework
-- **Database**: PostgreSQL with Drizzle ORM
-- **Build System**: Turborepo
-- **Code Quality**: oxlint/oxfmt (linting + formatting)
+See the [project structure guide](https://docs.deadlockmods.app/developer-docs/project-structure) for what each workspace in `apps/` and `packages/` does. Shared tool configuration lives in `tools/`.
 
 ## Development Workflow
 
@@ -446,7 +422,7 @@ wtx main                          # Jump back to main repo
 wtx rm fix-mod-conflict --yes     # Clean up when done
 ```
 
-The repo is pre-configured (`.wtx.kv`) to automatically copy `.env`, `.env.local`, and `.tauri/` keys, run `pnpm install`, and start `pnpm dev` in new worktrees.
+The repo has no wtx configuration, so new worktrees do not get environment files or dependencies automatically. Copy `.env`, `.env.local` and `.tauri/` into the worktree and run `pnpm install`, as shown for gtr below.
 
 ### Linux / macOS (git-worktree-runner)
 
@@ -703,7 +679,7 @@ Contributors are recognized in:
 
 **Build Failures:**
 
-- Ensure you're using the correct Node.js version (>= 24.8.0)
+- Ensure your Node.js and Bun versions meet the `engines` requirements in `package.json`
 - Run `pnpm install` to update dependencies
 - Check that Docker is running for database connections
 

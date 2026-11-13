@@ -193,7 +193,7 @@ For development setup, project architecture, contributing guidelines, and API in
 
 ### Quick start
 
-You need [Node.js](https://nodejs.org/) 24.8+, [pnpm](https://pnpm.io/), [Bun](https://bun.sh/) 1.4.2+, and [Rust](https://rustup.rs/) (stable), plus the [Tauri prerequisites](https://tauri.app/start/prerequisites/) for your platform (Visual Studio C++ Build Tools and WebView2 on Windows, WebKitGTK and friends on Linux).
+You need [Node.js](https://nodejs.org/), [pnpm](https://pnpm.io/), [Bun](https://bun.sh/) and [Rust](https://rustup.rs/) (stable); [CONTRIBUTING.md](CONTRIBUTING.md#prerequisites) lists the required versions. You also need the [Tauri prerequisites](https://tauri.app/start/prerequisites/) for your platform (Visual Studio C++ Build Tools and WebView2 on Windows, WebKitGTK and friends on Linux).
 
 ```bash
 git clone https://github.com/deadlock-mod-manager/deadlock-mod-manager.git
