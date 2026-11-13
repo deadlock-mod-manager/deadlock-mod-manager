@@ -92,8 +92,12 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
       const profileFolder = activeProfile?.folderName ?? null;
 
       // If file tree is provided and mod was downloaded with multiple files,
-      // we need to copy selected VPKs from archive first
-      if (fileTree?.has_multiple_files) {
+      // we need to copy selected VPKs from archive first. Loose parts of a
+      // custom mod name no archive; they are already parked in the addons.
+      if (
+        fileTree?.has_multiple_files &&
+        fileTree.files.some((file) => file.archive_name)
+      ) {
         logger
           .withMetadata({
             modId: mod.remoteId,

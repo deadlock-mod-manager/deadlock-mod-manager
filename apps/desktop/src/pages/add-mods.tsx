@@ -316,7 +316,7 @@ const AddMods = () => {
           <DialogFooter className='mt-2'>
             <Button
               disabled={isProcessing}
-              onClick={() => setOpen(false)}
+              onClick={() => handleOpenChange(false)}
               type='button'
               variant='ghost'>
               {t("addMods.cancel")}
