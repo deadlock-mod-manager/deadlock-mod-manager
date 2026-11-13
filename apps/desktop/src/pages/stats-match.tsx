@@ -296,6 +296,11 @@ const StatsMatch = () => {
     return (
       <div className='flex flex-col gap-4'>
         <MatchHeader
+          heroesById={heroesById}
+          profiles={profiles}
+          historyEntry={stats.matches.find(
+            (entry) => entry.match_id === matchId,
+          )}
           damageRank={
             placements.find((placement) => placement.metric === "damage")
               ?.rank ?? null

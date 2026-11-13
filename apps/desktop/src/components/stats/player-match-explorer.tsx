@@ -6,7 +6,7 @@ import { HeroAvatar } from "@/components/stats/hero-avatar";
 import { MatchDetailView } from "@/components/stats/match-detail-view";
 import type { DeadlockHero } from "@/lib/deadlock-api";
 import type { MatchHistoryEntry } from "@/lib/stats/api";
-import { matchOutcome, summarize } from "@/lib/stats/derive";
+import { matchStatus, summarize } from "@/lib/stats/derive";
 import {
   formatCompact,
   formatDateTime,
@@ -134,7 +134,7 @@ export const PlayerMatchExplorer = ({
           <div className='p-1.5'>
             {recent.map((match) => {
               const matchHero = heroesById.get(match.hero_id);
-              const outcome = matchOutcome(match);
+              const outcome = matchStatus(match);
               const isSelected = match.match_id === selected.match_id;
               return (
                 <button
@@ -151,7 +151,7 @@ export const PlayerMatchExplorer = ({
                       "rounded-md border-2",
                       outcome === "win"
                         ? "border-emerald-500/60"
-                        : outcome === "loss"
+                        : outcome !== "notScored"
                           ? "border-destructive/60"
                           : "border-muted-foreground/60",
                     )}>
@@ -171,7 +171,7 @@ export const PlayerMatchExplorer = ({
                           "text-[10px]",
                           outcome === "win"
                             ? "text-emerald-500"
-                            : outcome === "loss"
+                            : outcome !== "notScored"
                               ? "text-destructive"
                               : "text-muted-foreground",
                         )}>

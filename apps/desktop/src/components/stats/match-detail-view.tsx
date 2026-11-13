@@ -8,7 +8,7 @@ import { ItemPurchaseTimeline } from "@/components/stats/item-purchase-timeline"
 import { useMatchDetails } from "@/hooks/use-player-stats";
 import type { DeadlockHero } from "@/lib/deadlock-api";
 import type { MatchHistoryEntry } from "@/lib/stats/api";
-import { matchOutcome } from "@/lib/stats/derive";
+import { matchStatus } from "@/lib/stats/derive";
 import {
   formatCompact,
   formatDateTime,
@@ -49,7 +49,7 @@ export const MatchDetailView = ({
   const { t, i18n } = useTranslation();
   const details = useMatchDetails(match.match_id, accountId);
   const hero = heroesById.get(match.hero_id);
-  const outcome = matchOutcome(match);
+  const outcome = matchStatus(match);
   const finalStat = details.player?.stats[details.player.stats.length - 1];
   const shots = (finalStat?.shots_hit ?? 0) + (finalStat?.shots_missed ?? 0);
   const accuracy = shots > 0 ? (finalStat?.shots_hit ?? 0) / shots : null;
@@ -82,7 +82,11 @@ export const MatchDetailView = ({
                   ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-500"
                   : undefined
               }
-              variant={outcome === "loss" ? "destructive" : "outline"}>
+              variant={
+                outcome === "loss" || outcome === "abandoned"
+                  ? "destructive"
+                  : "outline"
+              }>
               {t(`stats.${outcome}`)}
             </Badge>
           </div>

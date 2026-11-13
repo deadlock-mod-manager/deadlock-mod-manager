@@ -13,11 +13,15 @@ import { badgeToStep } from "@/lib/stats/rank";
  */
 
 /** `match_result` alone cannot distinguish a win from a non-scored game. */
-export const isUnscored = (match: MatchHistoryEntry): boolean =>
-  match.player_match_outcome === 5;
+export const isUnscored = (
+  match: Pick<MatchHistoryEntry, "player_match_outcome">,
+): boolean => match.player_match_outcome === 5;
 
 export const matchOutcome = (
-  match: MatchHistoryEntry,
+  match: Pick<
+    MatchHistoryEntry,
+    "player_match_outcome" | "match_result" | "player_team"
+  >,
 ): "win" | "loss" | "notScored" =>
   isUnscored(match)
     ? "notScored"
@@ -27,6 +31,10 @@ export const matchOutcome = (
 
 export const isWin = (match: MatchHistoryEntry): boolean =>
   matchOutcome(match) === "win";
+
+/** Leaving is a display status; the scored result still drives aggregates. */
+export const matchStatus = (match: MatchHistoryEntry) =>
+  (match.abandoned_time_s ?? 0) > 0 ? "abandoned" : matchOutcome(match);
 
 /** The API returns newest first; charts read left to right. */
 export const chronological = (

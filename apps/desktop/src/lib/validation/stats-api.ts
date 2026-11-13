@@ -78,6 +78,8 @@ const matchMetadataDeathSchema = z.object({
 
 export const matchMetadataPlayerSchema = z.object({
   account_id: z.number(),
+  player_match_outcome: z.number().nullish().catch(null),
+  abandon_match_time_s: z.number().nullish().catch(null),
   player_slot: count,
   team: count,
   hero_id: z.number(),
