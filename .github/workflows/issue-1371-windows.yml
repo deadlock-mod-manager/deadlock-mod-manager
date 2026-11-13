@@ -48,7 +48,10 @@ jobs:
       - name: Check match sync with Clippy
         run: cargo clippy --manifest-path packages/deadlock-match-sync/Cargo.toml --all-targets
       - name: Build unsigned Windows installer
-        run: pnpm --filter @deadlock-mods/desktop tauri build --bundles nsis --config '{"bundle":{"createUpdaterArtifacts":false}}'
+        shell: pwsh
+        run: |
+          '{"bundle":{"createUpdaterArtifacts":false}}' | Set-Content -Encoding utf8 apps/desktop/src-tauri/tauri.test-build.conf.json
+          pnpm --filter @deadlock-mods/desktop tauri build --bundles nsis --config src-tauri/tauri.test-build.conf.json
       - name: Record source commit and checksums
         shell: pwsh
         run: |
