@@ -365,9 +365,14 @@ function TransparencyComponent() {
                 <div className='rounded-lg border bg-card p-6'>
                   <p className='text-muted-foreground leading-relaxed mb-4'>
                     Deadlock Mod Manager generates zero revenue. There are no
-                    advertisements, premium features, data tracking, or any form
-                    of monetization. The project is entirely self-funded by the
-                    maintainer.
+                    advertisements, premium features or other forms of
+                    monetization. The project is entirely self-funded by the
+                    maintainer. Desktop usage analytics stay off until you turn
+                    them on; the{" "}
+                    <a href='/privacy' className='text-primary hover:underline'>
+                      Privacy Policy
+                    </a>{" "}
+                    lists what they collect.
                   </p>
                   <p className='text-muted-foreground leading-relaxed'>
                     <strong className='text-foreground'>

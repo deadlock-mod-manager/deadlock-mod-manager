@@ -51,7 +51,7 @@ function TermsComponent() {
           </p>
           <div className='mx-auto mt-6 h-1 w-24 bg-primary'></div>
           <p className='text-muted-foreground text-sm mt-4'>
-            Last updated: September 24, 2025
+            Last updated: November 13, 2026
           </p>
         </div>
 
@@ -197,21 +197,21 @@ function TermsComponent() {
                 <ul className='space-y-2 text-muted-foreground ml-6 mb-4'>
                   <li className='list-disc'>
                     <strong className='text-foreground'>
-                      Optional Analytics:
+                      Optional analytics:
                     </strong>{" "}
-                    With your consent, we collect anonymous usage analytics to
-                    improve the application
+                    With your consent, the desktop app sends usage analytics
+                    tagged with a hardware ID for your PC
                   </li>
                   <li className='list-disc'>
-                    <strong className='text-foreground'>Crash Reports:</strong>{" "}
-                    Automatic error reporting to help fix bugs and improve
-                    stability
+                    <strong className='text-foreground'>Error logs:</strong> The
+                    desktop app does not send crash reports. Our servers record
+                    their own errors to keep the service running
                   </li>
                   <li className='list-disc'>
-                    <strong className='text-foreground'>
-                      No Personal Data:
-                    </strong>{" "}
-                    We do not collect personal information or identifiable data
+                    <strong className='text-foreground'>Account data:</strong>{" "}
+                    If you sign in, we store your name, email address and
+                    avatar. Your IP address is used for rate limiting and stored
+                    with each sign-in session, along with your user agent
                   </li>
                 </ul>
                 <p className='text-muted-foreground leading-relaxed'>
