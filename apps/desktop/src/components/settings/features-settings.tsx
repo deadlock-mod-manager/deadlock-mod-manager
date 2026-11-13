@@ -48,11 +48,6 @@ const FEATURE_DISPLAY = {
   { group: (typeof FEATURE_GROUPS)[number]; icon: Icon }
 >;
 
-// Builds without the plugin runtime have no plugins to turn off.
-const VISIBLE_FEATURES = OPTIONAL_FEATURES.filter(
-  (feature) => feature !== "plugins" || isPluginsBuilt(),
-);
-
 type FeatureChange =
   | { kind: "feature"; feature: OptionalFeature; enabled: boolean }
   | { kind: "minimal"; enabled: boolean };
@@ -136,12 +131,17 @@ export const FeaturesSettings = ({
       flag !== null && !isExperimentalFeatureOn({ experimentalFeatures }, flag)
     );
   };
+  // Builds without the plugin runtime have no plugins to turn off. Read at
+  // render time: this module loads before the runtime bootstrap resolves.
+  const visibleFeatures = OPTIONAL_FEATURES.filter(
+    (feature) => feature !== "plugins" || isPluginsBuilt(),
+  );
   const featureState = { features, experimentalFeatures, minimalMode };
   const leftoverFor = useFeatureLeftovers(
     (feature) => !isFeatureEnabled(featureState, feature),
   );
   // What Minimal DMM pauses, or what is on without it.
-  const enabledCount = VISIBLE_FEATURES.filter(
+  const enabledCount = visibleFeatures.filter(
     (feature) => features[feature] && !isFlagOff(feature),
   ).length;
 
@@ -154,10 +154,10 @@ export const FeaturesSettings = ({
         onCheckedChange={(checked) =>
           updateFeatures.mutate({ kind: "minimal", enabled: checked })
         }
-        total={VISIBLE_FEATURES.length}
+        total={visibleFeatures.length}
       />
       {FEATURE_GROUPS.map((group) => {
-        const groupFeatures = VISIBLE_FEATURES.filter(
+        const groupFeatures = visibleFeatures.filter(
           (feature) => FEATURE_DISPLAY[feature].group === group,
         );
         if (groupFeatures.length === 0) return null;
