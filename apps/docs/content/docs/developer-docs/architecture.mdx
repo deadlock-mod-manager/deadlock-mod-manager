@@ -155,9 +155,10 @@ graph TD
     D --> M[Download Manager]
     D --> N[Installation Manager]
 
-    O[Contexts] --> P[Theme Context]
-    O --> Q[Settings Context]
-    O --> R[Mods Context]
+    O[Zustand Store] --> P[Domain Slices]
+    O --> Q[Persisted Settings]
+    R[React Query] --> R1[Remote API Data]
+    A --> T1[Theme Provider]
 
     S[Hooks] --> T[API Hooks]
     S --> U[File System Hooks]
@@ -167,7 +168,7 @@ graph TD
 **Key Design Patterns:**
 
 1. **Component Composition**: Large components are broken down into smaller, reusable pieces
-2. **Context API**: Global state management for themes, settings, and mod data
+2. **Zustand store**: Persisted application state lives in the store at `apps/desktop/src/lib/store/`, composed from domain slices. React Query owns remote server data, and theme state comes from a React context provider
 3. **Custom Hooks**: Encapsulate complex logic for API calls, file operations, and state management
 4. **Separation of Concerns**: UI components separate from business logic
 

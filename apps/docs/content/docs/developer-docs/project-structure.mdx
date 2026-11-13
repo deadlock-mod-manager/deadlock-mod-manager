@@ -68,7 +68,7 @@ apps/desktop/
 
 - **Frontend**: React 18 + TypeScript + Tailwind CSS v4
 - **Backend**: Tauri v2 with Rust
-- **State Management**: React Context + hooks
+- **State Management**: Zustand store (`src/lib/store/`) for persisted state, React Query for remote data
 - **Styling**: Tailwind CSS v4 with custom design system
 - **Build**: Vite for frontend, Cargo for Rust
 
@@ -249,7 +249,7 @@ packages/vpk-parser/
 **Features:**
 
 - Native Rust performance for file parsing
-- TypeScript bindings using napi-rs
+- TypeScript bindings through Bun FFI (`src/ffi.ts`), which loads the Rust library from `target/release`
 - Comprehensive VPK format support
 - Memory-efficient streaming parsing
 

@@ -148,16 +148,19 @@ const setSettings = usePersistedStore((s) => s.setPluginSettings);
 
 ### Error Handling
 
+A `try`/`catch` around `return <YourComponent />` does not catch render errors, because React renders the child after the function returns. Wrap plugin UI in an error boundary instead. The app's boundary in `apps/desktop/src/components/shared/error-boundary.tsx` is built on `react-error-boundary`:
+
 ```typescript
-const Render = () => {
-  try {
-    return <YourComponent />;
-  } catch (error) {
-    console.error("Plugin error:", error);
-    return null;
-  }
-};
+import ErrorBoundary from "@/components/shared/error-boundary";
+
+const Render = () => (
+  <ErrorBoundary>
+    <YourComponent />
+  </ErrorBoundary>
+);
 ```
+
+Handle failures of async operations in their mutation or event handler, and report them with the initialized logger from `@/lib/logger` instead of `console`.
 
 ## Troubleshooting
 

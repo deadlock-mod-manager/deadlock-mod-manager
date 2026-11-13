@@ -75,19 +75,7 @@ New integrations should use the `/v2` routes. The `/v1` routes remain available:
 
 ## Rate Limits
 
-All API endpoints are rate-limited to ensure fair usage:
-
-- **Standard Endpoints**: 100 requests per minute per IP
-- **Download Endpoints**: 10 concurrent downloads per IP
-- **Bulk Operations**: 5 requests per minute per IP
-
-Rate limit information is included in response headers:
-
-```http
-X-RateLimit-Limit: 100
-X-RateLimit-Remaining: 99
-X-RateLimit-Reset: 1640995200
-```
+Only some routes are rate limited, per client IP; the mod listing is not. Limited routes return `RateLimit-Limit`, `RateLimit-Remaining` and `RateLimit-Reset` (seconds until the window resets), and a rejected request returns HTTP 429 with `Retry-After`. The [integration guide](/developer-docs/api-reference#rate-limiting) lists each limit.
 
 ## Error Handling
 

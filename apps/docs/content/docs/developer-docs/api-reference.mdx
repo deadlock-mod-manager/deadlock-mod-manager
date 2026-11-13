@@ -27,20 +27,24 @@ Routes that read or change account data, such as profile backups, require a sign
 
 ### Rate Limiting
 
-All endpoints are rate-limited to ensure fair usage:
+Rate limits apply per route and per client IP. Limited routes use a fixed window:
+
+| Route                                                                                                     | Limit                      |
+| --------------------------------------------------------------------------------------------------------- | -------------------------- |
+| `POST /v2/sync`, `POST /v2/sync/{id}`                                                                     | 3 requests per 60 seconds  |
+| `GET /v2/mod-authors/{id}`                                                                                | 60 requests per 60 seconds |
+| `GET /v2/servers`, `GET /v2/servers/facets`, `GET /v2/servers/{id}`, `POST /v2/servers/{id}/resolve-mods` | 60 requests per 60 seconds |
+| `PUT /v2/profile-backups`                                                                                 | 60 requests per 10 minutes |
+
+Other routes, including the mod listing, have no application rate limit. Limited routes return these headers, where `RateLimit-Reset` is the number of seconds until the window resets:
 
 ```http
-HTTP/1.1 200 OK
-X-RateLimit-Limit: 100
-X-RateLimit-Remaining: 99
-X-RateLimit-Reset: 1640995200
+RateLimit-Limit: 60
+RateLimit-Remaining: 59
+RateLimit-Reset: 42
 ```
 
-**Rate Limits:**
-
-- **Public endpoints**: 100 requests per minute per IP
-- **Download endpoints**: 10 concurrent downloads per IP
-- **Upload endpoints**: 5 requests per minute per IP (authenticated)
+A rejected request returns HTTP 429 with code `TOO_MANY_REQUESTS` and a `Retry-After` header in seconds.
 
 ## Mods
 
