@@ -31,7 +31,7 @@
   "tour": {
     "eyebrow": "Aperçu interactif",
     "title": "Essayez avant de télécharger",
-    "description": "Voici une copie fonctionnelle de l'app, directement sur la page. Installez un mod, changez de thème ou configurez un réticule.",
+    "description": "",
     "slidesLabel": "Comment marche l'app",
     "slides": {
       "find": {
@@ -55,7 +55,7 @@
       "heading": "Ce qu'elle fait",
       "items": {
         "copies": "Copie les fichiers de mods .vpk dans votre dossier addons",
-        "backups": "Sauvegarde avant toute modification, restauration en un clic",
+        "backups": "",
         "vanilla": "Vous laisse lancer le jeu vanilla à tout moment"
       }
     },
@@ -149,7 +149,7 @@
       },
       "safe": {
         "question": "Est-ce sûr d'utiliser des mods ?",
-        "answer": "L'app se contente de copier des fichiers .vpk dans le dossier addons du jeu, ne modifie jamais l'exécutable de Deadlock et fait une sauvegarde avant, pour que vous puissiez restaurer en un clic ou lancer le jeu vanilla à tout moment. Les skins sont côté client, et les mods eux-mêmes sont créés par la communauté : tenez-vous-en à ceux en qui vous avez confiance."
+        "answer": ""
       },
       "uninstall": {
         "question": "Comment désinstaller des mods ?",

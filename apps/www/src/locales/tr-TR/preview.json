@@ -137,7 +137,7 @@
   },
   "store": {
     "title": "Mod Mağazası",
-    "subtitle": "Her saat güncellenir ve yeni modlar eklenir.",
+    "subtitle": "",
     "tabs": {
       "mods": "Modlar",
       "sounds": "Sesler",
@@ -282,7 +282,7 @@
     },
     "themes": {
       "title": "Temalar",
-      "description": "Deneyiminizi iyileştirmek için özenle hazırlanmış temalardan birini seçin.",
+      "description": "",
       "predefined": "Hazır Temalar",
       "custom": "Özel Temalar",
       "active": "Etkin",

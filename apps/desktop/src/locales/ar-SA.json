@@ -197,7 +197,7 @@
     "plugins": "",
     "myMods": "تعديلاتي",
     "getMods": "احصل على تعديلات",
-    "addMods": "إضافة تعديلات",
+    "addMods": "",
     "downloads": "تنزيلات",
     "settings": "إعدادات",
     "developer": "المطور",
@@ -3905,7 +3905,7 @@
       "dropped": "",
       "cancelled": ""
     },
-    "orderSaved": "تم حفظ ترتيب التعديلات بنجاح",
+    "orderSaved": "",
     "orderSaveFailed": "فشل في حفظ ترتيب التعديلات",
     "manageOrder": "إدارة الترتيب",
     "compatibility": {
@@ -4095,8 +4095,8 @@
     "deleteConfirmBody": "",
     "deleteConfirmAction": "حذف",
     "deleteConfirmCancel": "إلغاء",
-    "deleteSuccess": "تم حذف التعديل بنجاح",
-    "disableSuccess": "تم تعطيل التعديل بنجاح",
+    "deleteSuccess": "",
+    "disableSuccess": "",
     "deleteError": "فشل في حذف التعديل",
     "deleteErrorVpkInUse": "",
     "disableError": "فشل في تعطيل التعديل",
@@ -4185,7 +4185,7 @@
     "noDownloadsFound": "لم يتم العثور على تحميلات",
     "noDownloadsMatchFilter": "لا توجد تحميلات تطابق المرشح الحالي الخاص بك.",
     "viewAllDownloads": "عرض جميع التحميلات",
-    "selectFilesToDownload": "اختر الملفات للتنزيل",
+    "selectFilesToDownload": "",
     "selectAll": "تحديد الكل",
     "selectNone": "عدم التحديد",
     "total": "الإجمالي",
@@ -4226,7 +4226,7 @@
     }
   },
   "notifications": {
-    "modInstalledSuccessfully": "تم تثبيت التعديل بنجاح",
+    "modInstalledSuccessfully": "",
     "failedToInstallMod": "فشل تثبيت التعديل",
     "installationCanceled": "تم إلغاء التثبيت",
     "modContainsFiles": "{{modName}} يحتوي على {{fileCount}} ملفات. اختر الملفات التي تريد تثبيتها.",
@@ -4329,7 +4329,7 @@
     "apiHealthy": "API متصل",
     "apiDegraded": "مشاكل في API",
     "apiOffline": "API غير متصل",
-    "apiUnknown": "حالة API غير معروفة",
+    "apiUnknown": "",
     "authOnline": "",
     "authOffline": "Auth غير متصل",
     "authUnknown": "حالة Auth غير معروفة",
@@ -4354,10 +4354,10 @@
     "searchNoResults": "",
     "language": "اللغة",
     "languageDescription": "اختر لغتك المفضلة لواجهة التطبيق",
-    "languageSettings": "إعدادات اللغة",
+    "languageSettings": "",
     "languageSettingsDescription": "اختر لغتك المفضلة لواجهة التطبيق",
     "appearance": "المظهر",
-    "appearanceDescription": "خصص مظهر التطبيق.",
+    "appearanceDescription": "",
     "theme": "المظهر",
     "themeDescription": "اختر بين المظهر الفاتح أو الداكن أو مظهر النظام",
     "audioVolume": "مستوى الصوت",
@@ -4440,15 +4440,15 @@
     "about": "عن التطبيق",
     "systemSettings": "إعدادات النظام",
     "systemSettingsDescription": "إعدادات مدير التعديلات. هذه لا تؤثر على اللعبة.",
-    "gameConfigManagement": "إدارة تكوين اللعبة",
+    "gameConfigManagement": "",
     "gameConfigDescription": "إدارة النسخ الاحتياطي لملف gameinfo.gi واستعادته والتحقق من صحته من أجل تعديل آمن.",
     "gamePath": "مسار اللعبة",
     "gamePathDescription": "المسار إلى تثبيت لعبة Deadlock الخاص بك. سيكتشف مدير التعديلات هذا تلقائيًا، ولكن يمكنك تعيينه يدويًا إذا لزم الأمر.",
     "currentGamePath": "مسار اللعبة الحالي",
     "browseGamePath": "تصفح",
     "autoDetectGamePath": "اكتشاف تلقائي",
-    "gamePathSet": "تم تعيين مسار اللعبة بنجاح",
-    "gamePathAutoDetected": "تم اكتشاف مسار اللعبة تلقائيًا بنجاح",
+    "gamePathSet": "",
+    "gamePathAutoDetected": "",
     "invalidGamePath": "مسار لعبة غير صالح. يرجى اختيار مجلد تثبيت Deadlock صالح.",
     "steamPath": "",
     "steamPathSectionDescription": "",
@@ -4476,7 +4476,7 @@
     "selectDefaultSort": "اختر الفرز الافتراضي",
     "tools": "أدوات",
     "backups": "النسخ الاحتياطية",
-    "toolsDescription": "الوظائف المساعدة لإدارة التعديلات الخاصة بك",
+    "toolsDescription": "",
     "gameGuard": "",
     "gameGuardDescription": "",
     "gameGuardSectionTitle": "",
@@ -4526,17 +4526,17 @@
     "addonsBackupDescription": "إنشاء واستعادة النسخ الاحتياطية للمودات المثبتة.",
     "createBackup": "إنشاء نسخة احتياطية",
     "creatingBackup": "جاري إنشاء النسخة الاحتياطية...",
-    "backupCreated": "تم إنشاء النسخة الاحتياطية بنجاح",
+    "backupCreated": "",
     "backupCreationFailed": "فشل في إنشاء النسخة الاحتياطية",
     "restoreBackup": "استعادة",
     "restoringBackup": "جاري استعادة النسخة الاحتياطية...",
     "restoring": "",
-    "backupRestored": "تم استعادة النسخة الاحتياطية بنجاح",
+    "backupRestored": "",
     "backupRestoreFailed": "فشل في استعادة النسخة الاحتياطية",
     "deleteBackup": "حذف",
     "deleteBackupConfirm": "هل أنت متأكد من أنك تريد حذف هذه النسخة الاحتياطية؟",
     "deleteBackupConfirmAction": "",
-    "backupDeleted": "تم حذف النسخة الاحتياطية بنجاح",
+    "backupDeleted": "",
     "backupDeleteFailed": "فشل في حذف النسخة الاحتياطية",
     "openBackupsFolder": "افتح مجلد النسخ الاحتياطية",
     "noBackupsFound": "لم يتم العثور على نسخ احتياطية",
@@ -4632,7 +4632,7 @@
     "confirmClearModsState": "مسح حالة التعديلات؟",
     "confirmClearModsStateBody": "",
     "confirmClearModsStateAction": "",
-    "modsStateCleared": "تم مسح حالة التعديلات بنجاح",
+    "modsStateCleared": "",
     "autoexec": "",
     "autoexecDescription": "إدارة ملف autoexec.cfg الخاص بك. التغييرات تتطلب إعادة تشغيل اللعبة.",
     "autoexecContent": "محتوى ملف التكوين",
@@ -4891,7 +4891,7 @@
     "openInFolder": "فتح في المجلد",
     "openInEditor": "فتح في المحرر",
     "saveChanges": "حفظ التغييرات",
-    "autoexecSaved": "تم حفظ تكوين autoexec بنجاح! أعد تشغيل اللعبة لتفعيل التغييرات.",
+    "autoexecSaved": "",
     "autoexecLoadError": "فشل في تحميل تكوين autoexec",
     "autoexecSaveError": "فشل في حفظ تكوين autoexec",
     "autoexecOpenFolderError": "فشل في فتح مجلد autoexec",
@@ -5071,8 +5071,8 @@
     "resetToVanilla": "إعادة التعيين إلى النسخة الأصلية",
     "validateConfiguration": "تحقق من صحة التكوين",
     "openInEditor": "افتح في المحرر",
-    "backupCreatedSuccess": "تم إنشاء نسخة احتياطية من gameinfo.gi بنجاح",
-    "restoreSuccess": "تم استعادة gameinfo.gi من النسخة الاحتياطية بنجاح",
+    "backupCreatedSuccess": "",
+    "restoreSuccess": "",
     "resetSuccess": "",
     "resetBackupRestored": "",
     "resetFailed": "",
@@ -5321,15 +5321,15 @@
     "thirdPartyDisclaimerTitle": "إخلاء مسؤولية محتوى الطرف الثالث",
     "thirdPartyDisclaimerDescription": "جميع التعديلات المتاحة من خلال هذا التطبيق هي محتوى من طرف ثالث تم إنشاؤه بواسطة أعضاء المجتمع. التعديلات ليست من إنشاء أو مراجعة أو التحقق منها أو تأييدها من قبل مشروع Deadlock Mod Manager. قم بتثبيت التعديلات على مسؤوليتك الخاصة.",
     "thirdPartyDisclaimerShort": "التعديلات هي محتوى من طرف ثالث لم يتم إنشاؤه أو مراجعته أو تأييده من قبل Deadlock Mod Manager.",
-    "gamebananaDescription": "مصدر التعديل الأساسي لدينا لهذا التطبيق. يوفر GameBanana قاعدة بيانات التعديل الشاملة وواجهة برمجة التطبيقات التي تجعل تصفح تعديلات Deadlock واكتشافها وتنزيلها ممكنًا.",
+    "gamebananaDescription": "",
     "visitGamebanana": "قم بزيارة GameBanana",
     "deadlockRichPresenceDescription": "",
     "visitDeadlockRichPresence": "",
-    "tauriDescription": "إطار العمل القوي الذي يتيح هذا التطبيق المكتبي متعدد المنصات. يجمع Tauri بين أفضل تقنيات الويب والأداء والأمان الأصليين.",
+    "tauriDescription": "",
     "visitTauri": "قم بزيارة Tauri",
-    "shadcnDescription": "مكونات React جميلة ويمكن الوصول إليها والتي توفر الأساس لواجهة المستخدم الحديثة. انسخ والصق وخصصها بشكل مثالي.",
+    "shadcnDescription": "",
     "visitShadcn": "قم بزيارة shadcn/ui",
-    "tailwindDescription": "إطار عمل CSS الذي يعتمد على الأداة المساعدة أولاً والذي يدعم تصميمنا المتجاوب والتصميم المتسق في جميع أنحاء التطبيق. ",
+    "tailwindDescription": "",
     "visitTailwind": "قم بزيارة Tailwind CSS",
     "vpkmergeDescription": "",
     "visitVpkmerge": "",
@@ -5339,7 +5339,7 @@
     "thirdPartyNoticesDescription": "",
     "viewThirdPartyNotices": "",
     "openSourceCommunity": "مجتمع المصادر المفتوحة",
-    "openSourceDescription": "تم تصميمه باستخدام تقنيات مذهلة مفتوحة المصدر بما في ذلك React و TypeScript والعديد من المكتبات الأخرى التي تجعل التطبيقات الحديثة ممكنة. شكرًا لجميع المساهمين والمشرفين.",
+    "openSourceDescription": "",
     "meetContributors": "",
     "releaseNotes": "ملاحظات الإصدار",
     "poweredBy": "مدعوم من",
@@ -5382,7 +5382,7 @@
     "newVersionAvailable": "إصدار جديد ({{version}}) متاح. أنت تستخدم حاليًا الإصدار {{currentVersion}}.",
     "releaseNotes": "ملاحظات الإصدار",
     "downloading": "جاري تنزيل التحديث",
-    "downloadAndInstall": "تنزيل وتثبيت",
+    "downloadAndInstall": "",
     "later": "لاحقاً",
     "installing": "جاري التثبيت...",
     "failedWithMessage": ""
@@ -5531,7 +5531,7 @@
     "savingMetadata": "حفظ بيانات التعديل...",
     "processingImage": "معالجة صورة التعديل...",
     "addingToLibrary": "إضافة التعديل إلى المكتبة...",
-    "modAddedSuccess": "تم إضافة التعديل بنجاح!",
+    "modAddedSuccess": "",
     "unsupportedSelection": "اختيار غير مدعوم.",
     "unsupportedFiles": "ملف(ات) غير مدعوم(ة).",
     "failedToReadDroppedFiles": "",
@@ -5681,7 +5681,7 @@
   },
   "onboarding": {
     "title": "مرحبًا بك في Deadlock Mod Manager",
-    "welcome": "دعنا نعدك مع {{appName}}! سيساعدك هذا الإعداد السريع على البدء.",
+    "welcome": "",
     "stepIndicator": "الخطوة {{current}} من {{total}}",
     "skip": "تخطي الإعداد",
     "back": "رجوع",
@@ -5697,7 +5697,7 @@
       "title": "اكتشاف مسار اللعبة",
       "description": "سنكتشف تلقائيًا مسار تثبيت Deadlock الخاص بك.",
       "detecting": "جاري اكتشاف مسار اللعبة...",
-      "success": "تم اكتشاف مسار اللعبة بنجاح!",
+      "success": "",
       "error": "تعذر اكتشاف مسار اللعبة",
       "errorDescription": "يرجى التصفح يدويًا إلى مجلد تثبيت Deadlock الخاص بك.",
       "retry": "إعادة محاولة الاكتشاف",
@@ -5708,7 +5708,7 @@
       "title": "اتصال API",
       "description": "التحقق من الاتصال بخادم قاعدة بيانات التعديلات.",
       "checking": "الاتصال بـ API...",
-      "success": "تم الاتصال بنجاح!",
+      "success": "",
       "error": "فشل الاتصال بـ API",
       "errorDescription": "يرجى التحقق من اتصالك بالإنترنت والمحاولة مرة أخرى.",
       "retry": "إعادة محاولة الاتصال",
@@ -5955,7 +5955,7 @@
   },
   "whatsNew": {
     "title": "ما الجديد",
-    "welcome": "مرحباً بك في أحدث إصدار من {{appName}}!",
+    "welcome": "",
     "fullReleaseNotes": "ملاحظات الإصدار الكاملة",
     "gotIt": "فهمت!",
     "highlightAlt": "",
@@ -6409,7 +6409,6 @@
         "title": "",
         "features": [
           "",
-          "",
           ""
         ]
       },
@@ -6464,10 +6463,7 @@
       },
       "0.8.2": {
         "title": "",
-        "features": [
-          "",
-          ""
-        ]
+        "features": []
       },
       "0.8.1": {
         "title": "",
@@ -6510,8 +6506,7 @@
         "features": [
           "🎵 تمت إضافة دعم للتعديلات الصوتية - خصص أصوات Deadlock الخاصة بك",
           "🚀 تحسين معالجة خيارات التشغيل - لم تعد تفترض متطلبات البادئة \"+\"",
-          "🔧 تحسين توافق التعديلات وعملية التثبيت",
-          "⚡ تحسينات مختلفة للأداء والاستقرار"
+          "🔧 تحسين توافق التعديلات وعملية التثبيت"
         ]
       },
       "0.5.1": {
@@ -6524,8 +6519,7 @@
           "🔍 تحسين وظيفة التصفية والبحث في صفحة التعديلات",
           "🐳 حل مشاكل توافق Docker",
           "🎨 تحسين تخطيط وتصميم بطاقة التعديل",
-          "📖 تحديث واجهة المستخدم للاعتراف بـ GameBanana كمصدر بيانات",
-          "⚡ تحسينات أداء واستقرار مختلفة"
+          "📖 تحديث واجهة المستخدم للاعتراف بـ GameBanana كمصدر بيانات"
         ]
       },
       "0.5.0": {
@@ -6536,8 +6530,7 @@
           "⚠️ نظام تحذير جديد للتعديل القديم لإدارة أفضل للتعديلات",
           "🎮 تحديث قائمة الأبطال مع أحدث أبطال Deadlock",
           "🔧 تم إصلاح خيارات التشغيل المخصصة التي لا تحترم حالة التمكين/التعطيل",
-          "🎨 تحسين مكونات واجهة المستخدم وتحسينات التخطيط",
-          "🔧 تحسينات استقرار وإصلاحات أخطاء متنوعة"
+          "🎨 تحسين مكونات واجهة المستخدم وتحسينات التخطيط"
         ]
       },
       "0.4.0": {
@@ -6554,8 +6547,7 @@
         "features": [
           "🎨 إصلاح شامل لواجهة المستخدم لتجربة مستخدم أفضل",
           "📦 تحسين إدارة التنزيل",
-          "⚡ تحسينات الأداء",
-          "🔄 تحديث التبعيات الأساسية"
+          ""
         ]
       },
       "0.2.0": {
@@ -6606,7 +6598,7 @@
       "settingsDescription": "اضبط مظهر التطبيق واختر بين الإعدادات الجاهزة المنسقة أو الأنماط المخصصة.",
       "preDefinedThemes": "السمات المحددة مسبقًا",
       "customThemes": "السمات المخصصة",
-      "preDefinedDescription": "اختر من بين السمات المصممة بعناية لتحسين تجربتك.",
+      "preDefinedDescription": "",
       "customDescription": "أنشئ سمة مخصصة خاصة بك بألوانك وأسلوبك المفضل.",
       "customThemeBuilder": "منشئ السمات المخصصة",
       "customThemeBuilderDescription": "أنشئ سمتك الخاصة باختيار الألوان والأنماط.",
@@ -6754,7 +6746,7 @@
       "customColorDescription": ""
     },
     "nightshift": {
-      "description": "ثيم سايبربانك بلمسات فيروزية مصمم للوضوح والجلسات الطويلة.",
+      "description": "",
       "visit": "زر Nightshift:",
       "twitter": "تويتر",
       "discord": "ديسكورد"
@@ -6764,7 +6756,7 @@
       "visit": "ثيم من Skeptic"
     },
     "arcane": {
-      "description": "ثيم داكن أنيق مع تأثيرات توهج وردية-حمراء مستوحاة من جمالية Arcane.",
+      "description": "",
       "visit": "ثيم من Skeptic",
       "customColor": "لون مخصص",
       "customColorDescription": "اختر لون تمييز مخصص لثيم Arcane."
@@ -7431,7 +7423,7 @@
     "latestMods": "أحدث التعديلات",
     "popularMods": "التعديلات الشائعة",
     "noAnnouncementsTitle": "لا توجد إعلانات",
-    "noAnnouncementsDescription": "لا توجد إعلانات حالياً. تحقق لاحقًا للحصول على التحديثات والأخبار.",
+    "noAnnouncementsDescription": "",
     "checkBackLater": "تحقق لاحقًا للحصول على التحديثات",
     "noModsAvailable": "لا توجد تعديلات متاحة",
     "learnMore": "",
@@ -7504,7 +7496,7 @@
     "catalogWiped": "",
     "wipeCatalogFailed": "",
     "confirmClearModsState": "هل أنت متأكد من أنك تريد مسح حالة التعديلات؟ هذا سيزيل جميع التعديلات من التطبيق ولكن لن يحذفها من مجلد اللعبة الخاص بك. يمكنك إعادة فحص مجلد التعديلات لاستعادتها.",
-    "modsStateCleared": "تم مسح حالة التعديلات بنجاح",
+    "modsStateCleared": "",
     "triggerOnboarding": "",
     "resetTelemetryConsent": "",
     "triggerMatchSyncConsent": "",
@@ -7514,7 +7506,7 @@
   },
   "developer": {
     "title": "أدوات المطور",
-    "description": "أدوات وميزات متقدمة للمطورين",
+    "description": "",
     "shards": {
       "navLabel": "",
       "title": "",
@@ -7581,12 +7573,12 @@
     "inactive": "",
     "switching": "",
     "manageDescription": "إنشاء وتحرير والتنقل بين ملفات التعديل المختلفة. كل ملف شخصي يتذكر التعديلات التي قمت بتفعيلها.",
-    "createNew": "إنشاء ملف شخصي جديد",
+    "createNew": "",
     "create": "إنشاء",
     "creating": "جاري الإنشاء...",
     "createDescription": "إنشاء ملف شخصي جديد لتنظيم تعديلاتك. كل ملف شخصي يمكن أن يحتوي على تعديلات مختلفة مفعلة.",
     "editProfile": "تحرير الملف الشخصي",
-    "editDescription": "تحرير الملف الشخصي '{{profileName}}'",
+    "editDescription": "",
     "update": "تحديث",
     "updating": "جاري التحديث...",
     "name": "الاسم",
@@ -7611,16 +7603,16 @@
     "switchDetails": "{{enabled}} مفعل، {{disabled}} معطل",
     "switchError": "فشل في تبديل الملفات الشخصية: {{errors}}",
     "switchUnexpectedError": "حدث خطأ غير متوقع أثناء تبديل الملفات الشخصية",
-    "createSuccess": "تم إنشاء الملف الشخصي '{{profileName}}' بنجاح",
+    "createSuccess": "",
     "createError": "فشل في إنشاء الملف الشخصي",
-    "updateSuccess": "تم تحديث الملف الشخصي '{{profileName}}' بنجاح",
+    "updateSuccess": "",
     "updateError": "فشل في تحديث الملف الشخصي",
-    "deleteSuccess": "تم حذف الملف الشخصي '{{profileName}}' بنجاح",
+    "deleteSuccess": "",
     "deleteError": "فشل في حذف الملف الشخصي",
     "sync": "مزامنة الملفات الشخصية",
-    "syncSuccess": "تمت مزامنة الملفات الشخصية بنجاح",
+    "syncSuccess": "",
     "syncError": "فشل في مزامنة الملفات الشخصية",
-    "shareSuccess": "تم مشاركة الملف الشخصي بنجاح!",
+    "shareSuccess": "",
     "shareError": "فشل في مشاركة الملف الشخصي",
     "shareNoMods": "لا يمكن مشاركة الملف الشخصي: لا توجد تعديلات مفعلة",
     "noHardwareIdOrVersion": "لا يمكن مشاركة الملف الشخصي: معرف الجهاز أو معلومات الإصدار مفقودة",
@@ -7641,7 +7633,7 @@
     "submissionTypeSound": "",
     "profileIdPlaceholder": "أدخل معرف الملف الشخصي (مثل: abc123def456)",
     "profileIdRequired": "معرف الملف الشخصي مطلوب",
-    "importSuccess": "تم استيراد الملف الشخصي بنجاح!",
+    "importSuccess": "",
     "importError": "فشل في استيراد الملف الشخصي. يرجى التحقق من معرف الملف الشخصي والمحاولة مرة أخرى.",
     "includedMods": "التعديلات المضمنة",
     "noModsIncluded": "لا توجد تعديلات مضمّنة في هذا الملف الشخصي",
@@ -7649,7 +7641,7 @@
     "importOptionsDescription": "اختر كيفية حفظ هذا الملف الشخصي المستورد:",
     "createNewProfile": "إنشاء ملف شخصي جديد",
     "overrideExisting": "تجاوز الملف الشخصي النشط",
-    "overrideSuccess": "تم تحديث الملف الشخصي النشط بنجاح!",
+    "overrideSuccess": "",
     "creatingProfile": "جاري إنشاء ملف شخصي جديد...",
     "updatingProfile": "جاري تحديث الملف الشخصي الحالي...",
     "processingMods": "جاري معالجة التعديلات...",
@@ -7765,14 +7757,14 @@
     "noUpdateAvailable": "",
     "checkUpdateError": "",
     "vpkReplacement": {
-      "title": "استبدال ملفات VPK",
+      "title": "",
       "description": "استبدال ملفات التعديل للتكرار السريع أثناء التطوير",
       "dragAndDrop": "اسحب وأفلت ملفات VPK هنا",
       "selectFiles": "اختر الملفات",
       "currentFiles": "ملفات VPK الحالية",
       "replaceAll": "استبدال جميع الملفات",
       "selectToReplace": "اختر {{count}} ملف(ات) للاستبدال",
-      "success": "تم استبدال ملفات VPK بنجاح",
+      "success": "",
       "error": "فشل في استبدال ملفات VPK",
       "countMismatch": ""
     },
@@ -7831,7 +7823,7 @@
     "loadFirst": ""
   },
   "reports": {
-    "reportSubmitted": "تم إرسال التقرير",
+    "reportSubmitted": "",
     "reportFailed": "فشل في إرسال التقرير",
     "thankYou": "شكرًا لك!",
     "thankYouDescription": "",
@@ -7917,9 +7909,9 @@
       "apply": "تطبيق",
       "publish": "نشر",
       "publishing": "جاري النشر...",
-      "applied": "تم تطبيق الموضع بنجاح",
+      "applied": "",
       "applyError": "فشل في تطبيق الموضع",
-      "published": "تم نشر الموضع بنجاح",
+      "published": "",
       "loginRequired": "يجب تسجيل الدخول لنشر المواضع",
       "nameValidation": "يجب أن يكون الاسم بين 3 و 50 حرفًا",
       "descriptionValidation": "يجب أن يكون الوصف أقل من 500 حرف",
@@ -7931,7 +7923,7 @@
         "title": "استيراد إعدادات الموضع",
         "description": "الصق إعدادات تنسيق موضع citadel أدناه لاستيرادها إلى النموذج.",
         "placeholder": "",
-        "success": "تم استيراد إعدادات الموضع بنجاح",
+        "success": "",
         "emptyError": "يرجى لصق إعدادات الموضع للاستيراد",
         "parseError": "فشل في تحليل إعدادات الموضع. يرجى التحقق من التنسيق والمحاولة مرة أخرى."
       }

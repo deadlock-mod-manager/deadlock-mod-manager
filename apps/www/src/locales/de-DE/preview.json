@@ -137,7 +137,7 @@
   },
   "store": {
     "title": "Mods entdecken",
-    "subtitle": "Stündlich aktualisiert, jede Stunde neue Mods.",
+    "subtitle": "",
     "tabs": {
       "mods": "",
       "sounds": "",
@@ -282,7 +282,7 @@
     },
     "themes": {
       "title": "",
-      "description": "Wähle aus sorgfältig gestalteten Themes, die dein Erlebnis verbessern.",
+      "description": "",
       "predefined": "Vordefinierte Themes",
       "custom": "Eigene Themes",
       "active": "Aktiv",

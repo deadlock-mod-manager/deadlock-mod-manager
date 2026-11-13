@@ -197,7 +197,7 @@
     "plugins": "",
     "myMods": "คลังม็อด",
     "getMods": "รายการม็อด",
-    "addMods": "เพิ่มม็อดในเครื่อง",
+    "addMods": "",
     "downloads": "ดาวน์โหลด",
     "settings": "การตั้งค่า",
     "developer": "",
@@ -3905,7 +3905,7 @@
       "dropped": "",
       "cancelled": ""
     },
-    "orderSaved": "บันทึกลำดับม็อดเรียบร้อยแล้ว",
+    "orderSaved": "",
     "orderSaveFailed": "ไม่สามารถบันทึกลำดับม็อดได้",
     "manageOrder": "เปลี่ยนลำดับม็อด",
     "compatibility": {
@@ -4095,8 +4095,8 @@
     "deleteConfirmBody": "",
     "deleteConfirmAction": "ลบ",
     "deleteConfirmCancel": "ยกเลิก",
-    "deleteSuccess": "ลบม็อดเรียบร้อยแล้ว",
-    "disableSuccess": "ปิดใช้งานม็อดเรียบร้อยแล้ว",
+    "deleteSuccess": "",
+    "disableSuccess": "",
     "deleteError": "ไม่สามารถลบม็อดได้",
     "deleteErrorVpkInUse": "",
     "disableError": "ไม่สามารถปิดใช้งานม็อดได้",
@@ -4185,7 +4185,7 @@
     "noDownloadsFound": "ไม่พบการดาวน์โหลด",
     "noDownloadsMatchFilter": "ไม่มีการดาวน์โหลดที่ตรงกับตัวกรองปัจจุบันของคุณ",
     "viewAllDownloads": "ดูการดาวน์โหลดทั้งหมด",
-    "selectFilesToDownload": "เลือกไฟล์ที่จะดาวน์โหลด",
+    "selectFilesToDownload": "",
     "selectAll": "",
     "selectNone": "",
     "total": "",
@@ -4226,7 +4226,7 @@
     }
   },
   "notifications": {
-    "modInstalledSuccessfully": "ติดตั้งม็อดเรียบร้อยแล้ว",
+    "modInstalledSuccessfully": "",
     "failedToInstallMod": "ไม่สามารถติดตั้งม็อดได้",
     "installationCanceled": "ยกเลิกการติดตั้งแล้ว",
     "modContainsFiles": "{{modName}} มี {{fileCount}} ไฟล์ โปรดเลือกไฟล์ที่จะติดตั้ง",
@@ -4329,7 +4329,7 @@
     "apiHealthy": "API ออนไลน์",
     "apiDegraded": "API มีปัญหา",
     "apiOffline": "API ออฟไลน์",
-    "apiUnknown": "ไม่ทราบสถานะ API",
+    "apiUnknown": "",
     "authOnline": "Auth ออนไลน์",
     "authOffline": "Auth ออฟไลน์",
     "authUnknown": "ไม่ทราบสถานะ Auth",
@@ -4354,10 +4354,10 @@
     "searchNoResults": "",
     "language": "ภาษา",
     "languageDescription": "เลือกภาษาที่คุณต้องการสำหรับส่วนติดต่อผู้ใช้ของแอปพลิเคชัน",
-    "languageSettings": "การตั้งค่าภาษา",
+    "languageSettings": "",
     "languageSettingsDescription": "เลือกภาษาที่คุณต้องการสำหรับส่วนติดต่อผู้ใช้ของแอปพลิเคชัน",
     "appearance": "ลักษณะที่ปรากฏ",
-    "appearanceDescription": "ปรับแต่งลักษณะที่ปรากฏของแอปพลิเคชัน",
+    "appearanceDescription": "",
     "theme": "ธีม",
     "themeDescription": "เลือกระหว่างธีมสว่าง, มืด หรือธีมตามระบบ",
     "audioVolume": "ระดับเสียง",
@@ -4440,15 +4440,15 @@
     "about": "เกี่ยวกับ",
     "systemSettings": "การตั้งค่าระบบ",
     "systemSettingsDescription": "การตั้งค่าตัวจัดการม็อด สิ่งเหล่านี้ไม่มีผลต่อเกม",
-    "gameConfigManagement": "การจัดการการกำหนดค่าเกม",
+    "gameConfigManagement": "",
     "gameConfigDescription": "จัดการการสำรอง, การกู้คืน และการตรวจสอบไฟล์ gameinfo.gi เพื่อการลงม็อดอย่างปลอดภัย",
     "gamePath": "ตำแหน่งของเกม",
     "gamePathDescription": "ตำแหน่งการติดตั้งเกม Deadlock ของคุณ ตัวจัดการม็อดจะตรวจจับสิ่งนี้โดยอัตโนมัติ แต่คุณสามารถตั้งค่าด้วยตนเองได้หากจำเป็น",
     "currentGamePath": "ตำแหน่งของเกมปัจจุบัน",
     "browseGamePath": "เลือกดู",
     "autoDetectGamePath": "ตรวจจับอัตโนมัติ",
-    "gamePathSet": "ตั้งค่าตำแหน่งของเกมเรียบร้อยแล้ว",
-    "gamePathAutoDetected": "ตรวจจับตำแหน่งของเกมอัตโนมัติเรียบร้อยแล้ว",
+    "gamePathSet": "",
+    "gamePathAutoDetected": "",
     "invalidGamePath": "ตำแหน่งของเกมไม่ถูกต้อง โปรดเลือกโฟลเดอร์การติดตั้ง Deadlock ที่ถูกต้อง",
     "steamPath": "",
     "steamPathSectionDescription": "",
@@ -4476,7 +4476,7 @@
     "selectDefaultSort": "เลือกการจัดเรียงเริ่มต้น",
     "tools": "เครื่องมือ",
     "backups": "สำรองข้อมูล",
-    "toolsDescription": "ฟังก์ชันยูทิลิตี้สำหรับจัดการม็อดของคุณ",
+    "toolsDescription": "",
     "gameGuard": "",
     "gameGuardDescription": "",
     "gameGuardSectionTitle": "",
@@ -4526,17 +4526,17 @@
     "addonsBackupDescription": "สร้างและกู้คืนข้อมูลสำรองของม็อดที่ติดตั้งของคุณ",
     "createBackup": "สร้างข้อมูลสำรอง",
     "creatingBackup": "กำลังสร้างข้อมูลสำรอง...",
-    "backupCreated": "สร้างข้อมูลสำรองเรียบร้อยแล้ว",
+    "backupCreated": "",
     "backupCreationFailed": "ไม่สามารถสร้างข้อมูลสำรองได้",
     "restoreBackup": "กู้คืน",
     "restoringBackup": "กำลังกู้คืนข้อมูลสำรอง...",
     "restoring": "",
-    "backupRestored": "กู้คืนข้อมูลสำรองเรียบร้อยแล้ว",
+    "backupRestored": "",
     "backupRestoreFailed": "ไม่สามารถกู้คืนข้อมูลสำรองได้",
     "deleteBackup": "ลบ",
     "deleteBackupConfirm": "คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลสำรองนี้?",
     "deleteBackupConfirmAction": "",
-    "backupDeleted": "ลบข้อมูลสำรองเรียบร้อยแล้ว",
+    "backupDeleted": "",
     "backupDeleteFailed": "ไม่สามารถลบข้อมูลสำรองได้",
     "openBackupsFolder": "เปิดโฟลเดอร์ข้อมูลสำรอง",
     "noBackupsFound": "ไม่พบข้อมูลสำรอง",
@@ -5321,15 +5321,15 @@
     "thirdPartyDisclaimerTitle": "ข้อจำกัดความรับผิดชอบเนื้อหาจากบุคคลที่สาม",
     "thirdPartyDisclaimerDescription": "ม็อดทั้งหมดที่มีให้ผ่านแอปพลิเคชันนี้เป็นเนื้อหาจากบุคคลที่สามที่สร้างโดยสมาชิกชุมชน ม็อดไม่ได้ถูกสร้าง ตรวจสอบ หรือรับรองโดยโครงการ Deadlock Mod Manager ติดตั้งม็อดด้วยความเสี่ยงของคุณเอง",
     "thirdPartyDisclaimerShort": "ม็อดเป็นเนื้อหาจากบุคคลที่สามที่ไม่ได้ถูกสร้าง ตรวจสอบ หรือรับรองโดย Deadlock Mod Manager",
-    "gamebananaDescription": "แหล่งม็อดหลักและแกนหลักของแอปพลิเคชันนี้ GameBanana ให้บริการฐานข้อมูลม็อดและ API ที่ครอบคลุมซึ่งทำให้การเรียกดู ค้นหา และดาวน์โหลดม็อด Deadlock เป็นไปได้",
+    "gamebananaDescription": "",
     "visitGamebanana": "เยี่ยมชม GameBanana",
     "deadlockRichPresenceDescription": "",
     "visitDeadlockRichPresence": "",
-    "tauriDescription": "เฟรมเวิร์กที่ทรงพลังซึ่งช่วยให้แอปพลิเคชันเดสก์ท็อปข้ามแพลตฟอร์มนี้เป็นไปได้ Tauri ผสมผสานสิ่งที่ดีที่สุดของเทคโนโลยีเว็บเข้ากับประสิทธิภาพและความปลอดภัยแบบเนทีฟ",
+    "tauriDescription": "",
     "visitTauri": "เยี่ยมชม Tauri",
-    "shadcnDescription": "คอมโพเนนต์ React ที่สวยงามและเข้าถึงได้ซึ่งเป็นรากฐานสำหรับส่วนติดต่อผู้ใช้ที่ทันสมัยของเรา คัดลอก วาง และปรับแต่งให้สมบูรณ์แบบ",
+    "shadcnDescription": "",
     "visitShadcn": "เยี่ยมชม shadcn/ui",
-    "tailwindDescription": "เฟรมเวิร์ก CSS แบบ utility-first ที่ขับเคลื่อนการออกแบบที่ตอบสนองและสไตล์ที่สอดคล้องกันทั่วทั้งแอปพลิเคชัน",
+    "tailwindDescription": "",
     "visitTailwind": "เยี่ยมชม Tailwind CSS",
     "vpkmergeDescription": "",
     "visitVpkmerge": "",
@@ -5339,7 +5339,7 @@
     "thirdPartyNoticesDescription": "",
     "viewThirdPartyNotices": "",
     "openSourceCommunity": "ชุมชนโอเพนซอร์ส",
-    "openSourceDescription": "สร้างขึ้นด้วยเทคโนโลยีโอเพนซอร์สที่น่าทึ่ง รวมถึง React, TypeScript และไลบรารีอื่น ๆ อีกมากมายที่ทำให้แอปพลิเคชันสมัยใหม่เป็นไปได้ ขอบคุณผู้มีส่วนร่วมและผู้ดูแลทุกคน",
+    "openSourceDescription": "",
     "meetContributors": "",
     "releaseNotes": "บันทึกประจำรุ่น",
     "poweredBy": "ขับเคลื่อนโดย",
@@ -5382,7 +5382,7 @@
     "newVersionAvailable": "มีเวอร์ชันใหม่ ({{version}}) พร้อมใช้งาน ขณะนี้คุณใช้เวอร์ชัน {{currentVersion}}",
     "releaseNotes": "บันทึกประจำรุ่น",
     "downloading": "กำลังดาวน์โหลดการอัปเดต",
-    "downloadAndInstall": "ดาวน์โหลดและติดตั้ง",
+    "downloadAndInstall": "",
     "later": "ไว้ทีหลัง",
     "installing": "กำลังติดตั้ง...",
     "failedWithMessage": ""
@@ -5531,7 +5531,7 @@
     "savingMetadata": "กำลังบันทึกข้อมูลเมตาของม็อด...",
     "processingImage": "กำลังประมวลผลภาพม็อด...",
     "addingToLibrary": "กำลังเพิ่มม็อดไปยังคลัง...",
-    "modAddedSuccess": "เพิ่มม็อดเรียบร้อยแล้ว!",
+    "modAddedSuccess": "",
     "unsupportedSelection": "การเลือกที่ไม่รองรับ",
     "unsupportedFiles": "ไฟล์ที่ไม่รองรับ",
     "failedToReadDroppedFiles": "",
@@ -5681,7 +5681,7 @@
   },
   "onboarding": {
     "title": "ยินดีต้อนรับสู่ Deadlock Mod Manager",
-    "welcome": "มาเริ่มตั้งค่า {{appName}} กันเถอะ! การตั้งค่าอย่างรวดเร็วนี้จะช่วยให้คุณเริ่มต้นได้",
+    "welcome": "",
     "stepIndicator": "ขั้นตอนที่ {{current}} จาก {{total}}",
     "skip": "ข้ามการตั้งค่า",
     "back": "ย้อนกลับ",
@@ -5697,7 +5697,7 @@
       "title": "การตรวจจับตำแหน่งของเกม",
       "description": "เราจะตรวจจับตำแหน่งการติดตั้ง Deadlock ของคุณโดยอัตโนมัติ",
       "detecting": "กำลังตรวจจับตำแหน่งของเกม...",
-      "success": "ตรวจจับตำแหน่งของเกมเรียบร้อยแล้ว!",
+      "success": "",
       "error": "ไม่สามารถตรวจจับตำแหน่งของเกมได้",
       "errorDescription": "โปรดเลือกโฟลเดอร์การติดตั้ง Deadlock ของคุณด้วยตนเอง",
       "retry": "ลองตรวจจับอีกครั้ง",
@@ -5708,7 +5708,7 @@
       "title": "การเชื่อมต่อ API",
       "description": "กำลังตรวจสอบการเชื่อมต่อไปยังเซิร์ฟเวอร์ฐานข้อมูลม็อด",
       "checking": "กำลังเชื่อมต่อกับ API...",
-      "success": "เชื่อมต่อเรียบร้อยแล้ว!",
+      "success": "",
       "error": "ไม่สามารถเชื่อมต่อกับ API ได้",
       "errorDescription": "โปรดตรวจสอบการเชื่อมต่ออินเทอร์เน็ตของคุณและลองอีกครั้ง",
       "retry": "ลองเชื่อมต่ออีกครั้ง",
@@ -5955,7 +5955,7 @@
   },
   "whatsNew": {
     "title": "มีอะไรใหม่",
-    "welcome": "ยินดีต้อนรับสู่ {{appName}} เวอร์ชันล่าสุด!",
+    "welcome": "",
     "fullReleaseNotes": "บันทึกประจำรุ่นฉบับเต็ม",
     "gotIt": "รับทราบ!",
     "highlightAlt": "",
@@ -6409,7 +6409,6 @@
         "title": "",
         "features": [
           "",
-          "",
           ""
         ]
       },
@@ -6464,10 +6463,7 @@
       },
       "0.8.2": {
         "title": "การแก้ไขข้อบกพร่องและการปรับปรุง",
-        "features": [
-          "🐛 แก้ไขข้อบกพร่องต่างๆ และปรับปรุงความเสถียร",
-          "⚡ การปรับปรุงประสิทธิภาพและการเพิ่มประสิทธิภาพ"
-        ]
+        "features": []
       },
       "0.8.1": {
         "title": "การปรับปรุงทางเทคนิค",
@@ -6510,8 +6506,7 @@
         "features": [
           "🎵 เพิ่มการรองรับม็อดเสียง - ปรับแต่งเสียง Deadlock ของคุณ",
           "🚀 การปรับปรุงการจัดการตัวเลือกการเริ่มเกม - ไม่ต้องใช้คำนำหน้า \"+\" อีกต่อไป",
-          "🔧 การปรับปรุงความเข้ากันได้ของม็อดและกระบวนการติดตั้ง",
-          "⚡ การเพิ่มประสิทธิภาพและปรับปรุงความเสถียรต่างๆ"
+          "🔧 การปรับปรุงความเข้ากันได้ของม็อดและกระบวนการติดตั้ง"
         ]
       },
       "0.5.1": {
@@ -6524,8 +6519,7 @@
           "🔍 การปรับปรุงฟังก์ชันการกรองและการค้นหาในหน้าม็อด",
           "🐳 แก้ไขปัญหาความเข้ากันได้ของ Docker",
           "🎨 การปรับปรุงเลย์เอาต์และการจัดสไตล์การ์ดม็อด",
-          "📖 อัปเดต UI เพื่อรับทราบว่า GameBanana เป็นแหล่งข้อมูล",
-          "⚡ การเพิ่มประสิทธิภาพและปรับปรุงความเสถียรต่างๆ"
+          "📖 อัปเดต UI เพื่อรับทราบว่า GameBanana เป็นแหล่งข้อมูล"
         ]
       },
       "0.5.0": {
@@ -6536,8 +6530,7 @@
           "⚠️ ระบบเตือนม็อดที่ล้าสมัยใหม่เพื่อการจัดการม็อดที่ดีขึ้น",
           "🎮 อัปเดตรายชื่อแชมเปี้ยนด้วยฮีโร่ Deadlock ล่าสุด",
           "🔧 แก้ไขตัวเลือกการเริ่มเกมที่กำหนดเองที่ไม่เคารพสถานะเปิด/ปิด",
-          "🎨 การปรับปรุงคอมโพเนนต์ UI และเลย์เอาต์",
-          "🔧 การปรับปรุงความเสถียรและการแก้ไขข้อบกพร่องต่างๆ"
+          "🎨 การปรับปรุงคอมโพเนนต์ UI และเลย์เอาต์"
         ]
       },
       "0.4.0": {
@@ -6554,8 +6547,7 @@
         "features": [
           "🎨 การปรับปรุง UI ทั้งหมดเพื่อประสบการณ์ผู้ใช้ที่ดีขึ้น",
           "📦 การจัดการการดาวน์โหลดที่ได้รับการปรับปรุง",
-          "⚡ การเพิ่มประสิทธิภาพ",
-          "🔄 อัปเดตการพึ่งพาหลัก"
+          ""
         ]
       },
       "0.2.0": {
@@ -6764,7 +6756,7 @@
       "visit": "ธีมโดย Skeptic"
     },
     "arcane": {
-      "description": "ธีมมืดสง่างามพร้อมเอฟเฟกต์เรืองแสงสีชมพู-แดง ได้รับแรงบันดาลใจจากสไตล์ Arcane",
+      "description": "",
       "visit": "ธีมโดย Skeptic",
       "customColor": "สีกำหนดเอง",
       "customColorDescription": "เลือกสีเน้นกำหนดเองสำหรับธีม Arcane"
@@ -7431,7 +7423,7 @@
     "latestMods": "ม็อดล่าสุด",
     "popularMods": "ม็อดยอดนิยม",
     "noAnnouncementsTitle": "ไม่มีประกาศ",
-    "noAnnouncementsDescription": "ขณะนี้ไม่มีประกาศ โปรดกลับมาตรวจสอบอีกครั้งเพื่อรับการอัปเดตและข่าวสาร",
+    "noAnnouncementsDescription": "",
     "checkBackLater": "กลับมาตรวจสอบอีกครั้งเพื่อรับการอัปเดต",
     "noModsAvailable": "ไม่มีม็อด",
     "learnMore": "",
@@ -7504,7 +7496,7 @@
     "catalogWiped": "",
     "wipeCatalogFailed": "",
     "confirmClearModsState": "คุณแน่ใจหรือไม่ว่าต้องการล้างสถานะม็อด? การกระทำนี้จะลบม็อดทั้งหมดออกจากแอปพลิเคชัน แต่จะไม่ลบออกจากโฟลเดอร์เกมของคุณ คุณสามารถสแกนโฟลเดอร์ม็อดของคุณอีกครั้งเพื่อกู้คืนได้",
-    "modsStateCleared": "ล้างสถานะม็อดเรียบร้อยแล้ว",
+    "modsStateCleared": "",
     "triggerOnboarding": "",
     "resetTelemetryConsent": "",
     "triggerMatchSyncConsent": "",
@@ -7514,7 +7506,7 @@
   },
   "developer": {
     "title": "เครื่องมือสำหรับนักพัฒนา",
-    "description": "เครื่องมือและคุณสมบัติขั้นสูงสำหรับนักพัฒนา",
+    "description": "",
     "shards": {
       "navLabel": "",
       "title": "",
@@ -7581,12 +7573,12 @@
     "inactive": "",
     "switching": "",
     "manageDescription": "สร้าง แก้ไข และสลับระหว่างโปรไฟล์ม็อดต่างๆ แต่ละโปรไฟล์จะจดจำว่าคุณเปิดใช้งานม็อดใดไว้บ้าง",
-    "createNew": "สร้างโปรไฟล์ใหม่",
+    "createNew": "",
     "create": "สร้าง",
     "creating": "กำลังสร้าง...",
     "createDescription": "สร้างโปรไฟล์ใหม่เพื่อจัดระเบียบม็อดของคุณ แต่ละโปรไฟล์สามารถเปิดใช้งานม็อดที่แตกต่างกันได้",
     "editProfile": "แก้ไขโปรไฟล์",
-    "editDescription": "แก้ไขโปรไฟล์ '{{profileName}}'",
+    "editDescription": "",
     "update": "อัปเดต",
     "updating": "กำลังอัปเดต...",
     "name": "ชื่อ",
@@ -7611,16 +7603,16 @@
     "switchDetails": "เปิดใช้งาน {{enabled}} รายการ, ปิดใช้งาน {{disabled}} รายการ",
     "switchError": "ไม่สามารถสลับโปรไฟล์ได้: {{errors}}",
     "switchUnexpectedError": "เกิดข้อผิดพลาดที่ไม่คาดคิดขณะสลับโปรไฟล์",
-    "createSuccess": "สร้างโปรไฟล์ '{{profileName}}' เรียบร้อยแล้ว",
+    "createSuccess": "",
     "createError": "ไม่สามารถสร้างโปรไฟล์ได้",
-    "updateSuccess": "อัปเดตโปรไฟล์ '{{profileName}}' เรียบร้อยแล้ว",
+    "updateSuccess": "",
     "updateError": "ไม่สามารถอัปเดตโปรไฟล์ได้",
-    "deleteSuccess": "ลบโปรไฟล์ '{{profileName}}' เรียบร้อยแล้ว",
+    "deleteSuccess": "",
     "deleteError": "ไม่สามารถลบโปรไฟล์ได้",
     "sync": "",
     "syncSuccess": "",
     "syncError": "",
-    "shareSuccess": "แชร์โปรไฟล์เรียบร้อยแล้ว!",
+    "shareSuccess": "",
     "shareError": "ไม่สามารถแชร์โปรไฟล์ได้",
     "shareNoMods": "ไม่สามารถแชร์โปรไฟล์ได้: ไม่มีม็อดที่เปิดใช้งาน",
     "noHardwareIdOrVersion": "ไม่สามารถแชร์โปรไฟล์ได้: ข้อมูล ID ฮาร์ดแวร์หรือเวอร์ชันหายไป",
@@ -7641,7 +7633,7 @@
     "submissionTypeSound": "",
     "profileIdPlaceholder": "ป้อน ID โปรไฟล์ (เช่น abc123def456)",
     "profileIdRequired": "ต้องระบุ ID โปรไฟล์",
-    "importSuccess": "นำเข้าโปรไฟล์เรียบร้อยแล้ว!",
+    "importSuccess": "",
     "importError": "ไม่สามารถนำเข้าโปรไฟล์ได้ โปรดตรวจสอบ ID โปรไฟล์และลองอีกครั้ง",
     "includedMods": "ม็อดที่รวมอยู่",
     "noModsIncluded": "ไม่มีม็อดรวมอยู่ในโปรไฟล์นี้",
@@ -7649,7 +7641,7 @@
     "importOptionsDescription": "เลือกว่าจะบันทึกโปรไฟล์ที่นำเข้านี้อย่างไร:",
     "createNewProfile": "สร้างโปรไฟล์ใหม่",
     "overrideExisting": "แทนที่โปรไฟล์ที่ใช้งานอยู่",
-    "overrideSuccess": "อัปเดตโปรไฟล์ที่ใช้งานอยู่เรียบร้อยแล้ว!",
+    "overrideSuccess": "",
     "creatingProfile": "กำลังสร้างโปรไฟล์ใหม่...",
     "updatingProfile": "กำลังอัปเดตโปรไฟล์ปัจจุบัน...",
     "processingMods": "กำลังประมวลผลม็อด...",
@@ -7831,7 +7823,7 @@
     "loadFirst": ""
   },
   "reports": {
-    "reportSubmitted": "ส่งรายงานเรียบร้อยแล้ว",
+    "reportSubmitted": "",
     "reportFailed": "ไม่สามารถส่งรายงานได้",
     "thankYou": "ขอบคุณ!",
     "thankYouDescription": "",

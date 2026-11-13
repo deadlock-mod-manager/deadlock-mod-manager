@@ -31,7 +31,7 @@
     "otherPlatforms": "Diğer platformlar",
     "highlights": {
       "openSource": "Ücretsiz ve açık kaynaklı",
-      "autoUpdate": "Otomatik güncellenir",
+      "autoUpdate": "",
       "platforms": "Windows ve Linux"
     }
   },
@@ -97,7 +97,7 @@
       },
       "flatpak": {
         "label": "Flatpak paketi",
-        "description": "Çoğu dağıtımda çalışır"
+        "description": ""
       },
       "deb": {
         "label": "Debian paketi",

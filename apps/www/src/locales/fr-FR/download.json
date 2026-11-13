@@ -31,7 +31,7 @@
     "otherPlatforms": "Autres plateformes",
     "highlights": {
       "openSource": "Gratuit et open source",
-      "autoUpdate": "Se met à jour tout seul",
+      "autoUpdate": "",
       "platforms": "Windows et Linux"
     }
   },
@@ -97,7 +97,7 @@
       },
       "flatpak": {
         "label": "",
-        "description": "Fonctionne sur la plupart des distributions"
+        "description": ""
       },
       "deb": {
         "label": "Paquet Debian",

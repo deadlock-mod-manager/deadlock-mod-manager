@@ -197,7 +197,7 @@
     "plugins": "",
     "myMods": "Моите модове",
     "getMods": "Изтегли модове",
-    "addMods": "Добавяне на локален мод",
+    "addMods": "",
     "downloads": "Изтегляния",
     "settings": "Настройки",
     "developer": "Разработчик",
@@ -4185,7 +4185,7 @@
     "noDownloadsFound": "",
     "noDownloadsMatchFilter": "",
     "viewAllDownloads": "",
-    "selectFilesToDownload": "Изберете файлове за изтегляне",
+    "selectFilesToDownload": "",
     "selectAll": "",
     "selectNone": "",
     "total": "",
@@ -4226,7 +4226,7 @@
     }
   },
   "notifications": {
-    "modInstalledSuccessfully": "Модът е инсталиран успешно",
+    "modInstalledSuccessfully": "",
     "failedToInstallMod": "Неуспешна инсталация на мод",
     "installationCanceled": "Инсталацията бе прекратена",
     "modContainsFiles": "{{modName}} съдържа {{fileCount}} файла. Изберете кои да бъдат изтеглени.",
@@ -4329,7 +4329,7 @@
     "apiHealthy": "API на линия",
     "apiDegraded": "Проблеми с API",
     "apiOffline": "API Офлайн",
-    "apiUnknown": "Състоянието на API е неизвестно",
+    "apiUnknown": "",
     "authOnline": "",
     "authOffline": "Auth Офлайн",
     "authUnknown": "Състоянието на Auth е неизвестно",
@@ -4354,7 +4354,7 @@
     "searchNoResults": "",
     "language": "Език",
     "languageDescription": "Изберете предпочитания език за интерфейса на приложението",
-    "languageSettings": "Опции за Език",
+    "languageSettings": "",
     "languageSettingsDescription": "Изберете предпочитания език за интерфейса на приложението",
     "appearance": "",
     "appearanceDescription": "",
@@ -4440,7 +4440,7 @@
     "about": "За",
     "systemSettings": "Системни Настройки",
     "systemSettingsDescription": "Настройки на Мод Мениджъра. Тези настройки не влияят на играта.",
-    "gameConfigManagement": "Управление на конфигурацията на играта",
+    "gameConfigManagement": "",
     "gameConfigDescription": "Управление на архивирането, възстановяването и проверката на файла gameinfo.gi за безопасно модифициране.",
     "gamePath": "",
     "gamePathDescription": "",
@@ -4476,7 +4476,7 @@
     "selectDefaultSort": "Изберете сортиране по подразбиране",
     "tools": "Инструменти",
     "backups": "Резервни копия",
-    "toolsDescription": "Полезни функции за управление на вашите модове",
+    "toolsDescription": "",
     "gameGuard": "",
     "gameGuardDescription": "",
     "gameGuardSectionTitle": "",
@@ -5321,15 +5321,15 @@
     "thirdPartyDisclaimerTitle": "Декларация за съдържание на трети страни",
     "thirdPartyDisclaimerDescription": "Всички модове, достъпни чрез това приложение, са съдържание на трети страни, създадено от членове на общността. Модовете не са създадени, прегледани, проверени или одобрени от проекта Deadlock Mod Manager. Инсталирайте модове на свой риск.",
     "thirdPartyDisclaimerShort": "Модовете са съдържание на трети страни, което не е създадено, прегледано или одобрено от Deadlock Mod Manager.",
-    "gamebananaDescription": "Нашият основен източник на модове и гръбнакът на това приложение. GameBanana предоставя богата база данни с модове и API, който прави възможно преглеждането, откриването и изтеглянето на модове за Deadlock.",
+    "gamebananaDescription": "",
     "visitGamebanana": "Посетете GameBanana",
     "deadlockRichPresenceDescription": "",
     "visitDeadlockRichPresence": "",
-    "tauriDescription": "Мощната платформа, която позволява това крос-платформено настолно приложение. Tauri съчетава най-доброто от уеб технологиите с нативна производителност и сигурност.",
+    "tauriDescription": "",
     "visitTauri": "Посетете Tauri",
-    "shadcnDescription": "Красиви и достъпни React компоненти, които предоставят основата за нашия съвременен потребителски интерфейс. Копирайте, поставяйте и персонализирайте до съвършенство.",
+    "shadcnDescription": "",
     "visitShadcn": "Посетете shadcn/ui",
-    "tailwindDescription": "CSS фреймуърк, който поставя полезността на първо място и стимулира отзивчив дизайн и консистентно стилово оформление в приложението.",
+    "tailwindDescription": "",
     "visitTailwind": "Посетете Tailwind CSS",
     "vpkmergeDescription": "",
     "visitVpkmerge": "",
@@ -5339,7 +5339,7 @@
     "thirdPartyNoticesDescription": "",
     "viewThirdPartyNotices": "",
     "openSourceCommunity": "Общност с отворен код",
-    "openSourceDescription": "Изграден с невероятни оупен сорс технологии, включително React, TypeScript и много други библиотеки, които правят съвременните приложения възможни. Благодарим на всички, които са допринесли и поддържат проекта.",
+    "openSourceDescription": "",
     "meetContributors": "",
     "releaseNotes": "бележки към версията",
     "poweredBy": "Задвижвано от",
@@ -5531,7 +5531,7 @@
     "savingMetadata": "Запазване на метаданните на мода...",
     "processingImage": "Обработване на изображението на мода...",
     "addingToLibrary": "Добавяне на мод към библиотеката...",
-    "modAddedSuccess": "Модът е добавен успешно!",
+    "modAddedSuccess": "",
     "unsupportedSelection": "Неподдържана селекция.",
     "unsupportedFiles": "Неподдържани файлове.",
     "failedToReadDroppedFiles": "",
@@ -6409,7 +6409,6 @@
         "title": "",
         "features": [
           "",
-          "",
           ""
         ]
       },
@@ -6464,10 +6463,7 @@
       },
       "0.8.2": {
         "title": "",
-        "features": [
-          "",
-          ""
-        ]
+        "features": []
       },
       "0.8.1": {
         "title": "",
@@ -6510,7 +6506,6 @@
         "features": [
           "",
           "",
-          "",
           ""
         ]
       },
@@ -6524,14 +6519,12 @@
           "",
           "",
           "",
-          "",
           ""
         ]
       },
       "0.5.0": {
         "title": "",
         "features": [
-          "",
           "",
           "",
           "",
@@ -6552,7 +6545,6 @@
       "0.3.0": {
         "title": "",
         "features": [
-          "",
           "",
           "",
           ""
@@ -6764,7 +6756,7 @@
       "visit": ""
     },
     "arcane": {
-      "description": "Елегантна тъмна тема с розово-червени светещи ефекти, вдъхновена от естетиката на Arcane.",
+      "description": "",
       "visit": "Тема от Skeptic",
       "customColor": "Персонализиран цвят",
       "customColorDescription": "Изберете персонализиран акцентен цвят за темата Arcane."

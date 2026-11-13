@@ -197,7 +197,7 @@
     "plugins": "",
     "myMods": "Mini Mods",
     "getMods": "Mods endecke",
-    "addMods": "Mods hinzuefüege",
+    "addMods": "",
     "downloads": "",
     "settings": "Istellige",
     "developer": "",
@@ -4095,8 +4095,8 @@
     "deleteConfirmBody": "",
     "deleteConfirmAction": "Lösche",
     "deleteConfirmCancel": "Abbreche",
-    "deleteSuccess": "Mod erfolgriich glöscht",
-    "disableSuccess": "Mod erfolgriich deaktiviert",
+    "deleteSuccess": "",
+    "disableSuccess": "",
     "deleteError": "Fehler bim Lösche vo de Mod",
     "deleteErrorVpkInUse": "",
     "disableError": "Fehler bim Deaktiviere vo de Mod",
@@ -4185,7 +4185,7 @@
     "noDownloadsFound": "Kei Downloads gfunde",
     "noDownloadsMatchFilter": "Es git kei Downloads wo zu dim aktuelle Filter passed.",
     "viewAllDownloads": "Alli Downloads azeige",
-    "selectFilesToDownload": "Dateie zum Abelade wähle",
+    "selectFilesToDownload": "",
     "selectAll": "",
     "selectNone": "",
     "total": "",
@@ -4226,7 +4226,7 @@
     }
   },
   "notifications": {
-    "modInstalledSuccessfully": "Mod erfolgriich installiert",
+    "modInstalledSuccessfully": "",
     "failedToInstallMod": "Mod het nöd chönne installiert werde",
     "installationCanceled": "Installation abbrochen",
     "modContainsFiles": "{{modName}} enthaltet {{fileCount}} Dateie. Wähle si us, welli installiert werde söll.",
@@ -4329,7 +4329,7 @@
     "apiHealthy": "",
     "apiDegraded": "API Problem",
     "apiOffline": "",
-    "apiUnknown": "API Status unbekannt",
+    "apiUnknown": "",
     "authOnline": "Auth Online",
     "authOffline": "Auth Offline",
     "authUnknown": "Auth Status unbekannt",
@@ -4354,10 +4354,10 @@
     "searchNoResults": "",
     "language": "Sprache",
     "languageDescription": "Wähled Sie Ihri bevorzugti Sprach für d'Awendigsoberflächi",
-    "languageSettings": "Sprachistellige",
+    "languageSettings": "",
     "languageSettingsDescription": "Wähled Sie Ihri bevorzugti Sprach für d'Awendigsoberflächi",
     "appearance": "Erscheinungsbild",
-    "appearanceDescription": "Passed Sie s'Erschiningsbild vo de Awendig a.",
+    "appearanceDescription": "",
     "theme": "Design",
     "themeDescription": "Wähle Sie zwüsched hellem und dunklem oder System-Design",
     "audioVolume": "Audiolautschtärchi",
@@ -4440,7 +4440,7 @@
     "about": "Über",
     "systemSettings": "Systemeinstellungen",
     "systemSettingsDescription": "Mod Manager Instellifge. Die beeinflussed das Spiel nöd.",
-    "gameConfigManagement": "Spielkonfigurationsverwaltig",
+    "gameConfigManagement": "",
     "gameConfigDescription": "Verwalted Sie gameinfo.gi Datei-Backup, Wiederherstellig und Validierig für sichers Modding.",
     "gamePath": "",
     "gamePathDescription": "",
@@ -4476,7 +4476,7 @@
     "selectDefaultSort": "Standard-Sortierig uswähle",
     "tools": "Werchzüg",
     "backups": "Backup",
-    "toolsDescription": "Hilfsfunktione zur Verwaltig Ihre Mods",
+    "toolsDescription": "",
     "gameGuard": "",
     "gameGuardDescription": "",
     "gameGuardSectionTitle": "",
@@ -5321,15 +5321,15 @@
     "thirdPartyDisclaimerTitle": "Hinwis zu Inhalt vo Drittaabietere",
     "thirdPartyDisclaimerDescription": "Alli Mods, wo dur dise Awendig verfüegbar sind, sind Inhalt vo Drittaabietere, wo vo Community-Mitgliider erstellt worde sind. Mods werde nöd vom Deadlock Mod Manager-Projekt erstellt, überprüeft, verifiziert oder unterstützt. Installier Mods uf eigeni Verantwortig.",
     "thirdPartyDisclaimerShort": "Mods sind Inhalt vo Drittaabietere und werde nöd vom Deadlock Mod Manager erstellt, überprüeft oder unterstützt.",
-    "gamebananaDescription": "Üsi primäri Mod-Quelle und s'rückrad vo dere Awendig. GameBanana bütet die umfassendi Mod-Datenbank und API, wos durchsueche, Entdecke und abelade vo Deadlock-Mods möglich macht.",
+    "gamebananaDescription": "",
     "visitGamebanana": "GameBanana bsuche",
     "deadlockRichPresenceDescription": "",
     "visitDeadlockRichPresence": "",
-    "tauriDescription": "s'leistungsstarke Framework, das die plattformübergriifende Desktop-Awendig ermöglicht. Tauri kombiniert di besten Web-Technologie mit nativer Leistig und Sicherheit.",
+    "tauriDescription": "",
     "visitTauri": "Tauri bsuechen",
-    "shadcnDescription": "Schöni und zuegänglichi React-Komponente, wo Grundlage für üsi moderni Benutzeroberflächi bildet. Kopiered, ifüeged und perfekt apassed.",
+    "shadcnDescription": "",
     "visitShadcn": "shadcn/ui bsueche",
-    "tailwindDescription": "Das Utility-First CSS-Framework, wo üsi responsives Design und konsistentes Styling i de gsamte Awendig unterstützt.",
+    "tailwindDescription": "",
     "visitTailwind": "Tailwind CSS besuchen",
     "vpkmergeDescription": "",
     "visitVpkmerge": "",
@@ -5339,7 +5339,7 @@
     "thirdPartyNoticesDescription": "",
     "viewThirdPartyNotices": "",
     "openSourceCommunity": "",
-    "openSourceDescription": "Erstellt mit erstundliche Open Source-Technologie mit React, TypeScript und vielne andere Bibliotheke, die modern Awendig ermöglicht. Viele  Dank a alli Mittwürkende und Beträuer.",
+    "openSourceDescription": "",
     "meetContributors": "",
     "releaseNotes": "Release-Notize",
     "poweredBy": "Unterstützt vo",
@@ -5382,7 +5382,7 @@
     "newVersionAvailable": "Ä neui Version ({{version}}) isch verfüegbar. Sie verwended momentan d'Version {{currentVersion}}.",
     "releaseNotes": "Release-Notize",
     "downloading": "Update wird abeglade",
-    "downloadAndInstall": "Abelade und Installliere",
+    "downloadAndInstall": "",
     "later": "Spöter",
     "installing": "Wird installiert...",
     "failedWithMessage": ""
@@ -5531,7 +5531,7 @@
     "savingMetadata": "Mod-Metadate speichere...",
     "processingImage": "Mod-Bild verarbeite...",
     "addingToLibrary": "Mod zur Bibliothek hinzufüge...",
-    "modAddedSuccess": "Mod erfolgreich hinzugfüegt!",
+    "modAddedSuccess": "",
     "unsupportedSelection": "Nöd unterstützti Uswahl.",
     "unsupportedFiles": "Nöd unterstützti Datei.",
     "failedToReadDroppedFiles": "",
@@ -6409,7 +6409,6 @@
         "title": "",
         "features": [
           "",
-          "",
           ""
         ]
       },
@@ -6464,10 +6463,7 @@
       },
       "0.8.2": {
         "title": "",
-        "features": [
-          "",
-          ""
-        ]
+        "features": []
       },
       "0.8.1": {
         "title": "",
@@ -6510,7 +6506,6 @@
         "features": [
           "",
           "",
-          "",
           ""
         ]
       },
@@ -6524,14 +6519,12 @@
           "",
           "",
           "",
-          "",
           ""
         ]
       },
       "0.5.0": {
         "title": "",
         "features": [
-          "",
           "",
           "",
           "",
@@ -6552,7 +6545,6 @@
       "0.3.0": {
         "title": "",
         "features": [
-          "",
           "",
           "",
           ""
@@ -6754,7 +6746,7 @@
       "customColorDescription": ""
     },
     "nightshift": {
-      "description": "Es cyberpunk‑Theme mit türkisfarbige Akzänte für Uebersicht und lengeri Gaming‑Sessione.",
+      "description": "",
       "visit": "Nightshift bsueche:",
       "twitter": "",
       "discord": ""
@@ -6764,7 +6756,7 @@
       "visit": "Theme vo Skeptic"
     },
     "arcane": {
-      "description": "Es elegants dunkels Theme mit pink-rote Lüchteffekte, inspiriert vo dr Arcane-Ästhetik.",
+      "description": "",
       "visit": "Theme vo Skeptic",
       "customColor": "Eigeni Farb",
       "customColorDescription": "Wähl e eigeni Akzäntfarb für s'Arcane-Theme."
@@ -7581,12 +7573,12 @@
     "inactive": "",
     "switching": "",
     "manageDescription": "Erstelle, bearbeite und wechsle zwüsched verschiedene Mod-Profile. Jedes Profil merkt sich, welli Mods Sie aktiviert hend.",
-    "createNew": "Neus Profil erstelle",
+    "createNew": "",
     "create": "Erstelle",
     "creating": "Erstelle...",
     "createDescription": "Erstelle es neus Profil zum Organisiere vo Ihre Mods. Jedes Profil chann verschiedeni aktivierti Mods ha.",
     "editProfile": "Profil bearbeite",
-    "editDescription": "Profil '{{profileName}}' bearbeite",
+    "editDescription": "",
     "update": "Aktualisiere",
     "updating": "Aktualisiere...",
     "name": "",
@@ -7611,11 +7603,11 @@
     "switchDetails": "{{enabled}} aktiviert, {{disabled}} deaktiviert",
     "switchError": "Fehler bim Wechsle vo de Profile: {{errors}}",
     "switchUnexpectedError": "En unerwartete Fehler isch bim Wechsle vo de Profile ufträte",
-    "createSuccess": "Profil '{{profileName}}' erfolgriich erstellt",
+    "createSuccess": "",
     "createError": "Fehler bim Erstelle vom Profil",
-    "updateSuccess": "Profil '{{profileName}}' erfolgriich aktualisiert",
+    "updateSuccess": "",
     "updateError": "Fehler bim Aktualisiere vom Profil",
-    "deleteSuccess": "Profil '{{profileName}}' erfolgriich glöscht",
+    "deleteSuccess": "",
     "deleteError": "Fehler bim Lösche vom Profil",
     "sync": "",
     "syncSuccess": "",
@@ -7765,14 +7757,14 @@
     "noUpdateAvailable": "",
     "checkUpdateError": "",
     "vpkReplacement": {
-      "title": "VPK-Dateie ersetze",
+      "title": "",
       "description": "Mod-Dateie für schnälli Iteration währed dr Entwicklig ersetze",
       "dragAndDrop": "VPK-Dateie da abelege",
       "selectFiles": "Dateie uswähle",
       "currentFiles": "Aktuelli VPK-Dateie",
       "replaceAll": "Alli Dateie ersetze",
       "selectToReplace": "{{count}} Datei(e) zum Ersetze uswähle",
-      "success": "VPK-Dateie erfolgriich ersetzt",
+      "success": "",
       "error": "Fehler bim Ersetze vo de VPK-Dateie",
       "countMismatch": ""
     },

@@ -137,7 +137,7 @@
   },
   "store": {
     "title": "Zdobądź mody",
-    "subtitle": "Aktualizowane co godzinę, z nowymi modami co godzinę.",
+    "subtitle": "",
     "tabs": {
       "mods": "Mody",
       "sounds": "Dźwięki",
@@ -282,7 +282,7 @@
     },
     "themes": {
       "title": "Motywy",
-      "description": "Wybierz spośród starannie dopracowanych motywów, które uprzyjemnią korzystanie z aplikacji.",
+      "description": "",
       "predefined": "Predefiniowane motywy",
       "custom": "Niestandardowe motywy",
       "active": "Aktywny",
