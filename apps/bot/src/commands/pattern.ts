@@ -153,7 +153,7 @@ export class PatternCommand extends Command {
       logger.info("Triage service reloaded with new pattern");
 
       return interaction.editReply({
-        content: `✅ Successfully added pattern to **${category === "bug_report" ? "Bug Report" : "Help Request"}** category!\n\n**Pattern:** ${message.substring(0, 100)}${message.length > 100 ? "..." : ""}\n**ID:** \`${pattern.id}\``,
+        content: `Added ${category === "bug_report" ? "bug report" : "help request"} pattern ${pattern.id}: ${message.substring(0, 100)}${message.length > 100 ? "..." : ""}`,
       });
     } catch (error) {
       logger

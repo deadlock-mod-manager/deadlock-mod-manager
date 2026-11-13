@@ -110,11 +110,11 @@ export class MessageTriageListener extends Listener {
           ? "the bug reports channel"
           : "the support channel";
 
-      const messageType =
-        result.type === "bug_report" ? "reporting a bug" : "asking for help";
+      const action =
+        result.type === "bug_report" ? "post your bug report" : "ask for help";
 
       await message.reply({
-        content: `Hey! 👋 It looks like you're ${messageType}. Please post in ${channelMention} so our team can assist you better!`,
+        content: `Please ${action} in ${channelMention}.`,
       });
 
       logger
