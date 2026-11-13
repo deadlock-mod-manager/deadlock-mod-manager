@@ -74,10 +74,13 @@ export const ModPartsList = ({
           );
         })}
       </ol>
-      <p className='flex items-start gap-2 text-muted-foreground text-xs'>
-        <Info className='mt-0.5 h-3.5 w-3.5 shrink-0' />
-        {t("addMods.partsHint")}
-      </p>
+      {/* Manage files only offers a choice once there is more than one part. */}
+      {files.length > 1 && (
+        <p className='flex items-start gap-2 text-muted-foreground text-xs'>
+          <Info className='mt-0.5 h-3.5 w-3.5 shrink-0' />
+          {t("addMods.partsHint")}
+        </p>
+      )}
     </section>
   );
 };
