@@ -10,10 +10,22 @@ import {
   detectSource,
   getSourceFilePath,
   readFromDataTransferItems,
-  stageDroppedFile,
+  sourceFiles,
+  stageDroppedFiles,
 } from "@/lib/file-utils";
 
 const logger = createLogger("use-file-drop");
+
+export const pickModFiles = async (
+  filterName: string,
+  extensions = ["vpk", "zip", "rar", "7z"],
+): Promise<File[] | null> => {
+  const selected = await openDialog({
+    multiple: true,
+    filters: [{ name: filterName, extensions }],
+  });
+  return selected?.length ? selected.map(createPathBackedFile) : null;
+};
 
 const readStringItem = (item: DataTransferItem): Promise<string> =>
   new Promise((resolve) => {
@@ -142,19 +154,25 @@ export const useDroppedSource = (
   // only ever handles paths and never holds a large mod in memory.
   const stageSource = useCallback(
     async (source: DetectedSource): Promise<DetectedSource> => {
-      if (getSourceFilePath(source.file)) {
+      // One drop gives either path-backed files or read ones, never a mix.
+      const files = sourceFiles(source);
+      if (files.every((file) => getSourceFilePath(file))) {
         return source;
       }
 
-      const status = t("addMods.copyingDroppedFile", {
-        name: source.file.name,
-      });
-      setProcessing(true, status, { done: 0, total: source.file.size });
+      const status =
+        files.length === 1
+          ? t("addMods.copyingDroppedFile", { name: files[0].name })
+          : t("addMods.copyingDroppedFiles", { count: files.length });
+      const total = files.reduce((sum, file) => sum + file.size, 0);
+      setProcessing(true, status, { done: 0, total });
       try {
-        const file = await stageDroppedFile(source.file, (done, total) =>
+        const staged = await stageDroppedFiles(files, (done, total) =>
           setProcessing(true, status, { done, total }),
         );
-        return { ...source, file };
+        return source.kind === "vpks"
+          ? { kind: "vpks", files: staged }
+          : { ...source, file: staged[0] };
       } finally {
         setProcessing(false);
       }
@@ -313,20 +331,10 @@ export const useFileDrop = (
   );
 
   const openTauriFilePicker = useCallback(async () => {
-    const selected = await openDialog({
-      multiple: false,
-      filters: [
-        {
-          name: t("common.mods"),
-          extensions: ["vpk", "zip", "rar", "7z"],
-        },
-      ],
-    });
-
+    const selected = await pickModFiles(t("common.mods"));
     if (!selected) return;
 
-    const file = createPathBackedFile(selected);
-    const detectedSource = detectSource([file]);
+    const detectedSource = detectSource(selected);
 
     if (!detectedSource) {
       onError(

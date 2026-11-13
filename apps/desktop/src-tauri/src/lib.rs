@@ -514,6 +514,7 @@ pub fn run() {
       commands::archive::replace_mod_vpks,
       commands::archive::copy_selected_vpks_from_archive,
       commands::archive::copy_local_mod_vpks,
+      commands::archive::get_local_mod_parts,
       commands::mods::get_mod_available_options,
       commands::mods::swap_mod_options,
       commands::mods::fetch_missing_mod_variants,

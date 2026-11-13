@@ -65,8 +65,8 @@ const storeSourceFile = async (
   });
 };
 
-// Sources backed by a file; the live bridge is built by the backend instead.
-type FileSource = Exclude<ModSource, { kind: "liveBridge" }>;
+// Sources backed by one file; the live bridge is built by the backend instead.
+type FileSource = Exclude<ModSource, { kind: "liveBridge" | "vpks" }>;
 
 const sourceFileName = (source: FileSource): string =>
   source.kind === "staged" ? source.fileName : getFileBaseName(source.file);
@@ -175,6 +175,10 @@ export const useModProcessor = () => {
     try {
       if (detectedSource.kind === "liveBridge") {
         await invoke("build_live_bridge", { modId });
+      } else if (detectedSource.kind === "vpks") {
+        for (const file of detectedSource.files) {
+          await storeSourceFile(file, filesDir);
+        }
       } else {
         const vpks = VPK_PATTERN.test(sourceFileName(detectedSource))
           ? [await placeSource(detectedSource, filesDir)]
@@ -220,9 +224,12 @@ export const useModProcessor = () => {
       });
 
       try {
-        fileTree = (await invoke("get_mod_file_tree", {
-          modPath: modDir,
-        })) as ModFileTree;
+        fileTree =
+          detectedSource.kind === "vpks"
+            ? await invoke<ModFileTree>("get_local_mod_parts", { modId })
+            : await invoke<ModFileTree>("get_mod_file_tree", {
+                modPath: modDir,
+              });
       } catch {}
     } catch (error) {
       setProcessing(false);

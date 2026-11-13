@@ -43,7 +43,8 @@ import ModMetadataForm, {
   type ModMetadataFormHandle,
 } from "@/components/mod-creation/mod-metadata-form";
 import PageTitle from "@/components/shared/page-title";
-import { useFileDrop } from "@/hooks/use-file-drop";
+import { ModPartsList } from "@/components/mod-creation/mod-parts-list";
+import { pickModFiles, useFileDrop } from "@/hooks/use-file-drop";
 import { useModProcessor } from "@/hooks/use-mod-processor";
 import {
   getModCategoryDisplayName,
@@ -53,9 +54,10 @@ import {
 import { ALL_SUPPORTED_PATTERN } from "@/lib/file-patterns";
 import {
   type DetectedSource,
+  detectSource,
   discardStagedDrops,
   getFileBaseName,
-  getFileName,
+  sourceFiles,
 } from "@/lib/file-utils";
 import logger from "@/lib/logger";
 import { takePendingDrop } from "@/lib/pending-drop";
@@ -66,6 +68,28 @@ const discardStaged = () =>
   discardStagedDrops().catch((error) =>
     logger.withError(error).warn("Failed to discard staged drop"),
   );
+
+const fileStem = (file: File) =>
+  getFileBaseName(file).replace(ALL_SUPPORTED_PATTERN, "");
+
+const NAME_SEPARATOR = /[\s._-]/;
+
+// Parts usually share a prefix ("skin_base", "skin_hair"), which names the mod.
+// The prefix ends on a word boundary: "hero_alpha" and "hero_alt" give "hero".
+const defaultModName = (source: DetectedSource): string => {
+  const stems = sourceFiles(source).map(fileStem).sort();
+  let prefix = stems[0];
+  for (const stem of stems) {
+    while (!stem.startsWith(prefix)) prefix = prefix.slice(0, -1);
+  }
+  const endsAtWord = stems.every(
+    (stem) =>
+      stem.length === prefix.length || NAME_SEPARATOR.test(stem[prefix.length]),
+  );
+  if (!endsAtWord) prefix = prefix.replace(/[^\s._-]*$/, "");
+  prefix = prefix.replace(/[\s._-]+$/, "");
+  return stems.length > 1 && prefix.length >= 3 ? prefix : stems[0];
+};
 
 const AddMods = () => {
   const { t } = useTranslation();
@@ -82,21 +106,30 @@ const AddMods = () => {
 
   const form = useForm<AddModFormValues>({
     resolver: zodResolver(addModSchema),
-    defaultValues: { category: ModCategory.SKINS, sourceType: "vpk" },
+    defaultValues: { category: ModCategory.SKINS },
   });
 
   const handleFilesDetected = (detectedSource: DetectedSource) => {
-    const baseName = getFileBaseName(detectedSource.file).replace(
-      ALL_SUPPORTED_PATTERN,
-      "",
-    );
     setDetected(detectedSource);
-    form.reset({
-      category: ModCategory.SKINS,
-      sourceType: detectedSource.kind,
-    });
-    setInitialMeta({ name: baseName || "" });
+    form.reset({ category: ModCategory.SKINS });
+    setInitialMeta({ name: defaultModName(detectedSource) });
     setOpen(true);
+  };
+
+  const replaceParts = (files: File[]) => {
+    const source = detectSource(files);
+    if (source) setDetected(source);
+  };
+
+  const handleAddParts = async () => {
+    if (!detected) return;
+    const picked = await pickModFiles(t("common.mods"), ["vpk"]);
+    if (picked) replaceParts([...sourceFiles(detected), ...picked]);
+  };
+
+  const handleRemovePart = (file: File) => {
+    if (!detected) return;
+    replaceParts(sourceFiles(detected).filter((part) => part !== file));
   };
 
   const handleOpenChange = (nextOpen: boolean) => {
@@ -265,20 +298,19 @@ const AddMods = () => {
               </form>
             </Form>
 
-            <div className='rounded-md bg-muted p-3 text-xs'>
-              {form.getValues("sourceType") === "archive" &&
-              detected?.kind === "archive" ? (
-                <div>
-                  <span className='font-medium'>{t("addMods.source")}:</span>{" "}
-                  Archive → {detected.file.name}
-                </div>
-              ) : detected?.kind === "vpk" ? (
-                <div>
-                  <span className='font-medium'>{t("addMods.source")}:</span>{" "}
-                  VPK → {getFileName(detected.file)}
-                </div>
-              ) : null}
-            </div>
+            {detected?.kind === "archive" ? (
+              <div className='rounded-md bg-muted p-3 text-xs'>
+                <span className='font-medium'>{t("addMods.source")}:</span>{" "}
+                Archive → {detected.file.name}
+              </div>
+            ) : detected ? (
+              <ModPartsList
+                disabled={isProcessing}
+                files={sourceFiles(detected)}
+                onAdd={handleAddParts}
+                onRemove={handleRemovePart}
+              />
+            ) : null}
           </div>
 
           <DialogFooter className='mt-2'>

@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 use crate::errors::Error;
 use crate::mod_manager::archive_extractor::ArchiveExtractor;
+use crate::mod_manager::file_tree::{FileTreeAnalyzer, ModFileTree};
 
 use super::state::MANAGER;
 
@@ -209,6 +210,24 @@ pub async fn copy_local_mod_vpks(
     mod_id
   );
   Ok(prefixed_vpks)
+}
+
+/// The parts of a mod imported as loose VPKs: every VPK in its `files` folder,
+/// named and ordered as `copy_local_mod_vpks` installs them. Separate from
+/// `get_mod_file_tree`, which reads archives, so mods that keep loose VPKs for
+/// other reasons don't start asking for a file selection.
+#[tauri::command]
+pub async fn get_local_mod_parts(mod_id: String) -> Result<ModFileTree, Error> {
+  let files_dir = MANAGER
+    .lock()
+    .unwrap()
+    .get_mods_store_path()?
+    .join(&mod_id)
+    .join("files");
+  if !files_dir.exists() {
+    return Err(Error::ModFileNotFound);
+  }
+  FileTreeAnalyzer::new().get_file_tree_from_extracted(&files_dir, "")
 }
 
 pub(crate) fn persist_prefixed_import(
