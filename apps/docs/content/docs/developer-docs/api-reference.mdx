@@ -106,135 +106,35 @@ Returns `{ "downloads": [...], "count": n }`. Each download has `url`, `size` in
 
 ## Desktop Integration API
 
-### Tauri Commands
+The desktop frontend calls Rust through Tauri commands. Commands are registered in `invoke_handler` in `apps/desktop/src-tauri/src/lib.rs` and implemented in `apps/desktop/src-tauri/src/commands/`. Rust payload types that derive `ts-rs` are exported to `apps/desktop/src/types/generated/`; run `pnpm --filter desktop generate-types` after changing one.
 
-The desktop application exposes these Tauri commands for frontend-backend communication:
+### Installing and launching mods
 
-#### File System Operations
+Use the existing hooks instead of invoking these commands from new code. `useInstall` in `apps/desktop/src/hooks/use-install.ts` installs a downloaded mod into the active profile and resolves file conflicts with the user. `useLaunch` in `apps/desktop/src/hooks/use-launch.ts` runs the pre-launch checks and starts the game.
+
+Commands that change files in the game install go through `invokeGuarded` from `apps/desktop/src/lib/game-guard.ts`. The backend refuses them while Deadlock is running; `invokeGuarded` shows the warning dialog and, if the user continues, retries once with a one-time permit. This is how `use-model-conflict-install.ts` calls `install_mod`:
 
 ```typescript
-// Check if game is installed
-const gameInstalled = await invoke<boolean>("check_game_installation", {
-  gamePath: "/path/to/deadlock",
-});
-
-// Install a mod
-const result = await invoke<InstallResult>("install_mod", {
-  modId: 12345,
-  filePath: "/path/to/mod.zip",
-  options: {
-    backup: true,
-    overwrite: false,
+const result = await invokeGuarded<InstallableMod>("install_mod", {
+  deadlockMod: {
+    id: mod.remoteId,
+    name: mod.name,
+    is_map: mod.isMap,
+    file_tree: mod.file_tree,
   },
-});
-
-// Uninstall a mod
-await invoke<void>("uninstall_mod", {
-  modId: 12345,
-  restoreBackup: true,
-});
-```
-
-#### System Integration
-
-```typescript
-// Get system information
-const systemInfo = await invoke<SystemInfo>("get_system_info");
-
-// Open file explorer
-await invoke<void>("open_file_explorer", {
-  path: "/path/to/directory",
-});
-
-// Show in file manager
-await invoke<void>("show_in_file_manager", {
-  filePath: "/path/to/file.zip",
+  profileFolder,
+  replaceConflictingMods,
+  allowConflictingMods: [...allow, ...protectedRequirements],
+  bisectOriginalEnabled,
+  keptChoices,
 });
 ```
 
-#### Game Integration
-
-```typescript
-// Detect game installation
-const detectionResult = await invoke<GameDetection>("detect_game_installation");
-
-// Launch game
-await invoke<void>("launch_game", {
-  gamePath: "/path/to/deadlock",
-  args: ["--windowed"],
-});
-
-// Get mod status
-const modStatus = await invoke<ModStatus[]>("get_mod_status", {
-  gamePath: "/path/to/deadlock",
-});
-```
+`install_mod` enables the VPKs of a mod that is already in the mod store. It does not take an archive path or backup options.
 
 ### Events
 
-The desktop application emits events for real-time updates:
-
-```typescript
-import { listen } from "@tauri-apps/api/event";
-
-// Download progress
-await listen<DownloadProgress>("download-progress", (event) => {
-  console.log(`Download ${event.payload.id}: ${event.payload.progress}%`);
-});
-
-// Installation progress
-await listen<InstallProgress>("install-progress", (event) => {
-  console.log(`Installing: ${event.payload.status}`);
-});
-
-// Error events
-await listen<ErrorEvent>("error", (event) => {
-  console.error("Error occurred:", event.payload.message);
-});
-```
-
-## Data Types
-
-### Desktop Application Types
-
-#### InstallResult
-
-```typescript
-interface InstallResult {
-  success: boolean;
-  mod_id: number;
-  installed_files: string[];
-  backup_created: boolean;
-  message?: string;
-  error?: string;
-}
-```
-
-#### SystemInfo
-
-```typescript
-interface SystemInfo {
-  platform: "windows" | "linux";
-  arch: string;
-  version: string;
-  total_memory: number;
-  available_memory: number;
-  cpu_count: number;
-}
-```
-
-#### GameDetection
-
-```typescript
-interface GameDetection {
-  found: boolean;
-  path?: string;
-  version?: string;
-  valid: boolean;
-  steam_id?: string;
-  executable_path?: string;
-}
-```
+Some long operations report progress through Tauri events. For example, the addons backup manager emits `backup-progress`, which `apps/desktop/src/components/settings/addons-backup-management.tsx` subscribes to with `listen` from `@tauri-apps/api/event`. Search the Rust sources for `.emit(` to find an event's name and payload.
 
 ## Error Handling
 
@@ -253,22 +153,7 @@ Invalid input returns 400 with code `BAD_REQUEST`.
 
 ### Desktop Application Errors
 
-```typescript
-interface TauriError {
-  code: string;
-  message: string;
-  details?: Record<string, any>;
-}
-
-// Common error codes
-const ErrorCodes = {
-  GAME_NOT_FOUND: "GAME_NOT_FOUND",
-  INSTALL_FAILED: "INSTALL_FAILED",
-  PERMISSION_DENIED: "PERMISSION_DENIED",
-  FILE_NOT_FOUND: "FILE_NOT_FOUND",
-  CHECKSUM_MISMATCH: "CHECKSUM_MISMATCH",
-} as const;
-```
+Tauri commands reject with an object that has a `kind` field, such as `gameNotFound` or `gameRunning`, and a message. `ErrorKind` and the `isTauriError` type guard live in `apps/desktop/src/types/tauri.ts`.
 
 ## Support and Resources
 
