@@ -71,7 +71,7 @@
     },
     "store": {
       "nav": "Mod Mağazası",
-      "title": "GameBanana kataloğunun tamamı bilgisayarınızda",
+      "title": "",
       "body": "V2, GameBanana kataloğunun bir kopyasını bilgisayarınızda tutar; böylece gezinme ve arama için ağı beklemeniz gerekmez. Uygulamayı başlattığınızda ve açık kaldığı sürece yaklaşık 30 dakikada bir yeni ve güncellenmiş modları denetler.",
       "points": {
         "tabs": "Modlar, Sesler, Koleksiyonlar ve Devam Eden Çalışmalar için ayrı sekmeler",

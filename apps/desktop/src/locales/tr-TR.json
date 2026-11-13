@@ -197,7 +197,7 @@
     "plugins": "",
     "myMods": "Modlarım",
     "getMods": "Modları keşfet",
-    "addMods": "Mod ekle",
+    "addMods": "",
     "downloads": "İndirilenler",
     "settings": "Ayarlar",
     "developer": "Geliştirici",
@@ -1642,14 +1642,14 @@
         "longGames": "Maçları sonuca bağlama"
       },
       "form": "Seçili son 30 maçta kazanma oranı {{recent}}; tüm seçimde {{career}}.",
-      "winStreak_one": "Üst üste {{count}} galibiyet. Sizi buraya getiren seçimleri sürdürün.",
-      "winStreak_other": "Üst üste {{count}} galibiyet. Sizi buraya getiren seçimleri sürdürün.",
-      "lossStreak_one": "Üst üste {{count}} mağlubiyet. Bir maç daha sıraya girmek yerine ara vermek genellikle daha iyi gelir.",
-      "lossStreak_other": "Üst üste {{count}} mağlubiyet. Bir maç daha sıraya girmek yerine ara vermek genellikle daha iyi gelir.",
-      "session": "Bir oturumun {{position}}. maçında olağan {{baseline}} oranınız yerine {{winrate}} oranıyla kazanıyorsunuz. Ara vermek için iyi bir nokta.",
+      "winStreak_one": "",
+      "winStreak_other": "",
+      "lossStreak_one": "",
+      "lossStreak_other": "",
+      "session": "",
       "hours": "{{range}} aralığında {{baseline}} yerine {{winrate}} oranıyla kazanıyorsunuz.",
-      "comfortHero": "{{matches}} maçta {{winrate}} kazanma oranı; ortalamanızın belirgin biçimde üzerinde.",
-      "trapHero": "{{matches}} maçta yalnızca {{winrate}} kazanma oranı. Bu seçimi bırakmayı veya bilinçli olarak çalışmayı düşünebilirsiniz.",
+      "comfortHero": "",
+      "trapHero": "",
       "topHero": "Açık ara en çok oynanan: {{matches}} maçta {{winrate}} kazanma oranı.",
       "longGames": "{{minutes}} dakikayı aşan maçlarda kazanma oranınız {{winrate}}; genel oranınız {{baseline}}.",
       "panelTitle": "Öne çıkanlar",
@@ -2496,8 +2496,8 @@
     },
     "pool": {
       "title": "Kahraman havuzu",
-      "gem_one": "{{hero}}, {{count}} maçta {{winrate}} kazanma oranına sahip; daha fazla oynamaya değer.",
-      "gem_other": "{{hero}}, {{count}} maçta {{winrate}} kazanma oranına sahip; daha fazla oynamaya değer.",
+      "gem_one": "",
+      "gem_other": "",
       "description": "Çubuklar oynanan maç sayısını gösterir",
       "games_one": "{{count}} maç",
       "games_other": "{{count}} maç",
@@ -2657,7 +2657,7 @@
       "forgeDescription": "Topluluğun görünüm atölyesi ve varlık tarayıcısı. Tarayıcınızda açılır.",
       "forgeAction": "deadlockforge.net adresini aç",
       "commissionsTitle": "DMM Commissions",
-      "commissionsDescription": "Kendiniz yapamadığınız bir şey mi istiyorsunuz? Size özel bir görünüm, ses paketi veya başka bir mod hazırlaması için mod geliştiricisine ücret ödeyebilirsiniz. Tarayıcınızda açılır.",
+      "commissionsDescription": "",
       "commissionsAction": "Siparişlere göz at",
       "hint": "Harita modları burada desteklenmiyor. Foundry, kahraman görünümleri içindir."
     },
@@ -3905,7 +3905,7 @@
       "dropped": "{{name}}, {{position}} konumuna bırakıldı",
       "cancelled": "{{name}} taşınması iptal edildi"
     },
-    "orderSaved": "Mod sırası başarıyla kaydedildi",
+    "orderSaved": "",
     "orderSaveFailed": "Mod sırası kaydedilemedi",
     "manageOrder": "Modların Sırasını Değiştir",
     "compatibility": {
@@ -4095,8 +4095,8 @@
     "deleteConfirmBody": "Bu işlem modu mod listenizden kaldırır ve ilişkili tüm dosyaları siler. Bu işlem geri alınamaz. Silmeden önce Deadlock'un kapalı olduğundan emin olun.",
     "deleteConfirmAction": "Sil",
     "deleteConfirmCancel": "İptal",
-    "deleteSuccess": "Mod başarıyla silindi",
-    "disableSuccess": "Mod başarıyla devre dışı bırakıldı",
+    "deleteSuccess": "",
+    "disableSuccess": "",
     "deleteError": "Mod silinirken hata oluştu",
     "deleteErrorVpkInUse": "Bazı mod dosyaları şu anda oyun tarafından kullanılıyor. Lütfen Deadlock'u kapatıp yeniden deneyin.",
     "disableError": "Mod devre dışı bırakılırken hata oluştu",
@@ -4185,7 +4185,7 @@
     "noDownloadsFound": "İndirilen dosya bulunamadı",
     "noDownloadsMatchFilter": "Mevcut filtrenizle eşleşen indirme yok.",
     "viewAllDownloads": "Tüm indirmeleri görüntüle",
-    "selectFilesToDownload": "İndirilecek dosyaları seçin",
+    "selectFilesToDownload": "",
     "selectAll": "Tümünü seç",
     "selectNone": "Hiçbirini seçme",
     "total": "Toplam",
@@ -4226,7 +4226,7 @@
     }
   },
   "notifications": {
-    "modInstalledSuccessfully": "Mod başarıyla yüklendi",
+    "modInstalledSuccessfully": "",
     "failedToInstallMod": "Mod yüklenemedi",
     "installationCanceled": "Yükleme iptal edildi",
     "modContainsFiles": "{{modName}} {{fileCount}} dosya içeriyor. Yüklenecekleri seçin.",
@@ -4329,7 +4329,7 @@
     "apiHealthy": "API Çevrimiçi",
     "apiDegraded": "API Sorunları",
     "apiOffline": "API Çevrimdışı",
-    "apiUnknown": "API Durumu Bilinmiyor",
+    "apiUnknown": "",
     "authOnline": "Auth Çevrimiçi",
     "authOffline": "Auth Çevrimdışı",
     "authUnknown": "Auth Durumu Bilinmiyor",
@@ -4354,10 +4354,10 @@
     "searchNoResults": "Eşleşen ayar bulunamadı",
     "language": "Dil",
     "languageDescription": "Uygulama arayüzü için tercih ettiğiniz dili seçin",
-    "languageSettings": "Dil ayarları",
+    "languageSettings": "",
     "languageSettingsDescription": "Uygulama arayüzü için tercih ettiğiniz dili seçin",
     "appearance": "Görünüm",
-    "appearanceDescription": "Uygulamaın görünümünü özelleştirin.",
+    "appearanceDescription": "",
     "theme": "Tema",
     "themeDescription": "Açık, koyu veya sistem temasını seçin",
     "audioVolume": "Ses Seviyesi",
@@ -4440,15 +4440,15 @@
     "about": "Hakkında",
     "systemSettings": "Sistem ayarları",
     "systemSettingsDescription": "Mod Yöneticisi. Bunlar oyunu etkilemez.",
-    "gameConfigManagement": "Oyun yapılandırma yönetimi",
+    "gameConfigManagement": "",
     "gameConfigDescription": "gameinfo.gi dosyası için yedekleme, geri yükleme ve doğrulamayı yömetin. Güvenli modlama için.",
     "gamePath": "Oyun Yolu",
     "gamePathDescription": "Deadlock oyununuzun yüklü olduğu konum. Mod yöneticisi bunu otomatik olarak algılar; gerekirse elle de belirleyebilirsiniz.",
     "currentGamePath": "Geçerli Oyun Yolu",
     "browseGamePath": "Gözat",
     "autoDetectGamePath": "Otomatik Algıla",
-    "gamePathSet": "Oyun yolu başarıyla ayarlandı",
-    "gamePathAutoDetected": "Oyun yolu başarıyla otomatik olarak algılandı",
+    "gamePathSet": "",
+    "gamePathAutoDetected": "",
     "invalidGamePath": "Geçersiz oyun yolu. Lütfen geçerli bir Deadlock kurulum klasörü seçin.",
     "steamPath": "Steam Yolu",
     "steamPathSectionDescription": "Mod yöneticisinin oyunu başlatmak ve ilgili özellikleri kullanmak için Steam kurulumunuzu nasıl bulacağını yapılandırın.",
@@ -4456,10 +4456,10 @@
     "steamPathAutoDetected": "Otomatik algılanan Steam kurulumu kullanılıyor",
     "currentSteamPath": "Özel Steam Yolu",
     "browseSteamPath": "Steam klasörünü seç",
-    "steamPathSet": "Steam yolu başarıyla ayarlandı",
+    "steamPathSet": "",
     "invalidSteamPath": "Geçersiz Steam yolu. Lütfen geçerli bir Steam kurulum klasörü seçin.",
     "steamPathToggleFailed": "Steam yolu ayarları güncellenemedi",
-    "downloadCacheLocation": "İndirme önbelleğinin konumu",
+    "downloadCacheLocation": "",
     "downloadCacheLocationDescription": "İndirilen ve içe aktarılan modların saklandığı yerdir. Sistem sürücünüzde yer açmak için başka bir sürücüdeki klasörü seçin. Önbellek, seçtiğiniz klasörün içinde DeadlockModManager adlı bir klasöre kaydedilir.",
     "currentDownloadCacheLocation": "Geçerli konum",
     "browseDownloadCacheLocation": "İndirme önbelleği için klasör seçin",
@@ -4476,7 +4476,7 @@
     "selectDefaultSort": "Varsayılan sıralama seçin",
     "tools": "Araçlar",
     "backups": "Yedekler",
-    "toolsDescription": "Modlarınızı yönetmek için yardımıcı fonksiyonlar",
+    "toolsDescription": "",
     "gameGuard": "Oyun açıkken mod yüklemeyi, kaldırmayı veya sıralamayı engeller; çünkü Deadlock bu dosyaları kullanır ve yarım kalan bir değişiklik yükleme sıranızı bozabilir. Uyarı göründüğünde tek bir işlem için bu korumayı yine de geçersiz kılabilirsiniz",
     "gameGuardDescription": "Deadlock bu dosyaları kullandığı için oyun açıkken mod yükleme, kaldırma veya yeniden sıralama işlemlerini engeller. Yarım kalan bir değişiklik yükleme sıranızı bozabilir. Uyarı göründüğünde tek bir işlemi yine de zorlayabilirsiniz.",
     "gameGuardSectionTitle": "Oyun sırasında koruma",
@@ -4526,17 +4526,17 @@
     "addonsBackupDescription": "Yüklü modlarınızın yedeklerini oluşturun ve geri yükleyin.",
     "createBackup": "Yedek Oluştur",
     "creatingBackup": "Yedek oluşturuluyor...",
-    "backupCreated": "Yedek başarıyla oluşturuldu",
+    "backupCreated": "",
     "backupCreationFailed": "Yedek oluşturulamadı",
     "restoreBackup": "Geri Yükle",
     "restoringBackup": "Yedek geri yükleniyor...",
     "restoring": "Geri yükleniyor:",
-    "backupRestored": "Yedek başarıyla geri yüklendi",
+    "backupRestored": "",
     "backupRestoreFailed": "Yedek geri yüklenemedi",
     "deleteBackup": "Sil",
     "deleteBackupConfirm": "Bu yedeği silmek istediğinizden emin misiniz?",
     "deleteBackupConfirmAction": "Sil",
-    "backupDeleted": "Yedek başarıyla silindi",
+    "backupDeleted": "",
     "backupDeleteFailed": "Yedek silinemedi",
     "openBackupsFolder": "Yedekler Klasörünü Aç",
     "noBackupsFound": "Yedek bulunamadı",
@@ -4632,7 +4632,7 @@
     "confirmClearModsState": "Mod listesini temizle?",
     "confirmClearModsStateBody": "",
     "confirmClearModsStateAction": "Mod Durumunu Temizle",
-    "modsStateCleared": "Mod durumu başarıyla temizlendi",
+    "modsStateCleared": "",
     "autoexec": "Autoexec.cfg",
     "autoexecDescription": "Autoexec.cfg dosyanızı yönetin. Değişiklikler için oyunu yeniden başlatmanız gerekir.",
     "autoexecContent": "Yapılandırma Dosyası İçeriği",
@@ -4891,7 +4891,7 @@
     "openInFolder": "Klasörde aç",
     "openInEditor": "Düzenleyicide aç",
     "saveChanges": "Değişiklikleri Kaydet",
-    "autoexecSaved": "Autoexec yapılandırması başarıyla kaydedildi! Değişikliklerin geçerli olması için oyunu yeniden başlatın.",
+    "autoexecSaved": "",
     "autoexecLoadError": "Autoexec yapılandırması yüklenemedi",
     "autoexecSaveError": "Autoexec yapılandırması kaydedilemedi",
     "autoexecOpenFolderError": "Autoexec klasörü açılamadı",
@@ -5071,8 +5071,8 @@
     "resetToVanilla": "Vanilla’ya sıfırla",
     "validateConfiguration": "Yapılandırmayı doğrula",
     "openInEditor": "Düzenleyicide aç",
-    "backupCreatedSuccess": "gameinfo.gi yedeği başarıyla oluşturuldu",
-    "restoreSuccess": "gameinfo.gi yedekten başarıyla geri yüklendi",
+    "backupCreatedSuccess": "",
+    "restoreSuccess": "",
     "resetSuccess": "gameinfo.gi indirilen dosya kullanılarak varsayılan hâline sıfırlandı",
     "resetBackupRestored": "",
     "resetFailed": "Sıfırlama başarısız: gameinfo.gi varsayılan hâline getirilemedi",
@@ -5321,15 +5321,15 @@
     "thirdPartyDisclaimerTitle": "Üçüncü Taraf İçerik Bildirimi",
     "thirdPartyDisclaimerDescription": "Bu uygulama aracılığıyla mevcut tüm modlar, topluluk üyeleri tarafından oluşturulan üçüncü taraf içeriklerdir. Modlar Deadlock Mod Manager projesi tarafından oluşturulmaz, incelenmez, doğrulanmaz veya onaylanmaz. Modları kendi sorumluluğunuzda yükleyin.",
     "thirdPartyDisclaimerShort": "Modlar Deadlock Mod Manager tarafından oluşturulmayan, incelenmeyen veya onaylanmayan üçüncü taraf içeriklerdir.",
-    "gamebananaDescription": "Birincil mod kaynağımız ve bu uygulamanın omurgasıdır. GameBanana, Deadlock modlarını keşfetme, bulma ve indirmeyi sağlayan kapsamlı mod veritabanı ve API sunar.",
+    "gamebananaDescription": "",
     "visitGamebanana": "GameBanana’yı ziyaret et",
     "deadlockRichPresenceDescription": "Discord Game Presence özelliği, Jelloge'un Deadlock Rich Presence projesi ve zengin durum göstergesi için Deadlock konsol günlüğü olaylarını eşleştirme çalışması sayesinde mümkün oldu.",
     "visitDeadlockRichPresence": "Deadlock Rich Presence projesini ziyaret et",
-    "tauriDescription": "Bu çapraz platform masaüstü uygulamasını mümkün kılan güçlü framework. Tauri, en iyi web teknolojilerini yerel performans ve güvenlikle birleştirir.",
+    "tauriDescription": "",
     "visitTauri": "Tauri’yi ziyaret et",
-    "shadcnDescription": "Modern kullanıcı arayüzümüzün temelini oluşturan güzel ve erişilebilir React bileşenleri. Kopyala, yapıştır, özelleştir.",
+    "shadcnDescription": "",
     "visitShadcn": "shadcn/ui’yi ziyaret et",
-    "tailwindDescription": "Uygulamanın her yerinde duyarlı tasarım ve tutarlı stil sağlayan Utility-First CSS framework’ü.",
+    "tailwindDescription": "",
     "visitTailwind": "Tailwind CSS’i ziyaret et",
     "vpkmergeDescription": "Mod Foundry'de kullanılan Source 2 doku, KV3 ve ses codec'leri. morphic crate'inden (MIT) alınmıştır.",
     "visitVpkmerge": "Siteyi ziyaret et: vpkmerge",
@@ -5339,7 +5339,7 @@
     "thirdPartyNoticesDescription": "Bu uygulamayla birlikte dağıtılan, projeye dahil edilmiş veya kopyalanmış üçüncü taraf kodlarının lisans metinlerinin tamamı.",
     "viewThirdPartyNotices": "Üçüncü taraf bildirimlerini görüntüle",
     "openSourceCommunity": "Açık Kaynak Topluluğu",
-    "openSourceDescription": "React, TypeScript ve modern uygulamaları mümkün kılan birçok kütüphane dahil olmak üzere harika açık kaynak teknolojilerle oluşturuldu. Tüm katkıda bulunanlara teşekkürler.",
+    "openSourceDescription": "",
     "meetContributors": "Katkıda bulunanlarla tanışın",
     "releaseNotes": "Sürüm notları",
     "poweredBy": "Destekleyen",
@@ -5382,7 +5382,7 @@
     "newVersionAvailable": "Yeni bir sürüm ({{version}}) mevcut. Şu anda {{currentVersion}} sürümünü kullanıyorsunuz.",
     "releaseNotes": "Sürüm Notları",
     "downloading": "Güncelleme indiriliyor",
-    "downloadAndInstall": "İndir ve Yükle",
+    "downloadAndInstall": "",
     "later": "Sonra",
     "installing": "Yükleniyor...",
     "failedWithMessage": "Güncelleme başarısız oldu: {{message}}. Uygulamayı manuel olarak güncellemeniz gerekebilir."
@@ -5531,7 +5531,7 @@
     "savingMetadata": "Mod metaverisi kaydediliyor...",
     "processingImage": "Mod resmi işleniyor...",
     "addingToLibrary": "Mod kütüphaneye ekleniyor...",
-    "modAddedSuccess": "Mod başarıyla eklendi!",
+    "modAddedSuccess": "",
     "unsupportedSelection": "Desteklenmeyen seçim.",
     "unsupportedFiles": "Desteklenmeyen dosya(lar).",
     "failedToReadDroppedFiles": "Bırakılan dosyalar okunamadı.",
@@ -5681,7 +5681,7 @@
   },
   "onboarding": {
     "title": "Deadlock Mod Manager'a hoş geldiniz",
-    "welcome": "{{appName}} kurulumunu tamamlayalım! Bu hızlı kurulum başlamanıza yardımcı olacak.",
+    "welcome": "",
     "stepIndicator": "Adım {{current}} / {{total}}",
     "skip": "Kurulumu atla",
     "back": "Geri",
@@ -5697,7 +5697,7 @@
       "title": "Oyun yolunu bulma",
       "description": "Deadlock'un kurulu olduğu yolu otomatik olarak bulacağız.",
       "detecting": "Oyun yolu bulunuyor...",
-      "success": "Oyun yolu başarıyla bulundu!",
+      "success": "",
       "error": "Oyun yolu bulunamadı",
       "errorDescription": "Lütfen Deadlock'un kurulu olduğu klasörü kendiniz seçin.",
       "retry": "Yeniden dene",
@@ -5708,7 +5708,7 @@
       "title": "API bağlantısı",
       "description": "Mod veritabanı sunucusuna bağlantı kontrol ediliyor.",
       "checking": "API'ye bağlanılıyor...",
-      "success": "Bağlantı kuruldu!",
+      "success": "",
       "error": "API'ye bağlanılamadı",
       "errorDescription": "Lütfen internet bağlantınızı kontrol edin ve yeniden deneyin.",
       "retry": "Bağlantıyı yeniden dene",
@@ -5733,8 +5733,8 @@
   },
   "telemetryConsent": {
     "title": "Geliştirmemize yardımcı olun",
-    "description": "Kullanım analizini açık tutmanız bizi çok mutlu eder. Bu, hangi özelliklerin önemli olduğunu ve iyileştirmeler için nelere odaklanmamız gerektiğini anlamamıza yardımcı olur.",
-    "dialogDescription": "Kullanım analizi şu anda kapalı. Ayarlar'dan istediğiniz zaman açabilirsiniz; şimdi açmanız uygulamayı herkes için geliştirmemize yardımcı olur.",
+    "description": "",
+    "dialogDescription": "",
     "whatWeCollectTitle": "Topladığımız veriler",
     "whatWeCollectHwid": "Kurulumları birbirinden ayırt etmek için bu bilgisayara ait bir kimlik. Adınızla veya hesaplarınızla ilişkilendirilmez",
     "whatWeCollectFeatures": "Kullandığınız sayfalar ve özellikler ile açtığınız veya yüklediğiniz modlar",
@@ -5955,7 +5955,7 @@
   },
   "whatsNew": {
     "title": "Yenilikler",
-    "welcome": "{{appName}} uygulamasının en son sürümüne hoş geldiniz!",
+    "welcome": "",
     "fullReleaseNotes": "Tüm Sürüm Notları",
     "gotIt": "Anladım!",
     "highlightAlt": "",
@@ -6409,8 +6409,7 @@
         "title": "Nişangâh Kullanım Deneyimi İyileştirmeleri ve Japonca Desteği",
         "features": [
           "🎨 Özel nişangâh kullanım deneyimi iyileştirildi; geçmişteki nişangâhları devre dışı bırakma ve silme seçenekleri eklendi",
-          "🌐 Uygulamaya Japonca dil desteği eklendi",
-          "🔧 Küçük hata düzeltmeleri ve kararlılık iyileştirmeleri"
+          "🌐 Uygulamaya Japonca dil desteği eklendi"
         ]
       },
       "0.11.0": {
@@ -6464,10 +6463,7 @@
       },
       "0.8.2": {
         "title": "Hata Düzeltmeleri ve İyileştirmeler",
-        "features": [
-          "🐛 Çeşitli hatalar giderildi ve kararlılık artırıldı",
-          "⚡ Performans iyileştirmeleri ve optimizasyonlar"
-        ]
+        "features": []
       },
       "0.8.1": {
         "title": "Teknik İyileştirmeler",
@@ -6510,8 +6506,7 @@
         "features": [
           "🎵 Ses modları desteği eklendi - Deadlock seslerini özelleştirin",
           "🚀 Başlatma seçenekleri yönetimi geliştirildi - artık \"+\" önekinin zorunlu olduğunu varsaymıyor",
-          "🔧 Mod uyumluluğu ve yükleme süreci geliştirildi",
-          "⚡ Çeşitli performans iyileştirmeleri ve kararlılık geliştirmeleri"
+          "🔧 Mod uyumluluğu ve yükleme süreci geliştirildi"
         ]
       },
       "0.5.1": {
@@ -6524,8 +6519,7 @@
           "🔍 Modlar sayfasındaki filtreleme ve arama işlevleri iyileştirildi",
           "🐳 Docker uyumluluk sorunları giderildi",
           "🎨 Mod kartlarının düzeni ve görünümü geliştirildi",
-          "📖 GameBanana'yı veri kaynağı olarak belirten arayüz güncellendi",
-          "⚡ Çeşitli performans iyileştirmeleri ve kararlılık geliştirmeleri"
+          "📖 GameBanana'yı veri kaynağı olarak belirten arayüz güncellendi"
         ]
       },
       "0.5.0": {
@@ -6536,8 +6530,7 @@
           "⚠️ Modları daha iyi yönetmek için yeni eski mod uyarı sistemi eklendi",
           "🎮 Kahraman listesi en yeni Deadlock kahramanlarıyla güncellendi",
           "🔧 Özel başlatma seçeneklerinin etkin/devre dışı durumunu dikkate almaması sorunu giderildi",
-          "🎨 Arayüz bileşenleri ve düzen iyileştirildi",
-          "🔧 Çeşitli kararlılık iyileştirmeleri ve hata düzeltmeleri"
+          "🎨 Arayüz bileşenleri ve düzen iyileştirildi"
         ]
       },
       "0.4.0": {
@@ -6554,8 +6547,7 @@
         "features": [
           "🎨 Daha iyi kullanıcı deneyimi için arayüz tamamen yenilendi",
           "📦 İndirme yönetimi iyileştirildi",
-          "⚡ Performans iyileştirmeleri",
-          "🔄 Temel bağımlılıklar güncellendi"
+          ""
         ]
       },
       "0.2.0": {
@@ -6606,7 +6598,7 @@
       "settingsDescription": "Görünümü ayarla ve seçilmiş hazır ayarlar ile özel stiller arasında seçim yap.",
       "preDefinedThemes": "Önceden tanımlanmış temalar",
       "customThemes": "Özel temalar",
-      "preDefinedDescription": "Deneyiminizi geliştirmek için özenle hazırlanmış temalar arasından seçim yapın.",
+      "preDefinedDescription": "",
       "customDescription": "Tercih ettiğiniz renk ve stillerle kendi temanızı oluşturun.",
       "customThemeBuilder": "Özel Tema Oluşturucu",
       "customThemeBuilderDescription": "Renk ve stiller seçerek kendi temanızı oluşturun.",
@@ -6754,7 +6746,7 @@
       "customColorDescription": ""
     },
     "nightshift": {
-      "description": "Klarite ve uzun oyun oturumları için tasarlanmış turkuaz vurgulu siberpunk tema.",
+      "description": "",
       "visit": "Nightshift'i ziyaret et:",
       "twitter": "Twitter",
       "discord": "Discord"
@@ -6764,7 +6756,7 @@
       "visit": "Skeptic tarafından tema"
     },
     "arcane": {
-      "description": "Arcane estetiğinden ilham alan pembe-kırmızı parıltı efektleriyle şık karanlık tema.",
+      "description": "",
       "visit": "Skeptic tarafından tema",
       "customColor": "Özel Renk",
       "customColorDescription": "Arcane teması için özel bir vurgu rengi seçin."
@@ -7431,7 +7423,7 @@
     "latestMods": "En Yeni Modlar",
     "popularMods": "Popüler Modlar",
     "noAnnouncementsTitle": "Duyuru yok",
-    "noAnnouncementsDescription": "Şu anda duyuru yok. Güncellemeler ve haberler için daha sonra tekrar kontrol edin.",
+    "noAnnouncementsDescription": "",
     "checkBackLater": "Güncellemeler için daha sonra tekrar kontrol edin",
     "noModsAvailable": "Kullanılabilir mod yok",
     "learnMore": "Daha fazla bilgi",
@@ -7504,7 +7496,7 @@
     "catalogWiped": "Yerel katalog temizlendi",
     "wipeCatalogFailed": "Yerel katalog temizlenemedi",
     "confirmClearModsState": "Modlar durumunu temizlemek istediğinizden emin misiniz? Bu, tüm modları uygulamadan kaldıracak ancak oyun klasörünüzden SİLMEYECEKTİR. Modları geri yüklemek için mod klasörünüzü yeniden tarayabilirsiniz.",
-    "modsStateCleared": "Modlar durumu başarıyla temizlendi",
+    "modsStateCleared": "",
     "triggerOnboarding": "İlk kurulumu tetikle",
     "resetTelemetryConsent": "Telemetri iznini sıfırla",
     "triggerMatchSyncConsent": "Maç verisi izni istemini tetikle",
@@ -7514,7 +7506,7 @@
   },
   "developer": {
     "title": "Geliştirici Araçları",
-    "description": "Geliştiricilere yönelik gelişmiş araçlar ve özellikler",
+    "description": "",
     "shards": {
       "navLabel": "Parçalar",
       "title": "Parça durumu",
@@ -7581,12 +7573,12 @@
     "inactive": "Etkin değil",
     "switching": "Profil değiştiriliyor…",
     "manageDescription": "Farklı mod profilleri oluşturun, düzenleyin ve aralarında geçiş yapın. Her profil hangi modları etkinleştirdiğinizi hatırlar.",
-    "createNew": "Yeni profil oluştur",
+    "createNew": "",
     "create": "Oluştur",
     "creating": "Oluşturuluyor...",
     "createDescription": "Modlarınızı düzenlemek için yeni bir profil oluşturun. Her profil farklı etkinleştirilmiş modlara sahip olabilir.",
     "editProfile": "Profili düzenle",
-    "editDescription": "'{{profileName}}' profilini düzenle",
+    "editDescription": "",
     "update": "Güncelle",
     "updating": "Güncelleniyor...",
     "name": "İsim",
@@ -7611,16 +7603,16 @@
     "switchDetails": "{{enabled}} etkinleştirildi, {{disabled}} devre dışı bırakıldı",
     "switchError": "Profil değiştirme başarısız: {{errors}}",
     "switchUnexpectedError": "Profil değiştirirken beklenmeyen bir hata oluştu",
-    "createSuccess": "'{{profileName}}' profili başarıyla oluşturuldu",
+    "createSuccess": "",
     "createError": "Profil oluşturma başarısız",
-    "updateSuccess": "'{{profileName}}' profili başarıyla güncellendi",
+    "updateSuccess": "",
     "updateError": "Profil güncelleme başarısız",
-    "deleteSuccess": "'{{profileName}}' profili başarıyla silindi",
+    "deleteSuccess": "",
     "deleteError": "Profil silme başarısız",
     "sync": "Profilleri eşitle",
-    "syncSuccess": "Profiller başarıyla eşitlendi",
+    "syncSuccess": "",
     "syncError": "Profiller eşitlenemedi",
-    "shareSuccess": "Profil başarıyla paylaşıldı!",
+    "shareSuccess": "",
     "shareError": "Profil paylaşılamadı",
     "shareNoMods": "Profil paylaşılamıyor: hiçbir mod etkin değil",
     "noHardwareIdOrVersion": "Profil paylaşılamıyor: donanım ID'si veya sürüm bilgisi eksik",
@@ -7641,7 +7633,7 @@
     "submissionTypeSound": "Ses",
     "profileIdPlaceholder": "Profil ID'si girin (örn. abc123def456)",
     "profileIdRequired": "Profil ID'si gerekli",
-    "importSuccess": "Profil başarıyla içe aktarıldı!",
+    "importSuccess": "",
     "importError": "Profil içe aktarılamadı. Profil ID'sini kontrol edin ve tekrar deneyin.",
     "includedMods": "Dahil Edilen Modlar",
     "noModsIncluded": "Bu profilde hiçbir mod bulunmuyor",
@@ -7649,7 +7641,7 @@
     "importOptionsDescription": "Bu içe aktarılan profili nasıl kaydedeceğinizi seçin:",
     "createNewProfile": "Yeni Profil Oluştur",
     "overrideExisting": "Aktif Profili Değiştir",
-    "overrideSuccess": "Aktif profil başarıyla güncellendi!",
+    "overrideSuccess": "",
     "creatingProfile": "Yeni profil oluşturuluyor...",
     "updatingProfile": "Mevcut profil güncelleniyor...",
     "processingMods": "Modlar işleniyor...",
@@ -7765,14 +7757,14 @@
     "noUpdateAvailable": "Güncelleme yok",
     "checkUpdateError": "Güncellemeler denetlenemedi",
     "vpkReplacement": {
-      "title": "VPK Dosyalarını Değiştir",
+      "title": "",
       "description": "Geliştirme sırasında hızlı iterasyon için mod dosyalarını değiştirin",
       "dragAndDrop": "VPK dosyalarını buraya sürükleyip bırakın",
       "selectFiles": "Dosya Seç",
       "currentFiles": "Mevcut VPK Dosyaları",
       "replaceAll": "Tüm Dosyaları Değiştir",
       "selectToReplace": "Değiştirilecek {{count}} dosya seçin",
-      "success": "VPK dosyaları başarıyla değiştirildi",
+      "success": "",
       "error": "VPK dosyaları değiştirilemedi",
       "countMismatch": "Beklenen {{expected}} dosya (tekil veya çoğul), alınan {{actual}}"
     },
@@ -7831,7 +7823,7 @@
     "loadFirst": ""
   },
   "reports": {
-    "reportSubmitted": "Rapor başarıyla gönderildi",
+    "reportSubmitted": "",
     "reportFailed": "Rapor gönderilemedi",
     "thankYou": "Teşekkürler!",
     "thankYouDescription": "Topluluğa haber verdiğiniz için teşekkürler!",
@@ -7917,9 +7909,9 @@
       "apply": "Uygula",
       "publish": "Yayımla",
       "publishing": "Yayımlanıyor...",
-      "applied": "Nişangâh başarıyla uygulandı",
+      "applied": "",
       "applyError": "Nişangâh uygulanamadı",
-      "published": "Nişangâh başarıyla yayımlandı",
+      "published": "",
       "loginRequired": "Nişangâh yayımlamak için giriş yapmış olmanız gerekir",
       "nameValidation": "Ad 3 ile 50 karakter arasında olmalıdır",
       "descriptionValidation": "Açıklama 500 karakterden kısa olmalıdır",
@@ -7931,7 +7923,7 @@
         "title": "Nişangah ayarlarını içe aktar",
         "description": "Citadel biçimindeki nişangah ayarlarınızı forma aktarmak için aşağıya yapıştırın.",
         "placeholder": "citadel_crosshair_color_r 255; citadel_crosshair_color_g 255; citadel_crosshair_color_b 255; citadel_crosshair_pip_border true; ...",
-        "success": "Nişangah ayarları başarıyla içe aktarıldı",
+        "success": "",
         "emptyError": "İçe aktarmak için nişangah ayarlarını yapıştırın",
         "parseError": "Nişangah ayarları çözümlenemedi. Lütfen biçimi kontrol edip tekrar deneyin."
       }
@@ -8035,7 +8027,7 @@
     "byAuthor": "{{author}} tarafından"
   },
   "criticalPaths": {
-    "title": "Kritik Oyun Dosyaları Uyarısı",
+    "title": "",
     "body": "Bu mod kritik oyun dosyalarının (yetenekler, kahramanlar veya genel veriler) üzerine yazar. Bu modu etkinleştirmek oyun kararsızlığına veya çökmelere neden olabilir. Yine de bu modu etkinleştirmek istiyor musunuz?",
     "cancel": "Hayır",
     "confirm": "Evet, yine de etkinleştir"
@@ -8766,7 +8758,7 @@
       "body": "Araç takımları ekleyin, kaldırın, boyutlarını değiştirin veya yeniden düzenleyin; şablonlardan yeni sekmeler oluşturun."
     },
     "nightlyChannel": {
-      "title": "Yenilikleri herkesten önce denemek ister misiniz?",
+      "title": "",
       "body": ""
     }
   },
@@ -8782,7 +8774,7 @@
     "title": "3D önizleme",
     "disclaimerTitle": "Geliştirme aşamasında",
     "wipBadge": "Yapım aşamasında",
-    "disclaimer": "Bu önizleme hâlâ yoğun biçimde geliştiriliyor. Bazı kısıtlamaları vardır ve modeller, malzemeler, animasyonlar ile efektler dahil oyunda gördüğünüz her şeyi yansıtmayabilir.",
+    "disclaimer": "",
     "downloadFirstHint": "",
     "download": "",
     "chooseFile": "",

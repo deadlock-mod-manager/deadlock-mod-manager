@@ -197,7 +197,7 @@
     "plugins": "",
     "myMods": "Бібліятэка модаў",
     "getMods": "Крама модаў",
-    "addMods": "Дадаць лакальны мод",
+    "addMods": "",
     "downloads": "Спампоўкі",
     "settings": "Налады",
     "developer": "Распрацоўшчык",
@@ -3905,7 +3905,7 @@
       "dropped": "",
       "cancelled": ""
     },
-    "orderSaved": "Парадак модаў паспяхова захаваны",
+    "orderSaved": "",
     "orderSaveFailed": "Не атрымалася захаваць парадак модаў",
     "manageOrder": "Змяніць парадак модаў",
     "compatibility": {
@@ -4095,8 +4095,8 @@
     "deleteConfirmBody": "Гэта выдаліць яго са спісу модаў і сатрэ ўсе звязаныя файлы. Гэтае дзеянне нельга адмяніць. Пераканайцеся, што Deadlock зачынены перад выдаленнем.",
     "deleteConfirmAction": "Выдаліць",
     "deleteConfirmCancel": "Адмяніць",
-    "deleteSuccess": "Мод паспяхова выдалены",
-    "disableSuccess": "Мод паспяхова адключаны",
+    "deleteSuccess": "",
+    "disableSuccess": "",
     "deleteError": "Не атрымалася выдаліць мод",
     "deleteErrorVpkInUse": "Некаторыя файлы мода зараз выкарыстоўваюцца гульнёй. Калі ласка, зачыніце Deadlock і паспрабуйце яшчэ раз.",
     "disableError": "Не атрымалася адключыць мод",
@@ -4185,7 +4185,7 @@
     "noDownloadsFound": "Спампоўак не знойдзена",
     "noDownloadsMatchFilter": "Няма спампоўак, якія адпавядаюць вашаму бягучаму фільтру.",
     "viewAllDownloads": "Прагляд усіх спампоўак",
-    "selectFilesToDownload": "Выбраць файлы для спампоўкі",
+    "selectFilesToDownload": "",
     "selectAll": "Выбраць усё",
     "selectNone": "Зняць выбар",
     "total": "Усяго",
@@ -4226,7 +4226,7 @@
     }
   },
   "notifications": {
-    "modInstalledSuccessfully": "Мод паспяхова ўсталяваны",
+    "modInstalledSuccessfully": "",
     "failedToInstallMod": "Не атрымалася ўсталяваць мод",
     "installationCanceled": "Усталёўка адменена",
     "modContainsFiles": "{{modName}} змяшчае {{fileCount}} файлаў. Выберыце, якія з іх усталяваць.",
@@ -4329,7 +4329,7 @@
     "apiHealthy": "API у сетцы",
     "apiDegraded": "Праблемы з API",
     "apiOffline": "API не ў сетцы",
-    "apiUnknown": "Статус API невядомы",
+    "apiUnknown": "",
     "authOnline": "Сервер аўтарызацыі ў сетцы",
     "authOffline": "Сервер аўтарызацыі не ў сетцы",
     "authUnknown": "Статус аўтарызацыі невядомы",
@@ -4354,10 +4354,10 @@
     "searchNoResults": "",
     "language": "Мова",
     "languageDescription": "Выберыце пажаданую мову для інтэрфейсу праграмы",
-    "languageSettings": "Налады мовы",
+    "languageSettings": "",
     "languageSettingsDescription": "Выберыце пажаданую мову для інтэрфейсу праграмы",
     "appearance": "Знешні выгляд",
-    "appearanceDescription": "Наладзьце знешні выгляд праграмы.",
+    "appearanceDescription": "",
     "theme": "Тэма",
     "themeDescription": "Выберыце светлую, цёмную або сістэмную тэму",
     "audioVolume": "Гучнасць аўдыё",
@@ -4440,15 +4440,15 @@
     "about": "Аб праграме",
     "systemSettings": "Налады сістэмы",
     "systemSettingsDescription": "Налады менеджэра модаў. Яны не ўплываюць на гульню.",
-    "gameConfigManagement": "Кіраванне канфігурацыяй гульні",
+    "gameConfigManagement": "",
     "gameConfigDescription": "Кіраванне рэзервовым капіраваннем, аднаўленнем і праверкай файла gameinfo.gi для бяспечнай усталёўкі модаў.",
     "gamePath": "Шлях да гульні",
     "gamePathDescription": "Шлях да ўсталяванай гульні Deadlock. Менеджэр модаў аўтаматычна выявіць яго, але вы можаце ўсталяваць яго ўручную пры неабходнасці.",
     "currentGamePath": "Бягучы шлях да гульні",
     "browseGamePath": "Агляд",
     "autoDetectGamePath": "Аўта-выяўленне",
-    "gamePathSet": "Шлях да гульні паспяхова ўсталяваны",
-    "gamePathAutoDetected": "Шлях да гульні паспяхова выяўлены аўтаматычна",
+    "gamePathSet": "",
+    "gamePathAutoDetected": "",
     "invalidGamePath": "Няслушны шлях да гульні. Калі ласка, выберыце сапраўдную папку ўсталявання Deadlock.",
     "steamPath": "Шлях да Steam",
     "steamPathSectionDescription": "Наладзьце, як менеджэр модаў знаходзіць вашу ўсталёўку Steam для запуску гульні і звязаных функцый.",
@@ -4456,7 +4456,7 @@
     "steamPathAutoDetected": "Выкарыстоўваецца аўтаматычна выяўленая ўсталёўка Steam",
     "currentSteamPath": "Кастомны шлях да Steam",
     "browseSteamPath": "Выбраць папку Steam",
-    "steamPathSet": "Шлях да Steam паспяхова ўсталяваны",
+    "steamPathSet": "",
     "invalidSteamPath": "Няслушны шлях да Steam. Калі ласка, выберыце сапраўдную папку ўсталявання Steam.",
     "steamPathToggleFailed": "Не атрымалася абнавіць налады шляху да Steam",
     "downloadCacheLocation": "",
@@ -6409,7 +6409,6 @@
         "title": "",
         "features": [
           "",
-          "",
           ""
         ]
       },
@@ -6464,10 +6463,7 @@
       },
       "0.8.2": {
         "title": "",
-        "features": [
-          "",
-          ""
-        ]
+        "features": []
       },
       "0.8.1": {
         "title": "",
@@ -6510,7 +6506,6 @@
         "features": [
           "",
           "",
-          "",
           ""
         ]
       },
@@ -6524,14 +6519,12 @@
           "",
           "",
           "",
-          "",
           ""
         ]
       },
       "0.5.0": {
         "title": "",
         "features": [
-          "",
           "",
           "",
           "",
@@ -6552,7 +6545,6 @@
       "0.3.0": {
         "title": "",
         "features": [
-          "",
           "",
           "",
           ""

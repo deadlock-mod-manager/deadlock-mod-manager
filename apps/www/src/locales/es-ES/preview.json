@@ -137,7 +137,7 @@
   },
   "store": {
     "title": "Buscar Mods",
-    "subtitle": "Actualizado cada hora, con nuevos Mods añadidos constantemente.",
+    "subtitle": "",
     "tabs": {
       "mods": "",
       "sounds": "Sonidos",
@@ -282,7 +282,7 @@
     },
     "themes": {
       "title": "Temas",
-      "description": "Elige entre temas cuidadosamente diseñados para mejorar tu experiencia.",
+      "description": "",
       "predefined": "Temas predefinidos",
       "custom": "Temas personalizados",
       "active": "Activo",

@@ -31,7 +31,7 @@
   "tour": {
     "eyebrow": "Prévia ao vivo",
     "title": "Teste antes de baixar",
-    "description": "Esta é uma cópia funcional do app, aqui mesmo na página. Instale um mod, troque o tema ou configure uma mira.",
+    "description": "",
     "slidesLabel": "Como o app funciona",
     "slides": {
       "find": {
@@ -55,7 +55,7 @@
       "heading": "O que ele faz",
       "items": {
         "copies": "Copia os arquivos .vpk dos mods para a pasta addons",
-        "backups": "Faz backup antes de mudar algo e restaura com um clique",
+        "backups": "",
         "vanilla": "Deixa você jogar sem mods quando quiser"
       }
     },
@@ -149,7 +149,7 @@
       },
       "safe": {
         "question": "É seguro usar mods?",
-        "answer": "O app só copia arquivos .vpk para a pasta addons do jogo, nunca modifica o executável do Deadlock e faz backup antes, para você restaurar com um clique ou jogar sem mods quando quiser. As skins ficam só no seu cliente, e os mods são feitos pela comunidade, então fique com os que você confia."
+        "answer": ""
       },
       "uninstall": {
         "question": "Como desinstalar mods?",

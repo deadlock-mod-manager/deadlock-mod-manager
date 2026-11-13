@@ -197,7 +197,7 @@
     "plugins": "",
     "myMods": "我的模组",
     "getMods": "获取模组",
-    "addMods": "添加本地模组",
+    "addMods": "",
     "downloads": "下载",
     "settings": "设置",
     "developer": "开发者",
@@ -1642,11 +1642,11 @@
         "longGames": "如何终结比赛"
       },
       "form": "",
-      "winStreak_one": "{{count}} 连胜。保持让你走到这里的选人。",
-      "winStreak_other": "{{count}} 连胜。保持让你走到这里的选人。",
+      "winStreak_one": "",
+      "winStreak_other": "",
       "lossStreak_one": "",
       "lossStreak_other": "",
-      "session": "在一场会话的第 {{position}} 场比赛，你的胜率是 {{winrate}}，而平时是 {{baseline}}。这大概就是该停下来的位置。",
+      "session": "",
       "hours": "在 {{range}} 之间，你的胜率是 {{winrate}}，而基准是 {{baseline}}。",
       "comfortHero": "",
       "trapHero": "",
@@ -2657,7 +2657,7 @@
       "forgeDescription": "社区的皮肤工坊与素材浏览器，将在浏览器中打开。",
       "forgeAction": "打开 deadlockforge.net",
       "commissionsTitle": "",
-      "commissionsDescription": "想要自己做不出来的东西？付费委托模组作者为你定制皮肤、音效包或其他模组。将在浏览器中打开。",
+      "commissionsDescription": "",
       "commissionsAction": "浏览委托",
       "hint": ""
     },
@@ -3905,7 +3905,7 @@
       "dropped": "",
       "cancelled": ""
     },
-    "orderSaved": "模组顺序保存成功",
+    "orderSaved": "",
     "orderSaveFailed": "保存模组顺序失败",
     "manageOrder": "更改模组顺序",
     "compatibility": {
@@ -4095,8 +4095,8 @@
     "deleteConfirmBody": "这会将其从你的模组列表中移除并删除所有相关文件。此操作无法撤销。请确保在删除前关闭 Deadlock。",
     "deleteConfirmAction": "删除",
     "deleteConfirmCancel": "取消",
-    "deleteSuccess": "模组删除成功",
-    "disableSuccess": "模组禁用成功",
+    "deleteSuccess": "",
+    "disableSuccess": "",
     "deleteError": "删除模组失败",
     "deleteErrorVpkInUse": "部分模组文件当前正被游戏使用。请关闭 Deadlock 并重试。",
     "disableError": "禁用模组失败",
@@ -4185,7 +4185,7 @@
     "noDownloadsFound": "未找到下载",
     "noDownloadsMatchFilter": "没有符合当前筛选条件的下载项。",
     "viewAllDownloads": "查看所有下载",
-    "selectFilesToDownload": "选择要下载的文件",
+    "selectFilesToDownload": "",
     "selectAll": "全选",
     "selectNone": "全不选",
     "total": "总计",
@@ -4226,7 +4226,7 @@
     }
   },
   "notifications": {
-    "modInstalledSuccessfully": "模组安装成功",
+    "modInstalledSuccessfully": "",
     "failedToInstallMod": "模组安装失败",
     "installationCanceled": "安装已取消",
     "modContainsFiles": "{{modName}} 包含 {{fileCount}} 个文件。请选择要安装的文件。",
@@ -4329,7 +4329,7 @@
     "apiHealthy": "API 在线",
     "apiDegraded": "API 存在问题",
     "apiOffline": "API 离线",
-    "apiUnknown": "API 状态未知",
+    "apiUnknown": "",
     "authOnline": "Auth 在线",
     "authOffline": "Auth 离线",
     "authUnknown": "Auth 状态未知",
@@ -4354,10 +4354,10 @@
     "searchNoResults": "没有匹配的设置",
     "language": "语言",
     "languageDescription": "选择应用程序界面的首选语言",
-    "languageSettings": "语言设置",
+    "languageSettings": "",
     "languageSettingsDescription": "选择应用程序界面的首选语言",
     "appearance": "外观",
-    "appearanceDescription": "自定义应用程序的外观。",
+    "appearanceDescription": "",
     "theme": "主题",
     "themeDescription": "在浅色、深色或系统主题之间选择",
     "audioVolume": "音频音量",
@@ -4440,15 +4440,15 @@
     "about": "关于",
     "systemSettings": "系统设置",
     "systemSettingsDescription": "模组管理器设置。这些设置不影响游戏。",
-    "gameConfigManagement": "游戏配置管理",
+    "gameConfigManagement": "",
     "gameConfigDescription": "管理 gameinfo.gi 文件的备份、恢复和验证，以确保模组安装安全。",
     "gamePath": "游戏路径",
     "gamePathDescription": "Deadlock 游戏安装的路径。模组管理器会自动检测，但你可以根据需要手动设置。",
     "currentGamePath": "当前游戏路径",
     "browseGamePath": "浏览",
     "autoDetectGamePath": "自动检测",
-    "gamePathSet": "游戏路径设置成功",
-    "gamePathAutoDetected": "游戏路径自动检测成功",
+    "gamePathSet": "",
+    "gamePathAutoDetected": "",
     "invalidGamePath": "游戏路径无效。请选择一个有效的 Deadlock 安装文件夹。",
     "steamPath": "Steam 路径",
     "steamPathSectionDescription": "配置模组管理器如何定位你的 Steam 安装以启动游戏及相关功能。",
@@ -4456,7 +4456,7 @@
     "steamPathAutoDetected": "使用自动检测到的 Steam 安装",
     "currentSteamPath": "自定义 Steam 路径",
     "browseSteamPath": "浏览 Steam 文件夹",
-    "steamPathSet": "Steam 路径设置成功",
+    "steamPathSet": "",
     "invalidSteamPath": "无效的 Steam 路径。请选择有效的 Steam 安装文件夹。",
     "steamPathToggleFailed": "无法更新 Steam 路径设置",
     "downloadCacheLocation": "",
@@ -4476,7 +4476,7 @@
     "selectDefaultSort": "选择默认排序",
     "tools": "工具",
     "backups": "备份",
-    "toolsDescription": "用于管理模组的实用功能",
+    "toolsDescription": "",
     "gameGuard": "Deadlock 运行时阻止更改",
     "gameGuardDescription": "游戏打开时拒绝安装、移除或调整模组顺序，因为 Deadlock 会占用这些文件，更改进行到一半可能破坏你的加载顺序。出现警告时，你仍可为单次操作强行继续。",
     "gameGuardSectionTitle": "游玩时的保护",
@@ -4526,17 +4526,17 @@
     "addonsBackupDescription": "创建和恢复已安装模组的备份。",
     "createBackup": "创建备份",
     "creatingBackup": "正在创建备份…",
-    "backupCreated": "备份创建成功",
+    "backupCreated": "",
     "backupCreationFailed": "创建备份失败",
     "restoreBackup": "恢复",
     "restoringBackup": "正在恢复备份…",
     "restoring": "恢复：",
-    "backupRestored": "备份恢复成功",
+    "backupRestored": "",
     "backupRestoreFailed": "恢复备份失败",
     "deleteBackup": "删除",
     "deleteBackupConfirm": "你确定要删除此备份吗？",
     "deleteBackupConfirmAction": "删除",
-    "backupDeleted": "备份删除成功",
+    "backupDeleted": "",
     "backupDeleteFailed": "删除备份失败",
     "openBackupsFolder": "打开备份文件夹",
     "noBackupsFound": "未找到备份",
@@ -4632,7 +4632,7 @@
     "confirmClearModsState": "清除模组状态？",
     "confirmClearModsStateBody": "",
     "confirmClearModsStateAction": "清除模组状态",
-    "modsStateCleared": "模组状态已成功清除",
+    "modsStateCleared": "",
     "autoexec": "Autoexec.cfg",
     "autoexecDescription": "管理你的 autoexec.cfg 文件。更改需要重新启动游戏。",
     "autoexecContent": "配置文件内容",
@@ -4891,7 +4891,7 @@
     "openInFolder": "在文件夹中打开",
     "openInEditor": "在编辑器中打开",
     "saveChanges": "保存更改",
-    "autoexecSaved": "Autoexec 配置保存成功！重启游戏以使更改生效。",
+    "autoexecSaved": "",
     "autoexecLoadError": "无法加载 autoexec 配置",
     "autoexecSaveError": "autoexec 配置保存失败",
     "autoexecOpenFolderError": "无法打开 autoexec 文件夹",
@@ -5071,8 +5071,8 @@
     "resetToVanilla": "重置为纯净版",
     "validateConfiguration": "验证配置",
     "openInEditor": "在编辑器中打开",
-    "backupCreatedSuccess": "gameinfo.gi 备份已成功创建",
-    "restoreSuccess": "gameinfo.gi 已从备份成功恢复",
+    "backupCreatedSuccess": "",
+    "restoreSuccess": "",
     "resetSuccess": "",
     "resetBackupRestored": "",
     "resetFailed": "",
@@ -5321,15 +5321,15 @@
     "thirdPartyDisclaimerTitle": "第三方内容免责声明",
     "thirdPartyDisclaimerDescription": "通过此应用程序提供的所有模组均为社区成员创建的第三方内容。模组并非由 Deadlock Mod Manager 项目创建、审查、验证或认可。请自行决定是否安装模组。",
     "thirdPartyDisclaimerShort": "模组为第三方内容，并非由 Deadlock Mod Manager 创建、审查或认可。",
-    "gamebananaDescription": "我们的主要模组来源和本应用程序的支柱。GameBanana 提供了全面的模组数据库和 API，使得浏览、发现和下载 Deadlock 模组成为可能。",
+    "gamebananaDescription": "",
     "visitGamebanana": "访问 GameBanana",
     "deadlockRichPresenceDescription": "Discord 游戏状态显示之所以能够实现，完全多亏了 Jelloge 的 Deadlock Rich Presence 项目以及其映射 Deadlock 控制台日志事件以支持 rich presence 的工作。",
     "visitDeadlockRichPresence": "访问 Deadlock Rich Presence",
-    "tauriDescription": "强大的框架，支持此跨平台桌面应用程序。Tauri 将最佳的 Web 技术与原生性能和安全性相结合。",
+    "tauriDescription": "",
     "visitTauri": "访问 Tauri",
-    "shadcnDescription": "美观且易于访问的 React 组件，为我们现代化的用户界面奠定了基础。可复制、粘贴并完美自定义。",
+    "shadcnDescription": "",
     "visitShadcn": "访问 shadcn/ui",
-    "tailwindDescription": "实用优先的 CSS 框架，为我们在整个应用程序中的响应式设计和一致样式提供动力。",
+    "tailwindDescription": "",
     "visitTailwind": "访问 Tailwind CSS",
     "vpkmergeDescription": "Mod Foundry 所使用的 Source 2 纹理、KV3 与音频编解码器，来自 morphic crate（MIT 许可）。",
     "visitVpkmerge": "访问 vpkmerge",
@@ -5339,7 +5339,7 @@
     "thirdPartyNoticesDescription": "本应用随附的第三方代码（含内置与拷贝引入部分）的完整许可文本。",
     "viewThirdPartyNotices": "查看第三方声明",
     "openSourceCommunity": "开源社区",
-    "openSourceDescription": "使用出色的开源技术构建，包括 React、TypeScript 和许多其他使现代应用程序成为可能的库。感谢所有贡献者和维护者。",
+    "openSourceDescription": "",
     "meetContributors": "",
     "releaseNotes": "发行说明",
     "poweredBy": "技术支持",
@@ -5382,7 +5382,7 @@
     "newVersionAvailable": "新版本（{{version}}） 可用。你当前使用的版本是 {{currentVersion}}。",
     "releaseNotes": "发行说明",
     "downloading": "正在下载更新",
-    "downloadAndInstall": "下载并安装",
+    "downloadAndInstall": "",
     "later": "稍后",
     "installing": "正在安装…",
     "failedWithMessage": "更新失败：{{message}}。你可能需要手动更新应用。"
@@ -5531,7 +5531,7 @@
     "savingMetadata": "正在保存模组元数据…",
     "processingImage": "正在处理模组图片…",
     "addingToLibrary": "正在将模组添加到库中…",
-    "modAddedSuccess": "模组添加成功！",
+    "modAddedSuccess": "",
     "unsupportedSelection": "不支持的选择。",
     "unsupportedFiles": "不支持的文件。",
     "failedToReadDroppedFiles": "无法读取拖放的文件。",
@@ -5681,7 +5681,7 @@
   },
   "onboarding": {
     "title": "欢迎使用 Deadlock Mod Manager",
-    "welcome": "让我们帮你完成 {{appName}} 的设置吧！这个快速设置流程将帮助你快速上手。",
+    "welcome": "",
     "stepIndicator": "第 {{current}} 步，共 {{total}} 步",
     "skip": "跳过设置",
     "back": "返回",
@@ -5697,7 +5697,7 @@
       "title": "游戏路径检测",
       "description": "我们将自动检测你的 Deadlock 安装路径。",
       "detecting": "正在检测游戏路径…",
-      "success": "游戏路径检测成功！",
+      "success": "",
       "error": "无法检测到游戏路径",
       "errorDescription": "请手动浏览至你的 Deadlock 安装文件夹。",
       "retry": "重试检测",
@@ -5708,7 +5708,7 @@
       "title": "API 连接",
       "description": "正在检查与模组数据库服务器的连接。",
       "checking": "连接 API 中…",
-      "success": "连接成功！",
+      "success": "",
       "error": "连接 API 失败",
       "errorDescription": "请检查你的互联网连接并重试。",
       "retry": "重试连接",
@@ -5733,8 +5733,8 @@
   },
   "telemetryConsent": {
     "title": "帮助我们改进！",
-    "description": "我们非常希望你能保持使用分析功能开启。这能帮助我们了解哪些功能至关重要，以及应将改进重点放在何处。",
-    "dialogDescription": "使用情况分析当前已关闭。你可以随时在“设置”中开启，但现在开启有助于我们为所有用户改进应用。",
+    "description": "",
+    "dialogDescription": "",
     "whatWeCollectTitle": "我们收集的内容",
     "whatWeCollectHwid": "",
     "whatWeCollectFeatures": "",
@@ -5955,7 +5955,7 @@
   },
   "whatsNew": {
     "title": "更新日志",
-    "welcome": "欢迎使用 {{appName}} 的最新版本！",
+    "welcome": "",
     "fullReleaseNotes": "完整发行说明",
     "gotIt": "知道了！",
     "highlightAlt": "",
@@ -6409,8 +6409,7 @@
         "title": "准星用户体验改进与日语支持",
         "features": [
           "🎨 自定义十字准星 UX 改进 - 从历史记录中禁用和删除十字准星的选项",
-          "🌐 应用已添加日语支持",
-          "🔧 修复了一些小问题并提升了稳定性"
+          "🌐 应用已添加日语支持"
         ]
       },
       "0.11.0": {
@@ -6464,10 +6463,7 @@
       },
       "0.8.2": {
         "title": "错误修复与改进",
-        "features": [
-          "🐛 修复了各种错误并提高了稳定性",
-          "⚡ 性能改进和优化"
-        ]
+        "features": []
       },
       "0.8.1": {
         "title": "技术改进",
@@ -6510,8 +6506,7 @@
         "features": [
           "🎵 添加了对音频模组的支持 - 自定义你的 Deadlock 音效",
           "🚀 改进了启动选项处理 - 不再假定需要 \"+\" 前缀",
-          "🔧 增强了模组兼容性和安装过程",
-          "⚡ 各种性能优化和稳定性改进"
+          "🔧 增强了模组兼容性和安装过程"
         ]
       },
       "0.5.1": {
@@ -6524,8 +6519,7 @@
           "🔍 改进了模组页面上的过滤和搜索功能",
           "🐳 解决了 Docker 兼容性问题",
           "🎨 增强了模组卡片布局和样式",
-          "📖 更新了 UI，确认 GameBanana 作为数据来源",
-          "⚡ 各种性能优化和稳定性改进"
+          "📖 更新了 UI，确认 GameBanana 作为数据来源"
         ]
       },
       "0.5.0": {
@@ -6536,8 +6530,7 @@
           "⚠️ 新的过时模组警告系统，便于更好地管理模组",
           "🎮 更新了英雄名单，包含最新的 Deadlock 英雄",
           "🔧 修复了自定义启动选项不遵守启用/禁用状态的问题",
-          "🎨 增强了 UI 组件和布局改进",
-          "🔧 各种稳定性改进和错误修复"
+          "🎨 增强了 UI 组件和布局改进"
         ]
       },
       "0.4.0": {
@@ -6554,8 +6547,7 @@
         "features": [
           "🎨 完整的 UI 大修，提供更好的用户体验",
           "📦 改进的下载管理",
-          "⚡ 性能优化",
-          "🔄 更新了核心依赖项"
+          ""
         ]
       },
       "0.2.0": {
@@ -6606,7 +6598,7 @@
       "settingsDescription": "调整外观设置，可在精选预设与自定义样式之间选择。",
       "preDefinedThemes": "预设主题",
       "customThemes": "自定义主题",
-      "preDefinedDescription": "从精心设计的主题中选择，以增强你的体验。",
+      "preDefinedDescription": "",
       "customDescription": "使用你喜欢的颜色和样式创建自己的自定义主题。",
       "customThemeBuilder": "主题构建器",
       "customThemeBuilderDescription": "通过选择颜色和样式来构建你自己的主题。",
@@ -6754,7 +6746,7 @@
       "customColorDescription": ""
     },
     "nightshift": {
-      "description": "一款带有青色点缀的赛博朋克主题，专为清晰度和长时间游戏而设计。",
+      "description": "",
       "visit": "访问 Nightshift：",
       "twitter": "推特",
       "discord": "Discord"
@@ -6764,7 +6756,7 @@
       "visit": "Skeptic 制作的主题"
     },
     "arcane": {
-      "description": "一款优雅的暗黑主题，带有粉红色发光效果，灵感来自 Arcane 美学。",
+      "description": "",
       "visit": "Skeptic 制作的主题",
       "customColor": "自定义颜色",
       "customColorDescription": "为 Arcane 主题选择自定义强调色。"
@@ -7431,7 +7423,7 @@
     "latestMods": "最新模组",
     "popularMods": "热门模组",
     "noAnnouncementsTitle": "暂无公告",
-    "noAnnouncementsDescription": "目前暂无公告。请稍后回来查看更新和新闻。",
+    "noAnnouncementsDescription": "",
     "checkBackLater": "稍后回来查看更新",
     "noModsAvailable": "没有可用的模组",
     "learnMore": "了解更多",
@@ -7504,7 +7496,7 @@
     "catalogWiped": "本地目录已清空",
     "wipeCatalogFailed": "无法清空本地目录",
     "confirmClearModsState": "确定要清除模组状态吗？这将从应用程序中移除所有模组，但不会从你的游戏文件夹中删除它们。你可以重新扫描模组文件夹来恢复它们。",
-    "modsStateCleared": "模组状态清除成功",
+    "modsStateCleared": "",
     "triggerOnboarding": "触发新手引导",
     "resetTelemetryConsent": "重置遥测同意",
     "triggerMatchSyncConsent": "",
@@ -7514,7 +7506,7 @@
   },
   "developer": {
     "title": "开发者工具",
-    "description": "面向开发者的高级工具和功能",
+    "description": "",
     "shards": {
       "navLabel": "分片",
       "title": "分片状态",
@@ -7581,12 +7573,12 @@
     "inactive": "",
     "switching": "",
     "manageDescription": "创建、编辑和切换不同的模组配置。每个配置都会记住你启用了哪些模组。",
-    "createNew": "创建新配置",
+    "createNew": "",
     "create": "创建",
     "creating": "创建中…",
     "createDescription": "创建一个新的配置来组织你的模组。每个配置可以启用不同的模组。",
     "editProfile": "编辑配置",
-    "editDescription": "编辑配置 '{{profileName}}'",
+    "editDescription": "",
     "update": "更新",
     "updating": "更新中…",
     "name": "名称",
@@ -7611,16 +7603,16 @@
     "switchDetails": "已启用 {{enabled}} 个，已禁用 {{disabled}} 个",
     "switchError": "切换配置失败：{{errors}}",
     "switchUnexpectedError": "切换配置时发生意外错误",
-    "createSuccess": "配置 '{{profileName}}' 创建成功",
+    "createSuccess": "",
     "createError": "创建配置失败",
-    "updateSuccess": "配置 '{{profileName}}' 更新成功",
+    "updateSuccess": "",
     "updateError": "更新配置失败",
-    "deleteSuccess": "配置 '{{profileName}}' 删除成功",
+    "deleteSuccess": "",
     "deleteError": "删除配置失败",
     "sync": "同步配置文件",
-    "syncSuccess": "配置文件同步成功",
+    "syncSuccess": "",
     "syncError": "无法同步配置文件",
-    "shareSuccess": "配置分享成功！",
+    "shareSuccess": "",
     "shareError": "分享配置失败",
     "shareNoMods": "无法分享配置：没有启用任何模组",
     "noHardwareIdOrVersion": "无法分享配置文件：缺少硬件 ID 或版本信息",
@@ -7641,7 +7633,7 @@
     "submissionTypeSound": "音效",
     "profileIdPlaceholder": "输入配置 ID（例如：abc123def456）",
     "profileIdRequired": "配置 ID 是必填项",
-    "importSuccess": "配置导入成功！",
+    "importSuccess": "",
     "importError": "导入配置失败。请检查配置 ID 并重试。",
     "includedMods": "包含的模组",
     "noModsIncluded": "此配置未包含任何模组",
@@ -7649,7 +7641,7 @@
     "importOptionsDescription": "选择如何保存此导入的配置：",
     "createNewProfile": "创建新配置",
     "overrideExisting": "覆盖当前活跃配置",
-    "overrideSuccess": "活跃配置更新成功！",
+    "overrideSuccess": "",
     "creatingProfile": "正在创建新配置…",
     "updatingProfile": "正在更新当前配置…",
     "processingMods": "正在处理模组…",
@@ -7765,14 +7757,14 @@
     "noUpdateAvailable": "无可用更新",
     "checkUpdateError": "检查更新失败",
     "vpkReplacement": {
-      "title": "替换 VPK 文件",
+      "title": "",
       "description": "在开发过程中替换模组文件以快速迭代",
       "dragAndDrop": "将 VPK 文件拖放到此处",
       "selectFiles": "选择文件",
       "currentFiles": "当前 VPK 文件",
       "replaceAll": "替换所有文件",
       "selectToReplace": "选择 {{count}} 个文件进行替换",
-      "success": "VPK 文件替换成功",
+      "success": "",
       "error": "VPK 文件替换失败",
       "countMismatch": "预期 {{expected}} 个文件，实际得到 {{actual}} 个"
     },
@@ -7831,7 +7823,7 @@
     "loadFirst": ""
   },
   "reports": {
-    "reportSubmitted": "报告已成功提交",
+    "reportSubmitted": "",
     "reportFailed": "提交报告失败",
     "thankYou": "谢谢！",
     "thankYouDescription": "感谢你告知社区！",
@@ -7917,9 +7909,9 @@
       "apply": "应用",
       "publish": "发布",
       "publishing": "发布中…",
-      "applied": "十字线应用成功",
+      "applied": "",
       "applyError": "准星应用失败",
-      "published": "准星发布成功",
+      "published": "",
       "loginRequired": "你必须登录才能发布准星。",
       "nameValidation": "名称必须在3到50个字符之间",
       "descriptionValidation": "描述必须少于500个字符",
@@ -7931,7 +7923,7 @@
         "title": "导入准星设置",
         "description": "在下方粘贴你的 citadel 十字准星格式设置，以将其导入表单。",
         "placeholder": "citadel_crosshair_color_r 255; citadel_crosshair_color_g 255; citadel_crosshair_color_b 255; citadel_crosshair_pip_border true;…",
-        "success": "准星设置已成功导入",
+        "success": "",
         "emptyError": "请粘贴准星设置以导入",
         "parseError": "解析准星设置失败，请检查格式并重试。"
       }
@@ -8035,7 +8027,7 @@
     "byAuthor": "来源：{{author}}"
   },
   "criticalPaths": {
-    "title": "关键游戏文件警告",
+    "title": "",
     "body": "此模组会覆盖关键的游戏文件（能力、英雄或通用数据）。启用它可能导致游戏不稳定或崩溃。是否仍然要启用此模组？",
     "cancel": "否",
     "confirm": "是，仍然启用"

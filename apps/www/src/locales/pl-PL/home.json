@@ -31,7 +31,7 @@
   "tour": {
     "eyebrow": "Podgląd na żywo",
     "title": "Wypróbuj, zanim pobierzesz",
-    "description": "To działająca kopia aplikacji, tutaj na stronie. Zainstaluj mod, zmień motyw albo ustaw celownik.",
+    "description": "",
     "slidesLabel": "Jak działa aplikacja",
     "slides": {
       "find": {
@@ -55,7 +55,7 @@
       "heading": "Co robi",
       "items": {
         "copies": "Kopiuje pliki modów .vpk do folderu addons",
-        "backups": "Robi kopię zapasową przed zmianami, przywraca jednym kliknięciem",
+        "backups": "",
         "vanilla": "Pozwala w każdej chwili zagrać bez modów"
       }
     },
@@ -149,7 +149,7 @@
       },
       "safe": {
         "question": "Czy korzystanie z modów jest bezpieczne?",
-        "answer": "Aplikacja tylko kopiuje pliki .vpk do folderu addons gry, nigdy nie modyfikuje pliku wykonywalnego Deadlock i najpierw robi kopię zapasową, więc możesz wszystko przywrócić jednym kliknięciem albo w każdej chwili zagrać bez modów. Skiny działają tylko po twojej stronie, a same mody tworzy społeczność, więc trzymaj się tych, którym ufasz."
+        "answer": ""
       },
       "uninstall": {
         "question": "Jak odinstalować mody?",

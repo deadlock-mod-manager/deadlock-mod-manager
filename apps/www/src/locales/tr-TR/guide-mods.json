@@ -2,7 +2,7 @@
   "meta": {
     "name": "Deadlock modları",
     "title": "Deadlock modları: GameBanana modlarını indirin ve yükleyin | Deadlock Mod Manager",
-    "description": "GameBanana’daki kahraman görünümlerinden arayüz ve kullanım kolaylığı modlarına kadar tüm Deadlock modlarına göz atın. Ücretsiz Deadlock Mod Manager ile tek tıklamayla yükleyin."
+    "description": ""
   },
   "faqs": {
     "where": {
@@ -28,8 +28,8 @@
   },
   "hero": {
     "eyebrow": "Deadlock modları",
-    "title": "Tüm Deadlock modları bir tık uzağınızda",
-    "intro": "Deadlock Mod Manager, GameBanana kataloğunun tamamını sunar: görünümler, arayüz ve kullanım kolaylığı modları, sesler ve daha fazlası. Bir mod seçip İndir’e tıklayın; uygulama onu doğru yere yüklesin."
+    "title": "",
+    "intro": ""
   },
   "popular": {
     "title": "Şu anda popüler Deadlock modları",
@@ -79,12 +79,12 @@
     },
     "figure": {
       "alt": "Kahraman ve kategori filtreleriyle GameBanana modlarını listeleyen Deadlock Mod Manager Mod Mağazası",
-      "caption": "Mod Mağazası: GameBanana’daki tüm Deadlock içerikleri, filtrelerle birlikte."
+      "caption": ""
     }
   },
   "gamebanana": {
     "title": "GameBanana Deadlock modları, uğraştıran işlemler olmadan",
     "manual": "<link>GameBanana</link>, Deadlock mod topluluğunun çalışmalarını yayımladığı platformdur ve Deadlock Mod Manager’ın iş ortağıdır. Siteden elle yüklemek için bir arşiv indirmeniz, doğru <code>.vpk</code> dosyasını bulmanız, diğer modlarla çakışmaması için dosyayı yeniden adlandırmanız ve <code>gameinfo.gi</code> dosyasını düzenlemeniz gerekir.",
-    "app": "Uygulama tüm bunları yapar ve yüklemeden sonra da yardımcı olur: İki mod aynı dosyaları değiştirdiğinde sizi uyarır, güncellemeleri kontrol eder, farklı kurulumlar için ayrı profiller tutar ve gerektiğinde geri dönebilmeniz için önce eklentilerinizi yedekler."
+    "app": ""
   }
 }

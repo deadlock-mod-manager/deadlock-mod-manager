@@ -197,7 +197,7 @@
     "plugins": "",
     "myMods": "Mis Mods",
     "getMods": "Buscar Mods",
-    "addMods": "Añadir Mods",
+    "addMods": "",
     "downloads": "Descargas",
     "settings": "Configuración",
     "developer": "Desarrollador",
@@ -3905,7 +3905,7 @@
       "dropped": "",
       "cancelled": ""
     },
-    "orderSaved": "Orden de mods guardado exitosamente",
+    "orderSaved": "",
     "orderSaveFailed": "Error al guardar el orden de mods",
     "manageOrder": "Cambiar Orden de Mods",
     "compatibility": {
@@ -4095,8 +4095,8 @@
     "deleteConfirmBody": "",
     "deleteConfirmAction": "Eliminar",
     "deleteConfirmCancel": "Cancelar",
-    "deleteSuccess": "Mod eliminado exitosamente",
-    "disableSuccess": "Mod deshabilitado exitosamente",
+    "deleteSuccess": "",
+    "disableSuccess": "",
     "deleteError": "Error al eliminar el Mod",
     "deleteErrorVpkInUse": "",
     "disableError": "Error al deshabilitar el Mod",
@@ -4185,7 +4185,7 @@
     "noDownloadsFound": "No se han encontrado descargas",
     "noDownloadsMatchFilter": "No exiten descargas con los filtros introducidos",
     "viewAllDownloads": "Ver todas las descargas",
-    "selectFilesToDownload": "Seleccionar archivos para descargar",
+    "selectFilesToDownload": "",
     "selectAll": "Seleccionar todo",
     "selectNone": "Ninguno",
     "total": "",
@@ -4226,7 +4226,7 @@
     }
   },
   "notifications": {
-    "modInstalledSuccessfully": "Mod instalado exitosamente",
+    "modInstalledSuccessfully": "",
     "failedToInstallMod": "Error al instalar el Mod",
     "installationCanceled": "Instalación cancelada",
     "modContainsFiles": "{{modName}} contiene {{fileCount}} archivos. Selecciona los archivos a instalar.",
@@ -4329,7 +4329,7 @@
     "apiHealthy": "",
     "apiDegraded": "Errores en la API",
     "apiOffline": "API desctivada",
-    "apiUnknown": "Estado de la API desconocinda",
+    "apiUnknown": "",
     "authOnline": "Auth Online",
     "authOffline": "Auth desctivada",
     "authUnknown": "Estado de la Auth desconocinda",
@@ -4354,10 +4354,10 @@
     "searchNoResults": "",
     "language": "Idioma",
     "languageDescription": "Elige tu idioma preferido para la interfaz de la aplicación",
-    "languageSettings": "Configuración de Idioma",
+    "languageSettings": "",
     "languageSettingsDescription": "Elige tu idioma preferido para la interfaz de la aplicación",
     "appearance": "Apariencia",
-    "appearanceDescription": "Personaliza la apariencia de la aplicación.",
+    "appearanceDescription": "",
     "theme": "Tema",
     "themeDescription": "Elige entre tema claro, oscuro o del sistema",
     "audioVolume": "Volumen de Audio",
@@ -4440,15 +4440,15 @@
     "about": "Información",
     "systemSettings": "Configuración del Sistema",
     "systemSettingsDescription": "Configuración del Gestor de Mods. Estas no afectan al juego.",
-    "gameConfigManagement": "Gestión de Configuración del Juego",
+    "gameConfigManagement": "",
     "gameConfigDescription": "Gestiona la copia de seguridad, restauración y validación del archivo gameinfo.gi para un modding seguro.",
     "gamePath": "Ruta del Juego",
     "gamePathDescription": "La ruta a tu instalación del juego Deadlock. El gestor de mods lo detectará automáticamente, pero puedes configurarlo manualmente si es necesario.",
     "currentGamePath": "Ruta Actual del Juego",
     "browseGamePath": "Explorar",
     "autoDetectGamePath": "Auto-Detectar",
-    "gamePathSet": "Ruta del juego configurada exitosamente",
-    "gamePathAutoDetected": "Ruta del juego auto-detectada exitosamente",
+    "gamePathSet": "",
+    "gamePathAutoDetected": "",
     "invalidGamePath": "Ruta de juego inválida. Por favor selecciona una carpeta de instalación válida de Deadlock.",
     "steamPath": "",
     "steamPathSectionDescription": "",
@@ -4476,7 +4476,7 @@
     "selectDefaultSort": "Seleccionar ordenamiento predeterminado",
     "tools": "Herramientas",
     "backups": "Copias de seguridad",
-    "toolsDescription": "Funciones de utilidad para gestionar tus mods",
+    "toolsDescription": "",
     "gameGuard": "",
     "gameGuardDescription": "",
     "gameGuardSectionTitle": "",
@@ -4526,17 +4526,17 @@
     "addonsBackupDescription": "Crear y restaurar respaldos de tus mods instalados.",
     "createBackup": "Crear Respaldo",
     "creatingBackup": "Creando respaldo...",
-    "backupCreated": "Respaldo creado exitosamente",
+    "backupCreated": "",
     "backupCreationFailed": "Error al crear respaldo",
     "restoreBackup": "Restaurar",
     "restoringBackup": "Restaurando respaldo...",
     "restoring": "",
-    "backupRestored": "Respaldo restaurado exitosamente",
+    "backupRestored": "",
     "backupRestoreFailed": "Error al restaurar respaldo",
     "deleteBackup": "Eliminar",
     "deleteBackupConfirm": "¿Estás seguro de que quieres eliminar este respaldo?",
     "deleteBackupConfirmAction": "",
-    "backupDeleted": "Respaldo eliminado exitosamente",
+    "backupDeleted": "",
     "backupDeleteFailed": "Error al eliminar respaldo",
     "openBackupsFolder": "Abrir Carpeta de Respaldos",
     "noBackupsFound": "No se encontraron respaldos",
@@ -5071,8 +5071,8 @@
     "resetToVanilla": "Reiniciar a Vanilla (sin Mods)",
     "validateConfiguration": "Validar configuración",
     "openInEditor": "Abrir en el editor",
-    "backupCreatedSuccess": "Copia de seguridad de gameinfo.gi creada correctamente",
-    "restoreSuccess": "gameinfo.gi restaurado desde la copia de seguridad correctamente",
+    "backupCreatedSuccess": "",
+    "restoreSuccess": "",
     "resetSuccess": "",
     "resetBackupRestored": "",
     "resetFailed": "",
@@ -5321,15 +5321,15 @@
     "thirdPartyDisclaimerTitle": "Descargo de Responsabilidad de Contenido de Terceros",
     "thirdPartyDisclaimerDescription": "Todos los mods disponibles a través de esta aplicación son contenido de terceros creado por miembros de la comunidad. Los mods no son creados, revisados, verificados o respaldados por el proyecto Deadlock Mod Manager. Instala mods bajo tu propia responsabilidad.",
     "thirdPartyDisclaimerShort": "Los mods son contenido de terceros no creado, revisado o respaldado por Deadlock Mod Manager.",
-    "gamebananaDescription": "Nuestra primera fuente de Mods y la base de nuestra aplicación. GameBanana proporciona la base de datos de Mods y la API integral que hacen posible explorar, descubrir y descargar mods de Deadlock.",
+    "gamebananaDescription": "",
     "visitGamebanana": "Visitar GameBanana",
     "deadlockRichPresenceDescription": "",
     "visitDeadlockRichPresence": "",
-    "tauriDescription": "El potente framework que hace posible esta aplicación de escritorio multiplataforma. Tauri combina lo mejor de las tecnologías web con el rendimiento y la seguridad nativos. ",
+    "tauriDescription": "",
     "visitTauri": "Visitar Tauri",
-    "shadcnDescription": "Componentes de React accesibles y bien diseñados que proveé la fundación para nuestra interfaz de usuario moderna. Copia, pega y personaliza a la perfección.",
+    "shadcnDescription": "",
     "visitShadcn": "Visitar Shadcdn",
-    "tailwindDescription": "El framework CSS basado en utilidades que impulsa nuestro diseño responsivo y el estilo consistente en toda la aplicación.",
+    "tailwindDescription": "",
     "visitTailwind": "Visitar Tailwind CSS",
     "vpkmergeDescription": "",
     "visitVpkmerge": "",
@@ -5339,7 +5339,7 @@
     "thirdPartyNoticesDescription": "",
     "viewThirdPartyNotices": "",
     "openSourceCommunity": "Comunidad Open Source",
-    "openSourceDescription": "Construido con increíbles tecnologías de código abierto, incluyendo React, TypeScript y muchas otras librerías que permiten la creación de aplicaciones modernas. Gracias a todos los colaboradores.",
+    "openSourceDescription": "",
     "meetContributors": "",
     "releaseNotes": "Notas de Parche",
     "poweredBy": "Desarrollado por",
@@ -5382,7 +5382,7 @@
     "newVersionAvailable": "Una nueva versión ({{version}}) esta disponible. Actualmente estas en la versión {{currentVersion}}.",
     "releaseNotes": "Notas de parche",
     "downloading": "Descargando actualización",
-    "downloadAndInstall": "Descargar y Instalar",
+    "downloadAndInstall": "",
     "later": "Más tarde",
     "installing": "Instalando...",
     "failedWithMessage": ""
@@ -5531,7 +5531,7 @@
     "savingMetadata": "Guardando metadatos del mod...",
     "processingImage": "Procesando imagen del mod...",
     "addingToLibrary": "Añadiendo mod a la biblioteca...",
-    "modAddedSuccess": "¡Mod añadido exitosamente!",
+    "modAddedSuccess": "",
     "unsupportedSelection": "Selección no soportada.",
     "unsupportedFiles": "Archivo(s) no soportado(s).",
     "failedToReadDroppedFiles": "",
@@ -5681,7 +5681,7 @@
   },
   "onboarding": {
     "title": "Bienvenido a Deadlock Mod Manager",
-    "welcome": "¡Te ayudaremos a configurar {{appName}}! Esta configuración rápida te ayudará a empezar.",
+    "welcome": "",
     "stepIndicator": "Paso {{current}} de {{total}}",
     "skip": "Omitir Configuración",
     "back": "Atrás",
@@ -5697,7 +5697,7 @@
       "title": "Detección de Ruta del Juego",
       "description": "Detectaremos automáticamente la ruta de tu instalación de Deadlock.",
       "detecting": "Detectando ruta del juego...",
-      "success": "¡Ruta del juego detectada exitosamente!",
+      "success": "",
       "error": "No se pudo detectar la ruta del juego",
       "errorDescription": "Por favor navega manualmente a tu carpeta de instalación de Deadlock.",
       "retry": "Reintentar Detección",
@@ -5708,7 +5708,7 @@
       "title": "Conexión API",
       "description": "Verificando conexión al servidor de la base de datos de mods.",
       "checking": "Conectando a la API...",
-      "success": "¡Conectado exitosamente!",
+      "success": "",
       "error": "Error al conectar a la API",
       "errorDescription": "Por favor verifica tu conexión a internet e intenta de nuevo.",
       "retry": "Reintentar Conexión",
@@ -5955,7 +5955,7 @@
   },
   "whatsNew": {
     "title": "Novedades",
-    "welcome": "¡Bienvenido a la última versión de {{appName}}!",
+    "welcome": "",
     "fullReleaseNotes": "Notas de Lanzamiento Completas",
     "gotIt": "¡Entendido!",
     "highlightAlt": "",
@@ -6409,7 +6409,6 @@
         "title": "",
         "features": [
           "",
-          "",
           ""
         ]
       },
@@ -6464,10 +6463,7 @@
       },
       "0.8.2": {
         "title": "Corrección de Errores y Mejoras",
-        "features": [
-          "🐛 Corregidos varios errores y mejorada la estabilidad",
-          "⚡ Mejoras de rendimiento y optimizaciones"
-        ]
+        "features": []
       },
       "0.8.1": {
         "title": "Mejoras Técnicas",
@@ -6510,8 +6506,7 @@
         "features": [
           "🎵 Añadido soporte para mods de audio - personaliza tus sonidos de Deadlock",
           "🚀 Mejorado el manejo de opciones de lanzamiento - ya no asume el requisito de prefijo \"+\"",
-          "🔧 Mejorada la compatibilidad de mods y proceso de instalación",
-          "⚡ Varias optimizaciones de rendimiento y mejoras de estabilidad"
+          "🔧 Mejorada la compatibilidad de mods y proceso de instalación"
         ]
       },
       "0.5.1": {
@@ -6524,8 +6519,7 @@
           "🔍 Mejorada la funcionalidad de filtrado y búsqueda en la página de mods",
           "🐳 Resueltos problemas de compatibilidad con Docker",
           "🎨 Mejorado el diseño de tarjetas de mods y estilo",
-          "📖 Actualizada la UI para reconocer GameBanana como fuente de datos",
-          "⚡ Varias optimizaciones de rendimiento y mejoras de estabilidad"
+          "📖 Actualizada la UI para reconocer GameBanana como fuente de datos"
         ]
       },
       "0.5.0": {
@@ -6536,8 +6530,7 @@
           "⚠️ Nuevo sistema de advertencia de mods desactualizados para mejor gestión de mods",
           "🎮 Actualizado el roster de campeones con los últimos héroes de Deadlock",
           "🔧 Corregidas las Opciones de Lanzamiento Personalizadas que no respetaban el estado habilitado/deshabilitado",
-          "🎨 Mejorados los componentes de UI y mejoras de diseño",
-          "🔧 Varias mejoras de estabilidad y corrección de errores"
+          "🎨 Mejorados los componentes de UI y mejoras de diseño"
         ]
       },
       "0.4.0": {
@@ -6554,8 +6547,7 @@
         "features": [
           "🎨 Renovación completa de UI para mejor experiencia de usuario",
           "📦 Gestión de descargas mejorada",
-          "⚡ Optimizaciones de rendimiento",
-          "🔄 Dependencias principales actualizadas"
+          ""
         ]
       },
       "0.2.0": {
@@ -6764,7 +6756,7 @@
       "visit": "Tema por Skeptic"
     },
     "arcane": {
-      "description": "Un tema oscuro elegante con efectos de brillo rosa-rojo inspirado en la estética de Arcane.",
+      "description": "",
       "visit": "Tema por Skeptic",
       "customColor": "Color personalizado",
       "customColorDescription": "Elige un color de acento personalizado para el tema Arcane."
@@ -7431,7 +7423,7 @@
     "latestMods": "Mods Más Recientes",
     "popularMods": "Mods Populares",
     "noAnnouncementsTitle": "Sin Anuncios",
-    "noAnnouncementsDescription": "Actualmente no hay anuncios. Vuelve más tarde para actualizaciones y noticias.",
+    "noAnnouncementsDescription": "",
     "checkBackLater": "Vuelve más tarde para actualizaciones",
     "noModsAvailable": "No hay mods disponibles",
     "learnMore": "",
@@ -7504,7 +7496,7 @@
     "catalogWiped": "",
     "wipeCatalogFailed": "",
     "confirmClearModsState": "¿Estás seguro de que quieres limpiar el estado de los mods? Esto eliminará todos los mods de la aplicación pero NO los eliminará de tu carpeta del juego. Puedes volver a escanear tu carpeta de mods para restaurarlos.",
-    "modsStateCleared": "Estado de mods limpiado exitosamente",
+    "modsStateCleared": "",
     "triggerOnboarding": "",
     "resetTelemetryConsent": "",
     "triggerMatchSyncConsent": "",
@@ -7514,7 +7506,7 @@
   },
   "developer": {
     "title": "Herramientas de Desarrollador",
-    "description": "Herramientas y funciones avanzadas para desarrolladores",
+    "description": "",
     "shards": {
       "navLabel": "",
       "title": "",
@@ -7581,12 +7573,12 @@
     "inactive": "",
     "switching": "",
     "manageDescription": "Crear, editar y cambiar entre diferentes perfiles de mod. Cada perfil recuerda qué mods tienes habilitados.",
-    "createNew": "Crear Nuevo Perfil",
+    "createNew": "",
     "create": "Crear",
     "creating": "Creando...",
     "createDescription": "Crear un nuevo perfil para organizar tus mods. Cada perfil puede tener diferentes mods habilitados.",
     "editProfile": "Editar Perfil",
-    "editDescription": "Editar el perfil '{{profileName}}'",
+    "editDescription": "",
     "update": "Actualizar",
     "updating": "Actualizando...",
     "name": "Nombre",
@@ -7611,16 +7603,16 @@
     "switchDetails": "{{enabled}} habilitados, {{disabled}} deshabilitados",
     "switchError": "Error al cambiar perfiles: {{errors}}",
     "switchUnexpectedError": "Ocurrió un error inesperado al cambiar perfiles",
-    "createSuccess": "Perfil '{{profileName}}' creado exitosamente",
+    "createSuccess": "",
     "createError": "Error al crear perfil",
-    "updateSuccess": "Perfil '{{profileName}}' actualizado exitosamente",
+    "updateSuccess": "",
     "updateError": "Error al actualizar perfil",
-    "deleteSuccess": "Perfil '{{profileName}}' eliminado exitosamente",
+    "deleteSuccess": "",
     "deleteError": "Error al eliminar perfil",
     "sync": "",
     "syncSuccess": "",
     "syncError": "",
-    "shareSuccess": "¡Perfil compartido exitosamente!",
+    "shareSuccess": "",
     "shareError": "Error al compartir perfil",
     "shareNoMods": "No se puede compartir perfil: no hay mods habilitados",
     "noHardwareIdOrVersion": "No se puede compartir perfil: falta información de ID de hardware o versión",
@@ -7641,7 +7633,7 @@
     "submissionTypeSound": "",
     "profileIdPlaceholder": "Ingresa ID de Perfil (ej., abc123def456)",
     "profileIdRequired": "ID de Perfil es requerido",
-    "importSuccess": "¡Perfil importado exitosamente!",
+    "importSuccess": "",
     "importError": "Error al importar perfil. Por favor verifica el ID de Perfil e intenta de nuevo.",
     "includedMods": "Mods Incluidos",
     "noModsIncluded": "No hay mods incluidos en este perfil",
@@ -7649,7 +7641,7 @@
     "importOptionsDescription": "Elige cómo guardar este perfil importado:",
     "createNewProfile": "Crear Nuevo Perfil",
     "overrideExisting": "Sobrescribir Perfil Activo",
-    "overrideSuccess": "¡Perfil activo actualizado exitosamente!",
+    "overrideSuccess": "",
     "creatingProfile": "Creando nuevo perfil...",
     "updatingProfile": "Actualizando perfil actual...",
     "processingMods": "Procesando mods...",
@@ -7765,14 +7757,14 @@
     "noUpdateAvailable": "",
     "checkUpdateError": "",
     "vpkReplacement": {
-      "title": "Reemplazar Archivos VPK",
+      "title": "",
       "description": "Reemplazar archivos de mod para iteración rápida durante el desarrollo",
       "dragAndDrop": "Arrastra y suelta archivos VPK aquí",
       "selectFiles": "Seleccionar Archivos",
       "currentFiles": "Archivos VPK Actuales",
       "replaceAll": "Reemplazar Todos los Archivos",
       "selectToReplace": "Selecciona {{count}} archivo(s) para reemplazar",
-      "success": "Archivos VPK reemplazados exitosamente",
+      "success": "",
       "error": "Error al reemplazar archivos VPK",
       "countMismatch": ""
     },
@@ -7831,7 +7823,7 @@
     "loadFirst": ""
   },
   "reports": {
-    "reportSubmitted": "Reporte enviado exitosamente",
+    "reportSubmitted": "",
     "reportFailed": "Error al enviar reporte",
     "thankYou": "¡Gracias!",
     "thankYouDescription": "",

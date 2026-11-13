@@ -31,7 +31,7 @@
   "tour": {
     "eyebrow": "Canlı önizleme",
     "title": "İndirmeden önce deneyin",
-    "description": "Bu sayfada uygulamanın çalışan bir kopyası var. Bir mod yükleyin, temayı değiştirin veya nişangâh ayarlayın.",
+    "description": "",
     "slidesLabel": "Uygulama nasıl çalışır?",
     "slides": {
       "find": {
@@ -55,7 +55,7 @@
       "heading": "Yaptıkları",
       "items": {
         "copies": ".vpk mod dosyalarını addons klasörünüze kopyalar",
-        "backups": "Değişiklikten önce yedek alır, tek tıklamayla geri yükler",
+        "backups": "",
         "vanilla": "Oyunu istediğiniz zaman modsuz başlatmanızı sağlar"
       }
     },
@@ -149,7 +149,7 @@
       },
       "safe": {
         "question": "Mod kullanmak güvenli mi?",
-        "answer": "Uygulama .vpk dosyalarını yalnızca oyununuzun addons klasörüne kopyalar; Deadlock çalıştırılabilir dosyasını değiştirmez. Önce yedek alır; böylece tek tıklamayla geri yükleyebilir veya oyunu istediğiniz zaman modsuz başlatabilirsiniz. Görünümler yalnızca sizin oyun istemcinizde uygulanır. Modlar topluluk tarafından hazırlandığı için güvendiğiniz modları kullanın."
+        "answer": ""
       },
       "uninstall": {
         "question": "Modları nasıl kaldırırım?",

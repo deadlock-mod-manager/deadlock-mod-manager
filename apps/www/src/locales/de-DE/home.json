@@ -31,7 +31,7 @@
   "tour": {
     "eyebrow": "Live-Vorschau",
     "title": "Teste die App vor dem Download",
-    "description": "Das ist eine funktionierende Kopie der App, direkt hier auf der Seite. Installier einen Mod, wechsel das Theme oder richte ein Fadenkreuz ein.",
+    "description": "",
     "slidesLabel": "So funktioniert die App",
     "slides": {
       "find": {
@@ -55,7 +55,7 @@
       "heading": "Was sie macht",
       "items": {
         "copies": "Kopiert .vpk-Mod-Dateien in deinen addons-Ordner",
-        "backups": "Legt vor Änderungen ein Backup an, Wiederherstellen mit einem Klick",
+        "backups": "",
         "vanilla": "Lässt dich jederzeit vanilla starten"
       }
     },
@@ -149,7 +149,7 @@
       },
       "safe": {
         "question": "Ist es sicher, Mods zu nutzen?",
-        "answer": "Die App kopiert nur .vpk-Dateien in den addons-Ordner deines Spiels, patcht nie die Deadlock-Programmdatei und legt vorher ein Backup an, sodass du mit einem Klick wiederherstellen oder jederzeit vanilla starten kannst. Skins sind clientseitig, und die Mods selbst stammen von der Community, also bleib bei denen, denen du vertraust."
+        "answer": ""
       },
       "uninstall": {
         "question": "Wie deinstalliere ich Mods?",
