@@ -42,7 +42,7 @@ jobs:
         run: pnpm --filter @deadlock-mods/desktop check-types
       - name: Test match outcomes and rendering
         working-directory: apps/desktop
-        run: bun test --isolate src/lib/stats/derive.test.ts src/lib/stats/live-lobby.test.ts src/lib/stats/dashboard/match-query.test.ts src/components/stats/recent-matches.test.tsx
+        run: bun test --isolate src/lib/stats/derive.test.ts src/lib/stats/live-lobby.test.ts src/lib/stats/dashboard/match-query.test.ts src/lib/stats/match-scoring.test.ts src/components/stats/recent-matches.test.tsx src/components/stats/match/match-header.test.tsx
       - name: Test match sync
         run: cargo test --manifest-path packages/deadlock-match-sync/Cargo.toml
       - name: Check match sync with Clippy

@@ -15,7 +15,7 @@ import type { DeadlockHero } from "@/lib/deadlock-api";
 import type { MatchHistoryEntry } from "@/lib/stats/api";
 import { PER_MATCH } from "@/lib/stats/benchmark";
 import {
-  matchOutcome,
+  matchStatus,
   type PlaySession,
   playSessions,
 } from "@/lib/stats/derive";
@@ -136,12 +136,12 @@ export const RecentMatches = ({ matches, heroesById }: RecentMatchesProps) => {
             <SessionHeader session={session} />
             <div className='overflow-hidden rounded-lg border border-border/60 bg-background'>
               {session.matches.map((match) => {
-                const outcome = matchOutcome(match);
+                const outcome = matchStatus(match);
                 const hero = heroesById.get(match.hero_id);
                 const color =
                   outcome === "win"
                     ? WIN_COLOR
-                    : outcome === "loss"
+                    : outcome !== "notScored"
                       ? LOSS_COLOR
                       : MUTED_COLOR;
                 return (
@@ -155,16 +155,14 @@ export const RecentMatches = ({ matches, heroesById }: RecentMatchesProps) => {
                     <span
                       className='flex h-6 w-6 shrink-0 items-center justify-center rounded-md font-bold font-mono text-[11.5px]'
                       style={{ color, backgroundColor: tint(color, 12) }}
-                      title={
-                        outcome === "notScored"
-                          ? t("stats.notScored")
-                          : undefined
-                      }>
-                      {outcome === "notScored"
-                        ? t("stats.recent.notScoredShort")
-                        : outcome === "win"
-                          ? t("stats.recent.winShort")
-                          : t("stats.recent.lossShort")}
+                      title={t(`stats.${outcome}`)}>
+                      {outcome === "abandoned"
+                        ? t("stats.recent.abandonedShort")
+                        : outcome === "notScored"
+                          ? t("stats.recent.notScoredShort")
+                          : outcome === "win"
+                            ? t("stats.recent.winShort")
+                            : t("stats.recent.lossShort")}
                     </span>
                     <div className='flex w-44 min-w-0 shrink-0 items-center gap-2.5'>
                       <HeroAvatar
@@ -177,9 +175,11 @@ export const RecentMatches = ({ matches, heroesById }: RecentMatchesProps) => {
                           {hero?.name ?? `#${match.hero_id}`}
                         </span>
                         <span className='flex gap-2 text-[11.5px] text-muted-foreground'>
-                          {match.match_mode === 4
-                            ? t("stats.scope.ranked")
-                            : t("stats.scope.unranked")}
+                          {outcome === "abandoned"
+                            ? t("stats.abandoned")
+                            : match.match_mode === 4
+                              ? t("stats.scope.ranked")
+                              : t("stats.scope.unranked")}
                           <span className='font-mono text-muted-foreground'>
                             {formatClock(match.match_duration_s)}
                           </span>
