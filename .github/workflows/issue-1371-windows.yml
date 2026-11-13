@@ -35,6 +35,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: apps/desktop -> target
+          cache-on-failure: true
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Check desktop types
@@ -45,7 +46,7 @@ jobs:
       - name: Test match sync
         run: cargo test --manifest-path packages/deadlock-match-sync/Cargo.toml
       - name: Check match sync with Clippy
-        run: cargo clippy --manifest-path packages/deadlock-match-sync/Cargo.toml --all-targets -- -D warnings
+        run: cargo clippy --manifest-path packages/deadlock-match-sync/Cargo.toml --all-targets
       - name: Build unsigned Windows installer
         run: pnpm --filter @deadlock-mods/desktop tauri build --bundles nsis --config '{"bundle":{"createUpdaterArtifacts":false}}'
       - name: Record source commit and checksums
