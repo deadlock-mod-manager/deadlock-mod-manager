@@ -1,4 +1,2 @@
 interface:
   display_name: "Simplify"
-policy:
-  allow_implicit_invocation: false
