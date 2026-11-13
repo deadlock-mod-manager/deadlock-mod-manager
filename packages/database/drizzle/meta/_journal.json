@@ -449,6 +449,13 @@
       "when": 1793376267264,
       "tag": "0063_drop_oauth_legacy_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1794575861113,
+      "tag": "0064_oauth_token_expiry_indexes",
+      "breakpoints": true
     }
   ]
 }

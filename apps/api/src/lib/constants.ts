@@ -12,6 +12,7 @@ export const SENTRY_OPTIONS = {
 export enum MonitorSlug {
   MODS_SYNCHRONIZATION = "mods-synchronization",
   RELAY_DISCOVERY = "relay-discovery",
+  OAUTH_TOKEN_CLEANUP = "oauth-token-cleanup",
 }
 
 /**

@@ -1,5 +1,6 @@
 import type { CronJobDefinition } from "@deadlock-mods/queue/cron";
 import { ModsSyncProcessor } from "@/processors/mods-sync";
+import { OAuthTokenCleanupProcessor } from "@/processors/oauth-token-cleanup";
 import { RelayDiscoveryProcessor } from "@/processors/relay-discovery";
 
 /** Every job carried by the API cron queue. */
@@ -13,6 +14,12 @@ export const cronJobDefinitions: CronJobDefinition[] = [
     // first run after a fresh deploy sweeps every mod for over an hour. The
     // schedule is the retry.
     jobOptions: { attempts: 1 },
+  },
+  {
+    name: OAuthTokenCleanupProcessor.name,
+    pattern: OAuthTokenCleanupProcessor.cronPattern,
+    processor: OAuthTokenCleanupProcessor.getInstance(),
+    enabled: true,
   },
   {
     name: RelayDiscoveryProcessor.name,

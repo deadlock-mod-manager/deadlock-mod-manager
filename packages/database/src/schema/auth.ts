@@ -212,6 +212,7 @@ export const oauthRefreshToken = pgTable(
     index("idx_oauth_refresh_token_authorization_code_id").on(
       table.authorizationCodeId,
     ),
+    index("idx_oauth_refresh_token_expires_at").on(table.expiresAt),
   ],
 );
 
@@ -250,6 +251,7 @@ export const oauthAccessToken = pgTable(
       table.authorizationCodeId,
     ),
     index("idx_oauth_access_token_refresh_id").on(table.refreshId),
+    index("idx_oauth_access_token_expires_at").on(table.expiresAt),
   ],
 );
 
