@@ -86,7 +86,7 @@ See the [features overview](https://docs.deadlockmods.app/using-mod-manager/feat
 
 ## Installation
 
-Download the latest installer for Windows or Linux (`.exe`, `.deb`, `.rpm`, `.flatpak`) from the [releases page](https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/latest), or use a package manager. On Linux, the CEF (Chromium) builds, such as `deadlock-mod-manager-cef.flatpak`, are the recommended default:
+Download the latest installer for Windows or Linux (`.exe`, `.deb`, `.rpm`, `.flatpak`, `.AppImage`) from the [releases page](https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/latest), or use a package manager. On Linux, the CEF (Chromium) builds, such as `deadlock-mod-manager-cef.flatpak`, are the recommended default:
 
 ```bash
 # Windows (winget)

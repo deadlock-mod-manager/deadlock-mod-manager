@@ -414,7 +414,7 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-latest
-    needs: [create-test-release, build-test-release]
+    needs: [create-test-release, build-test-release, build-appimage]
     if: failure()
 
     steps:
@@ -437,3 +437,16 @@ jobs:
                 console.error(`Cleanup failed: ${error.message}`);
               }
             }
+
+  build-appimage:
+    needs: [check-label, prepare-matrix, create-test-release]
+    if: contains(fromJSON(needs.prepare-matrix.outputs.matrix).platform, 'ubuntu-24.04')
+    permissions:
+      contents: write
+    uses: ./.github/workflows/_build-appimage.yml
+    with:
+      release_id: ${{ needs.create-test-release.outputs.release_id }}
+      ref: ${{ needs.check-label.outputs.branch }}
+    secrets:
+      TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+      VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}
