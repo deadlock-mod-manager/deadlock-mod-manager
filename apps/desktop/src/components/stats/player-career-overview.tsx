@@ -11,6 +11,7 @@ import { ChartCard } from "@/components/stats/chart-card";
 import {
   HERO_TILE_CLASS,
   LOSS_COLOR,
+  MUTED_COLOR,
   tint,
   WIN_COLOR,
 } from "@/components/stats/chart-fx";
@@ -20,7 +21,7 @@ import { HeroPool } from "@/components/stats/hero-pool";
 import { WinrateRing } from "@/components/stats/trend-strip";
 import type { DeadlockHero } from "@/lib/deadlock-api";
 import type { MatchHistoryEntry, PlayerHeroStats } from "@/lib/stats/api";
-import { heroPerformance, isWin, summarize } from "@/lib/stats/derive";
+import { heroPerformance, matchOutcome, summarize } from "@/lib/stats/derive";
 import {
   formatCompact,
   formatDecimal,
@@ -132,20 +133,28 @@ export const PlayerCareerOverview = ({
               <div
                 aria-hidden
                 className='flex h-5 flex-row-reverse items-end justify-end gap-[3px]'>
-                {recent.map((match) => (
-                  <span
-                    className={cn(
-                      "w-2 rounded-[2px]",
-                      isWin(match) ? "h-full" : "h-1/2",
-                    )}
-                    key={match.match_id}
-                    style={{
-                      backgroundColor: isWin(match)
-                        ? tint(WIN_COLOR, 80)
-                        : tint(LOSS_COLOR, 70),
-                    }}
-                  />
-                ))}
+                {recent.map((match) => {
+                  const outcome = matchOutcome(match);
+                  const height =
+                    outcome === "win"
+                      ? "h-full"
+                      : outcome === "loss"
+                        ? "h-1/2"
+                        : "h-1/3";
+                  const color =
+                    outcome === "win"
+                      ? tint(WIN_COLOR, 80)
+                      : outcome === "loss"
+                        ? tint(LOSS_COLOR, 70)
+                        : MUTED_COLOR;
+                  return (
+                    <span
+                      className={cn("w-2 rounded-[2px]", height)}
+                      key={match.match_id}
+                      style={{ backgroundColor: color }}
+                    />
+                  );
+                })}
               </div>
               {recent.length > 0 && (
                 <span
@@ -158,7 +167,7 @@ export const PlayerCareerOverview = ({
                   }}>
                   {t("stats.player.recentRecord", {
                     wins: recentForm.wins,
-                    losses: recentForm.matches - recentForm.wins,
+                    losses: recentForm.losses,
                     winrate: formatPercent(recentForm.winrate, 0),
                   })}
                 </span>
@@ -208,8 +217,13 @@ export const PlayerCareerOverview = ({
             title={t("stats.player.recentMatches")}>
             <div className='grid grid-cols-4 gap-2 sm:grid-cols-6'>
               {recent.map((match) => {
-                const won = isWin(match);
-                const color = won ? WIN_COLOR : LOSS_COLOR;
+                const outcome = matchOutcome(match);
+                const color =
+                  outcome === "win"
+                    ? WIN_COLOR
+                    : outcome === "loss"
+                      ? LOSS_COLOR
+                      : MUTED_COLOR;
                 const hero = heroesById.get(match.hero_id);
                 return (
                   <Tooltip key={match.match_id}>
@@ -240,8 +254,7 @@ export const PlayerCareerOverview = ({
                     </TooltipTrigger>
                     <TooltipContent>
                       {hero?.name ?? `#${match.hero_id}`},{" "}
-                      {won ? t("stats.win") : t("stats.loss")},{" "}
-                      {formatCompact(match.net_worth)}
+                      {t(`stats.${outcome}`)}, {formatCompact(match.net_worth)}
                     </TooltipContent>
                   </Tooltip>
                 );

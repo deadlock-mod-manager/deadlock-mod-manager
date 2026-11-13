@@ -179,6 +179,9 @@ pub struct LocalMatch {
   pub last_hits: u32,
   pub match_duration_s: u32,
   pub match_result: u32,
+  /// Valve's pinned history proto exposes `not_scored`, before the newer
+  /// `player_match_outcome` enum. Five is the API's NotScored outcome.
+  pub player_match_outcome: u32,
   pub team_abandoned: Option<bool>,
   pub abandoned_time_s: Option<u32>,
   pub objectives_mask_team0: u64,

@@ -47,6 +47,37 @@ const query = (input: z.input<typeof matchQuerySchema>) =>
   matchQuerySchema.parse(input);
 
 describe("runMatchQuery", () => {
+  it("reports unscored matches separately from losses", () => {
+    const matches = [win(), loss({ player_match_outcome: 5 }), loss()];
+    const summary = runMatchQuery(
+      matches,
+      query({ metrics: ["matches", "wins", "losses", "winrate"] }),
+      NOW,
+    );
+    expect(summary.rows[0]).toMatchObject({
+      matches: 3,
+      wins: 1,
+      losses: 1,
+      winrate: 0.5,
+    });
+
+    const grouped = runMatchQuery(
+      matches,
+      query({ metrics: ["matches", "losses"], groupBy: "result" }),
+      NOW,
+    );
+    expect(grouped.rows).toContainEqual({
+      [GROUP_FIELD]: 2,
+      matches: 1,
+      losses: 0,
+    });
+    const filtered = runMatchQuery(
+      matches,
+      query({ metrics: ["matches"], result: "losses" }),
+      NOW,
+    );
+    expect(filtered.rows[0]?.matches).toBe(1);
+  });
   it("returns a single row when nothing is grouped", () => {
     const result = runMatchQuery(
       [win(), win(), loss()],

@@ -3,7 +3,7 @@ import type {
   MatchHistoryEntry,
   PlayerHeroStats,
 } from "@/lib/stats/api";
-import { isWin } from "@/lib/stats/derive";
+import { isUnscored, isWin } from "@/lib/stats/derive";
 import type { ResolvedPlayer } from "@/lib/stats/live-teams";
 
 export interface WinRecord {
@@ -127,6 +127,7 @@ export const lobbyRecords = (
 
 export const recentForm = (history: MatchHistoryEntry[]): boolean[] =>
   [...history]
+    .filter((match) => !isUnscored(match))
     .sort((a, b) => b.start_time - a.start_time)
     .slice(0, FORM_LENGTH)
     .map(isWin);

@@ -16,7 +16,7 @@ import {
   median,
   PER_MATCH,
 } from "@/lib/stats/benchmark";
-import { chronological, isWin, summarize } from "@/lib/stats/derive";
+import { chronological, matchOutcome, summarize } from "@/lib/stats/derive";
 import {
   formatCompact,
   formatDecimal,
@@ -171,7 +171,10 @@ export const TrendStrip = ({
     const sparkWindow = ordered.slice(-(SPARK_MATCHES + SPARK_SMOOTHING - 1));
     return {
       recent: summarize(last),
-      results: last.map((match) => ({ id: match.match_id, won: isWin(match) })),
+      results: last.map((match) => ({
+        id: match.match_id,
+        outcome: matchOutcome(match),
+      })),
       trends: TREND_METRICS.map(({ metric, format }) => ({
         metric,
         format,
@@ -198,7 +201,7 @@ export const TrendStrip = ({
             <span className='mt-1 font-mono text-[9.5px] text-muted-foreground'>
               {t("stats.form.recordValue", {
                 wins: recent.wins,
-                losses: recent.matches - recent.wins,
+                losses: recent.losses,
               })}
             </span>
           </div>
@@ -210,22 +213,27 @@ export const TrendStrip = ({
           <div
             aria-label={t("stats.trends.resultsLabel", {
               wins: recent.wins,
-              losses: recent.matches - recent.wins,
+              losses: recent.losses,
             })}
             className='flex h-[22px] items-end gap-[3px]'
             role='img'>
             {results.map((result) => (
               <span
                 className={
-                  result.won
+                  result.outcome === "win"
                     ? "h-full flex-1 rounded-[3px]"
-                    : "h-1/2 flex-1 rounded-[3px]"
+                    : result.outcome === "loss"
+                      ? "h-1/2 flex-1 rounded-[3px]"
+                      : "h-1/3 flex-1 rounded-[3px]"
                 }
                 key={result.id}
                 style={{
-                  backgroundColor: result.won
-                    ? tint(WIN_COLOR, 80)
-                    : tint(LOSS_COLOR, 70),
+                  backgroundColor:
+                    result.outcome === "win"
+                      ? tint(WIN_COLOR, 80)
+                      : result.outcome === "loss"
+                        ? tint(LOSS_COLOR, 70)
+                        : "var(--viz-muted)",
                 }}
               />
             ))}
