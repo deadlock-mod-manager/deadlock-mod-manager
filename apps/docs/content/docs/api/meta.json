@@ -1,5 +1,5 @@
 {
   "title": "API Reference",
-  "description": "Complete API documentation for Deadlock Mod Manager",
+  "description": "HTTP API endpoint reference for Deadlock Mod Manager",
   "pages": ["index", "..."]
 }
