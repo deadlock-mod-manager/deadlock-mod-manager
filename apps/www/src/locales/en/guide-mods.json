@@ -2,7 +2,7 @@
   "meta": {
     "name": "Deadlock mods",
     "title": "Deadlock Mods: Download & Install GameBanana Mods | Deadlock Mod Manager",
-    "description": "Browse every Deadlock mod on GameBanana, from hero skins to HUD and quality-of-life mods, and install them in one click with the free Deadlock Mod Manager."
+    "description": "Browse Deadlock mods on GameBanana, from hero skins to HUD and quality-of-life mods, and install them in one click with the free Deadlock Mod Manager."
   },
   "faqs": {
     "where": {
@@ -28,8 +28,8 @@
   },
   "hero": {
     "eyebrow": "Deadlock mods",
-    "title": "Every Deadlock mod, one click away",
-    "intro": "Deadlock Mod Manager browses the whole GameBanana catalog for you: skins, HUD and quality-of-life mods, sounds and more. Pick a mod, hit download, and the app puts it in the right place."
+    "title": "Browse and install Deadlock mods",
+    "intro": "Deadlock Mod Manager browses GameBanana's Deadlock catalog for you: skins, HUD and quality-of-life mods, sounds and more. Pick a mod, hit download, and the app puts it in the right place."
   },
   "popular": {
     "title": "Popular Deadlock mods right now",
@@ -79,7 +79,7 @@
     },
     "figure": {
       "alt": "The Deadlock Mod Manager Mods Store listing GameBanana mods with hero and category filters",
-      "caption": "The Mods Store: every Deadlock submission on GameBanana, with filters."
+      "caption": "The Mods Store: GameBanana's Deadlock catalog, with filters."
     }
   },
   "gamebanana": {

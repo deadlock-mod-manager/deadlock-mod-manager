@@ -137,7 +137,7 @@
   },
   "store": {
     "title": "Mods Store",
-    "subtitle": "Updated hourly, with new mods added every hour.",
+    "subtitle": "Sample mods from the GameBanana catalog.",
     "tabs": {
       "mods": "Mods",
       "sounds": "Sounds",
@@ -282,7 +282,7 @@
     },
     "themes": {
       "title": "Themes",
-      "description": "Choose from carefully crafted themes designed to enhance your experience.",
+      "description": "Choose a theme for the app.",
       "predefined": "Pre-defined Themes",
       "custom": "Custom Themes",
       "active": "Active",

@@ -71,7 +71,7 @@
     },
     "store": {
       "nav": "Mods Store",
-      "title": "The whole of GameBanana, on your PC",
+      "title": "GameBanana's Deadlock catalog, on your PC",
       "body": "V2 keeps a copy of the GameBanana catalog on your PC, so browsing and searching don't wait on the network. It checks for new and updated mods when you start the app, then about every 30 minutes while it's open.",
       "points": {
         "tabs": "Separate tabs for Mods, Sounds, Collections and WiPs",

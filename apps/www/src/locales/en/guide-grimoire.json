@@ -97,7 +97,7 @@
   },
   "tryIt": {
     "title": "Try ours before you download",
-    "intro": "This is a working copy of the app. Install a mod, hit launch, or pick a theme under Settings → Themes.",
+    "intro": "Try an interactive demo of the app. Simulate an install or launch, or pick a theme under Settings → Themes.",
     "mobileNote": "On a PC you can click through the live preview right here."
   },
   "switch": {

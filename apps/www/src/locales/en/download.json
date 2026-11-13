@@ -31,7 +31,7 @@
     "otherPlatforms": "Other platforms",
     "highlights": {
       "openSource": "Free and open source",
-      "autoUpdate": "Updates itself automatically",
+      "autoUpdate": "Checks for updates on launch",
       "platforms": "Windows and Linux"
     }
   },
@@ -97,7 +97,7 @@
       },
       "flatpak": {
         "label": "Flatpak",
-        "description": "Works on most distributions"
+        "description": "Works on most distributions. Updates come through Flatpak, not the app."
       },
       "deb": {
         "label": "Debian package",

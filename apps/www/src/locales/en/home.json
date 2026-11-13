@@ -31,7 +31,7 @@
   "tour": {
     "eyebrow": "Live preview",
     "title": "Try it before you download",
-    "description": "This is a working copy of the app, right here on the page. Install a mod, change the theme or set up a crosshair.",
+    "description": "Try an interactive demo of the app. Simulate a mod install, change the theme or set up a crosshair.",
     "slidesLabel": "How the app works",
     "slides": {
       "find": {
