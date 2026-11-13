@@ -55,7 +55,7 @@
       "heading": "What it does",
       "items": {
         "copies": "Copies .vpk mod files into your addons folder",
-        "backups": "Backs up before making changes, restores in one click",
+        "backups": "Backs up mods before updating them, with restore in Settings",
         "vanilla": "Lets you launch vanilla any time"
       }
     },
@@ -149,7 +149,7 @@
       },
       "safe": {
         "question": "Is it safe to use mods?",
-        "answer": "The app just copies .vpk files into your game's addons folder, never patches the Deadlock executable, and backs up first so you can restore in one click or launch vanilla any time. Skins are client-side, and the mods themselves are made by the community, so stick to ones you trust."
+        "answer": "The app copies .vpk files into your game's addons folder and never patches the Deadlock executable. By default it backs up mods before updating them, you can create backups in Settings, and you can launch vanilla any time. Skins are client-side, and the mods themselves are made by the community, so stick to ones you trust."
       },
       "uninstall": {
         "question": "How do I uninstall mods?",

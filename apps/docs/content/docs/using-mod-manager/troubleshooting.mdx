@@ -298,24 +298,32 @@ If downloads get slow again later, check the setting again: some optimizer tools
 
 2. **Clear All Mods (Nuclear Option)**
 
-   <Callout type='warn' title='Important: Backup First!'>
-     Before using Clear All Mods, **ALWAYS** take a screenshot of your installed
-     mods list or backup your mods manually.
+   <Callout type='warn' title='Clear All Mods deletes files'>
+     Clear All Mods removes every tracked mod from the active profile and
+     deletes its installed VPKs and downloaded files, including downloads shared
+     with other profiles. Unrecognized files are kept. Back up local mods and
+     any downloads you cannot get again before you confirm.
    </Callout>
 
    If individual mod removal doesn't work:
    - Navigate to **Settings > Tools**
-   - Click the **"Clear All Mods"** button
-   - This will remove all mod manager entries but preserve the actual mod files
+   - Click **Clear All Mods** and confirm
+
+   If you only need to reset the mod list, use **Clear Mods State** in the same
+   section instead. It resets the list without deleting mod files, and
+   restarting the app restores the mods recorded in its ownership manifest.
 
 3. **Alternative Manual Recovery**
 
-   If you prefer more control over the process:
-   - Copy all mods from your game's `addons` folder to a safe backup location
-   - Use the **Clear All Mods** button in Settings > Tools
-   - Copy the backed-up mods back to the `addons` folder
-   - Use **Local Analyze Addons** feature to re-add them to the mod manager
-   - This ensures you don't lose any mods while fixing stuck states
+   To keep your installed VPKs while clearing a stuck state:
+   - Copy the mods from your game's `addons` folder to a safe location
+   - Use **Clear All Mods** in Settings > Tools
+   - Copy the saved VPKs back to the `addons` folder
+   - Use **Analyze Local Addons** to reconnect them to the mod manager
+
+   This keeps only the VPKs that were installed. Other files from the original
+   downloads, such as variants you had not installed, are deleted and have to be
+   downloaded again.
 
 ## Mod-Related Issues
 
