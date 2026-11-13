@@ -1,18 +1,16 @@
 # @deadlock-mods/feature-flags
 
-A comprehensive feature flags management system with user segmentation support, priority-based overrides, and automatic caching.
+Feature flags with user segments, ranked overrides and cached evaluation.
 
 ## Features
 
-- **Feature Flag Management**: Create, update, and delete feature flags with boolean values
-- **User Segmentation**: Organize users into segments with priority-based override capabilities
-- **Segment Overrides**: Override feature flag values for specific user segments
-- **Priority System**: When a user belongs to multiple segments, the segment with the lowest rank (highest priority) wins
-- **Caching**: Automatic caching of feature flag evaluations for improved performance (15-minute TTL)
-- **Error Handling**: Robust error handling with structured error types using neverthrow
-- **Database Integration**: Built on Drizzle ORM with PostgreSQL support
-- **Bootstrap System**: Automatic feature flag registration on application startup
-- **Type Safety**: Full TypeScript support throughout
+- Create, update and delete boolean feature flags
+- Group users into segments and override flag values per segment
+- When a user belongs to several segments, the segment with the lowest rank wins
+- Cache flag evaluations for 15 minutes (see [Caching](#caching))
+- Return errors as neverthrow `Result` values with structured error types
+- Store flags in PostgreSQL through Drizzle ORM
+- Register flags when the application starts
 
 ## Installation
 

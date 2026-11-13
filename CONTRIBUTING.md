@@ -1,6 +1,6 @@
 # Contributing to Deadlock Mod Manager
 
-Thank you for your interest in contributing to Deadlock Mod Manager! This guide will help you get started with contributing to the project, whether you're fixing bugs, adding features, improving documentation, or helping with translations.
+This guide covers setup, workflow and submission requirements for code, documentation and translation contributions.
 
 ## AI-Assisted Contributions
 
@@ -705,12 +705,6 @@ Contributors are recognized in:
 - **Hot Reload**: The desktop app supports hot reload for faster development
 - **Debugging**: Use browser dev tools in the Tauri webview for debugging
 - **Logging**: Use the structured logging package for consistent logging
-
-## Thank You!
-
-Your contributions make Deadlock Mod Manager better for everyone. Whether you're fixing a small typo or adding a major feature, every contribution is valued and appreciated.
-
-For questions about contributing, feel free to reach out to the maintainers or ask in our community channels. Happy coding! 🚀
 
 ---
 

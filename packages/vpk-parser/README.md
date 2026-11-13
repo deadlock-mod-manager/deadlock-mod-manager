@@ -1,8 +1,6 @@
 # @deadlock-mods/vpk-parser
 
-High-performance VPK (Valve Package Format) parser for parsing Deadlock mod files using native Rust implementation via Bun FFI.
-
-This package provides fast and reliable parsing of VPK files, which are the container format used by Valve games like Deadlock for packaging game assets and mod files. It's specifically designed to fingerprint mod files from GameBanana and powers several key components of the Deadlock modding ecosystem.
+Rust VPK parser with Bun FFI bindings, used to fingerprint GameBanana mod files.
 
 ## What are VPK Files?
 
@@ -17,10 +15,10 @@ VPK (Valve Package Format) files are archive containers used by Valve games to s
 
 This VPK parser is used across the Deadlock modding ecosystem:
 
-- **🌐 VPK Analyzer Website**: Powers the online VPK analyzer tool for inspecting mod files
-- **📊 Lockdex**: Builds and maintains the largest index of Deadlock mods by analyzing VPK files from GameBanana
-- **🎮 Mod Manager**: Enables detection of already installed mods by comparing VPK fingerprints
-- **🔍 Mod Identification**: Generates unique fingerprints for mod files to prevent duplicates and track versions
+- The online VPK analyzer uses it to inspect mod files
+- Lockdex uses it to index Deadlock mods by analyzing VPK files from GameBanana
+- The mod manager uses it to detect installed mods by comparing VPK fingerprints
+- Its fingerprints identify mod files, which prevents duplicates and tracks versions
 
 This parser extracts all metadata from VPK files including:
 

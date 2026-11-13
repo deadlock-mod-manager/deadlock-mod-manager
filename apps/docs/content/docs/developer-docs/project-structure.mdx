@@ -6,13 +6,9 @@ description: Understanding the Deadlock Mod Manager codebase organization and ar
 import { Card, Cards } from "fumadocs-ui/components/card";
 import { Callout } from "fumadocs-ui/components/callout";
 
-# Project Structure
-
-Deadlock Mod Manager is organized as a monorepo using pnpm workspaces, built with modern technologies and following established patterns for maintainability and scalability.
+The pnpm monorepo separates applications in `apps/`, shared packages in `packages/`, and tooling in `tools/`.
 
 ## Overview
-
-The project follows a clear separation between applications, shared packages, and development tools:
 
 ```
 deadlock-modmanager/

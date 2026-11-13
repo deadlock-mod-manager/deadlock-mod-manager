@@ -1,13 +1,6 @@
 # Database Package
 
-This package contains the database layer for the Deadlock Mod Manager, built with Drizzle ORM and PostgreSQL.
-
-## Features
-
-- **Drizzle ORM Integration**: Type-safe database operations
-- **Repository Pattern**: Clean abstraction layer for database operations
-- **PostgreSQL Support**: Optimized for PostgreSQL databases
-- **Schema Management**: Centralized database schema definitions
+PostgreSQL schemas and Drizzle repositories for Deadlock Mod Manager. Schemas live in `src/schema/` and repositories wrap common queries.
 
 ## Usage
 
@@ -116,6 +109,6 @@ The database includes the following tables:
 
 When updating the schema:
 
-1. Modify `src/schema.ts`
+1. Modify the schema files in `src/schema/`
 2. Generate migration: `pnpm db:generate`
 3. Review the generated migration in `drizzle/` directory

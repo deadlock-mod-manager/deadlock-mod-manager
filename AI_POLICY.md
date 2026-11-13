@@ -8,8 +8,6 @@ Deadlock Mod Manager is built with AI assistance, and we're not shy about it. Ou
 
 That said, AI tools amplify the skill of the person using them. A good developer with AI becomes faster. A developer who doesn't understand what they're contributing becomes a burden on maintainers, regardless of how the code was produced.
 
-**This is not an anti-AI policy. This is a pro-accountability policy.**
-
 ## Rules for Contributors
 
 ### 1. You Own What You Submit
@@ -85,7 +83,7 @@ We genuinely want to help contributors learn and grow. If you're new to open sou
 
 The open source ecosystem is dealing with a wave of low-quality, AI-generated contributions that waste maintainer time. Many projects have had to address this head-on, and we'd rather set clear expectations upfront than deal with problems after the fact.
 
-We believe AI is a net positive for software development when used by people who know what they're doing—and this policy is designed to encourage exactly that.
+We believe AI is a net positive for software development when used by people who know what they're doing, and this policy is designed to encourage exactly that.
 
 ## References & Inspiration
 

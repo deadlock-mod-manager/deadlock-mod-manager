@@ -116,9 +116,7 @@ See the [installation guide](https://docs.deadlockmods.app/using-mod-manager/ins
 
 ## Usage
 
-For detailed installation instructions, getting started guides, troubleshooting, and feature documentation, please visit our comprehensive documentation:
-
-**[Player Guide](https://docs.deadlockmods.app/using-mod-manager)** - Installation, usage, and troubleshooting
+The [Player Guide](https://docs.deadlockmods.app/using-mod-manager) covers installation, usage and troubleshooting.
 
 For help and support:
 
@@ -274,14 +272,7 @@ Translation files are located in `apps/desktop/src/locales/` and loaded via [rea
 
 ## Contributing
 
-Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
-
-For comprehensive contributing guidelines, development setup, code style standards, and best practices, please see:
-
-- **[CONTRIBUTING.md](CONTRIBUTING.md)**
-- **[Contributing Documentation](https://docs.deadlockmods.app/developer-docs/contributing)**
-
-> **AI-Assisted Contributions:** We welcome AI-assisted contributions! Please review our [AI Policy](./AI_POLICY.md) for guidelines on disclosure and quality expectations.
+Read [CONTRIBUTING.md](CONTRIBUTING.md) for setup and submission requirements, and [AI_POLICY.md](./AI_POLICY.md) for disclosure rules. The [contributing documentation](https://docs.deadlockmods.app/developer-docs/contributing) covers the workflow in more detail.
 
 ### Top contributors:
 
@@ -307,8 +298,6 @@ Vendored and copied-in third-party source (vpkmerge, ValveResourceFormat, shadcn
 - **Discord Community**: [Join our Discord](https://deadlockmods.app/discord)
 - **Author**: [Stormix](https://github.com/Stormix)
 
-For support and questions, please use GitHub Issues or join our Discord community. We're always happy to help!
-
 <!-- ACKNOWLEDGMENTS -->
 
 ## Acknowledgments
@@ -317,7 +306,7 @@ This project was only possible thanks to the amazing open source community, espe
 
 ### Special Thanks
 
-- **[GameBanana](https://gamebanana.com/)** - Our primary mod source and the backbone of this application. GameBanana provides the comprehensive mod database and API that makes browsing, discovering, and downloading Deadlock mods possible. This project would not exist without their excellent platform and community-driven content.
+- **[GameBanana](https://gamebanana.com/)** - GameBanana provides the mod catalog and API used to browse and download Deadlock mods. This project would not exist without it.
 - **[Jelloge/Deadlock-Rich-Presence](https://github.com/Jelloge/Deadlock-Rich-Presence)** - Discord Game Presence was only possible thanks to this project and its work mapping Deadlock console log events for rich presence.
 - **[vpkmerge](https://github.com/Slush97/vpkmerge)** - Source 2 texture, KV3 and sound codecs used by the Mod Foundry (MIT).
 - **[ValveResourceFormat](https://github.com/ValveResourceFormat/ValveResourceFormat)** - Source 2 resource format research the Foundry's codecs and model preview are adapted from (MIT).

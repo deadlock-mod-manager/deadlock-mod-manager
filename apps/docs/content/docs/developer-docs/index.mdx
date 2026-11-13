@@ -1,17 +1,11 @@
 ---
 title: Overview
-description: Welcome to the Deadlock Mod Manager developer documentation
+description: Setup, architecture, contribution and API guides for Deadlock Mod Manager developers
 ---
 
 import { Card, Cards } from "fumadocs-ui/components/card";
 
 # Developer Documentation Overview
-
-Welcome to the developer documentation for Deadlock Mod Manager! This section provides comprehensive information for developers who want to contribute to the project, integrate with the API, or understand the underlying architecture.
-
-## For Developers
-
-Whether you're looking to contribute code, understand the architecture, or integrate with our systems, this guide has you covered:
 
 <Cards>
   <Card
@@ -31,7 +25,7 @@ Whether you're looking to contribute code, understand the architecture, or integ
   />
   <Card
     title='Architecture'
-    description='Deep dive into system design and technical decisions'
+    description='System design and technical decisions'
     href='/developer-docs/architecture'
   />
   <Card
@@ -41,7 +35,7 @@ Whether you're looking to contribute code, understand the architecture, or integ
   />
   <Card
     title='API Integration'
-    description='Advanced patterns and examples for API integration'
+    description='Base URL, mod routes and error format'
     href='/developer-docs/api-reference'
   />
   <Card
@@ -53,22 +47,20 @@ Whether you're looking to contribute code, understand the architecture, or integ
 
 ## Getting Started
 
-Choose your path based on what you want to do:
-
-### 🔨 **Contributing Code**
+### Contributing code
 
 1. [Set up your development environment](/developer-docs/development-setup) (or use [Nix](/developer-docs/nix-development) on Linux)
 2. [Understand the project structure](/developer-docs/project-structure)
 3. [Read the contributing guidelines](/developer-docs/contributing)
 4. Start with a good first issue on GitHub
 
-### 🏗️ **Understanding the System**
+### Understanding the system
 
 1. [Review the project structure](/developer-docs/project-structure)
 2. [Study the architecture documentation](/developer-docs/architecture)
 3. [Explore the interactive API documentation](/api)
 
-### 🔌 **API Integration**
+### API integration
 
 1. [Browse the interactive API reference](/api)
 2. [Read the integration guide](/developer-docs/api-reference)
@@ -76,19 +68,13 @@ Choose your path based on what you want to do:
 
 ## Key Technologies
 
-Deadlock Mod Manager is built with modern technologies:
-
-- **Desktop**: Tauri v2 with Rust backend and React frontend
-- **Backend**: Bun runtime with Hono web framework
-- **Database**: PostgreSQL with Drizzle ORM
-- **Cache & Pub/Sub**: Redis for caching and pub/sub messaging
-- **Frontend**: React 18 with TypeScript and Tailwind CSS v4
-- **Build System**: Turborepo for efficient monorepo management
+- Desktop: Tauri v2 with a Rust backend and a React 19 frontend using TypeScript and Tailwind CSS v4
+- Backend: Bun with Hono and oRPC
+- Database: PostgreSQL with Drizzle ORM
+- Cache and pub/sub: Redis
+- Build system: Turborepo
 
 ## Community
 
-- **GitHub**: [Source code and issues](https://github.com/deadlock-mod-manager/deadlock-mod-manager)
-- **Discord**: [Developer community](https://discord.gg/WbFNt8CCr8)
-- **API**: [Live API documentation](/api)
-
-Ready to dive in? Start with our [development setup guide](/developer-docs/development-setup)!
+- [Source code and issues on GitHub](https://github.com/deadlock-mod-manager/deadlock-mod-manager)
+- [Discord](https://discord.gg/WbFNt8CCr8)

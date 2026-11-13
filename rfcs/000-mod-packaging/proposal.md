@@ -10,61 +10,23 @@
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Goals & Design Principles](#goals--design-principles)
-3. [Configuration Format](#configuration-format)
-4. [Project Structure](#project-structure)
-5. [Binary Format Specification](#binary-format-specification)
-6. [Layer System](#layer-system)
-7. [Variant Groups](#variant-groups)
-8. [File Transformers](#file-transformers)
-9. [Mod Bundles](#mod-bundles)
-10. [CLI Tooling](#cli-tooling)
-11. [Migration Path](#migration-path)
-12. [Examples](#examples)
-13. [Future Considerations](#future-considerations)
+2. [Configuration Format](#configuration-format)
+3. [Project Structure](#project-structure)
+4. [Binary Format Specification](#binary-format-specification)
+5. [Layer System](#layer-system)
+6. [Variant Groups](#working-with-variant-groups)
+7. [File Transformers](#file-transformers)
+8. [Mod Bundles](#mod-bundles)
+9. [CLI Tooling](#cli-tooling)
+10. [Migration Path](#migration-path)
+11. [Examples](#examples)
+12. [Future Considerations](#future-considerations)
 
 ---
 
 ## Overview
 
-The Deadlock Mod Packaging format (`.dmodpkg`) is a standardized binary format for creating, distributing, and installing Deadlock game modifications. This format addresses the limitations of current distribution methods (zip/rar/7z archives) by providing:
-
-- **Standardized metadata** for mod discovery and compatibility
-- **Version management** for mods and dependencies
-- **Modular content** through layers and variant systems
-- **Efficient compression** using Zstd
-- **Integrity verification** through checksums and optional signatures
-
-### Problem Statement
-
-Current Deadlock mod distribution suffers from:
-
-1. **Inconsistent structure**: Mods use different archive formats and internal organization
-2. **No metadata standard**: Version info, authors, and dependencies are ad-hoc or missing
-3. **Poor variant support**: Multiple downloads required for different mod variations
-4. **No dependency tracking**: Users must manually identify and install required mods
-5. **Large file sizes**: Inefficient compression and redundant files
-
----
-
-## Goals & Design Principles
-
-### Primary Goals
-
-1. **Standardization**: Single format for all Deadlock mods
-2. **Efficiency**: Better compression ratios and faster installation
-3. **Modularity**: Support variants, optional features, and layered content
-4. **Compatibility**: Clear dependency tracking and version constraints
-5. **Extensibility**: Plugin system for future features and transformers
-6. **Developer-friendly**: Simple project structure and tooling
-
-### Design Principles
-
-- **Convention over configuration**: Sensible defaults, explicit overrides
-- **Backward compatibility**: Easy migration from existing archives
-- **Performance**: Fast extraction and minimal memory footprint
-- **Security**: Integrity verification and optional cryptographic signatures
-- **Human-readable metadata**: JSON configuration for easy editing
+This draft proposes `.dmodpkg`, a container for Deadlock mods with JSON metadata, priority-ordered content layers, mutually exclusive variant groups, Zstd-compressed data chunks, and checksums with optional signatures. Mods are distributed today as zip, rar and 7z archives with inconsistent layouts and no shared contract for metadata or variant selection. Dependency resolution is deferred until there is a demonstrated need (see [Future Considerations](#future-considerations)).
 
 ---
 
