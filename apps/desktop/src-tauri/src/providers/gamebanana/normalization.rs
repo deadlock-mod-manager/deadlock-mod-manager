@@ -24,6 +24,10 @@ static GAMEBANANA_MOD_URL: LazyLock<Regex> = LazyLock::new(|| {
 static BLOCK_TAG: LazyLock<Regex> = LazyLock::new(|| {
   Regex::new(r"(?i)</?(?:br|p|li|ol|ul|div|h[1-6])\b[^>]*>").expect("block tag regex must be valid")
 });
+// An opening code tag reads as an opening backtick, so "<code>map streetball</code>" is a
+// quoted command. Closing tags stay spaces so text after the code is not quoted.
+static CODE_OPEN_TAG: LazyLock<Regex> =
+  LazyLock::new(|| Regex::new(r"(?i)<code\b[^>]*>").expect("code tag regex must be valid"));
 static INLINE_TAG: LazyLock<Regex> =
   LazyLock::new(|| Regex::new(r"<[^>]*>").expect("inline tag regex must be valid"));
 // "map_" also matches, because authors write "map_dl_bearpit" for "map dl_bearpit".
@@ -255,6 +259,7 @@ pub fn is_nsfw_visibility(initial_visibility: &str) -> bool {
 
 fn description_to_text(description: &str) -> String {
   let text = BLOCK_TAG.replace_all(description, "\n");
+  let text = CODE_OPEN_TAG.replace_all(&text, "`");
   INLINE_TAG
     .replace_all(&text, " ")
     .replace("&quot;", "\"")
@@ -267,10 +272,11 @@ fn description_to_text(description: &str) -> String {
 }
 
 /// Finds the console map name in a GameBanana description. Every "map <name>" is a
-/// candidate. A candidate written as a command (quoted, after "type" or "command", or alone
-/// on its line) wins over one that only looks like a map identifier (has an underscore or
-/// digit). Prose such as "this map features" is neither, so it never matches. Keep in sync
-/// with `extractMapName` in the API; both run the shared `map-names.json` fixture.
+/// candidate. A candidate written as a command (quoted or in code, after "type" or
+/// "command", or alone on its line) wins over one that only looks like a map identifier (has
+/// an underscore or digit). Prose such as "this map features" is neither, so it never
+/// matches. Keep in sync with `extractMapName` in the API; both run the shared
+/// `map-names.json` fixture.
 pub fn extract_map_name(description: &str) -> Option<String> {
   let text = description_to_text(description);
   let mut identifier = None;

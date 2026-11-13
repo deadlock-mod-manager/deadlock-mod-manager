@@ -221,6 +221,10 @@ export const buildDownloadSignatureFromPayload = (
 // Block tags end a line, so "<br>map queue<br>" reads as a command on its own
 // line while "<br>Map has lots of jumps" stays prose.
 const BLOCK_TAG_RE = /<\/?(?:br|p|li|ol|ul|div|h[1-6])\b[^>]*>/gi;
+// An opening code tag reads as an opening backtick, so
+// "<code>map streetball</code>" is a quoted command. Closing tags stay spaces
+// so text after the code is not quoted.
+const CODE_OPEN_TAG_RE = /<code\b[^>]*>/gi;
 const INLINE_TAG_RE = /<[^>]*>/g;
 const HTML_ENTITIES: Record<string, string> = {
   "&quot;": '"',
@@ -243,17 +247,19 @@ const OWN_LINE_SUFFIX_RE = /^\W*$/;
 function descriptionToText(description: string): string {
   return description
     .replace(BLOCK_TAG_RE, "\n")
+    .replace(CODE_OPEN_TAG_RE, "`")
     .replace(INLINE_TAG_RE, " ")
     .replace(HTML_ENTITY_RE, (entity) => HTML_ENTITIES[entity]);
 }
 
 /**
  * Finds the console map name in a GameBanana description. Every "map <name>"
- * is a candidate. A candidate written as a command (quoted, after "type" or
- * "command", or alone on its line) wins over one that only looks like a map
- * identifier (has an underscore or digit). Prose such as "this map features"
- * is neither, so it never matches. Keep in sync with `extract_map_name` in the
- * desktop GameBanana normalizer; both run the shared `map-names.json` fixture.
+ * is a candidate. A candidate written as a command (quoted or in code, after
+ * "type" or "command", or alone on its line) wins over one that only looks
+ * like a map identifier (has an underscore or digit). Prose such as "this map
+ * features" is neither, so it never matches. Keep in sync with
+ * `extract_map_name` in the desktop GameBanana normalizer; both run the shared
+ * `map-names.json` fixture.
  */
 export function extractMapName(description: string): string | undefined {
   if (!description) return undefined;

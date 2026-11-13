@@ -112,5 +112,23 @@
     "name": "pkfr_cobbletowers",
     "mapName": null,
     "description": "Lil' ol map I made for Deadlock movement. \"pkfr\" stands for ParKour Fast Regen, reflecting how it's designed for one air jump, one air dash, etc. to always be available for each time you hop into the air.<br><br>Map has lots of wall jumps. Remember that when you air dash or air jump, your wall jump will be refreshed and you can get full height with it again. Many jumps in this map utilize this."
+  },
+  {
+    "submission": null,
+    "name": "Synthetic: code tag after an unlisted verb",
+    "mapName": "streetball",
+    "description": "Open the console and enter <code>map streetball</code> to start playing."
+  },
+  {
+    "submission": null,
+    "name": "Synthetic: same instruction without a code tag",
+    "mapName": null,
+    "description": "Open the console and enter map streetball to start playing."
+  },
+  {
+    "submission": null,
+    "name": "Synthetic: prose after a closed code tag",
+    "mapName": null,
+    "description": "Toggle <code>noclip</code> map edges have no collision."
   }
 ]
