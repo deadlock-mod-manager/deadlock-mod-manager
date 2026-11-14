@@ -50,6 +50,7 @@ export const ListModCard = memo(function ListModCard({
 }: ModCardProps) {
   const { t } = useTranslation();
   const isDisabled = mod.status !== ModStatus.Installed;
+  const isCustom = mod.remoteUrl?.startsWith("local://");
   const hasUpdate = useModHasUpdate(mod);
   const isInstalling = mod.status === ModStatus.Installing;
   const navigate = useNavigate();
@@ -148,6 +149,7 @@ export const ListModCard = memo(function ListModCard({
             <p className='truncate text-muted-foreground text-sm'>
               <LibraryModAuthor mod={mod} />{" "}
               {mod.isAudio && `• ${t("mods.audioMod")}`}
+              {mod.isMap && !isCustom && ` • ${t("mods.mapBadge")}`}
             </p>
           </div>
 
@@ -178,9 +180,9 @@ export const ListModCard = memo(function ListModCard({
                 status={conflictStatus}
               />
             )}
-            {mod.remoteUrl?.startsWith("local://") && (
+            {isCustom && (
               <Badge variant='outline' className='text-xs'>
-                {t("mods.customBadge")}
+                {mod.isMap ? t("mods.customMapBadge") : t("mods.customBadge")}
               </Badge>
             )}
           </div>

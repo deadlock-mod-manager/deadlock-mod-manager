@@ -1,7 +1,6 @@
 import { createHash } from "node:crypto";
 import { appendFile, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
 import { $, $$, browser } from "@wdio/globals";
 import { z } from "zod";
@@ -9,7 +8,12 @@ import { fixtureGamePaths } from "./gameinfo-mounts";
 import { observeUntil } from "./observations";
 import { readLifecycleState } from "./lifecycle-oracle";
 import { findMod, searchLibrary } from "./shard-actions";
-import { navigate, openAddLocalMod, waitForClickable } from "./ui";
+import {
+  dropFilePaths,
+  navigate,
+  openAddLocalMod,
+  waitForClickable,
+} from "./ui";
 import { assertOwnedWorld } from "./world";
 
 // Probes for fixed-status cases. A fixed mod should keep "Fixed for this
@@ -411,9 +415,6 @@ export const ageRepairRevision = async (
   return { from: revision, to: revision - 1 };
 };
 
-const DROP_AREA =
-  '[role="button"][aria-label="Drop files/folders here, or click to select"]';
-
 /** Imports a VPK from the world's fixtures as a new mod, enabled or not. */
 export const importMod = async (
   world: string,
@@ -422,23 +423,7 @@ export const importMod = async (
 ) => {
   const before = (await readLifecycleState(world)).localMods.length;
   await openAddLocalMod();
-  await $(DROP_AREA).waitForClickable();
-  const uri = pathToFileURL(path.join(world, "fixtures", file)).href;
-  await browser.execute(
-    (selector: string, dropped: string) => {
-      const transfer = new DataTransfer();
-      transfer.setData("text/uri-list", dropped);
-      document.querySelector(selector)?.dispatchEvent(
-        new DragEvent("drop", {
-          bubbles: true,
-          cancelable: true,
-          dataTransfer: transfer,
-        }),
-      );
-    },
-    DROP_AREA,
-    uri,
-  );
+  await dropFilePaths([path.join(world, "fixtures", file)]);
   const dialog = await $('[role="dialog"]');
   await dialog.waitForDisplayed();
   const add = await dialog.$("button=Add");

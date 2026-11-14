@@ -16,7 +16,7 @@ const windows = process.platform === "win32";
 describe("scenario selection", () => {
   it("registers every case with explicit phases and capability requirements", () => {
     const ids = selectScenarios("all");
-    expect(ids).toHaveLength(windows ? 182 : 172);
+    expect(ids).toHaveLength(windows ? 183 : 173);
     expect(ids).toContain("downloads-segmented-range-error");
     // Some of these specs don't dispatch on their case ID, so a rename
     // wouldn't fail them.

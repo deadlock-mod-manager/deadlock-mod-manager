@@ -29,6 +29,7 @@ import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import { generateFallbackModSVG } from "@/lib/file-patterns";
+import { cn } from "@/lib/utils";
 
 export type ModMetadata = {
   name: string;
@@ -44,6 +45,12 @@ export type ModMetadataFormProps = {
   title?: string;
   description?: string;
   hideCardChrome?: boolean;
+  // Shown while no image is chosen, such as a cover rendered from the files.
+  defaultImageSrc?: string | null;
+  defaultImagePending?: boolean;
+  imageNote?: string;
+  // Each file becomes a mod named after it, so there is no name to ask for.
+  hideName?: boolean;
 };
 
 export type ModMetadataFormHandle = {
@@ -116,7 +123,16 @@ type FormValues = z.infer<ReturnType<typeof buildSchema>>;
 
 const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
   function ModMetadataForm(
-    { initial, title, description, hideCardChrome = false },
+    {
+      initial,
+      title,
+      description,
+      hideCardChrome = false,
+      defaultImageSrc,
+      defaultImagePending = false,
+      imageNote,
+      hideName = false,
+    },
     ref,
   ) {
     const { t } = useTranslation();
@@ -141,7 +157,13 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
       },
     });
 
-    const resolvedDefault = useMemo(() => DEFAULT_IMAGE, []);
+    const resolvedDefault = useMemo(
+      () =>
+        sanitizePreviewUrl(defaultImageSrc ?? undefined) ??
+        sanitizePreviewUrl(initial?.imageSrc) ??
+        DEFAULT_IMAGE,
+      [defaultImageSrc, initial?.imageSrc],
+    );
     useEffect(() => {
       const sub = form.watch((_, { name }) => {
         if (name === "imageFile") {
@@ -152,13 +174,8 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
             setImgOk(true);
             return () => URL.revokeObjectURL(url);
           }
-          if (initial?.imageSrc) {
-            setPreview(sanitizePreviewUrl(initial.imageSrc) ?? resolvedDefault);
-            setImgOk(true);
-          } else {
-            setPreview(resolvedDefault);
-            setImgOk(true);
-          }
+          setPreview(resolvedDefault);
+          setImgOk(true);
         }
       });
       const initF = form.getValues("imageFile") as File | null | undefined;
@@ -168,13 +185,10 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
         setImgOk(true);
         return () => URL.revokeObjectURL(url);
       }
-      if (initial?.imageSrc) {
-        setPreview(sanitizePreviewUrl(initial.imageSrc) ?? resolvedDefault);
-      } else {
-        setPreview(resolvedDefault);
-      }
+      setPreview(resolvedDefault);
+      setImgOk(true);
       return () => sub.unsubscribe();
-    }, [form, initial?.imageSrc, resolvedDefault]);
+    }, [form, resolvedDefault]);
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
@@ -206,7 +220,9 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
       ref,
       () => ({
         validateAndGet: async () => {
-          const valid = await form.trigger();
+          const valid = await (hideName
+            ? form.trigger(["author", "description", "link", "imageFile"])
+            : form.trigger());
           if (!valid) {
             return null;
           }
@@ -233,17 +249,27 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
           clearImage();
         },
       }),
-      [form, preview, imgOk, initial, clearImage],
+      [form, preview, imgOk, initial, clearImage, hideName],
     );
 
     const Body = (
       <div className='grid grid-cols-1 gap-6 md:grid-cols-12'>
         {}
         <div className='md:col-span-4'>
-          <div className='aspect-video w-full overflow-hidden rounded-md border bg-muted'>
+          <div
+            className={cn(
+              "aspect-video w-full overflow-hidden rounded-md border bg-muted",
+              defaultImagePending && "animate-pulse",
+            )}>
             <img
               alt={t("modForm.modPreview")}
-              className='h-full w-full object-cover'
+              className={cn(
+                "h-full w-full",
+                // Rendered covers frame the whole model, as library cards do.
+                defaultImageSrc && preview === resolvedDefault
+                  ? "object-contain"
+                  : "object-cover",
+              )}
               onError={() => {
                 setImgOk(false);
                 setPreview(generateFallbackSVG());
@@ -266,26 +292,31 @@ const Inner = React.forwardRef<ModMetadataFormHandle, ModMetadataFormProps>(
               Use default
             </Button>
           </div>
+          {imageNote && (
+            <p className='mt-2 text-muted-foreground text-xs'>{imageNote}</p>
+          )}
         </div>
 
         {}
         <div className='space-y-4 md:col-span-8'>
-          <FormField
-            control={form.control}
-            name='name'
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Name *</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder={t("modForm.modNamePlaceholder")}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {!hideName && (
+            <FormField
+              control={form.control}
+              name='name'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name *</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder={t("modForm.modNamePlaceholder")}
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
           <div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
             <FormField
               control={form.control}

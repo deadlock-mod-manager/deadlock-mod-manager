@@ -1,11 +1,14 @@
 import { startApplication } from "../support/application";
-import { openAddLocalMod } from "../support/ui";
+import {
+  ADD_MODS_DROP_AREA,
+  dropFilePaths,
+  openAddLocalMod,
+} from "../support/ui";
 import { observeUntil } from "../support/observations";
 import { closeApplication } from "../support/application-exit";
 import { $, browser, expect } from "@wdio/globals";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
 import { z } from "zod";
 import {
   assertLifecycleDisk,
@@ -83,26 +86,12 @@ describe("local mod lifecycle", () => {
       await link.waitForClickable();
       await link.click();
       await openAddLocalMod();
-      const dropSelector =
-        '[role="button"][aria-label="Drop files/folders here, or click to select"]';
-      const dropArea = await $(dropSelector);
+      const dropArea = await $(ADD_MODS_DROP_AREA);
       await dropArea.waitForClickable();
       if (process.env.DMM_E2E_CASE_ID === "local-mod-name-recovery") {
-        await browser.execute(
-          (selector: string, uri: string) => {
-            const transfer = new DataTransfer();
-            transfer.setData("text/uri-list", uri);
-            document.querySelector(selector)?.dispatchEvent(
-              new DragEvent("drop", {
-                bubbles: true,
-                cancelable: true,
-                dataTransfer: transfer,
-              }),
-            );
-          },
-          dropSelector,
-          pathToFileURL(path.join(world, "fixtures", "e2e-local-mod.vpk")).href,
-        );
+        await dropFilePaths([
+          path.join(world, "fixtures", "e2e-local-mod.vpk"),
+        ]);
       } else {
         await selectNativeFixture(runtime.processId, world, () =>
           dropArea.click(),

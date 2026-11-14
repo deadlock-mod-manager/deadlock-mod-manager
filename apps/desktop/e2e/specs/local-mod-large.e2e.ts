@@ -1,5 +1,9 @@
 import { startApplication } from "../support/application";
-import { openAddLocalMod } from "../support/ui";
+import {
+  ADD_MODS_DROP_AREA,
+  dropFilePaths,
+  openAddLocalMod,
+} from "../support/ui";
 import { closeApplication } from "../support/application-exit";
 import { observeUntil } from "../support/observations";
 import { readLifecycleState } from "../support/lifecycle-oracle";
@@ -8,7 +12,6 @@ import { assertOwnedWorld } from "../support/world";
 import { $, browser } from "@wdio/globals";
 import { appendFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
 
 type Flow = { source: "picker" | "drop" | "drop-path"; fileName: string };
 
@@ -27,44 +30,37 @@ const flows = {
   },
 } satisfies Record<string, Flow>;
 
-const DROP_AREA =
-  '[role="button"][aria-label="Drop files/folders here, or click to select"]';
-
 // A drop carries either a renderer File, read here from app data, or only a
-// file:// path, as drops from some applications do. A path takes the same
-// route as a picked file. The File is assembled from 8 MiB Blobs because one
-// 1 GiB IPC read takes the webview down before the app sees the drop.
-const dispatchDrop = async (
+// file:// path, as drops from some applications do (see dropFilePaths). The
+// File is assembled from 8 MiB Blobs because one 1 GiB IPC read takes the
+// webview down before the app sees the drop.
+const dropRendererFile = async (
   fileName: string,
-  payload: { readFrom: string } | { uri: string },
+  readFrom: string,
 ): Promise<void> => {
   await browser.execute(
-    async (selector: string, name: string, dropped: typeof payload) => {
+    async (selector: string, name: string, source: string) => {
       const transfer = new DataTransfer();
-      if ("uri" in dropped) {
-        transfer.setData("text/uri-list", dropped.uri);
-      } else {
-        const { invoke } = window.__TAURI_INTERNALS__;
-        const rid = await invoke<number>("plugin:fs|open", {
-          path: dropped.readFrom,
-          options: { read: true },
+      const { invoke } = window.__TAURI_INTERNALS__;
+      const rid = await invoke<number>("plugin:fs|open", {
+        path: source,
+        options: { read: true },
+      });
+      const parts: Blob[] = [];
+      for (;;) {
+        // The last 8 bytes hold the big-endian count of bytes read.
+        const data = await invoke<ArrayBuffer>("plugin:fs|read", {
+          rid,
+          len: 8 * 1024 * 1024,
         });
-        const parts: Blob[] = [];
-        for (;;) {
-          // The last 8 bytes hold the big-endian count of bytes read.
-          const data = await invoke<ArrayBuffer>("plugin:fs|read", {
-            rid,
-            len: 8 * 1024 * 1024,
-          });
-          const read = Number(
-            new DataView(data).getBigUint64(data.byteLength - 8),
-          );
-          if (read === 0) break;
-          parts.push(new Blob([new Uint8Array(data, 0, read)]));
-        }
-        await invoke("plugin:resources|close", { rid });
-        transfer.items.add(new File(parts, name));
+        const read = Number(
+          new DataView(data).getBigUint64(data.byteLength - 8),
+        );
+        if (read === 0) break;
+        parts.push(new Blob([new Uint8Array(data, 0, read)]));
       }
+      await invoke("plugin:resources|close", { rid });
+      transfer.items.add(new File(parts, name));
       document.querySelector(selector)?.dispatchEvent(
         new DragEvent("drop", {
           bubbles: true,
@@ -73,9 +69,9 @@ const dispatchDrop = async (
         }),
       );
     },
-    DROP_AREA,
+    ADD_MODS_DROP_AREA,
     fileName,
-    payload,
+    readFrom,
   );
 };
 
@@ -117,7 +113,7 @@ describe("large local mod import", () => {
     await link.waitForClickable();
     await link.click();
     await openAddLocalMod();
-    const dropArea = await $(DROP_AREA);
+    const dropArea = await $(ADD_MODS_DROP_AREA);
     await dropArea.waitForClickable();
 
     const started = Date.now();
@@ -129,16 +125,15 @@ describe("large local mod import", () => {
         flow.fileName,
       );
     } else if (flow.source === "drop-path") {
-      await dispatchDrop(flow.fileName, { uri: pathToFileURL(fixture).href });
+      await dropFilePaths([fixture]);
     } else {
-      await dispatchDrop(flow.fileName, { readFrom: fixture });
+      await dropRendererFile(flow.fileName, fixture);
     }
 
-    // A dropped File is staged to disk before the dialog opens.
+    // A dropped File is staged to disk before the details step opens.
     const dialog = await $('[role="dialog"]');
-    await dialog.waitForDisplayed({ timeout: 240_000 });
     const add = await dialog.$("button=Add");
-    await add.waitForClickable();
+    await add.waitForClickable({ timeout: 240_000 });
     await add.click();
 
     // Manifest recovery can add a placeholder before metadata and cleanup finish.

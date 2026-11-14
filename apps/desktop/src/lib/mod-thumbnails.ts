@@ -21,6 +21,28 @@ const remember = (identity: string, image: string) => {
   return image;
 };
 
+const localCoverIdentity = async (remoteId: string): Promise<string> => {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(`dmm-local-cover-1:${remoteId}`),
+  );
+  return Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, "0"),
+  ).join("");
+};
+
+const keepCover = async (identity: string, dataUrl: string) => {
+  await invoke("foundry_save_thumbnail", {
+    identity,
+    png: dataUrl.slice(dataUrl.indexOf(",") + 1),
+  });
+  return remember(identity, dataUrl);
+};
+
+/** Keeps a cover rendered before import as the new mod's library thumbnail. */
+export const saveLocalCover = async (remoteId: string, dataUrl: string) =>
+  keepCover(await localCoverIdentity(remoteId), dataUrl);
+
 const localModThumbnail = async (
   mod: ThumbnailMod,
   profileFolder: string | null,
@@ -28,13 +50,7 @@ const localModThumbnail = async (
 ): Promise<string | null> => {
   // Local imports have a unique id. Deployment paths and enablement are not
   // revisions of their cover: read the saved image before resolving any VPK.
-  const digest = await crypto.subtle.digest(
-    "SHA-256",
-    new TextEncoder().encode(`dmm-local-cover-1:${mod.remoteId}`),
-  );
-  const identity = Array.from(new Uint8Array(digest), (byte) =>
-    byte.toString(16).padStart(2, "0"),
-  ).join("");
+  const identity = await localCoverIdentity(mod.remoteId);
   signal.throwIfAborted();
   const cached = memory.get(identity);
   if (cached) return remember(identity, cached);
@@ -59,37 +75,74 @@ const localModThumbnail = async (
       identity: info.identity,
     });
     signal.throwIfAborted();
-    if (previous) {
-      await invoke("foundry_save_thumbnail", {
-        identity,
-        png: previous.slice(previous.indexOf(",") + 1),
-      });
-      return remember(identity, previous);
-    }
-    if (!info.modelPath || info.ambiguousHero) return null;
-    const model = await decodeFoundryModel(
-      info.filePath,
-      info.modelPath,
-      null,
-      signal,
-    );
-    try {
-      // Partial previews need viewer diagnostics, rather than an accurate-looking cover.
-      if (model.report?.issues.length) return null;
-      const image = await renderModelThumbnail(model, signal);
-      if (!image) return null;
-      const bytes = new Uint8Array(await image.arrayBuffer());
-      let binary = "";
-      for (const byte of bytes) binary += String.fromCharCode(byte);
-      const png = btoa(binary);
-      signal.throwIfAborted();
-      await invoke("foundry_save_thumbnail", { identity, png });
-      return remember(identity, `data:image/png;base64,${png}`);
-    } finally {
-      releaseFoundryModel(model);
-    }
+    if (previous) return keepCover(identity, previous);
+    const png = await renderCover(info, signal);
+    if (!png) return null;
+    signal.throwIfAborted();
+    await invoke("foundry_save_thumbnail", { identity, png });
+    return remember(identity, `data:image/png;base64,${png}`);
   }, signal);
 };
+
+// The hero model a VPK ships, rendered as a base64 PNG, or null without one.
+const renderCover = async (
+  info: ModPreviewInfo,
+  signal: AbortSignal,
+): Promise<string | null> => {
+  if (!info.modelPath || info.ambiguousHero) return null;
+  const model = await decodeFoundryModel(
+    info.filePath,
+    info.modelPath,
+    null,
+    signal,
+  );
+  try {
+    // Partial previews need viewer diagnostics, rather than an accurate-looking cover.
+    if (model.report?.issues.length) return null;
+    const image = await renderModelThumbnail(model, signal);
+    if (!image) return null;
+    const bytes = new Uint8Array(await image.arrayBuffer());
+    let binary = "";
+    for (const byte of bytes) binary += String.fromCharCode(byte);
+    return btoa(binary);
+  } finally {
+    releaseFoundryModel(model);
+  }
+};
+
+/**
+ * A cover for a mod not imported yet, from the first VPK with a hero model.
+ * Queued ahead of library thumbnails, since someone is waiting on it.
+ */
+const filesCover = (filePaths: string[], signal: AbortSignal) =>
+  previewCaptureQueue.run(
+    async () => {
+      for (const filePath of filePaths) {
+        const info = await invoke<ModPreviewInfo>("foundry_mod_preview_info", {
+          filePath,
+        });
+        signal.throwIfAborted();
+        const png = await renderCover(info, signal);
+        if (png) return `data:image/png;base64,${png}`;
+      }
+      return null;
+    },
+    signal,
+    1,
+  );
+
+export const filesCoverOptions = (filePaths: string[]) =>
+  queryOptions({
+    queryKey: ["files-cover", filePaths],
+    queryFn: ({ signal }) => filesCover(filePaths, signal),
+    enabled: filePaths.length > 0,
+    // Local reads and rendering: React Query's default would pause while offline.
+    networkMode: "always",
+    staleTime: Infinity,
+    gcTime: 0,
+    retry: false,
+    meta: { skipGlobalErrorHandler: true },
+  });
 
 export const localModThumbnailOptions = (
   mod: ThumbnailMod,
@@ -98,6 +151,7 @@ export const localModThumbnailOptions = (
   queryOptions({
     queryKey: ["local-mod-thumbnail", mod.remoteId],
     queryFn: ({ signal }) => localModThumbnail(mod, profileFolder, signal),
+    networkMode: "always",
     staleTime: Infinity,
     gcTime: 5 * 60_000,
     refetchOnMount: false,

@@ -1,3 +1,4 @@
+import { pathToFileURL } from "node:url";
 import { $, browser, expect } from "@wdio/globals";
 import type { ChainablePromiseElement } from "webdriverio";
 import { step } from "./evidence";
@@ -135,4 +136,30 @@ export const openAddLocalMod = async () => {
   await menu.click();
   await browser.keys("ArrowDown");
   await $('[data-testid="add-local-mod"]').click();
+};
+
+export const ADD_MODS_DROP_AREA =
+  '[role="button"][aria-label="Drop files/folders here, or click to select"]';
+
+/**
+ * Drops files on the open Add Mods dialog as file:// paths, which take the
+ * same route as files picked in the native dialog.
+ */
+export const dropFilePaths = async (filePaths: string[]) => {
+  await $(ADD_MODS_DROP_AREA).waitForClickable();
+  await browser.execute(
+    (selector: string, uris: string) => {
+      const transfer = new DataTransfer();
+      transfer.setData("text/uri-list", uris);
+      document.querySelector(selector)?.dispatchEvent(
+        new DragEvent("drop", {
+          bubbles: true,
+          cancelable: true,
+          dataTransfer: transfer,
+        }),
+      );
+    },
+    ADD_MODS_DROP_AREA,
+    filePaths.map((filePath) => pathToFileURL(filePath).href).join("\r\n"),
+  );
 };

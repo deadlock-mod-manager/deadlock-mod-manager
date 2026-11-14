@@ -12,6 +12,7 @@ const metadataSchema = z.object({
   description: z.string().nullish(),
   link: z.string().nullish(),
   category: z.string().nullish(),
+  mapName: z.string().nullish(),
 });
 
 export const readLocalModMetadata = async (modId: string) => {
@@ -38,5 +39,6 @@ export const readLocalModMetadata = async (modId: string) => {
     remoteUrl: metadata.link ?? "local://manual",
     category: metadata.category ?? "local",
     isMap: metadata.category === ModCategory.MAPS,
+    metadata: metadata.mapName ? { mapName: metadata.mapName } : null,
   };
 };

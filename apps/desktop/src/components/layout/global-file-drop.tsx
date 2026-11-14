@@ -2,30 +2,22 @@ import { toast } from "@deadlock-mods/ui/components/sonner";
 import { UploadSimple } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useLocation, useNavigate } from "react-router";
 import { useDroppedSource } from "@/hooks/use-file-drop";
-import { setPendingDrop } from "@/lib/pending-drop";
-
-const ADD_MODS_PATH = "/add-mods";
+import { useAddModDialog } from "@/lib/add-mod-dialog";
 
 const hasFiles = (event: DragEvent) =>
   event.dataTransfer?.types.includes("Files") ?? false;
 
 /**
  * Lets users drop a mod file anywhere in the window. The drop opens the Add
- * Mods page with the file loaded; that page keeps its own drop zone.
+ * Mods dialog with the file loaded; that dialog keeps its own drop zone.
  */
 export const GlobalFileDrop = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const { pathname } = useLocation();
   const [dragging, setDragging] = useState(false);
-  const enabled = pathname !== ADD_MODS_PATH;
+  const enabled = !useAddModDialog((state) => state.open);
   const { handleDataTransfer } = useDroppedSource(
-    (source) => {
-      setPendingDrop(source);
-      navigate(ADD_MODS_PATH);
-    },
+    (source) => useAddModDialog.getState().show(source),
     (message) => toast.error(message),
   );
   // The listeners stay attached for the whole drag; read the latest handler.

@@ -1,8 +1,14 @@
 import { describe, expect, it } from "bun:test";
-import { resolveDroppedModSource } from "./dropped-file-source";
-import { detectSource } from "./file-utils";
+import {
+  CombinedArchiveError,
+  resolveDroppedModSource,
+} from "./dropped-file-source";
+import { type DetectedSource, detectSource, sourceFiles } from "./file-utils";
 
 const createFile = (name: string) => new File(["test"], name);
+
+const fileNames = (source: DetectedSource | null) =>
+  source ? sourceFiles(source).map((file) => file.name) : [];
 
 const createPathOnlyFile = (path: string) => {
   const file = new File(["test"], "");
@@ -33,7 +39,7 @@ describe("resolveDroppedModSource", () => {
     );
 
     expect(detectedSource?.kind).toBe("vpk");
-    expect(detectedSource?.file.name).toBe("mod.vpk");
+    expect(fileNames(detectedSource)).toEqual(["mod.vpk"]);
     expect(itemReads).toBe(0);
     expect(uriReads).toBe(0);
   });
@@ -47,7 +53,7 @@ describe("resolveDroppedModSource", () => {
     );
 
     expect(detectedSource?.kind).toBe("vpk");
-    expect(detectedSource?.file.name).toBe("dropped.vpk");
+    expect(fileNames(detectedSource)).toEqual(["dropped.vpk"]);
   });
 
   it("falls back to uri-list files when both initial files and items are unusable", async () => {
@@ -60,7 +66,29 @@ describe("resolveDroppedModSource", () => {
     );
 
     expect(detectedSource?.kind).toBe("vpk");
-    expect(detectedSource?.file.name).toBe("from-uri.vpk");
+    expect(fileNames(detectedSource)).toEqual(["from-uri.vpk"]);
+  });
+
+  it("refuses an archive combined with other files from a fallback list", async () => {
+    await expect(
+      resolveDroppedModSource([], {
+        getFilesFromUriList: async () => [
+          createFile("first.zip"),
+          createFile("second.zip"),
+        ],
+      }),
+    ).rejects.toThrow(CombinedArchiveError);
+  });
+
+  it("keeps an archive dropped in a folder with a readme", async () => {
+    const detectedSource = await resolveDroppedModSource([], {
+      getFilesFromItems: async () => [
+        createFile("mod.zip"),
+        createFile("readme.txt"),
+      ],
+    });
+
+    expect(fileNames(detectedSource)).toEqual(["mod.zip"]);
   });
 
   it("detects supported files from webkitRelativePath when File.name is empty", () => {
@@ -79,7 +107,7 @@ describe("resolveDroppedModSource", () => {
     ]);
 
     expect(detectedSource?.kind).toBe("vpk");
-    expect(detectedSource?.file.name).toBe("hero_skin.vpk");
+    expect(fileNames(detectedSource)).toEqual(["hero_skin.vpk"]);
   });
 
   it("detects an archive when multiple files are dropped alongside unsupported files", () => {
@@ -89,7 +117,23 @@ describe("resolveDroppedModSource", () => {
     ]);
 
     expect(detectedSource?.kind).toBe("archive");
-    expect(detectedSource?.file.name).toBe("skin_pack.zip");
+    expect(fileNames(detectedSource)).toEqual(["skin_pack.zip"]);
+  });
+
+  it("keeps several vpks as one source, once per file name", () => {
+    const detectedSource = detectSource([
+      createFile("skin_base.vpk"),
+      createFile("readme.txt"),
+      createFile("skin_hair.vpk"),
+      createFile("SKIN_BASE.vpk"),
+      createFile("backup.zip"),
+    ]);
+
+    expect(detectedSource?.kind).toBe("vpks");
+    expect(fileNames(detectedSource)).toEqual([
+      "skin_base.vpk",
+      "skin_hair.vpk",
+    ]);
   });
 
   it("prefers vpk over archive when both are present in a multi-file drop", () => {
@@ -99,6 +143,6 @@ describe("resolveDroppedModSource", () => {
     ]);
 
     expect(detectedSource?.kind).toBe("vpk");
-    expect(detectedSource?.file.name).toBe("hero_skin.vpk");
+    expect(fileNames(detectedSource)).toEqual(["hero_skin.vpk"]);
   });
 });

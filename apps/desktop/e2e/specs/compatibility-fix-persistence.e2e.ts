@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
 import { $, browser } from "@wdio/globals";
 import { z } from "zod";
 import { startApplication } from "../support/application";
@@ -19,7 +18,12 @@ import { fixtureGamePaths } from "../support/gameinfo-mounts";
 import { readLifecycleState } from "../support/lifecycle-oracle";
 import { observeUntil } from "../support/observations";
 import { searchLibrary, setModEnabled } from "../support/shard-actions";
-import { navigate, openAddLocalMod, waitForClickable } from "../support/ui";
+import {
+  dropFilePaths,
+  navigate,
+  openAddLocalMod,
+  waitForClickable,
+} from "../support/ui";
 import { assertOwnedWorld } from "../support/world";
 
 const manifestSchema = z.object({
@@ -89,8 +93,6 @@ const readManifest = async (world: string) => {
   );
 };
 
-const DROP_AREA =
-  '[role="button"][aria-label="Drop files/folders here, or click to select"]';
 // Fixture mods are named after their IDs; an imported mod is not.
 const card = (name: string) =>
   `//*[@title="${name}"]/ancestor::*[.//button[@role="switch"]][1]`;
@@ -98,24 +100,7 @@ const card = (name: string) =>
 const importNewMod = async (world: string) => {
   const before = (await readLifecycleState(world)).localMods.length;
   await openAddLocalMod();
-  await $(DROP_AREA).waitForClickable();
-  const uri = pathToFileURL(path.join(world, "fixtures", NEW_MOD_FILE)).href;
-  // A dropped file:// path takes the same route as a picked file.
-  await browser.execute(
-    (selector: string, dropped: string) => {
-      const transfer = new DataTransfer();
-      transfer.setData("text/uri-list", dropped);
-      document.querySelector(selector)?.dispatchEvent(
-        new DragEvent("drop", {
-          bubbles: true,
-          cancelable: true,
-          dataTransfer: transfer,
-        }),
-      );
-    },
-    DROP_AREA,
-    uri,
-  );
+  await dropFilePaths([path.join(world, "fixtures", NEW_MOD_FILE)]);
   const dialog = await $('[role="dialog"]');
   await dialog.waitForDisplayed();
   const add = await dialog.$("button=Add");

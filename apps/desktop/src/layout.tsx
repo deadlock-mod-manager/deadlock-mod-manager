@@ -12,6 +12,7 @@ import { BottomBar } from "./components/layout/bottom-bar";
 import { CatalogSyncProgress } from "./components/layout/catalog-sync-progress";
 import { GameConfigBanner } from "./components/layout/game-config-banner";
 import { GlobalFileDrop } from "./components/layout/global-file-drop";
+import { AddModDialog } from "./components/mod-creation/add-mod-dialog";
 import { LaunchOverlay } from "./components/layout/launch-overlay";
 import { Titlebar } from "./components/layout/titlebar";
 import { WhatsNewDialog } from "./components/layout/whats-new-dialog";
@@ -56,6 +57,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
       <GlobalAudioPlayer />
       <FeatureHintsRenderer />
       <GlobalFileDrop />
+      <AddModDialog />
       <BulkActionRecapDialog action='disable' />
       <BulkActionRecapDialog action='delete' />
 

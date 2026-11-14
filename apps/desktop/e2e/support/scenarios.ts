@@ -87,6 +87,7 @@ import { prepareShardWorld } from "./shard-fixtures";
 import { assertCrashEvidence } from "./filesystem-oracle";
 import { assertNormalExit, assertInterruptedExit } from "./phase-evidence";
 import { buildSyntheticVpk, writeSyntheticVpk } from "./vpk";
+import { prepareLocalPartsWorld } from "./local-parts-fixtures";
 import {
   assertUnknownAddonNetwork,
   prepareUnknownAddonWorld,
@@ -860,6 +861,13 @@ export const scenarios = {
     phases: ["import", "restart-delete"],
     nativeInput: false,
     platforms: ["win32", "linux"],
+  },
+  "local-mod-parts": {
+    ...defaults,
+    family: "local",
+    spec: "local-mod-parts",
+    phases: ["import-toggle", "restart"],
+    prepare: prepareLocalPartsWorld,
   },
   "local-mod-large-picker-vpk": { ...localLargeOnDisk, nativeInput: true },
   "local-mod-large-picker-zip": { ...localLargeOnDisk, nativeInput: true },

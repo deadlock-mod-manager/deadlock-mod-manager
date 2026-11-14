@@ -8,7 +8,6 @@ import { useExperimentalFeature } from "./hooks/use-experimental-feature";
 import { useFeatureEnabled } from "./hooks/use-feature-enabled";
 import { queryClient } from "./lib/client";
 import type { OptionalFeature } from "./lib/features";
-import AddMods from "./pages/add-mods";
 import Author from "./pages/author";
 import Collection from "./pages/collection";
 import Crosshairs from "./pages/crosshairs";
@@ -91,7 +90,6 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
               <Route element={<Mod />} path='/mods/:id' />
               <Route element={<Author />} path='/authors/:id' />
               <Route element={<Collection />} path='/collections/:id' />
-              <Route element={<AddMods />} path='/add-mods' />
               <Route element={<Downloads />} path='/downloads' />
               <Route
                 element={

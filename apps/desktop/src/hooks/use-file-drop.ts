@@ -1,19 +1,39 @@
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { resolveDroppedModSource } from "@/lib/dropped-file-source";
+import {
+  CombinedArchiveError,
+  resolveDroppedModSource,
+} from "@/lib/dropped-file-source";
 import { useProgress } from "@/components/downloads/progress-indicator";
 import { createLogger } from "@/lib/logger";
 import {
   type DetectedSource,
+  combinesArchives,
   createPathBackedFile,
   detectSource,
   getSourceFilePath,
   readFromDataTransferItems,
-  stageDroppedFile,
+  sourceFiles,
+  stageDroppedFiles,
 } from "@/lib/file-utils";
 
 const logger = createLogger("use-file-drop");
+
+// Each drop clears the staging folder, so a second one would delete the first
+// one's files while they are still being copied. Shared by every drop target.
+let dropInFlight = false;
+
+export const pickModFiles = async (
+  filterName: string,
+  extensions = ["vpk", "zip", "rar", "7z"],
+): Promise<File[] | null> => {
+  const selected = await openDialog({
+    multiple: true,
+    filters: [{ name: filterName, extensions }],
+  });
+  return selected?.length ? selected.map(createPathBackedFile) : null;
+};
 
 const readStringItem = (item: DataTransferItem): Promise<string> =>
   new Promise((resolve) => {
@@ -142,19 +162,25 @@ export const useDroppedSource = (
   // only ever handles paths and never holds a large mod in memory.
   const stageSource = useCallback(
     async (source: DetectedSource): Promise<DetectedSource> => {
-      if (getSourceFilePath(source.file)) {
+      // One drop gives either path-backed files or read ones, never a mix.
+      const files = sourceFiles(source);
+      if (files.every((file) => getSourceFilePath(file))) {
         return source;
       }
 
-      const status = t("addMods.copyingDroppedFile", {
-        name: source.file.name,
-      });
-      setProcessing(true, status, { done: 0, total: source.file.size });
+      const status =
+        files.length === 1
+          ? t("addMods.copyingDroppedFile", { name: files[0].name })
+          : t("addMods.copyingDroppedFiles", { count: files.length });
+      const total = files.reduce((sum, file) => sum + file.size, 0);
+      setProcessing(true, status, { done: 0, total });
       try {
-        const file = await stageDroppedFile(source.file, (done, total) =>
+        const staged = await stageDroppedFiles(files, (done, total) =>
           setProcessing(true, status, { done, total }),
         );
-        return { ...source, file };
+        return source.kind === "vpks"
+          ? { kind: "vpks", files: staged }
+          : { ...source, file: staged[0] };
       } finally {
         setProcessing(false);
       }
@@ -164,69 +190,79 @@ export const useDroppedSource = (
 
   const handleDataTransfer = useCallback(
     async (dataTransfer: DataTransfer) => {
-      const droppedFiles = Array.from(dataTransfer.files || []);
-      const droppedItems = Array.from(dataTransfer.items || []);
-      const droppedUriList = dataTransfer.getData("text/uri-list");
-
-      logger.debug(
-        "Drop event: files=%d items=%d uriList=%s",
-        droppedFiles.length,
-        droppedItems.length,
-        Boolean(droppedUriList),
-      );
-      for (const file of droppedFiles) {
-        logger.debug(
-          "Dropped file: name=%s type=%s size=%d",
-          file.name,
-          file.type,
-          file.size,
-        );
-      }
-
-      let detectedSource: DetectedSource | null;
-
+      if (dropInFlight) return;
+      dropInFlight = true;
       try {
-        const stringPayloads = await readStringPayloads(droppedItems);
-        const extractedStringPaths =
-          extractPathsFromStringPayloads(stringPayloads);
+        const droppedFiles = Array.from(dataTransfer.files || []);
+        const droppedItems = Array.from(dataTransfer.items || []);
+        const droppedUriList = dataTransfer.getData("text/uri-list");
 
-        detectedSource = await resolveDroppedModSource(droppedFiles, {
-          getFilesFromItems: droppedItems.length
-            ? () => readFromDataTransferItems(droppedItems)
-            : undefined,
-          getFilesFromUriList:
-            droppedUriList || extractedStringPaths.length
-              ? async () => {
-                  const paths = droppedUriList
-                    ? droppedUriList
-                        .split(/\r?\n/)
-                        .map((line) => line.trim())
-                        .filter((line) => line && !line.startsWith("#"))
-                        .map(normalizeDroppedPath)
-                        .filter((path): path is string => Boolean(path))
-                    : extractedStringPaths;
-
-                  return paths.map(createPathBackedFile);
-                }
-              : undefined,
-        });
-        if (detectedSource) {
-          detectedSource = await stageSource(detectedSource);
-        }
-      } catch (error) {
-        logger.withError(error).error("Failed to resolve dropped mod source");
-        onError(t("addMods.failedToReadDroppedFiles"));
-        return;
-      }
-
-      if (!detectedSource) {
-        onError(
-          `${t("addMods.unsupportedFiles")} ${t("addMods.supportedFormats")}`,
+        logger.debug(
+          "Drop event: files=%d items=%d uriList=%s",
+          droppedFiles.length,
+          droppedItems.length,
+          Boolean(droppedUriList),
         );
-        return;
-      }
+        for (const file of droppedFiles) {
+          logger.debug(
+            "Dropped file: name=%s type=%s size=%d",
+            file.name,
+            file.type,
+            file.size,
+          );
+        }
 
-      onFilesDetected(detectedSource);
+        let detectedSource: DetectedSource | null;
+
+        try {
+          const stringPayloads = await readStringPayloads(droppedItems);
+          const extractedStringPaths =
+            extractPathsFromStringPayloads(stringPayloads);
+
+          detectedSource = await resolveDroppedModSource(droppedFiles, {
+            getFilesFromItems: droppedItems.length
+              ? () => readFromDataTransferItems(droppedItems)
+              : undefined,
+            getFilesFromUriList:
+              droppedUriList || extractedStringPaths.length
+                ? async () => {
+                    const paths = droppedUriList
+                      ? droppedUriList
+                          .split(/\r?\n/)
+                          .map((line) => line.trim())
+                          .filter((line) => line && !line.startsWith("#"))
+                          .map(normalizeDroppedPath)
+                          .filter((path): path is string => Boolean(path))
+                      : extractedStringPaths;
+
+                    return paths.map(createPathBackedFile);
+                  }
+                : undefined,
+          });
+          if (detectedSource) {
+            detectedSource = await stageSource(detectedSource);
+          }
+        } catch (error) {
+          if (error instanceof CombinedArchiveError) {
+            onError(t("addMods.oneArchiveAtATime"));
+            return;
+          }
+          logger.withError(error).error("Failed to resolve dropped mod source");
+          onError(t("addMods.failedToReadDroppedFiles"));
+          return;
+        }
+
+        if (!detectedSource) {
+          onError(
+            `${t("addMods.unsupportedFiles")} ${t("addMods.supportedFormats")}`,
+          );
+          return;
+        }
+
+        onFilesDetected(detectedSource);
+      } finally {
+        dropInFlight = false;
+      }
     },
     [onFilesDetected, onError, stageSource, t],
   );
@@ -313,20 +349,14 @@ export const useFileDrop = (
   );
 
   const openTauriFilePicker = useCallback(async () => {
-    const selected = await openDialog({
-      multiple: false,
-      filters: [
-        {
-          name: t("common.mods"),
-          extensions: ["vpk", "zip", "rar", "7z"],
-        },
-      ],
-    });
-
+    const selected = await pickModFiles(t("common.mods"));
     if (!selected) return;
+    if (combinesArchives(selected)) {
+      onError(t("addMods.oneArchiveAtATime"));
+      return;
+    }
 
-    const file = createPathBackedFile(selected);
-    const detectedSource = detectSource([file]);
+    const detectedSource = detectSource(selected);
 
     if (!detectedSource) {
       onError(

@@ -1,3 +1,4 @@
+import { Folder } from "@deadlock-mods/ui/icons";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -45,6 +46,30 @@ export const LibraryModAuthor = ({
     },
   });
 
+  if (mod.remoteId.startsWith("local-")) {
+    const author = mod.author.trim();
+    // Custom mods are saved as "Unknown", or its translation from the form,
+    // when no author is given.
+    if (
+      !author ||
+      author === "Unknown" ||
+      author === t("modForm.unknownAuthor")
+    ) {
+      return (
+        <span className='inline-flex max-w-full items-center gap-1.5'>
+          <Folder className='size-3.5 shrink-0' />
+          <span className='truncate'>{t("mods.fromYourFiles")}</span>
+        </span>
+      );
+    }
+    // No source icon: the card's Custom badge already says where it came from.
+    return (
+      <span className='block truncate' title={author}>
+        {t("mods.by")} {author}
+      </span>
+    );
+  }
+
   if (
     !mod.modAuthorId &&
     parseSubmissionSlug(mod.remoteId)?.provider !== "gamebanana"
@@ -56,10 +81,7 @@ export const LibraryModAuthor = ({
         <span className='truncate'>
           {t("mods.by")} {mod.author}
         </span>
-        <ModSourceIcon
-          source={mod.source}
-          local={mod.remoteId.startsWith("local-")}
-        />
+        <ModSourceIcon source={mod.source} />
       </span>
     );
   }
