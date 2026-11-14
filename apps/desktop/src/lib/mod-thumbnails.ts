@@ -136,6 +136,8 @@ export const filesCoverOptions = (filePaths: string[]) =>
     queryKey: ["files-cover", filePaths],
     queryFn: ({ signal }) => filesCover(filePaths, signal),
     enabled: filePaths.length > 0,
+    // Local reads and rendering: React Query's default would pause while offline.
+    networkMode: "always",
     staleTime: Infinity,
     gcTime: 0,
     retry: false,
@@ -149,6 +151,7 @@ export const localModThumbnailOptions = (
   queryOptions({
     queryKey: ["local-mod-thumbnail", mod.remoteId],
     queryFn: ({ signal }) => localModThumbnail(mod, profileFolder, signal),
+    networkMode: "always",
     staleTime: Infinity,
     gcTime: 5 * 60_000,
     refetchOnMount: false,

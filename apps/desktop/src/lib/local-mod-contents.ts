@@ -10,6 +10,8 @@ export const localModContentsOptions = (filePaths: string[]) =>
     queryFn: () =>
       invoke<LocalPartContents[]>("inspect_local_mod_files", { filePaths }),
     enabled: filePaths.length > 0,
+    // A local read: React Query's default would pause it while offline.
+    networkMode: "always",
     staleTime: Infinity,
     // Drops are staged under their own name, so the same path can hold a
     // different file next time.
