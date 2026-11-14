@@ -1352,6 +1352,11 @@ export const scenarios = {
     spec: "stats-broken-endpoints",
     phases: ["broken"],
   },
+  "stats-season-filter": {
+    ...stats,
+    spec: "stats-season-filter",
+    phases: ["season-filter"],
+  },
   "perf-video-apply-restore": performance,
   "perf-video-changed-in-game": performance,
   "perf-video-adopt": performance,

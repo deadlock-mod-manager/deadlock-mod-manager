@@ -282,6 +282,13 @@ export const useItemStats = (
   };
 };
 
+/** deadlock-api's season list, which it reads from each game patch. */
+export const useRankedSeasons = (active = true) =>
+  useStatsQuery(
+    { key: "assets:ranked-seasons", ttl: STATS_TTL.seasons, enabled: active },
+    getRankedSeasons,
+  );
+
 /**
  * Where the player sits on the current ladder. Both payloads are global and
  * account-independent, so they are fetched once and shared by every card that
@@ -297,10 +304,7 @@ export const useRankInsights = (active = true) => {
     getBadgeDistribution,
   );
 
-  const seasons = useStatsQuery(
-    { key: "assets:ranked-seasons", ttl: STATS_TTL.assets, enabled: active },
-    getRankedSeasons,
-  );
+  const seasons = useRankedSeasons(active);
 
   return {
     distribution: distribution.data?.data ?? [],
@@ -578,7 +582,7 @@ export const usePlayerStats = (
 
   const benchmark = useStatsQuery(
     { key: `benchmark:heroes:${scopeKey}`, ttl: STATS_TTL.benchmark },
-    () => getAnalyticsHeroStats(scope.since, scope.mode),
+    () => getAnalyticsHeroStats(scope),
   );
 
   // Today's matches come from the Game Coordinator; the API has not ingested

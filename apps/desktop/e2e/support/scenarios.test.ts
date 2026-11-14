@@ -112,6 +112,7 @@ describe("scenario selection", () => {
       "stats-custom-tabs",
       "stats-custom-queries",
       "stats-broken-endpoints",
+      "stats-season-filter",
     ]);
     expect(selectScenarios("shards")).toEqual([
       "shards-library",
