@@ -91,7 +91,7 @@ export class FeatureFlagService {
   }
 
   /**
-   * Get all feature flags, the result is cached for 15 minutes
+   * Get all feature flags, the result is cached for one hour
    */
   async getAllFeatureFlags(options?: { userId?: string }) {
     const userId = options?.userId ?? "";
@@ -112,7 +112,7 @@ export class FeatureFlagService {
   }
 
   /**
-   * Get all exposed feature flags, the result is cached for 15 minutes
+   * Get all exposed feature flags, the result is cached for one hour
    */
   async getAllExposedFeatureFlags() {
     return ResultAsync.fromPromise(
@@ -131,7 +131,7 @@ export class FeatureFlagService {
 
   /**
    * Get all feature flags formatted for client consumption with user-specific overrides applied
-   * The result is cached for 15 minutes per user
+   * The result is cached for one hour per user
    *
    * @param options - Options including userId for user-specific overrides
    * @returns Array of feature flags with applied overrides ready for client
@@ -180,7 +180,7 @@ export class FeatureFlagService {
   }
 
   /**
-   * Get a feature flag value with type support, the result is cached for 15 minutes
+   * Get a feature flag value with type support, the result is cached for one hour
    *
    * @param featureFlagName - The name of the feature flag
    * @param options - Options including shouldThrow and userId for segment overrides
@@ -245,7 +245,7 @@ export class FeatureFlagService {
 
   /**
    * Check if a feature flag is enabled (boolean convenience method)
-   * The result is cached for 15 minutes
+   * The result is cached for one hour
    *
    * @param featureFlagName - The name of the feature flag
    * @param options - Options including shouldThrow and userId for segment overrides
