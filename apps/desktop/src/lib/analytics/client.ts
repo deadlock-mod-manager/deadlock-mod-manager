@@ -147,7 +147,6 @@ export const screenName = (pathname: string): string => {
   const screens = new Map([
     ["/my-mods", "my-mods"],
     ["/maps", "maps"],
-    ["/add-mods", "add-mods"],
     ["/downloads", "downloads"],
     ["/servers", "server-browser"],
     ["/crosshairs", "crosshairs"],

@@ -18,8 +18,8 @@ import { UploadSimple } from "@phosphor-icons/react";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
 import { HintAnchor } from "@/components/feature-hints/hint-anchor";
+import { useAddModDialog } from "@/lib/add-mod-dialog";
 import { canShowHint } from "@/lib/feature-hints";
 import { usePersistedStore } from "@/lib/store";
 import {
@@ -35,7 +35,6 @@ import { ImportWizardDialog } from "./import-wizard-dialog";
  */
 export const AddModsMenu = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const markFeatureUsed = usePersistedStore((state) => state.markFeatureUsed);
   // Detection only runs for the hint while it could still be shown.
@@ -92,7 +91,7 @@ export const AddModsMenu = () => {
         <DropdownMenuContent align='end' className='w-72'>
           <DropdownMenuItem
             data-testid='add-local-mod'
-            onSelect={() => navigate("/add-mods")}>
+            onSelect={() => useAddModDialog.getState().show()}>
             <UploadSimple className='h-4 w-4' />
             {t("navigation.addMods")}
           </DropdownMenuItem>

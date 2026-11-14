@@ -57,6 +57,7 @@ export const GridModCard = memo(function GridModCard({
 }: ModCardProps) {
   const { t } = useTranslation();
   const isDisabled = mod.status !== ModStatus.Installed;
+  const isCustom = mod.remoteUrl?.startsWith("local://");
   const hasUpdate = useModHasUpdate(mod);
   const navigate = useNavigate();
   const { uninstall } = useUninstall();
@@ -145,10 +146,14 @@ export const GridModCard = memo(function GridModCard({
             {mod.isAudio && (
               <Badge variant='secondary'>{t("mods.audio")}</Badge>
             )}
-            {mod.remoteUrl?.startsWith("local://") && (
+            {isCustom ? (
               <Badge variant='outline' className='bg-background/95'>
-                {t("mods.customBadge")}
+                {mod.isMap ? t("mods.customMapBadge") : t("mods.customBadge")}
               </Badge>
+            ) : (
+              mod.isMap && (
+                <Badge variant='secondary'>{t("mods.mapBadge")}</Badge>
+              )
             )}
             {showsDateOutdatedWarning(isModOutdated(mod), health) && (
               <OutdatedModWarning variant='indicator' />

@@ -15,13 +15,24 @@ export const PART_FILES = [
 ] as const;
 // Dropped with the parts and removed in the finalize dialog.
 export const EXTRA_PART = "e2e-parts_extra.vpk";
+// Unrelated files, which the finalize dialog offers to add as separate mods.
+export const VOICE_PACK = "kill-lines.vpk";
+export const LOOSE_FILE = "sparkles.vpk";
+export const MAP_FILE = "street-map.vpk";
 
 export const prepareLocalPartsWorld = async (world: CreatedWorld) => {
-  for (const name of [...PART_FILES, EXTRA_PART]) {
-    await writeSyntheticVpk(path.join(world.directory, "fixtures", name), [
+  const fixtures = path.join(world.directory, "fixtures");
+  for (const name of [...PART_FILES, EXTRA_PART, LOOSE_FILE]) {
+    await writeSyntheticVpk(path.join(fixtures, name), [
       { path: `scripts/${name}.txt`, contents: `DMM part fixture ${name}\n` },
     ]);
   }
+  await writeSyntheticVpk(path.join(fixtures, VOICE_PACK), [
+    { path: "sounds/vo/kill_01.vsnd_c", contents: "DMM voice line fixture\n" },
+  ]);
+  await writeSyntheticVpk(path.join(fixtures, MAP_FILE), [
+    { path: "maps/street_test.vpk", contents: "DMM map fixture\n" },
+  ]);
 };
 
 const stateSchema = z.object({
@@ -31,6 +42,8 @@ const stateSchema = z.object({
         remoteId: z.string(),
         name: z.string(),
         status: z.string(),
+        category: z.string().optional(),
+        metadata: z.object({ mapName: z.string().optional() }).nullish(),
         installedFileTree: z
           .object({
             files: z.array(
@@ -59,6 +72,41 @@ const manifestSchema = z.object({
 
 export const readPartsState = async (world: string) =>
   stateSchema.parse(await readPersistedDocument(world)).state;
+
+/**
+ * Each unrelated file became a mod of its own, named after the file. The voice
+ * pack and the map are filed under the category their files point to, and the
+ * map keeps the name it launches by; the other file, which points to none,
+ * takes the category picked in the dialog.
+ */
+export const assertSeparateMods = async (world: string): Promise<void> => {
+  const {
+    configuration: { roots },
+  } = await assertOwnedWorld(world);
+  const state = await readPartsState(world);
+  const added = state.localMods.filter((mod) => mod.name !== PARTS_MOD_NAME);
+  assert.deepEqual(
+    added
+      .map((mod) => [mod.name, mod.category, mod.metadata?.mapName ?? null])
+      .sort(),
+    [
+      ["kill-lines", "VOs", null],
+      ["sparkles", "Skins", null],
+      ["street-map", "Maps", "street_test"],
+    ],
+  );
+  assert.ok(added.every((mod) => mod.status === "downloaded"));
+  const fixtures = await collectFileInventory(path.join(world, "fixtures"));
+  for (const mod of added) {
+    const file = `${mod.name}.vpk`;
+    assert.deepEqual(
+      await collectFileInventory(
+        path.join(roots.appData, "mods", mod.remoteId, "files"),
+      ),
+      { [file]: fixtures[file] },
+    );
+  }
+};
 
 /**
  * One library mod owns every part. Enabled parts are installed with their own

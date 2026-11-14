@@ -134,11 +134,10 @@ describe("large local mod import", () => {
       await dispatchDrop(flow.fileName, { readFrom: fixture });
     }
 
-    // A dropped File is staged to disk before the dialog opens.
+    // A dropped File is staged to disk before the details step opens.
     const dialog = await $('[role="dialog"]');
-    await dialog.waitForDisplayed({ timeout: 240_000 });
     const add = await dialog.$("button=Add");
-    await add.waitForClickable();
+    await add.waitForClickable({ timeout: 240_000 });
     await add.click();
 
     // Manifest recovery can add a placeholder before metadata and cleanup finish.

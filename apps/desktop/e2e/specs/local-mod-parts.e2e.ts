@@ -13,10 +13,14 @@ import {
 import { step } from "../support/evidence";
 import {
   assertPartsDisk,
+  assertSeparateMods,
   EXTRA_PART,
+  LOOSE_FILE,
+  MAP_FILE,
   PART_FILES,
   PARTS_MOD_NAME,
   readPartsState,
+  VOICE_PACK,
 } from "../support/local-parts-fixtures";
 import { observeUntil } from "../support/observations";
 import {
@@ -37,6 +41,30 @@ const waitForStatus = (world: string, status: string) =>
     () => readPartsState(world),
     (state) => state.localMods[0]?.status === status,
   );
+
+const dropFiles = async (world: string, names: string[]) => {
+  await navigate("my-mods");
+  await openAddLocalMod();
+  const dropArea = await $(DROP_SELECTOR);
+  await dropArea.waitForClickable();
+  await browser.execute(
+    (selector: string, uris: string) => {
+      const transfer = new DataTransfer();
+      transfer.setData("text/uri-list", uris);
+      document.querySelector(selector)?.dispatchEvent(
+        new DragEvent("drop", {
+          bubbles: true,
+          cancelable: true,
+          dataTransfer: transfer,
+        }),
+      );
+    },
+    DROP_SELECTOR,
+    names
+      .map((name) => pathToFileURL(path.join(world, "fixtures", name)).href)
+      .join("\r\n"),
+  );
+};
 
 const listedParts = () =>
   $$('[data-testid="mod-parts"] [data-part-name]').map((row) =>
@@ -62,29 +90,7 @@ describe("local mod parts", () => {
 
     if (process.env.DMM_E2E_PHASE === "import-toggle") {
       await step("drop four VPKs and drop one part", async () => {
-        await navigate("my-mods");
-        await openAddLocalMod();
-        const dropArea = await $(DROP_SELECTOR);
-        await dropArea.waitForClickable();
-        await browser.execute(
-          (selector: string, uris: string) => {
-            const transfer = new DataTransfer();
-            transfer.setData("text/uri-list", uris);
-            document.querySelector(selector)?.dispatchEvent(
-              new DragEvent("drop", {
-                bubbles: true,
-                cancelable: true,
-                dataTransfer: transfer,
-              }),
-            );
-          },
-          DROP_SELECTOR,
-          [EXTRA_PART, ...PART_FILES]
-            .map(
-              (name) => pathToFileURL(path.join(world, "fixtures", name)).href,
-            )
-            .join("\r\n"),
-        );
+        await dropFiles(world, [EXTRA_PART, ...PART_FILES]);
         await browser.waitUntil(
           async () => (await listedParts()).length === 4,
           {
@@ -152,6 +158,36 @@ describe("local mod parts", () => {
       });
       await applyInstalledFiles([...PART_FILES], PARTS_MOD_NAME);
       await assertPartsDisk(world, "hair-on", "installed", PART_FILES);
+
+      await step("unrelated files are added as separate mods", async () => {
+        await dropFiles(world, [VOICE_PACK, LOOSE_FILE, MAP_FILE]);
+        await browser.waitUntil(
+          async () => (await listedParts()).length === 3,
+          { timeoutMsg: "The finalize dialog did not list the dropped files" },
+        );
+        // The voice pack's category comes from its files, read in the dialog.
+        await browser.waitUntil(
+          async () =>
+            (await $(`[data-part-name="${VOICE_PACK}"]`).getText()).includes(
+              "1 voice line",
+            ),
+          { timeoutMsg: "The dialog did not say what the voice pack holds" },
+        );
+        // Nothing in their names ties them together.
+        await expect($('[data-testid="import-mode-separate"]')).toHaveAttribute(
+          "data-state",
+          "on",
+        );
+        const add = await $('[role="dialog"]').$("button=Add 3 mods");
+        await add.waitForClickable();
+        await add.click();
+        await observeUntil(
+          "The files did not all reach the library",
+          () => readPartsState(world),
+          (state) => state.localMods.length === 4,
+        );
+        await assertSeparateMods(world);
+      });
     } else {
       throw new Error(`Unknown phase ${process.env.DMM_E2E_PHASE}`);
     }

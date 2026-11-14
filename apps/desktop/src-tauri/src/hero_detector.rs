@@ -5,6 +5,7 @@ use hero_parser::HeroDetectionResult;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
+use ts_rs::TS;
 
 static HERO_CACHE: LazyLock<hero_parser::VpkEntryCache> =
   LazyLock::new(hero_parser::VpkEntryCache::new);
@@ -164,6 +165,96 @@ pub async fn detect_mod_hero(
   .map_err(|e| Error::BackgroundTaskFailed(e.to_string()))?
 }
 
+/// What one VPK of a custom mod changes, read from its file list before import.
+#[derive(Debug, Default, Serialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct LocalPartContents {
+  pub file_path: String,
+  /// False when the file could not be read as a VPK.
+  pub readable: bool,
+  pub hero: Option<String>,
+  /// True when the part's models or materials name the hero, as a skin's do.
+  pub reskins_hero: bool,
+  pub models: u32,
+  pub particles: u32,
+  pub ability_sounds: u32,
+  pub voice_lines: u32,
+  pub weapon_sounds: u32,
+  pub other_sounds: u32,
+  pub hud_files: u32,
+  /// The maps the part ships, by the name the `map` console command takes.
+  pub map_names: Vec<String>,
+}
+
+impl LocalPartContents {
+  fn count(&mut self, path: &str) {
+    if path.ends_with(".vmdl_c") {
+      self.models += 1;
+    } else if path.ends_with(".vpcf_c") {
+      self.particles += 1;
+    } else if path.ends_with(".vsnd_c") {
+      let bucket = if path.starts_with("sounds/abilities/") {
+        &mut self.ability_sounds
+      } else if path.starts_with("sounds/vo/") || path.starts_with("sounds/voice/") {
+        &mut self.voice_lines
+      } else if path.starts_with("sounds/weapons/") {
+        &mut self.weapon_sounds
+      } else {
+        &mut self.other_sounds
+      };
+      *bucket += 1;
+    }
+    if path.starts_with("panorama/") {
+      self.hud_files += 1;
+    }
+    // Skins ship their hero-select scene under maps/ui/; a map mod ships the
+    // map's own VPK.
+    if path.starts_with("maps/") && !path.starts_with("maps/ui/") {
+      let name = path
+        .strip_suffix(".vpk")
+        .and_then(|stem| stem.rsplit('/').next());
+      if let Some(name) = name.filter(|name| !self.map_names.iter().any(|known| known == name)) {
+        self.map_names.push(name.to_string());
+      }
+    }
+  }
+}
+
+fn part_contents(path: &Path) -> LocalPartContents {
+  let mut contents = LocalPartContents {
+    file_path: path.to_string_lossy().into_owned(),
+    ..LocalPartContents::default()
+  };
+  let Some(entries) = HERO_CACHE.get_or_parse(path) else {
+    return contents;
+  };
+  contents.readable = true;
+  let detection = hero_parser::detect_hero(&entries);
+  contents.reskins_hero = detection.category == "hero";
+  contents.hero = detection.hero_display;
+  for entry in &entries {
+    contents.count(&entry.full_path);
+  }
+  contents
+}
+
+/// Reads the VPKs a custom mod is about to be imported from, so the import
+/// dialog can suggest a category and say what each part changes.
+#[tauri::command]
+pub async fn inspect_local_mod_files(
+  file_paths: Vec<String>,
+) -> Result<Vec<LocalPartContents>, Error> {
+  tauri::async_runtime::spawn_blocking(move || {
+    file_paths
+      .iter()
+      .map(|path| part_contents(Path::new(path)))
+      .collect()
+  })
+  .await
+  .map_err(|e| Error::BackgroundTaskFailed(e.to_string()))
+}
+
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ModDetectionRequest {
@@ -241,4 +332,22 @@ pub async fn detect_mod_heroes_batch(
       })
       .collect(),
   )
+}
+
+#[cfg(test)]
+mod local_part_tests {
+  use super::LocalPartContents;
+
+  #[test]
+  fn map_names_come_from_the_map_vpk_not_a_skins_hero_scene() {
+    let mut part = LocalPartContents::default();
+    for path in [
+      "maps/ui/hero_prefabs/necro.vpk",
+      "maps/street_test.vpk",
+      "maps/street_test/entities/lights.vmdl_c",
+    ] {
+      part.count(path);
+    }
+    assert_eq!(part.map_names, ["street_test"]);
+  }
 }

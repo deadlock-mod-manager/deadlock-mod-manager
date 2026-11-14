@@ -1,11 +1,25 @@
+import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Button } from "@deadlock-mods/ui/components/button";
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@deadlock-mods/ui/components/toggle-group";
 import { File as FileIcon, Info, Plus, X } from "@deadlock-mods/ui/icons";
+import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
+import { getModCategoryDisplayName } from "@/lib/constants";
 import { getFileBaseName } from "@/lib/file-utils";
+import { partContentsFor, suggestCategory } from "@/lib/local-mod-contents";
+import type { LocalPartContents } from "@/types/generated/LocalPartContents";
+
+export type ImportMode = "one" | "separate";
 
 interface ModPartsListProps {
   files: File[];
+  contents?: LocalPartContents[];
+  mode: ImportMode;
   disabled?: boolean;
+  onModeChange: (mode: ImportMode) => void;
   onAdd: () => void;
   onRemove: (file: File) => void;
 }
@@ -18,23 +32,77 @@ const byInstallOrder = (a: File, b: File) => {
   return left < right ? -1 : 1;
 };
 
+// What the part changes, most telling first.
+const contentTags = (part: LocalPartContents, t: TFunction): string[] => {
+  const tags: string[] = [];
+  for (const name of part.mapNames) {
+    tags.push(t("addMods.contents.map", { name }));
+  }
+  const counted = [
+    ["models", part.models],
+    ["particles", part.particles],
+    ["voiceLines", part.voiceLines],
+    ["abilitySounds", part.abilitySounds],
+    ["weaponSounds", part.weaponSounds],
+    ["sounds", part.otherSounds],
+  ] as const;
+  for (const [key, count] of counted) {
+    if (count > 0) tags.push(t(`addMods.contents.${key}`, { count }));
+  }
+  // A skin's panorama files are its hero cards, not a HUD.
+  if (part.hudFiles > 0 && !part.reskinsHero) {
+    tags.push(t("addMods.contents.hud"));
+  }
+  return tags;
+};
+
 /** The VPKs a custom mod is imported from, each a part Manage files can turn off. */
 export const ModPartsList = ({
   files,
+  contents,
+  mode,
   disabled = false,
+  onModeChange,
   onAdd,
   onRemove,
 }: ModPartsListProps) => {
   const { t } = useTranslation();
   const ordered = [...files].sort(byInstallOrder);
+  const separate = mode === "separate";
 
   return (
     <section className='space-y-2' data-testid='mod-parts'>
       <div className='flex items-center gap-2'>
-        <h3 className='font-medium text-sm'>{t("addMods.parts")}</h3>
+        <h3 className='font-medium text-sm'>
+          {separate ? t("common.mods") : t("addMods.parts")}
+        </h3>
         <span className='flex-1 text-muted-foreground text-xs tabular-nums'>
           {t("addMods.partsCount", { count: files.length })}
         </span>
+        {files.length > 1 && (
+          <ToggleGroup
+            aria-label={t("addMods.importAs")}
+            className='gap-0.5 rounded-md bg-muted/60 p-0.5'
+            disabled={disabled}
+            onValueChange={(value) => {
+              if (value === "one" || value === "separate") onModeChange(value);
+            }}
+            size='sm'
+            type='single'
+            value={mode}>
+            {(["one", "separate"] as const).map((value) => (
+              <ToggleGroupItem
+                className='h-7 px-2.5 text-muted-foreground text-xs data-[state=on]:bg-secondary data-[state=on]:text-foreground'
+                data-testid={`import-mode-${value}`}
+                key={value}
+                value={value}>
+                {value === "one"
+                  ? t("addMods.oneMod")
+                  : t("addMods.separateMods")}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        )}
         <Button
           disabled={disabled}
           icon={<Plus className='h-3.5 w-3.5' />}
@@ -48,18 +116,46 @@ export const ModPartsList = ({
       <ol className='divide-y rounded-md border bg-card'>
         {ordered.map((file, index) => {
           const name = getFileBaseName(file);
+          const part = partContentsFor(contents, file);
+          // A separate mod's category comes from its own files.
+          const category = separate && part ? suggestCategory([part]) : null;
           return (
             <li
               className='flex items-center gap-3 px-3 py-2'
               data-part-name={name}
               key={name}>
-              <span className='w-4 text-muted-foreground text-xs tabular-nums'>
-                {index + 1}
-              </span>
+              {/* Separate mods load in library order, not file order. */}
+              {!separate && (
+                <span className='w-4 text-muted-foreground text-xs tabular-nums'>
+                  {index + 1}
+                </span>
+              )}
               <FileIcon className='h-4 w-4 shrink-0 text-muted-foreground' />
               <span className='min-w-0 flex-1 truncate font-mono text-sm'>
                 {name}
               </span>
+              {part && !part.readable && (
+                <Badge variant='destructive'>
+                  {t("addMods.contents.unreadable")}
+                </Badge>
+              )}
+              {category && (
+                <Badge variant='outline'>
+                  {getModCategoryDisplayName(category)}
+                </Badge>
+              )}
+              {part?.hero && <Badge variant='outline'>{part.hero}</Badge>}
+              {part &&
+                contentTags(part, t)
+                  .slice(0, category ? 2 : 3)
+                  .map((tag) => (
+                    <Badge
+                      className='border-transparent bg-muted font-normal text-muted-foreground'
+                      key={tag}
+                      variant='outline'>
+                      {tag}
+                    </Badge>
+                  ))}
               <Button
                 aria-label={t("addMods.removePart", { name })}
                 className='h-7 w-7'
@@ -74,11 +170,11 @@ export const ModPartsList = ({
           );
         })}
       </ol>
-      {/* Manage files only offers a choice once there is more than one part. */}
+      {/* One file has no parts to turn off and nothing to split. */}
       {files.length > 1 && (
         <p className='flex items-start gap-2 text-muted-foreground text-xs'>
           <Info className='mt-0.5 h-3.5 w-3.5 shrink-0' />
-          {t("addMods.partsHint")}
+          {separate ? t("addMods.separateHint") : t("addMods.partsHint")}
         </p>
       )}
     </section>

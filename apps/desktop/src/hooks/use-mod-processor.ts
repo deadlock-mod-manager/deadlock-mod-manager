@@ -29,7 +29,7 @@ import {
   writeFileText,
 } from "@/lib/file-utils";
 import logger from "@/lib/logger";
-import { localModThumbnailOptions } from "@/lib/mod-thumbnails";
+import { localModThumbnailOptions, saveLocalCover } from "@/lib/mod-thumbnails";
 import { needsLocalThumbnail } from "@/lib/mods/local-preview-image";
 import { usePersistedStore } from "@/lib/store";
 import { getProfileVpkSnapshot } from "@/lib/tauri-commands";
@@ -45,6 +45,11 @@ export interface ModMetadata {
   imageFile?: File | null;
   // A cover hosted by the mod's source, shown instead of the local preview.
   imageUrl?: string | null;
+  // A cover already rendered from the files, kept so the library need not
+  // render it again.
+  renderedCover?: string | null;
+  // What the `map` console command takes, so the map can be launched.
+  mapName?: string | null;
   installSource?: string;
 }
 
@@ -152,7 +157,9 @@ export const useModProcessor = () => {
     metadata: ModMetadata,
     category: ModCategory,
     detectedSource: ModSource,
-  ): Promise<void> => {
+    // Callers adding several mods at once report them together.
+    { announce = true }: { announce?: boolean } = {},
+  ): Promise<string | null> => {
     setProcessing(true, t("addMods.validatingMetadata"));
 
     const modId = `local-${crypto.randomUUID()}`;
@@ -234,7 +241,7 @@ export const useModProcessor = () => {
     } catch (error) {
       setProcessing(false);
       toast.error((error as Error)?.message || "Unknown error");
-      return;
+      return null;
     }
 
     setProcessing(true, t("addMods.savingMetadata"));
@@ -250,6 +257,7 @@ export const useModProcessor = () => {
       preview: previewName,
       imageUrl: metadata.imageUrl ?? null,
       installSource: metadata.installSource ?? null,
+      mapName: metadata.mapName || null,
       _schema: 1,
     };
 
@@ -288,7 +296,7 @@ export const useModProcessor = () => {
       isObsolete: false,
       category,
       filesUpdatedAt: null,
-      metadata: null,
+      metadata: modMetadata.mapName ? { mapName: modMetadata.mapName } : null,
       overrides: null,
       dependencies: null,
     };
@@ -299,6 +307,11 @@ export const useModProcessor = () => {
       installSource: metadata.installSource,
     });
     setModStatus(modId, ModStatus.Downloaded);
+    if (metadata.renderedCover && !metadata.imageFile) {
+      await saveLocalCover(modId, metadata.renderedCover).catch((error) =>
+        logger.withError(error).warn("Failed to keep the rendered cover"),
+      );
+    }
     queueThumbnail(modId);
 
     invoke<HeroDetectionResult>("detect_mod_hero", { modId })
@@ -306,8 +319,11 @@ export const useModProcessor = () => {
       .catch(() => setDetectedHero(modId, null));
 
     setProcessing(true, t("addMods.modAddedSuccess"));
-    toast.success(t("addMods.addedSuccess", { name: metadata.name }));
+    if (announce) {
+      toast.success(t("addMods.addedSuccess", { name: metadata.name }));
+    }
     setProcessing(false);
+    return modId;
   };
 
   const processLocalAddon = async (

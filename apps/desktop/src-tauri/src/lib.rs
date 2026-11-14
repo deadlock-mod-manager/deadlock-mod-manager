@@ -453,6 +453,7 @@ pub fn run() {
       commands::folders::remove_mod_folder,
       commands::vpk::parse_vpk_file,
       hero_detector::detect_mod_hero,
+      hero_detector::inspect_local_mod_files,
       hero_detector::detect_mod_heroes_batch,
       hero_detector::clear_vpk_entry_cache,
       commands::vpk::check_addons_exist,
