@@ -59,6 +59,7 @@ const getBackupStatusItem = (
 
   return {
     label: t("settings.backup"),
+    tooltip: t("settings.backupTooltip"),
     value: getBackupValue(),
     color: getBackupColor(),
     icon: status.backup_exists ? Shield : Database,
@@ -91,6 +92,7 @@ const getModificationsStatusItem = (
 
   return {
     label: t("settings.modifications"),
+    tooltip: t("settings.modificationsTooltip"),
     value: getModificationsValue(),
     color: getModificationsColor(),
     icon: status.has_mod_paths ? FileCheck : CheckCircle,
@@ -140,6 +142,7 @@ const GameInfoManagement = () => {
     const items = [
       {
         label: t("settings.syntax"),
+        tooltip: t("settings.syntaxTooltip"),
         value: status.syntax_valid ? t("status.valid") : t("status.invalid"),
         color: status.syntax_valid ? "success" : "destructive",
         icon: status.syntax_valid ? CheckCircle : AlertTriangle,
@@ -256,14 +259,7 @@ const GameInfoManagement = () => {
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>
-                    {item.label === "Syntax" &&
-                      "Whether the gameinfo.gi file has valid syntax"}
-                    {item.label === "Backup" &&
-                      "Status of the backup file integrity"}
-                    {item.label === "Modifications" &&
-                      "How the file was last modified"}
-                  </p>
+                  <p>{item.tooltip}</p>
                 </TooltipContent>
               </Tooltip>
             );
