@@ -24,7 +24,7 @@ import {
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { PlusIcon } from "@phosphor-icons/react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -100,7 +100,7 @@ export const AddModDetails = ({
 }: AddModDetailsProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { isProcessing, setProcessing } = useProgress();
+  const { setProcessing } = useProgress();
   const { processMod } = useModProcessor();
   // Files with nothing in common are likely unrelated mods.
   const [mode, setMode] = useState<ImportMode>(() =>
@@ -112,6 +112,8 @@ export const AddModDetails = ({
     name: sharedName(source) ?? fileStem(sourceFiles(source)[0]),
   }));
   const metaRef = useRef<ModMetadataFormHandle>(null);
+  // A second click lands before isPending re-renders the button disabled.
+  const submitting = useRef(false);
 
   const form = useForm<AddModFormValues>({
     resolver: zodResolver(addModSchema),
@@ -204,30 +206,23 @@ export const AddModDetails = ({
     return modIds;
   };
 
-  const handleFinalize = async () => {
-    const metadata = await metaRef.current?.validateAndGet();
-    const valid = await form.trigger(
-      askMapName ? ["category", "mapName"] : "category",
-    );
-    if (!metadata || !valid) return;
-
-    try {
-      let modIds: string[] = [];
-      if (separate) {
-        modIds = await importSeparately(metadata, sourceFiles(source));
-      } else {
-        const modId = await processMod(
-          {
-            ...metadata,
-            renderedCover: cover.data,
-            mapName: askMapName ? form.getValues("mapName")?.trim() : null,
-          },
-          category,
-          source,
-          { announce: false },
-        );
-        if (modId) modIds = [modId];
-      }
+  const importMods = useMutation({
+    mutationFn: async (metadata: ModMetadata): Promise<string[]> => {
+      if (separate) return importSeparately(metadata, sourceFiles(source));
+      const modId = await processMod(
+        {
+          ...metadata,
+          renderedCover: cover.data,
+          mapName: askMapName ? form.getValues("mapName")?.trim() : null,
+        },
+        category,
+        source,
+        { announce: false },
+      );
+      return modId ? [modId] : [];
+    },
+    onSuccess: (modIds, metadata) => {
+      // processMod already reported a failure that returned no mod.
       if (modIds.length === 0) return;
       onClose();
       toast.success(
@@ -236,12 +231,28 @@ export const AddModDetails = ({
           : t("addMods.addedMods", { count: modIds.length }),
       );
       navigate("/my-mods");
-    } catch (error) {
-      // processMod leaves its progress indicator up when a step throws.
+    },
+    onError: (error) => {
+      // Some processMod steps throw without clearing its progress indicator.
       setProcessing(false);
       logger.withError(error).error("Failed to process mod");
       toast.error(t("addMods.processingError"));
-    }
+    },
+    onSettled: () => {
+      submitting.current = false;
+    },
+    meta: { skipGlobalErrorHandler: true },
+  });
+
+  const handleFinalize = async () => {
+    if (submitting.current) return;
+    submitting.current = true;
+    const metadata = await metaRef.current?.validateAndGet();
+    const valid = await form.trigger(
+      askMapName ? ["category", "mapName"] : "category",
+    );
+    if (metadata && valid) importMods.mutate(metadata);
+    else submitting.current = false;
   };
 
   return (
@@ -370,7 +381,7 @@ export const AddModDetails = ({
         ) : (
           <ModPartsList
             contents={contents}
-            disabled={isProcessing}
+            disabled={importMods.isPending}
             files={sourceFiles(source)}
             mode={mode}
             onAdd={handleAddParts}
@@ -384,19 +395,19 @@ export const AddModDetails = ({
 
       <DialogFooter className='mt-2'>
         <Button
-          disabled={isProcessing}
+          disabled={importMods.isPending}
           onClick={onClose}
           type='button'
           variant='ghost'>
           {t("addMods.cancel")}
         </Button>
         <Button
-          disabled={isProcessing}
+          disabled={importMods.isPending}
           icon={<PlusIcon className='h-4 w-4' />}
-          isLoading={isProcessing}
+          isLoading={importMods.isPending}
           onClick={handleFinalize}
           type='button'>
-          {isProcessing
+          {importMods.isPending
             ? t("addMods.processing")
             : separate
               ? t("addMods.addCount", { count: sourceFiles(source).length })
