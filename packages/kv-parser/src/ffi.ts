@@ -2,6 +2,7 @@ import { RuntimeError } from "@deadlock-mods/common";
 import { CString, dlopen, FFIType, type Pointer, ptr } from "bun:ffi";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { takeNativeString } from "./native-string";
 import type {
   DiffStats,
   DocumentDiff,
@@ -32,27 +33,27 @@ const libPath =
 const lib = dlopen(libPath, {
   kv_parse: {
     args: [FFIType.ptr, FFIType.uint64_t, FFIType.ptr],
-    returns: FFIType.cstring,
+    returns: FFIType.ptr,
   },
   kv_serialize_ast: {
     args: [FFIType.ptr],
-    returns: FFIType.cstring,
+    returns: FFIType.ptr,
   },
   kv_serialize_data: {
     args: [FFIType.ptr, FFIType.ptr],
-    returns: FFIType.cstring,
+    returns: FFIType.ptr,
   },
   kv_diff: {
     args: [FFIType.ptr, FFIType.ptr],
-    returns: FFIType.cstring,
+    returns: FFIType.ptr,
   },
   kv_apply_diff: {
     args: [FFIType.ptr, FFIType.ptr],
-    returns: FFIType.cstring,
+    returns: FFIType.ptr,
   },
   kv_diff_stats: {
     args: [FFIType.ptr],
-    returns: FFIType.cstring,
+    returns: FFIType.ptr,
   },
   kv_free_string: {
     args: [FFIType.ptr],
@@ -60,60 +61,18 @@ const lib = dlopen(libPath, {
   },
   kv_version: {
     args: [],
-    returns: FFIType.cstring,
+    returns: FFIType.ptr,
   },
 });
 
-type FFIFunction = (
-  ...args: (number | bigint | CString | Pointer | NodeJS.TypedArray | null)[]
-) => CString;
-
-type FFIFunctionPointerOnly = (
-  ...args: (CString | Pointer | NodeJS.TypedArray | null)[]
-) => CString;
-
-interface ErrorResult {
-  error: string;
-}
-
-/**
- * Calls native FFI function and handles various return types from Bun FFI
- */
-function callNativeFunction<T>(
-  fn: FFIFunction | FFIFunctionPointerOnly,
-  ...args: (number | bigint | CString | Pointer | NodeJS.TypedArray | null)[]
-): T {
-  const result = (fn as FFIFunction)(...args);
-  let jsonString: string;
-
-  if (typeof result === "string") {
-    jsonString = result;
-  } else if (typeof result === "object" && result !== null) {
-    if (result.constructor === String || result instanceof String) {
-      jsonString = result.toString();
-    } else {
-      const errorResult = result as ErrorResult;
-      if (errorResult.error) {
-        throw new RuntimeError(errorResult.error);
-      }
-      return result as T;
-    }
-  } else if (typeof result === "number" && result !== 0) {
-    const resultStr = new CString(result as Pointer);
-    jsonString = resultStr.toString();
-    lib.symbols.kv_free_string(result as Pointer);
-  } else {
-    throw new RuntimeError(
-      `Unexpected result type: ${typeof result}, value: ${result}`,
-    );
+function decodeNativeResult<T extends object>(result: Pointer | null): T {
+  const parsed: T & { error?: string } = JSON.parse(
+    extractStringResult(result),
+  );
+  if (parsed.error) {
+    throw new RuntimeError(parsed.error);
   }
-
-  const parsed = JSON.parse(jsonString) as T | ErrorResult;
-  const errorResult = parsed as ErrorResult;
-  if (errorResult.error) {
-    throw new RuntimeError(errorResult.error);
-  }
-  return parsed as T;
+  return parsed;
 }
 
 /**
@@ -128,33 +87,20 @@ export function parseKv(content: string, options?: ParseOptions): ParseResult {
   });
   const optionsBuffer = Buffer.from(`${optionsJson}\0`, "utf8");
 
-  return callNativeFunction<ParseResult>(
-    lib.symbols.kv_parse,
-    ptr(buffer),
-    buffer.length,
-    ptr(optionsBuffer),
+  return decodeNativeResult<ParseResult>(
+    lib.symbols.kv_parse(ptr(buffer), buffer.length, ptr(optionsBuffer)),
   );
 }
 
 /**
- * Extracts a string result from various FFI return types
+ * Copies and frees a string allocated by the native KV library.
  */
-function extractStringResult(result: unknown): string {
-  if (typeof result === "string") {
-    return result;
-  } else if (typeof result === "object" && result !== null) {
-    if (result.constructor === String || result instanceof String) {
-      return result.toString();
-    }
-    // CString object - convert to string
-    return String(result);
-  } else if (typeof result === "number" && result !== 0) {
-    const resultStr = new CString(result as Pointer).toString();
-    lib.symbols.kv_free_string(result as Pointer);
-    return resultStr;
-  } else {
-    throw new RuntimeError(`Unexpected result type: ${typeof result}`);
-  }
+function extractStringResult(result: Pointer | null): string {
+  return takeNativeString(
+    result,
+    (pointer) => new CString(pointer).toString(),
+    lib.symbols.kv_free_string,
+  );
 }
 
 /**
@@ -206,10 +152,8 @@ export function generateDiff(
   const sourceBuffer = Buffer.from(`${sourceJson}\0`, "utf8");
   const targetBuffer = Buffer.from(`${targetJson}\0`, "utf8");
 
-  return callNativeFunction<DocumentDiff>(
-    lib.symbols.kv_diff,
-    ptr(sourceBuffer),
-    ptr(targetBuffer),
+  return decodeNativeResult<DocumentDiff>(
+    lib.symbols.kv_diff(ptr(sourceBuffer), ptr(targetBuffer)),
   );
 }
 
@@ -225,10 +169,8 @@ export function applyDiff(
   const sourceBuffer = Buffer.from(`${sourceJson}\0`, "utf8");
   const diffBuffer = Buffer.from(`${diffJson}\0`, "utf8");
 
-  return callNativeFunction<KeyValuesObject>(
-    lib.symbols.kv_apply_diff,
-    ptr(sourceBuffer),
-    ptr(diffBuffer),
+  return decodeNativeResult<KeyValuesObject>(
+    lib.symbols.kv_apply_diff(ptr(sourceBuffer), ptr(diffBuffer)),
   );
 }
 
@@ -239,9 +181,8 @@ export function getDiffStats(diff: DocumentDiff): DiffStats {
   const diffJson = JSON.stringify(diff);
   const diffBuffer = Buffer.from(`${diffJson}\0`, "utf8");
 
-  return callNativeFunction<DiffStats>(
-    lib.symbols.kv_diff_stats,
-    ptr(diffBuffer),
+  return decodeNativeResult<DiffStats>(
+    lib.symbols.kv_diff_stats(ptr(diffBuffer)),
   );
 }
 
