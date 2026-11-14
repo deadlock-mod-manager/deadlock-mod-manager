@@ -129,10 +129,8 @@ const main = async () => {
       .error("Failed to bootstrap feature flags");
   }
 
-  logger.withMetadata({ port: env.PORT }).info("Server started");
-
-  Bun.serve({
-    port: 9000,
+  const server = Bun.serve({
+    port: env.PORT,
     fetch: app.fetch,
     maxRequestBodySize: VPK_CONSTANTS.MAX_FILE_SIZE_BYTES,
     // Handlers that fan out to upstream providers enforce their own deadlines
@@ -140,6 +138,8 @@ const main = async () => {
     // closed connection.
     idleTimeout: 30,
   });
+
+  logger.withMetadata({ port: server.port }).info("Server started");
 };
 
 if (import.meta.main) {
