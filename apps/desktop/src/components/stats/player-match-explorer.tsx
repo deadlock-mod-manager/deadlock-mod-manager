@@ -118,7 +118,10 @@ export const PlayerMatchExplorer = ({
           <p className='border-b px-3 py-2 text-muted-foreground text-[11px] tabular-nums'>
             {t("stats.player.heroRunSummary", {
               count: summary.matches,
-              winrate: formatPercent(summary.winrate, 0),
+              winrate:
+                summary.wins + summary.losses > 0
+                  ? formatPercent(summary.winrate, 0)
+                  : t("stats.recent.notScoredShort"),
               kda: formatDecimal(summary.kda),
             })}
           </p>

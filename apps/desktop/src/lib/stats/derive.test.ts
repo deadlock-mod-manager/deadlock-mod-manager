@@ -483,6 +483,15 @@ describe("mergeLocalMatches", () => {
     expect(merged[0].net_worth).toBe(50_000);
   });
 
+  it("keeps a local non-score when the API entry has no outcome", () => {
+    const merged = mergeLocalMatches(
+      [win({ match_id: 7, player_match_outcome: null })],
+      [win({ match_id: 7, player_match_outcome: 5 })],
+    );
+
+    expect(matchOutcome(merged[0])).toBe("notScored");
+  });
+
   it("returns the API list untouched when there is nothing local", () => {
     const api = [win({ match_id: 1 })];
 

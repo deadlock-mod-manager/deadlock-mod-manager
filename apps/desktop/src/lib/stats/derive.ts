@@ -50,14 +50,27 @@ export const chronological = (
  *
  * deadlock-api ingests with up to a day of delay, so today's games are missing
  * from it while the GC already has them. The API entry wins on conflicts - it is
- * the richer record - and local-only matches are appended.
+ * the richer record - and local-only matches are appended. A local non-score
+ * still fills in when the API entry carries no outcome of its own.
  */
 export const mergeLocalMatches = (
   api: MatchHistoryEntry[],
   local: MatchHistoryEntry[],
 ): MatchHistoryEntry[] => {
+  const notScored = new Set(local.filter(isUnscored).map((m) => m.match_id));
+  const merged =
+    notScored.size === 0
+      ? api
+      : api.map((match) =>
+          notScored.has(match.match_id)
+            ? {
+                ...match,
+                player_match_outcome: match.player_match_outcome ?? 5,
+              }
+            : match,
+        );
   const extra = localOnlyMatches(api, local);
-  return extra.length === 0 ? api : [...extra, ...api];
+  return extra.length === 0 ? merged : [...extra, ...merged];
 };
 
 /** The local matches the API does not know yet - the gap everything else fills from. */
