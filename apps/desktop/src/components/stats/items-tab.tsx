@@ -4,7 +4,12 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@deadlock-mods/ui/components/toggle-group";
-import { TrendingDown, TrendingUp, Zap } from "@deadlock-mods/ui/icons";
+import {
+  RefreshCw,
+  TrendingDown,
+  TrendingUp,
+  Zap,
+} from "@deadlock-mods/ui/icons";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -227,10 +232,20 @@ interface ItemsTabProps {
   items: ItemInsight[];
   itemsById: Map<number, DeadlockItem>;
   isPending: boolean;
+  isError: boolean;
+  isFetching: boolean;
+  onRetry: () => void;
 }
 
 /** The player's items next to everyone else's, with the extremes called out. */
-export const ItemsTab = ({ items, itemsById, isPending }: ItemsTabProps) => {
+export const ItemsTab = ({
+  items,
+  itemsById,
+  isPending,
+  isError,
+  isFetching,
+  onRetry,
+}: ItemsTabProps) => {
   const { t } = useTranslation();
   const [slot, setSlot] = useState<SlotFilter>("all");
 
@@ -255,6 +270,32 @@ export const ItemsTab = ({ items, itemsById, isPending }: ItemsTabProps) => {
     [known],
   );
 
+  if (isError) {
+    return (
+      <div className='pb-8'>
+        <div
+          className='flex min-h-48 flex-col items-center justify-center rounded-md border border-dashed p-6 text-center'
+          role='status'>
+          <h3 className='font-semibold text-sm'>
+            {t("stats.items.errorTitle")}
+          </h3>
+          <p className='mt-1 max-w-md text-muted-foreground text-xs'>
+            {t("stats.items.errorDescription")}
+          </p>
+          <Button
+            className='mt-4'
+            disabled={isFetching}
+            onClick={onRetry}
+            size='sm'
+            type='button'
+            variant='outline'>
+            <RefreshCw />
+            {t("stats.dashboard.broken.retry")}
+          </Button>
+        </div>
+      </div>
+    );
+  }
   if (isPending) {
     return <ItemsSkeleton />;
   }

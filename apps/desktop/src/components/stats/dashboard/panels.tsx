@@ -106,9 +106,12 @@ const ItemsPanel = ({ accountId }: { accountId: number }) => {
   const itemStats = useItemStats(accountId, true, scope);
   return (
     <ItemsTab
+      isError={itemStats.isError}
+      isFetching={itemStats.isFetching}
       isPending={itemStats.isPending}
       items={itemStats.items}
       itemsById={itemStats.itemsById}
+      onRetry={() => void itemStats.refetch()}
     />
   );
 };

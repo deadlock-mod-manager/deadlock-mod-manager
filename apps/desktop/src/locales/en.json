@@ -1256,6 +1256,8 @@
       "emptyTitle": "No item stats yet",
       "emptyDescription": "deadlock-api builds item stats from fully analysed matches, and only some of yours have been analysed so far. They will show up here as more of your matches are processed.",
       "emptyAction": "Get matches analysed first",
+      "errorTitle": "Couldn’t load item stats",
+      "errorDescription": "Check your connection and try again.",
       "tableTitle": "Your items against everyone",
       "tableDescription": "Winrate when you buy an item, next to all players who buy it",
       "slotFilter": "Item slot",
