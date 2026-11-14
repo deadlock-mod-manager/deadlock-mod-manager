@@ -30,13 +30,7 @@ fn create_profile_folder_unguarded(profile_id: &str, profile_name: &str) -> Resu
   let folder_name = profile_folder_name(profile_id, profile_name);
 
   let mod_manager = MANAGER.lock().unwrap();
-  let game_path = mod_manager
-    .get_steam_manager()
-    .get_game_path()
-    .ok_or(Error::GamePathNotSet)?;
-
-  let addons_path = game_path.join("game").join("citadel").join("addons");
-  let profile_folder = addons_path.join(&folder_name);
+  let profile_folder = mod_manager.get_addons_path(Some(&folder_name))?;
 
   if profile_folder.exists() {
     log::warn!("Profile folder already exists: {profile_folder:?}");
@@ -109,16 +103,7 @@ pub async fn delete_profile_folder(
     .await;
 
   let mod_manager = MANAGER.lock().unwrap();
-  let game_path = mod_manager
-    .get_steam_manager()
-    .get_game_path()
-    .ok_or(Error::GamePathNotSet)?;
-
-  let base = game_path
-    .join("game")
-    .join("citadel")
-    .join("addons")
-    .join(&profile_folder);
+  let base = mod_manager.get_addons_path(Some(&profile_folder))?;
   let removed = crate::mod_manager::shard::remove_profile_shards(&base)?;
   mod_manager.delete_profile_localization_overlay(&profile_folder)?;
 
@@ -194,20 +179,10 @@ pub async fn get_profile_installed_vpks(
   profile_folder: Option<String>,
 ) -> Result<Vec<ProfileVpkFile>, Error> {
   let mod_manager = MANAGER.lock().unwrap();
-  let game_path = mod_manager
-    .get_steam_manager()
-    .get_game_path()
-    .ok_or(Error::GamePathNotSet)?;
-
-  let addons_path = if let Some(folder) = profile_folder {
-    game_path
-      .join("game")
-      .join("citadel")
-      .join("addons")
-      .join(folder)
-  } else {
-    game_path.join("game").join("citadel").join("addons")
-  };
+  let addons_path = mod_manager
+    .get_addons_path(profile_folder.as_deref())?
+    .path()
+    .to_path_buf();
 
   if !addons_path.exists() {
     log::warn!("Addons path does not exist: {addons_path:?}");
@@ -593,13 +568,8 @@ pub async fn import_profile_batch(
     create_profile_folder_unguarded(&profile_id, &profile_name)?
   } else {
     let mod_manager = MANAGER.lock().unwrap();
-    let game_path = mod_manager
-      .get_steam_manager()
-      .get_game_path()
-      .ok_or(Error::GamePathNotSet)?;
-
-    let addons_path = game_path.join("game").join("citadel").join("addons");
-    let profile_path = addons_path.join(&profile_folder);
+    let profile_path =
+      mod_manager.get_addons_path(import_install_folder(&profile_folder).as_deref())?;
 
     if !profile_path.exists() {
       std::fs::create_dir_all(&profile_path)?;
@@ -721,19 +691,10 @@ pub async fn import_profile_batch(
       continue;
     }
 
-    let game_path = MANAGER
+    let verify_path = MANAGER
       .lock()
       .unwrap()
-      .get_steam_manager()
-      .get_game_path()
-      .ok_or(Error::GamePathNotSet)?
-      .clone();
-
-    let verify_path = game_path
-      .join("game")
-      .join("citadel")
-      .join("addons")
-      .join(&final_profile_folder);
+      .get_addons_path(import_install_folder(&final_profile_folder).as_deref())?;
 
     let vpk_manager = crate::mod_manager::vpk_manager::VpkManager::new();
     match vpk_manager.find_prefixed_vpks(&verify_path, &mod_data.mod_id) {

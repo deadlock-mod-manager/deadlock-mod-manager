@@ -659,14 +659,6 @@ pub async fn register_analyzed_mod(
   )
 }
 
-fn resolve_addons_path(game_path: &std::path::Path, profile_folder: Option<&str>) -> PathBuf {
-  let base = game_path.join("game").join("citadel").join("addons");
-  match profile_folder {
-    Some(folder) => base.join(folder),
-    None => base,
-  }
-}
-
 #[tauri::command]
 pub async fn get_mod_available_options(
   mod_id: String,
@@ -679,15 +671,10 @@ pub async fn get_mod_available_options(
     current_installed_vpks.len()
   );
 
-  let game_path = {
-    let manager = MANAGER.lock().unwrap();
-    manager
-      .get_steam_manager()
-      .get_game_path()
-      .ok_or(Error::GamePathNotSet)?
-      .clone()
-  };
-  let addons_path = resolve_addons_path(&game_path, profile_folder.as_deref());
+  let addons_path = MANAGER
+    .lock()
+    .unwrap()
+    .get_addons_path(profile_folder.as_deref())?;
 
   if !addons_path.exists() {
     return Err(Error::GamePathNotSet);
@@ -800,15 +787,10 @@ pub async fn fetch_missing_mod_variants(
     archives.len()
   );
 
-  let game_path = {
-    let manager = MANAGER.lock().unwrap();
-    manager
-      .get_steam_manager()
-      .get_game_path()
-      .ok_or(Error::GamePathNotSet)?
-      .clone()
-  };
-  let addons_path = resolve_addons_path(&game_path, profile_folder.as_deref());
+  let addons_path = MANAGER
+    .lock()
+    .unwrap()
+    .get_addons_path(profile_folder.as_deref())?;
 
   if !addons_path.exists() {
     return Err(Error::GamePathNotSet);
@@ -1024,15 +1006,10 @@ pub async fn stage_download_archive(
 ) -> Result<StageDownloadArchiveResult, Error> {
   log::info!("Staging download archive for {mod_id} (profile: {profile_folder:?}): {archive_name}");
 
-  let game_path = {
-    let manager = MANAGER.lock().unwrap();
-    manager
-      .get_steam_manager()
-      .get_game_path()
-      .ok_or(Error::GamePathNotSet)?
-      .clone()
-  };
-  let addons_path = resolve_addons_path(&game_path, profile_folder.as_deref());
+  let addons_path = MANAGER
+    .lock()
+    .unwrap()
+    .get_addons_path(profile_folder.as_deref())?;
 
   if !addons_path.exists() {
     return Err(Error::GamePathNotSet);
@@ -1286,15 +1263,10 @@ pub async fn switch_mod_download_variant(
     "Switching download variant for {mod_id} (profile: {profile_folder:?}) to archive {archive_name}"
   );
 
-  let game_path = {
-    let manager = MANAGER.lock().unwrap();
-    manager
-      .get_steam_manager()
-      .get_game_path()
-      .ok_or(Error::GamePathNotSet)?
-      .clone()
-  };
-  let addons_path = resolve_addons_path(&game_path, profile_folder.as_deref());
+  let addons_path = MANAGER
+    .lock()
+    .unwrap()
+    .get_addons_path(profile_folder.as_deref())?;
 
   if !addons_path.exists() {
     return Err(Error::GamePathNotSet);

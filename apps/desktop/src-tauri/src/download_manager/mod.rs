@@ -1616,15 +1616,10 @@ impl DownloadManager {
         .clone()
     };
 
-    let destination_path = if let Some(ref profile_folder) = task.profile_folder {
-      game_path
-        .join("game")
-        .join("citadel")
-        .join("addons")
-        .join(profile_folder)
-    } else {
-      game_path.join("game").join("citadel").join("addons")
-    };
+    let destination_path = crate::mod_manager::ModManager::profile_addons_dir(
+      &game_path,
+      task.profile_folder.as_deref(),
+    )?;
 
     log::info!(
       "Using game destination path: {destination_path:?} (profile_folder: {:?})",

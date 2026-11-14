@@ -63,15 +63,8 @@ pub async fn check_addons_exist(profile_folder: Option<String>) -> Result<bool, 
   };
   drop(mod_manager);
 
-  let addons_path = if let Some(ref folder) = profile_folder {
-    game_path
-      .join("game")
-      .join("citadel")
-      .join("addons")
-      .join(folder)
-  } else {
-    game_path.join("game").join("citadel").join("addons")
-  };
+  let addons_path =
+    crate::mod_manager::ModManager::profile_addons_dir(&game_path, profile_folder.as_deref())?;
 
   if !addons_path.exists() {
     return Ok(false);

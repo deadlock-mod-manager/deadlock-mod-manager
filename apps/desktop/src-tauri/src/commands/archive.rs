@@ -62,88 +62,13 @@ pub async fn copy_selected_vpks_from_archive(
     "copy_selected_vpks_from_archive",
     guard_permit.as_deref(),
   )?;
-  use crate::mod_manager::archive_extractor::ArchiveExtractor;
 
   log::info!(
     "Copying selected VPKs from extracted directory for mod: {} (profile: {profile_folder:?})",
     mod_id
   );
 
-  let mod_manager = MANAGER.lock().unwrap();
-  let mods_path = mod_manager.get_mods_store_path()?;
-  let mod_dir = mods_path.join(&mod_id);
-
-  let extracted_dir = mod_dir.join("extracted");
-
-  if !extracted_dir.exists() {
-    log::warn!("Extracted directory not found, falling back to archive extraction");
-
-    let extractor = ArchiveExtractor::new();
-    let mut archive_path: Option<PathBuf> = None;
-
-    for entry in std::fs::read_dir(&mod_dir)? {
-      let entry = entry?;
-      let path = entry.path();
-      if extractor.is_supported_archive(&path) {
-        archive_path = Some(path);
-        break;
-      }
-    }
-
-    let archive_path = archive_path.ok_or(Error::ModFileNotFound)?;
-
-    log::info!("Extracting archive: {archive_path:?}");
-    extractor.extract_archive(&archive_path, &extracted_dir)?;
-  } else {
-    log::info!("Using already-extracted directory: {extracted_dir:?}");
-  }
-
-  let game_path = mod_manager
-    .get_steam_manager()
-    .get_game_path()
-    .ok_or(Error::GamePathNotSet)?
-    .clone();
-
-  let destination_path = if let Some(ref folder) = profile_folder {
-    game_path
-      .join("game")
-      .join("citadel")
-      .join("addons")
-      .join(folder)
-  } else {
-    game_path.join("game").join("citadel").join("addons")
-  };
-
-  if !destination_path.exists() {
-    std::fs::create_dir_all(&destination_path)?;
-  }
-
-  drop(mod_manager);
-
-  let vpk_manager = crate::mod_manager::vpk_manager::VpkManager::new();
-  let prefixed_vpks = vpk_manager.place_selected_vpks_with_prefix(
-    &extracted_dir,
-    &destination_path,
-    &mod_id,
-    &file_tree,
-  )?;
-  persist_prefixed_import(&destination_path, &mod_id, prefixed_vpks)?;
-
-  log::info!("Removing extracted directory: {extracted_dir:?}");
-  std::fs::remove_dir_all(&extracted_dir)?;
-
-  let extractor = ArchiveExtractor::new();
-  for entry in std::fs::read_dir(&mod_dir)? {
-    let entry = entry?;
-    let path = entry.path();
-    if extractor.is_supported_archive(&path) {
-      log::info!("Removing archive: {path:?}");
-      std::fs::remove_file(&path)?;
-    }
-  }
-
-  log::info!("Successfully copied selected VPKs for mod: {}", mod_id);
-  Ok(())
+  manager_lock()?.copy_selected_vpks_from_archive(&mod_id, &file_tree, profile_folder.as_deref())
 }
 
 #[tauri::command]
@@ -154,62 +79,13 @@ pub async fn copy_local_mod_vpks(
   guard_permit: Option<String>,
 ) -> Result<Vec<String>, Error> {
   crate::game_guard::ensure_game_idle_locked("copy_local_mod_vpks", guard_permit.as_deref())?;
-  use crate::mod_manager::vpk_manager::VpkManager;
 
   log::info!(
     "Copying VPKs from local mod files directory for mod: {} (profile: {profile_folder:?})",
     mod_id
   );
 
-  let mod_manager = MANAGER.lock().unwrap();
-  let mods_path = mod_manager.get_mods_store_path()?;
-  let mod_dir = mods_path.join(&mod_id);
-  let files_dir = mod_dir.join("files");
-
-  if !files_dir.exists() {
-    return Err(Error::ModFileNotFound);
-  }
-
-  let game_path = mod_manager
-    .get_steam_manager()
-    .get_game_path()
-    .ok_or(Error::GamePathNotSet)?
-    .clone();
-
-  let destination_path = if let Some(ref folder) = profile_folder {
-    game_path
-      .join("game")
-      .join("citadel")
-      .join("addons")
-      .join(folder)
-  } else {
-    game_path.join("game").join("citadel").join("addons")
-  };
-
-  if !destination_path.exists() {
-    std::fs::create_dir_all(&destination_path)?;
-  }
-
-  drop(mod_manager);
-
-  let vpk_manager = VpkManager::new();
-  let prefixed_vpks = vpk_manager.copy_vpks_with_prefix(&files_dir, &destination_path, &mod_id)?;
-
-  if prefixed_vpks.is_empty() {
-    log::warn!("No VPK files found in mod files directory: {files_dir:?}");
-    return Err(Error::InvalidInput(
-      "No VPK files found in mod directory".to_string(),
-    ));
-  }
-
-  persist_prefixed_import(&destination_path, &mod_id, prefixed_vpks.clone())?;
-
-  log::info!(
-    "Successfully copied {} VPKs for local mod: {}",
-    prefixed_vpks.len(),
-    mod_id
-  );
-  Ok(prefixed_vpks)
+  manager_lock()?.copy_local_mod_vpks(&mod_id, profile_folder.as_deref())
 }
 
 /// The parts of a mod imported as loose VPKs: every VPK in its `files` folder,
@@ -237,22 +113,13 @@ pub(crate) fn persist_prefixed_import(
 ) -> Result<(), Error> {
   // Manifest recovery runs under this lock and removes any `.dmm.json.tmp` as
   // a crashed save, so saving without it can lose the temp file mid-save.
-  let _manager = MANAGER
+  manager_lock()?.record_prefixed_import(destination_path, mod_id, prefixed_vpks)
+}
+
+fn manager_lock() -> Result<std::sync::MutexGuard<'static, crate::mod_manager::ModManager>, Error> {
+  MANAGER
     .lock()
-    .map_err(|_| Error::BackgroundTaskFailed("Mod manager lock poisoned".to_string()))?;
-  let mut manifest =
-    crate::mod_manager::vpk_manifest::ProfileVpkManifest::open_for_write(destination_path)?;
-  let original_names: Vec<String> = prefixed_vpks
-    .iter()
-    .map(|name| {
-      name
-        .strip_prefix(&format!("{mod_id}_"))
-        .unwrap_or(name)
-        .to_string()
-    })
-    .collect();
-  manifest.mark_disabled(mod_id, prefixed_vpks, original_names);
-  manifest.save(destination_path)
+    .map_err(|_| Error::BackgroundTaskFailed("Mod manager lock poisoned".to_string()))
 }
 
 #[tauri::command]
