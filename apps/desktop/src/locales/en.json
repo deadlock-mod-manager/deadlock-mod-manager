@@ -1403,8 +1403,6 @@
           "description": "The board fills in when you load into a match.",
           "launch": "Launch modded"
         },
-        "win": "W",
-        "loss": "L",
         "victory": "Victory",
         "defeat": "Defeat",
         "queued": {

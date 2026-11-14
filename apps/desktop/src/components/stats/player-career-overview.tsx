@@ -12,6 +12,7 @@ import {
   HERO_TILE_CLASS,
   LOSS_COLOR,
   MUTED_COLOR,
+  OUTCOME_COLORS,
   tint,
   WIN_COLOR,
 } from "@/components/stats/chart-fx";
@@ -21,7 +22,12 @@ import { HeroPool } from "@/components/stats/hero-pool";
 import { WinrateRing } from "@/components/stats/trend-strip";
 import type { DeadlockHero } from "@/lib/deadlock-api";
 import type { MatchHistoryEntry, PlayerHeroStats } from "@/lib/stats/api";
-import { heroPerformance, matchOutcome, summarize } from "@/lib/stats/derive";
+import {
+  heroPerformance,
+  matchOutcome,
+  matchStatus,
+  summarize,
+} from "@/lib/stats/derive";
 import {
   formatCompact,
   formatDecimal,
@@ -221,13 +227,8 @@ export const PlayerCareerOverview = ({
             title={t("stats.player.recentMatches")}>
             <div className='grid grid-cols-4 gap-2 sm:grid-cols-6'>
               {recent.map((match) => {
-                const outcome = matchOutcome(match);
-                const color =
-                  outcome === "win"
-                    ? WIN_COLOR
-                    : outcome === "loss"
-                      ? LOSS_COLOR
-                      : MUTED_COLOR;
+                const status = matchStatus(match);
+                const color = OUTCOME_COLORS[status];
                 const hero = heroesById.get(match.hero_id);
                 return (
                   <Tooltip key={match.match_id}>
@@ -258,7 +259,7 @@ export const PlayerCareerOverview = ({
                     </TooltipTrigger>
                     <TooltipContent>
                       {hero?.name ?? `#${match.hero_id}`},{" "}
-                      {t(`stats.${outcome}`)}, {formatCompact(match.net_worth)}
+                      {t(`stats.${status}`)}, {formatCompact(match.net_worth)}
                     </TooltipContent>
                   </Tooltip>
                 );

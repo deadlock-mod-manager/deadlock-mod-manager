@@ -17,12 +17,15 @@ export const isUnscored = (
   match: Pick<MatchHistoryEntry, "player_match_outcome">,
 ): boolean => match.player_match_outcome === 5;
 
+export type MatchOutcome = "win" | "loss" | "notScored";
+export type MatchStatus = MatchOutcome | "abandoned";
+
 export const matchOutcome = (
   match: Pick<
     MatchHistoryEntry,
     "player_match_outcome" | "match_result" | "player_team"
   >,
-): "win" | "loss" | "notScored" =>
+): MatchOutcome =>
   isUnscored(match)
     ? "notScored"
     : match.match_result === match.player_team
@@ -33,7 +36,7 @@ export const isWin = (match: MatchHistoryEntry): boolean =>
   matchOutcome(match) === "win";
 
 /** Leaving is a display status; the scored result still drives aggregates. */
-export const matchStatus = (match: MatchHistoryEntry) =>
+export const matchStatus = (match: MatchHistoryEntry): MatchStatus =>
   (match.abandoned_time_s ?? 0) > 0 ? "abandoned" : matchOutcome(match);
 
 /** The API returns newest first; charts read left to right. */
@@ -392,7 +395,7 @@ export const playSessions = (matches: MatchHistoryEntry[]): PlaySession[] => {
       matches: games,
       startTime: oldest?.start_time ?? 0,
       endTime: newest ? newest.start_time + newest.match_duration_s : 0,
-      wins: games.filter((match) => matchOutcome(match) === "win").length,
+      wins: games.filter(isWin).length,
       losses: games.filter((match) => matchOutcome(match) === "loss").length,
       rankSteps:
         badgeBefore !== null && latestBadge !== null
@@ -458,7 +461,7 @@ export const todaysSession = (
     .sort((a, b) => a.start_time - b.start_time);
   return {
     matches: today,
-    wins: today.filter((match) => matchOutcome(match) === "win").length,
+    wins: today.filter(isWin).length,
     losses: today.filter((match) => matchOutcome(match) === "loss").length,
     best: [...today].sort((a, b) => sessionScore(b) - sessionScore(a))[0],
   };

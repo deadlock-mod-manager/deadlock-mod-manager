@@ -4,9 +4,9 @@ import { type ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import {
-  LOSS_COLOR,
+  MUTED_COLOR,
+  OUTCOME_COLORS,
   tint,
-  WIN_COLOR,
   winrateColor,
 } from "@/components/stats/chart-fx";
 import { HeroAvatar } from "@/components/stats/hero-avatar";
@@ -19,7 +19,7 @@ import {
 import { useNow } from "@/hooks/use-now";
 import type { DeadlockHero } from "@/lib/deadlock-api";
 import type { MatchHistoryEntry, RankAsset } from "@/lib/stats/api";
-import { matchOutcome, todaysSession } from "@/lib/stats/derive";
+import { matchStatus, todaysSession } from "@/lib/stats/derive";
 import { formatClock, formatKda, formatThousands } from "@/lib/stats/format";
 import type { Grade } from "@/lib/stats/live-grades";
 import { winrateOf } from "@/lib/stats/live-lobby";
@@ -133,7 +133,7 @@ export const LiveSessionCard = ({
   const color =
     wins + losses > 0
       ? winrateColor(winrateOf({ matches: wins + losses, wins }))
-      : "var(--viz-muted)";
+      : MUTED_COLOR;
 
   return (
     <LivePanel
@@ -193,13 +193,8 @@ export const LiveSessionCard = ({
           </div>
           <div className='flex flex-col gap-1.5'>
             {today.map((match) => {
-              const outcome = matchOutcome(match);
-              const color =
-                outcome === "win"
-                  ? WIN_COLOR
-                  : outcome === "loss"
-                    ? LOSS_COLOR
-                    : "var(--viz-muted)";
+              const status = matchStatus(match);
+              const color = OUTCOME_COLORS[status];
               const hero = heroesById.get(match.hero_id);
               return (
                 <Link
@@ -210,11 +205,7 @@ export const LiveSessionCard = ({
                   <span
                     className='w-4 font-bold font-mono text-xs'
                     style={{ color }}>
-                    {outcome === "notScored"
-                      ? t("stats.recent.notScoredShort")
-                      : outcome === "win"
-                        ? t("stats.live.states.win")
-                        : t("stats.live.states.loss")}
+                    {t(`stats.recent.${status}Short`)}
                   </span>
                   <HeroAvatar
                     className='h-6 w-6 rounded-md'
@@ -265,7 +256,7 @@ export const LiveLastMatchCard = ({
       (now / 1000 - lastMatch.start_time - lastMatch.match_duration_s) / 60,
     ),
   );
-  const outcome = matchOutcome(lastMatch);
+  const status = matchStatus(lastMatch);
 
   return (
     <LivePanel
@@ -291,19 +282,12 @@ export const LiveLastMatchCard = ({
             <span className='flex items-center gap-2'>
               <span
                 className='font-bold text-base'
-                style={{
-                  color:
-                    outcome === "win"
-                      ? WIN_COLOR
-                      : outcome === "loss"
-                        ? LOSS_COLOR
-                        : "var(--viz-muted)",
-                }}>
-                {outcome === "notScored"
-                  ? t("stats.notScored")
-                  : outcome === "win"
-                    ? t("stats.live.states.victory")
-                    : t("stats.live.states.defeat")}
+                style={{ color: OUTCOME_COLORS[status] }}>
+                {status === "win"
+                  ? t("stats.live.states.victory")
+                  : status === "loss"
+                    ? t("stats.live.states.defeat")
+                    : t(`stats.${status}`)}
               </span>
               <span className='font-mono text-muted-foreground text-xs'>
                 {formatClock(lastMatch.match_duration_s)}

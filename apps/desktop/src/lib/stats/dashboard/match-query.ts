@@ -3,7 +3,6 @@ import {
   chronological,
   isUnscored,
   isWin,
-  matchOutcome,
   sessionPositions,
 } from "@/lib/stats/derive";
 import type { Dataset, DatasetField, DatasetRow, FieldFormat } from "./dataset";
@@ -221,7 +220,7 @@ const groupKey = (
     case "hour":
       return new Date(match.start_time * 1000).getHours();
     case "result":
-      return matchOutcome(match) === "notScored" ? 2 : isWin(match) ? 1 : 0;
+      return isUnscored(match) ? 2 : isWin(match) ? 1 : 0;
     case "duration":
       return (
         Math.floor(minutesOf(match) / DURATION_BUCKET_MIN) * DURATION_BUCKET_MIN

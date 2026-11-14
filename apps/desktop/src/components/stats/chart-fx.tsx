@@ -3,6 +3,8 @@
  * site because they are document-global.
  */
 
+import type { MatchStatus } from "@/lib/stats/derive";
+
 export const VerticalFade = ({
   id,
   color,
@@ -26,6 +28,14 @@ export const WARN_COLOR = "var(--viz-warn)";
 export const PENDING_COLOR = "var(--viz-pending)";
 export const INFO_COLOR = "var(--viz-info)";
 export const MUTED_COLOR = "var(--viz-muted)";
+
+/** An abandon takes the loss colour whatever the team's result was. */
+export const OUTCOME_COLORS = {
+  win: WIN_COLOR,
+  loss: LOSS_COLOR,
+  abandoned: LOSS_COLOR,
+  notScored: MUTED_COLOR,
+} satisfies Record<MatchStatus, string>;
 
 /** A win rate's colour: even or better reads as winning. */
 export const winrateColor = (winrate: number) =>

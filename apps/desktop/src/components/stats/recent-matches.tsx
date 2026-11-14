@@ -6,7 +6,7 @@ import { ChartCard } from "@/components/stats/chart-card";
 import {
   HERO_TILE_CLASS,
   LOSS_COLOR,
-  MUTED_COLOR,
+  OUTCOME_COLORS,
   tint,
   WIN_COLOR,
 } from "@/components/stats/chart-fx";
@@ -138,12 +138,7 @@ export const RecentMatches = ({ matches, heroesById }: RecentMatchesProps) => {
               {session.matches.map((match) => {
                 const outcome = matchStatus(match);
                 const hero = heroesById.get(match.hero_id);
-                const color =
-                  outcome === "win"
-                    ? WIN_COLOR
-                    : outcome !== "notScored"
-                      ? LOSS_COLOR
-                      : MUTED_COLOR;
+                const color = OUTCOME_COLORS[outcome];
                 return (
                   <Link
                     aria-label={t("stats.player.openMatch", {
@@ -156,13 +151,7 @@ export const RecentMatches = ({ matches, heroesById }: RecentMatchesProps) => {
                       className='flex h-6 w-6 shrink-0 items-center justify-center rounded-md font-bold font-mono text-[11.5px]'
                       style={{ color, backgroundColor: tint(color, 12) }}
                       title={t(`stats.${outcome}`)}>
-                      {outcome === "abandoned"
-                        ? t("stats.recent.abandonedShort")
-                        : outcome === "notScored"
-                          ? t("stats.recent.notScoredShort")
-                          : outcome === "win"
-                            ? t("stats.recent.winShort")
-                            : t("stats.recent.lossShort")}
+                      {t(`stats.recent.${outcome}Short`)}
                     </span>
                     <div className='flex w-44 min-w-0 shrink-0 items-center gap-2.5'>
                       <HeroAvatar

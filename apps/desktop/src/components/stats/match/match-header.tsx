@@ -23,7 +23,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import {
   LOSS_COLOR,
-  MUTED_COLOR,
+  OUTCOME_COLORS,
   WIN_COLOR,
 } from "@/components/stats/chart-fx";
 import { HeroAvatar } from "@/components/stats/hero-avatar";
@@ -118,12 +118,6 @@ export const MatchHeader = ({
   const { t, i18n } = useTranslation();
   const scoring = matchScoring(match, me, historyEntry);
   const outcome = scoring.status;
-  const outcomeColor =
-    outcome === "notScored"
-      ? MUTED_COLOR
-      : outcome === "win"
-        ? WIN_COLOR
-        : LOSS_COLOR;
   const minutes = match.duration_s / 60;
   const damage = me.stats[me.stats.length - 1]?.player_damage ?? 0;
 
@@ -194,7 +188,7 @@ export const MatchHeader = ({
           />
           <div className='min-w-0'>
             <h1 className='truncate font-bold text-3xl tracking-tight'>
-              <span style={{ color: outcomeColor }}>
+              <span style={{ color: OUTCOME_COLORS[outcome] }}>
                 {outcome === "notScored"
                   ? t("stats.notScored")
                   : outcome === "abandoned"

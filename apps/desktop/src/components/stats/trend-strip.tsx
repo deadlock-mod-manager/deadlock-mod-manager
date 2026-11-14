@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Area, AreaChart, ReferenceLine, YAxis } from "recharts";
 import {
   LOSS_COLOR,
+  MUTED_COLOR,
   tint,
   VerticalFade,
   WIN_COLOR,
@@ -238,7 +239,7 @@ export const TrendStrip = ({
                       ? tint(WIN_COLOR, 80)
                       : result.outcome === "loss"
                         ? tint(LOSS_COLOR, 70)
-                        : "var(--viz-muted)",
+                        : MUTED_COLOR,
                 }}
               />
             ))}
