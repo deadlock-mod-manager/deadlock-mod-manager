@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use crate::errors::Error;
+use crate::mod_manager::ModManager;
 use crate::mod_manager::archive_extractor::ArchiveExtractor;
 use crate::mod_manager::file_tree::{FileTreeAnalyzer, ModFileTree};
 
@@ -68,7 +69,16 @@ pub async fn copy_selected_vpks_from_archive(
     mod_id
   );
 
-  manager_lock()?.copy_selected_vpks_from_archive(&mod_id, &file_tree, profile_folder.as_deref())
+  // Resolve under the lock, then copy without it: only the manifest write
+  // needs the mod manager, and a large copy would stall every other command.
+  let (mods_path, destination) = manager_lock()?.archive_copy_paths(profile_folder.as_deref())?;
+  ModManager::copy_selected_vpks_from(
+    &mods_path,
+    &destination,
+    &mod_id,
+    &file_tree,
+    &persist_prefixed_import,
+  )
 }
 
 #[tauri::command]
@@ -85,7 +95,8 @@ pub async fn copy_local_mod_vpks(
     mod_id
   );
 
-  manager_lock()?.copy_local_mod_vpks(&mod_id, profile_folder.as_deref())
+  let (mods_path, destination) = manager_lock()?.archive_copy_paths(profile_folder.as_deref())?;
+  ModManager::copy_local_mod_vpks_from(&mods_path, &destination, &mod_id, &persist_prefixed_import)
 }
 
 /// The parts of a mod imported as loose VPKs: every VPK in its `files` folder,
@@ -116,7 +127,7 @@ pub(crate) fn persist_prefixed_import(
   manager_lock()?.record_prefixed_import(destination_path, mod_id, prefixed_vpks)
 }
 
-fn manager_lock() -> Result<std::sync::MutexGuard<'static, crate::mod_manager::ModManager>, Error> {
+fn manager_lock() -> Result<std::sync::MutexGuard<'static, ModManager>, Error> {
   MANAGER
     .lock()
     .map_err(|_| Error::BackgroundTaskFailed("Mod manager lock poisoned".to_string()))

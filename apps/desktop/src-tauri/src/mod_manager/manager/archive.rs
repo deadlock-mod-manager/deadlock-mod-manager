@@ -1,27 +1,30 @@
 use super::ModManager;
 use crate::errors::Error;
 use crate::mod_manager::archive_extractor::ArchiveExtractor;
+use crate::mod_manager::shard::ProfileBase;
 use crate::mod_manager::vpk_manager::VpkManager;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+
+/// Records placed VPKs in the profile manifest. Callers pass a function that
+/// takes the mod manager lock only for this step, not for the copy before it.
+pub(crate) type RecordImport<'a> = &'a dyn Fn(&Path, &str, Vec<String>) -> Result<(), Error>;
 
 impl ModManager {
-  pub(crate) fn copy_selected_vpks_from_archive(
+  /// The mod store and validated addons folder an archive copy works with.
+  pub(crate) fn archive_copy_paths(
     &self,
-    mod_id: &str,
-    file_tree: &crate::mod_manager::file_tree::ModFileTree,
     profile_folder: Option<&str>,
-  ) -> Result<(), Error> {
-    let destination_path = self.get_addons_path(profile_folder)?;
-    let mods_path = self.get_mods_store_path()?;
-    self.copy_selected_vpks_from(&mods_path, &destination_path, mod_id, file_tree)
+  ) -> Result<(PathBuf, ProfileBase), Error> {
+    let destination = self.get_addons_path(profile_folder)?;
+    Ok((self.get_mods_store_path()?, destination))
   }
 
-  fn copy_selected_vpks_from(
-    &self,
-    mods_path: &std::path::Path,
-    destination_path: &std::path::Path,
+  pub(crate) fn copy_selected_vpks_from(
+    mods_path: &Path,
+    destination_path: &Path,
     mod_id: &str,
     file_tree: &crate::mod_manager::file_tree::ModFileTree,
+    record: RecordImport,
   ) -> Result<(), Error> {
     let mod_dir = mods_path.join(mod_id);
 
@@ -74,7 +77,7 @@ impl ModManager {
       mod_id,
       file_tree,
     )?;
-    self.record_prefixed_import(destination_path, mod_id, prefixed_vpks)?;
+    record(destination_path, mod_id, prefixed_vpks)?;
 
     log::info!("Removing extracted directory: {extracted_dir:?}");
     std::fs::remove_dir_all(&extracted_dir)?;
@@ -93,26 +96,24 @@ impl ModManager {
     Ok(())
   }
 
-  pub(crate) fn copy_local_mod_vpks(
-    &self,
+  pub(crate) fn copy_local_mod_vpks_from(
+    mods_path: &Path,
+    destination_path: &Path,
     mod_id: &str,
-    profile_folder: Option<&str>,
+    record: RecordImport,
   ) -> Result<Vec<String>, Error> {
-    let destination_path = self.get_addons_path(profile_folder)?;
-    let mods_path = self.get_mods_store_path()?;
-    let mod_dir = mods_path.join(mod_id);
-    let files_dir = mod_dir.join("files");
+    let files_dir = mods_path.join(mod_id).join("files");
 
     if !files_dir.exists() {
       return Err(Error::ModFileNotFound);
     }
 
     if !destination_path.exists() {
-      std::fs::create_dir_all(&destination_path)?;
+      std::fs::create_dir_all(destination_path)?;
     }
 
     let vpk_manager = VpkManager::new();
-    let prefixed_vpks = vpk_manager.copy_vpks_with_prefix(&files_dir, &destination_path, mod_id)?;
+    let prefixed_vpks = vpk_manager.copy_vpks_with_prefix(&files_dir, destination_path, mod_id)?;
 
     if prefixed_vpks.is_empty() {
       log::warn!("No VPK files found in mod files directory: {files_dir:?}");
@@ -121,7 +122,7 @@ impl ModManager {
       ));
     }
 
-    self.record_prefixed_import(&destination_path, mod_id, prefixed_vpks.clone())?;
+    record(destination_path, mod_id, prefixed_vpks.clone())?;
 
     log::info!(
       "Successfully copied {} VPKs for local mod: {}",
@@ -133,7 +134,7 @@ impl ModManager {
 
   pub(crate) fn record_prefixed_import(
     &self,
-    destination_path: &std::path::Path,
+    destination_path: &Path,
     mod_id: &str,
     prefixed_vpks: Vec<String>,
   ) -> Result<(), Error> {
@@ -164,43 +165,33 @@ mod tests {
     let manager = super::super::tests::test_manager(game.path());
     let outside = game.path().join("outside");
     let absolute = outside.to_string_lossy().into_owned();
-    let tree = ModFileTree::from_options(&[], &std::collections::HashSet::new());
     for folder in ["../outside", absolute.as_str()] {
       assert!(matches!(
-        manager.copy_local_mod_vpks("42", Some(folder)),
-        Err(Error::InvalidInput(_))
-      ));
-      assert!(matches!(
-        manager.copy_selected_vpks_from_archive("42", &tree, Some(folder)),
+        manager.archive_copy_paths(Some(folder)),
         Err(Error::InvalidInput(_))
       ));
       assert!(!outside.exists());
       assert!(!game.path().join("game/citadel/outside").exists());
-      assert!(!game.path().join("game/citadel/addons").exists());
     }
   }
 
   #[test]
   fn reenabling_after_the_archive_was_consumed_reuses_the_placed_vpks() {
-    let game = super::super::tests::game_dir();
-    let manager = super::super::tests::test_manager(game.path());
     let mods = tempfile::tempdir().unwrap();
     std::fs::create_dir(mods.path().join("42")).unwrap();
-    let addons = game.path().join("game/citadel/addons");
-    std::fs::create_dir_all(&addons).unwrap();
+    let addons = tempfile::tempdir().unwrap();
     let tree = ModFileTree::from_options(&[], &std::collections::HashSet::new());
+    let record: RecordImport = &|_, _, _| panic!("nothing new was placed");
 
     assert!(matches!(
-      manager.copy_selected_vpks_from(mods.path(), &addons, "42", &tree),
+      ModManager::copy_selected_vpks_from(mods.path(), addons.path(), "42", &tree, record),
       Err(Error::ModFileNotFound)
     ));
 
-    std::fs::write(addons.join("42_pak01_dir.vpk"), b"placed").unwrap();
-    manager
-      .copy_selected_vpks_from(mods.path(), &addons, "42", &tree)
-      .unwrap();
+    std::fs::write(addons.path().join("42_pak01_dir.vpk"), b"placed").unwrap();
+    ModManager::copy_selected_vpks_from(mods.path(), addons.path(), "42", &tree, record).unwrap();
     assert_eq!(
-      std::fs::read(addons.join("42_pak01_dir.vpk")).unwrap(),
+      std::fs::read(addons.path().join("42_pak01_dir.vpk")).unwrap(),
       b"placed"
     );
   }
