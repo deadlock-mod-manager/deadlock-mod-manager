@@ -1,5 +1,8 @@
 import { describe, expect, it } from "bun:test";
-import { resolveDroppedModSource } from "./dropped-file-source";
+import {
+  CombinedArchiveError,
+  resolveDroppedModSource,
+} from "./dropped-file-source";
 import { type DetectedSource, detectSource, sourceFiles } from "./file-utils";
 
 const createFile = (name: string) => new File(["test"], name);
@@ -64,6 +67,28 @@ describe("resolveDroppedModSource", () => {
 
     expect(detectedSource?.kind).toBe("vpk");
     expect(fileNames(detectedSource)).toEqual(["from-uri.vpk"]);
+  });
+
+  it("refuses an archive combined with other files from a fallback list", async () => {
+    await expect(
+      resolveDroppedModSource([], {
+        getFilesFromUriList: async () => [
+          createFile("first.zip"),
+          createFile("second.zip"),
+        ],
+      }),
+    ).rejects.toThrow(CombinedArchiveError);
+  });
+
+  it("keeps an archive dropped in a folder with a readme", async () => {
+    const detectedSource = await resolveDroppedModSource([], {
+      getFilesFromItems: async () => [
+        createFile("mod.zip"),
+        createFile("readme.txt"),
+      ],
+    });
+
+    expect(fileNames(detectedSource)).toEqual(["mod.zip"]);
   });
 
   it("detects supported files from webkitRelativePath when File.name is empty", () => {

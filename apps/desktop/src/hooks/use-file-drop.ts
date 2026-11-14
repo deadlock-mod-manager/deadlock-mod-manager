@@ -1,7 +1,10 @@
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { resolveDroppedModSource } from "@/lib/dropped-file-source";
+import {
+  CombinedArchiveError,
+  resolveDroppedModSource,
+} from "@/lib/dropped-file-source";
 import { useProgress } from "@/components/downloads/progress-indicator";
 import { createLogger } from "@/lib/logger";
 import {
@@ -191,10 +194,6 @@ export const useDroppedSource = (
       dropInFlight = true;
       try {
         const droppedFiles = Array.from(dataTransfer.files || []);
-        if (combinesArchives(droppedFiles)) {
-          onError(t("addMods.oneArchiveAtATime"));
-          return;
-        }
         const droppedItems = Array.from(dataTransfer.items || []);
         const droppedUriList = dataTransfer.getData("text/uri-list");
 
@@ -244,6 +243,10 @@ export const useDroppedSource = (
             detectedSource = await stageSource(detectedSource);
           }
         } catch (error) {
+          if (error instanceof CombinedArchiveError) {
+            onError(t("addMods.oneArchiveAtATime"));
+            return;
+          }
           logger.withError(error).error("Failed to resolve dropped mod source");
           onError(t("addMods.failedToReadDroppedFiles"));
           return;

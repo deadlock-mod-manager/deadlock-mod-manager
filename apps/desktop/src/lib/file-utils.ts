@@ -209,10 +209,16 @@ export const detectSource = (files: File[]): DetectedSource | null => {
   return null;
 };
 
-/** One archive is one mod, so it can't be added alongside other files. */
-export const combinesArchives = (files: File[]): boolean =>
-  files.length > 1 &&
-  files.some((file) => ARCHIVE_PATTERN.test(getFileBaseName(file)));
+/**
+ * One archive is one mod, so it can't be added alongside other mod files.
+ * Other files, such as a readme in a dropped folder, don't count.
+ */
+export const combinesArchives = (files: File[]): boolean => {
+  const names = files.map(getFileBaseName);
+  const archives = names.filter((name) => ARCHIVE_PATTERN.test(name)).length;
+  const vpks = names.filter((name) => VPK_PATTERN.test(name)).length;
+  return archives > 0 && archives + vpks > 1;
+};
 
 export const sourceFiles = (source: DetectedSource): File[] =>
   source.kind === "vpks" ? source.files : [source.file];
