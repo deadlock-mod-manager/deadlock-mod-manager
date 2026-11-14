@@ -5,12 +5,13 @@ import {
   useReinstallMod,
 } from "@/hooks/use-reinstall-mod";
 import { getErrorMessage } from "@/lib/errors";
+import i18n from "@/lib/i18n";
 import { createLogger } from "@/lib/logger";
 import { isLocalMod } from "@/lib/mods/installed-helpers";
 import { usePersistedStore } from "@/lib/store";
 import { type LocalMod, ModStatus } from "@/types/mods";
 import type { KeptChoices } from "@/types/generated/KeptChoices";
-import { invokeGuarded, isGameRunningError } from "@/lib/game-guard";
+import { invokeGuarded } from "@/lib/game-guard";
 
 const logger = createLogger("nuke-reinstall");
 
@@ -49,8 +50,6 @@ export type NukeState = {
   progress: number;
   currentMod: string | null;
   mods: NukeModEntry[];
-  /** Mods that were already gone from disk - expected, not an error. */
-  missingOnDisk: number;
   /** Set when the run itself broke down, not just a single mod. */
   error?: string;
   isRunning: boolean;
@@ -62,7 +61,6 @@ const INITIAL_STATE: NukeState = {
   progress: 0,
   currentMod: null,
   mods: [],
-  missingOnDisk: 0,
   isRunning: false,
   cancelRequested: false,
 };
@@ -73,8 +71,8 @@ const INITIAL_STATE: NukeState = {
  * This takes the mods the manager *thinks* it has, wipes cache, state and the
  * files on disk, and rebuilds that list from scratch.
  *
- * Purge failures are expected - a mod the manager believes in may not be on
- * disk at all - so they are counted, never fatal.
+ * Missing files are accepted by purge_mod. A rejected purge stops the run
+ * before clearing the download cache or persisted state.
  */
 export const useNukeReinstall = () => {
   const [state, setState] = useState<NukeState>(INITIAL_STATE);
@@ -231,10 +229,8 @@ export const useNukeReinstall = () => {
       completedUnits += 1;
       setProgress();
 
-      let missingOnDisk = 0;
-
       setState((current) => ({ ...current, phase: "purging" }));
-      for (const mod of targets) {
+      for (const [index, mod] of targets.entries()) {
         setState((current) => ({ ...current, currentMod: mod.name }));
         try {
           const kept = await invokeGuarded<KeptChoices | null>("purge_mod", {
@@ -244,20 +240,20 @@ export const useNukeReinstall = () => {
           });
           if (kept) keptChoicesRef.current.set(mod.remoteId, kept);
         } catch (error) {
-          // A guard block is not drift: the files are in use. Aborting here
-          // leaves the state intact instead of nuking it for nothing.
-          if (isGameRunningError(error)) throw error;
-          // Expected whenever the manager's state is ahead of the file system.
-          missingOnDisk += 1;
-          logger
-            .withMetadata({ mod: mod.remoteId })
-            .withError(error)
-            .warn("Purge failed during nuke (file likely already gone)");
+          // Mods purged before this one are already gone; Retry failed must
+          // be able to bring them back. The rest are untouched.
+          for (const purged of targets.slice(0, index)) {
+            patchMod(purged.remoteId, {
+              outcome: "failed",
+              error: i18n.t("nuke.removedBeforeStop"),
+            });
+          }
+          throw error;
         }
         completedUnits += 1;
         setProgress();
       }
-      setState((current) => ({ ...current, missingOnDisk, currentMod: null }));
+      setState((current) => ({ ...current, currentMod: null }));
 
       setState((current) => ({ ...current, phase: "clearingCache" }));
       try {
@@ -301,7 +297,7 @@ export const useNukeReinstall = () => {
         isRunning: false,
       }));
     }
-  }, [reinstallTargets]);
+  }, [reinstallTargets, patchMod]);
 
   const retryFailed = useCallback(async () => {
     const failedIds = new Set(
