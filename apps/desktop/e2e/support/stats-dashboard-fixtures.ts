@@ -96,25 +96,30 @@ const rankedSeason = (id: number, start: number, end: number) => ({
   intervals: [{ interval: id, start_timestamp: start, end_timestamp: end }],
 });
 
-const SEASON_ONE = { start: 7, end: 3 };
+// Beta Season 1 as served, so the network check compares with the same
+// bounds even if local midnight passes during the run.
+let seasonOne = { start: 0, end: 0 };
 /** The season list in deadlock-api's order, oldest first. */
-const seasonRoutes = (): FixtureRoute[] => [
-  {
-    method: "GET",
-    path: "/v1/assets/ranked-seasons",
-    status: 200,
-    body: json([
-      rankedSeason(1, localNoon(SEASON_ONE.start), localNoon(SEASON_ONE.end)),
-      rankedSeason(2, localNoon(3), localNoon(-120)),
-    ]),
-  },
-  {
-    method: "GET",
-    path: `/v1/players/${STATS_ACCOUNT_ID}/match-history`,
-    status: 200,
-    body: json(seasonHistory()),
-  },
-];
+const seasonRoutes = (): FixtureRoute[] => {
+  seasonOne = { start: localNoon(7), end: localNoon(3) };
+  return [
+    {
+      method: "GET",
+      path: "/v1/assets/ranked-seasons",
+      status: 200,
+      body: json([
+        rankedSeason(1, seasonOne.start, seasonOne.end),
+        rankedSeason(2, seasonOne.end, localNoon(-120)),
+      ]),
+    },
+    {
+      method: "GET",
+      path: `/v1/players/${STATS_ACCOUNT_ID}/match-history`,
+      status: 200,
+      body: json(seasonHistory()),
+    },
+  ];
+};
 
 const heroes = [
   { id: INFERNUS, name: "Infernus", class_name: "hero_inferno", images: {} },
@@ -451,8 +456,8 @@ export const assertStatsDashboardNetwork = (
   if (id === "stats-season-filter") {
     // Beta Season 1 reaches the server as its exact window, the end sent as
     // the last second it covers (deadlock-api's end is inclusive).
-    const min = String(localNoon(SEASON_ONE.start));
-    const max = String(localNoon(SEASON_ONE.end) - 1);
+    const min = String(seasonOne.start);
+    const max = String(seasonOne.end - 1);
     const seasonRequest = requests.some((request) => {
       const query = new URL(request.url, "http://fixture").searchParams;
       return (
