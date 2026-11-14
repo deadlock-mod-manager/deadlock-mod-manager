@@ -653,4 +653,137 @@ mod tests {
       })
     );
   }
+
+  #[test]
+  fn a_batch_keeps_each_mods_failure_and_learning_as_when_checked_in_order() {
+    let temp = tempfile::tempdir().unwrap();
+    let citadel = temp.path().join("game/citadel");
+    fs::create_dir_all(&citadel).unwrap();
+    fs::write(citadel.join("steam.inf"), b"ClientVersion=100\n").unwrap();
+    // The broken game table sorts first, so a mod that ships it stops learning there.
+    let broken = "scripts/e2e_0_broken.vdata_c";
+    let [first, second, third] = [
+      "scripts/e2e_1.vdata_c",
+      "scripts/e2e_2.vdata_c",
+      "scripts/e2e_3.vdata_c",
+    ];
+    let rows = |name: &str| {
+      vec![(
+        format!("{name}_row"),
+        Kv3Value::Object(vec![("value".into(), Kv3Value::Int(1))]),
+      )]
+    };
+    let table = |name: &str| compiled_resource(rows(name));
+    write_vpk(
+      &citadel.join("pak01_dir.vpk"),
+      &[
+        (broken, b"not a compiled resource"),
+        (first, &table("first")),
+        (second, &table("second")),
+        (third, &table("third")),
+      ],
+    );
+    let base = ProfileBase::new(citadel.join("addons")).unwrap();
+    // Checked in id order: `a` fails while learning, `b` learns `second` and
+    // then fails in its analysis, `c` works and `d` has nothing to check.
+    let mods = [
+      (
+        "a",
+        vec![(broken, table("broken")), (first, table("first"))],
+      ),
+      (
+        "b",
+        vec![(broken, table("broken")), (second, table("second"))],
+      ),
+      ("c", vec![(third, table("third"))]),
+      ("d", vec![("sounds/a.vsnd_c", b"sound".to_vec())]),
+    ];
+    let mut manifest = ProfileVpkManifest::default();
+    for (id, files) in &mods {
+      let files: Vec<_> = files
+        .iter()
+        .map(|(path, bytes)| (*path, bytes.as_slice()))
+        .collect();
+      write_vpk(&base.join(format!("{id}_dir.vpk")), &files);
+      manifest.mods.insert(
+        (*id).into(),
+        ProfileVpkManifestEntry {
+          disabled_vpks: vec![format!("{id}_dir.vpk")],
+          ..Default::default()
+        },
+      );
+    }
+    manifest.save(&base).unwrap();
+    let history = temp.path().join("cache/vdata-history.bin");
+    let context = ModHealthContext {
+      citadel,
+      base,
+      app_data: temp.path().join("app-data"),
+      overlay_path: temp
+        .path()
+        .join("game/citadel/dmm_localization_default")
+        .join(OVERLAY_VPK_NAME),
+      history: Some(history.clone()),
+    };
+    // Built without the check's learning code, from the tables' rows.
+    let learned = |tables: &[(&str, &str)]| {
+      let mut expected = VdataHistoryIndex::default();
+      for (path, name) in tables {
+        expected
+          .record(path, 100, &Kv3Value::Object(rows(name)))
+          .unwrap();
+      }
+      expected.to_bytes().unwrap()
+    };
+    let check = || {
+      let progress = Mutex::new(Vec::new());
+      let check = context
+        .check(None, true, |update| progress.lock().unwrap().push(update))
+        .unwrap();
+      let report = &check.report;
+      let mut checked: Vec<_> = report
+        .mods
+        .iter()
+        .map(|health| health.mod_id.as_str())
+        .collect();
+      checked.sort_unstable();
+      assert_eq!(checked, ["c", "d"], "failed mods are left unchecked");
+      let works = report
+        .mods
+        .iter()
+        .find(|health| health.mod_id == "c")
+        .unwrap();
+      assert_eq!(works.status, ModHealthStatus::Works);
+      assert_eq!((works.repairs, works.warnings), (0, 0));
+      assert!(works.symptoms.is_empty());
+      assert!(works.fix_symptoms.is_empty());
+      assert!(works.remaining_symptoms.is_empty());
+      assert_eq!(works.source, ModHealthSource::Standalone);
+      assert_eq!(works.game_build, Some(100));
+      assert_eq!(status(report, "d"), Some(ModHealthStatus::NotCovered));
+      assert_eq!(
+        *progress.lock().unwrap(),
+        (0..=4)
+          .map(|checked| ModHealthProgress { checked, total: 4 })
+          .collect::<Vec<_>>()
+      );
+      check.history_changed
+    };
+
+    // Only failed mods learned something new, so nothing is saved.
+    fs::create_dir_all(history.parent().unwrap()).unwrap();
+    fs::write(&history, learned(&[(third, "third")])).unwrap();
+    assert!(!check());
+    assert_eq!(fs::read(&history).unwrap(), learned(&[(third, "third")]));
+
+    // A working mod learns something new, so the batch saves what every mod
+    // learned before it failed: `second`, but not `first`, which `a` never
+    // reached.
+    fs::remove_file(&history).unwrap();
+    assert!(check());
+    assert_eq!(
+      fs::read(&history).unwrap(),
+      learned(&[(second, "second"), (third, "third")])
+    );
+  }
 }
