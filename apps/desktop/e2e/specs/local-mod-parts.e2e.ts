@@ -1,7 +1,6 @@
 import { $, $$, browser, expect } from "@wdio/globals";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { pathToFileURL } from "node:url";
 import { z } from "zod";
 import { startApplication } from "../support/application";
 import { closeApplication } from "../support/application-exit";
@@ -24,6 +23,7 @@ import {
 } from "../support/local-parts-fixtures";
 import { observeUntil } from "../support/observations";
 import {
+  dropFilePaths,
   installedFiles,
   navigate,
   openAddLocalMod,
@@ -32,8 +32,6 @@ import {
 
 const checkpointSchema = z.object({ processId: z.number() });
 const [BASE, HAIR, SOUNDS] = PART_FILES;
-const DROP_SELECTOR =
-  '[role="button"][aria-label="Drop files/folders here, or click to select"]';
 
 const waitForStatus = (world: string, status: string) =>
   observeUntil(
@@ -45,25 +43,7 @@ const waitForStatus = (world: string, status: string) =>
 const dropFiles = async (world: string, names: string[]) => {
   await navigate("my-mods");
   await openAddLocalMod();
-  const dropArea = await $(DROP_SELECTOR);
-  await dropArea.waitForClickable();
-  await browser.execute(
-    (selector: string, uris: string) => {
-      const transfer = new DataTransfer();
-      transfer.setData("text/uri-list", uris);
-      document.querySelector(selector)?.dispatchEvent(
-        new DragEvent("drop", {
-          bubbles: true,
-          cancelable: true,
-          dataTransfer: transfer,
-        }),
-      );
-    },
-    DROP_SELECTOR,
-    names
-      .map((name) => pathToFileURL(path.join(world, "fixtures", name)).href)
-      .join("\r\n"),
-  );
+  await dropFilePaths(names.map((name) => path.join(world, "fixtures", name)));
 };
 
 const listedParts = () =>
