@@ -93,26 +93,11 @@ export async function healthCheck(): Promise<{
   };
 }
 
-// Legacy health check function for backward compatibility
-export async function legacyHealthCheck(): Promise<void> {
-  try {
-    await redis.ping();
-  } catch (error) {
-    logger.withError(error as Error).error("Health check failed");
-    throw new RuntimeError("Redis ping failed", error);
+if (import.meta.main) {
+  const { status, checks } = await healthCheck();
+  if (status === "unhealthy") {
+    logger.withMetadata({ checks }).error("Health check failed");
   }
-
-  try {
-    const testKey = "health-check";
-    const testValue = Date.now().toString();
-    await redis.set(testKey, testValue, "EX", 10);
-    const retrievedValue = await redis.get(testKey);
-    if (retrievedValue !== testValue) {
-      throw new RuntimeError("Redis read/write test failed");
-    }
-    await redis.del(testKey);
-  } catch (error) {
-    logger.withError(error as Error).error("Health check failed");
-    throw new RuntimeError("Redis read/write test failed", error);
-  }
+  // The Redis connection keeps the event loop alive, so exit explicitly.
+  process.exit(status === "healthy" ? 0 : 1);
 }
