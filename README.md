@@ -100,7 +100,7 @@ sudo apt update && sudo apt install deadlock-mod-manager
 # Arch Linux (AUR)
 yay -S deadlock-modmanager
 
-# nixpkgs
+# nixpkgs - for the CEF (Chromium) build, use deadlock-mod-manager-cef
 nix-shell -p deadlock-mod-manager --run deadlock-mod-manager
 
 # Nix nightly (prebuilt via the deadlock-mod-manager Cachix cache)

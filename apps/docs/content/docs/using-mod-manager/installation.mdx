@@ -49,7 +49,7 @@ The easiest way to install Deadlock Mod Manager is to download the latest releas
 
 ### CEF (Chromium) Builds
 
-Releases include builds using Chromium Embedded Framework (CEF) instead of the system webview. These assets have a `-cef` suffix: `-cef-setup.exe`, `-cef.deb`, and `deadlock-mod-manager-cef.flatpak`. On Ubuntu/Debian, the CEF build is also available from the [APT repository](#ubuntudebian-apt).
+Releases include builds using Chromium Embedded Framework (CEF) instead of the system webview. These assets have a `-cef` suffix: `-cef-setup.exe`, `-cef.deb`, and `deadlock-mod-manager-cef.flatpak`. On Ubuntu/Debian, the CEF build is also available from the [APT repository](#ubuntudebian-apt), and on NixOS as the [`deadlock-mod-manager-cef`](#nixpkgs) package.
 
 **On Linux, the CEF build is the default.** The download buttons on [deadlockmods.app](https://deadlockmods.app/download) give you the CEF Flatpak, because the system webview (WebKitGTK) is slow or renders blank on many setups. The system webview builds (`deadlock-mod-manager.flatpak`, `.deb`, `.rpm`) are still available as alternatives. There is no CEF `.rpm`; use the CEF Flatpak on Fedora and openSUSE.
 
@@ -148,16 +148,21 @@ yay -S deadlock-modmanager-git
 
 #### nixpkgs
 
+nixpkgs has two packages: `deadlock-mod-manager` uses the system webview (WebKitGTK), and `deadlock-mod-manager-cef` bundles Chromium. If the regular package is slow or renders blank, use the CEF one. New versions land in `nixos-unstable` first. Stable NixOS releases don't receive new packages, so `deadlock-mod-manager-cef` is missing from NixOS 26.05 and older; take it from `nixos-unstable` instead.
+
 ```bash
 # Run in your shell
 nix-shell -p deadlock-mod-manager --run deadlock-mod-manager
 
 # Experimental nix flakes version
 nix shell nixpkgs#deadlock-mod-manager -c deadlock-mod-manager
+
+# CEF (Chromium) build from nixos-unstable
+nix shell github:NixOS/nixpkgs/nixos-unstable#deadlock-mod-manager-cef -c deadlock-mod-manager
 ```
 
 ```nix
-# configuration.nix
+# configuration.nix (use deadlock-mod-manager-cef for the CEF build)
 environment.systemPackages = with pkgs; [
   deadlock-mod-manager
 ];
