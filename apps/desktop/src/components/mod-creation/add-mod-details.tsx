@@ -129,7 +129,9 @@ export const AddModDetails = ({
       ? []
       : sourceFiles(source).flatMap((file) => getSourceFilePath(file) ?? []);
   const separate = source.kind === "vpks" && mode === "separate";
-  const { data: contents } = useQuery(localModContentsOptions(partPaths));
+  const { data: contents, isFetching: inspecting } = useQuery(
+    localModContentsOptions(partPaths),
+  );
   // Only a part that reskins a hero has a model to render; reading the others
   // would copy each one, however large, for nothing.
   const coverPaths = separate
@@ -150,12 +152,14 @@ export const AddModDetails = ({
   const categoryIsFallback =
     separate && contents?.some((part) => suggestCategory([part]) !== null);
 
-  // Until the user picks one, the category follows the files.
+  // Until the user picks one, the category follows the files. While a changed
+  // set of parts is read again, there are no contents yet; that is not a
+  // detection that found nothing.
   useEffect(() => {
-    if (!categoryTouched) {
+    if (!categoryTouched && !inspecting) {
       form.setValue("category", suggestedCategory ?? ModCategory.SKINS);
     }
-  }, [suggestedCategory, categoryTouched, form]);
+  }, [suggestedCategory, categoryTouched, inspecting, form]);
 
   const detectedMap = contents && !separate ? detectedMapName(contents) : null;
   const mapNameDetected =
@@ -164,8 +168,10 @@ export const AddModDetails = ({
   const askMapName = category === ModCategory.MAPS && !separate;
 
   useEffect(() => {
-    if (!mapNameTouched) form.setValue("mapName", detectedMap ?? "");
-  }, [detectedMap, mapNameTouched, form]);
+    if (!mapNameTouched && !inspecting) {
+      form.setValue("mapName", detectedMap ?? "");
+    }
+  }, [detectedMap, mapNameTouched, inspecting, form]);
 
   const replaceParts = (files: File[]) => {
     const next = detectSource(files);
@@ -397,7 +403,8 @@ export const AddModDetails = ({
           {t("addMods.cancel")}
         </Button>
         <Button
-          disabled={importMods.isPending}
+          // The import reads each part's category and map name from the contents.
+          disabled={importMods.isPending || inspecting}
           icon={<PlusIcon className='h-4 w-4' />}
           isLoading={importMods.isPending}
           onClick={handleFinalize}
