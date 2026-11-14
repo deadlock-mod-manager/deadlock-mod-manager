@@ -122,11 +122,11 @@ export const seasonWindows = (
       const until = Math.max(
         ...season.intervals.map((interval) => interval.end_timestamp),
       );
-      // The picker keys options by id and shows both bounds as dates, so a
-      // row without an id or a valid span can't be offered.
+      // The picker keys options by id and shows the first and last second as
+      // dates, so a row without an id or such a span can't be offered.
       if (
         !season.class_name ||
-        until <= since ||
+        until - 1 < since ||
         since > nowUnix ||
         !isDate(since) ||
         !isDate(until)

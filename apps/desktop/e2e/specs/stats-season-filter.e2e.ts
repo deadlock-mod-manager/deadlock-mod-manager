@@ -8,19 +8,6 @@ import { openStats, widget } from "../support/stats-dashboard-actions";
 const RANGE = '[data-testid="stats-range"]';
 const SEASON = '[data-testid="stats-season"]';
 
-const pad = (value: number) => String(value).padStart(2, "0");
-
-/** A local calendar date `daysAgo` days back, as a date input holds it. */
-const localDate = (daysAgo: number) => {
-  const today = new Date();
-  const day = new Date(
-    today.getFullYear(),
-    today.getMonth(),
-    today.getDate() - daysAgo,
-  );
-  return `${day.getFullYear()}-${pad(day.getMonth() + 1)}-${pad(day.getDate())}`;
-};
-
 // The WebView driver can't type into a date input reliably; set it the way a
 // picked date arrives, through the input event React listens to.
 const setDate = (selector: string, date: string) =>
@@ -69,14 +56,14 @@ describe("stats season and date range", () => {
     });
 
     await step("a start date replaces the season", async () => {
-      await setDate('[data-testid="stats-since"]', localDate(5));
+      await setDate('[data-testid="stats-since"]', "2026-10-26");
       await expect($(RANGE)).toHaveText(expect.stringContaining("Since"));
       await expect($(SEASON)).toHaveText("Choose a season");
       await expectRecord("3W 2L");
     });
 
     await step("an end date drops the matches after it", async () => {
-      await setDate('[data-testid="stats-until"]', localDate(2));
+      await setDate('[data-testid="stats-until"]', "2026-10-29");
       await expect($(RANGE)).toHaveText(expect.stringContaining("–"));
       await expectRecord("2W 2L");
     });

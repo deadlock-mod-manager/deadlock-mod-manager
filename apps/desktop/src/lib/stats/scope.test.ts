@@ -228,6 +228,7 @@ describe("Stats match scope", () => {
         season("", [[100, 200]]),
         season("reversed", [[300, 100]]),
         season("instant", [[100, 100]]),
+        season("subsecond", [[100, 100.5]]),
         season("unrepresentable", [[-9_000_000_000_000, 200]]),
       ],
       500,
