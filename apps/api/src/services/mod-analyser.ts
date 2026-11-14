@@ -230,22 +230,13 @@ export class ModAnalyser {
       hashes.contentSignature,
     );
     if (contentSigMatches.length > 0) {
-      // If multiple matches, prefer the one with the closest file count (if available)
-      let bestContentMatch = contentSigMatches[0];
-      let alternativeMatches = contentSigMatches.slice(1);
-
-      if (hashes.fileSize !== undefined) {
-        bestContentMatch = contentSigMatches.reduce((best, current) => {
-          const bestDiff = Math.abs(best.fileCount - (hashes.fileSize || 0));
-          const currentDiff = Math.abs(
-            current.fileCount - (hashes.fileSize || 0),
-          );
-          return currentDiff < bestDiff ? current : best;
-        });
-        alternativeMatches = contentSigMatches.filter(
-          (m) => m.id !== bestContentMatch.id,
-        );
-      }
+      const bestContentMatch = this.closestBySize(
+        contentSigMatches,
+        hashes.fileSize,
+      );
+      const alternativeMatches = contentSigMatches.filter(
+        (m) => m.id !== bestContentMatch.id,
+      );
 
       results.push({
         matchedVpk: bestContentMatch,
@@ -272,12 +263,10 @@ export class ModAnalyser {
         );
 
         if (uniqueFastMatches.length > 0) {
-          // If multiple matches, use scoring system (simplified since we don't have full fingerprint)
-          const bestFastMatch = uniqueFastMatches.reduce((best, current) => {
-            const bestScore = this.calculateHashMatchScore(best, hashes);
-            const currentScore = this.calculateHashMatchScore(current, hashes);
-            return currentScore > bestScore ? current : best;
-          });
+          const bestFastMatch = this.closestBySize(
+            uniqueFastMatches,
+            hashes.fileSize,
+          );
 
           results.push({
             matchedVpk: bestFastMatch,
@@ -310,15 +299,9 @@ export class ModAnalyser {
         );
 
         if (uniqueMerkleMatches.length > 0) {
-          const bestMerkleMatch = uniqueMerkleMatches.reduce(
-            (best, current) => {
-              const bestScore = this.calculateHashMatchScore(best, hashes);
-              const currentScore = this.calculateHashMatchScore(
-                current,
-                hashes,
-              );
-              return currentScore > bestScore ? current : best;
-            },
+          const bestMerkleMatch = this.closestBySize(
+            uniqueMerkleMatches,
+            hashes.fileSize,
           );
 
           results.push({
@@ -342,33 +325,19 @@ export class ModAnalyser {
     return results;
   }
 
-  private calculateHashMatchScore(
-    vpkEntry: CachedVPK,
-    hashes: {
-      sha256?: string;
-      contentSignature: string;
-      fastHash?: string;
-      fileSize?: number;
-      merkleRoot?: string;
-    },
-  ): number {
-    let score = 0;
-
-    // File size comparison (if available)
-    if (hashes.fileSize !== undefined) {
-      const fileCountDiff = Math.abs(vpkEntry.fileCount - hashes.fileSize);
-      if (fileCountDiff === 0) {
-        score += 40;
-      } else if (fileCountDiff <= 5) {
-        score += 30;
-      } else if (fileCountDiff <= 20) {
-        score += 15;
-      }
-    }
-
-    // We can't compare VPK version, multiparts, or inline data from hashes alone
-    // So this scoring is simplified compared to the full fingerprint version
-
-    return score;
+  /**
+   * Hash-only lookups carry the VPK byte size but not its file count, so
+   * candidates are ranked by distance to the cached `sizeBytes`. Without a size
+   * the first candidate wins.
+   */
+  private closestBySize(
+    candidates: CachedVPK[],
+    fileSize: number | undefined,
+  ): CachedVPK {
+    const distance = (vpk: CachedVPK) =>
+      fileSize === undefined ? 0 : Math.abs(vpk.sizeBytes - fileSize);
+    return candidates.reduce((best, current) =>
+      distance(current) < distance(best) ? current : best,
+    );
   }
 }
