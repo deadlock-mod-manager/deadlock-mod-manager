@@ -1347,15 +1347,15 @@ export const scenarios = {
     spec: "stats-custom-queries",
     phases: ["queries"],
   },
-  "stats-broken-endpoints": {
-    ...stats,
-    spec: "stats-broken-endpoints",
-    phases: ["broken"],
-  },
   "stats-season-filter": {
     ...stats,
     spec: "stats-season-filter",
     phases: ["season-filter"],
+  },
+  "stats-broken-endpoints": {
+    ...stats,
+    spec: "stats-broken-endpoints",
+    phases: ["broken"],
   },
   "perf-video-apply-restore": performance,
   "perf-video-changed-in-game": performance,
