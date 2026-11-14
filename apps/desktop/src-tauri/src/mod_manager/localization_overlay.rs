@@ -482,6 +482,66 @@ impl RepairPlanProgress {
   }
 }
 
+/// One mod opened against a shared game index for a standalone check, with
+/// the game tables its analysis matches against already learned. Observing
+/// every mod of a batch first leaves the history unchanged while the mods are
+/// analysed, so they can be analysed at the same time.
+pub(crate) struct StandaloneMod {
+  mods: [LocalizationModInput; 1],
+  enabled_mod_ids: BTreeSet<String>,
+  resources: resources::ResourceSnapshot,
+}
+
+impl StandaloneMod {
+  /// `recorded` lists game tables already learned into `observed` during
+  /// this pass.
+  pub(crate) fn observe(
+    game: &Arc<GameIndex>,
+    input: LocalizationModInput,
+    observed: &mut VdataHistoryIndex,
+    version: Option<u32>,
+    recorded: &mut BTreeSet<String>,
+  ) -> Result<(Self, bool), Error> {
+    let enabled_mod_ids = BTreeSet::from([input.mod_id.clone()]);
+    let mods = [input];
+    let resources = resources::ResourceSnapshot::with_game(Arc::clone(game), &mods)?;
+    let changed = LocalizationOverlayPlan::observe(
+      &resources,
+      &mods,
+      observed,
+      version,
+      &enabled_mod_ids,
+      recorded,
+    )?;
+    Ok((
+      Self {
+        mods,
+        enabled_mod_ids,
+        resources,
+      },
+      changed,
+    ))
+  }
+
+  pub(crate) fn mod_id(&self) -> &str {
+    &self.mods[0].mod_id
+  }
+
+  pub(crate) fn analyse(
+    &self,
+    observed: &VdataHistoryIndex,
+  ) -> Result<LocalizationOverlayPlan, Error> {
+    LocalizationOverlayPlan::build_snapshot(
+      &self.mods,
+      HistoricalLocalizationIndex::embedded(),
+      VdataHistoryIndex::embedded().with_observed(observed),
+      &self.resources,
+      &self.enabled_mod_ids,
+      &|_| {},
+    )
+  }
+}
+
 impl LocalizationOverlayPlan {
   #[cfg(test)]
   pub fn build(
@@ -550,6 +610,7 @@ impl LocalizationOverlayPlan {
 
   /// Analyses one mod on its own against a shared game index. `recorded`
   /// lists game tables already learned into `observed` during this pass.
+  #[cfg(test)]
   pub(crate) fn build_standalone(
     game: &Arc<GameIndex>,
     input: LocalizationModInput,
@@ -557,18 +618,8 @@ impl LocalizationOverlayPlan {
     version: Option<u32>,
     recorded: &mut BTreeSet<String>,
   ) -> Result<(Self, bool), Error> {
-    let enabled_mod_ids = BTreeSet::from([input.mod_id.clone()]);
-    let mods = [input];
-    let resources = resources::ResourceSnapshot::with_game(Arc::clone(game), &mods)?;
-    Self::build_observing(
-      &resources,
-      &mods,
-      observed,
-      version,
-      &enabled_mod_ids,
-      recorded,
-      &|_| {},
-    )
+    let (standalone, changed) = StandaloneMod::observe(game, input, observed, version, recorded)?;
+    Ok((standalone.analyse(observed)?, changed))
   }
 
   fn build_observing(
@@ -580,42 +631,14 @@ impl LocalizationOverlayPlan {
     recorded: &mut BTreeSet<String>,
     progress: &dyn Fn(RepairPlanProgress),
   ) -> Result<(Self, bool), Error> {
-    let scope = repair_scope::RepairScope::new(mods, enabled_mod_ids, resources);
-    let mut changed = false;
-    if let Some(version) = version {
-      let mut paths: BTreeSet<_> = resources
-        .mod_paths()
-        .filter(|path| {
-          is_mergeable_compiled_data_path(path)
-            && !scope.protects(path)
-            && resources
-              .provider(path)
-              .and_then(|provider| provider.mod_id)
-              .is_some_and(|id| scope.includes_mod(&id))
-        })
-        .cloned()
-        .collect();
-      if resources.mod_paths().any(|path| {
-        model_camera::is_path(path)
-          && resources
-            .provider(path)
-            .and_then(|provider| provider.mod_id)
-            .is_some_and(|id| scope.includes_mod(&id))
-      }) {
-        paths.insert(HEROES_VDATA_PATH.into());
-      }
-      if paths.contains(HEROES_VDATA_PATH) {
-        paths.insert(vdata_compatibility::ABILITIES_PATH.into());
-      }
-      for path in paths {
-        if !recorded.insert(path.clone()) {
-          continue;
-        }
-        if let Some(bytes) = resources.game_bytes(&path)? {
-          changed |= observed_data::record(observed, &path, version, &bytes)?;
-        }
-      }
-    }
+    let changed = Self::observe(
+      resources,
+      mods,
+      observed,
+      version,
+      enabled_mod_ids,
+      recorded,
+    )?;
     let history = VdataHistoryIndex::embedded().with_observed(observed);
     let plan = Self::build_snapshot(
       mods,
@@ -626,6 +649,57 @@ impl LocalizationOverlayPlan {
       progress,
     )?;
     Ok((plan, changed))
+  }
+
+  /// Learns the installed game tables the included mods' analysis matches
+  /// against. `recorded` lists tables already learned during this pass; a
+  /// table is listed before it is read, so one that fails is not retried.
+  fn observe(
+    resources: &resources::ResourceSnapshot,
+    mods: &[LocalizationModInput],
+    observed: &mut VdataHistoryIndex,
+    version: Option<u32>,
+    enabled_mod_ids: &BTreeSet<String>,
+    recorded: &mut BTreeSet<String>,
+  ) -> Result<bool, Error> {
+    let Some(version) = version else {
+      return Ok(false);
+    };
+    let scope = repair_scope::RepairScope::new(mods, enabled_mod_ids, resources);
+    let mut paths: BTreeSet<_> = resources
+      .mod_paths()
+      .filter(|path| {
+        is_mergeable_compiled_data_path(path)
+          && !scope.protects(path)
+          && resources
+            .provider(path)
+            .and_then(|provider| provider.mod_id)
+            .is_some_and(|id| scope.includes_mod(&id))
+      })
+      .cloned()
+      .collect();
+    if resources.mod_paths().any(|path| {
+      model_camera::is_path(path)
+        && resources
+          .provider(path)
+          .and_then(|provider| provider.mod_id)
+          .is_some_and(|id| scope.includes_mod(&id))
+    }) {
+      paths.insert(HEROES_VDATA_PATH.into());
+    }
+    if paths.contains(HEROES_VDATA_PATH) {
+      paths.insert(vdata_compatibility::ABILITIES_PATH.into());
+    }
+    let mut changed = false;
+    for path in paths {
+      if !recorded.insert(path.clone()) {
+        continue;
+      }
+      if let Some(bytes) = resources.game_bytes(&path)? {
+        changed |= observed_data::record(observed, &path, version, &bytes)?;
+      }
+    }
+    Ok(changed)
   }
 
   #[cfg(test)]
