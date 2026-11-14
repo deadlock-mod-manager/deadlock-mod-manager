@@ -123,9 +123,12 @@ export const seasonWindows = (
         ...season.intervals.map((interval) => interval.end_timestamp),
       );
       // The picker keys options by id and shows the first and last second as
-      // dates, so a row without an id or such a span can't be offered.
+      // dates, and deadlock-api takes whole seconds, so a row without an id or
+      // such a span can't be offered.
       if (
         !season.class_name ||
+        !Number.isInteger(since) ||
+        !Number.isInteger(until) ||
         until - 1 < since ||
         since > nowUnix ||
         !isDate(since) ||
