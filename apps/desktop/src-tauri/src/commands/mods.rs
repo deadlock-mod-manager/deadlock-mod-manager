@@ -20,9 +20,7 @@ use super::downloads::{
 };
 use super::fonts::{apply_font_cleanup, prepare_font_cleanup};
 use super::state::MANAGER;
-use crate::download_manager::{DownloadFileDto, DownloadTask};
-
-const ALLOWED_DOWNLOAD_HOSTS: &[&str] = &["gamebanana.com", "deadlockmods.app"];
+use crate::download_manager::{DownloadFileDto, DownloadManager, DownloadTask};
 
 fn sanitize_archive_name(name: &str) -> Result<String, Error> {
   if name.is_empty() {
@@ -40,36 +38,6 @@ fn sanitize_archive_name(name: &str) -> Result<String, Error> {
     Some(f) if f == name => Ok(f.to_string()),
     _ => Err(Error::InvalidInput(format!("Invalid archive name: {name}"))),
   }
-}
-
-fn validate_download_url(url: &str) -> Result<(), Error> {
-  let parsed = reqwest::Url::parse(url)
-    .map_err(|e| Error::InvalidInput(format!("Invalid download URL: {e}")))?;
-
-  match parsed.scheme() {
-    "http" | "https" => {}
-    scheme => {
-      return Err(Error::InvalidInput(format!(
-        "Download URL scheme must be http or https, got: {scheme}"
-      )));
-    }
-  }
-
-  let host = parsed
-    .host_str()
-    .ok_or_else(|| Error::InvalidInput(format!("Download URL has no host: {url}")))?;
-
-  let is_allowed = ALLOWED_DOWNLOAD_HOSTS
-    .iter()
-    .any(|allowed| host == *allowed || host.ends_with(&format!(".{allowed}")));
-
-  if !is_allowed {
-    return Err(Error::InvalidInput(format!(
-      "Download URL host not in allowlist: {host}"
-    )));
-  }
-
-  Ok(())
 }
 
 #[tauri::command]
@@ -809,10 +777,6 @@ pub async fn fetch_missing_mod_variants(
   let mut skipped: Vec<String> = Vec::new();
   let mut missing: Vec<String> = Vec::new();
 
-  let client = reqwest::Client::builder()
-    .build()
-    .map_err(|e| Error::Network(format!("Failed to build HTTP client: {e}")))?;
-
   for archive in archives {
     let to_fetch: Vec<String> = archive
       .wanted_originals
@@ -864,37 +828,14 @@ pub async fn fetch_missing_mod_variants(
     );
     let temp_dir = tempfile::tempdir()?;
     let archive_path = temp_dir.path().join(&safe_archive_name);
-    if let Some(artifact) = &file.native_artifact {
-      crate::download_manager::downloader::download_native_artifact(
-        artifact,
-        &archive_path,
-        |_| {},
-        tokio_util::sync::CancellationToken::new(),
-        crate::download_manager::downloader::PauseHandle::new(),
-      )
-      .await?;
-    } else {
-      let response = client
-        .get(&file.url)
-        .send()
-        .await
-        .map_err(|e| Error::Network(format!("Failed to fetch {}: {e}", file.url)))?;
-
-      if !response.status().is_success() {
-        return Err(Error::DownloadFailed(format!(
-          "{} returned status {}",
-          file.url,
-          response.status()
-        )));
-      }
-
-      let bytes = response
-        .bytes()
-        .await
-        .map_err(|e| Error::DownloadFailed(format!("Failed reading body for {}: {e}", file.url)))?;
-
-      std::fs::write(&archive_path, &bytes)?;
-    }
+    DownloadManager::download_resolved_file(
+      &file,
+      &archive_path,
+      |_| {},
+      tokio_util::sync::CancellationToken::new(),
+      crate::download_manager::downloader::PauseHandle::new(),
+    )
+    .await?;
 
     let extract_dir = temp_dir.path().join("extracted");
 
@@ -1081,33 +1022,14 @@ pub async fn stage_download_archive(
       });
     }
   };
-  let download = if let Some(artifact) = &file.native_artifact {
-    crate::download_manager::downloader::download_native_artifact(
-      artifact,
-      &archive_path,
-      report,
-      cancel,
-      crate::download_manager::downloader::PauseHandle::new(),
-    )
-    .await
-  } else {
-    crate::download_manager::downloader::download_file_resumable(
-      &file.url,
-      &archive_path,
-      file.size,
-      report,
-      cancel,
-      crate::download_manager::downloader::PauseHandle::new(),
-      Some(if file.size == 0 {
-        2 * 1024 * 1024 * 1024
-      } else {
-        file.size.min(2 * 1024 * 1024 * 1024)
-      }),
-      file.md5_checksum.as_deref(),
-      true,
-    )
-    .await
-  };
+  let download = DownloadManager::download_resolved_file(
+    &file,
+    &archive_path,
+    report,
+    cancel,
+    crate::download_manager::downloader::PauseHandle::new(),
+  )
+  .await;
   {
     let mut tokens = STAGE_CANCEL.lock().unwrap();
     if tokens.get(&mod_id).is_some_and(|(owner, _)| *owner == run) {
@@ -1245,8 +1167,12 @@ pub struct SwitchDownloadVariantResult {
   pub file_tree: ModFileTree,
 }
 
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub async fn switch_mod_download_variant(
+  catalog_state: State<'_, super::gamebanana_catalog::GameBananaCatalogState>,
+  native_sources: State<'_, crate::providers::native_sources::NativeSourceManager>,
+  policy: State<'_, super::policy::PolicyState>,
   mod_id: String,
   profile_folder: Option<String>,
   archive_url: String,
@@ -1272,7 +1198,6 @@ pub async fn switch_mod_download_variant(
     return Err(Error::GamePathNotSet);
   }
 
-  validate_download_url(&archive_url)?;
   let safe_archive_name = sanitize_archive_name(&archive_name)?;
 
   log::info!(
@@ -1281,32 +1206,36 @@ pub async fn switch_mod_download_variant(
     archive_url
   );
 
-  let client = reqwest::Client::builder()
-    .build()
-    .map_err(|e| Error::Network(format!("Failed to build HTTP client: {e}")))?;
-
-  let response = client
-    .get(&archive_url)
-    .send()
-    .await
-    .map_err(|e| Error::Network(format!("Failed to fetch {}: {e}", archive_url)))?;
-
-  if !response.status().is_success() {
-    return Err(Error::DownloadFailed(format!(
-      "{} returned status {}",
-      archive_url,
-      response.status()
-    )));
-  }
-
-  let bytes = response
-    .bytes()
-    .await
-    .map_err(|e| Error::DownloadFailed(format!("Failed reading body for {}: {e}", archive_url)))?;
-
+  let file = resolve_download_files(
+    &native_sources,
+    &catalog_state,
+    &policy,
+    &mod_id,
+    &[DownloadFileDto {
+      fallback_urls: Vec::new(),
+      url: archive_url,
+      name: safe_archive_name.clone(),
+      size: 0,
+      md5_checksum: None,
+      native_artifact: None,
+      late_sources: None,
+    }],
+    FileserverPreference::Default,
+  )
+  .await?
+  .into_iter()
+  .next()
+  .ok_or(Error::ModFileNotFound)?;
   let temp_dir = tempfile::tempdir()?;
   let archive_path = temp_dir.path().join(&safe_archive_name);
-  std::fs::write(&archive_path, &bytes)?;
+  DownloadManager::download_resolved_file(
+    &file,
+    &archive_path,
+    |_| {},
+    tokio_util::sync::CancellationToken::new(),
+    crate::download_manager::downloader::PauseHandle::new(),
+  )
+  .await?;
 
   let extract_dir = temp_dir.path().join("extracted");
 

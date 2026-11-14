@@ -513,13 +513,7 @@ impl DownloadManager {
           );
         });
       }
-      let urls = std::iter::once(file.url.clone())
-        .chain(file.fallback_urls.iter().cloned())
-        .collect::<Vec<_>>();
-      let file_size = file.size;
-      let md5_checksum = file.md5_checksum.clone();
-      let native_artifact = file.native_artifact.clone();
-      let late_sources = file.late_sources.clone();
+      let file = file.clone();
       let mod_id_clone = mod_id.clone();
       let attempt_id = task.attempt_id.clone();
       let app_handle_clone = app_handle.clone();
@@ -528,10 +522,9 @@ impl DownloadManager {
       let aggregator_shared = Arc::clone(&aggregator);
 
       let handle = tokio::spawn(async move {
-        let result = Self::download_file(
-          &urls,
+        let result = Self::download_resolved_file(
+          &file,
           &target_path,
-          file_size,
           {
             let app_handle = app_handle_clone.clone();
             let mod_id = mod_id_clone.clone();
@@ -560,14 +553,6 @@ impl DownloadManager {
           },
           cancel_token_clone,
           pause_clone,
-          Some(if file_size == 0 {
-            2 * 1024 * 1024 * 1024
-          } else {
-            file_size.min(2 * 1024 * 1024 * 1024)
-          }),
-          md5_checksum.as_deref(),
-          native_artifact.as_ref(),
-          late_sources.as_ref(),
         )
         .await;
 
@@ -741,6 +726,39 @@ impl DownloadManager {
         && max_bytes.is_none_or(|limit| file_size <= limit)
     })?;
     Some((md5, budget.opt_in()))
+  }
+
+  /// Execute provider-resolved sources with the same limits and transport as queued downloads.
+  pub(crate) async fn download_resolved_file<F>(
+    file: &DownloadFileDto,
+    target_path: &std::path::Path,
+    on_progress: F,
+    cancel_token: CancellationToken,
+    pause: PauseHandle,
+  ) -> Result<(), Error>
+  where
+    F: Fn(FileProgress) + Send + Sync + 'static,
+  {
+    let urls = std::iter::once(file.url.clone())
+      .chain(file.fallback_urls.iter().cloned())
+      .collect::<Vec<_>>();
+    Self::download_file(
+      &urls,
+      target_path,
+      file.size,
+      on_progress,
+      cancel_token,
+      pause,
+      Some(if file.size == 0 {
+        2 * 1024 * 1024 * 1024
+      } else {
+        file.size.min(2 * 1024 * 1024 * 1024)
+      }),
+      file.md5_checksum.as_deref(),
+      file.native_artifact.as_ref(),
+      file.late_sources.as_ref(),
+    )
+    .await
   }
 
   /// In segments when the setting is on and the file qualifies, in one stream
