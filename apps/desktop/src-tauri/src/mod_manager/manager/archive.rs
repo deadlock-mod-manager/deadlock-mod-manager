@@ -13,6 +13,16 @@ impl ModManager {
   ) -> Result<(), Error> {
     let destination_path = self.get_addons_path(profile_folder)?;
     let mods_path = self.get_mods_store_path()?;
+    self.copy_selected_vpks_from(&mods_path, &destination_path, mod_id, file_tree)
+  }
+
+  fn copy_selected_vpks_from(
+    &self,
+    mods_path: &std::path::Path,
+    destination_path: &std::path::Path,
+    mod_id: &str,
+    file_tree: &crate::mod_manager::file_tree::ModFileTree,
+  ) -> Result<(), Error> {
     let mod_dir = mods_path.join(mod_id);
 
     let extracted_dir = mod_dir.join("extracted");
@@ -23,16 +33,29 @@ impl ModManager {
       let extractor = ArchiveExtractor::new();
       let mut archive_path: Option<PathBuf> = None;
 
-      for entry in std::fs::read_dir(&mod_dir)? {
-        let entry = entry?;
-        let path = entry.path();
-        if extractor.is_supported_archive(&path) {
-          archive_path = Some(path);
-          break;
+      if mod_dir.exists() {
+        for entry in std::fs::read_dir(&mod_dir)? {
+          let entry = entry?;
+          let path = entry.path();
+          if extractor.is_supported_archive(&path) {
+            archive_path = Some(path);
+            break;
+          }
         }
       }
 
-      let archive_path = archive_path.ok_or(Error::ModFileNotFound)?;
+      let Some(archive_path) = archive_path else {
+        // A first install deletes the archive after placing the selected VPKs
+        // under this mod's prefix. Re-enabling it finds them already there.
+        if VpkManager::new()
+          .find_prefixed_vpks(destination_path, mod_id)?
+          .is_empty()
+        {
+          return Err(Error::ModFileNotFound);
+        }
+        log::info!("Selected VPKs for mod {mod_id} are already placed; nothing to copy");
+        return Ok(());
+      };
 
       log::info!("Extracting archive: {archive_path:?}");
       extractor.extract_archive(&archive_path, &extracted_dir)?;
@@ -41,17 +64,17 @@ impl ModManager {
     }
 
     if !destination_path.exists() {
-      std::fs::create_dir_all(&destination_path)?;
+      std::fs::create_dir_all(destination_path)?;
     }
 
-    let vpk_manager = crate::mod_manager::vpk_manager::VpkManager::new();
+    let vpk_manager = VpkManager::new();
     let prefixed_vpks = vpk_manager.place_selected_vpks_with_prefix(
       &extracted_dir,
-      &destination_path,
+      destination_path,
       mod_id,
       file_tree,
     )?;
-    self.record_prefixed_import(&destination_path, mod_id, prefixed_vpks)?;
+    self.record_prefixed_import(destination_path, mod_id, prefixed_vpks)?;
 
     log::info!("Removing extracted directory: {extracted_dir:?}");
     std::fs::remove_dir_all(&extracted_dir)?;
@@ -155,5 +178,30 @@ mod tests {
       assert!(!game.path().join("game/citadel/outside").exists());
       assert!(!game.path().join("game/citadel/addons").exists());
     }
+  }
+
+  #[test]
+  fn reenabling_after_the_archive_was_consumed_reuses_the_placed_vpks() {
+    let game = super::super::tests::game_dir();
+    let manager = super::super::tests::test_manager(game.path());
+    let mods = tempfile::tempdir().unwrap();
+    std::fs::create_dir(mods.path().join("42")).unwrap();
+    let addons = game.path().join("game/citadel/addons");
+    std::fs::create_dir_all(&addons).unwrap();
+    let tree = ModFileTree::from_options(&[], &std::collections::HashSet::new());
+
+    assert!(matches!(
+      manager.copy_selected_vpks_from(mods.path(), &addons, "42", &tree),
+      Err(Error::ModFileNotFound)
+    ));
+
+    std::fs::write(addons.join("42_pak01_dir.vpk"), b"placed").unwrap();
+    manager
+      .copy_selected_vpks_from(mods.path(), &addons, "42", &tree)
+      .unwrap();
+    assert_eq!(
+      std::fs::read(addons.join("42_pak01_dir.vpk")).unwrap(),
+      b"placed"
+    );
   }
 }
