@@ -40,6 +40,7 @@ import {
 } from "@/components/mod-creation/mod-parts-list";
 import { pickModFiles } from "@/hooks/use-file-drop";
 import { useModProcessor } from "@/hooks/use-mod-processor";
+import { IMPORT_MODS_KEY } from "@/lib/add-mod-dialog";
 import {
   getModCategoryDisplayName,
   MOD_CATEGORY_ORDER,
@@ -149,9 +150,10 @@ export const AddModDetails = ({
   const categoryIsFallback =
     separate && contents?.some((part) => suggestCategory([part]) !== null);
 
+  // Until the user picks one, the category follows the files.
   useEffect(() => {
-    if (suggestedCategory && !categoryTouched) {
-      form.setValue("category", suggestedCategory);
+    if (!categoryTouched) {
+      form.setValue("category", suggestedCategory ?? ModCategory.SKINS);
     }
   }, [suggestedCategory, categoryTouched, form]);
 
@@ -162,20 +164,12 @@ export const AddModDetails = ({
   const askMapName = category === ModCategory.MAPS && !separate;
 
   useEffect(() => {
-    if (detectedMap && !mapNameTouched) form.setValue("mapName", detectedMap);
+    if (!mapNameTouched) form.setValue("mapName", detectedMap ?? "");
   }, [detectedMap, mapNameTouched, form]);
 
   const replaceParts = (files: File[]) => {
     const next = detectSource(files);
     if (next) onSourceChange(next);
-  };
-
-  const handleModeChange = (next: ImportMode) => {
-    setMode(next);
-    // A category detected for all the files does not fit each separate mod.
-    if (next === "separate" && !categoryTouched) {
-      form.setValue("category", ModCategory.SKINS);
-    }
   };
 
   const handleAddParts = async () => {
@@ -207,6 +201,7 @@ export const AddModDetails = ({
   };
 
   const importMods = useMutation({
+    mutationKey: IMPORT_MODS_KEY,
     mutationFn: async (metadata: ModMetadata): Promise<string[]> => {
       if (separate) return importSeparately(metadata, sourceFiles(source));
       const modId = await processMod(
@@ -385,7 +380,7 @@ export const AddModDetails = ({
             files={sourceFiles(source)}
             mode={mode}
             onAdd={handleAddParts}
-            onModeChange={handleModeChange}
+            onModeChange={setMode}
             onRemove={(file) =>
               replaceParts(sourceFiles(source).filter((part) => part !== file))
             }

@@ -1,6 +1,8 @@
 import { create } from "zustand";
 import type { DetectedSource } from "@/lib/file-utils";
 
+export const IMPORT_MODS_KEY = ["import-local-mods"];
+
 type AddModDialogState = {
   open: boolean;
   // The files being added; none while the dialog asks for them.

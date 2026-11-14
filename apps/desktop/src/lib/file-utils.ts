@@ -209,6 +209,11 @@ export const detectSource = (files: File[]): DetectedSource | null => {
   return null;
 };
 
+/** One archive is one mod, so it can't be added alongside other files. */
+export const combinesArchives = (files: File[]): boolean =>
+  files.length > 1 &&
+  files.some((file) => ARCHIVE_PATTERN.test(getFileBaseName(file)));
+
 export const sourceFiles = (source: DetectedSource): File[] =>
   source.kind === "vpks" ? source.files : [source.file];
 

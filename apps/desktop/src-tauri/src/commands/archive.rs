@@ -220,7 +220,7 @@ pub async fn copy_local_mod_vpks(
 pub async fn get_local_mod_parts(mod_id: String) -> Result<ModFileTree, Error> {
   let files_dir = MANAGER
     .lock()
-    .unwrap()
+    .map_err(|_| Error::BackgroundTaskFailed("Mod manager lock poisoned".to_string()))?
     .get_mods_store_path()?
     .join(&mod_id)
     .join("files");
