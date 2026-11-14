@@ -7,9 +7,11 @@ import {
   analyticsScopeQuery,
   filterStatsMatches,
   seasonWindows,
+  statsRangeWindow,
   statsScopeQuery,
   statsSinceTimestamp,
   statsUntilTimestamp,
+  type StatsRange,
   type StatsScope,
 } from "./scope";
 
@@ -225,6 +227,8 @@ describe("Stats match scope", () => {
         season("undated", []),
         season("", [[100, 200]]),
         season("reversed", [[300, 100]]),
+        season("instant", [[100, 100]]),
+        season("unrepresentable", [[-9_000_000_000_000, 200]]),
       ],
       500,
     );
@@ -238,5 +242,15 @@ describe("Stats match scope", () => {
       },
       { id: "split", name: "split", since: 100, until: 400, isRunning: false },
     ]);
+  });
+
+  it("reads a picked season's window from the current list", () => {
+    const range: StatsRange = { kind: "season", id: "picked" };
+    const revised = seasonWindows([season("picked", [[200, 250]])], 500);
+    expect(statsRangeWindow(range, revised)).toEqual({
+      since: 200,
+      until: 250,
+    });
+    expect(statsRangeWindow(range, [])).toEqual({ since: 0, until: 0 });
   });
 });

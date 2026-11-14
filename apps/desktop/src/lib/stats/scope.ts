@@ -103,6 +103,8 @@ export const statsRangeWindow = (
     : { since: 0, until: 0 };
 };
 
+const isDate = (unix: number) => !Number.isNaN(new Date(unix * 1000).getTime());
+
 /**
  * The seasons that have started, newest first. A season can run in several
  * intervals, and covers the span from its first to its last.
@@ -120,19 +122,25 @@ export const seasonWindows = (
       const until = Math.max(
         ...season.intervals.map((interval) => interval.end_timestamp),
       );
-      // The picker keys options by id and formats each span, so a row
-      // without either can't be offered.
-      return !season.class_name || until <= since || since > nowUnix
-        ? []
-        : [
-            {
-              id: season.class_name,
-              name: season.name,
-              since,
-              until,
-              isRunning: until > nowUnix,
-            },
-          ];
+      // The picker keys options by id and shows both bounds as dates, so a
+      // row without an id or a valid span can't be offered.
+      if (
+        !season.class_name ||
+        until <= since ||
+        since > nowUnix ||
+        !isDate(since) ||
+        !isDate(until)
+      )
+        return [];
+      return [
+        {
+          id: season.class_name,
+          name: season.name,
+          since,
+          until,
+          isRunning: until > nowUnix,
+        },
+      ];
     })
     .sort((a, b) => b.since - a.since);
 
