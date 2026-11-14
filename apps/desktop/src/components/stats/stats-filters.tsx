@@ -52,12 +52,16 @@ export const StatsFilters = ({
     day: "numeric",
     year: "numeric",
   });
+  const season =
+    range.kind === "season"
+      ? seasons.find((entry) => entry.id === range.id)
+      : undefined;
   const sinceDate = range.kind === "dates" ? range.sinceDate : "";
   const untilDate = range.kind === "dates" ? range.untilDate : "";
   const isAllTime = range.kind === "dates" && !sinceDate && !untilDate;
 
   const rangeLabel = () => {
-    if (range.kind === "season") return range.season.name;
+    if (season) return season.name;
     if (sinceDate && untilDate)
       return dateFormat.formatRange(localDay(sinceDate), localDay(untilDate));
     if (sinceDate)
@@ -72,14 +76,14 @@ export const StatsFilters = ({
   };
 
   // A running season's scheduled end is often a placeholder, so it isn't shown.
-  const seasonDates = (season: SeasonWindow) =>
-    season.isRunning
+  const seasonDates = (option: SeasonWindow) =>
+    option.isRunning
       ? t("stats.scope.seasonRunning", {
-          date: dateFormat.format(new Date(season.since * 1000)),
+          date: dateFormat.format(new Date(option.since * 1000)),
         })
       : dateFormat.formatRange(
-          new Date(season.since * 1000),
-          new Date((season.until - 1) * 1000),
+          new Date(option.since * 1000),
+          new Date((option.until - 1) * 1000),
         );
 
   const changeDates = (next: { sinceDate: string; untilDate: string }) =>
@@ -130,25 +134,22 @@ export const StatsFilters = ({
                 {t("stats.scope.season")}
               </Label>
               <Select
-                onValueChange={(value) => {
-                  const season = seasons.find((entry) => entry.id === value);
-                  if (season) onRangeChange({ kind: "season", season });
-                }}
-                value={range.kind === "season" ? range.season.id : ""}>
+                onValueChange={(id) => onRangeChange({ kind: "season", id })}
+                value={season?.id ?? ""}>
                 <SelectTrigger
                   className='h-9 text-sm'
                   data-testid='stats-season'
                   id={`${id}-season`}>
                   <SelectValue placeholder={t("stats.scope.seasonPlaceholder")}>
-                    {range.kind === "season" ? range.season.name : undefined}
+                    {season?.name}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  {seasons.map((season) => (
-                    <SelectItem key={season.id} value={season.id}>
-                      <span>{season.name}</span>
+                  {seasons.map((option) => (
+                    <SelectItem key={option.id} value={option.id}>
+                      <span>{option.name}</span>
                       <span className='ml-2 text-muted-foreground text-xs'>
-                        {seasonDates(season)}
+                        {seasonDates(option)}
                       </span>
                     </SelectItem>
                   ))}

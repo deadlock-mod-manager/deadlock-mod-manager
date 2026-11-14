@@ -23,7 +23,7 @@ export interface SeasonWindow {
 /** What the time filter holds: a season, or a custom start and end date. */
 export type StatsRange =
   | { kind: "dates"; sinceDate: string; untilDate: string }
-  | { kind: "season"; season: SeasonWindow };
+  | { kind: "season"; id: string };
 
 export const ALL_TIME_RANGE: StatsRange = {
   kind: "dates",
@@ -78,24 +78,30 @@ export const statsSinceTimestamp = (date: string): number => {
 
 /** The local midnight after `date`, so the whole picked day is kept. */
 export const statsUntilTimestamp = (date: string): number => {
-  const start = statsSinceTimestamp(date);
-  if (start === 0) return 0;
-  const day = new Date(start * 1000);
+  const day = new Date(`${date}T00:00:00`);
+  if (!date || Number.isNaN(day.getTime())) return 0;
   return (
     new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1).getTime() /
     1000
   );
 };
 
+/** A season no longer in the list leaves the window open, as All time does. */
 export const statsRangeWindow = (
   range: StatsRange,
-): Pick<StatsScope, "since" | "until"> =>
-  range.kind === "season"
-    ? { since: range.season.since, until: range.season.until }
-    : {
-        since: statsSinceTimestamp(range.sinceDate),
-        until: statsUntilTimestamp(range.untilDate),
-      };
+  seasons: SeasonWindow[],
+): Pick<StatsScope, "since" | "until"> => {
+  if (range.kind === "dates") {
+    return {
+      since: statsSinceTimestamp(range.sinceDate),
+      until: statsUntilTimestamp(range.untilDate),
+    };
+  }
+  const season = seasons.find((entry) => entry.id === range.id);
+  return season
+    ? { since: season.since, until: season.until }
+    : { since: 0, until: 0 };
+};
 
 /**
  * The seasons that have started, newest first. A season can run in several
@@ -114,7 +120,9 @@ export const seasonWindows = (
       const until = Math.max(
         ...season.intervals.map((interval) => interval.end_timestamp),
       );
-      return since > nowUnix
+      // The picker keys options by id and formats each span, so a row
+      // without either can't be offered.
+      return !season.class_name || until <= since || since > nowUnix
         ? []
         : [
             {

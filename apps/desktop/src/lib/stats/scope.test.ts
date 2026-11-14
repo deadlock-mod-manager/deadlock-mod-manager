@@ -199,6 +199,9 @@ describe("Stats match scope", () => {
     const until = statsUntilTimestamp("2026-11-05");
     expect(until).toBe(new Date(2026, 10, 6).getTime() / 1000);
     expect(statsUntilTimestamp("")).toBe(0);
+    expect(statsUntilTimestamp("1970-01-01")).toBe(
+      new Date(1970, 0, 2).getTime() / 1000,
+    );
     const rows = [
       { match_id: 1, game_mode: 1, match_mode: 1, start_time: until - 1 },
       { match_id: 2, game_mode: 1, match_mode: 1, start_time: until },
@@ -220,6 +223,8 @@ describe("Stats match scope", () => {
         season("running", [[400, 900]]),
         season("upcoming", [[900, 1000]]),
         season("undated", []),
+        season("", [[100, 200]]),
+        season("reversed", [[300, 100]]),
       ],
       500,
     );

@@ -94,11 +94,15 @@ const Stats = () => {
   const hasAccount = accountId !== null;
   const [mode, setMode] = useState<StatsMatchMode>("all");
   const [range, setRange] = useState<StatsRange>(ALL_TIME_RANGE);
-  const scope = useMemo<StatsScope>(
-    () => ({ mode, ...statsRangeWindow(range) }),
-    [mode, range],
-  );
   const rankedSeasons = useRankedSeasons();
+  const seasons = useMemo(
+    () => seasonWindows(rankedSeasons.data?.data ?? [], Date.now() / 1000),
+    [rankedSeasons.data],
+  );
+  const scope = useMemo<StatsScope>(
+    () => ({ mode, ...statsRangeWindow(range, seasons) }),
+    [mode, range, seasons],
+  );
   const stats = usePlayerStats(accountId, scope);
   const { heroesById } = useHeroCatalog();
   const rankAssets = useRankAssets();
@@ -311,10 +315,7 @@ const Stats = () => {
                   onModeChange={setMode}
                   onRangeChange={setRange}
                   range={range}
-                  seasons={seasonWindows(
-                    rankedSeasons.data?.data ?? [],
-                    Date.now() / 1000,
-                  )}
+                  seasons={seasons}
                 />
                 {customize}
               </div>

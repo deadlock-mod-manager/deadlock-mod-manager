@@ -96,7 +96,7 @@ const rankedSeason = (id: number, start: number, end: number) => ({
   intervals: [{ interval: id, start_timestamp: start, end_timestamp: end }],
 });
 
-const SEASON_ONE_HOURS = 4 * 24;
+const SEASON_ONE = { start: 7, end: 3 };
 /** The season list in deadlock-api's order, oldest first. */
 const seasonRoutes = (): FixtureRoute[] => [
   {
@@ -104,7 +104,7 @@ const seasonRoutes = (): FixtureRoute[] => [
     path: "/v1/assets/ranked-seasons",
     status: 200,
     body: json([
-      rankedSeason(1, localNoon(7), localNoon(3)),
+      rankedSeason(1, localNoon(SEASON_ONE.start), localNoon(SEASON_ONE.end)),
       rankedSeason(2, localNoon(3), localNoon(-120)),
     ]),
   },
@@ -450,21 +450,21 @@ export const assertStatsDashboardNetwork = (
   }
   if (id === "stats-season-filter") {
     // Beta Season 1 reaches the server as its exact window, the end sent as
-    // the last second it covers. Noon to noon over four days is 95-97 hours
-    // across a daylight-saving change.
+    // the last second it covers (deadlock-api's end is inclusive).
+    const min = String(localNoon(SEASON_ONE.start));
+    const max = String(localNoon(SEASON_ONE.end) - 1);
     const seasonRequest = requests.some((request) => {
       const query = new URL(request.url, "http://fixture").searchParams;
-      const min = Number(query.get("min_unix_timestamp"));
-      const max = Number(query.get("max_unix_timestamp"));
-      const hours = (max + 1 - min) / HOUR_S;
       return (
         request.url.includes("/v1/analytics/hero-stats") &&
-        hours >= SEASON_ONE_HOURS - 1 &&
-        hours <= SEASON_ONE_HOURS + 1
+        query.get("min_unix_timestamp") === min &&
+        query.get("max_unix_timestamp") === max
       );
     });
     if (!seasonRequest)
-      throw new Error("No global benchmark asked for Beta Season 1's window");
+      throw new Error(
+        `No global benchmark asked for Beta Season 1's window ${min}-${max}`,
+      );
   }
   if (id === "stats-custom-queries") {
     const query = requests.find((request) =>
