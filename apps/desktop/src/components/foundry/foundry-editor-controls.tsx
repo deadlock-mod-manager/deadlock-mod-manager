@@ -48,8 +48,14 @@ const InspectorSection = ({
 /** Replace a file by dropping or picking one, and undo that again. */
 const FoundryReplaceControls = ({ entry }: { entry: FoundryEntry }) => {
   const { t } = useTranslation();
-  const { workspace, busy, editedPaths, replaceEntry, revertEntry } =
-    useFoundry();
+  const {
+    workspace,
+    workspacePreparationFailed,
+    busy,
+    editedPaths,
+    replaceEntry,
+    revertEntry,
+  } = useFoundry();
   const isEdited = editedPaths.has(entry.path);
   const disabled = !workspace || busy;
 
@@ -111,7 +117,9 @@ const FoundryReplaceControls = ({ entry }: { entry: FoundryEntry }) => {
       </button>
       {!workspace && (
         <p className='rounded-md border border-dashed px-3 py-2 text-muted-foreground text-xs'>
-          {t("foundry.editor.workspacePending")}
+          {workspacePreparationFailed
+            ? t("foundry.editor.workspaceFailed")
+            : t("foundry.editor.workspacePending")}
         </p>
       )}
     </>

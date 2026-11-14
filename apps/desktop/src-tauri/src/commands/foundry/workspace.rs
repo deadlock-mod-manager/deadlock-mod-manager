@@ -22,7 +22,7 @@ use crate::vpk_archive_cache::open_archive;
 use super::analyze::classify;
 use super::game::foundry_workspace_root;
 use super::remove_parts::{REMOVED_JOURNAL, removal_owner, removed_parts_list};
-use super::staging::staged_base_game_vpk;
+use super::staging::{stage_lock, staged_base_game_vpk};
 use super::types::{
   FoundryAppliedPaint, FoundryBuildResult, FoundryCategory, FoundryEntry, FoundryEntrySource,
   FoundryReplacementResult, FoundrySoundSettings, FoundryTexture, FoundryWorkspace,
@@ -843,6 +843,10 @@ pub(crate) fn prepare_workspace(
   let root = root_dir.join(&id);
   let files_dir = root.join("files");
   std::fs::create_dir_all(&root)?;
+  // Opening the same skin twice must not unpack into one workspace at once:
+  // the second call would delete the first one's staging tree mid-unpack.
+  let lock = stage_lock(&format!("workspace:{id}"));
+  let _guard = lock.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
 
   let vpk_copy = if entries.is_none() {
     let original_name = file_path
@@ -878,12 +882,19 @@ pub(crate) fn prepare_workspace(
     if sources.exists() {
       std::fs::remove_dir_all(sources)?;
     }
-    std::fs::create_dir_all(&files_dir)?;
+    // Unpack beside `files` and move it into place only once complete: a
+    // non-empty `files` is reused as-is, so a partial unpack must never get there.
+    let staging_dir = root.join("files.unpacking");
+    if staging_dir.exists() {
+      std::fs::remove_dir_all(&staging_dir)?;
+    }
+    std::fs::create_dir_all(&staging_dir)?;
     let count = match &entries {
-      Some(paths) => source2_model::vpk_extract::extract_entries(&file_path, &files_dir, paths),
-      None => source2_model::vpk_extract::extract_all(&file_path, &files_dir),
+      Some(paths) => source2_model::vpk_extract::extract_entries(&file_path, &staging_dir, paths),
+      None => source2_model::vpk_extract::extract_all(&file_path, &staging_dir),
     }
     .map_err(|e| Error::InvalidInput(format!("failed to unpack VPK: {e}")))?;
+    std::fs::rename(&staging_dir, &files_dir)?;
     (count, true)
   };
 

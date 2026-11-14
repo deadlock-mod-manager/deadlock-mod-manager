@@ -2863,6 +2863,7 @@
       "reverted": "Reverted {{file}}",
       "revertFailed": "Couldn't revert that file.",
       "workspacePending": "Preparing the editable copy of this skin…",
+      "workspaceFailed": "Couldn’t prepare this skin for editing. You can still preview it. Retry to edit and export.",
       "replaceSoundHint": "Pick an MP3, WAV, OGG or FLAC. It's rebuilt into this clip's container.",
       "primaryLabel": "Primary model",
       "primaryHint": "The preview opens this model and the export is named after it.",

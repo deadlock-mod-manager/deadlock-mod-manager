@@ -39,9 +39,9 @@ enum Companions {
   Reference,
 }
 
-/// Per-staging-id lock, so two skin selections racing on the same source VPK
-/// can't both be halfway through writing the same staged file.
-fn stage_lock(id: &str) -> Arc<Mutex<()>> {
+/// Per-id lock, so two skin selections racing on the same source VPK or
+/// workspace can't both be halfway through writing the same files.
+pub(crate) fn stage_lock(id: &str) -> Arc<Mutex<()>> {
   static LOCKS: OnceLock<Mutex<HashMap<String, Arc<Mutex<()>>>>> = OnceLock::new();
   let locks = LOCKS.get_or_init(|| Mutex::new(HashMap::new()));
   let mut guard = locks
