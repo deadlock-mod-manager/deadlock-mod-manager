@@ -4274,6 +4274,7 @@
     "title": "Launching Deadlock",
     "hide": "Hide (the launch keeps going)",
     "cancel": "Cancel launch",
+    "cancelFailed": "Couldn’t cancel the launch, so it’s still going. Try again.",
     "randomizerFailed": "The randomizer couldn’t put on every pick, so some randomized mods are off for this game.",
     "steps": {
       "randomizingSkins": "Randomizing hero skins",
