@@ -21,6 +21,10 @@ program
 // import { migrateCommand } from "./commands/migrate";
 
 // Placeholder commands - to be implemented
+const notImplemented = (command: string) => () => {
+  program.error(`dmodpkg ${command}: not implemented yet`);
+};
+
 program
   .command("init [project-name]")
   .description("Initialize a new mod project (not implemented)")
@@ -31,9 +35,7 @@ program
   .option("--author <name>", "Set author name")
   .option("--license <spdx>", "Set license (default: MIT)")
   .option("-i, --interactive", "Interactive project setup")
-  .action(() => {
-    console.log("init command - not yet implemented");
-  });
+  .action(notImplemented("init"));
 
 program
   .command("pack")
@@ -44,9 +46,7 @@ program
   .option("--chunk-size <size>", "Chunk size", "1MB")
   .option("--no-validate", "Skip validation checks")
   .option("--sign <key>", "Sign package with private key")
-  .action(() => {
-    console.log("pack command - not yet implemented");
-  });
+  .action(notImplemented("pack"));
 
 program
   .command("extract <package>")
@@ -55,27 +55,21 @@ program
   .option("--layers <names>", "Extract specific layers (comma-separated)")
   .option("--verify", "Verify checksums during extraction")
   .option("--no-decompress", "Extract without decompressing")
-  .action(() => {
-    console.log("extract command - not yet implemented");
-  });
+  .action(notImplemented("extract"));
 
 program
   .command("info <package>")
   .description("Display package information (not implemented)")
   .option("--json", "Output as JSON")
   .option("-v, --verbose", "Show detailed information")
-  .action(() => {
-    console.log("info command - not yet implemented");
-  });
+  .action(notImplemented("info"));
 
 program
   .command("validate [target]")
   .description("Validate a mod project or package (not implemented)")
   .option("--strict", "Enable strict validation mode")
   .option("--schema <version>", "Schema version to validate against")
-  .action(() => {
-    console.log("validate command - not yet implemented");
-  });
+  .action(notImplemented("validate"));
 
 program
   .command("migrate <archive>")
@@ -83,9 +77,7 @@ program
   .option("--output <path>", "Output project directory")
   .option("--auto-detect", "Attempt to auto-detect variants")
   .option("--template <name>", "Use migration template")
-  .action(() => {
-    console.log("migrate command - not yet implemented");
-  });
+  .action(notImplemented("migrate"));
 
 // Bundle commands
 const bundle = program
@@ -102,9 +94,7 @@ bundle
   )
   .option("--output <path>", "Output directory", "./build")
   .option("--no-validate", "Skip validation checks")
-  .action(() => {
-    console.log("bundle pack command - not yet implemented");
-  });
+  .action(notImplemented("bundle pack"));
 
 bundle
   .command("extract <bundle>")
@@ -114,25 +104,19 @@ bundle
   .option("--output <path>", "Output directory")
   .option("--packages <names>", "Extract specific packages (comma-separated)")
   .option("--all", "Extract all packages (default)")
-  .action(() => {
-    console.log("bundle extract command - not yet implemented");
-  });
+  .action(notImplemented("bundle extract"));
 
 bundle
   .command("info <bundle>")
   .description("Display bundle information (not implemented)")
   .option("--json", "Output as JSON")
   .option("-v, --verbose", "Show detailed information")
-  .action(() => {
-    console.log("bundle info command - not yet implemented");
-  });
+  .action(notImplemented("bundle info"));
 
 bundle
   .command("validate [target]")
   .description("Validate a bundle project or package (not implemented)")
   .option("--strict", "Enable strict validation mode")
-  .action(() => {
-    console.log("bundle validate command - not yet implemented");
-  });
+  .action(notImplemented("bundle validate"));
 
 program.parse();

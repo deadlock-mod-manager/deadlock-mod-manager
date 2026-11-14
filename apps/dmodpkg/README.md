@@ -1,6 +1,6 @@
 # dmodpkg CLI
 
-This CLI is a scaffold. Registered commands currently print placeholders and do not create, inspect, or extract packages.
+This CLI is a scaffold. Registered commands exit with an error and do not create, inspect, or extract packages.
 
 ## Installation
 
