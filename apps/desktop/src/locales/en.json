@@ -2780,7 +2780,8 @@
       "alt": "Skin preview",
       "startSpin": "Auto-rotate",
       "stopSpin": "Stop rotation",
-      "painting": "Painting…"
+      "painting": "Painting…",
+      "textureRefreshFailed": "Some edited textures couldn’t be refreshed, so the preview may show earlier edits."
     },
     "inspector": {
       "title": "Properties",
