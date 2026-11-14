@@ -6,7 +6,7 @@ import { HeroAvatar } from "@/components/stats/hero-avatar";
 import { MatchDetailView } from "@/components/stats/match-detail-view";
 import type { DeadlockHero } from "@/lib/deadlock-api";
 import type { MatchHistoryEntry } from "@/lib/stats/api";
-import { isWin, summarize } from "@/lib/stats/derive";
+import { matchStatus, summarize } from "@/lib/stats/derive";
 import {
   formatCompact,
   formatDateTime,
@@ -118,7 +118,10 @@ export const PlayerMatchExplorer = ({
           <p className='border-b px-3 py-2 text-muted-foreground text-[11px] tabular-nums'>
             {t("stats.player.heroRunSummary", {
               count: summary.matches,
-              winrate: formatPercent(summary.winrate, 0),
+              winrate:
+                summary.wins + summary.losses > 0
+                  ? formatPercent(summary.winrate, 0)
+                  : t("stats.recent.notScoredShort"),
               kda: formatDecimal(summary.kda),
             })}
           </p>
@@ -134,7 +137,7 @@ export const PlayerMatchExplorer = ({
           <div className='p-1.5'>
             {recent.map((match) => {
               const matchHero = heroesById.get(match.hero_id);
-              const matchWon = isWin(match);
+              const outcome = matchStatus(match);
               const isSelected = match.match_id === selected.match_id;
               return (
                 <button
@@ -149,9 +152,11 @@ export const PlayerMatchExplorer = ({
                   <div
                     className={cn(
                       "rounded-md border-2",
-                      matchWon
+                      outcome === "win"
                         ? "border-emerald-500/60"
-                        : "border-destructive/60",
+                        : outcome !== "notScored"
+                          ? "border-destructive/60"
+                          : "border-muted-foreground/60",
                     )}>
                     <HeroAvatar
                       className='h-9 w-9'
@@ -167,9 +172,13 @@ export const PlayerMatchExplorer = ({
                       <span
                         className={cn(
                           "text-[10px]",
-                          matchWon ? "text-emerald-500" : "text-destructive",
+                          outcome === "win"
+                            ? "text-emerald-500"
+                            : outcome !== "notScored"
+                              ? "text-destructive"
+                              : "text-muted-foreground",
                         )}>
-                        {matchWon ? t("stats.win") : t("stats.loss")}
+                        {t(`stats.${outcome}`)}
                       </span>
                     </div>
                     <div className='truncate text-[10px] text-muted-foreground'>

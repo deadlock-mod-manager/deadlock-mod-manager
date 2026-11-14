@@ -9,7 +9,8 @@ const logger = createLogger("stats-cache");
 const STORE_FILE = "stats-cache.json";
 // Bump when a cached payload's shape changes; older entries are then ignored.
 // v2: match history carries the ranked badge, which replaced /mmr-history.
-const CACHE_VERSION = 2;
+// v3: history and metadata retain personal outcomes and recorded abandons.
+const CACHE_VERSION = 3;
 
 export const STATS_TTL = {
   matchHistory: 10 * 60 * 1000,

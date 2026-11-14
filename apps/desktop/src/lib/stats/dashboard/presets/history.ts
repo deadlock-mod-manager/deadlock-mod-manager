@@ -2,6 +2,7 @@ import type { MatchHistoryEntry } from "@/lib/stats/api";
 import {
   chronological,
   formCurve,
+  isUnscored,
   isWin,
   streaks,
   summarize,
@@ -145,7 +146,11 @@ export const HISTORY_PRESETS: PresetDef[] = [
       tabulate(newest(chronological(matches), lastMatchesOf(params)), [
         ["startTime", "date", (match) => match.start_time],
         ["heroId", "hero", (match) => match.hero_id],
-        ["result", "result", (match) => (isWin(match) ? 1 : 0)],
+        [
+          "result",
+          "result",
+          (match) => (isUnscored(match) ? 2 : isWin(match) ? 1 : 0),
+        ],
         ["kills", "integer", (match) => match.player_kills],
         ["deaths", "integer", (match) => match.player_deaths],
         ["assists", "integer", (match) => match.player_assists],

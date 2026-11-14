@@ -262,16 +262,19 @@ const StatsMatch = () => {
     [details.player, details.itemsById],
   );
 
+  const historyEntry = stats.matches.find(
+    (match) => match.match_id === matchId,
+  );
+
   const body = (() => {
     if (accountsPending || details.isPending) {
       return <MatchSkeleton />;
     }
     if (details.isError || !details.match) {
-      const entry = stats.matches.find((match) => match.match_id === matchId);
       return (
         <MatchUnavailable
-          entry={entry}
-          hero={entry ? heroesById.get(entry.hero_id) : undefined}
+          entry={historyEntry}
+          hero={historyEntry ? heroesById.get(historyEntry.hero_id) : undefined}
           isRetrying={details.isFetching}
           onRetry={() => void details.refetch()}
         />
@@ -296,6 +299,9 @@ const StatsMatch = () => {
     return (
       <div className='flex flex-col gap-4'>
         <MatchHeader
+          heroesById={heroesById}
+          profiles={profiles}
+          historyEntry={historyEntry}
           damageRank={
             placements.find((placement) => placement.metric === "damage")
               ?.rank ?? null

@@ -12,6 +12,7 @@ import {
   generateInsights,
   heroPerformance,
   isWin,
+  matchOutcome,
   joinItemStats,
   joinMateStats,
   mergeHeroStats,
@@ -123,6 +124,13 @@ describe("isWin", () => {
     expect(isWin(makeMatch({ player_team: 1, match_result: 1 }))).toBe(true);
     expect(isWin(makeMatch({ player_team: 1, match_result: 0 }))).toBe(false);
   });
+
+  it("labels a non-scored match separately from its team's result", () => {
+    expect(matchOutcome(loss({ player_match_outcome: 5 }))).toBe("notScored");
+    expect(matchOutcome(win({ player_match_outcome: 5 }))).toBe("notScored");
+    expect(isWin(win({ player_match_outcome: 5 }))).toBe(false);
+    expect(matchOutcome(loss({ player_match_outcome: 2 }))).toBe("loss");
+  });
 });
 
 describe("chronological", () => {
@@ -137,6 +145,18 @@ describe("chronological", () => {
 });
 
 describe("summarize", () => {
+  it("does not count an unscored match as a loss or in the winrate", () => {
+    const summary = summarize([
+      win({ player_kills: 4 }),
+      loss({ player_kills: 8, player_match_outcome: 5 }),
+    ]);
+    expect(summary.matches).toBe(2);
+    expect(summary.wins).toBe(1);
+    expect(summary.losses).toBe(0);
+    expect(summary.winrate).toBe(1);
+    expect(summary.kills).toBe(6);
+    expect(summarize([loss({ player_match_outcome: 5 })]).winrate).toBe(0);
+  });
   it("averages per match and derives per-minute rates", () => {
     const summary = summarize([
       win({ player_kills: 10, player_deaths: 2, player_assists: 4 }),
@@ -167,6 +187,17 @@ describe("summarize", () => {
 });
 
 describe("rollingWinrate", () => {
+  it("keeps the window on scored matches after an unscored game", () => {
+    const points = rollingWinrate(
+      [
+        win({ start_time: 1 }),
+        loss({ start_time: 2, player_match_outcome: 5 }),
+        loss({ start_time: 3 }),
+      ],
+      2,
+    );
+    expect(points.map((point) => point.winrate)).toEqual([null, 0.5]);
+  });
   it("stays blank until the window is full, then follows the trailing slice", () => {
     const matches = [
       win({ start_time: 1 }),
@@ -187,6 +218,15 @@ describe("rollingWinrate", () => {
 });
 
 describe("streaks", () => {
+  it("does not break a win streak for an unscored match", () => {
+    expect(
+      streaks([
+        win({ start_time: 1 }),
+        loss({ start_time: 2, player_match_outcome: 5 }),
+        win({ start_time: 3 }),
+      ]).current,
+    ).toBe(2);
+  });
   it("reports the running streak signed and both records", () => {
     const result = streaks([
       win({ start_time: 1 }),
@@ -224,6 +264,14 @@ describe("winrateByHour", () => {
 });
 
 describe("playSessions", () => {
+  it("keeps an unscored game in the history without adding a loss", () => {
+    const [session] = playSessions([
+      win({ start_time: 1 }),
+      loss({ start_time: 2, player_match_outcome: 5 }),
+    ]);
+    expect(session?.matches).toHaveLength(2);
+    expect(session).toMatchObject({ wins: 1, losses: 0 });
+  });
   it("splits on long breaks and tracks rank across sessions", () => {
     const start = 1_700_000_000;
     const sessions = playSessions([
@@ -254,6 +302,18 @@ describe("playSessions", () => {
 });
 
 describe("sessionCurve", () => {
+  it("preserves session positions when a game was not scored", () => {
+    const start = 1_700_000_000;
+    const curve = sessionCurve([
+      win({ start_time: start }),
+      loss({ start_time: start + HOUR, player_match_outcome: 5 }),
+      loss({ start_time: start + 2 * HOUR }),
+    ]);
+
+    expect(curve.map((slot) => slot.bucket)).toEqual([1, 3]);
+    expect(curve.find((slot) => slot.bucket === 3)?.winrate).toBe(0);
+  });
+
   it("counts position within a session and restarts after a long break", () => {
     const start = 1_700_000_000;
     const curve = sessionCurve([
@@ -423,6 +483,15 @@ describe("mergeLocalMatches", () => {
     expect(merged[0].net_worth).toBe(50_000);
   });
 
+  it("keeps a local non-score when the API entry has no outcome", () => {
+    const merged = mergeLocalMatches(
+      [win({ match_id: 7, player_match_outcome: null })],
+      [win({ match_id: 7, player_match_outcome: 5 })],
+    );
+
+    expect(matchOutcome(merged[0])).toBe("notScored");
+  });
+
   it("returns the API list untouched when there is nothing local", () => {
     const api = [win({ match_id: 1 })];
 
@@ -471,6 +540,14 @@ describe("mergeHeroStats", () => {
     const fresh = merged.find((hero) => hero.hero_id === 99);
     expect(fresh?.matches_played).toBe(1);
     expect(fresh?.wins).toBe(0);
+  });
+
+  it("does not alter hero aggregates for an unscored local game", () => {
+    expect(
+      mergeHeroStats(heroStats, [
+        win({ player_match_outcome: 5, player_kills: 7 }),
+      ]),
+    ).toBe(heroStats);
   });
 
   it("returns the API rows untouched with nothing to merge", () => {
