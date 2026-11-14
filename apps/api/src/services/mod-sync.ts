@@ -66,7 +66,7 @@ export class ModSyncService {
       const provider =
         providerRegistry.getProvider<GameBananaSubmission>("gamebanana");
 
-      const submission = { _idRow: Number(remoteId) } as GameBananaSubmission;
+      const submission: GameBananaSubmission = { _idRow: Number(remoteId) };
       const existing =
         await modRepository.findByRemoteIdIncludingBlacklisted(remoteId);
       let result = await provider.createMod(

@@ -287,7 +287,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
           {
             _idRow: Number(remoteId),
             _aRootCategory: { _sName: category },
-          } as GameBananaSubmission,
+          },
           isAudio ? "sound" : "all",
         );
       }
@@ -362,12 +362,12 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       tags: parseTags(profile._aTags),
       author: submitterDisplayName(profile),
       likes: profile._nLikeCount ?? 0,
-      hero: heroFromGameBananaProfile(profile, mod._aRootCategory._sName),
+      hero: heroFromGameBananaProfile(profile, mod._aRootCategory?._sName),
       downloadCount: profile._nDownloadCount ?? 0,
       remoteUrl: profile._sProfileUrl,
       category: categoryFromGameBananaProfile(
         profile,
-        mod._aRootCategory._sName,
+        mod._aRootCategory?._sName,
       ),
       downloadable: (profile._aFiles?.length ?? 0) > 0,
       ...resolveRemoteTimestamps(profile._tsDateAdded, profile._tsDateModified),
@@ -407,7 +407,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
     if (isUnavailableProfile(profile)) return "unavailable";
 
     const description = profile._sText || profile._sDescription || "";
-    const rootCategoryName = mod._aRootCategory._sName;
+    const rootCategoryName = mod._aRootCategory?._sName;
     const category = categoryFromGameBananaProfile(profile, rootCategoryName);
     const isMap = category === MAPS_CATEGORY_NAME;
     const dependencies = parseRequirements(profile._aRequirements);

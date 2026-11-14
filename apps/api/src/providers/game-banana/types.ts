@@ -1,10 +1,15 @@
 import type { GameBanana } from "@deadlock-mods/shared";
 
 export type GameBananaSubmissionSource = "all" | "sound";
-export type GameBananaSubmission =
-  | GameBanana.GameBananaSubmission
-  | GameBanana.GameBananaIndexSubmission
-  | GameBanana.GameBananaSoundSubmission;
+/** Profile hydration accepts an ID; index context is available only for listings. */
+export interface GameBananaSubmission {
+  _idRow: GameBanana.GameBananaSubmission["_idRow"];
+  _tsDateModified?: GameBanana.GameBananaSubmission["_tsDateModified"];
+  _aRootCategory?: Pick<
+    GameBanana.GameBananaSubmission["_aRootCategory"],
+    "_sName"
+  >;
+}
 export type GameBananaListedSubmission =
   | GameBanana.GameBananaIndexSubmission
   | GameBanana.GameBananaSoundSubmission;

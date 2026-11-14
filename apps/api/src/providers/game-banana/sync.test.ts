@@ -12,6 +12,8 @@ import { ModRepository } from "@deadlock-mods/database";
 import { createMockLogger } from "@deadlock-mods/logging";
 import modIndex from "../../../../desktop/src-tauri/tests/fixtures/gamebanana/mod-index.json";
 import modProfile from "../../../../desktop/src-tauri/tests/fixtures/gamebanana/mod-profile.json";
+import soundProfile from "../../../../desktop/src-tauri/tests/fixtures/gamebanana/sound-profile.json";
+import type { GameBananaSubmission, GameBananaSubmissionSource } from "./types";
 
 // Bun module mocks persist across files; isolate provider dependencies from other suites.
 if (process.env.DMM_SYNC_TEST_CHILD !== "1") {
@@ -21,7 +23,7 @@ if (process.env.DMM_SYNC_TEST_CHILD !== "1") {
       stdout: "pipe",
       stderr: "pipe",
     });
-    expect(new TextDecoder().decode(result.stderr)).toContain("5 pass");
+    expect(new TextDecoder().decode(result.stderr)).toContain("7 pass");
     expect(result.exitCode).toBe(0);
   });
 } else {
@@ -67,6 +69,30 @@ if (process.env.DMM_SYNC_TEST_CHILD !== "1") {
   });
 
   describe("GameBanana stale profile deferral", () => {
+    for (const source of [
+      "all",
+      "sound",
+    ] satisfies GameBananaSubmissionSource[]) {
+      it(`hydrates an ID-only ${source} input`, async () => {
+        const profile = source === "sound" ? soundProfile : modProfile;
+        spyOn(globalThis, "fetch").mockResolvedValue(Response.json(profile));
+        const submission: GameBananaSubmission = { _idRow: profile._idRow };
+
+        const payload = await new GameBananaProvider().createModPayload(
+          submission,
+          source,
+        );
+
+        if (typeof payload === "string")
+          throw new Error(`Unexpected skip: ${payload}`);
+        expect(payload.remoteId).toBe(String(profile._idRow));
+        expect(payload.isAudio).toBe(source === "sound");
+        expect(payload.category).toBe(
+          source === "sound" ? "Abilities" : "Skins",
+        );
+      });
+    }
+
     it("does not turn lock loss during hydration into a failed item result", async () => {
       const provider = new GameBananaProvider();
       const controller = new AbortController();
