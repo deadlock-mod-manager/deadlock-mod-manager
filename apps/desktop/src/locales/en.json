@@ -4617,7 +4617,8 @@
       "title": "Share matches from Steam's cache",
       "description": "Watches Steam's download cache for Deadlock match data and sends it to deadlock-api.",
       "sectionTitle": "From Steam's download cache",
-      "sectionDescription": "Shares matches Steam has already downloaded to this PC, such as matches you view in Deadlock. Never signs in to Steam and sends no account ID. On by default."
+      "sectionDescription": "Shares matches Steam has already downloaded to this PC, such as matches you view in Deadlock. Never signs in to Steam and sends no account ID. On by default.",
+      "syncFailed": "Couldn’t update the cache watcher, so the setting wasn’t changed."
     },
     "autoUpdate": "Automatic Updates",
     "autoUpdateDescription": "Automatically check for and notify about application updates on startup.",
