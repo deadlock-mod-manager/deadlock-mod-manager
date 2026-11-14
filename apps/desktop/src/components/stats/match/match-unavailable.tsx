@@ -14,13 +14,14 @@ import { Link } from "react-router";
 import {
   HERO_TILE_CLASS,
   LOSS_COLOR,
+  MUTED_COLOR,
   tint,
   WIN_COLOR,
 } from "@/components/stats/chart-fx";
 import { HeroAvatar } from "@/components/stats/hero-avatar";
 import type { DeadlockHero } from "@/lib/deadlock-api";
 import type { MatchHistoryEntry } from "@/lib/stats/api";
-import { isWin } from "@/lib/stats/derive";
+import { matchStatus } from "@/lib/stats/derive";
 import { formatClock } from "@/lib/stats/format";
 import { cn } from "@/lib/utils";
 
@@ -43,15 +44,27 @@ const MatchSummary = ({
   hero: DeadlockHero | undefined;
 }) => {
   const { t } = useTranslation();
-  const won = isWin(entry);
-  const color = won ? WIN_COLOR : LOSS_COLOR;
+  const outcome = matchStatus(entry);
+  const color =
+    outcome === "win"
+      ? WIN_COLOR
+      : outcome !== "notScored"
+        ? LOSS_COLOR
+        : MUTED_COLOR;
 
   return (
     <div className='flex w-full items-center gap-4 rounded-lg border border-border/60 bg-background px-3.5 py-2.5 text-left'>
       <span
         className='flex h-6 w-6 shrink-0 items-center justify-center rounded-md font-bold font-mono text-[11.5px]'
-        style={{ color, backgroundColor: tint(color, 12) }}>
-        {won ? t("stats.recent.winShort") : t("stats.recent.lossShort")}
+        style={{ color, backgroundColor: tint(color, 12) }}
+        title={t(`stats.${outcome}`)}>
+        {outcome === "abandoned"
+          ? t("stats.recent.abandonedShort")
+          : outcome === "notScored"
+            ? t("stats.recent.notScoredShort")
+            : outcome === "win"
+              ? t("stats.recent.winShort")
+              : t("stats.recent.lossShort")}
       </span>
       <div className='flex min-w-0 flex-1 items-center gap-2.5'>
         <HeroAvatar
@@ -64,9 +77,11 @@ const MatchSummary = ({
             {hero?.name ?? `#${entry.hero_id}`}
           </span>
           <span className='flex gap-2 text-[11.5px] text-muted-foreground'>
-            {entry.match_mode === 4
-              ? t("stats.scope.ranked")
-              : t("stats.scope.unranked")}
+            {outcome === "abandoned"
+              ? t("stats.abandoned")
+              : entry.match_mode === 4
+                ? t("stats.scope.ranked")
+                : t("stats.scope.unranked")}
             <span className='font-mono'>
               {formatClock(entry.match_duration_s)}
             </span>

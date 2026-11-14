@@ -21,10 +21,21 @@ import {
 } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
-import { LOSS_COLOR, WIN_COLOR } from "@/components/stats/chart-fx";
+import {
+  LOSS_COLOR,
+  MUTED_COLOR,
+  WIN_COLOR,
+} from "@/components/stats/chart-fx";
 import { HeroAvatar } from "@/components/stats/hero-avatar";
+import { MatchScoringNote } from "@/components/stats/match/match-scoring-note";
 import type { DeadlockHero } from "@/lib/deadlock-api";
-import type { MatchMetadata, MatchMetadataPlayer } from "@/lib/stats/api";
+import type {
+  MatchHistoryEntry,
+  MatchMetadata,
+  MatchMetadataPlayer,
+  SteamProfile,
+} from "@/lib/stats/api";
+import { matchScoring } from "@/lib/stats/match-scoring";
 import {
   formatClock,
   formatCompact,
@@ -51,6 +62,9 @@ export interface RankChange {
 }
 
 interface MatchHeaderProps {
+  heroesById: Map<number, DeadlockHero>;
+  profiles: Map<number, SteamProfile>;
+  historyEntry: MatchHistoryEntry | undefined;
   match: MatchMetadata["match_info"];
   me: MatchMetadataPlayer;
   hero: DeadlockHero | undefined;
@@ -88,6 +102,9 @@ const LineFigure = ({
 
 /** Where the match sits in the history, how it ended, and the player's line. */
 export const MatchHeader = ({
+  heroesById,
+  profiles,
+  historyEntry,
   match,
   me,
   hero,
@@ -99,7 +116,14 @@ export const MatchHeader = ({
   nextId,
 }: MatchHeaderProps) => {
   const { t, i18n } = useTranslation();
-  const won = match.winning_team === me.team;
+  const scoring = matchScoring(match, me, historyEntry);
+  const outcome = scoring.status;
+  const outcomeColor =
+    outcome === "notScored"
+      ? MUTED_COLOR
+      : outcome === "win"
+        ? WIN_COLOR
+        : LOSS_COLOR;
   const minutes = match.duration_s / 60;
   const damage = me.stats[me.stats.length - 1]?.player_damage ?? 0;
 
@@ -170,8 +194,14 @@ export const MatchHeader = ({
           />
           <div className='min-w-0'>
             <h1 className='truncate font-bold text-3xl tracking-tight'>
-              <span style={{ color: won ? WIN_COLOR : LOSS_COLOR }}>
-                {won ? t("stats.match.victory") : t("stats.match.defeat")}
+              <span style={{ color: outcomeColor }}>
+                {outcome === "notScored"
+                  ? t("stats.notScored")
+                  : outcome === "abandoned"
+                    ? t("stats.abandoned")
+                    : outcome === "win"
+                      ? t("stats.match.victory")
+                      : t("stats.match.defeat")}
               </span>{" "}
               {t("stats.match.onHero", {
                 hero: hero?.name ?? `#${me.hero_id}`,
@@ -210,6 +240,11 @@ export const MatchHeader = ({
                 />
               </button>
             </div>
+            <MatchScoringNote
+              scoring={scoring}
+              profiles={profiles}
+              heroesById={heroesById}
+            />
           </div>
         </div>
         <div className='flex flex-wrap items-center gap-y-3'>

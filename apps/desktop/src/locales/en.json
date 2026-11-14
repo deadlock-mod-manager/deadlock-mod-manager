@@ -1552,6 +1552,8 @@
     },
     "win": "Win",
     "loss": "Loss",
+    "notScored": "Not scored",
+    "abandoned": "Abandoned",
     "unranked": "Unranked",
     "unknownPlayer": "Unknown player",
     "signedIn": "signed in",
@@ -2490,6 +2492,8 @@
       "rankDown_other": "-{{count}} subranks",
       "winShort": "W",
       "lossShort": "L",
+      "notScoredShort": "–",
+      "abandonedShort": "A",
       "kda": "KDA {{value}}",
       "souls": "Souls",
       "lastHits": "Last hits"
@@ -2526,6 +2530,10 @@
       "next": "Next match",
       "victory": "Victory",
       "defeat": "Defeat",
+      "abandonedAt": "You were recorded as abandoning at {{time}}.",
+      "unscoredTeammates": "Not scored for you. Teammates recorded as abandoning:",
+      "teammateAbandonedAt": "{{player}} at {{time}}",
+      "unscoredReasonUnavailable": "The data does not identify why this match was not scored.",
       "onHero": "on {{hero}}",
       "teams": {
         "0": "Hidden King",

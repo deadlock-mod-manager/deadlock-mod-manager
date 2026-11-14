@@ -25,6 +25,7 @@ import type { DeadlockHero } from "@/lib/deadlock-api";
 import type { MatchHistoryEntry } from "@/lib/stats/api";
 import {
   chronological,
+  isUnscored,
   isWin,
   rollingWinrate,
   summarize,
@@ -85,7 +86,9 @@ export const FormChart = ({
   const fillId = useId();
 
   const { rows, baseline } = useMemo(() => {
-    const ordered = chronological(matches);
+    const ordered = chronological(
+      matches.filter((match) => !isUnscored(match)),
+    );
     const rolling = rollingWinrate(ordered, window);
     const start = Math.max(0, ordered.length - shown);
     return {

@@ -410,8 +410,8 @@ export const useMatchDetails = (
   const enabled = active && matchId !== null && accountId !== null;
   const metadata = useStatsQuery(
     {
-      // v2 keeps slots, deaths, MVP and lane; older entries were trimmed without them.
-      key: `match:${matchId}:metadata:v2`,
+      // Older cached metadata was trimmed without scoring and abandonment fields.
+      key: `match:${matchId}:metadata:v3`,
       ttl: STATS_TTL.matchMetadata,
       enabled,
     },

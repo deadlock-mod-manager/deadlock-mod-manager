@@ -117,7 +117,11 @@ export const useFieldFormat = (dataset: Dataset) => {
           return rank.name ? `${rank.name} ${rank.subrank}` : `#${value}`;
         }
         case "result":
-          return value >= 0.5 ? t("stats.win") : t("stats.loss");
+          return value === 2
+            ? t("stats.notScored")
+            : value >= 0.5
+              ? t("stats.win")
+              : t("stats.loss");
         case "session":
           return t("stats.charts.sessionTick", { position: value });
         case "durationBucket":

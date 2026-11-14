@@ -3,10 +3,30 @@ import {
   averageBadge,
   type LiveLobby,
   matchupReport,
+  recentForm,
   scoutingTags,
   streakOf,
 } from "@/lib/stats/live-lobby";
 import type { ResolvedPlayer } from "@/lib/stats/live-teams";
+import { matchHistoryEntrySchema } from "@/lib/validation/stats-api";
+
+const match = (matchId: number, result: number, outcome: number) =>
+  matchHistoryEntrySchema.parse({
+    match_id: matchId,
+    hero_id: 1,
+    start_time: matchId,
+    player_team: 0,
+    match_result: result,
+    player_match_outcome: outcome,
+  });
+
+describe("recentForm", () => {
+  it("ignores an unscored game between scored results", () => {
+    expect(
+      recentForm([match(1, 0, 1), match(2, 1, 5), match(3, 1, 2)]),
+    ).toEqual([false, true]);
+  });
+});
 
 describe("averageBadge", () => {
   it("steps over the gap between a tier's sixth subrank and the next tier", () => {

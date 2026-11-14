@@ -16,7 +16,7 @@ import {
   median,
   PER_MATCH,
 } from "@/lib/stats/benchmark";
-import { chronological, isWin, summarize } from "@/lib/stats/derive";
+import { chronological, matchOutcome, summarize } from "@/lib/stats/derive";
 import {
   formatCompact,
   formatDecimal,
@@ -50,7 +50,7 @@ const rollingMedian = (values: number[], window: number) =>
     median(values.slice(Math.max(0, index - window + 1), index + 1)),
   );
 
-export const WinrateRing = ({ winrate }: { winrate: number }) => {
+export const WinrateRing = ({ winrate }: { winrate: number | null }) => {
   const radius = 36;
   const circumference = 2 * Math.PI * radius;
   return (
@@ -67,19 +67,21 @@ export const WinrateRing = ({ winrate }: { winrate: number }) => {
         strokeOpacity={0.07}
         strokeWidth={6}
       />
-      <circle
-        cx={42}
-        cy={42}
-        fill='none'
-        r={radius}
-        stroke={winrate >= 0.5 ? WIN_COLOR : LOSS_COLOR}
-        strokeDasharray={`${circumference * winrate} ${circumference}`}
-        strokeLinecap='round'
-        strokeWidth={6}
-        style={{
-          filter: `drop-shadow(0 0 4px ${tint(winrate >= 0.5 ? WIN_COLOR : LOSS_COLOR, 50)})`,
-        }}
-      />
+      {winrate !== null && (
+        <circle
+          cx={42}
+          cy={42}
+          fill='none'
+          r={radius}
+          stroke={winrate >= 0.5 ? WIN_COLOR : LOSS_COLOR}
+          strokeDasharray={`${circumference * winrate} ${circumference}`}
+          strokeLinecap='round'
+          strokeWidth={6}
+          style={{
+            filter: `drop-shadow(0 0 4px ${tint(winrate >= 0.5 ? WIN_COLOR : LOSS_COLOR, 50)})`,
+          }}
+        />
+      )}
     </svg>
   );
 };
@@ -171,7 +173,10 @@ export const TrendStrip = ({
     const sparkWindow = ordered.slice(-(SPARK_MATCHES + SPARK_SMOOTHING - 1));
     return {
       recent: summarize(last),
-      results: last.map((match) => ({ id: match.match_id, won: isWin(match) })),
+      results: last.map((match) => ({
+        id: match.match_id,
+        outcome: matchOutcome(match),
+      })),
       trends: TREND_METRICS.map(({ metric, format }) => ({
         metric,
         format,
@@ -184,21 +189,24 @@ export const TrendStrip = ({
     };
   }, [matches]);
 
+  const recentWinrate = recent.wins + recent.losses > 0 ? recent.winrate : null;
   const medians = new Map(bracket.map((row) => [row.metric, row]));
 
   return (
     <Card className='stats-surface grid h-full grid-cols-1 overflow-hidden shadow-none sm:grid-cols-2 xl:grid-cols-[minmax(260px,1.3fr)_repeat(4,minmax(0,1fr))]'>
       <div className='flex items-center gap-4 p-5'>
         <div className='relative shrink-0'>
-          <WinrateRing winrate={recent.winrate} />
+          <WinrateRing winrate={recentWinrate} />
           <div className='absolute inset-0 flex flex-col items-center justify-center'>
             <span className='font-bold text-xl leading-none tabular-nums'>
-              {formatPercent(recent.winrate, 0)}
+              {recentWinrate === null
+                ? t("stats.recent.notScoredShort")
+                : formatPercent(recentWinrate, 0)}
             </span>
             <span className='mt-1 font-mono text-[9.5px] text-muted-foreground'>
               {t("stats.form.recordValue", {
                 wins: recent.wins,
-                losses: recent.matches - recent.wins,
+                losses: recent.losses,
               })}
             </span>
           </div>
@@ -210,22 +218,27 @@ export const TrendStrip = ({
           <div
             aria-label={t("stats.trends.resultsLabel", {
               wins: recent.wins,
-              losses: recent.matches - recent.wins,
+              losses: recent.losses,
             })}
             className='flex h-[22px] items-end gap-[3px]'
             role='img'>
             {results.map((result) => (
               <span
                 className={
-                  result.won
+                  result.outcome === "win"
                     ? "h-full flex-1 rounded-[3px]"
-                    : "h-1/2 flex-1 rounded-[3px]"
+                    : result.outcome === "loss"
+                      ? "h-1/2 flex-1 rounded-[3px]"
+                      : "h-1/3 flex-1 rounded-[3px]"
                 }
                 key={result.id}
                 style={{
-                  backgroundColor: result.won
-                    ? tint(WIN_COLOR, 80)
-                    : tint(LOSS_COLOR, 70),
+                  backgroundColor:
+                    result.outcome === "win"
+                      ? tint(WIN_COLOR, 80)
+                      : result.outcome === "loss"
+                        ? tint(LOSS_COLOR, 70)
+                        : "var(--viz-muted)",
                 }}
               />
             ))}

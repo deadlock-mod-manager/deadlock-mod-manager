@@ -12,9 +12,29 @@ import { badgeToStep } from "@/lib/stats/rank";
  * a full dashboard costs a handful of requests instead of one per widget.
  */
 
-/** `match_result` holds the winning team index, so it wins when it is our team. */
+/** `match_result` alone cannot distinguish a win from a non-scored game. */
+export const isUnscored = (
+  match: Pick<MatchHistoryEntry, "player_match_outcome">,
+): boolean => match.player_match_outcome === 5;
+
+export const matchOutcome = (
+  match: Pick<
+    MatchHistoryEntry,
+    "player_match_outcome" | "match_result" | "player_team"
+  >,
+): "win" | "loss" | "notScored" =>
+  isUnscored(match)
+    ? "notScored"
+    : match.match_result === match.player_team
+      ? "win"
+      : "loss";
+
 export const isWin = (match: MatchHistoryEntry): boolean =>
-  match.match_result === match.player_team;
+  matchOutcome(match) === "win";
+
+/** Leaving is a display status; the scored result still drives aggregates. */
+export const matchStatus = (match: MatchHistoryEntry) =>
+  (match.abandoned_time_s ?? 0) > 0 ? "abandoned" : matchOutcome(match);
 
 /** The API returns newest first; charts read left to right. */
 export const chronological = (
@@ -64,13 +84,14 @@ export const mergeHeroStats = (
   heroStats: PlayerHeroStats[],
   extraMatches: MatchHistoryEntry[],
 ): PlayerHeroStats[] => {
-  if (extraMatches.length === 0) {
+  const scoredMatches = extraMatches.filter((match) => !isUnscored(match));
+  if (scoredMatches.length === 0) {
     return heroStats;
   }
 
   const byHero = new Map(heroStats.map((hero) => [hero.hero_id, { ...hero }]));
 
-  for (const match of extraMatches) {
+  for (const match of scoredMatches) {
     const existing = byHero.get(match.hero_id);
     const hero: PlayerHeroStats = existing ?? {
       ...EMPTY_HERO_STATS,
@@ -125,6 +146,7 @@ const EMPTY_HERO_STATS: PlayerHeroStats = {
 export interface StatsSummary {
   matches: number;
   wins: number;
+  losses: number;
   winrate: number;
   kills: number;
   deaths: number;
@@ -138,6 +160,7 @@ export interface StatsSummary {
 const EMPTY_SUMMARY: StatsSummary = {
   matches: 0,
   wins: 0,
+  losses: 0,
   winrate: 0,
   kills: 0,
   deaths: 0,
@@ -154,6 +177,7 @@ export const summarize = (matches: MatchHistoryEntry[]): StatsSummary => {
   }
 
   let wins = 0;
+  let losses = 0;
   let kills = 0;
   let deaths = 0;
   let assists = 0;
@@ -162,7 +186,9 @@ export const summarize = (matches: MatchHistoryEntry[]): StatsSummary => {
   let durationS = 0;
 
   for (const match of matches) {
-    if (isWin(match)) wins++;
+    const outcome = matchOutcome(match);
+    if (outcome === "win") wins++;
+    if (outcome === "loss") losses++;
     kills += match.player_kills;
     deaths += match.player_deaths;
     assists += match.player_assists;
@@ -175,7 +201,8 @@ export const summarize = (matches: MatchHistoryEntry[]): StatsSummary => {
   return {
     matches: matches.length,
     wins,
-    winrate: wins / matches.length,
+    losses,
+    winrate: wins / Math.max(wins + losses, 1),
     kills: kills / matches.length,
     deaths: deaths / matches.length,
     assists: assists / matches.length,
@@ -199,7 +226,7 @@ export const rollingWinrate = (
   matches: MatchHistoryEntry[],
   window = 20,
 ): RollingPoint[] => {
-  const ordered = chronological(matches);
+  const ordered = chronological(matches.filter((match) => !isUnscored(match)));
   return ordered.map((match, index) => {
     const slice = ordered.slice(Math.max(0, index - window + 1), index + 1);
     const summary = summarize(slice);
@@ -244,7 +271,7 @@ export interface StreakInfo {
 }
 
 export const streaks = (matches: MatchHistoryEntry[]): StreakInfo => {
-  const ordered = chronological(matches);
+  const ordered = chronological(matches.filter((match) => !isUnscored(match)));
   let current = 0;
   let longestWin = 0;
   let longestLoss = 0;
@@ -273,6 +300,7 @@ const bucketize = (
   const buckets = new Map<number, { matches: number; wins: number }>();
 
   for (const match of matches) {
+    if (isUnscored(match)) continue;
     const key = bucketOf(match);
     const entry = buckets.get(key) ?? { matches: 0, wins: 0 };
     entry.matches++;
@@ -326,6 +354,7 @@ export interface PlaySession {
   startTime: number;
   endTime: number;
   wins: number;
+  losses: number;
   /** Subranks gained (or lost) across the session; `null` without ranked games on both ends. */
   rankSteps: number | null;
 }
@@ -363,7 +392,8 @@ export const playSessions = (matches: MatchHistoryEntry[]): PlaySession[] => {
       matches: games,
       startTime: oldest?.start_time ?? 0,
       endTime: newest ? newest.start_time + newest.match_duration_s : 0,
-      wins: games.filter(isWin).length,
+      wins: games.filter((match) => matchOutcome(match) === "win").length,
+      losses: games.filter((match) => matchOutcome(match) === "loss").length,
       rankSteps:
         badgeBefore !== null && latestBadge !== null
           ? badgeToStep(latestBadge) - badgeToStep(badgeBefore)
@@ -381,6 +411,7 @@ export const playSessions = (matches: MatchHistoryEntry[]): PlaySession[] => {
 export const sessionCurve = (matches: MatchHistoryEntry[]): BucketStats[] => {
   const byPosition = new Map<number, MatchHistoryEntry[]>();
   for (const { match, position: slot } of sessionPositions(matches)) {
+    if (isUnscored(match)) continue;
     const bucket = byPosition.get(slot);
     if (bucket) {
       bucket.push(match);
@@ -406,6 +437,7 @@ export interface TodaysSession {
   /** Oldest first, the order the day was played in. */
   matches: MatchHistoryEntry[];
   wins: number;
+  losses: number;
   /** The match with the best kills plus assists minus deaths. */
   best: MatchHistoryEntry | undefined;
 }
@@ -426,7 +458,8 @@ export const todaysSession = (
     .sort((a, b) => a.start_time - b.start_time);
   return {
     matches: today,
-    wins: today.filter(isWin).length,
+    wins: today.filter((match) => matchOutcome(match) === "win").length,
+    losses: today.filter((match) => matchOutcome(match) === "loss").length,
     best: [...today].sort((a, b) => sessionScore(b) - sessionScore(a))[0],
   };
 };

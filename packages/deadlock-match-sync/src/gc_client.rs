@@ -541,6 +541,7 @@ impl GcMatchClient for SteamGcClient {
             last_hits: m.last_hits.unwrap_or_default(),
             match_duration_s: m.match_duration_s.unwrap_or_default(),
             match_result: m.match_result.unwrap_or_default(),
+            player_match_outcome: if m.not_scored.unwrap_or(false) { 5 } else { 0 },
             team_abandoned: m.team_abandoned,
             abandoned_time_s: m.abandoned_time_s,
             objectives_mask_team0: m.objectives_mask_team0.unwrap_or_default(),

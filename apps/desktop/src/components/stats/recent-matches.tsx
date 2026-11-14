@@ -6,6 +6,7 @@ import { ChartCard } from "@/components/stats/chart-card";
 import {
   HERO_TILE_CLASS,
   LOSS_COLOR,
+  MUTED_COLOR,
   tint,
   WIN_COLOR,
 } from "@/components/stats/chart-fx";
@@ -13,7 +14,11 @@ import { HeroAvatar } from "@/components/stats/hero-avatar";
 import type { DeadlockHero } from "@/lib/deadlock-api";
 import type { MatchHistoryEntry } from "@/lib/stats/api";
 import { PER_MATCH } from "@/lib/stats/benchmark";
-import { isWin, type PlaySession, playSessions } from "@/lib/stats/derive";
+import {
+  matchStatus,
+  type PlaySession,
+  playSessions,
+} from "@/lib/stats/derive";
 import { formatClock, formatCompact, formatDecimal } from "@/lib/stats/format";
 import { cn } from "@/lib/utils";
 
@@ -52,7 +57,6 @@ const timeOfDay = (unixSeconds: number, locale: string) =>
 const SessionHeader = ({ session }: { session: PlaySession }) => {
   const { t, i18n } = useTranslation();
   const dayLabel = useDayLabel();
-  const losses = session.matches.length - session.wins;
   const steps = session.rankSteps;
 
   return (
@@ -70,7 +74,10 @@ const SessionHeader = ({ session }: { session: PlaySession }) => {
       </div>
       <div className='flex shrink-0 items-center gap-3 text-[11.5px]'>
         <span className='font-mono font-semibold text-foreground/85'>
-          {t("stats.form.recordValue", { wins: session.wins, losses })}
+          {t("stats.form.recordValue", {
+            wins: session.wins,
+            losses: session.losses,
+          })}
         </span>
         {steps !== null && (
           <span
@@ -129,9 +136,14 @@ export const RecentMatches = ({ matches, heroesById }: RecentMatchesProps) => {
             <SessionHeader session={session} />
             <div className='overflow-hidden rounded-lg border border-border/60 bg-background'>
               {session.matches.map((match) => {
-                const won = isWin(match);
+                const outcome = matchStatus(match);
                 const hero = heroesById.get(match.hero_id);
-                const color = won ? WIN_COLOR : LOSS_COLOR;
+                const color =
+                  outcome === "win"
+                    ? WIN_COLOR
+                    : outcome !== "notScored"
+                      ? LOSS_COLOR
+                      : MUTED_COLOR;
                 return (
                   <Link
                     aria-label={t("stats.player.openMatch", {
@@ -142,10 +154,15 @@ export const RecentMatches = ({ matches, heroesById }: RecentMatchesProps) => {
                     to={`/stats/matches/${match.match_id}`}>
                     <span
                       className='flex h-6 w-6 shrink-0 items-center justify-center rounded-md font-bold font-mono text-[11.5px]'
-                      style={{ color, backgroundColor: tint(color, 12) }}>
-                      {won
-                        ? t("stats.recent.winShort")
-                        : t("stats.recent.lossShort")}
+                      style={{ color, backgroundColor: tint(color, 12) }}
+                      title={t(`stats.${outcome}`)}>
+                      {outcome === "abandoned"
+                        ? t("stats.recent.abandonedShort")
+                        : outcome === "notScored"
+                          ? t("stats.recent.notScoredShort")
+                          : outcome === "win"
+                            ? t("stats.recent.winShort")
+                            : t("stats.recent.lossShort")}
                     </span>
                     <div className='flex w-44 min-w-0 shrink-0 items-center gap-2.5'>
                       <HeroAvatar
@@ -158,9 +175,11 @@ export const RecentMatches = ({ matches, heroesById }: RecentMatchesProps) => {
                           {hero?.name ?? `#${match.hero_id}`}
                         </span>
                         <span className='flex gap-2 text-[11.5px] text-muted-foreground'>
-                          {match.match_mode === 4
-                            ? t("stats.scope.ranked")
-                            : t("stats.scope.unranked")}
+                          {outcome === "abandoned"
+                            ? t("stats.abandoned")
+                            : match.match_mode === 4
+                              ? t("stats.scope.ranked")
+                              : t("stats.scope.unranked")}
                           <span className='font-mono text-muted-foreground'>
                             {formatClock(match.match_duration_s)}
                           </span>

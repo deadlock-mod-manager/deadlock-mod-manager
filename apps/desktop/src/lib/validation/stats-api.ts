@@ -29,6 +29,9 @@ export const matchHistoryEntrySchema = z.object({
   // between them, so a default would silently turn every match into a loss.
   player_team: z.number(),
   match_result: z.number(),
+  // 5 means the match did not count for this player. Older local GC entries
+  // may not carry this field, so keep the winning-team fallback available.
+  player_match_outcome: z.number().nullish().catch(null),
   player_kills: count,
   player_deaths: count,
   player_assists: count,
@@ -75,6 +78,8 @@ const matchMetadataDeathSchema = z.object({
 
 export const matchMetadataPlayerSchema = z.object({
   account_id: z.number(),
+  player_match_outcome: z.number().nullish().catch(null),
+  abandon_match_time_s: z.number().nullish().catch(null),
   player_slot: count,
   team: count,
   hero_id: z.number(),
