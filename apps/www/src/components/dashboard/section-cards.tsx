@@ -19,7 +19,7 @@ type AnalyticsDataPoint = {
 type SectionCardProps = {
   title: string;
   value: number;
-  trend: number;
+  trend?: number;
   trendLabel: string;
   description: string;
 };
@@ -57,9 +57,9 @@ function calculateTrend(
   data: AnalyticsDataPoint[],
   dataKey: keyof AnalyticsDataPoint,
   timeRange: "1h" | "1d" | "7d" | "30d" | "90d",
-): { trend: number; current: number; previous: number } {
+): number {
   if (!data.length) {
-    return { trend: 0, current: 0, previous: 0 };
+    return 0;
   }
 
   const periodDays = getTrendPeriodDays(timeRange);
@@ -92,14 +92,10 @@ function calculateTrend(
     0,
   );
 
-  const trend =
-    previous === 0
-      ? current > 0
-        ? 100
-        : 0
-      : ((current - previous) / previous) * 100;
-
-  return { trend, current, previous };
+  if (previous === 0) {
+    return current > 0 ? 100 : 0;
+  }
+  return ((current - previous) / previous) * 100;
 }
 
 export function SectionCard({
@@ -109,7 +105,7 @@ export function SectionCard({
   trendLabel,
   description,
 }: SectionCardProps) {
-  const isPositive = trend >= 0;
+  const isPositive = (trend ?? 0) >= 0;
   const TrendIcon = isPositive ? TrendingUp : TrendingDown;
 
   return (
@@ -119,18 +115,20 @@ export function SectionCard({
         <CardTitle className='text-2xl font-semibold tabular-nums @[250px]/card:text-3xl'>
           {formatNumber(value)}
         </CardTitle>
-        <CardAction>
-          <Badge variant='outline'>
-            <TrendIcon className='size-3' />
-            {isPositive ? "+" : ""}
-            {trend.toFixed(1)}%
-          </Badge>
-        </CardAction>
+        {trend !== undefined && (
+          <CardAction>
+            <Badge variant='outline'>
+              <TrendIcon className='size-3' />
+              {isPositive ? "+" : ""}
+              {trend.toFixed(1)}%
+            </Badge>
+          </CardAction>
+        )}
       </CardHeader>
       <CardFooter className='flex-col items-start gap-1.5 text-sm'>
         <div className='line-clamp-1 flex gap-2 font-medium'>
           {trendLabel}
-          <TrendIcon className='size-4' />
+          {trend !== undefined && <TrendIcon className='size-4' />}
         </div>
         <div className='text-muted-foreground'>{description}</div>
       </CardFooter>
@@ -149,9 +147,7 @@ type SectionCardsProps = {
 
 export function SectionCards({ data, timeRange, totals }: SectionCardsProps) {
   const usersTrend =
-    timeRange === "all"
-      ? { trend: 0, current: 0, previous: 0 }
-      : calculateTrend(data, "users", timeRange);
+    timeRange === "all" ? undefined : calculateTrend(data, "users", timeRange);
   const appDownloads = totals?.appDownloads ?? 0;
   const totalUsers = totals?.users ?? 0;
 
@@ -171,20 +167,19 @@ export function SectionCards({ data, timeRange, totals }: SectionCardsProps) {
       <SectionCard
         title='App Downloads'
         value={appDownloads}
-        trend={0}
         trendLabel='All time'
         description='Downloads across published app releases'
       />
       <SectionCard
         title='Users'
         value={totalUsers}
-        trend={usersTrend.trend}
+        trend={usersTrend}
         trendLabel={
-          timeRange === "all"
+          usersTrend === undefined
             ? "All time"
-            : usersTrend.trend >= 0
-              ? `Up ${usersTrend.trend.toFixed(1)}% ${trendLabelPrefix}`
-              : `Down ${Math.abs(usersTrend.trend).toFixed(1)}% ${trendLabelPrefix}`
+            : usersTrend >= 0
+              ? `Up ${usersTrend.toFixed(1)}% ${trendLabelPrefix}`
+              : `Down ${Math.abs(usersTrend).toFixed(1)}% ${trendLabelPrefix}`
         }
         description={
           timeRange === "all"
