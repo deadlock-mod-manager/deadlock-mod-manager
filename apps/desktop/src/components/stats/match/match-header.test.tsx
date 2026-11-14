@@ -116,6 +116,10 @@ it("shows a 45-minute non-scored match neutrally despite the team's defeat", asy
   expect(html).toContain("color:var(--viz-muted)");
   expect(html).toContain("45:57");
   expect(html).not.toContain("Defeat");
+  expect(html).toContain(
+    "The data does not identify why this match was not scored.",
+  );
+  expect(html).not.toContain("Teammates recorded as abandoning");
 });
 
 it("keeps the defeat heading for a scored loss", async () => {
@@ -171,12 +175,4 @@ it("shows a personal abandon with its time instead of a generic defeat", async (
   expect(html).toContain("Abandoned");
   expect(html).toContain("You were recorded as abandoning at 40:59.");
   expect(html).not.toContain("Defeat");
-});
-
-it("keeps an unknown non-score reason explicit", async () => {
-  const html = await renderHeader(history(5));
-  expect(html).toContain(
-    "The data does not identify why this match was not scored.",
-  );
-  expect(html).not.toContain("Teammates recorded as abandoning");
 });

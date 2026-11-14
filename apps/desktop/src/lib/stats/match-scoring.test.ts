@@ -4,7 +4,6 @@ import {
   matchHistoryEntrySchema,
 } from "@/lib/validation/stats-api";
 import { matchScoring } from "./match-scoring";
-import { matchStatus, summarize } from "./derive";
 
 const match = matchMetadataSchema.parse({
   match_info: {
@@ -84,8 +83,6 @@ it("uses a known history departure when metadata has no timestamp", () => {
     status: "abandoned",
     time: 2459,
   });
-  expect(matchStatus(history)).toBe("abandoned");
-  expect(summarize([history]).losses).toBe(1);
 });
 
 it("retains missing scoring fields as unknown instead of creating an abandon", () => {

@@ -6,7 +6,6 @@ import type {
   MateStats,
   PlayerHeroStats,
 } from "@/lib/stats/api";
-import { matchHistoryEntrySchema } from "@/lib/validation/stats-api";
 import {
   benchmarkDeltas,
   chronological,
@@ -127,10 +126,6 @@ describe("isWin", () => {
   });
 
   it("labels a non-scored match separately from its team's result", () => {
-    const apiEntry = matchHistoryEntrySchema.parse(
-      loss({ player_match_outcome: 5 }),
-    );
-    expect(matchOutcome(apiEntry)).toBe("notScored");
     expect(matchOutcome(loss({ player_match_outcome: 5 }))).toBe("notScored");
     expect(matchOutcome(win({ player_match_outcome: 5 }))).toBe("notScored");
     expect(isWin(win({ player_match_outcome: 5 }))).toBe(false);

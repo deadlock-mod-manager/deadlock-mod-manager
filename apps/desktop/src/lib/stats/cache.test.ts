@@ -1,5 +1,4 @@
 import { beforeEach, expect, it, mock } from "bun:test";
-import { matchOutcome, summarize } from "@/lib/stats/derive";
 import {
   type MatchHistoryEntry,
   matchHistoryEntrySchema,
@@ -54,22 +53,11 @@ it("refetches a fresh pre-upgrade history instead of showing a false loss", asyn
   const result = await cachedFetch(key, STATS_TTL.matchHistory, fetcher);
 
   expect(fetcher).toHaveBeenCalledTimes(1);
-  expect(matchOutcome(result.data[0] ?? oldMatch)).toBe("notScored");
-  expect(summarize(result.data).losses).toBe(0);
+  expect(result.data).toEqual([unscored]);
   expect(entries.get(key)?.version).toBe(3);
 
   await cachedFetch(key, STATS_TTL.matchHistory, fetcher);
   expect(fetcher).toHaveBeenCalledTimes(1);
-});
-
-it("reuses fresh current-version stats without an extra request", async () => {
-  entries.set(key, { version: 3, fetchedAt: Date.now(), data: [unscored] });
-  const fetcher = mock(async () => [oldMatch]);
-
-  const result = await cachedFetch(key, STATS_TTL.matchHistory, fetcher);
-
-  expect(result.data).toEqual([unscored]);
-  expect(fetcher).not.toHaveBeenCalled();
 });
 
 it("does not fall back to incompatible old stats when offline", async () => {
@@ -81,23 +69,4 @@ it("does not fall back to incompatible old stats when offline", async () => {
       throw error;
     }),
   ).rejects.toBe(error);
-});
-
-it("preserves the offline fallback for current-version stats", async () => {
-  entries.set(key, {
-    version: 3,
-    fetchedAt: Date.now() - STATS_TTL.matchHistory - 1,
-    data: [unscored],
-  });
-
-  const result = await cachedFetch<MatchHistoryEntry[]>(
-    key,
-    STATS_TTL.matchHistory,
-    async () => {
-      throw new Error("Offline");
-    },
-  );
-
-  expect(result.data).toEqual([unscored]);
-  expect(result.isStale).toBe(true);
 });

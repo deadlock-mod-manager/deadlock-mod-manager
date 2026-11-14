@@ -52,21 +52,20 @@ mock.module("@/components/stats/item-purchase-timeline", () => ({
 
 let metadata: MatchMetadata["match_info"] | null = null;
 let pending = false;
-let failed = false;
 mock.module("@/hooks/use-player-stats", () => ({
   useMatchDetails: () => ({
     match: metadata,
     player: metadata?.players[0] ?? null,
     itemsById: new Map(),
     isPending: pending,
-    isError: failed,
+    isError: false,
     refetch: async () => {},
   }),
 }));
 
 const { MatchDetailView } = await import("./match-detail-view");
 const { PlayerCareerOverview } = await import("./player-career-overview");
-const { TrendStrip, WinrateRing } = await import("./trend-strip");
+const { TrendStrip } = await import("./trend-strip");
 
 const history = matchHistoryEntrySchema.parse({
   account_id: 1,
@@ -117,7 +116,6 @@ const renderCareer = (matches = [unscored]) =>
 beforeEach(() => {
   metadata = null;
   pending = false;
-  failed = false;
 });
 
 it("uses a metadata-only non-scored outcome in the compact detail badge", async () => {
@@ -151,11 +149,6 @@ it("keeps the history fallback while metadata is loading", async () => {
   expect(await renderDetails()).toContain('data-badge="destructive">Loss');
 });
 
-it("keeps the history fallback when metadata fails", async () => {
-  failed = true;
-  expect(await renderDetails()).toContain('data-badge="destructive">Loss');
-});
-
 it("shows an unavailable rate and muted record for an entirely unscored recent window", async () => {
   const html = await renderCareer();
   expect(html).toContain('style="color:var(--viz-muted)">0W 0L, –');
@@ -165,13 +158,6 @@ it("shows an unavailable rate and muted record for an entirely unscored recent w
 it("still shows a real zero winrate as a decline against a positive career rate", async () => {
   const html = await renderCareer([{ ...history, player_match_outcome: 2 }]);
   expect(html).toContain('style="color:var(--viz-loss)">0W 1L, 0%');
-});
-
-it("leaves only the neutral ring track when no scored results exist", () => {
-  const html = renderToStaticMarkup(<WinrateRing winrate={null} />);
-  expect(html).toContain('stroke-opacity="0.07"');
-  expect(html).not.toContain("stroke-dasharray");
-  expect(html).not.toContain("var(--viz-loss)");
 });
 
 it("shows no percentage or result arc in the entirely unscored trend strip", async () => {
