@@ -1,6 +1,6 @@
 use super::receipt::REPAIR_REVISION;
 use super::*;
-use crate::mod_manager::localization_overlay::{self, GameIndex};
+use crate::mod_manager::localization_overlay::{self, GameIndex, StandaloneMod};
 use crate::mod_manager::mod_health::{
   self, CachedModHealth, CompatibilityChoice, FixModsResult, FixModsStatus, HealthKey, ModFindings,
   ModHealthCheck, ModHealthProgress, ModHealthReport, ModHealthSource, ProfileHealth,
@@ -269,10 +269,19 @@ impl ModHealthContext {
     let game = Arc::new(GameIndex::open(&self.citadel)?);
     let mut observed = history::load(self.history.as_deref());
     let mut recorded = BTreeSet::new();
+    // Analyses borrow the history, so every mod's game tables are learned
+    // first, in the same order as before; the analyses then run side by side.
+    let observing: Vec<_> = pending
+      .iter()
+      .map(|installed| observe_mod(&game, installed, &mut observed, game_build, &mut recorded))
+      .collect();
+    let results = analyse_mods(observing, &observed, |checked| {
+      progress(ModHealthProgress { checked, total })
+    });
     let mut learned = false;
     let mut entries = Vec::with_capacity(pending.len());
-    for (index, installed) in pending.into_iter().enumerate() {
-      match check_mod(&game, installed, &mut observed, game_build, &mut recorded) {
+    for (installed, result) in pending.into_iter().zip(results) {
+      match result {
         Ok((findings, changed)) => {
           learned |= changed;
           entries.push((installed, findings));
@@ -282,10 +291,6 @@ impl ModHealthContext {
           installed.id
         ),
       }
-      progress(ModHealthProgress {
-        checked: index as u32 + 1,
-        total,
-      });
     }
     // Enabling, disabling or reordering a mod renames its files, and a read of
     // the old name mid-analysis fails as if the mod were broken. The key
@@ -333,23 +338,82 @@ impl ModHealthContext {
   }
 }
 
-fn check_mod(
+/// The most mods analysed at once. Each analysis holds its own archives and
+/// decoded tables while it runs, so every extra worker raises peak memory.
+const MAX_WORKERS: usize = 2;
+
+enum ObservedMod {
+  Uncovered,
+  Standalone(StandaloneMod, bool),
+}
+
+fn observe_mod(
   game: &Arc<GameIndex>,
   installed: &InstalledMod,
   observed: &mut VdataHistoryIndex,
   game_build: Option<u32>,
   recorded: &mut BTreeSet<String>,
-) -> Result<(ModFindings, bool), Error> {
+) -> Result<ObservedMod, Error> {
   let input = installed.input();
   if !localization_overlay::has_checkable_resources(&input)? {
-    return Ok((ModFindings::uncovered(), false));
+    return Ok(ObservedMod::Uncovered);
   }
-  let (plan, changed) =
-    LocalizationOverlayPlan::build_standalone(game, input, observed, game_build, recorded)?;
-  Ok((
-    ModFindings::from_analysis(&plan.analysis, &installed.id, true),
-    changed,
-  ))
+  let (standalone, changed) = StandaloneMod::observe(game, input, observed, game_build, recorded)?;
+  Ok(ObservedMod::Standalone(standalone, changed))
+}
+
+/// Analyses the observed mods on up to [`MAX_WORKERS`] threads and returns
+/// their results in the order given. `checked` counts finished mods.
+fn analyse_mods(
+  observing: Vec<Result<ObservedMod, Error>>,
+  observed: &VdataHistoryIndex,
+  checked: impl Fn(u32),
+) -> Vec<Result<(ModFindings, bool), Error>> {
+  let count = observing.len();
+  let workers = std::thread::available_parallelism()
+    .map_or(1, std::num::NonZero::get)
+    .min(MAX_WORKERS)
+    .min(count);
+  let queue = Mutex::new(observing.into_iter().enumerate());
+  let (sender, receiver) = std::sync::mpsc::channel();
+  let mut results: Vec<_> = std::iter::repeat_with(|| None).take(count).collect();
+  std::thread::scope(|scope| {
+    for _ in 0..workers {
+      let sender = sender.clone();
+      let queue = &queue;
+      scope.spawn(move || {
+        loop {
+          let next = queue
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .next();
+          let Some((index, observing)) = next else {
+            break;
+          };
+          let result = observing.and_then(|observing| match observing {
+            ObservedMod::Uncovered => Ok((ModFindings::uncovered(), false)),
+            ObservedMod::Standalone(standalone, changed) => {
+              let plan = standalone.analyse(observed)?;
+              let findings = ModFindings::from_analysis(&plan.analysis, standalone.mod_id(), true);
+              Ok((findings, changed))
+            }
+          });
+          if sender.send((index, result)).is_err() {
+            break;
+          }
+        }
+      });
+    }
+    drop(sender);
+    for (done, (index, result)) in receiver.into_iter().enumerate() {
+      results[index] = Some(result);
+      checked(done as u32 + 1);
+    }
+  });
+  results
+    .into_iter()
+    .map(|result| result.expect("every queued mod sends a result"))
+    .collect()
 }
 
 #[cfg(test)]
@@ -784,6 +848,43 @@ mod tests {
     assert_eq!(
       fs::read(&history).unwrap(),
       learned(&[(second, "second"), (third, "third")])
+    );
+  }
+
+  #[test]
+  fn analysed_results_stay_with_their_mod_and_progress_counts_up() {
+    // Many instant results, so two workers are likely to interleave.
+    let count = 4096;
+    let observing = (0..count)
+      .map(|index| {
+        if index % 2 == 0 {
+          Err(Error::ModInvalid(index.to_string()))
+        } else {
+          Ok(ObservedMod::Uncovered)
+        }
+      })
+      .collect();
+    let checked = Mutex::new(Vec::new());
+    let results = analyse_mods(observing, &VdataHistoryIndex::default(), |done| {
+      checked.lock().unwrap().push(done)
+    });
+    assert_eq!(results.len(), count);
+    for (index, result) in results.iter().enumerate() {
+      if index % 2 == 0 {
+        assert!(
+          matches!(result, Err(Error::ModInvalid(message)) if *message == index.to_string()),
+          "result {index} belongs to another mod"
+        );
+      } else {
+        assert!(
+          matches!(result, Ok((_, false))),
+          "result {index} is not uncovered"
+        );
+      }
+    }
+    assert_eq!(
+      *checked.lock().unwrap(),
+      (1..=count as u32).collect::<Vec<_>>()
     );
   }
 }
