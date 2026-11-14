@@ -65,6 +65,30 @@ const matches = [
   },
 ];
 
+const sentWindow = (scope: StatsScope) => {
+  const query = new URLSearchParams(statsScopeQuery(scope));
+  return [query.get("min_unix_timestamp"), query.get("max_unix_timestamp")];
+};
+
+const analyticsStart = (scope: StatsScope) =>
+  new URLSearchParams(analyticsScopeQuery(scope)).get("min_unix_timestamp");
+
+const season = (name: string, intervals: [number, number][]): RankedSeason => ({
+  class_name: name,
+  name,
+  ranked_type: "normal",
+  min_wins: 60,
+  min_hero_wins: 15,
+  min_hero_unlocks: 3,
+  calibration_matches: 8,
+  valid_party_sizes: [1, 2],
+  intervals: intervals.map(([start, end], index) => ({
+    interval: index + 1,
+    start_timestamp: start,
+    end_timestamp: end,
+  })),
+});
+
 describe("Stats match scope", () => {
   it("limits the combined selection to standard ranked and unranked matches", () => {
     expect(
@@ -145,36 +169,30 @@ describe("Stats match scope", () => {
   });
 
   it("sends each picked bound, the end as its last included second", () => {
-    const window = (scope: StatsScope) => {
-      const query = new URLSearchParams(statsScopeQuery(scope));
-      return [query.get("min_unix_timestamp"), query.get("max_unix_timestamp")];
-    };
-    expect(window({ mode: "all", since: 100, until: 500 })).toEqual([
+    expect(sentWindow({ mode: "all", since: 100, until: 500 })).toEqual([
       "100",
       "499",
     ]);
-    expect(window({ mode: "all", since: 100, until: 0 })).toEqual([
+    expect(sentWindow({ mode: "all", since: 100, until: 0 })).toEqual([
       "100",
       null,
     ]);
-    expect(window({ mode: "all", since: 0, until: 500 })).toEqual([
+    expect(sentWindow({ mode: "all", since: 0, until: 500 })).toEqual([
       null,
       "499",
     ]);
-    expect(window(ALL_STATS_SCOPE)).toEqual([null, null]);
+    expect(sentWindow(ALL_STATS_SCOPE)).toEqual([null, null]);
   });
 
   it("gives global comparisons the 30 days before an end picked without a start", () => {
-    const start = (scope: StatsScope) =>
-      new URLSearchParams(analyticsScopeQuery(scope)).get("min_unix_timestamp");
     const end = 1_790_000_000;
-    expect(start({ mode: "all", since: 0, until: end })).toBe(
+    expect(analyticsStart({ mode: "all", since: 0, until: end })).toBe(
       String(end - 30 * 86_400),
     );
-    expect(start({ mode: "all", since: 1_780_000_000, until: end })).toBe(
-      "1780000000",
-    );
-    expect(start(ALL_STATS_SCOPE)).toBeNull();
+    expect(
+      analyticsStart({ mode: "all", since: 1_780_000_000, until: end }),
+    ).toBe("1780000000");
+    expect(analyticsStart(ALL_STATS_SCOPE)).toBeNull();
   });
 
   it("keeps every match of the picked end day and none after it", () => {
@@ -193,24 +211,6 @@ describe("Stats match scope", () => {
   });
 
   it("offers started seasons newest first, each spanning all its intervals", () => {
-    const season = (
-      name: string,
-      intervals: [number, number][],
-    ): RankedSeason => ({
-      class_name: name,
-      name,
-      ranked_type: "normal",
-      min_wins: 60,
-      min_hero_wins: 15,
-      min_hero_unlocks: 3,
-      calibration_matches: 8,
-      valid_party_sizes: [1, 2],
-      intervals: intervals.map(([start, end], index) => ({
-        interval: index + 1,
-        start_timestamp: start,
-        end_timestamp: end,
-      })),
-    });
     const windows = seasonWindows(
       [
         season("split", [

@@ -8,6 +8,8 @@ import { openStats, widget } from "../support/stats-dashboard-actions";
 const RANGE = '[data-testid="stats-range"]';
 const SEASON = '[data-testid="stats-season"]';
 
+const pad = (value: number) => String(value).padStart(2, "0");
+
 /** A local calendar date `daysAgo` days back, as a date input holds it. */
 const localDate = (daysAgo: number) => {
   const today = new Date();
@@ -16,7 +18,6 @@ const localDate = (daysAgo: number) => {
     today.getMonth(),
     today.getDate() - daysAgo,
   );
-  const pad = (value: number) => String(value).padStart(2, "0");
   return `${day.getFullYear()}-${pad(day.getMonth() + 1)}-${pad(day.getDate())}`;
 };
 
