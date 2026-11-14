@@ -190,12 +190,11 @@
               cargo-edit
 
               # Node.js ecosystem
-              nodejs_22
+              nodejs_24
               pnpm_11
               bun
 
               # Development tools
-              biome
               turbo
               lefthook
               git
