@@ -1,5 +1,6 @@
 import type { Database, JobLock } from "@deadlock-mods/database";
-import { eq, jobLocks, lt } from "@deadlock-mods/database";
+import { RuntimeError } from "@deadlock-mods/common";
+import { and, eq, gt, jobLocks, lt } from "@deadlock-mods/database";
 import type { Logger } from "@deadlock-mods/logging";
 import { v4 as uuidv4 } from "uuid";
 
@@ -16,6 +17,8 @@ export interface AcquiredLock {
   jobName: string;
   instanceId: string;
   lockId: string;
+  /** Aborts with a RuntimeError when ownership is lost or the lock is released. */
+  signal: AbortSignal;
   release: () => Promise<void>;
   updateHeartbeat: () => Promise<void>;
 }
@@ -29,7 +32,10 @@ export class DistributedLockService {
   private readonly db: Database;
   private readonly logger: Logger;
   private readonly heartbeatTimers = new Map<string, NodeJS.Timeout>();
-  private readonly lockTimeouts = new Map<string, number>();
+  private readonly activeLocks = new Map<
+    string,
+    { timeout: number; controller: AbortController }
+  >();
   private readonly instanceId: string;
 
   constructor(
@@ -113,12 +119,18 @@ export class DistributedLockService {
         .info(`Successfully acquired lock for job: ${jobName}`);
 
       // Set up automatic heartbeat
-      this.startHeartbeat(acquiredLock.id, jobName, heartbeatInterval, timeout);
+      const signal = this.startHeartbeat(
+        acquiredLock.id,
+        jobName,
+        heartbeatInterval,
+        timeout,
+      );
 
       const lock: AcquiredLock = {
         jobName,
         instanceId,
         lockId: acquiredLock.id,
+        signal,
         release: async () => {
           await this.releaseLock(acquiredLock.id);
         },
@@ -167,25 +179,30 @@ export class DistributedLockService {
    * Update heartbeat for a specific lock
    */
   private async updateHeartbeat(lockId: string): Promise<void> {
-    const timeoutMs = this.lockTimeouts.get(lockId);
-    if (timeoutMs === undefined) {
-      this.logger.warn(
-        `No timeout found for lock ${lockId}, skipping heartbeat`,
-      );
-      return;
+    const activeLock = this.activeLocks.get(lockId);
+    if (!activeLock) {
+      throw new RuntimeError(`Lock ${lockId} is no longer held`);
     }
 
     try {
       const now = new Date();
-      const expiresAt = new Date(now.getTime() + timeoutMs);
-      await this.db
+      const expiresAt = new Date(now.getTime() + activeLock.timeout);
+      const renewed = await this.db
         .update(jobLocks)
         .set({ heartbeatAt: now, expiresAt })
-        .where(eq(jobLocks.id, lockId));
+        .where(and(eq(jobLocks.id, lockId), gt(jobLocks.expiresAt, now)))
+        .returning({ id: jobLocks.id });
+      if (renewed.length === 0) {
+        throw new RuntimeError(`Lock ${lockId} is no longer held`);
+      }
+      activeLock.controller.signal.throwIfAborted();
     } catch (error) {
-      this.logger
-        .withError(error)
-        .error(`Error updating heartbeat for lock ${lockId}`);
+      const failure = new RuntimeError(
+        `Lost lock ${lockId} during renewal`,
+        error,
+      );
+      this.stopHeartbeat(lockId, failure);
+      throw failure;
     }
   }
 
@@ -224,9 +241,10 @@ export class DistributedLockService {
     jobName: string,
     interval: number,
     timeout: number,
-  ): void {
+  ): AbortSignal {
     this.stopHeartbeat(lockId);
-    this.lockTimeouts.set(lockId, timeout);
+    const controller = new AbortController();
+    this.activeLocks.set(lockId, { timeout, controller });
 
     const timer = setInterval(async () => {
       try {
@@ -238,23 +256,28 @@ export class DistributedLockService {
         this.logger
           .withError(error)
           .error(`Failed to update heartbeat for lock ${lockId}`);
-        this.stopHeartbeat(lockId);
       }
     }, interval);
 
     this.heartbeatTimers.set(lockId, timer);
+    return controller.signal;
   }
 
   /**
    * Stop heartbeat for a lock
    */
-  private stopHeartbeat(lockId: string): void {
+  private stopHeartbeat(
+    lockId: string,
+    reason = new RuntimeError(`Lock ${lockId} is no longer held`),
+  ): void {
     const timer = this.heartbeatTimers.get(lockId);
     if (timer) {
       clearInterval(timer);
       this.heartbeatTimers.delete(lockId);
     }
-    this.lockTimeouts.delete(lockId);
+    const activeLock = this.activeLocks.get(lockId);
+    this.activeLocks.delete(lockId);
+    activeLock?.controller.abort(reason);
   }
 
   /**
@@ -322,11 +345,9 @@ export class DistributedLockService {
    * Cleanup all timers (call this when shutting down)
    */
   cleanup(): void {
-    this.heartbeatTimers.forEach((timer) => {
-      clearInterval(timer);
-    });
-    this.heartbeatTimers.clear();
-    this.lockTimeouts.clear();
+    for (const lockId of this.activeLocks.keys()) {
+      this.stopHeartbeat(lockId);
+    }
     this.logger.info("Cleaned up all heartbeat timers");
   }
 }

@@ -1,4 +1,14 @@
-import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
+import { RuntimeError } from "@deadlock-mods/common";
+import { ModRepository } from "@deadlock-mods/database";
 import { createMockLogger } from "@deadlock-mods/logging";
 import modIndex from "../../../../desktop/src-tauri/tests/fixtures/gamebanana/mod-index.json";
 import modProfile from "../../../../desktop/src-tauri/tests/fixtures/gamebanana/mod-profile.json";
@@ -11,30 +21,30 @@ if (process.env.DMM_SYNC_TEST_CHILD !== "1") {
       stdout: "pipe",
       stderr: "pipe",
     });
-    expect(new TextDecoder().decode(result.stderr)).toContain("3 pass");
+    expect(new TextDecoder().decode(result.stderr)).toContain("5 pass");
     expect(result.exitCode).toBe(0);
   });
 } else {
   const markSynced = mock(async () => {});
-  const upsert = mock(async () => {});
+  const upsert = mock(async () => {
+    throw new Error("Unexpected mod write");
+  });
   const emit = mock((_outcome: "success" | "error", _error?: Error) => {});
   const set = mock((_key: string, _value: string | number) => {});
 
-  mock.module("@deadlock-mods/database", () => ({
-    db: {},
-    ModRepository: class {
-      markSynced = markSynced;
-      upsertByRemoteId = upsert;
-      async findIndexModifiedAtByRemoteIds() {
-        return new Map<string, Date | null>();
-      }
-      async findLeastRecentlySynced() {
-        return [];
-      }
-    },
-    ModAuthorRepository: class {},
-    ModDownloadRepository: class {},
-  }));
+  beforeEach(() => {
+    spyOn(ModRepository.prototype, "markSynced").mockImplementation(markSynced);
+    spyOn(ModRepository.prototype, "upsertByRemoteId").mockImplementation(
+      upsert,
+    );
+    spyOn(
+      ModRepository.prototype,
+      "findIndexModifiedAtByRemoteIds",
+    ).mockResolvedValue(new Map<string, Date | null>());
+    spyOn(ModRepository.prototype, "findLeastRecentlySynced").mockResolvedValue(
+      [],
+    );
+  });
   mock.module("../../lib/logger", () => ({
     logger: createMockLogger(),
     createWideEvent: () => ({ set, emit }),
@@ -57,6 +67,53 @@ if (process.env.DMM_SYNC_TEST_CHILD !== "1") {
   });
 
   describe("GameBanana stale profile deferral", () => {
+    it("does not turn lock loss during hydration into a failed item result", async () => {
+      const provider = new GameBananaProvider();
+      const controller = new AbortController();
+      const failure = new RuntimeError("Lock lost");
+      spyOn(provider, "createModPayload").mockImplementation(async () => {
+        controller.abort(failure);
+        return "not_found";
+      });
+
+      await expect(
+        provider.createMod(modIndex._aRecords[0], "all", {
+          signal: controller.signal,
+        }),
+      ).rejects.toBe(failure);
+      expect(upsert).not.toHaveBeenCalled();
+    });
+
+    it("stops before acknowledging an item or processing another item after lock loss", async () => {
+      const provider = new GameBananaProvider();
+      const controller = new AbortController();
+      const failure = new RuntimeError("Lock lost");
+      spyOn(globalThis, "fetch").mockResolvedValue(
+        Response.json({
+          ...modIndex,
+          _aRecords: [...modIndex._aRecords, ...modIndex._aRecords],
+          _aMetadata: { ...modIndex._aMetadata, _bIsComplete: true },
+        }),
+      );
+      const create = spyOn(provider, "createMod").mockImplementation(
+        async () => {
+          controller.abort(failure);
+          return {
+            mod: undefined,
+            filesChanged: false,
+            contentChanged: false,
+            skipped: "not_found",
+          };
+        },
+      );
+
+      await expect(provider.synchronize(controller.signal)).rejects.toBe(
+        failure,
+      );
+      expect(markSynced).not.toHaveBeenCalled();
+      expect(create).toHaveBeenCalledTimes(1);
+    });
+
     it("keeps a stale profile pending across syncs without emitting an error or writing it", async () => {
       const fetch = spyOn(globalThis, "fetch").mockImplementation(
         Object.assign(
