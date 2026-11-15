@@ -256,7 +256,13 @@ impl ProfileVpkManifest {
       })?
     } else if temp_path.exists() {
       let manifest_bytes = fs::read(&temp_path)?;
-      serde_json::from_slice(&manifest_bytes).unwrap_or_default()
+      serde_json::from_slice(&manifest_bytes).unwrap_or_else(|error| {
+        log::debug!(
+          "Ignoring incomplete VPK manifest temp file at {}: {error}",
+          temp_path.display()
+        );
+        Self::default()
+      })
     } else {
       Self::default()
     };
