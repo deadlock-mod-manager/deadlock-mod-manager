@@ -35,7 +35,11 @@ fn rejects_unsafe_resource_segments_on_every_platform() {
     let devices = ["con", "PRN", "Aux", "NUL"]
         .into_iter()
         .map(String::from)
-        .chain((1..=9).flat_map(|digit| [format!("Com{digit}"), format!("lPt{digit}")]));
+        .chain(
+            ('1'..='9')
+                .chain(['¹', '²', '³'])
+                .flat_map(|digit| [format!("Com{digit}"), format!("lPt{digit}")]),
+        );
     for device in devices {
         for path in [
             device.clone(),
@@ -59,6 +63,7 @@ fn accepts_normal_names_and_normalizes_only_separators() {
         ("Models\\Hero\\Skin.vmdl_c", "Models/Hero/Skin.vmdl_c"),
         ("scripts/Com10.vdata_c", "scripts/Com10.vdata_c"),
         ("a/lpt0.txt", "a/lpt0.txt"),
+        ("a/com⁴.txt", "a/com⁴.txt"),
         ("a/console.txt", "a/console.txt"),
         ("éé/中文.txt", "éé/中文.txt"),
     ] {

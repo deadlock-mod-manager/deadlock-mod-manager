@@ -432,11 +432,17 @@ pub fn normalize_resource_path(entry_path: &str) -> Option<String> {
             || stem.eq_ignore_ascii_case("prn")
             || stem.eq_ignore_ascii_case("aux")
             || stem.eq_ignore_ascii_case("nul")
-            || (stem.len() == 4
-                && stem.get(..3).is_some_and(|prefix| {
-                    prefix.eq_ignore_ascii_case("com") || prefix.eq_ignore_ascii_case("lpt")
-                })
-                && matches!(stem.as_bytes()[3], b'1'..=b'9'));
+            // Windows also reserves the superscript digits ¹ ² ³ after COM and LPT.
+            || stem
+                .get(..3)
+                .zip(stem.get(3..))
+                .is_some_and(|(prefix, digit)| {
+                    (prefix.eq_ignore_ascii_case("com") || prefix.eq_ignore_ascii_case("lpt"))
+                        && matches!(
+                            digit,
+                            "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "¹" | "²" | "³"
+                        )
+                });
         if matches!(segment, "" | "." | "..")
             || segment.ends_with(['.', ' '])
             || segment.contains(':')
