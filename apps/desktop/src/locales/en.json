@@ -3804,13 +3804,13 @@
     "summaryModelsAll_other": "All of them hide a model.",
     "summaryNoModels_one": "It doesn't hide a model.",
     "summaryNoModels_other": "None of them hide a model.",
-    "summaryNone": "When two enabled mods change the same file, they show up here.",
-    "safeNote": "Overlaps never stop the game from launching. They only decide which mod's copy of a shared file is used.",
-    "howItWorks": "How load order decides",
+    "summaryNone": "Enabled mods that change the same file show up here.",
+    "safeNote": "Overlaps don't stop the game from launching. They decide which mod's copy of a shared file the game uses.",
+    "howItWorks": "How load order works",
     "scanning": "Reading your enabled mods...",
     "scanFailed": "Couldn't read your enabled mods: {{error}}",
     "noneTitle": "Nothing overlaps",
-    "noneDescription": "Each file in your enabled mods comes from exactly one mod.",
+    "noneDescription": "No two enabled mods change the same file.",
     "noSearchMatches": "No overlaps involve the mods matching your search and filters.",
     "badge": {
       "modelHidden": "Model hidden",
@@ -3850,7 +3850,7 @@
     "ignoredPair": "{{first}} and {{second}}",
     "ignoredFilesRow_one": "{{count}} file shared by {{first}} and {{second}}",
     "ignoredFilesRow_other": "{{count}} files shared by {{first}} and {{second}}",
-    "ignoredModRow": "{{mod}}, every overlap",
+    "ignoredModRow": "Every overlap with {{mod}}",
     "restore": "Restore",
     "clearIgnores": "Restore all",
     "help": {
@@ -3866,10 +3866,10 @@
       },
       "fromMod": "From #{{position}}",
       "skipped": "Skipped",
-      "safe": "Most overlaps are harmless. Both mods still load, and only the files they share come from one of them, so the difference is usually small or invisible.",
-      "order": "Mods load in the order from Change Mods Order. If two of them include the same file, the game takes it from the mod higher in that list and skips the other copy.",
-      "modelException": "Models are the exception: a skin whose model is skipped usually won't appear at all.",
-      "resolve": "Press Load first on the mod you want to see, or mark the overlap as fine if the game already looks the way you like."
+      "safe": "Most overlaps are harmless. Both mods still load, and only the files they share come from one mod, so the difference is usually small or invisible.",
+      "order": "The game loads mods in the order set in Change Mods Order. When two mods include the same file, it uses the copy from the mod higher in that list.",
+      "modelException": "Models are different. If a skin's model is skipped, the skin usually won't show up at all.",
+      "resolve": "To change which mod wins, press Load first on the one you want to see. If the game already looks right, mark the overlap as fine."
     }
   },
   "modOrdering": {

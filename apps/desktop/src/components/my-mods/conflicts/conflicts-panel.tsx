@@ -4,16 +4,11 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@deadlock-mods/ui/components/collapsible";
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@deadlock-mods/ui/components/empty";
-import { ChevronDown, CircleCheck, Loader2 } from "@deadlock-mods/ui/icons";
+import { ChevronDown, Loader2 } from "@deadlock-mods/ui/icons";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useShallow } from "zustand/react/shallow";
+import { getEnabledMods } from "@/hooks/use-bisect";
 import {
   useConflictIgnore,
   useMakeConflictWinner,
@@ -24,6 +19,7 @@ import { usePersistedStore } from "@/lib/store";
 import { ConflictGroupRow } from "./conflict-group-row";
 import { IgnoredSection } from "./ignored-section";
 import { LoadOrderHelp } from "./load-order-help";
+import { NoOverlapsState } from "./no-overlaps-state";
 
 /**
  * `visibleModIds` holds the mods left by the library's search and filters; an
@@ -41,6 +37,7 @@ export const ConflictsPanel = ({
     () => new Map(localMods.map((mod) => [mod.remoteId, mod])),
     [localMods],
   );
+  const activeMods = usePersistedStore(useShallow(getEnabledMods));
   const { data, groups, isLoading, error } = useProfileConflicts();
   const ignore = useConflictIgnore();
   const makeWinner = useMakeConflictWinner();
@@ -88,19 +85,7 @@ export const ConflictsPanel = ({
   } else if (data) {
     let list: React.ReactNode;
     if (groups.length === 0) {
-      list = (
-        <Empty className='py-12'>
-          <EmptyHeader>
-            <EmptyMedia variant='default'>
-              <CircleCheck className='h-12 w-12' />
-            </EmptyMedia>
-            <EmptyTitle>{t("conflicts.noneTitle")}</EmptyTitle>
-            <EmptyDescription>
-              {t("conflicts.noneDescription")}
-            </EmptyDescription>
-          </EmptyHeader>
-        </Empty>
-      );
+      list = <NoOverlapsState mods={activeMods} />;
     } else if (visibleGroups.length === 0) {
       list = (
         <p className='py-8 text-center text-muted-foreground text-sm'>
@@ -144,13 +129,24 @@ export const ConflictsPanel = ({
       open={helpOpen}>
       <div className='flex flex-wrap items-center justify-between gap-2'>
         <div className='text-sm'>
-          <p>{summary}</p>
+          {/* With overlaps the summary is status; without, it only explains the tab. */}
+          <p
+            className={
+              groups.length > 0
+                ? "font-medium text-foreground"
+                : "text-muted-foreground"
+            }>
+            {summary}
+          </p>
           {groups.length > 0 && (
             <p className='text-muted-foreground'>{t("conflicts.safeNote")}</p>
           )}
         </div>
         <CollapsibleTrigger asChild>
-          <Button size='sm' variant='ghost'>
+          <Button
+            className='text-muted-foreground hover:text-foreground'
+            size='sm'
+            variant='ghost'>
             {t("conflicts.howItWorks")}
             <ChevronDown
               aria-hidden

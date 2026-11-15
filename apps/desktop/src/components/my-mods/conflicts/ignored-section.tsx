@@ -31,15 +31,16 @@ export const IgnoredSection = ({
   return (
     <Collapsible className='mt-2'>
       <div className='flex items-center justify-between'>
-        <CollapsibleTrigger className='group flex items-center gap-1.5 rounded-sm text-muted-foreground text-sm outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60'>
+        <CollapsibleTrigger className='group flex items-center gap-1.5 rounded-sm font-semibold text-[10.5px] text-muted-foreground uppercase tracking-[0.12em] outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/60'>
           <ChevronDown
             aria-hidden
-            className='h-4 w-4 transition-transform group-data-[state=closed]:-rotate-90'
+            className='h-3.5 w-3.5 transition-transform group-data-[state=closed]:-rotate-90'
           />
           {t("conflicts.markedFineSection", { count: total })}
         </CollapsibleTrigger>
         <Button
           disabled={ignore.isPending}
+          className='text-muted-foreground hover:text-foreground'
           onClick={() => ignore.mutate([{ type: "clearAll" }])}
           size='sm'
           variant='ghost'>
@@ -47,7 +48,7 @@ export const IgnoredSection = ({
         </Button>
       </div>
       <CollapsibleContent>
-        <ul className='mt-2 divide-y rounded-lg border'>
+        <ul className='mt-2 divide-y divide-border/60 overflow-hidden rounded-lg border border-border/60 bg-muted/20'>
           {ignored.map((conflict) => (
             <IgnoredRow
               disabled={ignore.isPending}
@@ -64,6 +65,10 @@ export const IgnoredSection = ({
                       second: modDisplayName(modsById, conflict.loser),
                     })
               }
+              mods={[
+                modsById.get(conflict.winner),
+                modsById.get(conflict.loser),
+              ]}
               onRestore={
                 conflict.ignoreReason === "mod"
                   ? undefined
@@ -86,6 +91,7 @@ export const IgnoredSection = ({
               label={t("conflicts.ignoredModRow", {
                 mod: modDisplayName(modsById, modId),
               })}
+              mods={[modsById.get(modId)]}
               onRestore={() => ignore.mutate([{ type: "unignoreMod", modId }])}
             />
           ))}
