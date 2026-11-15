@@ -249,7 +249,7 @@ impl ProfileVpkManifest {
     let source_path = if manifest_path.exists() {
       Some(manifest_path.clone())
     } else if temp_path.exists() {
-      Some(temp_path)
+      Some(temp_path.clone())
     } else {
       None
     };
@@ -257,12 +257,16 @@ impl ProfileVpkManifest {
     let manifest: Self = match source_path {
       Some(path) => {
         let manifest_json = fs::read_to_string(&path)?;
-        serde_json::from_str(&manifest_json).map_err(|e| {
-          Error::InvalidInput(format!(
-            "Failed to parse VPK manifest at {}: {e}",
-            path.display()
-          ))
-        })?
+        match serde_json::from_str(&manifest_json) {
+          Ok(manifest) => manifest,
+          Err(_) if path == temp_path => Self::default(),
+          Err(error) => {
+            return Err(Error::InvalidInput(format!(
+              "Failed to parse VPK manifest at {}: {error}",
+              path.display()
+            )));
+          }
+        }
       }
       None => Self::default(),
     };
@@ -323,6 +327,16 @@ impl ProfileVpkManifest {
         ))
       })?;
     } else {
+      let manifest_json = fs::read_to_string(&temp_path)?;
+      if let Err(error) = serde_json::from_str::<Self>(&manifest_json) {
+        fs::remove_file(&temp_path)?;
+        log::warn!(
+          "Discarded incomplete VPK manifest temp file at {}: {error}",
+          temp_path.display()
+        );
+        return Ok(());
+      }
+
       fs::rename(&temp_path, &manifest_path).map_err(|e| {
         Error::InvalidInput(format!(
           "Failed to recover VPK manifest temp file from {} to {}: {e}",
@@ -707,6 +721,80 @@ mod tests {
     let loaded = ProfileVpkManifest::load(&base).unwrap();
 
     assert_eq!(loaded, manifest);
+  }
+
+  #[test]
+  fn open_for_write_discards_invalid_temp_manifest_when_main_is_missing() {
+    for bytes in [b"{ partial".as_slice(), br#"{"mods": []}"#, &[0; 64]] {
+      let temp = tempfile::tempdir().unwrap();
+      let base = addons_base(&temp);
+      let temp_path = base.join(format!("{MANIFEST_FILENAME}.tmp"));
+      fs::write(&temp_path, bytes).unwrap();
+
+      let loaded = ProfileVpkManifest::open_for_write(&base).unwrap();
+
+      assert_eq!(loaded, ProfileVpkManifest::default());
+      assert!(!temp_path.exists());
+      assert!(!base.join(MANIFEST_FILENAME).exists());
+    }
+  }
+
+  #[test]
+  fn load_ignores_invalid_temp_manifest_without_changing_it() {
+    for bytes in [b"{ partial".as_slice(), br#"{"mods": []}"#, &[0; 64]] {
+      let temp = tempfile::tempdir().unwrap();
+      let base = addons_base(&temp);
+      let temp_path = base.join(format!("{MANIFEST_FILENAME}.tmp"));
+      fs::write(&temp_path, bytes).unwrap();
+
+      let loaded = ProfileVpkManifest::load(&base).unwrap();
+
+      assert_eq!(loaded, ProfileVpkManifest::default());
+      assert_eq!(fs::read(&temp_path).unwrap(), bytes);
+      assert!(!base.join(MANIFEST_FILENAME).exists());
+    }
+  }
+
+  #[test]
+  fn open_for_write_promotes_future_version_temp_manifest_before_rejecting_it() {
+    let temp = tempfile::tempdir().unwrap();
+    let base = addons_base(&temp);
+    let temp_path = base.join(format!("{MANIFEST_FILENAME}.tmp"));
+    let bytes = format!(
+      r#"{{"version": {}, "mods": {{}}}}"#,
+      CURRENT_MANIFEST_VERSION + 1
+    );
+    fs::write(&temp_path, &bytes).unwrap();
+
+    let error = ProfileVpkManifest::load(&base).unwrap_err();
+    assert!(error.to_string().contains("unsupported version"));
+    assert_eq!(fs::read_to_string(&temp_path).unwrap(), bytes);
+    assert!(!base.join(MANIFEST_FILENAME).exists());
+
+    let error = ProfileVpkManifest::open_for_write(&base).unwrap_err();
+
+    assert!(error.to_string().contains("unsupported version"));
+    assert!(!temp_path.exists());
+    assert_eq!(
+      fs::read_to_string(base.join(MANIFEST_FILENAME)).unwrap(),
+      bytes
+    );
+  }
+
+  #[test]
+  fn temp_manifest_read_errors_propagate_without_removing_the_temp() {
+    let temp = tempfile::tempdir().unwrap();
+    let base = addons_base(&temp);
+    let temp_path = base.join(format!("{MANIFEST_FILENAME}.tmp"));
+    fs::create_dir(&temp_path).unwrap();
+
+    assert!(matches!(ProfileVpkManifest::load(&base), Err(Error::Io(_))));
+    assert!(matches!(
+      ProfileVpkManifest::open_for_write(&base),
+      Err(Error::Io(_))
+    ));
+    assert!(temp_path.is_dir());
+    assert!(!base.join(MANIFEST_FILENAME).exists());
   }
 
   #[test]
