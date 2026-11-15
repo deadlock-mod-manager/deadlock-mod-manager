@@ -1,5 +1,6 @@
 use super::{LocalizationModInput, normalize_path, resources::ResourceSnapshot};
 use serde::Serialize;
+use source2_model::vpk_extract::normalize_resource_path;
 use std::collections::{BTreeMap, BTreeSet};
 
 #[derive(Debug, Clone, Serialize)]
@@ -27,6 +28,9 @@ impl RepairScope {
     {
       for archive in &input.vpks {
         for path in resources.archive(archive).list_entries() {
+          if normalize_resource_path(&path).is_none() {
+            continue;
+          }
           let path = normalize_path(&path);
           // Merged tables combine providers; binary assets follow the engine's
           // winning provider, so an inactive skin must not veto its repairs.
@@ -68,6 +72,9 @@ impl RepairScope {
     for input in mods.iter().filter(|input| self.includes_mod(&input.mod_id)) {
       for archive in &input.vpks {
         for path in resources.archive(archive).list_entries() {
+          if normalize_resource_path(&path).is_none() {
+            continue;
+          }
           let path = normalize_path(&path);
           if self.protects(&path)
             && (super::reads_compiled_baseline(&path)

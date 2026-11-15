@@ -418,38 +418,51 @@ impl VpkArchive {
     }
 }
 
-/// Turn a VPK entry path into a safe relative path under an output dir: forward
-/// slashes, no `..`/root/prefix components. Returns `None` if nothing is left.
-fn sanitize_relative(entry_path: &str) -> Option<PathBuf> {
-    use std::path::Component;
+/// Normalize resource separators, rejecting empty, dot, parent, drive, stream,
+/// control-character, Windows device-name and trailing-dot/space segments on every platform.
+pub fn normalize_resource_path(entry_path: &str) -> Option<String> {
     let normalized = entry_path.replace('\\', "/");
-    let mut out = PathBuf::new();
-    for component in Path::new(&normalized).components() {
-        match component {
-            Component::Normal(part) if starts_with_drive_letter(&part.to_string_lossy()) => {
-                return None;
-            }
-            Component::Normal(part) => out.push(part),
-            Component::CurDir => {}
-            Component::ParentDir | Component::RootDir | Component::Prefix(_) => {
-                return None;
-            }
+    for segment in normalized.split('/') {
+        let stem = segment
+            .split('.')
+            .next()
+            .unwrap_or(segment)
+            .trim_end_matches(' ');
+        let device = stem.eq_ignore_ascii_case("con")
+            || stem.eq_ignore_ascii_case("prn")
+            || stem.eq_ignore_ascii_case("aux")
+            || stem.eq_ignore_ascii_case("nul")
+            // Windows also reserves the superscript digits ¹ ² ³ after COM and LPT.
+            || stem
+                .get(..3)
+                .zip(stem.get(3..))
+                .is_some_and(|(prefix, digit)| {
+                    (prefix.eq_ignore_ascii_case("com") || prefix.eq_ignore_ascii_case("lpt"))
+                        && matches!(
+                            digit,
+                            "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "¹" | "²" | "³"
+                        )
+                });
+        if matches!(segment, "" | "." | "..")
+            || segment.ends_with(['.', ' '])
+            || segment.contains(':')
+            || segment.chars().any(char::is_control)
+            || device
+        {
+            return None;
         }
     }
-    if out.as_os_str().is_empty() {
-        None
-    } else {
-        Some(out)
-    }
+    Some(normalized)
 }
 
-/// Whether `component` starts with a Windows drive specifier such as `C:`. `C:` only parses
-/// as a prefix in leading position, and pushing it would discard everything already in the
-/// buffer, so a drive letter must be rejected wherever it appears.
-fn starts_with_drive_letter(component: &str) -> bool {
-    let bytes = component.as_bytes();
-    bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':'
+fn sanitize_relative(entry_path: &str) -> Option<PathBuf> {
+    normalize_resource_path(entry_path).map(PathBuf::from)
 }
+
+#[cfg(test)]
+#[path = "resource_path_tests.rs"]
+mod resource_path_tests;
+
 /// Read the raw bytes of a single entry inside a VPK, resolving inline data and
 /// companion `_NNN.vpk` archives. Mirrors the game's VPK v2 layout.
 pub fn extract_entry(vpk_path: &Path, entry_path: &str) -> Result<Vec<u8>> {

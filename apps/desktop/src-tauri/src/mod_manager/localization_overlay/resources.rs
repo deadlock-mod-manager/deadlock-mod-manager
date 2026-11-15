@@ -1,6 +1,6 @@
 use super::{LocalizationModInput, normalize_path};
 use crate::errors::Error;
-use source2_model::vpk_extract::VpkArchive;
+use source2_model::vpk_extract::{VpkArchive, normalize_resource_path};
 use std::{
   cell::RefCell,
   collections::{BTreeMap, VecDeque},
@@ -308,6 +308,9 @@ fn open_mod_archives(mods: &[LocalizationModInput]) -> Result<ModArchives, Error
         "Could not read VPK {} for mod {}: {error}. Reinstall this mod or disable it before retrying compatibility review", path.display(), input.mod_id
       )))?;
       for entry in archive.list_entries() {
+        if normalize_resource_path(&entry).is_none() {
+          continue;
+        }
         providers
           .entry(normalize_path(&entry))
           .or_insert_with(|| Provider {
@@ -324,12 +327,8 @@ fn open_mod_archives(mods: &[LocalizationModInput]) -> Result<ModArchives, Error
 }
 
 pub(super) fn resource_path(name: &str) -> Option<String> {
-  let mut path = normalize_path(name);
-  if path
-    .split('/')
-    .any(|part| matches!(part, "" | "." | "..") || part.contains(':'))
-    || path.contains('#')
-  {
+  let mut path = normalize_resource_path(name)?.to_ascii_lowercase();
+  if path.contains('#') {
     return None;
   }
   if !path.ends_with("_c") && !path.ends_with(".txt") {
