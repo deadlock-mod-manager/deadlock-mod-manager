@@ -41,6 +41,7 @@ import {
   profileRestoreRoutes,
 } from "./profile-restore-fixtures";
 import { prepareFileOrderWorld } from "./file-order-fixtures";
+import { prepareProfileSwitchLeakWorld } from "./profile-switch-leak-fixtures";
 import { prepareBrokenProfileWorld } from "./broken-profile-fixtures";
 import {
   disabledFixRoutes,
@@ -932,6 +933,14 @@ export const scenarios = {
     phases: ["reorder-files", "restart-file-order"],
     routes: profileRoutes,
     prepare: prepareFileOrderWorld,
+  },
+  "profiles-switch-leak": {
+    ...defaults,
+    family: "profiles",
+    spec: "profiles-switch-leak",
+    phases: ["switch-leak"],
+    routes: profileRoutes,
+    prepare: prepareProfileSwitchLeakWorld,
   },
   "conflicts-resolve": conflicts,
   "bisect-conflicts": {

@@ -1,12 +1,21 @@
 use super::*;
 
-fn rewrite(text: &str, paths: Option<&[String]>, deadworks: bool) -> Result<String, Error> {
+fn rewrite_claiming(
+  text: &str,
+  paths: Option<&[String]>,
+  deadworks: bool,
+  claimed: &[String],
+) -> Result<Rewrite, Error> {
   let mode = paths.map_or(MountMode::Disabled, MountMode::Enabled);
-  super::rewrite(text, mode, deadworks, &[]).map(|result| result.content)
+  super::rewrite(text, mode, deadworks, || Ok(claimed.to_vec()))
+}
+
+fn rewrite(text: &str, paths: Option<&[String]>, deadworks: bool) -> Result<String, Error> {
+  rewrite_claiming(text, paths, deadworks, &[]).map(|result| result.content)
 }
 
 fn mounted_paths(text: &str) -> Result<Vec<String>, Error> {
-  inspect(text, &[]).map(|inspection| inspection.mod_paths)
+  inspect(text, || Ok(Vec::new())).map(|inspection| inspection.mod_paths)
 }
 
 #[test]
@@ -360,12 +369,9 @@ fn legacy_migration_preserves_foreign_fences_and_unknown_addon_paths() {
   let original = fixture().replace("    \"SearchPaths\"", &format!("{LEGACY_START}\n    \"SearchPaths\""))
     .replace("      Game citadel\n", "      Game citadel/addons/server_stale\n      Game citadel/addons/unattributed\n      Game citadel/addons/profile_annotated // another tool\n      Game citadel\n")
     .replace("    }\n  }", &format!("    }}\n{LEGACY_END}\n  }}"));
-  let updated = super::rewrite(
-    &original,
-    MountMode::Enabled(&paths()),
-    false,
-    &["citadel/addons/server_stale".into()],
-  )
+  let updated = super::rewrite(&original, MountMode::Enabled(&paths()), false, || {
+    Ok(vec!["citadel/addons/server_stale".into()])
+  })
   .unwrap()
   .content;
   assert!(!updated.lines().any(|line| line.trim() == LEGACY_START));
@@ -525,4 +531,117 @@ fn compact_documents_stay_valid_and_repeated_mounts_are_stable() {
   assert_eq!(disabled, original);
   assert!(disabled.contains("Game citadel Game core"));
   validate(&disabled).unwrap();
+}
+
+const STRAYS: [&str; 3] = [
+  "      Game citadel/addons\n",
+  "      \"Game\" \"citadel/addons/profile_old\" // from a modding guide\n",
+  "      game Citadel/Addons2/profile_old\n",
+];
+const KEPT: [&str; 3] = [
+  "      Game citadel/addons/user_owned\n",
+  "      Game citadel/addons/profile_old [$WIN64]\n",
+  "      Game+Mod citadel/addons\n",
+];
+
+fn managed() -> Vec<String> {
+  vec![
+    "citadel/addons".into(),
+    "citadel/addons/profile_old".into(),
+    "citadel/addons2/profile_old".into(),
+  ]
+}
+
+/// A hand-added mount of a folder DMM manages loaded that profile's mods under
+/// every other profile and in vanilla launches (#1401).
+#[test]
+fn stray_mounts_of_managed_folders_are_dropped() {
+  let fenced = FOREIGN.replace("citadel/hyperline/startup", "citadel/addons/profile_old");
+  for newline in ["\n", "\r\n"] {
+    let original = fixture()
+      .replace(FOREIGN, &fenced)
+      .replace(
+        "      Game citadel\n",
+        &format!("{}{}      Game citadel\n", STRAYS.concat(), KEPT.concat()),
+      )
+      .replace('\n', newline);
+    assert!(
+      inspect(&original, || Ok(managed()))
+        .unwrap()
+        .mod_paths
+        .is_empty()
+    );
+
+    let rewrite_managed = |text: &str, paths: Option<&[String]>| {
+      rewrite_claiming(text, paths, false, &managed()).unwrap()
+    };
+    let enabled = rewrite_managed(&original, Some(&paths()));
+    let disabled = rewrite_managed(&original, None);
+    for (label, result) in [("enabled", &enabled), ("disabled", &disabled)] {
+      assert_eq!(
+        result.removed_strays,
+        [
+          "citadel/addons",
+          "citadel/addons/profile_old",
+          "Citadel/Addons2/profile_old"
+        ],
+        "{label}"
+      );
+      for stray in STRAYS {
+        assert!(
+          !result.content.contains(&stray.replace('\n', newline)),
+          "{label}: kept {stray}"
+        );
+      }
+      for kept in KEPT.iter().chain([&fenced.as_str()]) {
+        assert!(
+          result.content.contains(&kept.replace('\n', newline)),
+          "{label}: lost {kept}"
+        );
+      }
+    }
+    assert_eq!(mounted_paths(&enabled.content).unwrap(), paths());
+    assert!(mounted_paths(&disabled.content).unwrap().is_empty());
+
+    let again = rewrite_managed(&enabled.content, Some(&paths()));
+    assert_eq!(again.content, enabled.content);
+    assert!(again.removed_strays.is_empty());
+    let cleaned = rewrite_managed(&enabled.content, None);
+    assert_eq!(cleaned.content, disabled.content);
+    assert!(cleaned.removed_strays.is_empty());
+  }
+}
+
+#[test]
+fn stray_mounts_of_unmanaged_folders_are_kept() {
+  let original = fixture().replace(
+    "      Game citadel\n",
+    &format!("{}      Game citadel\n", STRAYS.concat()),
+  );
+  let result = rewrite_claiming(&original, Some(&paths()), false, &[]).unwrap();
+  assert!(result.removed_strays.is_empty());
+  assert!(result.content.contains(&STRAYS.concat()));
+  assert_eq!(rewrite(&result.content, None, false).unwrap(), original);
+}
+
+#[test]
+fn strays_sharing_a_line_are_kept_instead_of_failing_the_rewrite() {
+  let original = "GameInfo { FileSystem { SearchPaths { Game citadel Game citadel/addons } } }";
+  let result = rewrite_claiming(original, Some(&paths()), false, &managed()).unwrap();
+  assert!(result.removed_strays.is_empty());
+  assert!(result.content.contains("Game citadel/addons }"));
+}
+
+#[test]
+fn profile_manifests_are_read_only_for_untagged_addon_mounts() {
+  let unread = || Err(Error::InvalidInput("claims were read".into()));
+  let mounted = super::rewrite(&fixture(), MountMode::Enabled(&paths()), false, unread).unwrap();
+  super::rewrite(&mounted.content, MountMode::Disabled, false, unread).unwrap();
+  inspect(&mounted.content, unread).unwrap();
+  let stray = fixture().replace(
+    "      Game citadel\n",
+    &format!("{}      Game citadel\n", STRAYS[0]),
+  );
+  assert!(super::rewrite(&stray, MountMode::Disabled, false, unread).is_err());
+  assert!(inspect(&stray, unread).is_ok());
 }

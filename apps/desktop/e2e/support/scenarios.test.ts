@@ -115,7 +115,7 @@ describe("scenario selection", () => {
 
   it("registers every case with explicit phases and capability requirements", () => {
     const ids = selectScenarios("all");
-    expect(ids).toHaveLength(windows ? 189 : 179);
+    expect(ids).toHaveLength(windows ? 190 : 180);
     expect(ids).toContain("downloads-segmented-range-error");
     // Some of these specs don't dispatch on their case ID, so a rename
     // wouldn't fail them.
