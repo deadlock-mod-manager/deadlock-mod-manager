@@ -2,4 +2,4 @@
 "@deadlock-mods/desktop": patch
 ---
 
-Stop the Collections tab from freezing and eating memory on Linux by dropping the per-card backdrop blur
+Stop freezes and runaway memory on Linux by dropping backdrop blur effects

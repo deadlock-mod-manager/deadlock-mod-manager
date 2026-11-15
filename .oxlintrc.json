@@ -46,7 +46,7 @@
     {
       "files": ["apps/desktop/src/**"],
       "rules": {
-        "anti-slop/no-backdrop-filter": "warn"
+        "anti-slop/no-backdrop-filter": "error"
       }
     },
     {

@@ -111,9 +111,10 @@ export const NSFWBlur = ({
   // WebKitGTK's compositor stalls or crashes on pages with many filter and
   // backdrop-filter layers (#1041), so Linux blurs image thumbnails through a
   // canvas instead. Other content keeps the CSS blur.
+  const isLinux = platform() === "linux";
   const canvasBlur =
     linuxCanvasNSFWBlur &&
-    platform() === "linux" &&
+    isLinux &&
     isValidElement(children) &&
     children.type === "img";
   const blurWithCanvas = canvasBlur && isNSFW && !disableBlur && !isVisible;
@@ -190,7 +191,7 @@ export const NSFWBlur = ({
                 type='button'
                 className={cn(
                   "group flex items-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-medium text-white/80 transition-all duration-300 hover:border-white/30 hover:bg-white/15 hover:text-white hover:shadow-[0_0_16px_rgba(255,255,255,0.08)]",
-                  !canvasBlur && "backdrop-blur-xl",
+                  !isLinux && "backdrop-blur-xl",
                 )}
                 onClick={handleToggle}>
                 <Eye className='h-3.5 w-3.5 transition-transform duration-300 group-hover:scale-110' />
@@ -206,8 +207,8 @@ export const NSFWBlur = ({
           <button
             type='button'
             className={cn(
-              "group flex items-center gap-1.5 rounded-full border border-white/15 bg-black/50 px-3 py-1.5 text-xs font-medium text-white/70 transition-all duration-300 hover:border-white/25 hover:bg-black/70 hover:text-white",
-              !canvasBlur && "backdrop-blur-xl",
+              "group flex items-center gap-1.5 rounded-full border border-white/15 bg-black/60 px-3 py-1.5 text-xs font-medium text-white/70 transition-all duration-300 hover:border-white/25 hover:bg-black/70 hover:text-white",
+              !isLinux && "backdrop-blur-xl",
             )}
             onClick={handleToggle}>
             <EyeOff className='h-3.5 w-3.5 transition-transform duration-300 group-hover:scale-110' />
