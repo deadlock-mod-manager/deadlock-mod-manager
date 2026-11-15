@@ -1,5 +1,6 @@
 import { definePlugin } from "@oxlint/plugins";
 
+import { noBackdropFilterRule } from "./rules/no-backdrop-filter.ts";
 import { noChainedTypeAssertionsRule } from "./rules/no-chained-type-assertions.ts";
 import { noConditionalEmptyObjectSpreadRule } from "./rules/no-conditional-empty-object-spread.ts";
 import { noKnownValueWideningRule } from "./rules/no-known-value-widening.ts";
@@ -18,6 +19,7 @@ import { noWidenThenAssertRule } from "./rules/no-widen-then-assert.ts";
 const antiSlopPlugin = definePlugin({
   meta: { name: "anti-slop" },
   rules: {
+    "no-backdrop-filter": noBackdropFilterRule,
     "no-chained-type-assertions": noChainedTypeAssertionsRule,
     "no-conditional-empty-object-spread": noConditionalEmptyObjectSpreadRule,
     "no-known-value-widening": noKnownValueWideningRule,

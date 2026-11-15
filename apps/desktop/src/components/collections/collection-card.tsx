@@ -19,8 +19,6 @@ export const CollectionCard = memo(
           className='absolute inset-0 h-full w-full transition-transform duration-300 group-hover:scale-[1.03] motion-reduce:transition-none'
           collection={collection}
         />
-        {/* No backdrop-filter: one per card makes WebKitGTK's compositor
-            run away and exhaust memory on Linux (#1041). */}
         <span className='absolute top-2.5 right-2.5 rounded-md bg-background/85 px-2 py-0.5 text-xs tabular-nums'>
           {t("collections.itemCount", { count: collection.itemCount })}
         </span>
