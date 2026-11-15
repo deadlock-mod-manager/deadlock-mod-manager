@@ -149,7 +149,15 @@ const ModeTabs = () => {
 /** The editor: skin header on top, the active mode's workspace below. */
 export const FoundryShell = () => {
   const { t } = useTranslation();
-  const { manifest, workspace, busy, activeTab, reset } = useFoundry();
+  const {
+    manifest,
+    workspace,
+    workspacePreparationFailed,
+    retryWorkspacePreparation,
+    busy,
+    activeTab,
+    reset,
+  } = useFoundry();
   const [importOpen, setImportOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
 
@@ -182,12 +190,30 @@ export const FoundryShell = () => {
             onClick={() => setExportOpen(true)}
             size='sm'
             title={
-              workspace ? undefined : t("foundry.editor.workspacePending")
+              workspace
+                ? undefined
+                : workspacePreparationFailed
+                  ? t("foundry.editor.workspaceFailed")
+                  : t("foundry.editor.workspacePending")
             }>
             {t("foundry.toolbar.export")}
           </Button>
         </div>
       </div>
+
+      {workspacePreparationFailed && (
+        <div
+          className='flex items-center justify-between gap-3 rounded-md border border-destructive/40 px-3 py-2 text-xs'
+          role='status'>
+          <p>{t("foundry.editor.workspaceFailed")}</p>
+          <Button
+            onClick={retryWorkspacePreparation}
+            size='sm'
+            variant='outline'>
+            {t("common.retry")}
+          </Button>
+        </div>
+      )}
 
       <div className='relative flex min-h-0 flex-1 overflow-hidden rounded-[10px] border bg-background'>
         {activeTab === "assets" && (

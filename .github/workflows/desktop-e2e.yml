@@ -1,6 +1,18 @@
 name: Desktop E2E
 
 on:
+  workflow_call:
+    inputs:
+      required:
+        description: Run selected coverage as part of the required CI gate
+        type: boolean
+        default: false
+      platforms:
+        type: string
+        default: windows
+      suites:
+        type: string
+        default: '["critical"]'
   pull_request:
     types: [opened, synchronize, reopened, labeled]
     paths:
@@ -31,7 +43,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: desktop-e2e-${{ github.event.pull_request.number || github.ref }}
+  group: desktop-e2e-${{ inputs.required && 'required' || 'full' }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 defaults:
@@ -41,7 +53,7 @@ defaults:
 jobs:
   build:
     name: Build isolated harness
-    if: (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'e2e-full')) && inputs.platforms != 'nix'
+    if: (inputs.required || github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'e2e-full')) && inputs.platforms != 'nix'
     runs-on: windows-latest
     timeout-minutes: 60
     steps:

@@ -1,3 +1,4 @@
+import { mapDrizzleError } from "@deadlock-mods/common";
 import {
   account,
   and,
@@ -30,7 +31,7 @@ export async function findUserIdsByDiscordIds(
     return rows.map((row) => row.userId);
   } catch (error) {
     logger.withError(error).error("Failed to find user IDs by Discord IDs");
-    return [];
+    throw mapDrizzleError(error);
   }
 }
 
@@ -55,7 +56,7 @@ export async function findUserIdByDiscordId(
       .withError(error)
       .withMetadata({ discordId })
       .error("Failed to find user ID by Discord ID");
-    return null;
+    throw mapDrizzleError(error);
   }
 }
 
@@ -73,6 +74,6 @@ export async function findUserIdByName(name: string): Promise<string | null> {
       .withError(error)
       .withMetadata({ name })
       .error("Failed to find user ID by name");
-    return null;
+    throw mapDrizzleError(error);
   }
 }

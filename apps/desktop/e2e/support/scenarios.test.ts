@@ -1,6 +1,7 @@
 import { YAML } from "bun";
 import { describe, expect, it } from "bun:test";
 import { readFile } from "node:fs/promises";
+import { runInNewContext } from "node:vm";
 import { z } from "zod";
 import {
   parseScenarioId,
@@ -8,15 +9,113 @@ import {
   scenarioSpec,
   selectScenarios,
   scenarios,
+  criticalScenarios,
 } from "./scenarios";
 
 // Legacy native-input cases and filesystem-lock are Windows-only.
 const windows = process.platform === "win32";
 
 describe("scenario selection", () => {
+  it("runs critical recovery cases without expanding to every family", () => {
+    const selected = selectScenarios("critical", "win32");
+    expect(new Set(selected)).toEqual(new Set(criticalScenarios));
+    expect(selected).toHaveLength(8);
+    expect(selected).toContain("gamebanana-file-toggle");
+    expect(selected).toContain("gamebanana-reinstall-readonly");
+    expect(selected).toContain("profiles-restore-during-sync");
+    expect(selected).toContain("filesystem-crash-placed");
+    expect(selected).toContain("filesystem-crash-committed");
+    expect(selected).not.toContain("monkey");
+    expect(scenarioPhases("filesystem-crash-placed")).toContain("mutate");
+    expect(scenarios["filesystem-crash-placed"].exit("mutate")).toBe("crash");
+  });
+
+  it("fails the required CI gate for failed, cancelled, or unexpectedly skipped coverage", async () => {
+    const { jobs } = z
+      .object({
+        jobs: z.object({
+          "static-checks": z.object({
+            steps: z.array(z.object({ run: z.string().optional() })),
+          }),
+          "desktop-critical": z.object({
+            needs: z.string(),
+            if: z.string(),
+            uses: z.string(),
+            with: z.object({
+              required: z.boolean(),
+              platforms: z.string(),
+              suites: z.string(),
+            }),
+          }),
+          "check-types": z.object({
+            name: z.string(),
+            needs: z.array(z.string()),
+            if: z.string(),
+            steps: z.array(z.object({ shell: z.string(), run: z.string() })),
+          }),
+        }),
+      })
+      .parse(
+        YAML.parse(
+          await readFile(
+            new URL("../../../../.github/workflows/ci.yml", import.meta.url),
+            "utf8",
+          ),
+        ),
+      );
+    const gate = jobs["check-types"];
+    expect(gate.name).toBe("Type Check");
+    expect(gate.needs).toEqual(["static-checks", "desktop-critical"]);
+    expect(gate.if).toBe("always()");
+    expect(jobs["desktop-critical"].needs).toBe("static-checks");
+    expect(jobs["desktop-critical"].if).toBe(
+      "needs.static-checks.outputs.desktop == 'true'",
+    );
+    expect(jobs["desktop-critical"].uses).toBe(
+      "./.github/workflows/desktop-e2e.yml",
+    );
+    expect(jobs["desktop-critical"].with).toEqual({
+      required: true,
+      platforms: "windows",
+      suites: '["critical"]',
+    });
+    expect(jobs["static-checks"].steps.map((step) => step.run)).toEqual(
+      expect.arrayContaining(["pnpm lint", "pnpm format:check"]),
+    );
+    const step = gate.steps[0];
+    if (!step) throw new Error("Required gate step missing");
+    expect(step.shell).toBe("node {0}");
+    const outcomes: [string, string, string, number][] = [
+      ["success", "true", "success", 0],
+      ["success", "false", "skipped", 0],
+      ["failure", "false", "skipped", 1],
+      ["cancelled", "true", "success", 1],
+      ["skipped", "false", "skipped", 1],
+      ["success", "true", "failure", 1],
+      ["success", "true", "cancelled", 1],
+      ["success", "true", "skipped", 1],
+      ["success", "", "skipped", 1],
+    ];
+    for (const [staticResult, required, desktopResult, exitCode] of outcomes) {
+      const processFixture = {
+        env: {
+          STATIC_RESULT: staticResult,
+          DESKTOP_REQUIRED: required,
+          DESKTOP_RESULT: desktopResult,
+        },
+        exitCode: 0,
+      };
+      runInNewContext(step.run, {
+        process: processFixture,
+        console: { error: () => {} },
+      });
+      expect(processFixture.exitCode).toBe(exitCode);
+    }
+  });
+
   it("registers every case with explicit phases and capability requirements", () => {
     const ids = selectScenarios("all");
-    expect(ids).toHaveLength(windows ? 184 : 174);
+    expect(ids).toHaveLength(windows ? 190 : 180);
     expect(ids).toContain("downloads-segmented-range-error");
     // Some of these specs don't dispatch on their case ID, so a rename
     // wouldn't fail them.
@@ -40,7 +139,7 @@ describe("scenario selection", () => {
       "onboarding-telemetry-default",
       "onboarding-identified-addon",
     ]);
-    expect(selectScenarios("gamebanana")).toHaveLength(35);
+    expect(selectScenarios("gamebanana")).toHaveLength(36);
     expect(selectScenarios("gamebanana")).toContain(
       "gamebanana-switch-reinstall",
     );
@@ -105,7 +204,11 @@ describe("scenario selection", () => {
     }
     expect(selectScenarios("interchange")).toEqual(["grimoire-import"]);
     expect(selectScenarios("analyze")).toEqual(["analyze-errors"]);
-    expect(selectScenarios("skins")).toEqual(["hero-skins-active"]);
+    expect(selectScenarios("skins")).toEqual([
+      "hero-skins-active",
+      "foundry-workspace-failure",
+      "foundry-revert-failure",
+    ]);
     expect(selectScenarios("stats")).toEqual([
       "stats-default-layout",
       "stats-arrange-widgets",
@@ -113,6 +216,7 @@ describe("scenario selection", () => {
       "stats-custom-queries",
       "stats-season-filter",
       "stats-broken-endpoints",
+      "stats-items-error",
     ]);
     expect(selectScenarios("shards")).toEqual([
       "shards-library",

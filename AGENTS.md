@@ -75,6 +75,8 @@ Before the human submits your work, ensure:
 
 Test observable behavior and failure cases for functional changes; follow each package's existing test layout and naming. Documentation-only changes do not need new tests. Suggest updates to shared guidance when the task reveals a missing convention.
 
+For changes to cancellation, retries, locks, authorization, or filesystem mutations, and before removing a behavioral guard or regression test, follow [failure and recovery review](.agents/context/FAILURE-RECOVERY.md).
+
 ## Tech Stack Quick Reference
 
 | Layer             | Technology                           |

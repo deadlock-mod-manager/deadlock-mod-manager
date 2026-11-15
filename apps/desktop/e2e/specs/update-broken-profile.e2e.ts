@@ -144,7 +144,7 @@ describe("updates beside a broken inactive profile", () => {
       await $("button=Restore").click();
       await $('[role="dialog"]').$("button=Restore").click();
       await $(
-        '//*[@data-sonner-toast]//*[@data-title and normalize-space()="Backup restored successfully"]',
+        '//*[@data-sonner-toast]//*[@data-title and normalize-space()="Backup restored"]',
       ).waitForDisplayed();
       await waitFilesRecorded(world, "v1");
       await assertMultipakDisk(world, "restored-v1", {

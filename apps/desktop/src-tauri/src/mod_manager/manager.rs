@@ -23,6 +23,7 @@ use std::{
 };
 
 mod analyzed;
+mod archive;
 pub use analyzed::AnalyzedModRegistration;
 mod gameinfo;
 #[cfg(test)]

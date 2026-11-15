@@ -221,6 +221,8 @@ interface FoundryContextValue {
   manifest: FoundryManifest | null;
   skinOrigin: FoundrySkinOrigin | null;
   workspace: FoundryWorkspace | null;
+  workspacePreparationFailed: boolean;
+  retryWorkspacePreparation: () => void;
   error: string | null;
   activeTab: FoundryTab;
   selectedEntryPath: string | null;
@@ -332,6 +334,7 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
   const [manifest, setManifest] = useState<FoundryManifest | null>(null);
   const [skinOrigin, setSkinOrigin] = useState<FoundrySkinOrigin | null>(null);
   const [workspace, setWorkspace] = useState<FoundryWorkspace | null>(null);
+  const workspaceSessionRef = useRef(0);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<FoundryTab>("assets");
   const [selectedEntryPath, setSelectedEntryPath] = useState<string | null>(
@@ -413,7 +416,78 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
     soundCacheRef.current.clear();
   }, []);
 
+  /**
+   * Unpack the loaded skin in the background. Editing is unavailable until this
+   * lands, but previewing the model and cards remains available after failure.
+   */
+  const {
+    mutate: openWorkspace,
+    reset: resetWorkspacePreparation,
+    isError: workspacePreparationFailed,
+  } = useMutation({
+    networkMode: "always",
+    meta: { skipGlobalErrorHandler: true },
+    mutationFn: async (loaded: FoundryManifest) => {
+      const session = workspaceSessionRef.current;
+      const name = loaded.heroDisplay ?? loaded.hero ?? "skin";
+      // A default-hero source is the shared multi-GB base pak; only that hero's
+      // listed assets are unpacked from it.
+      const entries =
+        loaded.models[0]?.source === "default"
+          ? manifestEntryPaths(loaded)
+          : null;
+      const prepared = await prepareFoundryWorkspace(
+        loaded.filePath,
+        name,
+        entries,
+      );
+      if (session !== workspaceSessionRef.current) return;
+      // A reused workspace keeps edits from earlier sessions; its journal says
+      // which, so export and undo see them too.
+      setEditedPaths(new Set(prepared.editedPaths));
+      setSoundSettings(
+        new Map(
+          prepared.soundSettings.map((sound) => [sound.entryPath, sound]),
+        ),
+      );
+      setAppliedPaint(
+        Object.fromEntries(
+          prepared.appliedPaint.map((applied) => [
+            partPaintKey(applied.entryPath),
+            {
+              colorHex: applied.colorHex,
+              saturation: applied.saturation,
+              brightness: applied.brightness,
+              pattern:
+                FOUNDRY_PATTERNS.find((id) => id === applied.pattern) ?? "none",
+              patternIntensity: applied.patternIntensity,
+              patternPhase: applied.patternPhase,
+            },
+          ]),
+        ),
+      );
+      setRemovedParts(
+        Object.fromEntries(
+          prepared.removedParts.map((removed) => [removed.modelPath, removed]),
+        ),
+      );
+      setWorkspace(prepared);
+    },
+    onError: (err, loaded) => {
+      logger
+        .withMetadata({ filePath: loaded.filePath })
+        .withError(err)
+        .error("[Foundry] Failed to prepare workspace");
+    },
+  });
+
+  const retryWorkspacePreparation = useCallback(() => {
+    if (manifest) openWorkspace(manifest);
+  }, [manifest, openWorkspace]);
+
   const reset = useCallback(() => {
+    workspaceSessionRef.current += 1;
+    resetWorkspacePreparation();
     clearCaches();
     void releaseFoundryArchives();
     setStatus("idle");
@@ -438,7 +512,7 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
     setTexturePreview(IDLE_TEXTURE);
     setModelPreview(IDLE_MODEL);
     setCardPreviews(IDLE_CARDS);
-  }, [clearCaches]);
+  }, [clearCaches, resetWorkspacePreparation]);
 
   const selectEntryPath = useCallback((path: string | null) => {
     setSelectedTextureSource("manifest");
@@ -654,67 +728,14 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
     );
   }, []);
 
-  /**
-   * Unpack the loaded skin in the background. Editing is unavailable until this
-   * lands, but previewing the model and cards is not, so a failure here is
-   * logged rather than turning the whole Foundry into an error state.
-   */
-  const openWorkspace = useCallback(async (loaded: FoundryManifest) => {
-    const name = loaded.heroDisplay ?? loaded.hero ?? "skin";
-    // A default-hero source is the shared multi-GB base pak; only that hero's
-    // listed assets are unpacked from it.
-    const entries =
-      loaded.models[0]?.source === "default"
-        ? manifestEntryPaths(loaded)
-        : null;
-    try {
-      const prepared = await prepareFoundryWorkspace(
-        loaded.filePath,
-        name,
-        entries,
-      );
-      // A reused workspace keeps edits from earlier sessions; its journal says
-      // which, so export and undo see them too.
-      setEditedPaths(new Set(prepared.editedPaths));
-      setSoundSettings(
-        new Map(
-          prepared.soundSettings.map((sound) => [sound.entryPath, sound]),
-        ),
-      );
-      setAppliedPaint(
-        Object.fromEntries(
-          prepared.appliedPaint.map((applied) => [
-            partPaintKey(applied.entryPath),
-            {
-              colorHex: applied.colorHex,
-              saturation: applied.saturation,
-              brightness: applied.brightness,
-              pattern:
-                FOUNDRY_PATTERNS.find((id) => id === applied.pattern) ?? "none",
-              patternIntensity: applied.patternIntensity,
-              patternPhase: applied.patternPhase,
-            },
-          ]),
-        ),
-      );
-      setRemovedParts(
-        Object.fromEntries(
-          prepared.removedParts.map((removed) => [removed.modelPath, removed]),
-        ),
-      );
-      setWorkspace(prepared);
-    } catch (err) {
-      logger.withError(err).error("[Foundry] Failed to prepare workspace");
-      setWorkspace(null);
-    }
-  }, []);
-
   const loadManifest = useCallback(
     async (
       load: () => Promise<FoundryManifest>,
       requireHeroSkin: boolean,
       origin: FoundrySkinOrigin,
     ) => {
+      workspaceSessionRef.current += 1;
+      resetWorkspacePreparation();
       clearCaches();
       setCardPreviews(IDLE_CARDS);
       setWorkspace(null);
@@ -738,7 +759,7 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
         selectEntryPath(initialModel);
         setActiveTab("assets");
         setStatus("ready");
-        void openWorkspace(result);
+        openWorkspace(result);
         return result;
       } catch (err) {
         logger.withError(err).error("[Foundry] Failed to load skin");
@@ -749,7 +770,7 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
         return null;
       }
     },
-    [clearCaches, openWorkspace, selectEntryPath],
+    [clearCaches, openWorkspace, resetWorkspacePreparation, selectEntryPath],
   );
 
   const importVpk = useCallback(
@@ -1124,6 +1145,8 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       manifest,
       skinOrigin,
       workspace,
+      workspacePreparationFailed,
+      retryWorkspacePreparation,
       error,
       activeTab,
       selectedEntryPath,
@@ -1180,6 +1203,8 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       manifest,
       skinOrigin,
       workspace,
+      workspacePreparationFailed,
+      retryWorkspacePreparation,
       error,
       activeTab,
       selectedEntryPath,

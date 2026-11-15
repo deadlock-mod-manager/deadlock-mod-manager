@@ -29,7 +29,7 @@ export const PreviewOverlay = ({ brush }: { brush: PaintBrush }) => {
       <div className='pointer-events-none absolute inset-x-0 top-[62px] flex justify-center'>
         <Tooltip>
           <TooltipTrigger asChild>
-            <label className='pointer-events-auto flex items-center gap-2.5 rounded-full border bg-card/90 py-1.5 pr-2 pl-3 text-xs backdrop-blur-md'>
+            <label className='pointer-events-auto flex items-center gap-2.5 rounded-full border bg-card/95 py-1.5 pr-2 pl-3 text-xs'>
               <span
                 className={cn(
                   "h-[7px] w-[7px] rounded-full",
@@ -59,7 +59,7 @@ export const PreviewOverlay = ({ brush }: { brush: PaintBrush }) => {
       </div>
       {brush.tinting && viewerReady && (
         <div className='pointer-events-none absolute inset-x-0 bottom-[124px] flex justify-center'>
-          <p className='flex items-center gap-2 rounded-[7px] border bg-card/90 py-[5px] pr-2.5 pl-1.5 text-[11px] text-muted-foreground backdrop-blur-md'>
+          <p className='flex items-center gap-2 rounded-[7px] border bg-card/95 py-[5px] pr-2.5 pl-1.5 text-[11px] text-muted-foreground'>
             <kbd className='rounded border border-white/10 bg-muted px-[7px] py-0.5 font-mono font-semibold text-[10px] text-foreground'>
               {t("foundry.paint.spaceKey")}
             </kbd>

@@ -12,10 +12,12 @@ export abstract class Provider<T> {
     });
   }
 
-  abstract synchronize(): Promise<void>;
+  /** `signal` aborts when the caller's job lock is lost; stop before writing. */
+  abstract synchronize(signal?: AbortSignal): Promise<void>;
   abstract createMod(
     mod: T,
     source: string,
+    options?: { signal?: AbortSignal },
   ): Promise<{
     mod: Mod | undefined;
     filesChanged: boolean;

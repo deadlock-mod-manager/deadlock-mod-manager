@@ -33,7 +33,7 @@ export const LaunchOverlay = () => {
     <div
       role='status'
       aria-live='polite'
-      className='absolute inset-0 z-30 flex animate-launch-fade-in items-center justify-center bg-background/70 backdrop-blur-[2px]'>
+      className='absolute inset-0 z-30 flex animate-launch-fade-in items-center justify-center bg-background/80'>
       <div className='relative flex w-80 animate-launch-pop-in flex-col items-center rounded-xl border bg-card p-6 text-card-foreground shadow-[0_24px_60px_rgba(0,0,0,0.45)]'>
         <Button
           aria-label={t("launch.hide")}

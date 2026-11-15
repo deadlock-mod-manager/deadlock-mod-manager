@@ -284,7 +284,7 @@ export const CollectionPageContent = ({ id }: { id: string }) => {
           )}
         </div>
 
-        <div className='sticky top-0 z-30 mb-4 flex flex-wrap items-center gap-2 bg-background/90 px-1 py-2 backdrop-blur-sm'>
+        <div className='sticky top-0 z-30 mb-4 flex flex-wrap items-center gap-2 bg-background px-1 py-2'>
           <div className='min-w-48 max-w-sm flex-1'>
             <SearchInput
               className='w-full'

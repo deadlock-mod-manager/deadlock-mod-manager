@@ -241,6 +241,9 @@ export const useItemCatalog = (active = true) => {
     itemsById,
     isPending: active && query.isPending,
     isError: query.isError,
+    isMissing: query.isError && !query.data,
+    isFetching: query.isFetching,
+    refetch: query.refetch,
   };
 };
 
@@ -277,8 +280,18 @@ export const useItemStats = (
   return {
     items,
     itemsById: catalog.itemsById,
-    isPending: enabled && (mine.isPending || global.isPending),
-    isError: mine.isError,
+    isPending:
+      enabled && (mine.isPending || global.isPending || catalog.isPending),
+    // Cached data outlives a failed refetch; only a request with nothing to
+    // show would otherwise fall through to the empty state.
+    isError:
+      enabled &&
+      ((mine.isError && !mine.data) ||
+        (global.isError && !global.data) ||
+        catalog.isMissing),
+    isFetching: mine.isFetching || global.isFetching || catalog.isFetching,
+    refetch: () =>
+      Promise.all([mine.refetch(), global.refetch(), catalog.refetch()]),
   };
 };
 

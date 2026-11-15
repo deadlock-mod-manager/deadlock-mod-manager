@@ -1,6 +1,8 @@
 import { RuntimeError } from "@deadlock-mods/common/client-errors";
+import { Button } from "@deadlock-mods/ui/components/button";
 import { cn } from "@deadlock-mods/ui/lib/utils";
 import { CompassIcon, CubeIcon } from "@phosphor-icons/react";
+import { useMutation } from "@tanstack/react-query";
 import {
   type ReactNode,
   type RefObject,
@@ -1060,51 +1062,99 @@ export const FoundryModelViewer = ({
   readTextureRef.current = readTexture;
   const refreshPathsRef = useRef(textureRefresh?.paths);
   refreshPathsRef.current = textureRefresh?.paths;
+  const pendingRefreshPathsRef = useRef(new Set<string>());
+  const refreshRequestRef = useRef<(() => Promise<void>) | null>(null);
+  const {
+    mutate: refreshTextures,
+    reset: resetTextureRefresh,
+    isError: textureRefreshFailed,
+  } = useMutation({
+    networkMode: "always",
+    meta: { skipGlobalErrorHandler: true },
+    mutationFn: (run: () => Promise<void>) => run(),
+  });
+
+  useEffect(() => {
+    pendingRefreshPathsRef.current.clear();
+    resetTextureRefresh();
+  }, [model, resetTextureRefresh]);
+
   useEffect(() => {
     const read = readTextureRef.current;
     const paths = refreshPathsRef.current;
-    if (refreshRevision === undefined || !read || !paths?.length) return;
+    if (loading || refreshRevision === undefined || !read || !paths?.length)
+      return;
     let cancelled = false;
-    for (const path of paths) {
-      const key = path.toLowerCase();
-      const matching = snapshotsRef.current.filter(
-        (snapshot) => snapshot.texture === key && snapshot.material.map,
+    const pending = pendingRefreshPathsRef.current;
+    for (const path of paths) pending.add(path);
+    const run = async () => {
+      const results = await Promise.all(
+        [...pending].map(async (path) => {
+          const key = path.toLowerCase();
+          const matching = snapshotsRef.current.filter(
+            (snapshot) => snapshot.texture === key && snapshot.material.map,
+          );
+          const variants = await Promise.all(
+            [
+              ...new Set(
+                matching.map(
+                  ({ material }) =>
+                    !material.transparent && material.alphaTest === 0,
+                ),
+              ),
+            ].map(async (opaque) => {
+              try {
+                const url = await read(path, opaque);
+                const image = new Image();
+                image.src = url;
+                await image.decode();
+                if (cancelled) return true;
+                for (const snapshot of matching) {
+                  const map = snapshot.material.map;
+                  if (
+                    !map ||
+                    (!snapshot.material.transparent &&
+                      snapshot.material.alphaTest === 0) !== opaque
+                  )
+                    continue;
+                  // GLTF preview maps may be smaller than the edited texture. Free
+                  // their immutable GPU allocation before uploading the new image.
+                  map.dispose();
+                  map.image = image;
+                  map.needsUpdate = true;
+                }
+                return true;
+              } catch (err) {
+                if (cancelled) return true;
+                logger
+                  .withMetadata({
+                    assetId: model.assetId,
+                    texturePath: path,
+                    opaque,
+                    revision: refreshRevision,
+                  })
+                  .withError(err)
+                  .error("[Foundry] Failed to refresh edited texture");
+                return false;
+              }
+            }),
+          );
+          const refreshed = variants.every(Boolean);
+          if (!cancelled && refreshed) pending.delete(path);
+          return refreshed;
+        }),
       );
-      for (const opaque of new Set(
-        matching.map(
-          ({ material }) => !material.transparent && material.alphaTest === 0,
-        ),
-      )) {
-        read(path, opaque)
-          .then(async (url) => {
-            const image = new Image();
-            image.src = url;
-            await image.decode();
-            if (cancelled) return;
-            for (const snapshot of matching) {
-              const map = snapshot.material.map;
-              if (
-                !map ||
-                (!snapshot.material.transparent &&
-                  snapshot.material.alphaTest === 0) !== opaque
-              )
-                continue;
-              // GLTF preview maps may be smaller than the edited texture. Free
-              // their immutable GPU allocation before uploading the new image.
-              map.dispose();
-              map.image = image;
-              map.needsUpdate = true;
-            }
-          })
-          .catch(() => {
-            // The next full load reads the same file; nothing to recover here.
-          });
+      if (!cancelled && results.includes(false)) {
+        throw new RuntimeError("Failed to refresh edited textures");
       }
-    }
+    };
+    refreshRequestRef.current = run;
+    refreshTextures(run);
     return () => {
       cancelled = true;
+      refreshRequestRef.current = null;
     };
-  }, [refreshRevision]);
+  }, [refreshRevision, loading, model, refreshTextures]);
 
   // Once posed by the first frames of its animation, the model teaches the
   // loading embers this hero's shape for next time.
@@ -1202,6 +1252,25 @@ export const FoundryModelViewer = ({
         <ViewerWipBadge />
         {!loading && <ViewerMaterialStatus diagnostics={materialDiagnostics} />}
       </div>
+      {textureRefreshFailed && !loading && !failed && (
+        <div
+          className={cn(
+            overlaySurface,
+            "absolute bottom-14 left-3 flex max-w-[calc(100%-7rem)] items-center gap-2 rounded-md px-3 py-2 text-xs",
+          )}
+          role='status'>
+          <p>{t("foundry.preview.textureRefreshFailed")}</p>
+          <Button
+            size='sm'
+            variant='outline'
+            onClick={() => {
+              const request = refreshRequestRef.current;
+              if (request) refreshTextures(request);
+            }}>
+            {t("common.retry")}
+          </Button>
+        </div>
+      )}
       <ViewerToolRail
         belowGizmo={showGizmo}
         autoRotate={autoRotate}

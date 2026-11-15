@@ -4,7 +4,12 @@
   "exports": {
     ".": "./src/index.ts"
   },
+  "scripts": {
+    "test": "bun test",
+    "check-types": "tsc --noEmit && tsc --noEmit -p tsconfig.tests.json"
+  },
   "dependencies": {
+    "@deadlock-mods/common": "workspace:*",
     "@deadlock-mods/database": "workspace:*",
     "@deadlock-mods/logging": "workspace:*",
     "uuid": "^14.0.0",

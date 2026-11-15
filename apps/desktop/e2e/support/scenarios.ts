@@ -58,6 +58,10 @@ import {
   reinstallChoicesRoutes,
 } from "./reinstall-choices-fixtures";
 import {
+  assertNoInstallFailureDownloads,
+  prepareInstallPreparationFailureWorld,
+} from "./install-failure-fixtures";
+import {
   FIXED_MOD as STATUS_FIXED_MOD,
   PLAIN_MOD as STATUS_PLAIN_MOD,
   RIVAL_MOD as STATUS_RIVAL_MOD,
@@ -105,6 +109,7 @@ import { contentRoutes, prepareContentWorld } from "./content-fixtures";
 import { preparePresenceCache } from "./settings-fixtures";
 import { grimoireRoutes, prepareGrimoireWorld } from "./interchange-fixtures";
 import { prepareHeroSkinsWorld } from "./hero-skins-fixtures";
+import { prepareFoundryWorld } from "./foundry-fixtures";
 import { prepareHeroSwapWorld } from "./hero-swap-fixtures";
 import {
   catalogRefreshRoutes,
@@ -141,6 +146,11 @@ import {
   assertVariantNamesNetwork,
 } from "./variant-names-fixtures";
 import {
+  assertModOptionsVariantNetwork,
+  modOptionsVariantRoutes,
+  prepareModOptionsVariantWorld,
+} from "./mod-options-variant-fixtures";
+import {
   assertRenamedPacksNetwork,
   renamedPacksRoutes,
 } from "./renamed-packs-fixtures";
@@ -152,8 +162,11 @@ import {
 } from "./app-update-fixtures";
 import {
   assertStatsDashboardNetwork,
+  assertStatsItemsErrorNetwork,
   prepareStatsDashboardWorld,
+  prepareStatsItemsErrorWorld,
   statsDashboardRoutes,
+  statsItemsErrorRoutes,
 } from "./stats-dashboard-fixtures";
 import {
   networkDiagnosticsRoutes,
@@ -1050,6 +1063,23 @@ export const scenarios = {
     routes: reinstallChoicesRoutes,
     prepare: async (world) => prepareReinstallChoicesWorld(world),
   },
+  "nuke-purge-failure": {
+    ...defaults,
+    family: "compatibility",
+    spec: "nuke-purge-failure",
+    phases: ["purge-failure"],
+    routes: reinstallChoicesRoutes,
+    prepare: async (world) => prepareReinstallChoicesWorld(world),
+    verifyNetwork: assertNoInstallFailureDownloads,
+  },
+  "install-preparation-failure": {
+    ...defaults,
+    family: "compatibility",
+    spec: "install-preparation-failure",
+    phases: ["preparation-failure"],
+    prepare: async (world) => prepareInstallPreparationFailureWorld(world),
+    verifyNetwork: assertNoInstallFailureDownloads,
+  },
   "fixed-status-shared-file": {
     ...defaults,
     family: "fixed-status",
@@ -1264,6 +1294,15 @@ export const scenarios = {
   "gamebanana-switch-reinstall": catalogLifecycle,
   "gamebanana-reselect": catalogLifecycle,
   "gamebanana-file-toggle": catalogLifecycle,
+  "mod-options-missing-variant": {
+    ...defaults,
+    family: "gamebanana",
+    spec: "mod-options-missing-variant",
+    phases: ["missing-variants", "restart"],
+    routes: modOptionsVariantRoutes,
+    prepare: prepareModOptionsVariantWorld,
+    verifyNetwork: assertModOptionsVariantNetwork,
+  },
   "gamebanana-reinstall": catalogLifecycle,
   "gamebanana-reinstall-disabled": catalogLifecycle,
   "gamebanana-reinstall-readonly": {
@@ -1331,6 +1370,18 @@ export const scenarios = {
   },
   "grimoire-import": interchange,
   "hero-skins-active": heroSkins,
+  "foundry-workspace-failure": {
+    ...heroSkins,
+    spec: "foundry-workspace-failure",
+    phases: ["workspace-failure"],
+    prepare: prepareFoundryWorld,
+  },
+  "foundry-revert-failure": {
+    ...heroSkins,
+    spec: "foundry-revert-failure",
+    phases: ["revert-failure"],
+    prepare: prepareFoundryWorld,
+  },
   "stats-default-layout": stats,
   "stats-arrange-widgets": {
     ...stats,
@@ -1357,6 +1408,14 @@ export const scenarios = {
     spec: "stats-broken-endpoints",
     phases: ["broken"],
   },
+  "stats-items-error": {
+    ...stats,
+    spec: "stats-items-error",
+    phases: ["player-error", "baseline-error", "catalog-error", "empty-items"],
+    routes: statsItemsErrorRoutes,
+    prepare: prepareStatsItemsErrorWorld,
+    verifyNetwork: assertStatsItemsErrorNetwork,
+  },
   "perf-video-apply-restore": performance,
   "perf-video-changed-in-game": performance,
   "perf-video-adopt": performance,
@@ -1372,6 +1431,17 @@ export const scenarios = {
   },
 } satisfies Record<string, Definition>;
 export type ScenarioId = keyof typeof scenarios;
+// Protect recovery and valid workflows that stricter error handling can break.
+export const criticalScenarios: readonly ScenarioId[] = [
+  "gamebanana-file-toggle",
+  "gamebanana-reinstall-readonly",
+  "compatibility-nuke-keeps-choices",
+  "profiles-import-failures",
+  "profiles-restore-during-sync",
+  "downloads-queued-retry",
+  "filesystem-crash-placed",
+  "filesystem-crash-committed",
+];
 const isScenario = (value: string): value is ScenarioId =>
   Object.hasOwn(scenarios, value);
 const supportsPlatform = (
@@ -1402,6 +1472,7 @@ export const selectScenarios = (
     .filter(
       (id) =>
         suite === "all" ||
+        (suite === "critical" && criticalScenarios.includes(id)) ||
         id === suite ||
         scenarios[id].family === suite ||
         scenarios[id].coverage === suite,

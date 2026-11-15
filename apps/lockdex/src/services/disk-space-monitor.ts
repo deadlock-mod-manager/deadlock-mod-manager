@@ -1,4 +1,5 @@
 import { statfs } from "node:fs/promises";
+import { RuntimeError } from "@deadlock-mods/common";
 import type { Logger } from "@deadlock-mods/logging";
 import { logger } from "@/lib/logger";
 import { getTempDir } from "@/lib/temp-dir";
@@ -129,16 +130,10 @@ export class DiskSpaceMonitor {
         usedBytes,
       };
     } catch (error) {
-      this.logger
-        .withError(error)
-        .warn("Failed to get disk space info, using fallback");
-
-      // Fallback: return conservative estimates
-      return {
-        totalBytes: 100 * 1024 * 1024 * 1024, // 100GB fallback
-        freeBytes: 10 * 1024 * 1024 * 1024, // 10GB fallback
-        usedBytes: 90 * 1024 * 1024 * 1024, // 90GB fallback
-      };
+      throw new RuntimeError(
+        `Disk space measurement unavailable for ${path}`,
+        error,
+      );
     }
   }
 }

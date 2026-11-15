@@ -66,18 +66,22 @@ export class ModSyncService {
       const provider =
         providerRegistry.getProvider<GameBananaSubmission>("gamebanana");
 
-      const submission = { _idRow: Number(remoteId) } as GameBananaSubmission;
+      const submission: GameBananaSubmission = { _idRow: Number(remoteId) };
       const existing =
         await modRepository.findByRemoteIdIncludingBlacklisted(remoteId);
       let result = await provider.createMod(
         submission,
         existing?.isAudio ? "sound" : "all",
+        { signal: lock.signal },
       );
       // A new id may be a sound, which only resolves under /Sound/. Only a 404
       // falls through: a private Mod with this id must not import a Sound.
       if (!existing && result.skipped === "not_found") {
-        result = await provider.createMod(submission, "sound");
+        result = await provider.createMod(submission, "sound", {
+          signal: lock.signal,
+        });
       }
+      lock.signal.throwIfAborted();
 
       wide?.merge({
         modCreated: !!result.mod,
@@ -172,7 +176,8 @@ export class ModSyncService {
         providerRegistry.getProvider<GameBanana.GameBananaSubmission>(
           "gamebanana",
         );
-      await provider.synchronize();
+      await provider.synchronize(lock?.signal);
+      lock?.signal.throwIfAborted();
 
       return {
         success: true,

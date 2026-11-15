@@ -12,7 +12,15 @@ reqwest = { version = "0.12", features = ["json", "stream"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2.0.18"
-tokio = { version = "1.50.0", features = ["macros", "rt-multi-thread", "sync", "time", "net", "io-util", "process"] }
+tokio = { version = "1.50.0", features = [
+  "macros",
+  "rt-multi-thread",
+  "sync",
+  "time",
+  "net",
+  "io-util",
+  "process",
+] }
 tokio-util = "0.7"
 ts-rs = { version = "11.1.0", features = ["serde-compat"] }
 tempfile = "3.27.0"

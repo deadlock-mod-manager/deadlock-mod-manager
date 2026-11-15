@@ -81,7 +81,7 @@ const LatestNote = ({
             {note.excerpt}
           </p>
         </div>
-        <span className='hidden shrink-0 items-center gap-1.5 rounded-md border border-primary/30 bg-background/60 px-3 py-1.5 font-medium text-primary text-xs backdrop-blur-sm transition-colors group-hover/latest:bg-primary group-hover/latest:text-primary-foreground sm:inline-flex'>
+        <span className='hidden shrink-0 items-center gap-1.5 rounded-md border border-primary/30 bg-background/85 px-3 py-1.5 font-medium text-primary text-xs transition-colors group-hover/latest:bg-primary group-hover/latest:text-primary-foreground sm:inline-flex'>
           {t("patchNotes.read")}
           <ArrowRightIcon
             className='size-3 transition-transform group-hover/latest:translate-x-0.5 motion-reduce:transition-none'

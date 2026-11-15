@@ -55,7 +55,7 @@ export const BrokenModButton = ({
             onClick={handleClick}
             className={
               variant === "hero"
-                ? "rounded-full border border-white/15 bg-black/40 text-white shadow-lg backdrop-blur-md hover:bg-black/60 hover:text-white"
+                ? "rounded-full border border-white/15 bg-black/60 text-white shadow-lg hover:bg-black/75 hover:text-white"
                 : undefined
             }>
             <HeartBreakIcon className='size-5' />

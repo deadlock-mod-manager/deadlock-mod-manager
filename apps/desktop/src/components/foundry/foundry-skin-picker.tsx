@@ -76,7 +76,7 @@ const SkinCard = ({
           </div>
         )}
         {hero && (
-          <span className='absolute top-2.5 left-2.5 rounded-[5px] bg-background/80 px-2 py-0.5 font-semibold text-[11px] backdrop-blur-sm'>
+          <span className='absolute top-2.5 left-2.5 rounded-[5px] bg-background/85 px-2 py-0.5 font-semibold text-[11px]'>
             {hero}
           </span>
         )}

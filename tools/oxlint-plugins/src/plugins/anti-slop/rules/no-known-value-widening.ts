@@ -2,7 +2,11 @@ import type { ESTree, SourceCode, Variable } from "@oxlint/plugins";
 
 import { defineRule } from "@oxlint/plugins";
 
-import { resolveVariable } from "../shared/ast.ts";
+import {
+  isStableConstVariable,
+  resolveVariable,
+  variableDeclarator,
+} from "../shared/ast.ts";
 import {
   classifyWideningTarget,
   createTypeEnvironment,
@@ -26,27 +30,6 @@ const unwrapExpression = (expression: ESTree.Expression): ESTree.Expression => {
   }
   return current;
 };
-
-const variableDeclarator = (
-  variable: Variable,
-): ESTree.VariableDeclarator | null => {
-  if (variable.defs.length !== 1) return null;
-  const [definition] = variable.defs;
-  return definition?.type === "Variable" &&
-    definition.node.type === "VariableDeclarator"
-    ? definition.node
-    : null;
-};
-
-const isStableConstVariable = (
-  variable: Variable,
-  declarator: ESTree.VariableDeclarator,
-): boolean =>
-  declarator.parent.type === "VariableDeclaration" &&
-  declarator.parent.kind === "const" &&
-  variable.references.every(
-    (reference) => reference.init || !reference.isWrite(),
-  );
 
 const hasKnownEvidence = (
   sourceCode: SourceCode,

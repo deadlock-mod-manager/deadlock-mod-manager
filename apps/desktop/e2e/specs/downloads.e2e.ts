@@ -159,9 +159,7 @@ const deleteQueued = async (world: string): Promise<void> => {
     const confirm = $('[role="alertdialog"]').$("button=Delete");
     await confirm.waitForClickable();
     await confirm.click();
-    await expect(
-      $("[data-sonner-toast]*=Mod deleted successfully"),
-    ).toBeDisplayed();
+    await expect($("[data-sonner-toast]*=Mod deleted")).toBeDisplayed();
     expect(await $(`[data-sonner-toast]*=${QUEUED_NAME}`).isExisting()).toBe(
       false,
     );
