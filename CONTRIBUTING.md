@@ -501,6 +501,8 @@ pnpm --filter desktop test
 
 ### Test Guidelines
 
+The required Type Check status includes lint, formatting, type checks, and the critical desktop E2E suite when desktop code, shared dependencies, or build configuration changes. The `e2e-full` label still requests the broader platform suites; it is not needed for critical coverage. Run the critical suite locally with `pnpm --filter @deadlock-mods/desktop e2e:test -- --suite critical` after building the isolated harness as described in [the E2E guide](apps/desktop/e2e/README.md).
+
 - Write tests for new features and bug fixes
 - Follow AAA pattern: Arrange, Act, Assert
 - Use descriptive test names

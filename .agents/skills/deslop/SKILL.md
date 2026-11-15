@@ -22,7 +22,7 @@ The failure mode this exists for: AI-assisted code that passes review because it
 - **`any` casts** — used to silence type errors rather than fix them.
 - **Deep nesting** — logic that could be flattened with early returns or guard clauses.
 - **Style drift** — patterns inconsistent with the file and the files around it.
-- **Low-signal tests** — tests added or modified in the diff that would not catch a real regression. For each one, name the regression it catches that nothing else does; delete it if you can't. Typical cases:
+- **Low-signal tests** — tests added or modified in the diff with demonstrably redundant coverage or no behavioral assertions. Typical candidates:
   - restating a one-line helper, constant, regex, or path join;
   - asserting what the type checker or a schema already enforces;
   - duplicating coverage another test or layer already gives (a TS wrapper test repeating the Rust test underneath, a second case that exercises the same branch);

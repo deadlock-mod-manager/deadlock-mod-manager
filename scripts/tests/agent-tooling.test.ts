@@ -154,3 +154,37 @@ test("accepts precise inferred values through the anti-slop plugin", async () =>
   expect(result.status).toBe(0);
   expect(result.stdout).not.toContain("anti-slop(");
 });
+
+test.each([
+  [
+    "no-reflect-get",
+    'export const name = Reflect.get({ name: "mod" }, "name");',
+  ],
+  [
+    "no-reflect-apply",
+    "export const name = Reflect.apply(String, null, [42]);",
+  ],
+  ["no-unknown-type-aliases", "export type Input = unknown;"],
+  [
+    "no-widen-then-assert",
+    'const input: unknown = { name: "mod" }; export const value = input as { name: string };',
+  ],
+])("rejects %s through the repository lint command", async (rule, source) => {
+  const root = await workspace();
+  const file = join(root, "regression.ts");
+  await writeFile(file, source);
+  const result = spawnSync(
+    process.execPath,
+    [
+      "node_modules/oxlint/bin/oxlint",
+      "--config",
+      ".oxlintrc.json",
+      "--format",
+      "json",
+      file,
+    ],
+    { encoding: "utf8" },
+  );
+  expect(result.status).toBe(1);
+  expect(result.stdout).toContain(`anti-slop(${rule})`);
+});

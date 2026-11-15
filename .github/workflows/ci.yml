@@ -37,12 +37,16 @@ jobs:
           HEAD_SHA: ${{ github.sha }}
         run: node scripts/check-recent-reversions.mjs
 
-  check-types:
-    name: Type Check
+  static-checks:
+    name: Static checks
     runs-on: depot-ubuntu-24.04
+    outputs:
+      desktop: ${{ steps.desktop.outputs.required }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js environment
         uses: actions/setup-node@v7
@@ -51,6 +55,13 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
 
       - uses: pnpm/action-setup@v6
+
+      - name: Select critical desktop coverage
+        id: desktop
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha || github.event.before }}
+          HEAD_SHA: ${{ github.sha }}
+        run: node scripts/select-critical-e2e.mjs
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -62,6 +73,12 @@ jobs:
 
       - name: Check toolchain pins
         run: pnpm check:toolchain
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Check formatting
+        run: pnpm format:check
 
       - name: Type check agent tooling
         run: pnpm check-types:tooling
@@ -77,6 +94,38 @@ jobs:
 
       - name: Run type check
         run: pnpm check-types
+
+  desktop-critical:
+    needs: static-checks
+    if: needs.static-checks.outputs.desktop == 'true'
+    uses: ./.github/workflows/desktop-e2e.yml
+    with:
+      required: true
+      platforms: windows
+      suites: '["critical"]'
+
+  check-types:
+    name: Type Check
+    needs: [static-checks, desktop-critical]
+    if: always()
+    runs-on: depot-ubuntu-24.04
+    steps:
+      # Keep the existing required check name so rulesets enforce both paths.
+      - name: Require static checks and selected desktop scenarios
+        shell: node {0}
+        env:
+          STATIC_RESULT: ${{ needs.static-checks.result }}
+          DESKTOP_REQUIRED: ${{ needs.static-checks.outputs.desktop }}
+          DESKTOP_RESULT: ${{ needs.desktop-critical.result }}
+        run: |
+          const { STATIC_RESULT, DESKTOP_REQUIRED, DESKTOP_RESULT } = process.env;
+          const desktopPassed =
+            (DESKTOP_REQUIRED === 'true' && DESKTOP_RESULT === 'success') ||
+            (DESKTOP_REQUIRED === 'false' && DESKTOP_RESULT === 'skipped');
+          if (STATIC_RESULT !== 'success' || !desktopPassed) {
+            console.error('Required static or desktop checks did not pass.');
+            process.exitCode = 1;
+          }
 
   test:
     name: Run Tests

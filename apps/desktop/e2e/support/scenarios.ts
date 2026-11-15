@@ -1367,6 +1367,17 @@ export const scenarios = {
   },
 } satisfies Record<string, Definition>;
 export type ScenarioId = keyof typeof scenarios;
+// Protect recovery and valid workflows that stricter error handling can break.
+export const criticalScenarios: readonly ScenarioId[] = [
+  "gamebanana-file-toggle",
+  "gamebanana-reinstall-readonly",
+  "compatibility-nuke-keeps-choices",
+  "profiles-import-failures",
+  "profiles-restore-during-sync",
+  "downloads-queued-retry",
+  "filesystem-crash-placed",
+  "filesystem-crash-committed",
+];
 const isScenario = (value: string): value is ScenarioId =>
   Object.hasOwn(scenarios, value);
 const supportsPlatform = (
@@ -1397,6 +1408,7 @@ export const selectScenarios = (
     .filter(
       (id) =>
         suite === "all" ||
+        (suite === "critical" && criticalScenarios.includes(id)) ||
         id === suite ||
         scenarios[id].family === suite ||
         scenarios[id].coverage === suite,
