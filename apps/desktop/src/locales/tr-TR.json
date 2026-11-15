@@ -1256,6 +1256,8 @@
       "emptyTitle": "Henüz eşya istatistiği yok",
       "emptyDescription": "deadlock-api, eşya istatistiklerini tamamen analiz edilmiş maçlardan oluşturur. Şu ana kadar maçlarınızın yalnızca bir kısmı analiz edildi. Diğer maçlarınız işlendikçe istatistikler burada görünür.",
       "emptyAction": "Önce maçlarınızı analiz ettirin",
+      "errorTitle": "",
+      "errorDescription": "",
       "tableTitle": "Eşyalarınızın herkese kıyasla durumu",
       "tableDescription": "Bir eşyayı aldığınızda kazanma oranınız, aynı eşyayı alan tüm oyuncuların oranıyla birlikte",
       "slotFilter": "Eşya yuvası",
@@ -2778,7 +2780,8 @@
       "alt": "Görünüm önizlemesi",
       "startSpin": "Otomatik döndür",
       "stopSpin": "Döndürmeyi durdur",
-      "painting": "Renklendiriliyor…"
+      "painting": "Renklendiriliyor…",
+      "textureRefreshFailed": ""
     },
     "inspector": {
       "title": "Özellikler",
@@ -2863,6 +2866,7 @@
       "reverted": "{{file}} geri alındı",
       "revertFailed": "Bu dosya geri alınamadı.",
       "workspacePending": "Bu görünümün düzenlenebilir kopyası hazırlanıyor…",
+      "workspaceFailed": "",
       "replaceSoundHint": "",
       "primaryLabel": "Birincil model",
       "primaryHint": "",
@@ -4274,6 +4278,7 @@
     "title": "Deadlock başlatılıyor",
     "hide": "Gizle (başlatma devam eder)",
     "cancel": "Başlatmayı İptal Et",
+    "cancelFailed": "",
     "randomizerFailed": "",
     "steps": {
       "randomizingSkins": "Kahraman kostümleri rastgele seçiliyor",
@@ -4617,7 +4622,8 @@
       "title": "",
       "description": "",
       "sectionTitle": "",
-      "sectionDescription": ""
+      "sectionDescription": "",
+      "syncFailed": ""
     },
     "autoUpdate": "Otomatik Güncellemeler",
     "autoUpdateDescription": "Başlangıçta uygulama güncellemelerini otomatik olarak denetleyip bildirim göster.",
@@ -5151,6 +5157,7 @@
     "retryFailed_one": "Başarısız modu yeniden dene",
     "retryFailed_other": "Başarısız {{count}} modu yeniden dene",
     "summary": "{{total}} moddan {{restored}} tanesi geri yüklendi.",
+    "removedBeforeStop": "",
     "summaryManual_one": "Yüklemeden önce {{count}} mod için dosyayı elle seçmeniz gerekiyor.",
     "summaryManual_other": "Yüklemeden önce {{count}} mod için dosyayı elle seçmeniz gerekiyor.",
     "summaryFailed_one": "{{count}} mod geri yüklenemedi.",
