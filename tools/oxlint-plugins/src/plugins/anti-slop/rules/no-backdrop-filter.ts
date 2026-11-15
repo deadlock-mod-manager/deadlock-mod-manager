@@ -71,8 +71,12 @@ const isLinuxOnly = (
   return isLinuxOnly(sourceCode, declarator.init, visitedVariables);
 };
 
-/** Reports whether a class string is skipped on Linux: `!<linux-only condition> && "…"`. */
-const isSkippedOnLinux = (
+/**
+ * Reports whether a class string is behind a Linux gate: `!<linux-only condition> && "…"`.
+ * The gate may be an opt-in, so Linux users who turn it off still get the class;
+ * that choice is theirs (for example `!canvasBlur` with the canvas NSFW blur setting off).
+ */
+const isLinuxGated = (
   sourceCode: SourceCode,
   node: ESTree.Node,
   parent: ESTree.Node,
@@ -97,11 +101,11 @@ export const noBackdropFilterRule = defineRule({
     type: "problem",
     docs: {
       description:
-        "Disallow backdrop-filter utilities and styles unless gated off Linux; WebKitGTK allocates a compositing layer per element and exhausts memory.",
+        "Disallow backdrop-filter utilities and styles unless behind a Linux gate; WebKitGTK allocates a compositing layer per element and exhausts memory.",
     },
     messages: {
       backdropFilter:
-        'Avoid backdrop-filter: WebKitGTK composites each one separately and can freeze the Linux app (#1041). Use a more opaque background, or skip it on Linux behind a `platform() === "linux"` condition, e.g. `!canvasBlur && "backdrop-…"`.',
+        'Avoid backdrop-filter: WebKitGTK composites each one separately and can freeze the Linux app (#1041). Use a more opaque background, or gate it on a `platform() === "linux"` condition, e.g. `!isLinux && "backdrop-…"`.',
     },
   },
   create(context) {
@@ -109,7 +113,7 @@ export const noBackdropFilterRule = defineRule({
       Literal(node) {
         if (
           hasBackdropClass(String(node.value)) &&
-          !isSkippedOnLinux(context.sourceCode, node, node.parent)
+          !isLinuxGated(context.sourceCode, node, node.parent)
         ) {
           context.report({ node, messageId: "backdropFilter" });
         }
