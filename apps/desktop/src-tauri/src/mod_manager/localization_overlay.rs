@@ -44,6 +44,8 @@ mod observed_data;
 mod profile_benchmark;
 mod repair_scope;
 mod resources;
+#[cfg(test)]
+mod strict_game_text_tests;
 pub mod vdata_compatibility;
 
 pub(crate) use resources::GameIndex;
@@ -815,8 +817,23 @@ impl LocalizationOverlayPlan {
 
           if !bases.contains_key(&normalized_file) {
             let parsed = if let Some(bytes) = resources.game_bytes(&normalized_file)? {
-              game_text.insert(normalized_file.clone());
-              parse_localization_bytes(&bytes, &format!("game:{file_path}"))?.file
+              match parse_game_localization_bytes(&bytes, &file_path)? {
+                GameLocalizationBaseline::Complete(file) => {
+                  game_text.insert(normalized_file.clone());
+                  file
+                }
+                GameLocalizationBaseline::Unsupported => {
+                  parse_warnings.push(LocalizationParseWarning {
+                    mod_id: mod_input.mod_id.clone(),
+                    file_path: file_path.replace('\\', "/"),
+                    skipped_lines: Vec::new(),
+                    error: Some(format!(
+                      "The game file {file_path} uses a format DMM does not merge. The mod's own file is left as is"
+                    )),
+                  });
+                  continue;
+                }
+              }
             } else {
               LocalizationFile {
                 language: infer_language(&file_path),
@@ -2344,6 +2361,31 @@ fn choose_winner<'a>(
   })
 }
 
+enum GameLocalizationBaseline {
+  Complete(LocalizationFile),
+  Unsupported,
+}
+
+fn parse_game_localization_bytes(
+  bytes: &[u8],
+  source: &str,
+) -> Result<GameLocalizationBaseline, Error> {
+  let damaged = || Error::GameLocalizationInvalid(source.to_string());
+  let text = decode_localization_text(bytes).ok_or_else(damaged)?;
+  let text = text.strip_prefix('\u{feff}').unwrap_or(&text);
+  if let Ok(parsed) = keyvalues_parser::parse(text) {
+    return Ok(match localization_table(&parsed, source) {
+      Ok(file) => GameLocalizationBaseline::Complete(file),
+      Err(_) => GameLocalizationBaseline::Unsupported,
+    });
+  }
+  let parsed = parse_localization_lines(text, source).map_err(|_| damaged())?;
+  if !parsed.skipped_lines.is_empty() {
+    return Err(damaged());
+  }
+  Ok(GameLocalizationBaseline::Complete(parsed.file))
+}
+
 fn parse_localization_bytes(bytes: &[u8], source: &str) -> Result<ParsedLocalizationFile, Error> {
   let text = decode_localization_text(bytes)
     .ok_or_else(|| Error::ModInvalid(format!("{source} is not UTF-8 or UTF-16 text")))?;
@@ -2351,6 +2393,16 @@ fn parse_localization_bytes(bytes: &[u8], source: &str) -> Result<ParsedLocaliza
   let Ok(parsed) = keyvalues_parser::parse(text) else {
     return parse_localization_lines(text, source);
   };
+  Ok(ParsedLocalizationFile {
+    file: localization_table(&parsed, source)?,
+    skipped_lines: Vec::new(),
+  })
+}
+
+fn localization_table(
+  parsed: &keyvalues_parser::PartialVdf<'_>,
+  source: &str,
+) -> Result<LocalizationFile, Error> {
   if !parsed.key.eq_ignore_ascii_case("lang") {
     return Err(Error::ModInvalid(format!(
       "Localization file {source} has root {:?}, expected lang",
@@ -2376,10 +2428,7 @@ fn parse_localization_bytes(bytes: &[u8], source: &str) -> Result<ParsedLocaliza
         .map(|value| (token.to_string(), value.to_string()))
     })
     .collect();
-  Ok(ParsedLocalizationFile {
-    file: LocalizationFile { language, tokens },
-    skipped_lines: Vec::new(),
-  })
+  Ok(LocalizationFile { language, tokens })
 }
 
 /// Older tools save localization as UTF-16 with a byte order mark.
@@ -2405,6 +2454,8 @@ fn parse_localization_lines(text: &str, source: &str) -> Result<ParsedLocalizati
   let mut skipped_lines = Vec::new();
   let mut found_tokens = false;
   let mut in_tokens = false;
+  let mut tokens_start_line = 0;
+  let mut closed_tokens = false;
 
   for (index, line) in text.lines().enumerate() {
     let line_number = index + 1;
@@ -2425,15 +2476,20 @@ fn parse_localization_lines(text: &str, source: &str) -> Result<ParsedLocalizati
       }
       if found_tokens && trimmed.contains('{') {
         in_tokens = true;
+        tokens_start_line = line_number;
       }
       continue;
     }
 
     if trimmed.starts_with('}') {
+      closed_tokens = true;
       break;
     }
     match parse_quoted_fields(trimmed) {
       Ok(fields) if fields.len() >= 2 => {
+        if fields.len() > 2 {
+          skipped_lines.push(line_number);
+        }
         tokens.insert(fields[0].clone(), fields[1].clone());
       }
       _ => skipped_lines.push(line_number),
@@ -2444,6 +2500,10 @@ fn parse_localization_lines(text: &str, source: &str) -> Result<ParsedLocalizati
     return Err(Error::ModInvalid(format!(
       "Localization file {source} has no readable Tokens object"
     )));
+  }
+  if !closed_tokens {
+    skipped_lines.push(tokens_start_line);
+    skipped_lines.sort_unstable();
   }
   Ok(ParsedLocalizationFile {
     file: LocalizationFile { language, tokens },
