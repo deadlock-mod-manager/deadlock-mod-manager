@@ -3,7 +3,7 @@ use crate::mod_manager::vdata_history::{BaselineEvidence, VdataHistory, VdataHis
 use keyvalues_parser::Value;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use source2_model::vpk_extract::VpkArchive;
+use source2_model::vpk_extract::{VpkArchive, normalize_resource_path};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -43,6 +43,8 @@ mod observed_data;
 #[cfg(test)]
 mod profile_benchmark;
 mod repair_scope;
+#[cfg(test)]
+mod resource_path_tests;
 mod resources;
 pub mod vdata_compatibility;
 
@@ -74,7 +76,10 @@ pub(crate) fn localization_paths(mods: &[LocalizationModInput]) -> Result<BTreeS
       paths.extend(
         entries
           .into_iter()
-          .filter(|entry| is_localization_path(&entry.full_path))
+          .filter(|entry| {
+            normalize_resource_path(&entry.full_path).is_some()
+              && is_localization_path(&entry.full_path)
+          })
           .map(|entry| normalize_path(&entry.full_path)),
       );
     }
@@ -94,13 +99,14 @@ pub(crate) fn has_checkable_resources(input: &LocalizationModInput) -> Result<bo
     })?;
     if entries.iter().any(|entry| {
       let path = &entry.full_path;
-      is_localization_path(path)
-        || is_mergeable_compiled_data_path(path)
-        || model_camera::is_path(path)
-        || animation_skeleton::is_path(path)
-        || asset_compatibility::is_mesh_path(path)
-        || normalize_path(path).ends_with(".vmat_c")
-        || normalize_path(path).ends_with(".vxml_c")
+      normalize_resource_path(path).is_some()
+        && (is_localization_path(path)
+          || is_mergeable_compiled_data_path(path)
+          || model_camera::is_path(path)
+          || animation_skeleton::is_path(path)
+          || asset_compatibility::is_mesh_path(path)
+          || normalize_path(path).ends_with(".vmat_c")
+          || normalize_path(path).ends_with(".vxml_c"))
     }) {
       return Ok(true);
     }
@@ -700,6 +706,24 @@ impl LocalizationOverlayPlan {
         let mut model_paths = Vec::new();
         let mut mesh_paths = Vec::new();
         for entry_path in archive.list_entries() {
+          if normalize_resource_path(&entry_path).is_none() {
+            if is_localization_path(&entry_path) && repair_scope.includes_mod(&mod_input.mod_id) {
+              parse_warnings.push(LocalizationParseWarning {
+                mod_id: mod_input.mod_id.clone(),
+                file_path: entry_path.replace('\\', "/"),
+                skipped_lines: Vec::new(),
+                error: Some("Skipped unsafe resource path".into()),
+              });
+            } else {
+              log::warn!(
+                "Skipping unsafe resource path {:?} from {} for mod {}",
+                entry_path,
+                vpk_path.display(),
+                mod_input.mod_id
+              );
+            }
+            continue;
+          }
           let effective = resources.provider(&entry_path).is_some_and(|provider| {
             provider.archive == *vpk_path
               && provider.mod_id.as_deref() == Some(mod_input.mod_id.as_str())
@@ -1285,11 +1309,11 @@ impl LocalizationOverlayPlan {
 
     let workspace = TempDir::new()?;
     for (normalized_file, localization) in &output_files {
-      let output_file = workspace.path().join(normalized_file);
-      if let Some(parent) = output_file.parent() {
-        fs::create_dir_all(parent)?;
-      }
-      fs::write(output_file, render_localization(localization))?;
+      write_staged_resource(
+        workspace.path(),
+        normalized_file,
+        &render_localization(localization),
+      )?;
     }
 
     let vdata_compatibility::PreparedData {
@@ -1308,11 +1332,7 @@ impl LocalizationOverlayPlan {
       .chain(&self.camera_models)
       .chain(&self.material_assets)
     {
-      let output_file = workspace.path().join(file_path);
-      if let Some(parent) = output_file.parent() {
-        fs::create_dir_all(parent)?;
-      }
-      fs::write(output_file, bytes)?;
+      write_staged_resource(workspace.path(), file_path, bytes)?;
     }
 
     if output_files.is_empty()
@@ -1353,6 +1373,17 @@ impl LocalizationOverlayPlan {
       data_warnings,
     })
   }
+}
+
+fn write_staged_resource(root: &Path, path: &str, bytes: &[u8]) -> Result<(), Error> {
+  let relative = normalize_resource_path(path)
+    .ok_or_else(|| Error::InvalidInput(format!("Unsafe resource path: {path:?}")))?;
+  let output = root.join(relative);
+  if let Some(parent) = output.parent() {
+    fs::create_dir_all(parent)?;
+  }
+  fs::write(output, bytes)?;
+  Ok(())
 }
 
 /// Read the packed overlay back and compare every entry with the file staged
@@ -2064,11 +2095,7 @@ impl CompiledDataTable {
     if merged.applied_rows.is_empty() {
       // The original mod still overrides this table through the addons search path.
       // Emit current bytes even when all stale data was ignored or vanilla was selected.
-      let output_file = output_root.join(&self.file_path);
-      if let Some(parent) = output_file.parent() {
-        fs::create_dir_all(parent)?;
-      }
-      fs::write(output_file, &self.base_bytes)?;
+      write_staged_resource(output_root, &self.file_path, &self.base_bytes)?;
       return Ok(0);
     }
 
@@ -2116,11 +2143,7 @@ impl CompiledDataTable {
       }
     }
 
-    let output_file = output_root.join(&self.file_path);
-    if let Some(parent) = output_file.parent() {
-      fs::create_dir_all(parent)?;
-    }
-    fs::write(output_file, rebuilt)?;
+    write_staged_resource(output_root, &self.file_path, &rebuilt)?;
     Ok(merged.applied_rows.len())
   }
 }
