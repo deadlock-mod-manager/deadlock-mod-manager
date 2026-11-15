@@ -13,7 +13,7 @@ use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-mod legacy_paths;
+mod managed_mounts;
 #[cfg(test)]
 mod preservation_tests;
 
@@ -99,7 +99,7 @@ impl GameConfigManager {
     game_path: &Path,
     content: &str,
   ) -> Result<gameinfo_search_paths::Inspection, Error> {
-    gameinfo_search_paths::inspect(content, &legacy_paths::claims(game_path, content)?)
+    gameinfo_search_paths::inspect(content, || managed_mounts::claims(game_path))
   }
 
   pub fn has_mod_search_paths(game_path: &Path, content: &str) -> Result<bool, Error> {
@@ -176,15 +176,15 @@ impl GameConfigManager {
     }
 
     // Settings reports invalid syntax separately from ownership and enabled mounts.
-    let legacy_claims = legacy_paths::claims(game_path, &content)?;
     let (is_modified_by_mod_manager, has_mod_paths, syntax_valid) =
-      match gameinfo_search_paths::inspect(&content, &legacy_claims) {
+      match gameinfo_search_paths::inspect(&content, || managed_mounts::claims(game_path)) {
         Ok(inspection) => (
           inspection.has_owned_entries,
           !inspection.mod_paths.is_empty(),
           true,
         ),
-        Err(_) => (false, false, false),
+        Err(Error::GameConfigParse(_)) => (false, false, false),
+        Err(error) => return Err(error),
       };
 
     // Check if file was modified externally
@@ -563,7 +563,7 @@ impl GameConfigManager {
       &original,
       mode,
       deadworks,
-      &legacy_paths::claims(game_path, &original)?,
+      || managed_mounts::claims(game_path),
     )?;
     if updated.content == original {
       // An identical profile/launch request still supersedes pending cleanup.
@@ -574,7 +574,13 @@ impl GameConfigManager {
     if !backup.exists() {
       fs::copy(path, backup)?;
     }
-    if updated.migrated_legacy {
+    if !updated.removed_strays.is_empty() {
+      log::info!(
+        "Removing gameinfo.gi mounts of DMM-managed folders outside DMM's block: {:?}",
+        updated.removed_strays
+      );
+    }
+    if updated.migrated_legacy || !updated.removed_strays.is_empty() {
       Self::keep_gameinfo_copy(path, original.as_bytes(), "pre-dmm-migration")?;
     }
     Self::commit_gameinfo(path, Some(original.as_bytes()), &updated.content)?;

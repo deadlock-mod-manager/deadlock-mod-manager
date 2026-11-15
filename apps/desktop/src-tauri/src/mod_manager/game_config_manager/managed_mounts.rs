@@ -1,18 +1,13 @@
-//! Legacy outer markers cannot distinguish our profiles from another tool's.
-//! Only a readable DMM manifest can establish ownership of a base or named folder.
+//! Addon search paths DMM manages. Neither a legacy outer marker nor a folder
+//! name proves a mount is ours; only a readable DMM manifest establishes that
+//! DMM manages a base or named folder.
 
 use super::*;
 use crate::mod_manager::shard::{ProfileBase, ShardIndex};
 use crate::mod_manager::vpk_manager::VpkManager;
 use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
 
-pub(super) fn claims(game_path: &Path, content: &str) -> Result<Vec<String>, Error> {
-  if !content
-    .lines()
-    .any(|line| line.trim() == gameinfo_search_paths::LEGACY_START)
-  {
-    return Ok(Vec::new());
-  }
+pub(super) fn claims(game_path: &Path) -> Result<Vec<String>, Error> {
   let addons = game_path.join("game/citadel/addons");
   let entries = match fs::read_dir(&addons) {
     Ok(entries) => entries,
@@ -20,19 +15,18 @@ pub(super) fn claims(game_path: &Path, content: &str) -> Result<Vec<String>, Err
     Err(error) => return Err(error.into()),
   };
   let mut paths = profile_claims(&addons, None)?;
-  for entry in entries {
-    let entry = entry?;
-    if !entry.file_type()?.is_dir() {
+  // Entries that vanish or cannot be stat'ed mid-scan are not DMM folders.
+  for entry in entries.flatten() {
+    if !entry.file_type().is_ok_and(|kind| kind.is_dir()) {
       continue;
     }
     let folder = entry.file_name();
     let Some(folder) = folder.to_str() else {
       continue;
     };
-    if !shard::is_valid_search_path(&format!("citadel/addons/{folder}")) {
-      continue;
+    if shard::is_valid_search_path(&format!("citadel/addons/{folder}")) {
+      paths.extend(profile_claims(&entry.path(), Some(folder))?);
     }
-    paths.extend(profile_claims(&entry.path(), Some(folder))?);
   }
   Ok(paths)
 }
@@ -83,7 +77,7 @@ mod tests {
       fs::create_dir_all(&overflow).unwrap();
       fs::write(overflow.join("readme.txt"), "another tool's directory").unwrap();
       assert_eq!(
-        claims(game.path(), gameinfo_search_paths::LEGACY_START).unwrap(),
+        claims(game.path()).unwrap(),
         [ShardIndex::FIRST.search_path(folder)]
       );
     }
@@ -120,24 +114,8 @@ mod tests {
           .take(3)
           .map(|index| index.search_path(folder))
           .collect();
-        assert_eq!(
-          claims(game.path(), gameinfo_search_paths::LEGACY_START).unwrap(),
-          expected
-        );
+        assert_eq!(claims(game.path()).unwrap(), expected);
       }
     }
-  }
-
-  #[test]
-  fn versioned_markers_skip_legacy_manifest_scanning() {
-    let directory = tempfile::tempdir().unwrap();
-    let citadel = directory.path().join("game/citadel");
-    fs::create_dir_all(&citadel).unwrap();
-    // Make an accidental scan observable without platform-specific permissions.
-    fs::write(citadel.join("addons"), "not a directory").unwrap();
-    let versioned = include_str!("../gameinfo_search_paths/fixtures/deadworks-after-dmm.gi");
-    assert!(claims(directory.path(), versioned).unwrap().is_empty());
-    let legacy = format!(" \t{}\r\n", gameinfo_search_paths::LEGACY_START);
-    assert!(claims(directory.path(), &legacy).is_err());
   }
 }

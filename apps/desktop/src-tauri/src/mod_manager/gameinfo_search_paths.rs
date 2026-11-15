@@ -38,6 +38,9 @@ enum Format {
 
 struct Ownership<'a> {
   entries: Vec<&'a Site>,
+  /// Lines outside DMM's block that mount a folder DMM manages. They are not
+  /// ours, but they would load that folder's mods whatever profile is active.
+  strays: Vec<&'a Site>,
   format: Format,
 }
 
@@ -56,6 +59,8 @@ pub(super) enum MountMode<'a> {
 pub(super) struct Rewrite {
   pub content: String,
   pub migrated_legacy: bool,
+  /// Values of the stray mounts the rewrite removed.
+  pub removed_strays: Vec<String>,
 }
 
 fn fail(reason: impl Into<String>) -> Error {
@@ -146,10 +151,6 @@ fn whole_line(text: &str, at: usize) -> Result<Range<usize>, Error> {
   Ok(start..line_end(text, at))
 }
 
-fn legacy_path(value: &str, claimed_paths: &[String]) -> bool {
-  shard::is_valid_search_path(value) && claimed_paths.iter().any(|path| path == value)
-}
-
 /// Match fence names, so an unrelated comment ending in END cannot close a tool's block.
 fn foreign_fences(comments: &[Comment], body: &Range<usize>) -> Vec<Range<usize>> {
   let mut stack: Vec<(&str, usize)> = Vec::new();
@@ -195,11 +196,15 @@ fn is_mount(text: &str, site: &Site, role: &str, path: &str) -> bool {
     && (tail.is_empty() || tail.starts_with("//"))
 }
 
-/// Recognizes tagged entries and historical DMM mounts, preserving foreign fences.
+/// Recognizes tagged entries, historical DMM mounts and, when `find_strays` is
+/// set, stray mounts of folders DMM manages, preserving foreign fences.
+/// `claims` lists those folders' search paths; it reads every profile manifest,
+/// so it only runs once an untagged entry could match.
 fn owned_entries<'a>(
   text: &str,
   doc: &'a Document,
-  legacy_claims: &[String],
+  claims: impl FnOnce() -> Result<Vec<String>, Error>,
+  find_strays: bool,
 ) -> Result<Ownership<'a>, Error> {
   let current = doc.markers(START, END)?;
   let legacy = doc.markers(LEGACY_START, LEGACY_END)?;
@@ -222,7 +227,21 @@ fn owned_entries<'a>(
       "Legacy DMM markers do not surround the active SearchPaths block; the file was left unchanged",
     ));
   }
+  let mut claims = Some(claims);
+  let mut claimed_paths = Vec::new();
+  let mut is_claimed = |value: &str| -> Result<bool, Error> {
+    if let Some(load) = claims.take() {
+      claimed_paths = load()?;
+    }
+    // The game resolves search paths case-insensitively on Windows and Proton.
+    Ok(
+      claimed_paths
+        .iter()
+        .any(|path| path.eq_ignore_ascii_case(value)),
+    )
+  };
   let mut result = Vec::new();
+  let mut strays = Vec::new();
   for site in doc.entries() {
     let SiteKind::Scalar { value, value_range } = &site.kind else {
       continue;
@@ -238,18 +257,36 @@ fn owned_entries<'a>(
         "A DMM search-path entry spans multiple lines; the file was left unchanged",
       ));
     }
-    // Historical writers emitted plain, unconditional lines. Comments, conditions,
-    // and another tool's fenced block are evidence that a line is not ours.
-    let old = legacy.is_some()
-      && !in_foreign_block(doc, site.key_start)
-      && same_line
-      && !text[site.key_start..].starts_with('"')
-      && tail.is_empty()
-      && site.is_unconditional()
-      && site.path[2] == "Game"
-      && legacy_path(value, legacy_claims);
-    if tagged || old {
+    if tagged {
       result.push(site);
+      continue;
+    }
+    // Only a whole line can be removed. Another tool's fence marks a deliberate
+    // mount, and dropping a compound role like `Game+Mod` would lose its Mod role.
+    let removable = same_line
+      && text[line_start(text, site.key_start)..site.key_start]
+        .trim()
+        .is_empty()
+      && !in_foreign_block(doc, site.key_start)
+      && site.is_unconditional()
+      && site.path[2].eq_ignore_ascii_case("Game")
+      && (tail.is_empty() || tail.starts_with("//"));
+    // Historical writers emitted plain lines. Comments and quoting are evidence
+    // that a line is not ours.
+    let old = legacy.is_some()
+      && removable
+      && tail.is_empty()
+      && site.path[2] == "Game"
+      && !text[site.key_start..].starts_with('"');
+    if (old || (find_strays && removable))
+      && shard::is_valid_search_path(&value.to_ascii_lowercase())
+      && is_claimed(value)?
+    {
+      if old {
+        result.push(site);
+      } else {
+        strays.push(site);
+      }
     }
   }
   let format = if legacy.is_some() {
@@ -261,20 +298,21 @@ fn owned_entries<'a>(
   };
   Ok(Ownership {
     entries: result,
+    strays,
     format,
   })
 }
 
 pub(super) fn validate(text: &str) -> Result<(), Error> {
   let doc = Document::parse(text)?;
-  owned_entries(text, &doc, &[])?;
+  owned_entries(text, &doc, || Ok(Vec::new()), false)?;
   Ok(())
 }
 
 /// A reset must produce a configuration the Windows game client can mount.
 pub(super) fn validate_reset(text: &str) -> Result<(), Error> {
   let doc = Document::parse(text)?;
-  owned_entries(text, &doc, &[])?;
+  owned_entries(text, &doc, || Ok(Vec::new()), false)?;
   for site in doc.entries().filter(|site| has_role(site, "Game")) {
     if matches!(site.kind, SiteKind::Scalar { .. })
       && site
@@ -287,9 +325,13 @@ pub(super) fn validate_reset(text: &str) -> Result<(), Error> {
   Err(fail("Reset configuration has no active Game mount"))
 }
 
-pub(super) fn inspect(text: &str, legacy_claims: &[String]) -> Result<Inspection, Error> {
+/// Strays are not DMM's mounts, so inspection never looks for them.
+pub(super) fn inspect(
+  text: &str,
+  claims: impl FnOnce() -> Result<Vec<String>, Error>,
+) -> Result<Inspection, Error> {
   let doc = Document::parse(text)?;
-  let ownership = owned_entries(text, &doc, legacy_claims)?;
+  let ownership = owned_entries(text, &doc, claims, false)?;
   let mod_paths = ownership
     .entries
     .iter()
@@ -312,13 +354,14 @@ pub(super) fn rewrite(
   text: &str,
   mode: MountMode<'_>,
   deadworks: bool,
-  legacy_claims: &[String],
+  claims: impl FnOnce() -> Result<Vec<String>, Error>,
 ) -> Result<Rewrite, Error> {
   let doc = Document::parse(text)?;
   let Ownership {
     entries: owned,
+    strays,
     format,
-  } = owned_entries(text, &doc, legacy_claims)?;
+  } = owned_entries(text, &doc, claims, true)?;
   let saved_roles = ["Mod", "Write"].map(|role| {
     let value = owned.iter().find_map(|site| match &site.kind {
       SiteKind::Scalar { value, .. } if has_role(site, role) => Some(value.as_str()),
@@ -327,7 +370,13 @@ pub(super) fn rewrite(
     (role, value)
   });
   let mut edits = Vec::new();
-  for site in owned {
+  let mut removed_strays = Vec::new();
+  for site in &strays {
+    if let SiteKind::Scalar { value, .. } = &site.kind {
+      removed_strays.push(value.clone());
+    }
+  }
+  for site in owned.into_iter().chain(strays) {
     edits.push((whole_line(text, site.key_start)?, String::new()));
   }
   for comment in &doc.comments {
@@ -377,5 +426,6 @@ pub(super) fn rewrite(
   Ok(Rewrite {
     content: clean,
     migrated_legacy: format == Format::Legacy,
+    removed_strays,
   })
 }

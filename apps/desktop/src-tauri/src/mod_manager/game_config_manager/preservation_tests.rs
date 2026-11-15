@@ -546,3 +546,56 @@ fn migration_and_atomic_rewrites_support_long_game_paths() {
   manager.toggle_mods(&game_path, true).unwrap();
   assert_eq!(fs::read_to_string(path).unwrap(), fixture());
 }
+
+/// A mount of the Default profile's folder outside DMM's block kept it loaded
+/// under every other profile (#1401).
+#[test]
+fn hand_added_mounts_of_managed_folders_are_removed_with_a_safety_copy() {
+  use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
+  let (game, path) = game();
+  let addons = path.parent().unwrap().join("addons");
+  fs::create_dir_all(addons.join("profile_b")).unwrap();
+  ProfileVpkManifest::default().save(&addons).unwrap();
+  let original = fixture().replace(
+    "   Game citadel\r\n",
+    "   Game citadel/addons\r\n   Game citadel\r\n",
+  );
+  fs::write(&path, &original).unwrap();
+  let mut manager = GameConfigManager::new();
+
+  manager
+    .update_mod_paths(game.path(), &["citadel/addons/profile_b".to_string()])
+    .unwrap();
+  let switched = fs::read_to_string(&path).unwrap();
+  let mounts: Vec<_> = switched
+    .lines()
+    .filter(|line| line.contains("Game") && line.contains("citadel/addons"))
+    .map(str::trim)
+    .collect();
+  assert_eq!(
+    mounts,
+    [
+      "Game\t\tcitadel/addons/profile_b // dmm-search-path",
+      "Game citadel/addons/external // user's mount",
+    ]
+  );
+  let snapshots: Vec<_> = fs::read_dir(path.parent().unwrap())
+    .unwrap()
+    .map(Result::unwrap)
+    .filter(|entry| {
+      entry
+        .file_name()
+        .to_string_lossy()
+        .starts_with("gameinfo.gi.pre-dmm-migration-")
+    })
+    .collect();
+  assert_eq!(snapshots.len(), 1);
+  assert_eq!(fs::read_to_string(snapshots[0].path()).unwrap(), original);
+
+  manager.toggle_mods(game.path(), true).unwrap();
+  assert_eq!(
+    fs::read_to_string(&path).unwrap(),
+    fixture(),
+    "a vanilla launch leaves only the user's other mounts"
+  );
+}
