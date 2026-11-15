@@ -87,7 +87,8 @@ impl Parser {
             options.allow_escape_sequences,
             options.allow_conditionals,
             options.allow_includes,
-        );
+        )
+        .with_max_token_length(options.max_token_length);
         let tokens = tokenizer.tokenize()?;
         let mut parser = Parser::new(tokens);
         let ast = parser.parse_document()?;
@@ -107,6 +108,7 @@ impl Parser {
             options.allow_conditionals,
             options.allow_includes,
         )
+        .with_max_token_length(options.max_token_length)
         .tokenize()?;
         let mut parser = Self::new(tokens);
         let ast = parser.parse_document_strict()?;

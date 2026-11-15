@@ -79,6 +79,7 @@ impl SourceDocument {
             options.allow_conditionals,
             options.allow_includes,
         )
+        .with_max_token_length(options.max_token_length)
         .tokenize()?;
         let comments = tokens
             .iter()
