@@ -1256,6 +1256,8 @@
       "emptyTitle": "",
       "emptyDescription": "",
       "emptyAction": "",
+      "errorTitle": "",
+      "errorDescription": "",
       "tableTitle": "",
       "tableDescription": "",
       "slotFilter": "",
@@ -2778,7 +2780,8 @@
       "alt": "皮肤预览",
       "startSpin": "自动旋转",
       "stopSpin": "停止旋转",
-      "painting": "正在上色…"
+      "painting": "正在上色…",
+      "textureRefreshFailed": ""
     },
     "inspector": {
       "title": "属性",
@@ -2863,6 +2866,7 @@
       "reverted": "已还原 {{file}}",
       "revertFailed": "无法还原该文件。",
       "workspacePending": "正在准备该皮肤的可编辑副本…",
+      "workspaceFailed": "",
       "replaceSoundHint": "",
       "primaryLabel": "主模型",
       "primaryHint": "",
@@ -4274,6 +4278,7 @@
     "title": "",
     "hide": "",
     "cancel": "",
+    "cancelFailed": "",
     "randomizerFailed": "",
     "steps": {
       "randomizingSkins": "",
@@ -4617,7 +4622,8 @@
       "title": "",
       "description": "",
       "sectionTitle": "",
-      "sectionDescription": ""
+      "sectionDescription": "",
+      "syncFailed": ""
     },
     "autoUpdate": "自动更新",
     "autoUpdateDescription": "启动时自动检查并提示应用更新。",
@@ -5151,6 +5157,7 @@
     "retryFailed_one": "",
     "retryFailed_other": "",
     "summary": "已恢复 {{total}} 个模组中的 {{restored}} 个。",
+    "removedBeforeStop": "",
     "summaryManual_one": "{{count}} 个模组需要手动选择文件后才能安装。",
     "summaryManual_other": "{{count}} 个模组需要手动选择文件后才能安装。",
     "summaryFailed_one": "{{count}} 个模组无法恢复。",

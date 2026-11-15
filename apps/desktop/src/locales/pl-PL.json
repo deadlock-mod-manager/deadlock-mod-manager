@@ -1256,6 +1256,8 @@
       "emptyTitle": "",
       "emptyDescription": "",
       "emptyAction": "",
+      "errorTitle": "",
+      "errorDescription": "",
       "tableTitle": "",
       "tableDescription": "",
       "slotFilter": "",
@@ -2778,7 +2780,8 @@
       "alt": "",
       "startSpin": "",
       "stopSpin": "",
-      "painting": ""
+      "painting": "",
+      "textureRefreshFailed": ""
     },
     "inspector": {
       "title": "",
@@ -2863,6 +2866,7 @@
       "reverted": "",
       "revertFailed": "",
       "workspacePending": "",
+      "workspaceFailed": "",
       "replaceSoundHint": "",
       "primaryLabel": "",
       "primaryHint": "",
@@ -4274,6 +4278,7 @@
     "title": "",
     "hide": "",
     "cancel": "",
+    "cancelFailed": "",
     "randomizerFailed": "",
     "steps": {
       "randomizingSkins": "",
@@ -4617,7 +4622,8 @@
       "title": "",
       "description": "",
       "sectionTitle": "",
-      "sectionDescription": ""
+      "sectionDescription": "",
+      "syncFailed": ""
     },
     "autoUpdate": "Aktualizacje automatyczne",
     "autoUpdateDescription": "Automatycznie sprawdzaj i powiadamiaj o aktualizacjach aplikacji przy uruchomieniu.",
@@ -5151,6 +5157,7 @@
     "retryFailed_one": "",
     "retryFailed_other": "",
     "summary": "",
+    "removedBeforeStop": "",
     "summaryManual_one": "",
     "summaryManual_other": "",
     "summaryFailed_one": "",
