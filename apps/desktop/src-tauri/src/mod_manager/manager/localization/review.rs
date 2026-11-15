@@ -196,14 +196,7 @@ impl ReviewedInputs {
     })?;
     let mods = involved
       .into_iter()
-      .map(|mod_id| {
-        let stamps = key
-          .mods
-          .iter()
-          .find(|(id, _)| id == mod_id)
-          .map(|(_, stamps)| stamps.clone());
-        (mod_id.to_owned(), stamps)
-      })
+      .map(|mod_id| (mod_id.to_owned(), mod_input_stamps(key, mod_id)))
       .collect();
     Ok(Self {
       revision: REPAIR_REVISION,
@@ -216,6 +209,22 @@ impl ReviewedInputs {
       }),
     })
   }
+}
+
+fn mod_input_stamps(
+  key: &LocalizationOverlayPlanKey,
+  mod_id: &str,
+) -> Option<Vec<LocalizationInputStamp>> {
+  let mut archives = key
+    .mods
+    .iter()
+    .filter(|(id, _)| id == mod_id)
+    .map(|(_, stamps)| stamps);
+  let mut stamps = archives.next()?.clone();
+  for archive in archives {
+    stamps.extend_from_slice(archive);
+  }
+  Some(stamps)
 }
 
 impl SavedReview {
@@ -482,6 +491,134 @@ mod tests {
       inputs(&compiled_review(1, 1), &key("learned since")),
       reviewed,
       "equal evidence can hide a changed history match"
+    );
+  }
+
+  #[test]
+  fn multi_archive_reviews_reopen_when_a_later_archive_changes() {
+    let temp = tempfile::tempdir().unwrap();
+    let overlay = temp.path().join("overlay_dir.vpk");
+    let analysis = compiled_review(1, 1);
+    let mut reviewed_key = key("h");
+    reviewed_key.mods.push((
+      "first".into(),
+      vec![stamp("first-extra", 1), stamp("first-extra_000.vpk", 1)],
+    ));
+    save(&overlay, inputs(&analysis, &reviewed_key), &[]).unwrap();
+    for change in ["size", "mtime", "companion", "removed", "reordered"] {
+      let mut changed = reviewed_key.clone();
+      match change {
+        "size" => changed.mods[3].1[0].length = 2,
+        "mtime" => changed.mods[3].1[0].modified = Some(std::time::UNIX_EPOCH),
+        "companion" => changed.mods[3].1[1].length = 2,
+        "removed" => {
+          changed.mods.remove(3);
+        }
+        "reordered" => changed.mods.swap(0, 3),
+        _ => unreachable!(),
+      }
+      assert!(
+        load(&overlay)
+          .unwrap()
+          .unwrap()
+          .resolutions_for(&inputs(&analysis, &changed))
+          .is_none(),
+        "{change} in a later archive must reopen the review"
+      );
+    }
+
+    let saved = load(&overlay).unwrap().unwrap();
+    assert_eq!(
+      saved.inputs.mods["first"],
+      Some(vec![
+        stamp("first", 1),
+        stamp("first-extra", 1),
+        stamp("first-extra_000.vpk", 1),
+      ])
+    );
+
+    let mut legacy_key = reviewed_key.clone();
+    legacy_key.mods.pop();
+    save(&overlay, inputs(&analysis, &legacy_key), &[]).unwrap();
+    assert!(
+      load(&overlay)
+        .unwrap()
+        .unwrap()
+        .resolutions_for(&inputs(&analysis, &reviewed_key))
+        .is_none(),
+      "a legacy review covering only the first archive must reopen"
+    );
+  }
+
+  #[test]
+  fn multi_archive_reviews_survive_unrelated_mod_changes() {
+    let temp = tempfile::tempdir().unwrap();
+    let overlay = temp.path().join("overlay_dir.vpk");
+    let analysis = compiled_review(1, 1);
+    let mut reviewed_key = key("h");
+    reviewed_key
+      .mods
+      .push(("first".into(), vec![stamp("first-extra", 1)]));
+    save(&overlay, inputs(&analysis, &reviewed_key), &[]).unwrap();
+
+    reviewed_key.mods[2].1[0].length = 2;
+    assert_eq!(
+      load(&overlay)
+        .unwrap()
+        .unwrap()
+        .resolutions_for(&inputs(&analysis, &reviewed_key))
+        .unwrap()
+        .len(),
+      0
+    );
+  }
+
+  #[test]
+  fn single_archive_saved_review_keeps_legacy_serialization() {
+    let temp = tempfile::tempdir().unwrap();
+    let overlay = temp.path().join("overlay_dir.vpk");
+    let analysis = text_review(&[("first", 0), ("second", 1)]);
+    save(&overlay, inputs(&analysis, &key("h")), &[]).unwrap();
+    let legacy = r#"{
+  "inputs": {
+    "revision": 40,
+    "subject": "8018256ea234530482784060ca261ba6fd459c8dda8691927dda3c4e0948b9d5",
+    "mods": {
+      "first": [
+        {
+          "path": "first",
+          "length": 1,
+          "modified": null,
+          "digest": null
+        }
+      ],
+      "second": [
+        {
+          "path": "second",
+          "length": 1,
+          "modified": null,
+          "digest": null
+        }
+      ]
+    },
+    "base_game": [
+      {
+        "path": "game/pak01_dir.vpk",
+        "length": 1,
+        "modified": null,
+        "digest": null
+      }
+    ],
+    "compiled_history": null
+  },
+  "resolutions": []
+}"#;
+    assert_eq!(fs::read_to_string(path(&overlay)).unwrap(), legacy);
+    assert!(
+      serde_json::from_str::<SavedReview>(legacy)
+        .unwrap()
+        .resolutions_for(&inputs(&analysis, &key("h")))
+        .is_some()
     );
   }
 
