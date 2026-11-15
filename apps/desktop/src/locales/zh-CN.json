@@ -3804,13 +3804,13 @@
     "summaryModelsAll_other": "它们都会隐藏模型。",
     "summaryNoModels_one": "它不会隐藏模型。",
     "summaryNoModels_other": "它们都不会隐藏模型。",
-    "summaryNone": "当两个已启用的模组修改同一个文件时，就会显示在这里。",
-    "safeNote": "重叠不会阻止游戏启动，它只决定共享文件采用哪个模组的版本。",
-    "howItWorks": "加载顺序如何决定",
+    "summaryNone": "",
+    "safeNote": "",
+    "howItWorks": "",
     "scanning": "正在读取已启用的模组…",
     "scanFailed": "无法读取已启用的模组：{{error}}",
     "noneTitle": "没有重叠",
-    "noneDescription": "已启用模组中的每个文件都只来自一个模组。",
+    "noneDescription": "",
     "noSearchMatches": "符合当前搜索与筛选条件的模组之间没有重叠。",
     "badge": {
       "modelHidden": "模型被隐藏",
@@ -3850,7 +3850,7 @@
     "ignoredPair": "{{first}} 与 {{second}}",
     "ignoredFilesRow_one": "",
     "ignoredFilesRow_other": "",
-    "ignoredModRow": "{{mod}}，全部重叠",
+    "ignoredModRow": "",
     "restore": "恢复",
     "clearIgnores": "全部恢复",
     "help": {
@@ -3866,10 +3866,10 @@
       },
       "fromMod": "来自第 #{{position}} 个",
       "skipped": "已跳过",
-      "safe": "大多数重叠都无影响。两个模组都会加载，只有它们共享的文件来自其中一个，因此差异通常很小甚至看不出来。",
-      "order": "模组按「更改模组顺序」中的顺序加载。如果两个模组包含同一文件，游戏会采用列表中更靠前的那个模组的版本，并跳过另一个。",
-      "modelException": "模型是例外：模型被跳过的皮肤通常完全不会显示。",
-      "resolve": "在你想看到的模组上点击「优先加载」，或者如果游戏内的效果已经让你满意，就把这处重叠标记为无碍。"
+      "safe": "",
+      "order": "",
+      "modelException": "",
+      "resolve": ""
     }
   },
   "modOrdering": {

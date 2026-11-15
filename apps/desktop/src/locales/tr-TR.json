@@ -3804,13 +3804,13 @@
     "summaryModelsAll_other": "Hepsi bir modeli gizliyor.",
     "summaryNoModels_one": "Bir modeli gizlemiyor.",
     "summaryNoModels_other": "Hiçbiri bir modeli gizlemiyor.",
-    "summaryNone": "İki etkin mod aynı dosyayı değiştirdiğinde burada görünür.",
-    "safeNote": "Çakışmalar oyunun başlatılmasını engellemez. Yalnızca paylaşılan dosyanın hangi moddaki kopyasının kullanılacağını belirler.",
-    "howItWorks": "Yükleme sırası nasıl belirliyor?",
+    "summaryNone": "",
+    "safeNote": "",
+    "howItWorks": "",
     "scanning": "Etkin modlarınız okunuyor...",
     "scanFailed": "Etkin modlarınız okunamadı: {{error}}",
     "noneTitle": "Çakışma yok",
-    "noneDescription": "Etkin modlarınızdaki her dosya yalnızca bir moda ait.",
+    "noneDescription": "",
     "noSearchMatches": "Arama ve filtrelerinize uyan modlar arasında çakışma yok.",
     "badge": {
       "modelHidden": "Model gizli",
@@ -3850,7 +3850,7 @@
     "ignoredPair": "{{first}} ve {{second}}",
     "ignoredFilesRow_one": "",
     "ignoredFilesRow_other": "",
-    "ignoredModRow": "{{mod}}: tüm çakışmalar",
+    "ignoredModRow": "",
     "restore": "Geri yükle",
     "clearIgnores": "Tümünü geri yükle",
     "help": {
@@ -3866,10 +3866,10 @@
       },
       "fromMod": "Şu sıradaki moddan: #{{position}}",
       "skipped": "Atlandı",
-      "safe": "Çakışmaların çoğu zararsızdır. Her iki mod da yüklenmeye devam eder; yalnızca ortak dosyalar modlardan birinden alınır. Bu nedenle fark genellikle küçük olur veya hiç fark edilmez.",
-      "order": "Modlar, Mod Sırasını Değiştir bölümündeki sıraya göre yüklenir. İki mod aynı dosyayı içeriyorsa oyun, listedeki daha üst sıradaki modun dosyasını kullanır ve diğer kopyayı atlar.",
-      "modelException": "Modeller bu kuralın istisnasıdır: modeli atlanan bir kostüm genellikle hiç görünmez.",
-      "resolve": "Görmek istediğiniz modda önce Yükle'ye basın veya oyun istediğiniz gibi görünüyorsa çakışmayı sorunsuz olarak işaretleyin."
+      "safe": "",
+      "order": "",
+      "modelException": "",
+      "resolve": ""
     }
   },
   "modOrdering": {
