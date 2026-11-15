@@ -1,7 +1,7 @@
 use std::ops::Range;
 
 use crate::evaluate_condition;
-use crate::{AstNode, ParseOptions, Parser, Result, TokenType, Tokenizer, ValueNode};
+use crate::{AstNode, ParseOptions, Parser, Result, Token, TokenType, Tokenizer, ValueNode};
 
 /// A line comment with its UTF-8 byte position in the original input.
 #[derive(Debug)]
@@ -16,6 +16,9 @@ pub struct SourceSite {
     pub path: Vec<String>,
     /// UTF-8 byte position of the key's first character, including its quote.
     pub key_start: usize,
+    /// Complete declaration, from the key through its value and own condition.
+    pub entry_range: Range<usize>,
+    pub line: usize,
     pub conditions: Vec<String>,
     pub kind: SourceKind,
 }
@@ -72,7 +75,6 @@ impl SourceDocument {
             .strip_prefix('\u{feff}')
             .map_or(0, |_| '\u{feff}'.len_utf8());
         let source = &text[shift..];
-        let offsets = CharOffsets::new(source, shift);
         let tokens = Tokenizer::with_options(
             source,
             options.allow_escape_sequences,
@@ -81,6 +83,14 @@ impl SourceDocument {
         )
         .with_max_token_length(options.max_token_length)
         .tokenize()?;
+        Self::from_tokens(text, tokens)
+    }
+
+    pub(crate) fn from_tokens(text: &str, tokens: Vec<Token>) -> Result<Self> {
+        let shift = text
+            .strip_prefix('\u{feff}')
+            .map_or(0, |_| '\u{feff}'.len_utf8());
+        let offsets = CharOffsets::new(&text[shift..], shift);
         let comments = tokens
             .iter()
             .filter(|token| token.token_type == TokenType::Comment && token.raw.starts_with("//"))
@@ -132,9 +142,19 @@ fn collect_sites(
             ValueNode::String(node) => scalar(node.value.clone(), node.start.offset, &node.raw),
             ValueNode::Number(node) => scalar(node.raw.clone(), node.start.offset, &node.raw),
         };
+        let end = pair.conditional.as_ref().map_or_else(
+            || match &kind {
+                SourceKind::Scalar { value_range, .. } => value_range.end,
+                SourceKind::Object { close, .. } => close + 1,
+            },
+            |condition| offsets.byte(condition.start.offset + condition.raw.chars().count()),
+        );
+        let key_start = offsets.byte(pair.key.start.offset);
         sites.push(SourceSite {
             path: path.clone(),
-            key_start: offsets.byte(pair.key.start.offset),
+            key_start,
+            entry_range: key_start..end,
+            line: pair.key.start.line,
             conditions: conditions.clone(),
             kind,
         });

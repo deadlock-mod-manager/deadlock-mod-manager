@@ -3,6 +3,7 @@ mod conditions;
 mod diff;
 mod document;
 mod error;
+pub mod localization;
 mod parser;
 mod serializer;
 mod source;

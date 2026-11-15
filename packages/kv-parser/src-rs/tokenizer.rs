@@ -12,6 +12,7 @@ pub struct Tokenizer {
     allow_conditionals: bool,
     allow_includes: bool,
     max_token_length: Option<usize>,
+    strict_termination: bool,
 }
 
 impl Tokenizer {
@@ -25,6 +26,7 @@ impl Tokenizer {
             allow_conditionals: true,
             allow_includes: true,
             max_token_length: Some(MAX_TOKEN_LENGTH),
+            strict_termination: false,
         }
     }
 
@@ -43,12 +45,18 @@ impl Tokenizer {
             allow_conditionals,
             allow_includes,
             max_token_length: Some(MAX_TOKEN_LENGTH),
+            strict_termination: false,
         }
     }
 
     /// Set the decoded UTF-8 byte limit, or disable it with `None`.
     pub fn with_max_token_length(mut self, max_token_length: Option<usize>) -> Self {
         self.max_token_length = max_token_length;
+        self
+    }
+
+    pub(crate) fn with_strict_termination(mut self) -> Self {
+        self.strict_termination = true;
         self
     }
 
@@ -168,11 +176,13 @@ impl Tokenizer {
         self.advance(); // Skip *
 
         let mut value = String::new();
+        let mut terminated = false;
         while let Some(ch) = self.current_char() {
             if ch == '*' && self.peek(1) == Some('/') {
                 raw.push_str("*/");
                 self.advance(); // Skip *
                 self.advance(); // Skip /
+                terminated = true;
                 break;
             }
             value.push(ch);
@@ -180,7 +190,12 @@ impl Tokenizer {
             self.advance();
         }
 
-        if self.current_char().is_none() && !raw.ends_with("*/") {
+        let unterminated = if self.strict_termination {
+            !terminated
+        } else {
+            self.current_char().is_none() && !raw.ends_with("*/")
+        };
+        if unterminated {
             return Ok(Token {
                 token_type: TokenType::Error,
                 value: "Unterminated block comment".to_string(),
@@ -244,10 +259,12 @@ impl Tokenizer {
 
         let mut value = String::new();
 
+        let mut terminated = false;
         while let Some(ch) = self.current_char() {
             if ch == '"' {
                 raw.push('"');
                 self.advance(); // Skip closing quote
+                terminated = true;
                 break;
             }
 
@@ -266,7 +283,12 @@ impl Tokenizer {
             self.check_token_length(&value, start_line, start_column)?;
         }
 
-        if self.current_char().is_none() && !raw.ends_with('"') {
+        let unterminated = if self.strict_termination {
+            !terminated
+        } else {
+            self.current_char().is_none() && !raw.ends_with('"')
+        };
+        if unterminated {
             return Err(KvError::UnterminatedString {
                 line: start_line,
                 column: start_column,
