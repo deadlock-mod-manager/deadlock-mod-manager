@@ -192,7 +192,7 @@ describe("filesystem recovery", () => {
         await $('[role="dialog"]').$("#merge").click();
       await $('[role="dialog"]').$("button=Restore").click();
       await $(
-        '//*[@data-sonner-toast]//*[@data-title and normalize-space()="Backup restored successfully"]',
+        '//*[@data-sonner-toast]//*[@data-title and normalize-space()="Backup restored"]',
       ).waitForDisplayed();
       await assertFilesystemLayout(world, "restored", original, extras);
       assert.deepEqual(
