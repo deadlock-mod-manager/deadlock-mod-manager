@@ -9,6 +9,7 @@ import {
   DEADLOCK_GAME_ID,
   GAME_BANANA_BASE_URL,
 } from "@/providers/game-banana/constants";
+import { classifyNSFW } from "@/providers/game-banana/utils";
 
 export interface GameBananaIdentity {
   provider: "gamebanana";
@@ -45,6 +46,7 @@ const profileSnapshotSchema = z
     _bIsTrashed: z.boolean().optional(),
     _bIsObsolete: z.boolean().optional(),
     _aContentRatings: z.record(z.string(), z.string()).optional(),
+    _sInitialVisibility: z.string().optional(),
     _nLikeCount: z.number().int().optional(),
     _nDownloadCount: z.number().int().optional(),
     _tsDateAdded: z.number().int().optional(),
@@ -162,9 +164,7 @@ export const fetchGameBananaSubmission = async (
       isMap,
       audioUrl: profile._aPreviewMedia?._aMetadata?._sAudioUrl ?? null,
       downloadCount: profile._nDownloadCount ?? 0,
-      isNSFW: Object.keys(profile._aContentRatings ?? {}).some((rating) =>
-        ["st", "sa", "lp", "pn", "nu"].includes(rating),
-      ),
+      isNSFW: classifyNSFW(profile),
       isObsolete: profile._bIsObsolete ?? false,
       isBlacklisted: false,
       blacklistReason: null,

@@ -5151,8 +5151,6 @@
     "retryFailed_one": "Başarısız modu yeniden dene",
     "retryFailed_other": "Başarısız {{count}} modu yeniden dene",
     "summary": "{{total}} moddan {{restored}} tanesi geri yüklendi.",
-    "summaryMissing_one": "{{count}} mod zaten diskte yoktu.",
-    "summaryMissing_other": "{{count}} mod zaten diskte yoktu.",
     "summaryManual_one": "Yüklemeden önce {{count}} mod için dosyayı elle seçmeniz gerekiyor.",
     "summaryManual_other": "Yüklemeden önce {{count}} mod için dosyayı elle seçmeniz gerekiyor.",
     "summaryFailed_one": "{{count}} mod geri yüklenemedi.",

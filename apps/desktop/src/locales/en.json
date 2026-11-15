@@ -1256,6 +1256,8 @@
       "emptyTitle": "No item stats yet",
       "emptyDescription": "deadlock-api builds item stats from fully analysed matches, and only some of yours have been analysed so far. They will show up here as more of your matches are processed.",
       "emptyAction": "Get matches analysed first",
+      "errorTitle": "Couldn’t load item stats",
+      "errorDescription": "Check your connection and try again.",
       "tableTitle": "Your items against everyone",
       "tableDescription": "Winrate when you buy an item, next to all players who buy it",
       "slotFilter": "Item slot",
@@ -2778,7 +2780,8 @@
       "alt": "Skin preview",
       "startSpin": "Auto-rotate",
       "stopSpin": "Stop rotation",
-      "painting": "Painting…"
+      "painting": "Painting…",
+      "textureRefreshFailed": "Some edited textures couldn’t be refreshed, so the preview may show earlier edits."
     },
     "inspector": {
       "title": "Properties",
@@ -2863,6 +2866,7 @@
       "reverted": "Reverted {{file}}",
       "revertFailed": "Couldn't revert that file.",
       "workspacePending": "Preparing the editable copy of this skin…",
+      "workspaceFailed": "Couldn’t prepare this skin for editing. You can still preview it. Retry to edit and export.",
       "replaceSoundHint": "Pick an MP3, WAV, OGG or FLAC. It's rebuilt into this clip's container.",
       "primaryLabel": "Primary model",
       "primaryHint": "The preview opens this model and the export is named after it.",
@@ -4274,6 +4278,7 @@
     "title": "Launching Deadlock",
     "hide": "Hide (the launch keeps going)",
     "cancel": "Cancel launch",
+    "cancelFailed": "Couldn’t cancel the launch, so it’s still going. Try again.",
     "randomizerFailed": "The randomizer couldn’t put on every pick, so some randomized mods are off for this game.",
     "steps": {
       "randomizingSkins": "Randomizing hero skins",
@@ -4617,7 +4622,8 @@
       "title": "Share matches from Steam's cache",
       "description": "Watches Steam's download cache for Deadlock match data and sends it to deadlock-api.",
       "sectionTitle": "From Steam's download cache",
-      "sectionDescription": "Shares matches Steam has already downloaded to this PC, such as matches you view in Deadlock. Never signs in to Steam and sends no account ID. On by default."
+      "sectionDescription": "Shares matches Steam has already downloaded to this PC, such as matches you view in Deadlock. Never signs in to Steam and sends no account ID. On by default.",
+      "syncFailed": "Couldn’t update the cache watcher, so the setting wasn’t changed."
     },
     "autoUpdate": "Automatic Updates",
     "autoUpdateDescription": "Automatically check for and notify about application updates on startup.",
@@ -5151,8 +5157,7 @@
     "retryFailed_one": "Retry failed mod",
     "retryFailed_other": "Retry {{count}} failed mods",
     "summary": "{{restored}} of {{total}} mods restored.",
-    "summaryMissing_one": "{{count}} mod was already gone from disk.",
-    "summaryMissing_other": "{{count}} mods were already gone from disk.",
+    "removedBeforeStop": "Removed, but the run stopped before reinstalling it.",
     "summaryManual_one": "{{count}} mod needs a manual file selection before installing.",
     "summaryManual_other": "{{count}} mods need a manual file selection before installing.",
     "summaryFailed_one": "{{count}} mod could not be restored.",

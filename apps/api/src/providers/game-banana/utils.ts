@@ -124,18 +124,19 @@ export const parseRequirements = (
 
 /**
  * Classify if a GameBanana mod contains NSFW content
- * @param mod GameBanana mod submission data
+ * @param profile GameBanana content ratings and initial visibility
  * @returns boolean indicating if the mod is NSFW
  */
-export const classifyNSFW = (
-  profile: GameBanana.GameBananaModProfile | GameBanana.GameBananaSoundProfile,
-): boolean => {
+export const classifyNSFW = (profile: {
+  _aContentRatings?: Record<string, string> | null;
+  _sInitialVisibility?: string | null;
+}): boolean => {
   if (NSFW_VISIBILITIES.includes(profile._sInitialVisibility ?? "")) {
     return true;
   }
-  const ratings =
-    "_aContentRatings" in profile ? profile._aContentRatings : undefined;
-  return Object.keys(ratings ?? {}).some((key) => key in NSFW_CONTENT_RATINGS);
+  return Object.keys(profile._aContentRatings ?? {}).some(
+    (key) => key in NSFW_CONTENT_RATINGS,
+  );
 };
 
 /**

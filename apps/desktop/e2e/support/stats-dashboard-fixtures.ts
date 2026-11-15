@@ -1,9 +1,9 @@
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
 import type { FixtureRequest, FixtureRoute } from "./fixture-server";
 import { readPersistedDocument } from "./observations";
-import type { CreatedWorld } from "./world";
+import { assertOwnedWorld, type CreatedWorld } from "./world";
 
 /**
  * deadlock-api as the Stats dashboard sees it: one pinned account, a twenty
@@ -392,6 +392,111 @@ export const assertStatsDashboardNetwork = (
     if (!query || !/min_unix_timestamp=\d{9,}/.test(query.url))
       throw new Error(
         `The {since_30d} placeholder was not resolved: ${query?.url ?? "no request"}`,
+      );
+  }
+};
+
+/** Four cold-cache processes share one fixture server and its response sequences. */
+export const statsItemsErrorRoutes = async () => (): FixtureRoute[] => {
+  const failure = {
+    status: 404,
+    body: json({ error: "Not Found" }),
+    repeat: 2,
+  };
+  const healthy = { status: 200, body: json(itemStats) };
+  const catalog = baseRoutes().find(
+    (route) => route.path === "/v1/assets/items",
+  );
+  if (!catalog) throw new Error("Missing item catalog fixture");
+  return [
+    {
+      method: "GET",
+      path: "/v1/analytics/item-stats",
+      query: { account_id: String(STATS_ACCOUNT_ID), min_matches: "3" },
+      ...healthy,
+      // Initial query + automatic retry fail; the button's request recovers.
+      sequence: [
+        failure,
+        { ...healthy, repeat: 3 },
+        { status: 200, body: "[]" },
+      ],
+    },
+    {
+      method: "GET",
+      path: "/v1/analytics/item-stats",
+      query: { min_matches: "1000" },
+      ...healthy,
+      sequence: [healthy, failure, healthy],
+    },
+    {
+      ...catalog,
+      sequence: [{ ...catalog, repeat: 2 }, failure, catalog],
+    },
+    ...baseRoutes(),
+  ];
+};
+
+export const prepareStatsItemsErrorWorld = async (world: CreatedWorld) => {
+  await prepareStatsDashboardWorld(world);
+  await writeFile(
+    path.join(world.configuration.roots.appData, "stats-cache.json"),
+    "{}",
+  );
+};
+
+export const readStatsItemsCache = async (world: string) => {
+  const { configuration } = await assertOwnedWorld(world);
+  return z
+    .record(z.string(), z.object({ data: z.json() }))
+    .parse(
+      JSON.parse(
+        await readFile(
+          path.join(configuration.roots.appData, "stats-cache.json"),
+          "utf8",
+        ),
+      ),
+    );
+};
+
+export const assertStatsItemsErrorNetwork = (
+  _id: string,
+  requests: readonly FixtureRequest[],
+) => {
+  const statuses = (pathname: string, query: Record<string, string>) =>
+    requests
+      .filter((request) => {
+        const url = new URL(request.url, "http://fixture");
+        return (
+          url.pathname === pathname &&
+          Object.entries(query).every(
+            ([key, value]) => url.searchParams.get(key) === value,
+          )
+        );
+      })
+      .map((request) => request.responseStatus);
+  const checks = [
+    {
+      name: "player items",
+      actual: statuses("/v1/analytics/item-stats", {
+        account_id: String(STATS_ACCOUNT_ID),
+      }),
+      expected: [404, 404, 200, 200, 200, 200],
+    },
+    {
+      name: "global baseline",
+      actual: statuses("/v1/analytics/item-stats", { min_matches: "1000" }),
+      expected: [200, 404, 404, 200, 200, 200],
+    },
+    {
+      name: "item catalog",
+      actual: statuses("/v1/assets/items", {}),
+      expected: [200, 200, 404, 404, 200, 200],
+    },
+  ];
+  for (const check of checks) {
+    if (JSON.stringify(check.actual) !== JSON.stringify(check.expected))
+      throw new Error(
+        `${check.name}: expected ${json(check.expected)}, got ${json(check.actual)}`,
       );
   }
 };

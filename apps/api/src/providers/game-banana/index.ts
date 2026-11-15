@@ -211,7 +211,8 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
     return data;
   }
 
-  async synchronize(): Promise<void> {
+  async synchronize(signal?: AbortSignal): Promise<void> {
+    signal?.throwIfAborted();
     const wide = wideEventContext.get();
     wide?.merge({ provider: "GameBanana" });
 
@@ -228,13 +229,16 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       source: GameBananaSubmissionSource,
       indexModifiedAt?: Date,
     ) => {
+      signal?.throwIfAborted();
       const fetchStartedAt = Date.now();
       const result = await this.createMod(submission, source, {
         deferListingInvalidation: true,
+        signal,
       });
       anyFilesUpdated ||= result.filesChanged;
       anyContentChanged ||= result.contentChanged;
       if (result.mod || result.handledAsTrashed || result.skipped) {
+        signal?.throwIfAborted();
         await modRepository.markSynced(
           submission._idRow.toString(),
           indexRevisionToAcknowledge(indexModifiedAt, fetchStartedAt),
@@ -244,11 +248,13 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
 
     try {
       for await (const { submissions, source } of this.getIndexPages()) {
+        signal?.throwIfAborted();
         listedCount += submissions.length;
         const stored = await modRepository.findIndexModifiedAtByRemoteIds(
           submissions.map((submission) => submission._idRow.toString()),
         );
         for (const submission of submissions) {
+          signal?.throwIfAborted();
           const listedModifiedAt = gameBananaTimestampToDate(
             submission._tsDateModified,
           );
@@ -273,6 +279,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         SYNC_REFRESH_BATCH_SIZE,
       );
       for (const { remoteId, isAudio, category } of stale) {
+        signal?.throwIfAborted();
         refreshedCount++;
         // Profiles name only a category and its parent; the stored category is
         // the root the index reported, and nested categories need it.
@@ -280,7 +287,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
           {
             _idRow: Number(remoteId),
             _aRootCategory: { _sName: category },
-          } as GameBananaSubmission,
+          },
           isAudio ? "sound" : "all",
         );
       }
@@ -303,6 +310,17 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         syncChangedCount: changedCount,
         syncRefreshedCount: refreshedCount,
       });
+      // Mods acknowledged before the failure aren't synced again, so their
+      // listing change can't wait for the next run.
+      if (anyFilesUpdated || anyContentChanged) {
+        try {
+          await modCache.invalidateListing();
+        } catch (cleanupError) {
+          this.logger
+            .withError(cleanupError)
+            .error("Failed to invalidate the mod listing after a failed sync");
+        }
+      }
       throw error;
     }
   }
@@ -344,12 +362,12 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       tags: parseTags(profile._aTags),
       author: submitterDisplayName(profile),
       likes: profile._nLikeCount ?? 0,
-      hero: heroFromGameBananaProfile(profile, mod._aRootCategory._sName),
+      hero: heroFromGameBananaProfile(profile, mod._aRootCategory?._sName),
       downloadCount: profile._nDownloadCount ?? 0,
       remoteUrl: profile._sProfileUrl,
       category: categoryFromGameBananaProfile(
         profile,
-        mod._aRootCategory._sName,
+        mod._aRootCategory?._sName,
       ),
       downloadable: (profile._aFiles?.length ?? 0) > 0,
       ...resolveRemoteTimestamps(profile._tsDateAdded, profile._tsDateModified),
@@ -389,7 +407,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
     if (isUnavailableProfile(profile)) return "unavailable";
 
     const description = profile._sText || profile._sDescription || "";
-    const rootCategoryName = mod._aRootCategory._sName;
+    const rootCategoryName = mod._aRootCategory?._sName;
     const category = categoryFromGameBananaProfile(profile, rootCategoryName);
     const isMap = category === MAPS_CATEGORY_NAME;
     const dependencies = parseRequirements(profile._aRequirements);
@@ -456,7 +474,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
   async createMod(
     mod: GameBananaSubmission,
     source: GameBananaSubmissionSource,
-    options?: { deferListingInvalidation?: boolean },
+    options?: { deferListingInvalidation?: boolean; signal?: AbortSignal },
   ): Promise<{
     mod: Mod | undefined;
     filesChanged: boolean;
@@ -472,8 +490,10 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
     });
 
     try {
+      options?.signal?.throwIfAborted();
       let t0 = Date.now();
       const payload = await this.createModPayload(mod, source);
+      options?.signal?.throwIfAborted();
       wide.set("payloadMs", Date.now() - t0);
 
       if (payload === "stale_profile") {
@@ -514,6 +534,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
             handledAsTrashed: true,
           };
         }
+        options?.signal?.throwIfAborted();
         await modRepository.markAsTrashed(remoteId);
         await modCache.invalidateAfterModSync({
           remoteId,
@@ -533,6 +554,9 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
 
       t0 = Date.now();
       const { modAuthor, ...modPayload } = payload;
+      // The lock is checked once before a mod's writes start; a started mod
+      // finishes so its downloads, timestamp, hooks and cache stay in step.
+      options?.signal?.throwIfAborted();
       const author = modAuthor
         ? await modAuthorRepository.upsert(modAuthor)
         : null;
@@ -577,6 +601,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       return { mod: dbMod, filesChanged, contentChanged };
     } catch (error) {
       wide.emit("error", error);
+      options?.signal?.throwIfAborted();
       return { mod: undefined, filesChanged: false, contentChanged: false };
     }
   }

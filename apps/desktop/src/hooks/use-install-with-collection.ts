@@ -22,7 +22,7 @@ import type {
   ModFileTree,
 } from "@/types/mods";
 import { ModStatus } from "@/types/mods";
-import { invokeGuarded, isGameRunningError } from "@/lib/game-guard";
+import { invokeGuarded } from "@/lib/game-guard";
 
 const logger = createLogger("install-with-collection");
 
@@ -105,24 +105,12 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
           })
           .info("Copying selected VPKs from archive");
 
-        try {
-          await invokeGuarded("copy_selected_vpks_from_archive", {
-            modId: mod.remoteId,
-            fileTree,
-            profileFolder,
-            isMap: mod.isMap,
-          });
-        } catch (error) {
-          // The user declined the override; installing anyway would only ask
-          // again for the very next step.
-          if (isGameRunningError(error)) throw error;
-          logger
-            .withMetadata({ modId: mod.remoteId })
-            .withError(error)
-            .error("Failed to copy selected VPKs");
-          // If copying fails, try to proceed anyway (maybe VPKs already exist)
-          // This handles edge cases where archive was already processed
-        }
+        await invokeGuarded("copy_selected_vpks_from_archive", {
+          modId: mod.remoteId,
+          fileTree,
+          profileFolder,
+          isMap: mod.isMap,
+        });
       }
 
       const modData: LocalModWithFiles = {

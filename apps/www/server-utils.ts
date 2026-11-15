@@ -1,4 +1,5 @@
 import path from "node:path";
+import { RuntimeError } from "@deadlock-mods/common";
 import { env } from "./env";
 import { logger } from "./logger";
 
@@ -209,10 +210,11 @@ export async function initializeStaticRoutes(
 
           skipped.push(metadata);
         }
-      } catch (error: unknown) {
-        if (error instanceof Error && error.name !== "EISDIR") {
-          logger.withError(error).error(`Failed to load ${filepath}`);
-        }
+      } catch (error) {
+        throw new RuntimeError(
+          `Failed to load static asset ${filepath}`,
+          error,
+        );
       }
     }
 
@@ -225,9 +227,10 @@ export async function initializeStaticRoutes(
 
     logSummary(loaded, skipped, totalPreloadedBytes);
   } catch (error) {
-    logger
-      .withError(error as Error)
-      .error(`Failed to load static files from ${clientDirectory}`);
+    throw new RuntimeError(
+      `Failed to initialize static files from ${clientDirectory}`,
+      error,
+    );
   }
 
   return { routes, loaded, skipped };

@@ -22,7 +22,7 @@ use crate::vpk_archive_cache::open_archive;
 use super::analyze::classify;
 use super::game::foundry_workspace_root;
 use super::remove_parts::{REMOVED_JOURNAL, removal_owner, removed_parts_list};
-use super::staging::staged_base_game_vpk;
+use super::staging::{stage_lock, staged_base_game_vpk};
 use super::types::{
   FoundryAppliedPaint, FoundryBuildResult, FoundryCategory, FoundryEntry, FoundryEntrySource,
   FoundryReplacementResult, FoundrySoundSettings, FoundryTexture, FoundryWorkspace,
@@ -219,7 +219,6 @@ pub(crate) fn adjust_workspace_sound(
   stored.mute = adjust.mute;
 
   if adjust.is_identity() && stored.source.is_none() {
-    write_sound_settings(&workspace_root, &settings)?;
     revert_workspace_file(workspace_root, entry_path.clone(), template_vpk_path)?;
   } else {
     let donor = packed_entry_bytes(template_vpk_path.as_deref(), &entry_path)?;
@@ -447,39 +446,46 @@ fn texture_template_bytes(
     return Ok(std::fs::read(target_path)?);
   }
 
-  if let Some(vpk_path) = template_vpk_path.filter(|path| path.exists())
-    && let Ok(bytes) = source2_model::vpk_extract::extract_entry(vpk_path, entry_path)
-  {
-    return Ok(bytes);
-  }
+  packed_entry_bytes(template_vpk_path, entry_path)
+}
 
-  if let Some(base_vpk) = staged_base_game_vpk()?
-    && let Ok(bytes) = source2_model::vpk_extract::extract_entry(&base_vpk, entry_path)
-  {
-    return Ok(bytes);
-  }
+enum OriginalEntry {
+  Skin(Vec<u8>),
+  BaseGame(Vec<u8>),
+}
 
-  Err(Error::InvalidInput(format!(
-    "template texture not found for {entry_path}"
-  )))
+fn extraction_error(error: source2_model::Source2Error) -> Error {
+  match error {
+    source2_model::Source2Error::Io(error) => Error::Io(error),
+    error => Error::InvalidInput(error.to_string()),
+  }
+}
+
+fn original_entry(
+  vpk_path: Option<&Path>,
+  entry_path: &str,
+  base_vpk: impl FnOnce() -> Result<Option<PathBuf>, Error>,
+) -> Result<OriginalEntry, Error> {
+  if let Some(vpk_path) = vpk_path {
+    match source2_model::vpk_extract::extract_entry(vpk_path, entry_path) {
+      Ok(bytes) => return Ok(OriginalEntry::Skin(bytes)),
+      Err(source2_model::Source2Error::EntryNotFound(_)) => {}
+      Err(error) => return Err(extraction_error(error)),
+    }
+  }
+  let base_vpk = base_vpk()?
+    .ok_or_else(|| Error::InvalidInput(format!("original not found for {entry_path}")))?;
+  source2_model::vpk_extract::extract_entry(&base_vpk, entry_path)
+    .map(OriginalEntry::BaseGame)
+    .map_err(extraction_error)
 }
 
 /// An entry's bytes as originally packed: from the skin VPK, or from the base
 /// game when the skin doesn't ship it. Ignores any workspace edit.
 fn packed_entry_bytes(vpk_path: Option<&Path>, entry_path: &str) -> Result<Vec<u8>, Error> {
-  if let Some(vpk_path) = vpk_path.filter(|path| path.exists())
-    && let Ok(bytes) = source2_model::vpk_extract::extract_entry(vpk_path, entry_path)
-  {
-    return Ok(bytes);
+  match original_entry(vpk_path, entry_path, staged_base_game_vpk)? {
+    OriginalEntry::Skin(bytes) | OriginalEntry::BaseGame(bytes) => Ok(bytes),
   }
-  if let Some(base_vpk) = staged_base_game_vpk()?
-    && let Ok(bytes) = source2_model::vpk_extract::extract_entry(&base_vpk, entry_path)
-  {
-    return Ok(bytes);
-  }
-  Err(Error::InvalidInput(format!(
-    "original not found for {entry_path}"
-  )))
 }
 
 fn workspace_entry_bytes(
@@ -541,11 +547,11 @@ pub(crate) fn extract_either(
 ) -> Result<Vec<u8>, Error> {
   skin
     .extract_entry(entry_path)
-    .or_else(|error| match base {
-      Some(base) => base.extract_entry(entry_path),
-      None => Err(error),
+    .or_else(|error| match (&error, base) {
+      (source2_model::Source2Error::EntryNotFound(_), Some(base)) => base.extract_entry(entry_path),
+      _ => Err(error),
     })
-    .map_err(|e| Error::InvalidInput(format!("{e}")))
+    .map_err(extraction_error)
 }
 
 pub(crate) fn base_archive() -> Option<std::sync::Arc<source2_model::vpk_extract::VpkArchive>> {
@@ -656,6 +662,8 @@ pub(crate) fn replace_workspace_file(
         "a sound replacement must be .mp3, .wav, .ogg, .flac or .vsnd_c, not .{source_ext}"
       )));
     }
+    // Always rebuild from the packed container, before changing replacement sources.
+    let donor = packed_entry_bytes(template_vpk_path.as_deref(), &entry_path)?;
     let mut settings = read_sound_settings(&workspace_root);
     let mut stored = settings.remove(&entry_path).unwrap_or_default();
     let sources_dir = workspace_root.join(SOUND_SOURCES);
@@ -667,10 +675,6 @@ pub(crate) fn replace_workspace_file(
     std::fs::copy(&source_file_path, sources_dir.join(&source_name))?;
     stored.source = Some(source_name);
 
-    // The donor is always the packed original, never the workspace copy: a
-    // second swap should rebuild from the game's container rather than from the
-    // one the first swap already rewrote.
-    let donor = packed_entry_bytes(template_vpk_path.as_deref(), &entry_path)?;
     std::fs::write(&target_path, build_sound(&workspace_root, &donor, &stored)?)?;
     settings.insert(entry_path.clone(), stored);
     write_sound_settings(&workspace_root, &settings)?;
@@ -702,36 +706,59 @@ pub(crate) fn replace_workspace_file(
 }
 
 /// Restore one entry to the state it had when the workspace was unpacked, by
-/// deleting the edited file and re-extracting it from the source VPK.
+/// replacing it with its packed original or removing a base-game-only override.
 pub(crate) fn revert_workspace_file(
   workspace_root: PathBuf,
   entry_path: String,
   template_vpk_path: Option<PathBuf>,
 ) -> Result<(), Error> {
+  revert_workspace_file_with_base(
+    workspace_root,
+    entry_path,
+    template_vpk_path,
+    staged_base_game_vpk,
+  )
+}
+
+fn revert_workspace_file_with_base(
+  workspace_root: PathBuf,
+  entry_path: String,
+  template_vpk_path: Option<PathBuf>,
+  base_vpk: impl FnOnce() -> Result<Option<PathBuf>, Error>,
+) -> Result<(), Error> {
   let files_dir = workspace_files_dir(&workspace_root)?;
   let relative = safe_entry_relative(&entry_path)?;
   let target_path = files_dir.join(&relative);
-  if target_path.exists() {
-    std::fs::remove_file(&target_path)?;
+  match original_entry(template_vpk_path.as_deref(), &entry_path, base_vpk)? {
+    OriginalEntry::Skin(bytes) => {
+      let parent = target_path
+        .parent()
+        .ok_or_else(|| Error::InvalidInput(format!("invalid Foundry entry path: {entry_path}")))?;
+      std::fs::create_dir_all(parent)?;
+      let mut restored = tempfile::NamedTempFile::new_in(parent)?;
+      std::io::Write::write_all(&mut restored, &bytes)?;
+      restored
+        .persist(&target_path)
+        .map_err(|error| Error::Io(error.error))?;
+    }
+    OriginalEntry::BaseGame(_) => {
+      // The skin never shipped this entry. Removing its override restores the
+      // validated base-game asset without adding it to the exported skin.
+      match std::fs::remove_file(&target_path) {
+        Ok(()) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(error) => return Err(error.into()),
+      }
+    }
   }
   record_edits(&workspace_root, std::slice::from_ref(&entry_path), false)?;
   record_paint(&workspace_root, std::slice::from_ref(&entry_path), None)?;
   let mut settings = read_sound_settings(&workspace_root);
   if let Some(stored) = settings.remove(&entry_path) {
+    write_sound_settings(&workspace_root, &settings)?;
     if let Some(source) = stored.source {
       let _ = std::fs::remove_file(workspace_root.join(SOUND_SOURCES).join(source));
     }
-    write_sound_settings(&workspace_root, &settings)?;
-  }
-
-  let Some(vpk_path) = template_vpk_path.filter(|path| path.exists()) else {
-    return Ok(());
-  };
-  if let Ok(bytes) = source2_model::vpk_extract::extract_entry(&vpk_path, &entry_path) {
-    if let Some(parent) = target_path.parent() {
-      std::fs::create_dir_all(parent)?;
-    }
-    std::fs::write(&target_path, bytes)?;
   }
   Ok(())
 }
@@ -816,6 +843,10 @@ pub(crate) fn prepare_workspace(
   let root = root_dir.join(&id);
   let files_dir = root.join("files");
   std::fs::create_dir_all(&root)?;
+  // Opening the same skin twice must not unpack into one workspace at once:
+  // the second call would delete the first one's staging tree mid-unpack.
+  let lock = stage_lock(&format!("workspace:{id}"));
+  let _guard = lock.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
 
   let vpk_copy = if entries.is_none() {
     let original_name = file_path
@@ -851,12 +882,19 @@ pub(crate) fn prepare_workspace(
     if sources.exists() {
       std::fs::remove_dir_all(sources)?;
     }
-    std::fs::create_dir_all(&files_dir)?;
+    // Unpack beside `files` and move it into place only once complete: a
+    // non-empty `files` is reused as-is, so a partial unpack must never get there.
+    let staging_dir = root.join("files.unpacking");
+    if staging_dir.exists() {
+      std::fs::remove_dir_all(&staging_dir)?;
+    }
+    std::fs::create_dir_all(&staging_dir)?;
     let count = match &entries {
-      Some(paths) => source2_model::vpk_extract::extract_entries(&file_path, &files_dir, paths),
-      None => source2_model::vpk_extract::extract_all(&file_path, &files_dir),
+      Some(paths) => source2_model::vpk_extract::extract_entries(&file_path, &staging_dir, paths),
+      None => source2_model::vpk_extract::extract_all(&file_path, &staging_dir),
     }
     .map_err(|e| Error::InvalidInput(format!("failed to unpack VPK: {e}")))?;
+    std::fs::rename(&staging_dir, &files_dir)?;
     (count, true)
   };
 
@@ -879,6 +917,9 @@ pub(crate) fn prepare_workspace(
     created,
   })
 }
+
+#[cfg(test)]
+mod restore_tests;
 
 #[cfg(test)]
 mod tests {

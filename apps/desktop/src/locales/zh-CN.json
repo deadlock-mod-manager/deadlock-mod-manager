@@ -5151,8 +5151,6 @@
     "retryFailed_one": "",
     "retryFailed_other": "",
     "summary": "已恢复 {{total}} 个模组中的 {{restored}} 个。",
-    "summaryMissing_one": "{{count}} 个模组已从磁盘上消失。",
-    "summaryMissing_other": "{{count}} 个模组已从磁盘上消失。",
     "summaryManual_one": "{{count}} 个模组需要手动选择文件后才能安装。",
     "summaryManual_other": "{{count}} 个模组需要手动选择文件后才能安装。",
     "summaryFailed_one": "{{count}} 个模组无法恢复。",

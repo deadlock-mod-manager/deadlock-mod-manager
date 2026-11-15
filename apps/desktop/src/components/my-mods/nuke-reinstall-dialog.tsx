@@ -347,11 +347,6 @@ export const NukeReinstallDialog = ({
                       total: state.mods.length,
                     })}
                   </p>
-                  {state.missingOnDisk > 0 && (
-                    <p>
-                      {t("nuke.summaryMissing", { count: state.missingOnDisk })}
-                    </p>
-                  )}
                   {summary.manual > 0 && (
                     <p>{t("nuke.summaryManual", { count: summary.manual })}</p>
                   )}

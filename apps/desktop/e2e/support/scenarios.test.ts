@@ -115,7 +115,7 @@ describe("scenario selection", () => {
 
   it("registers every case with explicit phases and capability requirements", () => {
     const ids = selectScenarios("all");
-    expect(ids).toHaveLength(windows ? 183 : 173);
+    expect(ids).toHaveLength(windows ? 189 : 179);
     expect(ids).toContain("downloads-segmented-range-error");
     // Some of these specs don't dispatch on their case ID, so a rename
     // wouldn't fail them.
@@ -139,7 +139,7 @@ describe("scenario selection", () => {
       "onboarding-telemetry-default",
       "onboarding-identified-addon",
     ]);
-    expect(selectScenarios("gamebanana")).toHaveLength(35);
+    expect(selectScenarios("gamebanana")).toHaveLength(36);
     expect(selectScenarios("gamebanana")).toContain(
       "gamebanana-switch-reinstall",
     );
@@ -204,13 +204,18 @@ describe("scenario selection", () => {
     }
     expect(selectScenarios("interchange")).toEqual(["grimoire-import"]);
     expect(selectScenarios("analyze")).toEqual(["analyze-errors"]);
-    expect(selectScenarios("skins")).toEqual(["hero-skins-active"]);
+    expect(selectScenarios("skins")).toEqual([
+      "hero-skins-active",
+      "foundry-workspace-failure",
+      "foundry-revert-failure",
+    ]);
     expect(selectScenarios("stats")).toEqual([
       "stats-default-layout",
       "stats-arrange-widgets",
       "stats-custom-tabs",
       "stats-custom-queries",
       "stats-broken-endpoints",
+      "stats-items-error",
     ]);
     expect(selectScenarios("shards")).toEqual([
       "shards-library",
