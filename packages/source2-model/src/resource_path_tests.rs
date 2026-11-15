@@ -10,6 +10,13 @@ fn rejects_unsafe_resource_segments_on_every_platform() {
         "a/",
         "a/./b.txt",
         "a/../b.txt",
+        "a/con .txt",
+        "a/b./c.txt",
+        "a/b /c.txt",
+        "a/b.txt.",
+        "a/b.txt ",
+        "a/.../c.txt",
+        "a/...",
         "C:/file.txt",
         "a/C:/file.txt",
         "a/file.txt:stream",
@@ -33,6 +40,7 @@ fn rejects_unsafe_resource_segments_on_every_platform() {
         for path in [
             device.clone(),
             format!("a/{device}.txt"),
+            format!("a/{device} .txt"),
             format!("{device}.x/y"),
         ] {
             assert_eq!(normalize_resource_path(&path), None, "{path:?}");

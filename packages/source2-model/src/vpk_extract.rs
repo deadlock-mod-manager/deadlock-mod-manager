@@ -418,12 +418,16 @@ impl VpkArchive {
     }
 }
 
-/// Normalize separators in a resource path, rejecting empty, dot, parent, drive,
-/// stream, control-character and Windows device-name segments on every platform.
+/// Normalize resource separators, rejecting empty, dot, parent, drive, stream,
+/// control-character, Windows device-name and trailing-dot/space segments on every platform.
 pub fn normalize_resource_path(entry_path: &str) -> Option<String> {
     let normalized = entry_path.replace('\\', "/");
     for segment in normalized.split('/') {
-        let stem = segment.split('.').next().unwrap_or(segment);
+        let stem = segment
+            .split('.')
+            .next()
+            .unwrap_or(segment)
+            .trim_end_matches(' ');
         let device = stem.eq_ignore_ascii_case("con")
             || stem.eq_ignore_ascii_case("prn")
             || stem.eq_ignore_ascii_case("aux")
@@ -434,6 +438,7 @@ pub fn normalize_resource_path(entry_path: &str) -> Option<String> {
                 })
                 && matches!(stem.as_bytes()[3], b'1'..=b'9'));
         if matches!(segment, "" | "." | "..")
+            || segment.ends_with(['.', ' '])
             || segment.contains(':')
             || segment.chars().any(char::is_control)
             || device

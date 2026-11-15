@@ -76,12 +76,26 @@ fn traversal_localization_is_warned_and_valid_text_is_still_applied() {
       &[(&unsafe_path, MOD_TEXT), (TEXT_PATH, MOD_TEXT)],
     )],
   };
+  let plan = LocalizationOverlayPlan::build(&citadel, std::slice::from_ref(&input)).unwrap();
+  let output = root.path().join("overlay_dir.vpk");
+  let applied = plan.write(&output, &[]).unwrap();
+  assert!(
+    !escaped.exists(),
+    "Escaped file was written: {}",
+    escaped.display()
+  );
+  assert_eq!(applied.packed_files, 1);
+  let archive = VpkArchive::open(&output).unwrap();
+  assert_eq!(archive.list_entries(), [TEXT_PATH]);
+  let text =
+    parse_localization_bytes(&archive.extract_entry(TEXT_PATH).unwrap(), TEXT_PATH).unwrap();
+  assert_eq!(text.file.tokens["X"], "Authored");
+  assert_eq!(text.file.tokens["Y"], "Current");
   assert_eq!(
     localization_paths(std::slice::from_ref(&input)).unwrap(),
     BTreeSet::from([TEXT_PATH.into()])
   );
   assert!(has_checkable_resources(&input).unwrap());
-  let plan = LocalizationOverlayPlan::build(&citadel, &[input]).unwrap();
   assert_eq!(plan.analysis.parse_warnings.len(), 1);
   let warning = &plan.analysis.parse_warnings[0];
   assert_eq!(warning.mod_id, "mixed");
@@ -93,15 +107,6 @@ fn traversal_localization_is_warned_and_valid_text_is_still_applied() {
       .unwrap()
       .contains("unsafe resource path")
   );
-  let output = root.path().join("overlay_dir.vpk");
-  assert_eq!(plan.write(&output, &[]).unwrap().packed_files, 1);
-  let archive = VpkArchive::open(&output).unwrap();
-  assert_eq!(archive.list_entries(), [TEXT_PATH]);
-  let text =
-    parse_localization_bytes(&archive.extract_entry(TEXT_PATH).unwrap(), TEXT_PATH).unwrap();
-  assert_eq!(text.file.tokens["X"], "Authored");
-  assert_eq!(text.file.tokens["Y"], "Current");
-  assert!(!escaped.exists());
 }
 
 #[test]
