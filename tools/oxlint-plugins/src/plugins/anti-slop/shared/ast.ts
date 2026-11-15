@@ -93,3 +93,24 @@ export const resolveVariable = (
   }
   return null;
 };
+
+export const variableDeclarator = (
+  variable: Variable,
+): ESTree.VariableDeclarator | null => {
+  if (variable.defs.length !== 1) return null;
+  const [definition] = variable.defs;
+  return definition?.type === "Variable" &&
+    definition.node.type === "VariableDeclarator"
+    ? definition.node
+    : null;
+};
+
+export const isStableConstVariable = (
+  variable: Variable,
+  declarator: ESTree.VariableDeclarator,
+): boolean =>
+  declarator.parent.type === "VariableDeclaration" &&
+  declarator.parent.kind === "const" &&
+  variable.references.every(
+    (reference) => reference.init || !reference.isWrite(),
+  );

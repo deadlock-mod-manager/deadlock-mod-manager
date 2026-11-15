@@ -1,6 +1,13 @@
-import type { ESTree } from "@oxlint/plugins";
+import type { ESTree, SourceCode, Variable } from "@oxlint/plugins";
 
 import { defineRule } from "@oxlint/plugins";
+
+import {
+  isStableConstVariable,
+  resolveVariable,
+  unwrapParenthesizedExpression,
+  variableDeclarator,
+} from "../shared/ast.ts";
 
 // Tailwind backdrop utilities (with optional variant, `!`, or negative prefixes),
 // arbitrary `[backdrop-filter:...]` properties, and raw `backdrop-filter:` declarations.
@@ -12,17 +19,75 @@ const BACKDROP_STYLE_KEYS = new Set(["backdropFilter", "WebkitBackdropFilter"]);
 const hasBackdropClass = (value: string): boolean =>
   value.includes("backdrop") && BACKDROP_CLASS_PATTERN.test(value);
 
-/** Reports whether a class string sits behind the `!isLinux && "…"` gate; the `isLinux` name is the contract. */
-const isSkippedOnLinux = (node: ESTree.Node, parent: ESTree.Node): boolean => {
-  if (parent.type !== "LogicalExpression") return false;
-  const { left } = parent;
+const isPlatformCall = (expression: ESTree.Expression): boolean =>
+  expression.type === "CallExpression" &&
+  expression.callee.type === "Identifier" &&
+  expression.callee.name === "platform";
+
+const isLinuxLiteral = (expression: ESTree.Expression): boolean =>
+  expression.type === "Literal" && expression.value === "linux";
+
+const isLinuxPlatformCheck = (expression: ESTree.Expression): boolean => {
+  if (expression.type !== "BinaryExpression" || expression.operator !== "===")
+    return false;
+  const { left, right } = expression;
   return (
-    parent.operator === "&&" &&
-    parent.right === node &&
+    (isPlatformCall(left) && isLinuxLiteral(right)) ||
+    (isLinuxLiteral(left) && isPlatformCall(right))
+  );
+};
+
+/**
+ * Reports whether an expression can only be true on Linux: a `platform() === "linux"`
+ * check, an `&&` chain containing one, or a const bound to either. Opt-in gates such as
+ * `canvasBlur = linuxCanvasNSFWBlur && platform() === "linux" && …` qualify.
+ */
+const isLinuxOnly = (
+  sourceCode: SourceCode,
+  expression: ESTree.Expression,
+  visitedVariables = new Set<Variable>(),
+): boolean => {
+  const unwrapped = unwrapParenthesizedExpression(expression);
+  if (isLinuxPlatformCheck(unwrapped)) return true;
+  if (unwrapped.type === "LogicalExpression") {
+    return (
+      unwrapped.operator === "&&" &&
+      (isLinuxOnly(sourceCode, unwrapped.left, visitedVariables) ||
+        isLinuxOnly(sourceCode, unwrapped.right, visitedVariables))
+    );
+  }
+  if (unwrapped.type !== "Identifier") return false;
+  const variable = resolveVariable(sourceCode, unwrapped);
+  if (variable === null || visitedVariables.has(variable)) return false;
+  const declarator = variableDeclarator(variable);
+  if (
+    declarator === null ||
+    declarator.init === null ||
+    !isStableConstVariable(variable, declarator)
+  ) {
+    return false;
+  }
+  visitedVariables.add(variable);
+  return isLinuxOnly(sourceCode, declarator.init, visitedVariables);
+};
+
+/** Reports whether a class string is skipped on Linux: `!<linux-only condition> && "…"`. */
+const isSkippedOnLinux = (
+  sourceCode: SourceCode,
+  node: ESTree.Node,
+  parent: ESTree.Node,
+): boolean => {
+  if (
+    parent.type !== "LogicalExpression" ||
+    parent.operator !== "&&" ||
+    parent.right !== node
+  )
+    return false;
+  const left = unwrapParenthesizedExpression(parent.left);
+  return (
     left.type === "UnaryExpression" &&
     left.operator === "!" &&
-    left.argument.type === "Identifier" &&
-    left.argument.name === "isLinux"
+    isLinuxOnly(sourceCode, left.argument)
   );
 };
 
@@ -36,7 +101,7 @@ export const noBackdropFilterRule = defineRule({
     },
     messages: {
       backdropFilter:
-        'Avoid backdrop-filter: WebKitGTK composites each one separately and can freeze the Linux app (#1041). Use a more opaque background, or skip it on Linux with `!isLinux && "backdrop-…"`.',
+        'Avoid backdrop-filter: WebKitGTK composites each one separately and can freeze the Linux app (#1041). Use a more opaque background, or skip it on Linux behind a `platform() === "linux"` condition, e.g. `!canvasBlur && "backdrop-…"`.',
     },
   },
   create(context) {
@@ -44,7 +109,7 @@ export const noBackdropFilterRule = defineRule({
       Literal(node) {
         if (
           hasBackdropClass(String(node.value)) &&
-          !isSkippedOnLinux(node, node.parent)
+          !isSkippedOnLinux(context.sourceCode, node, node.parent)
         ) {
           context.report({ node, messageId: "backdropFilter" });
         }
