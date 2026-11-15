@@ -63,7 +63,8 @@ fn traversal_localization_is_warned_and_valid_text_is_still_applied() {
   let escaped_name = format!(
     "{}-escaped.txt",
     root.path().file_name().unwrap().to_str().unwrap()
-  );
+  )
+  .to_ascii_lowercase();
   let unsafe_path = format!("resource/localization/../../../{escaped_name}");
   let escaped = std::env::temp_dir().join(escaped_name);
   assert!(!escaped.exists());
@@ -118,7 +119,8 @@ fn traversal_compiled_data_is_skipped_and_valid_table_is_still_applied() {
   let escaped_name = format!(
     "{}-escaped.vdata_c",
     root.path().file_name().unwrap().to_str().unwrap()
-  );
+  )
+  .to_ascii_lowercase();
   let unsafe_path = format!("scripts/../../{escaped_name}");
   let escaped = std::env::temp_dir().join(escaped_name);
   assert!(!escaped.exists());
