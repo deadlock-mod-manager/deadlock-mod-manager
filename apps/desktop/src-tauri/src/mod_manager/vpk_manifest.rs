@@ -246,29 +246,19 @@ impl ProfileVpkManifest {
     let manifest_path = addons_path.join(MANIFEST_FILENAME);
     let temp_path = addons_path.join(format!("{MANIFEST_FILENAME}.tmp"));
 
-    let source_path = if manifest_path.exists() {
-      Some(manifest_path.clone())
+    let manifest: Self = if manifest_path.exists() {
+      let manifest_json = fs::read_to_string(&manifest_path)?;
+      serde_json::from_str(&manifest_json).map_err(|error| {
+        Error::InvalidInput(format!(
+          "Failed to parse VPK manifest at {}: {error}",
+          manifest_path.display()
+        ))
+      })?
     } else if temp_path.exists() {
-      Some(temp_path.clone())
+      let manifest_bytes = fs::read(&temp_path)?;
+      serde_json::from_slice(&manifest_bytes).unwrap_or_default()
     } else {
-      None
-    };
-
-    let manifest: Self = match source_path {
-      Some(path) => {
-        let manifest_json = fs::read_to_string(&path)?;
-        match serde_json::from_str(&manifest_json) {
-          Ok(manifest) => manifest,
-          Err(_) if path == temp_path => Self::default(),
-          Err(error) => {
-            return Err(Error::InvalidInput(format!(
-              "Failed to parse VPK manifest at {}: {error}",
-              path.display()
-            )));
-          }
-        }
-      }
-      None => Self::default(),
+      Self::default()
     };
 
     manifest.validate_version(addons_path)
@@ -327,8 +317,8 @@ impl ProfileVpkManifest {
         ))
       })?;
     } else {
-      let manifest_json = fs::read_to_string(&temp_path)?;
-      if let Err(error) = serde_json::from_str::<Self>(&manifest_json) {
+      let manifest_bytes = fs::read(&temp_path)?;
+      if let Err(error) = serde_json::from_slice::<Self>(&manifest_bytes) {
         fs::remove_file(&temp_path)?;
         log::warn!(
           "Discarded incomplete VPK manifest temp file at {}: {error}",
@@ -725,7 +715,15 @@ mod tests {
 
   #[test]
   fn open_for_write_discards_invalid_temp_manifest_when_main_is_missing() {
-    for bytes in [b"{ partial".as_slice(), br#"{"mods": []}"#, &[0; 64]] {
+    let manifest = r#"{"mods":{"123":{"originalVpkNames":["皮肤.vpk"]}}}"#;
+    let truncated = &manifest.as_bytes()[..manifest.find('皮').unwrap() + 1];
+    for bytes in [
+      &[0xFF, 0xFE, 0x00, 0x80],
+      truncated,
+      b"{ partial".as_slice(),
+      br#"{"mods": []}"#,
+      &[0; 64],
+    ] {
       let temp = tempfile::tempdir().unwrap();
       let base = addons_base(&temp);
       let temp_path = base.join(format!("{MANIFEST_FILENAME}.tmp"));
@@ -741,7 +739,15 @@ mod tests {
 
   #[test]
   fn load_ignores_invalid_temp_manifest_without_changing_it() {
-    for bytes in [b"{ partial".as_slice(), br#"{"mods": []}"#, &[0; 64]] {
+    let manifest = r#"{"mods":{"123":{"originalVpkNames":["皮肤.vpk"]}}}"#;
+    let truncated = &manifest.as_bytes()[..manifest.find('皮').unwrap() + 1];
+    for bytes in [
+      &[0xFF, 0xFE, 0x00, 0x80],
+      truncated,
+      b"{ partial".as_slice(),
+      br#"{"mods": []}"#,
+      &[0; 64],
+    ] {
       let temp = tempfile::tempdir().unwrap();
       let base = addons_base(&temp);
       let temp_path = base.join(format!("{MANIFEST_FILENAME}.tmp"));
