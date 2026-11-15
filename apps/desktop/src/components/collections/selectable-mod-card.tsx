@@ -34,7 +34,7 @@ export const SelectableModCard = ({
         aria-label={mod.name}
         checked={selected}
         className={cn(
-          "absolute top-2.5 left-2.5 z-20 h-5 w-5 border-white/70 bg-black/50 backdrop-blur-sm transition-opacity",
+          "absolute top-2.5 left-2.5 z-20 h-5 w-5 border-white/70 bg-black/70 transition-opacity",
           !selecting &&
             "opacity-0 group-hover/select:opacity-100 focus-visible:opacity-100",
         )}
