@@ -10,6 +10,8 @@ use sha2::{Digest, Sha256};
 mod health;
 mod history;
 mod inventory;
+#[cfg(test)]
+mod mount_tests;
 #[cfg(all(test, unix))]
 mod performance;
 mod preference;
@@ -53,6 +55,7 @@ pub(super) struct CachedLocalizationOverlayPlan {
 /// the slow plan build can run without it.
 pub struct ModFixRefresh {
   profile_folder: Option<String>,
+  search_paths_revision: u64,
   citadel: PathBuf,
   inputs: Vec<LocalizationModInput>,
   key: LocalizationOverlayPlanKey,
@@ -392,6 +395,7 @@ impl ModManager {
     }
     Ok(Some(ModFixRefresh {
       profile_folder: profile_folder.map(str::to_owned),
+      search_paths_revision: self.config_manager.search_paths_revision(),
       citadel,
       inputs,
       key,

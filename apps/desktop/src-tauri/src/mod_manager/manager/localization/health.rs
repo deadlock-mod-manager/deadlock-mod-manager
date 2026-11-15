@@ -97,13 +97,23 @@ impl ModManager {
       return Err(Error::GameRunning);
     }
     let profile_folder = refresh.profile_folder.clone();
+    let search_paths_revision = refresh.search_paths_revision;
     self.report_plan_stage(RepairPlanStage::WritingPackage);
     let status = match self.commit_mod_fix_refresh(refresh, plan) {
       Ok(true) => FixModsStatus::Applied,
       Ok(false) | Err(Error::ModDataReviewRequired) => FixModsStatus::ReviewRequired,
       Err(error) => return Err(error),
     };
-    self.apply_profile_gameinfo(profile_folder)?;
+    let current_revision = self.config_manager.search_paths_revision();
+    // begin_fix_mods saves the fix choice before capturing this revision, so
+    // even a later mount of the same profile already includes its repair path.
+    if current_revision == search_paths_revision {
+      self.apply_profile_gameinfo(profile_folder)?;
+    } else {
+      log::info!(
+        "Keeping newer search paths after fixing profile {profile_folder:?}: revision {search_paths_revision} changed to {current_revision}"
+      );
+    }
     Ok(FixModsResult { status })
   }
 

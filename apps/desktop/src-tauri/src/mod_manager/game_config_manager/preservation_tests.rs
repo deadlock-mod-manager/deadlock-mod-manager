@@ -13,6 +13,44 @@ fn game() -> (tempfile::TempDir, PathBuf) {
 }
 
 #[test]
+fn every_mount_writer_advances_the_search_paths_revision() {
+  let (game, path) = game();
+  let mut manager = GameConfigManager::new();
+  assert_eq!(manager.search_paths_revision(), 0);
+
+  manager.setup_game_for_mods(game.path()).unwrap();
+  let mut revision = manager.search_paths_revision();
+  assert!(revision > 0);
+
+  manager
+    .update_mod_paths(game.path(), &["citadel/addons/first".into()])
+    .unwrap();
+  assert!(manager.search_paths_revision() > revision);
+  revision = manager.search_paths_revision();
+
+  manager.modify_search_paths(&path, true).unwrap();
+  assert!(manager.search_paths_revision() > revision);
+  revision = manager.search_paths_revision();
+
+  manager.toggle_mods(game.path(), false).unwrap();
+  assert!(manager.search_paths_revision() > revision);
+  revision = manager.search_paths_revision();
+
+  manager
+    .apply_vanilla_gameinfo(game.path(), fixture())
+    .unwrap();
+  assert!(manager.search_paths_revision() > revision);
+  revision = manager.search_paths_revision();
+
+  manager.restore_gameinfo_backup(game.path()).unwrap();
+  assert!(manager.search_paths_revision() > revision);
+  revision = manager.search_paths_revision();
+
+  manager.reset_gameinfo(game.path(), Ok(fixture())).unwrap();
+  assert!(manager.search_paths_revision() > revision);
+}
+
+#[test]
 fn a_write_conflict_does_not_fall_back_to_restoring_a_backup() {
   let (game, path) = game();
   let observed = fs::read(&path).unwrap();

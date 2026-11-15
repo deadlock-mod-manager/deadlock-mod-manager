@@ -115,6 +115,10 @@ impl GameConfigManager {
     Ok((!self.marker_addons_paths(game_path)?.is_empty()).then_some(self.search_paths_revision))
   }
 
+  pub fn search_paths_revision(&self) -> u64 {
+    self.search_paths_revision
+  }
+
   /// Do not remove mounts staged by an operation newer than the observed exit.
   pub fn remove_mod_paths_at_revision(
     &mut self,
