@@ -413,7 +413,7 @@ const Mod = () => {
               cornerAction={
                 canPreviewModel && (
                   <Button
-                    className='gap-1.5 rounded-full border border-white/15 bg-black/40 text-white shadow-lg backdrop-blur-md hover:bg-black/60 hover:text-white'
+                    className='gap-1.5 rounded-full border border-white/15 bg-black/60 text-white shadow-lg hover:bg-black/75 hover:text-white'
                     onClick={openModelPreview}
                     size='sm'
                     variant='ghost'>

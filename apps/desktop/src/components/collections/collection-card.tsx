@@ -19,7 +19,7 @@ export const CollectionCard = memo(
           className='absolute inset-0 h-full w-full transition-transform duration-300 group-hover:scale-[1.03] motion-reduce:transition-none'
           collection={collection}
         />
-        <span className='absolute top-2.5 right-2.5 rounded-md bg-background/70 px-2 py-0.5 text-xs tabular-nums backdrop-blur-sm'>
+        <span className='absolute top-2.5 right-2.5 rounded-md bg-background/85 px-2 py-0.5 text-xs tabular-nums'>
           {t("collections.itemCount", { count: collection.itemCount })}
         </span>
         <div className='absolute inset-x-0 bottom-0 flex flex-col gap-1 bg-gradient-to-t from-background via-background/80 to-transparent p-4 pt-16'>

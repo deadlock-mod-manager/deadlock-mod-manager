@@ -72,7 +72,7 @@ export const GlobalFileDrop = () => {
   if (!dragging) return null;
 
   return (
-    <div className='pointer-events-none fixed inset-0 z-[60] flex items-center justify-center bg-background/70 backdrop-blur-[2px]'>
+    <div className='pointer-events-none fixed inset-0 z-[60] flex items-center justify-center bg-background/80'>
       <div className='flex flex-col items-center gap-2 rounded-xl border-2 border-primary/60 border-dashed bg-card/90 px-10 py-8 text-center shadow-lg'>
         <UploadSimple className='size-10 text-primary' />
         <p className='font-semibold text-lg'>

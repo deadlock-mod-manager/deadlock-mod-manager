@@ -44,6 +44,12 @@
   },
   "overrides": [
     {
+      "files": ["apps/desktop/src/**"],
+      "rules": {
+        "anti-slop/no-backdrop-filter": "error"
+      }
+    },
+    {
       "files": [
         "tools/oxlint-plugins/src/plugins/anti-slop/rules/no-runtime-typeof.ts"
       ],

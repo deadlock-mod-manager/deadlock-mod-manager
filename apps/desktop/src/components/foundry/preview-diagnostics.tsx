@@ -26,7 +26,7 @@ export const PreviewDiagnostics = ({
   if (issues.length === 0 && !animationFailed && !effectsLimited) return null;
   const kinds = [...new Set(issues.map((issue) => issue.kind))];
   return (
-    <details className='absolute top-14 left-3 z-10 max-w-[min(20rem,calc(100%-2rem))] rounded-md border bg-background/90 px-2.5 py-1.5 text-xs backdrop-blur'>
+    <details className='absolute top-14 left-3 z-10 max-w-[min(20rem,calc(100%-2rem))] rounded-md border bg-background/95 px-2.5 py-1.5 text-xs'>
       <summary className='cursor-pointer text-muted-foreground' role='status'>
         {t("modPreview.partial")}
       </summary>

@@ -43,7 +43,7 @@ export const ModHero = ({
     return (
       <div className='relative h-64 w-full bg-gradient-to-br from-muted via-secondary to-accent'>
         {!native && (
-          <div className='absolute top-4 left-4 z-20 flex items-center gap-1.5 rounded-full border border-white/10 bg-black/40 px-2.5 py-1 font-mono text-white/70 text-xs shadow-lg backdrop-blur-md'>
+          <div className='absolute top-4 left-4 z-20 flex items-center gap-1.5 rounded-full border border-white/10 bg-black/60 px-2.5 py-1 font-mono text-white/70 text-xs shadow-lg'>
             <Hash className='h-3 w-3' />
             <span className='tabular-nums'>{mod.remoteId}</span>
           </div>
@@ -93,7 +93,7 @@ export const ModHero = ({
           <div className='absolute inset-0 bg-gradient-to-t from-black/60 to-transparent' />
         )}
         {!native && (
-          <div className='absolute top-4 left-4 z-20 flex items-center gap-1.5 rounded-full border border-white/10 bg-black/40 px-2.5 py-1 font-mono text-white/70 text-xs shadow-lg backdrop-blur-md'>
+          <div className='absolute top-4 left-4 z-20 flex items-center gap-1.5 rounded-full border border-white/10 bg-black/60 px-2.5 py-1 font-mono text-white/70 text-xs shadow-lg'>
             <Hash className='h-3 w-3' />
             <span className='tabular-nums'>{mod.remoteId}</span>
           </div>

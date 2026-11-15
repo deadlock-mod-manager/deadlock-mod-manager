@@ -126,7 +126,7 @@ export const SkinCardShell = ({
         )}
         {!pooling && inPool && (
           <span
-            className='absolute right-2 bottom-2 z-10 flex size-[22px] items-center justify-center rounded-md bg-background/80 text-secondary-foreground backdrop-blur-sm'
+            className='absolute right-2 bottom-2 z-10 flex size-[22px] items-center justify-center rounded-md bg-background/85 text-secondary-foreground'
             role='img'
             aria-label={t("skins.randomizer.poolMember")}
             title={t("skins.randomizer.poolMember")}>

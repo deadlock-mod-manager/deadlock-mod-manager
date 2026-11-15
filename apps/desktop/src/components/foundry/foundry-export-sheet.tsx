@@ -170,7 +170,7 @@ export const FoundryExportSheet = ({ onClose }: { onClose: () => void }) => {
     <div className='absolute inset-0 z-20 flex justify-end'>
       <button
         aria-label={t("common.close")}
-        className='absolute inset-0 bg-background/70 backdrop-blur-[1px]'
+        className='absolute inset-0 bg-background/80'
         disabled={busy}
         onClick={onClose}
         type='button'
