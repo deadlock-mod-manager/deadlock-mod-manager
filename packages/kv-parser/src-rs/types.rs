@@ -95,6 +95,9 @@ pub struct ParseOptions {
     pub allow_conditionals: bool,
     #[serde(default = "default_true")]
     pub allow_includes: bool,
+    /// Maximum decoded token length in UTF-8 bytes; `None` disables the limit.
+    #[serde(default = "default_max_token_length")]
+    pub max_token_length: Option<usize>,
 }
 
 impl Default for ParseOptions {
@@ -103,12 +106,17 @@ impl Default for ParseOptions {
             allow_escape_sequences: true,
             allow_conditionals: true,
             allow_includes: true,
+            max_token_length: default_max_token_length(),
         }
     }
 }
 
 fn default_true() -> bool {
     true
+}
+
+fn default_max_token_length() -> Option<usize> {
+    Some(1024)
 }
 
 /// Serialize options
