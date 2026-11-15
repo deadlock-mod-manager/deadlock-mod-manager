@@ -1801,6 +1801,35 @@ Game core
   }
 
   #[test]
+  fn launch_preparation_rebuilds_revision_40_receipts() {
+    let temp = tempfile::tempdir().unwrap();
+    let manager = test_manager(temp.path());
+    manager
+      .prepare_localization_overlay_with_progress(None, true, || {})
+      .unwrap();
+    let overlay = manager.localization_overlay_vpk_path(None).unwrap();
+    let path = receipt::path(&overlay);
+    let mut previous: serde_json::Value =
+      serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+    previous["revision"] = 40.into();
+    fs::write(&path, serde_json::to_vec(&previous).unwrap()).unwrap();
+    let old_time = SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(1000);
+    fs::File::options()
+      .write(true)
+      .open(&path)
+      .unwrap()
+      .set_times(fs::FileTimes::new().set_modified(old_time))
+      .unwrap();
+    manager
+      .prepare_localization_overlay_with_progress(None, true, || {})
+      .unwrap();
+    assert_ne!(fs::metadata(&path).unwrap().modified().unwrap(), old_time);
+    let rebuilt: serde_json::Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+    assert_eq!(rebuilt["revision"], receipt::REPAIR_REVISION);
+    assert!(receipt::load(&overlay).unwrap().is_some());
+  }
+
+  #[test]
   fn launch_preparation_refreshes_receipts_after_game_chunk_or_version_changes() {
     let temp = tempfile::tempdir().unwrap();
     let manager = test_manager(temp.path());
