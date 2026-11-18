@@ -129,7 +129,7 @@ fn connect_cache_hex(vdf: &Vdf, account: &str) -> Result<Option<String>, MatchSy
     .and_then(Value::get_obj)
     .ok_or_else(|| err("no ConnectCache in local.vdf (logged out or 'remember me' off)"))?;
 
-  let prefix = format!("{:08x}", crc32fast::hash(account.as_bytes()));
+  let prefix = format!("{:x}1", crc32fast::hash(account.as_bytes()));
   Ok(
     cache
       .iter()
