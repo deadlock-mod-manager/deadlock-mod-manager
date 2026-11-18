@@ -71,7 +71,7 @@ peerDependencyRules:
     "tailwindcss-animate>tailwindcss": "3"
 
 catalog:
-  vite: ^7.3.7
+  vite: ^7.3.8
   "@isaacs/ttlcache": ^1.4.1
   "@keyv/redis": ^5.1.6
   "@sentry/node": ^10.46.0
