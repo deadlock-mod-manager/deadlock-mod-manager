@@ -13,16 +13,23 @@ const CHECK_TIMEOUT: Duration = Duration::from_secs(5);
 const STOP_SETTLE: Duration = Duration::from_millis(500);
 
 // Unlike ps's space-joined arguments, /proc preserves argv[0]'s boundaries.
-// Each record is pid\0comm\0argv[0]\0\0; a process without a command line is
-// pid\0comm\0\0.
+// Each record is pid\0comm\0argv[0]\0\0, with an empty argv[0] when there is
+// none. Bash reads up to a NUL itself, so a scan starts no process per host
+// process. Its read is locale-aware; C keeps bytes as they are, including
+// names the kernel cut inside a UTF-8 character.
 const HOST_PROCESSES: &str = r#"
+LC_ALL=C
 for proc in "$1"/[0-9]*; do
   IFS= read -r name 2>/dev/null < "$proc/comm" || continue
-  printf '%s\000%s\000' "${proc##*/}" "$name"
-  head -z -n 1 "$proc/cmdline" 2>/dev/null
-  printf '\000'
+  argv0=
+  IFS= read -r -d '' argv0 2>/dev/null < "$proc/cmdline"
+  printf '%s\000%s\000%s\000\000' "${proc##*/}" "$name" "$argv0"
 done
 "#;
+
+/// Runs `HOST_PROCESSES` over the proc directory passed after it. `-p` ignores
+/// the host's BASH_ENV and SHELLOPTS: a `set -f` there would empty the scan.
+const HOST_SCAN: [&str; 5] = ["bash", "-p", "-c", HOST_PROCESSES, "host-processes"];
 
 /// A command that runs on the host, outside the sandbox.
 fn host_command() -> Command {
@@ -35,7 +42,7 @@ fn host_command() -> Command {
 /// on the host and apply the native process match.
 async fn host_game_pids() -> Result<Vec<u32>, Error> {
   let mut command = host_command();
-  command.args(["sh", "-c", HOST_PROCESSES, "host-processes", "/proc"]);
+  command.args(HOST_SCAN).arg("/proc");
   let output = host_output(command, CHECK_TIMEOUT).await?;
   Ok(game_pids(&output))
 }
@@ -213,6 +220,8 @@ mod tests {
       ("3", "kworker", ""),
       // An empty argv[0] must not hide the record after it.
       ("10", "empty-argv0", "\0--flag\0"),
+      // Nor must a command line without a NUL, as a retitled process has.
+      ("105", "sshd", "sshd: user@pts/0"),
       ("11", "MainThrd", "S:\\Steam\\Deadlock\\deadlock.exe\0"),
     ] {
       let proc = root.path().join(pid);
@@ -220,13 +229,26 @@ mod tests {
       std::fs::write(proc.join("comm"), format!("{name}\n")).unwrap();
       std::fs::write(proc.join("cmdline"), command).unwrap();
     }
+    // Exited between the reads: it must not inherit the game's argv[0].
+    std::fs::create_dir(root.path().join("110")).unwrap();
+    std::fs::write(root.path().join("110/comm"), "exited\n").unwrap();
+    let bash_env = root.path().join("bash-env");
+    std::fs::write(&bash_env, "set -f\n").unwrap();
     let scan = || {
-      let mut command = Command::new("sh");
+      let mut command = Command::new(HOST_SCAN[0]);
       command
-        .args(["-c", HOST_PROCESSES, "host-processes"])
-        .arg(root.path());
+        .args(&HOST_SCAN[1..])
+        .arg(root.path())
+        .env("LC_ALL", "C.UTF-8")
+        .env("BASH_ENV", &bash_env);
       command
     };
+    assert_eq!(
+      game_pids(&host_output(scan(), CHECK_TIMEOUT).await.unwrap()),
+      [11]
+    );
+    // The kernel cuts names to 15 bytes, even inside a UTF-8 character.
+    std::fs::write(root.path().join("11/comm"), b"ab\xc2\n").unwrap();
     assert_eq!(
       game_pids(&host_output(scan(), CHECK_TIMEOUT).await.unwrap()),
       [11]
