@@ -27,6 +27,10 @@ pub enum Error {
   AppHandleNotInitialized,
   #[error("Failed to parse game configuration: {0}")]
   GameConfigParse(String),
+  #[error(
+    "Cannot fully read game localization file {0}. Verify the game's files in Steam before retrying compatibility repair"
+  )]
+  GameLocalizationInvalid(String),
   #[error("Mod file not found at path")]
   ModFileNotFound,
   #[error(transparent)]
@@ -195,6 +199,7 @@ impl serde::Serialize for Error {
       Error::GamePathNotSet => "gamePathNotSet",
       Error::AppHandleNotInitialized => "appHandleNotInitialized",
       Error::GameConfigParse(_) => "gameConfigParse",
+      Error::GameLocalizationInvalid(_) => "gameLocalizationInvalid",
       Error::ModFileNotFound => "modFileNotFound",
       Error::KeyValues(_) => "keyValues",
       Error::Rar(_) => "rar",
