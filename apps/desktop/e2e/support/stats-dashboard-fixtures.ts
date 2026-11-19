@@ -25,35 +25,87 @@ const ITEM_ID = 7409189;
 
 const json = <T>(body: T) => JSON.stringify(body);
 
+const historyEntry = (index: number, startTime: number, won: boolean) => ({
+  account_id: STATS_ACCOUNT_ID,
+  match_id: 5_000 + index,
+  hero_id: index % 3 === 0 ? SEVEN : INFERNUS,
+  hero_level: 30,
+  start_time: startTime,
+  game_mode: 1,
+  match_mode: 1,
+  player_team: 0,
+  match_result: won ? 0 : 1,
+  player_kills: 5 + (index % 4),
+  player_deaths: 4,
+  player_assists: 8,
+  denies: 3,
+  net_worth: 32_000,
+  last_hits: 140,
+  match_duration_s: 1_900,
+  team_abandoned: false,
+  abandoned_time_s: null,
+  objectives_mask_team0: 0,
+  objectives_mask_team1: 0,
+  ranked_display_badge: null,
+  ranked_delta: null,
+  ranked_calibration_match: null,
+});
+
 const matchHistory = () => {
   const now = Math.floor(Date.now() / 1000);
-  return Array.from({ length: 20 }, (_, index) => ({
-    account_id: STATS_ACCOUNT_ID,
-    match_id: 5_000 + index,
-    hero_id: index % 3 === 0 ? SEVEN : INFERNUS,
-    hero_level: 30,
-    start_time: now - (index + 1) * 2 * HOUR_S,
-    game_mode: 1,
-    match_mode: 1,
-    player_team: 0,
-    // Team 0 wins every even match.
-    match_result: index % 2,
-    player_kills: 5 + (index % 4),
-    player_deaths: 4,
-    player_assists: 8,
-    denies: 3,
-    net_worth: 32_000,
-    last_hits: 140,
-    match_duration_s: 1_900,
-    team_abandoned: false,
-    abandoned_time_s: null,
-    objectives_mask_team0: 0,
-    objectives_mask_team1: 0,
-    ranked_display_badge: null,
-    ranked_delta: null,
-    ranked_calibration_match: null,
-  }));
+  // Team 0 wins every even match.
+  return Array.from({ length: 20 }, (_, index) =>
+    historyEntry(index, now - (index + 1) * 2 * HOUR_S, index % 2 === 0),
+  );
 };
+
+/** Local noon on a day of October 2026: twelve hours from either day boundary. */
+const octoberNoon = (day: number) =>
+  new Date(2026, 9, day, 12).getTime() / 1000;
+
+/**
+ * One match at local noon on each of six fixed days, so the season and
+ * date-range case can count exactly what a window keeps, whatever the clock:
+ *   October    25 26 27 28 29 30
+ *   result      L  L  W  L  W  W   (all time 3W 3L)
+ * Beta Season 1 covers Oct 25-27 (1W 2L), Beta Season 2 Oct 28 onwards (2W 1L).
+ */
+const SEASON_RESULTS = [true, true, false, true, false, false];
+const seasonHistory = () =>
+  SEASON_RESULTS.map((won, index) =>
+    historyEntry(index, octoberNoon(30 - index), won),
+  );
+
+const rankedSeason = (id: number, start: number, end: number) => ({
+  class_name: `season_${id}`,
+  name: `Beta Season ${id}`,
+  ranked_type: "normal",
+  min_wins: 60,
+  min_hero_unlocks: 3,
+  calibration_matches: 8,
+  valid_party_sizes: [1, 2],
+  intervals: [{ interval: id, start_timestamp: start, end_timestamp: end }],
+});
+
+const seasonOne = () => ({ start: octoberNoon(24), end: octoberNoon(28) });
+/** The season list in deadlock-api's order, oldest first. */
+const seasonRoutes = (): FixtureRoute[] => [
+  {
+    method: "GET",
+    path: "/v1/assets/ranked-seasons",
+    status: 200,
+    body: json([
+      rankedSeason(1, seasonOne().start, seasonOne().end),
+      rankedSeason(2, seasonOne().end, new Date(2100, 0, 1).getTime() / 1000),
+    ]),
+  },
+  {
+    method: "GET",
+    path: `/v1/players/${STATS_ACCOUNT_ID}/match-history`,
+    status: 200,
+    body: json(seasonHistory()),
+  },
+];
 
 const heroes = [
   { id: INFERNUS, name: "Infernus", class_name: "hero_inferno", images: {} },
@@ -267,7 +319,9 @@ const brokenRoutes = (): FixtureRoute[] => [
 export const statsDashboardRoutes = async (id: string) => () =>
   id === "stats-broken-endpoints"
     ? [...brokenRoutes(), ...baseRoutes()]
-    : baseRoutes();
+    : id === "stats-season-filter"
+      ? [...seasonRoutes(), ...baseRoutes()]
+      : baseRoutes();
 
 type SeededView = { chart: string; x?: string; y: string[] };
 
@@ -384,6 +438,24 @@ export const assertStatsDashboardNetwork = (
       throw new Error("The recovering widget must fail exactly once");
     if (answered(requests, "/v1/analytics/item-stats", 200) !== 1)
       throw new Error("Retry must refetch the failed endpoint exactly once");
+  }
+  if (id === "stats-season-filter") {
+    // Beta Season 1 reaches the server as its exact window, the end sent as
+    // the last second it covers (deadlock-api's end is inclusive).
+    const min = String(seasonOne().start);
+    const max = String(seasonOne().end - 1);
+    const seasonRequest = requests.some((request) => {
+      const query = new URL(request.url, "http://fixture").searchParams;
+      return (
+        request.url.includes("/v1/analytics/hero-stats") &&
+        query.get("min_unix_timestamp") === min &&
+        query.get("max_unix_timestamp") === max
+      );
+    });
+    if (!seasonRequest)
+      throw new Error(
+        `No global benchmark asked for Beta Season 1's window ${min}-${max}`,
+      );
   }
   if (id === "stats-custom-queries") {
     const query = requests.find((request) =>

@@ -26,6 +26,8 @@ export const STATS_TTL = {
   // the whole ladder in one go.
   distribution: 12 * 60 * 60 * 1000,
   assets: 7 * 24 * 60 * 60 * 1000,
+  // A new season shows up within a day of deadlock-api reading its patch.
+  seasons: 24 * 60 * 60 * 1000,
 } as const;
 
 type CacheEntry<T> = {

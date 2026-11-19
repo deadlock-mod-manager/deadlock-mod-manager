@@ -29,9 +29,9 @@ import {
 } from "@/lib/validation/stats-api";
 import { runtimeServiceOrigin } from "@/lib/runtime-bootstrap";
 import {
+  analyticsScopeQuery,
   statsScopeQuery,
   type StatsScope,
-  type StatsMatchMode,
 } from "@/lib/stats/scope";
 import { jsonValueSchema } from "@/lib/validation/json";
 
@@ -179,12 +179,9 @@ export const getSteamProfiles = (accountIds: number[]) => {
 };
 
 /** Global per-hero totals, used to benchmark the player against everyone else. */
-export const getAnalyticsHeroStats = (
-  sinceUnix: number,
-  mode: StatsMatchMode = "all",
-) =>
+export const getAnalyticsHeroStats = (scope: StatsScope) =>
   getList(
-    `/v1/analytics/hero-stats?${statsScopeQuery({ mode, since: sinceUnix })}`,
+    `/v1/analytics/hero-stats?${analyticsScopeQuery(scope)}`,
     analyticsHeroStatsSchema,
   );
 
@@ -209,7 +206,7 @@ export const getBracketMetrics = async ({
   maxBadge: number;
   scope: StatsScope;
 }) => {
-  const path = `/v1/analytics/player-stats/metrics?min_average_badge=${minBadge}&max_average_badge=${maxBadge}&${statsScopeQuery(scope)}`;
+  const path = `/v1/analytics/player-stats/metrics?min_average_badge=${minBadge}&max_average_badge=${maxBadge}&${analyticsScopeQuery(scope)}`;
   const response = await request(path);
   return parseOne(
     z.record(z.string(), metricSpreadSchema),
@@ -243,7 +240,7 @@ export const getBracketCurve = ({
   scope: StatsScope;
 }) =>
   getList(
-    `/v1/analytics/player-performance-curve?hero_ids=${heroId}${badges ? `&min_average_badge=${badges.minBadge}&max_average_badge=${badges.maxBadge}` : ""}&resolution=0&${statsScopeQuery(scope)}`,
+    `/v1/analytics/player-performance-curve?hero_ids=${heroId}${badges ? `&min_average_badge=${badges.minBadge}&max_average_badge=${badges.maxBadge}` : ""}&resolution=0&${analyticsScopeQuery(scope)}`,
     performanceCurvePointSchema,
   );
 
@@ -270,7 +267,7 @@ export const getHeroCombStats = ({
   scope: StatsScope;
 }) =>
   getList(
-    `/v1/analytics/hero-comb-stats?comb_size=${size}${badgeQuery(badges)}&${statsScopeQuery(scope)}`,
+    `/v1/analytics/hero-comb-stats?comb_size=${size}${badgeQuery(badges)}&${analyticsScopeQuery(scope)}`,
     heroCombStatsSchema,
   );
 
@@ -311,7 +308,7 @@ export const getItemStats = ({
       // `hero_ids` (plural) is the filter that applies; the singular `hero_id`
       // parameter the schema also lists comes back empty for every account.
       heroId ? `&hero_ids=${heroId}` : ""
-    }${scope ? `&${statsScopeQuery(scope)}` : ""}`,
+    }${scope ? `&${analyticsScopeQuery(scope)}` : ""}`,
     itemStatsSchema,
   );
 

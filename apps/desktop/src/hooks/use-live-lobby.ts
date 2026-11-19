@@ -165,6 +165,8 @@ export const useLiveHeroBenchmark = (
   const windowScope = {
     ...scope,
     since: Math.max(scope.since, today - LIVE_CURVE_DAYS * DAY_S),
+    // A running match is graded against now, even with a past window picked.
+    until: 0,
   };
   return useStatsQuery(
     {
