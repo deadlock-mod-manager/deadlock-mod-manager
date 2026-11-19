@@ -519,13 +519,13 @@
 	{	 
 		"rate"
 		{
-			"min"		"98304"
+			"min"		"133120"
 			"default"	"786432"
 			"max"		"1000000"
 		}
 
 		// Networking - General
-		"sv_minrate"	"98304"
+		"sv_minrate"	"133120"
 		"sv_maxunlag"	"0.500"
 		"sv_maxunlag_player" "0.200"
 		"sv_lagcomp_filterbyviewangle" "false"
