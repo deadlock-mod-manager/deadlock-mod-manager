@@ -7,4 +7,8 @@ export type ParseOptions = {
   allowEscapeSequences: boolean;
   allowConditionals: boolean;
   allowIncludes: boolean;
+  /**
+   * Maximum decoded token length in UTF-8 bytes; `None` disables the limit.
+   */
+  maxTokenLength: number | null;
 };
