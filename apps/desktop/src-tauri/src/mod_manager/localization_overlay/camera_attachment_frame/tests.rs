@@ -828,6 +828,82 @@ fn partially_migrated_meshes_convert_only_their_stale_root_attachments() {
   assert!(repair(&repaired, &base).unwrap().is_none());
 }
 
+#[test]
+fn old_pivots_with_current_attachments_migrate_only_the_pivots() {
+  let base = container(&model(), &[mesh(IDENTITY)]);
+  for frame in [IDENTITY, turned(IDENTITY, 10_f64.to_radians())] {
+    let mut authored = mesh(OLD_FRAME);
+    points_mut(&mut authored)[2] = point("aim", "root_motion", [5.0, 70.0, 6.0], frame);
+    let source = container(&model(), &[authored.clone(), authored.clone()]);
+    let repaired = repair(&source, &base).unwrap().unwrap();
+    migrate_mesh(
+      &mut authored,
+      Some(&PIVOTS.into_iter().map(str::to_owned).collect()),
+    )
+    .unwrap();
+    let resource = Resource::parse(&repaired).unwrap();
+    for (index, block) in resource.blocks().iter().enumerate() {
+      if block.kind == *b"MDAT" {
+        assert_eq!(
+          kv3::decode(resource.get_block_by_index(index).unwrap()).unwrap(),
+          authored
+        );
+      }
+    }
+    assert!(repair(&repaired, &base).unwrap().is_none());
+  }
+}
+
+#[test]
+fn old_pivots_preserve_custom_offsets_on_current_camera_attachments() {
+  let mut current = mesh(IDENTITY);
+  points_mut(&mut current).push(point("gunaim_00", "root_motion", [1.0, 2.0, 3.0], PITCH));
+  let base = container(&model(), &[current]);
+  let mut authored = mesh(OLD_FRAME);
+  let custom = point("gunaim_00", "root_motion", [21.0, 32.0, 43.0], PITCH);
+  points_mut(&mut authored).push(custom.clone());
+  let source = container(&model(), &[authored]);
+  let repaired = repair(&source, &base).unwrap().unwrap();
+  let resource = Resource::parse(&repaired).unwrap();
+  let updated = kv3::decode(resource.find_block(*b"MDAT").unwrap()).unwrap();
+  assert!(pivots(&updated, IDENTITY));
+  assert_eq!(attachment(&updated, "gunaim_00"), custom.get("value"));
+  assert!(same_rotation(
+    rotation(attachment(&updated, "aim").unwrap()).unwrap(),
+    IDENTITY
+  ));
+  assert!(repair(&repaired, &base).unwrap().is_none());
+}
+
+#[test]
+fn all_old_attachments_keep_the_legacy_migration_bytes() {
+  let base = container(&model(), &[mesh(IDENTITY)]);
+  let mut authored = mesh(OLD_FRAME);
+  points_mut(&mut authored).push(point(
+    "custom_root",
+    "root_motion",
+    [21.0, 32.0, 43.0],
+    OLD_PITCH,
+  ));
+  let source = container(&model(), &[authored.clone(), authored.clone()]);
+  let mut legacy = source.clone();
+  for index in [1, 2] {
+    let resource = Resource::parse(&legacy).unwrap();
+    let raw = resource.get_block_by_index(index).unwrap();
+    let (mut mesh, mut encoding) = kv3::decode_preserving(raw).unwrap();
+    migrate_mesh(&mut mesh, None).unwrap();
+    kv3::normalize_numeric_array_encoding(&mesh, &mut encoding).unwrap();
+    round_float_values(&mut mesh, &encoding);
+    let format = kv3::Format::from_payload(raw).unwrap();
+    let rebuilt = kv3::encode_preserving(&mesh, &encoding, &format).unwrap();
+    legacy = resource
+      .rebuild_with_block_preserving(index, &rebuilt)
+      .unwrap();
+  }
+  assert_eq!(repair(&source, &base).unwrap().unwrap(), legacy);
+  assert!(repair(&legacy, &base).unwrap().is_none());
+}
+
 /// Packs a game model with a complete camera interface and an old skin, then
 /// plans the skin's repairs.
 fn camera_interface_plan(
