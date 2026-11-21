@@ -199,6 +199,55 @@ jobs:
           unzip -q awscliv2.zip
           sudo ./aws/install --update
 
+      - name: Clean up old backups before upload (keep 3 most recent)
+        if: ${{ !inputs.skip-retention }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
+          S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
+        run: |
+          # Prune before uploading so the new dump fits on the RustFS volume;
+          # keeping 3 leaves 4 backups once the upload completes.
+          S3_BUCKET="${{ secrets.S3_BUCKET }}"
+          S3_PREFIX="backups/backup-"
+
+          if [[ -n "$S3_ENDPOINT" ]]; then
+            BACKUP_LIST=$(aws s3 ls "s3://${S3_BUCKET}/${S3_PREFIX}" --endpoint-url "$S3_ENDPOINT" --recursive 2>/dev/null | grep "\.dump$" | sort -r || echo "")
+          else
+            BACKUP_LIST=$(aws s3 ls "s3://${S3_BUCKET}/${S3_PREFIX}" --recursive 2>/dev/null | grep "\.dump$" | sort -r || echo "")
+          fi
+
+          if [[ -z "$BACKUP_LIST" ]]; then
+            echo "No existing backups found"
+            exit 0
+          fi
+
+          BACKUP_COUNT=$(echo "$BACKUP_LIST" | grep -c "\.dump$" || echo "0")
+
+          if [ "$BACKUP_COUNT" -gt 3 ]; then
+            echo "Found $BACKUP_COUNT backups, keeping 3 most recent"
+            TO_DELETE=$(echo "$BACKUP_LIST" | tail -n +4)
+            
+            while IFS= read -r line; do
+              if [[ -n "$line" ]]; then
+                BACKUP_KEY=$(echo "$line" | awk '{print $4}')
+                if [[ -n "$BACKUP_KEY" ]]; then
+                  echo "Deleting old backup: $BACKUP_KEY"
+                  if [[ -n "$S3_ENDPOINT" ]]; then
+                    aws s3 rm "s3://${S3_BUCKET}/${BACKUP_KEY}" --endpoint-url "$S3_ENDPOINT"
+                  else
+                    aws s3 rm "s3://${S3_BUCKET}/${BACKUP_KEY}"
+                  fi
+                fi
+              fi
+            done <<< "$TO_DELETE"
+            
+            echo "Retention cleanup completed"
+          else
+            echo "Found $BACKUP_COUNT backups, no cleanup needed (limit: 3)"
+          fi
+
       - name: Upload backup to S3
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
@@ -235,53 +284,6 @@ jobs:
           fi
 
           echo "Backup uploaded successfully to s3://${S3_BUCKET}/${S3_KEY}"
-
-      - name: Clean up old backups (keep 5 most recent)
-        if: ${{ !inputs.skip-retention }}
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
-          S3_BUCKET: ${{ secrets.S3_BUCKET }}
-          S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
-        run: |
-          S3_BUCKET="${{ secrets.S3_BUCKET }}"
-          S3_PREFIX="backups/backup-"
-
-          if [[ -n "$S3_ENDPOINT" ]]; then
-            BACKUP_LIST=$(aws s3 ls "s3://${S3_BUCKET}/${S3_PREFIX}" --endpoint-url "$S3_ENDPOINT" --recursive 2>/dev/null | grep "\.dump$" | sort -r || echo "")
-          else
-            BACKUP_LIST=$(aws s3 ls "s3://${S3_BUCKET}/${S3_PREFIX}" --recursive 2>/dev/null | grep "\.dump$" | sort -r || echo "")
-          fi
-
-          if [[ -z "$BACKUP_LIST" ]]; then
-            echo "No existing backups found"
-            exit 0
-          fi
-
-          BACKUP_COUNT=$(echo "$BACKUP_LIST" | grep -c "\.dump$" || echo "0")
-
-          if [ "$BACKUP_COUNT" -gt 5 ]; then
-            echo "Found $BACKUP_COUNT backups, keeping 5 most recent"
-            TO_DELETE=$(echo "$BACKUP_LIST" | tail -n +6)
-            
-            while IFS= read -r line; do
-              if [[ -n "$line" ]]; then
-                BACKUP_KEY=$(echo "$line" | awk '{print $4}')
-                if [[ -n "$BACKUP_KEY" ]]; then
-                  echo "Deleting old backup: $BACKUP_KEY"
-                  if [[ -n "$S3_ENDPOINT" ]]; then
-                    aws s3 rm "s3://${S3_BUCKET}/${BACKUP_KEY}" --endpoint-url "$S3_ENDPOINT"
-                  else
-                    aws s3 rm "s3://${S3_BUCKET}/${BACKUP_KEY}"
-                  fi
-                fi
-              fi
-            done <<< "$TO_DELETE"
-            
-            echo "Retention cleanup completed"
-          else
-            echo "Found $BACKUP_COUNT backups, no cleanup needed (limit: 5)"
-          fi
 
       - name: Cleanup local backup file
         if: always()
