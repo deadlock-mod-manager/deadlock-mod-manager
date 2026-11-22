@@ -2,10 +2,11 @@ import { definePlugin } from "@oxlint/plugins";
 
 import { noBackdropFilterRule } from "./rules/no-backdrop-filter.ts";
 import { noChainedTypeAssertionsRule } from "./rules/no-chained-type-assertions.ts";
+import { noCommentedOutCodeRule } from "./rules/no-commented-out-code.ts";
 import { noConditionalEmptyObjectSpreadRule } from "./rules/no-conditional-empty-object-spread.ts";
 import { noKnownValueWideningRule } from "./rules/no-known-value-widening.ts";
 import { noObjectParametersRule } from "./rules/no-object-parameters.ts";
-import { noRedundantNameCommentRule } from "./rules/no-redundant-name-comment.ts";
+import { noRestatingCommentRule } from "./rules/no-restating-comment.ts";
 import { noReflectApplyRule } from "./rules/no-reflect-apply.ts";
 import { noReflectGetRule } from "./rules/no-reflect-get.ts";
 import { noRuntimeTypeofRule } from "./rules/no-runtime-typeof.ts";
@@ -13,6 +14,7 @@ import { noForbiddenTermInSymbolNamesRule } from "./rules/no-shape-in-symbol-nam
 import { noUnknownParametersRule } from "./rules/no-unknown-parameters.ts";
 import { noUnknownReturnsRule } from "./rules/no-unknown-returns.ts";
 import { noUnknownTypeAliasesRule } from "./rules/no-unknown-type-aliases.ts";
+import { noUntrackedTodoRule } from "./rules/no-untracked-todo.ts";
 import { noUnsafeDictionaryTypeRule } from "./rules/no-unsafe-dictionary-type.ts";
 import { noWidenThenAssertRule } from "./rules/no-widen-then-assert.ts";
 
@@ -22,10 +24,11 @@ const antiSlopPlugin = definePlugin({
   rules: {
     "no-backdrop-filter": noBackdropFilterRule,
     "no-chained-type-assertions": noChainedTypeAssertionsRule,
+    "no-commented-out-code": noCommentedOutCodeRule,
     "no-conditional-empty-object-spread": noConditionalEmptyObjectSpreadRule,
     "no-known-value-widening": noKnownValueWideningRule,
     "no-object-parameters": noObjectParametersRule,
-    "no-redundant-name-comment": noRedundantNameCommentRule,
+    "no-restating-comment": noRestatingCommentRule,
     "no-reflect-apply": noReflectApplyRule,
     "no-reflect-get": noReflectGetRule,
     "no-runtime-typeof": noRuntimeTypeofRule,
@@ -34,6 +37,7 @@ const antiSlopPlugin = definePlugin({
     "no-unknown-parameters": noUnknownParametersRule,
     "no-unknown-returns": noUnknownReturnsRule,
     "no-unknown-type-aliases": noUnknownTypeAliasesRule,
+    "no-untracked-todo": noUntrackedTodoRule,
     "no-widen-then-assert": noWidenThenAssertRule,
   },
 });

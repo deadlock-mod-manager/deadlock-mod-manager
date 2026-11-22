@@ -11,6 +11,5 @@ export async function initCommand(
     interactive?: boolean;
   },
 ) {
-  // TODO: Implement init command
   console.log("Init command implementation pending");
 }

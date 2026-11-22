@@ -154,6 +154,10 @@ test.each([
       "// Finished jobs",
       "",
       "export const finishedJobs = [];",
+      "// Restore scroll position after the virtual list remounts.",
+      "restoreScrollPosition();",
+      "// TODO(#123): drop the legacy slot fallback",
+      "export const legacySlots = [];",
     ].join("\n"),
   ],
 ])("accepts %s through the anti-slop plugin", async (_description, source) => {
@@ -187,16 +191,21 @@ test.each([
   ],
   ["no-unknown-type-aliases", "export type Input = unknown;"],
   [
-    "no-redundant-name-comment",
+    "no-restating-comment",
     "// Restore scroll position\nexport const restoreScrollPosition = () => {};",
   ],
   [
-    "no-redundant-name-comment",
-    "// Read IPC slots.\nexport function readIPCSlots() {}",
+    "no-restating-comment",
+    "// Set mod as downloaded\nsetModStatus(id, ModStatus.Downloaded);",
   ],
   [
-    "no-redundant-name-comment",
-    "declare const ui: { restoreScrollPosition(): void };\n// Restore scroll position\nui.restoreScrollPosition();",
+    "no-restating-comment",
+    "/** Read IPC slots. */\nfunction readIPCSlots() {}\nreadIPCSlots();",
+  ],
+  ["no-untracked-todo", "// TODO: drop the legacy slot fallback\nexport {};"],
+  [
+    "no-commented-out-code",
+    '// import { initCommand } from "./commands/init";\nexport {};',
   ],
   [
     "no-widen-then-assert",

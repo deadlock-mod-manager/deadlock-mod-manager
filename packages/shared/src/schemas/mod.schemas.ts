@@ -155,7 +155,6 @@ export const ErrorResponseSchema = z.object({
   error: z.string(),
 });
 
-// Check updates schemas
 export const CheckUpdatesInputSchema = z.object({
   mods: z.array(
     z.object({

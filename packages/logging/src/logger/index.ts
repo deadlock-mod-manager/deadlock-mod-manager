@@ -68,12 +68,6 @@ const createLogger = <C extends Record<string, unknown>>(
     errorFieldInMetadata: false, // Include error in metadata instead of root level
     errorSerializer: serializeError, // Function to transform Error objects
 
-    // Data structure
-    // contextFieldName: 'context', // Put context data in a specific field -- Keep as flattened for now
-    // metadataFieldName: 'metadata', // Put metadata in a specific field -- Keep as flattened for now
-    // muteContext: false,
-    // muteMetadata: false,
-
     plugins: [...openTelemetryPlugins, storeContextPlugin()],
     ...options,
   });

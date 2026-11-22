@@ -10,6 +10,5 @@ export async function bundleExtractCommand(
     all?: boolean;
   },
 ) {
-  // TODO: Implement bundle extract command
   console.log("Bundle extract command implementation pending");
 }

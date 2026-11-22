@@ -58,7 +58,6 @@ export class ValidationProcessor extends BaseProcessor<CronJobData> {
               })
               .warn("Mod download no longer exists, marking file for deletion");
 
-            // Delete from S3
             const deleteResult = await S3Service.instance.deleteFile(
               mirroredFile.s3Key,
             );
