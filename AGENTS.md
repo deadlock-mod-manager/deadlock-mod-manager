@@ -43,7 +43,7 @@ Key directories:
 - Throw `BaseError` subclasses from `@deadlock-mods/common` in TypeScript application and library code. Tests and generated UI context invariants may keep raw `Error`; see [error handling](.agents/context/ERROR-HANDLING.md) when adding or changing errors.
 - Use Rust edition 2024 across Rust crates; verify Rust changes with appropriate `cargo check`, tests, and `cargo clippy`.
 - Use the initialized structured logger instead of `console.*`; follow [logging-best-practices](.agents/skills/logging-best-practices/SKILL.md) when adding or changing logging.
-- Write comments for non-obvious decisions, business rules, algorithms, and public API contracts. Validate external data, user input, and destructive operations; trust typed internal contracts and let programming errors surface. Catch errors when recovery or useful context is possible.
+- Let names, types, and small functions carry intent; add a comment only for an external constraint, non-obvious invariant, or exported API contract that the code cannot express (see [coding conventions](.agents/context/CODING.md#comments-and-validation)). Validate external data, user input, and destructive operations; trust typed internal contracts and let programming errors surface. Catch errors when recovery or useful context is possible.
 - Use `react-i18next` for any user-facing strings (check `apps/desktop/src/locales/`)
 - Use React Query mutations for async operations, not manual useState loading
 - Keep React files focused on one component or responsibility. Extract substantial child components with their owning types, hooks, and helpers; avoid nested component definitions. Follow [split-react-components](.agents/skills/split-react-components/SKILL.md) when a file accumulates multiple components, preserving state ownership and behavior.
@@ -69,6 +69,7 @@ Before the human submits your work, ensure:
 
 - [ ] `pnpm lint:fix` and `pnpm format:fix` have been run
 - [ ] `pnpm check-types` passes
+- [ ] Added comments, guards, and tests pass a [deslop](.agents/skills/deslop/SKILL.md) check
 - [ ] Changes are tested (manually at minimum, automated tests preferred)
 - [ ] PR description explains _what_ and _why_, not just _how_
 - [ ] AI usage is disclosed per the [AI Policy](./AI_POLICY.md)
