@@ -80,9 +80,12 @@ export const auth = betterAuth({
       // longer than any short window. Reuse outside the window deletes every
       // token the user has for the client, so replay for the token's lifetime,
       // as oidcProvider kept used refresh tokens valid until they expired.
+      // The API's token cleanup deletes rotated tokens after 7 days. Keep this
+      // window longer than that, or a rotated token presented before its
+      // deletion signs the user out everywhere.
       refreshTokenReuseInterval: 30 * 24 * 60 * 60,
-      // Every refresh adds a refresh token row that stays for 30 days, and
-      // clients refresh when the access token expires. At the 1 hour default
+      // Every refresh adds a refresh token row that stays for up to 30 days,
+      // and clients refresh when the access token expires. At the 1 hour default
       // that table grows to millions of rows. Access tokens are opaque and
       // checked against the database on every request, so a longer lifetime
       // does not delay revocation.

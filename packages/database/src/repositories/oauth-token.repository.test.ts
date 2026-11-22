@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "bun:test";
 import { randomUUID } from "node:crypto";
 import { generateDrizzleJson, generateMigration } from "drizzle-kit/api";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Client, Pool } from "pg";
 import type { Database } from "../client";
@@ -16,9 +17,10 @@ import { OAuthTokenRepository } from "./oauth-token.repository";
 
 const testDatabaseUrl = process.env.MIGRATION_TEST_DATABASE_URL;
 const HOUR = 60 * 60 * 1000;
+const DAY = 24 * HOUR;
 
 // Uses a fresh database on the explicitly supplied test server, never DATABASE_URL.
-describe.skipIf(!testDatabaseUrl)("deleting expired OAuth tokens", () => {
+describe.skipIf(!testDatabaseUrl)("deleting OAuth tokens", () => {
   const databaseName = `oauth_token_test_${randomUUID().replaceAll("-", "")}`;
   const admin = new Client({ connectionString: testDatabaseUrl });
   let pool: Pool;
@@ -95,8 +97,7 @@ describe.skipIf(!testDatabaseUrl)("deleting expired OAuth tokens", () => {
         refreshToken("expired-2", past),
         refreshToken("expired-3", past),
         refreshToken("live", future),
-        // A rotated token stays until it expires: presenting it again is how
-        // the provider detects reuse and revokes the token family.
+        // Expiry cleanup leaves rotated tokens to deleteRotatedRefreshTokens.
         refreshToken("rotated-live", future, past),
       ])
       .returning();
@@ -146,5 +147,65 @@ describe.skipIf(!testDatabaseUrl)("deleting expired OAuth tokens", () => {
       .select({ token: oauthAccessToken.token })
       .from(oauthAccessToken);
     expect(remainingAccess.map((row) => row.token)).toEqual(["access-live"]);
+  });
+
+  it("deletes only refresh tokens rotated before the cutoff, in batches", async () => {
+    const now = new Date();
+    const future = new Date(now.getTime() + DAY);
+    const rotatedBefore = new Date(now.getTime() - 7 * DAY);
+    const [owner] = await database
+      .insert(user)
+      .values({
+        name: "Returning player",
+        email: "returning@example.com",
+        emailVerified: true,
+      })
+      .returning();
+    if (!owner) throw new Error("Test user was not created");
+    await database
+      .insert(oauthClient)
+      .values({ clientId: "desktop-rotation", redirectUris: [] });
+    const eightDaysAgo = new Date(now.getTime() - 8 * DAY);
+    const refreshToken = (
+      token: string,
+      rotatedAt: Date | null,
+      revoked = rotatedAt,
+    ) => ({
+      token,
+      clientId: "desktop-rotation",
+      userId: owner.id,
+      scopes: ["openid"],
+      createdAt: new Date(now.getTime() - 20 * DAY),
+      expiresAt: future,
+      revoked,
+      rotatedAt,
+    });
+    await database.insert(oauthRefreshToken).values([
+      refreshToken("rotated-old-1", eightDaysAgo),
+      refreshToken("rotated-old-2", eightDaysAgo),
+      refreshToken("rotated-old-3", eightDaysAgo),
+      refreshToken("rotated-recent", new Date(now.getTime() - 6 * DAY)),
+      refreshToken("active-old", null),
+      // Revoked without rotation: presenting it must still reach the
+      // provider's reuse handling.
+      refreshToken("revoked-old", null, eightDaysAgo),
+    ]);
+    const repository = new OAuthTokenRepository(database);
+
+    const deleteBatch = (limit: number) =>
+      repository.deleteRotatedRefreshTokens(rotatedBefore, 30 * DAY, limit);
+    expect(await deleteBatch(2)).toBe(2);
+    expect(await deleteBatch(10)).toBe(1);
+
+    const remaining = await database
+      .select({ token: oauthRefreshToken.token })
+      .from(oauthRefreshToken)
+      .where(eq(oauthRefreshToken.userId, owner.id))
+      .orderBy(oauthRefreshToken.token);
+    expect(remaining.map((row) => row.token)).toEqual([
+      "active-old",
+      "revoked-old",
+      "rotated-recent",
+    ]);
   });
 });

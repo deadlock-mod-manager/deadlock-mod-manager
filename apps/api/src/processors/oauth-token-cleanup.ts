@@ -17,16 +17,21 @@ const logger = mainLogger.child().withContext({
 const oauthTokenRepository = new OAuthTokenRepository(db);
 
 const BATCH_SIZE = 5000;
-// Token refreshes can leave a backlog of millions of rows. The cap spreads a
-// backlog over several runs so one run can't burst WAL onto the replicas and
-// the archive; later runs pick up the rest.
-const MAX_BATCHES_PER_TABLE = 20;
+// Token refreshes can leave a backlog of millions of rows. The cap spreads
+// each pass's backlog over several runs so one run can't burst WAL onto the
+// replicas and the archive; later runs pick up the rest.
+const MAX_BATCHES_PER_PASS = 20;
+// A client that lost a refresh response can replay it for this long. After
+// that the rotated token is deleted and the client has to sign in again.
+const ROTATED_TOKEN_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
+// Better Auth's default refresh token lifetime, which the auth service keeps.
+const REFRESH_TOKEN_LIFETIME_MS = 30 * 24 * 60 * 60 * 1000;
 
 const deleteInBatches = async (
   deleteBatch: (limit: number) => Promise<number>,
 ) => {
   let total = 0;
-  for (let batch = 0; batch < MAX_BATCHES_PER_TABLE; batch++) {
+  for (let batch = 0; batch < MAX_BATCHES_PER_PASS; batch++) {
     const deleted = await deleteBatch(BATCH_SIZE);
     total += deleted;
     if (deleted < BATCH_SIZE) break;
@@ -84,6 +89,17 @@ export class OAuthTokenCleanupProcessor extends BaseProcessor<CronJobData> {
           oauthTokenRepository.deleteExpiredRefreshTokens(cutoff, limit),
         );
         wide.merge({ deletedRefreshTokens });
+        const rotatedBefore = new Date(
+          cutoff.getTime() - ROTATED_TOKEN_RETENTION_MS,
+        );
+        const deletedRotatedRefreshTokens = await deleteInBatches((limit) =>
+          oauthTokenRepository.deleteRotatedRefreshTokens(
+            rotatedBefore,
+            REFRESH_TOKEN_LIFETIME_MS,
+            limit,
+          ),
+        );
+        wide.merge({ deletedRotatedRefreshTokens });
         wide.emit();
         return this.handleJobSuccess(jobData, checkInId);
       } catch (error) {

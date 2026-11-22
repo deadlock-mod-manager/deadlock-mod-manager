@@ -1,4 +1,4 @@
-import { inArray, lt } from "drizzle-orm";
+import { and, inArray, lt } from "drizzle-orm";
 import type { Database } from "../client";
 import { oauthAccessToken, oauthRefreshToken } from "../schema/auth";
 
@@ -42,6 +42,39 @@ export class OAuthTokenRepository {
     const result = await this.db
       .delete(oauthRefreshToken)
       .where(inArray(oauthRefreshToken.id, expired));
+    return result.rowCount ?? 0;
+  }
+
+  /**
+   * Deletes up to `limit` refresh tokens that were rotated before
+   * `rotatedBefore`. A rotated row only replays its refresh response to a
+   * client that lost it. Once the row is gone, presenting that token fails
+   * with `invalid_grant` and signs out that one client.
+   *
+   * `rotated_at` has no index. A token rotated before the cutoff was also
+   * issued before it, so it expires within `lifetimeMs` of the cutoff, and
+   * that bound stops the `expires_at` index scan at the newer tokens.
+   */
+  async deleteRotatedRefreshTokens(
+    rotatedBefore: Date,
+    lifetimeMs: number,
+    limit: number,
+  ) {
+    const expiresBefore = new Date(rotatedBefore.getTime() + lifetimeMs);
+    const rotated = this.db
+      .select({ id: oauthRefreshToken.id })
+      .from(oauthRefreshToken)
+      .where(
+        and(
+          lt(oauthRefreshToken.expiresAt, expiresBefore),
+          lt(oauthRefreshToken.rotatedAt, rotatedBefore),
+        ),
+      )
+      .orderBy(oauthRefreshToken.expiresAt)
+      .limit(limit);
+    const result = await this.db
+      .delete(oauthRefreshToken)
+      .where(inArray(oauthRefreshToken.id, rotated));
     return result.rowCount ?? 0;
   }
 }
