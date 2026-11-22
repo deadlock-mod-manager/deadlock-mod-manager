@@ -132,13 +132,34 @@ test("loads anti-slop through the repository lint config and detects an assertio
   expect(result.stdout).toContain("anti-slop(no-chained-type-assertions)");
 });
 
-test("accepts precise inferred values through the anti-slop plugin", async () => {
+test.each([
+  [
+    "precise inferred values",
+    'const value = { name: "mod" } satisfies { name: string }; console.log(value);',
+  ],
+  [
+    "comment rationale, public docs, and section headings",
+    [
+      "// discord-rich-presence searches slots 0–9 and Discord's Flatpak directory.",
+      "export function readIPCSlots() {}",
+      "/** Restore scroll position. */",
+      "export function restoreScrollPosition() {}",
+      "// A different sandbox whose ID contains the old ID must not block launch.",
+      "export const runningSandbox = '9123';",
+      "// The worker checks these together:",
+      "// Pending jobs",
+      "export const pendingJobs = [];",
+      "export const ready = true; // Active jobs",
+      "export const activeJobs = [];",
+      "// Finished jobs",
+      "",
+      "export const finishedJobs = [];",
+    ].join("\n"),
+  ],
+])("accepts %s through the anti-slop plugin", async (_description, source) => {
   const root = await workspace();
   const file = join(root, "inferred.ts");
-  await writeFile(
-    file,
-    'const value = { name: "mod" } satisfies { name: string }; console.log(value);',
-  );
+  await writeFile(file, source);
   const result = spawnSync(
     process.execPath,
     [
@@ -165,6 +186,18 @@ test.each([
     "export const name = Reflect.apply(String, null, [42]);",
   ],
   ["no-unknown-type-aliases", "export type Input = unknown;"],
+  [
+    "no-redundant-name-comment",
+    "// Restore scroll position\nexport const restoreScrollPosition = () => {};",
+  ],
+  [
+    "no-redundant-name-comment",
+    "// Read IPC slots.\nexport function readIPCSlots() {}",
+  ],
+  [
+    "no-redundant-name-comment",
+    "declare const ui: { restoreScrollPosition(): void };\n// Restore scroll position\nui.restoreScrollPosition();",
+  ],
   [
     "no-widen-then-assert",
     'const input: unknown = { name: "mod" }; export const value = input as { name: string };',
