@@ -158,6 +158,12 @@ test.each([
       "restoreScrollPosition();",
       "// TODO(#123): drop the legacy slot fallback",
       "export const legacySlots = [];",
+      "// The host loads this exact ESM export:",
+      "// ```ts",
+      "// export const enabled = false;",
+      "// ```",
+      "// Step 2 must finish before step 3 because the host reads the manifest eagerly.",
+      "export const manifest = {};",
     ].join("\n"),
   ],
 ])("accepts %s through the anti-slop plugin", async (_description, source) => {

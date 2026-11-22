@@ -2,7 +2,7 @@ import { defineRule } from "@oxlint/plugins";
 
 import { commentBody } from "../shared/comments.ts";
 
-const STEP_PATTERN = /^step\s+\d+\b/i;
+const STEP_LABEL_PATTERN = /^step\s+\d+\s*[:.)-]/i;
 
 export const noStepCommentRule = defineRule({
   meta: {
@@ -20,7 +20,7 @@ export const noStepCommentRule = defineRule({
     return {
       Program() {
         for (const comment of sourceCode.getAllComments()) {
-          if (STEP_PATTERN.test(commentBody(comment))) {
+          if (STEP_LABEL_PATTERN.test(commentBody(comment))) {
             context.report({ loc: comment.loc, messageId: "step" });
           }
         }

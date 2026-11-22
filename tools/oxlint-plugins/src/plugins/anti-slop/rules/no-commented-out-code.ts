@@ -27,6 +27,7 @@ export const noCommentedOutCodeRule = defineRule({
     const { sourceCode } = context;
     return {
       Program() {
+        let inFencedExample = false;
         for (const comment of sourceCode.getAllComments()) {
           if (
             comment.type !== "Line" ||
@@ -35,7 +36,14 @@ export const noCommentedOutCodeRule = defineRule({
             continue;
           }
           const body = comment.value.trim();
-          if (CODE_PATTERNS.some((pattern) => pattern.test(body))) {
+          if (body.startsWith("```")) {
+            inFencedExample = !inFencedExample;
+            continue;
+          }
+          if (
+            !inFencedExample &&
+            CODE_PATTERNS.some((pattern) => pattern.test(body))
+          ) {
             context.report({ loc: comment.loc, messageId: "commentedOut" });
           }
         }
