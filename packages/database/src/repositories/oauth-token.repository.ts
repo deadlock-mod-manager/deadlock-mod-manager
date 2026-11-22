@@ -1,4 +1,4 @@
-import { and, inArray, lt } from "drizzle-orm";
+import { inArray, lt } from "drizzle-orm";
 import type { Database } from "../client";
 import { oauthAccessToken, oauthRefreshToken } from "../schema/auth";
 
@@ -7,9 +7,9 @@ import { oauthAccessToken, oauthRefreshToken } from "../schema/auth";
  * an expired token before it checks revocation or rotation reuse, so an expired
  * row no longer affects any request and is safe to delete.
  *
- * Batches walk the `expires_at` index in order: an unordered LIMIT lets the
- * planner seq-scan past the rows earlier batches deleted but vacuum has not
- * yet reclaimed.
+ * Batches walk the index on the column they filter by, in order: an unordered
+ * LIMIT lets the planner seq-scan past the rows earlier batches deleted but
+ * vacuum has not yet reclaimed.
  */
 export class OAuthTokenRepository {
   constructor(private readonly db: Database) {}
@@ -50,27 +50,13 @@ export class OAuthTokenRepository {
    * `rotatedBefore`. A rotated row only replays its refresh response to a
    * client that lost it. Once the row is gone, presenting that token fails
    * with `invalid_grant` and signs out that one client.
-   *
-   * `rotated_at` has no index. A token rotated before the cutoff was also
-   * issued before it, so it expires within `lifetimeMs` of the cutoff, and
-   * that bound stops the `expires_at` index scan at the newer tokens.
    */
-  async deleteRotatedRefreshTokens(
-    rotatedBefore: Date,
-    lifetimeMs: number,
-    limit: number,
-  ) {
-    const expiresBefore = new Date(rotatedBefore.getTime() + lifetimeMs);
+  async deleteRotatedRefreshTokens(rotatedBefore: Date, limit: number) {
     const rotated = this.db
       .select({ id: oauthRefreshToken.id })
       .from(oauthRefreshToken)
-      .where(
-        and(
-          lt(oauthRefreshToken.expiresAt, expiresBefore),
-          lt(oauthRefreshToken.rotatedAt, rotatedBefore),
-        ),
-      )
-      .orderBy(oauthRefreshToken.expiresAt)
+      .where(lt(oauthRefreshToken.rotatedAt, rotatedBefore))
+      .orderBy(oauthRefreshToken.rotatedAt)
       .limit(limit);
     const result = await this.db
       .delete(oauthRefreshToken)

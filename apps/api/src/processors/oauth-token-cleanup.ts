@@ -24,8 +24,6 @@ const MAX_BATCHES_PER_PASS = 20;
 // A client that lost a refresh response can replay it for this long. After
 // that the rotated token is deleted and the client has to sign in again.
 const ROTATED_TOKEN_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
-// Better Auth's default refresh token lifetime, which the auth service keeps.
-const REFRESH_TOKEN_LIFETIME_MS = 30 * 24 * 60 * 60 * 1000;
 
 const deleteInBatches = async (
   deleteBatch: (limit: number) => Promise<number>,
@@ -93,11 +91,7 @@ export class OAuthTokenCleanupProcessor extends BaseProcessor<CronJobData> {
           cutoff.getTime() - ROTATED_TOKEN_RETENTION_MS,
         );
         const deletedRotatedRefreshTokens = await deleteInBatches((limit) =>
-          oauthTokenRepository.deleteRotatedRefreshTokens(
-            rotatedBefore,
-            REFRESH_TOKEN_LIFETIME_MS,
-            limit,
-          ),
+          oauthTokenRepository.deleteRotatedRefreshTokens(rotatedBefore, limit),
         );
         wide.merge({ deletedRotatedRefreshTokens });
         wide.emit();

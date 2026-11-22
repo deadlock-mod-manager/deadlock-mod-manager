@@ -192,10 +192,12 @@ describe.skipIf(!testDatabaseUrl)("deleting OAuth tokens", () => {
     ]);
     const repository = new OAuthTokenRepository(database);
 
-    const deleteBatch = (limit: number) =>
-      repository.deleteRotatedRefreshTokens(rotatedBefore, 30 * DAY, limit);
-    expect(await deleteBatch(2)).toBe(2);
-    expect(await deleteBatch(10)).toBe(1);
+    expect(await repository.deleteRotatedRefreshTokens(rotatedBefore, 2)).toBe(
+      2,
+    );
+    expect(await repository.deleteRotatedRefreshTokens(rotatedBefore, 10)).toBe(
+      1,
+    );
 
     const remaining = await database
       .select({ token: oauthRefreshToken.token })
