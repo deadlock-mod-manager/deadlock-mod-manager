@@ -17,7 +17,7 @@ const logger = mainLogger.child().withContext({
 const oauthTokenRepository = new OAuthTokenRepository(db);
 
 const BATCH_SIZE = 5000;
-// Desktop refreshes create about 7k rows per table an hour. The cap spreads a
+// Token refreshes can leave a backlog of millions of rows. The cap spreads a
 // backlog over several runs so one run can't burst WAL onto the replicas and
 // the archive; later runs pick up the rest.
 const MAX_BATCHES_PER_TABLE = 20;

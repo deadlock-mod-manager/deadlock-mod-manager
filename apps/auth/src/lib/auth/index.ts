@@ -81,6 +81,12 @@ export const auth = betterAuth({
       // token the user has for the client, so replay for the token's lifetime,
       // as oidcProvider kept used refresh tokens valid until they expired.
       refreshTokenReuseInterval: 30 * 24 * 60 * 60,
+      // Every refresh adds a refresh token row that stays for 30 days, and
+      // clients refresh when the access token expires. At the 1 hour default
+      // that table grows to millions of rows. Access tokens are opaque and
+      // checked against the database on every request, so a longer lifetime
+      // does not delay revocation.
+      accessTokenExpiresIn: 24 * 60 * 60,
       customUserInfoClaims: async ({ user }) => ({
         isAdmin: user.isAdmin === true,
       }),
