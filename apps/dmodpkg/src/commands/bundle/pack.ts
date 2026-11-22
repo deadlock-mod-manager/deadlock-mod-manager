@@ -7,6 +7,5 @@ export async function bundlePackCommand(_options?: {
   output?: string;
   validate?: boolean;
 }) {
-  // TODO: Implement bundle pack command
   console.log("Bundle pack command implementation pending");
 }

@@ -245,5 +245,4 @@ export class FeatureFlagsServiceSingleton {
   }
 }
 
-// Export singleton instance
 export const featureFlagsService = FeatureFlagsServiceSingleton.getInstance();

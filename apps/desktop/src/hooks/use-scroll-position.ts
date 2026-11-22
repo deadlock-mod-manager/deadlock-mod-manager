@@ -32,7 +32,6 @@ export const useScrollPosition = (key?: string) => {
     }
   }, [scrollKey, setScrollPosition]);
 
-  // Restore scroll position
   const restoreScrollPosition = useCallback(() => {
     if (scrollElementRef.current && !isRestoringRef.current) {
       const savedPosition = getScrollPosition(scrollKey);
@@ -46,7 +45,6 @@ export const useScrollPosition = (key?: string) => {
     }
   }, [scrollKey, getScrollPosition]);
 
-  // Clear stored scroll position for current key
   const clearScrollPosition = useCallback(() => {
     clearStoreScrollPosition(scrollKey);
   }, [scrollKey, clearStoreScrollPosition]);

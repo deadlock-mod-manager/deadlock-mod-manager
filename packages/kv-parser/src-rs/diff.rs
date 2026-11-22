@@ -475,7 +475,6 @@ impl DiffApplicator {
                 "\t\t\t".to_string()
             };
 
-            // Get separator from the KeyValue node
             let sep = if let AstNode::KeyValue(kv) = &children[first_pos] {
                 kv.separator
                     .as_ref()
@@ -1346,7 +1345,6 @@ impl DiffApplicator {
                     let ws_before_comment = format!("\r\n{}", tabs);
                     let ws_after_comment = format!("\r\n{}", tabs);
 
-                    // Create whitespace node before comment
                     let ws_before_node = AstNode::Whitespace(WhitespaceNode {
                         node_type: NodeType::Whitespace,
                         start: Position {
@@ -1363,7 +1361,6 @@ impl DiffApplicator {
                         value: ws_before_comment,
                     });
 
-                    // Create whitespace node after comment (before target)
                     let ws_after_node = AstNode::Whitespace(WhitespaceNode {
                         node_type: NodeType::Whitespace,
                         start: Position {

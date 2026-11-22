@@ -32,7 +32,6 @@ rustPlatform.buildRustPackage (finalAttrs: {
   version = "nightly";
   inherit src;
 
-  # Build from apps/desktop directory
   cargoRoot = "apps/desktop";
   buildAndTestSubdir = finalAttrs.cargoRoot;
 

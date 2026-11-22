@@ -58,10 +58,8 @@ export class DiskHealthMonitor {
     this.logger.info("Starting disk health monitor");
     this.isRunning = true;
 
-    // Perform initial check
     this.performHealthCheck();
 
-    // Set up periodic checks
     this.intervalId = setInterval(() => {
       this.performHealthCheck();
     }, this.config.checkIntervalMs);

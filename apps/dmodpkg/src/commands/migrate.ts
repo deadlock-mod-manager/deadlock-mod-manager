@@ -10,6 +10,5 @@ export async function migrateCommand(
     template?: string;
   },
 ) {
-  // TODO: Implement migrate command
   console.log("Migrate command implementation pending");
 }

@@ -9,6 +9,5 @@ export async function validateCommand(
     schema?: string;
   },
 ) {
-  // TODO: Implement validate command
   console.log("Validate command implementation pending");
 }

@@ -50,12 +50,10 @@ export function VpkAnalyzer() {
   const analyzeFile = useCallback(
     async (fileState: FileAnalysisState, index: number) => {
       try {
-        // Update status to analyzing
         updateFileState(index, { status: "analyzing" as const });
 
         const result = await client.analyseVPK({ vpk: fileState.file });
 
-        // Update with successful result
         updateFileState(index, {
           result: result as VpkAnalysisResult,
           status: "completed" as const,
@@ -76,7 +74,6 @@ export function VpkAnalyzer() {
         const errorMessage =
           error instanceof Error ? error.message : t("toasts.unknownError");
 
-        // Update with error
         updateFileState(index, {
           status: "error" as const,
           error: errorMessage,
@@ -98,7 +95,6 @@ export function VpkAnalyzer() {
       setIsAnalyzing(true);
       const startTime = Date.now();
 
-      // Track analysis started
       if (analytics.isEnabled) {
         analytics.trackVpkAnalysisStarted(files.length);
       }
@@ -150,7 +146,6 @@ export function VpkAnalyzer() {
         );
       }
 
-      // Create initial file analysis states
       const newFileAnalyses: FileAnalysisState[] = vpkFiles.map((file) => ({
         file,
         result: null,

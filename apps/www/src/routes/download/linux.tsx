@@ -43,7 +43,6 @@ function DownloadLinuxComponent() {
       return;
     }
 
-    // Find Linux downloads
     const linuxDownloads = releases.latest.downloads.filter(
       (download) => download.platform === "linux",
     );

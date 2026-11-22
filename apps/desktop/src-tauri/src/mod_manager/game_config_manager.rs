@@ -237,7 +237,6 @@ impl GameConfigManager {
       );
     }
 
-    // Create backup
     log::info!("Creating backup: {backup_path:?}");
     fs::copy(&gameinfo_path, &backup_path)?;
 

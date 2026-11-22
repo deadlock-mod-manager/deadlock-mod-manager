@@ -40,7 +40,6 @@ runs:
 
         echo "Restarting deployment: $DEPLOYMENT_NAME in namespace: ${{ inputs.namespace }}"
 
-        # Check if deployment exists
         if kubectl get deployment "$DEPLOYMENT_NAME" -n "${{ inputs.namespace }}" >/dev/null 2>&1; then
           kubectl rollout restart deployment/"$DEPLOYMENT_NAME" -n "${{ inputs.namespace }}"
           echo "✅ Successfully triggered restart for deployment: $DEPLOYMENT_NAME"

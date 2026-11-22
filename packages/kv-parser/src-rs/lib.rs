@@ -41,7 +41,6 @@ pub unsafe extern "C" fn kv_free_string(ptr: *mut c_char) {
     }
 }
 
-// Get library version
 #[unsafe(no_mangle)]
 pub extern "C" fn kv_version() -> *mut c_char {
     to_c_string(env!("CARGO_PKG_VERSION").to_string())
@@ -83,7 +82,6 @@ pub unsafe extern "C" fn kv_parse(
         }
     };
 
-    // Parse the KV
     match Parser::parse(&input, options) {
         Ok(result) => match serde_json::to_string(&result) {
             Ok(json) => to_c_string(json),

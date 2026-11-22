@@ -8,7 +8,7 @@ import { db, schema } from "./client";
       .values({
         key: "+citadel_unit_status_use_new",
         value: "true",
-        type: "launch_option", // TODO: enum
+        type: "launch_option",
         description: "Use new unit status system (new healthbar, etc.)",
       })
       .onConflictDoNothing();

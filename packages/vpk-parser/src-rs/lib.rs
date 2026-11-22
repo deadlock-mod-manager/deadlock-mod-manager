@@ -203,7 +203,6 @@ pub unsafe extern "C" fn vpk_get_info(buffer: *const u8, buffer_len: usize) -> *
     }
 }
 
-// Get library version
 #[unsafe(no_mangle)]
 pub extern "C" fn vpk_version() -> *mut c_char {
     to_c_string(env!("CARGO_PKG_VERSION").to_string())

@@ -8,7 +8,6 @@ export abstract class BaseError extends Error {
     this.name = (this.constructor as unknown as { name: string }).name;
     this.originalError = originalError;
 
-    // Preserve original error's stack trace
     if (originalError instanceof Error && originalError?.stack) {
       this.stack = originalError.stack;
     } else if (Error.captureStackTrace) {

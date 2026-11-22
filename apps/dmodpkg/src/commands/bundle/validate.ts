@@ -8,6 +8,5 @@ export async function bundleValidateCommand(
     strict?: boolean;
   },
 ) {
-  // TODO: Implement bundle validate command
   console.log("Bundle validate command implementation pending");
 }

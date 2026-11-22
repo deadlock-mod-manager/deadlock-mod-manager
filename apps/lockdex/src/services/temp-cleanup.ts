@@ -313,7 +313,6 @@ export class TempCleanupService {
 
       return totalSize;
     } catch {
-      // If we can't calculate size, return 0
       return 0;
     }
   }

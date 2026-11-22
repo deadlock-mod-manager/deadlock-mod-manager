@@ -51,17 +51,11 @@ interface TranslationFile {
   [key: string]: unknown;
 }
 
-/**
- * Get the current version from package.json
- */
 function getPackageVersion(): string {
   const packageJson = JSON.parse(readFileSync(DESKTOP_PACKAGE_JSON, "utf-8"));
   return packageJson.version;
 }
 
-/**
- * Get the current version from Cargo.toml
- */
 function getCargoVersion(): string {
   const cargoToml = readFileSync(CARGO_TOML, "utf-8");
   const match = cargoToml.match(/^version = "([^"]+)"/m);
@@ -71,9 +65,6 @@ function getCargoVersion(): string {
   return match[1];
 }
 
-/**
- * Update Cargo.toml with the new version
- */
 function updateCargoVersion(newVersion: string): void {
   const cargoToml = readFileSync(CARGO_TOML, "utf-8");
   const updatedCargoToml = cargoToml.replace(
@@ -140,7 +131,6 @@ function parseChangelogForVersion(version: string): WhatsNewVersion | null {
       // Remove commit hashes (e.g., "f48352c: ")
       feature = feature.replace(/^[a-f0-9]+: /, "");
 
-      // Skip empty features
       if (feature.length > 0) {
         features.push(feature);
       }
@@ -157,9 +147,6 @@ function parseChangelogForVersion(version: string): WhatsNewVersion | null {
   return { title, features: formatFeaturesForWhatsNew(features) };
 }
 
-/**
- * Generate a title from the features
- */
 function generateTitle(features: string[], version: string): string {
   // Try to extract key themes from features
   const themes: string[] = [];
@@ -186,7 +173,6 @@ function generateTitle(features: string[], version: string): string {
       themes.push("Improvements");
   }
 
-  // Deduplicate themes
   const uniqueThemes = [...new Set(themes)];
 
   if (uniqueThemes.length === 0) {
@@ -360,9 +346,6 @@ function getRecentCommits(): string[] {
   }
 }
 
-/**
- * Main function
- */
 function main(): void {
   const args = new Set(process.argv.slice(2));
   const generateWhatsNew = args.has("--generate-whats-new");
@@ -370,14 +353,12 @@ function main(): void {
 
   console.log("=== Version Bump Script ===\n");
 
-  // Step 1: Get versions
   const packageVersion = getPackageVersion();
   const cargoVersion = getCargoVersion();
 
   console.log(`Package.json version: ${packageVersion}`);
   console.log(`Cargo.toml version: ${cargoVersion}`);
 
-  // Step 2: Sync Cargo.toml if needed
   if (packageVersion !== cargoVersion) {
     console.log(`\nVersion mismatch detected!`);
     if (dryRun) {
@@ -389,7 +370,6 @@ function main(): void {
     console.log(`\nVersions are in sync.`);
   }
 
-  // Step 3: Generate What's New content
   if (generateWhatsNew) {
     console.log(`\n=== Generating What's New Content ===\n`);
 

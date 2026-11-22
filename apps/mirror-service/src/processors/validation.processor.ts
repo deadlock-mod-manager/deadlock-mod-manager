@@ -29,7 +29,6 @@ export class ValidationProcessor extends BaseProcessor<CronJobData> {
     try {
       this.logger.info("Starting validation worker");
 
-      // Get all mirrored files with their related mod downloads
       const mirroredFilesResult =
         await this.mirroredFileRepository.findAllWithModDownloads();
 
@@ -49,7 +48,6 @@ export class ValidationProcessor extends BaseProcessor<CronJobData> {
         try {
           filesChecked++;
 
-          // Check if mod download still exists
           if (!mirroredFile.modDownload) {
             this.logger
               .withMetadata({
@@ -58,7 +56,6 @@ export class ValidationProcessor extends BaseProcessor<CronJobData> {
               })
               .warn("Mod download no longer exists, marking file for deletion");
 
-            // Delete from S3
             const deleteResult = await S3Service.instance.deleteFile(
               mirroredFile.s3Key,
             );
@@ -71,7 +68,6 @@ export class ValidationProcessor extends BaseProcessor<CronJobData> {
               filesDeleted++;
             }
 
-            // Remove from database
             const dbDeleteResult = await this.mirroredFileRepository.deleteById(
               mirroredFile.id,
             );
@@ -85,7 +81,6 @@ export class ValidationProcessor extends BaseProcessor<CronJobData> {
             continue;
           }
 
-          // Compare file sizes
           if (mirroredFile.fileSize !== mirroredFile.modDownload.size) {
             this.logger
               .withMetadata({
@@ -98,7 +93,6 @@ export class ValidationProcessor extends BaseProcessor<CronJobData> {
 
             staleFilesFound++;
 
-            // Delete old file from S3
             const deleteResult = await S3Service.instance.deleteFile(
               mirroredFile.s3Key,
             );
@@ -111,7 +105,6 @@ export class ValidationProcessor extends BaseProcessor<CronJobData> {
               filesDeleted++;
             }
 
-            // Mark as stale in database
             const markStaleResult =
               await this.mirroredFileRepository.markAsStale(mirroredFile.id);
             if (markStaleResult.isErr()) {
@@ -121,7 +114,6 @@ export class ValidationProcessor extends BaseProcessor<CronJobData> {
                 .error("Failed to mark file as stale");
             }
           } else {
-            // Update last validated timestamp for files that are still valid
             const updateResult =
               await this.mirroredFileRepository.updateLastValidated(
                 mirroredFile.id,

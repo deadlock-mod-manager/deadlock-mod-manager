@@ -33,7 +33,13 @@ When adding or reviewing a `useEffect`, read React's [You Might Not Need an Effe
 
 ## Comments and validation
 
-Prefer clear names and small functions over comments that narrate assignments, loops, or calls. Explain non-obvious business rules, algorithm choices, constraints, and meaningful TODOs. Document public APIs and complex interfaces.
+Let clear names, explicit types, and small functions explain what the code does. Add a comment only when it supplies information the code cannot express:
+
+- **External constraints and invariants**: platform or runtime quirks (Flatpak, WebKitGTK, Steam, Valve formats, CI coupling), ordering or concurrency requirements, and deliberate non-obvious tradeoffs.
+- **Exported API contracts**: JSDoc or doc comments on public exports in shared packages or complex interfaces when behavior, units, or edge cases are not obvious from the signature. Keep unexported helpers self-describing through their names and types.
+- **Tracked debt**: link `TODO`, `FIXME`, `HACK`, and `XXX` notes to an issue (`TODO(#123)` or a URL) rather than leaving untracked reminders. Delete dead code instead of commenting it out; git history preserves it.
+- **Single source of facts**: rely on the constant or expression itself for defaults, timeouts, and limits rather than restating values in prose where they can drift, and structure multi-step code into named helpers rather than `Step 1:` / narrating comments.
+- **Architectural decisions**: reserve `docs/adr/` for cross-cutting, hard-to-reverse decisions; keep local constraints next to the code that depends on them.
 
 Validate data at external boundaries and before critical operations such as deleting user data. Avoid repeating checks already guaranteed by internal types or validated callers. Let invalid internal API use surface as a programming error instead of hiding it behind fallback values.
 

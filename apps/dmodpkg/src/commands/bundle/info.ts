@@ -9,6 +9,5 @@ export async function bundleInfoCommand(
     verbose?: boolean;
   },
 ) {
-  // TODO: Implement bundle info command
   console.log("Bundle info command implementation pending");
 }

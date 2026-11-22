@@ -1,13 +1,12 @@
 // Simple NSFW settings types for frontend
 export type NSFWSettings = {
-  hideNSFW: boolean; // default: true
+  hideNSFW: boolean; // default: false
   blurStrength: number; // CSS pixels; default: 16
   showLikelyNSFW: boolean; // default: false
   rememberPerItemOverrides: boolean; // default: true
   disableBlur: boolean; // default: false - disable blurring NSFW content globally
 };
 
-// Default NSFW settings
 export const DEFAULT_NSFW_SETTINGS: NSFWSettings = {
   hideNSFW: false,
   blurStrength: 16,

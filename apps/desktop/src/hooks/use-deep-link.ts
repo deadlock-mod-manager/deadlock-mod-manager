@@ -187,7 +187,6 @@ export const useOneClickInstall = (): OneClickInstall => {
           setModProgress(modData.remoteId, progress);
         },
         onComplete: async (path) => {
-          // Set mod as downloaded
           setModStatus(modData.remoteId, ModStatus.Downloaded);
 
           logger

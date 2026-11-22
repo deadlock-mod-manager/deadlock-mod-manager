@@ -20,7 +20,7 @@ export interface DownloadOptions {
   timeout?: number;
 
   /**
-   * Maximum file size in bytes (default: 500MB)
+   * Maximum file size in bytes (default: 256 MiB)
    */
   maxFileSize?: number;
 

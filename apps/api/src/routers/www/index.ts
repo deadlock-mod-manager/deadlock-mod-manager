@@ -76,7 +76,6 @@ export const publicRouter = {
         };
         const betterStackStatus = data.data.attributes.aggregate_state;
 
-        // Map betterstack status to our status format
         let status: "operational" | "downtime" | "degraded";
         switch (betterStackStatus.toLowerCase()) {
           case "operational":

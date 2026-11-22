@@ -64,10 +64,8 @@ export function hasBlacklistPermission(
     return false;
   }
 
-  // Check if user is server administrator
   const isAdmin = member.permissions.has("Administrator");
 
-  // Check if user has blacklist moderator role
   const userRoles = member.roles.cache.map((role) => role.id);
   const hasBlacklistRole = env.BLACKLIST_MODERATOR_ROLES.some((roleId) =>
     userRoles.includes(roleId),

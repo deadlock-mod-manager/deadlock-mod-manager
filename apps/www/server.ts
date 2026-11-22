@@ -73,7 +73,6 @@ async function toWebResponse(
   const body = res.body;
   const headers = new Headers();
 
-  // Copy headers
   if (res.headers) {
     res.headers.forEach((value: string, key: string) => {
       headers.set(key, value);

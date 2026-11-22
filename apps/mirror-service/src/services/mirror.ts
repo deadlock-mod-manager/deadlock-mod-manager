@@ -58,7 +58,6 @@ export class MirrorService {
         // Track cache miss for missing S3 files
         await MetricsService.instance.incrementCacheMiss();
       } else {
-        // Update last downloaded at
         await this.mirroredFileRepository.update(mirroredFile.value.id, {
           lastDownloadedAt: new Date(),
         });

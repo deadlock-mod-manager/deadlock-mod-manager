@@ -534,7 +534,6 @@ impl Parser {
             condition = condition[1..].trim().to_string();
         }
 
-        // Remove $ prefix if present
         if condition.starts_with('$') {
             condition = condition[1..].to_string();
         }

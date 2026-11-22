@@ -52,7 +52,6 @@ export class CleanupProcessor extends BaseProcessor<CronJobData> {
 
       for (const file of unusedFiles) {
         try {
-          // Delete from S3
           const deleteResult = await S3Service.instance.deleteFile(file.s3Key);
           if (deleteResult.isErr()) {
             this.logger
@@ -63,7 +62,6 @@ export class CleanupProcessor extends BaseProcessor<CronJobData> {
             continue;
           }
 
-          // Remove from database
           const dbDeleteResult = await this.mirroredFileRepository.deleteById(
             file.id,
           );

@@ -18,7 +18,7 @@ const modRepository = new ModRepository(db);
 export class ModSyncService {
   private static instance: ModSyncService;
   private readonly lockService: DistributedLockService;
-  private readonly JOB_NAME = "synchronize-mods"; // TODO: we'll refactor this to the processor
+  private readonly JOB_NAME = "synchronize-mods";
 
   constructor() {
     this.lockService = new DistributedLockService(db, logger, {

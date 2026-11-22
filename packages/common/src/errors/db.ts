@@ -117,12 +117,10 @@ export class NotNullError extends BaseError {
 export const mapDrizzleError = (
   error: DatabaseError | Error | undefined | null | unknown,
 ): BaseError => {
-  // Handle null or undefined errors
   if (!error) {
     return new UnknownError("Unknown database error");
   }
 
-  // Handle errors that are not Error instances
   if (!(error instanceof Error)) {
     return new UnknownError("Unknown database error");
   }
@@ -143,7 +141,6 @@ export const mapDrizzleError = (
   const errMsg = currentError.message || "";
   const errCode = "code" in currentError ? currentError.code : "";
 
-  // Handle "not found" errors
   if (errMsg.includes("no rows returned") || errMsg.includes("not found")) {
     return new EntityNotFoundError("Entity", "unknown");
   }

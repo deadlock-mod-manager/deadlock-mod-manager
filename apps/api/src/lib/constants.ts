@@ -46,7 +46,7 @@ export const CACHE_TTL = {
   RELAYS_MANIFEST: 10 * 60 * 1000,
   /** Relay mesh health snapshot TTL (1 day) */
   RELAYS_HEALTH: 24 * 60 * 60 * 1000,
-  /** Default cache TTL - 10 minutes */
+  /** Default cache TTL (1 hour) */
   DEFAULT: 60 * 60 * 1000,
 } as const;
 

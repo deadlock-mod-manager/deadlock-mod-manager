@@ -170,7 +170,6 @@ export class DistributedLockService {
       // Stop heartbeat timer
       this.stopHeartbeat(lockId);
 
-      // Delete the lock
       const result = await this.db
         .delete(jobLocks)
         .where(eq(jobLocks.id, lockId))
